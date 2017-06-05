@@ -3,7 +3,7 @@ describe("PDF document module", function()
 
     setup(function()
         require("commonrequire")
-        DocumentRegistry = require("document/documentregistry")
+        DocumentRegistry = package.reload("document/documentregistry")
     end)
 
     local doc
@@ -52,7 +52,7 @@ describe("EPUB document module", function()
 
     setup(function()
         require("commonrequire")
-        DocumentRegistry = require("document/documentregistry")
+        DocumentRegistry = package.reload("document/documentregistry")
     end)
 
     local doc

@@ -5,9 +5,9 @@ describe("Readersearch module", function()
 
     setup(function()
         require("commonrequire")
-        DocumentRegistry = require("document/documentregistry")
-        ReaderUI = require("apps/reader/readerui")
-        dbg = require("dbg")
+        DocumentRegistry = package.reload("document/documentregistry")
+        ReaderUI = package.reload("apps/reader/readerui")
+        dbg = package.reload("dbg")
     end)
 
     describe("search API for EPUB documents", function()

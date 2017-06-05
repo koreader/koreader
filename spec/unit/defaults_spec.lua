@@ -2,8 +2,8 @@ describe("defaults module", function()
     local Defaults, DataStorage
     setup(function()
         require("commonrequire")
-        Defaults = require("apps/filemanager/filemanagersetdefaults")
-        DataStorage = require("datastorage")
+        DataStorage = package.reload("datastorage")
+        Defaults = package.reload("apps/filemanager/filemanagersetdefaults")
     end)
 
     it("should load all defaults from defaults.lua", function()

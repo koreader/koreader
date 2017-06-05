@@ -2,8 +2,8 @@ describe("Nickel configuation module", function()
     local lfs, NickelConf
     setup(function()
         require("commonrequire")
+        NickelConf = package.reload("device/kobo/nickel_conf")
         lfs = require("libs/libkoreader-lfs")
-        NickelConf = require("device/kobo/nickel_conf")
     end)
 
     describe("Frontlight module", function()

@@ -2,7 +2,7 @@ describe("Font module", function()
     local Font
     setup(function()
         require("commonrequire")
-        Font = require("ui/font")
+        Font = package.reload("ui/font")
     end)
     it("should get face", function()
         local f

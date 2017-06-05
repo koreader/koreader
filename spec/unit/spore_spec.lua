@@ -35,7 +35,7 @@ describe("Lua Spore modules #notest #nocov", function()
     local Spore, client
     setup(function()
         require("commonrequire")
-        Spore = require("Spore")
+        Spore = package.reload("Spore")
         client = Spore.new_from_string(service)
         client:enable('Format.JSON')
     end)
@@ -58,13 +58,13 @@ describe("Lua Spore modules with async http request #notest #nocov", function()
 
     setup(function()
         require("commonrequire")
-        UIManager = require("ui/uimanager")
-        local HTTPClient = require("httpclient")
-        local Spore = require("Spore")
+        UIManager = package.reload("ui/uimanager")
+        local HTTPClient = package.reload("httpclient")
+        local Spore = package.reload("Spore")
         client = Spore.new_from_string(service)
         local async_http_client = HTTPClient:new()
         package.loaded['Spore.Middleware.AsyncHTTP'] = {}
-        require('Spore.Middleware.AsyncHTTP').call = function(args, req)
+        package.reload('Spore.Middleware.AsyncHTTP').call = function(args, req)
             req:finalize()
             local result
             async_http_client:request({

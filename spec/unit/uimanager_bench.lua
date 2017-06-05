@@ -1,6 +1,6 @@
 require("commonrequire")
+local UIManager = package.reload("ui/uimanager")
 local util = require("ffi/util")
-local UIManager = require("ui/uimanager")
 
 local noop = function() end
 

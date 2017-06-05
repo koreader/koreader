@@ -4,9 +4,9 @@ describe("Readertoc module", function()
 
     setup(function()
         require("commonrequire")
-        DocumentRegistry = require("document/documentregistry")
-        ReaderUI = require("apps/reader/readerui")
-        DEBUG = require("dbg")
+        DocumentRegistry = package.reload("document/documentregistry")
+        ReaderUI = package.reload("apps/reader/readerui")
+        DEBUG = package.reload("dbg")
 
         local sample_epub = "spec/front/unit/data/juliet.epub"
         readerui = ReaderUI:new{

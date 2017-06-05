@@ -4,9 +4,9 @@ describe("UIManager spec", function()
 
     setup(function()
         require("commonrequire")
+        Device = package.reload("device")
+        UIManager = package.reload("ui/uimanager")
         util = require("ffi/util")
-        UIManager = require("ui/uimanager")
-        Device = require("device")
     end)
 
     it("should consume due tasks", function()

@@ -2,8 +2,8 @@ describe("gesturerange module", function()
     local GestureRange, Geom
     setup(function()
         require("commonrequire")
-        GestureRange = require("ui/gesturerange")
-        Geom = require("ui/geometry")
+        GestureRange = package.reload("ui/gesturerange")
+        Geom = package.reload("ui/geometry")
     end)
 
     it("should match tap event within range", function()

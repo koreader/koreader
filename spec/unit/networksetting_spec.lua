@@ -2,9 +2,9 @@ describe("NetworkSetting module", function()
     local NetworkSetting, NetworkMgr, UIManager
     setup(function()
         require("commonrequire")
-        UIManager = require("ui/uimanager")
-        NetworkSetting = require("ui/widget/networksetting")
-        NetworkMgr = require("ui/network/manager")
+        UIManager = package.reload("ui/uimanager")
+        NetworkMgr = package.reload("ui/network/manager")
+        NetworkSetting = package.reload("ui/widget/networksetting")
     end)
 
     it("should initilize properly with empty network list", function()

@@ -2,8 +2,8 @@ describe("TextBoxWidget module", function()
     local TextBoxWidget, Font
     setup(function()
         require("commonrequire")
-        Font = require("ui/font")
-        TextBoxWidget = require("ui/widget/textboxwidget")
+        Font = package.reload("ui/font")
+        TextBoxWidget = package.reload("ui/widget/textboxwidget")
     end)
 
     it("should select the correct word on HoldWord event", function()

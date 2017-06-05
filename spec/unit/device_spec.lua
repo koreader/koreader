@@ -24,7 +24,7 @@ describe("device module", function()
         package.loaded['ffi/framebuffer_mxcfb'] = mock_fb
         package.loaded['device/kindle/device'] = nil
         package.loaded['device/kobo/device'] = nil
-        mock_input = require('device/input')
+        mock_input = package.reload('device/input')
         stub(mock_input, "open")
         stub(os, "getenv")
         stub(os, "execute")
@@ -43,8 +43,8 @@ describe("device module", function()
         local TimeVal
         local NickelConf
         setup(function()
-            TimeVal = require("ui/timeval")
-            NickelConf = require("device/kobo/nickel_conf")
+            TimeVal = package.reload("ui/timeval")
+            NickelConf = package.reload("device/kobo/nickel_conf")
         end)
 
         before_each(function()
@@ -60,7 +60,7 @@ describe("device module", function()
 
         it("should initialize properly on Kobo dahlia", function()
             os.getenv.returns("dahlia")
-            local kobo_dev = require("device/kobo/device")
+            local kobo_dev = package.reload("device/kobo/device")
 
             kobo_dev:init()
             assert.is.same("Kobo_dahlia", kobo_dev.model)
@@ -76,7 +76,7 @@ describe("device module", function()
             end)
 
             package.loaded['device/kobo/device'] = nil
-            local kobo_dev = require("device/kobo/device")
+            local kobo_dev = package.reload("device/kobo/device")
             kobo_dev:init()
             local Screen = kobo_dev.screen
 
@@ -121,7 +121,7 @@ describe("device module", function()
                     return saved_getenv(key)
                 end
             end)
-            local kobo_dev = require("device/kobo/device")
+            local kobo_dev = package.reload("device/kobo/device")
             kobo_dev:init()
             local Screen = kobo_dev.screen
 
@@ -159,13 +159,13 @@ describe("device module", function()
 
         it("should flush book settings before suspend", function()
             local sample_pdf = "spec/front/unit/data/tall.pdf"
-            local ReaderUI = require("apps/reader/readerui")
-            local Device = require("device")
+            local Device = package.reload("device")
+            local ReaderUI = package.reload("apps/reader/readerui")
 
             NickelConf.frontLightLevel.get.returns(1)
             NickelConf.frontLightState.get.returns(0)
 
-            local UIManager = require("ui/uimanager")
+            local UIManager = package.reload("ui/uimanager")
             stub(Device, "suspend")
             stub(Device.powerd, "beforeSuspend")
             stub(Device, "isKobo")
@@ -201,7 +201,7 @@ describe("device module", function()
                 end
             end
 
-            local kindle_dev = require('device/kindle/device')
+            local kindle_dev = package.reload('device/kindle/device')
             assert.is.same(kindle_dev.model, "KindleVoyage")
             kindle_dev:init()
             assert.is.same(kindle_dev.input.event_map[104], "LPgBack")
@@ -227,7 +227,7 @@ describe("device module", function()
                 end
             end
 
-            local kindle_dev = require("device/kindle/device")
+            local kindle_dev = package.reload("device/kindle/device")
             kindle_dev:init()
 
             assert.is.same(kindle_dev.powerd.fl_intensity, 12)
@@ -260,7 +260,7 @@ describe("device module", function()
                 end
             end
 
-            mock_ffi_input = require('ffi/input')
+            mock_ffi_input = package.reload('ffi/input')
             stub(mock_ffi_input, "waitForEvent")
             mock_ffi_input.waitForEvent.returns({
                 type = 3,
@@ -272,10 +272,10 @@ describe("device module", function()
                 value = 16
             })
 
-            local UIManager = require("ui/uimanager")
+            local UIManager = package.reload("ui/uimanager")
             stub(UIManager, "onRotation")
 
-            local kindle_dev = require('device/kindle/device')
+            local kindle_dev = package.reload('device/kindle/device')
             assert.is.same("KindleOasis", kindle_dev.model)
             kindle_dev:init()
 

@@ -2,7 +2,7 @@ describe("ImageWidget module", function()
     local ImageWidget
     setup(function()
         require("commonrequire")
-        ImageWidget = require("ui/widget/imagewidget")
+        ImageWidget = package.reload("ui/widget/imagewidget")
     end)
 
     it("should render without error", function()

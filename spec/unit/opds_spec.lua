@@ -231,8 +231,8 @@ describe("OPDS module #nocov", function()
 
     setup(function()
         require("commonrequire")
-        OPDSParser = require("ui/opdsparser")
-        OPDSBrowser = require("ui/widget/opdsbrowser")
+        OPDSParser = package.reload("ui/opdsparser")
+        OPDSBrowser = package.reload("ui/widget/opdsbrowser")
     end)
 
     describe("OPDS parser module", function()

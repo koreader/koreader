@@ -125,7 +125,7 @@ describe("ReaderLink module", function()
         }
         -- disable footer
         G_reader_settings:saveSetting("reader_footer_mode", 0)
-        require("docsettings"):open(sample_pdf):purge()
+        package.reload("docsettings"):open(sample_pdf):purge()
         local readerui = ReaderUI:new{
             document = DocumentRegistry:openDocument(sample_pdf),
         }

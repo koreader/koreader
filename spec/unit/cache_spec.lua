@@ -4,9 +4,9 @@ describe("Cache module", function()
     local max_page = 1
     setup(function()
         require("commonrequire")
-        DocumentRegistry = require("document/documentregistry")
-        Cache = require("cache")
-        DEBUG = require("dbg")
+        Cache = package.reload("cache")
+        DEBUG = package.reload("dbg")
+        DocumentRegistry = package.reload("document/documentregistry")
 
         local sample_pdf = "spec/front/unit/data/sample.pdf"
         doc = DocumentRegistry:openDocument(sample_pdf)

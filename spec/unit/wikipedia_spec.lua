@@ -2,7 +2,7 @@ describe("Wikipedia module", function()
     local util
     setup(function()
         require("commonrequire")
-        Wikipedia = require("ui/wikipedia")
+        Wikipedia = package.reload("ui/wikipedia")
     end)
 
     it("should return Wikipedia server", function()

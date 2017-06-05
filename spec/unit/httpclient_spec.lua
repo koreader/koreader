@@ -5,7 +5,7 @@ describe("HTTP client module #notest #nocov", function()
     local UIManager
     setup(function()
         require("commonrequire")
-        UIManager = require("ui/uimanager")
+        UIManager = package.reload("ui/uimanager")
     end)
 
     local requests = 0
@@ -17,7 +17,7 @@ describe("HTTP client module #notest #nocov", function()
     end
 
     it("should get response from async GET request", function()
-        local HTTPClient = require("httpclient")
+        local HTTPClient = package.reload("httpclient")
         local async_client = HTTPClient:new()
         UIManager:quit()
         local urls = {
