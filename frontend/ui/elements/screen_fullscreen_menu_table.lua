@@ -13,7 +13,7 @@ return {
         G_reader_settings:saveSetting("disable_fullscreen", not disabled)
         android.setFullscreen(disabled)
         UIManager:show(InfoMessage:new{
-            text = _("This will take effect on next restart."),
+            text = _("The fullscreen setting will take effect on next restart."),
         })
     end,
 }

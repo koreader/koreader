@@ -38,7 +38,7 @@ common_settings.screen = {
         require("ui/elements/screen_dpi_menu_table"),
         require("ui/elements/screen_eink_opt_menu_table"),
         require("ui/elements/screen_disable_double_tap_table"),
-        require("ui/elements/refresh_menu_table")
+        require("ui/elements/refresh_menu_table"),
     },
 }
 if Device:isAndroid() then
