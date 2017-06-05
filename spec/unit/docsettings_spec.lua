@@ -3,7 +3,7 @@ describe("docsettings module", function()
 
     setup(function()
         require("commonrequire")
-        docsettings = package.reload("docsettings")
+        docsettings = require("docsettings")
         lfs = require("libs/libkoreader-lfs")
         util = require("ffi/util")
     end)

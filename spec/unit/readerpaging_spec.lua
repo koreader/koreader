@@ -5,10 +5,10 @@ describe("Readerpaging module", function()
 
     setup(function()
         require("commonrequire")
-        DocumentRegistry = package.reload("document/documentregistry")
-        Event = package.reload("ui/event")
-        ReaderUI = package.reload("apps/reader/readerui")
-        UIManager = package.reload("ui/uimanager")
+        UIManager = require("ui/uimanager")
+        Event = require("ui/event")
+        DocumentRegistry = require("document/documentregistry")
+        ReaderUI = require("apps/reader/readerui")
     end)
 
     describe("Page mode", function()
@@ -41,7 +41,7 @@ describe("Readerpaging module", function()
     describe("Scroll mode", function()
         setup(function()
             local purgeDir = require("ffi/util").purgeDir
-            local DocSettings = package.reload("docsettings")
+            local DocSettings = require("docsettings")
             purgeDir(DocSettings:getSidecarDir(sample_pdf))
             os.remove(DocSettings:getHistoryPath(sample_pdf))
 

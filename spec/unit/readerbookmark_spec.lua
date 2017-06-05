@@ -4,13 +4,13 @@ describe("ReaderBookmark module", function()
 
     setup(function()
         require("commonrequire")
-        DocSettings = package.reload("docsettings")
-        DocumentRegistry = package.reload("document/documentregistry")
-        Geom = package.reload("ui/geometry")
-        ReaderUI = package.reload("apps/reader/readerui")
-        Screen = package.reload("device").screen
-        UIManager = package.reload("ui/uimanager")
-        dbg = package.reload("dbg")
+        DocSettings = require("docsettings")
+        DocumentRegistry = require("document/documentregistry")
+        ReaderUI = require("apps/reader/readerui")
+        UIManager = require("ui/uimanager")
+        Screen = require("device").screen
+        Geom = require("ui/geometry")
+        dbg = require("dbg")
 
         sample_epub = "spec/front/unit/data/juliet.epub"
         sample_pdf = "spec/front/unit/data/sample.pdf"

@@ -4,10 +4,10 @@ describe("Readerui module", function()
     local readerui
     setup(function()
         require("commonrequire")
-        DocumentRegistry = package.reload("document/documentregistry")
-        ReaderUI = package.reload("apps/reader/readerui")
-        DocSettings = package.reload("docsettings")
-        UIManager = package.reload("ui/uimanager")
+        DocumentRegistry = require("document/documentregistry")
+        ReaderUI = require("apps/reader/readerui")
+        DocSettings = require("docsettings")
+        UIManager = require("ui/uimanager")
 
         readerui = ReaderUI:new{
             document = DocumentRegistry:openDocument(sample_epub),

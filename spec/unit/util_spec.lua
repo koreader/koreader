@@ -2,7 +2,7 @@ describe("util module", function()
     local util
     setup(function()
         require("commonrequire")
-        util = package.reload("util")
+        util = require("util")
     end)
 
     it("should strip punctuations around word", function()

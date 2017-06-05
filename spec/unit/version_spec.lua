@@ -2,7 +2,7 @@ describe("Version module", function()
     local Version
     setup(function()
         require("commonrequire")
-        Version = package.reload("version")
+        Version = require("version")
     end)
     it("should get current revision", function()
         local rev = Version:getCurrentRevision()

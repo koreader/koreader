@@ -2,8 +2,8 @@ describe("DepGraph module", function()
     local DepGraph, logger
     setup(function()
         require("commonrequire")
-        DepGraph = package.reload("depgraph")
-        logger = package.reload("logger")
+        logger = require("logger")
+        DepGraph = require("depgraph")
     end)
 
     it("should serialize simple graph", function()

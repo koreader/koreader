@@ -4,10 +4,10 @@ describe("Readerrolling module", function()
 
     setup(function()
         require("commonrequire")
-        DEBUG = package.reload("dbg")
-        DocumentRegistry = package.reload("document/documentregistry")
-        Event = package.reload("ui/event")
-        ReaderUI = package.reload("apps/reader/readerui")
+        DocumentRegistry = require("document/documentregistry")
+        ReaderUI = require("apps/reader/readerui")
+        Event = require("ui/event")
+        DEBUG = require("dbg")
 
         local sample_epub = "spec/front/unit/data/juliet.epub"
         readerui = ReaderUI:new{
@@ -185,13 +185,13 @@ describe("Readerrolling module", function()
 
     describe("test initialization", function()
         it("should emit PageUpdate event after book is rendered", function()
-            local ReaderView = package.reload("apps/reader/modules/readerview")
+            local ReaderView = require("apps/reader/modules/readerview")
             local saved_handler = ReaderView.onPageUpdate
             ReaderView.onPageUpdate = function(_self)
                 assert.are.same(7, _self.ui.document:getPageCount())
             end
             local test_book = "spec/front/unit/data/sample.txt"
-            package.reload("docsettings"):open(test_book):purge()
+            require("docsettings"):open(test_book):purge()
             ReaderUI:new{
                 document = DocumentRegistry:openDocument(test_book),
             }

@@ -2,7 +2,7 @@ describe("luasettings module", function()
     local Settings
     setup(function()
         require("commonrequire")
-        Settings = package.reload("frontend/luasettings"):open("this-is-not-a-valid-file")
+        Settings = require("frontend/luasettings"):open("this-is-not-a-valid-file")
     end)
 
     it("should handle undefined keys", function()

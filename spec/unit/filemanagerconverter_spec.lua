@@ -2,7 +2,7 @@ describe("FileConverter module", function()
     local FileConverter
     setup(function()
         require("commonrequire")
-        FileConverter = package.reload("apps/filemanager/filemanagerconverter")
+        FileConverter = require("apps/filemanager/filemanagerconverter")
     end)
     it("should show conversion support for Markdown", function()
         assert.is_true(FileConverter:isSupported("/markdown_file.md"))

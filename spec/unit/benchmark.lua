@@ -1,5 +1,5 @@
 require("commonrequire")
-local DocumentRegistry = package.reload("document/documentregistry")
+local DocumentRegistry = require("document/documentregistry")
 local util = require("ffi/util")
 
 function logDuration(filename, pageno, dur)

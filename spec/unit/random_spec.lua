@@ -6,7 +6,7 @@ describe("random package tests", function()
     end
 
     setup(function()
-        random = package.reload("frontend/random")
+        random = require("frontend/random")
     end)
 
     it("should generate uuid without dash", function()

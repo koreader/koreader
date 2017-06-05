@@ -2,8 +2,8 @@ describe("Menu widget", function()
     local Menu, dbg
     setup(function()
         require("commonrequire")
-        Menu = package.reload("ui/widget/menu")
-        dbg = package.reload("dbg")
+        Menu = require("ui/widget/menu")
+        dbg = require("dbg")
     end)
 
     it("should convert item table from touch menu properly", function()

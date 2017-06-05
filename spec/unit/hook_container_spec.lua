@@ -4,7 +4,7 @@ describe("HookContainer tests", function()
     end)
 
     it("should register and unregister functions", function()
-        local HookContainer = package.reload("ui/hook_container"):new()
+        local HookContainer = require("ui/hook_container"):new()
         local f1 = spy.new(function() end)
         local f2 = spy.new(function() end)
         local f3 = spy.new(function() end)
@@ -34,8 +34,8 @@ describe("HookContainer tests", function()
     end)
 
     it("should register and automatically unregister widget", function()
-        local HookContainer = package.reload("ui/hook_container"):new()
-        local widget = package.reload("ui/widget/widget"):new()
+        local HookContainer = require("ui/hook_container"):new()
+        local widget = require("ui/widget/widget"):new()
         widget.onEvent = spy.new(function() end)
         local close_widget = spy.new(function() end)
         widget.onCloseWidget = close_widget
@@ -50,8 +50,8 @@ describe("HookContainer tests", function()
     end)
 
     it("should pass widget itself", function()
-        local HookContainer = package.reload("ui/hook_container"):new()
-        local widget = package.reload("ui/widget/widget"):new()
+        local HookContainer = require("ui/hook_container"):new()
+        local widget = require("ui/widget/widget"):new()
         local onEvent_called = false
         local onCloseWidget_called = false
         function widget:onEvent(args)

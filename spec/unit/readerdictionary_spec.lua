@@ -3,13 +3,13 @@ describe("Readerdictionary module", function()
 
     setup(function()
         require("commonrequire")
-        DEBUG = package.reload("dbg")
-        DocumentRegistry = package.reload("document/documentregistry")
-        Event = package.reload("ui/event")
-        ReaderUI = package.reload("apps/reader/readerui")
-        Screen = package.reload("device").screen
-        UIManager = package.reload("ui/uimanager")
+        DocumentRegistry = require("document/documentregistry")
+        ReaderUI = require("apps/reader/readerui")
         lfs = require("libs/libkoreader-lfs")
+        UIManager = require("ui/uimanager")
+        Screen = require("device").screen
+        Event = require("ui/event")
+        DEBUG = require("dbg")
     end)
 
     local readerui, rolling, dictionary

@@ -56,18 +56,18 @@ describe("KOSync modules #notest #nocov", function()
 
     setup(function()
         require("commonrequire")
-        UIManager = package.reload("ui/uimanager")
-        logger = package.reload("logger")
-        md5 = package.reload("ffi/MD5")
-        local HTTPClient = package.reload("httpclient")
-        local Spore = package.reload("Spore")
+        UIManager = require("ui/uimanager")
+        logger = require("logger")
+        md5 = require("ffi/MD5")
+        local HTTPClient = require("httpclient")
+        local Spore = require("Spore")
         client = Spore.new_from_string(service)
         package.loaded['Spore.Middleware.GinClient'] = {}
-        package.reload('Spore.Middleware.GinClient').call = function(self, req)
+        require('Spore.Middleware.GinClient').call = function(self, req)
             req.headers['accept'] = "application/vnd.koreader.v1+json"
         end
         package.loaded['Spore.Middleware.KOSyncAuth'] = {}
-        package.reload('Spore.Middleware.KOSyncAuth').call = function(args, req)
+        require('Spore.Middleware.KOSyncAuth').call = function(args, req)
             req.headers['x-auth-user'] = args.username
             req.headers['x-auth-key'] = args.userkey
         end
@@ -190,7 +190,7 @@ describe("KOSync modules #notest #nocov", function()
     -- TODO: Test kosync module
     local function mockKOSyncClient()
         package.loaded["KOSyncClient"] = nil
-        local c = package.reload("KOSyncClient")
+        local c = require("KOSyncClient")
         c.new = function(o)
             local o = o or {}
             setmetatable(o, self)

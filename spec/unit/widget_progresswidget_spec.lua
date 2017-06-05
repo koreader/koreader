@@ -2,8 +2,8 @@ describe("ProgressWidget widget", function()
     local ProgressWidget, Screen
     setup(function()
         require("commonrequire")
-        ProgressWidget = package.reload("ui/widget/progresswidget")
-        Screen = package.reload("device").screen
+        ProgressWidget = require("ui/widget/progresswidget")
+        Screen = require("device").screen
     end)
 
     it("should not crash with nil self.last", function()

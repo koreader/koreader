@@ -2,7 +2,7 @@ describe("MenuSorter module", function()
     local MenuSorter
     setup(function()
         require("commonrequire")
-        MenuSorter = package.reload("ui/menusorter")
+        MenuSorter = require("ui/menusorter")
     end)
 
     it("should put menu items in the defined order", function()

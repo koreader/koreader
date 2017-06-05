@@ -2,7 +2,7 @@ describe("Dbg module", function()
     local dbg, dbg_on
     setup(function()
         package.path = "?.lua;common/?.lua;rocks/share/lua/5.1/?.lua;frontend/?.lua;" .. package.path
-        dbg = package.reload("dbg")
+        dbg = require("dbg")
         dbg_on = dbg.is_on
     end)
 

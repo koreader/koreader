@@ -2,9 +2,9 @@ describe("Koptinterface module", function()
     local DocumentRegistry, Koptinterface, Cache
     setup(function()
         require("commonrequire")
-        Cache = package.reload("cache")
-        DocumentRegistry = package.reload("document/documentregistry")
-        Koptinterface = package.reload("document/koptinterface")
+        DocumentRegistry = require("document/documentregistry")
+        Koptinterface = require("document/koptinterface")
+        Cache = require("cache")
     end)
 
     local tall_pdf = "spec/front/unit/data/tall.pdf"
@@ -136,7 +136,7 @@ describe("Koptinterface module", function()
         })
         assert.truthy(link)
         assert.is.same(20, link.page)
-        package.reload("dbg"):v("link", link)
+        require("dbg"):v("link", link)
     end)
 
     it("should get link from reflow position", function()
