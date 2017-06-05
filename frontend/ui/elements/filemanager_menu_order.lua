@@ -6,6 +6,7 @@ local order = {
         "main",
     },
     setting = {
+        "filemanager_display_mode",
         "show_hidden_files",
         "----------------------------",
         "sort_by",
