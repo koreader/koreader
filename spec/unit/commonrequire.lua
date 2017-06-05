@@ -90,7 +90,9 @@ package.unloadAll = function()
         end
     end
     for _, name in ipairs(pending) do
-        assert(package.unload(name))
+        if name ~= "commonrequire" then
+            assert(package.unload(name))
+        end
     end
     return #pending
 end
