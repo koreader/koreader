@@ -413,6 +413,7 @@ function KindleVoyage:init()
     Kindle.init(self)
 
     self.input.open(self.touch_dev)
+    self.input.open("/dev/input/event0") -- PowerButton
     self.input.open("/dev/input/event2") -- WhisperTouch
     self.input.open("fake_events")
 end
