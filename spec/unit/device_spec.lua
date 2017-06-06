@@ -18,10 +18,10 @@ describe("device module", function()
             end
         }
         require("commonrequire")
+        package.unloadAll()
     end)
 
     before_each(function()
-        package.unloadAll()
         package.loaded['ffi/framebuffer_mxcfb'] = mock_fb
         mock_input = require('device/input')
         stub(mock_input, "open")
@@ -246,6 +246,7 @@ describe("device module", function()
         end)
 
         it("oasis should interpret orientation event", function()
+            package.unload('device/kindle/device')
             io.open = function(filename, mode)
                 if filename == "/proc/usid" then
                     return {
