@@ -63,7 +63,8 @@ function AutoSuspend:_schedule()
     if Debug.dassert(self:_enabled()) then
         local delay = self.last_action_sec + self.auto_suspend_sec - os.time();
         logger.dbg("AutoSuspend: scheduleIn ", delay, " seconds")
-        UIManager:scheduleIn(delay, function() self:_action(self.settings_id) end)
+        local settings_id = self.settings_id
+        UIManager:scheduleIn(delay, function() self:_action(settings_id) end)
     end
 end
 
@@ -74,6 +75,8 @@ end
 
 function AutoSuspend:_start()
     if self:_enabled() then
+        logger.dbg("AutoSuspend: start at ", os.time())
+        self.last_action_sec = os.time()
         self:_schedule()
     end
 end
