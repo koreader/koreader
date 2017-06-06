@@ -3,7 +3,7 @@ local Device = require("device")
 if not Device:isKobo() and not Device:isSDL() then return { disabled = true, } end
 
 local DataStorage = require("datastorage")
-local Debug = require("dbg")
+local Debug = require("info")
 local LuaSettings = require("luasettings")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -39,7 +39,7 @@ end
 
 function AutoSuspend:_action(settings_id)
     if self.settings_id ~= settings_id then
-        logger.dbg("AutoSuspend: registered settings_id ",
+        logger.info("AutoSuspend: registered settings_id ",
                    settings_id,
                    " does not equal to current one ",
                    self.settings_id)
@@ -48,7 +48,7 @@ function AutoSuspend:_action(settings_id)
 
     local now = os.time()
     if self.last_action_sec + self.auto_suspend_sec <= now then
-        logger.dbg("AutoSuspend: will suspend the device")
+        logger.info("AutoSuspend: will suspend the device")
         UIManager:suspend()
     else
         self:_schedule()
@@ -62,14 +62,14 @@ end
 function AutoSuspend:_schedule()
     if Debug.dassert(self:_enabled()) then
         local delay = self.last_action_sec + self.auto_suspend_sec - os.time();
-        logger.dbg("AutoSuspend: scheduleIn ", delay, " seconds")
+        logger.info("AutoSuspend: scheduleIn ", delay, " seconds")
         UIManager:scheduleIn(delay, function() self:_action(self.settings_id) end)
     end
 end
 
 function AutoSuspend:_deprecateLastTask()
     self.settings_id = self.settings_id + 1
-    logger.dbg("AutoSuspend: deprecateLastTask ", self.settings_id)
+    logger.info("AutoSuspend: deprecateLastTask ", self.settings_id)
 end
 
 function AutoSuspend:_start()
@@ -86,19 +86,19 @@ function AutoSuspend:init()
 end
 
 function AutoSuspend:onInputEvent()
-    logger.dbg("AutoSuspend: onInputEvent")
+    logger.info("AutoSuspend: onInputEvent")
     self.last_action_sec = os.time()
 end
 
 -- We do not want auto suspend procedure to waste battery during suspend. So let's unschedule it
 -- when suspending and restart it after resume.
 function AutoSuspend:onSuspend()
-    logger.dbg("AutoSuspend: onSuspend")
+    logger.info("AutoSuspend: onSuspend")
     self:_deprecateLastTask()
 end
 
 function AutoSuspend:onResume()
-    logger.dbg("AutoSuspend: onResume")
+    logger.info("AutoSuspend: onResume")
     self:_start()
 end
 
