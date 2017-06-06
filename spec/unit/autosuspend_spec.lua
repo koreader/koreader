@@ -2,6 +2,7 @@ describe("AutoSuspend widget tests", function()
     setup(function()
         require("commonrequire")
         package.unloadAll()
+        require("dbg"):turnOn()
     end)
 
     teardown(function()
