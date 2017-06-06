@@ -72,18 +72,19 @@ package.reload = function(name)
 end
 
 package.unloadAll = function()
-    local folders = {
+    local candidates = {
         "spec/",
         "frontend/",
         "plugins/",
-        "ffi/"
+        "datastorage.lua",
+        "defaults.lua",
     }
     local pending = {}
     for name, _ in pairs(package.loaded) do
         local path = package.searchpath(name, package.path)
         if path ~= nil then
-            for _, folder in ipairs(folders) do
-                if path:find(folder) == 0 then
+            for _, candidate in ipairs(candidates) do
+                if path:find(candidate) == 1 then
                     table.insert(pending, name)
                 end
             end

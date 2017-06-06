@@ -18,13 +18,11 @@ describe("device module", function()
             end
         }
         require("commonrequire")
-        package.unloadAll()
     end)
 
     before_each(function()
+        package.unloadAll()
         package.loaded['ffi/framebuffer_mxcfb'] = mock_fb
-        package.loaded['device/kindle/device'] = nil
-        package.loaded['device/kobo/device'] = nil
         mock_input = require('device/input')
         stub(mock_input, "open")
         stub(os, "getenv")
