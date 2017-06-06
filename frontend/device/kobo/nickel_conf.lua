@@ -56,7 +56,7 @@ function NickelConf.frontLightLevel.get()
         -- In NickelConfSpec, require("device") won't return KoboDevice
         local powerd = require("device/kobo/powerd")
         local fallback_fl_level = powerd.fl_intensity or 1
-        assert(NickelConf.frontLightLevel.set(fallback_fl_level))
+        NickelConf.frontLightLevel.set(fallback_fl_level)
         return fallback_fl_level
     end
 end
@@ -113,7 +113,8 @@ function NickelConf._write_kobo_conf(re_Match, key, value, dont_create)
         lines[#lines + 1] = new_value_line
     end
 
-    local kobo_conf_w = assert(io.open(kobo_conf_path, "w"))
+    local kobo_conf_w = io.open(kobo_conf_path, "w")
+    if not kobo_conf_w then return false end
     for i, line in ipairs(lines) do
       kobo_conf_w:write(line, "\n")
     end
