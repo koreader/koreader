@@ -115,7 +115,7 @@ function ReaderStatistics:initData()
     self.data.series = book_properties.series
 
     self.data.pages = self.view.document:getPageCount()
-    self.data.md5 = self:md5(self.document.file)
+    self.data.md5 = self:partialMd5(self.document.file)
     self.curr_total_time = 0
     self.curr_total_pages = 0
     self.id_curr_book = self:getIdBookDB()
@@ -133,8 +133,8 @@ function ReaderStatistics:checkInitDatabase()
     if self.convert_to_db then      -- if conversion to sqlite was doing earlier
         if not conn:exec("pragma table_info('book');") then
             UIManager:show(ConfirmBox:new{
-                text = T(_("Cannot open database in %1.\nProbably the database has been deleted or moved.\n " ..
-                    "Do you want to create empty database?"), db_location),
+                text = T(_("Cannot open database in %1.\nThe database may have been moved or deleted.\n " ..
+                    "Do you want to create an empty database?"), db_location),
                 cancel_text = _("Close"),
                 cancel_callback = function()
                     return
@@ -155,8 +155,8 @@ function ReaderStatistics:checkInitDatabase()
             if #ReadHistory.hist > 0 then
                 local info = InfoMessage:new{
                     text =_("New version of statistics plugin is detected.\n" ..
-                        "You need to convert statistics data to database.\n"..
-                        "It make take a few minutes.\nPlease wait...")}
+                        "Statistics data needs to be converted into the new database format.\n"..
+                        "It make take a few minutes.\nPlease wait…")}
                 UIManager:show(info)
                 UIManager:forceRePaint()
                 local nr_book = self:migrateToDB(conn)
@@ -166,9 +166,6 @@ function ReaderStatistics:checkInitDatabase()
                     text =T(_("Convertion completed.\nImported %1 books to database."),nr_book), timeout = 4 })
             else
                 self:createDB(conn)
-                UIManager:show(InfoMessage:new{
-                    text =_("New version of statistics plugin is detected.\n" ..
-                        "A new database has been created.")})
             end
         end
         self:saveSettings()
@@ -176,7 +173,7 @@ function ReaderStatistics:checkInitDatabase()
     conn:close()
 end
 
-function ReaderStatistics:md5(file)
+function ReaderStatistics:partialMd5(file)
     if file == nil then
         return nil
     end
@@ -216,7 +213,7 @@ function ReaderStatistics:createDB(conn)
             );
         CREATE TABLE IF NOT EXISTS page_stat
             (
-                id_book    integer,
+                id_book    integer PRIMARY KEY,
                 page       integer NOT NULL,
                 start_time integer NOT NULL,
                 period     integer NOT NULL,
@@ -236,7 +233,6 @@ function ReaderStatistics:createDB(conn)
 end
 
 function ReaderStatistics:addBookStatToDB(book_stats, conn)
-    local res
     local id_book
     local last_open_book = 0
     local start_open_page
@@ -248,21 +244,21 @@ function ReaderStatistics:addBookStatToDB(book_stats, conn)
         and util.tableSize(book_stats.performance_in_pages) > 0 then
         local read_pages = util.tableSize(book_stats.performance_in_pages)
         logger.dbg("Insert to database: " .. book_stats.title)
-        local book_title = book_stats.title:gsub("'", "''")
-        local book_authors = book_stats.authors:gsub("'", "''")
         sql_stmt = [[
             SELECT count(id)
             FROM   book
-            WHERE  title = '%s'
-                AND    authors = '%s'
-                AND    md5 = '%s';
+            WHERE  title = ?
+                AND    authors = ?
+                AND    md5 = ?
         ]]
-        res = conn:rowexec(string.format(sql_stmt, book_title, book_authors, self:md5(book_stats.file)))
-        if res == 0 then
-            local stmt = conn:prepare("INSERT INTO book VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+        local stmt = conn:prepare(sql_stmt)
+        local result = stmt:reset():bind(self.data.title, self.data.authors, self.data.md5):step()
+        local nr_id = tonumber(result[1])
+        if nr_id == 0 then
+            stmt = conn:prepare("INSERT INTO book VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
             stmt:reset():bind(book_stats.title, book_stats.authors, book_stats.notes,
                 last_open_book, book_stats.highlights, book_stats.pages,
-                book_stats.series, book_stats.language, self:md5(book_stats.file), total_read_time, total_read_pages) :step()
+                book_stats.series, book_stats.language, self:partialMd5(book_stats.file), total_read_time, total_read_pages) :step()
             sql_stmt = [[
                 SELECT last_insert_rowid() AS num;
             ]]
@@ -271,11 +267,14 @@ function ReaderStatistics:addBookStatToDB(book_stats, conn)
             sql_stmt = [[
                 SELECT id
                 FROM   book
-                WHERE  title = '%s'
-                    AND authors = '%s'
-                    AND md5 = '%s'
+                WHERE  title = ?
+                    AND authors = ?
+                    AND md5 = ?
             ]]
-            id_book = conn:rowexec(string.format(sql_stmt, book_title, book_authors, self:md5(book_stats.file)))
+            stmt = conn:prepare(sql_stmt)
+            result = stmt:reset():bind(self.data.title, self.data.authors, self.data.md5):step()
+            id_book = result[1]
+
         end
         local sorted_performance = {}
         for k, _ in pairs(book_stats.performance_in_pages) do
@@ -284,7 +283,7 @@ function ReaderStatistics:addBookStatToDB(book_stats, conn)
         table.sort(sorted_performance)
 
         conn:exec('BEGIN')
-        local stmt = conn:prepare("INSERT OR IGNORE INTO page_stat VALUES(?, ?, ?, ?)")
+        stmt = conn:prepare("INSERT OR IGNORE INTO page_stat VALUES(?, ?, ?, ?)")
         local avg_time = math.ceil(book_stats.total_time_in_sec / read_pages)
         local first_read_page = book_stats.performance_in_pages[sorted_performance[1]]
         if first_read_page > 1 then
@@ -386,18 +385,18 @@ end
 function ReaderStatistics:getIdBookDB()
     local conn = SQ3.open(db_location)
     local id_book
-    local book_title = self.data.title:gsub("'", "''")
-    local book_authors = self.data.authors:gsub("'", "''")
     local sql_stmt = [[
         SELECT count(id)
         FROM   book
-        WHERE  title = '%s'
-            AND authors = '%s'
-            AND md5 = '%s'
+        WHERE  title = ?
+            AND authors = ?
+            AND md5 = ?
     ]]
-    local res = conn:rowexec(string.format(sql_stmt, book_title, book_authors, self.data.md5))
-    if res == 0 then
-        local stmt = conn:prepare("INSERT INTO book VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+    local stmt = conn:prepare(sql_stmt)
+    local result = stmt:reset():bind(self.data.title, self.data.authors, self.data.md5):step()
+    local nr_id = tonumber(result[1])
+    if nr_id == 0 then
+        stmt = conn:prepare("INSERT INTO book VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
         stmt:reset():bind(self.data.title, self.data.authors, self.data.notes,
             TimeVal:now().sec, self.data.highlights, self.data.pages,
             self.data.series, self.data.language, self.data.md5, self.curr_total_time, self.curr_total_pages):step()
@@ -409,11 +408,13 @@ function ReaderStatistics:getIdBookDB()
         sql_stmt = [[
             SELECT id
             FROM   book
-            WHERE  title = '%s'
-                AND    authors = '%s'
-                AND    md5 = '%s'
+            WHERE  title = ?
+                AND    authors = ?
+                AND    md5 = ?
         ]]
-        id_book = conn:rowexec(string.format(sql_stmt, book_title, book_authors, self.data.md5))
+        stmt = conn:prepare(sql_stmt)
+        result = stmt:reset():bind(self.data.title, self.data.authors, self.data.md5):step()
+        id_book = result[1]
     end
     conn:close()
     return tonumber(id_book)
@@ -427,18 +428,19 @@ function ReaderStatistics:insertDB(id_book)
     local diff_time
     local conn = SQ3.open(db_location)
     local sorted_performance = {}
-    for k, v in pairs(self.pages_stats) do
-        table.insert(sorted_performance, k)
+    for time, pages in pairs(self.pages_stats) do
+        table.insert(sorted_performance, time)
     end
     table.sort(sorted_performance)
     conn:exec('BEGIN')
     local stmt = conn:prepare("INSERT OR IGNORE INTO page_stat VALUES(?, ?, ?, ?)")
     for i=1, #sorted_performance - 1 do
         diff_time = sorted_performance[i+1] - sorted_performance[i]
-        if diff_time <= self.page_max_read_sec and diff_time >= self.page_min_read_sec  then
-            stmt:reset():bind(id_book, self.pages_stats[sorted_performance[i]], sorted_performance[i], diff_time):step()
-        elseif diff_time > self.page_max_read_sec then
-            stmt:reset():bind(id_book, self.pages_stats[sorted_performance[i]], sorted_performance[i], self.page_max_read_sec):step()
+        if diff_time >= self.page_min_read_sec then
+            stmt:reset():bind(id_book,
+                self.pages_stats[sorted_performance[i]],
+                sorted_performance[i],
+                math.min(diff_time, self.page_max_read_sec)):step()
         end
     end
     conn:exec('COMMIT')
@@ -892,7 +894,7 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype)
         end
         table.insert(results, {
             date_text,
-            T(_("Pages (%1) Time: %2"), tonumber(result_pages[2][i]), util.secondsToClock(tonumber(result_book[3][i]), false))
+            T(_("Pages: (%1) Time: %2"), tonumber(result_pages[2][i]), util.secondsToClock(tonumber(result_book[3][i]), false))
         })
     end
     return results
@@ -900,6 +902,7 @@ end
 
 function ReaderStatistics:getReadingProgressStats(sdays)
     local results = {}
+    local pages, period, date_read
     local now_t = os.date("*t")
     local from_begin_day = now_t.hour *3600 + now_t.min*60 + now_t.sec
     local now_stamp = os.time()
@@ -930,14 +933,17 @@ function ReaderStatistics:getReadingProgressStats(sdays)
         ORDER  BY dates DESC
     ]]
     local result_pages = conn:exec(string.format(sql_stmt, period_begin))
+
     for i = 1, sdays do
-        local pages = tonumber(result_pages[2][i])
-        local period = tonumber(result_book[3][i])
+        pages = tonumber(result_pages[2][i])
+        period = tonumber(result_book[3][i])
+        date_read = result_book[1][i]
         if pages == nil then pages = 0 end
         if period == nil then period = 0 end
         table.insert(results, {
             pages,
-            period
+            period,
+            date_read
         })
     end
     conn:close()
@@ -964,7 +970,7 @@ local function getDatesForBook(id_book)
     for i=1, #result_book.dates do
         table.insert(results, {
             result_book[1][i],
-            T(_("Pages (%1) Time: %2"), tonumber(result_book[2][i]), util.secondsToClock(tonumber(result_book[3][i]), false))
+            T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), util.secondsToClock(tonumber(result_book[3][i]), false))
         })
     end
     return results
@@ -975,7 +981,7 @@ function ReaderStatistics:getTotalStats()
     local conn = SQ3.open(db_location)
     local sql_stmt = [[
         SELECT sum(period)
-        FROM   page_sta
+        FROM   page_stat
     ]]
     local total_books_time = conn:rowexec(sql_stmt)
     if total_books_time == nil then
@@ -1036,8 +1042,8 @@ function ReaderStatistics:onPageUpdate(pageno)
     if util.tableSize(self.pages_stats) > 1 then
         mem_read_pages = util.tableSize(self.pages_stats) - 1
         local sorted_performance = {}
-        for k, v in pairs(self.pages_stats) do
-            table.insert(sorted_performance, k)
+        for time, page in pairs(self.pages_stats) do
+            table.insert(sorted_performance, time)
         end
         table.sort(sorted_performance)
         local diff_time

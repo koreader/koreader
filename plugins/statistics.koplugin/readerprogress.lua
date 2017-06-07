@@ -198,9 +198,15 @@ function ReaderProgress:genWeekStats(stats_day)
         },
     }
 
+    local j = 1
     for i = 1, stats_day do
         diff_time = now_time - second_in_day * (i - 1)
-        select_day_time = self.dates[i][2]
+        if self.dates[j][3] == os.date("%Y-%m-%d", diff_time) then
+            select_day_time = self.dates[j][2]
+            j = j + 1
+        else
+            select_day_time = 0
+        end
         date_format_show = dayOfWeekTranslation[os.date("%A", diff_time)] .. os.date(" (%d.%m)", diff_time)
         local total_group = HorizontalGroup:new{
             align = "center",
