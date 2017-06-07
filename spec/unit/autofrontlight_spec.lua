@@ -42,6 +42,10 @@ describe("AutoFrontlight widget tests", function()
     it("should automatically turn on or off frontlight", function()
         local UIManager = require("ui/uimanager")
         UIManager._run_forever = true
+        require("luasettings"):
+            open(require("datastorage"):getSettingsDir() .. "/autofrontlight.lua"):
+            saveSetting("enable", "true"):
+            close()
         local class = dofile("plugins/autofrontlight.koplugin/main.lua")
         local AutoFrontlight = class:new()
         AutoFrontlight:init()
