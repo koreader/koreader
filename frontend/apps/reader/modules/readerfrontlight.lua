@@ -65,7 +65,7 @@ function ReaderFrontLight:onAdjust(arg, ges)
 end
 
 function ReaderFrontLight:onShowIntensity()
-    if not Deivce.hasFrontlight() then return true end
+    if not Device.hasFrontlight() then return true end
     local powerd = Device:getPowerDevice()
     local new_text
     if powerd:isFrontlightOff() then
