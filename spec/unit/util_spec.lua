@@ -11,6 +11,8 @@ describe("util module", function()
         assert.is_equal(util.stripePunctuations("\"hello, world?\""), "hello, world")
         assert.is_equal(util.stripePunctuations("“你好“"), "你好")
         assert.is_equal(util.stripePunctuations("“你好?“"), "你好")
+        assert.is_equal(util.stripePunctuations(""), "")
+        assert.is_equal(util.stripePunctuations(nil), nil)
     end)
 
     it("should split string with patterns", function()
