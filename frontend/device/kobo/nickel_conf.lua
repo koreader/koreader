@@ -53,7 +53,7 @@ function NickelConf.frontLightLevel.get()
         -- FrontLightState config, so don't normalize the value here yet.
         return tonumber(new_intensity)
     else
-        local fallback_fl_level = 20
+        local fallback_fl_level = 1
         assert(NickelConf.frontLightLevel.set(fallback_fl_level))
         return fallback_fl_level
     end

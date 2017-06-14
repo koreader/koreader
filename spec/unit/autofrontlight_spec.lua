@@ -52,22 +52,22 @@ describe("AutoFrontlight widget tests", function()
         Device.brightness = 3
         MockTime:increase(1)
         UIManager:handleInput()
-        assert.are.equal(Device:getPowerDevice().frontlight, 0)
+        assert.are.equal(0, Device:getPowerDevice().frontlight)
         Device.brightness = 0
         MockTime:increase(1)
         UIManager:handleInput()
-        assert.are.equal(Device:getPowerDevice().frontlight, 2)
+        assert.are.equal(2, Device:getPowerDevice().frontlight)
         Device.brightness = 1
         MockTime:increase(1)
         UIManager:handleInput()
-        assert.are.equal(Device:getPowerDevice().frontlight, 2)
+        assert.are.equal(2, Device:getPowerDevice().frontlight)
         Device.brightness = 2
         MockTime:increase(1)
         UIManager:handleInput()
-        assert.are.equal(Device:getPowerDevice().frontlight, 0)
+        assert.are.equal(0, Device:getPowerDevice().frontlight)
         Device.brightness = 3
         MockTime:increase(1)
         UIManager:handleInput()
-        assert.are.equal(Device:getPowerDevice().frontlight, 0)
+        assert.are.equal(0, Device:getPowerDevice().frontlight)
     end)
 end)
