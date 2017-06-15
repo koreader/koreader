@@ -45,7 +45,7 @@ end
 
 function KoboPowerD:setIntensityHW(intensity)
     if self.fl == nil then return end
-    self.fl:setBrightness(self.frontlightIntensity())
+    self.fl:setBrightness(intensity)
     self:_syncNickelConf()
 end
 
