@@ -29,7 +29,7 @@ function KindlePowerD:setIntensityHW(intensity)
     if self.lipc_handle ~= nil and intensity > 0 then
         -- NOTE: We want to bypass setIntensity's shenanigans and simply restore the light as-is
         self.lipc_handle:set_int_property(
-            "com.lab126.powerd", "flIntensity", self.fronglightIntensity())
+            "com.lab126.powerd", "flIntensity", intensity)
     else
         -- NOTE: when intensity is 0, We want to really kill the light, so do it manually
         -- (asking lipc to set it to 0 would in fact set it to 1)...
@@ -73,7 +73,7 @@ function KindlePowerD:afterResume()
     if self:isFrontlightOn() then
         -- Kindle stock software should turn on the front light automatically. The follow statement
         -- ensure the consistency of intensity.
-        self:setIntensityHW()
+        self:turnOnFrontlightHW()
     else
         self:turnOffFrontlightHW()
     end
