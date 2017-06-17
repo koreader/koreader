@@ -1,6 +1,5 @@
 local Generic = require("device/generic/device")
 local logger = require("logger")
-local util = require("ffi/util")
 
 local function yes() return true end
 local function no() return false end  -- luacheck: ignore
