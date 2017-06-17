@@ -669,7 +669,9 @@ function ReaderFooter:onSuspend()
 end
 
 function ReaderFooter:onFrontlightStateChanged()
-    self:updateFooter()
+    if self.settings.frontlight then
+        self:updateFooter()
+    end
 end
 
 return ReaderFooter
