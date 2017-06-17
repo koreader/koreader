@@ -43,10 +43,8 @@ local footerTextGeneratorMap = {
     frontlight = function()
         if not Device:hasFrontlight() then return "L: NA" end
         local powerd = Device:getPowerDevice()
-        if powerd.is_fl_on ~= nil and powerd.is_fl_on == true then
-            if powerd.fl_intensity ~= nil then
-                return ("L: %d%%"):format(powerd.fl_intensity)
-            end
+        if powerd:isFrontlightOn() then
+            return ("L: %d%%"):format(powerd:frontlightIntensity())
         else
             return "L: Off"
         end

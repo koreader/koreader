@@ -9,8 +9,8 @@ local AndroidPowerD = BasePowerD:new{
 function AndroidPowerD:init()
 end
 
-function AndroidPowerD:setIntensityHW()
-    android.setScreenBrightness(math.floor(255 * self.fl_intensity / 25))
+function AndroidPowerD:setIntensityHW(intensity)
+    android.setScreenBrightness(math.floor(255 * intensity / 25))
 end
 
 function AndroidPowerD:getCapacityHW()

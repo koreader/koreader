@@ -38,47 +38,45 @@ function ReaderFrontLight:init()
 end
 
 function ReaderFrontLight:onAdjust(arg, ges)
+    if not Device.hasFrontlight() then return true end
     local powerd = Device:getPowerDevice()
-    if powerd.fl_intensity ~= nil then
-        logger.dbg("frontlight intensity", powerd.fl_intensity)
-        local step = math.ceil(#self.steps * ges.distance / self.gestureScale)
-        logger.dbg("step = ", step)
-        local delta_int = self.steps[step] or self.steps[#self.steps]
-        logger.dbg("delta_int = ", delta_int)
-        local new_intensity
-        if ges.direction == "north" then
-            new_intensity = powerd.fl_intensity + delta_int
-        elseif ges.direction == "south" then
-            new_intensity = powerd.fl_intensity - delta_int
-        end
-        if new_intensity ~= nil then
-            -- when new_intensity <=0, toggle light off
-            if new_intensity <= 0 then
-                powerd:toggleFrontlight()
-            end
-            powerd:setIntensity(new_intensity)
-            if self.view.footer_visible and self.view.footer.settings.frontlight then
-                self.view.footer:updateFooter()
-            end
-        end
+    logger.dbg("frontlight intensity", powerd:frontlightIntensity())
+    local step = math.ceil(#self.steps * ges.distance / self.gestureScale)
+    logger.dbg("step = ", step)
+    local delta_int = self.steps[step] or self.steps[#self.steps]
+    logger.dbg("delta_int = ", delta_int)
+    local new_intensity
+    if ges.direction == "north" then
+        new_intensity = powerd:frontlightIntensity() + delta_int
+    elseif ges.direction == "south" then
+        new_intensity = powerd:frontlightIntensity() - delta_int
+    end
+    if new_intensity == nil then return true end
+    -- when new_intensity <=0, toggle light off
+    if new_intensity <= 0 then
+        powerd:turnOffFrontlight()
+    else
+        powerd:setIntensity(new_intensity)
+    end
+    if self.view.footer_visible and self.view.footer.settings.frontlight then
+        self.view.footer:updateFooter()
     end
     return true
 end
 
 function ReaderFrontLight:onShowIntensity()
+    if not Device.hasFrontlight() then return true end
     local powerd = Device:getPowerDevice()
-    if powerd.fl_intensity ~= nil then
-        local new_text
-        if powerd.fl_intensity == 0 then
-            new_text = _("Frontlight is off.")
-        else
-            new_text = T(_("Frontlight intensity is set to %1."), powerd.fl_intensity)
-        end
-        UIManager:show(Notification:new{
-            text = new_text,
-            timeout = 1.0,
-        })
+    local new_text
+    if powerd:isFrontlightOff() then
+        new_text = _("Frontlight is off.")
+    else
+        new_text = T(_("Frontlight intensity is set to %1."), powerd:frontlightIntensity())
     end
+    UIManager:show(Notification:new{
+        text = new_text,
+        timeout = 1.0,
+    })
     return true
 end
 
