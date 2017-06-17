@@ -21,11 +21,10 @@ function BasePowerD:new(o)
     if o.device and o.device.hasFrontlight() then
         o.fl_intensity = o:frontlightIntensityHW()
         o:_decideFrontlightState()
-        -- In initialization, UIManager is not ready, we cannot broadcast events.
         if o:isFrontlightOn() then
-            o:setIntensityHW(o.fl_min)
+            o:turnOnFrontlightHW()
         else
-            o:setIntensityHW(o.fl_intensity)
+            o:turnOffFrontlightHW()
         end
     end
     return o
@@ -147,9 +146,13 @@ end
 
 function BasePowerD:_setIntensity(intensity)
     self:setIntensityHW(intensity)
-    local Event = require("ui/event")
-    local UIManager = require("ui/uimanager")
-    UIManager:broadcastEvent(Event:new("FrontlightStateChanged"))
+    -- BasePowerD is loaded before UIManager. So we cannot broadcast events
+    -- Before UIManager has been loaded.
+    if package.loaded["ui/uimanager"] ~= nil then
+        local Event = require("ui/event")
+        local UIManager = require("ui/uimanager")
+        UIManager:broadcastEvent(Event:new("FrontlightStateChanged"))
+    end
 end
 
 return BasePowerD
