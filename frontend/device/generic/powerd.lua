@@ -35,8 +35,8 @@ function BasePowerD:setIntensityHW(intensity) end
 function BasePowerD:getCapacityHW() return 0 end
 function BasePowerD:isChargingHW() return false end
 function BasePowerD:frontlightIntensityHW() return 0 end
-function BasePowerD:turnOffFrontlightHW() self:setIntensityHW(self.fl_min) end
-function BasePowerD:turnOnFrontlightHW() self:setIntensityHW(self.fl_intensity) end
+function BasePowerD:turnOffFrontlightHW() self:_setIntensity(self.fl_min) end
+function BasePowerD:turnOnFrontlightHW() self:_setIntensity(self.fl_intensity) end
 -- Anything needs to be done before do a real hardware suspend. Such as turn off
 -- front light.
 function BasePowerD:beforeSuspend() end
@@ -128,7 +128,7 @@ function BasePowerD:setIntensity(intensity)
     self.fl_intensity = self:normalizeIntensity(intensity)
     self:_decideFrontlightState()
     logger.dbg("set light intensity", self.fl_intensity)
-    self:setIntensityHW(self.fl_intensity)
+    self:_setIntensity(self.fl_intensity)
     return true
 end
 
@@ -142,6 +142,13 @@ end
 
 function BasePowerD:isCharging()
     return self:isChargingHW()
+end
+
+function BasePowerD:_setIntensity(intensity)
+    self:setIntensityHW(intensity)
+    local Event = require("ui/event")
+    local UIManager = require("ui/uimanager")
+    UIManager:broadcastEvent(Event:new("FrontlightStateChanged"))
 end
 
 return BasePowerD

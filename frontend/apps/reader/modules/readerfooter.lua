@@ -668,4 +668,8 @@ function ReaderFooter:onSuspend()
     end
 end
 
+function ReaderFooter:onFrontlightStateChanged()
+    self:updateFooter()
+end
+
 return ReaderFooter
