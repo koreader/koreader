@@ -146,8 +146,8 @@ end
 
 function BasePowerD:_setIntensity(intensity)
     self:setIntensityHW(intensity)
-    -- BasePowerD is loaded before UIManager. So we cannot broadcast events
-    -- Before UIManager has been loaded.
+    -- BasePowerD is loaded before UIManager. So we cannot broadcast events before UIManager has
+    -- been loaded.
     if package.loaded["ui/uimanager"] ~= nil then
         local Event = require("ui/event")
         local UIManager = require("ui/uimanager")
