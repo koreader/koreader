@@ -21,10 +21,11 @@ function BasePowerD:new(o)
     if o.device and o.device.hasFrontlight() then
         o.fl_intensity = o:frontlightIntensityHW()
         o:_decideFrontlightState()
+        -- In initialization, UIManager is not ready, we cannot broadcast events.
         if o:isFrontlightOn() then
-            o:turnOnFrontlightHW()
+            o:setIntensityHW(o.fl_min)
         else
-            o:turnOffFrontlightHW()
+            o:setIntensityHW(o.fl_intensity)
         end
     end
     return o
@@ -80,8 +81,8 @@ function BasePowerD:turnOffFrontlight()
     assert(self ~= nil)
     if not self.device.hasFrontlight() then return end
     if self:isFrontlightOff() then return false end
-    self:turnOffFrontlightHW()
     self.is_fl_on = false
+    self:turnOffFrontlightHW()
     return true
 end
 
@@ -90,8 +91,8 @@ function BasePowerD:turnOnFrontlight()
     if not self.device.hasFrontlight() then return end
     if self:isFrontlightOn() then return false end
     if self.fl_intensity == self.fl_min then return false end
-    self:turnOnFrontlightHW()
     self.is_fl_on = true
+    self:turnOnFrontlightHW()
     return true
 end
 
