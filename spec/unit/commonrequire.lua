@@ -50,3 +50,50 @@ function assertNotAlmostEquals(expected, actual, margin)
             .. ', received: ' .. actual
     )
 end
+
+package.unload = function(module)
+    if type(module) ~= "string" then return false end
+    package.loaded[module] = nil
+    _G[module] = nil
+    return true
+end
+
+package.replace = function(name, module)
+    if type(name) ~= "string" then return false end
+    assert(package.unload(name))
+    package.loaded[name] = module
+    return true
+end
+
+package.reload = function(name)
+    if type(name) ~= "string" then return false end
+    assert(package.unload(name))
+    return require(name)
+end
+
+package.unloadAll = function()
+    local candidates = {
+        "spec/",
+        "frontend/",
+        "plugins/",
+        "datastorage.lua",
+        "defaults.lua",
+    }
+    local pending = {}
+    for name, _ in pairs(package.loaded) do
+        local path = package.searchpath(name, package.path)
+        if path ~= nil then
+            for _, candidate in ipairs(candidates) do
+                if path:find(candidate) == 1 then
+                    table.insert(pending, name)
+                end
+            end
+        end
+    end
+    for _, name in ipairs(pending) do
+        if name ~= "commonrequire" then
+            assert(package.unload(name))
+        end
+    end
+    return #pending
+end

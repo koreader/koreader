@@ -299,7 +299,7 @@ function UIManager:scheduleIn(seconds, action)
     local usecs = (seconds - s) * MILLION
     when[1] = when[1] + s
     when[2] = when[2] + usecs
-    if when[2] > MILLION then
+    if when[2] >= MILLION then
         when[1] = when[1] + 1
         when[2] = when[2] - MILLION
     end

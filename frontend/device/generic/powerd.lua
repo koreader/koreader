@@ -8,27 +8,92 @@ local BasePowerD = {
     device = nil,                     -- device object
 
     last_capacity_pull_time = 0,      -- timestamp of last pull
+
+    is_fl_on = false,                 -- whether the frontlight is on
 }
 
 function BasePowerD:new(o)
     o = o or {}
     setmetatable(o, self)
     self.__index = self
+    assert(o.fl_min < o.fl_max)
     if o.init then o:init() end
+    if o.device and o.device.hasFrontlight() then
+        o.fl_intensity = o:frontlightIntensityHW()
+        o:_decideFrontlightState()
+        if o:isFrontlightOn() then
+            o:turnOnFrontlightHW()
+        else
+            o:turnOffFrontlightHW()
+        end
+    end
     return o
 end
 
 function BasePowerD:init() end
-function BasePowerD:toggleFrontlight() end
-function BasePowerD:setIntensityHW() end
+function BasePowerD:setIntensityHW(intensity) end
 function BasePowerD:getCapacityHW() return 0 end
 function BasePowerD:isChargingHW() return false end
+function BasePowerD:frontlightIntensityHW() return 0 end
+function BasePowerD:turnOffFrontlightHW() self:setIntensityHW(self.fl_min) end
+function BasePowerD:turnOnFrontlightHW() self:setIntensityHW(self.fl_intensity) end
 -- Anything needs to be done before do a real hardware suspend. Such as turn off
 -- front light.
 function BasePowerD:beforeSuspend() end
 -- Anything needs to be done after do a real hardware resume. Such as resume
 -- front light state.
 function BasePowerD:afterResume() end
+
+function BasePowerD:isFrontlightOn()
+    assert(self ~= nil)
+    return self.is_fl_on
+end
+
+function BasePowerD:_decideFrontlightState()
+    assert(self ~= nil)
+    assert(self.device.hasFrontlight())
+    self.is_fl_on = (self.fl_intensity > self.fl_min)
+end
+
+function BasePowerD:isFrontlightOff()
+    return not self:isFrontlightOn()
+end
+
+function BasePowerD:frontlightIntensity()
+    assert(self ~= nil)
+    if not self.device.hasFrontlight() then return 0 end
+    if self:isFrontlightOff() then return 0 end
+    return self.fl_intensity
+end
+
+function BasePowerD:toggleFrontlight()
+    assert(self ~= nil)
+    if not self.device.hasFrontlight() then return false end
+    if self:isFrontlightOn() then
+        return self:turnOffFrontlight()
+    else
+        return self:turnOnFrontlight()
+    end
+end
+
+function BasePowerD:turnOffFrontlight()
+    assert(self ~= nil)
+    if not self.device.hasFrontlight() then return end
+    if self:isFrontlightOff() then return false end
+    self:turnOffFrontlightHW()
+    self.is_fl_on = false
+    return true
+end
+
+function BasePowerD:turnOnFrontlight()
+    assert(self ~= nil)
+    if not self.device.hasFrontlight() then return end
+    if self:isFrontlightOn() then return false end
+    if self.fl_intensity == self.fl_min then return false end
+    self:turnOnFrontlightHW()
+    self.is_fl_on = true
+    return true
+end
 
 function BasePowerD:read_int_file(file)
     local fd =  io.open(file, "r")
@@ -58,10 +123,13 @@ function BasePowerD:normalizeIntensity(intensity)
 end
 
 function BasePowerD:setIntensity(intensity)
-    if intensity == self.fl_intensity then return end
+    if not self.device.hasFrontlight() then return false end
+    if intensity == self.fl_intensity then return false end
     self.fl_intensity = self:normalizeIntensity(intensity)
+    self:_decideFrontlightState()
     logger.dbg("set light intensity", self.fl_intensity)
-    self:setIntensityHW()
+    self:setIntensityHW(self.fl_intensity)
+    return true
 end
 
 function BasePowerD:getCapacity()
