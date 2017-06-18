@@ -259,9 +259,10 @@ end
 
 function ReaderDictionary:onReadSettings(config)
     self.default_dictionary = config:readSetting("default_dictionary")
-    self.disable_fuzzy_search = config:readSetting("disable_fuzzy_search") or
-                    G_reader_settings:readSetting("disable_fuzzy_search") or
-                    false
+    self.disable_fuzzy_search = config:readSetting("disable_fuzzy_search")
+    if self.disable_fuzzy_search == nil then
+        self.disable_fuzzy_search = G_reader_settings:isTrue("disable_fuzzy_search")
+    end
 end
 
 function ReaderDictionary:onSaveSettings()
