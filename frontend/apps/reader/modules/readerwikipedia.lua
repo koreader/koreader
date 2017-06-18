@@ -137,7 +137,7 @@ function ReaderWikipedia:onLookupWikipedia(word, box, get_fullpage, forced_lang)
     else
         self.lookup_msg = T(_("Searching Wikipedia %2 for:\n%1"), "%1", lang:upper())
     end
-    self:onLookupInfoStarted(word)
+    self:showLookupInfo(word)
     local results = {}
     local ok, pages
     if get_fullpage then

@@ -5,11 +5,11 @@ local DictQuickLookup = require("ui/widget/dictquicklookup")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local JSON = require("json")
-local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local util  = require("util")
 local _ = require("gettext")
+local Screen = Device.screen
 local T = require("ffi/util").template
 
 local ReaderDictionary = InputContainer:new{
@@ -120,14 +120,14 @@ function ReaderDictionary:cleanSelection(text)
     return text
 end
 
-function ReaderDictionary:onLookupInfoStarted(word)
+function ReaderDictionary:showLookupInfo(word)
     local text = T(self.lookup_msg, word)
     self.lookup_progress_msg = InfoMessage:new{text=text}
     UIManager:show(self.lookup_progress_msg)
     UIManager:forceRePaint()
 end
 
-function ReaderDictionary:onLookupInfoDone()
+function ReaderDictionary:dismissLookupInfo()
     if self.lookup_progress_msg then
         UIManager:close(self.lookup_progress_msg)
         UIManager:forceRePaint()
@@ -144,7 +144,7 @@ function ReaderDictionary:stardictLookup(word, box)
         return
     end
     if not self.disable_fuzzy_search then
-        self:onLookupInfoStarted(word)
+        self:showLookupInfo(word)
     end
     local final_results = {}
     local seen_results = {}
@@ -217,7 +217,7 @@ function ReaderDictionary:stardictLookup(word, box)
 end
 
 function ReaderDictionary:showDict(word, results, box)
-    self:onLookupInfoDone()
+    self:dismissLookupInfo()
     if results and results[1] then
         logger.dbg("showing quick lookup window", word, results)
         self.dict_window = DictQuickLookup:new{
