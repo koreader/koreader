@@ -577,6 +577,10 @@ function ConfigDialog:onConfigChoose(values, name, event, args, events, position
 end
 
 function ConfigDialog:onMakeDefault(name, name_text, values, labels, position)
+    if name == "font_fine_tune" then
+        return
+    end
+
     UIManager:show(ConfirmBox:new{
         text = T(
             _("Set default %1 to %2?"),
