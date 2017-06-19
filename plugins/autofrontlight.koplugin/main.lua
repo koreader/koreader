@@ -54,12 +54,11 @@ function AutoFrontlight:_action(settings_id)
     if current_level <= 1 then
         logger.dbg("AutoFrontlight: going to turn on frontlight")
         Device:getPowerDevice():turnOnFrontlight()
-        self.last_brightness = current_level
     elseif current_level >= 3 then
         logger.dbg("AutoFrontlight: going to turn off frontlight")
         Device:getPowerDevice():turnOffFrontlight()
-        self.last_brightness = current_level
     end
+    self.last_brightness = current_level
 end
 
 function AutoFrontlight:init()
