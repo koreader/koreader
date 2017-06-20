@@ -21,31 +21,33 @@ local AutoFrontlight = {
   last_brightness = -1,
 }
 
-function AutoFrontlight:_schedule()
+function AutoFrontlight:_schedule(settings_id)
     if not self.enabled then
         logger.dbg("AutoFrontlight:_schedule() is disabled")
         return
     end
-
-    local settings_id = self.settings_id
-    logger.dbg("AutoFrontlight:_schedule() @ ", os.time(), ", it should be executed at ", os.time() + 1)
-    UIManager:scheduleIn(2, function()
-        self:_action(settings_id)
-        self:_schedule(self.settings_id)
-    end)
-end
-
-function AutoFrontlight:_action(settings_id)
     if settings_id ~= self.settings_id then
-        logger.dbg("AutoFrontlight:_action(): registered settings_id ",
+        logger.dbg("AutoFrontlight:_schedule(): registered settings_id ",
                    settings_id,
                    " does not equal to current one ",
                    self.settings_id)
         return
     end
+
+    logger.dbg("AutoFrontlight:_schedule() starts with settings_id ", settings_id)
+
+    self:_action()
+
+    logger.dbg("AutoFrontlight:_schedule() @ ", os.time(), ", it should be executed at ", os.time() + 2)
+    UIManager:scheduleIn(2, function()
+        self:_schedule(settings_id)
+    end)
+end
+
+function AutoFrontlight:_action()
     logger.dbg("AutoFrontlight:_action() @ ", os.time())
     local current_level = Device:ambientBrightnessLevel()
-    logger.dbg("Retrieved ambient brightness level: ", current_level)
+    logger.dbg("AutoFrontlight:_action(): Retrieved ambient brightness level: ", current_level)
     if self.last_brightness == current_level then
         logger.dbg("AutoFrontlight:_action(): recorded brightness is same as current level ",
                    self.last_brightness)
@@ -62,14 +64,14 @@ function AutoFrontlight:_action(settings_id)
 end
 
 function AutoFrontlight:init()
-    self.enabled = not self.settings:isFalse("enable")
-    logger.dbg("AutoFrontlight:init() self.enabled: ", self.enabled)
+    self.enabled = self.settings:nilOrTrue("enable")
     self.settings_id = self.settings_id + 1
-    self:_schedule()
+    logger.dbg("AutoFrontlight:init() self.enabled: ", self.enabled, " with id ", self.settings_id)
+    self:_schedule(self.settings_id)
 end
 
 function AutoFrontlight:flipSetting()
-    self.settings:flipFalse("enable")
+    self.settings:flipNilOrTrue("enable")
     self:init()
 end
 
@@ -80,7 +82,20 @@ local AutoFrontlightWidget = WidgetContainer:new{
 }
 
 function AutoFrontlightWidget:init()
-    self.ui.menu:registerToMainMenu(self)
+    -- self.ui and self.ui.menu are nil in unittests.
+    if self.ui ~= nil and self.ui.menu ~= nil then
+        self.ui.menu:registerToMainMenu(self)
+    end
+end
+
+function AutoFrontlightWidget:flipSetting()
+    AutoFrontlight:flipSetting()
+end
+
+-- For test only.
+function AutoFrontlightWidget:deprecateLastTask()
+    logger.dbg("AutoFrontlightWidget:deprecateLastTask() @ ", AutoFrontlight.settings_id)
+    AutoFrontlight.settings_id = AutoFrontlight.settings_id + 1
 end
 
 function AutoFrontlightWidget:addToMainMenu(menu_items)
@@ -92,7 +107,7 @@ function AutoFrontlightWidget:addToMainMenu(menu_items)
                          AutoFrontlight.enabled and _("disable") or _("enable")),
                 ok_text = AutoFrontlight.enabled and _("Disable") or _("Enable"),
                 ok_callback = function()
-                    AutoFrontlight:flipSetting()
+                    self:flipSetting()
                 end
             })
         end,
