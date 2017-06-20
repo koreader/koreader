@@ -18,7 +18,7 @@ local AutoFrontlight = {
   settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/autofrontlight.lua"),
   settings_id = 0,
   enabled = false,
-  last_brightness = Device:ambientBrightnessLevel(),
+  last_brightness = -1,
 }
 
 function AutoFrontlight:_schedule()
@@ -62,14 +62,14 @@ function AutoFrontlight:_action(settings_id)
 end
 
 function AutoFrontlight:init()
-    self.enabled = not self.settings:nilOrFalse("enable")
+    self.enabled = not self.settings:isFalse("enable")
     logger.dbg("AutoFrontlight:init() self.enabled: ", self.enabled)
     self.settings_id = self.settings_id + 1
     self:_schedule()
 end
 
 function AutoFrontlight:flipSetting()
-    self.settings:flipNilOrFalse("enable")
+    self.settings:flipFalse("enable")
     self:init()
 end
 
@@ -96,7 +96,7 @@ function AutoFrontlightWidget:addToMainMenu(menu_items)
                 end
             })
         end,
-        checked_func = function() AutoFrontlight.enabled end,
+        checked_func = function() return AutoFrontlight.enabled end,
     }
 end
 

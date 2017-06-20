@@ -131,8 +131,8 @@ function Kindle:ambientBrightnessLevel()
     lipc_handle:close()
     if type(value) ~= "number" then return 0 end
     if value < 10 then return 0 end
-    if value < 128 then return 1 end
-    if value < 256 then return 2 end
+    if value < 96 then return 1 end
+    if value < 192 then return 2 end
     if value < 32768 then return 3 end
     return 4
 end
