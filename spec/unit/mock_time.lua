@@ -1,3 +1,5 @@
+local logger = require("logger")
+
 local MockTime = {
     original_os_time = os.time,
     original_util_time = nil,
@@ -11,8 +13,14 @@ function MockTime:install()
         self.original_util_time = util.gettime
         assert(self.original_util_time ~= nil)
     end
-    os.time = function() return self.value end
-    util.gettime = function() return self.value, 0 end
+    os.time = function()
+        logger.dbg("MockTime:os.time: ", self.value)
+        return self.value
+    end
+    util.gettime = function()
+        logger.dbg("MockTime:util.gettime: ", self.value)
+        return self.value, 0
+    end
 end
 
 function MockTime:uninstall()
@@ -30,6 +38,7 @@ function MockTime:set(value)
         return false
     end
     self.value = math.floor(value)
+    logger.dbg("MockTime:set ", self.value)
     return true
 end
 
@@ -39,6 +48,7 @@ function MockTime:increase(value)
         return false
     end
     self.value = math.floor(self.value + value)
+    logger.dbg("MockTime:increase ", self.value)
     return true
 end
 

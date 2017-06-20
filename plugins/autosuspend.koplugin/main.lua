@@ -3,7 +3,6 @@ local Device = require("device")
 if not Device:isKobo() and not Device:isSDL() then return { disabled = true, } end
 
 local DataStorage = require("datastorage")
-local Debug = require("dbg")
 local LuaSettings = require("luasettings")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -59,7 +58,7 @@ function AutoSuspend:_schedule(settings_id)
         logger.dbg("AutoSuspend: will suspend the device")
         UIManager:suspend()
     else
-        logger.dbg("AutoSuspend: scheduleIn ", delay, " seconds")
+        logger.dbg("AutoSuspend: schedule at ", os.time() + delay)
         UIManager:scheduleIn(delay, function() self:_schedule(settings_id) end)
     end
 end
