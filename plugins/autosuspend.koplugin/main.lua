@@ -37,34 +37,30 @@ function AutoSuspend:_readTimeoutSec()
     return 60 * 60
 end
 
-function AutoSuspend:_action(settings_id)
+function AutoSuspend:_enabled()
+    return self.auto_suspend_sec > 0
+end
+
+function AutoSuspend:_schedule(settings_id)
+    if not self:_enabled() then
+        logger.dbg("AutoSuspend:_schedule is disabled")
+        return
+    end
     if self.settings_id ~= settings_id then
-        logger.dbg("AutoSuspend: registered settings_id ",
+        logger.dbg("AutoSuspend:_schedule registered settings_id ",
                    settings_id,
                    " does not equal to current one ",
                    self.settings_id)
         return
     end
 
-    local now = os.time()
-    if self.last_action_sec + self.auto_suspend_sec <= now then
+    local delay = self.last_action_sec + self.auto_suspend_sec - os.time()
+    if delay <= 0 then
         logger.dbg("AutoSuspend: will suspend the device")
         UIManager:suspend()
     else
-        self:_schedule()
-    end
-end
-
-function AutoSuspend:_enabled()
-    return self.auto_suspend_sec > 0
-end
-
-function AutoSuspend:_schedule()
-    if Debug.dassert(self:_enabled()) then
-        local delay = self.last_action_sec + self.auto_suspend_sec - os.time();
         logger.dbg("AutoSuspend: scheduleIn ", delay, " seconds")
-        local settings_id = self.settings_id
-        UIManager:scheduleIn(delay, function() self:_action(settings_id) end)
+        UIManager:scheduleIn(delay, function() self:_schedule(settings_id) end)
     end
 end
 
@@ -77,7 +73,7 @@ function AutoSuspend:_start()
     if self:_enabled() then
         logger.dbg("AutoSuspend: start at ", os.time())
         self.last_action_sec = os.time()
-        self:_schedule()
+        self:_schedule(self.settings_id)
     end
 end
 
