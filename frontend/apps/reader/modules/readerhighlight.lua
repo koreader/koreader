@@ -118,7 +118,7 @@ function ReaderHighlight:clear()
     if self.hold_pos then
         self.hold_pos = nil
         self.selected_text = nil
-        UIManager:setDirty(self.dialog, "partial")
+        UIManager:setDirty(self.dialog, "ui")
         return true
     end
 end
@@ -255,7 +255,7 @@ function ReaderHighlight:onHold(arg, ges)
             table.insert(boxes, self.selected_word.sbox)
             self.view.highlight.temp[self.hold_pos.page] = boxes
         end
-        UIManager:setDirty(self.dialog, "partial")
+        UIManager:setDirty(self.dialog, "ui")
         -- TODO: only mark word?
         -- Unfortunately, CREngine does not return good coordinates
         -- UIManager:setDirty(self.dialog, "partial", self.selected_word.sbox)

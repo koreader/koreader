@@ -285,6 +285,7 @@ end
 function ReaderMenu:onTapShowMenu()
     self.ui:handleEvent(Event:new("ShowConfigMenu"))
     self.ui:handleEvent(Event:new("ShowReaderMenu"))
+    return true
 end
 
 function ReaderMenu:onTapCloseMenu()
