@@ -35,6 +35,7 @@ function BasePowerD:setIntensityHW(intensity) end
 function BasePowerD:getCapacityHW() return 0 end
 function BasePowerD:isChargingHW() return false end
 function BasePowerD:frontlightIntensityHW() return 0 end
+function BasePowerD:isFrontlightOnHW() return self.fl_intensity > self.fl_min end
 function BasePowerD:turnOffFrontlightHW() self:_setIntensity(self.fl_min) end
 function BasePowerD:turnOnFrontlightHW() self:_setIntensity(self.fl_intensity) end
 -- Anything needs to be done before do a real hardware suspend. Such as turn off
@@ -52,7 +53,7 @@ end
 function BasePowerD:_decideFrontlightState()
     assert(self ~= nil)
     assert(self.device.hasFrontlight())
-    self.is_fl_on = (self.fl_intensity > self.fl_min)
+    self.is_fl_on = self:isFrontlightOnHW()
 end
 
 function BasePowerD:isFrontlightOff()
