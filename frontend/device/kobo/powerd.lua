@@ -43,7 +43,7 @@ function KoboPowerD:frontlightIntensityHW()
     return 20
 end
 
-function BasePowerD:turnOffFrontlightHW() self:_setIntensity(0) end
+function KoboPowerD:turnOffFrontlightHW() self:_setIntensity(0) end
 
 function KoboPowerD:setIntensityHW(intensity)
     if self.fl == nil then return end
