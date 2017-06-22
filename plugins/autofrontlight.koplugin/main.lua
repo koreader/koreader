@@ -75,6 +75,10 @@ function AutoFrontlight:flipSetting()
     self:init()
 end
 
+function AutoFrontlight:onFlushSettings()
+    self.settings:flush()
+end
+
 AutoFrontlight:init()
 
 local AutoFrontlightWidget = WidgetContainer:new{
@@ -113,6 +117,10 @@ function AutoFrontlightWidget:addToMainMenu(menu_items)
         end,
         checked_func = function() return AutoFrontlight.enabled end,
     }
+end
+
+function AutoFrontlightWidget:onFlushSettings()
+    AutoFrontlight:onFlushSettings()
 end
 
 return AutoFrontlightWidget
