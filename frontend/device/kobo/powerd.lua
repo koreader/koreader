@@ -32,7 +32,7 @@ end
 function KoboPowerD:_syncNickelConf()
     if self.has_fl_state_cfg and KOBO_SYNC_BRIGHTNESS_WITH_NICKEL then
         NickelConf.frontLightState.set(self:isFrontlightOn())
-        NickelConf.frontLightLevel.set(self:frontlightIntensity())
+        NickelConf.frontLightLevel.set(self.fl_intensity)
     end
 end
 
@@ -42,6 +42,15 @@ function KoboPowerD:frontlightIntensityHW()
     end
     return 20
 end
+
+function KoboPowerD:isFrontlightOnHW()
+    if self.has_fl_state_cfg then
+        return NickelConf.frontLightState.get()
+    end
+    return BasePowerD.isFrontlightOnHW(self)
+end
+
+function KoboPowerD:turnOffFrontlightHW() self:_setIntensity(0) end
 
 function KoboPowerD:setIntensityHW(intensity)
     if self.fl == nil then return end
