@@ -3,6 +3,7 @@ describe("ReaderLink module", function()
 
     setup(function()
         require("commonrequire")
+        package.unloadAll()
         DocumentRegistry = require("document/documentregistry")
         Event = require("ui/event")
         ReaderUI = require("apps/reader/readerui")

@@ -3,6 +3,7 @@ describe("Readerview module", function()
 
     setup(function()
         require("commonrequire")
+        package.unloadAll()
         DocumentRegistry = require("document/documentregistry")
         Blitbuffer = require("ffi/blitbuffer")
         ReaderUI = require("apps/reader/readerui")

@@ -8,11 +8,10 @@ local Geom = require("ui/geometry")
 local dbg = require("dbg")
 local logger = require("logger")
 local util = require("ffi/util")
+local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
-local _ = require("gettext")
 
-local noop = function() end
 local MILLION = 1000000
 
 -- there is only one instance of this
@@ -34,6 +33,8 @@ local UIManager = {
     _refresh_func_stack = {},
     _entered_poweroff_stage = false,
     _exit_code = nil,
+
+    event_hook = require("ui/hook_container"):new()
 }
 
 function UIManager:init()
@@ -72,28 +73,12 @@ function UIManager:init()
         -- We do not want auto suspend procedure to waste battery during
         -- suspend. So let's unschedule it when suspending, and restart it after
         -- resume.
-        self:_initAutoSuspend()
         self.event_handlers["Suspend"] = function()
             self:_beforeSuspend()
-            if self._stopAutoSuspend then
-                -- TODO(Hzj-jie): Why _stopAutoSuspend could be nil in test cases.
-                --[[
-                frontend/ui/uimanager.lua:62: attempt to call method _stopAutoSuspend (a nil value)
-
-                stack traceback:
-                frontend/ui/uimanager.lua:62: in function Suspend
-                frontend/ui/uimanager.lua:119: in function __default__
-                frontend/ui/uimanager.lua:662: in function handleInput
-                frontend/ui/uimanager.lua:707: in function run
-                spec/front/unit/readerui_spec.lua:32: in function <spec/front/unit/readerui_spec.lua:28>
-                --]]
-                self:_stopAutoSuspend()
-            end
             Device:onPowerEvent("Suspend")
         end
         self.event_handlers["Resume"] = function()
             Device:onPowerEvent("Resume")
-            self:_startAutoSuspend()
             self:_afterResume()
         end
         self.event_handlers["PowerPress"] = function()
@@ -166,6 +151,15 @@ function UIManager:init()
         self.event_handlers["NotCharging"] = function()
             Device:usbPlugOut()
             self:_afterNotCharging()
+        end
+    elseif Device:isSDL() then
+        self.event_handlers["Suspend"] = function()
+            self:_beforeSuspend()
+            Device:simulateSuspend()
+        end
+        self.event_handlers["Resume"] = function()
+            Device:simulateResume()
+            self:_afterResume()
         end
     end
 end
@@ -714,7 +708,9 @@ function UIManager:handleInput()
 
     -- delegate input_event to handler
     if input_event then
-        self:_resetAutoSuspendTimer()
+        if input_event.handler ~= "onInputError" then
+            self.event_hook:execute("InputEvent", input_event)
+        end
         local handler = self.event_handlers[input_event]
         if handler then
             handler(input_event)
@@ -780,57 +776,6 @@ function UIManager:runForever()
     return self:run()
 end
 
--- Kobo does not have an auto suspend function, so we implement it ourselves.
-function UIManager:_initAutoSuspend()
-    local function isAutoSuspendEnabled()
-        return Device:isKobo() and self.auto_suspend_sec > 0
-    end
-
-    local sec = G_reader_settings:readSetting("auto_suspend_timeout_seconds")
-    if sec then
-        self.auto_suspend_sec = sec
-    else
-        -- default setting is 60 minutes
-        self.auto_suspend_sec = 60 * 60
-    end
-
-    if isAutoSuspendEnabled() then
-        self.auto_suspend_action = function()
-            local now = os.time()
-            -- Do not repeat auto suspend procedure after suspend.
-            if self.last_action_sec + self.auto_suspend_sec <= now then
-                self:suspend()
-            else
-                self:scheduleIn(
-                    self.last_action_sec + self.auto_suspend_sec - now,
-                    self.auto_suspend_action)
-            end
-        end
-
-        function UIManager:_startAutoSuspend()
-            self.last_action_sec = os.time()
-            self:nextTick(self.auto_suspend_action)
-        end
-        dbg:guard(UIManager, '_startAutoSuspend',
-            function()
-                assert(isAutoSuspendEnabled())
-            end)
-
-        function UIManager:_stopAutoSuspend()
-            self:unschedule(self.auto_suspend_action)
-        end
-
-        function UIManager:_resetAutoSuspendTimer()
-            self.last_action_sec = os.time()
-        end
-
-        self:_startAutoSuspend()
-    else
-        self._startAutoSuspend = noop
-        self._stopAutoSuspend = noop
-    end
-end
-
 -- The common operations should be performed before suspending the device. Ditto.
 function UIManager:_beforeSuspend()
     self:flushSettings()
@@ -853,7 +798,7 @@ end
 -- Executes all the operations of a suspending request. This function usually puts the device into
 -- suspension.
 function UIManager:suspend()
-    if Device:isKobo() then
+    if Device:isKobo() or Device:isSDL() then
         self.event_handlers["Suspend"]()
     elseif Device:isKindle() then
         self.event_handlers["IntoSS"]()
@@ -862,7 +807,7 @@ end
 
 -- Executes all the operations of a resume request. This function usually wakes up the device.
 function UIManager:resume()
-    if Device:isKobo() then
+    if Device:isKobo() or Device:isSDL() then
         self.event_handlers["Resume"]()
     elseif Device:isKindle() then
         self.event_handlers["OutOfSS"]()
@@ -878,8 +823,6 @@ function UIManager:restartKOReader()
     -- This is just a magic number to indicate the restart request for shell scripts.
     self._exit_code = 85
 end
-
-UIManager._resetAutoSuspendTimer = noop
 
 UIManager:init()
 return UIManager

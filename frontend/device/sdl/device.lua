@@ -59,4 +59,22 @@ function Device:init()
     Generic.init(self)
 end
 
+function Device:simulateSuspend()
+    local InfoMessage = require("ui/widget/infomessage")
+    local UIManager = require("ui/uimanager")
+    local _ = require("gettext")
+    UIManager:show(InfoMessage:new{
+        text = _("Suspend")
+    })
+end
+
+function Device:simulateResume()
+    local InfoMessage = require("ui/widget/infomessage")
+    local UIManager = require("ui/uimanager")
+    local _ = require("gettext")
+    UIManager:show(InfoMessage:new{
+        text = _("Resume")
+    })
+end
+
 return Device
