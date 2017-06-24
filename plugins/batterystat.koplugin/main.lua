@@ -18,7 +18,7 @@ function State:new(o)
     setmetatable(o, self)
     self.__index = self
     if o.percentage == nil or o.timestamp == nil then
-        o.percentage = PowerD:getCapacity()
+        o.percentage = PowerD:getCapacityHW()
         o.timestamp = os.time()
     end
     return o
