@@ -1,5 +1,5 @@
 describe("AutoFrontlight widget tests", function()
-    local Device, PowerD, MockTime
+    local Device, PowerD, MockTime, AutoFrontlight
 
     setup(function()
         require("commonrequire")
@@ -37,37 +37,99 @@ describe("AutoFrontlight widget tests", function()
             return self.brightness
         end
         Device.input.waitEvent = function() end
-    end)
-
-    it("should automatically turn on or off frontlight", function()
-        local UIManager = require("ui/uimanager")
-        UIManager._run_forever = true
         require("luasettings"):
             open(require("datastorage"):getSettingsDir() .. "/autofrontlight.lua"):
             saveSetting("enable", "true"):
             close()
+        require("ui/uimanager")._run_forever = true
+    end)
+
+    after_each(function()
+        AutoFrontlight:deprecateLastTask()
+        -- Ensure the scheduled task from this test case won't impact others.
+        MockTime:increase(2)
+        require("ui/uimanager"):handleInput()
+        AutoFrontlight = nil
+    end)
+
+    it("should automatically turn on or off frontlight", function()
+        local UIManager = require("ui/uimanager")
         local class = dofile("plugins/autofrontlight.koplugin/main.lua")
-        local AutoFrontlight = class:new()
-        AutoFrontlight:init()
+        AutoFrontlight = class:new()
         Device.brightness = 3
-        MockTime:increase(1)
+        MockTime:increase(2)
         UIManager:handleInput()
         assert.are.equal(0, Device:getPowerDevice().frontlight)
         Device.brightness = 0
-        MockTime:increase(1)
+        MockTime:increase(2)
         UIManager:handleInput()
         assert.are.equal(2, Device:getPowerDevice().frontlight)
         Device.brightness = 1
-        MockTime:increase(1)
+        MockTime:increase(2)
         UIManager:handleInput()
         assert.are.equal(2, Device:getPowerDevice().frontlight)
         Device.brightness = 2
-        MockTime:increase(1)
+        MockTime:increase(2)
+        UIManager:handleInput()
+        assert.are.equal(2, Device:getPowerDevice().frontlight)
+        Device.brightness = 3
+        MockTime:increase(2)
+        UIManager:handleInput()
+        assert.are.equal(0, Device:getPowerDevice().frontlight)
+        Device.brightness = 4
+        MockTime:increase(2)
         UIManager:handleInput()
         assert.are.equal(0, Device:getPowerDevice().frontlight)
         Device.brightness = 3
-        MockTime:increase(1)
+        MockTime:increase(2)
         UIManager:handleInput()
         assert.are.equal(0, Device:getPowerDevice().frontlight)
+        Device.brightness = 2
+        MockTime:increase(2)
+        UIManager:handleInput()
+        assert.are.equal(0, Device:getPowerDevice().frontlight)
+        Device.brightness = 1
+        MockTime:increase(2)
+        UIManager:handleInput()
+        assert.are.equal(2, Device:getPowerDevice().frontlight)
+        Device.brightness = 0
+        MockTime:increase(2)
+        UIManager:handleInput()
+        assert.are.equal(2, Device:getPowerDevice().frontlight)
+    end)
+
+    it("should turn on frontlight at the begining", function()
+        local UIManager = require("ui/uimanager")
+        local class = dofile("plugins/autofrontlight.koplugin/main.lua")
+        Device.brightness = 0
+        AutoFrontlight = class:new()
+        MockTime:increase(2)
+        UIManager:handleInput()
+        assert.are.equal(2, Device:getPowerDevice().frontlight)
+    end)
+
+    it("should turn off frontlight at the begining", function()
+        local UIManager = require("ui/uimanager")
+        local class = dofile("plugins/autofrontlight.koplugin/main.lua")
+        Device.brightness = 3
+        AutoFrontlight = class:new()
+        MockTime:increase(2)
+        UIManager:handleInput()
+        assert.are.equal(0, Device:getPowerDevice().frontlight)
+    end)
+
+    it("should handle configuration update", function()
+        local UIManager = require("ui/uimanager")
+        local class = dofile("plugins/autofrontlight.koplugin/main.lua")
+        Device.brightness = 0
+        AutoFrontlight = class:new()
+        MockTime:increase(2)
+        UIManager:handleInput()
+        assert.are.equal(2, Device:getPowerDevice().frontlight)
+        AutoFrontlight:flipSetting()
+        Device.brightness = 3
+        MockTime:increase(2)
+        UIManager:handleInput()
+        assert.are.equal(2, Device:getPowerDevice().frontlight)
     end)
 end)
