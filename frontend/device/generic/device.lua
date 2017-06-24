@@ -206,11 +206,12 @@ function Device:retrieveNetworkInfo()
 end
 
 -- Return an integer value to indicate the brightness of the environment. The value should be in
--- range [0, 3].
+-- range [0, 4].
 -- 0: dark.
 -- 1: dim, frontlight is needed.
--- 2: bright, frontlight is not needed.
--- 3: dazzling.
+-- 2: neutral, turning frontlight on or off does not impact the reading experience.
+-- 3: bright, frontlight is not needed.
+-- 4: dazzling.
 function Device:ambientBrightnessLevel()
     return 0
 end
