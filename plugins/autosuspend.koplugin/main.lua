@@ -4,6 +4,7 @@ if not Device:isKobo() and not Device:isSDL() then return { disabled = true, } e
 
 local DataStorage = require("datastorage")
 local LuaSettings = require("luasettings")
+local PluginShare = require("pluginshare")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
@@ -53,7 +54,14 @@ function AutoSuspend:_schedule(settings_id)
         return
     end
 
-    local delay = self.last_action_sec + self.auto_suspend_sec - os.time()
+    local delay
+
+    if PluginShare.pause_auto_suspend then
+        delay = self.auto_suspend_sec
+    else
+        delay = self.last_action_sec + self.auto_suspend_sec - os.time()
+    end
+
     if delay <= 0 then
         logger.dbg("AutoSuspend: will suspend the device")
         UIManager:suspend()
