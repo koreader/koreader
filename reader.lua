@@ -140,7 +140,7 @@ end
 if Device:isKobo() then
     if Device:hasFrontlight() then
         local powerd = Device:getPowerDevice()
-        if powerd and powerd.restore_settings then
+        if powerd then
             -- UIManager:init() should have sanely set up the frontlight_stuff by this point
             local intensity = G_reader_settings:readSetting("frontlight_intensity")
             powerd.fl_intensity = intensity or powerd.fl_intensity
