@@ -51,7 +51,6 @@ function MenuSorter:sort(item_table, order)
     local sub_menus = {}
     -- the actual sorting of menu items
     for order_id, order_item in pairs (order) do
-        logger.dbg("MenuSorter: Processing ", order_id, ":", item_table[order_id].text)
         -- user might define non-existing menu item
         if item_table[order_id] ~= nil then
             local tmp_menu_table = {}
@@ -60,14 +59,12 @@ function MenuSorter:sort(item_table, order)
             for order_number,order_number_id in ipairs(order_item) do
                 -- this is a submenu, mark it for later
                 if order[order_number_id] then
-                    logger.dbg("MenuSorter: Processing submenu ", order_number, " @ ", order_number_id)
                     table.insert(sub_menus, order_number_id)
                     tmp_menu_table[order_number] = {
                         id = order_number_id,
                     }
                 -- regular, just insert a menu action
                 else
-                    logger.dbg("MenuSorter: Processing regular menu item ", order_number, " @ ", order_number_id)
                     if order_number_id == separator_id then
                         -- it's a separator
                         tmp_menu_table[order_number] = self.separator
@@ -87,7 +84,6 @@ function MenuSorter:sort(item_table, order)
             while i <= table.maxn(tmp_menu_table) do
                 local v = tmp_menu_table[i]
                 if v then
-                    logger.dbg("MenuSorter: Inserting ", v.id, " to menu_table @ ", order_id, " - ", new_index)
                     if v.id == separator_id then
                         new_index = new_index - 1
                         menu_table[order_id][new_index].separator = true
@@ -117,9 +113,7 @@ function MenuSorter:sort(item_table, order)
         -- now do the submenus
         for i,sub_menu in ipairs(sub_menus) do
             if menu_table[sub_menu] ~= nil then
-                logger.dbg("MenuSorter: Processing sub_menu ", sub_menu)
                 local sub_menu_position = self:findById(menu_table["KOMenu:menu_buttons"], sub_menu)
-                logger.dbg("MenuSorter: findById(", sub_menu, ") returns ", sub_menu_position)
                 if sub_menu_position then
                     changed = true
                     local sub_menu_content = menu_table[sub_menu]
@@ -153,7 +147,6 @@ function MenuSorter:sort(item_table, order)
     item_table["KOMenu:menu_buttons"] = nil
         --attach orphans based on menu_hint
     for k,v in pairs(item_table) do
-        logger.dbg("MenuSorter: Processing orphan ", k, " @ ", v.text)
         -- normally there should be menu text but check to be sure
         if v.text and v.new ~= true then
             v.id = k
