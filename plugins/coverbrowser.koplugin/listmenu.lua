@@ -585,7 +585,7 @@ function ListMenu:_recalculateDimen()
 
     -- Find out available height from other UI elements made in Menu
     self.others_height = 0
-    if self.title_bar then -- init() has been done
+    if self.title_bar then -- Menu:init() has been done
         if not self.is_borderless then
             self.others_height = self.others_height + 2
         end
@@ -596,6 +596,15 @@ function ListMenu:_recalculateDimen()
         if self.page_info then
             self.others_height = self.others_height + self.page_info:getSize().h
         end
+    else
+        -- Menu:init() not yet done: other elements used to calculate self.others_heights
+        -- are not yet defined, so next calculations will be wrong, and we may get
+        -- a self.perpage higher than it should be: Menu:init() will set a wrong self.page.
+        -- We'll have to update it, if we want FileManager to get back to the original page.
+        self.page_recalc_needed_next_time = true
+        -- Also remember original position, which will be changed by Menu/FileChooser
+        -- to a probably wrong value
+        self.itemnum_orig = self.path_items[self.path]
     end
     local available_height = self.dimen.h - self.others_height
 
@@ -613,6 +622,20 @@ function ListMenu:_recalculateDimen()
         w = self.item_width,
         h = self.item_height
     }
+
+    if self.page_recalc_needed then
+        -- self.page has probably been set to a wrong value,
+        -- we recalculate it here as done in Menu:init()
+        if #self.item_table > 0 then
+            self.page = math.ceil((self.itemnum_orig or 1) / self.perpage)
+        end
+        self.page_recalc_needed = nil
+        self.itemnum_orig = nil
+    end
+    if self.page_recalc_needed_next_time then
+        self.page_recalc_needed = true
+        self.page_recalc_needed_next_time = nil
+    end
 end
 
 function ListMenu:_updateItemsBuildUI()

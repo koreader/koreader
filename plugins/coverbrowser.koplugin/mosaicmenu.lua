@@ -109,7 +109,6 @@ local FakeCover = FrameContainer:new{
 }
 
 function FakeCover:init()
-    -- logger.info("FakeCover:init()", self.filename)
     -- BookInfoManager:extractBookInfo() made sure
     -- to save as nil (NULL) metadata that were an empty string
     local authors = self.authors
@@ -256,7 +255,6 @@ function FakeCover:init()
         },
         vgroup,
     }
-    -- logger.dbg("FakeCover:", self.filename, "made, sizedec =", sizedec, "interpad = ", inter_pad)
 end
 
 

@@ -69,10 +69,8 @@ function CoverMenu:updateItems(select_number)
     collectgarbage()
     collectgarbage()
 
-
     -- Specific UI building implementation (defined in some other module)
     self:_updateItemsBuildUI()
-
 
     -- As done in Menu:updateItems()
     if self.item_group[1] then
@@ -113,7 +111,6 @@ function CoverMenu:updateItems(select_number)
     if self.path_items then
         self.path_items[self.path] = (self.page - 1) * self.perpage + (select_number or 1)
     end
-
 
     -- Deal with items not found in db
     if #self.items_to_update > 0 then
@@ -174,7 +171,6 @@ function CoverMenu:updateItems(select_number)
         end
         UIManager:scheduleIn(1, self.items_update_action)
     end
-
 
     -- (We may not need to do the following if we extend onFileHold
     -- code in filemanager.lua to check for existence and call a
