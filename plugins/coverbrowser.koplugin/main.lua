@@ -171,7 +171,52 @@ function CoverBrowser:addToMainMenu(menu_items)
                             -- no callback, only for information
                         },
                         {
-                            text = _("Purge cache"),
+                            text = _("Prune cache of removed books"),
+                            callback = function()
+                                local ConfirmBox = require("ui/widget/confirmbox")
+                                UIManager:close(self.file_dialog)
+                                UIManager:show(ConfirmBox:new{
+                                    -- Checking file existences is quite fast, but deleting entries is slow.
+                                    text = _("Are you sure that you want to prune cache of removed books?\n(This may take a while.)"),
+                                    ok_text = _("Prune cache"),
+                                    ok_callback = function()
+                                        local InfoMessage = require("ui/widget/infomessage")
+                                        local msg = InfoMessage:new{ text = _("Pruning cache of removed books…") }
+                                        UIManager:show(msg)
+                                        UIManager:nextTick(function()
+                                            local BookInfoManager = require("bookinfomanager")
+                                            local summary = BookInfoManager:removeNonExistantEntries()
+                                            UIManager:close(msg)
+                                            UIManager:show( InfoMessage:new{ text = summary } )
+                                        end)
+                                    end
+                                })
+                            end,
+                        },
+                        {
+                            text = _("Compact cache database"),
+                            callback = function()
+                                local ConfirmBox = require("ui/widget/confirmbox")
+                                UIManager:close(self.file_dialog)
+                                UIManager:show(ConfirmBox:new{
+                                    text = _("Are you sure that you want to compact cache database?\n(This may take a while.)"),
+                                    ok_text = _("Compact database"),
+                                    ok_callback = function()
+                                        local InfoMessage = require("ui/widget/infomessage")
+                                        local msg = InfoMessage:new{ text = _("Compacting cache database…") }
+                                        UIManager:show(msg)
+                                        UIManager:nextTick(function()
+                                            local BookInfoManager = require("bookinfomanager")
+                                            local summary = BookInfoManager:compactDb()
+                                            UIManager:close(msg)
+                                            UIManager:show( InfoMessage:new{ text = summary } )
+                                        end)
+                                    end
+                                })
+                            end,
+                        },
+                        {
+                            text = _("Delete cache database"),
                             callback = function()
                                 local ConfirmBox = require("ui/widget/confirmbox")
                                 UIManager:close(self.file_dialog)
@@ -185,8 +230,6 @@ function CoverBrowser:addToMainMenu(menu_items)
                                 })
                             end,
                         },
-                        -- XXX Add "Prune obsolete info", to remove entries
-                        -- for no more existing files
                     },
                 },
             },
