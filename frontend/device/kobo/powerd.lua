@@ -14,40 +14,60 @@ local KoboPowerD = BasePowerD:new{
     is_charging_file = batt_state_folder .. "status",
 }
 
+-- TODO: Remove KOBO_LIGHT_ON_START
+function KoboPowerD:_syncKoboLightOnStart()
+    local kobo_light_on_start = tonumber(KOBO_LIGHT_ON_START)
+    if kobo_light_on_start then
+        local new_intensity
+        local is_frontlight_on
+        if kobo_light_on_start > 0 then
+            new_intensity = math.min(kobo_light_on_start, 100)
+            is_frontlight_on = true
+        elseif kobo_light_on_start == 0 then
+            new_intensity = 0
+            is_frontlight_on = false
+        elseif kobo_light_on_start == -2 then
+            return
+        else -- if kobo_light_on_start == -1 or other unexpected value then
+            -- TODO(Hzj-jie): Read current frontlight states from OS.
+            return
+        end
+        -- Since this is kobo-specific, we save all values in settings here
+        -- and let the code (reader.lua) pick it up later during bootstrap.
+        if new_intensity then
+            NickelConf.frontLightLevel.set(new_intensity)
+        end
+        NickelConf.frontLightState.set(is_frontlight_on)
+    end
+end
+
 function KoboPowerD:init()
     if self.device.hasFrontlight() then
         local kobolight = require("ffi/kobolight")
         local ok, light = pcall(kobolight.open)
         if ok then
             self.fl = light
-            if NickelConf.frontLightState.get() ~= nil then
-                self.has_fl_state_cfg = true
-            else
-                self.has_fl_state_cfg = false
-            end
+            self:_syncKoboLightOnStart()
         end
     end
 end
 
 function KoboPowerD:_syncNickelConf()
-    if self.has_fl_state_cfg and KOBO_SYNC_BRIGHTNESS_WITH_NICKEL then
-        NickelConf.frontLightState.set(self:isFrontlightOn())
-        NickelConf.frontLightLevel.set(self.fl_intensity)
-    end
+    if not KOBO_SYNC_BRIGHTNESS_WITH_NICKEL then return end
+    NickelConf.frontLightState.set(self:isFrontlightOn())
+    NickelConf.frontLightLevel.set(self.fl_intensity)
 end
 
 function KoboPowerD:frontlightIntensityHW()
-    if self.has_fl_state_cfg then
-        return NickelConf.frontLightLevel.get()
-    end
-    return 20
+    return NickelConf.frontLightLevel.get()
 end
 
 function KoboPowerD:isFrontlightOnHW()
-    if self.has_fl_state_cfg then
-        return NickelConf.frontLightState.get()
+    local result = NickelConf.frontLightState.get()
+    if result == nil then
+        return BasePowerD.isFrontlightOnHW(self)
     end
-    return BasePowerD.isFrontlightOnHW(self)
+    return result
 end
 
 function KoboPowerD:turnOffFrontlightHW() self:_setIntensity(0) end
