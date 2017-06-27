@@ -28,8 +28,9 @@ local function showConfirmBox()
 end
 
 if Device:isKobo() then
-    disable = function() UIManager:_startAutoSuspend() end
-    enable = function() UIManager:_stopAutoSuspend() end
+    local PluginShare = require("pluginshare")
+    enable = function() PluginShare.pause_auto_suspend = true end
+    disable = function() PluginShare.pause_auto_suspend = false end
 elseif Device:isKindle() then
     disable = function()
         os.execute("lipc-set-prop com.lab126.powerd preventScreenSaver 0")
