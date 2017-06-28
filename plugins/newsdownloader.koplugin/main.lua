@@ -69,7 +69,7 @@ function NewsDownloader:addToMainMenu(menu_items)
                 text = _("Help"),
                 callback = function()
                     UIManager:show(InfoMessage:new{
-                        text = T(_("News downloader can be configured in the feeds config file:\n%1\n\nIt downloads news items to:\n%2.\n\nTo set you own news sources edit foregoing feeds config file. Items download limit can be set there."),
+                        text = T(_("Plugin obtains RSS and Atom news entries and stores them to:\n%2.\nEach entry is a separate html file, that can be browsed by KOReader file manager."),
                                  feed_config_path,
                                  news_download_dir_path)
                     })
