@@ -60,7 +60,7 @@ function NewsDownloader:addToMainMenu(menu_items)
                 text = _("Settings"),
                 callback = function()
                     UIManager:show(InfoMessage:new{
-                        text = T(_("To change feed (Atom/RSS) sources please manually edit configuration file:\n%1"),
+                        text = T(_("To change feed (Atom/RSS) sources please manually edit configuration file:\n%1\n\nIt's very simple, contains comments and sample configuration."),
                                  feed_config_path)
                     })
                 end,
