@@ -57,6 +57,15 @@ function NewsDownloader:addToMainMenu(menu_items)
                 callback = function() self:setCustomDownloadDirectory() end,
             },
             {
+                text = _("Settings"),
+                callback = function()
+                    UIManager:show(InfoMessage:new{
+                        text = T(_("To change feed (Atom/RSS) sources please manually edit configuration file:\n%1"),
+                                 feed_config_path)
+                    })
+                end,
+            },
+            {
                 text = _("Help"),
                 callback = function()
                     UIManager:show(InfoMessage:new{
