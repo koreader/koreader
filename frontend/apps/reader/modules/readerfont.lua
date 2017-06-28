@@ -1,6 +1,7 @@
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
 local Event = require("ui/event")
+local GestureRange = require("ui/gesturerange")
 local Input = Device.input
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
@@ -19,6 +20,8 @@ local ReaderFont = InputContainer:new{
     face_table = nil,
     -- default gamma from crengine's lvfntman.cpp
     gamma_index = nil,
+    steps = {0,1,1,1,1,1,2,2,2,3,3,3,4,4,5},
+    gestureScale = Screen:getWidth() * FRONTLIGHT_SENSITIVITY_DECREASE,
 }
 
 function ReaderFont:init()
@@ -71,24 +74,18 @@ end
 
 function ReaderFont:setupTouchZones()
     if Device:isTouchDevice() then
-        self.ui:registerTouchZones({
-            {
-                id = "id_spread",
-                ges = "spread",
-                screen_zone = {
-                    ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
-                },
-                handler = function() return self:onSpread() end
+        self.ges_events = {
+            AdjustSpread = {
+                GestureRange:new{
+                    ges = "spread",
+                }
             },
-            {
-                id = "id_pinch",
-                ges = "pinch",
-                screen_zone = {
-                    ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
-                },
-                handler = function() return self:onPinch() end
-            },
-        })
+            AdjustPinch = {
+                GestureRange:new{
+                    ges = "pinch",
+                }
+            }
+        }
     end
 end
 
@@ -160,9 +157,13 @@ end
 --[[
     UpdatePos event is used to tell ReaderRolling to update pos.
 --]]
-function ReaderFont:onChangeSize(direction)
+function ReaderFont:onChangeSize(direction, font_delta)
     local delta = direction == "decrease" and -1 or 1
-    self.font_size = self.font_size + delta
+    if font_delta then
+        self.font_size = self.font_size + font_delta * delta
+    else
+        self.font_size = self.font_size + delta
+    end
     self.ui:handleEvent(Event:new("SetFontSize", self.font_size))
     return true
 end
@@ -258,20 +259,24 @@ function ReaderFont:addToMainMenu(menu_items)
     }
 end
 
-function ReaderFont:onPinch()
-    local info = Notification:new{text = _("Decreasing font size…")}
+function ReaderFont:onAdjustSpread(arg, ges)
+    local step = math.ceil(2 * #self.steps * ges.distance / self.gestureScale)
+    local delta_int = self.steps[step] or self.steps[#self.steps]
+    local info = Notification:new{text = _("Increasing font size…")}
     UIManager:show(info)
     UIManager:forceRePaint()
-    self:onChangeSize("decrease")
+    self:onChangeSize("increase", delta_int)
     UIManager:close(info)
     return true
 end
 
-function ReaderFont:onSpread()
-    local info = Notification:new{text = _("Increasing font size…")}
+function ReaderFont:onAdjustPinch(arg, ges)
+    local step = math.ceil(2 * #self.steps * ges.distance / self.gestureScale)
+    local delta_int = self.steps[step] or self.steps[#self.steps]
+    local info = Notification:new{text = _("Decreasing font size…")}
     UIManager:show(info)
     UIManager:forceRePaint()
-    self:onChangeSize("increase")
+    self:onChangeSize("decrease", delta_int)
     UIManager:close(info)
     return true
 end
