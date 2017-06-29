@@ -188,6 +188,7 @@ function FrontLightWidget:setProgress(num, step)
         callback = function()
             local powerd = Device:getPowerDevice()
             powerd:toggleFrontlight()
+            self:setProgress(powerd:frontlightIntensity(), step)
         end,
     }
     local empty_space = HorizontalSpan:new{
