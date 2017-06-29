@@ -32,11 +32,7 @@ function KoboPowerD:_syncKoboLightOnStart()
             -- TODO(Hzj-jie): Read current frontlight states from OS.
             return
         end
-        -- Since this is kobo-specific, we save all values in settings here
-        -- and let the code (reader.lua) pick it up later during bootstrap.
-        if new_intensity then
-            NickelConf.frontLightLevel.set(new_intensity)
-        end
+        NickelConf.frontLightLevel.set(new_intensity)
         NickelConf.frontLightState.set(is_frontlight_on)
     end
 end
@@ -66,7 +62,7 @@ function KoboPowerD:_syncNickelConf()
         if NickelConf.frontLightState.get() ~= self:isFrontlightOn() then
             NickelConf.frontLightState.set(self:isFrontlightOn())
         end
-        NickelConf.frontLightLevel.set(self.fl_intensity)
+        self:_syncIntensity(self.fl_intensity)
     end
 end
 
@@ -77,7 +73,7 @@ end
 function KoboPowerD:isFrontlightOnHW()
     local result = NickelConf.frontLightState.get()
     if result == nil then
-        return BasePowerD.isFrontlightOnHW(self)
+        return self.fl_intensity > 0
     end
     return result
 end
