@@ -57,11 +57,19 @@ function NewsDownloader:addToMainMenu(menu_items)
                 callback = function() self:setCustomDownloadDirectory() end,
             },
             {
+                text = _("Settings"),
+                callback = function()
+                    UIManager:show(InfoMessage:new{
+                        text = T(_("To change feed (Atom/RSS) sources please manually edit the configuration file:\n%1\n\nIt is very simple and contains comments as well as sample configuration."),
+                                 feed_config_path)
+                    })
+                end,
+            },
+            {
                 text = _("Help"),
                 callback = function()
                     UIManager:show(InfoMessage:new{
-                        text = T(_("News downloader can be configured in the feeds config file:\n%1\n\nIt downloads news items to:\n%2.\n\nTo set you own news sources edit foregoing feeds config file. Items download limit can be set there."),
-                                 feed_config_path,
+                        text = T(_("News downloader retrieves RSS and Atom news entries and stores them to:\n%1\n\nEach entry is a separate html file, that can be browsed by KOReader file manager.\nItems download limit can be configured in Settings."),
                                  news_download_dir_path)
                     })
                 end,
