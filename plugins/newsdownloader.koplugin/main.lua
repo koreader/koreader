@@ -69,7 +69,7 @@ function NewsDownloader:addToMainMenu(menu_items)
                 text = _("Help"),
                 callback = function()
                     UIManager:show(InfoMessage:new{
-                        text = T(_("News Downloader retrieves RSS and Atom news entries and stores them to:\n%1\n\nEach entry is a separate html file, that can be browsed by KOReader file manager.\nItems download limit can be configured in Settings."),
+                        text = T(_("News downloader retrieves RSS and Atom news entries and stores them to:\n%1\n\nEach entry is a separate html file, that can be browsed by KOReader file manager.\nItems download limit can be configured in Settings."),
                                  news_download_dir_path)
                     })
                 end,
