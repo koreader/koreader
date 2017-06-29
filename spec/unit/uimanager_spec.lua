@@ -164,35 +164,6 @@ describe("UIManager spec", function()
         assert.is_true(UIManager._task_queue_dirty)
     end)
 
-    it("should setup auto suspend on kobo", function()
-        local old_reset_timer = UIManager._resetAutoSuspendTimer
-        local noop = old_reset_timer
-        assert.falsy(UIManager._startAutoSuspend)
-        assert.falsy(UIManager._stopAutoSuspend)
-        assert.truthy(old_reset_timer)
-        G_reader_settings:saveSetting("auto_suspend_timeout_seconds", 3600)
-
-        UIManager:run()
-        UIManager:quit()
-        -- should skip on non-kobo devices
-        UIManager:_initAutoSuspend()
-        assert.is.same(noop, UIManager._startAutoSuspend)
-        assert.is.same(noop, UIManager._stopAutoSuspend)
-        assert.truthy(old_reset_timer)
-        assert.is.same(#UIManager._task_queue, 0)
-        -- now test kobo devices
-        local old_is_kobo = Device.isKobo
-        Device.isKobo = function() return true end
-        UIManager:_initAutoSuspend()
-        assert.truthy(UIManager._startAutoSuspend)
-        assert.truthy(UIManager._stopAutoSuspend)
-        assert.is_not.same(UIManager._resetAutoSuspendTimer, old_reset_timer)
-        assert.is.same(#UIManager._task_queue, 1)
-        assert.is.same(UIManager._task_queue[1].action,
-                       UIManager.auto_suspend_action)
-        Device.isKobo = old_is_kobo
-    end)
-
     it("should check active widgets in order", function()
         local call_signals = {false, false, false}
         UIManager._window_stack = {
