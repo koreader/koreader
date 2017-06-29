@@ -125,7 +125,7 @@ end
 
 function BasePowerD:setIntensity(intensity)
     if not self.device.hasFrontlight() then return false end
-    if intensity == self.fl_intensity then return false end
+    if intensity == self:frontlightIntensity() then return false end
     self.fl_intensity = self:normalizeIntensity(intensity)
     self:_decideFrontlightState()
     logger.dbg("set light intensity", self.fl_intensity)
