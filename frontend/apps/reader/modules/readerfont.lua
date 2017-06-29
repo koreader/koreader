@@ -1,7 +1,6 @@
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
 local Event = require("ui/event")
-local GestureRange = require("ui/gesturerange")
 local Input = Device.input
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
@@ -74,18 +73,24 @@ end
 
 function ReaderFont:setupTouchZones()
     if Device:isTouchDevice() then
-        self.ges_events = {
-            AdjustSpread = {
-                GestureRange:new{
-                    ges = "spread",
-                }
+        self.ui:registerTouchZones({
+            {
+                id = "id_spread",
+                ges = "spread",
+                screen_zone = {
+                    ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
+                },
+                handler = function(ges) return self:onAdjustSpread(ges) end
             },
-            AdjustPinch = {
-                GestureRange:new{
-                    ges = "pinch",
-                }
-            }
-        }
+            {
+                id = "id_pinch",
+                ges = "pinch",
+                screen_zone = {
+                    ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
+                },
+                handler = function(ges) return self:onAdjustPinch(ges) end
+            },
+        })
     end
 end
 
@@ -259,7 +264,7 @@ function ReaderFont:addToMainMenu(menu_items)
     }
 end
 
-function ReaderFont:onAdjustSpread(arg, ges)
+function ReaderFont:onAdjustSpread(ges)
     local step = math.ceil(2 * #self.steps * ges.distance / self.gestureScale)
     local delta_int = self.steps[step] or self.steps[#self.steps]
     local info = Notification:new{text = _("Increasing font size…")}
@@ -270,7 +275,7 @@ function ReaderFont:onAdjustSpread(arg, ges)
     return true
 end
 
-function ReaderFont:onAdjustPinch(arg, ges)
+function ReaderFont:onAdjustPinch(ges)
     local step = math.ceil(2 * #self.steps * ges.distance / self.gestureScale)
     local delta_int = self.steps[step] or self.steps[#self.steps]
     local info = Notification:new{text = _("Decreasing font size…")}
