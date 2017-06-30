@@ -1,5 +1,3 @@
-local InfoMessage = require("ui/widget/infomessage")
-local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 local android = require("device/android/device")
 local logger = require("logger")
