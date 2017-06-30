@@ -104,7 +104,9 @@ function NickelConf._write_kobo_conf(re_Match, key, value, dont_create)
         kobo_conf:close()
     end
 
-    if not found and dont_create ~= true then
+    if not found then
+        if dont_create then return true end
+
         if not correct_section then
             lines[#lines + 1] = "[PowerOptions]"
         end
