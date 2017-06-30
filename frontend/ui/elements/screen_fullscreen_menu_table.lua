@@ -2,18 +2,21 @@ local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 local android = require("device/android/device")
+local logger = require("logger")
+
 
 return {
     text = _("Fullscreen"),
     checked_func = function()
-        return G_reader_settings:readSetting("disable_fullscreen") ~= false
+        local disabled_fullscreen = G_reader_settings:readSetting("disabled_fullscreen") ~= false
+        logger.dbg("screen_fullscreen_menu_table.lua: Is fullscreen disabled", disabled_fullscreen)
+        return disabled_fullscreen
     end,
     callback = function()
-        local disabled = G_reader_settings:readSetting("disable_fullscreen") ~= false
-        G_reader_settings:saveSetting("disable_fullscreen", not disabled)
-        android.setFullscreen(disabled)
-        UIManager:show(InfoMessage:new{
-            text = _("The fullscreen setting will take effect on next restart."),
-        })
+        local disabled_fullscreen = G_reader_settings:readSetting("disabled_fullscreen") ~= false
+        local enabled_fullscreen = not disabled_fullscreen
+        logger.dbg("screen_fullscreen_menu_table.lua:  setting fullscreen to enabled ", enabled_fullscreen)
+        android.setFullscreen(android, enabled_fullscreen)
+        G_reader_settings:saveSetting("disabled_fullscreen", enabled_fullscreen)
     end,
 }
