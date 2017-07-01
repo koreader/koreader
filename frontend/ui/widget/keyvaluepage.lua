@@ -32,6 +32,7 @@ local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local RenderText = require("ui/rendertext")
+local TextViewer = require("ui/widget/textviewer")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -117,6 +118,8 @@ local KeyValueItem = InputContainer:new{
     tface = Font:getFace("smallinfofontbold"),
     width = nil,
     height = nil,
+    textviewer_width = nil,
+    textviewer_height = nil,
 }
 
 function KeyValueItem:init()
@@ -149,6 +152,15 @@ function KeyValueItem:init()
                 key_w = key_w_rendered + space_w_rendered
                 self.show_value = RenderText:truncateTextByWidth(self.value, self.cface, frame_internal_width - key_w_rendered, true)
                 self.show_key = self.key
+            end
+            -- allow for displaying the non-truncated texts with Hold
+            if Device:isTouchDevice() then
+                self.ges_events.Hold = {
+                    GestureRange:new{
+                        ges = "hold",
+                        range = self.dimen,
+                    }
+                }
             end
         -- misalign to fit all info
         else
@@ -195,6 +207,17 @@ function KeyValueItem:onTap()
     return true
 end
 
+function KeyValueItem:onHold()
+    local textviewer = TextViewer:new{
+        title = self.key,
+        text = self.value,
+        width = self.textviewer_width,
+        height = self.textviewer_height,
+    }
+    UIManager:show(textviewer)
+    return true
+end
+
 
 local KeyValuePage = InputContainer:new{
     title = "",
@@ -210,6 +233,11 @@ function KeyValuePage:init()
         h = self.height or Screen:getHeight(),
     }
 
+    if Device:hasKeys() then
+        self.key_events = {
+            Close = { {"Back"}, doc = "close page" },
+        }
+    end
     if Device:isTouchDevice() then
         self.ges_events.Swipe = {
             GestureRange:new{
@@ -236,6 +264,11 @@ function KeyValuePage:init()
     self.items_per_page = math.floor(content_height / line_height)
     self.pages = math.ceil(#self.kv_pairs / self.items_per_page)
     self.main_content = VerticalGroup:new{}
+
+    -- set textviewer height to let our title fully visible
+    self.textviewer_width = self.item_width
+    self.textviewer_height = self.dimen.h - 2*self.title_bar:getSize().h
+
     self:_populateItems()
     -- assemble page
     self[1] = FrameContainer:new{
@@ -285,11 +318,15 @@ function KeyValuePage:_populateItems()
                     key = entry[1],
                     value = entry[2],
                     callback = entry.callback,
+                    textviewer_width = self.textviewer_width,
+                    textviewer_height = self.textviewer_height,
                 }
             )
         elseif type(entry) == "string" then
             local c = string.sub(entry, 1, 1)
             if c == "-" then
+                table.insert(self.main_content,
+                             VerticalSpan:new{ width = self.item_margin })
                 table.insert(self.main_content, LineWidget:new{
                     background = Blitbuffer.COLOR_LIGHT_GREY,
                     dimen = Geom:new{
@@ -316,6 +353,12 @@ function KeyValuePage:onSwipe(arg, ges_ev)
     elseif ges_ev.direction == "east" then
         self:prevPage()
         return true
+    else
+        -- trigger full refresh
+        UIManager:setDirty(nil, "full")
+        -- a long diagonal swipe may also be used for taking a screenshot,
+        -- so let it propagate
+        return false
     end
 end
 
