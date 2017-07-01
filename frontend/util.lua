@@ -400,4 +400,105 @@ function util.splitToArray(str, splitter, capture_empty_entity)
     return result
 end
 
+--- Convert a Unicode codepoint (number) to UTF8 char
+--
+--- @int c Unicode codepoint
+--- @treturn string UTF8 char
+function util.unicodeCodepointToUtf8(c)
+    if c < 128 then
+        return string.char(c)
+    elseif c < 2048 then
+        return string.char(192 + c/64, 128 + c%64)
+    elseif c < 55296 or 57343 < c and c < 65536 then
+        return string.char(224 + c/4096, 128 + c/64%64, 128 + c%64)
+    elseif c < 1114112 then
+        return string.char(240 + c/262144, 128 + c/4096%64, 128 + c/64%64, 128 + c%64)
+    else
+        return util.unicodeCodepointToUtf8(65533) -- U+FFFD REPLACEMENT CHARACTER
+    end
+end
+
+local HTML_ENTITIES_TO_UTF8 = {
+    ["&lt;"] = "<",
+    ["&gt;"] = ">",
+    ["&quot;"] = '"',
+    ["&apos;"] = "'",
+    ["&nbsp;"] = "\xC2\xA0",
+    ["&#(%d+);"] = function(x) return util.unicodeCodepointToUtf8(tonumber(x)) end,
+    ["&#x(%x+);"] = function(x) return util.unicodeCodepointToUtf8(tonumber(x,16)) end,
+    ["&amp;"] = "&", -- must be last
+}
+--- Replace HTML entities with their UTF8 equivalent in text
+--
+-- Supports only basic ones and those with numbers (no support
+-- for named entities like &eacute;)
+--- @int string text with HTML entities
+--- @treturn string UTF8 text
+function util.htmlEntitiesToUtf8(text)
+    for k,v in pairs(HTML_ENTITIES_TO_UTF8) do
+        text = text:gsub(k, v)
+    end
+    return text
+end
+
+--- Convert simple HTML to plain text
+-- This may fail on complex HTML (with styles, scripts, comments), but should
+-- be fine enough with simple HTML as found in EPUB's <dc:description>.
+--
+--- @string text HTML text
+--- @treturn string plain text
+function util.htmlToPlainText(text)
+    -- Replace <br> and <p> with \n
+    text = text:gsub("%s*<%s*br%s*/?>%s*", "\n") -- <br> and <br/>
+    text = text:gsub("%s*<%s*p%s*>%s*", "\n") -- <p>
+    text = text:gsub("%s*</%s*p%s*>%s*", "\n") -- </p>
+    text = text:gsub("%s*<%s*p%s*/>%s*", "\n") -- standalone <p/>
+    -- Remove all HTML tags
+    text = text:gsub("<[^>]*>", "")
+    -- Convert HTML entities
+    text = util.htmlEntitiesToUtf8(text)
+    -- Trim spaces and new lines at start and end
+    text = text:gsub("^[\n%s]*", "")
+    text = text:gsub("[\n%s]*$", "")
+    return text
+end
+
+--- Convert HTML to plain text if text seems to be HTML
+-- Detection of HTML is simple and may raise false positives
+-- or negatives, but seems quite good at guessing content type
+-- of text found in EPUB's <dc:description>.
+--
+--- @string text the string with possibly some HTML
+--- @treturn string cleaned text
+function util.htmlToPlainTextIfHtml(text)
+    local is_html = false
+    -- Quick way to check if text is some HTML:
+    -- look for html tags
+    local _, nb_tags
+    _, nb_tags = text:gsub("<%w+.->", "")
+    if nb_tags > 0 then
+        is_html = true
+    else
+        -- no <tag> found
+        -- but we may meet some text badly twicely encoded html containing "&lt;br&gt;"
+        local nb_encoded_tags
+        _, nb_encoded_tags = text:gsub("&lt;%a+&gt;", "")
+        if nb_encoded_tags > 0 then
+            is_html = true
+            -- decode one of the two encodes
+            text = util.htmlEntitiesToUtf8(text)
+        end
+    end
+
+    if is_html then
+        text = util.htmlToPlainText(text)
+    else
+        -- if text ends with ]]>, it probably comes from <![CDATA[ .. ]]> that
+        -- crengine has extracted correctly, but let the ending tag in, so
+        -- let's remove it
+        text = text:gsub("]]>%s*$", "")
+    end
+    return text
+end
+
 return util

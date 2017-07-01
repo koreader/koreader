@@ -10,6 +10,7 @@ local Device = require("device")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
 local Event = require("ui/event")
+local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
 local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
@@ -315,6 +316,12 @@ function ReaderUI:init()
     -- history view
     self:registerModule("history", FileManagerHistory:new{
         dialog = self.dialog,
+        ui = self,
+    })
+    -- book info
+    self:registerModule("bookinfo", FileManagerBookInfo:new{
+        dialog = self.dialog,
+        document = self.document,
         ui = self,
     })
     -- koreader plugins
