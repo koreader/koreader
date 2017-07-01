@@ -174,6 +174,8 @@ function PdfDocument:getProps()
     props.authors = props.author
     props.series = ""
     props.language = ""
+    props.keywords = props.keywords
+    props.description = props.subject
     return props
 end
 
