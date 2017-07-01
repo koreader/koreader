@@ -81,6 +81,7 @@ local order = {
     main = {
         "history",
         "book_status",
+        "book_info",
         "----------------------------",
         "ota_update", --[[ if Device:isKindle() or Device:isKobo() or
                            Device:isPocketBook() or Device:isAndroid() ]]--

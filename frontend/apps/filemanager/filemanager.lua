@@ -6,6 +6,7 @@ local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
 local Event = require("ui/event")
 local FileChooser = require("ui/widget/filechooser")
+local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local FileManagerConverter = require("apps/filemanager/filemanagerconverter")
 local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
 local FileManagerMenu = require("apps/filemanager/filemanagermenu")
@@ -15,7 +16,6 @@ local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
-local KeyValuePage = require("ui/widget/keyvaluepage")
 local PluginLoader = require("pluginloader")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local ReaderUI = require("apps/reader/readerui")
@@ -25,36 +25,12 @@ local TextWidget = require("ui/widget/textwidget")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local UIManager = require("ui/uimanager")
+local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("ffi/util")
 local _ = require("gettext")
 local Screen = Device.screen
-
-local function getDefaultDir()
-    if Device:isKindle() then
-        return "/mnt/us/documents"
-    elseif Device:isKobo() then
-        return "/mnt/onboard"
-    elseif Device:isAndroid() then
-        return "/sdcard"
-    else
-        return "."
-    end
-end
-
-local function abbreviate(path)
-    local home_dir_name = G_reader_settings:readSetting("home_dir_display_name")
-    if home_dir_name ~= nil then
-        local home_dir = G_reader_settings:readSetting("home_dir") or getDefaultDir()
-        local len = home_dir:len()
-        local start = path:sub(1, len)
-        if start == home_dir then
-            return home_dir_name .. path:sub(len+1)
-        end
-    end
-    return path
-end
 
 local function restoreScreenMode()
     local screen_mode = G_reader_settings:readSetting("fm_screen_mode")
@@ -80,7 +56,7 @@ function FileManager:init()
 
     self.path_text = TextWidget:new{
         face = Font:getFace("xx_smallinfofont"),
-        text = abbreviate(self.root_path),
+        text = filemanagerutil.abbreviate(self.root_path),
     }
 
     self.banner = FrameContainer:new{
@@ -122,7 +98,7 @@ function FileManager:init()
     self.file_chooser = file_chooser
 
     function file_chooser:onPathChanged(path)  -- luacheck: ignore
-        FileManager.instance.path_text:setText(abbreviate(path))
+        FileManager.instance.path_text:setText(filemanagerutil.abbreviate(path))
         UIManager:setDirty(FileManager.instance, function()
             return "ui", FileManager.instance.banner.dimen
         end)
@@ -259,20 +235,9 @@ function FileManager:init()
                 },
                 {
                     text = _("Book information"),
-                    enabled = lfs.attributes(file, "mode") == "file"
-                        and not DocumentRegistry:getProvider(file).is_pic and true or false,
+                    enabled = FileManagerBookInfo:isSupported(file),
                     callback = function()
-                        local book_info_metadata = FileManager:bookInformation(file)
-                        if  book_info_metadata then
-                            UIManager:show(KeyValuePage:new{
-                                title = _("Book information"),
-                                kv_pairs = book_info_metadata,
-                            })
-                        else
-                            UIManager:show(InfoMessage:new{
-                                text = _("Cannot fetch information for a selected book"),
-                            })
-                        end
+                        FileManagerBookInfo:show(file)
                         UIManager:close(self.file_dialog)
                     end,
                 },
@@ -344,23 +309,6 @@ function FileManager:init()
     end
 
     self:handleEvent(Event:new("SetDimensions", self.dimen))
-end
-
-function FileManager:bookInformation(file)
-    local file_mode = lfs.attributes(file, "mode")
-    if file_mode ~= "file" then return false end
-    local book_stats = DocSettings:open(file):readSetting('stats')
-    if book_stats ~= nil then
-        return FileManagerHistory:buildBookInformationTable(book_stats)
-    end
-    local document = DocumentRegistry:openDocument(file)
-    if document.loadDocument then
-        document:loadDocument()
-        document:render()
-    end
-    book_stats = document:getProps()
-    book_stats.pages = document:getPageCount()
-    return FileManagerHistory:buildBookInformationTable(book_stats)
 end
 
 function FileManager:reinit(path)
@@ -536,7 +484,7 @@ function FileManager:getSortingMenuTable()
 end
 
 function FileManager:showFiles(path)
-    path = path or G_reader_settings:readSetting("lastdir") or getDefaultDir()
+    path = path or G_reader_settings:readSetting("lastdir") or filemanagerutil.getDefaultDir()
     G_reader_settings:saveSetting("lastdir", path)
     restoreScreenMode()
     local file_manager = FileManager:new{
