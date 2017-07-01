@@ -342,6 +342,16 @@ function ReaderUI:init()
     end
     self.postInitCallback = nil
 
+    -- Now that document is loaded, store book metadata in settings
+    -- (so that filemanager can use it from sideCar file to display
+    -- Book information).
+    -- via pcall because picdocument:getProps() may fail
+    local ok, doc_props = pcall(self.document.getProps, self.document)
+    if not ok then
+        doc_props = {}
+    end
+    self.doc_settings:saveSetting("doc_props", doc_props)
+
     -- After initialisation notify that document is loaded and rendered
     -- CREngine only reports correct page count after rendering is done
     -- Need the same event for PDF document

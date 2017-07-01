@@ -546,6 +546,7 @@ end
 function ReaderFooter:onPageUpdate(pageno)
     self.pageno = pageno
     self.pages = self.view.document:getPageCount()
+    self.ui.doc_settings:saveSetting("doc_pages", self.pages) -- for Book information
     self:updateFooterPage()
 end
 
