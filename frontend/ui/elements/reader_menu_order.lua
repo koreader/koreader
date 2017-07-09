@@ -32,7 +32,6 @@ local order = {
     },
     setting = {
         "read_from_right_to_left",
-        "disable_fuzzy_search",
         -- common settings
         -- those that don't exist will simply be skipped during menu gen
         "frontlight", -- if Device:hasFrontlight()
@@ -70,6 +69,8 @@ local order = {
     },
     search = {
         "dictionary_lookup",
+        "disable_fuzzy_search",
+        "----------------------------",
         "wikipedia_lookup",
         "----------------------------",
         "goodreads",
