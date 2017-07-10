@@ -1,9 +1,9 @@
-local lfs = require("libs/libkoreader-lfs")
 local DataStorage = require("datastorage")
 local DocSettings = require("docsettings")
-local realpath = require("ffi/util").realpath
-local joinPath = require("ffi/util").joinPath
 local dump = require("dump")
+local joinPath = require("ffi/util").joinPath
+local lfs = require("libs/libkoreader-lfs")
+local realpath = require("ffi/util").realpath
 
 local history_file = joinPath(DataStorage:getDataDir(), "history.lua")
 
