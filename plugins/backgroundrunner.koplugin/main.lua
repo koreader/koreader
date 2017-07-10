@@ -41,8 +41,10 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 -- end_sec: integer, the os.time() when the job was stopped.
 -- insert_sec: integer, the os.time() when the job was inserted into queue.
 
+PluginShare.backgroundJobs = {}
+
 local BackgroundRunner = {
-    jobs = {},
+    jobs = PluginShare.backgroundJobs,
 }
 
 --- Copies required fields from |job|.
@@ -62,7 +64,7 @@ function BackgroundRunner:_finishJob(job)
     job.timeout = ((job.end_sec - job.start_sec) > timeout_sec)
     job.blocked = job.timeout
     if not job.blocked and job["repeat"] then
-        self:insert(self:_clone(job))
+        self:_insert(self:_clone(job))
     end
 end
 
@@ -147,7 +149,7 @@ function BackgroundRunner:_schedule()
     UIManager:scheduleIn(2, function() self:_repeat() end)
 end
 
-function BackgroundRunner:insert(job)
+function BackgroundRunner:_insert(job)
     assert(self ~= nil)
     job.insert_sec = os.time()
     table.insert(self.jobs, job)

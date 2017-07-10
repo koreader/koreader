@@ -1,0 +1,10 @@
+describe("BackgroundRunner widget tests", function()
+    setup(function()
+        require("commonrequire")
+        package.unloadAll()
+    end)
+
+    teardown(function()
+        package.unloadAll()
+    end)
+end)
