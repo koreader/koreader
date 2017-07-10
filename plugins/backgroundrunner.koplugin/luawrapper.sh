@@ -30,6 +30,6 @@ do
       BADCOMMAND="false"
     fi
 
-    echo "{ result = $EXIT_CODE, timeout = $TIMEOUT, badcommand = $BADCOMMAND }"
+    echo "{ result = $EXIT_CODE, timeout = $TIMEOUT, bad_command = $BADCOMMAND }"
   fi
 done
