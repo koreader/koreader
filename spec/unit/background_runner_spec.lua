@@ -1,6 +1,5 @@
 describe("BackgroundRunner widget tests", function()
     local Device, PluginShare, MockTime, UIManager
-    local package_path
 
     setup(function()
         require("commonrequire")
@@ -13,17 +12,13 @@ describe("BackgroundRunner widget tests", function()
         MockTime:install()
         UIManager = require("ui/uimanager")
         UIManager._run_forever = true
-        package_path = package.path
-        package.path = "plugins/backgroundrunner.koplugin/?.lua;" .. package_path
-        require("main")
-
-        require("dbg"):turnOn()
+        requireBackgroundRunner()
     end)
 
     teardown(function()
         MockTime:uninstall()
-        package.path = package_path
         package.unloadAll()
+        stopBackgroundRunner()
     end)
 
     it("should start job", function()

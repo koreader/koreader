@@ -8,6 +8,7 @@ end
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local LuaSettings = require("luasettings")
+local PluginShare = require("pluginshare")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
@@ -21,27 +22,34 @@ local AutoFrontlight = {
   last_brightness = -1,
 }
 
+PluginShare.backgroundJobs = PluginShare.backgroundJobs or {}
+
 function AutoFrontlight:_schedule(settings_id)
-    if not self.enabled then
-        logger.dbg("AutoFrontlight:_schedule() is disabled")
-        return
+    local enabled = function()
+        if not self.enabled then
+            logger.dbg("AutoFrontlight:_schedule() is disabled")
+            return false
+        end
+        if settings_id ~= self.settings_id then
+            logger.dbg("AutoFrontlight:_schedule(): registered settings_id ",
+                       settings_id,
+                       " does not equal to current one ",
+                       self.settings_id)
+            return false
+        end
+
+        return true
     end
-    if settings_id ~= self.settings_id then
-        logger.dbg("AutoFrontlight:_schedule(): registered settings_id ",
-                   settings_id,
-                   " does not equal to current one ",
-                   self.settings_id)
-        return
-    end
 
-    logger.dbg("AutoFrontlight:_schedule() starts with settings_id ", settings_id)
-
-    self:_action()
-
-    logger.dbg("AutoFrontlight:_schedule() @ ", os.time(), ", it should be executed at ", os.time() + 2)
-    UIManager:scheduleIn(2, function()
-        self:_schedule(settings_id)
-    end)
+    table.insert(PluginShare.backgroundJobs, {
+        when = 2,
+        repeated = enabled,  
+        executable = function()
+            if enabled() then
+                self:_action()
+            end
+        end
+    })
 end
 
 function AutoFrontlight:_action()

@@ -44,7 +44,7 @@ local logger = require("logger")
 -- end_sec: number, the os.time() when the job was stopped.
 -- insert_sec: number, the os.time() when the job was inserted into queue.
 
-PluginShare.backgroundJobs = {}
+PluginShare.backgroundJobs = PluginShare.backgroundJobs or {}
 
 local BackgroundRunner = {
     jobs = PluginShare.backgroundJobs,
@@ -162,7 +162,10 @@ function BackgroundRunner:_execute()
             if round > 2 then break end
         end
     end
-    self:_schedule()
+
+    if PluginShare.stopBackgroundRunner == nil then
+        self:_schedule()
+    end
 end
 
 function BackgroundRunner:_schedule()
