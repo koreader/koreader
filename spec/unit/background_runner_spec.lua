@@ -158,4 +158,31 @@ describe("BackgroundRunner widget tests", function()
         assert.are.equal(10, executed)
     end)
 
+    it("should not execute two jobs sequentially", function()
+        local executed = 0
+        table.insert(PluginShare.backgroundJobs, {
+            when = 1,
+            executable = function()
+                executed = executed + 1
+            end,
+        })
+        table.insert(PluginShare.backgroundJobs, {
+            when = 1,
+            executable = function()
+                executed = executed + 1
+            end,
+        })
+
+        MockTime:increase(2)
+        UIManager:handleInput()
+        MockTime:increase(2)
+        UIManager:handleInput()
+        assert.are.equal(1, executed)
+        MockTime:increase(2)
+        UIManager:handleInput()
+        assert.are.equal(2, executed)
+        MockTime:increase(2)
+        UIManager:handleInput()
+        assert.are.equal(2, executed)
+    end)
 end)
