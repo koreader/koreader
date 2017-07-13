@@ -110,9 +110,13 @@ describe("BackgroundRunner widget tests", function()
     end)
 
     it("should execute binary", function()
+        local executed = false
         local job = {
             when = 1,
             executable = "ls | grep this-should-not-be-a-file",
+            callback = function()
+                executed = true
+            end,
         }
         table.insert(PluginShare.backgroundJobs, job)
 
@@ -127,5 +131,31 @@ describe("BackgroundRunner widget tests", function()
         assert.are.equal(1, job.result)
         assert.is_false(job.timeout)
         assert.is_false(job.bad_command)
+        assert.is_true(executed)
     end)
+
+    it("should execute callback", function()
+        local executed = 0
+        table.insert(PluginShare.backgroundJobs, {
+            when = 1,
+            repeated = 10,
+            executable = function() end,
+            callback = function()
+                executed = executed + 1
+            end,
+        })
+
+        MockTime:increase(2)
+        UIManager:handleInput()
+
+        for i = 1, 10 do
+            MockTime:increase(2)
+            UIManager:handleInput()
+            assert.are.equal(i, executed)
+        end
+        MockTime:increase(2)
+        UIManager:handleInput()
+        assert.are.equal(10, executed)
+    end)
+
 end)

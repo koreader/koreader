@@ -14,10 +14,11 @@ local logger = require("logger")
 --           "idle"        - the job will be started when the device is idle.
 --   function: if the return value of the function is true, the job will be
 --             executed immediately.
--- repeated: boolean or function or nil
+-- repeated: boolean or function or nil or number
 --   boolean: true to repeated the job once it finished.
 --   function: if the return value of the function is true, repeated the job
---             once it finished.
+--             once it finished. If the function throws an error, it equals to
+--             return false.
 --   nil: same as false.
 --   number: times to repeat.
 -- executable: string or function
@@ -29,12 +30,22 @@ local logger = require("logger")
 --             second.
 --   If the executable times out, the job will be blocked, i.e. the repeated
 --   field will be ignored.
+-- callback: function or nil
+--   function: the action to be executed when executable has been finished.
+--             Errors thrown from this function will be ignored.
+--   nil: ignore.
 --
 -- If a job does not contain enough information, it will be ignored.
 --
 -- Once the job is finished, several items will be added to the table:
--- result: number, the return value of the command. For function executable, if
---         the function throws an error, it will be 1, otherwise 0.
+-- result: number, the return value of the command. In general, 0 means
+--         succeeded.
+--         For function executable, 1 if the function throws an error.
+--         For string executable, several predefined values indicate the
+--         internal errors. E.g. 223: the binary crashes. 222: the output is
+--         invalid. 127: the command is invalid. 255: the command timed out.
+--         Typically, consumers can use following states instead of hardcodeing
+--         the error codes.
 -- exception: error, the error returned from function executable. Not available
 --            for string executable.
 -- timeout: boolean, whether the command times out.
@@ -59,6 +70,7 @@ function BackgroundRunner:_clone(job)
     result.when = job.when
     result.repeated = job.repeated
     result.executable = job.executable
+    result.callback = job.callback
     return result
 end
 
@@ -88,6 +100,9 @@ function BackgroundRunner:_finishJob(job)
     job.blocked = job.timeout
     if not job.blocked and self:_shouldRepeat(job) then
         self:_insert(self:_clone(job))
+    end
+    if type(job.callback) == "function" then
+        pcall(job.callback)
     end
 end
 
