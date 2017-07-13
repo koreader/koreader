@@ -2,14 +2,14 @@
 
 # Converts the return of "sh wrapper.sh $@" into Lua format.
 
-CURRENT_DIR=dirname "$0"
-sh $CURRENT_DIR/wrapper.sh $@ &
+CURRENT_DIR=`dirname "$0"`
+sh $CURRENT_DIR/wrapper.sh $@ > /dev/null 2>&1 &
 JOB_ID=$!
 
 while true
 do
   ps -p $JOB_ID | grep $JOB_ID > /dev/null 2>&1
-  if [ $? ]
+  if [ $? -eq 0 ]
   then
     # Unblock f:read().
     echo
@@ -30,6 +30,11 @@ do
       BADCOMMAND="false"
     fi
 
-    echo "{ result = $EXIT_CODE, timeout = $TIMEOUT, bad_command = $BADCOMMAND }"
+    echo return {                                    \
+            result = $EXIT_CODE,                     \
+            timeout = $TIMEOUT,                      \
+            bad_command = $BADCOMMAND,               \
+        }
+    exit 0
   fi
 done

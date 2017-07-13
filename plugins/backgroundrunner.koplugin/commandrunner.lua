@@ -1,3 +1,5 @@
+local logger = require("logger")
+
 local CommandRunner = {
     pio = nil,
     job = nil,
@@ -9,7 +11,9 @@ function CommandRunner:start(job)
     assert(self.job == nil)
     self.job = job
     self.job.start_sec = os.time()
-    self.pio = io.popen("sh koplugins/backgroundrunner.koplugin/luawrapper.sh " .. self.job.executable) 
+    assert(type(self.job.executable) == "string")
+    self.pio = io.popen("sh plugins/backgroundrunner.koplugin/luawrapper.sh " ..
+                        "\"" .. self.job.executable .. "\"")
 end
 
 --- Polls the status of self.pio.
@@ -28,16 +32,18 @@ function CommandRunner:poll()
             self.job.result = 223
         else
             line = line .. self.pio:read("*a")
-            local result = pcall(loadstring(line))
-            if result == nil then
-                -- The output from binary is invalid.
-                self.job.result = 222
-            else
+            logger.dbg("CommandRunner: Receive output " .. line)
+            local status, result = pcall(loadstring(line))
+            if status and result ~= nil then
                 for k, v in pairs(result) do
                     self.job[k] = v
                 end
+            else
+                -- The output from binary is invalid.
+                self.job.result = 222
             end
         end
+        self.pio:close()
         self.pio = nil
         self.job.end_sec = os.time()
         local job = self.job

@@ -19,6 +19,7 @@ local logger = require("logger")
 --   function: if the return value of the function is true, repeated the job
 --             once it finished.
 --   nil: same as false.
+--   number: times to repeat.
 -- executable: string or function
 --   string: the command line to be executed. The command or binary will be
 --           executed in the lowest priority. Command or binary will be killed
@@ -61,12 +62,31 @@ function BackgroundRunner:_clone(job)
     return result
 end
 
+function BackgroundRunner:_shouldRepeat(job)
+    if type(job.repeated) == "nil" then return false end
+    if type(job.repeated) == "boolean" then return job.repeated end
+    if type(job.repeated) == "function" then
+        local status, result = pcall(job.repeated)
+        if status then
+            return result
+        else
+            return false
+        end
+    end
+    if type(job.repeated) == "number" then
+        job.repeated = job.repeated - 1
+        return job.repeated > 0
+    end
+
+    return false
+end
+
 function BackgroundRunner:_finishJob(job)
     assert(self ~= nil)
     local timeout_sec = type(job.executable) == "string" and 3600 or 1
     job.timeout = ((job.end_sec - job.start_sec) > timeout_sec)
     job.blocked = job.timeout
-    if not job.blocked and job.repeated then
+    if not job.blocked and self:_shouldRepeat(job) then
         self:_insert(self:_clone(job))
     end
 end
@@ -79,7 +99,7 @@ function BackgroundRunner:_executeJob(job)
     if job.executable == nil then return false end
 
     if type(job.executable) == "string" then
-        CommandRunner:start(job.executable)
+        CommandRunner:start(job)
         return true
     elseif type(job.executable) == "function" then
         job.start_sec = os.time()

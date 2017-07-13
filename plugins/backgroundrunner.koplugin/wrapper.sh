@@ -16,14 +16,14 @@ echo "Timeout has been set to $TIMEOUT seconds"
 
 echo "Will start command $@"
 
-nice -n 19 $@ &
+echo $@ | nice -n 19 sh &
 JOB_ID=$!
 echo "Job id: $JOB_ID"
 
 for i in $(seq 1 1 $TIMEOUT)
 do
   ps -p $JOB_ID | grep $JOB_ID > /dev/null 2>&1
-  if [ $? ]
+  if [ $? -eq 0 ]
   then
     # Job is still running.
     sleep 1
