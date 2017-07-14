@@ -59,29 +59,33 @@ function BookInfo:show(file, book_props)
     -- book_props may be provided if caller already has them available
     -- but it may lack 'pages', that we may get from sidecar file
     if not book_props or not book_props.pages then
-        local doc_settings = DocSettings:open(file)
-        if doc_settings then
-            if not book_props then
-                -- Files opened after 20170701 have a 'doc_props' setting with
-                -- complete metadata and 'doc_pages' with accurate nb of pages
-                book_props = doc_settings:readSetting('doc_props')
-            end
-            if not book_props then
-                -- File last opened before 20170701 may have a 'stats' setting
-                -- with partial metadata, or empty metadata if statistics plugin
-                -- was not enabled when book was read (we can guess that from
-                -- the fact that stats.page = 0)
-                local stats = doc_settings:readSetting('stats')
-                if stats and stats.pages ~= 0 then
-                    -- Let's use them as is (which was what was done before), even if
-                    -- incomplete, to avoid expensive book opening
-                    book_props = stats
+        -- check there is actually a sidecar file before calling DocSettings:open()
+        -- that would create an empty sidecar directory
+        if DocSettings:hasSidecarFile(file) then
+            local doc_settings = DocSettings:open(file)
+            if doc_settings then
+                if not book_props then
+                    -- Files opened after 20170701 have a 'doc_props' setting with
+                    -- complete metadata and 'doc_pages' with accurate nb of pages
+                    book_props = doc_settings:readSetting('doc_props')
                 end
-            end
-            -- Files opened after 20170701 have an accurate 'doc_pages' setting
-            local doc_pages = doc_settings:readSetting('doc_pages')
-            if doc_pages and book_props then
-                book_props.pages = doc_pages
+                if not book_props then
+                    -- File last opened before 20170701 may have a 'stats' setting
+                    -- with partial metadata, or empty metadata if statistics plugin
+                    -- was not enabled when book was read (we can guess that from
+                    -- the fact that stats.page = 0)
+                    local stats = doc_settings:readSetting('stats')
+                    if stats and stats.pages ~= 0 then
+                        -- Let's use them as is (which was what was done before), even if
+                        -- incomplete, to avoid expensive book opening
+                        book_props = stats
+                    end
+                end
+                -- Files opened after 20170701 have an accurate 'doc_pages' setting
+                local doc_pages = doc_settings:readSetting('doc_pages')
+                if doc_pages and book_props then
+                    book_props.pages = doc_pages
+                end
             end
         end
     end
