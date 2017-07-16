@@ -1,5 +1,9 @@
 local Device = require("device")
+local DocumentRegistry = require("document/documentregistry")
+local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
+local ImageViewer = require("ui/widget/imageviewer")
 local Menu = require("ui/widget/menu")
+local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local util = require("ffi/util")
@@ -149,7 +153,13 @@ function CoverMenu:updateItems(select_number)
                 if item.bookinfo_found then
                     logger.dbg("  found", item.text)
                     local refreshfunc = function()
-                        return "ui", item[1].dimen
+                        if item.refresh_dimen then
+                            -- MosaicMenuItem may exceed its own dimen in its paintTo
+                            -- with its "description" hint
+                            return "ui", item.refresh_dimen
+                        else
+                            return "ui", item[1].dimen
+                        end
                     end
                     UIManager:setDirty(self.show_parent, refreshfunc)
                     table.remove(self.items_to_update, i)
@@ -210,7 +220,46 @@ function CoverMenu:updateItems(select_number)
             -- on screen, so we won't see it)
             UIManager:close(self.file_dialog)
 
+            -- Replace Book information callback to use directly our bookinfo
+            orig_buttons[4][2].callback = function()
+                FileManagerBookInfo:show(file, bookinfo)
+                UIManager:close(self.file_dialog)
+            end
+
             -- Add some new buttons to original buttons set
+            table.insert(orig_buttons, {
+                { -- Allow user to view real size cover in ImageViewer
+                    text = _("View full size cover"),
+                    enabled = bookinfo.has_cover and true or false,
+                    callback = function()
+                        local document = DocumentRegistry:openDocument(file)
+                        if document then
+                            local cover_bb = document:getCoverPageImage()
+                            local imgviewer = ImageViewer:new{
+                                image = cover_bb,
+                                with_title_bar = false,
+                                fullscreen = true,
+                            }
+                            UIManager:show(imgviewer)
+                            UIManager:close(self.file_dialog)
+                            DocumentRegistry:closeDocument(file)
+                        end
+                    end,
+                },
+                { -- Allow user to directly view description in TextViewer
+                    text = bookinfo.description and _("View book description") or _("No book description"),
+                    enabled = bookinfo.description and true or false,
+                    callback = function()
+                        local description = require("util").htmlToPlainTextIfHtml(bookinfo.description)
+                        local textviewer = TextViewer:new{
+                            title = bookinfo.title,
+                            text = description,
+                        }
+                        UIManager:show(textviewer)
+                        UIManager:close(self.file_dialog)
+                    end,
+                },
+            })
             table.insert(orig_buttons, {
                 { -- Allow user to ignore some offending cover image
                     text = bookinfo.ignore_cover and _("Unignore cover") or _("Ignore cover"),
@@ -283,7 +332,52 @@ function CoverMenu:onHistoryMenuHold(item)
     -- on screen, so we won't see it)
     UIManager:close(self.histfile_dialog)
 
+    -- Replace Book information callback to use directly our bookinfo
+    logger.warn(orig_buttons)
+    orig_buttons[2][1].callback = function()
+        FileManagerBookInfo:show(file, bookinfo)
+        UIManager:close(self.histfile_dialog)
+    end
+    -- Re-organise buttons to make them more coherent with those we're going to add
+    -- Move up "Clear history of deleted items" and down "Book information", so
+    -- it's now similar to File browser's onFileHold
+    -- (The original organisation is fine in classic mode)
+    orig_buttons[2], orig_buttons[4] = orig_buttons[4], orig_buttons[2]
+
     -- Add some new buttons to original buttons set
+    table.insert(orig_buttons, {
+        { -- Allow user to view real size cover in ImageViewer
+            text = _("View full size cover"),
+            enabled = bookinfo.has_cover and true or false,
+            callback = function()
+                local document = DocumentRegistry:openDocument(file)
+                if document then
+                    local cover_bb = document:getCoverPageImage()
+                    local imgviewer = ImageViewer:new{
+                        image = cover_bb,
+                        with_title_bar = false,
+                        fullscreen = true,
+                    }
+                    UIManager:show(imgviewer)
+                    UIManager:close(self.histfile_dialog)
+                    DocumentRegistry:closeDocument(file)
+                end
+            end,
+        },
+        { -- Allow user to directly view description in TextViewer
+            text = bookinfo.description and _("View book description") or _("No book description"),
+            enabled = bookinfo.description and true or false,
+            callback = function()
+                local description = require("util").htmlToPlainTextIfHtml(bookinfo.description)
+                local textviewer = TextViewer:new{
+                    title = bookinfo.title,
+                    text = description,
+                }
+                UIManager:show(textviewer)
+                UIManager:close(self.histfile_dialog)
+            end,
+        },
+    })
     table.insert(orig_buttons, {
         { -- Allow user to ignore some offending cover image
             text = bookinfo.ignore_cover and _("Unignore cover") or _("Ignore cover"),

@@ -274,6 +274,7 @@ local MosaicMenuItem = InputContainer:new{
     init_done = false,
     bookinfo_found = false,
     cover_specs = nil,
+    has_description = false,
 }
 
 function MosaicMenuItem:init()
@@ -466,6 +467,23 @@ function MosaicMenuItem:update()
                     }
                 }
             else
+                -- add Series metadata if requested
+                if bookinfo.series then
+                    if BookInfoManager:getSetting("append_series_to_title") then
+                        if bookinfo.title then
+                            bookinfo.title = bookinfo.title .. " - " .. bookinfo.series
+                        else
+                            bookinfo.title = bookinfo.series
+                        end
+                    end
+                    if BookInfoManager:getSetting("append_series_to_authors") then
+                        if bookinfo.authors then
+                            bookinfo.authors = bookinfo.authors .. " - " .. bookinfo.series
+                        else
+                            bookinfo.authors = bookinfo.series
+                        end
+                    end
+                end
                 widget = CenterContainer:new{
                     dimen = dimen,
                     FakeCover:new{
@@ -482,6 +500,10 @@ function MosaicMenuItem:update()
             -- In case we got a blitbuffer and didnt use it (ignore_cover, wikipedia), free it
             if bookinfo.cover_bb and not cover_bb_used then
                 bookinfo.cover_bb:free()
+            end
+            -- So we can draw an indicator if this book has a description
+            if bookinfo.description then
+                self.has_description = true
             end
 
         else -- bookinfo not found
@@ -555,6 +577,25 @@ function MosaicMenuItem:paintTo(bb, x, y)
         local iy = self.height - math.ceil((self.height - target.dimen.h)/2) - corner_mark:getSize().h
         -- math.ceil() makes it looks better than math.floor()
         corner_mark:paintTo(bb, x+ix, y+iy)
+    end
+
+    -- to which we paint a small indicator if this book has a description
+    if self.has_description and not BookInfoManager:getSetting("no_hint_description") then
+        -- On book's right (for similarity to ListMenuItem)
+        local target =  self[1][1][1]
+        local d_w = Screen:scaleBySize(3)
+        local d_h = math.ceil(target.dimen.h / 8)
+        -- Paint it directly relative to target.dimen.x/y which has been computed at this point
+        local ix = target.dimen.w - 1
+        local iy = 0
+        bb:paintBorder(target.dimen.x+ix, target.dimen.y+iy, d_w, d_h, 1)
+        local x_overflow = target.dimen.x+ix+d_w - x - self.dimen.w
+        if x_overflow > 0 then
+            -- Set alternate dimen to be marked as dirty to include this description in refresh
+            self.refresh_dimen = self[1].dimen:copy()
+            self.refresh_dimen.w = self.refresh_dimen.w + x_overflow
+        end
+
     end
 end
 

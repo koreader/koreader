@@ -2,6 +2,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
+local BookInfoManager = require("bookinfomanager")
 
 --[[
     This plugin provides additional display modes to file browsers (File Manager
@@ -24,7 +25,7 @@ local _FileManagerHistory_updateItemTable_orig = FileManagerHistory.updateItemTa
 
 -- Available display modes
 local DISPLAY_MODES = {
-    -- nil                      -- classic : filename only
+    -- nil or ""                -- classic : filename only
     mosaic_image        = true, -- 3x3 grid covers with images
     mosaic_text         = true, -- 3x3 grid covers text only
     list_image_meta     = true, -- image with metadata (title/authors)
@@ -42,10 +43,10 @@ function CoverBrowser:init()
         return
     end
 
-    self.filemanager_display_mode = G_reader_settings:readSetting("filemanager_display_mode")
+    self.filemanager_display_mode = BookInfoManager:getSetting("filemanager_display_mode")
     self:setupFileManagerDisplayMode()
 
-    self.history_display_mode = G_reader_settings:readSetting("history_display_mode")
+    self.history_display_mode = BookInfoManager:getSetting("history_display_mode")
     self:setupHistoryDisplayMode()
 
     self.ui.menu:registerToMainMenu(self)
@@ -69,7 +70,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                     text = _("Classic (filename only)"),
                     checked_func = function() return not self.filemanager_display_mode end,
                     callback = function()
-                       self:setupFileManagerDisplayMode("classic")
+                       self:setupFileManagerDisplayMode("")
                     end,
                 },
                 {
@@ -118,7 +119,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                             text = _("Classic (filename only)"),
                             checked_func = function() return not self.history_display_mode end,
                             callback = function()
-                               self:setupHistoryDisplayMode("classic")
+                               self:setupHistoryDisplayMode("")
                             end,
                         },
                         {
@@ -159,12 +160,65 @@ function CoverBrowser:addToMainMenu(menu_items)
                         },
                     },
                 },
+                -- Misc settings
+                {
+                    text = _("Other settings"),
+                    sub_item_table = {
+                        {
+                            text = _("Show hint for books with description"),
+                            checked_func = function() return not BookInfoManager:getSetting("no_hint_description") end,
+                            callback = function()
+                                if BookInfoManager:getSetting("no_hint_description") then
+                                    BookInfoManager:saveSetting("no_hint_description", false)
+                                else
+                                    BookInfoManager:saveSetting("no_hint_description", true)
+                                end
+                                self:refreshFileManagerInstance()
+                            end,
+                        },
+                        {
+                            text = _("Show hint for opened books in History"),
+                            checked_func = function() return BookInfoManager:getSetting("history_hint_opened") end,
+                            callback = function()
+                                if BookInfoManager:getSetting("history_hint_opened") then
+                                    BookInfoManager:saveSetting("history_hint_opened", false)
+                                else
+                                    BookInfoManager:saveSetting("history_hint_opened", true)
+                                end
+                                self:refreshFileManagerInstance()
+                            end,
+                        },
+                        {
+                            text = _("Append Series metadata to Authors"),
+                            checked_func = function() return BookInfoManager:getSetting("append_series_to_authors") end,
+                            callback = function()
+                                if BookInfoManager:getSetting("append_series_to_authors") then
+                                    BookInfoManager:saveSetting("append_series_to_authors", false)
+                                else
+                                    BookInfoManager:saveSetting("append_series_to_authors", true)
+                                end
+                                self:refreshFileManagerInstance()
+                            end,
+                        },
+                        {
+                            text = _("Append Series metadata to Title"),
+                            checked_func = function() return BookInfoManager:getSetting("append_series_to_title") end,
+                            callback = function()
+                                if BookInfoManager:getSetting("append_series_to_title") then
+                                    BookInfoManager:saveSetting("append_series_to_title", false)
+                                else
+                                    BookInfoManager:saveSetting("append_series_to_title", true)
+                                end
+                                self:refreshFileManagerInstance()
+                            end,
+                        },
+                    },
+                },
                 {
                     text = _("Book info cache management"),
                     sub_item_table = {
                         {
                             text_func = function() -- add current db size to menu text
-                                local BookInfoManager = require("bookinfomanager")
                                 local sstr = BookInfoManager:getDbSize()
                                 return _("Current cache size: ") .. sstr
                             end,
@@ -184,7 +238,6 @@ function CoverBrowser:addToMainMenu(menu_items)
                                         local msg = InfoMessage:new{ text = _("Pruning cache of removed books…") }
                                         UIManager:show(msg)
                                         UIManager:nextTick(function()
-                                            local BookInfoManager = require("bookinfomanager")
                                             local summary = BookInfoManager:removeNonExistantEntries()
                                             UIManager:close(msg)
                                             UIManager:show( InfoMessage:new{ text = summary } )
@@ -206,7 +259,6 @@ function CoverBrowser:addToMainMenu(menu_items)
                                         local msg = InfoMessage:new{ text = _("Compacting cache database…") }
                                         UIManager:show(msg)
                                         UIManager:nextTick(function()
-                                            local BookInfoManager = require("bookinfomanager")
                                             local summary = BookInfoManager:compactDb()
                                             UIManager:close(msg)
                                             UIManager:show( InfoMessage:new{ text = summary } )
@@ -221,10 +273,9 @@ function CoverBrowser:addToMainMenu(menu_items)
                                 local ConfirmBox = require("ui/widget/confirmbox")
                                 UIManager:close(self.file_dialog)
                                 UIManager:show(ConfirmBox:new{
-                                    text = _("Are you sure that you want to delete cover and metadata cache?\n"),
+                                    text = _("Are you sure that you want to delete cover and metadata cache?\n(This will also reset your display mode settings.)"),
                                     ok_text = _("Purge"),
                                     ok_callback = function()
-                                        local BookInfoManager = require("bookinfomanager")
                                         BookInfoManager:deleteDb()
                                     end
                                 })
@@ -262,7 +313,7 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
         display_mode = nil
     end
     self.filemanager_display_mode = display_mode
-    G_reader_settings:saveSetting("filemanager_display_mode", self.filemanager_display_mode)
+    BookInfoManager:saveSetting("filemanager_display_mode", self.filemanager_display_mode)
     logger.dbg("CoverBrowser: setting FileManager display mode to:", display_mode or "classic")
 
     if not display_mode then -- classic mode
@@ -358,8 +409,7 @@ local function _FileManagerHistory_updateItemTable(self)
             -- no need for do_hint_opened with History
 
         end
-        -- Not really needed for History (?)
-        -- hist_menu._do_hint_opened = true
+        hist_menu._do_hint_opened = BookInfoManager:getSetting("history_hint_opened")
     end
 
     -- We do now the single thing done in FileManagerHistory:updateItemTable():
@@ -374,7 +424,7 @@ function CoverBrowser:setupHistoryDisplayMode(display_mode)
         display_mode = nil
     end
     self.history_display_mode = display_mode
-    G_reader_settings:saveSetting("history_display_mode", self.history_display_mode)
+    BookInfoManager:saveSetting("history_display_mode", self.history_display_mode)
     logger.dbg("CoverBrowser: setting History display mode to:", display_mode or "classic")
 
     -- We only need to replace one FileManagerHistory method

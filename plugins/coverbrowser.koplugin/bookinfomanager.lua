@@ -14,7 +14,7 @@ local T = require("ffi/util").template
 local xutil = require("xutil")
 
 -- Database definition
-local BOOKINFO_DB_VERSION = "1-20170605"
+local BOOKINFO_DB_VERSION = "2-20170701"
 local BOOKINFO_DB_SCHEMA = [[
     -- For caching book cover and metadata
     CREATE TABLE IF NOT EXISTS bookinfo (
@@ -47,6 +47,8 @@ local BOOKINFO_DB_SCHEMA = [[
         authors             TEXT,
         series              TEXT,
         language            TEXT,
+        keywords            TEXT,
+        description         TEXT,
 
         -- Cover image
         cover_w             INTEGER,  -- blitbuffer width
@@ -79,11 +81,13 @@ local BOOKINFO_COLS_SET = {
         "cover_sizetag",
         "ignore_meta",
         "ignore_cover",
+        "pages",
         "title",
         "authors",
         "series",
         "language",
-        "pages",
+        "keywords",
+        "description",
         "cover_w",
         "cover_h",
         "cover_btype",
@@ -121,6 +125,7 @@ function BookInfoManager:init()
     -- 300 seconds should be enough to open and get info from 9-10 books
 end
 
+-- DB management
 function BookInfoManager:getDbSize()
     local file_size = lfs.attributes(self.db_location, "size") or 0
     local sstr
@@ -183,6 +188,74 @@ function BookInfoManager:deleteDb()
     self.db_created = false
 end
 
+function BookInfoManager:compactDb()
+    -- Reduce db size (note: "when VACUUMing a database, as much as twice the
+    -- size of the original database file is required in free disk space")
+    -- By default, sqlite will use a temporary file in /tmp/ . On Kobo, /tmp/
+    -- is 16 Mb, and this will crash if DB is > 16Mb. For now, it's safer to
+    -- use memory for temp files (which will also cause a crash when DB size
+    -- is bigger than available memory...)
+    local prev_size = self:getDbSize()
+    self:openDbConnection()
+    self.db_conn:exec("PRAGMA temp_store = 2") -- use memory for temp files
+    -- self.db_conn:exec("VACUUM")
+    -- Catch possible "memory or disk is full" error
+    local ok, errmsg = pcall(self.db_conn.exec, self.db_conn, "VACUUM") -- this may take some time
+    self:closeDbConnection()
+    if not ok then
+        return T(_("Failed compacting database: %1"), errmsg)
+    end
+    local cur_size = self:getDbSize()
+    return T(_("Cache database size reduced from %1 to %2."), prev_size, cur_size)
+end
+
+-- Settings management, stored in 'config' table
+function BookInfoManager:loadSettings()
+    if lfs.attributes(self.db_location, "mode") ~= "file" then
+        -- no db, empty config
+        self.settings = {}
+        return
+    end
+    self.settings = {}
+    self:openDbConnection()
+    local res = self.db_conn:exec("SELECT key, value FROM config")
+    local keys = res[1]
+    local values = res[2]
+    for i, key in ipairs(keys) do
+        self.settings[key] = values[i]
+    end
+end
+
+function BookInfoManager:getSetting(key)
+    if not self.settings then
+        self:loadSettings()
+    end
+    return self.settings[key]
+end
+
+function BookInfoManager:saveSetting(key, value)
+    if not value or value == false or value == "" then
+        if lfs.attributes(self.db_location, "mode") ~= "file" then
+            -- If no db created, no need to save (and create db) an empty value
+            return
+        end
+    end
+    self:openDbConnection()
+    local query = "INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)"
+    local stmt = self.db_conn:prepare(query)
+    if value == false then -- convert false to NULL
+        value = nil
+    elseif value == true then -- convert true to "Y"
+        value = "Y"
+    end
+    stmt:bind(key, value)
+    stmt:step() -- commited
+    stmt:clearbind():reset() -- cleanup
+    -- Reload settings, so we may get (or not if it failed) what we just saved
+    self:loadSettings()
+end
+
+-- Bookinfo management
 function BookInfoManager:getBookInfo(filepath, get_cover)
     local directory, filename = splitFilePathName(filepath)
     self:openDbConnection()
@@ -217,7 +290,6 @@ function BookInfoManager:getBookInfo(filepath, get_cover)
                 bookinfo["cover_bb"] = Blitbuffer.fromstring(row[num], row[num+1], row[num+2], cover_data, row[num+3])
                 -- release memory used by uncompressed data:
                 cover_data = nil -- luacheck: no unused
-                bookinfo["cover_bb"]:setAllocated(1) -- XXX bump base and remove (fixed in ffi/blitbuffer.lua fromstring())
             end
             break
         end
@@ -310,6 +382,8 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
             if props.authors and props.authors ~= "" then dbrow.authors = props.authors end
             if props.series and props.series ~= "" then dbrow.series = props.series end
             if props.language and props.language ~= "" then dbrow.language = props.language end
+            if props.keywords and props.keywords ~= "" then dbrow.keywords = props.keywords end
+            if props.description and props.description ~= "" then dbrow.description = props.description end
         end
         if cover_specs then
             local spec_sizetag = cover_specs.sizetag
@@ -412,27 +486,7 @@ function BookInfoManager:removeNonExistantEntries()
     return T(_("Removed %1 / %2 entries from cache."), #bcids_to_remove, #bcids)
 end
 
-function BookInfoManager:compactDb()
-    -- Reduce db size (note: "when VACUUMing a database, as much as twice the
-    -- size of the original database file is required in free disk space")
-    -- By default, sqlite will use a temporary file in /tmp/ . On Kobo, /tmp/
-    -- is 16 Mb, and this will crash if DB is > 16Mb. For now, it's safer to
-    -- use memory for temp files (which will also cause a crash when DB size
-    -- is bigger than available memory...)
-    local prev_size = self:getDbSize()
-    self:openDbConnection()
-    self.db_conn:exec("PRAGMA temp_store = 2") -- use memory for temp files
-    -- self.db_conn:exec("VACUUM")
-    -- Catch possible "memory or disk is full" error
-    local ok, errmsg = pcall(self.db_conn.exec, self.db_conn, "VACUUM") -- this may take some time
-    self:closeDbConnection()
-    if not ok then
-        return T(_("Failed compacting database: %1"), errmsg)
-    end
-    local cur_size = self:getDbSize()
-    return T(_("Cache database size reduced from %1 to %2."), prev_size, cur_size)
-end
-
+-- Background extraction management
 function BookInfoManager:collectSubprocesses()
     -- We need to regularly watch if a sub-process has terminated by
     -- calling waitpid() so this process does not become a zombie hanging

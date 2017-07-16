@@ -101,6 +101,7 @@ local ListMenuItem = InputContainer:new{
     init_done = false,
     bookinfo_found = false,
     cover_specs = nil,
+    has_description = false,
 }
 
 function ListMenuItem:init()
@@ -280,6 +281,10 @@ function ListMenuItem:update()
             if bookinfo.cover_bb and not cover_bb_used then
                 bookinfo.cover_bb:free()
             end
+            -- So we can draw an indicator if this book has a description
+            if bookinfo.description then
+                self.has_description = true
+            end
 
             -- Gather some info, mostly for right widget:
             --   file size (self.mandatory) (not available with History)
@@ -298,7 +303,10 @@ function ListMenuItem:update()
             if DocSettings:hasSidecarFile(self.filepath) then
                 self.been_opened = true
                 local docinfo = DocSettings:open(self.filepath)
-                if docinfo.data.stats and docinfo.data.stats.pages then
+                -- We can get nb of page in the new 'doc_pages' setting, or from the old 'stats.page'
+                if docinfo.data.doc_pages then
+                    pages = docinfo.data.doc_pages
+                elseif docinfo.data.stats and docinfo.data.stats.pages then
                     if docinfo.data.stats.pages ~= 0 then -- crengine with statistics disabled stores 0
                         pages = docinfo.data.stats.pages
                     end
@@ -371,6 +379,23 @@ function ListMenuItem:update()
             else
                 title = bookinfo.title and bookinfo.title or filename_without_suffix
                 authors = bookinfo.authors
+            end
+            -- add Series metadata if requested
+            if bookinfo.series then
+                if BookInfoManager:getSetting("append_series_to_title") then
+                    if title then
+                        title = title .. " - " .. bookinfo.series
+                    else
+                        title = bookinfo.series
+                    end
+                end
+                if BookInfoManager:getSetting("append_series_to_authors") then
+                    if authors then
+                        authors = authors .. " - " .. bookinfo.series
+                    else
+                        authors = bookinfo.series
+                    end
+                end
             end
             if bookinfo.unsupported then
                 -- Let's show this fact in place of the anyway empty authors slot
@@ -539,6 +564,21 @@ function ListMenuItem:paintTo(bb, x, y)
         local ix = self.width - corner_mark:getSize().w
         local iy = self.height - corner_mark:getSize().h
         corner_mark:paintTo(bb, x+ix, y+iy)
+    end
+
+    -- to which we paint a small indicator if this book has a description
+    if self.has_description and not BookInfoManager:getSetting("no_hint_description") then
+        local target =  self[1][1][2]
+        local d_w = Screen:scaleBySize(3)
+        local d_h = math.ceil(target.dimen.h / 4)
+        if self.do_cover_image and target[1][1][1] then
+            -- it has an image, align it on image's framecontainer's right border
+            target = target[1][1]
+            bb:paintBorder(target.dimen.x + target.dimen.w - 1, target.dimen.y, d_w, d_h, 1)
+        else
+            -- no image, align it to the left border
+            bb:paintBorder(x, y, d_w, d_h, 1)
+        end
     end
 end
 
