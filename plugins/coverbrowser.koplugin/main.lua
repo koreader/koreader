@@ -177,7 +177,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                             end,
                         },
                         {
-                            text = _("Show hint for opened books in History"),
+                            text = _("Show hint for opened books in history"),
                             checked_func = function() return BookInfoManager:getSetting("history_hint_opened") end,
                             callback = function()
                                 if BookInfoManager:getSetting("history_hint_opened") then
@@ -189,7 +189,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                             end,
                         },
                         {
-                            text = _("Append Series metadata to Authors"),
+                            text = _("Append series metadata to authors"),
                             checked_func = function() return BookInfoManager:getSetting("append_series_to_authors") end,
                             callback = function()
                                 if BookInfoManager:getSetting("append_series_to_authors") then
@@ -201,7 +201,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                             end,
                         },
                         {
-                            text = _("Append Series metadata to Title"),
+                            text = _("Append series metadata to title"),
                             checked_func = function() return BookInfoManager:getSetting("append_series_to_title") end,
                             callback = function()
                                 if BookInfoManager:getSetting("append_series_to_title") then
