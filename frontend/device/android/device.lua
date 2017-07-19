@@ -58,4 +58,17 @@ function Device:setFullscreen(fullscreen)
     return android.setFullscreen(fullscreen)
 end
 
+function Device:getStatusBarHeight()
+    return android.getStatusBarHeight()
+end
+
+function Device:getScreenWidth()
+    return android.getScreenWidth()
+end
+
+function Device:getScreenHeight()
+    return android.getScreenHeight()
+end
+
+
 return Device
