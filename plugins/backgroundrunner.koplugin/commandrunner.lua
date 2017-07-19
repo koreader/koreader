@@ -5,6 +5,31 @@ local CommandRunner = {
     job = nil,
 }
 
+function CommandRunner:createEnvironmentFromTable(t)
+    if t == nil then rturn "" end
+
+    local r = ""
+    for k, v in pairs(t) do
+        r = r .. k .. "=" .. v .. " "
+    end
+
+    if string.len(r) > 0 then r = "export " .. r .. ";" end
+    return r
+end
+
+function CommandRunner:createEnvironment()
+    if type(self.job.environment) == "table" then
+        return self:createEnvironmentFromTable(self.job.environment)
+    end
+    if type(self.job.environment) == "function" then
+        local status, result = pcall(self.job.environment)
+        if status then
+            return self:createEnvironmentFromTable(result)
+        end
+    end
+    return ""
+end
+
 function CommandRunner:start(job)
     assert(self ~= nil)
     assert(self.pio == nil)
@@ -12,8 +37,11 @@ function CommandRunner:start(job)
     self.job = job
     self.job.start_sec = os.time()
     assert(type(self.job.executable) == "string")
-    self.pio = io.popen("sh plugins/backgroundrunner.koplugin/luawrapper.sh " ..
-                        "\"" .. self.job.executable .. "\"")
+    local command = self:createEnvironment() .. " " ..
+                    "sh plugins/backgroundrunner.koplugin/luawrapper.sh " ..
+                    "\"" .. self.job.executable .. "\""
+    logger.dbg("CommandRunner: Will execute command " .. command)
+    self.pio = io.popen(command)
 end
 
 --- Polls the status of self.pio.

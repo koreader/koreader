@@ -14,6 +14,7 @@ local logger = require("logger")
 --           "idle"        - the job will be started when the device is idle.
 --   function: if the return value of the function is true, the job will be
 --             executed immediately.
+--
 -- repeated: boolean or function or nil or number
 --   boolean: true to repeated the job once it finished.
 --   function: if the return value of the function is true, repeated the job
@@ -21,6 +22,7 @@ local logger = require("logger")
 --             return false.
 --   nil: same as false.
 --   number: times to repeat.
+--
 -- executable: string or function
 --   string: the command line to be executed. The command or binary will be
 --           executed in the lowest priority. Command or binary will be killed
@@ -30,6 +32,12 @@ local logger = require("logger")
 --             second.
 --   If the executable times out, the job will be blocked, i.e. the repeated
 --   field will be ignored.
+--
+-- environment: table or function or nil
+--   table: the key-value pairs of all environments set for string executable.
+--   function: the function to return a table of environments.
+--   nil: ignore.
+--
 -- callback: function or nil
 --   function: the action to be executed when executable has been finished.
 --             Errors thrown from this function will be ignored.
@@ -71,6 +79,7 @@ function BackgroundRunner:_clone(job)
     result.repeated = job.repeated
     result.executable = job.executable
     result.callback = job.callback
+    result.environment = job.environment
     return result
 end
 
@@ -95,8 +104,9 @@ end
 
 function BackgroundRunner:_finishJob(job)
     assert(self ~= nil)
-    local timeout_sec = type(job.executable) == "string" and 3600 or 1
-    job.timeout = ((job.end_sec - job.start_sec) > timeout_sec)
+    if type(job.executable) == "function" then
+        job.timeout = ((job.end_sec - job.start_sec) > 1)
+    end
     job.blocked = job.timeout
     if not job.blocked and self:_shouldRepeat(job) then
         self:_insert(self:_clone(job))

@@ -7,35 +7,31 @@
 
 echo "TIMEOUT in environment: $TIMEOUT"
 
-if [ -z "$TIMEOUT" ]
-then
-  TIMEOUT=3600
+if [ -z "$TIMEOUT" ]; then
+    TIMEOUT=3600
 fi
 
 echo "Timeout has been set to $TIMEOUT seconds"
 
 echo "Will start command $@"
 
-echo $@ | nice -n 19 sh &
+echo "$@" | nice -n 19 sh &
 JOB_ID=$!
 echo "Job id: $JOB_ID"
 
-for i in $(seq 1 1 $TIMEOUT)
-do
-  ps -p $JOB_ID | grep $JOB_ID > /dev/null 2>&1
-  if [ $? -eq 0 ]
-  then
-    # Job is still running.
-    sleep 1
-    ROUND=$(echo -n $i | tail -c 1)
-    if [ "$ROUND" -eq "0" ]
-    then
-      echo "Job $JOB_ID is still running ... waited for $i seconds."
+for i in $(seq 1 1 $TIMEOUT); do
+    ps -p $JOB_ID | grep $JOB_ID > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        # Job is still running.
+        sleep 1
+        ROUND=$(printf "$i" | tail -c 1)
+        if [ "$ROUND" -eq "0" ]; then
+            echo "Job $JOB_ID is still running ... waited for $i seconds."
+        fi
+    else
+        wait $JOB_ID
+        exit $?
     fi
-  else
-    wait $JOB_ID
-    exit $?
-  fi
 done
 
 echo "Command $@ has timed out"

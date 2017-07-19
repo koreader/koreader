@@ -120,18 +120,122 @@ describe("BackgroundRunner widget tests", function()
         }
         table.insert(PluginShare.backgroundJobs, job)
 
-        MockTime:increase(2)
-        UIManager:handleInput()
         while job.end_sec == nil do
             MockTime:increase(2)
             UIManager:handleInput()
         end
 
-        -- grep should return 1 when there is not matching.
+        -- grep should return 1 when there is no match.
         assert.are.equal(1, job.result)
         assert.is_false(job.timeout)
         assert.is_false(job.bad_command)
         assert.is_true(executed)
+    end)
+
+    it("should forward string environment to the executable", function()
+        local job = {
+            when = 1,
+            repeated = false,
+            executable = "echo $ENV1 | grep $ENV2",
+            environment = {
+                ENV1 = "yes",
+                ENV2 = "yes",
+            }
+        }
+        table.insert(PluginShare.backgroundJobs, job)
+
+        while job.end_sec == nil do
+            MockTime:increase(2)
+            UIManager:handleInput()
+        end
+
+        -- grep should return 0 when there is a match.
+        assert.are.equal(0, job.result)
+        assert.is_false(job.timeout)
+        assert.is_false(job.bad_command)
+
+        job.environment = {
+            ENV1 = "yes",
+            ENV2 = "no",
+        }
+        job.end_sec = nil
+        table.insert(PluginShare.backgroundJobs, job)
+
+        while job.end_sec == nil do
+            MockTime:increase(2)
+            UIManager:handleInput()
+        end
+
+        -- grep should return 1 when there is no match.
+        assert.are.equal(1, job.result)
+        assert.is_false(job.timeout)
+        assert.is_false(job.bad_command)
+
+        assert.are.not_equal(os.getenv("ENV1"), "yes")
+        assert.are.not_equal(os.getenv("ENV2"), "yes")
+        assert.are.not_equal(os.getenv("ENV2"), "no")
+    end)
+
+    it("should forward function environment to the executable", function()
+        local env2 = "yes"
+        local job = {
+            when = 1,
+            repeated = false,
+            executable = "echo $ENV1 | grep $ENV2",
+            environment = function()
+                return {
+                    ENV1 = "yes",
+                    ENV2 = env2,
+                }
+            end,
+        }
+        table.insert(PluginShare.backgroundJobs, job)
+
+        while job.end_sec == nil do
+            MockTime:increase(2)
+            UIManager:handleInput()
+        end
+
+        -- grep should return 0 when there is a match.
+        assert.are.equal(0, job.result)
+        assert.is_false(job.timeout)
+        assert.is_false(job.bad_command)
+
+        job.end_sec = nil
+        env2 = "no"
+        table.insert(PluginShare.backgroundJobs, job)
+
+        while job.end_sec == nil do
+            MockTime:increase(2)
+            UIManager:handleInput()
+        end
+
+        -- grep should return 1 when there is no match.
+        assert.are.equal(1, job.result)
+        assert.is_false(job.timeout)
+        assert.is_false(job.bad_command)
+    end)
+
+    it("should block long binary job", function()
+        local executed = 0
+        local job = {
+            when = 1,
+            repeated = true,
+            executable = "sleep 1h",
+            environment = {
+                TIMEOUT = 1
+            }
+        }
+        table.insert(PluginShare.backgroundJobs, job)
+
+        while job.end_sec == nil do
+            MockTime:increase(2)
+            UIManager:handleInput()
+        end
+
+        assert.are.equal(255, job.result)
+        assert.is_true(job.timeout)
+        assert.is_true(job.blocked)
     end)
 
     it("should execute callback", function()
