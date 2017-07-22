@@ -20,7 +20,7 @@ JOB_ID=$!
 echo "Job id: $JOB_ID"
 
 for i in $(seq 1 1 $TIMEOUT); do
-    ps -p $JOB_ID | grep $JOB_ID > /dev/null 2>&1
+    ps -p $JOB_ID | grep $JOB_ID >/dev/null 2>&1
     if [ $? -eq 0 ]; then
         # Job is still running.
         sleep 1
