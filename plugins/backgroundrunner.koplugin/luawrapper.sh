@@ -7,7 +7,7 @@ sh "$CURRENT_DIR/wrapper.sh" "$@" >/dev/null 2>&1 &
 JOB_ID=$!
 
 while true; do
-    ps -p $JOB_ID | grep $JOB_ID > /dev/null 2>&1
+    ps -p $JOB_ID | grep $JOB_ID >/dev/null 2>&1
     if [ $? -eq 0 ]; then
         # Unblock f:read().
         echo
@@ -27,10 +27,10 @@ while true; do
         fi
 
         echo return { \
-                        result = $EXIT_CODE, \
-                        timeout = $TIMEOUT, \
-                        bad_command = $BADCOMMAND, \
-                 }
+            result = $EXIT_CODE, \
+            timeout = $TIMEOUT, \
+            bad_command = $BADCOMMAND, \
+            }
         exit 0
     fi
 done
