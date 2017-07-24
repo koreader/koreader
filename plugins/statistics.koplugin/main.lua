@@ -1104,9 +1104,12 @@ function ReaderStatistics:onAddNote()
     self.data.notes = self.data.notes + 1
 end
 
--- in case when screensaver starts
 function ReaderStatistics:onSaveSettings()
     self:saveSettings()
+end
+
+-- in case when screensaver starts
+function ReaderStatistics:onSuspend()
     if not self:isDocless() then
         self.ui.doc_settings:saveSetting("stats", self.data)
         self:insertDB(self.id_curr_book)
