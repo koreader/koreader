@@ -12,8 +12,8 @@ SHELLSCRIPT_ERROR=0
 for shellscript in "${shellscript_locations[@]}"; do
     # These two scripts are running on the device, so they should use pure sh
     # syntax. shellcheck raises false positive warnings.
-    if [ ${shellscript} != "plugins/backgroundrunner.koplugin/luawrapper.sh" ] \
-        && [ ${shellscript} != "plugins/backgroundrunner.koplugin/wrapper.sh" ]; then
+    if [ "${shellscript}" != "plugins/backgroundrunner.koplugin/luawrapper.sh" ] \
+        && [ "${shellscript}" != "plugins/backgroundrunner.koplugin/wrapper.sh" ]; then
         echo -e "${ANSI_GREEN}Running shellcheck on ${shellscript}"
         shellcheck "${shellscript}" || SHELLSCRIPT_ERROR=1
     fi
