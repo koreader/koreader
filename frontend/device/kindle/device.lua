@@ -37,8 +37,8 @@ Test if a kindle device has Special Offers
 --]]
 local function isSpecialOffers()
     -- Look at the current blanket modules to see if the SO screensavers are enabled...
-    local lipc = require("liblipclua")
-    if not lipc then
+    local haslipc, lipc = pcall(require, "liblipclua")
+    if not (haslipc and lipc) then
         logger.warn("could not load liblibclua")
         return true
     end
