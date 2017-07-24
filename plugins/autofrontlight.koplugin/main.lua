@@ -43,7 +43,7 @@ function AutoFrontlight:_schedule(settings_id)
 
     table.insert(PluginShare.backgroundJobs, {
         when = 2,
-        repeated = enabled,  
+        repeated = enabled,
         executable = function()
             if enabled() then
                 self:_action()

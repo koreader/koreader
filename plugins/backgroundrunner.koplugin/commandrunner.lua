@@ -6,7 +6,7 @@ local CommandRunner = {
 }
 
 function CommandRunner:createEnvironmentFromTable(t)
-    if t == nil then rturn "" end
+    if t == nil then return "" end
 
     local r = ""
     for k, v in pairs(t) do
