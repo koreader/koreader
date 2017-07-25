@@ -10,13 +10,8 @@ mapfile -t shellscript_locations < <({ git grep -lE '^#!(/usr)?/bin/(env )?(bash
 SHELLSCRIPT_ERROR=0
 
 for shellscript in "${shellscript_locations[@]}"; do
-    # These two scripts are running on the device, so they should use pure sh
-    # syntax. shellcheck raises false positive warnings.
-    if [ "${shellscript}" != "plugins/backgroundrunner.koplugin/luawrapper.sh" ] \
-        && [ "${shellscript}" != "plugins/backgroundrunner.koplugin/wrapper.sh" ]; then
-        echo -e "${ANSI_GREEN}Running shellcheck on ${shellscript}"
-        shellcheck "${shellscript}" || SHELLSCRIPT_ERROR=1
-    fi
+    echo -e "${ANSI_GREEN}Running shellcheck on ${shellscript}"
+    shellcheck "${shellscript}" || SHELLSCRIPT_ERROR=1
     echo -e "${ANSI_GREEN}Running shfmt on ${shellscript}"
     if ! shfmt -i 4 "${shellscript}" >/dev/null 2>&1; then
         echo -e "${ANSI_RED}Warning: ${shellscript} contains the following problem:"
