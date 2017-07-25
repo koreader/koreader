@@ -1,26 +1,26 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
-local FrameContainer = require("ui/widget/container/framecontainer")
-local CenterContainer = require("ui/widget/container/centercontainer")
-local LeftContainer = require("ui/widget/container/leftcontainer")
-local HorizontalGroup = require("ui/widget/horizontalgroup")
-local OverlapGroup = require("ui/widget/overlapgroup")
-local VerticalGroup = require("ui/widget/verticalgroup")
-local HorizontalSpan = require("ui/widget/horizontalspan")
-local VerticalSpan = require("ui/widget/verticalspan")
-local LineWidget = require("ui/widget/linewidget")
-local TextWidget = require("ui/widget/textwidget")
-local ScrollTextWidget = require("ui/widget/scrolltextwidget")
-local ImageWidget = require("ui/widget/imagewidget")
-local TextBoxWidget = require("ui/widget/textboxwidget")
-local CloseButton = require("ui/widget/closebutton")
-local UIManager = require("ui/uimanager")
-local Geom = require("ui/geometry")
 local Blitbuffer = require("ffi/blitbuffer")
-local Screen = require("device").screen
+local CenterContainer = require("ui/widget/container/centercontainer")
+local CloseButton = require("ui/widget/closebutton")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local Geom = require("ui/geometry")
 local Font = require("ui/font")
-local _ = require("gettext")
-local T = require("ffi/util").template
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local HorizontalSpan = require("ui/widget/horizontalspan")
+local ImageWidget = require("ui/widget/imagewidget")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local LeftContainer = require("ui/widget/container/leftcontainer")
+local LineWidget = require("ui/widget/linewidget")
+local OverlapGroup = require("ui/widget/overlapgroup")
 local Pic = require("ffi/pic")
+local TextWidget = require("ui/widget/textwidget")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local VerticalSpan = require("ui/widget/verticalspan")
+local Screen = require("device").screen
+local ScrollTextWidget = require("ui/widget/scrolltextwidget")
+local TextBoxWidget = require("ui/widget/textboxwidget")
+local UIManager = require("ui/uimanager")
+local T = require("ffi/util").template
+local _ = require("gettext")
 
 local GoodreadsBook = InputContainer:new{
     padding = Screen:scaleBySize(15),
@@ -237,6 +237,7 @@ function GoodreadsBook:bookReview()
             width = self.screen_width * 0.9,
             height = self.screen_height * 0.48,
             dialog = self,
+            justified = true,
         }
     }
     return CenterContainer:new{
