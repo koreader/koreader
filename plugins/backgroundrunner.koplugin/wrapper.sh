@@ -33,7 +33,7 @@ for i in $(seq 1 1 $TIMEOUT); do
     fi
 done
 
-echo "Command $@ has timed out"
+echo "Command $* has timed out"
 
 kill -9 $JOB_ID
 exit 255
