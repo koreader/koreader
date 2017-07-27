@@ -422,7 +422,7 @@ function ReaderHighlight:getHighlightBookmarkItem()
 end
 
 function ReaderHighlight:saveHighlight()
-    self:handleEvent(Event:new("AddHighlight"))
+    self.ui:handleEvent(Event:new("AddHighlight"))
     logger.dbg("save highlight")
     local page = self.hold_pos.page
     if self.hold_pos and self.selected_text and self.selected_text.pos0
@@ -519,6 +519,7 @@ function ReaderHighlight:moreAction()
 end
 
 function ReaderHighlight:deleteHighlight(page, i)
+    self.ui:handleEvent(Event:new("DelHighlight"))
     logger.dbg("delete highlight")
     local removed = table.remove(self.view.highlight.saved[page], i)
     self.ui.bookmark:removeBookmark({
