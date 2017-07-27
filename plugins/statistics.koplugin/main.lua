@@ -1105,7 +1105,7 @@ function ReaderStatistics:onAddHighlight()
 end
 
 function ReaderStatistics:onDelHighlight()
-    if self.data.highlight > 0 then
+    if self.data.highlights > 0 then
         self.data.highlights = self.data.highlights - 1
     end
     return true
