@@ -457,11 +457,13 @@ function ReaderStatistics:insertDB(id_book)
                notes = ?,
                highlights = ?,
                total_read_time = ?,
-               total_read_pages = ?
+               total_read_pages = ?,
+               pages = ?
         WHERE  id = ?
     ]]
     stmt = conn:prepare(sql_stmt)
-    stmt:reset():bind(TimeVal:now().sec, self.data.notes, self.data.highlights, total_read_time, total_read_pages, id_book):step()
+    stmt:reset():bind(TimeVal:now().sec, self.data.notes, self.data.highlights, total_read_time, total_read_pages,
+        self.data.pages, id_book):step()
     if total_read_pages then
         self.total_read_pages = tonumber(total_read_pages)
     else
@@ -765,6 +767,7 @@ function ReaderStatistics:getCurrentStat(id_book)
     if total_read_pages == nil then
         total_read_pages = 0
     end
+    self.data.pages = self.view.document:getPageCount()
     total_time_book = tonumber(total_time_book)
     total_read_pages = tonumber(total_read_pages)
     local avg_time_per_page = total_time_book / total_read_pages
@@ -1098,6 +1101,14 @@ end
 
 function ReaderStatistics:onAddHighlight()
     self.data.highlights = self.data.highlights + 1
+    return true
+end
+
+function ReaderStatistics:onDelHighlight()
+    if self.data.highlight > 0 then
+        self.data.highlights = self.data.highlights - 1
+    end
+    return true
 end
 
 function ReaderStatistics:onAddNote()
@@ -1106,6 +1117,10 @@ end
 
 function ReaderStatistics:onSaveSettings()
     self:saveSettings()
+    if not self:isDocless() then
+        self.ui.doc_settings:saveSetting("stats", self.data)
+        self:insertDB(self.id_curr_book)
+    end
 end
 
 -- in case when screensaver starts
