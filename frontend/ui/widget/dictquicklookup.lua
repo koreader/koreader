@@ -329,9 +329,13 @@ function DictQuickLookup:update()
                 },
                 {
                     text = self:getHighlightText(),
-                    enabled = select(2, self:getHighlightText()),
+                    enabled = true,
                     callback = function()
-                        self.ui:handleEvent(Event:new("Highlight"))
+                        if self:getHighlightText() == "Highlight" then
+                            self.ui:handleEvent(Event:new("Highlight"))
+                        else
+                            self.ui:handleEvent(Event:new("Unhighlight"))
+                        end
                         self:update()
                     end,
                 },

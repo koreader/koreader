@@ -1,11 +1,11 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
+local ButtonDialog = require("ui/widget/buttondialog")
+local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
+local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
-local ButtonDialog = require("ui/widget/buttondialog")
 local logger = require("logger")
 local _ = require("gettext")
-local ConfirmBox = require("ui/widget/confirmbox")
 
 local ReaderHighlight = InputContainer:new{}
 
@@ -400,6 +400,34 @@ end
 
 function ReaderHighlight:onHighlight()
     self:saveHighlight()
+end
+
+function ReaderHighlight:onUnhighlight(item)
+    local page
+    local sel_text
+    local sel_pos0
+    local idx
+    if item then
+        local bookmark_text = item.text
+        local words = {}
+        for word in bookmark_text:gmatch("%S+") do table.insert(words, word) end
+        page = tonumber(words[2])
+        sel_text = item.notes
+        sel_pos0 = item.pos0
+    else
+        page = self.hold_pos.page
+        sel_text = self.selected_text.text
+        sel_pos0 = self.selected_text.pos0
+    end
+    for index = 1, #self.view.highlight.saved[page] do
+        if self.view.highlight.saved[page][index].text == sel_text and
+            self.view.highlight.saved[page][index].pos0 == sel_pos0 then
+            idx = index
+            break
+        end
+    end
+    self:deleteHighlight(page, idx)
+    return true
 end
 
 function ReaderHighlight:getHighlightBookmarkItem()
