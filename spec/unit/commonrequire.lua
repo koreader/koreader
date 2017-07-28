@@ -97,3 +97,20 @@ package.unloadAll = function()
     end
     return #pending
 end
+
+local background_runner
+requireBackgroundRunner = function()
+    require("pluginshare").stopBackgroundRunner = nil
+    if background_runner == nil then
+        local package_path = package.path
+        package.path = "plugins/backgroundrunner.koplugin/?.lua;" .. package.path
+        background_runner = dofile("plugins/backgroundrunner.koplugin/main.lua")
+        package.path = package_path
+    end
+    return background_runner
+end
+
+stopBackgroundRunner = function()
+    background_runner = nil
+    require("pluginshare").stopBackgroundRunner = true
+end
