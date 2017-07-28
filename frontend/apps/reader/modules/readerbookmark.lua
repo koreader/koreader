@@ -213,7 +213,7 @@ function ReaderBookmark:onShowBookmark()
                     {
                         text = _("Remove this bookmark"),
                         callback = function()
-                            bookmark:removeBookmark(item)
+                            bookmark:removeHightligit(item)
                             bm_menu:switchItemTable(nil, bookmark.bookmarks, -1)
                             UIManager:close(self.remove_bookmark_dialog)
                         end,
@@ -313,6 +313,14 @@ function ReaderBookmark:isBookmarkAdded(item)
         end
     end
     return false
+end
+
+function ReaderBookmark:removeHightligit(item)
+    if item.pos0 then
+        self.ui:handleEvent(Event:new("Unhighlight", item))
+    else
+        self:removeBookmark(item)
+    end
 end
 
 -- binary search to remove bookmark
