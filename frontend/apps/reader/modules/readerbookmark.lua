@@ -316,7 +316,11 @@ function ReaderBookmark:isBookmarkAdded(item)
 end
 
 function ReaderBookmark:removeHightligit(item)
-    self.ui:handleEvent(Event:new("Unhighlight", item))
+    if item.pos0 then
+        self.ui:handleEvent(Event:new("Unhighlight", item))
+    else
+        self:removeBookmark(item)
+    end
 end
 
 -- binary search to remove bookmark
