@@ -598,6 +598,12 @@ function ReaderStatistics:addToMainMenu(menu_items)
                 callback = function() self:updateSettings() end,
             },
             {
+                text = _("Reset book statistics"),
+                callback = function()
+                    self:resetBook()
+                end
+            },
+            {
                 text = _("Current book"),
                 callback = function()
                     UIManager:show(KeyValuePage:new{
@@ -997,12 +1003,15 @@ function ReaderStatistics:getTotalStats()
         ORDER  BY last_open DESC
     ]]
     local id_book_tbl = conn:exec(sql_stmt)
-    if id_book_tbl == nil then
-        id_book_tbl = 0
+    local nr_books
+    if id_book_tbl ~= nil then
+        nr_books = #id_book_tbl.id
+    else
+        nr_books = 0
     end
 
     local total_time_book
-    for i=1, #id_book_tbl.id do
+    for i=1, nr_books do
         local id_book = tonumber(id_book_tbl[1][i])
         sql_stmt = [[
             SELECT title
@@ -1032,6 +1041,100 @@ function ReaderStatistics:getTotalStats()
     end
     conn:close()
     return T(_("Total hours read %1"), util.secondsToClock(total_books_time, false)), total_stats
+end
+
+function ReaderStatistics:resetBook()
+    local total_stats = {}
+    local kv_reset_book
+
+    self:insertDB(self.id_curr_book)
+    local conn = SQ3.open(db_location)
+    local sql_stmt = [[
+        SELECT id
+        FROM   book
+        ORDER  BY last_open DESC
+    ]]
+    local id_book_tbl = conn:exec(sql_stmt)
+    local nr_books
+    if id_book_tbl ~= nil then
+        nr_books = #id_book_tbl.id
+    else
+        nr_books = 0
+    end
+
+    local total_time_book
+    for i=1, nr_books do
+        local id_book = tonumber(id_book_tbl[1][i])
+        sql_stmt = [[
+            SELECT title
+            FROM   book
+            WHERE  id = '%s'
+        ]]
+        local book_title = conn:rowexec(string.format(sql_stmt, id_book))
+        sql_stmt = [[
+            SELECT sum(period)
+            FROM   page_stat
+            WHERE  id_book = '%s'
+        ]]
+        total_time_book = conn:rowexec(string.format(sql_stmt,id_book))
+        if total_time_book == nil then
+            total_time_book = 0
+        end
+
+        if id_book ~= self.id_curr_book then
+            table.insert(total_stats, {
+                book_title,
+                util.secondsToClock(total_time_book, false),
+                id_book,
+                callback = function()
+                    UIManager:show(ConfirmBox:new{
+                        text = T(_("Do you want to reset statistics for book:\n%1"), book_title),
+                        cancel_text = _("Cancel"),
+                        cancel_callback = function()
+                            return
+                        end,
+                        ok_text = _("Delete"),
+                        ok_callback = function()
+                            for j=1, #total_stats do
+                                if total_stats[j][3] == id_book then
+                                    self:deleteBook(id_book)
+                                    table.remove(total_stats, j)
+                                    break
+                                end
+                            end
+                            --refresh window after delete item
+                            kv_reset_book:_populateItems()
+                        end,
+                    })
+                end,
+            })
+        end
+    end
+    kv_reset_book = KeyValuePage:new{
+        title = _("Reset book statistics"),
+        kv_pairs = total_stats,
+    }
+    UIManager:show(kv_reset_book)
+    conn:close()
+end
+
+function ReaderStatistics:deleteBook(id_book)
+    local conn = SQ3.open(db_location)
+    local sql_stmt = [[
+            DELETE from book
+            WHERE  id = ?
+        ]]
+    local stmt = conn:prepare(sql_stmt)
+    stmt:reset():bind(id_book):step()
+
+    sql_stmt = [[
+            DELETE from page_stat
+            WHERE  id_book = ?
+        ]]
+    stmt = conn:prepare(sql_stmt)
+    stmt:reset():bind(id_book):step()
+    stmt:close()
+    conn:close()
 end
 
 function ReaderStatistics:onPageUpdate(pageno)
