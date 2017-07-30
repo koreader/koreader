@@ -14,7 +14,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local ScrollTextWidget = require("ui/widget/scrolltextwidget")
-local TextWidget = require("ui/widget/textwidget")
+local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -80,11 +80,11 @@ function TextViewer:init()
         }
     end
 
-    local title_text = TextWidget:new{
+    local title_text = TextBoxWidget:new{
         text = self.title,
         face = self.title_face,
         bold = true,
-        width = self.width - 2*self.title_padding - 2*self.title_margin,
+        width = self.width * 0.9,
     }
     local titlew = FrameContainer:new{
         padding = self.title_padding,
