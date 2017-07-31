@@ -27,6 +27,7 @@ local TextViewer = InputContainer:new{
     text = nil,
     width = nil,
     height = nil,
+    buttons_table = nil,
 
     title_face = Font:getFace("x_smalltfont"),
     text_face = Font:getFace("x_smallinfofont"),
@@ -115,16 +116,21 @@ function TextViewer:init()
         }
     }
 
-    local buttons = {
-        {
+    local buttons
+    if self.buttons_table == nil then
+        buttons = {
             {
-                text = _("Close"),
-                callback = function()
-                    UIManager:close(self)
-                end,
+                {
+                    text = _("Close"),
+                    callback = function()
+                        UIManager:close(self)
+                    end,
+                },
             },
-        },
-    }
+        }
+    else
+        buttons = self.buttons_table
+    end
     local button_table = ButtonTable:new{
         width = self.width - self.button_padding,
         button_font_face = "cfont",
