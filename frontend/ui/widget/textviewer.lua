@@ -80,11 +80,12 @@ function TextViewer:init()
         }
     end
 
+    local closeb = CloseButton:new{ window = self, }
     local title_text = TextBoxWidget:new{
         text = self.title,
         face = self.title_face,
         bold = true,
-        width = self.width * 0.9,
+        width = self.width - 2*self.title_padding - 2*self.title_margin - closeb:getSize().w,
     }
     local titlew = FrameContainer:new{
         padding = self.title_padding,
@@ -104,7 +105,7 @@ function TextViewer:init()
             h = titlew:getSize().h
         },
         titlew,
-        CloseButton:new{ window = self, },
+        closeb,
     }
 
     local separator = LineWidget:new{
