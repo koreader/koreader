@@ -10,6 +10,7 @@ local Device = require("device")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
 local Event = require("ui/event")
+local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
 local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
@@ -317,6 +318,12 @@ function ReaderUI:init()
         dialog = self.dialog,
         ui = self,
     })
+    -- book info
+    self:registerModule("bookinfo", FileManagerBookInfo:new{
+        dialog = self.dialog,
+        document = self.document,
+        ui = self,
+    })
     -- koreader plugins
     for _, plugin_module in ipairs(PluginLoader:loadPlugins()) do
         local ok, plugin_or_err = PluginLoader:createPluginInstance(
@@ -341,6 +348,16 @@ function ReaderUI:init()
         v()
     end
     self.postInitCallback = nil
+
+    -- Now that document is loaded, store book metadata in settings
+    -- (so that filemanager can use it from sideCar file to display
+    -- Book information).
+    -- via pcall because picdocument:getProps() may fail
+    local ok, doc_props = pcall(self.document.getProps, self.document)
+    if not ok then
+        doc_props = {}
+    end
+    self.doc_settings:saveSetting("doc_props", doc_props)
 
     -- After initialisation notify that document is loaded and rendered
     -- CREngine only reports correct page count after rendering is done
