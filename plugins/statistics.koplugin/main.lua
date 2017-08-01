@@ -1093,7 +1093,7 @@ function ReaderStatistics:resetBook()
                         cancel_callback = function()
                             return
                         end,
-                        ok_text = _("Delete"),
+                        ok_text = _("Reset"),
                         ok_callback = function()
                             for j=1, #total_stats do
                                 if total_stats[j][3] == id_book then
