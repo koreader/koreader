@@ -314,25 +314,13 @@ function NetworkItem:onAddNetwork()
         input_hint = "password",
         input_type = "text",
         text_type = "password",
+        show_toggle = true,
         buttons = {
             {
                 {
                     text = _("Cancel"),
                     callback = function()
                         UIManager:close(password_input)
-                    end,
-                },
-                {
-                    text = ("Switch visible"),
-                    callback = function()
-                        if password_input.text_type == "text" then
-                            password_input.text_type = "password"
-                            password_input:changeTextType("password")
-
-                        else
-                            password_input.text_type = "text"
-                            password_input:changeTextType("text")
-                        end
                     end,
                 },
                 {

@@ -72,6 +72,7 @@ local InputDialog = InputContainer:new{
     buttons = nil,
     input_type = nil,
     enter_callback = nil,
+    show_toggle = nil,
 
     width = nil,
 
@@ -148,6 +149,23 @@ function InputDialog:init()
         parent = self,
     }
 
+    if self.show_toggle then
+        local button_switch = {
+            {
+                text = ("Switch visible"),
+                callback = function()
+                    if self._input_widget.text_type == "text" then
+                        self._input_widget.text_type = "password"
+                        self:changeTextType("password")
+                    else
+                        self._input_widget.text_type = "text"
+                        self:changeTextType("text")
+                    end
+                end,
+            },
+        }
+        table.insert(self.buttons[1], button_switch[1])
+    end
     self.button_table = ButtonTable:new{
         width = self.width,
         button_font_face = "cfont",
