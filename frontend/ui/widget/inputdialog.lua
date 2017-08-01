@@ -220,6 +220,11 @@ function InputDialog:setInputText(text)
     self._input_widget:setText(text)
 end
 
+function InputDialog:changeTextType(type)
+    self._input_widget.text_type = type
+    self._input_widget:setText(self._input_widget:getText())
+end
+
 function InputDialog:onShow()
     UIManager:setDirty(self, function()
         return "ui", self.dialog_frame.dimen

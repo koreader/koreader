@@ -323,6 +323,19 @@ function NetworkItem:onAddNetwork()
                     end,
                 },
                 {
+                    text = ("Switch visible"),
+                    callback = function()
+                        if password_input.text_type == "text" then
+                            password_input.text_type = "password"
+                            password_input:changeTextType("password")
+
+                        else
+                            password_input.text_type = "text"
+                            password_input:changeTextType("text")
+                        end
+                    end,
+                },
+                {
                     text = _("Connect"),
                     is_enter_default = true,
                     callback = function()
