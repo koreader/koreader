@@ -20,6 +20,8 @@ Example:
 ]]
 
 local Blitbuffer = require("ffi/blitbuffer")
+local BottomContainer = require("ui/widget/container/bottomcontainer")
+local Button = require("ui/widget/button")
 local CloseButton = require("ui/widget/closebutton")
 local Device = require("device")
 local Font = require("ui/font")
@@ -27,6 +29,7 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
+local HorizontalSpan = require("ui/widget/horizontalspan")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
@@ -38,6 +41,8 @@ local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local Screen = Device.screen
+local T = require("ffi/util").template
+local _ = require("gettext")
 
 local KeyValueTitle = VerticalGroup:new{
     kv_page = nil,
@@ -247,6 +252,75 @@ function KeyValuePage:init()
         }
     end
 
+    -- group for page info
+    self.page_info_left_chev = Button:new{
+        icon = "resources/icons/appbar.chevron.left.png",
+        callback = function() self:prevPage() end,
+        bordersize = 0,
+        show_parent = self,
+    }
+    self.page_info_right_chev = Button:new{
+        icon = "resources/icons/appbar.chevron.right.png",
+        callback = function() self:nextPage() end,
+        bordersize = 0,
+        show_parent = self,
+    }
+    self.page_info_first_chev = Button:new{
+        icon = "resources/icons/appbar.chevron.first.png",
+        callback = function() self:goToPage(1) end,
+        bordersize = 0,
+        show_parent = self,
+    }
+    self.page_info_last_chev = Button:new{
+        icon = "resources/icons/appbar.chevron.last.png",
+        callback = function() self:goToPage(self.pages) end,
+        bordersize = 0,
+        show_parent = self,
+    }
+    self.page_info_spacer = HorizontalSpan:new{
+        width = Screen:scaleBySize(32),
+    }
+    self.page_info_left_chev:hide()
+    self.page_info_right_chev:hide()
+    self.page_info_first_chev:hide()
+    self.page_info_last_chev:hide()
+
+    self.page_info_text = Button:new{
+        text = "",
+        hold_input = {
+            title = _("Input page number"),
+            type = "number",
+            hint_func = function()
+                return "(" .. "1 - " .. self.pages .. ")"
+            end,
+            callback = function(input)
+                local page = tonumber(input)
+                if page >= 1 and page <= self.pages then
+                    self:goToPage(page)
+                end
+            end,
+        },
+        bordersize = 0,
+        margin = Screen:scaleBySize(20),
+        text_font_face = "cfont",
+        text_font_size = 20,
+        text_font_bold = false,
+    }
+    self.page_info = HorizontalGroup:new{
+        self.page_info_first_chev,
+        self.page_info_spacer,
+        self.page_info_left_chev,
+        self.page_info_text,
+        self.page_info_right_chev,
+        self.page_info_spacer,
+        self.page_info_last_chev,
+    }
+
+    local footer = BottomContainer:new{
+        dimen = self.dimen:copy(),
+        self.page_info,
+    }
+
     local padding = Screen:scaleBySize(10)
     self.item_width = self.dimen.w - 2 * padding
     self.item_height = Screen:scaleBySize(30)
@@ -260,7 +334,7 @@ function KeyValuePage:init()
     -- setup main content
     self.item_margin = self.item_height / 4
     local line_height = self.item_height + 2 * self.item_margin
-    local content_height = self.dimen.h - self.title_bar:getSize().h
+    local content_height = self.dimen.h - self.title_bar:getSize().h - self.page_info:getSize().h
     self.items_per_page = math.floor(content_height / line_height)
     self.pages = math.ceil(#self.kv_pairs / self.items_per_page)
     self.main_content = VerticalGroup:new{}
@@ -270,16 +344,23 @@ function KeyValuePage:init()
     self.textviewer_height = self.dimen.h - 2*self.title_bar:getSize().h
 
     self:_populateItems()
+
+    local content = OverlapGroup:new{
+        dimen = self.dimen:copy(),
+        VerticalGroup:new{
+            align = "left",
+            self.title_bar,
+            self.main_content,
+        },
+        footer,
+    }
     -- assemble page
     self[1] = FrameContainer:new{
         height = self.dimen.h,
         padding = padding,
         bordersize = 0,
         background = Blitbuffer.COLOR_WHITE,
-        VerticalGroup:new{
-            self.title_bar,
-            self.main_content,
-        },
+        content
     }
 end
 
@@ -299,8 +380,14 @@ function KeyValuePage:prevPage()
     end
 end
 
+function KeyValuePage:goToPage(page)
+    self.show_page = page
+    self:_populateItems()
+end
+
 -- make sure self.item_margin and self.item_height are set before calling this
 function KeyValuePage:_populateItems()
+    self.page_info:resetLayout()
     self.main_content:clear()
     local idx_offset = (self.show_page - 1) * self.items_per_page
     for idx = 1, self.items_per_page do
@@ -340,7 +427,17 @@ function KeyValuePage:_populateItems()
         table.insert(self.main_content,
                      VerticalSpan:new{ width = self.item_margin })
     end
-    self.title_bar:setPageCount(self.show_page, self.pages)
+    self.page_info_text:setText(T(_("page %1 of %2"), self.show_page, self.pages))
+    self.page_info_left_chev:showHide(self.pages > 1)
+    self.page_info_right_chev:showHide(self.pages > 1)
+    self.page_info_first_chev:showHide(self.pages > 2)
+    self.page_info_last_chev:showHide(self.pages > 2)
+
+    self.page_info_left_chev:enableDisable(self.show_page > 1)
+    self.page_info_right_chev:enableDisable(self.show_page < self.pages)
+    self.page_info_first_chev:enableDisable(self.show_page > 1)
+    self.page_info_last_chev:enableDisable(self.show_page < self.pages)
+
     UIManager:setDirty(self, function()
         return "ui", self.dimen
     end)
