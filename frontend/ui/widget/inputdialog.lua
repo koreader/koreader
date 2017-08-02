@@ -63,6 +63,7 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
+local _ = require("gettext")
 
 local InputDialog = InputContainer:new{
     title = "",
@@ -155,7 +156,7 @@ function InputDialog:init()
     if self.show_password_toggle and is_password_type then
         local button_switch = {
             {
-                text = "Show password",
+                text = _("Show password"),
                 callback = function()
                     if self._input_widget.text_type == "text" then
                         self._input_widget.text_type = "password"
