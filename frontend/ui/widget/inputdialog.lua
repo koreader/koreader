@@ -72,7 +72,7 @@ local InputDialog = InputContainer:new{
     buttons = nil,
     input_type = nil,
     enter_callback = nil,
-    show_toggle = nil,
+    show_password_toggle = true,
 
     width = nil,
 
@@ -148,19 +148,21 @@ function InputDialog:init()
         scroll = false,
         parent = self,
     }
-
-    if self.show_toggle then
+    local is_password_type = false
+    if self._input_widget.text_type == "password" then
+        is_password_type = true
+    end
+    if self.show_password_toggle and is_password_type then
         local button_switch = {
             {
-                text = ("Switch visible"),
+                text = "Show password",
                 callback = function()
                     if self._input_widget.text_type == "text" then
                         self._input_widget.text_type = "password"
-                        self:changeTextType("password")
                     else
                         self._input_widget.text_type = "text"
-                        self:changeTextType("text")
                     end
+                    self._input_widget:setText(self._input_widget:getText())
                 end,
             },
         }
@@ -236,11 +238,6 @@ end
 
 function InputDialog:setInputText(text)
     self._input_widget:setText(text)
-end
-
-function InputDialog:changeTextType(type)
-    self._input_widget.text_type = type
-    self._input_widget:setText(self._input_widget:getText())
 end
 
 function InputDialog:onShow()

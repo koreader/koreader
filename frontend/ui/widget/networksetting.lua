@@ -314,7 +314,6 @@ function NetworkItem:onAddNetwork()
         input_hint = "password",
         input_type = "text",
         text_type = "password",
-        show_toggle = true,
         buttons = {
             {
                 {
