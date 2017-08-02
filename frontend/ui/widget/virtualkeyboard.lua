@@ -108,7 +108,7 @@ function VirtualKey:onTapSelect()
     if self.callback then
         self.callback()
     end
-    UIManager:scheduleIn(0.2, function() self:invert(false) end)
+    UIManager:scheduleIn(0.1, function() self:invert(false) end)
     return true
 end
 
@@ -118,7 +118,7 @@ function VirtualKey:onHoldSelect()
     if self.hold_callback then
         self.hold_callback()
     end
-    UIManager:scheduleIn(0.2, function() self:invert(false) end)
+    UIManager:scheduleIn(0.1, function() self:invert(false) end)
     return true
 end
 
@@ -174,7 +174,7 @@ end
 function VirtualKeyboard:_refresh()
     -- TODO: Ideally, ui onShow & partial onClose
     UIManager:setDirty(self, function()
-        return "partial", self[1][1].dimen
+        return "ui", self[1][1].dimen
     end)
 end
 
