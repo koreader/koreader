@@ -1,31 +1,34 @@
 describe("ReadHistory module", function()
     local DocSettings
     local DataStorage
+    local joinPath
     local mkdir
     local realpath
-    local joinPath
+    local reload
     local usleep
-    local history_file
 
     local function file(name)
         return joinPath(DataStorage:getDataDir(), name)
     end
 
+    local function test_data_dir()
+        return joinPath(DataStorage:getDataDir(), "testdata")
+    end
+
     local function test_file(name)
-        return joinPath(joinPath(DataStorage:getDataDir(), "testdata"), name)
+        return joinPath(test_data_dir(), name)
     end
 
     local function legacy_history_file(name)
         return DocSettings:getHistoryPath(realpath(test_file(name)))
     end
 
-    local function reload()
-        package.loaded["readhistory"] = nil
-        return require("readhistory")
-    end
-
     local function rm(file)
         os.remove(file)
+    end
+
+    local function mv(source, target)
+        os.rename(source, target)
     end
 
     local function touch(file)
@@ -33,19 +36,25 @@ describe("ReadHistory module", function()
         f:close()
     end
 
-    local function assert_item_is(h, i, name)
+    local function assert_item_is(h, i, name, fileRemoved)
         assert.is.same(h.hist[i].text, name)
         assert.is.same(h.hist[i].index, i)
-        assert.is.same(h.hist[i].file, realpath(test_file(name)))
+        assert.is.same(h.hist[i].file, joinPath(realpath(test_data_dir()), name))
+        if fileRemoved then
+            assert.is_nil(realpath(test_file(name)))
+        else
+            assert.is.same(h.hist[i].file, realpath(test_file(name)))
+        end
     end
 
     setup(function()
         require("commonrequire")
         DocSettings = require("docsettings")
         DataStorage = require("datastorage")
+        joinPath = require("ffi/util").joinPath
         mkdir = require("libs/libkoreader-lfs").mkdir
         realpath = require("ffi/util").realpath
-        joinPath = require("ffi/util").joinPath
+        reload = function() return package.reload("readhistory") end
         usleep = require("ffi/util").usleep
 
         mkdir(joinPath(DataStorage:getDataDir(), "testdata"))
@@ -277,4 +286,84 @@ describe("ReadHistory module", function()
             rm(to_file(i))
         end
     end)
+
+    it("should reload the history file if it updated", function()
+        -- Prepare a history.lua file with two items a and b.
+        rm(file("history.lua"))
+        touch(test_file("a"))
+        touch(test_file("b"))
+        local h = reload()
+        h:addItem(test_file("a"))
+        h:addItem(test_file("b"))
+        mv(file("history.lua"), file("history.backup"))
+
+        h = reload()
+        assert.is.same(#h.hist, 0)
+        mv(file("history.backup"), file("history.lua"))
+        h:reload()
+
+        assert.is.same(#h.hist, 2)
+        assert_item_is(h, 1, "a")
+        assert_item_is(h, 2, "b")
+
+        rm(test_file("a"))
+        rm(test_file("b"))
+    end)
+
+    local function testAutoRemoveDeletedItems()
+        -- Prepare a history.lua file with two items a and b.
+        rm(file("history.lua"))
+        touch(test_file("a"))
+        touch(test_file("b"))
+        local h = reload()
+        h:addItem(test_file("a"))
+        h:addItem(test_file("b"))
+
+        rm(test_file("a"))
+
+        h:reload()
+        assert.is.same(#h.hist, 1)
+        assert_item_is(h, 1, "b")
+
+        rm(test_file("b"))
+    end
+
+    local function testDoNotAutoRemoveDeletedItems()
+        -- Prepare a history.lua file with two items a and b.
+        rm(file("history.lua"))
+        touch(test_file("a"))
+        touch(test_file("b"))
+        local h = reload()
+        h:addItem(test_file("a"))
+        h:addItem(test_file("b"))
+
+        rm(test_file("a"))
+
+        h:reload()
+        assert.is.same(#h.hist, 2)
+        assert_item_is(h, 1, "a", true)
+        assert_item_is(h, 2, "b")
+
+        rm(test_file("b"))
+    end
+
+    it("should automatically remove deleted items from history if setting has been set",
+       function()
+           G_reader_settings:saveSetting("autoremove_deleted_items_from_history", "true")
+           testAutoRemoveDeletedItems()
+           G_reader_settings:delSetting("autoremove_deleted_items_from_history")
+       end)
+
+    it("should not automatically remove deleted items from history if setting has not been set",
+       function()
+           G_reader_settings:delSetting("autoremove_deleted_items_from_history")
+           testDoNotAutoRemoveDeletedItems()
+       end)
+
+    it("should not automatically remove deleted items from history if setting has been set to false",
+       function()
+           G_reader_settings:saveSetting("autoremove_deleted_items_from_history", "false")
+           testDoNotAutoRemoveDeletedItems()
+           G_reader_settings:delSetting("autoremove_deleted_items_from_history")
+       end)
 end)

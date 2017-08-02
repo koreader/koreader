@@ -1,10 +1,8 @@
 local ButtonDialog = require("ui/widget/buttondialog")
 local CenterContainer = require("ui/widget/container/centercontainer")
-local DocSettings = require("docsettings")
+local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local Font = require("ui/font")
-local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local KeyValuePage = require("ui/widget/keyvaluepage")
 local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
 local RenderText = require("ui/rendertext")
@@ -39,48 +37,6 @@ function FileManagerHistory:onSetDimensions(dimen)
     self.dimen = dimen
 end
 
-function FileManagerHistory:buildBookInformationTable(book_props)
-    if book_props == nil then
-        return false
-    end
-
-    if book_props.authors == "" or book_props.authors == nil then
-        book_props.authors = _("N/A")
-    end
-
-    if book_props.title == "" or book_props.title == nil then
-        book_props.title = _("N/A")
-    end
-
-    if book_props.series == "" or book_props.series == nil then
-        book_props.series = _("N/A")
-    end
-
-    if book_props.pages == "" or book_props.pages == nil then
-        book_props.pages = _("N/A")
-    end
-
-    if book_props.language == "" or book_props.language == nil then
-        book_props.language = _("N/A")
-    end
-
-    return {
-        { _("Title:"), book_props.title },
-        { _("Authors:"), book_props.authors },
-        { _("Series:"), book_props.series },
-        { _("Pages:"), book_props.pages },
-        { _("Language:"), string.upper(book_props.language) },
-    }
-end
-
-function FileManagerHistory:bookInformation(file)
-    local file_mode = lfs.attributes(file, "mode")
-    if file_mode ~= "file" then return false end
-    local book_stats = DocSettings:open(file):readSetting('stats')
-    if book_stats == nil then return false end
-    return self:buildBookInformationTable(book_stats)
-end
-
 function FileManagerHistory:onMenuHold(item)
     local font_size = Font:getFace("tfont")
     local text_remove_hist = _("Remove \"%1\" from history")
@@ -113,18 +69,9 @@ function FileManagerHistory:onMenuHold(item)
             {
                 {
                     text = _("Book information"),
+                    enabled = FileManagerBookInfo:isSupported(item.file),
                     callback = function()
-                        local book_info_metadata = FileManagerHistory:bookInformation(item.file)
-                        if  book_info_metadata then
-                            UIManager:show(KeyValuePage:new{
-                                title = _("Book information"),
-                                kv_pairs = book_info_metadata,
-                            })
-                        else
-                            UIManager:show(InfoMessage:new{
-                                text = _("Cannot fetch information for a selected book"),
-                            })
-                        end
+                        FileManagerBookInfo:show(item.file)
                         UIManager:close(self.histfile_dialog)
                     end,
                  },

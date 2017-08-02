@@ -43,10 +43,8 @@ local footerTextGeneratorMap = {
     frontlight = function()
         if not Device:hasFrontlight() then return "L: NA" end
         local powerd = Device:getPowerDevice()
-        if powerd.is_fl_on ~= nil and powerd.is_fl_on == true then
-            if powerd.fl_intensity ~= nil then
-                return ("L: %d%%"):format(powerd.fl_intensity)
-            end
+        if powerd:isFrontlightOn() then
+            return ("L: %d%%"):format(powerd:frontlightIntensity())
         else
             return "L: Off"
         end
@@ -546,6 +544,7 @@ end
 function ReaderFooter:onPageUpdate(pageno)
     self.pageno = pageno
     self.pages = self.view.document:getPageCount()
+    self.ui.doc_settings:saveSetting("doc_pages", self.pages) -- for Book information
     self:updateFooterPage()
 end
 
@@ -671,6 +670,12 @@ end
 function ReaderFooter:onUpdateStats(avg_time_page)
     self.average_time_per_page = avg_time_page
     return true
+end
+
+function ReaderFooter:onFrontlightStateChanged()
+    if self.settings.frontlight then
+        self:updateFooter()
+    end
 end
 
 return ReaderFooter

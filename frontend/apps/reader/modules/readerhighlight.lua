@@ -1,11 +1,11 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
+local ButtonDialog = require("ui/widget/buttondialog")
+local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
+local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
-local ButtonDialog = require("ui/widget/buttondialog")
 local logger = require("logger")
 local _ = require("gettext")
-local ConfirmBox = require("ui/widget/confirmbox")
 
 local ReaderHighlight = InputContainer:new{}
 
@@ -118,7 +118,7 @@ function ReaderHighlight:clear()
     if self.hold_pos then
         self.hold_pos = nil
         self.selected_text = nil
-        UIManager:setDirty(self.dialog, "partial")
+        UIManager:setDirty(self.dialog, "ui")
         return true
     end
 end
@@ -255,7 +255,7 @@ function ReaderHighlight:onHold(arg, ges)
             table.insert(boxes, self.selected_word.sbox)
             self.view.highlight.temp[self.hold_pos.page] = boxes
         end
-        UIManager:setDirty(self.dialog, "partial")
+        UIManager:setDirty(self.dialog, "ui")
         -- TODO: only mark word?
         -- Unfortunately, CREngine does not return good coordinates
         -- UIManager:setDirty(self.dialog, "partial", self.selected_word.sbox)
@@ -402,6 +402,34 @@ function ReaderHighlight:onHighlight()
     self:saveHighlight()
 end
 
+function ReaderHighlight:onUnhighlight(item)
+    local page
+    local sel_text
+    local sel_pos0
+    local idx
+    if item then
+        local bookmark_text = item.text
+        local words = {}
+        for word in bookmark_text:gmatch("%S+") do table.insert(words, word) end
+        page = tonumber(words[2])
+        sel_text = item.notes
+        sel_pos0 = item.pos0
+    else
+        page = self.hold_pos.page
+        sel_text = self.selected_text.text
+        sel_pos0 = self.selected_text.pos0
+    end
+    for index = 1, #self.view.highlight.saved[page] do
+        if self.view.highlight.saved[page][index].text == sel_text and
+            self.view.highlight.saved[page][index].pos0 == sel_pos0 then
+            idx = index
+            break
+        end
+    end
+    self:deleteHighlight(page, idx)
+    return true
+end
+
 function ReaderHighlight:getHighlightBookmarkItem()
     if self.hold_pos and not self.selected_text then
         self:highlightFromHoldPos()
@@ -422,7 +450,7 @@ function ReaderHighlight:getHighlightBookmarkItem()
 end
 
 function ReaderHighlight:saveHighlight()
-    self:handleEvent(Event:new("AddHighlight"))
+    self.ui:handleEvent(Event:new("AddHighlight"))
     logger.dbg("save highlight")
     local page = self.hold_pos.page
     if self.hold_pos and self.selected_text and self.selected_text.pos0
@@ -519,6 +547,7 @@ function ReaderHighlight:moreAction()
 end
 
 function ReaderHighlight:deleteHighlight(page, i)
+    self.ui:handleEvent(Event:new("DelHighlight"))
     logger.dbg("delete highlight")
     local removed = table.remove(self.view.highlight.saved[page], i)
     self.ui.bookmark:removeBookmark({

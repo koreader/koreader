@@ -38,10 +38,7 @@ function FrontLightWidget:init()
     local powerd = Device:getPowerDevice()
     self.fl_min = powerd.fl_min
     self.fl_max = powerd.fl_max
-    self.fl_cur = powerd.fl_intensity
-    if self.fl_cur == nil then
-        self.fl_cur = self.fl_min
-    end
+    self.fl_cur = powerd:frontlightIntensity()
     local steps_fl = self.fl_max - self.fl_min + 1
     self.one_step = math.ceil(steps_fl / 25)
     self.steps = math.ceil(steps_fl / self.one_step)
@@ -191,6 +188,7 @@ function FrontLightWidget:setProgress(num, step)
         callback = function()
             local powerd = Device:getPowerDevice()
             powerd:toggleFrontlight()
+            self:setProgress(powerd:frontlightIntensity(), step)
         end,
     }
     local empty_space = HorizontalSpan:new{

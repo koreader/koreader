@@ -1,6 +1,4 @@
 local Generic = require("device/generic/device")
-local util = require("ffi/util")
-local Event = require("ui/event")
 local logger = require("logger")
 
 local function yes() return true end
@@ -39,8 +37,8 @@ Test if a kindle device has Special Offers
 --]]
 local function isSpecialOffers()
     -- Look at the current blanket modules to see if the SO screensavers are enabled...
-    local lipc = require("liblipclua")
-    if not lipc then
+    local haslipc, lipc = pcall(require, "liblipclua")
+    if not (haslipc and lipc) then
         logger.warn("could not load liblibclua")
         return true
     end
@@ -70,7 +68,6 @@ end
 
 function Kindle:usbPlugIn()
     if self.charging_mode == false and self.screen_saver_mode == false then
-        self.screen:saveCurrentBB()
         -- On FW >= 5.7.2, we sigstop awesome, but we need it to show stuff...
         if os.getenv("AWESOME_STOPPED") == "yes" then
             os.execute("killall -cont awesome")
@@ -86,14 +83,12 @@ function Kindle:intoScreenSaver()
     end
     self.powerd:beforeSuspend()
     if self.charging_mode == false and self.screen_saver_mode == false then
-        self.screen:saveCurrentBB()
         self.screen_saver_mode = true
         -- On FW >= 5.7.2, we sigstop awesome, but we need it to show stuff...
         if os.getenv("AWESOME_STOPPED") == "yes" then
             os.execute("killall -cont awesome")
         end
     end
-    require("ui/uimanager"):broadcastEvent(Event:new("FlushSettings"))
 end
 
 function Kindle:outofScreenSaver()
@@ -106,14 +101,8 @@ function Kindle:outofScreenSaver()
         if self:supportsScreensaver() and Screensaver.isUsingBookCover() then
             Screensaver:close()
         end
-        -- wait for native system update screen before we recover saved
-        -- Blitbuffer.
-        util.usleep(1500000)
-        self.screen:restoreFromSavedBB()
-        self:resume()
-        if self:needsScreenRefreshAfterResume() then
-            self.screen:refreshFull()
-        end
+        local UIManager = require("ui/uimanager")
+        UIManager:nextTick(function() UIManager:setDirty("all", "full") end)
     end
     self.screen_saver_mode = false
     self.powerd:afterResume()
@@ -125,14 +114,27 @@ function Kindle:usbPlugOut()
         if os.getenv("AWESOME_STOPPED") == "yes" then
             os.execute("killall -stop awesome")
         end
-        -- Same as when going out of screensaver, wait for the native system
-        util.usleep(1500000)
-        self.screen:restoreFromSavedBB()
-        self.screen:refreshFull()
+        local UIManager = require("ui/uimanager")
+        UIManager:nextTick(function() UIManager:setDirty("all", "full") end)
     end
 
     --@TODO signal filemanager for file changes  13.06 2012 (houqp)
     self.charging_mode = false
+end
+
+function Kindle:ambientBrightnessLevel()
+    local haslipc, lipc = pcall(require, "liblipclua")
+    if not haslipc or lipc == nil then return 0 end
+    local lipc_handle = lipc.init("com.github.koreader.ambientbrightness")
+    if not lipc_handle then return 0 end
+    local value = lipc_handle:get_int_property("com.lab126.powerd", "alsLux")
+    lipc_handle:close()
+    if type(value) ~= "number" then return 0 end
+    if value < 10 then return 0 end
+    if value < 96 then return 1 end
+    if value < 192 then return 2 end
+    if value < 32768 then return 3 end
+    return 4
 end
 
 

@@ -54,11 +54,13 @@ end
 --- Saves a setting.
 function LuaSettings:saveSetting(key, value)
     self.data[key] = value
+    return self
 end
 
 --- Deletes a setting.
 function LuaSettings:delSetting(key)
     self.data[key] = nil
+    return self
 end
 
 --- Checks if setting exists.
@@ -98,6 +100,7 @@ function LuaSettings:flipNilOrTrue(key)
     else
         self:delSetting(key)
     end
+    return self
 end
 
 --- Flips `nil` or `false` to `true`.
@@ -107,6 +110,7 @@ function LuaSettings:flipNilOrFalse(key)
     else
         self:delSetting(key)
     end
+    return self
 end
 
 --- Flips setting to `true`.
@@ -116,6 +120,7 @@ function LuaSettings:flipTrue(key)
     else
         self:saveSetting(key, true)
     end
+    return self
 end
 
 --- Flips setting to `false`.
@@ -125,11 +130,13 @@ function LuaSettings:flipFalse(key)
     else
         self:saveSetting(key, true)
     end
+    return self
 end
 
 --- Replaces existing settings with table.
 function LuaSettings:reset(table)
     self.data = table
+    return self
 end
 
 --- Writes settings to disk.
@@ -143,6 +150,7 @@ function LuaSettings:flush()
         f_out:write("\n")
         f_out:close()
     end
+    return self
 end
 
 --- Closes settings file.
@@ -155,6 +163,7 @@ function LuaSettings:purge()
     if self.file then
         os.remove(self.file)
     end
+    return self
 end
 
 return LuaSettings

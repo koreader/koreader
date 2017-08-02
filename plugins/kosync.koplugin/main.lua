@@ -223,7 +223,7 @@ end
 function KOSync:setCustomServer(server)
     DEBUG("set custom server", server)
     self.kosync_custom_server = server ~= "" and server or nil
-    self:onSaveSettings()
+    self:saveSettings()
 end
 
 function KOSync:login()
@@ -324,7 +324,7 @@ function KOSync:doRegister(username, password)
         })
     end
 
-    self:onSaveSettings()
+    self:saveSettings()
 end
 
 function KOSync:doLogin(username, password)
@@ -359,13 +359,13 @@ function KOSync:doLogin(username, password)
         })
     end
 
-    self:onSaveSettings()
+    self:saveSettings()
 end
 
 function KOSync:logout()
     self.kosync_userkey = nil
     self.kosync_auto_sync = true
-    self:onSaveSettings()
+    self:saveSettings()
 end
 
 function KOSync:getLastPercent()
@@ -555,7 +555,7 @@ function KOSync:getProgress(manual)
     end
 end
 
-function KOSync:onSaveSettings()
+function KOSync:saveSettings()
     local settings = {
         custom_server = self.kosync_custom_server,
         username = self.kosync_username,
@@ -605,6 +605,7 @@ function KOSync:_onResume()
 end
 
 function KOSync:_onFlushSettings()
+    if self.ui == nil or self.ui.document == nil then return end
     self:updateProgress()
 end
 

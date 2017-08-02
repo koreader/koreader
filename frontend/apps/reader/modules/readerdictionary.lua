@@ -1,8 +1,9 @@
+local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
 local DictQuickLookup = require("ui/widget/dictquicklookup")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local InfoMessage = require("ui/widget/infomessage")
+local InputContainer = require("ui/widget/container/inputcontainer")
 local JSON = require("json")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
@@ -34,6 +35,18 @@ function ReaderDictionary:addToMainMenu(menu_items)
                 self:onLookupWord(input)
             end,
         },
+    }
+    menu_items.disable_fuzzy_search = {
+        text = _("Disable dictionary fuzzy search"),
+        checked_func = function()
+            return self.disable_fuzzy_search == true
+        end,
+        callback = function()
+            self.disable_fuzzy_search = not self.disable_fuzzy_search
+        end,
+        hold_callback = function()
+            self:makeDisableFuzzyDefault(self.disable_fuzzy_search)
+        end,
     }
 end
 
@@ -107,14 +120,14 @@ function ReaderDictionary:cleanSelection(text)
     return text
 end
 
-function ReaderDictionary:onLookupStarted(word)
+function ReaderDictionary:showLookupInfo(word)
     local text = T(self.lookup_msg, word)
     self.lookup_progress_msg = InfoMessage:new{text=text}
     UIManager:show(self.lookup_progress_msg)
     UIManager:forceRePaint()
 end
 
-function ReaderDictionary:onLookupDone()
+function ReaderDictionary:dismissLookupInfo()
     if self.lookup_progress_msg then
         UIManager:close(self.lookup_progress_msg)
         UIManager:forceRePaint()
@@ -130,7 +143,9 @@ function ReaderDictionary:stardictLookup(word, box)
     if word == "" then
         return
     end
-    self:onLookupStarted(word)
+    if not self.disable_fuzzy_search then
+        self:showLookupInfo(word)
+    end
     local final_results = {}
     local seen_results = {}
     -- Allow for two sdcv calls : one in the classic data/dict, and
@@ -153,19 +168,19 @@ function ReaderDictionary:stardictLookup(word, box)
                 definition = _([[No dictionaries installed. Please search for "Dictionary support" in the KOReader Wiki to get more information about installing new dictionaries.]]),
             }
         }
-        self:onLookupDone()
         self:showDict(word, final_results, box)
         return
     end
     for _, dict_dir in ipairs(dict_dirs) do
         local results_str = nil
+        local common_options = self.disable_fuzzy_search and "-njf" or "-nj"
         if Device:isAndroid() then
             local A = require("android")
             results_str = A.stdout("./sdcv", "--utf8-input", "--utf8-output",
-                    "-nj", word, "--data-dir", dict_dir)
+                    common_options, word, "--data-dir", dict_dir)
         else
             local std_out = io.popen(
-                ("./sdcv --utf8-input --utf8-output -nj %q --data-dir %q"):format(word, dict_dir),
+                ("./sdcv --utf8-input --utf8-output %q %q --data-dir %q"):format(common_options, word, dict_dir),
                 "r")
             if std_out then
                 results_str = std_out:read("*all")
@@ -198,11 +213,11 @@ function ReaderDictionary:stardictLookup(word, box)
             }
         }
     end
-    self:onLookupDone()
     self:showDict(word, tidyMarkup(final_results), box)
 end
 
 function ReaderDictionary:showDict(word, results, box)
+    self:dismissLookupInfo()
     if results and results[1] then
         logger.dbg("showing quick lookup window", word, results)
         self.dict_window = DictQuickLookup:new{
@@ -244,11 +259,30 @@ end
 
 function ReaderDictionary:onReadSettings(config)
     self.default_dictionary = config:readSetting("default_dictionary")
+    self.disable_fuzzy_search = config:readSetting("disable_fuzzy_search")
+    if self.disable_fuzzy_search == nil then
+        self.disable_fuzzy_search = G_reader_settings:isTrue("disable_fuzzy_search")
+    end
 end
 
 function ReaderDictionary:onSaveSettings()
     logger.dbg("save default dictionary", self.default_dictionary)
     self.ui.doc_settings:saveSetting("default_dictionary", self.default_dictionary)
+    self.ui.doc_settings:saveSetting("disable_fuzzy_search", self.disable_fuzzy_search)
+end
+
+function ReaderDictionary:makeDisableFuzzyDefault(disable_fuzzy_search)
+    logger.dbg("disable fuzzy search", self.disable_fuzzy_search)
+    UIManager:show(ConfirmBox:new{
+        text = T(
+            disable_fuzzy_search
+            and _("Disable fuzzy search by default?")
+            or _("Enable fuzzy search by default?")
+        ),
+        ok_callback = function()
+            G_reader_settings:saveSetting("disable_fuzzy_search", disable_fuzzy_search)
+        end,
+    })
 end
 
 return ReaderDictionary

@@ -11,7 +11,6 @@ io.stdout:write([[
  [*] Current time: ]], os.date("%x-%X"), "\n\n")
 io.stdout:flush()
 
-
 -- load default settings
 require("defaults")
 local DataStorage = require("datastorage")
@@ -137,33 +136,11 @@ if G_reader_settings:readSetting("night_mode") then
     Device.screen:toggleNightMode()
 end
 
--- restore kobo frontlight settings and probe kobo touch coordinates
-if Device:isKobo() then
-    if Device:hasFrontlight() then
-        local powerd = Device:getPowerDevice()
-        if powerd and powerd.restore_settings then
-            -- UIManager:init() should have sanely set up the frontlight_stuff by this point
-            local intensity = G_reader_settings:readSetting("frontlight_intensity")
-            powerd.fl_intensity = intensity or powerd.fl_intensity
-            local is_frontlight_on = G_reader_settings:readSetting("is_frontlight_on")
-            if is_frontlight_on then
-                -- default powerd.is_fl_on is false, turn it on
-                powerd:toggleFrontlight()
-            else
-                -- the light can still be turned on manually outside of KOReader
-                -- or Nickel. so we always set the intensity to 0 here to keep it
-                -- in sync with powerd.is_fl_on (false by default)
-                -- NOTE: we cant use setIntensity method here because for Kobo the
-                -- min intensity is 1 :(
-                powerd.fl:setBrightness(0)
-            end
-        end
-    end
-end
-
 if Device:needsTouchScreenProbe() then
     Device:touchScreenProbe()
 end
+
+local exit_code = nil
 
 if ARGV[argidx] and ARGV[argidx] ~= "" then
     local file = nil
@@ -189,13 +166,13 @@ if ARGV[argidx] and ARGV[argidx] ~= "" then
             FileManager:showFiles(home_dir)
         end)
     end
-    UIManager:run()
+    exit_code = UIManager:run()
 elseif last_file then
     local ReaderUI = require("apps/reader/readerui")
     UIManager:nextTick(function()
         ReaderUI:showReader(last_file)
     end)
-    UIManager:run()
+    exit_code = UIManager:run()
 else
     return showusage()
 end
@@ -213,7 +190,12 @@ local function exitReader()
     Device:exit()
 
     if Profiler then Profiler.stop() end
-    os.exit(0)
+
+    if type(exit_code) == "number" then
+        os.exit(exit_code)
+    else
+        os.exit(0)
+    end
 end
 
 exitReader()

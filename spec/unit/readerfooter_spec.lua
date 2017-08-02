@@ -4,13 +4,13 @@ describe("Readerfooter module", function()
 
     setup(function()
         require("commonrequire")
-        DocumentRegistry = require("document/documentregistry")
-        ReaderUI = require("apps/reader/readerui")
-        ReaderUI = require("apps/reader/readerui")
-        DocSettings = require("docsettings")
-        UIManager = require("ui/uimanager")
-        MenuSorter = require("ui/menusorter")
+        package.unloadAll()
         DEBUG = require("dbg")
+        DocumentRegistry = require("document/documentregistry")
+        DocSettings = require("docsettings")
+        MenuSorter = require("ui/menusorter")
+        ReaderUI = require("apps/reader/readerui")
+        UIManager = require("ui/uimanager")
         purgeDir = require("ffi/util").purgeDir
         Screen = require("device").screen
 
@@ -43,6 +43,7 @@ describe("Readerfooter module", function()
             book_time_to_read = true,
             chapter_time_to_read = true,
         })
+        UIManager:run()
     end)
 
     it("should setup footer as visible in all_at_once mode", function()

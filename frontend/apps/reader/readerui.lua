@@ -1,55 +1,55 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
-local DocumentRegistry = require("document/documentregistry")
-local Screenshoter = require("ui/widget/screenshoter")
-local InfoMessage = require("ui/widget/infomessage")
-local InputDialog = require("ui/widget/inputdialog")
-local ConfirmBox = require("ui/widget/confirmbox")
-local lfs = require("libs/libkoreader-lfs")
-local DocSettings = require("docsettings")
-local UIManager = require("ui/uimanager")
-local Geom = require("ui/geometry")
-local Device = require("device")
-local Screen = require("device").screen
-local Event = require("ui/event")
-local Cache = require("cache")
-local logger = require("logger")
-local T = require("ffi/util").template
-local _ = require("gettext")
+--[[
+ReaderUI is an abstraction for a reader interface.
 
-local ReaderView = require("apps/reader/modules/readerview")
-local ReaderZooming = require("apps/reader/modules/readerzooming")
+It works using data gathered from a document interface.
+]]--
+
+local Cache = require("cache")
+local ConfirmBox = require("ui/widget/confirmbox")
+local Device = require("device")
+local DocSettings = require("docsettings")
+local DocumentRegistry = require("document/documentregistry")
+local Event = require("ui/event")
+local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
+local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
+local Geom = require("ui/geometry")
+local InfoMessage = require("ui/widget/infomessage")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local InputDialog = require("ui/widget/inputdialog")
+local PluginLoader = require("pluginloader")
+local ReaderActivityIndicator = require("apps/reader/modules/readeractivityindicator")
+local ReaderBookmark = require("apps/reader/modules/readerbookmark")
+local ReaderConfig = require("apps/reader/modules/readerconfig")
+local ReaderCoptListener = require("apps/reader/modules/readercoptlistener")
+local ReaderCropping = require("apps/reader/modules/readercropping")
+local ReaderDictionary = require("apps/reader/modules/readerdictionary")
+local ReaderFont = require("apps/reader/modules/readerfont")
+local ReaderFrontLight = require("apps/reader/modules/readerfrontlight")
+local ReaderGoto = require("apps/reader/modules/readergoto")
+local ReaderHinting = require("apps/reader/modules/readerhinting")
+local ReaderHighlight = require("apps/reader/modules/readerhighlight")
+local ReaderHyphenation = require("apps/reader/modules/readerhyphenation")
+local ReaderKoptListener = require("apps/reader/modules/readerkoptlistener")
+local ReaderLink = require("apps/reader/modules/readerlink")
+local ReaderMenu = require("apps/reader/modules/readermenu")
 local ReaderPanning = require("apps/reader/modules/readerpanning")
 local ReaderRotation = require("apps/reader/modules/readerrotation")
 local ReaderPaging = require("apps/reader/modules/readerpaging")
 local ReaderRolling = require("apps/reader/modules/readerrolling")
-local ReaderToc = require("apps/reader/modules/readertoc")
-local ReaderBookmark = require("apps/reader/modules/readerbookmark")
-local ReaderFont = require("apps/reader/modules/readerfont")
-local ReaderTypeset = require("apps/reader/modules/readertypeset")
-local ReaderMenu = require("apps/reader/modules/readermenu")
-local ReaderGoto = require("apps/reader/modules/readergoto")
-local ReaderConfig = require("apps/reader/modules/readerconfig")
-local ReaderCropping = require("apps/reader/modules/readercropping")
-local ReaderKoptListener = require("apps/reader/modules/readerkoptlistener")
-local ReaderCoptListener = require("apps/reader/modules/readercoptlistener")
-local ReaderHinting = require("apps/reader/modules/readerhinting")
-local ReaderHighlight = require("apps/reader/modules/readerhighlight")
-local ReaderFrontLight = require("apps/reader/modules/readerfrontlight")
-local ReaderDictionary = require("apps/reader/modules/readerdictionary")
-local ReaderWikipedia = require("apps/reader/modules/readerwikipedia")
-local ReaderHyphenation = require("apps/reader/modules/readerhyphenation")
-local ReaderActivityIndicator = require("apps/reader/modules/readeractivityindicator")
-local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
 local ReaderSearch = require("apps/reader/modules/readersearch")
-local ReaderLink = require("apps/reader/modules/readerlink")
 local ReaderStatus = require("apps/reader/modules/readerstatus")
-local PluginLoader = require("pluginloader")
-
---[[
-This is an abstraction for a reader interface
-
-it works using data gathered from a document interface
-]]--
+local ReaderToc = require("apps/reader/modules/readertoc")
+local ReaderTypeset = require("apps/reader/modules/readertypeset")
+local ReaderView = require("apps/reader/modules/readerview")
+local ReaderWikipedia = require("apps/reader/modules/readerwikipedia")
+local ReaderZooming = require("apps/reader/modules/readerzooming")
+local Screenshoter = require("ui/widget/screenshoter")
+local UIManager = require("ui/uimanager")
+local lfs = require("libs/libkoreader-lfs")
+local logger = require("logger")
+local _ = require("gettext")
+local Screen = require("device").screen
+local T = require("ffi/util").template
 
 local ReaderUI = InputContainer:new{
     name = "ReaderUI",
@@ -318,6 +318,12 @@ function ReaderUI:init()
         dialog = self.dialog,
         ui = self,
     })
+    -- book info
+    self:registerModule("bookinfo", FileManagerBookInfo:new{
+        dialog = self.dialog,
+        document = self.document,
+        ui = self,
+    })
     -- koreader plugins
     for _, plugin_module in ipairs(PluginLoader:loadPlugins()) do
         local ok, plugin_or_err = PluginLoader:createPluginInstance(
@@ -343,6 +349,16 @@ function ReaderUI:init()
     end
     self.postInitCallback = nil
 
+    -- Now that document is loaded, store book metadata in settings
+    -- (so that filemanager can use it from sideCar file to display
+    -- Book information).
+    -- via pcall because picdocument:getProps() may fail
+    local ok, doc_props = pcall(self.document.getProps, self.document)
+    if not ok then
+        doc_props = {}
+    end
+    self.doc_settings:saveSetting("doc_props", doc_props)
+
     -- After initialisation notify that document is loaded and rendered
     -- CREngine only reports correct page count after rendering is done
     -- Need the same event for PDF document
@@ -352,6 +368,22 @@ function ReaderUI:init()
         v()
     end
     self.postReaderCallback = nil
+end
+
+function ReaderUI:showFileManager()
+    local FileManager = require("apps/filemanager/filemanager")
+    local QuickStart = require("ui/quickstart")
+    local lastdir
+    local last_file = G_reader_settings:readSetting("lastfile")
+    -- ignore quickstart guide as last_file so we can go back to home dir
+    if last_file and last_file ~= QuickStart.quickstart_filename then
+        lastdir = last_file:match("(.*)/")
+    end
+    if FileManager.instance then
+        FileManager.instance:reinit(lastdir)
+    else
+        FileManager:showFiles(lastdir)
+    end
 end
 
 function ReaderUI:showReader(file)
@@ -393,8 +425,9 @@ function ReaderUI:doShowReader(file)
     local document = DocumentRegistry:openDocument(file)
     if not document then
         UIManager:show(InfoMessage:new{
-            text = _("No reader engine for this file.")
+            text = _("No reader engine for this file or invalid file.")
         })
+        self:showFileManager()
         return
     end
     if document.is_locked then
@@ -404,6 +437,7 @@ function ReaderUI:doShowReader(file)
         if coroutine.running() then
             local unlock_success = coroutine.yield()
             if not unlock_success then
+                self:showFileManager()
                 return
             end
         end
@@ -481,7 +515,6 @@ end
 
 function ReaderUI:onFlushSettings()
     self:saveSettings()
-    return true
 end
 
 function ReaderUI:closeDocument()
@@ -530,7 +563,6 @@ function ReaderUI:onClose()
     if _running_instance == self then
         _running_instance = nil
     end
-    return true
 end
 
 return ReaderUI

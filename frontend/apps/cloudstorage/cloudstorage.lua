@@ -202,7 +202,7 @@ function CloudStorage:cloudFile(item, path)
         },
         {
             {
-                text = _("Set download directory"),
+                text = _("Choose download directory by long-pressing"),
                 callback = function()
                     require("ui/downloadmgr"):new{
                         title = _("Choose download directory"),

@@ -119,8 +119,11 @@ if [ -e crash.log ]; then
     mv -f crash.log.new crash.log
 fi
 
-./reader.lua "${args}" >>crash.log 2>&1
-RESULT=$?
+RETURN_VALUE=85
+while [ $RETURN_VALUE -eq 85 ]; do
+    ./reader.lua "${args}" >>crash.log 2>&1
+    RETURN_VALUE=$?
+done
 
 if [ "${FROM_NICKEL}" = "true" ]; then
     if [ "${FROM_KFMON}" != "true" ]; then
@@ -145,4 +148,4 @@ else
     fi
 fi
 
-return ${RESULT}
+exit $RETURN_VALUE

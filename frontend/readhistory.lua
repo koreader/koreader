@@ -1,14 +1,15 @@
-local lfs = require("libs/libkoreader-lfs")
 local DataStorage = require("datastorage")
 local DocSettings = require("docsettings")
-local realpath = require("ffi/util").realpath
-local joinPath = require("ffi/util").joinPath
 local dump = require("dump")
+local joinPath = require("ffi/util").joinPath
+local lfs = require("libs/libkoreader-lfs")
+local realpath = require("ffi/util").realpath
 
 local history_file = joinPath(DataStorage:getDataDir(), "history.lua")
 
 local ReadHistory = {
     hist = {},
+    last_read_time = 0,
 }
 
 local function buildEntry(input_time, input_file)
@@ -40,6 +41,7 @@ local function timeFirstOrdering(l, r)
 end
 
 function ReadHistory:_indexing(start)
+    assert(self ~= nil)
     -- TODO(Hzj_jie): Use binary search to find an item when deleting it.
     for i = start, #self.hist, 1 do
         self.hist[i].index = i
@@ -47,7 +49,9 @@ function ReadHistory:_indexing(start)
 end
 
 function ReadHistory:_sort()
-    local autoremove_deleted_items_from_history = G_reader_settings:readSetting("autoremove_deleted_items_from_history") or false
+    assert(self ~= nil)
+    local autoremove_deleted_items_from_history =
+        not G_reader_settings:nilOrFalse("autoremove_deleted_items_from_history")
     if autoremove_deleted_items_from_history then
         self:clearMissing()
     end
@@ -70,6 +74,7 @@ end
 -- Reduces total count in hist list to a reasonable number by removing last
 -- several items.
 function ReadHistory:_reduce()
+    assert(self ~= nil)
     while #self.hist > 500 do
         table.remove(self.hist, #self.hist)
     end
@@ -77,6 +82,7 @@ end
 
 -- Flushes current history table into file.
 function ReadHistory:_flush()
+    assert(self ~= nil)
     local content = {}
     for k, v in pairs(self.hist) do
         content[k] = {
@@ -89,18 +95,28 @@ function ReadHistory:_flush()
     f:close()
 end
 
--- Reads history table from file
+--- Reads history table from file.
+-- @treturn boolean true if the history_file has been updated and reloaded.
 function ReadHistory:_read()
+    assert(self ~= nil)
+    local history_file_modification_time = lfs.attributes(history_file, "modification")
+    if history_file_modification_time == nil
+    or history_file_modification_time <= self.last_read_time then
+        return false
+    end
+    self.last_read_time = history_file_modification_time
     local ok, data = pcall(dofile, history_file)
     if ok and data then
         for k, v in pairs(data) do
             table.insert(self.hist, buildEntry(v.time, v.file))
         end
     end
+    return true
 end
 
 -- Reads history from legacy history folder
 function ReadHistory:_readLegacyHistory()
+    assert(self ~= nil)
     local history_dir = DataStorage:getHistoryDir()
     for f in lfs.dir(history_dir) do
         local path = joinPath(history_dir, f)
@@ -120,13 +136,12 @@ function ReadHistory:_readLegacyHistory()
 end
 
 function ReadHistory:_init()
-    self:_read()
-    self:_readLegacyHistory()
-    self:_sort()
-    self:_reduce()
+    assert(self ~= nil)
+    self:reload()
 end
 
 function ReadHistory:clearMissing()
+    assert(self ~= nil)
     for i = #self.hist, 1, -1 do
         if self.hist[i].file == nil or lfs.attributes(self.hist[i].file, "mode") ~= "file" then
             table.remove(self.hist, i)
@@ -135,6 +150,7 @@ function ReadHistory:clearMissing()
 end
 
 function ReadHistory:removeItemByPath(path)
+    assert(self ~= nil)
     for i = #self.hist, 1, -1 do
         if self.hist[i].file == path then
             self:removeItem(self.hist[i])
@@ -144,6 +160,7 @@ function ReadHistory:removeItemByPath(path)
 end
 
 function ReadHistory:removeItem(item)
+    assert(self ~= nil)
     table.remove(self.hist, item.index)
     os.remove(DocSettings:getHistoryPath(item.file))
     self:_indexing(item.index)
@@ -151,6 +168,7 @@ function ReadHistory:removeItem(item)
 end
 
 function ReadHistory:addItem(file)
+    assert(self ~= nil)
     if file ~= nil and lfs.attributes(file, "mode") == "file" then
         table.insert(self.hist, 1, buildEntry(os.time(), file))
         -- TODO(zijiehe): We do not need to sort if we can use binary insert and
@@ -159,6 +177,20 @@ function ReadHistory:addItem(file)
         self:_reduce()
         self:_flush()
     end
+end
+
+--- Reloads history from history_file.
+-- @treturn boolean true if history_file has been updated and reload happened.
+function ReadHistory:reload()
+    assert(self ~= nil)
+    if self:_read() then
+        self:_readLegacyHistory()
+        self:_sort()
+        self:_reduce()
+        return true
+    end
+
+    return false
 end
 
 ReadHistory:_init()

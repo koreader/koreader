@@ -42,8 +42,14 @@ if [ -e crash.log ]; then
     mv -f crash.log.new crash.log
 fi
 
-./reader.lua "${args}" >>crash.log 2>&1
+RETURN_VALUE=85
+while [ $RETURN_VALUE -eq 85 ]; do
+    ./reader.lua "${args}" >>crash.log 2>&1
+    RETURN_VALUE=$?
+done
 
 if pidof reader.lua >/dev/null 2>&1; then
     killall -TERM reader.lua
 fi
+
+exit $RETURN_VALUE

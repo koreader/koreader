@@ -54,6 +54,15 @@ function FileManagerMenu:initGesListener()
 
     self:registerTouchZones({
         {
+            id = "filemanager_tap",
+            ges = "tap",
+            screen_zone = {
+                ratio_x = DTAP_ZONE_MENU.x, ratio_y = DTAP_ZONE_MENU.y,
+                ratio_w = DTAP_ZONE_MENU.w, ratio_h = DTAP_ZONE_MENU.h,
+            },
+            handler = function(ges) return self:onTapShowMenu(ges) end,
+        },
+        {
             id = "filemanager_swipe",
             ges = "swipe",
             screen_zone = {
@@ -269,18 +278,13 @@ function FileManagerMenu:setUpdateItemTable()
     self.menu_items.exit = {
         text = _("Exit"),
         callback = function()
-            if SetDefaults.settings_changed then
-                SetDefaults.settings_changed = false
-                UIManager:show(ConfirmBox:new{
-                    text = _("You have unsaved default settings. Save them now?"),
-                    ok_callback = function()
-                        SetDefaults:saveSettings()
-                    end,
-                })
-            else
-                UIManager:close(self.menu_container)
-                self.ui:onClose()
-            end
+            self:exitOrRestart()
+        end,
+    }
+    self.menu_items.restart_koreader = {
+        text = _("Restart KOReader"),
+        callback = function()
+            self:exitOrRestart(function() UIManager:restartKOReader() end)
         end,
     }
 
@@ -297,6 +301,34 @@ dbg:guard(FileManagerMenu, 'setUpdateItemTable',
             widget:addToMainMenu(mock_menu_items)
         end
     end)
+
+function FileManagerMenu:exitOrRestart(callback)
+    if SetDefaults.settings_changed then
+        UIManager:show(ConfirmBox:new{
+            text = _("You have unsaved default settings. Save them now?\nTap \"Cancel\" to return to KOReader."),
+            ok_text = _("Save"),
+            ok_callback = function()
+              SetDefaults.settings_changed = false
+              SetDefaults:saveSettings()
+              self:exitOrRestart(callback)
+            end,
+            cancel_text = _("Don't save"),
+            cancel_callback = function()
+                SetDefaults.settings_changed = false
+                self:exitOrRestart(callback)
+            end,
+            other_buttons = {{
+              text = _("Cancel"),
+            }}
+        })
+    else
+        UIManager:close(self.menu_container)
+        self.ui:onClose()
+        if callback then
+            callback()
+        end
+    end
+end
 
 function FileManagerMenu:onShowMenu()
     local tab_index = G_reader_settings:readSetting("filemanagermenu_tab_index") or 1
@@ -344,6 +376,11 @@ function FileManagerMenu:onCloseFileManagerMenu()
     local last_tab_index = self.menu_container[1].last_index
     G_reader_settings:saveSetting("filemanagermenu_tab_index", last_tab_index)
     UIManager:close(self.menu_container)
+    return true
+end
+
+function FileManagerMenu:onTapShowMenu(ges)
+    self:onShowMenu()
     return true
 end
 

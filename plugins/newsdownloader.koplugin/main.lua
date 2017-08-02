@@ -57,11 +57,19 @@ function NewsDownloader:addToMainMenu(menu_items)
                 callback = function() self:setCustomDownloadDirectory() end,
             },
             {
+                text = _("Settings"),
+                callback = function()
+                    UIManager:show(InfoMessage:new{
+                        text = T(_("To change feed (Atom/RSS) sources please manually edit the configuration file:\n%1\n\nIt is very simple and contains comments as well as sample configuration."),
+                                 feed_config_path)
+                    })
+                end,
+            },
+            {
                 text = _("Help"),
                 callback = function()
                     UIManager:show(InfoMessage:new{
-                        text = T(_("News downloader can be configured in the feeds config file:\n%1\n\nIt downloads news items to:\n%2.\n\nTo set you own news sources edit foregoing feeds config file. Items download limit can be set there."),
-                                 feed_config_path,
+                        text = T(_("News downloader retrieves RSS and Atom news entries and stores them to:\n%1\n\nEach entry is a separate html file, that can be browsed by KOReader file manager.\nItems download limit can be configured in Settings."),
                                  news_download_dir_path)
                     })
                 end,
@@ -248,7 +256,7 @@ end
 
 function NewsDownloader:setCustomDownloadDirectory()
     UIManager:show(InfoMessage:new{
-       text = _("To select a folder press down and hold it for 1 second. \n\n Please restart Koreader afterwards for the applied changes to take effect.")
+       text = _("To select a folder press down and hold it for 1 second.")
     })
     require("ui/downloadmgr"):new{
        title = _("Choose download directory"),
@@ -257,8 +265,12 @@ function NewsDownloader:setCustomDownloadDirectory()
            local news_downloader_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), news_downloader_config_file))
            news_downloader_settings:saveSetting(config_key_custom_dl_dir, ("%s/"):format(path))
            news_downloader_settings:flush()
+
            logger.dbg("NewsDownloader: Coping to new download folder previous feed_config_file from: ", feed_config_path)
            FFIUtil.copyFile(feed_config_path, ("%s/%s"):format(path, feed_config_file))
+
+           initialized = false
+           self:lazyInitialization()
        end,
     }:chooseDir()
 end

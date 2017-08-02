@@ -2,13 +2,14 @@ describe("Readerhighlight module", function()
     local DocumentRegistry, ReaderUI, UIManager, Screen, Geom, dbg, Event
     setup(function()
         require("commonrequire")
+        package.unloadAll()
         DocumentRegistry = require("document/documentregistry")
-        ReaderUI = require("apps/reader/readerui")
-        UIManager = require("ui/uimanager")
-        Screen = require("device").screen
-        Geom = require("ui/geometry")
-        dbg = require("dbg")
         Event = require("ui/event")
+        Geom = require("ui/geometry")
+        ReaderUI = require("apps/reader/readerui")
+        Screen = require("device").screen
+        UIManager = require("ui/uimanager")
+        dbg = require("dbg")
     end)
 
     local function highlight_single_word(readerui, pos0)
@@ -18,6 +19,7 @@ describe("Readerhighlight module", function()
         UIManager:scheduleIn(1, function()
             UIManager:close(readerui.dictionary.dict_window)
             UIManager:close(readerui)
+            UIManager:quit()
         end)
         UIManager:run()
     end
@@ -57,6 +59,7 @@ describe("Readerhighlight module", function()
         UIManager:nextTick(function()
             UIManager:close(readerui.highlight.edit_highlight_dialog)
             UIManager:close(readerui)
+            UIManager:quit()
         end)
         UIManager:run()
     end
@@ -169,6 +172,7 @@ describe("Readerhighlight module", function()
             after_each(function()
                 readerui.highlight:clear()
                 readerui.document.configurable.text_wrap = 0
+                UIManager:close(readerui)  -- close to flush settings
             end)
             it("should highlight single word", function()
                 highlight_single_word(readerui, Geom:new{ x = 260, y = 70 })
@@ -253,6 +257,7 @@ describe("Readerhighlight module", function()
             after_each(function()
                 readerui.highlight:clear()
                 readerui.document.configurable.text_wrap = 0
+                UIManager:close(readerui)  -- close to flush settings
             end)
             it("should highlight single word", function()
                 highlight_single_word(readerui, Geom:new{ x = 260, y = 70 })

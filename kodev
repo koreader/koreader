@@ -366,8 +366,12 @@ OPTIONS:
             [[ $args != /* ]] && args="${CURDIR}/${args}"
         fi
 
-        EMULATE_READER_W=${screen_width} EMULATE_READER_H=${screen_height} \
-            ./reader.lua -d "$args"
+        RETURN_VALUE=85
+        while [ $RETURN_VALUE -eq 85 ]; do
+            EMULATE_READER_W=${screen_width} EMULATE_READER_H=${screen_height} \
+                ./reader.lua -d "$args"
+            RETURN_VALUE=$?
+        done
     } || exit
     popd
 }
@@ -417,6 +421,7 @@ OPTIONS:
     make "${EMU_DIR}/.busted"
     pushd "${EMU_DIR}" && {
         test_path="./spec/$1/unit"
+        rm -rf "${test_path}"/data/*.sdr
 
         if [ ! -z "$2" ]; then
             test_path="${test_path}/$2"

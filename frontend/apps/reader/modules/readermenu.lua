@@ -3,7 +3,6 @@ local Device = require("device")
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Screensaver = require("ui/screensaver")
-local QuickStart = require("ui/quickstart")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local dbg = require("dbg")
@@ -43,18 +42,7 @@ function ReaderMenu:init()
             callback = function()
                 self:onTapCloseMenu()
                 self.ui:onClose()
-                local lastdir
-                local last_file = G_reader_settings:readSetting("lastfile")
-                -- ignore quickstart guide as last_file so we can go back to home dir
-                if last_file and last_file ~= QuickStart.quickstart_filename then
-                    lastdir = last_file:match("(.*)/")
-                end
-                local FileManager = require("apps/filemanager/filemanager")
-                if FileManager.instance then
-                    FileManager.instance:reinit(lastdir)
-                else
-                    FileManager:showFiles(lastdir)
-                end
+                self.ui:showFileManager()
             end,
         },
         main = {
@@ -83,6 +71,15 @@ function ReaderMenu:onReaderReady()
     if not Device:isTouchDevice() then return end
 
     self.ui:registerTouchZones({
+        {
+            id = "readermenu_tap",
+            ges = "tap",
+            screen_zone = {
+                ratio_x = DTAP_ZONE_MENU.x, ratio_y = DTAP_ZONE_MENU.y,
+                ratio_w = DTAP_ZONE_MENU.w, ratio_h = DTAP_ZONE_MENU.h,
+            },
+            handler = function(ges) return self:onTapShowMenu(ges) end,
+        },
         {
             id = "readermenu_swipe",
             ges = "swipe",
@@ -186,12 +183,14 @@ function ReaderMenu:setUpdateItemTable()
     self.menu_items.exit = {
         text = _("Exit"),
         callback = function()
-            self:onTapCloseMenu()
-            UIManager:scheduleIn(0.1, function() self.ui:onClose() end)
-            local FileManager = require("apps/filemanager/filemanager")
-            if FileManager.instance then
-                FileManager.instance:onClose()
-            end
+            self:exitOrRestart()
+        end,
+    }
+
+    self.menu_items.restart_koreader = {
+        text = _("Restart KOReader"),
+        callback = function()
+            self:exitOrRestart(function() UIManager:restartKOReader() end)
         end,
     }
 
@@ -208,6 +207,20 @@ dbg:guard(ReaderMenu, 'setUpdateItemTable',
             widget:addToMainMenu(mock_menu_items)
         end
     end)
+
+function ReaderMenu:exitOrRestart(callback)
+    self:onTapCloseMenu()
+    UIManager:nextTick(function()
+        self.ui:onClose()
+        if callback ~= nil then
+            callback()
+        end
+    end)
+    local FileManager = require("apps/filemanager/filemanager")
+    if FileManager.instance then
+        FileManager.instance:onClose()
+    end
+end
 
 function ReaderMenu:onShowReaderMenu()
     if self.tab_item_table == nil then
@@ -267,6 +280,12 @@ function ReaderMenu:onSwipeShowMenu(ges)
         self.ui:handleEvent(Event:new("ShowReaderMenu"))
         return true
     end
+end
+
+function ReaderMenu:onTapShowMenu()
+    self.ui:handleEvent(Event:new("ShowConfigMenu"))
+    self.ui:handleEvent(Event:new("ShowReaderMenu"))
+    return true
 end
 
 function ReaderMenu:onTapCloseMenu()

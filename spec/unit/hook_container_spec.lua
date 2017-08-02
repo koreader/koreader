@@ -1,0 +1,72 @@
+describe("HookContainer tests", function()
+    setup(function()
+        require("commonrequire")
+    end)
+
+    it("should register and unregister functions", function()
+        local HookContainer = require("ui/hook_container"):new()
+        local f1 = spy.new(function() end)
+        local f2 = spy.new(function() end)
+        local f3 = spy.new(function() end)
+        HookContainer:register("a", f1)
+        HookContainer:register("a", f2)
+        HookContainer:register("b", f3)
+        assert.are.equal(HookContainer:execute("a", 100), 2)
+        assert.are.equal(HookContainer:execute("b", 200), 1)
+        assert.spy(f1).was_called(1)
+        assert.spy(f1).was_called_with(100)
+        assert.spy(f2).was_called(1)
+        assert.spy(f2).was_called_with(100)
+        assert.spy(f3).was_called(1)
+        assert.spy(f3).was_called_with(200)
+
+        assert.is.truthy(HookContainer:unregister("a", f1))
+        assert.is.falsy(HookContainer:unregister("b", f2))
+
+        assert.are.equal(HookContainer:execute("a", 300), 1)
+        assert.are.equal(HookContainer:execute("b", 400), 1)
+        assert.spy(f1).was_called(1)
+        assert.spy(f1).was_called_with(100)
+        assert.spy(f2).was_called(2)
+        assert.spy(f2).was_called_with(300)
+        assert.spy(f3).was_called(2)
+        assert.spy(f3).was_called_with(400)
+    end)
+
+    it("should register and automatically unregister widget", function()
+        local HookContainer = require("ui/hook_container"):new()
+        local widget = require("ui/widget/widget"):new()
+        widget.onEvent = spy.new(function() end)
+        local close_widget = spy.new(function() end)
+        widget.onCloseWidget = close_widget
+        HookContainer:registerWidget("Event", widget)
+        assert.are.equal(HookContainer:execute("Event", { a = 100, b = 200 }), 1)
+        assert.spy(widget.onEvent).was_called(1)
+        assert.spy(widget.onEvent).was_called_with(widget, { a = 100, b = 200 })
+
+        widget:onCloseWidget()
+        assert.spy(close_widget).was_called(1)
+        assert.spy(close_widget).was_called_with(widget)
+    end)
+
+    it("should pass widget itself", function()
+        local HookContainer = require("ui/hook_container"):new()
+        local widget = require("ui/widget/widget"):new()
+        local onEvent_called = false
+        local onCloseWidget_called = false
+        function widget:onEvent(args)
+            assert.is.truthy(self ~= nil)
+            assert.are.same(args, { c = 300, d = 400 })
+            onEvent_called = true
+        end
+        function widget:onCloseWidget()
+            assert.is.truthy(self ~= nil)
+            onCloseWidget_called = true
+        end
+        HookContainer:registerWidget("Event", widget)
+        assert.are.equal(HookContainer:execute("Event", { c = 300, d = 400 }), 1)
+        widget:onCloseWidget()
+        assert.is.truthy(onEvent_called)
+        assert.is.truthy(onCloseWidget_called)
+    end)
+end)

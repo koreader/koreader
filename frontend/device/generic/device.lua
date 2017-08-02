@@ -1,4 +1,3 @@
-local Event = require("ui/event")
 local logger = require("logger")
 local _ = require("gettext")
 
@@ -53,6 +52,7 @@ function Device:new(o)
 end
 
 function Device:init()
+    assert(self ~= nil)
     if not self.screen then
         error("screen/framebuffer must be implemented")
     end
@@ -125,9 +125,6 @@ function Device:onPowerEvent(ev)
     elseif ev == "Power" or ev == "Suspend" then
         self.powerd:beforeSuspend()
         local UIManager = require("ui/uimanager")
-        -- flushing settings first in case the screensaver takes too long time
-        -- that flushing has no chance to run
-        UIManager:broadcastEvent(Event:new("FlushSettings"))
         logger.dbg("Suspending...")
         -- always suspend in portrait mode
         self.orig_rotation_mode = self.screen:getRotationMode()
@@ -206,6 +203,17 @@ function Device:retrieveNetworkInfo()
         end
         return result
     end
+end
+
+-- Return an integer value to indicate the brightness of the environment. The value should be in
+-- range [0, 4].
+-- 0: dark.
+-- 1: dim, frontlight is needed.
+-- 2: neutral, turning frontlight on or off does not impact the reading experience.
+-- 3: bright, frontlight is not needed.
+-- 4: dazzling.
+function Device:ambientBrightnessLevel()
+    return 0
 end
 
 return Device
