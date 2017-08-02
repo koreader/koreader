@@ -302,8 +302,7 @@ function KeyValuePage:init()
         },
         bordersize = 0,
         margin = Screen:scaleBySize(20),
-        text_font_face = "cfont",
-        text_font_size = 20,
+        text_font_face = "pgfont",
         text_font_bold = false,
     }
     self.page_info = HorizontalGroup:new{
