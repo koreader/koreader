@@ -299,6 +299,8 @@ function TextBoxWidget:moveCursor(x, y)
         local w_prev = w - self.char_width_list[offset].width - self.char_width_list[offset].pad
         if x - w_prev < w - x then -- the previous one is more closer
             w = w_prev
+        else
+            offset = offset + 1
         end
     end
     self:free()
