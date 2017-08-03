@@ -41,7 +41,7 @@ function ReaderDogear:resetLayout()
                     }
                 }
             }
-         }
+        }
     end
 end
 
