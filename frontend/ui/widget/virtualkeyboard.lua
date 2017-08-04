@@ -93,6 +93,7 @@ function VirtualKey:init()
             },
         }
     end
+    self.flash_keyboard = G_reader_settings:readSetting("flash_keyboard") ~= false
 end
 
 function VirtualKey:update_keyboard()
@@ -103,7 +104,7 @@ function VirtualKey:update_keyboard()
 end
 
 function VirtualKey:onTapSelect()
-    if FLASH_KEYBOARD then
+    if self.flash_keyboard then
         self[1].invert = true
         self:update_keyboard()
         if self.callback then
@@ -119,7 +120,7 @@ function VirtualKey:onTapSelect()
 end
 
 function VirtualKey:onHoldSelect()
-    if FLASH_KEYBOARD then
+    if self.flash_keyboard then
         self[1].invert = true
         self:update_keyboard()
         if self.hold_callback then

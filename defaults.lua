@@ -188,9 +188,6 @@ DUSE_TURBO_LIB = false
 -- Custom font dir for Android
 ANDROID_FONT_DIR = "/system/fonts;/sdcard/koreader/fonts"
 
--- Flash virtual keyboard
-FLASH_KEYBOARD = true
-
 -- ####################################################################
 -- following features are not supported right now
 -- ####################################################################
