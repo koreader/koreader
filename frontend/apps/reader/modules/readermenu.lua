@@ -279,6 +279,9 @@ function ReaderMenu:onSwipeShowMenu(ges)
         self.ui:handleEvent(Event:new("ShowConfigMenu"))
         self.ui:handleEvent(Event:new("ShowReaderMenu"))
         return true
+    elseif ges.direction == "north" then
+        self.ui:handleEvent(Event:new("ShowConfigMenu"))
+        return true
     end
 end
 
