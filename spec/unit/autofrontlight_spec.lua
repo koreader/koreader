@@ -1,5 +1,5 @@
 describe("AutoFrontlight widget tests", function()
-    local Device, PowerD, MockTime, AutoFrontlight
+    local Device, PowerD, MockTime, class, AutoFrontlight, UIManager
 
     setup(function()
         require("commonrequire")
@@ -41,20 +41,28 @@ describe("AutoFrontlight widget tests", function()
             open(require("datastorage"):getSettingsDir() .. "/autofrontlight.lua"):
             saveSetting("enable", "true"):
             close()
-        require("ui/uimanager")._run_forever = true
+
+        UIManager = require("ui/uimanager")
+        UIManager._run_forever = true
+
+        requireBackgroundRunner()
+        class = dofile("plugins/autofrontlight.koplugin/main.lua")
+
+        -- Ensure the background runner has succeeded set the job.insert_sec.
+        MockTime:increase(2)
+        UIManager:handleInput()
     end)
 
     after_each(function()
         AutoFrontlight:deprecateLastTask()
         -- Ensure the scheduled task from this test case won't impact others.
         MockTime:increase(2)
-        require("ui/uimanager"):handleInput()
+        UIManager:handleInput()
         AutoFrontlight = nil
+        stopBackgroundRunner()
     end)
 
     it("should automatically turn on or off frontlight", function()
-        local UIManager = require("ui/uimanager")
-        local class = dofile("plugins/autofrontlight.koplugin/main.lua")
         AutoFrontlight = class:new()
         Device.brightness = 3
         MockTime:increase(2)
@@ -99,8 +107,6 @@ describe("AutoFrontlight widget tests", function()
     end)
 
     it("should turn on frontlight at the begining", function()
-        local UIManager = require("ui/uimanager")
-        local class = dofile("plugins/autofrontlight.koplugin/main.lua")
         Device.brightness = 0
         AutoFrontlight = class:new()
         MockTime:increase(2)
@@ -109,8 +115,6 @@ describe("AutoFrontlight widget tests", function()
     end)
 
     it("should turn off frontlight at the begining", function()
-        local UIManager = require("ui/uimanager")
-        local class = dofile("plugins/autofrontlight.koplugin/main.lua")
         Device.brightness = 3
         AutoFrontlight = class:new()
         MockTime:increase(2)
@@ -119,8 +123,6 @@ describe("AutoFrontlight widget tests", function()
     end)
 
     it("should handle configuration update", function()
-        local UIManager = require("ui/uimanager")
-        local class = dofile("plugins/autofrontlight.koplugin/main.lua")
         Device.brightness = 0
         AutoFrontlight = class:new()
         MockTime:increase(2)
