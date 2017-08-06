@@ -295,7 +295,7 @@ function KeyValuePage:init()
             end,
             callback = function(input)
                 local page = tonumber(input)
-                if page >= 1 and page <= self.pages then
+                if page and page >= 1 and page <= self.pages then
                     self:goToPage(page)
                 end
             end,
