@@ -14,7 +14,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local ScrollTextWidget = require("ui/widget/scrolltextwidget")
-local TextWidget = require("ui/widget/textwidget")
+local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -27,6 +27,7 @@ local TextViewer = InputContainer:new{
     text = nil,
     width = nil,
     height = nil,
+    buttons_table = nil,
 
     title_face = Font:getFace("x_smalltfont"),
     text_face = Font:getFace("x_smallinfofont"),
@@ -80,11 +81,12 @@ function TextViewer:init()
         }
     end
 
-    local title_text = TextWidget:new{
+    local closeb = CloseButton:new{ window = self, }
+    local title_text = TextBoxWidget:new{
         text = self.title,
         face = self.title_face,
         bold = true,
-        width = self.width - 2*self.title_padding - 2*self.title_margin,
+        width = self.width - 2*self.title_padding - 2*self.title_margin - closeb:getSize().w,
     }
     local titlew = FrameContainer:new{
         padding = self.title_padding,
@@ -104,7 +106,7 @@ function TextViewer:init()
             h = titlew:getSize().h
         },
         titlew,
-        CloseButton:new{ window = self, },
+        closeb,
     }
 
     local separator = LineWidget:new{
@@ -114,16 +116,21 @@ function TextViewer:init()
         }
     }
 
-    local buttons = {
-        {
+    local buttons
+    if self.buttons_table == nil then
+        buttons = {
             {
-                text = _("Close"),
-                callback = function()
-                    UIManager:close(self)
-                end,
+                {
+                    text = _("Close"),
+                    callback = function()
+                        UIManager:close(self)
+                    end,
+                },
             },
-        },
-    }
+        }
+    else
+        buttons = self.buttons_table
+    end
     local button_table = ButtonTable:new{
         width = self.width - self.button_padding,
         button_font_face = "cfont",

@@ -445,7 +445,7 @@ function Menu:init()
             end,
             callback = function(input)
                 local page = tonumber(input)
-                if page >= 1 and page <= self.page_num then
+                if page and page >= 1 and page <= self.page_num then
                     self:onGotoPage(page)
                 end
             end,

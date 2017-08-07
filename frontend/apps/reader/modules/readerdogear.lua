@@ -1,11 +1,11 @@
+local Device = require("device")
+local Event = require("ui/event")
+local Geom = require("ui/geometry")
+local GestureRange = require("ui/gesturerange")
+local ImageWidget = require("ui/widget/imagewidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local RightContainer = require("ui/widget/container/rightcontainer")
-local ImageWidget = require("ui/widget/imagewidget")
-local GestureRange = require("ui/gesturerange")
-local Device = require("device")
-local Geom = require("ui/geometry")
 local Screen = require("device").screen
-local Event = require("ui/event")
 
 local ReaderDogear = InputContainer:new{}
 
@@ -40,17 +40,6 @@ function ReaderDogear:resetLayout()
                         h = new_screen_height*DTAP_ZONE_BOOKMARK.h
                     }
                 }
-            },
-            Hold = {
-                GestureRange:new{
-                    ges = "hold",
-                    range = Geom:new{
-                        x = new_screen_width*DTAP_ZONE_BOOKMARK.x,
-                        y = new_screen_height*DTAP_ZONE_BOOKMARK.y,
-                        w = new_screen_width*DTAP_ZONE_BOOKMARK.w,
-                        h = new_screen_height*DTAP_ZONE_BOOKMARK.h
-                    }
-                }
             }
         }
     end
@@ -58,11 +47,6 @@ end
 
 function ReaderDogear:onTap()
     self.ui:handleEvent(Event:new("ToggleBookmark"))
-    return true
-end
-
-function ReaderDogear:onHold()
-    self.ui:handleEvent(Event:new("ToggleBookmarkFlipping"))
     return true
 end
 

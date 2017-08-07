@@ -1,4 +1,3 @@
-local ButtonDialog = require("ui/widget/buttondialog")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
 local Event = require("ui/event")
@@ -7,6 +6,7 @@ local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
+local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
@@ -207,22 +207,31 @@ function ReaderBookmark:onShowBookmark()
     end
 
     function bm_menu:onMenuHold(item)
-        self.remove_bookmark_dialog = ButtonDialog:new{
-            buttons = {
+        self.textviewer = TextViewer:new{
+            title = _("Bookmark details"),
+            text = item.notes,
+            width = self.textviewer_width,
+            height = self.textviewer_height,
+            buttons_table = {
                 {
+                    {
+                        text = _("Close"),
+                        callback = function()
+                            UIManager:close(self.textviewer)
+                        end,
+                    },
                     {
                         text = _("Remove this bookmark"),
                         callback = function()
                             bookmark:removeHightligit(item)
                             bm_menu:switchItemTable(nil, bookmark.bookmarks, -1)
-                            UIManager:close(self.remove_bookmark_dialog)
+                            UIManager:close(self.textviewer)
                         end,
                     },
                 },
-            },
+            }
         }
-
-        UIManager:show(self.remove_bookmark_dialog)
+        UIManager:show(self.textviewer)
         return true
     end
 

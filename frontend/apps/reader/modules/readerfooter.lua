@@ -233,7 +233,7 @@ function ReaderFooter:setupTouchZones()
             screen_zone = footer_screen_zone,
             handler = function(ges) return self:onTapFooter(ges) end,
             overrides = {
-                'tap_forward', 'tap_backward',
+                'tap_forward', 'tap_backward', 'readerconfigmenu_tap',
             },
         },
         {

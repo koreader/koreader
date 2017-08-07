@@ -93,32 +93,45 @@ function VirtualKey:init()
             },
         }
     end
+    self.flash_keyboard = G_reader_settings:readSetting("flash_keyboard") ~= false
 end
 
 function VirtualKey:update_keyboard()
     UIManager:setDirty(self.keyboard, function()
         logger.dbg("update key region", self[1].dimen)
-        return "ui", self[1].dimen
+        return "fast", self[1].dimen
     end)
 end
 
 function VirtualKey:onTapSelect()
-    self[1].invert = true
-    self:update_keyboard()
-    if self.callback then
-        self.callback()
+    if self.flash_keyboard then
+        self[1].invert = true
+        self:update_keyboard()
+        if self.callback then
+            self.callback()
+        end
+        UIManager:scheduleIn(0.1, function() self:invert(false) end)
+    else
+        if self.callback then
+            self.callback()
+        end
     end
-    UIManager:scheduleIn(0.2, function() self:invert(false) end)
     return true
 end
 
 function VirtualKey:onHoldSelect()
-    self[1].invert = true
-    self:update_keyboard()
-    if self.hold_callback then
-        self.hold_callback()
+    if self.flash_keyboard then
+        self[1].invert = true
+        self:update_keyboard()
+        if self.hold_callback then
+            self.hold_callback()
+        end
+        UIManager:scheduleIn(0.1, function() self:invert(false) end)
+    else
+        if self.hold_callback then
+            self.hold_callback()
+        end
     end
-    UIManager:scheduleIn(0.2, function() self:invert(false) end)
     return true
 end
 
@@ -174,7 +187,7 @@ end
 function VirtualKeyboard:_refresh()
     -- TODO: Ideally, ui onShow & partial onClose
     UIManager:setDirty(self, function()
-        return "partial", self[1][1].dimen
+        return "ui", self[1][1].dimen
     end)
 end
 
