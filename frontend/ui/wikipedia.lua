@@ -308,6 +308,9 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images, progress_callb
         return false
     end
 
+    -- We may need to build absolute urls for non-absolute links and images urls
+    local wiki_base_url = self:getWikiServer(lang)
+
     -- Get infos from wikipedia result
     -- (see example at https://en.wikipedia.org/w/api.php?action=parse&page=E-book&prop=text|sections|displaytitle|revid&disablelimitreport=&disableeditsection)
     local cancelled = false
@@ -333,6 +336,8 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images, progress_callb
         end
         if src:sub(1,2) == "//" then
             src = "https:" .. src -- Wikipedia redirects from http to https, so use https
+        elseif src:sub(1,1) == "/" then -- non absolute url
+            src = wiki_base_url .. src
         end
         local cur_image
         if seen_images[src] then -- already seen
@@ -355,8 +360,12 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images, progress_callb
             if srcset then
                 srcset = " "..srcset.. ", " -- for next pattern to possibly match 1st or last item
                 src2x = srcset:match([[ (%S+) 2x, ]])
-                if src2x and src2x:sub(1,2) == "//" then
-                    src2x = "https:" .. src2x
+                if src2x then
+                    if src2x:sub(1,2) == "//" then
+                        src2x = "https:" .. src2x
+                    elseif src2x:sub(1,1) == "/" then -- non absolute url
+                        src2x = wiki_base_url .. src2x
+                    end
                 end
             end
             cur_image = {
@@ -664,7 +673,6 @@ time, abbr, sup {
 
     -- Fix internal wikipedia links with full server url (including lang) so
     -- ReaderLink can notice them and deal with them with a LookupWikipedia event.
-    local wiki_base_url = self:getWikiServer(lang)
     --   html = html:gsub([[href="/wiki/]], [[href="]]..wiki_base_url..[[/wiki/]])
     --
     -- Also, crengine deals strangely with percent encoded utf8 :
