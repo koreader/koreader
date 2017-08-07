@@ -16,7 +16,6 @@ local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
 
-
 local MODE = {
     off = 0,
     page_progress = 1,
@@ -195,6 +194,10 @@ function ReaderFooter:init()
     self[1] = self.footer_positioner
 
     self.mode = G_reader_settings:readSetting("reader_footer_mode") or self.mode
+    if self.has_no_mode then
+        self.mode = MODE.off
+        self:resetLayout()
+    end
     if self.settings.all_at_once then
         self.view.footer_visible = (self.mode ~= MODE.off)
         self:updateFooterTextGenerator()
@@ -368,6 +371,14 @@ function ReaderFooter:addToMainMenu(menu_items)
                         self.has_no_mode = false
                         break
                     end
+                end
+                -- refresh margins position
+                if self.has_no_mode then
+                    self.ui:handleEvent(Event:new("SetPageMargins", self.view.document.configurable.page_margins))
+                    self.mode = MODE.off
+                elseif prev_has_no_mode then
+                    self.ui:handleEvent(Event:new("SetPageMargins", self.view.document.configurable.page_margins))
+                    G_reader_settings:saveSetting("reader_footer_mode", first_enabled_mode_num)
                 end
                 if callback then
                     should_update = callback(self)
@@ -603,6 +614,9 @@ function ReaderFooter:onExitFlippingMode()
 end
 
 function ReaderFooter:onTapFooter(ges)
+    if self.has_no_mode then
+        return
+    end
     if self.view.flipping_visible then
         local pos = ges.pos
         local dimen = self.progress_bar.dimen
