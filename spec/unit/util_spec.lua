@@ -146,7 +146,7 @@ describe("util module", function()
         local text = "Ce test : 1) est très simple ; 2 ) simple comme ( 2/2 ) > 50 % ? ok."
         local word = ""
         local table_of_words = {}
-        local c
+        local c, next_c
         local table_chars = util.splitToChars(text)
         for i = 1, #table_chars  do
             c = table_chars[i]
@@ -179,7 +179,7 @@ describe("util module", function()
         local text = "Ce test : 1) est « très simple » ; 2 ) simple comme ( 2/2 ) > 50 % ? ok."
         local word = ""
         local table_of_words = {}
-        local c
+        local c, next_c, prev_c
         local table_chars = util.splitToChars(text)
         for i = 1, #table_chars  do
             c = table_chars[i]

@@ -1,5 +1,5 @@
 describe("Wikipedia module", function()
-    local util
+    local Wikipedia
     setup(function()
         require("commonrequire")
         Wikipedia = require("ui/wikipedia")
