@@ -483,6 +483,37 @@ function FileManager:getSortingMenuTable()
     }
 end
 
+function FileManager:getStartWithMenuTable()
+    local start_with_setting = G_reader_settings:readSetting("start_with") or "filemanager"
+    local start_withs = {
+        filemanager = _("Start with file browser"),
+        history = _("Start with history"),
+        last = _("Start with last file"),
+    }
+    local set_sw_table = function(start_with)
+        return {
+            text = start_withs[start_with],
+            checked_func = function()
+                return start_with_setting == start_with
+            end,
+            callback = function()
+                start_with_setting = start_with
+                G_reader_settings:saveSetting("start_with", start_with)
+            end,
+        }
+    end
+    return {
+        text_func = function()
+            return start_withs[start_with_setting]
+        end,
+        sub_item_table = {
+            set_sw_table("filemanager"),
+            set_sw_table("history"),
+            set_sw_table("last"),
+        }
+    }
+end
+
 function FileManager:showFiles(path)
     path = path or G_reader_settings:readSetting("lastdir") or filemanagerutil.getDefaultDir()
     G_reader_settings:saveSetting("lastdir", path)

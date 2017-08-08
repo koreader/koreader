@@ -122,8 +122,9 @@ if fontmap ~= nil then
 end
 -- last file
 local last_file = G_reader_settings:readSetting("lastfile")
+local start_with = G_reader_settings:readSetting("start_with")
 -- load last opened file
-local open_last = G_reader_settings:readSetting("open_last")
+local open_last = start_with == "last"
 if open_last and last_file and lfs.attributes(last_file, "mode") ~= "file" then
     UIManager:show(retryLastFile())
     last_file = nil
@@ -165,6 +166,14 @@ if ARGV[argidx] and ARGV[argidx] ~= "" then
         UIManager:nextTick(function()
             FileManager:showFiles(home_dir)
         end)
+        -- always open history on top of filemanager so closing history
+        -- doesn't result in exit
+        if start_with == "history" then
+            local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
+            UIManager:nextTick(function()
+                FileManagerHistory:onShowHist(last_file)
+            end)
+        end
     end
     exit_code = UIManager:run()
 elseif last_file then

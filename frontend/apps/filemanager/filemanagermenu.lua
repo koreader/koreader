@@ -95,20 +95,7 @@ function FileManagerMenu:setUpdateItemTable()
         checked_func = function() return self.ui.file_chooser.reverse_collate end,
         callback = function() self.ui:toggleReverseCollate() end
     }
-    self.menu_items.start_with_last_opened_file = {
-        text = _("Start with last opened file"),
-        checked_func = function() return
-            G_reader_settings:readSetting("open_last")
-        end,
-        enabled_func = function() return
-            G_reader_settings:readSetting("lastfile") ~= nil
-        end,
-        callback = function()
-            local open_last = G_reader_settings:readSetting("open_last") or false
-            G_reader_settings:saveSetting("open_last", not open_last)
-            G_reader_settings:flush()
-        end
-    }
+    self.menu_items.start_with = self.ui:getStartWithMenuTable()
     if Device:supportsScreensaver() then
         self.menu_items.screensaver = {
             text = _("Screensaver"),
