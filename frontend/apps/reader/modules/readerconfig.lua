@@ -20,6 +20,10 @@ function ReaderConfig:init()
     if Device:isTouchDevice() then
         self:initGesListener()
     end
+    self.activation_menu = G_reader_settings:readSetting("activate_menu")
+    if self.activation_menu == nil then
+        self.activation_menu = "swipe_tap"
+    end
 end
 
 function ReaderConfig:initGesListener()
@@ -65,12 +69,14 @@ function ReaderConfig:onShowConfigMenu()
 end
 
 function ReaderConfig:onTapShowConfigMenu()
-    self:onShowConfigMenu()
-    return true
+    if self.activation_menu ~= "swipe" then
+        self:onShowConfigMenu()
+        return true
+    end
 end
 
 function ReaderConfig:onSwipeShowConfigMenu(ges)
-    if ges.direction == "north" then
+    if self.activation_menu ~= "tap" and ges.direction == "north" then
         self:onShowConfigMenu()
         return true
     end

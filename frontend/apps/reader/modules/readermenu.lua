@@ -62,6 +62,10 @@ function ReaderMenu:init()
             self.key_events.ShowReaderMenu = { { "Menu" }, doc = "show menu", }
         end
     end
+    self.activation_menu = G_reader_settings:readSetting("activate_menu")
+    if self.activation_menu == nil then
+        self.activation_menu = "swipe_tap"
+    end
 end
 
 function ReaderMenu:onReaderReady()
@@ -275,7 +279,7 @@ function ReaderMenu:onCloseReaderMenu()
 end
 
 function ReaderMenu:onSwipeShowMenu(ges)
-    if ges.direction == "south" then
+    if self.activation_menu ~= "tap" and ges.direction == "south" then
         self.ui:handleEvent(Event:new("ShowConfigMenu"))
         self.ui:handleEvent(Event:new("ShowReaderMenu"))
         return true
@@ -283,9 +287,11 @@ function ReaderMenu:onSwipeShowMenu(ges)
 end
 
 function ReaderMenu:onTapShowMenu()
-    self.ui:handleEvent(Event:new("ShowConfigMenu"))
-    self.ui:handleEvent(Event:new("ShowReaderMenu"))
-    return true
+    if self.activation_menu ~= "swipe" then
+        self.ui:handleEvent(Event:new("ShowConfigMenu"))
+        self.ui:handleEvent(Event:new("ShowReaderMenu"))
+        return true
+    end
 end
 
 function ReaderMenu:onTapCloseMenu()

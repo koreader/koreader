@@ -47,6 +47,10 @@ function FileManagerMenu:init()
             ShowMenu = { { "Menu" }, doc = "show menu" },
         }
     end
+    self.activation_menu = G_reader_settings:readSetting("activate_menu")
+    if self.activation_menu == nil then
+        self.activation_menu = "swipe_tap"
+    end
 end
 
 function FileManagerMenu:initGesListener()
@@ -380,12 +384,14 @@ function FileManagerMenu:onCloseFileManagerMenu()
 end
 
 function FileManagerMenu:onTapShowMenu(ges)
-    self:onShowMenu()
-    return true
+    if self.activation_menu ~= "swipe" then
+        self:onShowMenu()
+        return true
+    end
 end
 
 function FileManagerMenu:onSwipeShowMenu(ges)
-    if ges.direction == "south" then
+    if self.activation_menu ~= "tap" and ges.direction == "south" then
         self:onShowMenu()
         return true
     end
