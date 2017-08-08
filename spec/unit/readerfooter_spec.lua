@@ -595,7 +595,7 @@ describe("Readerfooter module", function()
         local footer = readerui.view.footer
 
         assert.truthy(footer.has_no_mode)
-        assert.truthy(readerui.view.footer_visible)
+        assert.falsy(readerui.view.footer_visible)
         assert.is.same(21, footer:getHeight())
     end)
 
