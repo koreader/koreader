@@ -1,5 +1,5 @@
 describe("Readerrolling module", function()
-    local DocumentRegistry, ReaderUI, Event, DEBUG
+    local DocumentRegistry, ReaderUI, Event
     local readerui, rolling
 
     setup(function()
@@ -7,7 +7,6 @@ describe("Readerrolling module", function()
         DocumentRegistry = require("document/documentregistry")
         ReaderUI = require("apps/reader/readerui")
         Event = require("ui/event")
-        DEBUG = require("dbg")
 
         local sample_epub = "spec/front/unit/data/juliet.epub"
         readerui = ReaderUI:new{

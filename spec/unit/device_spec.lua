@@ -1,4 +1,5 @@
 describe("device module", function()
+    -- luacheck: push ignore
     local mock_fb, mock_input
     local iopen = io.open
     local osgetenv = os.getenv
@@ -286,4 +287,5 @@ describe("device module", function()
             UIManager.onRotation:revert()
         end)
     end)
+    -- luacheck: pop
 end)

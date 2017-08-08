@@ -1,6 +1,6 @@
 describe("Readertoc module", function()
     local DocumentRegistry, ReaderUI, DEBUG
-    local readerui, toc, toc_max_depth
+    local readerui, toc, toc_max_depth, title
 
     setup(function()
         require("commonrequire")
@@ -22,10 +22,10 @@ describe("Readertoc module", function()
         assert.are.same(2, toc_max_depth)
     end)
     it("should get toc title from page", function()
-        local title = toc:getTocTitleByPage(51)
+        title = toc:getTocTitleByPage(51)
         DEBUG("toc", toc.toc)
         assert(title == "SCENE V. A hall in Capulet's house.")
-        local title = toc:getTocTitleByPage(155)
+        title = toc:getTocTitleByPage(155)
         assert(title == "SCENE I. Friar Laurence's cell.")
     end)
     describe("getTocTicks API", function()

@@ -166,6 +166,7 @@ bar=baz
         end)
 
         it("should create config file", function()
+            local fd
             local fn = "/tmp/abcfoobarbaz449"
             assert.is_not.Equals(lfs.attributes(fn, "mode"), "file")
             finally(function() os.remove(fn) end)

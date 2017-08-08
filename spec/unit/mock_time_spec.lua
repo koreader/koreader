@@ -41,7 +41,6 @@ describe("MockTime tests", function()
 
     it("should increase time", function()
         local mock_time = require("mock_time")
-        local current_time = os.time()
         mock_time:install()
         assert.is.truthy(mock_time:set(10.1))
         assert.are.equal(os.time(), 10)

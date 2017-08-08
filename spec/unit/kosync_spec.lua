@@ -51,15 +51,13 @@ local service = [[
 ]]
 
 describe("KOSync modules #notest #nocov", function()
-    local UIManager, logger, md5, client
+    local logger, md5, client
     local username, password, doc, percentage, progress, device
 
     setup(function()
         require("commonrequire")
-        UIManager = require("ui/uimanager")
         logger = require("logger")
         md5 = require("ffi/MD5")
-        local HTTPClient = require("httpclient")
         local Spore = require("Spore")
         client = Spore.new_from_string(service)
         package.loaded['Spore.Middleware.GinClient'] = {}
@@ -188,13 +186,13 @@ describe("KOSync modules #notest #nocov", function()
     }
 
     -- TODO: Test kosync module
-    local function mockKOSyncClient()
+    local function mockKOSyncClient() --luacheck: ignore
         package.loaded["KOSyncClient"] = nil
         local c = require("KOSyncClient")
         c.new = function(o)
-            local o = o or {}
-            setmetatable(o, self)
-            self.__index = self
+            o = o or {}
+            setmetatable(o, self) --luacheck: ignore
+            self.__index = self --luacheck: ignore
             return o
         end
 
@@ -208,11 +206,11 @@ describe("KOSync modules #notest #nocov", function()
             return res.result, res.body
         end
 
-        c.update_progress = function(name, passwd, doc, prog, percent, device, device_id, cb)
+        c.update_progress = function(name, passwd, doc, prog, percent, device, device_id, cb) --luacheck: ignore
             cb(res.result, res.body)
         end
 
-        c.get_progress = function(name, passwd, doc, cb)
+        c.get_progress = function(name, passwd, doc, cb) --luacheck: ignore
             cb(res.result, res.body)
         end
     end

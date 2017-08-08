@@ -1,5 +1,5 @@
 describe("ReaderBookmark module", function()
-    local DocumentRegistry, ReaderUI, UIManager, Screen, Geom, dbg, DocSettings
+    local DocumentRegistry, ReaderUI, UIManager, Screen, Geom, DocSettings
     local sample_epub, sample_pdf
 
     setup(function()
@@ -10,7 +10,6 @@ describe("ReaderBookmark module", function()
         UIManager = require("ui/uimanager")
         Screen = require("device").screen
         Geom = require("ui/geometry")
-        dbg = require("dbg")
 
         sample_epub = "spec/front/unit/data/juliet.epub"
         sample_pdf = "spec/front/unit/data/sample.pdf"
@@ -45,7 +44,6 @@ describe("ReaderBookmark module", function()
     end
 
     describe("bookmark for EPUB document", function()
-        local page = 10
         local readerui
         setup(function()
             DocSettings:open(sample_epub):purge()

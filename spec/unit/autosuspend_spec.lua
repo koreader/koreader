@@ -26,7 +26,7 @@ describe("AutoSuspend widget tests", function()
     it("should be able to execute suspend when timing out", function()
         local mock_time = require("mock_time")
         local widget_class = dofile("plugins/autosuspend.koplugin/main.lua")
-        local widget = widget_class:new()
+        local widget = widget_class:new() --luacheck: ignore
         local UIManager = require("ui/uimanager")
         mock_time:increase(5)
         UIManager:handleInput()
@@ -41,10 +41,10 @@ describe("AutoSuspend widget tests", function()
         local mock_time = require("mock_time")
         -- AutoSuspend plugin set the last_action_sec each time it is initialized.
         local widget_class = dofile("plugins/autosuspend.koplugin/main.lua")
-        local widget1 = widget_class:new()
+        local widget1 = widget_class:new() --luacheck: ignore
         -- So if one more initialization happens, it won't sleep after another 5 seconds.
         mock_time:increase(5)
-        local widget2 = widget_class:new()
+        local widget2 = widget_class:new() --luacheck: ignore
         local UIManager = require("ui/uimanager")
         mock_time:increase(6)
         UIManager:handleInput()
