@@ -84,7 +84,7 @@ describe("Readerpaging module", function()
             local tmp_readerui = ReaderUI:new{
                 document = DocumentRegistry:openDocument(sample_djvu),
             }
-            local paging = tmp_readerui.paging
+            paging = tmp_readerui.paging
             paging:onGotoPage(tmp_readerui.document:getPageCount())
             paging:onScrollPanRel(120)
             paging:onScrollPanRel(-1)

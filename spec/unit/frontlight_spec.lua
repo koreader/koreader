@@ -1,5 +1,6 @@
 describe("Frontlight function in PowerD", function()
-    local PowerD, device
+    local PowerD
+    local param
     setup(function()
         require("commonrequire")
 

@@ -13,7 +13,7 @@ function MockTime:install()
         self.original_util_time = util.gettime
         assert(self.original_util_time ~= nil)
     end
-    os.time = function()
+    os.time = function() --luacheck: ignore
         logger.dbg("MockTime:os.time: ", self.value)
         return self.value
     end
@@ -26,7 +26,7 @@ end
 function MockTime:uninstall()
     assert(self ~= nil)
     local util = require("ffi/util")
-    os.time = self.original_os_time
+    os.time = self.original_os_time --luacheck: ignore
     if self.original_util_time ~= nil then
         util.gettime = self.original_util_time
     end

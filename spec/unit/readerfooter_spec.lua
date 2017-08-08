@@ -1,14 +1,13 @@
 describe("Readerfooter module", function()
-    local DocumentRegistry, ReaderUI, MenuSorter, DocSettings, UIManager, DEBUG
+    local DocumentRegistry, ReaderUI, DocSettings, UIManager
     local purgeDir, Screen
+    local tapFooterMenu
 
     setup(function()
         require("commonrequire")
         package.unloadAll()
-        DEBUG = require("dbg")
         DocumentRegistry = require("document/documentregistry")
         DocSettings = require("docsettings")
-        MenuSorter = require("ui/menusorter")
         ReaderUI = require("apps/reader/readerui")
         UIManager = require("ui/uimanager")
         purgeDir = require("ffi/util").purgeDir
@@ -432,8 +431,8 @@ describe("Readerfooter module", function()
 
     it("should support toggle footer through menu if tap zone is disabled", function()
         local saved_tap_zone_minibar = DTAP_ZONE_MINIBAR
-        DTAP_ZONE_MINIBAR.w = 0
-        DTAP_ZONE_MINIBAR.h = 0
+        DTAP_ZONE_MINIBAR.w = 0 --luacheck: ignore
+        DTAP_ZONE_MINIBAR.h = 0 --luacheck: ignore
 
         local sample_pdf = "spec/front/unit/data/2col.pdf"
         purgeDir(DocSettings:getSidecarDir(sample_pdf))
@@ -471,7 +470,7 @@ describe("Readerfooter module", function()
         tapFooterMenu(fake_menu, "Toggle mode")
         assert.is.same(2, footer.mode)
 
-        DTAP_ZONE_MINIBAR = saved_tap_zone_minibar
+        DTAP_ZONE_MINIBAR = saved_tap_zone_minibar --luacheck: ignore
     end)
 
     it("should remove and add modes to footer text in all_at_once mode", function()
