@@ -23,16 +23,16 @@ describe("ReadHistory module", function()
         return DocSettings:getHistoryPath(realpath(test_file(name)))
     end
 
-    local function rm(file)
-        os.remove(file)
+    local function rm(filename)
+        os.remove(filename)
     end
 
     local function mv(source, target)
         os.rename(source, target)
     end
 
-    local function touch(file)
-        local f = io.open(file, "w")
+    local function touch(filename)
+        local f = io.open(filename, "w")
         f:close()
     end
 

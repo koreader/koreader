@@ -104,6 +104,11 @@ exclude_files = {
 
 -- don't balk on busted stuff in spec
 files["spec/unit/*"].std = "+busted"
+files["spec/unit/*"].globals = {
+    "package",
+    "assertAlmostEquals",
+    "assertAlmostNotEquals",
+}
 
 -- TODO: clean up and enforce max line width (631)
 ignore = {"631"}

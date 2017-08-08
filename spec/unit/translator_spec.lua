@@ -1,4 +1,5 @@
 local dutch_wikipedia_text = "Wikipedia is een meertalige encyclopedie, waarvan de inhoud vrij beschikbaar is. Iedereen kan hier kennis toevoegen!"
+local Translator
 
 describe("Translator module", function()
     setup(function()
