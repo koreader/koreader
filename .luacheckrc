@@ -102,5 +102,8 @@ exclude_files = {
     "plugins/newsdownloader.koplugin/lib/xml.lua",
 }
 
+-- don't balk on busted stuff in spec
+files["spec/unit/*"].std = "+busted"
+
 -- TODO: clean up and enforce max line width (631)
 ignore = {"631"}

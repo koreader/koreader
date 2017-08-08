@@ -10,7 +10,7 @@ travis_retry make fetchthirdparty
 "${CI_DIR}/helper_shellchecks.sh"
 
 echo -e "\n${ANSI_GREEN}Luacheck results"
-luajit "$(which luacheck)" --no-color -q {reader,setupkoenv,datastorage}.lua frontend plugins
+luajit "$(which luacheck)" --no-color -q {reader,setupkoenv,datastorage}.lua frontend plugins spec
 
 echo -e "\n${ANSI_GREEN}make all"
 make all
