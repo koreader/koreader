@@ -196,6 +196,7 @@ function ReaderFooter:init()
     self.mode = G_reader_settings:readSetting("reader_footer_mode") or self.mode
     if self.has_no_mode then
         self.mode = MODE.off
+        self.view.footer_visible = false
         self:resetLayout()
     end
     if self.settings.all_at_once then
@@ -204,7 +205,6 @@ function ReaderFooter:init()
     else
         self:applyFooterMode()
     end
-
     if self.settings.auto_refresh_time then
         self:setupAutoRefreshTime()
     end
@@ -375,6 +375,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 -- refresh margins position
                 if self.has_no_mode then
                     self.ui:handleEvent(Event:new("SetPageMargins", self.view.document.configurable.page_margins))
+                    self.genFooterText = footerTextGeneratorMap.empty
                     self.mode = MODE.off
                 elseif prev_has_no_mode then
                     self.ui:handleEvent(Event:new("SetPageMargins", self.view.document.configurable.page_margins))
