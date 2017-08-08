@@ -1,6 +1,6 @@
 describe("Frontlight function in PowerD", function()
     local PowerD
-    local param
+    local param, test_when_on, test_when_off
     setup(function()
         require("commonrequire")
 
@@ -18,7 +18,6 @@ describe("Frontlight function in PowerD", function()
     end)
 
     before_each(function()
-        frontlight = param.fl_min
         stub(PowerD, "init")
         stub(PowerD, "frontlightIntensityHW")
         stub(PowerD, "setIntensityHW")

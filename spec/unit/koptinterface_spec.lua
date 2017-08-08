@@ -76,14 +76,14 @@ describe("Koptinterface module", function()
     end)
 
     it("should get native text boxes", function()
-        local kc = Koptinterface:getCachedContext(doc, 1)
+        Koptinterface:getCachedContext(doc, 1)
         local boxes = Koptinterface:getNativeTextBoxes(doc, 1)
         local lines_in_native_page = #boxes
         assert.truthy(lines_in_native_page == 60)
     end)
 
     it("should get native text boxes from scratch", function()
-        local kc = Koptinterface:getCachedContext(doc, 1)
+        Koptinterface:getCachedContext(doc, 1)
         local boxes = Koptinterface:getNativeTextBoxesFromScratch(doc, 1)
         local lines_in_native_page = #boxes
         assert.truthy(lines_in_native_page == 60)
@@ -91,7 +91,7 @@ describe("Koptinterface module", function()
 
     it("should get reflow text boxes", function()
         doc.configurable.text_wrap = 1
-        local kc = Koptinterface:getCachedContext(doc, 1)
+        Koptinterface:getCachedContext(doc, 1)
         local boxes = Koptinterface:getReflowedTextBoxes(doc, 1)
         local lines_in_reflowed_page = #boxes
         assert.truthy(lines_in_reflowed_page > 60)
@@ -99,7 +99,7 @@ describe("Koptinterface module", function()
 
     it("should get reflow text boxes from scratch", function()
         doc.configurable.text_wrap = 1
-        local kc = Koptinterface:getCachedContext(doc, 1)
+        Koptinterface:getCachedContext(doc, 1)
         local boxes = Koptinterface:getReflowedTextBoxesFromScratch(doc, 1)
         local lines_in_reflowed_page = #boxes
         assert.truthy(lines_in_reflowed_page > 60)
@@ -123,7 +123,7 @@ describe("Koptinterface module", function()
 
     it("should get word from reflow position", function()
         complex_doc.configurable.text_wrap = 1
-        local kc = Koptinterface:getCachedContext(complex_doc, 19)
+        Koptinterface:getCachedContext(complex_doc, 19)
         local word_boxes = Koptinterface:getWordFromPosition(complex_doc, {
             page = 19, x = 320, y = 730,
         })

@@ -1,5 +1,5 @@
 -- set true to test httpclient
-DUSE_TURBO_LIB = false
+DUSE_TURBO_LIB = false --luacheck: ignore
 
 describe("HTTP client module #notest #nocov", function()
     local UIManager

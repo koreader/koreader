@@ -107,7 +107,9 @@ files["spec/unit/*"].std = "+busted"
 files["spec/unit/*"].globals = {
     "package",
     "assertAlmostEquals",
-    "assertAlmostNotEquals",
+    "assertNotAlmostEquals",
+    "requireBackgroundRunner",
+    "stopBackgroundRunner",
 }
 
 -- TODO: clean up and enforce max line width (631)

@@ -54,7 +54,8 @@ describe("Dbg module", function()
     end)
 
     it("should return all values returned by the guarded function", function()
-        local called = false, re
+        local called = false
+        local re
         local foo = {}
         function foo:bar() return 1 end
         assert.is.falsy(called)

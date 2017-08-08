@@ -1,8 +1,7 @@
 describe("DepGraph module", function()
-    local DepGraph, logger
+    local DepGraph
     setup(function()
         require("commonrequire")
-        logger = require("logger")
         DepGraph = require("depgraph")
     end)
 

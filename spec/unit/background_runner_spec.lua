@@ -217,7 +217,6 @@ describe("BackgroundRunner widget tests", function()
     end)
 
     it("should block long binary job", function()
-        local executed = 0
         local job = {
             when = 1,
             repeated = true,

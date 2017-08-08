@@ -1,7 +1,7 @@
 describe("BatteryState plugin tests", function()
     local MockTime, module
 
-    local stat = function()
+    local stat = function() --luacheck: ignore
         return module:new():stat()
     end,
 
