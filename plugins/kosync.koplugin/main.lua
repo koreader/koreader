@@ -131,7 +131,7 @@ function KOSync:addToMainMenu(menu_items)
                             return self.kosync_whisper_forward == SYNC_STRATEGY.WHISPER
                         end,
                         callback = function()
-                            self.kosync_whisper_forward = SYNC_STRATEGY.WHISPER
+                            self:setWhisperForward(SYNC_STRATEGY.WHISPER)
                         end,
                     },
                     {
@@ -140,7 +140,7 @@ function KOSync:addToMainMenu(menu_items)
                             return self.kosync_whisper_forward == SYNC_STRATEGY.PROMPT
                         end,
                         callback = function()
-                            self.kosync_whisper_forward = SYNC_STRATEGY.PROMPT
+                            self:setWhisperForward(SYNC_STRATEGY.PROMPT)
                         end,
                     },
                     {
@@ -149,7 +149,7 @@ function KOSync:addToMainMenu(menu_items)
                             return self.kosync_whisper_forward == SYNC_STRATEGY.DISABLE
                         end,
                         callback = function()
-                            self.kosync_whisper_forward = SYNC_STRATEGY.DISABLE
+                            self:setWhisperForward(SYNC_STRATEGY.DISABLE)
                         end,
                     },
                     {
@@ -162,7 +162,7 @@ function KOSync:addToMainMenu(menu_items)
                             return self.kosync_whisper_backward == SYNC_STRATEGY.WHISPER
                         end,
                         callback = function()
-                            self.kosync_whisper_backward = SYNC_STRATEGY.WHISPER
+                            self:setWhisperBackward(SYNC_STRATEGY.WHISPER)
                         end,
                     },
                     {
@@ -171,7 +171,7 @@ function KOSync:addToMainMenu(menu_items)
                             return self.kosync_whisper_backward == SYNC_STRATEGY.PROMPT
                         end,
                         callback = function()
-                            self.kosync_whisper_backward = SYNC_STRATEGY.PROMPT
+                            self:setWhisperBackward(SYNC_STRATEGY.PROMPT)
                         end,
                     },
                     {
@@ -180,7 +180,7 @@ function KOSync:addToMainMenu(menu_items)
                             return self.kosync_whisper_backward == SYNC_STRATEGY.DISABLE
                         end,
                         callback = function()
-                            self.kosync_whisper_backward = SYNC_STRATEGY.DISABLE
+                            self:setWhisperBackward(SYNC_STRATEGY.DISABLE)
                         end,
                     },
                 },
@@ -223,6 +223,16 @@ end
 function KOSync:setCustomServer(server)
     DEBUG("set custom server", server)
     self.kosync_custom_server = server ~= "" and server or nil
+    self:saveSettings()
+end
+
+function KOSync:setWhisperForward(strategy)
+    self.kosync_whisper_forward = strategy
+    self:saveSettings()
+end
+
+function KOSync:setWhisperBackward(strategy)
+    self.kosync_whisper_backward = strategy
     self:saveSettings()
 end
 
