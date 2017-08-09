@@ -94,6 +94,10 @@ ${SUPPORTED_TARGETS}"
             assert_ret_zero $?
             ;;
         android)
+            if [ "$NDK" == "" ]; then
+                # Some distributions use `ANDROID_NDK` instead, fall back to it
+                export NDK=$ANDROID_NDK
+            fi
             [[ -n ${NDK+x} ]] || export NDK="${CURDIR}/base/toolchain/android-ndk-r12b"
             [ -e "${CURDIR}/base/toolchain/android-toolchain/bin/arm-linux-androideabi-gcc" ] || {
                 { [ -e "${NDK}" ] || make -C "${CURDIR}/base/toolchain" android-ndk; }
