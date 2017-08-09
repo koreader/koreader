@@ -9,13 +9,21 @@ local Menu = require("ui/widget/menu")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local UIManager = require("ui/uimanager")
 local dump = require("dump")
+local isAndroid, android = pcall(require, "android")
 local util = require("ffi/util")
 local _ = require("gettext")
 local Screen = require("device").screen
 
-local defaults_path = DataStorage:getDataDir() .. "/defaults.lua"
-local persistent_defaults_path = DataStorage:getDataDir() .. "/defaults.persistent.lua"
+local function getDefaultsPath()
+    local defaults_path = DataStorage:getDataDir() .. "/defaults.lua"
+    if isAndroid then
+        defaults_path = android.dir .. "/defaults.lua"
+    end
+    return defaults_path
+end
 
+local defaults_path = getDefaultsPath()
+local persistent_defaults_path = DataStorage:getDataDir() .. "/defaults.persistent.lua"
 
 local SetDefaults = InputContainer:new{
     defaults_name = {},
