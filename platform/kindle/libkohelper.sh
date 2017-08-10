@@ -55,7 +55,7 @@ case "${kmodel}" in
             # Try the new device ID scheme...
             kmodel="$(cut -c4-6 /proc/usid)"
             case "${kmodel}" in
-                "0G1" | "0G2" | "0G4" | "0G5" | "0G6" | "0G7" | "0KB" | "0KC" | "0KD" | "0KE" | "0KF" | "0KG")
+                "0G1" | "0G2" | "0G4" | "0G5" | "0G6" | "0G7" | "0KB" | "0KC" | "0KD" | "0KE" | "0KF" | "0KG" | "0LK" | "0LL")
                     # PW3... NOTE: Hopefully matches the KV...
                     SCREEN_X_RES=1088
                     SCREEN_Y_RES=1448
