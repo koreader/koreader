@@ -112,7 +112,7 @@ function BackgroundRunner:_finishJob(job)
         self:_insert(self:_clone(job))
     end
     if type(job.callback) == "function" then
-        pcall(job.callback)
+        pcall(job.callback, job)
     end
 end
 

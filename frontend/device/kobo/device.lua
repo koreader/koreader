@@ -1,9 +1,10 @@
 local Generic = require("device/generic/device")
-local TimeVal = require("ui/timeval")
 local Geom = require("ui/geometry")
+local PluginShare = require("pluginshare")
+local TimeVal = require("ui/timeval")
+local logger = require("logger")
 local util = require("ffi/util")
 local _ = require("gettext")
-local logger = require("logger")
 
 local function yes() return true end
 
@@ -209,7 +210,15 @@ function Kobo:initNetworkManager(NetworkMgr)
     end
 
     function NetworkMgr:restoreWifiAsync()
-        os.execute("./restore-wifi-async.sh")
+        table.insert(PluginShare.backgroundJobs, {
+            when = 0,
+            executable = "./enable-wifi.sh ; ./obtain-ip.sh",
+            callback = function(job)
+                if job.result ~= 0 then
+                    -- TODO(Hzj_jie): Should we should a message?
+                end
+            end,
+        })
     end
 end
 

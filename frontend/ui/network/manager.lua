@@ -3,6 +3,7 @@ local DataStorage = require("datastorage")
 local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("luasettings")
+local PluginShare = require("pluginshare")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 local T = require("ffi/util").template
@@ -18,6 +19,20 @@ function NetworkMgr:init()
     if self.wifi_was_on and G_reader_settings:nilOrTrue("auto_restore_wifi") then
         self:restoreWifiAsync()
     end
+
+    table.insert(PluginShare.backgroundJobs, {
+        insert_sec = 0,  -- Actively set the insert_sec to start it immediately.
+        when = 30,       -- Checks network state once per 30 seconds.
+        executable = "ping -W 1 -c 1 www.example.com",
+        repeated = true,
+        callback = function(job)
+            if job.result == 0 then
+                self.network_state = true
+            else
+                self.network_state = false
+            end
+        end,
+    })
 end
 
 -- Following methods are Device specific which need to be initialized in
@@ -60,8 +75,7 @@ function NetworkMgr:promptWifiOff(complete_callback)
 end
 
 function NetworkMgr:isOnline()
-    local socket = require("socket")
-    return socket.dns.toip("www.example.com") ~= nil
+    return self.network_state
 end
 
 function NetworkMgr:setHTTPProxy(proxy)

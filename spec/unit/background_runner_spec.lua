@@ -111,10 +111,12 @@ describe("BackgroundRunner widget tests", function()
 
     it("should execute binary", function()
         local executed = false
+        local callback_parameter = nil
         local job = {
             when = 1,
             executable = "ls | grep this-should-not-be-a-file",
-            callback = function()
+            callback = function(input)
+                callback_parameter = input
                 executed = true
             end,
         }
@@ -129,6 +131,7 @@ describe("BackgroundRunner widget tests", function()
         assert.are.equal(1, job.result)
         assert.is_false(job.timeout)
         assert.is_false(job.bad_command)
+        assert.is_true(rawequal(callback_parameter, job))
         assert.is_true(executed)
     end)
 
