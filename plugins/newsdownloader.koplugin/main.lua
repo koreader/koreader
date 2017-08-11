@@ -1,16 +1,18 @@
-local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local InfoMessage = require("ui/widget/infomessage")
-local UIManager = require("ui/uimanager")
 local DataStorage = require("datastorage")
 local FFIUtil = require("ffi/util")
-local util = require("util")
-local T = FFIUtil.template
-local _ = require("gettext")
-local logger = require("logger")
+local InfoMessage = require("ui/widget/infomessage")
+local LuaSettings = require("frontend/luasettings")
+local UIManager = require("ui/uimanager")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffi = require("ffi")
 local http = require("socket.http")
+local https = require("ssl.https")
+local logger = require("logger")
 local ltn12 = require("ltn12")
-local LuaSettings = require("frontend/luasettings")
+local socket_url = require("socket.url")
+local util = require("util")
+local _ = require("gettext")
+local T = FFIUtil.template
 
 local NewsDownloader = WidgetContainer:new{}
 
@@ -22,6 +24,33 @@ local file_extension = ".html"
 local news_download_dir_name = "news"
 local news_download_dir_path, feed_config_path
 
+-- if a title looks like <title>blabla</title> it'll just be feed.title
+-- if a title looks like <title attr="alb">blabla</title> then we get a table
+-- where [1] is the title string and the attributes are also available
+local function getFeedTitle(possible_title)
+    if type(possible_title) == "string" then
+        return possible_title
+    elseif possible_title[1] and type(possible_title[1]) == "string" then
+        return possible_title[1]
+    end
+end
+
+-- there can be multiple links
+-- for now we just assume the first link is probably the right one
+-- @todo write unit tests
+-- some feeds that can be used for unit test
+-- http://fransdejonge.com/feed/ for multiple links
+-- https://github.com/koreader/koreader/commits/master.atom for single link with attributes
+local function getFeedLink(possible_link)
+    local E = {}
+    if type(possible_link) == "string" then
+        return possible_link
+    elseif (possible_link._attr or E).href then
+        return possible_link._attr.href
+    elseif ((possible_link[1] or E)._attr or E).href then
+        return possible_link[1]._attr.href
+    end
+end
 
 function NewsDownloader:init()
     self.ui.menu:registerToMainMenu(self)
@@ -159,15 +188,18 @@ end
 
 function NewsDownloader:processFeedSource(url, limit, unsupported_feeds_urls)
     local resp_lines = {}
-    http.request({ url = url, sink = ltn12.sink.table(resp_lines), })
+    local parsed = socket_url.parse(url)
+    local httpRequest = parsed.scheme == 'http' and http.request or https.request
+    httpRequest({ url = url, sink = ltn12.sink.table(resp_lines), })
     local feeds = self:deserializeXMLString(table.concat(resp_lines))
+
     if not feeds then
         table.insert(unsupported_feeds_urls, url)
         return
     end
 
     local is_rss = feeds.rss and feeds.rss.channel and feeds.rss.channel.title and feeds.rss.channel.item and feeds.rss.channel.item[1] and feeds.rss.channel.item[1].title and feeds.rss.channel.item[1].link
-    local is_atom = feeds.feed and feeds.feed.title and feeds.feed.entry.title and feeds.feed.entry.link and feeds.feed.entry[1] and feeds.feed.entry[1].title and feeds.feed.entry[1].link
+    local is_atom = feeds.feed and feeds.feed.title and feeds.feed.entry[1] and feeds.feed.entry[1].title and feeds.feed.entry[1].link
 
     if is_atom then
         self:processAtom(feeds, limit)
@@ -199,13 +231,13 @@ end
 function NewsDownloader:processAtom(feeds, limit)
     local feed_output_dir = string.format("%s%s/",
                                           news_download_dir_path,
-                                          util.replaceInvalidChars(feeds.feed.title))
+                                          util.replaceInvalidChars(getFeedTitle(feeds.feed.title)))
     if not lfs.attributes(feed_output_dir, "mode") then
         lfs.mkdir(feed_output_dir)
     end
 
     for index, feed in pairs(feeds.feed.entry) do
-        if index -1 == limit then
+        if limit ~= 0 and index - 1 == limit then
             break
         end
         self:downloadFeed(feed, feed_output_dir)
@@ -220,7 +252,7 @@ function NewsDownloader:processRSS(feeds, limit)
     end
 
     for index, feed in pairs(feeds.rss.channel.item) do
-        if index -1 == limit then
+        if limit ~= 0 and index - 1 == limit then
             break
         end
         self:downloadFeed(feed, feed_output_dir)
@@ -228,12 +260,15 @@ function NewsDownloader:processRSS(feeds, limit)
 end
 
 function NewsDownloader:downloadFeed(feed, feed_output_dir)
-
+    local link = getFeedLink(feed.link)
     local news_dl_path = ("%s%s%s"):format(feed_output_dir,
-                                               util.replaceInvalidChars(feed.title),
+                                               util.replaceInvalidChars(getFeedTitle(feed.title)),
                                                file_extension)
     logger.dbg("NewsDownloader: News file will be stored to :", news_dl_path)
-    http.request({ url = feed.link, sink = ltn12.sink.file(io.open(news_dl_path, 'w')), })
+
+    local parsed = socket_url.parse(link)
+    local httpRequest = parsed.scheme == 'http' and http.request or https.request
+    httpRequest({ url = link, sink = ltn12.sink.file(io.open(news_dl_path, 'w')), })
 end
 
 function NewsDownloader:removeNewsButKeepFeedConfig()
