@@ -46,8 +46,24 @@ function NetworkMgr:authenticateNetwork() end
 function NetworkMgr:disconnectNetwork() end
 function NetworkMgr:obtainIP() end
 function NetworkMgr:releaseIP() end
+function NetworkMgr:restoreWifiAsyncCmd() end
+
 -- This function should unblockly call both turnOnWifi() and obtainIP().
-function NetworkMgr:restoreWifiAsync() end
+-- To unblock UI, usually restoreWifiAsyncCmd() should be overrided.
+function NetworkMgr:restoreWifiAsync()
+    local cmd = self:restoreWifiAsyncCmd()
+    if type(cmd) == "string" then
+        table.insert(PluginShare.backgroundJobs, {
+            when = 0,
+            executable = cmd,
+            callback = function(job)
+                if job.result ~= 0 then
+                    -- TODO(Hzj_jie): Should we show a message?
+                end
+            end,
+        })
+    end
+end
 -- End of device specific methods
 
 function NetworkMgr:promptWifiOn(complete_callback)

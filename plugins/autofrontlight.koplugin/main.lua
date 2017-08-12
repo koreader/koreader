@@ -22,8 +22,6 @@ local AutoFrontlight = {
   last_brightness = -1,
 }
 
-PluginShare.backgroundJobs = PluginShare.backgroundJobs or {}
-
 function AutoFrontlight:_schedule(settings_id)
     local enabled = function()
         if not self.enabled then
