@@ -5,8 +5,9 @@ local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("luasettings")
 local PluginShare = require("pluginshare")
 local UIManager = require("ui/uimanager")
-local _ = require("gettext")
+local logger = require("logger")
 local T = require("ffi/util").template
+local _ = require("gettext")
 
 local NetworkMgr = {}
 
@@ -59,6 +60,7 @@ function NetworkMgr:restoreWifiAsync()
             callback = function(job)
                 if job.result ~= 0 then
                     -- TODO(Hzj_jie): Should we show a message?
+                    logger.dbg("Failed to restore network state, job returns ", job.result)
                 end
             end,
         })
