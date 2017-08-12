@@ -95,7 +95,7 @@ function DropBoxApi:listFolder(path, token)
     local dropbox_file = {}
     local tag, text
     local ls_dropbox = self:fetchListFolders(path, token)
-    if ls_dropbox == nil then return false end
+    if ls_dropbox == nil or ls_dropbox.entreis == nil then return false end
     for _, files in ipairs(ls_dropbox.entries) do
         text = files.name
         tag = files[".tag"]

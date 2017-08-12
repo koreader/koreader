@@ -230,7 +230,10 @@ function FileManagerMenu:setUpdateItemTable()
     self.menu_items.cloud_storage = {
         text = _("Cloud storage"),
         callback = function()
-            local cloud_storage = CloudStorage:new{}
+            local cloud_storage = CloudStorage:new{
+                width = Screen:getWidth(),
+                height = Screen:getHeight(),
+            }
             UIManager:show(cloud_storage)
             local filemanagerRefresh = function() self.ui:onRefresh() end
             function cloud_storage:onClose()
