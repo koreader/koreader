@@ -209,7 +209,7 @@ function Kobo:initNetworkManager(NetworkMgr)
     end
 
     function NetworkMgr:restoreWifiAsyncCmd()
-        return "./enable-wifi.sh ; ./obtain-ip.sh",
+        return "./enable-wifi.sh ; ./obtain-ip.sh"
     end
 end
 
