@@ -77,17 +77,17 @@ local function shorten(number)
     return string.format("%.2f", number);
 end
 
-function Usage:dump(kv_pairs)
+function Usage:dumpRemaining(kv_pairs)
     table.insert(kv_pairs, {_("    Consumed %"), shorten(self.percentage)})
     table.insert(kv_pairs, {_("    Total minutes"), shorten(self:minutes())})
     table.insert(kv_pairs, {_("    % per hour"), shorten(self:percentagePerHour())})
-end
-
-function Usage:dumpRemaining(kv_pairs)
     table.insert(kv_pairs, {_("    Estimated remaining hours"), shorten(self:remainingHours())})
 end
 
 function Usage:dumpCharging(kv_pairs)
+    table.insert(kv_pairs, {_("    Charged %"), shorten(-self.percentage)})
+    table.insert(kv_pairs, {_("    Total minutes"), shorten(self:minutes())})
+    table.insert(kv_pairs, {_("    % per hour"), shorten(-self:percentagePerHour())})
     table.insert(kv_pairs, {_("    Estimated hours for charging"), shorten(self:chargingHours())})
 end
 
@@ -259,16 +259,12 @@ end
 function BatteryStat:dump()
     local kv_pairs = {}
     table.insert(kv_pairs, {_("Awake since last charge"), ""})
-    self.awake:dump(kv_pairs)
     self.awake:dumpRemaining(kv_pairs)
     table.insert(kv_pairs, {_("Sleeping since last charge"), ""})
-    self.sleeping:dump(kv_pairs)
     self.sleeping:dumpRemaining(kv_pairs)
     table.insert(kv_pairs, {_("During last charge"), ""})
-    self.charging:dump(kv_pairs)
     self.charging:dumpCharging(kv_pairs)
     table.insert(kv_pairs, {_("Since last charge"), ""})
-    self.discharging:dump(kv_pairs)
     self.discharging:dumpRemaining(kv_pairs)
     return kv_pairs
 end
