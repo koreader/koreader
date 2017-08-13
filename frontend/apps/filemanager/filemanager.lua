@@ -141,21 +141,28 @@ function FileManager:init()
                     text = _("Purge .sdr"),
                     enabled = DocSettings:hasSidecarFile(util.realpath(file)),
                     callback = function()
-                        local file_abs_path = util.realpath(file)
-                        if file_abs_path then
-                            local autoremove_deleted_items_from_history = G_reader_settings:readSetting("autoremove_deleted_items_from_history") or false
-                            os.remove(DocSettings:getSidecarFile(file_abs_path))
-                            -- If the sidecar folder is empty, os.remove() can
-                            -- delete it. Otherwise, the following statement has no
-                            -- effect.
-                            os.remove(DocSettings:getSidecarDir(file_abs_path))
-                            self:refreshPath()
-                            -- also delete from history if autoremove_deleted_items_from_history is enabled
-                            if autoremove_deleted_items_from_history then
-                                require("readhistory"):removeItemByPath(file_abs_path)
-                            end
-                        end
-                        UIManager:close(self.file_dialog)
+                        local ConfirmBox = require("ui/widget/confirmbox")
+                        UIManager:show(ConfirmBox:new{
+                            text = util.template(_("Purge .sdr to reset settings for this document?\n\n%1"), self.file_dialog.title),
+                            ok_text = _("Purge"),
+                            ok_callback = function()
+                                local file_abs_path = util.realpath(file)
+                                if file_abs_path then
+                                    local autoremove_deleted_items_from_history = G_reader_settings:readSetting("autoremove_deleted_items_from_history") or false
+                                    os.remove(DocSettings:getSidecarFile(file_abs_path))
+                                    -- If the sidecar folder is empty, os.remove() can
+                                    -- delete it. Otherwise, the following statement has no
+                                    -- effect.
+                                    os.remove(DocSettings:getSidecarDir(file_abs_path))
+                                    self:refreshPath()
+                                    -- also delete from history if autoremove_deleted_items_from_history is enabled
+                                    if autoremove_deleted_items_from_history then
+                                        require("readhistory"):removeItemByPath(file_abs_path)
+                                    end
+                                end
+                                UIManager:close(self.file_dialog)
+                            end,
+                        })
                     end,
                 },
             },
