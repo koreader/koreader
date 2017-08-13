@@ -3,14 +3,14 @@ local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local DropBox = require("apps/cloudstorage/dropbox")
-local InfoMessage = require("ui/widget/infomessage")
 local Ftp = require("apps/cloudstorage/ftp")
-local Menu = require("ui/widget/menu")
+local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("luasettings")
-local Screen = require("device").screen
+local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
 local lfs = require("libs/libkoreader-lfs")
 local _ = require("gettext")
+local Screen = require("device").screen
 
 local CloudStorage = Menu:extend{
     cloud_servers = {
@@ -21,8 +21,6 @@ local CloudStorage = Menu:extend{
             editable = false,
         },
     },
-    width = Screen:getWidth(),
-    height = Screen:getHeight(),
     no_title = false,
     show_parent = nil,
     is_popout = false,
@@ -35,6 +33,8 @@ function CloudStorage:init()
     self.title = "Cloud Storage"
     self.show_parent = self
     self.item_table = self:genItemTableFromRoot()
+    self.width = Screen:getWidth()
+    self.height = Screen:getHeight()
     Menu.init(self)
 end
 
