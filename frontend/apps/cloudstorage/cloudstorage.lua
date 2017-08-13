@@ -10,6 +10,7 @@ local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
 local lfs = require("libs/libkoreader-lfs")
 local _ = require("gettext")
+local Screen = require("device").screen
 
 local CloudStorage = Menu:extend{
     cloud_servers = {
@@ -32,6 +33,8 @@ function CloudStorage:init()
     self.title = "Cloud Storage"
     self.show_parent = self
     self.item_table = self:genItemTableFromRoot()
+    self.width = Screen:getWidth()
+    self.height = Screen:getHeight()
     Menu.init(self)
 end
 
