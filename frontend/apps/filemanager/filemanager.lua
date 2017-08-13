@@ -468,7 +468,7 @@ function FileManager:getSortingMenuTable()
     return {
         text_func = function()
             return util.template(
-                _("Sort by %1"),
+                _("Sort by: %1"),
                 collates[fm.file_chooser.collate][1]
             )
         end,
@@ -486,13 +486,13 @@ end
 function FileManager:getStartWithMenuTable()
     local start_with_setting = G_reader_settings:readSetting("start_with") or "filemanager"
     local start_withs = {
-        filemanager = _("Start with file browser"),
-        history = _("Start with history"),
-        last = _("Start with last file"),
+        filemanager = {_("file browser"), _("Start with file browser")},
+        history = {_("history"), _("Start with history")},
+        last = {_("last file"), _("Start with last file")},
     }
     local set_sw_table = function(start_with)
         return {
-            text = start_withs[start_with],
+            text = start_withs[start_with][2],
             checked_func = function()
                 return start_with_setting == start_with
             end,
@@ -504,7 +504,10 @@ function FileManager:getStartWithMenuTable()
     end
     return {
         text_func = function()
-            return start_withs[start_with_setting]
+            return util.template(
+                _("Start with: %1"),
+                start_withs[start_with_setting][1]
+            )
         end,
         sub_item_table = {
             set_sw_table("filemanager"),
