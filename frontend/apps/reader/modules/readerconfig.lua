@@ -48,6 +48,16 @@ function ReaderConfig:initGesListener()
             overrides = { "rolling_swipe", "paging_swipe", },
             handler = function(ges) return self:onSwipeShowConfigMenu(ges) end,
         },
+        {
+            id = "readerconfigmenu_pan",
+            ges = "pan",
+            screen_zone = {
+                ratio_x = DTAP_ZONE_CONFIG.x, ratio_y = DTAP_ZONE_CONFIG.y,
+                ratio_w = DTAP_ZONE_CONFIG.w, ratio_h = DTAP_ZONE_CONFIG.h,
+            },
+            overrides = { "rolling_pan", "paging_pan", },
+            handler = function(ges) return self:onSwipeShowConfigMenu(ges) end,
+        },
     })
 end
 
