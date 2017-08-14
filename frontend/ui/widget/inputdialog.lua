@@ -63,7 +63,6 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
-local _ = require("gettext")
 
 local InputDialog = InputContainer:new{
     title = "",
@@ -73,7 +72,6 @@ local InputDialog = InputContainer:new{
     buttons = nil,
     input_type = nil,
     enter_callback = nil,
-    show_password_toggle = true,
 
     width = nil,
 
@@ -149,26 +147,6 @@ function InputDialog:init()
         scroll = false,
         parent = self,
     }
-    local is_password_type = false
-    if self._input_widget.text_type == "password" then
-        is_password_type = true
-    end
-    if self.show_password_toggle and is_password_type then
-        local button_switch = {
-            {
-                text = _("Show password"),
-                callback = function()
-                    if self._input_widget.text_type == "text" then
-                        self._input_widget.text_type = "password"
-                    else
-                        self._input_widget.text_type = "text"
-                    end
-                    self._input_widget:setText(self._input_widget:getText())
-                end,
-            },
-        }
-        table.insert(self.buttons[1], button_switch[1])
-    end
     self.button_table = ButtonTable:new{
         width = self.width,
         button_font_face = "cfont",
