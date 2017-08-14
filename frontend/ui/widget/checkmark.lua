@@ -29,7 +29,7 @@ local CheckMark = InputContainer:new{
 
 function CheckMark:init()
     local checked_widget = TextWidget:new{
-        text = " ✓",
+        text = " ✓", -- preceded by thin space for better alignment
         face = self.face,
     }
     local unchecked_widget = TextWidget:new{
@@ -45,6 +45,8 @@ function CheckMark:init()
         unchecked_widget
     }
     or empty_widget
+
+    self.dimen = unchecked_widget:getSize()
 end
 
 return CheckMark
