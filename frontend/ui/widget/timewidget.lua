@@ -26,8 +26,10 @@ local TimeWidget = InputContainer:new{
     title_face = Font:getFace("x_smalltfont"),
     width = nil,
     height = nil,
-    curr_hour = 0,
-    curr_min = 0,
+    hour = 0,
+    min = 0,
+    ok_text = _("OK"),
+    cancel_text = _("Cancel"),
 }
 
 function TimeWidget:init()
@@ -38,7 +40,7 @@ function TimeWidget:init()
     self.width = self.screen_width * 0.95
     if Device:hasKeys() then
         self.key_events = {
-            Close = { {"Back"}, doc = "close frontlight" }
+            Close = { {"Back"}, doc = "close time" }
         }
     end
     if Device:isTouchDevice() then
@@ -95,11 +97,11 @@ function TimeWidget:paintContainer()
         width = self.screen_width * 0.20,
         show_parent = self,
         callback = function()
-            self.curr_hour = self:changeHours(self.curr_hour, 1)
+            self.hour = self:changeHours(self.hour, 1)
             self:update()
         end,
         hold_callback = function()
-            self.curr_hour = self:changeHours(self.curr_hour, 6)
+            self.hour = self:changeHours(self.hour, 6)
             self:update()
         end
     }
@@ -112,11 +114,11 @@ function TimeWidget:paintContainer()
         width = self.screen_width * 0.20,
         show_parent = self,
         callback = function()
-            self.curr_hour = self:changeHours(self.curr_hour, -1)
+            self.hour = self:changeHours(self.hour, -1)
             self:update()
         end,
         hold_callback = function()
-            self.curr_hour = self:changeHours(self.curr_hour, -6)
+            self.hour = self:changeHours(self.hour, -6)
             self:update()
         end
     }
@@ -130,11 +132,11 @@ function TimeWidget:paintContainer()
         width = self.screen_width * 0.20,
         show_parent = self,
         callback = function()
-            self.curr_min = self:changeMin(self.curr_min, 1)
+            self.min = self:changeMin(self.min, 1)
             self:update()
         end,
         hold_callback = function()
-            self.curr_min = self:changeMin(self.curr_min, 15)
+            self.min = self:changeMin(self.min, 15)
             self:update()
         end
     }
@@ -147,11 +149,11 @@ function TimeWidget:paintContainer()
         width = self.screen_width * 0.20,
         show_parent = self,
         callback = function()
-            self.curr_min = self:changeMin(self.curr_min, -1)
+            self.min = self:changeMin(self.min, -1)
             self:update()
         end,
         hold_callback = function()
-            self.curr_min = self:changeMin(self.curr_min, -15)
+            self.min = self:changeMin(self.min, -15)
             self:update()
         end
     }
@@ -160,7 +162,7 @@ function TimeWidget:paintContainer()
     }
 
     local text_hours = TextBoxWidget:new{
-        text = string.format("%02d", self.curr_hour),
+        text = string.format("%02d", self.hour),
         alignment = "center",
         face = self.title_face,
         text_font_size = 24,
@@ -168,7 +170,7 @@ function TimeWidget:paintContainer()
         width = self.screen_width * 0.20,
     }
     local text_minutes = TextBoxWidget:new{
-        text = string.format("%02d", self.curr_min),
+        text = string.format("%02d", self.min),
         alignment = "center",
         face = self.title_face,
         text_font_size = 24,
@@ -257,17 +259,17 @@ function TimeWidget:update()
     local buttons = {
         {
             {
-                text = "OK",
+                text = self.cancel_text,
                 callback = function()
-                    if self.callback then
-                        self:callback(self)
-                    end
                     self:onClose()
                 end,
             },
             {
-                text = "Cancel",
+                text = self.ok_text,
                 callback = function()
+                    if self.callback then
+                        self:callback(self)
+                    end
                     self:onClose()
                 end,
             },

@@ -77,6 +77,16 @@ function PocketBook:init()
     Generic.init(self)
 end
 
+function PocketBook:setTime(hour, min)
+    if hour == nil or min == nil then return true end
+    if os.execute(string.format("date -s '%d:%d'", hour, min)) == 0 then
+        os.execute('hwclock -u -w')
+        return true
+    else
+        return false
+    end
+end
+
 function PocketBook:initNetworkManager(NetworkMgr)
     NetworkMgr.turnOnWifi = function()
         pocketbookEnableWifi(1)
