@@ -1,9 +1,12 @@
 local Device = require("device")
+local InfoMessage = require("ui/widget/infomessage")
 local Language = require("ui/language")
 local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
-local Screen = require("device").screen
+local TimeWidget = require("ui/widget/timewidget")
 local _ = require("gettext")
+local Screen = require("device").screen
+local T = require("ffi/util").template
 
 local common_settings = {}
 
@@ -13,6 +16,45 @@ if Device:hasFrontlight() then
         text = _("Frontlight"),
         callback = function()
             ReaderFrontLight:onShowFlDialog()
+        end,
+    }
+end
+
+local function setTime(hour, min)
+    if os.execute(string.format("date -s '%d:%d'", hour, min)) == 0 then
+        os.execute('hwclock -u -w')
+        return true
+    else
+        return false
+    end
+end
+
+if Device:isKobo() or Device:isKindle() or Device:isPocketBook() or Device:isSDL() then
+    common_settings.time = {
+        text = _("Set time"),
+        callback = function()
+            local now_t = os.date("*t")
+            local curr_hour1 = now_t.hour
+            local curr_min1 = now_t.min
+            local time_widget = TimeWidget:new{
+                curr_hour = curr_hour1,
+                curr_min = curr_min1,
+                title_text =  _("Set time"),
+                callback = function(time)
+                    if setTime(time.curr_hour, time.curr_min) then
+                        now_t = os.date("*t")
+                        UIManager:show(InfoMessage:new{
+                            text = T(_("Current time: %1:%2"), string.format("%02d", now_t.hour),
+                                string.format("%02d", now_t.min))
+                        })
+                    else
+                        UIManager:show(InfoMessage:new{
+                            text = _("Time not set"),
+                        })
+                    end
+                end
+            }
+            UIManager:show(time_widget)
         end,
     }
 end

@@ -35,6 +35,7 @@ local order = {
         -- common settings
         -- those that don't exist will simply be skipped during menu gen
         "frontlight", -- if Device:hasFrontlight()
+        "time",
         "night_mode",
         "----------------------------",
         "network",
