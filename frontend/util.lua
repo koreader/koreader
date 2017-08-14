@@ -132,7 +132,7 @@ function util.splitToChars(text)
     local tab = {}
     if text ~= nil then
         local prevcharcode, charcode = 0
-        for uchar in string.gfind(text, "([%z\1-\127\194-\244][\128-\191]*)") do
+        for uchar in string.gmatch(text, "([%z\1-\127\194-\244][\128-\191]*)") do
             charcode = BaseUtil.utf8charcode(uchar)
             if prevcharcode then -- utf8
                 table.insert(tab, uchar)
