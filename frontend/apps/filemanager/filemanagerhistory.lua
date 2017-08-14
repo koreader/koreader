@@ -100,8 +100,9 @@ function FileManagerHistory:onShowHist()
 
     self.hist_menu = Menu:new{
         ui = self.ui,
-        width = Screen:getWidth()-50,
-        height = Screen:getHeight()-50,
+        width = Screen:getWidth(),
+        height = Screen:getHeight(),
+        is_borderless = true,
         show_parent = menu_container,
         onMenuHold = self.onMenuHold,
         _manager = self,

@@ -11,7 +11,7 @@ local order = {
         "sort_by",
         "reverse_sorting",
         "----------------------------",
-        "start_with_last_opened_file",
+        "start_with",
         "screensaver",
         "----------------------------",
         -- common settings

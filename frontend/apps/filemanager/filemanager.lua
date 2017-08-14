@@ -468,7 +468,7 @@ function FileManager:getSortingMenuTable()
     return {
         text_func = function()
             return util.template(
-                _("Sort by %1"),
+                _("Sort by: %1"),
                 collates[fm.file_chooser.collate][1]
             )
         end,
@@ -479,6 +479,40 @@ function FileManager:getSortingMenuTable()
             set_collate_table("modification"),
             set_collate_table("size"),
             set_collate_table("type"),
+        }
+    }
+end
+
+function FileManager:getStartWithMenuTable()
+    local start_with_setting = G_reader_settings:readSetting("start_with") or "filemanager"
+    local start_withs = {
+        filemanager = {_("file browser"), _("Start with file browser")},
+        history = {_("history"), _("Start with history")},
+        last = {_("last file"), _("Start with last file")},
+    }
+    local set_sw_table = function(start_with)
+        return {
+            text = start_withs[start_with][2],
+            checked_func = function()
+                return start_with_setting == start_with
+            end,
+            callback = function()
+                start_with_setting = start_with
+                G_reader_settings:saveSetting("start_with", start_with)
+            end,
+        }
+    end
+    return {
+        text_func = function()
+            return util.template(
+                _("Start with: %1"),
+                start_withs[start_with_setting][1]
+            )
+        end,
+        sub_item_table = {
+            set_sw_table("filemanager"),
+            set_sw_table("history"),
+            set_sw_table("last"),
         }
     }
 end
