@@ -24,6 +24,7 @@ local order = {
         "save_document",
         "----------------------------",
         "language",
+        "time",
         -- end common settings
     },
     tools = {

@@ -66,6 +66,16 @@ function Kindle:supportsScreensaver()
     end
 end
 
+function Kindle:setTime(hour, min)
+    if hour == nil or min == nil then return true end
+    if os.execute(string.format("date -s '%d:%d'", hour, min)) == 0 then
+        os.execute('hwclock -u -w')
+        return true
+    else
+        return false
+    end
+end
+
 function Kindle:usbPlugIn()
     if self.charging_mode == false and self.screen_saver_mode == false then
         -- On FW >= 5.7.2, we sigstop awesome, but we need it to show stuff...

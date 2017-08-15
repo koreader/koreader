@@ -43,6 +43,7 @@ local order = {
         "save_document",
         "----------------------------",
         "language",
+        "time",
         "----------------------------",
         "djvu_render_mode",
         "status_bar",
