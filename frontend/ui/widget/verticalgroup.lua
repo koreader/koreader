@@ -1,8 +1,9 @@
+--[[--
+A layout widget that puts objects under each other.
+--]]
+
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 
---[[
-A Layout widget that puts objects under each other
---]]
 local VerticalGroup = WidgetContainer:new{
     align = "center",
     _size = nil,

@@ -1,8 +1,9 @@
+--[[--
+A layout widget that puts objects besides each other.
+--]]
+
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 
---[[
-A Layout widget that puts objects besides each others
---]]
 local HorizontalGroup = WidgetContainer:new{
     align = "center",
     _size = nil,

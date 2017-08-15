@@ -1,12 +1,23 @@
+--[[--
+A TextWidget puts a string on a single line.
+
+Example:
+
+    UIManager:show(TextWidget:new{
+        text = "Make it so.",
+        face = Font:getFace("cfont"),
+        bold = true,
+        fgcolor = Blitbuffer.COLOR_GREY,
+    })
+
+--]]
+
+local Blitbuffer = require("ffi/blitbuffer")
+local Geom = require("ui/geometry")
+local RenderText = require("ui/rendertext")
 local Widget = require("ui/widget/widget")
 local Screen = require("device").screen
-local RenderText = require("ui/rendertext")
-local Geom = require("ui/geometry")
-local Blitbuffer = require("ffi/blitbuffer")
 
---[[
-A TextWidget puts a string on a single line
---]]
 local TextWidget = Widget:new{
     text = nil,
     face = nil,
