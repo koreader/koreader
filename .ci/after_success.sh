@@ -36,6 +36,9 @@ if [ "${TRAVIS_PULL_REQUEST}" = false ] && [ "${TRAVIS_BRANCH}" = 'master' ]; th
     } || exit
     popd
 
+    # rerun make to regenerate /spec dir (was deleted to prevent uploading to cache)
+    echo -e "\n${ANSI_GREEN}make all"
+    make all
     travis_retry make coverage
     pushd koreader-*/koreader && {
         luajit "$(which luacov-coveralls)"
