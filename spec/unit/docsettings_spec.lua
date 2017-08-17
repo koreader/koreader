@@ -92,4 +92,55 @@ describe("docsettings module", function()
         local name_from_history = docsettings:getNameFromHistory(history_path)
         assert.is.same(file, path_from_history .. "/" .. name_from_history)
     end)
+
+    it("should reserve last good file", function()
+        local file = "file.pdf"
+        local d = docsettings:open(file)
+        d:saveSetting("a", "a")
+        d:flush()
+        -- metadata.pdf.lua should be generated.
+        assert.Equals("file", lfs.attributes(d.sidecar_file, "mode"))
+        d:close()
+        -- metadata.pdf.lua and metadata.pdf.lua.old should be generated.
+        assert.Equals("file", lfs.attributes(d.sidecar_file, "mode"))
+        assert.Equals("file", lfs.attributes(d.sidecar_file .. ".old", "mode"))
+
+        -- write some garbage to sidecar-file.
+        local f_out = io.open(d.sidecar_file, "w")
+        f_out:write("bla bla bla")
+        f_out:close()
+
+        d = docsettings:open(file)
+        -- metadata.pdf.lua should be removed.
+        assert.are.not_equal("file", lfs.attributes(d.sidecar_file, "mode"))
+        assert.Equals("file", lfs.attributes(d.sidecar_file .. ".old", "mode"))
+        assert.Equals("a", d:readSetting("a"))
+        d:saveSetting("a", "b")
+        d:close()
+        -- metadata.pdf.lua should be generated.
+        assert.Equals("file", lfs.attributes(d.sidecar_file, "mode"))
+        assert.Equals("file", lfs.attributes(d.sidecar_file .. ".old", "mode"))
+        -- The contents in sidecar_file and sidecar_file.old are different.
+        -- a:b v.s. a:a
+
+        d = docsettings:open(file)
+        -- The content should come from sidecar_file.
+        assert.Equals("b", d:readSetting("a"))
+        -- write some garbage to sidecar-file.
+        f_out = io.open(d.sidecar_file, "w")
+        f_out:write("bla bla bla")
+        f_out:close()
+
+        -- do not flush the result, open docsettings again.
+        d = docsettings:open(file)
+        -- metadata.pdf.lua should be removed.
+        assert.are.not_equal("file", lfs.attributes(d.sidecar_file, "mode"))
+        assert.Equals("file", lfs.attributes(d.sidecar_file .. ".old", "mode"))
+        -- The content should come from sidecar_file.old.
+        assert.Equals("a", d:readSetting("a"))
+        d:close()
+        -- metadata.pdf.lua should be generated.
+        assert.Equals("file", lfs.attributes(d.sidecar_file, "mode"))
+        assert.Equals("file", lfs.attributes(d.sidecar_file .. ".old", "mode"))
+    end)
 end)
