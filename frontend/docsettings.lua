@@ -7,6 +7,7 @@ in the so-called sidecar directory
 local DataStorage = require("datastorage")
 local dump = require("dump")
 local lfs = require("libs/libkoreader-lfs")
+local logger = require("logger")
 local purgeDir = require("ffi/util").purgeDir
 
 local DocSettings = {}
@@ -110,10 +111,14 @@ function DocSettings:open(docfile)
     local candidates = {}
     -- New sidecar file
     table.insert(candidates, buildCandidate(new.sidecar_file))
+    -- Backup file of new sidecar file
+    table.insert(candidates, buildCandidate(new.sidecar_file .. ".old"))
     -- Legacy sidecar file
     table.insert(candidates, buildCandidate(new.legacy_sidecar_file))
     -- Legacy history folder
     table.insert(candidates, buildCandidate(new.history_file))
+    -- Backup file in legacy history folder
+    table.insert(candidates, buildCandidate(new.history_file .. ".old"))
     -- Legacy kpdfview setting
     table.insert(candidates, buildCandidate(docfile..".kpdfview.lua"))
     table.sort(candidates, function(l, r)
@@ -128,7 +133,11 @@ function DocSettings:open(docfile)
     for _, k in pairs(candidates) do
         ok, stored = pcall(dofile, k[1])
         if ok then
+            logger.dbg("data is read from ", k[1])
             break
+        else
+            logger.dbg(k[1], " is invalid, remove.")
+            os.remove(k[1])
         end
     end
     if ok and stored then
@@ -172,6 +181,11 @@ function DocSettings:flush()
     local s_out = dump(self.data)
     os.setlocale('C', 'numeric')
     for _, f in pairs(serials) do
+        if lfs.attributes(f, "mode") == "file" then
+            logger.dbg("Rename ", f, " to ", f .. ".old")
+            os.rename(f, f .. ".old")
+        end
+        logger.dbg("Write to ", f)
         local f_out = io.open(f, "w")
         if f_out ~= nil then
             f_out:write("-- we can read Lua syntax here!\nreturn ")
@@ -183,7 +197,8 @@ function DocSettings:flush()
             and not G_reader_settings:readSetting(
                         "preserve_legacy_docsetting") then
                 for _, k in pairs(self.candidates) do
-                    if k[1] ~= f then
+                    if k[1] ~= f and k[1] ~= f .. ".old" then
+                        logger.dbg("Remove legacy file ", k[1])
                         os.remove(k[1])
                         -- We should not remove sidecar folder, as it may
                         -- contain Kindle history files.
