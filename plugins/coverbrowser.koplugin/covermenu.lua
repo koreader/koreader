@@ -333,7 +333,6 @@ function CoverMenu:onHistoryMenuHold(item)
     UIManager:close(self.histfile_dialog)
 
     -- Replace Book information callback to use directly our bookinfo
-    logger.warn(orig_buttons)
     orig_buttons[2][1].callback = function()
         FileManagerBookInfo:show(file, bookinfo)
         UIManager:close(self.histfile_dialog)
