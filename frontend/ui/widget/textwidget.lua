@@ -41,9 +41,9 @@ function TextWidget:updateSize()
     if not tsize then
         self._length = 0
     else
-        self._length = tsize.x
+        self._length = math.ceil(tsize.x)
     end
-    self._height = self.face.size * 1.5
+    self._height = math.ceil(self.face.size * 1.5)
 end
 
 function TextWidget:getSize()

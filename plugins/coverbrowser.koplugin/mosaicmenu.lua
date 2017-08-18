@@ -21,6 +21,7 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local lfs = require("libs/libkoreader-lfs")
+local logger = require("logger")
 local _ = require("gettext")
 local Screen = Device.screen
 local getMenuText = require("util").getMenuText
@@ -543,15 +544,13 @@ function MosaicMenuItem:update()
 end
 
 function MosaicMenuItem:paintTo(bb, x, y)
-    -- We may get non-integer x or y that would cause some mess with image
+    -- We used to get non-integer x or y that would cause some mess with image
     -- inside FrameContainer were image would be drawn on top of the top border...
-    -- XXX We can stop having non-integer x/y by patching textwidget.lua
-    -- TextWidget:updateSize():
-    --         self._length = math.ceil(tsize.x)
-    --         self._height = math.ceil(self.face.size * 1.5)
-    -- In the meantime, make them integer:
-    x = math.floor(x)
-    y = math.floor(y)
+    -- Fixed by having TextWidget:updateSize() math.ceil()'ing its length and height
+    -- But let us know if that happens again
+    if x ~= math.floor(x) or y ~= math.floor(y) then
+        logger.err("MosaicMenuItem:paintTo() got non-integer x/y :", x, y)
+    end
 
     -- Original painting
     InputContainer.paintTo(self, bb, x, y)
