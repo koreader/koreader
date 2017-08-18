@@ -28,7 +28,7 @@ if [ "${TRAVIS_PULL_REQUEST}" = false ] && [ "${TRAVIS_BRANCH}" = 'master' ]; th
     cp -r doc/html/* koreader_doc/
     pushd koreader_doc && {
         git add -A
-        echo -e "\n${ANSI_GREEN}Pusing document update..."
+        echo -e "\n${ANSI_GREEN}Pushing document update..."
         git -c user.name="KOReader build bot" -c user.email="non-reply@koreader.rocks" \
             commit -a --amend -m 'Automated documentation build from travis-ci.'
         git push -f --quiet origin gh-pages >/dev/null
@@ -41,7 +41,7 @@ if [ "${TRAVIS_PULL_REQUEST}" = false ] && [ "${TRAVIS_BRANCH}" = 'master' ]; th
     make all
     travis_retry make coverage
     pushd koreader-*/koreader && {
-        luajit "$(which luacov-coveralls)"
+        luajit "$(which luacov-coveralls)" --verbose
     } || exit
     popd
 else
