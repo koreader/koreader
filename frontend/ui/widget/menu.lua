@@ -765,7 +765,9 @@ override this function to process the item selected in a different manner
 ]]--
 function Menu:onMenuSelect(item)
     if item.sub_item_table == nil then
-        self.close_callback()
+        if self.close_callback then
+            self.close_callback()
+        end
         self:onMenuChoice(item)
     else
         -- save menu title for later resume

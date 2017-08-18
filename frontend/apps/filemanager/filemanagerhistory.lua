@@ -1,5 +1,4 @@
 local ButtonDialog = require("ui/widget/buttondialog")
-local CenterContainer = require("ui/widget/container/centercontainer")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local Font = require("ui/font")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -94,28 +93,24 @@ function FileManagerHistory:onMenuHold(item)
 end
 
 function FileManagerHistory:onShowHist()
-    local menu_container = CenterContainer:new{
-        dimen = Screen:getSize(),
-    }
-
     self.hist_menu = Menu:new{
         ui = self.ui,
         width = Screen:getWidth(),
         height = Screen:getHeight(),
         is_borderless = true,
-        show_parent = menu_container,
         onMenuHold = self.onMenuHold,
         _manager = self,
     }
     self:updateItemTable()
-
-    table.insert(menu_container, self.hist_menu)
-
     self.hist_menu.close_callback = function()
-        UIManager:close(menu_container)
+        -- Close it at next tick so it stays displayed
+        -- while a book is opening (avoids a transient
+        -- display of the underlying File Browser)
+        UIManager:nextTick(function()
+            UIManager:close(self.hist_menu)
+        end)
     end
-
-    UIManager:show(menu_container)
+    UIManager:show(self.hist_menu)
     return true
 end
 
