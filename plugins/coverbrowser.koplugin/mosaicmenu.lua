@@ -194,10 +194,6 @@ function FakeCover:init()
         end
         inter_pad = math.floor(free_height / 2)
 
-        -- XXX We can benefit from adding to ui/widget/textboxwidget.lua at line 141
-        -- ("either a very long english word"):
-        --     if adjusted_idx == offset then self.has_split_inside_word = true end
-        -- The following as no effect till then
         local textboxes_ok = true
         if (authors_wg and authors_wg.has_split_inside_word) or (title_wg and title_wg.has_split_inside_word) then
             -- We may get a nicer cover at next lower font size
