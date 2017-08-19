@@ -225,6 +225,7 @@ function DictQuickLookup:update()
         padding = lookup_word_padding,
         margin = lookup_word_margin,
         bordersize = 0,
+        max_width = self.width,
         text = self.displayword,
         text_font_face = "tfont",
         text_font_size = lookup_word_font_size,
