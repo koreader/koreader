@@ -23,6 +23,7 @@ local TextWidget = Widget:new{
     face = nil,
     bold = nil,
     fgcolor = Blitbuffer.COLOR_BLACK,
+    max_width = nil,
     _bb = nil,
     _length = 0,
     _height = 0,
@@ -37,7 +38,7 @@ local TextWidget = Widget:new{
 --end
 
 function TextWidget:updateSize()
-    local tsize = RenderText:sizeUtf8Text(0, Screen:getWidth(), self.face, self.text, true, self.bold)
+    local tsize = RenderText:sizeUtf8Text(0, self.max_width and self.max_width or Screen:getWidth(), self.face, self.text, true, self.bold)
     if not tsize then
         self._length = 0
     else
@@ -70,7 +71,7 @@ function TextWidget:paintTo(bb, x, y)
     --bb:blitFrom(self._bb, x, y, 0, 0, self._length, self._bb:getHeight())
     --@TODO Don't use kerning for monospaced fonts.    (houqp)
     RenderText:renderUtf8Text(bb, x, y+self._height*0.7, self.face, self.text, true, self.bold,
-                self.fgcolor, self.width)
+                self.fgcolor, self.max_width and self.max_width or self.width)
 end
 
 function TextWidget:free()
