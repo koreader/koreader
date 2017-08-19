@@ -150,6 +150,9 @@ function FileManager:init()
                                 if file_abs_path then
                                     local autoremove_deleted_items_from_history = G_reader_settings:readSetting("autoremove_deleted_items_from_history") or false
                                     os.remove(DocSettings:getSidecarFile(file_abs_path))
+                                    -- also remove backup, otherwise it will be used if we re-open this document
+                                    -- (it also allows for the sidecar folder to be empty and removed)
+                                    os.remove(DocSettings:getSidecarFile(file_abs_path)..".old")
                                     -- If the sidecar folder is empty, os.remove() can
                                     -- delete it. Otherwise, the following statement has no
                                     -- effect.
