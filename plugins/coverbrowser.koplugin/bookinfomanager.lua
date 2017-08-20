@@ -373,18 +373,16 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
             local pages = document:getPageCount()
             dbrow.pages = pages
         end
-        -- via pcall because picdocument:getProps() always fails (we could
-        -- check document.is_pic, but this way, we'll catch any other error)
-        local ok, props = pcall(document.getProps, document)
-        if ok then
+        local props = document:getProps()
+        if next(props) then -- there's at least one item
             dbrow.has_meta = 'Y'
-            if props.title and props.title ~= "" then dbrow.title = props.title end
-            if props.authors and props.authors ~= "" then dbrow.authors = props.authors end
-            if props.series and props.series ~= "" then dbrow.series = props.series end
-            if props.language and props.language ~= "" then dbrow.language = props.language end
-            if props.keywords and props.keywords ~= "" then dbrow.keywords = props.keywords end
-            if props.description and props.description ~= "" then dbrow.description = props.description end
         end
+        if props.title and props.title ~= "" then dbrow.title = props.title end
+        if props.authors and props.authors ~= "" then dbrow.authors = props.authors end
+        if props.series and props.series ~= "" then dbrow.series = props.series end
+        if props.language and props.language ~= "" then dbrow.language = props.language end
+        if props.keywords and props.keywords ~= "" then dbrow.keywords = props.keywords end
+        if props.description and props.description ~= "" then dbrow.description = props.description end
         if cover_specs then
             local spec_sizetag = cover_specs.sizetag
             local spec_max_cover_w = cover_specs.max_cover_w
