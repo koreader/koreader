@@ -124,6 +124,28 @@ describe("MenuSorter module", function()
         assert.is_true(test_menu[1][2].separator == true)
         assert.is_true(test_menu[1][3].id == "third2")
     end)
+    it("should ignore separator as first item", function()
+        local menu_items = {
+            ["KOMenu:menu_buttons"] = {},
+            first = {},
+            second = {},
+            third1 = {},
+            third2 = {},
+        }
+        local order = {
+            ["KOMenu:menu_buttons"] = {"first",},
+            first = {"----------------------------", "second", "third1", "----------------------------", "third2"},
+        }
+
+        local test_menu = MenuSorter:sort(menu_items, order)
+
+        assert.is_true(test_menu[1].id == "first")
+        assert.is_true(test_menu[1][1].id == "second")
+        assert.is_nil(test_menu[1][1].separator)
+        assert.is_true(test_menu[1][2].id == "third1")
+        assert.is_true(test_menu[1][2].separator == true)
+        assert.is_true(test_menu[1][3].id == "third2")
+    end)
     it("should compress menus when items from order are missing", function()
         local menu_items = {
             ["KOMenu:menu_buttons"] = {},
