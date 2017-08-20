@@ -61,7 +61,7 @@ if Device.isTouchDevice() then
         if x > 0 and y > 0 then
             self.charpos = self.text_widget:moveCursor(x, y)
             UIManager:setDirty(self.parent, function()
-                return "ui", self.text_widget.dimen
+                return "ui", self.dimen
             end)
         end
     end
