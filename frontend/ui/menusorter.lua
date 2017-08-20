@@ -86,7 +86,10 @@ function MenuSorter:sort(item_table, order)
                 if v then
                     if v.id == separator_id then
                         new_index = new_index - 1
-                        menu_table[order_id][new_index].separator = true
+                        -- ignore separator if the menu starts with it
+                        if new_index > 0 then
+                            menu_table[order_id][new_index].separator = true
+                        end
                     else
                         -- fix the index
                         menu_table[order_id][new_index] = tmp_menu_table[i]
