@@ -26,6 +26,28 @@ function PicDocument:getUsedBBox(pageno)
     return { x0 = 0, y0 = 0, x1 = self._document.width, y1 = self._document.height }
 end
 
+function PicDocument:getProps()
+    local _, _, docname = self.file:find(".*/(.*)")
+    docname = docname or self.file
+    return {
+        title = docname:match("(.*)%."),
+    }
+end
+
+function PicDocument:getCoverPageImage()
+    local f = io.open(self.file, "rb")
+    if f then
+        local data = f:read("*all")
+        f:close()
+        local Mupdf = require("ffi/mupdf")
+        local ok, image = pcall(Mupdf.renderImage, data, data:len())
+        if ok then
+            return image
+        end
+    end
+    return nil
+end
+
 function PicDocument:register(registry)
     registry:addProvider("jpeg", "image/jpeg", self)
     registry:addProvider("jpg", "image/jpeg", self)
