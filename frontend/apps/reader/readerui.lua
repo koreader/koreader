@@ -529,8 +529,8 @@ function ReaderUI:notifyCloseDocument()
         else
             UIManager:show(ConfirmBox:new{
                 text = _("Do you want to save this document?"),
-                ok_text = _("Yes"),
-                cancel_text = _("No"),
+                ok_text = _("Save"),
+                cancel_text = _("Don't save"),
                 ok_callback = function()
                     self:closeDocument()
                 end,
