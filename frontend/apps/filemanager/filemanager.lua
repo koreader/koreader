@@ -158,9 +158,14 @@ function FileManager:init()
                                     -- effect.
                                     os.remove(DocSettings:getSidecarDir(file_abs_path))
                                     self:refreshPath()
-                                    -- also delete from history if autoremove_deleted_items_from_history is enabled
+                                    -- also delete from history and update lastfile to top item in
+                                    -- history if autoremove_deleted_items_from_history is enabled
                                     if autoremove_deleted_items_from_history then
-                                        require("readhistory"):removeItemByPath(file_abs_path)
+                                        local readhistory = require("readhistory")
+                                        readhistory:removeItemByPath(file_abs_path)
+                                        if G_reader_settings:readSetting("lastfile") == file_abs_path then
+                                            G_reader_settings:saveSetting("lastfile", #readhistory.hist > 0 and readhistory.hist[1].file or nil)
+                                        end
                                     end
                                 end
                                 UIManager:close(self.file_dialog)
@@ -189,10 +194,15 @@ function FileManager:init()
                                 local autoremove_deleted_items_from_history = G_reader_settings:readSetting("autoremove_deleted_items_from_history") or false
                                 local file_abs_path = util.realpath(file)
                                 deleteFile(file)
-                                -- also delete from history if autoremove_deleted_items_from_history is enabled
+                                -- also delete from history and update lastfile to top item in
+                                -- history if autoremove_deleted_items_from_history is enabled
                                 if autoremove_deleted_items_from_history then
                                     if file_abs_path then
-                                        require("readhistory"):removeItemByPath(file_abs_path)
+                                        local readhistory = require("readhistory")
+                                        readhistory:removeItemByPath(file_abs_path)
+                                        if G_reader_settings:readSetting("lastfile") == file_abs_path then
+                                            G_reader_settings:saveSetting("lastfile", #readhistory.hist > 0 and readhistory.hist[1].file or nil)
+                                        end
                                     end
                                 end
                                 self:refreshPath()
