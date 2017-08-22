@@ -70,9 +70,10 @@ local order = {
     },
     search = {
         "dictionary_lookup",
-        "disable_fuzzy_search",
+        "dictionary_settings",
         "----------------------------",
         "wikipedia_lookup",
+        "wikipedia_settings",
         "----------------------------",
         "goodreads",
         "----------------------------",

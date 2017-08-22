@@ -43,8 +43,6 @@ local DictQuickLookup = InputContainer:new{
     height = nil,
     -- box of highlighted word, quick lookup window tries to not hide the word
     word_box = nil,
-    -- allow for disabling justification
-    dict_justify = G_reader_settings:nilOrTrue("dict_justify"),
 
     title_padding = Screen:scaleBySize(5),
     title_margin = Screen:scaleBySize(2),
@@ -243,7 +241,8 @@ function DictQuickLookup:update()
             -- get a bit more height for definition as wiki has one less button raw
             height = self.is_fullpage and self.height*0.75 or self.height*0.7,
             dialog = self,
-            justified = self.dict_justify,
+            -- allow for disabling justification
+            justified = G_reader_settings:nilOrTrue("dict_justify"),
         },
     }
     -- Different sets of buttons if fullpage or not
@@ -266,9 +265,8 @@ function DictQuickLookup:update()
                         local filename = cleaned_lookupword .. "."..string.upper(lang)..".epub"
                         -- Find a directory to save file into
                         local dir = G_reader_settings:readSetting("wikipedia_save_dir")
-                        if not dir then dir = G_reader_settings:readSetting("download_dir") end -- OPDS dir
                         if not dir then dir = G_reader_settings:readSetting("home_dir") end
-                        if not dir then dir = G_reader_settings:readSetting("lastdir") end
+                        if not dir then dir = require("apps/filemanager/filemanagerutil").getDefaultDir() end
                         if not dir then
                             UIManager:show(InfoMessage:new{
                                 text = _("No directory to save the page to could be found."),

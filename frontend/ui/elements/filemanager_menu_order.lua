@@ -53,9 +53,10 @@ local order = {
     },
     search = {
         "dictionary_lookup",
-        "disable_fuzzy_search",
+        "dictionary_settings",
         "----------------------------",
         "wikipedia_lookup",
+        "wikipedia_settings",
         "----------------------------",
         "find_book_in_calibre_catalog",
         "find_file",
