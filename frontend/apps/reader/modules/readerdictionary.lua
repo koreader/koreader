@@ -36,17 +36,31 @@ function ReaderDictionary:addToMainMenu(menu_items)
             end,
         },
     }
-    menu_items.disable_fuzzy_search = {
-        text = _("Disable dictionary fuzzy search"),
-        checked_func = function()
-            return self.disable_fuzzy_search == true
-        end,
-        callback = function()
-            self.disable_fuzzy_search = not self.disable_fuzzy_search
-        end,
-        hold_callback = function()
-            self:makeDisableFuzzyDefault(self.disable_fuzzy_search)
-        end,
+    menu_items.dictionary_settings = {
+        text = _("Dictionary settings"),
+        sub_item_table = {
+            {
+                text = _("Disable dictionary fuzzy search"),
+                checked_func = function()
+                    return self.disable_fuzzy_search == true
+                end,
+                callback = function()
+                    self.disable_fuzzy_search = not self.disable_fuzzy_search
+                end,
+                hold_callback = function()
+                    self:makeDisableFuzzyDefault(self.disable_fuzzy_search)
+                end,
+            },
+            { -- setting used by dictquicklookup
+                text = _("Justify text"),
+                checked_func = function()
+                    return G_reader_settings:nilOrTrue("dict_justify")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrTrue("dict_justify")
+                end,
+            }
+        }
     }
 end
 
