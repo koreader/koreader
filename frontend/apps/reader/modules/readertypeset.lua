@@ -96,6 +96,9 @@ function ReaderTypeset:genStyleSheetMenu()
             end,
             hold_callback = function()
                 self:makeDefaultStyleSheet(file["css"], file["text"])
+            end,
+            checked_func = function()
+                return file.css == self.css
             end
         })
     end
