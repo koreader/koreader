@@ -20,20 +20,6 @@ function NetworkMgr:init()
     if self.wifi_was_on and G_reader_settings:nilOrTrue("auto_restore_wifi") then
         self:restoreWifiAsync()
     end
-
-    table.insert(PluginShare.backgroundJobs, {
-        insert_sec = 0,  -- Actively set the insert_sec to start it immediately.
-        when = 30,       -- Checks network state once per 30 seconds.
-        executable = "ping -W 1 -c 1 www.example.com",
-        repeated = true,
-        callback = function(job)
-            if job.result == 0 then
-                self.network_state = true
-            else
-                self.network_state = false
-            end
-        end,
-    })
 end
 
 -- Following methods are Device specific which need to be initialized in
@@ -61,6 +47,8 @@ function NetworkMgr:restoreWifiAsync()
                 if job.result ~= 0 then
                     -- TODO(Hzj_jie): Should we show a message?
                     logger.dbg("Failed to restore network state, job returns ", job.result)
+                else
+                    UIManager:broadcastEvent(Event:new("NetworkConnected"))
                 end
             end,
         })
@@ -93,7 +81,7 @@ function NetworkMgr:promptWifiOff(complete_callback)
 end
 
 function NetworkMgr:isOnline()
-    return self.network_state
+    return PluginShare.network_connectivity
 end
 
 function NetworkMgr:setHTTPProxy(proxy)

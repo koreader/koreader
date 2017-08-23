@@ -82,7 +82,7 @@ function ReaderMenu:onReaderReady()
                 ratio_x = DTAP_ZONE_MENU.x, ratio_y = DTAP_ZONE_MENU.y,
                 ratio_w = DTAP_ZONE_MENU.w, ratio_h = DTAP_ZONE_MENU.h,
             },
-            handler = function(ges) return self:onTapShowMenu(ges) end,
+            handler = function(ges) return self:_tapShowMenu(ges) end,
         },
         {
             id = "readermenu_swipe",
@@ -92,7 +92,7 @@ function ReaderMenu:onReaderReady()
                 ratio_w = DTAP_ZONE_MENU.w, ratio_h = DTAP_ZONE_MENU.h,
             },
             overrides = { "rolling_swipe", "paging_swipe", },
-            handler = function(ges) return self:onSwipeShowMenu(ges) end,
+            handler = function(ges) return self:_swipeShowMenu(ges) end,
         },
         {
             id = "readermenu_pan",
@@ -102,7 +102,7 @@ function ReaderMenu:onReaderReady()
                 ratio_w = DTAP_ZONE_MENU.w, ratio_h = DTAP_ZONE_MENU.h,
             },
             overrides = { "rolling_pan", "paging_pan", },
-            handler = function(ges) return self:onSwipeShowMenu(ges) end,
+            handler = function(ges) return self:_swipeShowMenu(ges) end,
         },
     })
 end
@@ -267,6 +267,7 @@ function ReaderMenu:onShowReaderMenu()
     -- maintain a reference to menu_container
     self.menu_container = menu_container
     UIManager:show(menu_container)
+    UIManager:broadcastEvent(Event:new("ShowMenu"))
 
     return true
 end
@@ -278,7 +279,7 @@ function ReaderMenu:onCloseReaderMenu()
     return true
 end
 
-function ReaderMenu:onSwipeShowMenu(ges)
+function ReaderMenu:_swipeShowMenu(ges)
     if self.activation_menu ~= "tap" and ges.direction == "south" then
         self.ui:handleEvent(Event:new("ShowConfigMenu"))
         self.ui:handleEvent(Event:new("ShowReaderMenu"))
@@ -286,7 +287,7 @@ function ReaderMenu:onSwipeShowMenu(ges)
     end
 end
 
-function ReaderMenu:onTapShowMenu()
+function ReaderMenu:_tapShowMenu()
     if self.activation_menu ~= "swipe" then
         self.ui:handleEvent(Event:new("ShowConfigMenu"))
         self.ui:handleEvent(Event:new("ShowReaderMenu"))

@@ -2,6 +2,7 @@ local CenterContainer = require("ui/widget/container/centercontainer")
 local CloudStorage = require("apps/cloudstorage/cloudstorage")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
+local Event = require("ui/event")
 local FileSearcher = require("apps/filemanager/filemanagerfilesearcher")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
@@ -64,7 +65,7 @@ function FileManagerMenu:initGesListener()
                 ratio_x = DTAP_ZONE_MENU.x, ratio_y = DTAP_ZONE_MENU.y,
                 ratio_w = DTAP_ZONE_MENU.w, ratio_h = DTAP_ZONE_MENU.h,
             },
-            handler = function(ges) return self:onTapShowMenu(ges) end,
+            handler = function(ges) return self:_tapShowMenu(ges) end,
         },
         {
             id = "filemanager_swipe",
@@ -74,7 +75,7 @@ function FileManagerMenu:initGesListener()
                 ratio_w = DTAP_ZONE_MENU.w, ratio_h = DTAP_ZONE_MENU.h,
             },
             overrides = { "rolling_swipe", "paging_swipe", },
-            handler = function(ges) return self:onSwipeShowMenu(ges) end,
+            handler = function(ges) return self:_swipeShowMenu(ges) end,
         },
     })
 end
@@ -321,7 +322,7 @@ function FileManagerMenu:exitOrRestart(callback)
     end
 end
 
-function FileManagerMenu:onShowMenu()
+function FileManagerMenu:_showMenu()
     local tab_index = G_reader_settings:readSetting("filemanagermenu_tab_index") or 1
     if self.tab_item_table == nil then
         self:setUpdateItemTable()
@@ -359,6 +360,7 @@ function FileManagerMenu:onShowMenu()
     -- maintain a reference to menu_container
     self.menu_container = menu_container
     UIManager:show(menu_container)
+    UIManager:broadcastEvent(Event:new("ShowMenu"))
 
     return true
 end
@@ -370,16 +372,16 @@ function FileManagerMenu:onCloseFileManagerMenu()
     return true
 end
 
-function FileManagerMenu:onTapShowMenu(ges)
+function FileManagerMenu:_tapShowMenu(ges)
     if self.activation_menu ~= "swipe" then
-        self:onShowMenu()
+        self:_showMenu()
         return true
     end
 end
 
-function FileManagerMenu:onSwipeShowMenu(ges)
+function FileManagerMenu:_swipeShowMenu(ges)
     if self.activation_menu ~= "tap" and ges.direction == "south" then
-        self:onShowMenu()
+        self:_showMenu()
         return true
     end
 end

@@ -50,6 +50,7 @@ local order = {
         "keep_alive",
         "terminal",
         "storage_stat",
+        "network_poller",
     },
     search = {
         "dictionary_lookup",
