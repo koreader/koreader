@@ -1,11 +1,11 @@
-local url = require('socket.url')
-local socket = require('socket')
+local DocumentRegistry = require("document/documentregistry")
+local JSON = require("json")
 local http = require('socket.http')
 local https = require('ssl.https')
 local ltn12 = require('ltn12')
+local socket = require('socket')
+local url = require('socket.url')
 local _ = require("gettext")
-local JSON = require("json")
-local DocumentRegistry = require("document/documentregistry")
 
 local DropBoxApi = {
 }
@@ -95,7 +95,7 @@ function DropBoxApi:listFolder(path, token)
     local dropbox_file = {}
     local tag, text
     local ls_dropbox = self:fetchListFolders(path, token)
-    if ls_dropbox == nil then return false end
+    if ls_dropbox == nil or ls_dropbox.entries == nil then return false end
     for _, files in ipairs(ls_dropbox.entries) do
         text = files.name
         tag = files[".tag"]

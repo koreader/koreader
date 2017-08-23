@@ -1,7 +1,8 @@
 describe("util module", function()
-    local util
+    local DataStorage, util
     setup(function()
         require("commonrequire")
+        DataStorage = require("datastorage")
         util = require("util")
     end)
 
@@ -295,5 +296,17 @@ describe("util module", function()
     it("should guess it is double encoded HTML and convert it to text", function()
         assert.is_equal(util.htmlToPlainTextIfHtml("Deux parties.&lt;br&gt;Prologue.Désespérée, elle le tue...&lt;br&gt;Première partie. Sur la route &amp;amp; dans la nuit"),
                     "Deux parties.\nPrologue.Désespérée, elle le tue...\nPremière partie. Sur la route & dans la nuit")
+    end)
+    it("should return true on empty dir", function()
+        assert.is_equal(util.isEmptyDir(DataStorage:getDataDir() .. "/data/dict"), -- should be empty during unit tests
+                    true)
+    end)
+    it("should return false on non-empty dir", function()
+        assert.is_equal(util.isEmptyDir(DataStorage:getDataDir()), -- should contain subdirectories
+                    false)
+    end)
+    it("should return nil on non-existent dir", function()
+        assert.is_equal(util.isEmptyDir("/this/is/just/some/nonsense/really/this/should/not/exist"),
+                    nil)
     end)
 end)

@@ -488,6 +488,16 @@ function ConfigDialog:init()
                 }
             }
         }
+        self.ges_events.SwipeCloseMenu = {
+            GestureRange:new{
+                ges = "swipe",
+                range = Geom:new{
+                    x = 0, y = 0,
+                    w = Screen:getWidth(),
+                    h = Screen:getHeight(),
+                }
+            }
+        }
     end
     if Device:hasKeys() then
         -- set up keyboard events
@@ -605,6 +615,20 @@ end
 
 function ConfigDialog:onTapCloseMenu(arg, ges_ev)
     if ges_ev.pos:notIntersectWith(self.dialog_frame.dimen) then
+        self:closeDialog()
+        return true
+    end
+end
+
+function ConfigDialog:onSwipeCloseMenu(arg, ges_ev)
+    local range = {
+        x = DTAP_ZONE_CONFIG.x * Screen:getWidth(),
+        y = DTAP_ZONE_CONFIG.y * Screen:getHeight(),
+        w = DTAP_ZONE_CONFIG.w * Screen:getWidth(),
+        h = DTAP_ZONE_CONFIG.h * Screen:getHeight(),
+    }
+    if ges_ev.direction == "south" and (ges_ev.pos:intersectWith(self.dialog_frame.dimen)
+        or ges_ev.pos:intersectWith(range)) then
         self:closeDialog()
         return true
     end

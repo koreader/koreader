@@ -18,6 +18,7 @@ local lang_locale = G_reader_settings:readSetting("language")
 if lang_locale then
     _.changeLang(lang_locale)
 end
+local Device = require("device")
 local UIManager = require("ui/uimanager")
 local RenderText = require("ui/rendertext")
 local Font = require("ui/font")
@@ -35,7 +36,6 @@ local TouchMenu = require("ui/widget/touchmenu")
 local DocumentRegistry = require("document/documentregistry")
 local ReaderUI = require("apps/reader/readerui")
 local DEBUG = require("dbg")
-local Device = require("device")
 local Screen = require("device").screen
 local Blitbuffer = require("ffi/blitbuffer")
 local InputText = require("ui/widget/inputtext")

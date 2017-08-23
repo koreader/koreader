@@ -141,21 +141,36 @@ function FileManager:init()
                     text = _("Purge .sdr"),
                     enabled = DocSettings:hasSidecarFile(util.realpath(file)),
                     callback = function()
-                        local file_abs_path = util.realpath(file)
-                        if file_abs_path then
-                            local autoremove_deleted_items_from_history = G_reader_settings:readSetting("autoremove_deleted_items_from_history") or false
-                            os.remove(DocSettings:getSidecarFile(file_abs_path))
-                            -- If the sidecar folder is empty, os.remove() can
-                            -- delete it. Otherwise, the following statement has no
-                            -- effect.
-                            os.remove(DocSettings:getSidecarDir(file_abs_path))
-                            self:refreshPath()
-                            -- also delete from history if autoremove_deleted_items_from_history is enabled
-                            if autoremove_deleted_items_from_history then
-                                require("readhistory"):removeItemByPath(file_abs_path)
-                            end
-                        end
-                        UIManager:close(self.file_dialog)
+                        local ConfirmBox = require("ui/widget/confirmbox")
+                        UIManager:show(ConfirmBox:new{
+                            text = util.template(_("Purge .sdr to reset settings for this document?\n\n%1"), self.file_dialog.title),
+                            ok_text = _("Purge"),
+                            ok_callback = function()
+                                local file_abs_path = util.realpath(file)
+                                if file_abs_path then
+                                    local autoremove_deleted_items_from_history = G_reader_settings:readSetting("autoremove_deleted_items_from_history") or false
+                                    os.remove(DocSettings:getSidecarFile(file_abs_path))
+                                    -- also remove backup, otherwise it will be used if we re-open this document
+                                    -- (it also allows for the sidecar folder to be empty and removed)
+                                    os.remove(DocSettings:getSidecarFile(file_abs_path)..".old")
+                                    -- If the sidecar folder is empty, os.remove() can
+                                    -- delete it. Otherwise, the following statement has no
+                                    -- effect.
+                                    os.remove(DocSettings:getSidecarDir(file_abs_path))
+                                    self:refreshPath()
+                                    -- also delete from history and update lastfile to top item in
+                                    -- history if autoremove_deleted_items_from_history is enabled
+                                    if autoremove_deleted_items_from_history then
+                                        local readhistory = require("readhistory")
+                                        readhistory:removeItemByPath(file_abs_path)
+                                        if G_reader_settings:readSetting("lastfile") == file_abs_path then
+                                            G_reader_settings:saveSetting("lastfile", #readhistory.hist > 0 and readhistory.hist[1].file or nil)
+                                        end
+                                    end
+                                end
+                                UIManager:close(self.file_dialog)
+                            end,
+                        })
                     end,
                 },
             },
@@ -179,10 +194,15 @@ function FileManager:init()
                                 local autoremove_deleted_items_from_history = G_reader_settings:readSetting("autoremove_deleted_items_from_history") or false
                                 local file_abs_path = util.realpath(file)
                                 deleteFile(file)
-                                -- also delete from history if autoremove_deleted_items_from_history is enabled
+                                -- also delete from history and update lastfile to top item in
+                                -- history if autoremove_deleted_items_from_history is enabled
                                 if autoremove_deleted_items_from_history then
                                     if file_abs_path then
-                                        require("readhistory"):removeItemByPath(file_abs_path)
+                                        local readhistory = require("readhistory")
+                                        readhistory:removeItemByPath(file_abs_path)
+                                        if G_reader_settings:readSetting("lastfile") == file_abs_path then
+                                            G_reader_settings:saveSetting("lastfile", #readhistory.hist > 0 and readhistory.hist[1].file or nil)
+                                        end
                                     end
                                 end
                                 self:refreshPath()
@@ -468,7 +488,7 @@ function FileManager:getSortingMenuTable()
     return {
         text_func = function()
             return util.template(
-                _("Sort by %1"),
+                _("Sort by: %1"),
                 collates[fm.file_chooser.collate][1]
             )
         end,
@@ -479,6 +499,40 @@ function FileManager:getSortingMenuTable()
             set_collate_table("modification"),
             set_collate_table("size"),
             set_collate_table("type"),
+        }
+    }
+end
+
+function FileManager:getStartWithMenuTable()
+    local start_with_setting = G_reader_settings:readSetting("start_with") or "filemanager"
+    local start_withs = {
+        filemanager = {_("file browser"), _("Start with file browser")},
+        history = {_("history"), _("Start with history")},
+        last = {_("last file"), _("Start with last file")},
+    }
+    local set_sw_table = function(start_with)
+        return {
+            text = start_withs[start_with][2],
+            checked_func = function()
+                return start_with_setting == start_with
+            end,
+            callback = function()
+                start_with_setting = start_with
+                G_reader_settings:saveSetting("start_with", start_with)
+            end,
+        }
+    end
+    return {
+        text_func = function()
+            return util.template(
+                _("Start with: %1"),
+                start_withs[start_with_setting][1]
+            )
+        end,
+        sub_item_table = {
+            set_sw_table("filemanager"),
+            set_sw_table("history"),
+            set_sw_table("last"),
         }
     }
 end

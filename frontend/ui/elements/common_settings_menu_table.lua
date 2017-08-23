@@ -1,9 +1,12 @@
 local Device = require("device")
+local InfoMessage = require("ui/widget/infomessage")
 local Language = require("ui/language")
 local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
-local Screen = require("device").screen
+local TimeWidget = require("ui/widget/timewidget")
 local _ = require("gettext")
+local Screen = Device.screen
+local T = require("ffi/util").template
 
 local common_settings = {}
 
@@ -13,6 +16,37 @@ if Device:hasFrontlight() then
         text = _("Frontlight"),
         callback = function()
             ReaderFrontLight:onShowFlDialog()
+        end,
+    }
+end
+
+if Device:setTime() then
+    common_settings.time = {
+        text = _("Set time"),
+        callback = function()
+            local now_t = os.date("*t")
+            local curr_hour = now_t.hour
+            local curr_min = now_t.min
+            local time_widget = TimeWidget:new{
+                hour = curr_hour,
+                min = curr_min,
+                ok_text = _("Set time"),
+                title_text =  _("Set time"),
+                callback = function(time)
+                    if Device:setTime(time.hour, time.min) then
+                        now_t = os.date("*t")
+                        UIManager:show(InfoMessage:new{
+                            text = T(_("Current time: %1:%2"), string.format("%02d", now_t.hour),
+                                string.format("%02d", now_t.min))
+                        })
+                    else
+                        UIManager:show(InfoMessage:new{
+                            text = _("Time couldn't be set"),
+                        })
+                    end
+                end
+            }
+            UIManager:show(time_widget)
         end,
     }
 end

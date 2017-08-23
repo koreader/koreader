@@ -132,7 +132,7 @@ function util.splitToChars(text)
     local tab = {}
     if text ~= nil then
         local prevcharcode, charcode = 0
-        for uchar in string.gfind(text, "([%z\1-\127\194-\244][\128-\191]*)") do
+        for uchar in string.gmatch(text, "([%z\1-\127\194-\244][\128-\191]*)") do
             charcode = BaseUtil.utf8charcode(uchar)
             if prevcharcode then -- utf8
                 table.insert(tab, uchar)
@@ -288,7 +288,10 @@ end
 ---- @treturn bool
 function util.isEmptyDir(path)
     local lfs = require("libs/libkoreader-lfs")
-    for filename in lfs.dir(path) do
+    -- lfs.dir will crash rather than return nil if directory doesn't exist O_o
+    local ok, iter, dir_obj = pcall(lfs.dir, path)
+    if not ok then return end
+    for filename in iter, dir_obj do
         if filename ~= '.' and filename ~= '..' then
             return false
         end

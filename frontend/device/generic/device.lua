@@ -205,6 +205,10 @@ function Device:retrieveNetworkInfo()
     end
 end
 
+function Device:setTime(hour, min)
+        return false
+end
+
 -- Return an integer value to indicate the brightness of the environment. The value should be in
 -- range [0, 4].
 -- 0: dark.

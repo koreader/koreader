@@ -50,6 +50,9 @@ local ImageViewer = InputContainer:new{
     image_padding = Screen:scaleBySize(2),
     button_padding = Screen:scaleBySize(14),
 
+    -- sensitivity for hold (trigger full refresh) vs pan (move image)
+    pan_threshold = Screen:scaleBySize(5),
+
     _scale_to_fit = nil, -- state of toggle between our 2 pre-defined scales (scale to fit / original size)
     _panning = false,
     -- Default centering on center of image if oversized
@@ -343,8 +346,8 @@ function ImageViewer:onHoldRelease(_, ges)
         self._panning = false
         self._pan_relative_x = ges.pos.x - self._pan_relative_x
         self._pan_relative_y = ges.pos.y - self._pan_relative_y
-        if self._pan_relative_x == 0 and self._pan_relative_y == 0 then
-            -- Hold with no move: use this to trigger full refresh
+        if math.abs(self._pan_relative_x) < self.pan_threshold and math.abs(self._pan_relative_y) < self.pan_threshold then
+            -- Hold with no move (or less than pan_threshold): use this to trigger full refresh
             UIManager:setDirty(nil, "full")
         else
             self:panBy(-self._pan_relative_x, -self._pan_relative_y)

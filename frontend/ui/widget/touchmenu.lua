@@ -1,6 +1,7 @@
 local Blitbuffer = require("ffi/blitbuffer")
 local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
+local CheckMark = require("ui/widget/checkmark")
 local Device = require("device")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
@@ -56,17 +57,20 @@ function TouchMenuItem:init()
     if self.item.enabled_func then
         item_enabled = self.item.enabled_func()
     end
+    local item_checkable = false
     local item_checked = self.item.checked
     if self.item.checked_func then
+        item_checkable = true
         item_checked = self.item.checked_func()
     end
-    local checked_widget = TextWidget:new{
-        text = "√ ",
-        face = self.face,
+    local checked_widget = CheckMark:new{
+        checked = true,
     }
-    local unchecked_widget = TextWidget:new{
-        text = "",
-        face = self.face,
+    local unchecked_widget = CheckMark:new{
+        checked = false,
+    }
+    local empty_widget = CheckMark:new{
+        checkable = false,
     }
     self.item_frame = FrameContainer:new{
         width = self.dimen.w,
@@ -76,7 +80,11 @@ function TouchMenuItem:init()
             align = "center",
             CenterContainer:new{
                 dimen = Geom:new{ w = checked_widget:getSize().w },
-                item_checked and checked_widget or unchecked_widget
+                item_checkable and (
+                    item_checked and checked_widget
+                    or unchecked_widget
+                )
+                or empty_widget
             },
             TextWidget:new{
                 text = getMenuText(self.item),

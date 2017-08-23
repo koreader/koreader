@@ -578,7 +578,10 @@ function Input:waitEvent(timeout_us)
         end
 
         -- ev does contain an error message:
-        if ev == "Waiting for input failed: timeout\n" then
+        local timeout_err_msg = "Waiting for input failed: timeout\n"
+        -- ev may not be equal to timeout_err_msg, but it may ends with it
+        -- ("./ffi/SDL2_0.lua:110: Waiting for input failed: timeout" on the emulator)
+        if ev and ev.sub and ev:sub(-timeout_err_msg:len()) == timeout_err_msg then
             -- don't report an error on timeout
             ev = nil
             break
