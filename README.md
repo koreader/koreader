@@ -80,6 +80,9 @@ sudo apt-get install build-essential git patch wget unzip \
 gettext autoconf automake cmake libtool nasm luarocks \
 libssl-dev libffi-dev libsdl2-dev libc6-dev-i386 xutils-dev linux-libc-dev:i386 zlib1g:i386
 ```
+
+If you are running Fedora, be sure to install the package `libstdc++-static`.
+
 That's all you need to get the emulator up and running with `./kodev build` and `./kodev run`.
 
 Cross compile toolchains are available for Ubuntu users through these commands:
