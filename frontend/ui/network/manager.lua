@@ -81,7 +81,8 @@ function NetworkMgr:promptWifiOff(complete_callback)
 end
 
 function NetworkMgr:isOnline()
-    return PluginShare.network_connectivity
+    return PluginShare.network_connectivity == nil or
+           PluginShare.network_connectivity
 end
 
 function NetworkMgr:setHTTPProxy(proxy)
