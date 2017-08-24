@@ -360,7 +360,6 @@ function FileManagerMenu:_showMenu()
     -- maintain a reference to menu_container
     self.menu_container = menu_container
     UIManager:show(menu_container)
-    UIManager:broadcastEvent(Event:new("ShowMenu"))
 
     return true
 end
