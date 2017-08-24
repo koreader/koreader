@@ -1,3 +1,4 @@
+local Device = require("device")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
@@ -36,10 +37,17 @@ local DISPLAY_MODES = {
 local CoverBrowser = InputContainer:new{}
 
 function CoverBrowser:init()
+    self.full_featured = true
     -- As we don't know how to run and kill subprocesses on Android (for
-    -- background info extraction), disable this plugin for now.
-    -- XXX What about the emulator on Windows ?
-    if require("ffi/util").isAndroid() then
+    -- background info extraction), this plugin is very limited on Android,
+    -- and will provide only a menu for managing a few core settings.
+    if Device.isAndroid() then
+        self.full_featured = false
+    end
+
+    self.ui.menu:registerToMainMenu(self)
+
+    if not self.full_featured then
         return
     end
 
@@ -48,8 +56,6 @@ function CoverBrowser:init()
 
     self.history_display_mode = BookInfoManager:getSetting("history_display_mode")
     self:setupHistoryDisplayMode()
-
-    self.ui.menu:registerToMainMenu(self)
 
     -- If KOReader has started directly to FileManager, the FileManager
     -- instance is being init()'ed and there is no FileManager.instance yet,
@@ -60,231 +66,322 @@ function CoverBrowser:init()
 end
 
 function CoverBrowser:addToMainMenu(menu_items)
-    if not self.ui.view then -- only for FileManager menu
-        menu_items.filemanager_display_mode = {
-            text = _("Display mode"),
+    -- We add it only to FileManager menu
+    if self.ui.view then -- Reader
+        return
+    end
+
+    -- Items available even if not full_featured
+    -- (settings used by core, that fit in this menu)
+    local generic_items = {
+        {
+            text_func = function()
+                local current_state = _("Show new files in bold")
+                if G_reader_settings:readSetting("show_file_in_bold") == "opened" then
+                    current_state = _("Show opened files in bold")
+                elseif G_reader_settings:readSetting("show_file_in_bold") == false then
+                    current_state = _("Show files in bold") -- with checkmark unchecked
+                end
+                if self.full_featured then
+                    -- Inform that this settings applies only to classic file chooser
+                    current_state = _("(Classic mode) ") .. current_state
+                end
+                return current_state
+            end,
+            checked_func = function() return G_reader_settings:readSetting("show_file_in_bold") ~= false end,
             sub_item_table = {
-                -- selecting these does not close menu, which may be nice
-                -- so one can see how they look below the menu
                 {
-                    text = _("Classic (filename only)"),
-                    checked_func = function() return not self.filemanager_display_mode end,
+                    text = _("Don't show files in bold"),
+                    checked_func = function() return G_reader_settings:readSetting("show_file_in_bold") == false end,
                     callback = function()
-                       self:setupFileManagerDisplayMode("")
+                        G_reader_settings:saveSetting("show_file_in_bold", false)
+                        self:refreshFileManagerInstance()
                     end,
                 },
                 {
-                    text = _("Mosaic with cover images"),
-                    checked_func = function() return self.filemanager_display_mode == "mosaic_image" end,
+                    text = _("Show opened files in bold"),
+                    checked_func = function() return G_reader_settings:readSetting("show_file_in_bold") == "opened" end,
                     callback = function()
-                       self:setupFileManagerDisplayMode("mosaic_image")
+                        G_reader_settings:saveSetting("show_file_in_bold", "opened")
+                        self:refreshFileManagerInstance()
                     end,
                 },
                 {
-                    text = _("Mosaic with text covers"),
-                    checked_func = function() return self.filemanager_display_mode == "mosaic_text" end,
+                    text = _("Show new (not yet opened) files in bold"),
+                    checked_func = function()
+                        return G_reader_settings:readSetting("show_file_in_bold") ~= false and G_reader_settings:readSetting("show_file_in_bold") ~= "opened"
+                    end,
                     callback = function()
-                       self:setupFileManagerDisplayMode("mosaic_text")
+                        G_reader_settings:delSetting("show_file_in_bold")
+                        self:refreshFileManagerInstance()
                     end,
                 },
-                {
-                    text = _("List with image and metadata"),
-                    checked_func = function() return self.filemanager_display_mode == "list_image_meta" end,
-                    callback = function()
-                       self:setupFileManagerDisplayMode("list_image_meta")
-                    end,
-                },
-                {
-                    text = _("List with metadata, no image"),
-                    checked_func = function() return self.filemanager_display_mode == "list_only_meta" end,
-                    callback = function()
-                       self:setupFileManagerDisplayMode("list_only_meta")
-                    end,
-                },
-                {
-                    text = _("List with image and filename"),
-                    checked_func = function() return self.filemanager_display_mode == "list_image_filename" end,
-                    callback = function()
-                       self:setupFileManagerDisplayMode("list_image_filename")
-                    end,
-                    separator = true,
-                },
-                -- Plug the same choices for History here as a submenu
-                -- (Any other suitable place for that ?)
-                {
-                    separator = true,
-                    text = _("History display mode"),
-                    sub_item_table = {
-                        {
-                            text = _("Classic (filename only)"),
-                            checked_func = function() return not self.history_display_mode end,
-                            callback = function()
-                               self:setupHistoryDisplayMode("")
-                            end,
-                        },
-                        {
-                            text = _("Mosaic with cover images"),
-                            checked_func = function() return self.history_display_mode == "mosaic_image" end,
-                            callback = function()
-                               self:setupHistoryDisplayMode("mosaic_image")
-                            end,
-                        },
-                        {
-                            text = _("Mosaic with text covers"),
-                            checked_func = function() return self.history_display_mode == "mosaic_text" end,
-                            callback = function()
-                               self:setupHistoryDisplayMode("mosaic_text")
-                            end,
-                        },
-                        {
-                            text = _("List with image and metadata"),
-                            checked_func = function() return self.history_display_mode == "list_image_meta" end,
-                            callback = function()
-                               self:setupHistoryDisplayMode("list_image_meta")
-                            end,
-                        },
-                        {
-                            text = _("List with metadata, no image"),
-                            checked_func = function() return self.history_display_mode == "list_only_meta" end,
-                            callback = function()
-                               self:setupHistoryDisplayMode("list_only_meta")
-                            end,
-                        },
-                        {
-                            text = _("List with image and filename"),
-                            checked_func = function() return self.history_display_mode == "list_image_filename" end,
-                            callback = function()
-                               self:setupHistoryDisplayMode("list_image_filename")
-                            end,
-                            separator = true,
-                        },
+            },
+            separator = true,
+        },
+        {
+            text = _("Shorten home directory to ~"),
+            checked_func = function() return G_reader_settings:readSetting("home_dir_display_name") end,
+            callback = function()
+                if G_reader_settings:readSetting("home_dir_display_name") then
+                    G_reader_settings:delSetting("home_dir_display_name")
+                    local FileManager = require("apps/filemanager/filemanager")
+                    if FileManager.instance then FileManager.instance:reinit() end
+                else
+                    G_reader_settings:saveSetting("home_dir_display_name", "~")
+                    local FileManager = require("apps/filemanager/filemanager")
+                    if FileManager.instance then FileManager.instance:reinit() end
+                end
+            end,
+        },
+        {
+            text = _("Auto-remove deleted or purged items from history"),
+            checked_func = function() return G_reader_settings:readSetting("autoremove_deleted_items_from_history") end,
+            callback = function() G_reader_settings:flipNilOrFalse("autoremove_deleted_items_from_history") end,
+        },
+    }
+
+    if not self.full_featured then
+        -- Make the generic items directly as 1st level items,
+        -- and use alternate name for main menu, not mentionning
+        -- "display mode" that are not available
+        menu_items.filemanager_display_mode = {
+            text = _("File browser settings"),
+            sub_item_table = generic_items
+        }
+        return
+    end
+
+    menu_items.filemanager_display_mode = {
+        text = _("Display mode"),
+        sub_item_table = {
+            -- selecting these does not close menu, which may be nice
+            -- so one can see how they look below the menu
+            {
+                text = _("Classic (filename only)"),
+                checked_func = function() return not self.filemanager_display_mode end,
+                callback = function()
+                   self:setupFileManagerDisplayMode("")
+                end,
+            },
+            {
+                text = _("Mosaic with cover images"),
+                checked_func = function() return self.filemanager_display_mode == "mosaic_image" end,
+                callback = function()
+                   self:setupFileManagerDisplayMode("mosaic_image")
+                end,
+            },
+            {
+                text = _("Mosaic with text covers"),
+                checked_func = function() return self.filemanager_display_mode == "mosaic_text" end,
+                callback = function()
+                   self:setupFileManagerDisplayMode("mosaic_text")
+                end,
+            },
+            {
+                text = _("Detailed list with cover images and metadata"),
+                checked_func = function() return self.filemanager_display_mode == "list_image_meta" end,
+                callback = function()
+                   self:setupFileManagerDisplayMode("list_image_meta")
+                end,
+            },
+            {
+                text = _("Detailed list with metadata, no images"),
+                checked_func = function() return self.filemanager_display_mode == "list_only_meta" end,
+                callback = function()
+                   self:setupFileManagerDisplayMode("list_only_meta")
+                end,
+            },
+            {
+                text = _("Detailed list with cover images and filenames"),
+                checked_func = function() return self.filemanager_display_mode == "list_image_filename" end,
+                callback = function()
+                   self:setupFileManagerDisplayMode("list_image_filename")
+                end,
+                separator = true,
+            },
+            -- Plug the same choices for History here as a submenu
+            -- (Any other suitable place for that ?)
+            {
+                text = _("History display mode"),
+                sub_item_table = {
+                    {
+                        text = _("Classic (filename only)"),
+                        checked_func = function() return not self.history_display_mode end,
+                        callback = function()
+                           self:setupHistoryDisplayMode("")
+                        end,
+                    },
+                    {
+                        text = _("Mosaic with cover images"),
+                        checked_func = function() return self.history_display_mode == "mosaic_image" end,
+                        callback = function()
+                           self:setupHistoryDisplayMode("mosaic_image")
+                        end,
+                    },
+                    {
+                        text = _("Mosaic with text covers"),
+                        checked_func = function() return self.history_display_mode == "mosaic_text" end,
+                        callback = function()
+                           self:setupHistoryDisplayMode("mosaic_text")
+                        end,
+                    },
+                    {
+                        text = _("Detailed list with cover images and metadata"),
+                        checked_func = function() return self.history_display_mode == "list_image_meta" end,
+                        callback = function()
+                           self:setupHistoryDisplayMode("list_image_meta")
+                        end,
+                    },
+                    {
+                        text = _("Detailed list with metadata, no images"),
+                        checked_func = function() return self.history_display_mode == "list_only_meta" end,
+                        callback = function()
+                           self:setupHistoryDisplayMode("list_only_meta")
+                        end,
+                    },
+                    {
+                        text = _("Detailed list with cover images and filenames"),
+                        checked_func = function() return self.history_display_mode == "list_image_filename" end,
+                        callback = function()
+                           self:setupHistoryDisplayMode("list_image_filename")
+                        end,
+                        separator = true,
                     },
                 },
-                -- Misc settings
-                {
-                    text = _("Other settings"),
-                    sub_item_table = {
-                        {
-                            text = _("Show hint for books with description"),
-                            checked_func = function() return not BookInfoManager:getSetting("no_hint_description") end,
-                            callback = function()
-                                if BookInfoManager:getSetting("no_hint_description") then
-                                    BookInfoManager:saveSetting("no_hint_description", false)
-                                else
-                                    BookInfoManager:saveSetting("no_hint_description", true)
-                                end
-                                self:refreshFileManagerInstance()
-                            end,
-                        },
-                        {
-                            text = _("Show hint for opened books in history"),
-                            checked_func = function() return BookInfoManager:getSetting("history_hint_opened") end,
-                            callback = function()
-                                if BookInfoManager:getSetting("history_hint_opened") then
-                                    BookInfoManager:saveSetting("history_hint_opened", false)
-                                else
-                                    BookInfoManager:saveSetting("history_hint_opened", true)
-                                end
-                                self:refreshFileManagerInstance()
-                            end,
-                        },
-                        {
-                            text = _("Append series metadata to authors"),
-                            checked_func = function() return BookInfoManager:getSetting("append_series_to_authors") end,
-                            callback = function()
-                                if BookInfoManager:getSetting("append_series_to_authors") then
-                                    BookInfoManager:saveSetting("append_series_to_authors", false)
-                                else
-                                    BookInfoManager:saveSetting("append_series_to_authors", true)
-                                end
-                                self:refreshFileManagerInstance()
-                            end,
-                        },
-                        {
-                            text = _("Append series metadata to title"),
-                            checked_func = function() return BookInfoManager:getSetting("append_series_to_title") end,
-                            callback = function()
-                                if BookInfoManager:getSetting("append_series_to_title") then
-                                    BookInfoManager:saveSetting("append_series_to_title", false)
-                                else
-                                    BookInfoManager:saveSetting("append_series_to_title", true)
-                                end
-                                self:refreshFileManagerInstance()
-                            end,
-                        },
+                separator = true,
+            },
+            -- Misc settings
+            {
+                text = _("Other settings"),
+                sub_item_table = {
+                    {
+                        text = _("Show hint for books with description"),
+                        checked_func = function() return not BookInfoManager:getSetting("no_hint_description") end,
+                        callback = function()
+                            if BookInfoManager:getSetting("no_hint_description") then
+                                BookInfoManager:saveSetting("no_hint_description", false)
+                            else
+                                BookInfoManager:saveSetting("no_hint_description", true)
+                            end
+                            self:refreshFileManagerInstance()
+                        end,
                     },
+                    {
+                        text = _("Show hint for opened books in history"),
+                        checked_func = function() return BookInfoManager:getSetting("history_hint_opened") end,
+                        callback = function()
+                            if BookInfoManager:getSetting("history_hint_opened") then
+                                BookInfoManager:saveSetting("history_hint_opened", false)
+                            else
+                                BookInfoManager:saveSetting("history_hint_opened", true)
+                            end
+                            self:refreshFileManagerInstance()
+                        end,
+                    },
+                    {
+                        text = _("Append series metadata to authors"),
+                        checked_func = function() return BookInfoManager:getSetting("append_series_to_authors") end,
+                        callback = function()
+                            if BookInfoManager:getSetting("append_series_to_authors") then
+                                BookInfoManager:saveSetting("append_series_to_authors", false)
+                            else
+                                BookInfoManager:saveSetting("append_series_to_authors", true)
+                            end
+                            self:refreshFileManagerInstance()
+                        end,
+                    },
+                    {
+                        text = _("Append series metadata to title"),
+                        checked_func = function() return BookInfoManager:getSetting("append_series_to_title") end,
+                        callback = function()
+                            if BookInfoManager:getSetting("append_series_to_title") then
+                                BookInfoManager:saveSetting("append_series_to_title", false)
+                            else
+                                BookInfoManager:saveSetting("append_series_to_title", true)
+                            end
+                            self:refreshFileManagerInstance()
+                        end,
+                    },
+                    -- generic_items will be inserted here
                 },
-                {
-                    text = _("Book info cache management"),
-                    sub_item_table = {
-                        {
-                            text_func = function() -- add current db size to menu text
-                                local sstr = BookInfoManager:getDbSize()
-                                return _("Current cache size: ") .. sstr
-                            end,
-                            -- no callback, only for information
-                        },
-                        {
-                            text = _("Prune cache of removed books"),
-                            callback = function()
-                                local ConfirmBox = require("ui/widget/confirmbox")
-                                UIManager:close(self.file_dialog)
-                                UIManager:show(ConfirmBox:new{
-                                    -- Checking file existences is quite fast, but deleting entries is slow.
-                                    text = _("Are you sure that you want to prune cache of removed books?\n(This may take a while.)"),
-                                    ok_text = _("Prune cache"),
-                                    ok_callback = function()
-                                        local InfoMessage = require("ui/widget/infomessage")
-                                        local msg = InfoMessage:new{ text = _("Pruning cache of removed books…") }
-                                        UIManager:show(msg)
-                                        UIManager:nextTick(function()
-                                            local summary = BookInfoManager:removeNonExistantEntries()
-                                            UIManager:close(msg)
-                                            UIManager:show( InfoMessage:new{ text = summary } )
-                                        end)
-                                    end
-                                })
-                            end,
-                        },
-                        {
-                            text = _("Compact cache database"),
-                            callback = function()
-                                local ConfirmBox = require("ui/widget/confirmbox")
-                                UIManager:close(self.file_dialog)
-                                UIManager:show(ConfirmBox:new{
-                                    text = _("Are you sure that you want to compact cache database?\n(This may take a while.)"),
-                                    ok_text = _("Compact database"),
-                                    ok_callback = function()
-                                        local InfoMessage = require("ui/widget/infomessage")
-                                        local msg = InfoMessage:new{ text = _("Compacting cache database…") }
-                                        UIManager:show(msg)
-                                        UIManager:nextTick(function()
-                                            local summary = BookInfoManager:compactDb()
-                                            UIManager:close(msg)
-                                            UIManager:show( InfoMessage:new{ text = summary } )
-                                        end)
-                                    end
-                                })
-                            end,
-                        },
-                        {
-                            text = _("Delete cache database"),
-                            callback = function()
-                                local ConfirmBox = require("ui/widget/confirmbox")
-                                UIManager:close(self.file_dialog)
-                                UIManager:show(ConfirmBox:new{
-                                    text = _("Are you sure that you want to delete cover and metadata cache?\n(This will also reset your display mode settings.)"),
-                                    ok_text = _("Purge"),
-                                    ok_callback = function()
-                                        BookInfoManager:deleteDb()
-                                    end
-                                })
-                            end,
-                        },
+            },
+            {
+                text = _("Book info cache management"),
+                sub_item_table = {
+                    {
+                        text_func = function() -- add current db size to menu text
+                            local sstr = BookInfoManager:getDbSize()
+                            return _("Current cache size: ") .. sstr
+                        end,
+                        -- no callback, only for information
+                    },
+                    {
+                        text = _("Prune cache of removed books"),
+                        callback = function()
+                            local ConfirmBox = require("ui/widget/confirmbox")
+                            UIManager:close(self.file_dialog)
+                            UIManager:show(ConfirmBox:new{
+                                -- Checking file existences is quite fast, but deleting entries is slow.
+                                text = _("Are you sure that you want to prune cache of removed books?\n(This may take a while.)"),
+                                ok_text = _("Prune cache"),
+                                ok_callback = function()
+                                    local InfoMessage = require("ui/widget/infomessage")
+                                    local msg = InfoMessage:new{ text = _("Pruning cache of removed books…") }
+                                    UIManager:show(msg)
+                                    UIManager:nextTick(function()
+                                        local summary = BookInfoManager:removeNonExistantEntries()
+                                        UIManager:close(msg)
+                                        UIManager:show( InfoMessage:new{ text = summary } )
+                                    end)
+                                end
+                            })
+                        end,
+                    },
+                    {
+                        text = _("Compact cache database"),
+                        callback = function()
+                            local ConfirmBox = require("ui/widget/confirmbox")
+                            UIManager:close(self.file_dialog)
+                            UIManager:show(ConfirmBox:new{
+                                text = _("Are you sure that you want to compact cache database?\n(This may take a while.)"),
+                                ok_text = _("Compact database"),
+                                ok_callback = function()
+                                    local InfoMessage = require("ui/widget/infomessage")
+                                    local msg = InfoMessage:new{ text = _("Compacting cache database…") }
+                                    UIManager:show(msg)
+                                    UIManager:nextTick(function()
+                                        local summary = BookInfoManager:compactDb()
+                                        UIManager:close(msg)
+                                        UIManager:show( InfoMessage:new{ text = summary } )
+                                    end)
+                                end
+                            })
+                        end,
+                    },
+                    {
+                        text = _("Delete cache database"),
+                        callback = function()
+                            local ConfirmBox = require("ui/widget/confirmbox")
+                            UIManager:close(self.file_dialog)
+                            UIManager:show(ConfirmBox:new{
+                                text = _("Are you sure that you want to delete cover and metadata cache?\n(This will also reset your display mode settings.)"),
+                                ok_text = _("Purge"),
+                                ok_callback = function()
+                                    BookInfoManager:deleteDb()
+                                end
+                            })
+                        end,
                     },
                 },
             },
-        }
+        },
+    }
+    -- Finally, insert the generic items at end of "Other settings" submenu
+    local sub_item_table = menu_items.filemanager_display_mode.sub_item_table
+    local generic_items_target = sub_item_table[#sub_item_table-1].sub_item_table -- second to last
+    for _, item in pairs(generic_items) do
+        table.insert(generic_items_target, item)
     end
 end
 
@@ -301,7 +398,11 @@ function CoverBrowser:refreshFileManagerInstance(cleanup)
                 fc.onFileHold_ours = nil
             end
         end
-        fc:updateItems()
+        if self.filemanager_display_mode then
+            fc:updateItems()
+        else -- classic file_chooser needs this for a full redraw
+            fc:refreshPath()
+        end
     end
 end
 
