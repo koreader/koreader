@@ -107,14 +107,7 @@ function BookInfo:show(file, book_props)
             -- for all others than crengine, we seem to get an accurate nb of pages
             pages = document:getPageCount()
         end
-        -- via pcall because picdocument:getProps() always fails (we could
-        -- check document.is_pic, but this way, we'll catch any other error)
-        local ok, props = pcall(document.getProps, document)
-        if ok then
-            book_props = props
-        else
-            book_props = {}
-        end
+        book_props = document:getProps()
         book_props.pages = pages
         DocumentRegistry:closeDocument(file)
     end

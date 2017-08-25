@@ -184,6 +184,16 @@ function Kobo:init()
     end
 end
 
+function Kobo:setTime(hour, min)
+    if hour == nil or min == nil then return true end
+    if os.execute(string.format("date -s '%d:%d'", hour, min)) == 0 then
+        os.execute('hwclock -u -w')
+        return true
+    else
+        return false
+    end
+end
+
 function Kobo:initNetworkManager(NetworkMgr)
     function NetworkMgr:turnOffWifi(complete_callback)
         koboEnableWifi(0)

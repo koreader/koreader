@@ -6,12 +6,13 @@ local order = {
         "main",
     },
     setting = {
+        "filemanager_display_mode",
         "show_hidden_files",
         "----------------------------",
         "sort_by",
         "reverse_sorting",
         "----------------------------",
-        "start_with_last_opened_file",
+        "start_with",
         "screensaver",
         "----------------------------",
         -- common settings
@@ -24,6 +25,7 @@ local order = {
         "save_document",
         "----------------------------",
         "language",
+        "time",
         -- end common settings
     },
     tools = {
@@ -51,9 +53,10 @@ local order = {
     },
     search = {
         "dictionary_lookup",
-        "disable_fuzzy_search",
+        "dictionary_settings",
         "----------------------------",
         "wikipedia_lookup",
+        "wikipedia_settings",
         "----------------------------",
         "find_book_in_calibre_catalog",
         "find_file",

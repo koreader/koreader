@@ -168,28 +168,36 @@ end
 
 function BatteryStat:onSuspend()
     self:debugOutput("onSuspend")
-    self.was_suspending = false
-    self:accumulate()
+    if not self.was_suspending then
+        self:accumulate()
+    end
+    self.was_suspending = true
 end
 
 function BatteryStat:onResume()
     self:debugOutput("onResume")
-    self.was_suspending = true
-    self:accumulate()
+    if self.was_suspending then
+        self:accumulate()
+    end
+    self.was_suspending = false
 end
 
 function BatteryStat:onCharging()
     self:debugOutput("onCharging")
-    self.was_charging = false
-    self:reset(true, false)
-    self:accumulate()
+    if not self.was_charging then
+        self:reset(true, false)
+        self:accumulate()
+    end
+    self.was_charging = true
 end
 
 function BatteryStat:onNotCharging()
     self:debugOutput("onNotCharging")
-    self.was_charging = true
-    self:reset(false, true)
-    self:accumulate()
+    if self.was_charging then
+        self:reset(false, true)
+        self:accumulate()
+    end
+    self.was_charging = false
 end
 
 function BatteryStat:showStatistics()
@@ -277,6 +285,8 @@ local BatteryStatWidget = WidgetContainer:new{
 }
 
 function BatteryStatWidget:init()
+    -- self.ui is nil in test cases.
+    if not self.ui or not self.ui.menu then return end
     self.ui.menu:registerToMainMenu(self)
 end
 
@@ -307,6 +317,11 @@ end
 
 function BatteryStatWidget:onNotCharging()
     BatteryStat:onNotCharging()
+end
+
+-- Test only
+function BatteryStatWidget:stat()
+    return BatteryStat
 end
 
 return BatteryStatWidget

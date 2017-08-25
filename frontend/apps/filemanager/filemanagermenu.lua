@@ -47,6 +47,10 @@ function FileManagerMenu:init()
             ShowMenu = { { "Menu" }, doc = "show menu" },
         }
     end
+    self.activation_menu = G_reader_settings:readSetting("activate_menu")
+    if self.activation_menu == nil then
+        self.activation_menu = "swipe_tap"
+    end
 end
 
 function FileManagerMenu:initGesListener()
@@ -95,20 +99,7 @@ function FileManagerMenu:setUpdateItemTable()
         checked_func = function() return self.ui.file_chooser.reverse_collate end,
         callback = function() self.ui:toggleReverseCollate() end
     }
-    self.menu_items.start_with_last_opened_file = {
-        text = _("Start with last opened file"),
-        checked_func = function() return
-            G_reader_settings:readSetting("open_last")
-        end,
-        enabled_func = function() return
-            G_reader_settings:readSetting("lastfile") ~= nil
-        end,
-        callback = function()
-            local open_last = G_reader_settings:readSetting("open_last") or false
-            G_reader_settings:saveSetting("open_last", not open_last)
-            G_reader_settings:flush()
-        end
-    }
+    self.menu_items.start_with = self.ui:getStartWithMenuTable()
     if Device:supportsScreensaver() then
         self.menu_items.screensaver = {
             text = _("Screensaver"),
@@ -380,12 +371,14 @@ function FileManagerMenu:onCloseFileManagerMenu()
 end
 
 function FileManagerMenu:onTapShowMenu(ges)
-    self:onShowMenu()
-    return true
+    if self.activation_menu ~= "swipe" then
+        self:onShowMenu()
+        return true
+    end
 end
 
 function FileManagerMenu:onSwipeShowMenu(ges)
-    if ges.direction == "south" then
+    if self.activation_menu ~= "tap" and ges.direction == "south" then
         self:onShowMenu()
         return true
     end

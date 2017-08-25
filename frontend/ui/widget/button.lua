@@ -26,6 +26,7 @@ local Button = InputContainer:new{
     radius = 15,
     padding = 2,
     width = nil,
+    max_width = nil,
     text_font_face = "cfont",
     text_font_size = 20,
     text_font_bold = true,
@@ -35,6 +36,7 @@ function Button:init()
     if self.text then
         self.label_widget = TextWidget:new{
             text = self.text,
+            max_width = self.max_width and self.max_width - 2*self.padding - 2*self.margin - 2*self.bordersize or nil,
             fgcolor = self.enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_GREY,
             bold = self.text_font_bold,
             face = Font:getFace(self.text_font_face, self.text_font_size)

@@ -17,7 +17,6 @@ function ReadTimer:init()
         self.time = 0
         UIManager:show(InfoMessage:new{
             text = T(_("Read timer alarm\nTime's up. It's %1 now."), os.date("%c")),
-            timeout = 10,
         })
     end
     self.ui.menu:registerToMainMenu(self)
@@ -44,20 +43,26 @@ end
 
 function ReadTimer:addToMainMenu(menu_items)
     menu_items.read_timer = {
-        text = _("Read timer"),
+        text_func = function()
+            if self:scheduled() then
+                return T(_("Read timer (%1m)"),
+                         string.format("%.2f", self:remainingMinutes()))
+            else
+                return _("Read timer")
+            end
+        end,
         checked_func = function()
-            -- TODO (hzj-jie): Find a way to refresh the menu items after the buttons callbacks.
             return self:scheduled()
         end,
         callback = function()
-            local description = _("When will the countdown timer notify you?")
+            local description = _("When should the countdown timer notify you?")
             local buttons = {{
                 text = _("Close"),
                 callback = function()
                     UIManager:close(self.input)
                 end,
             }, {
-                text = _("Start"),
+                text = _("Start timer"),
                 callback = function()
                     self:unschedule()
                     local seconds = self.input:getInputValue() * 60
@@ -66,6 +71,7 @@ function ReadTimer:addToMainMenu(menu_items)
                         UIManager:scheduleIn(seconds, self.alarm_callback)
                     end
                     UIManager:close(self.input)
+                    self.ui.menu:onTapCloseMenu()
                 end,
             }}
             if self:scheduled() then

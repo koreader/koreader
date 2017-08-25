@@ -1,11 +1,11 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
-local lfs = require("libs/libkoreader-lfs")
-local UIManager = require("ui/uimanager")
-local Screen = require("device").screen
 local Event = require("ui/event")
-local T = require("ffi/util").template
+local InputContainer = require("ui/widget/container/inputcontainer")
+local UIManager = require("ui/uimanager")
+local lfs = require("libs/libkoreader-lfs")
 local _ = require("gettext")
+local Screen = require("device").screen
+local T = require("ffi/util").template
 
 local ReaderTypeset = InputContainer:new{
     css_menu_title = _("Set render style"),
@@ -96,6 +96,9 @@ function ReaderTypeset:genStyleSheetMenu()
             end,
             hold_callback = function()
                 self:makeDefaultStyleSheet(file["css"], file["text"])
+            end,
+            checked_func = function()
+                return file.css == self.css
             end
         })
     end
@@ -196,7 +199,12 @@ function ReaderTypeset:onSetPageMargins(margins)
     local left = Screen:scaleBySize(margins[1])
     local top = Screen:scaleBySize(margins[2])
     local right = Screen:scaleBySize(margins[3])
-    local bottom = Screen:scaleBySize(margins[4])
+    local bottom
+    if self.view.footer.has_no_mode then
+        bottom = Screen:scaleBySize(margins[4])
+    else
+        bottom = Screen:scaleBySize(margins[4] + DMINIBAR_HEIGHT)
+    end
     self.ui.document:setPageMargins(left, top, right, bottom)
     self.ui:handleEvent(Event:new("UpdatePos"))
     return true

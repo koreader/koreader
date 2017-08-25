@@ -6,6 +6,7 @@ local noop = function() end
 
 describe("UIManager checkTasks benchmark", function()
     local now = { util.gettime() }
+    local wait_until -- luacheck: no unused
     UIManager:quit()
     UIManager._task_queue = {}
 
@@ -17,7 +18,7 @@ describe("UIManager checkTasks benchmark", function()
     end
 
     -- for i=1,1000 do
-        wait_until, now = UIManager:_checkTasks()
+        wait_until, now = UIManager:_checkTasks() -- luacheck: no unused
     -- end
 end)
 

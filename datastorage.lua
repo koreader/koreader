@@ -35,7 +35,7 @@ end
 
 local function initDataDir()
     local sub_data_dirs = {
-        "cache", "clipboard", "data", "history",
+        "cache", "clipboard", "data", "data/dict", "history",
         "ota", "screenshots", "settings",
     }
     for _, dir in ipairs(sub_data_dirs) do

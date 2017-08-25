@@ -1,16 +1,16 @@
 describe("UIManager spec", function()
-    local Device, UIManager, util
+    local UIManager, util
+    local now, wait_until
     local noop = function() end
 
     setup(function()
         require("commonrequire")
         util = require("ffi/util")
         UIManager = require("ui/uimanager")
-        Device = require("device")
     end)
 
     it("should consume due tasks", function()
-        local now = { util.gettime() }
+        now = { util.gettime() }
         local future = { now[1] + 60000, now[2] }
         local future2 = {future[1] + 5, future[2]}
         UIManager:quit()
@@ -28,7 +28,7 @@ describe("UIManager spec", function()
     end)
 
     it("should calcualte wait_until properly in checkTasks routine", function()
-        local now = { util.gettime() }
+        now = { util.gettime() }
         local future = { now[1] + 60000, now[2] }
         UIManager:quit()
         UIManager._task_queue = {
@@ -43,7 +43,7 @@ describe("UIManager spec", function()
     end)
 
     it("should return nil wait_until properly in checkTasks routine", function()
-        local now = { util.gettime() }
+        now = { util.gettime() }
         UIManager:quit()
         UIManager._task_queue = {
             { time = {now[1] - 10, now[2] }, action = noop },
@@ -55,7 +55,7 @@ describe("UIManager spec", function()
     end)
 
     it("should insert new task properly in empty task queue", function()
-        local now = { util.gettime() }
+        now = { util.gettime() }
         UIManager:quit()
         UIManager._task_queue = {}
         assert.are.same(0, #UIManager._task_queue)
@@ -65,7 +65,7 @@ describe("UIManager spec", function()
     end)
 
     it("should insert new task properly in single task queue", function()
-        local now = { util.gettime() }
+        now = { util.gettime() }
         local future = { now[1]+10000, now[2] }
         UIManager:quit()
         UIManager._task_queue = {
@@ -90,8 +90,7 @@ describe("UIManager spec", function()
     end)
 
     it("should insert new task in ascendant order", function()
-        local now = { util.gettime() }
-        local noop1 = function() end
+        now = { util.gettime() }
         UIManager:quit()
         UIManager._task_queue = {
             { time = {now[1] - 10, now[2] }, action = '1' },
@@ -116,8 +115,7 @@ describe("UIManager spec", function()
     end)
 
     it("should unschedule all the tasks with the same action", function()
-        local now = { util.gettime() }
-        local noop1 = function() end
+        now = { util.gettime() }
         UIManager:quit()
         UIManager._task_queue = {
             { time = {now[1] - 15, now[2] }, action = '3' },
@@ -135,7 +133,7 @@ describe("UIManager spec", function()
     end)
 
     it("should not have race between unschedule and _checkTasks", function()
-        local now = { util.gettime() }
+        now = { util.gettime() }
         local run_count = 0
         local task_to_remove = function()
             run_count = run_count + 1

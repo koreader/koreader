@@ -1,4 +1,5 @@
 local Blitbuffer = require("ffi/blitbuffer")
+local CheckButton = require("ui/widget/checkbutton")
 local Device = require("device")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Font = require("ui/font")
@@ -7,8 +8,10 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local ScrollTextWidget = require("ui/widget/scrolltextwidget")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
-local Screen = Device.screen
+local VerticalGroup = require("ui/widget/verticalgroup")
 local util = require("util")
+local _ = require("gettext")
+local Screen = Device.screen
 
 local Keyboard
 
@@ -20,14 +23,15 @@ local InputText = InputContainer:new{
     input_type = nil,
     text_type = nil,
     text_widget = nil, -- Text Widget for cursor movement
+    show_password_toggle = true,
 
     width = nil,
     height = nil,
     face = Font:getFace("smallinfofont"),
 
-    padding = 5,
-    margin = 5,
-    bordersize = 2,
+    padding = Screen:scaleBySize(5),
+    margin = Screen:scaleBySize(5),
+    bordersize = Screen:scaleBySize(2),
 
     parent = nil, -- parent dialog that will be set dirty
     scroll = false,
@@ -52,12 +56,12 @@ if Device.isTouchDevice() then
         if self.parent.onSwitchFocus then
             self.parent:onSwitchFocus(self)
         end
-        local x = ges.pos.x - self.dimen.x - self.bordersize - self.padding
-        local y = ges.pos.y - self.dimen.y - self.bordersize - self.padding
+        local x = ges.pos.x - self._frame_textwidget.dimen.x - self.bordersize - self.padding
+        local y = ges.pos.y - self._frame_textwidget.dimen.y - self.bordersize - self.padding
         if x > 0 and y > 0 then
             self.charpos = self.text_widget:moveCursor(x, y)
             UIManager:setDirty(self.parent, function()
-                return "ui", self[1].dimen
+                return "ui", self.dimen
             end)
         end
     end
@@ -72,8 +76,11 @@ function InputText:init()
     self:initEventListener()
 end
 
-function InputText:initTextBox(text, char_added)
+function InputText:initTextBox(text, char_added, is_password_type)
     self.text = text
+    if self.text_type == "password" then
+        is_password_type = true
+    end
     local fgcolor
     local show_charlist
     local show_text = text
@@ -97,6 +104,36 @@ function InputText:initTextBox(text, char_added)
         if self.charpos == nil then
             self.charpos = #self.charlist + 1
         end
+    end
+    if is_password_type and self.show_password_toggle then
+        self._check_button = self._check_button or CheckButton:new{
+            text = _("Show password"),
+            callback = function()
+                if self.text_type == "text" then
+                    self.text_type = "password"
+                    self._check_button:unCheck()
+                else
+                    self.text_type = "text"
+                    self._check_button:check()
+                end
+                self:setText(self:getText(), is_password_type)
+            end,
+
+            width = self.width,
+            height = self.height,
+
+            padding = self.padding,
+            margin = self.margin,
+            bordersize = self.bordersize,
+        }
+        self._password_toggle = FrameContainer:new{
+            bordersize = 0,
+            padding = self.padding,
+            margin = self.margin,
+            self._check_button,
+        }
+    else
+        self._password_toggle = nil
     end
     show_charlist = util.splitToChars(show_text)
     if self.scroll then
@@ -123,17 +160,29 @@ function InputText:initTextBox(text, char_added)
             height = self.height,
         }
     end
-    self[1] = FrameContainer:new{
+    self._frame_textwidget = FrameContainer:new{
         bordersize = self.bordersize,
         padding = self.padding,
         margin = self.margin,
         color = self.focused and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_GREY,
         self.text_widget,
     }
-    self.dimen = self[1]:getSize()
-    -- FIXME: self.parent is not always in the widget statck (BookStatusWidget)
+    self._verticalgroup = VerticalGroup:new{
+        align = "left",
+        self._frame_textwidget,
+        self._password_toggle,
+    }
+    self._frame = FrameContainer:new{
+        bordersize = 0,
+        margin = 0,
+        padding = 0,
+        self._verticalgroup,
+    }
+    self[1] = self._frame
+    self.dimen = self._frame:getSize()
+    -- FIXME: self.parent is not always in the widget stack (BookStatusWidget)
     UIManager:setDirty(self.parent, function()
-        return "ui", self[1].dimen
+        return "ui", self.dimen
     end)
 end
 
@@ -202,9 +251,9 @@ function InputText:getText()
     return self.text
 end
 
-function InputText:setText(text)
+function InputText:setText(text, is_password_type)
     self.charpos = nil
-    self:initTextBox(text)
+    self:initTextBox(text, nil, is_password_type)
     UIManager:setDirty(self.parent, function()
         return "partial", self[1].dimen
     end)

@@ -1,4 +1,5 @@
 describe("touch probe module", function()
+    local x, y
     setup(function()
         require("commonrequire")
     end)
@@ -12,7 +13,7 @@ describe("touch probe module", function()
         end
         -- for kobo touch, we have mirror_x, then switch_xy
         -- tap lower right corner
-        local x, y = Device.screen:getWidth()-40, Device.screen:getHeight()-40
+        x, y = Device.screen:getWidth()-40, Device.screen:getHeight()-40
         need_to_switch_xy = nil
         TouchProbe:onTapProbe(nil, {
             pos = {
@@ -25,7 +26,7 @@ describe("touch probe module", function()
 
         -- now only test mirror_x
         -- tap lower right corner
-        local x, y = Device.screen:getWidth()-40, Device.screen:getHeight()-40
+        x, y = Device.screen:getWidth()-40, Device.screen:getHeight()-40
         need_to_switch_xy = nil
         TouchProbe:onTapProbe(nil, {
             pos = {
@@ -38,7 +39,7 @@ describe("touch probe module", function()
 
         -- now only test switch_xy
         -- tap lower right corner
-        local x, y = Device.screen:getWidth()-40, Device.screen:getHeight()-40
+        x, y = Device.screen:getWidth()-40, Device.screen:getHeight()-40
         need_to_switch_xy = nil
         TouchProbe:onTapProbe(nil, {
             pos = {
@@ -49,7 +50,7 @@ describe("touch probe module", function()
         assert.is.same(TouchProbe.curr_probe_step, 2)
         assert.falsy(need_to_switch_xy)
         -- tap upper right corner
-        local x, y = Device.screen:getWidth()-40, 40
+        x, y = Device.screen:getWidth()-40, 40
         TouchProbe:onTapProbe(nil, {
             pos = {
                 x = y,

@@ -1,4 +1,5 @@
 describe("Math module", function()
+    local Math
 
     setup(function()
         require("commonrequire")

@@ -6,7 +6,8 @@ local AndroidPowerD = BasePowerD:new{
     fl_intensity = 10,
 }
 
-function AndroidPowerD:init()
+function AndroidPowerD:frontlightIntensityHW()
+    return android.getScreenBrightness()
 end
 
 function AndroidPowerD:setIntensityHW(intensity)

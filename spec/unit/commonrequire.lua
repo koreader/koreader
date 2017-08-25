@@ -10,12 +10,11 @@ logger:setLevel(logger.levels.warn)
 -- global reader settings
 local DataStorage = require("datastorage")
 os.remove(DataStorage:getDataDir().."/settings.reader.lua")
-local DocSettings = require("docsettings")
 G_reader_settings = require("luasettings"):open(".reader")
 
 -- global einkfb for Screen (do not show SDL window)
-einkfb = require("ffi/framebuffer")
-einkfb.dummy = true
+einkfb = require("ffi/framebuffer") --luacheck: ignore
+einkfb.dummy = true --luacheck: ignore
 
 -- init output device
 local Screen = require("device").screen

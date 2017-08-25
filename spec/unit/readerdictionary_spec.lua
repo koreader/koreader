@@ -1,15 +1,12 @@
 describe("Readerdictionary module", function()
-    local DocumentRegistry, ReaderUI, lfs, UIManager, Screen, Event, DEBUG
+    local DocumentRegistry, ReaderUI, UIManager, Screen
 
     setup(function()
         require("commonrequire")
         DocumentRegistry = require("document/documentregistry")
         ReaderUI = require("apps/reader/readerui")
-        lfs = require("libs/libkoreader-lfs")
         UIManager = require("ui/uimanager")
         Screen = require("device").screen
-        Event = require("ui/event")
-        DEBUG = require("dbg")
     end)
 
     local readerui, rolling, dictionary

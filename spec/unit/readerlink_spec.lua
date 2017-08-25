@@ -12,7 +12,7 @@ describe("ReaderLink module", function()
         sample_pdf = "spec/front/unit/data/paper.pdf"
     end)
 
-    it("should jump to links in epub", function()
+    it("should jump to links in epub #nocov", function()
         local readerui = ReaderUI:new{
             document = DocumentRegistry:openDocument(sample_epub),
         }
@@ -49,7 +49,7 @@ describe("ReaderLink module", function()
             or readerui.paging.current_page == 20)
     end)
 
-    it("should be able to go back after link jump in epub", function()
+    it("should be able to go back after link jump in epub #nocov", function()
         local readerui = ReaderUI:new{
             document = DocumentRegistry:openDocument(sample_epub),
         }

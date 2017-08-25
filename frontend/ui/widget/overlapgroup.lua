@@ -1,8 +1,9 @@
+--[[--
+A layout widget that puts objects above each other.
+--]]
+
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 
---[[
-A Layout widget that puts objects above each other
---]]
 local OverlapGroup = WidgetContainer:new{
     _size = nil,
 }

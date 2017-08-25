@@ -1,3 +1,4 @@
+local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local NetworkMgr = require("ui/network/manager")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
@@ -5,6 +6,7 @@ local Translator = require("ui/translator")
 local UIManager = require("ui/uimanager")
 local Wikipedia = require("ui/wikipedia")
 local logger = require("logger")
+local util  = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
@@ -58,6 +60,145 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                 NetworkMgr:promptWifiOn()
             end
         end
+    }
+    menu_items.wikipedia_settings = {
+        text = _("Wikipedia settings"),
+        sub_item_table = {
+            {
+                text = _("Set Wikipedia languages"),
+                callback = function()
+                    local wikilang_input
+                    local function save_wikilang()
+                        local wiki_languages = {}
+                        local langs = wikilang_input:getInputText()
+                        for lang in langs:gmatch("%S+") do
+                            if not lang:match("^[%a-]+$") then
+                                UIManager:show(InfoMessage:new{
+                                    text = T(_("%1 does not look like a valid Wikipedia language."), lang)
+                                })
+                                return
+                            end
+                            lang = lang:lower()
+                            table.insert(wiki_languages, lang)
+                        end
+                        G_reader_settings:saveSetting("wikipedia_languages", wiki_languages)
+                        -- re-init languages
+                        self.wiki_languages = {}
+                        self:initLanguages()
+                        UIManager:close(wikilang_input)
+                    end
+                    -- Use the list built by initLanguages (even if made from UI
+                    -- and document languages) as the initial value
+                    self:initLanguages()
+                    local curr_languages = table.concat(self.wiki_languages, " ")
+                    wikilang_input = InputDialog:new{
+                        title = _("Wikipedia languages"),
+                        input = curr_languages,
+                        input_hint = "en fr zh",
+                        input_type = "text",
+                        description = _("Enter one or more Wikipedia language codes (the 2 or 3 letters before .wikipedia.org), in the order you wish to see them available, separated by space(s) (example: en fr zh)\nFull list at https://en.wikipedia.org/wiki/List_of_Wikipedias"),
+                        buttons = {
+                            {
+                                {
+                                    text = _("Cancel"),
+                                    callback = function()
+                                        UIManager:close(wikilang_input)
+                                    end,
+                                },
+                                {
+                                    text = _("Save"),
+                                    is_enter_default = true,
+                                    callback = save_wikilang,
+                                },
+                            }
+                        },
+                    }
+                    wikilang_input:onShowKeyboard()
+                    UIManager:show(wikilang_input)
+                end,
+            },
+            { -- setting used by dictquicklookup
+                text = _("Set Wikipedia 'Save as EPUB' directory"),
+                callback = function()
+                    local folder_path_input
+                    local function save_folder_path()
+                        local folder_path = folder_path_input:getInputText()
+                        folder_path = folder_path:gsub("^%s*(.-)%s*$", "%1") -- trim spaces
+                        folder_path = folder_path:gsub("^(.-)/*$", "%1") -- remove trailing slash
+                        if folder_path == "" then
+                            G_reader_settings:delSetting("wikipedia_save_dir", folder_path)
+                        else
+                            if lfs.attributes(folder_path, "mode") == "directory" then -- existing directory
+                                G_reader_settings:saveSetting("wikipedia_save_dir", folder_path)
+                            elseif lfs.attributes(folder_path) then -- already exists, but not a directory
+                                UIManager:show(InfoMessage:new{
+                                    text = _("A path with that name already exists, but is not a directory.")
+                                })
+                                return
+                            else -- non-existing path, we may create it
+                                local parent_dir, sub_dir = util.splitFilePathName(folder_path) -- luacheck: no unused
+                                if lfs.attributes(parent_dir, "mode") == "directory" then -- existing directory
+                                    lfs.mkdir(folder_path)
+                                    if lfs.attributes(folder_path, "mode") == "directory" then -- existing directory
+                                        G_reader_settings:saveSetting("wikipedia_save_dir", folder_path)
+                                        UIManager:show(InfoMessage:new{
+                                            text = _("Directory created."),
+                                        })
+                                    else
+                                        UIManager:show(InfoMessage:new{
+                                            text = _("Creating directory failed.")
+                                        })
+                                        return
+                                    end
+                                else
+                                    -- We don't create more than one directory, in case of bad input
+                                    UIManager:show(InfoMessage:new{
+                                        text = _("Parent directory does not exist. Please create intermediate directories first.")
+                                    })
+                                    return
+                                end
+                            end
+                        end
+                        UIManager:close(folder_path_input)
+                    end
+                    -- for initial value, use the same logic as in dictquicklookup to decide save directory
+                    -- suggest to use a "Wikipedia" sub-directory of some directories
+                    local default_dir = require("apps/filemanager/filemanagerutil").getDefaultDir()
+                    default_dir = default_dir .. "/Wikipedia"
+                    local dir = G_reader_settings:readSetting("wikipedia_save_dir")
+                    if not dir then
+                        dir = G_reader_settings:readSetting("home_dir")
+                        if not dir then dir = default_dir end
+                        dir = dir:gsub("^(.-)/*$", "%1") -- remove trailing slash
+                        dir = dir .. "/Wikipedia"
+                    end
+                    folder_path_input = InputDialog:new{
+                        title = _("Wikipedia 'Save as EPUB' directory"),
+                        input = dir,
+                        input_hint = default_dir,
+                        input_type = "text",
+                        description = _("Enter the full path to a directory"),
+                        buttons = {
+                            {
+                                {
+                                    text = _("Cancel"),
+                                    callback = function()
+                                        UIManager:close(folder_path_input)
+                                    end,
+                                },
+                                {
+                                    text = _("Save"),
+                                    is_enter_default = true,
+                                    callback = save_folder_path,
+                                },
+                            }
+                        },
+                    }
+                    folder_path_input:onShowKeyboard()
+                    UIManager:show(folder_path_input)
+                end,
+            }
+        }
     }
 end
 

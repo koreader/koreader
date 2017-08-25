@@ -66,6 +66,16 @@ function Kindle:supportsScreensaver()
     end
 end
 
+function Kindle:setTime(hour, min)
+    if hour == nil or min == nil then return true end
+    if os.execute(string.format("date -s '%d:%d'", hour, min)) == 0 then
+        os.execute('hwclock -u -w')
+        return true
+    else
+        return false
+    end
+end
+
 function Kindle:usbPlugIn()
     if self.charging_mode == false and self.screen_saver_mode == false then
         -- On FW >= 5.7.2, we sigstop awesome, but we need it to show stuff...
@@ -577,7 +587,7 @@ local pw2_set = Set { "D4", "5A", "D5", "D6", "D7", "D8", "F2", "17",
 local kt2_set = Set { "C6", "DD" }
 local kv_set = Set { "13", "54", "2A", "4F", "52", "53" }
 local pw3_set = Set { "0G1", "0G2", "0G4", "0G5", "0G6", "0G7",
-                  "0KB", "0KC", "0KD", "0KE", "0KF", "0KG" }
+                  "0KB", "0KC", "0KD", "0KE", "0KF", "0KG", "0LK", "0LL" }
 local koa_set = Set { "0GC", "0GD", "0GR", "0GS", "0GT", "0GU" }
 local kt3_set = Set { "0DU", "0K9", "0KA" }
 
