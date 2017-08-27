@@ -6,14 +6,13 @@ See spec/unit/switch_plugin_spec.lua for the usage.
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local LuaSettings = require("luasettings")
-local PluginShare = require("pluginshare")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
-local SwitchPlugin = {}
+local SwitchPlugin = WidgetContainer:new()
 
 function SwitchPlugin:extend(o)
     o = o or {}
