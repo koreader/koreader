@@ -19,17 +19,20 @@ return {
         
         local status_bar_height = android.getStatusBarHeight()
         logger.dbg("Status bar height: ", status_bar_height)
-        local screen_width = android.getscreen_height()
+        local screen_width = android.getScreenWidth()
         logger.dbg("Screen width: ", screen_width)
         local screen_height = android.getScreenHeight()
         logger.dbg("Screen height: ", screen_height)
-        local viewport = Geom:new{x=status_bar_height, y=0, w=screen_width, h=screen_height}
-        
+        --local viewport = Geom:new{x=status_bar_height, y=0, w=screen_width, h=screen_height}
+	--local viewport = Geom:new{x=0, y=status_bar_height, w=screen_width, h=screen_height-status_bar_height}
+	--local viewport = Geom:new{x=status_bar_height, y=0, w=screen_width, h=screen_height-status_bar_height}
+--	local viewport = Geom:new{x=50, y=100, w=900, h=1600}
+	local viewport = Geom:new{x=0, y=0, w=900, h=1600}
         android.screen:setViewport(viewport)
         android.input:registerEventAdjustHook(
             android.input.adjustTouchTranslate,
-            {x = 0 - viewport.x, y = 0 - viewport.y})
-        
+--            {x = 0 - viewport.x, y = 0 - viewport.y})
+ {x = 0, y = 0 })
         G_reader_settings:saveSetting("disabled_fullscreen", enabled_fullscreen)
     end,
 }
