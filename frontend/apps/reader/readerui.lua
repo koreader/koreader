@@ -547,7 +547,11 @@ end
 
 function ReaderUI:onClose()
     logger.dbg("closing reader")
-    self:saveSettings()
+    -- if self.dialog is us, we'll have our onFlushSettings() called
+    -- by UIManager:close() below, so avoid double save
+    if self.dialog ~= self then
+        self:saveSettings()
+    end
     if self.document ~= nil then
         logger.dbg("closing document")
         self:notifyCloseDocument()
