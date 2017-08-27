@@ -699,10 +699,14 @@ function ReaderStatistics:getTodayBookStats()
     local start_today_time = now_stamp - from_begin_day
     local conn = SQ3.open(db_location)
     local sql_stmt = [[
-        SELECT count(DISTINCT page + '*' + id_book),
-               sum(period)
-        FROM   page_stat
-        WHERE  start_time >= '%s'
+        SELECT count(*),
+               sum(sum_period)
+        FROM    (
+                     SELECT sum(period)      AS sum_period
+                     FROM   page_stat
+                     WHERE  start_time >= '%s'
+                     GROUP  BY id_book, page
+	            )
     ]]
     local today_pages, today_period = conn:rowexec(string.format(sql_stmt, start_today_time))
     if today_pages == nil then
@@ -720,10 +724,14 @@ end
 function ReaderStatistics:getCurrentBookStats()
     local conn = SQ3.open(db_location)
     local sql_stmt = [[
-        SELECT count(DISTINCT page),
-               sum(period)
-        FROM   page_stat
-        WHERE  start_time >= '%s'
+        SELECT count(*),
+               sum(sum_period)
+        FROM   (
+                    SELECT sum(period)      AS sum_period
+                    FROM   page_stat
+                    WHERE  start_time >= '%s'
+                    GROUP  BY id_book, page
+               )
     ]]
     local current_pages, current_period = conn:rowexec(string.format(sql_stmt, self.start_current_period))
     if current_pages == nil then
@@ -749,13 +757,12 @@ function ReaderStatistics:getCurrentStat(id_book)
     local notes, highlights = conn:rowexec(string.format("SELECT notes, highlights  FROM book WHERE id = '%s';)", id_book))
     local sql_stmt = [[
         SELECT count(*)
-        FROM
-            (
-                SELECT strftime('%%Y-%%m-%%d', start_time, 'unixepoch', 'localtime') AS dates
-                FROM   page_stat
-                WHERE  id_book = '%s'
-                GROUP  BY dates
-            )
+        FROM   (
+                    SELECT strftime('%%Y-%%m-%%d', start_time, 'unixepoch', 'localtime') AS dates
+                    FROM   page_stat
+                    WHERE  id_book = '%s'
+                    GROUP  BY dates
+               )
     ]]
     local total_days = conn:rowexec(string.format(sql_stmt, id_book))
     sql_stmt = [[
@@ -807,73 +814,54 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype)
     local one_day = 86400 -- one day in seconds
     local period_begin = now_stamp - ((sdays-1) * one_day) - from_begin_day
     local sql_stmt_res_book
-    local sql_stmt_res_pages
     if ptype == "daily" or ptype == "daily_weekday" then
         sql_stmt_res_book = [[
-            SELECT strftime('%%Y-%%m-%%d', start_time, 'unixepoch', 'localtime') AS dates,
-                   count(DISTINCT page)                                          AS pages,
-                   sum(period)                                                   AS periods,
+            SELECT dates,
+                   count(*)             AS pages,
+                   sum(sum_period)      AS periods,
                    start_time
-            FROM   page_stat
-            WHERE  start_time >= '%s'
-            GROUP  BY dates
-            ORDER  BY dates DESC
-        ]]
-        sql_stmt_res_pages = [[
-            SELECT strftime('%%Y-%%m-%%d', start_time, 'unixepoch', 'localtime') AS dates,
-                   count(*)                                                      AS pages
             FROM   (
-                        SELECT *
+                        SELECT strftime('%%Y-%%m-%%d', start_time, 'unixepoch', 'localtime') AS dates,
+                               sum(period)                                                   AS sum_period,
+                               start_time
                         FROM   page_stat
-                        GROUP  BY id_book, page
+                        WHERE  start_time >= '%s'
+                        GROUP  BY id_book, page, dates
                    )
-            WHERE  start_time >= '%s'
             GROUP  BY dates
             ORDER  BY dates DESC
         ]]
     elseif ptype == "weekly" then
         sql_stmt_res_book = [[
-            SELECT strftime('%%Y-%%W', start_time, 'unixepoch', 'localtime') AS dates,
-                   count(DISTINCT page)                                      AS pages,
-                   sum(period)                                               AS periods,
+            SELECT dates,
+                   count(*)             AS pages,
+                   sum(sum_period)      AS periods,
                    start_time
-            FROM   page_stat
-            WHERE  start_time >= '%s'
-            GROUP  BY dates
-            ORDER  BY dates DESC
-        ]]
-        sql_stmt_res_pages = [[
-            SELECT strftime('%%Y-%%W', start_time, 'unixepoch', 'localtime') AS dates,
-                   count(*)                                                  AS pages
             FROM   (
-                        SELECT *
+                        SELECT strftime('%%Y-%%W', start_time, 'unixepoch', 'localtime')     AS dates,
+                               sum(period)                                                   AS sum_period,
+                               start_time
                         FROM   page_stat
-                        GROUP  BY id_book, page
+                        WHERE  start_time >= '%s'
+                        GROUP  BY id_book, page, dates
                    )
-            WHERE  start_time >= '%s'
             GROUP  BY dates
             ORDER  BY dates DESC
         ]]
     elseif ptype == "monthly" then
         sql_stmt_res_book = [[
-            SELECT strftime('%%Y %%m', start_time, 'unixepoch', 'localtime') AS dates,
-                   count(DISTINCT page)                                      AS pages,
-                   sum(period)                                               AS periods,
+            SELECT dates,
+                   count(*)             AS pages,
+                   sum(sum_period)      AS periods,
                    start_time
-            FROM   page_stat
-            WHERE  start_time >= '%s'
-            GROUP  BY dates
-            ORDER  BY dates DESC
-        ]]
-        sql_stmt_res_pages = [[
-            SELECT strftime('%%Y %%m', start_time, 'unixepoch', 'localtime') AS dates,
-                   count(*)                                                  AS pages
             FROM   (
-                        SELECT *
+                        SELECT strftime('%%Y-%%m', start_time, 'unixepoch', 'localtime')     AS dates,
+                               sum(period)                                                   AS sum_period,
+                               start_time
                         FROM   page_stat
-                        GROUP  BY id_book, page
+                        WHERE  start_time >= '%s'
+                        GROUP  BY id_book, page, dates
                    )
-            WHERE  start_time >= '%s'
             GROUP  BY dates
             ORDER  BY dates DESC
         ]]
@@ -881,7 +869,6 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype)
     self:insertDB(self.id_curr_book)
     local conn = SQ3.open(db_location)
     local result_book = conn:exec(string.format(sql_stmt_res_book, period_begin))
-    local result_pages = conn:exec(string.format(sql_stmt_res_pages, period_begin))
     conn:close()
     if result_book == nil then
         return {}
@@ -903,7 +890,7 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype)
         end
         table.insert(results, {
             date_text,
-            T(_("Pages: (%1) Time: %2"), tonumber(result_pages[2][i]), util.secondsToClock(tonumber(result_book[3][i]), false))
+            T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), util.secondsToClock(tonumber(result_book[3][i]), false))
         })
     end
     return results
@@ -919,32 +906,25 @@ function ReaderStatistics:getReadingProgressStats(sdays)
     local period_begin = now_stamp - ((sdays-1) * one_day) - from_begin_day
     local conn = SQ3.open(db_location)
     local sql_stmt = [[
-        SELECT strftime('%%Y-%%m-%%d', start_time, 'unixepoch', 'localtime') AS dates,
-               count(DISTINCT page)                                          AS pages,
-               sum(period)                                                   AS periods,
-               start_time
-        FROM   page_stat
-        WHERE  start_time >= '%s'
-        GROUP  BY dates
-        ORDER  BY dates DESC
+            SELECT dates,
+                   count(*)             AS pages,
+                   sum(sum_period)      AS periods,
+                   start_time
+            FROM   (
+                        SELECT strftime('%%Y-%%m-%%d', start_time, 'unixepoch', 'localtime') AS dates,
+                               sum(period)                                                   AS sum_period,
+                               start_time
+                        FROM   page_stat
+                        WHERE  start_time >= '%s'
+                        GROUP  BY id_book, page, dates
+                   )
+            GROUP  BY dates
+            ORDER  BY dates DESC
     ]]
     local result_book = conn:exec(string.format(sql_stmt, period_begin))
-    sql_stmt = [[
-        SELECT strftime('%%Y-%%m-%%d', start_time, 'unixepoch', 'localtime') AS dates,
-               count(*)                                                      AS pages
-        FROM   (
-                    SELECT *
-                    FROM   page_stat
-                    GROUP  BY id_book, page
-               )
-        WHERE  start_time >= '%s'
-        GROUP  BY dates
-        ORDER  BY dates DESC
-    ]]
-    local result_pages = conn:exec(string.format(sql_stmt, period_begin))
 
     for i = 1, sdays do
-        pages = tonumber(result_pages[2][i])
+        pages = tonumber(result_book[2][i])
         period = tonumber(result_book[3][i])
         date_read = result_book[1][i]
         if pages == nil then pages = 0 end
