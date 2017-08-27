@@ -41,8 +41,6 @@ local ImageViewer = InputContainer:new{
     height = nil,
     scale_factor = 0, -- start with image scaled for best fit
     rotated = false,
-    -- we use this global setting for rotation angle to have the same angle as reader
-    rotation_angle = DLANDSCAPE_CLOCKWISE_ROTATION and 90 or 270,
 
     title_face = Font:getFace("x_smalltfont"),
     title_padding = Screen:scaleBySize(5),
@@ -208,6 +206,19 @@ function ImageViewer:update()
     local max_image_h = img_container_h - self.image_padding*2
     local max_image_w = self.width - self.image_padding*2
 
+    local rotation_angle = 0
+    if self.rotated then
+        -- in portrait mode, rotate according to this global setting so we are
+        -- like in landscape mode
+        local rotate_clockwise = DLANDSCAPE_CLOCKWISE_ROTATION
+        if Screen:getWidth() > Screen:getHeight() then
+            -- in landscape mode, counter-rotate landscape rotation so we are
+            -- back like in portrait mode
+            rotate_clockwise = not rotate_clockwise
+        end
+        rotation_angle = rotate_clockwise and 90 or 270
+    end
+
     self._image_wg = ImageWidget:new{
         file = self.file,
         image = self.image,
@@ -215,7 +226,7 @@ function ImageViewer:update()
         alpha = true,
         width = max_image_w,
         height = max_image_h,
-        rotation_angle = self.rotated and self.rotation_angle or 0,
+        rotation_angle = rotation_angle,
         scale_factor = self.scale_factor,
         center_x_ratio = self._center_x_ratio,
         center_y_ratio = self._center_y_ratio,
