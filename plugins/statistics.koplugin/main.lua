@@ -906,20 +906,20 @@ function ReaderStatistics:getReadingProgressStats(sdays)
     local period_begin = now_stamp - ((sdays-1) * one_day) - from_begin_day
     local conn = SQ3.open(db_location)
     local sql_stmt = [[
-            SELECT dates,
-                   count(*)             AS pages,
-                   sum(sum_period)      AS periods,
-                   start_time
-            FROM   (
-                        SELECT strftime('%%Y-%%m-%%d', start_time, 'unixepoch', 'localtime') AS dates,
-                               sum(period)                                                   AS sum_period,
-                               start_time
-                        FROM   page_stat
-                        WHERE  start_time >= '%s'
-                        GROUP  BY id_book, page, dates
-                   )
-            GROUP  BY dates
-            ORDER  BY dates DESC
+        SELECT dates,
+               count(*)             AS pages,
+               sum(sum_period)      AS periods,
+               start_time
+        FROM   (
+                    SELECT strftime('%%Y-%%m-%%d', start_time, 'unixepoch', 'localtime') AS dates,
+                           sum(period)                                                   AS sum_period,
+                           start_time
+                    FROM   page_stat
+                    WHERE  start_time >= '%s'
+                    GROUP  BY id_book, page, dates
+               )
+        GROUP  BY dates
+        ORDER  BY dates DESC
     ]]
     local result_book = conn:exec(string.format(sql_stmt, period_begin))
 
