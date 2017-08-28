@@ -71,6 +71,12 @@ local function utf8Chars(input_text)
     return read_next_glyph, input_text, 1
 end
 
+--- Returns a rendered glyph
+--
+-- @tparam ui.font.FontFaceObj face font face for the text
+-- @int charcode
+-- @bool[opt=false] bold whether the text should be measured as bold
+-- @treturn glyph
 function RenderText:getGlyph(face, charcode, bold)
     local hash = "glyph|"..face.hash.."|"..charcode.."|"..(bold and 1 or 0)
     local glyph = GlyphCache:check(hash)
@@ -102,7 +108,7 @@ function RenderText:getGlyph(face, charcode, bold)
     return rendered_glyph
 end
 
---- Return a substring of a given text that meets the maximum width (in pixels)
+--- Returns a substring of a given text that meets the maximum width (in pixels)
 -- restriction.
 --
 -- @string text text to truncate
@@ -111,6 +117,7 @@ end
 -- @bool[opt=false] kerning whether the text should be measured with kerning
 -- @bool[opt=false] bold whether the text should be measured as bold
 -- @treturn string
+-- @see truncateTextByWidth
 function RenderText:getSubTextByWidth(text, face, width, kerning, bold)
     local pen_x = 0
     local prevcharcode
@@ -241,6 +248,17 @@ end
 
 local ellipsis, space = "…", " "
 local ellipsis_width, space_width
+--- Returns a substring of a given text that meets the maximum width (in pixels)
+-- restriction with ellipses (…) at the end if required.
+--
+-- @string text text to truncate
+-- @tparam ui.font.FontFaceObj face font face for the text
+-- @int width maximum width in pixels
+-- @bool[opt=false] kerning whether the text should be measured with kerning
+-- @bool[opt=false] bold whether the text should be measured as bold
+-- @bool[opt=false] prepend_space whether a space should be prepended to the text
+-- @treturn string
+-- @see getSubTextByWidth
 function RenderText:truncateTextByWidth(text, face, max_width, kerning, bold, prepend_space)
     if not ellipsis_width then
         ellipsis_width = self:sizeUtf8Text(0, max_width, face, ellipsis).x
