@@ -241,7 +241,7 @@ end
 
 local ellipsis, space = "…", " "
 local ellipsis_width, space_width
-function RenderText:truncateTextByWidth(text, face, max_width, prepend_space, kerning, bold)
+function RenderText:truncateTextByWidth(text, face, max_width, kerning, bold, prepend_space)
     if not ellipsis_width then
         ellipsis_width = self:sizeUtf8Text(0, max_width, face, ellipsis).x
     end
