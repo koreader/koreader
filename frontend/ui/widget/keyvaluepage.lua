@@ -155,7 +155,8 @@ function KeyValueItem:init()
                 self.show_value = self.value
             else
                 key_w = key_w_rendered + space_w_rendered
-                self.show_value = RenderText:truncateTextByWidth(self.value, self.cface, frame_internal_width - key_w_rendered, true)
+                self.show_value = RenderText:truncateTextByWidth(self.value, self.cface, frame_internal_width - key_w_rendered,
+                    false, false, true)
                 self.show_key = self.key
             end
             -- allow for displaying the non-truncated texts with Hold
