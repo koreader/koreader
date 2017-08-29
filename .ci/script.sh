@@ -15,7 +15,6 @@ luajit "$(which luacheck)" --no-color -q {reader,setupkoenv,datastorage}.lua fro
 echo -e "\n${ANSI_GREEN}make all"
 make all
 
-
 luarocks --local install lua-curl #to hopefully get more info out of luacov-coveralls
 
 travis_retry make coverage
@@ -23,7 +22,6 @@ pushd koreader-*/koreader && {
     luajit "$(which luacov-coveralls)" --verbose
 } || exit
 popd
-
 
 echo -e "\n${ANSI_GREEN}make testfront"
 make testfront
