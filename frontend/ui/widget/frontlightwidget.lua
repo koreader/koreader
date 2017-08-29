@@ -103,9 +103,23 @@ function FrontLightWidget:setProgress(num, step)
     if num then
         self.fl_cur = num
         set_fl = math.min(self.fl_cur, self.fl_max)
-        Device:getPowerDevice():setIntensity(set_fl)
-        if set_fl == self.fl_max then enable_button_plus = false end
-        if set_fl == self.fl_min then enable_button_minus = false end
+        -- don't touch frontlight on first call (no self[1] means not yet out of update()),
+        -- so that we don't untoggle light
+        if self[1] then
+            local powerd = Device:getPowerDevice()
+            if set_fl == self.fl_min then -- fl_min (which is always 0) means toggle
+                powerd:toggleFrontlight()
+            else
+                powerd:setIntensity(set_fl)
+            end
+            -- get back the real level (different from set_fl if untoggle)
+            self.fl_cur = powerd:frontlightIntensity()
+            -- and update our step_num with it for accurate progress bar
+            step_num = math.floor(self.fl_cur / step)
+        end
+
+        if self.fl_cur == self.fl_max then enable_button_plus = false end
+        if self.fl_cur == self.fl_min then enable_button_minus = false end
 
         for i = step_min, step_num do
             table.insert(fl_group, self.fl_prog_button:new{
@@ -122,8 +136,6 @@ function FrontLightWidget:setProgress(num, step)
                 end
             })
         end
-    else
-        num = 0
     end
 
     for i = step_num + 1, step_min + self.steps -1 do
@@ -139,7 +151,7 @@ function FrontLightWidget:setProgress(num, step)
         enabled = enable_button_minus,
         width = self.screen_width * 0.20,
         show_parent = self,
-        callback = function()  self:setProgress(num - 1, step) end,
+        callback = function()  self:setProgress(self.fl_cur - 1, step) end,
     }
     local button_plus = Button:new{
         text = "+1",
@@ -149,10 +161,10 @@ function FrontLightWidget:setProgress(num, step)
         enabled = enable_button_plus,
         width = self.screen_width * 0.20,
         show_parent = self,
-        callback = function() self:setProgress(num + 1, step) end,
+        callback = function() self:setProgress(self.fl_cur + 1, step) end,
     }
     local item_level = TextBoxWidget:new{
-        text = set_fl,
+        text = self.fl_cur,
         face = self.medium_font_face,
         alignment = "center",
         width = self.screen_width * 0.95 - 1.275 * button_minus.width - 1.275 * button_plus.width,
@@ -165,7 +177,7 @@ function FrontLightWidget:setProgress(num, step)
         enabled = true,
         width = self.screen_width * 0.20,
         show_parent = self,
-        callback = function() self:setProgress(self.fl_min, step) end,
+        callback = function() self:setProgress(self.fl_min+1, step) end, -- min is 1 (use toggle for 0)
     }
     local button_max = Button:new{
         text = _("Max"),
@@ -186,9 +198,7 @@ function FrontLightWidget:setProgress(num, step)
         width = self.screen_width * 0.20,
         show_parent = self,
         callback = function()
-            local powerd = Device:getPowerDevice()
-            powerd:toggleFrontlight()
-            self:setProgress(powerd:frontlightIntensity(), step)
+            self:setProgress(self.fl_min, step)
         end,
     }
     local empty_space = HorizontalSpan:new{
