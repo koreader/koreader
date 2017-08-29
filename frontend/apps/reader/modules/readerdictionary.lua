@@ -12,6 +12,64 @@ local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
 
+-- We'll store the list of available dictionaries as a module local
+-- so we only have to look for them on the first :init()
+local available_ifos = nil
+local ifo_disabled_suffix = "_Disabled_by_KOReader"
+local nb_enabled_ifos = 0
+
+local function getIfosInDir(path)
+    -- Get all the .ifo (and .ifo<ifo_disabled_suffix> for dicts we have disabled)
+    -- under directory path.
+    -- We use the same logic as sdcv to walk directories and ifos files
+    -- (so we get them in the order sdcv queries them) :
+    -- - No sorting, entries are processed in the order the dir_read_name() call
+    --   returns them (inodes linked list)
+    -- - If entry is a directory, Walk in it first and recurse
+    local ifos = {}
+    local ok, iter, dir_obj = pcall(lfs.dir, path)
+    if ok then
+        for name in iter, dir_obj do
+            if name ~= "." and name ~= ".." then
+                local fullpath = path.."/"..name
+                local attributes = lfs.attributes(fullpath)
+                if attributes ~= nil then
+                    if attributes.mode == "directory" then
+                        local dirifos = getIfosInDir(fullpath) -- recurse
+                        for _, ifo in pairs(dirifos) do
+                            table.insert(ifos, ifo)
+                        end
+                    else
+                        if fullpath:match("%.ifo$") then -- enabled ifo
+                            table.insert(ifos, fullpath)
+                        elseif fullpath:match("%.ifo"..ifo_disabled_suffix.."$") then -- disabled ifo
+                            fullpath = fullpath:gsub(ifo_disabled_suffix.."$", "")
+                            table.insert(ifos, fullpath)
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return ifos
+end
+
+local function toggleIfo(ifo)
+    -- To make a dictionary not used by sdcv, we just rename
+    -- its .ifo file by appending ifo_disabled_suffix to it.
+    local ifo_enabled = ifo
+    local ifo_disabled = ifo .. ifo_disabled_suffix
+    local is_enabled = lfs.attributes(ifo_enabled)
+    local is_disabled = lfs.attributes(ifo_disabled)
+    if is_enabled and not is_disabled then
+        os.rename(ifo_enabled, ifo_disabled)
+        return false
+    elseif is_disabled and not is_enabled then
+        os.rename(ifo_disabled, ifo_enabled)
+        return true
+    end
+end
+
 local ReaderDictionary = InputContainer:new{
     data_dir = nil,
     dict_window_list = {},
@@ -22,6 +80,45 @@ function ReaderDictionary:init()
     self.ui.menu:registerToMainMenu(self)
     self.data_dir = os.getenv("STARDICT_DATA_DIR") or
         DataStorage:getDataDir() .. "/data/dict"
+
+    -- Gather info about available dictionaries
+    if not available_ifos then
+        available_ifos = {}
+        logger.dbg("Getting list of dictionaries")
+        local ifo_files = getIfosInDir(self.data_dir)
+        local dict_ext = self.data_dir.."_ext"
+        if lfs.attributes(dict_ext, "mode") == "directory" then
+            local extifos = getIfosInDir(dict_ext)
+            for _, ifo in pairs(extifos) do
+                table.insert(ifo_files, ifo)
+            end
+        end
+        for _, ifo_file in pairs(ifo_files) do
+            local cur_ifo_file = ifo_file
+            local enabled = true
+            if not lfs.attributes(ifo_file) then
+                cur_ifo_file = ifo_file .. ifo_disabled_suffix
+                enabled = false
+            end
+            local f = io.open(cur_ifo_file, "r")
+            if f then
+                local content = f:read("*all")
+                f:close()
+                local dictname = content:match("bookname=(.-)\n")
+                -- sdcv won't use dict that don't have a bookname=
+                if dictname then
+                    table.insert(available_ifos, {
+                        file = ifo_file,
+                        name = dictname,
+                    })
+                    if enabled then
+                        nb_enabled_ifos = nb_enabled_ifos + 1
+                    end
+                end
+            end
+        end
+        logger.dbg("found", #available_ifos, "dictionaries")
+    end
 end
 
 function ReaderDictionary:addToMainMenu(menu_items)
@@ -39,6 +136,28 @@ function ReaderDictionary:addToMainMenu(menu_items)
     menu_items.dictionary_settings = {
         text = _("Dictionary settings"),
         sub_item_table = {
+            {
+                -- text = _("Installed dictionaries"),
+                text_func = function()
+                    local nb_str = #available_ifos
+                    if nb_enabled_ifos ~= #available_ifos then
+                        nb_str = nb_enabled_ifos .. "/" .. nb_str
+                    end
+                    return T(_("Installed dictionaries (%1)"), nb_str)
+                end,
+                sub_item_table = self:genDictionariesMenu(),
+            },
+            {
+                text = _("Info on dictionaries ordering"),
+                callback = function()
+                    UIManager:show(InfoMessage:new{
+                        text = T(_("If you'd like to change the order in which dictionaries are queried (and their results displayed), you can:\n"..
+                            "- move all dictionary directories out of %1.\n"..
+                            "- move them back there, one by one, in the order you want them to be used."
+                            ), self.data_dir)
+                    })
+                end
+            },
             {
                 text = _("Disable dictionary fuzzy search"),
                 checked_func = function()
@@ -68,6 +187,25 @@ function ReaderDictionary:onLookupWord(word, box, highlight)
     self.highlight = highlight
     self:stardictLookup(word, box)
     return true
+end
+
+function ReaderDictionary:genDictionariesMenu()
+    local items = {}
+    for _, ifo in pairs(available_ifos) do
+        table.insert(items, {
+            text = ifo.name,
+            callback = function()
+                local enabled = toggleIfo(ifo.file)
+                if enabled == true then nb_enabled_ifos = nb_enabled_ifos + 1
+                elseif enabled == false then nb_enabled_ifos = nb_enabled_ifos - 1
+                end
+            end,
+            checked_func = function()
+                return lfs.attributes(ifo.file, "mode") == "file"
+            end
+        })
+    end
+    return items
 end
 
 local function dictDirsEmpty(dict_dirs)
