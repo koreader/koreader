@@ -5,9 +5,7 @@ local batt_state_folder =
         "/sys/devices/platform/pmic_battery.1/power_supply/mc13892_bat/"
 
 local KoboPowerD = BasePowerD:new{
-    -- Do not actively set front light to 0, it may confuse users -- pressing
-    -- hardware button won't take any effect.
-    fl_min = 1, fl_max = 100,
+    fl_min = 0, fl_max = 100,
     fl = nil,
 
     batt_capacity_file = batt_state_folder .. "capacity",
