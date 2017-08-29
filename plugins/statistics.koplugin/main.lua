@@ -20,7 +20,7 @@ local Screen = require("device").screen
 local T = require("ffi/util").template
 
 local statistics_dir = DataStorage:getDataDir() .. "/statistics/"
-local db_location = DataStorage:getSettingsDir() .. "/book.sqlite3"
+local db_location = DataStorage:getSettingsDir() .. "/statistics.sqlite3"
 local PAGE_INSERT = 50
 local DEFAULT_MIN_READ_SEC = 5
 local DEFAULT_MAX_READ_SEC = 120
