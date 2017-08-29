@@ -15,12 +15,9 @@ local T = require("ffi/util").template
 -- We'll store the list of available dictionaries as a module local
 -- so we only have to look for them on the first :init()
 local available_ifos = nil
-local ifo_disabled_suffix = "_Disabled_by_KOReader"
-local nb_enabled_ifos = 0
 
 local function getIfosInDir(path)
-    -- Get all the .ifo (and .ifo<ifo_disabled_suffix> for dicts we have disabled)
-    -- under directory path.
+    -- Get all the .ifo under directory path.
     -- We use the same logic as sdcv to walk directories and ifos files
     -- (so we get them in the order sdcv queries them) :
     -- - No sorting, entries are processed in the order the dir_read_name() call
@@ -39,35 +36,14 @@ local function getIfosInDir(path)
                         for _, ifo in pairs(dirifos) do
                             table.insert(ifos, ifo)
                         end
-                    else
-                        if fullpath:match("%.ifo$") then -- enabled ifo
-                            table.insert(ifos, fullpath)
-                        elseif fullpath:match("%.ifo"..ifo_disabled_suffix.."$") then -- disabled ifo
-                            fullpath = fullpath:gsub(ifo_disabled_suffix.."$", "")
-                            table.insert(ifos, fullpath)
-                        end
+                    elseif fullpath:match("%.ifo$") then
+                        table.insert(ifos, fullpath)
                     end
                 end
             end
         end
     end
     return ifos
-end
-
-local function toggleIfo(ifo)
-    -- To make a dictionary not used by sdcv, we just rename
-    -- its .ifo file by appending ifo_disabled_suffix to it.
-    local ifo_enabled = ifo
-    local ifo_disabled = ifo .. ifo_disabled_suffix
-    local is_enabled = lfs.attributes(ifo_enabled)
-    local is_disabled = lfs.attributes(ifo_disabled)
-    if is_enabled and not is_disabled then
-        os.rename(ifo_enabled, ifo_disabled)
-        return false
-    elseif is_disabled and not is_enabled then
-        os.rename(ifo_disabled, ifo_enabled)
-        return true
-    end
 end
 
 local ReaderDictionary = InputContainer:new{
@@ -94,31 +70,63 @@ function ReaderDictionary:init()
             end
         end
         for _, ifo_file in pairs(ifo_files) do
-            local cur_ifo_file = ifo_file
-            local enabled = true
-            if not lfs.attributes(ifo_file) then
-                cur_ifo_file = ifo_file .. ifo_disabled_suffix
-                enabled = false
-            end
-            local f = io.open(cur_ifo_file, "r")
+            local f = io.open(ifo_file, "r")
             if f then
                 local content = f:read("*all")
                 f:close()
-                local dictname = content:match("bookname=(.-)\n")
+                local dictname = content:match("\nbookname=(.-)\n")
                 -- sdcv won't use dict that don't have a bookname=
                 if dictname then
                     table.insert(available_ifos, {
                         file = ifo_file,
                         name = dictname,
                     })
-                    if enabled then
-                        nb_enabled_ifos = nb_enabled_ifos + 1
-                    end
                 end
             end
         end
         logger.dbg("found", #available_ifos, "dictionaries")
+
+        if not G_reader_settings:readSetting("dicts_disabled") then
+            -- Create an empty dict for this setting, so that we can
+            -- access and update it directly thru G_reader_settings
+            -- and it will automatically be saved.
+            G_reader_settings:saveSetting("dicts_disabled", {})
+        end
     end
+    -- Prepare the -u options to give to sdcv if some dictionaries are disabled
+    self:updateSdcvDictNamesOptions()
+end
+
+function ReaderDictionary:updateSdcvDictNamesOptions()
+    -- We cannot tell sdcv which dictionaries to ignore, but we
+    -- can tell it which dictionaries to use, by using multiple
+    -- -u <dictname> options.
+    -- (The order of the -u does not matter, and we can not use
+    -- them for ordering queries and results)
+    local dicts_disabled = G_reader_settings:readSetting("dicts_disabled")
+    if not next(dicts_disabled) then
+        -- no dict disabled, no need to use any -u option
+        self.sdcv_dictnames_options_raw = nil
+        self.sdcv_dictnames_options_escaped = nil
+        return
+    end
+    local u_options_raw = {} -- for android call (individual unesscaped elements)
+    local u_options_escaped = {} -- for other devices call via shell
+    for _, ifo in pairs(available_ifos) do
+        if not dicts_disabled[ifo.file] then
+            table.insert(u_options_raw, "-u")
+            table.insert(u_options_raw, ifo.name)
+            -- Escape chars in dictname so it's ok for the shell command
+            -- local u_esc = ("-u %q"):format(ifo.name)
+            -- This may be safer than using lua's %q:
+            local u_esc = "-u '" .. ifo.name:gsub("'", "'\\''") .. "'"
+            table.insert(u_options_escaped, u_esc)
+        end
+        -- Note: if all dicts are disabled, we won't get any -u, and so
+        -- all dicts will be queried.
+    end
+    self.sdcv_dictnames_options_raw = u_options_raw
+    self.sdcv_dictnames_options_escaped = table.concat(u_options_escaped, " ")
 end
 
 function ReaderDictionary:addToMainMenu(menu_items)
@@ -139,9 +147,15 @@ function ReaderDictionary:addToMainMenu(menu_items)
             {
                 -- text = _("Installed dictionaries"),
                 text_func = function()
-                    local nb_str = #available_ifos
-                    if nb_enabled_ifos ~= #available_ifos then
-                        nb_str = nb_enabled_ifos .. "/" .. nb_str
+                    local nb_available = #available_ifos
+                    local nb_disabled = 0
+                    for _ in pairs(G_reader_settings:readSetting("dicts_disabled")) do
+                        nb_disabled = nb_disabled + 1
+                    end
+                    local nb_str = nb_available
+                    if nb_disabled > 0 then
+                        local nb_enabled = nb_available - nb_disabled
+                        nb_str = nb_enabled .. "/" .. nb_available
                     end
                     return T(_("Installed dictionaries (%1)"), nb_str)
                 end,
@@ -195,13 +209,18 @@ function ReaderDictionary:genDictionariesMenu()
         table.insert(items, {
             text = ifo.name,
             callback = function()
-                local enabled = toggleIfo(ifo.file)
-                if enabled == true then nb_enabled_ifos = nb_enabled_ifos + 1
-                elseif enabled == false then nb_enabled_ifos = nb_enabled_ifos - 1
+                local dicts_disabled = G_reader_settings:readSetting("dicts_disabled")
+                if dicts_disabled[ifo.file] then
+                    dicts_disabled[ifo.file] = nil
+                else
+                    dicts_disabled[ifo.file] = true
                 end
+                -- Update the -u options to give to sdcv
+                self:updateSdcvDictNamesOptions()
             end,
             checked_func = function()
-                return lfs.attributes(ifo.file, "mode") == "file"
+                local dicts_disabled = G_reader_settings:readSetting("dicts_disabled")
+                return not dicts_disabled[ifo.file]
             end
         })
     end
@@ -323,17 +342,24 @@ function ReaderDictionary:stardictLookup(word, box)
         self:showDict(word, final_results, box)
         return
     end
+    local common_options = self.disable_fuzzy_search and "-njf" or "-nj"
     for _, dict_dir in ipairs(dict_dirs) do
         local results_str = nil
-        local common_options = self.disable_fuzzy_search and "-njf" or "-nj"
         if Device:isAndroid() then
             local A = require("android")
-            results_str = A.stdout("./sdcv", "--utf8-input", "--utf8-output",
-                    common_options, word, "--data-dir", dict_dir)
+            local args = {"./sdcv", "--utf8-input", "--utf8-output", common_options, word, "--data-dir", dict_dir}
+            if self.sdcv_dictnames_options_raw then
+                for _, opt in pairs(self.sdcv_dictnames_options_raw) do
+                    table.insert(args, opt)
+                end
+            end
+            results_str = A.stdout(unpack(args))
         else
-            local std_out = io.popen(
-                ("./sdcv --utf8-input --utf8-output %q %q --data-dir %q"):format(common_options, word, dict_dir),
-                "r")
+            local cmd = ("./sdcv --utf8-input --utf8-output %q %q --data-dir %q"):format(common_options, word, dict_dir)
+            if self.sdcv_dictnames_options_escaped then
+                cmd = cmd .. " " .. self.sdcv_dictnames_options_escaped
+            end
+            local std_out = io.popen(cmd, "r")
             if std_out then
                 results_str = std_out:read("*all")
                 std_out:close()
