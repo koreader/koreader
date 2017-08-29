@@ -46,7 +46,7 @@ function ButtonTable:init()
                 enabled = btn_entry.enabled,
                 callback = btn_entry.callback,
                 width = (self.width - sizer_space)/column_cnt,
-                max_width = (self.width - sizer_space)/column_cnt - self.sep_width - self.padding,
+                max_width = (self.width - sizer_space)/column_cnt - 2*self.sep_width - 2*self.padding,
                 bordersize = 0,
                 margin = 0,
                 padding = 0,
