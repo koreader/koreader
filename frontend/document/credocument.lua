@@ -415,6 +415,11 @@ function CreDocument:setEmbeddedStyleSheet(toggle)
     self._document:setIntProperty("crengine.doc.embedded.styles.enabled", toggle)
 end
 
+function CreDocument:setEmbeddedFonts(toggle)
+    logger.dbg("CreDocument: set embedded fonts", toggle)
+    self._document:setIntProperty("crengine.doc.embedded.fonts.enabled", toggle)
+end
+
 function CreDocument:setPageMargins(left, top, right, bottom)
     logger.dbg("CreDocument: set page margins", left, top, right, bottom)
     self._document:setIntProperty("crengine.page.margin.left", left)

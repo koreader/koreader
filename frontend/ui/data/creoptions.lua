@@ -14,6 +14,10 @@ local Aa = setmetatable({"Aa"}, {
     end
 })
 
+local function enable_if_equals(configurable, option, value)
+    return configurable[option] == value
+end
+
 local CreOptions = {
     prefix = 'copt',
     {
@@ -157,6 +161,19 @@ local CreOptions = {
                 args = {true, false},
                 default_arg = nil,
                 event = "ToggleEmbeddedStyleSheet",
+            },
+            {
+                name = "embedded_fonts",
+                name_text = S.EMBEDDED_FONTS,
+                toggle = {S.ON, S.OFF},
+                values = {1, 0},
+                default_value = 1,
+                args = {true, false},
+                default_arg = nil,
+                event = "ToggleEmbeddedFonts",
+                enabled_func = function(configurable)
+                    return enable_if_equals(configurable, "embedded_css", 1)
+                end,
             },
         },
     },
