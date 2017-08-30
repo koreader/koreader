@@ -61,7 +61,11 @@ end
 
 function NetworkMgr:isOnline()
     local socket = require("socket")
-    return socket.dns.toip("www.example.com") ~= nil
+    -- Microsoft uses `dns.msftncsi.com` for Windows, see
+    -- <https://technet.microsoft.com/en-us/library/ee126135#BKMK_How> for
+    -- more information. They also check whether <http://www.msftncsi.com/ncsi.txt>
+    -- returns `Microsoft NCSI`.
+    return socket.dns.toip("dns.msftncsi.com") ~= nil
 end
 
 function NetworkMgr:setHTTPProxy(proxy)
