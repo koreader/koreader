@@ -129,4 +129,38 @@ describe("SwitchPlugin", function()
         })
         test_plugin:init()
     end)
+
+    it("should show a correct message box", function()
+        local UIManager = require("ui/uimanager")
+
+        local confirm_box
+        UIManager.show = function(self, element)
+            confirm_box = element
+        end
+
+        local test_plugin = TestPlugin2:new()
+        -- The plugin is off by default, we expect an "enable" message.
+        test_plugin:_showConfirmBox()
+        assert.is_not_nil(confirm_box)
+        assert.are.equal(
+            "This is a test plugin2, it's for test purpose only.\nDo you want to enable it?",
+            confirm_box.text)
+        assert.are.equal("Enable", confirm_box.ok_text)
+        confirm_box.ok_callback()
+        confirm_box = nil
+
+        -- The plugin is enabled by confirm_box.ok_callback(), we expect a "disable" message.
+        test_plugin:_showConfirmBox()
+        assert.is_not_nil(confirm_box)
+        assert.are.equal(
+            "This is a test plugin2, it's for test purpose only.\nDo you want to disable it?",
+            confirm_box.text)
+        assert.are.equal("Disable", confirm_box.ok_text)
+        confirm_box.ok_callback()
+        confirm_box = nil
+
+        assert.is_false(test_plugin.enabled)
+
+        package.unload("ui/uimanager")
+    end)
 end)

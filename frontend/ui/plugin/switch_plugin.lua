@@ -61,24 +61,27 @@ end
 --- Show a ConfirmBox to ask for enabling or disabling this plugin.
 function SwitchPlugin:_showConfirmBox()
     UIManager:show(ConfirmBox:new{
-        text = self._confirmMessage() ..
-               T(_("Do you want to %1 it?"),
-                 self.enabled and _("disable") or _("enable")),
+        text = self:_confirmMessage(),
         ok_text = self.enabled and _("Disable") or _("Enable"),
         ok_callback = function()
             self:flipSetting()
-        end
+        end,
     })
 end
 
 function SwitchPlugin:_confirmMessage()
+    local result = ""
     if type(self.confirm_message) == "string" then
-        return self.confirm_message .. "\n"
+        result = self.confirm_message .. "\n"
     elseif type(self.confirm_message) == "function" then
-        return self.confirm_message() .. "\n"
-    else
-        return ""
+        result = self.confirm_message() .. "\n"
     end
+    if self.enabled then
+        result = result .. _("Do you want to disable it?")
+    else
+        result = result .. _("Do you want to enable it?")
+    end
+    return result
 end
 
 function SwitchPlugin:init()
