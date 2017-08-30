@@ -170,7 +170,7 @@ Please wait…
                 UIManager:close(info)
                 UIManager:forceRePaint()
                 UIManager:show(InfoMessage:new{
-                    text =T(_("Convertion completed.\nImported %1 books to database."),nr_book), timeout = 4 })
+                    text =T(_("Conversion completed.\nImported %1 books to database."),nr_book), timeout = 4 })
             else
                 self:createDB(conn)
             end
