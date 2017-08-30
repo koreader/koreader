@@ -133,8 +133,12 @@ function ReaderStatistics:checkInitDatabase()
     if self.convert_to_db then      -- if conversion to sqlite was doing earlier
         if not conn:exec("pragma table_info('book');") then
             UIManager:show(ConfirmBox:new{
-                text = T(_("Cannot open database in %1.\nThe database may have been moved or deleted.\n " ..
-                    "Do you want to create an empty database?"), db_location),
+                text = T(_([[
+Cannot open database in %1.
+The database may have been moved or deleted.
+Do you want to create an empty database?
+]]),
+                        db_location),
                 cancel_text = _("Close"),
                 cancel_callback = function()
                     return
@@ -154,9 +158,12 @@ function ReaderStatistics:checkInitDatabase()
         if not conn:exec("pragma table_info('book');") then
             if #ReadHistory.hist > 0 then
                 local info = InfoMessage:new{
-                    text =_("New version of statistics plugin is detected.\n" ..
-                        "Statistics data needs to be converted into the new database format.\n"..
-                        "It make take a few minutes.\nPlease wait…")}
+                    text =_([[
+New version of statistics plugin is detected.
+Statistics data needs to be converted into the new database format.
+It make take a few minutes.
+Please wait…
+]])}
                 UIManager:show(info)
                 UIManager:forceRePaint()
                 local nr_book = self:migrateToDB(conn)
