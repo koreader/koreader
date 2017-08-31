@@ -1,6 +1,6 @@
 local Device = require("device")
 
-if not Device:isKindle() or
+if not Device:isSDL() or not Device:isKindle() or
    (Device.model ~= "KindleVoyage" and Device.model ~= "KindleOasis") then
     return { disabled = true, }
 end
