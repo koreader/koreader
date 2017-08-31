@@ -157,7 +157,6 @@ describe("SwitchPlugin", function()
             confirm_box.text)
         assert.are.equal("Disable", confirm_box.ok_text)
         confirm_box.ok_callback()
-        confirm_box = nil
 
         assert.is_false(test_plugin.enabled)
 
