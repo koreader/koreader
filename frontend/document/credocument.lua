@@ -335,6 +335,26 @@ function CreDocument:setFontFace(new_font_face)
     if new_font_face then
         logger.dbg("CreDocument: set font face", new_font_face)
         self._document:setStringProperty("font.face.default", new_font_face)
+
+        -- The following makes FontManager prefer this font in its match
+        -- algorithm, with the bias given (applies only to rendering of
+        -- elements with css font-family)
+        -- See: crengine/src/lvfntman.cpp LVFontDef::CalcMatch():
+        -- it will compute a score for each font, where it adds:
+        --  + 25600 if standard font family matches (inherit serif sans-serif
+        --     cursive fantasy monospace) (note that crengine registers all fonts as
+        --     "sans-serif", except if their name is "Times" or "Times New Roman")
+        --  + 6400 if they don't and none are monospace (ie:serif vs sans-serif,
+        --      prefer a sans-serif to a monospace if looking for a serif)
+        --  +256000 if font names match
+        -- So, here, we can bump the score of our default font, and we could use:
+        --      +1: uses existing real font-family, but use our font for
+        --          font-family: serif, sans-serif..., and fonts not found (or
+        --          embedded fonts disabled)
+        --  +25601: uses existing real font-family, but use our font even
+        --          for font-family: monospace
+        -- +256001: prefer our font to any existing font-family font
+        self._document:setAsPreferredFontWithBias(new_font_face, 1)
     end
 end
 
