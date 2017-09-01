@@ -220,7 +220,7 @@ function ReaderStatistics:createDB(conn)
             );
         CREATE TABLE IF NOT EXISTS page_stat
             (
-                id_book    integer PRIMARY KEY,
+                id_book    integer,
                 page       integer NOT NULL,
                 start_time integer NOT NULL,
                 period     integer NOT NULL,
