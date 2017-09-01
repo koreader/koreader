@@ -58,6 +58,11 @@ local DictQuickLookup = InputContainer:new{
     refresh_callback = nil,
 }
 
+local highlight_strings = {
+    highlight =_("Highlight"),
+    unhighlight = _("Unhighlight"),
+}
+
 function DictQuickLookup:init()
     self:changeToDefaultDict()
     if Device:hasKeys() then
@@ -317,6 +322,7 @@ function DictQuickLookup:update()
             },
         }
     else
+        local highlight_text_button = highlight_strings.highlight
         buttons = {
             {
                 {
@@ -330,7 +336,7 @@ function DictQuickLookup:update()
                     text = self:getHighlightText(),
                     enabled = true,
                     callback = function()
-                        if self:getHighlightText() == _("Highlight") then
+                        if self:getHighlightText() == highlight_text_button then
                             self.ui:handleEvent(Event:new("Highlight"))
                         else
                             self.ui:handleEvent(Event:new("Unhighlight"))
@@ -481,11 +487,11 @@ end
 function DictQuickLookup:getHighlightText()
     local item = self:getHighlightedItem()
     if not item then
-        return _("Highlight"), false
+        return highlight_strings.highlight, false
     elseif self.ui.bookmark:isBookmarkAdded(item) then
-        return _("Unhighlight"), false
+        return highlight_strings.unhighlight, false
     else
-        return _("Highlight"), true
+        return highlight_strings.highlight, true
     end
 end
 
