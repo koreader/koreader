@@ -231,6 +231,8 @@ function ReaderStatistics:createDB(conn)
              (
                  version integer
              );
+        CREATE INDEX IF NOT EXISTS page_stat_id_book ON page_stat(id_book);
+        CREATE INDEX IF NOT EXISTS book_title_authors_md5 ON book(title, authors, md5);
     ]]
     conn:exec(sql_stmt)
     --DB structure version - now is version 1
