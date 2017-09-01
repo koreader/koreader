@@ -937,7 +937,7 @@ function ReaderStatistics:getReadingProgressStats(sdays)
         ORDER  BY dates DESC
     ]]
     local result_book = conn:exec(string.format(sql_stmt, period_begin))
-    if result_book == nil then return nil end
+    if not result_book then return end
     for i = 1, sdays do
         pages = tonumber(result_book[2][i])
         period = tonumber(result_book[3][i])
