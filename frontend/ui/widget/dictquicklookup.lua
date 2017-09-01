@@ -330,7 +330,7 @@ function DictQuickLookup:update()
                     text = self:getHighlightText(),
                     enabled = true,
                     callback = function()
-                        if self:getHighlightText() == "Highlight" then
+                        if self:getHighlightText() == _("Highlight") then
                             self.ui:handleEvent(Event:new("Highlight"))
                         else
                             self.ui:handleEvent(Event:new("Unhighlight"))
