@@ -220,7 +220,7 @@ function ReaderStatistics:createDB(conn)
             );
         CREATE TABLE IF NOT EXISTS page_stat
             (
-                id_book    integer PRIMARY KEY,
+                id_book    integer,
                 page       integer NOT NULL,
                 start_time integer NOT NULL,
                 period     integer NOT NULL,
@@ -231,6 +231,8 @@ function ReaderStatistics:createDB(conn)
              (
                  version integer
              );
+        CREATE INDEX IF NOT EXISTS page_stat_id_book ON page_stat(id_book);
+        CREATE INDEX IF NOT EXISTS book_title_authors_md5 ON book(title, authors, md5);
     ]]
     conn:exec(sql_stmt)
     --DB structure version - now is version 1
@@ -636,13 +638,19 @@ function ReaderStatistics:addToMainMenu(menu_items)
                     self:insertDB(self.id_curr_book)
                     local current_period, current_pages = self:getCurrentBookStats()
                     local today_period, today_pages = self:getTodayBookStats()
-                    UIManager:show(ReaderProgress:new{
-                        dates = self:getReadingProgressStats(7),
-                        current_period = current_period,
-                        current_pages = current_pages,
-                        today_period = today_period,
-                        today_pages = today_pages,
-                    })
+                    local dates_stats = self:getReadingProgressStats(7)
+                    if dates_stats then
+                        UIManager:show(ReaderProgress:new{
+                            dates = dates_stats,
+                            current_period = current_period,
+                            current_pages = current_pages,
+                            today_period = today_period,
+                            today_pages = today_pages,
+                        })
+                    else
+                        UIManager:show(InfoMessage:new{
+                            text =T(_("Reading progress unavailable.\nNo data from last %1 days."),7)})
+                    end
                 end
             },
             {
@@ -929,7 +937,7 @@ function ReaderStatistics:getReadingProgressStats(sdays)
         ORDER  BY dates DESC
     ]]
     local result_book = conn:exec(string.format(sql_stmt, period_begin))
-
+    if not result_book then return end
     for i = 1, sdays do
         pages = tonumber(result_book[2][i])
         period = tonumber(result_book[3][i])
