@@ -322,7 +322,6 @@ function DictQuickLookup:update()
             },
         }
     else
-        local highlight_text_button = highlight_strings.highlight
         buttons = {
             {
                 {
@@ -336,7 +335,7 @@ function DictQuickLookup:update()
                     text = self:getHighlightText(),
                     enabled = true,
                     callback = function()
-                        if self:getHighlightText() == highlight_text_button then
+                        if self:getHighlightText() == highlight_strings.highlight then
                             self.ui:handleEvent(Event:new("Highlight"))
                         else
                             self.ui:handleEvent(Event:new("Unhighlight"))
