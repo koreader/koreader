@@ -43,7 +43,11 @@ local footerTextGeneratorMap = {
         if not Device:hasFrontlight() then return "L: NA" end
         local powerd = Device:getPowerDevice()
         if powerd:isFrontlightOn() then
-            return ("L: %d%%"):format(powerd:frontlightIntensity())
+            if Device:isKobo() then
+                return ("L: %d%%"):format(powerd:frontlightIntensity())
+            else
+                return ("L: %d"):format(powerd:frontlightIntensity())
+            end
         else
             return "L: Off"
         end
