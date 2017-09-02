@@ -5,6 +5,8 @@ local DictQuickLookup = require("ui/widget/dictquicklookup")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local JSON = require("json")
+local KeyValuePage = require("ui/widget/keyvaluepage")
+local LuaSettings = require("luasettings")
 local Trapper = require("ui/trapper")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
@@ -50,7 +52,7 @@ end
 local ReaderDictionary = InputContainer:new{
     data_dir = nil,
     dict_window_list = {},
-    lookup_msg = _("Searching dictionary for:\n%1")
+    lookup_msg = _("Searching dictionary for:\n%1"),
 }
 
 function ReaderDictionary:init()
@@ -141,6 +143,30 @@ function ReaderDictionary:addToMainMenu(menu_items)
                 self:onLookupWord(input)
             end,
         },
+    }
+    menu_items.dictionary_lookup_history = {
+        text = _("Dictionary lookup history"),
+        enabled_func = function()
+            local lookup_history = LuaSettings:open(self.ui.doc_settings.sidecar .. "/lookup_history.lua")
+            return lookup_history:has("lookup_history")
+        end,
+        callback = function()
+            local lookup_history = LuaSettings:open(self.ui.doc_settings.sidecar .. "/lookup_history.lua")
+            local kv_pairs = {}
+            for key, value in ipairs(lookup_history:readSetting("lookup_history")) do
+                table.insert(kv_pairs, {
+                    os.date("%Y-%m-%d %H:%M:%S", value.time),
+                    value.word,
+                    callback = function()
+                        self:onLookupWord(value.word)
+                    end
+                })
+            end
+            UIManager:show(KeyValuePage:new{
+                title = _("Dictionary lookup history"),
+                kv_pairs = kv_pairs,
+            })
+        end,
     }
     menu_items.dictionary_settings = {
         text = _("Dictionary settings"),
@@ -329,6 +355,13 @@ function ReaderDictionary:stardictLookup(word, box, link)
     if word == "" then
         return
     end
+
+    local lookup_history = LuaSettings:open(self.ui.doc_settings.sidecar .. "/lookup_history.lua")
+    lookup_history:addTableItem("lookup_history", {
+        time = os.time(),
+        word = word,
+    })
+
     if not self.disable_fuzzy_search then
         self:showLookupInfo(word)
     end

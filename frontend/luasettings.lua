@@ -133,6 +133,14 @@ function LuaSettings:flipFalse(key)
     return self
 end
 
+--- Adds item to the front of a table.
+function LuaSettings:addTableItem(key, value)
+    local settings_table = self:has(key) and self:readSetting(key) or {}
+    table.insert(settings_table, 1, value)
+    self:saveSetting(key, settings_table)
+    self:flush()
+end
+
 --- Replaces existing settings with table.
 function LuaSettings:reset(table)
     self.data = table
