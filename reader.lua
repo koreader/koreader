@@ -190,6 +190,9 @@ local function exitReader()
     local ReaderActivityIndicator =
         require("apps/reader/modules/readeractivityindicator")
 
+    -- Save any device settings before closing G_reader_settings
+    Device:saveSettings()
+
     G_reader_settings:close()
 
     -- Close lipc handles

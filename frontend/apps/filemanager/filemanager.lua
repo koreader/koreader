@@ -362,6 +362,7 @@ end
 
 function FileManager:onClose()
     logger.dbg("close filemanager")
+    G_reader_settings:flush()
     UIManager:close(self)
     if self.onExit then
         self:onExit()
