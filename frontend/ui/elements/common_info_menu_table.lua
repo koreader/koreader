@@ -52,6 +52,17 @@ common_info.report_bug = {
         })
     end
 }
+common_info.exit_menu = {
+    text = _("Exit"),
+}
+if Device:isKindle() or Device:isKobo() then
+    common_info.sleep = {
+        text = _("Sleep"),
+        callback = function()
+            UIManager:suspend()
+        end,
+    }
+end
 if Device:isKobo() then
     common_info.reboot = {
         text = _("Reboot the device"),
