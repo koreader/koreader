@@ -80,6 +80,36 @@ describe("MenuSorter module", function()
             assert.is_true(string.sub(menu_item.text,1,string.len(MenuSorter.orphaned_prefix))==MenuSorter.orphaned_prefix)
         end
     end)
+    it("should display submenu of orphaned submenu", function()
+        local menu_items = {
+            ["KOMenu:menu_buttons"] = {},
+            main = {text="Main"},
+            search = {text="Search"},
+            tools = {text="Tools"},
+            setting = {text="Settings"},
+            submenu = {text="Submenu"},
+            submenu_item1 = {text="Submenu item 1"},
+            submenu_item2 = {text="Submenu item 2"},
+        }
+        local order = {
+            ["KOMenu:menu_buttons"] = {
+                "setting",
+            },
+            setting = {},
+            submenu = {
+                "submenu_item2",
+                "submenu_item1",
+            },
+        }
+
+        local test_menu = MenuSorter:sort(menu_items, order)
+
+        -- all four should be in the first menu
+        assert.is_true(#test_menu[1] == 4)
+        assert.is_truthy(test_menu[1][3].sub_item_table)
+        assert.equals(test_menu[1][3].sub_item_table[1].id, "submenu_item2")
+        assert.equals(test_menu[1][3].sub_item_table[2].id, "submenu_item1")
+    end)
     it("should not treat disabled as orphans", function()
         local menu_items = {
             ["KOMenu:menu_buttons"] = {},
