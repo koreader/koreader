@@ -528,6 +528,7 @@ function KindleBasic2:init()
 end
 
 function KindleTouch:exit()
+    Generic.exit(self)
     if isSpecialOffers() then
         -- fake a touch event
         if self.touch_dev then
@@ -538,7 +539,6 @@ function KindleTouch:exit()
             )
         end
     end
-    Generic.exit(self)
 end
 KindlePaperWhite.exit = KindleTouch.exit
 KindlePaperWhite2.exit = KindleTouch.exit
