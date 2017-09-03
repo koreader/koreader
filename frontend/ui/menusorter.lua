@@ -157,6 +157,13 @@ function MenuSorter:sort(item_table, order)
             v.text = self.orphaned_prefix .. v.text
             -- prevent text being prepended to item on menu reload, i.e., on switching between reader and filemanager
             v.new = true
+            -- deal with orphaned submenus
+            if #v > 0 then
+                v.sub_item_table = {}
+                for i=1,#v do
+                    v.sub_item_table[i] = v[i]
+                end
+            end
         end
         table.insert(menu_table["KOMenu:menu_buttons"][1], v)
     end
