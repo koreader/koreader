@@ -8,7 +8,7 @@ local Screen = require("device").screen
 local T = require("ffi/util").template
 
 local ReaderTypeset = InputContainer:new{
-    css_menu_title = _("Set Rendering Style"),
+    css_menu_title = _("Style"),
     css = nil,
     internal_css = true,
 }
