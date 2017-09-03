@@ -41,6 +41,12 @@ function KoboPowerD:_syncKoboLightOnStart()
                     is_frontlight_on = false
                 end
             end
+            if is_frontlight_on == false and new_intensity == 0 then
+                -- frontlight was toggled off in nickel, and we have no
+                -- level-before-toggle-off (firmware without "FrontLightState"):
+                -- use the one from koreader settings
+                new_intensity = G_reader_settings:readSetting("frontlight_intensity")
+            end
         else -- if kobo_light_on_start == -1 or other unexpected value then
             -- As we can't read value from the OS or hardware, use last values
             -- stored in koreader settings
@@ -55,6 +61,11 @@ function KoboPowerD:_syncKoboLightOnStart()
     if is_frontlight_on ~= nil then
         -- will only be used to give initial state to BasePowerD:_decideFrontlightState()
         self.initial_is_fl_on = is_frontlight_on
+    end
+
+    -- In any case frontlight is off, ensure intensity is non-zero so untoggle works
+    if self.initial_is_fl_on == false and self.hw_intensity == 0 then
+        self.hw_intensity = 1
     end
 end
 
