@@ -266,6 +266,12 @@ function FileManagerMenu:setUpdateItemTable()
     for id, common_setting in pairs(require("ui/elements/common_info_menu_table")) do
         self.menu_items[id] = common_setting
     end
+    self.menu_items.exit_menu = {
+        text = _("Exit"),
+        hold_callback = function()
+            self:exitOrRestart()
+        end,
+    }
     self.menu_items.exit = {
         text = _("Exit"),
         callback = function()

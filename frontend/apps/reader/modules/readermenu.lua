@@ -184,13 +184,18 @@ function ReaderMenu:setUpdateItemTable()
         self.menu_items[id] = common_setting
     end
 
+    self.menu_items.exit_menu = {
+        text = _("Exit"),
+        hold_callback = function()
+            self:exitOrRestart()
+        end,
+    }
     self.menu_items.exit = {
         text = _("Exit"),
         callback = function()
             self:exitOrRestart()
         end,
     }
-
     self.menu_items.restart_koreader = {
         text = _("Restart KOReader"),
         callback = function()

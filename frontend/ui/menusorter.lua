@@ -121,6 +121,7 @@ function MenuSorter:sort(item_table, order)
                     changed = true
                     local sub_menu_content = menu_table[sub_menu]
                     sub_menu_position.text = sub_menu_content.text
+                    sub_menu_position.hold_callback = sub_menu_content.hold_callback
                     sub_menu_position.sub_item_table = sub_menu_content
                     -- remove reference from top level output
                     menu_table[sub_menu] = nil
