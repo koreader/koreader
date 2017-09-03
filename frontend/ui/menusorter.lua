@@ -34,9 +34,7 @@ function MenuSorter:mergeAndSort(config_prefix, item_table, order)
     local user_order = self:readMSSettings(config_prefix)
     if user_order then
         for user_order_id,user_order_item in pairs(user_order) do
-            if order[user_order_id] then
-                order[user_order_id] = user_order_item
-            end
+            order[user_order_id] = user_order_item
         end
     end
     return self:sort(item_table, order)
