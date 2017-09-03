@@ -8,7 +8,7 @@ local Screen = require("device").screen
 local T = require("ffi/util").template
 
 local ReaderTypeset = InputContainer:new{
-    css_menu_title = _("Set render style"),
+    css_menu_title = _("Set Rendering Style"),
     css = nil,
     internal_css = true,
 }
@@ -43,7 +43,7 @@ function ReaderTypeset:onReadSettings(config)
 
     self.embedded_css = config:readSetting("embedded_css")
     if self.embedded_css == nil then
-        -- default to enable embedded css
+        -- default to enable embedded CSS
         -- note that it's a bit confusing here:
         -- global settins store 0/1, while document settings store false/true
         -- we leave it that way for now to maintain backwards compatibility
@@ -66,7 +66,7 @@ function ReaderTypeset:onReadSettings(config)
         G_reader_settings:readSetting("floating_punctuation") or 1
     self:toggleFloatingPunctuation(self.floating_punctuation)
 
-    -- default to disable txt formatting as it does more harm than good
+    -- default to disable TXT formatting as it does more harm than good
     self.txt_preformatted = config:readSetting("txt_preformatted") or
         G_reader_settings:readSetting("txt_preformatted") or 1
     self:toggleTxtPreFormatted(self.txt_preformatted)
