@@ -1,9 +1,9 @@
+local Device = require("device")
+local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
 local UIManager = require("ui/uimanager")
-local Device = require("device")
-local Screen = Device.screen
-local DocSettings = require("docsettings")
 local logger = require("logger")
+local Screen = Device.screen
 
 local Screensaver = {
 }
@@ -28,13 +28,13 @@ local function createWidgetFromFile(file)
     if lfs.attributes(file, "mode") == "file" then
         local ImageWidget = require("ui/widget/imagewidget")
         return createWidgetFromImage(
-                   ImageWidget:new{
-                       file = file,
-                       file_do_cache = false,
-                       height = Screen:getHeight(),
-                       width = Screen:getWidth(),
-                       scale_factor = 0, -- scale to fit height/width
-                   })
+            ImageWidget:new{
+                file = file,
+                file_do_cache = false,
+                height = Screen:getHeight(),
+                width = Screen:getWidth(),
+                scale_factor = 0, -- scale to fit height/width
+            })
     end
 end
 
@@ -134,6 +134,9 @@ function Screensaver:show(kind, default_msg)
             UIManager:show(self.left_msg)
         end
     else
+        -- set modal to put screensaver on top of everything else
+        -- NB InfoMessage (in case of no image) defaults to modal
+        self.left_msg.modal = true
         -- refresh whole screen for other types
         UIManager:show(self.left_msg, "full")
     end

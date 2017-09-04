@@ -189,7 +189,10 @@ function UIManager:show(widget, refreshtype, refreshregion, x, y)
     for i = #self._window_stack, 0, -1 do
         local top_window = self._window_stack[i]
         -- skip modal window
-        if not top_window or not top_window.widget.modal then
+        if widget.modal then
+            table.insert(self._window_stack, i + 1, window)
+            break
+        elseif not top_window or not top_window.widget.modal then
             table.insert(self._window_stack, i + 1, window)
             break
         end
