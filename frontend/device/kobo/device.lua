@@ -491,6 +491,11 @@ function Kobo:resume()
     end
 end
 
+function Kobo:saveSettings()
+    -- save frontlight state to G_reader_settings (and NickelConf if needed)
+    self.powerd:saveSettings()
+end
+
 function Kobo:powerOff()
     os.execute("poweroff")
 end

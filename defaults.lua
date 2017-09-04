@@ -170,9 +170,10 @@ SEARCH_SERIES = true
 SEARCH_PATH = true
 
 -- Light parameter for Kobo
-KOBO_LIGHT_ON_START = -2           -- -1, -2 or 0-100. -1 leaves light as it
-                                   -- is, -2 uses 'Kobo eReader.conf', other
-                                   -- sets light on start/wake up
+KOBO_LIGHT_ON_START = -2           -- -1, -2 or 0-100.
+                                   -- -1 uses previous koreader session saved brightness
+                                   -- -2 uses 'Kobo eReader.conf' brighness,
+                                   -- other sets light on start to a fix brighness
 KOBO_SYNC_BRIGHTNESS_WITH_NICKEL = true  -- Save brightness set in KOreader
                                          -- with nickel's 'Kobo eReader.conf'
 
