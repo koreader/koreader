@@ -140,13 +140,16 @@ function ReaderRolling:onReadSettings(config)
     self.inverse_reading_order = config:readSetting("inverse_reading_order") or false
 end
 
-function ReaderRolling:onSaveSettings()
+function ReaderRolling:onCloseDocument()
     -- remove last_percent config since its deprecated
     self.ui.doc_settings:saveSetting("last_percent", nil)
     self.ui.doc_settings:saveSetting("last_xpointer", self.xpointer)
     self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
     self.ui.doc_settings:saveSetting("show_overlap_enable", self.show_overlap_enable)
     self.ui.doc_settings:saveSetting("inverse_reading_order", self.inverse_reading_order)
+end
+
+function ReaderRolling:onSaveSettings()
 end
 
 function ReaderRolling:onReaderReady()
