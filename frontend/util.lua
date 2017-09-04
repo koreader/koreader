@@ -691,4 +691,28 @@ function util.checkLuaSyntax(lua_text)
     return err
 end
 
+--- Unpack an archive.
+-- Extract the contents of an archive, detecting its format by
+-- filename extension. Inspired by luarocks archive_unpack()
+-- @param archive string: Filename of archive.
+-- @param extract_to string: Destination directory.
+-- @return boolean or (boolean, string): true on success, false and an error message on failure.
+function util.unpackArchive(archive, extract_to)
+    assert(type(archive) == "string")
+
+    local ok
+    if archive:match("%.tar%.gz$") or archive:match("%.tar%.bz2$") or archive:match("%.tgz$") then
+        ok = os.execute(("./tar xf %q -C %q"):format(archive, extract_to))
+    elseif archive:match("%.zip$") then
+        -- @todo add uncompress to ffi/zipwriter or compile unzip instead of depending on system
+        ok = os.execute(("unzip -o %q -d %q"):format(archive, extract_to))
+    else
+        return false, "Couldn't extract archive "..archive..": unrecognized filename extension"
+    end
+    if not ok then
+        return false, "Failed extracting "..archive
+    end
+    return true
+end
+
 return util

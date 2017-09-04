@@ -10,6 +10,7 @@ local KeyValuePage = require("ui/widget/keyvaluepage")
 local LuaData = require("luadata")
 local Trapper = require("ui/trapper")
 local UIManager = require("ui/uimanager")
+local ffiUtil  = require("ffi/util")
 local logger = require("logger")
 local util  = require("util")
 local _ = require("gettext")
@@ -213,6 +214,10 @@ function ReaderDictionary:addToMainMenu(menu_items)
         text = _("Dictionary settings"),
         sub_item_table = {
             {
+                text = _("Download dictionaries"),
+                sub_item_table = self:_genDownloadDictionariesMenu()
+            },
+            {
                 text_func = function()
                     local nb_available, nb_enabled, nb_disabled = self:getNumberOfDictionaries()
                     local nb_str = nb_available
@@ -368,6 +373,50 @@ function ReaderDictionary:getNumberOfDictionaries()
         end
     end
     return nb_available, nb_enabled, nb_disabled
+end
+
+function ReaderDictionary:_genDownloadDictionariesMenu()
+    local downloadable_dicts = require("ui/data/dictionaries")
+    local languages = {}
+
+    for i = 1, #downloadable_dicts do
+        local dict = downloadable_dicts[i]
+        local dict_lang_in = dict.lang_in
+        local dict_lang_out = dict.lang_out
+        if not languages[dict_lang_in] then
+            languages[dict_lang_in] = {}
+        end
+        table.insert(languages[dict_lang_in], dict)
+        if not languages[dict_lang_out] then
+            languages[dict_lang_out] = {}
+        end
+        table.insert(languages[dict_lang_out], dict)
+    end
+
+    -- remove duplicates
+    for lang_key,lang in pairs(languages) do
+        local hash = {}
+        local res = {}
+        for k,v in ipairs(lang) do
+           if not hash[v.name] then
+               res[#res+1] = v
+               hash[v.name] = true
+           end
+        end
+        languages[lang_key] = res
+    end
+
+    local menu_items = {}
+    for lang_key, available_langs in ffiUtil.orderedPairs(languages) do
+        table.insert(menu_items, {
+            text = lang_key,
+            callback = function()
+                self:showDownload(available_langs)
+            end
+        })
+    end
+
+    return menu_items
 end
 
 function ReaderDictionary:genDictionariesMenu()
@@ -674,6 +723,107 @@ function ReaderDictionary:showDict(word, results, box, link)
         }
         table.insert(self.dict_window_list, self.dict_window)
         UIManager:show(self.dict_window)
+    end
+end
+
+function ReaderDictionary:showDownload(downloadable_dicts)
+    local kv_pairs = {}
+    table.insert(kv_pairs, {_("Tap dictionary name to download"), ""})
+    table.insert(kv_pairs, "----------------------------")
+    for dummy, dict in ipairs(downloadable_dicts) do
+        table.insert(kv_pairs, {dict.name, "",
+            callback = function()
+                self:downloadDictionaryPrep(dict)
+            end})
+        local lang
+        if dict.lang_in == dict.lang_out then
+            lang = string.format("    %s", dict.lang_in)
+        else
+            lang = string.format("    %s–%s", dict.lang_in, dict.lang_out)
+        end
+        table.insert(kv_pairs, {lang, ""})
+        table.insert(kv_pairs, {"    ".._("License"), dict.license})
+        table.insert(kv_pairs, {"    ".._("Entries"), dict.entries})
+        table.insert(kv_pairs, "----------------------------")
+    end
+    self.download_window = KeyValuePage:new{
+        title = _("Download dictionaries"),
+        kv_pairs = kv_pairs,
+    }
+    UIManager:show(self.download_window)
+end
+
+function ReaderDictionary:downloadDictionaryPrep(dict, size, continue)
+    continue = continue or false
+    local dummy, filename = util.splitFilePathName(dict.url)
+    local download_location = string.format("%s/%s", self.data_dir, filename)
+
+    local lfs = require("libs/libkoreader-lfs")
+    if continue and lfs.attributes(download_location) then
+        UIManager:show(ConfirmBox:new{
+            text =  _("File already exists. Overwrite?"),
+            ok_text =  _("Overwrite"),
+            ok_callback = function()
+                self:downloadDictionary(dict, download_location)
+            end,
+        })
+    elseif continue then
+        UIManager:show(InfoMessage:new{
+            text = _("Downloading…"),
+            timeout = 3,
+        })
+        UIManager:nextTick(function()
+            self:downloadDictionary(dict, download_location)
+        end)
+    else
+        UIManager:show(ConfirmBox:new{
+            text =  _("Dictionary filesize is %1. Continue with download?"),
+            ok_text =  _("Download"),
+            ok_callback = function()
+                -- call ourselves with continue = true
+                self:downloadDictionaryPrep(dict, size, true)
+            end,
+        })
+    end
+end
+
+function ReaderDictionary:downloadDictionary(dict, download_location)
+    local http = require('socket.http')
+    local https = require('ssl.https')
+    local ltn12 = require("ltn12")
+    local url = require('socket.url')
+
+    local parsed = url.parse(dict.url)
+    local httpRequest = parsed.scheme == 'http' and http.request or https.request
+
+    local dummy, c, dummy = httpRequest{
+        url = dict.url,
+        sink = ltn12.sink.file(io.open(download_location, "w")),
+    }
+    if c == 200 then
+        logger.dbg("file downloaded to", download_location)
+    else
+        UIManager:show(InfoMessage:new{
+            text = _("Could not save file to:\n") .. download_location,
+            --timeout = 3,
+        })
+        return false
+    end
+
+    local ok, error = util.unpackArchive(download_location, self.data_dir)
+
+    if ok then
+        available_ifos = false
+        self:init()
+        UIManager:show(InfoMessage:new{
+            text = _("Dictionary downloaded:\n") .. dict.name,
+        })
+        return true
+    else
+        UIManager:show(InfoMessage:new{
+            text = _("Dictionary failed to download:\n") .. string.format("%s\n%s", dict.name, error),
+        })
+        return false
     end
 end
 
