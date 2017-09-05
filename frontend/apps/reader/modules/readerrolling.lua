@@ -140,6 +140,8 @@ function ReaderRolling:onReadSettings(config)
     self.inverse_reading_order = config:readSetting("inverse_reading_order") or false
 end
 
+-- in scroll mode percent_finished must be save before close document
+-- we cannot do it in onSaveSettings() because getLastPercent() uses self.ui.document
 function ReaderRolling:onCloseDocument()
     self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
 end
@@ -148,6 +150,9 @@ function ReaderRolling:onSaveSettings()
     -- remove last_percent config since its deprecated
     self.ui.doc_settings:saveSetting("last_percent", nil)
     self.ui.doc_settings:saveSetting("last_xpointer", self.xpointer)
+    -- in scrolling mode, the document may already be closed,
+    -- so we have to check the condition to avoid crash function self:getLastPercent()
+    -- that uses self.ui.document
     if self.ui.document then
         self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
     end
