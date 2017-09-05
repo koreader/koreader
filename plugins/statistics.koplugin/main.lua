@@ -886,7 +886,7 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype)
     end
     self:insertDB(self.id_curr_book)
     local conn = SQ3.open(db_location)
-    local result_book = conn:exec(string.format(sql_stmt_res_book))
+    local result_book = conn:exec(string.format(sql_stmt_res_book, period_begin))
     conn:close()
     if result_book == nil then
         return {}
