@@ -145,19 +145,16 @@ function ReaderDictionary:addToMainMenu(menu_items)
         text = _("Dictionary settings"),
         sub_item_table = {
             {
-                -- text = _("Installed dictionaries"),
                 text_func = function()
-                    local nb_available = #available_ifos
-                    local nb_disabled = 0
-                    for _ in pairs(G_reader_settings:readSetting("dicts_disabled")) do
-                        nb_disabled = nb_disabled + 1
-                    end
+                    local nb_available, nb_enabled, nb_disabled = self:getNumberOfDictionaries()
                     local nb_str = nb_available
                     if nb_disabled > 0 then
-                        local nb_enabled = nb_available - nb_disabled
                         nb_str = nb_enabled .. "/" .. nb_available
                     end
                     return T(_("Installed dictionaries (%1)"), nb_str)
+                end,
+                enabled_func = function()
+                    return self:getNumberOfDictionaries() > 0
                 end,
                 sub_item_table = self:genDictionariesMenu(),
             },
@@ -201,6 +198,20 @@ function ReaderDictionary:onLookupWord(word, box, highlight)
     self.highlight = highlight
     self:stardictLookup(word, box)
     return true
+end
+
+--- Gets number of available, enabled, and disabled dictionaries
+-- @treturn int nb_available
+-- @treturn int nb_enabled
+-- @treturn int nb_disabled
+function ReaderDictionary:getNumberOfDictionaries()
+    local nb_available = #available_ifos
+    local nb_disabled = 0
+    for _ in pairs(G_reader_settings:readSetting("dicts_disabled")) do
+        nb_disabled = nb_disabled + 1
+    end
+    local nb_enabled = nb_available - nb_disabled
+    return nb_available, nb_enabled, nb_disabled
 end
 
 function ReaderDictionary:genDictionariesMenu()
