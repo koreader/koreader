@@ -162,7 +162,9 @@ end
 
 function ReaderRolling:onReaderReady()
     self:setupTouchZones()
-    self.setupXpointer()
+    self.ui:registerPostReadyCallback(function()
+        self.setupXpointer()
+    end)
 end
 
 function ReaderRolling:setupTouchZones()
