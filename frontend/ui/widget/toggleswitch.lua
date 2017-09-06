@@ -142,7 +142,7 @@ end
 function ToggleSwitch:calculatePosition(gev)
     local x = (gev.pos.x - self.dimen.x) / self.dimen.w * self.n_pos
     local y = (gev.pos.y - self.dimen.y) / self.dimen.h * self.row_count
-    return math.ceil(x) + math.floor(y) * self.n_pos
+    return math.max(1, math.ceil(x)) + math.min(self.row_count-1, math.floor(y)) * self.n_pos
 end
 
 function ToggleSwitch:onTapSelect(arg, gev)
