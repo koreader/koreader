@@ -1237,8 +1237,10 @@ function ReaderStatistics:onResume()
 end
 
 function ReaderStatistics:saveSettings(fields)
-    if fields then
+    if fields[1] ~= "" then
         self.page_min_read_sec = tonumber(fields[1])
+    end
+    if fields[2] ~= "" then
         self.page_max_read_sec = tonumber(fields[2])
     end
 
