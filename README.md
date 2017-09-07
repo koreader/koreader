@@ -1,4 +1,4 @@
-[![Build Status][travis-badge]][travis-link]
+[![Build Status][circleci-badge]][circleci-link]
 [![Coverage Status][coverage-badge]][coverage-link]
 [![AGPL Licence][licence-badge]](COPYING)
 KOReader
@@ -176,7 +176,7 @@ make static-check
 
 NOTE: Extra dependencies for tests: luacheck from luarocks
 
-You may need to checkout the [travis config file][travis-conf] to setup up
+You may need to checkout the [circleci config file][circleci-conf] to setup up
 a proper testing environment. Briefly, you need to install `luarocks` and
 then install `busted` with `luarocks`. The "eng" language data file for
 tesseract-ocr is also need to test OCR functionality. Finally, make sure
@@ -287,9 +287,9 @@ http://ccache.samba.org
 
 [base-readme]:https://github.com/koreader/koreader-base/blob/master/README.md
 [nb-script]:https://gitlab.com/koreader/nightly-builds/blob/master/build_release.sh
-[travis-badge]:https://travis-ci.org/koreader/koreader.svg?branch=master
-[travis-link]:https://travis-ci.org/koreader/koreader
-[travis-conf]:https://github.com/koreader/koreader-base/blob/master/.travis.yml
+[circleci-badge]:https://circleci.com/gh/koreader/koreader.svg?style=svg
+[circleci-link]:https://circleci.com/gh/koreader/koreader
+[circleci-conf]:https://github.com/koreader/koreader-base/blob/master/.circleci/config.yml
 [linux-vm]:http://www.howtogeek.com/howto/11287/how-to-run-ubuntu-in-windows-7-with-vmware-player/
 [l10n-readme]:https://github.com/koreader/koreader/blob/master/l10n/README.md
 [koreader-transifex]:https://www.transifex.com/projects/p/koreader/
