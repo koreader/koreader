@@ -6,7 +6,7 @@ source "${CI_DIR}/common.sh"
 
 rm -rf "${HOME}/.luarocks"
 mkdir "${HOME}/.luarocks"
-cp "${TRAVIS_BUILD_DIR}/install/etc/luarocks/config.lua" "${HOME}/.luarocks/config.lua"
+cp "${CI_BUILD_DIR}/install/etc/luarocks/config.lua" "${HOME}/.luarocks/config.lua"
 echo "wrap_bin_scripts = false" >>"$HOME/.luarocks/config.lua"
 travis_retry luarocks --local install luafilesystem
 # for verbose_print module
