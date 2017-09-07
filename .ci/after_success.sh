@@ -6,7 +6,8 @@ source "${CI_DIR}/common.sh"
 
 set +e
 
-if [ "${TRAVIS_PULL_REQUEST}" = false ] && [ "${TRAVIS_BRANCH}" = 'master' ]; then
+# if [ "${TRAVIS_PULL_REQUEST}" = false ] && [ "${TRAVIS_BRANCH}" = 'master' ]; then
+if [ -z "${CIRCLE_PULL_REQUEST}" ] && [ "${CIRCLE_BRANCH}" = 'master' ]; then
     travis_retry luarocks --local install ldoc
     # get deploy key for doc repo
     openssl aes-256-cbc -k "${doc_build_secret:?}" -in .ci/koreader_doc.enc -out ~/.ssh/koreader_doc -d

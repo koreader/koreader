@@ -1,0 +1,52 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: houqp/kobase:0.0.5
+        environment:
+          EMULATE_READER: 1
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - deps
+            - build
+      - run: echo 'export PATH=${HOME}/bin:${PATH}' >> $BASH_ENV
+
+      - run:
+          name: setup
+          command: .ci/before_install.sh
+      - run:
+          name: install
+          command: .ci/install.sh
+      - run:
+          name: fetch
+          command: .ci/fetch.sh
+      - run:
+          name: check
+          command: .ci/check.sh
+      - run:
+          name: build
+          command: .ci/build.sh
+      - run:
+          name: test
+          command: .ci/test.sh
+      - run:
+          name: cleanup
+          command: .ci/after_success.sh
+
+      - run:
+          name: clean up cache
+          command: rm -frv ./base/build/*/{spec,cache/*}
+      - save_cache:
+          key: build
+          paths:
+            - "/home/ko/.ccache"
+            - "base"
+      - save_cache:
+          key: deps
+          paths:
+            - "/home/ko/bin"
+            - "/home/ko/.luarocks"
+            # compiled luarocks binaries
+            - "install"
