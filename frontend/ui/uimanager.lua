@@ -633,7 +633,7 @@ function UIManager:_repaint()
     -- we should have at least one refresh if we did repaint.  If we don't, we
     -- add one now and log a warning if we are debugging
     if dirty and #self._refresh_stack == 0 then
-        logger.warn("no refresh got enqueued. Will do a partial full screen refresh, which might be inefficient")
+        logger.dbg("no refresh got enqueued. Will do a partial full screen refresh, which might be inefficient")
         self:_refresh("partial")
     end
 
