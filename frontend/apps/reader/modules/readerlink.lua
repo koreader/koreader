@@ -106,6 +106,47 @@ function ReaderLink:addToMainMenu(menu_items)
     }
 end
 
+--- Gets link from gesture.
+-- `Document:getLinkFromPosition()` behaves differently depending on
+-- document type, so this function provides a wrapper.
+function ReaderLink:getLinkFromGes(ges)
+    if self.ui.document.info.has_pages then
+        local pos = self.view:screenToPageTransform(ges.pos)
+        if pos then
+            -- link box in native page
+            local link, lbox = self.ui.document:getLinkFromPosition(pos.page, pos)
+            if link and lbox then
+                return link, lbox, pos
+            end
+        end
+    else
+        local link = self.ui.document:getLinkFromPosition(ges.pos)
+        if link ~= "" then
+            return link
+        end
+    end
+end
+
+function ReaderLink:showLinkBox(link, lbox, pos)
+    if link and lbox then
+        -- screen box that holds the link
+        local sbox = self.view:pageToScreenTransform(pos.page,
+            self.ui.document:nativeToPageRectTransform(pos.page, lbox))
+        if sbox then
+            UIManager:show(LinkBox:new{
+                box = sbox,
+                timeout = FOLLOW_LINK_TIMEOUT,
+                callback = function() self:onGotoLink(link) end
+            })
+            return true
+        end
+    else
+        if link ~= "" then
+            return self:onGotoLink(link)
+        end
+    end
+end
+
 function ReaderLink:onSetDimensions(dimen)
     -- update listening according to new screen dimen
     if Device:isTouchDevice() then
@@ -115,30 +156,9 @@ end
 
 function ReaderLink:onTap(_, ges)
     if not isFollowLinksOn() then return end
-    if self.ui.document.info.has_pages then
-        local pos = self.view:screenToPageTransform(ges.pos)
-        if pos then
-            -- link box in native page
-            local link, lbox = self.ui.document:getLinkFromPosition(pos.page, pos)
-            if link and lbox then
-                -- screen box that holds the link
-                local sbox = self.view:pageToScreenTransform(pos.page,
-                    self.ui.document:nativeToPageRectTransform(pos.page, lbox))
-                if sbox then
-                    UIManager:show(LinkBox:new{
-                        box = sbox,
-                        timeout = FOLLOW_LINK_TIMEOUT,
-                        callback = function() self:onGotoLink(link) end
-                    })
-                    return true
-                end
-            end
-        end
-    else
-        local link = self.ui.document:getLinkFromPosition(ges.pos)
-        if link ~= "" then
-            return self:onGotoLink(link)
-        end
+    local link, lbox, pos = self:getLinkFromGes(ges)
+    if link then
+        self:showLinkBox(link, lbox, pos)
     end
 end
 

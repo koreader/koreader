@@ -252,9 +252,10 @@ function ReaderHighlight:onHold(arg, ges)
         logger.dbg("selected word:", word)
         logger.dbg(self.hold_pos)
         self.selected_word = word
-        local link = self.ui.document:getLinkFromPosition(self.hold_pos)
-        if string.find(link, "#") == 1 then
-            ReaderLink.ui = self.ui
+        ReaderLink.ui = self.ui
+        ReaderLink.view = self.view
+        local link = ReaderLink:getLinkFromGes(ges)
+        if link and string.find(link, "#") == 1 then
             logger.dbg("link:", link)
             self.selected_link = link
         else
