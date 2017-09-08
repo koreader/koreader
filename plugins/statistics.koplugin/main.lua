@@ -294,6 +294,9 @@ function ReaderStatistics:addBookStatToDB(book_stats, conn)
         conn:exec('BEGIN')
         stmt = conn:prepare("INSERT OR IGNORE INTO page_stat VALUES(?, ?, ?, ?)")
         local avg_time = math.ceil(book_stats.total_time_in_sec / read_pages)
+        if avg_time > self.page_max_read_sec then
+            avg_time = self.page_max_read_sec
+        end
         local first_read_page = book_stats.performance_in_pages[sorted_performance[1]]
         if first_read_page > 1 then
             first_read_page = first_read_page - 1
@@ -367,7 +370,7 @@ function ReaderStatistics:migrateToDB(conn)
             if lfs.attributes(path, "mode") == "file" then
                 local old_data = self:importFromFile(statistics_dir, curr_file)
                 if old_data and old_data.total_time > 0 and not exclude_titles[old_data.title] then
-                    local book_stats = {}
+                    local book_stats = { performance_in_pages= {} }
                     for _, v in pairs(old_data.details) do
                         book_stats.performance_in_pages[v.time] = v.page
                     end
@@ -378,6 +381,7 @@ function ReaderStatistics:migrateToDB(conn)
                     book_stats.pages = old_data.pages
                     book_stats.series = old_data.series
                     book_stats.language = old_data.language
+                    book_stats.total_time_in_sec = old_data.total_time
                     book_stats.file = nil
                     if self:addBookStatToDB(book_stats, conn) then
                         nr_of_conv_books = nr_of_conv_books + 1
