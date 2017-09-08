@@ -136,6 +136,15 @@ local CreOptions = {
                     DCREREADER_CONFIG_DEFAULT_FONT_GAMMA,
                     DCREREADER_CONFIG_DARKER_FONT_GAMMA,
                 },
+            },
+            {
+                name = "font_hinting",
+                name_text = S.FONT_HINT,
+                toggle = {S.OFF, S.NATIVE, S.AUTO},
+                values = {0, 1, 2},
+                default_value = 2,
+                args = {0, 1, 2},
+                event = "SetFontHinting",
             }
         }
     },

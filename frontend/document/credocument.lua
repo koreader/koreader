@@ -424,6 +424,11 @@ function CreDocument:setGammaIndex(index)
     cre.setGammaIndex(index)
 end
 
+function CreDocument:setFontHinting(mode)
+    logger.dbg("CreDocument: set font hinting mode", mode)
+    self._document:setIntProperty("font.hinting.mode", mode)
+end
+
 function CreDocument:setStyleSheet(new_css)
     logger.dbg("CreDocument: set style sheet", new_css)
     self._document:setStyleSheet(new_css)
