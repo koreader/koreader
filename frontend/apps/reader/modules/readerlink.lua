@@ -1,3 +1,7 @@
+--[[
+ReaderLink is an abstraction for document-specific link interfaces.
+]]--
+
 local Device = require("device")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
@@ -55,7 +59,7 @@ function ReaderLink:initGesListener()
     end
 end
 
-local function isTapToFollowLinkOn()
+local function isTapToFollowLinksOn()
     return not G_reader_settings:isFalse("tap_to_follow_links")
 end
 
@@ -75,11 +79,11 @@ function ReaderLink:addToMainMenu(menu_items)
             {
                 text = _("Tap to follow links"),
                 checked_func = function()
-                    return isTapToFollowLinkOn()
+                    return isTapToFollowLinksOn()
                 end,
                 callback = function()
                     G_reader_settings:saveSetting("tap_to_follow_links",
-                        not isTapToFollowLinkOn())
+                        not isTapToFollowLinksOn())
                 end
             },
             {
@@ -88,7 +92,7 @@ function ReaderLink:addToMainMenu(menu_items)
                 callback = function() self:onGoBackLink() end,
             },
             {
-                text = _("Swipe to go back"),
+                text = _("Swipe left to go back"),
                 checked_func = isSwipeToGoBackEnabled,
                 callback = function()
                     G_reader_settings:saveSetting("swipe_to_go_back",
@@ -96,7 +100,7 @@ function ReaderLink:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Swipe to follow first link"),
+                text = _("Swipe right to follow first link"),
                 checked_func = isSwipeToFollowFirstLinkEnabled,
                 callback = function()
                     G_reader_settings:saveSetting("swipe_to_follow_first_link",
@@ -157,7 +161,7 @@ function ReaderLink:onSetDimensions(dimen)
 end
 
 function ReaderLink:onTap(_, ges)
-    if not isTapToFollowLinkOn() then return end
+    if not isTapToFollowLinksOn() then return end
     local link, lbox, pos = self:getLinkFromGes(ges)
     if link then
         self:showLinkBox(link, lbox, pos)
@@ -219,6 +223,7 @@ function ReaderLink:onGotoLink(link)
     return true
 end
 
+--- Goes back to previous location.
 function ReaderLink:onGoBackLink()
     local saved_location = table.remove(self.location_stack)
     if saved_location then
@@ -239,6 +244,7 @@ function ReaderLink:onSwipe(_, ges)
     end
 end
 
+--- Goes to first link on page.
 function ReaderLink:onGoToFirstLink(ges)
     local firstlink = nil
     if self.ui.document.info.has_pages then
