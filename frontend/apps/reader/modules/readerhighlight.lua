@@ -3,6 +3,7 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local ReaderLink = require("apps/reader/modules/readerlink")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
@@ -249,7 +250,16 @@ function ReaderHighlight:onHold(arg, ges)
     local ok, word = pcall(self.ui.document.getWordFromPosition, self.ui.document, self.hold_pos)
     if ok and word then
         logger.dbg("selected word:", word)
+        logger.dbg(self.hold_pos)
         self.selected_word = word
+        local link = self.ui.document:getLinkFromPosition(self.hold_pos)
+        if string.find(link, "#") == 1 then
+            ReaderLink.ui = self.ui
+            logger.dbg("link:", link)
+            self.selected_link = link
+        else
+            self.selected_link = nil
+        end
         if self.ui.document.info.has_pages then
             local boxes = {}
             table.insert(boxes, self.selected_word.sbox)
@@ -296,17 +306,17 @@ function ReaderHighlight:onHoldPan(_, ges)
     UIManager:setDirty(self.dialog, "ui")
 end
 
-function ReaderHighlight:lookup(selected_word)
+function ReaderHighlight:lookup(selected_word, selected_link)
     -- if we extracted text directly
     if selected_word.word then
         local word_box = self.view:pageToScreenTransform(self.hold_pos.page, selected_word.sbox)
-        self.ui:handleEvent(Event:new("LookupWord", selected_word.word, word_box, self))
+        self.ui:handleEvent(Event:new("LookupWord", selected_word.word, word_box, self, selected_link))
     -- or we will do OCR
     elseif selected_word.sbox and self.hold_pos then
         local word = self.ui.document:getOCRWord(self.hold_pos.page, selected_word)
         logger.dbg("OCRed word:", word)
         local word_box = self.view:pageToScreenTransform(self.hold_pos.page, selected_word.sbox)
-        self.ui:handleEvent(Event:new("LookupWord", word, word_box, self))
+        self.ui:handleEvent(Event:new("LookupWord", word, word_box, self, selected_link))
     end
 end
 
@@ -323,7 +333,7 @@ end
 
 function ReaderHighlight:onHoldRelease()
     if self.selected_word then
-        self:lookup(self.selected_word)
+        self:lookup(self.selected_word, self.selected_link)
         self.selected_word = nil
     elseif self.selected_text then
         logger.dbg("show highlight dialog")
@@ -348,13 +358,8 @@ function ReaderHighlight:onHoldRelease()
                 },
                 {
                     {
-                        text = _("Wikipedia"),
-                        callback = function()
-                            UIManager:scheduleIn(0.1, function()
-                                self:lookupWikipedia()
-                                self:onClose()
-                            end)
-                        end,
+                        text = "_",
+                        enabled = false,
                     },
                     {
                         text = _("Translate"),
@@ -367,10 +372,12 @@ function ReaderHighlight:onHoldRelease()
                 },
                 {
                     {
-                        text = _("Search"),
+                        text = _("Wikipedia"),
                         callback = function()
-                            self:onHighlightSearch()
-                            UIManager:close(self.highlight_dialog)
+                            UIManager:scheduleIn(0.1, function()
+                                self:lookupWikipedia()
+                                self:onClose()
+                            end)
                         end,
                     },
                     {
@@ -378,6 +385,23 @@ function ReaderHighlight:onHoldRelease()
                         callback = function()
                             self:onHighlightDictLookup()
                             self:onClose()
+                        end,
+                    },
+                },
+                {
+                    {
+                        text = _("Follow Link"),
+                        enabled = self.selected_link ~= nil,
+                        callback = function()
+                            ReaderLink:onGotoLink(self.selected_link)
+                            UIManager:close(self.highlight_dialog)
+                        end,
+                    },
+                    {
+                        text = _("Search"),
+                        callback = function()
+                            self:onHighlightSearch()
+                            UIManager:close(self.highlight_dialog)
                         end,
                     },
                 },
