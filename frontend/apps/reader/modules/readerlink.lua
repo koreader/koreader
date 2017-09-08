@@ -1,13 +1,13 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
+local Device = require("device")
+local Event = require("ui/event")
+local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
+local InputContainer = require("ui/widget/container/inputcontainer")
 local LinkBox = require("ui/widget/linkbox")
 local UIManager = require("ui/uimanager")
-local Geom = require("ui/geometry")
-local Screen = require("device").screen
-local Device = require("device")
 local logger = require("logger")
-local Event = require("ui/event")
 local _ = require("gettext")
+local Screen = Device.screen
 local T = require("ffi/util").template
 
 local ReaderLink = InputContainer:new{
@@ -55,8 +55,8 @@ function ReaderLink:initGesListener()
     end
 end
 
-local function isFollowLinksOn()
-    return G_reader_settings:readSetting("follow_links") ~= false
+local function isTapToFollowLinkOn()
+    return not G_reader_settings:isFalse("tap_to_follow_links")
 end
 
 local function isSwipeToGoBackEnabled()
@@ -70,15 +70,16 @@ end
 function ReaderLink:addToMainMenu(menu_items)
     -- insert table to main reader menu
     menu_items.follow_links = {
-        text = _("Follow links"),
+        text = _("Links"),
         sub_item_table = {
             {
-                text_func = function()
-                    return isFollowLinksOn() and _("Disable") or _("Enable")
+                text = _("Tap to follow links"),
+                checked_func = function()
+                    return isTapToFollowLinkOn()
                 end,
                 callback = function()
-                    G_reader_settings:saveSetting("follow_links",
-                        not isFollowLinksOn())
+                    G_reader_settings:saveSetting("tap_to_follow_links",
+                        not isTapToFollowLinkOn())
                 end
             },
             {
@@ -127,6 +128,7 @@ function ReaderLink:getLinkFromGes(ges)
     end
 end
 
+--- Highlights a linkbox if available and goes to it.
 function ReaderLink:showLinkBox(link, lbox, pos)
     if link and lbox then
         -- screen box that holds the link
@@ -155,13 +157,14 @@ function ReaderLink:onSetDimensions(dimen)
 end
 
 function ReaderLink:onTap(_, ges)
-    if not isFollowLinksOn() then return end
+    if not isTapToFollowLinkOn() then return end
     local link, lbox, pos = self:getLinkFromGes(ges)
     if link then
         self:showLinkBox(link, lbox, pos)
     end
 end
 
+--- Goes to link.
 function ReaderLink:onGotoLink(link)
     logger.dbg("onGotoLink:", link)
     if self.ui.document.info.has_pages then
@@ -237,7 +240,6 @@ function ReaderLink:onSwipe(_, ges)
 end
 
 function ReaderLink:onGoToFirstLink(ges)
-    if not isFollowLinksOn() then return end
     local firstlink = nil
     if self.ui.document.info.has_pages then
         local pos = self.view:screenToPageTransform(ges.pos)
