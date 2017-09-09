@@ -13,6 +13,7 @@ local IconButton = InputContainer:new{
     -- show_parent is used for UIManager:setDirty, so we can trigger repaint
     show_parent = nil,
     scale_for_dpi = true,
+    invert_after_tap = false,
     callback = function() end,
 }
 
@@ -28,6 +29,9 @@ function IconButton:init()
     self:initGesListener()
 
     self[1] = self.image
+    if self.invert_after_tap then
+        self:onTapClickButton()
+    end
 end
 
 function IconButton:initGesListener()
@@ -48,14 +52,16 @@ function IconButton:onTapClickButton()
             return "ui", self[1].dimen
         end)
     end)
-    -- make sure button reacts before doing callback
-    UIManager:scheduleIn(0.1, function()
-        self.callback()
-        self.image.invert = false
-        UIManager:setDirty(self.show_parent, function()
-            return "ui", self[1].dimen
+    if  not self.invert_after_tap then
+        -- make sure button reacts before doing callback
+        UIManager:scheduleIn(0.1, function()
+            self.callback()
+            self.image.invert = false
+            UIManager:setDirty(self.show_parent, function()
+                return "ui", self[1].dimen
+            end)
         end)
-    end)
+    end
     return true
 end
 

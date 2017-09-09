@@ -411,9 +411,16 @@ function MenuBar:init()
     local menu_items = {}
     local icons_width = 0
     local icons_height = 0
+    local invert_button
     for c = 1, #config_options do
+        if c == self.panel_index then
+            invert_button = true
+        else
+            invert_button = false
+        end
         local menu_icon = IconButton:new{
             show_parent = self.config_dialog,
+            invert_after_tap = invert_button,
             icon_file = config_options[c].icon,
             callback = function()
                 self.config_dialog:handleEvent(Event:new("ShowConfigPanel", c))
@@ -470,9 +477,6 @@ function ConfigDialog:init()
     ------------------------------------------
     -- start to set up widget layout ---------
     ------------------------------------------
-    self.config_menubar = MenuBar:new{
-        config_dialog = self,
-    }
     self:update()
     ------------------------------------------
     -- start to set up input event callback --
@@ -513,6 +517,10 @@ function ConfigDialog:updateConfigPanel(index)
 end
 
 function ConfigDialog:update()
+    self.config_menubar = MenuBar:new{
+        config_dialog = self,
+        panel_index = self.panel_index,
+    }
     self.config_panel = ConfigPanel:new{
         index = self.panel_index,
         config_dialog = self,
