@@ -250,16 +250,14 @@ function ReaderHighlight:onHold(arg, ges)
     local ok, word = pcall(self.ui.document.getWordFromPosition, self.ui.document, self.hold_pos)
     if ok and word then
         logger.dbg("selected word:", word)
-        logger.dbg(self.hold_pos)
         self.selected_word = word
         ReaderLink.ui = self.ui
         ReaderLink.view = self.view
         local link = ReaderLink:getLinkFromGes(ges)
-        if link and string.find(link, "#") == 1 then
+        self.selected_link = nil
+        if link then
             logger.dbg("link:", link)
             self.selected_link = link
-        else
-            self.selected_link = nil
         end
         if self.ui.document.info.has_pages then
             local boxes = {}
