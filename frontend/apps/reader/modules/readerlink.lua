@@ -78,9 +78,7 @@ function ReaderLink:addToMainMenu(menu_items)
         sub_item_table = {
             {
                 text = _("Tap to follow links"),
-                checked_func = function()
-                    return isTapToFollowLinksOn()
-                end,
+                checked_func = isTapToFollowLinksOn,
                 callback = function()
                     G_reader_settings:saveSetting("tap_to_follow_links",
                         not isTapToFollowLinksOn())
@@ -92,7 +90,7 @@ function ReaderLink:addToMainMenu(menu_items)
                 callback = function() self:onGoBackLink() end,
             },
             {
-                text = _("Swipe left to go back"),
+                text = _("Swipe to go back"),
                 checked_func = isSwipeToGoBackEnabled,
                 callback = function()
                     G_reader_settings:saveSetting("swipe_to_go_back",
@@ -100,7 +98,7 @@ function ReaderLink:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Swipe right to follow first link"),
+                text = _("Swipe to follow first link"),
                 checked_func = isSwipeToFollowFirstLinkEnabled,
                 callback = function()
                     G_reader_settings:saveSetting("swipe_to_follow_first_link",
