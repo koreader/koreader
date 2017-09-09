@@ -194,9 +194,9 @@ If you'd like to change the order in which dictionaries are queried (and their r
     }
 end
 
-function ReaderDictionary:onLookupWord(word, box, highlight)
+function ReaderDictionary:onLookupWord(word, box, highlight, link)
     self.highlight = highlight
-    self:stardictLookup(word, box)
+    self:stardictLookup(word, box, link)
     return true
 end
 
@@ -317,7 +317,7 @@ function ReaderDictionary:dismissLookupInfo()
     self.lookup_progress_msg = nil
 end
 
-function ReaderDictionary:stardictLookup(word, box)
+function ReaderDictionary:stardictLookup(word, box, link)
     logger.dbg("lookup word:", word, box)
     -- escape quotes and other funny characters in word
     word = self:cleanSelection(word)
@@ -402,10 +402,10 @@ function ReaderDictionary:stardictLookup(word, box)
             }
         }
     end
-    self:showDict(word, tidyMarkup(final_results), box)
+    self:showDict(word, tidyMarkup(final_results), box, link)
 end
 
-function ReaderDictionary:showDict(word, results, box)
+function ReaderDictionary:showDict(word, results, box, link)
     self:dismissLookupInfo()
     if results and results[1] then
         logger.dbg("showing quick lookup window", word, results)
@@ -416,6 +416,8 @@ function ReaderDictionary:showDict(word, results, box)
             dialog = self.dialog,
             -- original lookup word
             word = word,
+            -- selected link, if any
+            selected_link = link,
             results = results,
             dictionary = self.default_dictionary,
             width = Screen:getWidth() - Screen:scaleBySize(80),
