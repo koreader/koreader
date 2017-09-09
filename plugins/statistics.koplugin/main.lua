@@ -697,11 +697,11 @@ function ReaderStatistics:addToMainMenu(menu_items)
                         end,
                     },
                     {
-                        text = _("Last 10 years by month"),
+                        text = _("All stats by month"),
                         callback = function()
                             UIManager:show(KeyValuePage:new{
-                                title = _("Last 10 years by month"),
-                                kv_pairs = self:getDatesFromAll(3650, "monthly"),
+                                title = _("All stats by month"),
+                                kv_pairs = self:getDatesFromAll(0, "monthly"),
                             })
                         end,
                     },
@@ -827,12 +827,16 @@ end
 --          monthly - show monthly
 function ReaderStatistics:getDatesFromAll(sdays, ptype)
     local results = {}
+    local year_begin, year_end, month_begin, month_end
     local now_t = os.date("*t")
     local from_begin_day = now_t.hour *3600 + now_t.min*60 + now_t.sec
     local now_stamp = os.time()
     local one_day = 86400 -- one day in seconds
-    local period_begin = now_stamp - ((sdays-1) * one_day) - from_begin_day
     local sql_stmt_res_book
+    local period_begin
+    if sdays > 0 then
+        period_begin = now_stamp - ((sdays-1) * one_day) - from_begin_day
+    end
     if ptype == "daily" or ptype == "daily_weekday" then
         sql_stmt_res_book = [[
             SELECT dates,
@@ -878,7 +882,6 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype)
                                sum(period)                                                   AS sum_period,
                                start_time
                         FROM   page_stat
-                        WHERE  start_time >= '%s'
                         GROUP  BY id_book, page, dates
                    )
             GROUP  BY dates
@@ -907,8 +910,65 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype)
         else
             date_text = result_book[1][i]
         end
+        if ptype == "monthly" then
+            year_begin = tonumber(os.date("%Y" , tonumber(result_book[4][i])))
+            month_begin = tonumber(os.date("%m" , tonumber(result_book[4][i])))
+            if month_begin == 12 then
+                year_end = year_begin + 1
+                month_end = 1
+            else
+                year_end = year_begin
+                month_end = month_begin + 1
+            end
+            local start_month = os.time{year=year_begin, month=month_begin, day=1, hour=0, min=0 }
+            local stop_month = os.time{year=year_end, month=month_end, day=1, hour=0, min=0 }
+            table.insert(results, {
+                date_text,
+                T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), util.secondsToClock(tonumber(result_book[3][i]), false)),
+                callback = function()
+                    UIManager:show(KeyValuePage:new{
+                        title = date_text,
+                        kv_pairs = self:getDaysFromPeriod(start_month, stop_month),
+                    })
+                end,
+            })
+        else
+            table.insert(results, {
+                date_text,
+                T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), util.secondsToClock(tonumber(result_book[3][i]), false))
+            })
+        end
+    end
+    return results
+end
+
+function ReaderStatistics:getDaysFromPeriod(period_begin, period_end)
+    local results = {}
+    local sql_stmt_res_book = [[
+        SELECT dates,
+               count(*)             AS pages,
+               sum(sum_period)      AS periods,
+               start_time
+        FROM   (
+                    SELECT strftime('%%Y-%%m-%%d', start_time, 'unixepoch', 'localtime') AS dates,
+                           sum(period)                                                   AS sum_period,
+                           start_time
+                    FROM   page_stat
+                    WHERE  start_time >= '%s' AND start_time < '%s'
+                    GROUP  BY id_book, page, dates
+               )
+        GROUP  BY dates
+        ORDER  BY dates DESC
+    ]]
+    local conn = SQ3.open(db_location)
+    local result_book = conn:exec(string.format(sql_stmt_res_book, period_begin, period_end))
+    conn:close()
+    if result_book == nil then
+        return {}
+    end
+    for i=1, #result_book.dates do
         table.insert(results, {
-            date_text,
+            result_book[1][i],
             T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), util.secondsToClock(tonumber(result_book[3][i]), false))
         })
     end
