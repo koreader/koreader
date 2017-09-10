@@ -1,19 +1,20 @@
-local CenterContainer = require("ui/widget/container/centercontainer")
-local InputContainer = require("ui/widget/container/inputcontainer")
-local FrameContainer = require("ui/widget/container/framecontainer")
-local ImageWidget = require("ui/widget/imagewidget")
-local TextWidget = require("ui/widget/textwidget")
-local GestureRange = require("ui/gesturerange")
+--[[--
+A button widget that shows text or a icon and handles callback when tapped.
+--]]
+
 local Blitbuffer = require("ffi/blitbuffer")
-local UIManager = require("ui/uimanager")
-local Geom = require("ui/geometry")
+local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
 local Font = require("ui/font")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local Geom = require("ui/geometry")
+local GestureRange = require("ui/gesturerange")
+local ImageWidget = require("ui/widget/imagewidget")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local TextWidget = require("ui/widget/textwidget")
+local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 
---[[
-a button widget that shows text or a icon and handles callback when tapped
---]]
 local Button = InputContainer:new{
     text = nil, -- mandatory
     icon = nil,
@@ -45,6 +46,7 @@ function Button:init()
         self.label_widget = ImageWidget:new{
             file = self.icon,
             dim = not self.enabled,
+            scale_for_dpi = true,
         }
     end
     local widget_size = self.label_widget:getSize()
