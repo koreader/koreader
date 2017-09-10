@@ -1,16 +1,16 @@
 --[[--
-A simple module to deal with time values.
+A simple module to module to compare and do arithmetic with time values.
 
 @usage
     local TimeVal = require("ui/timeval")
 
     local tv_start = TimeVal:now()
     -- Do some stuff.
-    -- You can add and substract `TimeValue` objects.
+    -- You can add and substract `TimeVal` objects.
     local tv_duration = TimeVal:now() - tv_start
     -- If you need more precision (like 2.5 s),
     -- you can add the milliseconds to the seconds.
-    local tv_duration = tv_duration.sec + tv_duration.usec/1000000
+    local tv_duration_seconds_float = tv_duration.sec + tv_duration.usec/1000000
 ]]
 
 local util = require("ffi/util")
@@ -138,7 +138,7 @@ Creates a new TimeVal object based on the current time.
     local TimeVal = require("ui/timeval")
     local tv_start = TimeVal:now()
     -- Do some stuff.
-    -- You can add and substract `TimeValue` objects.
+    -- You can add and substract `TimeVal` objects.
     local tv_duration = TimeVal:now() - tv_start
 
 @treturn TimeVal
