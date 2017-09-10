@@ -390,7 +390,7 @@ function ReaderHighlight:onHoldRelease()
                         enabled = self.selected_link ~= nil,
                         callback = function()
                             self.ui.link:onGotoLink(self.selected_link)
-                            UIManager:close(self.highlight_dialog)
+                            self:onClose()
                         end,
                     },
                     {
