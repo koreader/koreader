@@ -403,7 +403,7 @@ function ReaderRolling:onGotoXPointer(xp)
         local doc_margins = self.ui.document._document:getPageMargins()
         local screen_y = doc_y - top_y + doc_margins["top"]
         local marker_w = math.max(doc_margins["left"] - Screen:scaleBySize(5), Screen:scaleBySize(5))
-        local marker_h = math.ceil(self.ui.font.font_size * 2) -- 2 * font_size looks nice with normal text and headers
+        local marker_h = Screen:scaleBySize(self.ui.font.font_size * 1.1 * self.ui.font.line_space_percent/100.0)
         UIManager:scheduleIn(0.5, function()
             Screen.bb:paintRect(0, screen_y, marker_w, marker_h, Blitbuffer.COLOR_BLACK)
             Screen["refreshPartial"](Screen, 0, screen_y, marker_w, marker_h)
