@@ -417,6 +417,7 @@ function MenuBar:init()
     local menu_items = {}
     local icons_width = 0
     local icons_height = 0
+    local line_thickness = 2
     for c = 1, #config_options do
         local menu_icon = IconButton:new{
             show_parent = self.config_dialog,
@@ -445,13 +446,13 @@ function MenuBar:init()
     local spacing_line = LineWidget:new{
         dimen = Geom:new{
             w = spacing_width,
-            h = 2,
+            h = line_thickness,
         }
     }
     local sep_line = LineWidget:new{
         dimen = Geom:new{
             w = icon_sep_width,
-            h = 2,
+            h = line_thickness,
         }
     }
     local menu_bar = HorizontalGroup:new{}
@@ -468,7 +469,7 @@ function MenuBar:init()
                 background = Blitbuffer.COLOR_WHITE,
                 dimen = Geom:new{
                     w = menu_items[c]:getSize().w,
-                    h = 2,
+                    h = line_thickness,
                 }
             })
 
@@ -479,7 +480,7 @@ function MenuBar:init()
             table.insert(line_bar, LineWidget:new{
                 dimen = Geom:new{
                     w = menu_items[c]:getSize().w,
-                    h = 2,
+                    h = line_thickness,
                 }
             })
         end
