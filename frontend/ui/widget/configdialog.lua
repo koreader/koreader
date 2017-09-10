@@ -14,6 +14,7 @@ local HorizontalSpan = require("ui/widget/horizontalspan")
 local IconButton = require("ui/widget/iconbutton")
 local ImageWidget = require("ui/widget/imagewidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local LineWidget = require("ui/widget/linewidget")
 local RightContainer = require("ui/widget/container/rightcontainer")
 local TextWidget = require("ui/widget/textwidget")
 local ToggleSwitch = require("ui/widget/toggleswitch")
@@ -405,22 +406,20 @@ function ConfigPanel:init()
     table.insert(self, panel)
 end
 
-local MenuBar = FrameContainer:new{ background = Blitbuffer.COLOR_WHITE, }
+local MenuBar = FrameContainer:new{
+    bordersize = 0,
+    padding = 0,
+    background = Blitbuffer.COLOR_WHITE,
+}
 function MenuBar:init()
+    local icon_sep_width = Screen:scaleBySize(2)
     local config_options = self.config_dialog.config_options
     local menu_items = {}
     local icons_width = 0
     local icons_height = 0
-    local invert_button
     for c = 1, #config_options do
-        if c == self.panel_index then
-            invert_button = true
-        else
-            invert_button = false
-        end
         local menu_icon = IconButton:new{
             show_parent = self.config_dialog,
-            invert_after_tap = invert_button,
             icon_file = config_options[c].icon,
             callback = function()
                 self.config_dialog:handleEvent(Event:new("ShowConfigPanel", c))
@@ -433,20 +432,68 @@ function MenuBar:init()
         menu_items[c] = menu_icon
     end
 
-    local spacing = HorizontalSpan:new{
-        width = (Screen:getWidth() - icons_width) / (#menu_items+1)
+    local icon_sep = LineWidget:new{
+        dimen = Geom:new{
+            w = icon_sep_width,
+            h = icons_height,
+        }
     }
-
+    local spacing_width = math.ceil((Screen:getWidth() - icons_width) / (#menu_items+1))
+    local spacing = HorizontalSpan:new{
+        width = spacing_width,
+    }
+    local spacing_line = LineWidget:new{
+        dimen = Geom:new{
+            w = spacing_width,
+            h = 2,
+        }
+    }
+    local sep_line = LineWidget:new{
+        dimen = Geom:new{
+            w = icon_sep_width,
+            h = 2,
+        }
+    }
     local menu_bar = HorizontalGroup:new{}
+    local line_bar = HorizontalGroup:new{}
 
     for c = 1, #menu_items do
         table.insert(menu_bar, spacing)
-        table.insert(menu_bar, menu_items[c])
+        table.insert(line_bar, spacing_line)
+        if c == self.panel_index then
+            table.insert(menu_bar, icon_sep)
+            table.insert(line_bar, sep_line)
+            table.insert(menu_bar, menu_items[c])
+            table.insert(line_bar, LineWidget:new{
+                background = Blitbuffer.COLOR_WHITE,
+                dimen = Geom:new{
+                    w = menu_items[c]:getSize().w,
+                    h = 2,
+                }
+            })
+
+            table.insert(menu_bar, icon_sep)
+            table.insert(line_bar, sep_line)
+        else
+            table.insert(menu_bar, menu_items[c])
+            table.insert(line_bar, LineWidget:new{
+                dimen = Geom:new{
+                    w = menu_items[c]:getSize().w,
+                    h = 2,
+                }
+            })
+        end
     end
     table.insert(menu_bar, spacing)
+    table.insert(line_bar, spacing_line)
 
     self.dimen = Geom:new{ w = Screen:getWidth(), h = icons_height}
-    table.insert(self, menu_bar)
+    local vertical_menu = VerticalGroup:new{
+        line_bar,
+        menu_bar,
+    }
+    table.insert(self, vertical_menu)
+
 end
 
 --[[
