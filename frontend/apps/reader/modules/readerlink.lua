@@ -1,6 +1,6 @@
---[[
+--[[--
 ReaderLink is an abstraction for document-specific link interfaces.
-]]--
+]]
 
 local Device = require("device")
 local Event = require("ui/event")

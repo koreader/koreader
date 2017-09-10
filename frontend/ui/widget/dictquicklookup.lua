@@ -14,7 +14,6 @@ local InputDialog = require("ui/widget/inputdialog")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
-local ReaderLink = require("apps/reader/modules/readerlink")
 local ScrollTextWidget = require("ui/widget/scrolltextwidget")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
@@ -368,7 +367,7 @@ function DictQuickLookup:update()
                 {
                     -- if more than one language, enable it and display "current lang > next lang"
                     -- otherwise, just display current lang
-                    text = self.is_wiki and ( #self.wiki_languages > 1 and self.wiki_languages[1].." > "..self.wiki_languages[2] or self.wiki_languages[1] ) or "Follow Link",
+                    text = self.is_wiki and ( #self.wiki_languages > 1 and self.wiki_languages[1].." > "..self.wiki_languages[2] or self.wiki_languages[1] ) or _("Follow Link"),
                     enabled = (self.is_wiki and #self.wiki_languages > 1) or self.selected_link ~= nil,
                     callback = function()
                         if self.is_wiki then
@@ -376,8 +375,8 @@ function DictQuickLookup:update()
                             UIManager:close(self)
                             self:lookupWikipedia()
                         else
-                            UIManager:close(self)
-                            ReaderLink:onGotoLink(self.selected_link)
+                            self:onClose()
+                            self.ui.link:onGotoLink(self.selected_link)
                         end
                     end,
                 },
