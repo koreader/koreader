@@ -413,11 +413,11 @@ local MenuBar = FrameContainer:new{
 }
 function MenuBar:init()
     local icon_sep_width = Screen:scaleBySize(2)
+    local line_thickness = Screen:scaleBySize(2)
     local config_options = self.config_dialog.config_options
     local menu_items = {}
     local icons_width = 0
     local icons_height = 0
-    local line_thickness = 2
     for c = 1, #config_options do
         local menu_icon = IconButton:new{
             show_parent = self.config_dialog,
