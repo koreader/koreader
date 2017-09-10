@@ -3,7 +3,6 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local ReaderLink = require("apps/reader/modules/readerlink")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
@@ -251,9 +250,7 @@ function ReaderHighlight:onHold(arg, ges)
     if ok and word then
         logger.dbg("selected word:", word)
         self.selected_word = word
-        ReaderLink.ui = self.ui
-        ReaderLink.view = self.view
-        local link = ReaderLink:getLinkFromGes(ges)
+        local link = self.ui.link:getLinkFromGes(ges)
         self.selected_link = nil
         if link then
             logger.dbg("link:", link)
@@ -392,7 +389,7 @@ function ReaderHighlight:onHoldRelease()
                         text = _("Follow Link"),
                         enabled = self.selected_link ~= nil,
                         callback = function()
-                            ReaderLink:onGotoLink(self.selected_link)
+                            self.ui.link:onGotoLink(self.selected_link)
                             UIManager:close(self.highlight_dialog)
                         end,
                     },
