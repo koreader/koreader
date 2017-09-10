@@ -3,6 +3,7 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
@@ -265,6 +266,7 @@ function ReaderHighlight:onHold(arg, ges)
         -- TODO: only mark word?
         -- Unfortunately, CREngine does not return good coordinates
         -- UIManager:setDirty(self.dialog, "partial", self.selected_word.sbox)
+        self.hold_start_tv = TimeVal.now()
     end
     return true
 end
@@ -328,6 +330,17 @@ function ReaderHighlight:translate(selected_text)
 end
 
 function ReaderHighlight:onHoldRelease()
+    if self.hold_start_tv then
+        local hold_duration = TimeVal.now() - self.hold_start_tv
+        hold_duration = hold_duration.sec + hold_duration.usec/1000000
+        self.hold_start_tv = nil
+        if hold_duration > 3.0 and self.selected_word then
+            -- if we were holding for more than 3 seconds on a word, make
+            -- it behave like we panned and selected more words, so we can
+            -- directly access the highlight menu and avoid a dict lookup
+            self:onHoldPan(nil, {pos=self.hold_pos})
+        end
+    end
     if self.selected_word then
         self:lookup(self.selected_word, self.selected_link)
         self.selected_word = nil
