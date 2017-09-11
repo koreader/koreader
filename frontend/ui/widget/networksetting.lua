@@ -30,33 +30,31 @@ Example:
 
 ]]
 
-local FrameContainer = require("ui/widget/container/framecontainer")
-local InputContainer = require("ui/widget/container/inputcontainer")
-local LeftContainer = require("ui/widget/container/leftcontainer")
+local Blitbuffer = require("ffi/blitbuffer")
 local CenterContainer = require("ui/widget/container/centercontainer")
-local RightContainer = require("ui/widget/container/rightcontainer")
+local Device = require("device")
+local Font = require("ui/font")
+local Geom = require("ui/geometry")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
-local VerticalGroup = require("ui/widget/verticalgroup")
-local OverlapGroup = require("ui/widget/overlapgroup")
-local InfoMessage = require("ui/widget/infomessage")
-local InputDialog = require("ui/widget/inputdialog")
-local NetworkMgr = require("ui/network/manager")
-local ListView = require("ui/widget/listview")
 local ImageWidget = require("ui/widget/imagewidget")
-local Widget = require("ui/widget/widget")
+local InfoMessage = require("ui/widget/infomessage")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local InputDialog = require("ui/widget/inputdialog")
+local LeftContainer = require("ui/widget/container/leftcontainer")
+local ListView = require("ui/widget/listview")
+local RightContainer = require("ui/widget/container/rightcontainer")
+local NetworkMgr = require("ui/network/manager")
+local OverlapGroup = require("ui/widget/overlapgroup")
 local TextWidget = require("ui/widget/textwidget")
-local GestureRange = require("ui/gesturerange")
-local Blitbuffer = require("ffi/blitbuffer")
 local UIManager = require("ui/uimanager")
-local Geom = require("ui/geometry")
-local Device = require("device")
-local Screen = Device.screen
-local Font = require("ui/font")
-local T = require("ffi/util").template
+local VerticalGroup = require("ui/widget/verticalgroup")
+local Widget = require("ui/widget/widget")
 local _ = require("gettext")
-
-
+local T = require("ffi/util").template
+local Screen = Device.screen
 
 local function obtainIP()
     -- TODO: check for DHCP result
@@ -421,7 +419,7 @@ function NetworkSetting:init()
     self.popup = FrameContainer:new{
         background = Blitbuffer.COLOR_WHITE,
         padding = 0,
-        bordersize = 3,
+        bordersize = Screen:scaleBySize(3),
         VerticalGroup:new{
             align = "left",
             self.pagination,

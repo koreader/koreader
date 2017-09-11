@@ -1,6 +1,6 @@
-local Screen = require("device").screen
 local S = require("ui/data/strings")
 local _ = require("gettext")
+local Screen = require("device").screen
 
 local function enable_if_equals(configurable, option, value)
     return configurable[option] == value
@@ -29,7 +29,6 @@ local KoptOptions = {
             {
                 name = "trim_page",
                 name_text = S.PAGE_CROP,
-                width = 261,
                 toggle = {S.MANUAL, S.AUTO, S.SEMIAUTO},
                 alternate = false,
                 values = {0, 1, 2},

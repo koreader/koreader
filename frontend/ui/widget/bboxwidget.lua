@@ -9,11 +9,12 @@ local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local Math = require("optmath")
 local UIManager = require("ui/uimanager")
+local Screen = Device.screen
 
 local BBoxWidget = InputContainer:new{
     page_bbox = nil,
     screen_bbox = nil,
-    linesize = 2,
+    linesize = Screen:scaleBySize(2),
     fine_factor = 10,
     dimen = Geom:new(),
 }

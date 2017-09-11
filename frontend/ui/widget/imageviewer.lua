@@ -258,7 +258,6 @@ function ImageViewer:update()
     end
     self.main_frame = FrameContainer:new{
         radius = not self.fullscreen and 8 or nil,
-        bordersize = 3,
         padding = 0,
         margin = 0,
         background = Blitbuffer.COLOR_WHITE,

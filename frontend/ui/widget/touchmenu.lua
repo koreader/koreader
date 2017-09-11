@@ -431,7 +431,7 @@ function TouchMenu:init()
     self.item_width = self.width - self.padding*2 - self.bordersize*2
     self.split_line = HorizontalGroup:new{
         -- pad with 10 pixel to align with the up arrow in footer
-        HorizontalSpan:new{width = 10},
+        HorizontalSpan:new{width = Screen:scaleBySize(10)},
         LineWidget:new{
             background = Blitbuffer.gray(0.33),
             dimen = Geom:new{

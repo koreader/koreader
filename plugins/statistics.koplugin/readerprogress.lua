@@ -210,11 +210,11 @@ function ReaderProgress:genWeekStats(stats_day)
         date_format_show = dayOfWeekTranslation[os.date("%A", diff_time)] .. os.date(" (%d.%m)", diff_time)
         local total_group = HorizontalGroup:new{
             align = "center",
-            padding = 2,
+            padding = Screen:scaleBySize(2),
             LeftContainer:new{
                 dimen = Geom:new{ w = self.screen_width , h = height / 3 },
                 TextWidget:new{
-                    padding = 2,
+                    padding = Screen:scaleBySize(2),
                     text = date_format_show .. " - " .. util.secondsToClock(select_day_time, true),
                     face = Font:getFace("smallffont"),
                 },
@@ -353,7 +353,7 @@ function ReaderProgress:genSummaryWeek(width)
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextWidget:new{
-                padding = 5,
+                padding = Screen:scaleBySize(5),
                 text = _("Total"),
                 face = self.small_font_face,
             },

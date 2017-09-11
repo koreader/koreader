@@ -1,13 +1,13 @@
-local FrameContainer = require("ui/widget/container/framecontainer")
+local Blitbuffer = require("ffi/blitbuffer")
 local CenterContainer = require("ui/widget/container/centercontainer")
-local VerticalGroup = require("ui/widget/verticalgroup")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local Geom = require("ui/geometry")
 local InputDialog = require("ui/widget/inputdialog")
 local InputText = require("ui/widget/inputtext")
 local UIManager = require("ui/uimanager")
-local Geom = require("ui/geometry")
-local Screen = require("device").screen
+local VerticalGroup = require("ui/widget/verticalgroup")
 local _ = require("gettext")
-local Blitbuffer = require("ffi/blitbuffer")
+local Screen = require("device").screen
 
 local LoginDialog = InputDialog:extend{
     username = "",
@@ -41,8 +41,7 @@ function LoginDialog:init()
     }
 
     self.dialog_frame = FrameContainer:new{
-        radius = 8,
-        bordersize = 3,
+        radius = Screen:scaleBySize(8),
         padding = 0,
         margin = 0,
         background = Blitbuffer.COLOR_WHITE,

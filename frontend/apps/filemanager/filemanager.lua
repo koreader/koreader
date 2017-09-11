@@ -12,7 +12,6 @@ local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
 local FileManagerMenu = require("apps/filemanager/filemanagermenu")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
-local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
@@ -42,8 +41,6 @@ end
 local FileManager = InputContainer:extend{
     title = _("KOReader File Browser"),
     root_path = lfs.currentdir(),
-    -- our own size
-    dimen = Geom:new{ w = 400, h = 600 },
     onExit = function() end,
 
     mv_bin = Device:isAndroid() and "/system/bin/mv" or "/bin/mv",

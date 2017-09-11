@@ -4,7 +4,7 @@
 All of these apply to full rectangles:
 
     local Geom = require("ui/geometry")
-    Geom:new{ x = 1, y = 0, w = 100, h = 200, }
+    Geom:new{ x = 1, y = 0, w = Screen:scaleBySize(100), h = Screen:scaleBySize(200), }
 
 Some behaviour is defined for points:
 
@@ -12,7 +12,7 @@ Some behaviour is defined for points:
 
 Some behaviour is defined for dimensions:
 
-    Geom:new{ w = 600, h = 800, }
+    Geom:new{ w = Screen:scaleBySize(600), h = Screen:scaleBySize(800), }
 
 Just use it on simple tables that have x, y and/or w, h
 or define your own types using this as a metatable

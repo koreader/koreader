@@ -18,8 +18,8 @@ local Notification = InputContainer:new{
     face = Font:getFace("x_smallinfofont"),
     text = "Null Message",
     timeout = nil,
-    margin = 5,
-    padding = 5,
+    margin = Screen:scaleBySize(5),
+    padding = Screen:scaleBySize(5),
 }
 
 function Notification:init()

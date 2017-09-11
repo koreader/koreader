@@ -33,6 +33,9 @@ function SkimToWidget:init()
     self.screen_height = Screen:getSize().h
     self.span = math.ceil(self.screen_height * 0.01)
     self.width = self.screen_width * 0.95
+    self.button_bordersize = Screen:scaleBySize(2)
+    self.button_margin = self.button_bordersize
+    self.button_width = self.screen_width * 0.16 - (2*self.button_margin)
     if Device:hasKeys() then
         self.key_events = {
             Close = { {"Back"}, doc = "close skimto page" }
@@ -110,11 +113,11 @@ function SkimToWidget:init()
     }
     self.button_minus = Button:new{
         text = "-1",
-        bordersize = 2,
-        margin = 2,
+        bordersize = self.button_bordersize,
+        margin = self.button_margin,
         radius = 0,
         enabled = true,
-        width = self.screen_width * 0.16,
+        width = self.button_width,
         show_parent = self,
         callback = function()
             self.curr_page = self.curr_page - 1
@@ -124,11 +127,11 @@ function SkimToWidget:init()
     }
     self.button_minus_ten = Button:new{
         text = "-10",
-        bordersize = 2,
-        margin = 2,
+        bordersize = self.button_bordersize,
+        margin = self.button_margin,
         radius = 0,
         enabled = true,
-        width = self.screen_width * 0.16,
+        width = self.button_width,
         show_parent = self,
         callback = function()
             self.curr_page = self.curr_page - 10
@@ -138,11 +141,11 @@ function SkimToWidget:init()
     }
     self.button_plus = Button:new{
         text = "+1",
-        bordersize = 2,
-        margin = 2,
+        bordersize = self.button_bordersize,
+        margin = self.button_margin,
         radius = 0,
         enabled = true,
-        width = self.screen_width * 0.16,
+        width = self.button_width,
         show_parent = self,
         callback = function()
             self.curr_page = self.curr_page + 1
@@ -152,11 +155,11 @@ function SkimToWidget:init()
     }
     self.button_plus_ten = Button:new{
         text = "+10",
-        bordersize = 2,
-        margin = 2,
+        bordersize = self.button_bordersize,
+        margin = self.button_margin,
         radius = 0,
         enabled = true,
-        width = self.screen_width * 0.16,
+        width = self.button_width,
         show_parent = self,
         callback = function()
             self.curr_page = self.curr_page + 10
@@ -167,10 +170,10 @@ function SkimToWidget:init()
     local current_page_text = Button:new{
         text = self.curr_page,
         bordersize = 0,
-        margin = 2,
+        margin = self.button_margin,
         radius = 0,
         enabled = true,
-        width = self.screen_width * 0.2,
+        width = self.screen_width * 0.2 - (2*self.button_margin),
         show_parent = self,
         callback = function()
             self.callback_switch_to_goto()
@@ -193,8 +196,8 @@ function SkimToWidget:init()
     table.insert(vertical_group_control,padding_span)
 
     self.skimto_frame = FrameContainer:new{
-        radius = 5,
-        bordersize = 3,
+        radius = Screen:scaleBySize(5),
+        bordersize = Screen:scaleBySize(3),
         padding = 0,
         margin = 0,
         background = Blitbuffer.COLOR_WHITE,
@@ -256,10 +259,10 @@ function SkimToWidget:update()
     local current_page_text = Button:new{
         text = self.curr_page,
         bordersize = 0,
-        margin = 2,
+        margin = self.button_margin,
         radius = 0,
         enabled = true,
-        width = self.screen_width * 0.2,
+        width = self.screen_width * 0.2 - (2*self.button_margin),
         show_parent = self,
         callback = function()
             self.callback_switch_to_goto()
@@ -282,8 +285,8 @@ function SkimToWidget:update()
     table.insert(vertical_group_control,padding_span)
 
     self.skimto_frame = FrameContainer:new{
-        radius = 5,
-        bordersize = 3,
+        radius = Screen:scaleBySize(5),
+        bordersize = Screen:scaleBySize(3),
         padding = 0,
         margin = 0,
         background = Blitbuffer.COLOR_WHITE,

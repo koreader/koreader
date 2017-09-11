@@ -13,6 +13,7 @@ local ImageWidget = require("ui/widget/imagewidget")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local OverlapGroup = require("ui/widget/overlapgroup")
+local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
@@ -41,9 +42,9 @@ local corner_mark = ImageWidget:new{
 -- ItemShortCutIcon (for keyboard navigation) is private to menu.lua and can't be accessed,
 -- so we need to redefine it
 local ItemShortCutIcon = WidgetContainer:new{
-    dimen = Geom:new{ w = 22, h = 22 },
+    dimen = Geom:new{ w = Screen:scaleBySize(22), h = Screen:scaleBySize(22) },
     key = nil,
-    bordersize = 2,
+    bordersize = Screen:scaleBySize(2),
     radius = 0,
     style = "square",
 }
@@ -92,7 +93,7 @@ local FakeCover = FrameContainer:new{
     height = nil,
     margin = 0,
     padding = 0,
-    bordersize = 1,
+    bordersize = Size.line.thin,
     dim = nil,
     filename = nil,
     file_deleted = nil,

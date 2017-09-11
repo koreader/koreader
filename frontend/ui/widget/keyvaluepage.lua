@@ -74,7 +74,7 @@ function KeyValueTitle:init()
     })
     -- page count and separation line
     self.page_cnt = FrameContainer:new{
-        padding = 4,
+        padding = Screen:scaleBySize(4),
         margin = 0,
         bordersize = 0,
         background = Blitbuffer.COLOR_WHITE,

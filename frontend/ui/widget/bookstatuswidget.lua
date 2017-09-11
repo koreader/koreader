@@ -22,10 +22,10 @@ local ToggleSwitch = require("ui/widget/toggleswitch")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
-local Screen = require("device").screen
-local template = require("ffi/util").template
 local util = require("util")
 local _ = require("gettext")
+local Screen = require("device").screen
+local template = require("ffi/util").template
 
 local stats_book = {}
 
@@ -246,7 +246,7 @@ function BookStatusWidget:genBookInfoGroup()
     local text_author = TextWidget:new{
         text = self.props.authors,
         face = self.small_font_face,
-        padding = 2,
+        padding = Screen:scaleBySize(2),
     }
     table.insert(book_meta_info_group,
         CenterContainer:new{
@@ -391,14 +391,14 @@ function BookStatusWidget:genSummaryGroup(width)
         height = Screen:scaleBySize(130)
     end
 
-    local text_padding = 5
+    local text_padding = Screen:scaleBySize(5)
     self.input_note = InputText:new{
         text = self.summary.note,
         face = self.medium_font_face,
         width = width - self.padding * 3,
         height = height * 0.75,
         scroll = true,
-        bordersize = 2,
+        bordersize = Screen:scaleBySize(2),
         focused = false,
         padding = text_padding,
         parent = self,

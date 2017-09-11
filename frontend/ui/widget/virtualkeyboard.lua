@@ -27,7 +27,7 @@ local VirtualKey = InputContainer:new{
 
     width = nil,
     height = math.max(Screen:getWidth(), Screen:getHeight())*0.33,
-    bordersize = 2,
+    bordersize = Screen:scaleBySize(2),
     face = Font:getFace("infont"),
 }
 
@@ -62,7 +62,7 @@ function VirtualKey:init()
         margin = 0,
         bordersize = self.bordersize,
         background = Blitbuffer.COLOR_WHITE,
-        radius = 5,
+        radius = Screen:scaleBySize(5),
         padding = 0,
         CenterContainer:new{
             dimen = Geom:new{
