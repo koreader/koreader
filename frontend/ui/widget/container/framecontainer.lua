@@ -18,16 +18,18 @@ Example:
 
 --]]
 
-local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local Geom = require("ui/geometry")
 local Blitbuffer = require("ffi/blitbuffer")
+local Device = require("device")
+local Geom = require("ui/geometry")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local Screen = Device.screen
 
 local FrameContainer = WidgetContainer:new{
     background = nil,
     color = Blitbuffer.COLOR_BLACK,
     margin = 0,
     radius = 0,
-    bordersize = 2,
+    bordersize = Screen:scaleBySize(2),
     padding = 5,
     width = nil,
     height = nil,

@@ -574,7 +574,6 @@ function ConfigDialog:update()
         config_dialog = self,
     }
     self.dialog_frame = FrameContainer:new{
-        bordersize = Screen:scaleBySize(2),
         background = Blitbuffer.COLOR_WHITE,
         VerticalGroup:new{
             self.config_panel,
