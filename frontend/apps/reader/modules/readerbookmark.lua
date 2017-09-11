@@ -395,4 +395,16 @@ function ReaderBookmark:onGotoNextBookmark(pn_or_xp)
     return true
 end
 
+function ReaderBookmark:getLatestBookmark()
+    local latest_bookmark = nil
+    local latest_bookmark_datetime = "0"
+    for i = 1, #self.bookmarks do
+        if self.bookmarks[i].datetime > latest_bookmark_datetime then
+            latest_bookmark_datetime = self.bookmarks[i].datetime
+            latest_bookmark = self.bookmarks[i]
+        end
+    end
+    return latest_bookmark
+end
+
 return ReaderBookmark
