@@ -302,8 +302,23 @@ function Input:handleKeyBoardEv(ev)
     -- quit on Alt + F4
     -- this is also emitted by the close event in SQL
     if self.modifiers["Alt"] and keycode == "F4" then
-        local UIManager = require("ui/uimanager")
-        UIManager:quit()
+        local FileManager = require("apps/filemanager/filemanager")
+        if FileManager.instance then
+            FileManager.instance.menu:exitOrRestart()
+        end
+        local ReaderUI = require("apps/reader/readerui")
+        local instance = ReaderUI:_getRunningInstance()
+        if instance then
+            local Device = require("frontend/device")
+            local UIManager = require("ui/uimanager")
+
+            local save_quit = function()
+                Device:saveSettings()
+                UIManager:quit()
+            end
+
+            instance.menu:exitOrRestart(save_quit)
+        end
     end
 
     -- handle modifier keys

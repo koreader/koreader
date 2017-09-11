@@ -218,11 +218,19 @@ dbg:guard(ReaderMenu, 'setUpdateItemTable',
     end)
 
 function ReaderMenu:exitOrRestart(callback)
-    self:onTapCloseMenu()
+    if self.menu_container then self:onTapCloseMenu() end
     UIManager:nextTick(function()
         self.ui:onClose()
         if callback ~= nil then
-            callback()
+            local waiting = function(waiting)
+                if self.ui and self.ui.document and self.ui.document:isEdited() then
+                    logger.dbg("waiting for save settings")
+                    UIManager:scheduleIn(1, function() waiting(waiting) end)
+                else
+                    callback()
+                end
+            end
+            UIManager:scheduleIn(1, function() waiting(waiting) end)
         end
     end)
     local FileManager = require("apps/filemanager/filemanager")
