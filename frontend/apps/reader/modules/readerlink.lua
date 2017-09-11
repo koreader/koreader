@@ -109,7 +109,7 @@ function ReaderLink:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Swipe to follow page's first link"),
+                text = _("Swipe to follow first link on page"),
                 checked_func = isSwipeToFollowFirstLinkEnabled,
                 callback = function()
                     G_reader_settings:saveSetting("swipe_to_follow_first_link",
