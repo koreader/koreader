@@ -222,6 +222,13 @@ function ReaderMenu:exitOrRestart(callback)
     UIManager:nextTick(function()
         self.ui:onClose()
         if callback ~= nil then
+            -- show an empty widget so that the callback always happens
+            local Widget = require("ui/widget/widget")
+            local widget = Widget:new{
+                width = Screen:getWidth(),
+                height = Screen:getHeight(),
+            }
+            UIManager:show(widget)
             local waiting = function(waiting)
                 -- if we don't do this you can get a situation where either the
                 -- program won't exit due to remaining widgets until they're
@@ -232,6 +239,7 @@ function ReaderMenu:exitOrRestart(callback)
                     UIManager:scheduleIn(1, function() waiting(waiting) end)
                 else
                     callback()
+                    UIManager:close(widget)
                 end
             end
             UIManager:scheduleIn(1, function() waiting(waiting) end)
