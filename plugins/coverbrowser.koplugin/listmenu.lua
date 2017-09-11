@@ -44,9 +44,9 @@ local corner_mark = ImageWidget:new{
 -- ItemShortCutIcon (for keyboard navigation) is private to menu.lua and can't be accessed,
 -- so we need to redefine it
 local ItemShortCutIcon = WidgetContainer:new{
-    dimen = Geom:new{ w = 22, h = 22 },
+    dimen = Geom:new{ w = Screen:scaleBySize(22), h = Screen:scaleBySize(22) },
     key = nil,
-    bordersize = 2,
+    bordersize = Screen:scaleBySize(2),
     radius = 0,
     style = "square",
 }
@@ -698,10 +698,8 @@ end
 
 function ListMenu:_updateItemsBuildUI()
     -- Build our list
-    -- We separate items with a 1px LineWidget (no need for
-    -- scaleBySize, thin is fine)
     table.insert(self.item_group, LineWidget:new{
-                    dimen = Geom:new{ w = self.width, h = 1 },
+                    dimen = Geom:new{ w = self.width, h = Screen:scaleBySize(1) },
                     background = Blitbuffer.COLOR_GREY,
                     style = "solid",
                 })
@@ -742,7 +740,7 @@ function ListMenu:_updateItemsBuildUI()
             }
         table.insert(self.item_group, item_tmp)
         table.insert(self.item_group, LineWidget:new{
-                        dimen = Geom:new{ w = self.width, h = 1 },
+                        dimen = Geom:new{ w = self.width, h = Screen:scaleBySize(1) },
                         background = Blitbuffer.COLOR_GREY,
                         style = "solid",
                     })

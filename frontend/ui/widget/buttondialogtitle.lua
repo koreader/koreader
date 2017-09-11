@@ -47,7 +47,7 @@ function ButtonDialogTitle:init()
         FrameContainer:new{
             VerticalGroup:new{
                 align = "center",
-                VerticalSpan:new{ width = 2 },
+                VerticalSpan:new{ width = Screen:scaleBySize(2) },
                 TextBoxWidget:new{
                     text = self.title,
                     width = Screen:getWidth() * 0.8 ,
@@ -55,14 +55,14 @@ function ButtonDialogTitle:init()
                     bold = true,
                     alignment = self.title_align or "left",
                 },
-                VerticalSpan:new{ width = 2 },
+                VerticalSpan:new{ width = Screen:scaleBySize(2) },
                 LineWidget:new{
                     dimen = Geom:new{
                         w = Screen:getWidth() * 0.9,
-                        h = 1,
+                        h = Screen:scaleBySize(1),
                     }
                 },
-                VerticalSpan:new{ width = 2 },
+                VerticalSpan:new{ width = Screen:scaleBySize(2) },
                 ButtonTable:new{
                     width = Screen:getWidth() * 0.9,
                     buttons = self.buttons,
@@ -70,9 +70,9 @@ function ButtonDialogTitle:init()
                 },
             },
             background = Blitbuffer.COLOR_WHITE,
-            bordersize = 2,
-            radius = 7,
-            padding = 2,
+            bordersize = Screen:scaleBySize(2),
+            radius = Screen:scaleBySize(7),
+            padding = Screen:scaleBySize(2),
         }
     }
 end

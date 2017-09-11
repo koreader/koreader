@@ -112,7 +112,7 @@ function GoodreadsBook:genBookInfoGroup()
         TextBoxWidget:new{
             text = self.dates.title,
             face = self.medium_font_face,
-            padding = 2,
+            padding = Screen:scaleBySize(2),
             alignment = "center",
             width = width,
         },
@@ -142,7 +142,7 @@ function GoodreadsBook:genBookInfoGroup()
     local text_series = TextWidget:new{
         text = T(_("Series: %1"), self.dates.series),
         face = self.small_font_face,
-        padding = 2,
+        padding = Screen:scaleBySize(2),
     }
     table.insert(book_meta_info_group,
         CenterContainer:new{
@@ -154,7 +154,7 @@ function GoodreadsBook:genBookInfoGroup()
     local text_rating = TextWidget:new{
         text = T(_("Rating: %1"), self.dates.rating),
         face = self.small_font_face,
-        padding = 2,
+        padding = Screen:scaleBySize(2),
     }
     table.insert(book_meta_info_group,
         CenterContainer:new{
@@ -166,7 +166,7 @@ function GoodreadsBook:genBookInfoGroup()
     local text_pages = TextWidget:new{
         text = T(_("Pages: %1"), self.dates.pages),
         face = self.small_font_face,
-        padding = 2,
+        padding = Screen:scaleBySize(2),
     }
     table.insert(book_meta_info_group,
         CenterContainer:new{
@@ -178,7 +178,7 @@ function GoodreadsBook:genBookInfoGroup()
     local text_release = TextWidget:new{
         text = T(_("Release date: %1"), self.dates.release),
         face = self.small_font_face,
-        padding = 2,
+        padding = Screen:scaleBySize(2),
     }
     table.insert(book_meta_info_group,
         CenterContainer:new{

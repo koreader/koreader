@@ -45,8 +45,8 @@ local ConfirmBox = InputContainer:new{
     ok_callback = function() end,
     cancel_callback = function() end,
     other_buttons = nil,
-    margin = 5,
-    padding = 5,
+    margin = Screen:scaleBySize(5),
+    padding = Screen:scaleBySize(5),
 }
 
 function ConfirmBox:init()
@@ -70,9 +70,10 @@ function ConfirmBox:init()
     local content = HorizontalGroup:new{
         align = "center",
         ImageWidget:new{
-            file = "resources/info-i.png"
+            file = "resources/info-i.png",
+            scale_for_dpi = true,
         },
-        HorizontalSpan:new{ width = 10 },
+        HorizontalSpan:new{ width = Screen:scaleBySize(10) },
         TextBoxWidget:new{
             text = self.text,
             face = self.face,

@@ -164,8 +164,7 @@ function InputDialog:init()
     }
 
     self.dialog_frame = FrameContainer:new{
-        radius = 8,
-        bordersize = 3,
+        radius = Screen:scaleBySize(8),
         padding = 0,
         margin = 0,
         background = Blitbuffer.COLOR_WHITE,

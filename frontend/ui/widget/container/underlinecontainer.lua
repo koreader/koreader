@@ -7,10 +7,11 @@ a line under its child node.
 local Blitbuffer = require("ffi/blitbuffer")
 local Geom = require("ui/geometry")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local Screen = require("device").screen
 
 local UnderlineContainer = WidgetContainer:new{
-    linesize = 2,
-    padding = 1,
+    linesize = Screen:scaleBySize(2),
+    padding = Screen:scaleBySize(1),
     -- TODO: shouldn't this default to black instead?
     color = Blitbuffer.COLOR_WHITE,
     vertical_align = "top",

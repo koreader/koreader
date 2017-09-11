@@ -51,9 +51,9 @@ function FrontLightWidget:init()
 
     self.fl_prog_button = Button:new{
         text = "",
-        bordersize = 3,
+        bordersize = Screen:scaleBySize(3),
         radius = 0,
-        margin = 1,
+        margin = Screen:scaleBySize(1),
         enabled = true,
         width = self.button_width,
         show_parent = self,
@@ -124,7 +124,7 @@ function FrontLightWidget:setProgress(num, step)
         for i = step_min, step_num do
             table.insert(fl_group, self.fl_prog_button:new{
                 text= "",
-                margin = 1,
+                margin = Screen:scaleBySize(1),
                 preselect = true,
                 width = self.button_width,
                 callback = function()
@@ -145,8 +145,8 @@ function FrontLightWidget:setProgress(num, step)
     end
     local button_minus = Button:new{
         text = "-1",
-        bordersize = 2,
-        margin = 2,
+        bordersize = Screen:scaleBySize(2),
+        margin = Screen:scaleBySize(2),
         radius = 0,
         enabled = enable_button_minus,
         width = self.screen_width * 0.20,
@@ -155,8 +155,8 @@ function FrontLightWidget:setProgress(num, step)
     }
     local button_plus = Button:new{
         text = "+1",
-        bordersize = 2,
-        margin = 2,
+        bordersize = Screen:scaleBySize(2),
+        margin = Screen:scaleBySize(2),
         radius = 0,
         enabled = enable_button_plus,
         width = self.screen_width * 0.20,
@@ -171,8 +171,8 @@ function FrontLightWidget:setProgress(num, step)
     }
     local button_min = Button:new{
         text = _("Min"),
-        bordersize = 2,
-        margin = 2,
+        bordersize = Screen:scaleBySize(2),
+        margin = Screen:scaleBySize(2),
         radius = 0,
         enabled = true,
         width = self.screen_width * 0.20,
@@ -181,8 +181,8 @@ function FrontLightWidget:setProgress(num, step)
     }
     local button_max = Button:new{
         text = _("Max"),
-        bordersize = 2,
-        margin = 2,
+        bordersize = Screen:scaleBySize(2),
+        margin = Screen:scaleBySize(2),
         radius = 0,
         enabled = true,
         width = self.screen_width * 0.20,
@@ -191,8 +191,8 @@ function FrontLightWidget:setProgress(num, step)
     }
     local button_toggle = Button:new{
         text = _("Toggle"),
-        bordersize = 2,
-        margin = 2,
+        bordersize = Screen:scaleBySize(2),
+        margin = Screen:scaleBySize(2),
         radius = 0,
         enabled = true,
         width = self.screen_width * 0.20,
@@ -266,8 +266,8 @@ function FrontLightWidget:update()
         CloseButton:new{ window = self, },
     }
     self.light_frame = FrameContainer:new{
-        radius = 5,
-        bordersize = 3,
+        radius = Screen:scaleBySize(5),
+        bordersize = Screen:scaleBySize(3),
         padding = 0,
         margin = 0,
         background = Blitbuffer.COLOR_WHITE,

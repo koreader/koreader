@@ -4,8 +4,8 @@ Widget component that handles pagination for a list of items.
 Example:
 
     local list_view = ListView:new{
-        height = 400,
-        width = 200,
+        height = Screen:scaleBySize(400),
+        width = Screen:scaleBySize(200),
         page_update_cb = function(curr_page_num, total_pages)
             -- This callback function will be called whenever a page
             -- turn event is triggered. You can use it to update

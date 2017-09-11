@@ -1,19 +1,20 @@
+--[[--
+Text widget with vertical scroll bar.
+--]]
+
+local Blitbuffer = require("ffi/blitbuffer")
+local Device = require("device")
+local Geom = require("ui/geometry")
+local GestureRange = require("ui/gesturerange")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local HorizontalSpan = require("ui/widget/horizontalspan")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local VerticalScrollBar = require("ui/widget/verticalscrollbar")
-local Geom = require("ui/geometry")
-local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
-local Device = require("device")
-local Screen = Device.screen
 local Input = Device.input
-local HorizontalGroup = require("ui/widget/horizontalgroup")
-local HorizontalSpan = require("ui/widget/horizontalspan")
-local Blitbuffer = require("ffi/blitbuffer")
+local Screen = Device.screen
 
---[[
-Text widget with vertical scroll bar
---]]
 local ScrollTextWidget = InputContainer:new{
     text = nil,
     charlist = nil,
@@ -22,8 +23,8 @@ local ScrollTextWidget = InputContainer:new{
     justified = false,
     face = nil,
     fgcolor = Blitbuffer.COLOR_BLACK,
-    width = 400,
-    height = 20,
+    width = Screen:scaleBySize(400),
+    height = Screen:scaleBySize(20),
     scroll_bar_width = Screen:scaleBySize(6),
     text_scroll_span = Screen:scaleBySize(12),
     dialog = nil,

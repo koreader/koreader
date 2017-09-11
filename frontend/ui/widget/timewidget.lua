@@ -144,8 +144,7 @@ function TimeWidget:update()
     }
 
     self.time_frame = FrameContainer:new{
-        radius = 5,
-        bordersize = 3,
+        radius = Screen:scaleBySize(5),
         padding = 0,
         margin = 0,
         background = Blitbuffer.COLOR_WHITE,

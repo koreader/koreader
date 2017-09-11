@@ -1,5 +1,18 @@
 --[[--
-A button widget that shows text or a icon and handles callback when tapped.
+A button widget that shows text or an icon and handles callback when tapped.
+
+@usage
+    local Button = require("ui/widget/button")
+    local button = Button:new{
+        text = _("Press me!"),
+        enabled = false, -- defaults to true
+        callback = some_callback_function,
+        width = Screen:scaleBySize(50),
+        max_width = Screen:scaleBySize(100),
+        bordersize = Screen:scaleBySize(3),
+        margin = 0,
+        padding = Screen:scaleBySize(2),
+    }
 --]]
 
 local Blitbuffer = require("ffi/blitbuffer")
@@ -14,6 +27,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
+local Screen = Device.screen
 
 local Button = InputContainer:new{
     text = nil, -- mandatory
@@ -22,10 +36,10 @@ local Button = InputContainer:new{
     callback = nil,
     enabled = true,
     margin = 0,
-    bordersize = 3,
+    bordersize = Screen:scaleBySize(3),
     background = Blitbuffer.COLOR_WHITE,
-    radius = 15,
-    padding = 2,
+    radius = Screen:scaleBySize(15),
+    padding = Screen:scaleBySize(2),
     width = nil,
     max_width = nil,
     text_font_face = "cfont",

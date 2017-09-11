@@ -1,18 +1,25 @@
-local TextWidget = require("ui/widget/textwidget")
-local InputContainer = require("ui/widget/container/inputcontainer")
-local FrameContainer = require("ui/widget/container/framecontainer")
+--[[--
+Displays a button that toggles between states. Used in bottom configuration panel.
+
+@usage
+    local ToggleSwitch = require("ui/widget/toggleswitch")
+]]
+
+local Blitbuffer = require("ffi/blitbuffer")
 local CenterContainer = require("ui/widget/container/centercontainer")
-local HorizontalGroup = require("ui/widget/horizontalgroup")
-local VerticalGroup = require("ui/widget/verticalgroup")
+local Device = require("device")
 local Font = require("ui/font")
 local Geom = require("ui/geometry")
-local RenderText = require("ui/rendertext")
-local UIManager = require("ui/uimanager")
-local Screen = require("device").screen
-local Device = require("device")
 local GestureRange = require("ui/gesturerange")
-local Blitbuffer = require("ffi/blitbuffer")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local RenderText = require("ui/rendertext")
+local TextWidget = require("ui/widget/textwidget")
+local UIManager = require("ui/uimanager")
+local VerticalGroup = require("ui/widget/verticalgroup")
 local _ = require("gettext")
+local Screen = Device.screen
 
 local ToggleLabel = TextWidget:new{
     bold = true,
@@ -27,7 +34,7 @@ end
 local ToggleSwitch = InputContainer:new{
     width = Screen:scaleBySize(216),
     height = Screen:scaleBySize(30),
-    bgcolor = Blitbuffer.COLOR_WHITE, -- unfoused item color
+    bgcolor = Blitbuffer.COLOR_WHITE, -- unfocused item color
     fgcolor = Blitbuffer.COLOR_GREY, -- focused item color
     font_face = "cfont",
     font_size = 16,
@@ -43,9 +50,9 @@ function ToggleSwitch:init()
     self.toggle_frame = FrameContainer:new{
         background = Blitbuffer.COLOR_WHITE,
         color = Blitbuffer.COLOR_GREY,
-        radius = 7,
-        bordersize = 1,
-        padding = 2,
+        radius = Screen:scaleBySize(7),
+        bordersize = Screen:scaleBySize(1),
+        padding = Screen:scaleBySize(2),
         dim = not self.enabled,
     }
 
@@ -72,8 +79,8 @@ function ToggleSwitch:init()
             background = Blitbuffer.COLOR_WHITE,
             color = Blitbuffer.COLOR_GREY,
             margin = 0,
-            radius = 5,
-            bordersize = 1,
+            radius = Screen:scaleBySize(5),
+            bordersize = Screen:scaleBySize(1),
             padding = 0,
             content,
         }

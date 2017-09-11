@@ -10,7 +10,7 @@ local LinkBox = InputContainer:new{
     box = nil,
     color = Blitbuffer.COLOR_GREY,
     radius = 0,
-    bordersize = 2,
+    bordersize = Screen:scaleBySize(2),
 }
 
 function LinkBox:init()
@@ -60,4 +60,3 @@ function LinkBox:onTapClose()
 end
 
 return LinkBox
-

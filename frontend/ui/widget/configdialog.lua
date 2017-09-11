@@ -283,7 +283,7 @@ function ConfigOption:init()
                                 face = Font:getFace(item_font_face, item_font_size[d]),
                                 fgcolor = Blitbuffer.gray(enabled and 1.0 or 0.5),
                             },
-                            padding = 3,
+                            padding = Screen:scaleBySize(3),
                             color = d == current_item and Blitbuffer.gray(enabled and 1.0 or 0.5) or Blitbuffer.COLOR_WHITE,
                             enabled = enabled,
                         }

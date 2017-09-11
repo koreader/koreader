@@ -1,5 +1,5 @@
 --[[--
-Widget that shows a message and choice1/choice2/Cancel buttons
+Widget that shows a message and cancel/choice1/choice2 buttons
 
 Example:
 
@@ -42,8 +42,8 @@ local MultiConfirmBox = InputContainer:new{
     choice1_callback = function() end,
     choice2_callback = function() end,
     cancel_callback = function() end,
-    margin = 5,
-    padding = 5,
+    margin = Screen:scaleBySize(5),
+    padding = Screen:scaleBySize(5),
 }
 
 function MultiConfirmBox:init()
@@ -52,7 +52,7 @@ function MultiConfirmBox:init()
         ImageWidget:new{
             file = "resources/info-i.png"
         },
-        HorizontalSpan:new{ width = 10 },
+        HorizontalSpan:new{ width = Screen:scaleBySize(10) },
         TextBoxWidget:new{
             text = self.text,
             face = self.face,
