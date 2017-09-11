@@ -1,8 +1,8 @@
+local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
-local UIManager = require("ui/uimanager")
-local Event = require("ui/event")
 local SkimToWidget = require("apps/reader/skimtowidget")
+local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 
 local ReaderGoto = InputContainer:new{
@@ -62,7 +62,6 @@ function ReaderGoto:onShowGotoDialog()
                         self:close()
                     end,
                 },
-                goto_btn,
                 {
                     text = _("Skim mode"),
                     enabled = true,
@@ -80,6 +79,7 @@ function ReaderGoto:onShowGotoDialog()
 
                     end,
                 },
+                goto_btn,
             },
         },
         input_type = "number",
