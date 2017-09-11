@@ -6,7 +6,7 @@ A simple module to module to compare and do arithmetic with time values.
 
     local tv_start = TimeVal:now()
     -- Do some stuff.
-    -- You can add and substract `TimeVal` objects.
+    -- You can add and subtract `TimeVal` objects.
     local tv_duration = TimeVal:now() - tv_start
     -- If you need more precision (like 2.5 s),
     -- you can add the milliseconds to the seconds.
