@@ -18,4 +18,7 @@ topics = {
 package = ''
 format = 'markdown'
 sort_modules = true
-file = '../frontend'
+file = {
+    '../frontend',
+    '../base/ffi',
+}
