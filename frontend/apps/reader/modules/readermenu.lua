@@ -223,6 +223,10 @@ function ReaderMenu:exitOrRestart(callback)
         self.ui:onClose()
         if callback ~= nil then
             local waiting = function(waiting)
+                -- if we don't do this you can get a situation where either the
+                -- program won't exit due to remaining widgets until they're
+                -- dismissed or if the callback forces all widgets to close,
+                -- that the save document ConfirmBox is also closed
                 if self.ui and self.ui.document and self.ui.document:isEdited() then
                     logger.dbg("waiting for save settings")
                     UIManager:scheduleIn(1, function() waiting(waiting) end)
