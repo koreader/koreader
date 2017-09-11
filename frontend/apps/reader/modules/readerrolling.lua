@@ -1,4 +1,6 @@
+local Blitbuffer = require("ffi/blitbuffer")
 local Device = require("device")
+local Geom = require("ui/geometry")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Event = require("ui/event")
 local ReaderPanning = require("apps/reader/modules/readerpanning")
@@ -393,6 +395,23 @@ end
 function ReaderRolling:onGotoXPointer(xp)
     self:_gotoXPointer(xp)
     self.xpointer = xp
+    -- Show a mark on left side of screen to give a visual feedback
+    -- of where xpointer target is (removed after 1 second)
+    if string.sub(xp, 1, 1) == "#" then -- only for links, not page top fragment identifier
+        local doc_y = self.ui.document:getPosFromXPointer(xp)
+        local top_y = self.ui.document:getCurrentPos()
+        local doc_margins = self.ui.document._document:getPageMargins()
+        local screen_y = doc_y - top_y + doc_margins["top"]
+        local marker_w = math.max(doc_margins["left"] - Screen:scaleBySize(5), Screen:scaleBySize(5))
+        local marker_h = Screen:scaleBySize(self.ui.font.font_size * 1.1 * self.ui.font.line_space_percent/100.0)
+        UIManager:scheduleIn(0.5, function()
+            Screen.bb:paintRect(0, screen_y, marker_w, marker_h, Blitbuffer.COLOR_BLACK)
+            Screen["refreshPartial"](Screen, 0, screen_y, marker_w, marker_h)
+            UIManager:scheduleIn(1, function()
+                UIManager:setDirty(self.view.dialog, "partial", Geom:new({x=0, y=screen_y, w=marker_w, h=marker_h}))
+            end)
+        end)
+    end
     return true
 end
 
