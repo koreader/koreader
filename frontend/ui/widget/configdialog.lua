@@ -433,6 +433,18 @@ function MenuBar:init()
         menu_items[c] = menu_icon
     end
 
+    local available_width = Screen:getWidth() - icons_width
+    -- local padding = math.floor(available_width / #menu_items / 2) -- all for padding
+    -- local padding = math.floor(available_width / #menu_items / 2 / 2) -- half padding, half spacing ?
+    local padding = math.min(math.floor(available_width / #menu_items / 2), Screen:scaleBySize(20)) -- as in TouchMenuBar
+    if padding > 0 then
+        for c = 1, #menu_items do
+            menu_items[c]:setHorizontalPadding(padding)
+        end
+        available_width = available_width - 2*padding*#menu_items
+    end
+    local spacing_width = math.ceil(available_width / (#menu_items+1))
+
     local icon_sep_black = LineWidget:new{
         background = Blitbuffer.COLOR_BLACK,
         dimen = Geom:new{
@@ -447,7 +459,6 @@ function MenuBar:init()
             h = icons_height,
         }
     }
-    local spacing_width = math.ceil((Screen:getWidth() - icons_width) / (#menu_items+1))
     local spacing = HorizontalSpan:new{
         width = spacing_width,
     }
