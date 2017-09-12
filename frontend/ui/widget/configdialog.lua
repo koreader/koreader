@@ -427,13 +427,21 @@ function MenuBar:init()
             end,
         }
         local icon_dimen = menu_icon:getSize()
-        icons_width = icons_width + icon_dimen.w
+        icons_width = icons_width + icon_dimen.w + 2*icon_sep_width
         icons_height = icon_dimen.h > icons_height and icon_dimen.h or icons_height
 
         menu_items[c] = menu_icon
     end
 
-    local icon_sep = LineWidget:new{
+    local icon_sep_black = LineWidget:new{
+        background = Blitbuffer.COLOR_BLACK,
+        dimen = Geom:new{
+            w = icon_sep_width,
+            h = icons_height,
+        }
+    }
+    local icon_sep_white = LineWidget:new{
+        background = Blitbuffer.COLOR_WHITE,
         dimen = Geom:new{
             w = icon_sep_width,
             h = icons_height,
@@ -462,7 +470,7 @@ function MenuBar:init()
         table.insert(menu_bar, spacing)
         table.insert(line_bar, spacing_line)
         if c == self.panel_index then
-            table.insert(menu_bar, icon_sep)
+            table.insert(menu_bar, icon_sep_black)
             table.insert(line_bar, sep_line)
             table.insert(menu_bar, menu_items[c])
             table.insert(line_bar, LineWidget:new{
@@ -472,10 +480,11 @@ function MenuBar:init()
                     h = line_thickness,
                 }
             })
-
-            table.insert(menu_bar, icon_sep)
+            table.insert(menu_bar, icon_sep_black)
             table.insert(line_bar, sep_line)
         else
+            table.insert(menu_bar, icon_sep_white)
+            table.insert(line_bar, sep_line)
             table.insert(menu_bar, menu_items[c])
             table.insert(line_bar, LineWidget:new{
                 dimen = Geom:new{
@@ -483,6 +492,8 @@ function MenuBar:init()
                     h = line_thickness,
                 }
             })
+            table.insert(menu_bar, icon_sep_white)
+            table.insert(line_bar, sep_line)
         end
     end
     table.insert(menu_bar, spacing)
