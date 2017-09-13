@@ -13,6 +13,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local ProgressWidget = require("ui/widget/progresswidget")
+local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -29,11 +30,13 @@ local SkimToWidget = InputContainer:new{
 
 function SkimToWidget:init()
     self.medium_font_face = Font:getFace("ffont")
-    self.screen_width = Screen:getSize().w
-    self.screen_height = Screen:getSize().h
+    self.screen_width = Screen:getWidth()
+    self.screen_height = Screen:getHeight()
     self.span = math.ceil(self.screen_height * 0.01)
     self.width = self.screen_width * 0.95
-    self.button_bordersize = Screen:scaleBySize(2)
+    self.button_bordersize = Size.border.button
+    -- the buttons need some kind of separation but maybe I should just implement
+    -- margin_left and margin_right…
     self.button_margin = self.button_bordersize
     self.button_width = self.screen_width * 0.16 - (2*self.button_margin)
     if Device:hasKeys() then
@@ -65,8 +68,8 @@ function SkimToWidget:init()
     self.page_count = self.document:getPageCount()
 
     self.skimto_title = FrameContainer:new{
-        padding = Screen:scaleBySize(5),
-        margin = Screen:scaleBySize(2),
+        padding = Size.padding.default,
+        margin = Size.margin.default,
         bordersize = 0,
         TextWidget:new{
             text = self.dialog_title,
@@ -91,8 +94,8 @@ function SkimToWidget:init()
     table.insert(self.skimto_container, vertical_group)
 
     self.skimto_progress = FrameContainer:new{
-        padding = Screen:scaleBySize(2),
-        margin = Screen:scaleBySize(2),
+        padding = Size.padding.button,
+        margin = Size.margin.small,
         bordersize = 0,
         self.skimto_container
     }
@@ -100,7 +103,7 @@ function SkimToWidget:init()
     self.skimto_line = LineWidget:new{
         dimen = Geom:new{
             w = self.width,
-            h = Screen:scaleBySize(2),
+            h = Size.line.thick,
         }
     }
     self.skimto_bar = OverlapGroup:new{
@@ -196,8 +199,8 @@ function SkimToWidget:init()
     table.insert(vertical_group_control,padding_span)
 
     self.skimto_frame = FrameContainer:new{
-        radius = Screen:scaleBySize(5),
-        bordersize = Screen:scaleBySize(3),
+        radius = Size.radius.window,
+        bordersize = Size.border.window,
         padding = 0,
         margin = 0,
         background = Blitbuffer.COLOR_WHITE,
@@ -224,7 +227,7 @@ function SkimToWidget:init()
         },
         FrameContainer:new{
             bordersize = 0,
-            padding = Screen:scaleBySize(5),
+            padding = Size.padding.default,
             self.skimto_frame,
         }
     }
@@ -250,12 +253,6 @@ function SkimToWidget:update()
     table.insert(vertical_group, progress_bar)
     table.insert(self.skimto_container, vertical_group)
 
-    self.skimto_progress = FrameContainer:new{
-        padding = Screen:scaleBySize(2),
-        margin = Screen:scaleBySize(2),
-        bordersize = 0,
-        self.skimto_container
-    }
     local current_page_text = Button:new{
         text = self.curr_page,
         bordersize = 0,
@@ -285,8 +282,8 @@ function SkimToWidget:update()
     table.insert(vertical_group_control,padding_span)
 
     self.skimto_frame = FrameContainer:new{
-        radius = Screen:scaleBySize(5),
-        bordersize = Screen:scaleBySize(3),
+        radius = Size.radius.window,
+        bordersize = Size.border.window,
         padding = 0,
         margin = 0,
         background = Blitbuffer.COLOR_WHITE,
@@ -313,7 +310,6 @@ function SkimToWidget:update()
         },
         FrameContainer:new{
             bordersize = 0,
-            padding = Screen:scaleBySize(5),
             self.skimto_frame,
         }
     }

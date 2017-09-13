@@ -15,6 +15,7 @@ local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local ScrollTextWidget = require("ui/widget/scrolltextwidget")
+local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -44,10 +45,10 @@ local DictQuickLookup = InputContainer:new{
     -- box of highlighted word, quick lookup window tries to not hide the word
     word_box = nil,
 
-    title_padding = Screen:scaleBySize(5),
-    title_margin = Screen:scaleBySize(2),
-    word_padding = Screen:scaleBySize(5),
-    word_margin = Screen:scaleBySize(2),
+    title_padding = Size.padding.default,
+    title_margin = Size.margin.title,
+    word_padding = Size.padding.default,
+    word_margin = Size.margin.default,
     -- alt padding/margin for wiki to compensate for reduced font size
     wiki_word_padding = Screen:scaleBySize(7),
     wiki_word_margin = Screen:scaleBySize(3),
@@ -325,7 +326,7 @@ function DictQuickLookup:update()
         buttons = {
             {
                 {
-                    text = "<<",
+                    text = "◁◁",
                     enabled = self:isPrevDictAvaiable(),
                     callback = function()
                         self:changeToPrevDict()
@@ -344,7 +345,7 @@ function DictQuickLookup:update()
                     end,
                 },
                 {
-                    text = ">>",
+                    text = "▷▷",
                     enabled = self:isNextDictAvaiable(),
                     callback = function()
                         self:changeToNextDict()
@@ -404,7 +405,7 @@ function DictQuickLookup:update()
     local title_bar = LineWidget:new{
         dimen = Geom:new{
             w = button_table:getSize().w + self.button_padding,
-            h = Screen:scaleBySize(2),
+            h = Size.line.thick,
         }
     }
 
@@ -418,8 +419,8 @@ function DictQuickLookup:update()
     }
 
     self.dict_frame = FrameContainer:new{
-        radius = Screen:scaleBySize(8),
-        bordersize = Screen:scaleBySize(3),
+        radius = Size.radius.window,
+        bordersize = Size.border.window,
         padding = 0,
         margin = 0,
         background = Blitbuffer.COLOR_WHITE,
@@ -458,7 +459,7 @@ function DictQuickLookup:update()
         dimen = self.region,
         FrameContainer:new{
             bordersize = 0,
-            padding = Screen:scaleBySize(5),
+            padding = Size.padding.default,
             self.dict_frame,
         }
     }

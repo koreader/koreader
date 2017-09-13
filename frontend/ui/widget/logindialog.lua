@@ -1,9 +1,14 @@
+--[[--
+This widget displays a login dialog with a username and password.
+]]
+
 local Blitbuffer = require("ffi/blitbuffer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local InputDialog = require("ui/widget/inputdialog")
 local InputText = require("ui/widget/inputtext")
+local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local _ = require("gettext")
@@ -41,7 +46,7 @@ function LoginDialog:init()
     }
 
     self.dialog_frame = FrameContainer:new{
-        radius = Screen:scaleBySize(8),
+        radius = Size.radius.window,
         padding = 0,
         margin = 0,
         background = Blitbuffer.COLOR_WHITE,

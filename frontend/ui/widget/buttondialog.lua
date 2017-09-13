@@ -6,6 +6,7 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 local Screen = require("device").screen
@@ -42,9 +43,9 @@ function ButtonDialog:init()
                 show_parent = self,
             },
             background = Blitbuffer.COLOR_WHITE,
-            bordersize = Screen:scaleBySize(2),
-            radius = Screen:scaleBySize(7),
-            padding = Screen:scaleBySize(2),
+            bordersize = Size.border.window,
+            radius = Size.radius.window,
+            padding = Size.padding.button,
         }
     }
 end

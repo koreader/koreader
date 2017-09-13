@@ -4,6 +4,7 @@ local Device = require("device")
 local FocusManager = require("ui/widget/focusmanager")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local LineWidget = require("ui/widget/linewidget")
+local Size = require("ui/size")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local Geom = require("ui/geometry")
@@ -17,8 +18,8 @@ local ButtonTable = FocusManager:new{
             {text="Cancel", enabled=false, callback=nil},
         },
     },
-    sep_width = Screen:scaleBySize(1),
-    padding = Screen:scaleBySize(2),
+    sep_width = Size.line.medium,
+    padding = Size.padding.button,
 
     zero_sep = false,
     button_font_face = "cfont",
@@ -84,7 +85,7 @@ end
 
 function ButtonTable:addHorizontalSep()
     table.insert(self.container,
-                 VerticalSpan:new{ width = Screen:scaleBySize(2) })
+                 VerticalSpan:new{ width = Size.span.vertical_default })
     table.insert(self.container, LineWidget:new{
         background = Blitbuffer.COLOR_GREY,
         dimen = Geom:new{
@@ -93,7 +94,7 @@ function ButtonTable:addHorizontalSep()
         }
     })
     table.insert(self.container,
-                 VerticalSpan:new{ width = Screen:scaleBySize(2) })
+                 VerticalSpan:new{ width = Size.span.vertical_default })
 end
 
 function ButtonTable:onSelectByKeyPress()

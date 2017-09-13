@@ -44,7 +44,7 @@ local corner_mark = ImageWidget:new{
 local ItemShortCutIcon = WidgetContainer:new{
     dimen = Geom:new{ w = Screen:scaleBySize(22), h = Screen:scaleBySize(22) },
     key = nil,
-    bordersize = Screen:scaleBySize(2),
+    bordersize = Size.border.default,
     radius = 0,
     style = "square",
 }
@@ -106,8 +106,8 @@ local FakeCover = FrameContainer:new{
     title_font_min = 10,
     filename_font_max = 10,
     filename_font_min = 8,
-    top_pad = Screen:scaleBySize(5),
-    bottom_pad = Screen:scaleBySize(5),
+    top_pad = Size.padding.default,
+    bottom_pad = Size.padding.default,
     sizedec_step = Screen:scaleBySize(2), -- speeds up a bit if we don't do all font sizes
     initial_sizedec = 0,
 }

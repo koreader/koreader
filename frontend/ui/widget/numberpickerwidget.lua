@@ -7,6 +7,7 @@ local Font = require("ui/font")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local TextWidget = require("ui/widget/textboxwidget")
 local RenderText = require("ui/rendertext")
+local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
@@ -14,7 +15,7 @@ local _ = require("gettext")
 local Screen = Device.screen
 
 local NumberPickerWidget = InputContainer:new{
-    spinner_face = Font:getFace("x_smalltfont",24),
+    spinner_face = Font:getFace("smalltfont"),
     precision = "%02d",
     width = nil,
     height = nil,
@@ -30,8 +31,8 @@ local NumberPickerWidget = InputContainer:new{
 }
 
 function NumberPickerWidget:init()
-    self.screen_width = Screen:getSize().w
-    self.screen_height = Screen:getSize().h
+    self.screen_width = Screen:getWidth()
+    self.screen_height = Screen:getHeight()
     if self.width == nil then
         self.width = self.screen_width * 0.2
     end
@@ -45,11 +46,12 @@ function NumberPickerWidget:init()
 end
 
 function NumberPickerWidget:paintWidget()
-
+    local bordersize = Size.border.default
+    local margin = Size.margin.default
     local button_up = Button:new{
         text = "▲",
-        bordersize = 2,
-        margin = 2,
+        bordersize = bordersize,
+        margin = margin,
         radius = 0,
         text_font_size = 24,
         width = self.width,
@@ -71,8 +73,8 @@ function NumberPickerWidget:paintWidget()
     }
     local button_down = Button:new{
         text = "▼",
-        bordersize = 2,
-        margin = 2,
+        bordersize = bordersize,
+        margin = margin,
         radius = 0,
         text_font_size = 24,
         width = self.width,
@@ -127,7 +129,7 @@ function NumberPickerWidget:update()
     local widget_spinner = self:paintWidget()
     self.frame = FrameContainer:new{
         bordersize = 0,
-        padding = Screen:scaleBySize(5),
+        padding = Size.padding.default,
         CenterContainer:new{
             align = "center",
             dimen = Geom:new{

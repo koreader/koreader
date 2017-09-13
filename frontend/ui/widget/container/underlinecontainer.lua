@@ -6,12 +6,12 @@ a line under its child node.
 
 local Blitbuffer = require("ffi/blitbuffer")
 local Geom = require("ui/geometry")
+local Size = require("ui/size")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local Screen = require("device").screen
 
 local UnderlineContainer = WidgetContainer:new{
-    linesize = Screen:scaleBySize(2),
-    padding = Screen:scaleBySize(1),
+    linesize = Size.line.thick,
+    padding = Size.padding.tiny,
     -- TODO: shouldn't this default to black instead?
     color = Blitbuffer.COLOR_WHITE,
     vertical_align = "top",
@@ -25,7 +25,7 @@ function UnderlineContainer:getContentSize()
     local contentSize = self[1]:getSize()
     return Geom:new{
         w = contentSize.w,
-        h = contentSize.h + self.linesize + self.padding
+        h = contentSize.h + self.linesize + 2*self.padding
     }
 end
 
