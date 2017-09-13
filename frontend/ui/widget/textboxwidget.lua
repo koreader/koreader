@@ -16,6 +16,7 @@ local Blitbuffer = require("ffi/blitbuffer")
 local Geom = require("ui/geometry")
 local LineWidget = require("ui/widget/linewidget")
 local RenderText = require("ui/rendertext")
+local Size = require("ui/size")
 local TimeVal = require("ui/timeval")
 local Widget = require("ui/widget/widget")
 local logger = require("logger")
@@ -45,7 +46,7 @@ function TextBoxWidget:init()
     self.line_height_px = (1 + self.line_height) * self.face.size
     self.cursor_line = LineWidget:new{
         dimen = Geom:new{
-            w = Screen:scaleBySize(1),
+            w = Size.line.medium,
             h = self.line_height_px,
         }
     }

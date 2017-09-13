@@ -10,9 +10,9 @@ Example:
 
         FrameContainer:new{
             background = Blitbuffer.COLOR_WHITE,
-            bordersize = Screen:scaleBySize(1),
+            bordersize = Size.border.default,
             margin = 0,
-            padding = Screen:scaleBySize(1)
+            padding = Size.padding.default
         }
     }
 --]]

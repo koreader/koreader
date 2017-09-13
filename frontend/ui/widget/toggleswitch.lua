@@ -15,6 +15,7 @@ local HorizontalGroup = require("ui/widget/horizontalgroup")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local RenderText = require("ui/rendertext")
+local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -33,7 +34,7 @@ end
 
 local ToggleSwitch = InputContainer:new{
     width = Screen:scaleBySize(216),
-    height = Screen:scaleBySize(30),
+    height = Size.item.height_default,
     bgcolor = Blitbuffer.COLOR_WHITE, -- unfocused item color
     fgcolor = Blitbuffer.COLOR_GREY, -- focused item color
     font_face = "cfont",
@@ -50,9 +51,9 @@ function ToggleSwitch:init()
     self.toggle_frame = FrameContainer:new{
         background = Blitbuffer.COLOR_WHITE,
         color = Blitbuffer.COLOR_GREY,
-        radius = Screen:scaleBySize(7),
-        bordersize = Screen:scaleBySize(1),
-        padding = Screen:scaleBySize(2),
+        radius = Size.radius.window,
+        bordersize = Size.border.thin,
+        padding = Size.padding.small,
         dim = not self.enabled,
     }
 
@@ -79,8 +80,8 @@ function ToggleSwitch:init()
             background = Blitbuffer.COLOR_WHITE,
             color = Blitbuffer.COLOR_GREY,
             margin = 0,
-            radius = Screen:scaleBySize(5),
-            bordersize = Screen:scaleBySize(1),
+            radius = Size.radius.window,
+            bordersize = Size.border.thin,
             padding = 0,
             content,
         }

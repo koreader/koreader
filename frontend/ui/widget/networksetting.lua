@@ -48,6 +48,7 @@ local ListView = require("ui/widget/listview")
 local RightContainer = require("ui/widget/container/rightcontainer")
 local NetworkMgr = require("ui/network/manager")
 local OverlapGroup = require("ui/widget/overlapgroup")
+local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -119,7 +120,7 @@ function NetworkItem:init()
             wifi_icon_path,
             self.info.signal_quality + 25 - self.info.signal_quality % 25)
     end
-    local horizontal_space = HorizontalSpan:new{width = Screen:scaleBySize(8)}
+    local horizontal_space = HorizontalSpan:new{width = Size.span.horizontal_default}
     self.content_container = OverlapGroup:new{
         dimen = self.dimen:copy(),
         LeftContainer:new{
@@ -419,7 +420,7 @@ function NetworkSetting:init()
     self.popup = FrameContainer:new{
         background = Blitbuffer.COLOR_WHITE,
         padding = 0,
-        bordersize = Screen:scaleBySize(3),
+        bordersize = Size.border.window,
         VerticalGroup:new{
             align = "left",
             self.pagination,

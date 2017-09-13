@@ -12,6 +12,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local NumberPickerWidget = require("ui/widget/numberpickerwidget")
+local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
@@ -34,8 +35,8 @@ local DateWidget = InputContainer:new{
 function DateWidget:init()
     self.medium_font_face = Font:getFace("ffont")
     self.light_bar = {}
-    self.screen_width = Screen:getSize().w
-    self.screen_height = Screen:getSize().h
+    self.screen_width = Screen:getWidth()
+    self.screen_height = Screen:getHeight()
     self.width = self.screen_width * 0.95
     if Device:hasKeys() then
         self.key_events = {
@@ -105,8 +106,8 @@ function DateWidget:update()
     }
 
     local date_title = FrameContainer:new{
-        padding = Screen:scaleBySize(5),
-        margin = Screen:scaleBySize(2),
+        padding = Size.padding.default,
+        margin = Size.margin.default,
         bordersize = 0,
         TextWidget:new{
             text = self.title_text,
@@ -118,7 +119,7 @@ function DateWidget:update()
     local date_line = LineWidget:new{
         dimen = Geom:new{
             w = self.width,
-            h = Screen:scaleBySize(2),
+            h = Size.line.thick,
         }
     }
     local date_bar = OverlapGroup:new{
@@ -159,8 +160,8 @@ function DateWidget:update()
     }
 
     self.date_frame = FrameContainer:new{
-        radius = 5,
-        bordersize = 3,
+        radius = Size.radius.window,
+        bordersize = Size.border.window,
         padding = 0,
         margin = 0,
         background = Blitbuffer.COLOR_WHITE,
@@ -188,7 +189,7 @@ function DateWidget:update()
         },
         FrameContainer:new{
             bordersize = 0,
-            padding = Screen:scaleBySize(5),
+            padding = Size.padding.default,
             self.date_frame,
         }
     }

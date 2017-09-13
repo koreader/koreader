@@ -17,7 +17,7 @@ unscaled_size_check=$(grep -nr --include=*.lua --exclude=koptoptions.lua --exclu
 unscaled_size_check_geom=$(grep -E -nr --include=*.lua --exclude=gesturerange_spec.lua --exclude-dir=base --exclude-dir=*arm* 'Geom:new{.+ [wh] = [0-9]{1,4}' | grep -Ev '[wh] = 0' | grep -v '= [0-9]/[0-9]' | grep -v scaleBySize || true)
 
 if [ "${unscaled_size_check}" ] || [ "${unscaled_size_check_geom}" ]; then
-    echo -e "\\n${ANSI_RED}Warning: it looks like you might be using unscaled sizes.\\nIt is almost always preferable to defer to one of the predefined sizes in ui.elements.commonui in the following files:"
+    echo -e "\\n${ANSI_RED}Warning: it looks like you might be using unscaled sizes.\\nIt is almost always preferable to defer to one of the predefined sizes in ui.size in the following files:"
     echo "${unscaled_size_check}"
     echo "${unscaled_size_check_geom}"
     exit 1

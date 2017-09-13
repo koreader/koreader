@@ -12,6 +12,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local NumberPickerWidget = require("ui/widget/numberpickerwidget")
+local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
@@ -33,8 +34,8 @@ local TimeWidget = InputContainer:new{
 function TimeWidget:init()
     self.medium_font_face = Font:getFace("ffont")
     self.light_bar = {}
-    self.screen_width = Screen:getSize().w
-    self.screen_height = Screen:getSize().h
+    self.screen_width = Screen:getWidth()
+    self.screen_height = Screen:getHeight()
     self.width = self.screen_width * 0.95
     if Device:hasKeys() then
         self.key_events = {
@@ -91,8 +92,7 @@ function TimeWidget:update()
     }
 
     local time_title = FrameContainer:new{
-        padding = Screen:scaleBySize(5),
-        margin = Screen:scaleBySize(2),
+        margin = Size.margin.small,
         bordersize = 0,
         TextWidget:new{
             text = self.title_text,
@@ -104,7 +104,7 @@ function TimeWidget:update()
     local time_line = LineWidget:new{
         dimen = Geom:new{
             w = self.width,
-            h = Screen:scaleBySize(2),
+            h = Size.line.thick,
         }
     }
     local time_bar = OverlapGroup:new{
@@ -144,7 +144,7 @@ function TimeWidget:update()
     }
 
     self.time_frame = FrameContainer:new{
-        radius = Screen:scaleBySize(5),
+        radius = Size.radius.window,
         padding = 0,
         margin = 0,
         background = Blitbuffer.COLOR_WHITE,
@@ -172,7 +172,6 @@ function TimeWidget:update()
         },
         FrameContainer:new{
             bordersize = 0,
-            padding = Screen:scaleBySize(5),
             self.time_frame,
         }
     }

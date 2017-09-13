@@ -34,6 +34,7 @@ local HorizontalSpan = require("ui/widget/horizontalspan")
 local ImageWidget = require("ui/widget/imagewidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local ScrollTextWidget = require("ui/widget/scrolltextwidget")
+local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -129,12 +130,11 @@ function InfoMessage:init()
     self[1] = CenterContainer:new{
         dimen = Screen:getSize(),
         FrameContainer:new{
-            margin = Screen:scaleBySize(2),
             background = Blitbuffer.COLOR_WHITE,
             HorizontalGroup:new{
                 align = "center",
                 image_widget,
-                HorizontalSpan:new{ width = (self.show_icon and Screen:scaleBySize(10) or 0) },
+                HorizontalSpan:new{ width = (self.show_icon and Size.span.horizontal_default or 0) },
                 text_widget,
             }
         }

@@ -15,6 +15,7 @@ local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local RightContainer = require("ui/widget/container/rightcontainer")
+local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
@@ -46,7 +47,7 @@ local corner_mark = ImageWidget:new{
 local ItemShortCutIcon = WidgetContainer:new{
     dimen = Geom:new{ w = Screen:scaleBySize(22), h = Screen:scaleBySize(22) },
     key = nil,
-    bordersize = Screen:scaleBySize(2),
+    bordersize = Size.border.default,
     radius = 0,
     style = "square",
 }
@@ -699,7 +700,7 @@ end
 function ListMenu:_updateItemsBuildUI()
     -- Build our list
     table.insert(self.item_group, LineWidget:new{
-                    dimen = Geom:new{ w = self.width, h = Screen:scaleBySize(1) },
+                    dimen = Geom:new{ w = self.width, h = Size.line.thin },
                     background = Blitbuffer.COLOR_GREY,
                     style = "solid",
                 })
@@ -740,7 +741,7 @@ function ListMenu:_updateItemsBuildUI()
             }
         table.insert(self.item_group, item_tmp)
         table.insert(self.item_group, LineWidget:new{
-                        dimen = Geom:new{ w = self.width, h = Screen:scaleBySize(1) },
+                        dimen = Geom:new{ w = self.width, h = Size.line.thin },
                         background = Blitbuffer.COLOR_GREY,
                         style = "solid",
                     })
