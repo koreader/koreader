@@ -68,7 +68,7 @@ end
 function ReaderHighlight:addToMainMenu(menu_items)
     -- insert table to main reader menu
     menu_items.highlight_options = {
-        text = _("Highlight"),
+        text = _("Highlighting"),
         sub_item_table = self:genHighlightDrawerMenu(),
     }
 end
