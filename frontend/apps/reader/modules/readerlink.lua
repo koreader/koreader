@@ -196,7 +196,7 @@ function ReaderLink:onTap(_, ges)
     if not isTapToFollowLinksOn() then return end
     local link, lbox, pos = self:getLinkFromGes(ges)
     if link then
-        self:showLinkBox(link, lbox, pos)
+        return self:showLinkBox(link, lbox, pos)
     end
 end
 
