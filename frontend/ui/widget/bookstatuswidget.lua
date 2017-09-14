@@ -27,6 +27,8 @@ local template = require("ffi/util").template
 local util = require("util")
 local _ = require("gettext")
 
+local stats_book = {}
+
 --[[
 --Save into sdr folder addtional section
 ["summary"] = {
@@ -47,16 +49,9 @@ local BookStatusWidget = InputContainer:new{
         status = "",
         modified = "",
     },
-    stats = nil
 }
 
 function BookStatusWidget:init()
-    self.stats = {
-        total_time_in_sec = 0,
-        performance_in_pages = {},
-        total_pages = self.document:getPageCount(),
-    }
-    self:getStatisticsSettings()
     if self.settings then
         self.summary = self.settings:readSetting("summary") or {
             rating = nil,
@@ -65,6 +60,8 @@ function BookStatusWidget:init()
             modified = "",
         }
     end
+    self.total_pages = self.view.document:getPageCount()
+    stats_book = self:getStats()
 
     self.small_font_face = Font:getFace("smallffont")
     self.medium_font_face = Font:getFace("ffont")
@@ -89,6 +86,34 @@ function BookStatusWidget:init()
     }
 end
 
+function BookStatusWidget:getStats()
+    return {}
+end
+
+function BookStatusWidget:getStatDays()
+    if stats_book.days then
+        return stats_book.days
+    else
+        return _("N/A")
+    end
+end
+
+function BookStatusWidget:getStatHours()
+    if stats_book.time then
+        return util.secondsToClock(stats_book.time, false)
+    else
+        return _("N/A")
+    end
+end
+
+function BookStatusWidget:getStatReadPages()
+    if stats_book.pages then
+        return string.format("%s/%s",stats_book.pages, self.total_pages)
+    else
+        return _("N/A")
+    end
+end
+
 function BookStatusWidget:getStatusContent(width)
     return VerticalGroup:new{
         align = "left",
@@ -104,31 +129,6 @@ function BookStatusWidget:getStatusContent(width)
         self:genHeader(_("Update Status")),
         self:generateSwitchGroup(width),
     }
-end
-
-function BookStatusWidget:getStatDays(stats)
-    if stats and stats.performance_in_pages then
-        local dates = {}
-        for k, v in pairs(stats.performance_in_pages) do
-            dates[os.date("%Y-%m-%d", k)] = ""
-        end
-        return util.tableSize(dates)
-    end
-    return "none"
-end
-
-function BookStatusWidget:getStatHours(stats)
-    if stats and stats.total_time_in_sec then
-        return util.secondsToClock(stats.total_time_in_sec, false)
-    end
-    return "none"
-end
-
-function BookStatusWidget:getReadPages(stats)
-    if stats and stats.performance_in_pages and stats.total_pages then
-        return util.tableSize(stats.performance_in_pages) .. "/" .. stats.total_pages
-    end
-    return "none"
 end
 
 function BookStatusWidget:genHeader(title)
@@ -255,8 +255,7 @@ function BookStatusWidget:genBookInfoGroup()
         }
     )
     -- progress bar
-    local total_pages = self.stats.total_pages
-    local read_percentage = self.view.state.page / total_pages
+    local read_percentage = self.view.state.page / self.total_pages
     local progress_bar = ProgressWidget:new{
         width = width * 0.7,
         height = Screen:scaleBySize(10),
@@ -357,21 +356,21 @@ function BookStatusWidget:genStatisticsGroup(width)
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextWidget:new{
-                text = self:getStatDays(self.stats),
+                text = self:getStatDays(),
                 face = self.medium_font_face,
             },
         },
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextWidget:new{
-                text = self:getStatHours(self.stats),
+                text = self:getStatHours(),
                 face = self.medium_font_face,
             },
         },
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextWidget:new{
-                text = self:getReadPages(self.stats),
+                text = self:getStatReadPages(),
                 face = self.medium_font_face,
             }
         }
@@ -505,18 +504,6 @@ function BookStatusWidget:onClose()
     UIManager:setDirty("all")
     UIManager:close(self)
     return true
-end
-
-function BookStatusWidget:getStatisticsSettings()
-    if self.settings then
-        local stats = self.settings:readSetting("stats")
-        if stats then
-            self.stats.total_time_in_sec = self.stats.total_time_in_sec + stats.total_time_in_sec
-            for k, v in pairs(stats.performance_in_pages) do
-                self.stats.performance_in_pages[k] = v
-            end
-        end
-    end
 end
 
 function BookStatusWidget:onSwitchFocus(inputbox)

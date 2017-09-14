@@ -1,3 +1,4 @@
+local BookStatusWidget = require("ui/widget/bookstatuswidget")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local DocSettings = require("docsettings")
@@ -95,6 +96,9 @@ function ReaderStatistics:init()
     self.convert_to_db = settings.convert_to_db
     self.ui.menu:registerToMainMenu(self)
     self:checkInitDatabase()
+    BookStatusWidget.getStats = function()
+        return self:getStatsBookStatus(self.id_curr_book, self.is_enabled)
+    end
 end
 
 function ReaderStatistics:initData()
@@ -126,6 +130,45 @@ function ReaderStatistics:initData()
         self.ui:handleEvent(Event:new("UpdateStats", avg_time))
         self.view.footer:updateFooter()
     end
+end
+
+function ReaderStatistics:getStatsBookStatus(id_curr_book, stat_enable)
+    if not stat_enable or id_curr_book == nil then
+        return {}
+    end
+
+    self:insertDB(self.id_curr_book)
+    local conn = SQ3.open(db_location)
+    local sql_stmt = [[
+        SELECT count(*)
+        FROM   (
+                    SELECT strftime('%%Y-%%m-%%d', start_time, 'unixepoch', 'localtime') AS dates
+                    FROM   page_stat
+                    WHERE  id_book = '%s'
+                    GROUP  BY dates
+               )
+    ]]
+    local total_days = conn:rowexec(string.format(sql_stmt, id_curr_book))
+    sql_stmt = [[
+        SELECT sum(period),
+               count(DISTINCT page)
+        FROM   page_stat
+        WHERE  id_book = '%s'
+    ]]
+    local total_time_book, total_read_pages = conn:rowexec(string.format(sql_stmt, id_curr_book))
+    conn:close()
+
+    if total_time_book == nil then
+        total_time_book = 0
+    end
+    if total_read_pages == nil then
+        total_read_pages = 0
+    end
+    return  {
+        days = tonumber(total_days),
+        time = tonumber(total_time_book),
+        pages = tonumber(total_read_pages),
+    }
 end
 
 function ReaderStatistics:checkInitDatabase()
