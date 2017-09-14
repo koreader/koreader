@@ -427,19 +427,38 @@ function MenuBar:init()
             end,
         }
         local icon_dimen = menu_icon:getSize()
-        icons_width = icons_width + icon_dimen.w
+        icons_width = icons_width + icon_dimen.w + 2*icon_sep_width
         icons_height = icon_dimen.h > icons_height and icon_dimen.h or icons_height
 
         menu_items[c] = menu_icon
     end
 
-    local icon_sep = LineWidget:new{
+    local available_width = Screen:getWidth() - icons_width
+    -- local padding = math.floor(available_width / #menu_items / 2) -- all for padding
+    -- local padding = math.floor(available_width / #menu_items / 2 / 2) -- half padding, half spacing ?
+    local padding = math.min(math.floor(available_width / #menu_items / 2), Screen:scaleBySize(20)) -- as in TouchMenuBar
+    if padding > 0 then
+        for c = 1, #menu_items do
+            menu_items[c]:setHorizontalPadding(padding)
+        end
+        available_width = available_width - 2*padding*#menu_items
+    end
+    local spacing_width = math.ceil(available_width / (#menu_items+1))
+
+    local icon_sep_black = LineWidget:new{
+        background = Blitbuffer.COLOR_BLACK,
         dimen = Geom:new{
             w = icon_sep_width,
             h = icons_height,
         }
     }
-    local spacing_width = math.ceil((Screen:getWidth() - icons_width) / (#menu_items+1))
+    local icon_sep_white = LineWidget:new{
+        background = Blitbuffer.COLOR_WHITE,
+        dimen = Geom:new{
+            w = icon_sep_width,
+            h = icons_height,
+        }
+    }
     local spacing = HorizontalSpan:new{
         width = spacing_width,
     }
@@ -462,7 +481,7 @@ function MenuBar:init()
         table.insert(menu_bar, spacing)
         table.insert(line_bar, spacing_line)
         if c == self.panel_index then
-            table.insert(menu_bar, icon_sep)
+            table.insert(menu_bar, icon_sep_black)
             table.insert(line_bar, sep_line)
             table.insert(menu_bar, menu_items[c])
             table.insert(line_bar, LineWidget:new{
@@ -472,10 +491,11 @@ function MenuBar:init()
                     h = line_thickness,
                 }
             })
-
-            table.insert(menu_bar, icon_sep)
+            table.insert(menu_bar, icon_sep_black)
             table.insert(line_bar, sep_line)
         else
+            table.insert(menu_bar, icon_sep_white)
+            table.insert(line_bar, sep_line)
             table.insert(menu_bar, menu_items[c])
             table.insert(line_bar, LineWidget:new{
                 dimen = Geom:new{
@@ -483,6 +503,8 @@ function MenuBar:init()
                     h = line_thickness,
                 }
             })
+            table.insert(menu_bar, icon_sep_white)
+            table.insert(line_bar, sep_line)
         end
     end
     table.insert(menu_bar, spacing)

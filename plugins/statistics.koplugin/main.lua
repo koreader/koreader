@@ -624,7 +624,7 @@ function ReaderStatistics:addToMainMenu(menu_items)
                         kv_pairs = self:getCurrentStat(self.id_curr_book),
                     })
                 end,
-                enabled = not self:isDocless()
+                enabled_func = function() return not self:isDocless() and self.is_enabled end,
             },
             {
                 text = _("All books"),

@@ -357,10 +357,11 @@ OPTIONS:
 
     -h=X, --screen-height=X  set height of the emulator screen (default: 720)
     -w=X, --screen-width=X   set width of the emulator screen (default: 540)
+    -d=X, --screen-dpi=X     set DPI of the emulator screen (default: 160)
     --no-build               run reader without rebuilding
     --disable-touch          use this if you want to simulate keyboard only devices
     -s=FOO --simulate=FOO    simulate dimension and other specs for a given device model
-                             supported model: kobo-aura-one, kindle3
+                             supported model: kobo-aura-one, kindle3, hidpi
     --graph                  graph memory use (requires gnuplot)
     "
     screen_width=540
@@ -384,6 +385,9 @@ OPTIONS:
             -h | --screen-height)
                 screen_height=${VALUE}
                 ;;
+            -d | --screen-dpi)
+                screen_dpi=${VALUE}
+                ;;
             -s | --simulate)
                 device_model=${VALUE}
                 case ${device_model} in
@@ -394,6 +398,12 @@ OPTIONS:
                     kobo-aura-one)
                         screen_width=1404
                         screen_height=1872
+                        screen_dpi=300
+                        ;;
+                    hidpi)
+                        screen_width=1500
+                        screen_height=2000
+                        screen_dpi=600
                         ;;
                     *)
                         echo "ERROR: spec unknown for ${device_model}."
@@ -440,7 +450,7 @@ OPTIONS:
 
         RETURN_VALUE=85
         while [ $RETURN_VALUE -eq 85 ]; do
-            EMULATE_READER_W=${screen_width} EMULATE_READER_H=${screen_height} \
+            EMULATE_READER_W=${screen_width} EMULATE_READER_H=${screen_height} EMULATE_READER_DPI=${screen_dpi} \
                 ./reader.lua -d "$args"
             RETURN_VALUE=$?
         done

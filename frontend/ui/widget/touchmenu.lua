@@ -159,11 +159,10 @@ function TouchMenuBar:init()
     local icons_sep_width = icon_sep_width * (#self.icons + 1)
     -- we assume all icons are of the same width
     local tmp_ib = IconButton:new{icon_file = self.icons[1]}
+    -- content_width is the width of all the icon images
     local content_width = tmp_ib:getSize().w * #self.icons + icons_sep_width
     local spacing_width = (self.width - content_width)/(#self.icons*2)
-    local spacing = HorizontalSpan:new{
-        width = math.min(spacing_width, Screen:scaleBySize(20))
-    }
+    local icon_padding = math.min(spacing_width, Screen:scaleBySize(20))
     self.height = tmp_ib:getSize().h + Screen:scaleBySize(10)
     self.show_parent = self.show_parent or self
     self.bar_icon_group = HorizontalGroup:new{}
@@ -171,29 +170,24 @@ function TouchMenuBar:init()
     self.icon_widgets = {}
     -- hold icon seperators
     self.icon_seps = {}
-    -- hold all icon buttons
-    self.icon_buttons = {}
     -- the start_seg for first icon_widget should be 0
     -- we asign negative here to offset it in the loop
     local start_seg = -icon_sep_width
     local end_seg = start_seg
     -- self.width is the screen width
-    -- content_width is the width of the icons
-    -- (math.min(spacing_width, Screen:scaleBySize(20)) * #self.icons *2) is the combined width of spacing/separators
-    local stretch_width = self.width - content_width - (math.min(spacing_width, Screen:scaleBySize(20)) * #self.icons * 2) + icon_sep_width
+    -- content_width is the width of all the icon images
+    -- (2 * icon_padding * #self.icons) is the combined width of icons paddings
+    local stretch_width = self.width - content_width - (2 * icon_padding * #self.icons) + icon_sep_width
 
     for k, v in ipairs(self.icons) do
         local ib = IconButton:new{
             show_parent = self.show_parent,
             icon_file = v,
             callback = nil,
+            horizontal_padding = icon_padding,
         }
 
-        table.insert(self.icon_widgets, HorizontalGroup:new{
-            spacing, ib, spacing,
-        })
-
-        table.insert(self.icon_buttons, ib)
+        table.insert(self.icon_widgets, ib)
 
         -- we have to use local variable here for closure callback
         local _start_seg = end_seg + icon_sep_width
@@ -299,10 +293,10 @@ end
 function TouchMenuBar:switchToTab(index)
     -- a little safety check
     -- don't auto-activate a non-existent index
-    if index > #self.icon_buttons then
+    if index > #self.icon_widgets then
         index = 1
     end
-    self.icon_buttons[index].callback()
+    self.icon_widgets[index].callback()
 end
 
 --[[
