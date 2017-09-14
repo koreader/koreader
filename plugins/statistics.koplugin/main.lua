@@ -605,16 +605,14 @@ function ReaderStatistics:updateSettings()
         title = _("Statistics settings"),
         fields = {
             {
-                text = "",
+                text = self.page_min_read_sec,
+                description = T(_("Min seconds, default is %1"), DEFAULT_MIN_READ_SEC),
                 input_type = "number",
-                hint = T(_("Min seconds, default is %1. Current value: %2"),
-                    DEFAULT_MIN_READ_SEC, self.page_min_read_sec),
             },
             {
-                text = "",
+                text = self.page_max_read_sec,
+                description = T(_("Max seconds, default is %1"), DEFAULT_MAX_READ_SEC),
                 input_type = "number",
-                hint = T(_("Max seconds, default is %1. Current value: %2"),
-                    DEFAULT_MAX_READ_SEC, self.page_max_read_sec),
             },
         },
         buttons = {
