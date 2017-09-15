@@ -2,10 +2,10 @@ local BookStatusWidget = require("ui/widget/bookstatuswidget")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local DocSettings = require("docsettings")
-local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local KeyValuePage = require("ui/widget/keyvaluepage")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
+local ReaderFooter = require("apps/reader/modules/readerfooter")
 local ReaderProgress = require("readerprogress")
 local ReadHistory = require("readhistory")
 local SQ3 = require("lua-ljsqlite3/init")
@@ -99,6 +99,11 @@ function ReaderStatistics:init()
     BookStatusWidget.getStats = function()
         return self:getStatsBookStatus(self.id_curr_book, self.is_enabled)
     end
+    ReaderFooter.getAvgTimePerPage = function()
+        if self.is_enabled then
+            return self.avg_time
+        end
+    end
 end
 
 function ReaderStatistics:initData()
@@ -125,10 +130,7 @@ function ReaderStatistics:initData()
     self.id_curr_book = self:getIdBookDB()
     self.total_read_pages, self.total_read_time = self:getPageTimeTotalStats(self.id_curr_book)
     if self.total_read_pages > 0 then
-        local avg_time = math.ceil(self.total_read_time / self.total_read_pages)
-        self.avg_time = avg_time
-        self.ui:handleEvent(Event:new("UpdateStats", avg_time))
-        self.view.footer:updateFooter()
+        self.avg_time = math.ceil(self.total_read_time / self.total_read_pages)
     end
 end
 
@@ -596,6 +598,9 @@ function ReaderStatistics:getStatisticEnabledMenuItem()
                 self.pages_stats[self.start_current_period] = self.curr_page
             end
             self:saveSettings()
+            if not self:isDocless() then
+                self.view.footer:updateFooter()
+            end
         end,
     }
 end
@@ -1268,16 +1273,8 @@ function ReaderStatistics:onPageUpdate(pageno)
         mem_read_pages = 0
         mem_read_time = 0
     end
-    -- send avg_time_page
-    local avg_time
     if self.total_read_pages > 0 or mem_read_pages > 0 then
-        avg_time = math.ceil((self.total_read_time + mem_read_time) / (self.total_read_pages + mem_read_pages))
-        if self.avg_time ~= avg_time then
-            self.avg_time = avg_time
-            if avg_time > 0 then
-                self.ui:handleEvent(Event:new("UpdateStats", avg_time))
-            end
-        end
+        self.avg_time = math.ceil((self.total_read_time + mem_read_time) / (self.total_read_pages + mem_read_pages))
     end
 end
 

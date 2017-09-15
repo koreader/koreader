@@ -212,7 +212,6 @@ function ReaderFooter:init()
     if self.settings.auto_refresh_time then
         self:setupAutoRefreshTime()
     end
-    self.average_time_per_page = nil
 end
 
 function ReaderFooter:setupAutoRefreshTime()
@@ -500,10 +499,15 @@ function ReaderFooter:setTocMarkers()
     return true
 end
 
+function ReaderFooter:getAvgTimePerPage()
+    return
+end
+
 function ReaderFooter:getDataFromStatistics(title, pages)
     local sec = 'na'
-    if self.average_time_per_page then
-        sec = util.secondsToClock(pages * self.average_time_per_page, true)
+    local average_time_per_page = self:getAvgTimePerPage()
+    if average_time_per_page then
+        sec = util.secondsToClock(pages * average_time_per_page, true)
     end
     return title .. sec
 end
@@ -684,11 +688,6 @@ function ReaderFooter:onSuspend()
         UIManager:unschedule(self.autoRefreshTime)
         self.onCloseDocument = nil
     end
-end
-
-function ReaderFooter:onUpdateStats(avg_time_page)
-    self.average_time_per_page = avg_time_page
-    return true
 end
 
 function ReaderFooter:onFrontlightStateChanged()
