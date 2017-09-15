@@ -87,27 +87,29 @@ function KoboPowerD:init()
 end
 
 function KoboPowerD:saveSettings()
-    -- Store BasePowerD values into settings (and not our hw_intensity, so
-    -- that if frontlight was toggled off, we save and restore the previous
-    -- untoggled intensity and toggle state at next startup)
-    local cur_intensity = self.fl_intensity
-    local cur_is_fl_on = self.is_fl_on
-    -- Save intensity to koreader settings
-    G_reader_settings:saveSetting("frontlight_intensity", cur_intensity)
-    G_reader_settings:saveSetting("is_frontlight_on", cur_is_fl_on)
-    -- And to "Kobo eReader.conf" if needed
-    if KOBO_SYNC_BRIGHTNESS_WITH_NICKEL then
-        if NickelConf.frontLightState.get() ~= nil then
-            if NickelConf.frontLightState.get() ~= cur_is_fl_on then
-                NickelConf.frontLightState.set(cur_is_fl_on)
+    if self.device.hasFrontlight() then
+        -- Store BasePowerD values into settings (and not our hw_intensity, so
+        -- that if frontlight was toggled off, we save and restore the previous
+        -- untoggled intensity and toggle state at next startup)
+        local cur_intensity = self.fl_intensity
+        local cur_is_fl_on = self.is_fl_on
+        -- Save intensity to koreader settings
+        G_reader_settings:saveSetting("frontlight_intensity", cur_intensity)
+        G_reader_settings:saveSetting("is_frontlight_on", cur_is_fl_on)
+        -- And to "Kobo eReader.conf" if needed
+        if KOBO_SYNC_BRIGHTNESS_WITH_NICKEL then
+            if NickelConf.frontLightState.get() ~= nil then
+                if NickelConf.frontLightState.get() ~= cur_is_fl_on then
+                    NickelConf.frontLightState.set(cur_is_fl_on)
+                end
+            else -- no support for frontlight state
+                if not cur_is_fl_on then -- if toggled off, save intensity as 0
+                    cur_intensity = self.fl_min
+                end
             end
-        else -- no support for frontlight state
-            if not cur_is_fl_on then -- if toggled off, save intensity as 0
-                cur_intensity = self.fl_min
+            if NickelConf.frontLightLevel.get() ~= cur_intensity then
+                NickelConf.frontLightLevel.set(cur_intensity)
             end
-        end
-        if NickelConf.frontLightLevel.get() ~= cur_intensity then
-            NickelConf.frontLightLevel.set(cur_intensity)
         end
     end
 end
