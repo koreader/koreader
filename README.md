@@ -105,7 +105,7 @@ Mac OSX users may need to install these tools:
 brew install nasm binutils libtool autoconf automake sdl2 lua51
 ```
 
-A recent version of Android SDK (including platform support for API version 19)/NDK, `ant` and `openjdk-8-jdk` are needed
+A recent version of Android SDK (including platform support for API version 19)/NDK, `ant`, `openjdk-8-jdk` and `p7zip-full` are needed
 in order to build KOReader for Android devices.
 
 Users of Debian first need to configure the `backports` repository:
