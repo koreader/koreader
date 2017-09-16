@@ -401,9 +401,9 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images, progress_callb
     if with_images then
         -- if no progress_callback (non UI), our fake one will return true
         if #images > 0 then
-            include_images = progress_callback(T(_("The page contains %1 images.\nWould you like to download and include them in the generated EPUB file?"), #images), true)
+            include_images = progress_callback(T(_("The page contains %1 images.\nWould you like to download and include them in the generated EPUB file?"), #images), true, _("Include"), _("Don't include"))
             if include_images then
-                use_img_2x = progress_callback(_("Would you like to use slightly higher quality images? This will result in a bigger file size."), true)
+                use_img_2x = progress_callback(_("Would you like to use slightly higher quality images? This will result in a bigger file size."), true, _("Higher quality"), _("Standard quality"))
             end
         else
             progress_callback(_("The page does not contain any images."))
@@ -771,7 +771,7 @@ time, abbr, sup {
             if success then
                 epub:add("OEBPS/"..img.imgpath, content)
             else
-                go_on = progress_callback(T(_("Downloading image %1 failed. Continue anyway?"), inum), true)
+                go_on = progress_callback(T(_("Downloading image %1 failed. Continue anyway?"), inum), true, _("Continue"), _("Stop"))
                 if not go_on then
                     cancelled = true
                     break
@@ -782,12 +782,12 @@ time, abbr, sup {
 
     -- Done with adding files
     if cancelled then
-        if progress_callback(_("Download did not complete.\nDo you still want to create an EPUB with what has been downloaded so far?"), true) then
+        if progress_callback(_("Download did not complete.\nDo you want to create an EPUB with the already downloaded images?"), true, _("Create"), _("Don't create")) then
             cancelled = false
         end
     end
     if cancelled then
-        progress_callback(_("Cancelled, cleaning up…"))
+        progress_callback(_("Canceled. Cleaning up…"))
     else
         progress_callback(_("Packing EPUB…"))
     end
@@ -822,7 +822,7 @@ function Wikipedia:createEpubWithUI(epub_path, page, lang, result_callback)
 
     -- Visual progress callback
     local cur_progress_box = nil
-    local function ui_progress_callback(text, confirmbox)
+    local function ui_progress_callback(text, confirmbox, ok_text, cancel_text)
         if cur_progress_box then
             -- We want to catch a tap outside an InfoMessage (that the user
             -- could use to abort downloading) which will have its dismiss_callback
@@ -884,8 +884,8 @@ function Wikipedia:createEpubWithUI(epub_path, page, lang, result_callback)
             local _coroutine = coroutine.running()
             cur_progress_box = ConfirmBox:new{
                 text = text,
-                ok_text = _("Yes"),
-                cancel_text = _("No"),
+                ok_text = ok_text,
+                cancel_text = cancel_text,
                 ok_callback = function()
                     coroutine.resume(_coroutine, true)
                 end,
