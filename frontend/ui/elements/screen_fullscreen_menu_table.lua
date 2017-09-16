@@ -1,7 +1,6 @@
 local _ = require("gettext")
 local android = require("device/android/device")
 local logger = require("logger")
-local Geom = require("ui/geometry")
 
 return {
     text = _("Fullscreen"),
@@ -25,7 +24,8 @@ return {
         logger.dbg("screen_fullscreen_menu_table.lua: Screen height: ", screen_height)
 
 -- lines below should be uncommented once #3148 is resolved
---        logger.dbg("screen_fullscreen_menu_table.lua: Setting viewport to {x=".. status_bar_height .. ", y=0, w=" 
+--        local Geom = require("ui/geometry")
+--        logger.dbg("screen_fullscreen_menu_table.lua: Setting viewport to {x=".. status_bar_height .. ", y=0, w="
 --                .. screen_width .. ", h=" .. screen_height - status_bar_height) .. "}")
 --       local viewport = Geom:new{x=status_bar_height, y=0, w=screen_width, h=screen_height - status_bar_height}
 --        android.screen:setViewport(viewport)
