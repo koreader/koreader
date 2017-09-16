@@ -304,7 +304,7 @@ function DictQuickLookup:update()
                                             })
                                         else
                                             UIManager:show(InfoMessage:new{
-                                                text = _("Saving Wikipedia page failed."),
+                                                text = _("Saving Wikipedia page failed or canceled."),
                                             })
                                         end
                                     end)

@@ -401,9 +401,9 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images, progress_callb
     if with_images then
         -- if no progress_callback (non UI), our fake one will return true
         if #images > 0 then
-            include_images = progress_callback(T(_("The page contains %1 images.\nWould you like to download and include them in the generated EPUB file?"), #images), true)
+            include_images = progress_callback(T(_("The page contains %1 images.\nWould you like to download and include them in the generated EPUB file?"), #images), true, _("Include"), _("Don't include"))
             if include_images then
-                use_img_2x = progress_callback(_("Would you like to use slightly higher quality images? This will result in a bigger file size."), true)
+                use_img_2x = progress_callback(_("Would you like to use slightly higher quality images? This will result in a bigger file size."), true, _("Higher quality"), _("Standard quality"))
             end
         else
             progress_callback(_("The page does not contain any images."))
@@ -749,7 +749,13 @@ time, abbr, sup {
     if include_images then
         local nb_images = #images
         for inum, img in ipairs(images) do
-            progress_callback(T(_("Fetching image %1 / %2 …"), inum, nb_images))
+            -- Process can be interrupted at this point between each image download
+            -- by tapping while the InfoMessage is displayed
+            local go_on = progress_callback(T(_("Fetching image %1 / %2 …"), inum, nb_images))
+            if not go_on then
+                cancelled = true
+                break
+            end
             local src = img.src
             if use_img_2x and img.src2x then
                 src = img.src2x
@@ -765,7 +771,7 @@ time, abbr, sup {
             if success then
                 epub:add("OEBPS/"..img.imgpath, content)
             else
-                local go_on = progress_callback(T(_("Downloading image %1 failed. Continue anyway?"), inum), true)
+                go_on = progress_callback(T(_("Downloading image %1 failed. Continue anyway?"), inum), true, _("Continue"), _("Stop"))
                 if not go_on then
                     cancelled = true
                     break
@@ -776,7 +782,12 @@ time, abbr, sup {
 
     -- Done with adding files
     if cancelled then
-        progress_callback(_("Cleaning up…"))
+        if progress_callback(_("Download did not complete.\nDo you want to create an EPUB with the already downloaded images?"), true, _("Create"), _("Don't create")) then
+            cancelled = false
+        end
+    end
+    if cancelled then
+        progress_callback(_("Canceled. Cleaning up…"))
     else
         progress_callback(_("Packing EPUB…"))
     end
@@ -811,8 +822,53 @@ function Wikipedia:createEpubWithUI(epub_path, page, lang, result_callback)
 
     -- Visual progress callback
     local cur_progress_box = nil
-    local function ui_progress_callback(text, confirmbox)
+    local function ui_progress_callback(text, confirmbox, ok_text, cancel_text)
         if cur_progress_box then
+            -- We want to catch a tap outside an InfoMessage (that the user
+            -- could use to abort downloading) which will have its dismiss_callback
+            -- called. For it to get a chance to get processed, we need to give
+            -- control back to UIManager: that will be done with the coroutine.yield()
+            -- that follows. If no dismiss_callback fired, we need to get this code resumed,
+            -- and that will be done with the following go_on_func schedule in 0.1 second.
+            local _coroutine = coroutine.running()
+            local go_on_func = function() coroutine.resume(_coroutine, true) end
+            -- delay matters: 0.05 or 0.1 seems fine
+            -- 0.01 is too fast: go_on_func is called before our dismiss_callback is processed
+            UIManager:scheduleIn(0.1, go_on_func)
+            if coroutine.running() then
+                -- Gives control back to UIManager, and get the 2nd arg given to the
+                -- coroutine.resume() that got us resumed (either dismiss_callback or go_on_func)
+                local result = coroutine.yield()
+                if not result then -- dismiss_callback called
+                    UIManager:unschedule(go_on_func)
+                    local abort_box = ConfirmBox:new{
+                        text = _("Download paused"),
+                        -- ok and cancel reversed, as tapping outside will
+                        -- get cancel_callback called: if tap outside was the
+                        -- result of a tap error, we want to continue. Cancelling
+                        -- will need an explicit tap on the ok_text button.
+                        ok_text = _("Abort"),
+                        cancel_text = _("Continue"),
+                        ok_callback = function()
+                            coroutine.resume(_coroutine, false)
+                        end,
+                        cancel_callback = function()
+                            coroutine.resume(_coroutine, true)
+                        end,
+                    }
+                    UIManager:show(abort_box)
+                    UIManager:forceRePaint()
+                    if coroutine.running() then
+                        result = coroutine.yield() -- abort_box result
+                    end
+                    if not result then
+                        return false
+                    end
+                end
+                -- go_on_func returned result = true, or abort_box did not abort:
+                -- continue processing
+            end
+
             -- close previous progress info
             UIManager:close(cur_progress_box)
             -- no repaint here, we'll do that below when new stuff is shown
@@ -828,6 +884,8 @@ function Wikipedia:createEpubWithUI(epub_path, page, lang, result_callback)
             local _coroutine = coroutine.running()
             cur_progress_box = ConfirmBox:new{
                 text = text,
+                ok_text = ok_text,
+                cancel_text = cancel_text,
                 ok_callback = function()
                     coroutine.resume(_coroutine, true)
                 end,
@@ -836,8 +894,15 @@ function Wikipedia:createEpubWithUI(epub_path, page, lang, result_callback)
                 end,
             }
         else
-            -- simple InfoMessage requested
-            cur_progress_box = InfoMessage:new{text = text}
+            -- simple InfoMessage requested: dismiss callback
+            -- will be checked for at start of next call
+            local _coroutine = coroutine.running()
+            cur_progress_box = InfoMessage:new{
+                text = text,
+                dismiss_callback = function()
+                    coroutine.resume(_coroutine, false)
+                end,
+            }
         end
         logger.dbg("Showing", confirmbox and "ConfirmBox" or "InfoMessage", text)
         UIManager:show(cur_progress_box)

@@ -54,6 +54,7 @@ local InfoMessage = InputContainer:new{
     image_height = nil,  -- The image height if image is used. Keep it nil to use original height.
     -- Whether the icon should be shown. If it is false, self.image will be ignored.
     show_icon = true,
+    dismiss_callback = function() end,
 }
 
 function InfoMessage:init()
@@ -158,11 +159,13 @@ end
 
 function InfoMessage:onAnyKeyPressed()
     -- triggered by our defined key events
+    self.dismiss_callback()
     UIManager:close(self)
     return true
 end
 
 function InfoMessage:onTapClose()
+    self.dismiss_callback()
     UIManager:close(self)
     return true
 end
