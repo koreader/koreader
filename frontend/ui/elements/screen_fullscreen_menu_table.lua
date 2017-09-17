@@ -1,4 +1,4 @@
-local _, android = pcall(require, "android")
+local isAndroid, android = pcall(require, "android")
 local logger = require("logger")
 local _ = require("gettext")
 
