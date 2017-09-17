@@ -66,13 +66,22 @@ function Kindle:supportsScreensaver()
     end
 end
 
-function Kindle:setTime(hour, min)
+function Kindle:setTime(year, month, day, hour, min, sec)
     if hour == nil or min == nil then return true end
-    if os.execute(string.format("date -s '%d:%d'", hour, min)) == 0 then
-        os.execute('hwclock -u -w')
-        return true
+    if year then
+        if os.execute(string.format("date -s '%d-%d-%d %d:%d:%d'", year, month, day, hour, min, sec)) == 0 then
+            os.execute('hwclock -u -w')
+            return true
+        else
+            return false
+        end
     else
-        return false
+        if os.execute(string.format("date -s '%d:%d'",hour, min)) == 0 then
+            os.execute('hwclock -u -w')
+            return true
+        else
+            return false
+        end
     end
 end
 

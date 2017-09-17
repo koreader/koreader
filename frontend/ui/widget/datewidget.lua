@@ -20,17 +20,18 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local TimeWidget = InputContainer:new{
+local DateWidget = InputContainer:new{
     title_face = Font:getFace("x_smalltfont"),
     width = nil,
     height = nil,
-    hour = 0,
-    min = 0,
+    day = 1,
+    month = 1,
+    year = 2017,
     ok_text = _("OK"),
     cancel_text = _("Cancel"),
 }
 
-function TimeWidget:init()
+function DateWidget:init()
     self.medium_font_face = Font:getFace("ffont")
     self.light_bar = {}
     self.screen_width = Screen:getSize().w
@@ -38,7 +39,7 @@ function TimeWidget:init()
     self.width = self.screen_width * 0.95
     if Device:hasKeys() then
         self.key_events = {
-            Close = { {"Back"}, doc = "close time" }
+            Close = { {"Back"}, doc = "close date" }
         }
     end
     if Device:isTouchDevice() then
@@ -52,45 +53,58 @@ function TimeWidget:init()
                     }
                 },
             },
-         }
+        }
     end
     self:update()
 end
 
-function TimeWidget:update()
-    local hour_widget = NumberPickerWidget:new{
+function DateWidget:update()
+    local year_widget = NumberPickerWidget:new{
         show_parent = self,
         width = self.screen_width * 0.2,
-        value = self.hour,
-        value_min = 0,
-        value_max = 23,
+        value = self.year,
+        value_min = 2017,
+        value_max = 2037,
         value_step = 1,
         value_hold_step = 4,
     }
-    local min_widget = NumberPickerWidget:new{
+    local month_widget = NumberPickerWidget:new{
         show_parent = self,
         width = self.screen_width * 0.2,
-        value = self.min,
-        value_min = 0,
-        value_max = 59,
+        value = self.month,
+        value_min = 1,
+        value_max = 12,
         value_step = 1,
-        value_hold_step = 10,
+        value_hold_step = 3,
     }
-    local colon_space = TextBoxWidget:new{
-        text = ":",
+    local day_widget = NumberPickerWidget:new{
+        show_parent = self,
+        width = self.screen_width * 0.2,
+        value = self.day,
+        value_min = 1,
+        value_max = 31,
+        value_step = 1,
+        value_hold_step = 5,
+        date_month = month_widget,
+        date_year = year_widget,
+    }
+    local dash_space = TextBoxWidget:new{
+        text = "–",
         alignment = "center",
         face = self.title_face,
         bold = true,
-        width = self.screen_width * 0.2,
+        width = self.screen_width * 0.1,
     }
-    local time_group = HorizontalGroup:new{
+    local date_group = HorizontalGroup:new{
         align = "center",
-        hour_widget,
-        colon_space,
-        min_widget,
+        year_widget,
+        dash_space,
+        month_widget,
+        dash_space,
+        day_widget,
     }
 
-    local time_title = FrameContainer:new{
+    local date_title = FrameContainer:new{
         padding = Screen:scaleBySize(5),
         margin = Screen:scaleBySize(2),
         bordersize = 0,
@@ -101,18 +115,18 @@ function TimeWidget:update()
             width = self.screen_width * 0.95,
         },
     }
-    local time_line = LineWidget:new{
+    local date_line = LineWidget:new{
         dimen = Geom:new{
             w = self.width,
             h = Screen:scaleBySize(2),
         }
     }
-    local time_bar = OverlapGroup:new{
+    local date_bar = OverlapGroup:new{
         dimen = {
             w = self.width,
-            h = time_title:getSize().h
+            h = date_title:getSize().h
         },
-        time_title,
+        date_title,
         CloseButton:new{ window = self, },
     }
     local buttons = {
@@ -127,8 +141,9 @@ function TimeWidget:update()
                 text = self.ok_text,
                 callback = function()
                     if self.callback then
-                        self.hour = hour_widget:getValue()
-                        self.min = min_widget:getValue()
+                        self.year = year_widget:getValue()
+                        self.month = month_widget:getValue()
+                        self.day = day_widget:getValue()
                         self:callback(self)
                     end
                     self:onClose()
@@ -143,7 +158,7 @@ function TimeWidget:update()
         show_parent = self,
     }
 
-    self.time_frame = FrameContainer:new{
+    self.date_frame = FrameContainer:new{
         radius = 5,
         bordersize = 3,
         padding = 0,
@@ -151,16 +166,16 @@ function TimeWidget:update()
         background = Blitbuffer.COLOR_WHITE,
         VerticalGroup:new{
             align = "left",
-            time_bar,
-            time_line,
+            date_bar,
+            date_line,
             CenterContainer:new{
                 dimen = Geom:new{
                     w = self.screen_width * 0.95,
                     h = self.screen_height * 0.25,
                 },
-                time_group
+                date_group
             },
-            time_line,
+            date_line,
             ok_cancel_buttons
         }
     }
@@ -174,43 +189,43 @@ function TimeWidget:update()
         FrameContainer:new{
             bordersize = 0,
             padding = Screen:scaleBySize(5),
-            self.time_frame,
+            self.date_frame,
         }
     }
     UIManager:setDirty(self, function()
-        return "ui", self.time_frame.dimen
+        return "ui", self.date_frame.dimen
     end)
 end
 
-function TimeWidget:onCloseWidget()
+function DateWidget:onCloseWidget()
     UIManager:setDirty(nil, function()
-        return "partial", self.time_frame.dimen
+        return "partial", self.date_frame.dimen
     end)
     return true
 end
 
-function TimeWidget:onShow()
+function DateWidget:onShow()
     UIManager:setDirty(self, function()
-        return "ui", self.time_frame.dimen
+        return "ui", self.date_frame.dimen
     end)
     return true
 end
 
-function TimeWidget:onAnyKeyPressed()
+function DateWidget:onAnyKeyPressed()
     UIManager:close(self)
     return true
 end
 
-function TimeWidget:onTapCloseFL(arg, ges_ev)
-    if ges_ev.pos:notIntersectWith(self.time_frame.dimen) then
+function DateWidget:onTapCloseFL(arg, ges_ev)
+    if ges_ev.pos:notIntersectWith(self.date_frame.dimen) then
         self:onClose()
     end
     return true
 end
 
-function TimeWidget:onClose()
+function DateWidget:onClose()
     UIManager:close(self)
     return true
 end
 
-return TimeWidget
+return DateWidget

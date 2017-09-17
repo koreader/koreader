@@ -24,6 +24,9 @@ local NumberPickerWidget = InputContainer:new{
     value_step = 1,
     value_hold_step = 4,
     value_table = nil,
+    -- in case we need calculate number of days in a given month and year
+    date_month = nil,
+    date_year = nil,
 }
 
 function NumberPickerWidget:init()
@@ -52,10 +55,16 @@ function NumberPickerWidget:paintWidget()
         width = self.width,
         show_parent = self.show_parent,
         callback = function()
+            if self.date_month and self.date_year then
+                self.value_max = self:getDaysInMonth(self.date_month:getValue(), self.date_year:getValue())
+            end
             self.value = self:changeValue(self.value, self.value_step, self.value_max, self.value_min)
             self:update()
         end,
         hold_callback = function()
+            if self.date_month and self.date_year then
+                self.value_max = self:getDaysInMonth(self.date_month:getValue(), self.date_year:getValue())
+            end
             self.value = self:changeValue(self.value, self.value_hold_step, self.value_max, self.value_min)
             self:update()
         end
@@ -69,10 +78,16 @@ function NumberPickerWidget:paintWidget()
         width = self.width,
         show_parent = self.show_parent,
         callback = function()
+            if self.date_month and self.date_year then
+                self.value_max = self:getDaysInMonth(self.date_month:getValue(), self.date_year:getValue())
+            end
             self.value = self:changeValue(self.value, self.value_step * -1, self.value_max, self.value_min)
             self:update()
         end,
         hold_callback = function()
+            if self.date_month and self.date_year then
+                self.value_max = self:getDaysInMonth(self.date_month:getValue(), self.date_year:getValue())
+            end
             self.value = self:changeValue(self.value, self.value_hold_step * -1, self.value_max, self.value_min)
             self:update()
         end
@@ -142,12 +157,30 @@ function NumberPickerWidget:changeValue(value, step, max, min)
     else
         value = value + step
         if value > max then
-            value = value - max + 1
+            value = min
         elseif value < min then
-            value = max + 1 + value
+            value = max
         end
     end
     return value
+end
+
+function NumberPickerWidget:getDaysInMonth(month, year)
+    local days_in_month = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 }
+    local days = days_in_month[month]
+    -- check for leap year
+    if (month == 2) then
+        if year % 4 == 0 then
+            if year % 100 == 0 then
+                if year % 400 == 0 then
+                    days = 29
+                end
+            else
+                days = 29
+            end
+        end
+    end
+    return days
 end
 
 function NumberPickerWidget:getValue()
