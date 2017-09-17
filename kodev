@@ -157,7 +157,7 @@ ${SUPPORTED_TARGETS}"
                     # some distributions use `ANDROID_NDK` instead, fall back to it
                     export NDK="${ANDROID_NDK}"
                 else
-                    export NDK="${CURDIR}/base/toolchain/android-ndk-r12b"
+                    export NDK="${CURDIR}/base/toolchain/android-ndk-r15c"
                 fi
             fi
             [ -e "${CURDIR}/base/toolchain/android-toolchain/bin/arm-linux-androideabi-gcc" ] || {
