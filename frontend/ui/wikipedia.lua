@@ -352,8 +352,8 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images, progress_callb
             local imgid = string.format("img%05d", imagenum)
             local imgpath = string.format("images/%s.%s", imgid, ext)
             local mimetype = ext_to_mimetype[ext] or ""
-            local width = img_tag:match([[width="([^"]*)"]])
-            local height = img_tag:match([[height="([^"]*)"]])
+            local width = tonumber(img_tag:match([[width="([^"]*)"]]))
+            local height = tonumber(img_tag:match([[height="([^"]*)"]]))
             -- Get higher resolution (2x) image url
             local src2x = nil
             local srcset = img_tag:match([[srcset="([^"]*)"]])
