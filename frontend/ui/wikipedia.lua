@@ -390,7 +390,15 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images, progress_callb
         -- If we get src2x images, crengine will scale them down to the 1x image size
         -- (less space wasted by images while reading), but the 2x quality will be
         -- there when image is viewed full screen with ImageViewer widget.
-        return string.format([[<img src="%s" style="width: %spx; height: %spx" alt=""/>]], cur_image.imgpath, cur_image.width, cur_image.height)
+        local style_props = {}
+        if cur_image.width then
+            table.insert(style_props, string.format("width: %spx", cur_image.width))
+        end
+        if cur_image.height then
+            table.insert(style_props, string.format("height: %spx", cur_image.height))
+        end
+        local style = table.concat(style_props, "; ")
+        return string.format([[<img src="%s" style="%s" alt=""/>]], cur_image.imgpath, style)
     end
     html = html:gsub("(<%s*img [^>]*>)", processImg)
     logger.dbg("Images found in html:", images)
