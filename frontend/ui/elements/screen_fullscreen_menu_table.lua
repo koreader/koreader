@@ -2,6 +2,8 @@ local isAndroid, android = pcall(require, "android")
 local logger = require("logger")
 local _ = require("gettext")
 
+if not isAndroid then return end
+
 return {
     text = _("Fullscreen"),
     checked_func = function()
