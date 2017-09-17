@@ -11,7 +11,7 @@ local HorizontalGroup = require("ui/widget/horizontalgroup")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
-local SpinnerWidget = require("ui/widget/spinnerwidget")
+local NumberPickerWidget = require("ui/widget/numberpickerwidget")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
@@ -58,7 +58,7 @@ function TimeWidget:init()
 end
 
 function TimeWidget:update()
-    local hour_widget = SpinnerWidget:new{
+    local hour_widget = NumberPickerWidget:new{
         show_parent = self,
         width = self.screen_width * 0.2,
         height = nil,
@@ -68,7 +68,7 @@ function TimeWidget:update()
         value_step = 1,
         value_hold_step = 4,
     }
-    local min_widget = SpinnerWidget:new{
+    local min_widget = NumberPickerWidget:new{
         show_parent = self,
         width = self.screen_width * 0.2,
         height = nil,

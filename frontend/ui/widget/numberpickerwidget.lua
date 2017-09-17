@@ -13,7 +13,7 @@ local VerticalSpan = require("ui/widget/verticalspan")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local SpinnerWidget = InputContainer:new{
+local NumberPickerWidget = InputContainer:new{
     spinner_face = Font:getFace("x_smalltfont",24),
     precision = "%02d",
     width = nil,
@@ -26,7 +26,7 @@ local SpinnerWidget = InputContainer:new{
     value_table = nil,
 }
 
-function SpinnerWidget:init()
+function NumberPickerWidget:init()
     self.screen_width = Screen:getSize().w
     self.screen_height = Screen:getSize().h
     if self.width == nil then
@@ -41,7 +41,7 @@ function SpinnerWidget:init()
     self:update()
 end
 
-function SpinnerWidget:paintWidget()
+function NumberPickerWidget:paintWidget()
 
     local button_up = Button:new{
         text = "▲",
@@ -91,7 +91,7 @@ function SpinnerWidget:paintWidget()
         value = string.format(self.precision, value)
     end
 
-        local text_value = TextWidget:new{
+    local text_value = TextWidget:new{
         text = value,
         alignment = "center",
         face = self.spinner_face,
@@ -108,7 +108,7 @@ function SpinnerWidget:paintWidget()
     }
 end
 
-function SpinnerWidget:update()
+function NumberPickerWidget:update()
     local widget_spinner = self:paintWidget()
     self.frame = FrameContainer:new{
         bordersize = 0,
@@ -129,13 +129,13 @@ function SpinnerWidget:update()
     end)
 end
 
-function SpinnerWidget:changeValue(value, step, max, min)
+function NumberPickerWidget:changeValue(value, step, max, min)
     if self.value_index then
         self.value_index = self.value_index + step
         if self.value_index > #self.value_table then
             self.value_index = 1
         elseif
-            self.value_index < 1 then
+        self.value_index < 1 then
             self.value_index = #self.value_table
         end
         value = self.value_table[self.value_index]
@@ -150,8 +150,9 @@ function SpinnerWidget:changeValue(value, step, max, min)
     return value
 end
 
-function SpinnerWidget:getValue()
+function NumberPickerWidget:getValue()
     return self.value
 end
 
-return SpinnerWidget
+return NumberPickerWidget
+
