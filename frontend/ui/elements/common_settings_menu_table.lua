@@ -65,6 +65,7 @@ common_settings.network = {
     text = _("Network"),
     sub_item_table = NetworkMgr:getMenuTable()
 }
+
 common_settings.screen = {
     text = _("Screen"),
     sub_item_table = {
@@ -76,6 +77,10 @@ common_settings.screen = {
         require("ui/elements/menu_activate"),
     },
 }
+if Device:isAndroid() then
+    table.insert(common_settings.screen.sub_item_table, require("ui/elements/screen_fullscreen_menu_table"))
+end
+
 common_settings.save_document = {
     text = _("Save document"),
     sub_item_table = {
