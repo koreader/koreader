@@ -380,7 +380,7 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images, progress_callb
             table.insert(images, cur_image)
             seen_images[src] = cur_image
             -- Use first image of reasonable size (not an icon) and portrait-like as cover-image
-            if cover_imgid == "" and tonumber(width) > 50 and tonumber(height) > 50 and tonumber(height) > tonumber(width) then
+            if cover_imgid == "" and width and tonumber(width) > 50 and height and tonumber(height) > 50 and tonumber(height) > tonumber(width) then
                 cover_imgid = imgid
             end
             imagenum = imagenum + 1
