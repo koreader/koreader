@@ -352,8 +352,8 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images, progress_callb
             local imgid = string.format("img%05d", imagenum)
             local imgpath = string.format("images/%s.%s", imgid, ext)
             local mimetype = ext_to_mimetype[ext] or ""
-            local width = img_tag:match([[width="([^"]*)"]])
-            local height = img_tag:match([[height="([^"]*)"]])
+            local width = tonumber(img_tag:match([[width="([^"]*)"]]))
+            local height = tonumber(img_tag:match([[height="([^"]*)"]]))
             -- Get higher resolution (2x) image url
             local src2x = nil
             local srcset = img_tag:match([[srcset="([^"]*)"]])
@@ -380,7 +380,7 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images, progress_callb
             table.insert(images, cur_image)
             seen_images[src] = cur_image
             -- Use first image of reasonable size (not an icon) and portrait-like as cover-image
-            if cover_imgid == "" and tonumber(width) > 50 and tonumber(height) > 50 and tonumber(height) > tonumber(width) then
+            if cover_imgid == "" and width and width > 50 and height and height > 50 and height > width then
                 cover_imgid = imgid
             end
             imagenum = imagenum + 1
@@ -390,7 +390,15 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images, progress_callb
         -- If we get src2x images, crengine will scale them down to the 1x image size
         -- (less space wasted by images while reading), but the 2x quality will be
         -- there when image is viewed full screen with ImageViewer widget.
-        return string.format([[<img src="%s" style="width: %spx; height: %spx" alt=""/>]], cur_image.imgpath, cur_image.width, cur_image.height)
+        local style_props = {}
+        if cur_image.width then
+            table.insert(style_props, string.format("width: %spx", cur_image.width))
+        end
+        if cur_image.height then
+            table.insert(style_props, string.format("height: %spx", cur_image.height))
+        end
+        local style = table.concat(style_props, "; ")
+        return string.format([[<img src="%s" style="%s" alt=""/>]], cur_image.imgpath, style)
     end
     html = html:gsub("(<%s*img [^>]*>)", processImg)
     logger.dbg("Images found in html:", images)
