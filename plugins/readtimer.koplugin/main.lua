@@ -71,7 +71,11 @@ function ReadTimer:addToMainMenu(menu_items)
                         UIManager:scheduleIn(seconds, self.alarm_callback)
                     end
                     UIManager:close(self.input)
-                    self.ui.menu:onTapCloseMenu()
+                    if self.ui == nil or self.ui.document == nil then
+                        self.ui.menu:onCloseFileManagerMenu()
+                    else
+                        self.ui.menu:onTapCloseMenu()
+                    end
                 end,
             }}
             if self:scheduled() then
@@ -82,6 +86,11 @@ function ReadTimer:addToMainMenu(menu_items)
                     text = _("Stop"),
                     callback = function()
                         self:unschedule()
+                        if self.ui == nil or self.ui.document == nil then
+                            self.ui.menu:onCloseFileManagerMenu()
+                        else
+                            self.ui.menu:onTapCloseMenu()
+                        end
                         UIManager:close(self.input)
                     end,
                 })
