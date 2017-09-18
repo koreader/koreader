@@ -21,9 +21,9 @@ if Device:hasFrontlight() then
     }
 end
 
-if Device:setTime() then
+if Device:setDateTime() then
     common_settings.time = {
-        text = _("Set time and date"),
+        text = _("Time and date"),
         sub_item_table = {
             {
                 text = _("Set time"),
@@ -37,7 +37,7 @@ if Device:setTime() then
                         ok_text = _("Set time"),
                         title_text =  _("Set time"),
                         callback = function(time)
-                            if Device:setTime(nil, nil, nil, time.hour, time.min) then
+                            if Device:setDateTime(nil, nil, nil, time.hour, time.min) then
                                 now_t = os.date("*t")
                                 UIManager:show(InfoMessage:new{
                                     text = T(_("Current time: %1:%2"), string.format("%02d", now_t.hour),
@@ -68,7 +68,7 @@ if Device:setTime() then
                         title_text =  _("Set date"),
                         callback = function(time)
                             now_t = os.date("*t")
-                            if Device:setTime(time.year, time.month, time.day, now_t.hour, now_t.min, now_t.sec) then
+                            if Device:setDateTime(time.year, time.month, time.day, now_t.hour, now_t.min, now_t.sec) then
                                 now_t = os.date("*t")
                                 UIManager:show(InfoMessage:new{
                                     text = T(_("Current date: %1-%2-%3"), now_t.year, string.format("%02d", now_t.month),
@@ -84,7 +84,6 @@ if Device:setTime() then
                     UIManager:show(date_widget)
                 end,
             }
-
         }
     }
 end

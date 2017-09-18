@@ -188,4 +188,3 @@ function NumberPickerWidget:getValue()
 end
 
 return NumberPickerWidget
-

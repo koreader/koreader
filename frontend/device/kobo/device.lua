@@ -184,22 +184,19 @@ function Kobo:init()
     end
 end
 
-function Kobo:setTime(year, month, day, hour, min, sec)
+function Kobo:setDateTime(year, month, day, hour, min, sec)
     if hour == nil or min == nil then return true end
-    if year then
-        if os.execute(string.format("date -s '%d-%d-%d %d:%d:%d'", year, month, day, hour, min, sec)) == 0 then
-            os.execute('hwclock -u -w')
-            return true
-        else
-            return false
-        end
+    local command
+    if year and month and day then
+        command = string.format("date -s '%d-%d-%d %d:%d:%d'", year, month, day, hour, min, sec)
     else
-        if os.execute(string.format("date -s '%d:%d'",hour, min)) == 0 then
-            os.execute('hwclock -u -w')
-            return true
-        else
-            return false
-        end
+        command = string.format("date -s '%d:%d'",hour, min)
+    end
+    if os.execute(command) == 0 then
+        os.execute('hwclock -u -w')
+        return true
+    else
+        return false
     end
 end
 
