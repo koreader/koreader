@@ -5,6 +5,7 @@ local DictQuickLookup = require("ui/widget/dictquicklookup")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local JSON = require("json")
+local Trapper = require("ui/trapper")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local util  = require("util")
@@ -88,7 +89,7 @@ function ReaderDictionary:init()
 
         if not G_reader_settings:readSetting("dicts_disabled") then
             -- Create an empty dict for this setting, so that we can
-            -- access and update it directly thru G_reader_settings
+            -- access and update it directly through G_reader_settings
             -- and it will automatically be saved.
             G_reader_settings:saveSetting("dicts_disabled", {})
         end
@@ -196,7 +197,10 @@ end
 
 function ReaderDictionary:onLookupWord(word, box, highlight, link)
     self.highlight = highlight
-    self:stardictLookup(word, box, link)
+    -- Wrapped through Trapper, as we may be using Trapper:dismissablePopen() in it
+    Trapper:wrap(function()
+        self:stardictLookup(word, box, link)
+    end)
     return true
 end
 
@@ -353,8 +357,12 @@ function ReaderDictionary:stardictLookup(word, box, link)
         self:showDict(word, final_results, box)
         return
     end
+    local lookup_cancelled = false
     local common_options = self.disable_fuzzy_search and "-njf" or "-nj"
     for _, dict_dir in ipairs(dict_dirs) do
+        if lookup_cancelled then
+            break -- don't do any more lookup on additional dict_dirs
+        end
         local results_str = nil
         if Device:isAndroid() then
             local A = require("android")
@@ -370,26 +378,51 @@ function ReaderDictionary:stardictLookup(word, box, link)
             if self.sdcv_dictnames_options_escaped then
                 cmd = cmd .. " " .. self.sdcv_dictnames_options_escaped
             end
-            local std_out = io.popen(cmd, "r")
-            if std_out then
-                results_str = std_out:read("*all")
-                std_out:close()
-            end
-        end
-        local ok, results = pcall(JSON.decode, results_str)
-        if ok and results then
-            -- we may get duplicates (sdcv may do multiple queries,
-            -- in fixed mode then in fuzzy mode), we have to remove them
-            local h
-            for _,r in ipairs(results) do
-                h = r.dict .. r.word .. r.definition
-                if seen_results[h] == nil then
-                    table.insert(final_results, r)
-                    seen_results[h] = true
+            -- cmd = "sleep 7 ; " .. cmd     -- uncomment to simulate long lookup time
+
+            if self.lookup_progress_msg then
+                -- Some sdcv lookups, when using fuzzy search with many dictionaries
+                -- and a really bad selected text, can take up to 10 seconds.
+                -- It is nice to be able to cancel it when noticing wrong text was selected.
+                -- As we have a lookup_progress_msg (that can be used to catch a tap
+                -- and trigger cancellation), and because sdcv starts outputing its
+                -- output only at the end when it has done its work, we can
+                -- use Trapper:dismissablePopen() to cancel it as long as we are waiting
+                -- for output.
+                -- We must ensure we will have some output to be readable (if no
+                -- definition found, sdcv will output some message on stderr, and
+                -- let stdout empty) by appending an "echo":
+                cmd = cmd .. "; echo"
+                local completed
+                completed, results_str = Trapper:dismissablePopen(cmd, self.lookup_progress_msg)
+                lookup_cancelled = not completed
+            else
+                -- Fuzzy search disabled, usual option for people who don't want
+                -- a "Looking up..." InfoMessage and usually fast: do a classic
+                -- blocking io.popen()
+                local std_out = io.popen(cmd, "r")
+                if std_out then
+                    results_str = std_out:read("*all")
+                    std_out:close()
                 end
             end
-        else
-            logger.warn("JSON data cannot be decoded", results)
+        end
+        if results_str and results_str ~= "\n" then -- \n is when lookup was cancelled
+            local ok, results = pcall(JSON.decode, results_str)
+            if ok and results then
+                -- we may get duplicates (sdcv may do multiple queries,
+                -- in fixed mode then in fuzzy mode), we have to remove them
+                local h
+                for _,r in ipairs(results) do
+                    h = r.dict .. r.word .. r.definition
+                    if seen_results[h] == nil then
+                        table.insert(final_results, r)
+                        seen_results[h] = true
+                    end
+                end
+            else
+                logger.warn("JSON data cannot be decoded", results)
+            end
         end
     end
     if #final_results == 0 then
@@ -398,7 +431,7 @@ function ReaderDictionary:stardictLookup(word, box, link)
             {
                 dict = "",
                 word = word,
-                definition = _("No definition found."),
+                definition = lookup_cancelled and _("Dictionary lookup canceled.") or _("No definition found."),
             }
         }
     end

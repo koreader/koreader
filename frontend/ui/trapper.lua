@@ -12,6 +12,7 @@ Mostly done with coroutines, but hides their usage for simplicity.
 local ConfirmBox = require("ui/widget/confirmbox")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
+local ffiutil = require("ffi/util")
 local logger = require("logger")
 local _ = require("gettext")
 
@@ -273,6 +274,125 @@ function Trapper:confirm(text, cancel_text, ok_text)
     local ret = coroutine.yield() -- wait for ConfirmBox callback
     logger.dbg("ConfirmBox answers", ret)
     return ret
+end
+
+
+--[[--
+Dismissable wrapper for @{io.popen|io.popen(`cmd`)}.
+
+Notes and limitations:
+
+1) It is dismissable as long as `cmd` as not yet output anything.
+   Once output has started, the reading will block till it is done.
+   (Some shell tricks, included in `cmd`, could probably be used to
+   accumulate `cmd` output in some variable, and to output the whole
+   variable to stdout at the end.)
+
+2) `cmd` needs to output something (we will wait till some data is available)
+   If there are chances for it to not output anything, append `"; echo"` to `cmd`
+
+3) We need an @{ui.widget.infomessage|InfoMessage}, that, as a modal, will catch
+   any @{ui.event|Tap event} happening during `cmd` execution. This can be
+   provided as a string (a new InfoMessage will be created), or can be an
+   existing already displayed InfoMessage.
+
+If we really need to have more control, we would need to use `select()` via `ffi`
+or do low level non-blocking reading on the file descriptor.
+If there are `cmd` that may not exit, that we would be trying to
+collect indefinitely, the best option would be to compile any `timeout.c`
+and use it as a wrapper.
+
+@string cmd shell `cmd` to execute and get output from
+@param infomessage string or already shown @{ui.widget.infomessage|InfoMessage} widget instance
+@int check_interval_sec[opt=0.1] float interval in second for checking pipe for available output
+@treturn boolean completed (`true` if not interrupted, `false` if dismissed)
+@treturn string output of command
+]]
+function Trapper:dismissablePopen(cmd, infomessage, check_interval_sec)
+    local _coroutine = coroutine.running()
+    -- assert(_coroutine ~= nil, "Need to be called from a coroutine")
+    if not _coroutine then
+        logger.warn("unwrapped dismissablePopen(), falling back to blocking io.popen()")
+        local std_out = io.popen(cmd, "r")
+        if std_out then
+            local output = std_out:read("*all")
+            std_out:close()
+            return true, output
+        end
+        return false
+    end
+
+    local own_infomessage = false
+    if type(infomessage) == "string" then
+        infomessage = InfoMessage:new{text = infomessage}
+        UIManager:show(infomessage)
+        UIManager:forceRePaint()
+        own_infomessage = true
+    end
+    infomessage.dismiss_callback = function()
+        -- this callback will resume us at coroutine.yield() below
+        -- with a go_on = false
+        coroutine.resume(_coroutine, false)
+    end
+
+    if not check_interval_sec then
+        check_interval_sec = 0.1 -- default: check for output every 100ms
+    end
+    local collect_interval_sec = 5 -- collect cancelled cmd every 5 second, no hurry
+    local completed = false
+    local output = nil
+
+    local std_out = io.popen(cmd, "r")
+    if std_out then
+        -- We check regularly if data is available to be read, and we give
+        -- control in the meantime to UIManager so our InfoMessage.dismiss_callback
+        -- get a chance to be triggered, in which case we won't wait for reading,
+        -- We'll schedule a background function to collect the uneeded output and
+        -- close the pipe later.
+        while true do
+            -- The following function will resume us at coroutine.yield() below
+            -- with a go_on = true
+            local go_on_func = function() coroutine.resume(_coroutine, true) end
+            UIManager:scheduleIn(check_interval_sec, go_on_func) -- called in 100ms by default
+            local go_on = coroutine.yield() -- gives control back to UIManager
+            if not go_on then -- the dismiss_callback resumed us
+                UIManager:unschedule(go_on_func)
+                -- We forget cmd here, but something has to collect
+                -- its output and close the pipe to not leak file handles and
+                -- zombie processes.
+                local collect_and_clean
+                collect_and_clean = function()
+                    if ffiutil.getNonBlockingReadSize(std_out) ~= 0 then -- cmd started outputing
+                        std_out:read("*all")
+                        std_out:close()
+                        logger.dbg("collected cancelled cmd output")
+                    else -- no output yet, reschedule
+                        UIManager:scheduleIn(collect_interval_sec, collect_and_clean)
+                        logger.dbg("cancelled cmd output not yet collectable")
+                    end
+                end
+                UIManager:scheduleIn(collect_interval_sec, collect_and_clean)
+                break
+            end
+            -- the go_on_func resumed us, check if pipe is ready to be read
+            if ffiutil.getNonBlockingReadSize(std_out) ~= 0 then
+                -- Some data is available for reading: read it all,
+                -- but we may block from now on
+                output = std_out:read("*all")
+                std_out:close()
+                completed = true
+                break
+            end
+            -- logger.dbg("no cmd output yet, will check again soon")
+        end
+    end
+    if own_infomessage then
+        -- Remove our own infomessage
+        UIManager:close(infomessage)
+        UIManager:forceRePaint()
+    end
+    -- return what we got or not to our caller
+    return completed, output
 end
 
 return Trapper
