@@ -286,25 +286,19 @@ local ext_to_mimetype = {
 
 
 -- Create an epub file (with possibly images)
--- This is non-UI code (for batch creation or emulator test), but it accepts
--- a progress_callback function that will be feed with progress information
--- that could be shown to the user.
-function Wikipedia:createEpub(epub_path, page, lang, with_images, progress_callback)
-    if not progress_callback then
-        -- Make our own logging only process_callback
-        progress_callback = function(text, confirm)
-            logger.info("progress", confirm and "confirm" or "info", text)
-            return true -- always select "OK" in ConfirmBox
-        end
-    end
+function Wikipedia:createEpub(epub_path, page, lang, with_images)
+    -- Use Trapper to display progress and ask questions through the UI.
+    -- We need to have been Trapper.wrap()'ed for UI to be used, otherwise
+    -- Trapper:info() and Trapper:confirm() will just use logger.
+    local UI = require("ui/trapper")
 
-    progress_callback(_("Fetching Wikipedia page…"))
+    UI:info(_("Fetching Wikipedia page…"))
     local ok, phtml = pcall(self.wikiphtml, self, page, lang)
     if not ok then
-        progress_callback(phtml)
+        UI:info(phtml) -- display error in InfoMessage
         -- Sleep a bit to make that error seen
         util.sleep(2)
-        progress_callback() -- close last progress info
+        UI:reset()
         return false
     end
 
@@ -407,14 +401,14 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images, progress_callb
     local include_images = false
     local use_img_2x = false
     if with_images then
-        -- if no progress_callback (non UI), our fake one will return true
+        -- If no UI (Trapper:wrap() not called), UI:confirm() will answer true
         if #images > 0 then
-            include_images = progress_callback(T(_("The page contains %1 images.\nWould you like to download and include them in the generated EPUB file?"), #images), true, _("Include"), _("Don't include"))
+            include_images = UI:confirm(T(_("The page contains %1 images.\nWould you like to download and include them in the generated EPUB file?"), #images), _("Don't include"), _("Include"))
             if include_images then
-                use_img_2x = progress_callback(_("Would you like to use slightly higher quality images? This will result in a bigger file size."), true, _("Higher quality"), _("Standard quality"))
+                use_img_2x = UI:confirm(_("Would you like to use slightly higher quality images? This will result in a bigger file size."), _("Standard quality"), _("Higher quality"))
             end
         else
-            progress_callback(_("The page does not contain any images."))
+            UI:info(_("The page does not contain any images."))
             util.sleep(1) -- Let the user see that
         end
     end
@@ -427,6 +421,7 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images, progress_callb
         -- the images he chose to not get.
     end
 
+    UI:info(_("Building EPUB…"))
     -- Open the zip file (with .tmp for now, as crengine may still
     -- have a handle to the final epub_path, and we don't want to
     -- delete a good one if we fail/cancel later)
@@ -759,7 +754,7 @@ time, abbr, sup {
         for inum, img in ipairs(images) do
             -- Process can be interrupted at this point between each image download
             -- by tapping while the InfoMessage is displayed
-            local go_on = progress_callback(T(_("Fetching image %1 / %2 …"), inum, nb_images))
+            local go_on = UI:info(T(_("Fetching image %1 / %2 …"), inum, nb_images))
             if not go_on then
                 cancelled = true
                 break
@@ -779,7 +774,7 @@ time, abbr, sup {
             if success then
                 epub:add("OEBPS/"..img.imgpath, content)
             else
-                go_on = progress_callback(T(_("Downloading image %1 failed. Continue anyway?"), inum), true, _("Continue"), _("Stop"))
+                go_on = UI:confirm(T(_("Downloading image %1 failed. Continue anyway?"), inum), _("Stop"), _("Continue"))
                 if not go_on then
                     cancelled = true
                     break
@@ -790,19 +785,19 @@ time, abbr, sup {
 
     -- Done with adding files
     if cancelled then
-        if progress_callback(_("Download did not complete.\nDo you want to create an EPUB with the already downloaded images?"), true, _("Create"), _("Don't create")) then
+        if UI:confirm(_("Download did not complete.\nDo you want to create an EPUB with the already downloaded images?"), _("Don't create"), _("Create")) then
             cancelled = false
         end
     end
     if cancelled then
-        progress_callback(_("Canceled. Cleaning up…"))
+        UI:info(_("Canceled. Cleaning up…"))
     else
-        progress_callback(_("Packing EPUB…"))
+        UI:info(_("Packing EPUB…"))
     end
     epub:close()
     -- This was nearly a no-op, so sleep a bit to make that progress step seen
     util.usleep(300000)
-    progress_callback() -- close last progress info
+    UI:reset() -- close last InfoMessage
 
     if cancelled then
         -- Build was cancelled, remove half created .epub
@@ -819,132 +814,29 @@ time, abbr, sup {
 end
 
 
--- Wrapper to Wikipedia:createEpub() with UI progress info
+-- Wrap Wikipedia:createEpub() with UI progress info, provided
+-- by Trapper module.
 function Wikipedia:createEpubWithUI(epub_path, page, lang, result_callback)
-    -- For progress_callback to be able to wait when needed
-    -- for user confirmation, we need to wrap Wikipedia:createEpub
-    -- in a coroutine, that can be resumed by these confirm callbacks.
-    local UIManager = require("ui/uimanager")
-    local InfoMessage = require("ui/widget/infomessage")
-    local ConfirmBox = require("ui/widget/confirmbox")
-
-    -- Visual progress callback
-    local cur_progress_box = nil
-    local function ui_progress_callback(text, confirmbox, ok_text, cancel_text)
-        if cur_progress_box then
-            -- We want to catch a tap outside an InfoMessage (that the user
-            -- could use to abort downloading) which will have its dismiss_callback
-            -- called. For it to get a chance to get processed, we need to give
-            -- control back to UIManager: that will be done with the coroutine.yield()
-            -- that follows. If no dismiss_callback fired, we need to get this code resumed,
-            -- and that will be done with the following go_on_func schedule in 0.1 second.
-            local _coroutine = coroutine.running()
-            local go_on_func = function() coroutine.resume(_coroutine, true) end
-            -- delay matters: 0.05 or 0.1 seems fine
-            -- 0.01 is too fast: go_on_func is called before our dismiss_callback is processed
-            UIManager:scheduleIn(0.1, go_on_func)
-            if coroutine.running() then
-                -- Gives control back to UIManager, and get the 2nd arg given to the
-                -- coroutine.resume() that got us resumed (either dismiss_callback or go_on_func)
-                local result = coroutine.yield()
-                if not result then -- dismiss_callback called
-                    UIManager:unschedule(go_on_func)
-                    local abort_box = ConfirmBox:new{
-                        text = _("Download paused"),
-                        -- ok and cancel reversed, as tapping outside will
-                        -- get cancel_callback called: if tap outside was the
-                        -- result of a tap error, we want to continue. Cancelling
-                        -- will need an explicit tap on the ok_text button.
-                        ok_text = _("Abort"),
-                        cancel_text = _("Continue"),
-                        ok_callback = function()
-                            coroutine.resume(_coroutine, false)
-                        end,
-                        cancel_callback = function()
-                            coroutine.resume(_coroutine, true)
-                        end,
-                    }
-                    UIManager:show(abort_box)
-                    UIManager:forceRePaint()
-                    if coroutine.running() then
-                        result = coroutine.yield() -- abort_box result
-                    end
-                    if not result then
-                        return false
-                    end
-                end
-                -- go_on_func returned result = true, or abort_box did not abort:
-                -- continue processing
-            end
-
-            -- close previous progress info
-            UIManager:close(cur_progress_box)
-            -- no repaint here, we'll do that below when new stuff is shown
-        end
-        if not text then
-            -- no text given, used to just close previous progress info when done
-            -- a repaint is needed
-            UIManager:forceRePaint()
-            return true
-        end
-        if confirmbox then
-            -- ConfirmBox requested: callbacks will resume coroutine
-            local _coroutine = coroutine.running()
-            cur_progress_box = ConfirmBox:new{
-                text = text,
-                ok_text = ok_text,
-                cancel_text = cancel_text,
-                ok_callback = function()
-                    coroutine.resume(_coroutine, true)
-                end,
-                cancel_callback = function()
-                    coroutine.resume(_coroutine, false)
-                end,
-            }
-        else
-            -- simple InfoMessage requested: dismiss callback
-            -- will be checked for at start of next call
-            local _coroutine = coroutine.running()
-            cur_progress_box = InfoMessage:new{
-                text = text,
-                dismiss_callback = function()
-                    coroutine.resume(_coroutine, false)
-                end,
-            }
-        end
-        logger.dbg("Showing", confirmbox and "ConfirmBox" or "InfoMessage", text)
-        UIManager:show(cur_progress_box)
-        UIManager:forceRePaint()
-        if not confirmbox then
-            return true -- nothing more to do
-        end
-        -- we need to wait for ConfirmBox callback
-        logger.dbg("waiting for coroutine to resume")
-        if coroutine.running() then
-            local result = coroutine.yield()
-            logger.dbg("  coroutine ran and returned", result)
-            return result
-        end
-    end
-
-    -- Coroutine wrapping Wikipedia:createEpub()
-    local co = coroutine.create(function()
-        -- If errors in Wikipedia:createEpub(), the coroutine
-        -- would just abort without crashing the reader, so
-        -- pcall would not be needed. But if that happens,
-        -- pcall will let us know and returns the error,
-        -- that we can log.
-        local ok, success = pcall(self.createEpub, self, epub_path, page, lang, true, ui_progress_callback)
+    -- To do any UI interaction while building the EPUB, we need
+    -- to use a coroutine, so that our code can be suspended while waiting
+    -- for user interaction, and resumed by UI widgets callbacks.
+    -- All this is hidden and done by Trapper with a simple API.
+    local Trapper = require("ui/trapper")
+    Trapper:wrap(function()
+        Trapper:setPausedText("Download paused")
+        -- If errors in Wikipedia:createEpub(), the coroutine (used by
+        -- Trapper) would just abort (no reader crash, no error logged).
+        -- So we use pcall to catch any errors, log it, and report
+        -- the failure via result_callback.
+        local ok, success = pcall(self.createEpub, self, epub_path, page, lang, true)
         if ok and success then
             result_callback(true)
         else
-            ui_progress_callback() -- close any last progress info not cleaned
+            Trapper:reset() -- close any last widget not cleaned if error
             logger.warn("Wikipedia.createEpub pcall:", ok, success)
             result_callback(false)
         end
     end)
-    -- Execute coroutine
-    coroutine.resume(co)
 end
 
 return Wikipedia
