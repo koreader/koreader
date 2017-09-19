@@ -613,7 +613,7 @@ function DictQuickLookup:onClose()
     if self.highlight then
         -- delay unhighlight of selection, so we can see where we stopped when
         -- back from our journey into dictionary or wikipedia
-        UIManager:scheduleIn(1, function()
+        UIManager:scheduleIn(0.5, function()
             self.highlight:clear()
         end)
     end
