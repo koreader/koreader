@@ -110,23 +110,23 @@ function ReaderHighlight:genHighlightDrawerMenu()
     }
 end
 
-function ReaderHighlight:getClearTag()
-    -- Returns a tag, that can be provided on delayed call to clear(tag)
-    -- to ensure current highlight has not already been cleared, and that
-    -- we are not going to clear a new highlight
-    self.clear_tag = TimeVal.now() -- can act as a unique tag
-    return self.clear_tag
+-- Returns a unique id, that can be provided on delayed call to :clear(id)
+-- to ensure current highlight has not already been cleared, and that we
+-- are not going to clear a new highlight
+function ReaderHighlight:getClearId()
+    self.clear_id = TimeVal.now() -- can act as a unique id
+    return self.clear_id
 end
 
-function ReaderHighlight:clear(clear_tag)
-    if clear_tag then -- should be provided by delayed call to clear()
-        if clear_tag ~= self.clear_tag then
-            -- if tag is no more valid, highlight has already been
-            -- cleared since this tag was given
+function ReaderHighlight:clear(clear_id)
+    if clear_id then -- should be provided by delayed call to clear()
+        if clear_id ~= self.clear_id then
+            -- if clear_id is no more valid, highlight has already been
+            -- cleared since this clear_id was given
             return
         end
     end
-    self.clear_tag = nil -- invalidate tag
+    self.clear_id = nil -- invalidate id
     if self.ui.document.info.has_pages then
         self.view.highlight.temp = {}
     else
