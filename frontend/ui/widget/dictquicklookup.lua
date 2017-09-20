@@ -613,8 +613,9 @@ function DictQuickLookup:onClose()
     if self.highlight then
         -- delay unhighlight of selection, so we can see where we stopped when
         -- back from our journey into dictionary or wikipedia
+        local clear_tag = self.highlight:getClearTag()
         UIManager:scheduleIn(0.5, function()
-            self.highlight:clear()
+            self.highlight:clear(clear_tag)
         end)
     end
     return true
@@ -626,8 +627,9 @@ function DictQuickLookup:onHoldClose(no_clear)
         local window = self.window_list[i]
         -- if one holds a highlight, let's clear it like in onClose()
         if window.highlight and not no_clear then
-            UIManager:scheduleIn(1, function()
-                window.highlight:clear()
+            local clear_tag = window.highlight:getClearTag()
+            UIManager:scheduleIn(0.5, function()
+                window.highlight:clear(clear_tag)
             end)
         end
         UIManager:close(window)

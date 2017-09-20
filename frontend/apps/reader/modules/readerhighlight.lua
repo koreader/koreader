@@ -110,7 +110,23 @@ function ReaderHighlight:genHighlightDrawerMenu()
     }
 end
 
-function ReaderHighlight:clear()
+function ReaderHighlight:getClearTag()
+    -- Returns a tag, that can be provided on delayed call to clear(tag)
+    -- to ensure current highlight has not already been cleared, and that
+    -- we are not going to clear a new highlight
+    self.clear_tag = TimeVal.now() -- can act as a unique tag
+    return self.clear_tag
+end
+
+function ReaderHighlight:clear(clear_tag)
+    if clear_tag then -- should be provided by delayed call to clear()
+        if clear_tag ~= self.clear_tag then
+            -- if tag is no more valid, highlight has already been
+            -- cleared since this tag was given
+            return
+        end
+    end
+    self.clear_tag = nil -- invalidate tag
     if self.ui.document.info.has_pages then
         self.view.highlight.temp = {}
     else
@@ -223,6 +239,7 @@ end
 function ReaderHighlight:onHold(arg, ges)
     -- disable hold gesture if highlighting is disabled
     if self.view.highlight.disabled then return true end
+    self:clear() -- clear previous highlight (delayed clear may not have done it yet)
     self.hold_pos = self.view:screenToPageTransform(ges.pos)
     logger.dbg("hold position in page", self.hold_pos)
     if not self.hold_pos then
