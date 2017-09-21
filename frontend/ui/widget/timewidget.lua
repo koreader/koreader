@@ -25,6 +25,7 @@ local TimeWidget = InputContainer:new{
     width = nil,
     height = nil,
     hour = 0,
+    hour_max = 23,
     min = 0,
     ok_text = _("OK"),
     cancel_text = _("Cancel"),
@@ -63,7 +64,7 @@ function TimeWidget:update()
         width = self.screen_width * 0.2,
         value = self.hour,
         value_min = 0,
-        value_max = 23,
+        value_max = self.hour_max,
         value_step = 1,
         value_hold_step = 4,
     }

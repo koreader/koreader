@@ -5,7 +5,7 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local Font = require("ui/font")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local TextWidget = require("ui/widget/textboxwidget")
+local InputDialog = require("ui/widget/inputdialog")
 local RenderText = require("ui/rendertext")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -14,7 +14,8 @@ local _ = require("gettext")
 local Screen = Device.screen
 
 local NumberPickerWidget = InputContainer:new{
-    spinner_face = Font:getFace("x_smalltfont",24),
+    spinner_face_font = "x_smalltfont",
+    spinner_face_size = 24,
     precision = "%02d",
     width = nil,
     height = nil,
@@ -30,6 +31,7 @@ local NumberPickerWidget = InputContainer:new{
 }
 
 function NumberPickerWidget:init()
+    self.spinner_face = Font:getFace(self.spinner_face_font, self.spinner_face_size)
     self.screen_width = Screen:getSize().w
     self.screen_height = Screen:getSize().h
     if self.width == nil then
@@ -106,12 +108,50 @@ function NumberPickerWidget:paintWidget()
         value = string.format(self.precision, value)
     end
 
-    local text_value = TextWidget:new{
+    local input
+    local callback_input = nil
+    if self.value_table == nil then
+        callback_input =  function()
+            input = InputDialog:new{
+                title = _("Enter value"),
+                input_type = "number",
+                buttons = {
+                    {
+                        {
+                            text = _("Cancel"),
+                            callback = function()
+                                UIManager:close(input)
+                            end,
+                        },
+                        {
+                            text = _("OK"),
+                            is_enter_default = true,
+                            callback = function()
+                                input:closeInputDialog()
+                                local input_value = tonumber(input:getInputText())
+                                if input_value and input_value >= self.value_min and input_value <= self.value_max then
+                                    self.value = input_value
+                                    self:update()
+                                end
+                                UIManager:close(input)
+                            end,
+                        },
+                    },
+                },
+            }
+            input:onShowKeyboard()
+            UIManager:show(input)
+        end
+    end
+
+    local text_value = Button:new{
         text = value,
-        alignment = "center",
-        face = self.spinner_face,
-        bold = true,
+        bordersize = 0,
+        padding = 0,
+        text_font_face = self.spinner_face_font,
+        text_font_size = self.spinner_face_size,
         width = self.width,
+        callback = callback_input,
     }
     return VerticalGroup:new{
         align = "center",
