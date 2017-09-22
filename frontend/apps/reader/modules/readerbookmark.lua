@@ -52,13 +52,14 @@ function ReaderBookmark:addToMainMenu(menu_items)
             self:onShowBookmark()
         end,
     }
-    menu_items.bookmark_browsing_mode = {
-        text = self.bbm_menu_title,
-        enabled = self.ui.document.info.has_pages,
-        callback = function()
-            self:enableBookmarkBrowsingMode()
-        end,
-    }
+    if self.ui.document.info.has_pages then
+        menu_items.bookmark_browsing_mode = {
+            text = self.bbm_menu_title,
+            callback = function()
+                self:enableBookmarkBrowsingMode()
+            end,
+        }
+    end
 end
 
 function ReaderBookmark:enableBookmarkBrowsingMode()
