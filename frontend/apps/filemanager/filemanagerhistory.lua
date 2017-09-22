@@ -1,13 +1,13 @@
-local ButtonDialog = require("ui/widget/buttondialog")
+local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
+local DocSettings = require("docsettings")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
-local Font = require("ui/font")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
-local RenderText = require("ui/rendertext")
 local Screen = require("device").screen
+local filemanagerutil = require("apps/filemanager/filemanagerutil")
+local util = require("ffi/util")
 local _ = require("gettext")
-local T = require("ffi/util").template
 
 local FileManagerHistory = InputContainer:extend{
     hist_menu_title = _("History"),
@@ -28,8 +28,13 @@ function FileManagerHistory:addToMainMenu(menu_items)
 end
 
 function FileManagerHistory:updateItemTable()
+    -- try to stay on current page
+    local select_number = nil
+    if self.hist_menu.page and self.hist_menu.perpage then
+        select_number = (self.hist_menu.page - 1) * self.hist_menu.perpage + 1
+    end
     self.hist_menu:switchItemTable(self.hist_menu_title,
-                                  require("readhistory").hist)
+                                  require("readhistory").hist, select_number)
 end
 
 function FileManagerHistory:onSetDimensions(dimen)
@@ -37,56 +42,80 @@ function FileManagerHistory:onSetDimensions(dimen)
 end
 
 function FileManagerHistory:onMenuHold(item)
-    local font_size = Font:getFace("tfont")
-    local text_remove_hist = _("Remove \"%1\" from history")
-    local text_remove_without_item = T(text_remove_hist, "")
-    local text_remove_hist_width = (RenderText:sizeUtf8Text(
-        0, self.width, font_size, text_remove_without_item).x )
-    local text_item_width = (RenderText:sizeUtf8Text(
-        0, self.width , font_size, item.text).x )
-
-    local item_trun
-    if self.width < text_remove_hist_width + text_item_width then
-        item_trun = RenderText:truncateTextByWidth(item.text, font_size, 1.2 * self.width - text_remove_hist_width)
-    else
-        item_trun = item.text
-    end
-    local text_remove = T(text_remove_hist, item_trun)
-
-    self.histfile_dialog = ButtonDialog:new{
-        buttons = {
+    self.histfile_dialog = nil
+    local buttons = {
+        {
             {
-                {
-                    text = text_remove,
-                    callback = function()
-                        require("readhistory"):removeItem(item)
-                        self._manager:updateItemTable()
-                        UIManager:close(self.histfile_dialog)
-                    end,
-                },
+                text = _("Purge .sdr"),
+                enabled = DocSettings:hasSidecarFile(util.realpath(item.file)),
+                callback = function()
+                    local ConfirmBox = require("ui/widget/confirmbox")
+                    UIManager:show(ConfirmBox:new{
+                        text = util.template(_("Purge .sdr to reset settings for this document?\n\n%1"), item.text),
+                        ok_text = _("Purge"),
+                        ok_callback = function()
+                            filemanagerutil.purgeSettings(item.file)
+                            filemanagerutil.removeFileFromHistoryIfWanted(item.file)
+                            self._manager:updateItemTable()
+                            UIManager:close(self.histfile_dialog)
+                        end,
+                    })
+                end,
             },
             {
-                {
-                    text = _("Book information"),
-                    enabled = FileManagerBookInfo:isSupported(item.file),
-                    callback = function()
-                        FileManagerBookInfo:show(item.file)
-                        UIManager:close(self.histfile_dialog)
-                    end,
-                 },
-            },
-            {},
-            {
-                {
-                    text = _("Clear history of deleted files"),
-                    callback = function()
-                        require("readhistory"):clearMissing()
-                        self._manager:updateItemTable()
-                        UIManager:close(self.histfile_dialog)
-                    end,
-                 },
+                text = _("Remove from history"),
+                callback = function()
+                    require("readhistory"):removeItem(item)
+                    self._manager:updateItemTable()
+                    UIManager:close(self.histfile_dialog)
+                end,
             },
         },
+        {
+            {
+                text = _("Delete"),
+                enabled = lfs.attributes(item.file, "mode") and true or false,
+                callback = function()
+                    local ConfirmBox = require("ui/widget/confirmbox")
+                    UIManager:show(ConfirmBox:new{
+                        text = _("Are you sure that you want to delete this file?\n") .. item.file .. ("\n") .. _("If you delete a file, it is permanently lost."),
+                        ok_text = _("Delete"),
+                        ok_callback = function()
+                            local FileManager = require("apps/filemanager/filemanager")
+                            FileManager:deleteFile(item.file)
+                            filemanagerutil.removeFileFromHistoryIfWanted(item.file)
+                            require("readhistory"):setDeleted(item)
+                            self._manager:updateItemTable()
+                            UIManager:close(self.histfile_dialog)
+                        end,
+                    })
+                end,
+            },
+            {
+                text = _("Book information"),
+                enabled = FileManagerBookInfo:isSupported(item.file),
+                callback = function()
+                    FileManagerBookInfo:show(item.file)
+                    UIManager:close(self.histfile_dialog)
+                end,
+             },
+        },
+        {},
+        {
+            {
+                text = _("Clear history of deleted files"),
+                callback = function()
+                    require("readhistory"):clearMissing()
+                    self._manager:updateItemTable()
+                    UIManager:close(self.histfile_dialog)
+                end,
+             },
+        },
+    }
+    self.histfile_dialog = ButtonDialogTitle:new{
+        title = item.text:match("([^/]+)$"),
+        title_align = "center",
+        buttons = buttons,
     }
     UIManager:show(self.histfile_dialog)
     return true

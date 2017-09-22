@@ -513,8 +513,8 @@ local function _FileManagerHistory_updateItemTable(self)
         hist_menu._do_hint_opened = BookInfoManager:getSetting("history_hint_opened")
     end
 
-    -- We do now the single thing done in FileManagerHistory:updateItemTable():
-    hist_menu:switchItemTable(self.hist_menu_title, require("readhistory").hist)
+    -- And do now what the original does
+    _FileManagerHistory_updateItemTable_orig(self)
 end
 
 function CoverBrowser:setupHistoryDisplayMode(display_mode)

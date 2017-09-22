@@ -146,28 +146,9 @@ function FileManager:init()
                             text = util.template(_("Purge .sdr to reset settings for this document?\n\n%1"), self.file_dialog.title),
                             ok_text = _("Purge"),
                             ok_callback = function()
-                                local file_abs_path = util.realpath(file)
-                                if file_abs_path then
-                                    local autoremove_deleted_items_from_history = G_reader_settings:readSetting("autoremove_deleted_items_from_history") or false
-                                    os.remove(DocSettings:getSidecarFile(file_abs_path))
-                                    -- also remove backup, otherwise it will be used if we re-open this document
-                                    -- (it also allows for the sidecar folder to be empty and removed)
-                                    os.remove(DocSettings:getSidecarFile(file_abs_path)..".old")
-                                    -- If the sidecar folder is empty, os.remove() can
-                                    -- delete it. Otherwise, the following statement has no
-                                    -- effect.
-                                    os.remove(DocSettings:getSidecarDir(file_abs_path))
-                                    self:refreshPath()
-                                    -- also delete from history and update lastfile to top item in
-                                    -- history if autoremove_deleted_items_from_history is enabled
-                                    if autoremove_deleted_items_from_history then
-                                        local readhistory = require("readhistory")
-                                        readhistory:removeItemByPath(file_abs_path)
-                                        if G_reader_settings:readSetting("lastfile") == file_abs_path then
-                                            G_reader_settings:saveSetting("lastfile", #readhistory.hist > 0 and readhistory.hist[1].file or nil)
-                                        end
-                                    end
-                                end
+                                filemanagerutil.purgeSettings(file)
+                                filemanagerutil.removeFileFromHistoryIfWanted(file)
+                                self:refreshPath()
                                 UIManager:close(self.file_dialog)
                             end,
                         })
@@ -186,26 +167,14 @@ function FileManager:init()
                     text = _("Delete"),
                     callback = function()
                         local ConfirmBox = require("ui/widget/confirmbox")
-                        UIManager:close(self.file_dialog)
                         UIManager:show(ConfirmBox:new{
                             text = _("Are you sure that you want to delete this file?\n") .. file .. ("\n") .. _("If you delete a file, it is permanently lost."),
                             ok_text = _("Delete"),
                             ok_callback = function()
-                                local autoremove_deleted_items_from_history = G_reader_settings:readSetting("autoremove_deleted_items_from_history") or false
-                                local file_abs_path = util.realpath(file)
                                 deleteFile(file)
-                                -- also delete from history and update lastfile to top item in
-                                -- history if autoremove_deleted_items_from_history is enabled
-                                if autoremove_deleted_items_from_history then
-                                    if file_abs_path then
-                                        local readhistory = require("readhistory")
-                                        readhistory:removeItemByPath(file_abs_path)
-                                        if G_reader_settings:readSetting("lastfile") == file_abs_path then
-                                            G_reader_settings:saveSetting("lastfile", #readhistory.hist > 0 and readhistory.hist[1].file or nil)
-                                        end
-                                    end
-                                end
+                                filemanagerutil.removeFileFromHistoryIfWanted(file)
                                 self:refreshPath()
+                                UIManager:close(self.file_dialog)
                             end,
                         })
                     end,

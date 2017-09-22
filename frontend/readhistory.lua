@@ -16,7 +16,8 @@ local function buildEntry(input_time, input_file)
     return {
         time = input_time,
         text = input_file:gsub(".*/", ""),
-        file = realpath(input_file),
+        file = realpath(input_file) or input_file, -- keep orig file path of deleted files
+        dim = lfs.attributes(input_file, "mode") ~= "file", -- "dim", as expected by Menu
         callback = function()
             local ReaderUI = require("apps/reader/readerui")
             ReaderUI:showReader(input_file)
@@ -54,11 +55,6 @@ function ReadHistory:_sort()
         not G_reader_settings:nilOrFalse("autoremove_deleted_items_from_history")
     if autoremove_deleted_items_from_history then
         self:clearMissing()
-    end
-    for i = #self.hist, 1, -1 do
-        if self.hist[i].file == nil then
-            table.remove(self.hist, i)
-        end
     end
     table.sort(self.hist, fileFirstOrdering)
     -- TODO(zijiehe): Use binary insert instead of a loop to deduplicate.
@@ -176,6 +172,13 @@ function ReadHistory:addItem(file)
         self:_sort()
         self:_reduce()
         self:_flush()
+    end
+end
+
+function ReadHistory:setDeleted(item)
+    assert(self ~= nil)
+    if self.hist[item.index] then
+        self.hist[item.index].dim = true
     end
 end
 

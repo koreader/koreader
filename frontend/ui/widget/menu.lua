@@ -209,6 +209,7 @@ function MenuItem:init()
                 text = self.text,
                 face = self.face,
                 bold = self.bold,
+                fgcolor = self.dim and Blitbuffer.COLOR_GREY or nil,
             }
         }
     }
@@ -219,6 +220,7 @@ function MenuItem:init()
             text = mandatory,
             face = self.info_face,
             bold = self.bold,
+            fgcolor = self.dim and Blitbuffer.COLOR_GREY or nil,
         }
     }
 
@@ -651,6 +653,7 @@ function Menu:updateItems(select_number)
                 text = getMenuText(self.item_table[i]),
                 mandatory = self.item_table[i].mandatory,
                 bold = self.item_table.current == i or self.item_table[i].bold == true,
+                dim = self.item_table[i].dim,
                 face = self.cface,
                 dimen = self.item_dimen:new(),
                 shortcut = item_shortcut,

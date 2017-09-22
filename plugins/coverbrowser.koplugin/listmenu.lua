@@ -187,7 +187,8 @@ function ListMenuItem:update()
         h = self.height - 2 * self.underline_h
     }
 
-    if lfs.attributes(self.filepath, "mode") == "directory" then
+    local file_mode = lfs.attributes(self.filepath, "mode")
+    if file_mode == "directory" then
         self.is_directory = true
         -- nb items on the right, directory name on the left
         local wright = TextWidget:new{
@@ -220,6 +221,9 @@ function ListMenuItem:update()
             },
         }
     else
+        if file_mode ~= "file" then
+            self.file_deleted = true
+        end
         -- File
         local border_size = 1
         local max_img_w = dimen.h - 2*border_size -- width = height, squared
@@ -267,6 +271,7 @@ function ListMenuItem:update()
                             margin = 0,
                             padding = 0,
                             bordersize = border_size,
+                            dim = self.file_deleted,
                             wimage,
                         }
                     }
@@ -331,10 +336,12 @@ function ListMenuItem:update()
             local wfileinfo = TextWidget:new{
                 text = fileinfo_str,
                 face = Font:getFace("cfont", 14),
+                fgcolor = self.file_deleted and Blitbuffer.COLOR_GREY or nil,
             }
             local wpageinfo = TextWidget:new{
                 text = pages_str,
                 face = Font:getFace("cfont", 14),
+                fgcolor = self.file_deleted and Blitbuffer.COLOR_GREY or nil,
             }
 
             local wright_width = math.max(wfileinfo:getSize().w, wpageinfo:getSize().w)
@@ -421,6 +428,7 @@ function ListMenuItem:update()
                     width = wmain_width,
                     alignment = "left",
                     bold = true,
+                    fgcolor = self.file_deleted and Blitbuffer.COLOR_GREY or nil,
                 }
                 local height = wtitle:getSize().h
                 if authors then
@@ -429,6 +437,7 @@ function ListMenuItem:update()
                         face = Font:getFace(fontname_authors, fontsize_authors),
                         width = wmain_width,
                         alignment = "left",
+                        fgcolor = self.file_deleted and Blitbuffer.COLOR_GREY or nil,
                     }
                     height = height + wauthors:getSize().h
                 end
@@ -513,15 +522,20 @@ function ListMenuItem:update()
                 self.been_opened = true
             end
             -- A real simple widget, nothing fancy
+            local hint = "…" -- display hint it's being loaded
+            if self.file_deleted then -- unless file was deleted (can happen with History)
+                hint = " " .. _("(deleted)")
+            end
             widget = LeftContainer:new{
                 dimen = dimen,
                 HorizontalGroup:new{
                     HorizontalSpan:new{ width = Screen:scaleBySize(10) },
                     TextBoxWidget:new{
-                        text = self.text .. "…", -- display hint it's being loaded
+                        text = self.text .. hint,
                         face = Font:getFace("cfont", 18),
                         width = dimen.w - 2 * Screen:scaleBySize(10),
                         alignment = "left",
+                        fgcolor = self.file_deleted and Blitbuffer.COLOR_GREY or nil,
                     }
                 },
             }
@@ -736,7 +750,7 @@ function ListMenu:_updateItemsBuildUI()
         -- this is for focus manager
         table.insert(self.layout, {item_tmp})
 
-        if not item_tmp.bookinfo_found and not item_tmp.is_directory then
+        if not item_tmp.bookinfo_found and not item_tmp.is_directory and not item_tmp.file_deleted then
             -- Register this item for update
             table.insert(self.items_to_update, item_tmp)
         end
