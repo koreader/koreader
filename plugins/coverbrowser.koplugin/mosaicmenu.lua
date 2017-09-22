@@ -93,7 +93,9 @@ local FakeCover = FrameContainer:new{
     margin = 0,
     padding = 0,
     bordersize = 1,
+    dim = nil,
     filename = nil,
+    file_deleted = nil,
     title = nil,
     authors = nil,
     -- these font sizes will be scaleBySize'd by Font:getFace()
@@ -244,6 +246,11 @@ function FakeCover:init()
         table.insert(vgroup, VerticalSpan:new{ width = self.bottom_pad })
     end
 
+    if self.file_deleted then
+        self.dim = true
+        self.color = Blitbuffer.COLOR_GREY
+    end
+
     -- As we are a FrameContainer, a border will be painted around self[1]
     self[1] = CenterContainer:new{
         dimen = Geom:new{
@@ -354,7 +361,8 @@ function MosaicMenuItem:update()
         h = self.height - self.underline_h
     }
 
-    if lfs.attributes(self.filepath, "mode") == "directory" then
+    local file_mode = lfs.attributes(self.filepath, "mode")
+    if file_mode == "directory" then
         self.is_directory = true
         -- Directory : rounded corners
         local margin = Screen:scaleBySize(5) -- make directories less wide
@@ -395,6 +403,9 @@ function MosaicMenuItem:update()
             },
         }
     else
+        if file_mode ~= "file" then
+            self.file_deleted = true
+        end
         -- File : various appearances
         -- We'll draw a border around cover images, it may not be
         -- needed with some covers, but it's nicer when cover is
@@ -460,6 +471,8 @@ function MosaicMenuItem:update()
                         margin = 0,
                         padding = 0,
                         bordersize = border_size,
+                        dim = self.file_deleted,
+                        color = self.file_deleted and Blitbuffer.COLOR_GREY or nil,
                         image,
                     }
                 }
@@ -491,6 +504,7 @@ function MosaicMenuItem:update()
                         filename = self.text,
                         title = not bookinfo.ignore_meta and bookinfo.title,
                         authors = not bookinfo.ignore_meta and bookinfo.authors,
+                        file_deleted = self.file_deleted,
                     }
                 }
             end
@@ -521,14 +535,19 @@ function MosaicMenuItem:update()
                 }
             end
             -- Same as real FakeCover, but let it be squared (like a file)
+            local hint = "…" -- display hint it's being loaded
+            if self.file_deleted then -- unless file was deleted (can happen with History)
+                hint = _("(deleted)")
+            end
             widget = CenterContainer:new{
                 dimen = dimen,
                 FakeCover:new{
                     width = dimen.w,
                     height = dimen.h,
                     bordersize = border_size,
-                    filename = self.text .. "\n…", -- display hint it's being loaded
+                    filename = self.text .. "\n" .. hint,
                     initial_sizedec = 4, -- start with a smaller font when filenames only
+                    file_deleted = self.file_deleted,
                 }
             }
         end
@@ -725,7 +744,7 @@ function MosaicMenu:_updateItemsBuildUI()
         -- this is for focus manager
         table.insert(self.layout, {item_tmp})
 
-        if not item_tmp.bookinfo_found and not item_tmp.is_directory then
+        if not item_tmp.bookinfo_found and not item_tmp.is_directory and not item_tmp.file_deleted then
             -- Register this item for update
             table.insert(self.items_to_update, item_tmp)
         end

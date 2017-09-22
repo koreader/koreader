@@ -326,22 +326,23 @@ function CoverMenu:onHistoryMenuHold(item)
         return true
     end
 
-    -- Remember some of this original ButtonDialog properties
+    -- Remember some of this original ButtonDialogTitle properties
+    local orig_title = self.histfile_dialog.title
+    local orig_title_align = self.histfile_dialog.title_align
     local orig_buttons = self.histfile_dialog.buttons
     -- Close original ButtonDialog (it has not yet been painted
     -- on screen, so we won't see it)
     UIManager:close(self.histfile_dialog)
 
     -- Replace Book information callback to use directly our bookinfo
-    orig_buttons[2][1].callback = function()
+    orig_buttons[2][2].callback = function()
         FileManagerBookInfo:show(file, bookinfo)
         UIManager:close(self.histfile_dialog)
     end
-    -- Re-organise buttons to make them more coherent with those we're going to add
-    -- Move up "Clear history of deleted items" and down "Book information", so
-    -- it's now similar to File browser's onFileHold
-    -- (The original organisation is fine in classic mode)
-    orig_buttons[2], orig_buttons[4] = orig_buttons[4], orig_buttons[2]
+
+    -- Remove last button ("Clear history of deleted files"), we'll
+    -- add it back after our buttons
+    local last_button = table.remove(orig_buttons)
 
     -- Add some new buttons to original buttons set
     table.insert(orig_buttons, {
@@ -412,10 +413,15 @@ function CoverMenu:onHistoryMenuHold(item)
             end,
         },
     })
+    table.insert(orig_buttons, {}) -- separator
+    -- Put back "Clear history of deleted files"
+    table.insert(orig_buttons, last_button)
 
     -- Create the new ButtonDialog, and let UIManager show it
-    local ButtonDialog = require("ui/widget/buttondialog")
-    self.histfile_dialog = ButtonDialog:new{
+    local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
+    self.histfile_dialog = ButtonDialogTitle:new{
+        title = orig_title,
+        title_align = orig_title_align,
         buttons = orig_buttons,
     }
     UIManager:show(self.histfile_dialog)
