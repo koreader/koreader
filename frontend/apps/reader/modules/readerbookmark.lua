@@ -55,8 +55,10 @@ function ReaderBookmark:addToMainMenu(menu_items)
     if self.ui.document.info.has_pages then
         menu_items.bookmark_browsing_mode = {
             text = self.bbm_menu_title,
-            callback = function()
+            checked_func = function() return self.view.flipping_visible end,
+            callback = function(touchmenu_instance)
                 self:enableBookmarkBrowsingMode()
+                touchmenu_instance:closeMenu()
             end,
         }
     end
