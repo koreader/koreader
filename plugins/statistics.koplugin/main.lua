@@ -204,9 +204,9 @@ Do you want to create an empty database?
             if #ReadHistory.hist > 0 then
                 local info = InfoMessage:new{
                     text =_([[
-New version of statistics plugin is detected.
+New version of statistics plugin detected.
 Statistics data needs to be converted into the new database format.
-It make take a few minutes.
+This may take a few minutes.
 Please wait…
 ]])}
                 UIManager:show(info)
