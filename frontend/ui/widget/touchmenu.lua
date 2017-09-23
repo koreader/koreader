@@ -167,7 +167,7 @@ function TouchMenuBar:init()
     -- content_width is the width of all the icon images
     local content_width = icon_width * #self.icons + icons_sep_width
     local spacing_width = (self.width - content_width)/(#self.icons*2)
-    local icon_padding = math.min(spacing_width, Size.span.horizontal_default)
+    local icon_padding = math.min(spacing_width, Screen:scaleBySize(16))
     self.height = icon_height + Size.span.vertical_large
     self.show_parent = self.show_parent or self
     self.bar_icon_group = HorizontalGroup:new{}
