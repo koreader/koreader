@@ -138,8 +138,9 @@ function MenuItem:init()
     end
 
     self.detail = self.text
-    -- 15 for HorizontalSpan,
-    self.content_width = self.dimen.w - shortcut_icon_dimen.w - 15
+    -- account for added HorizontalSpans
+    self.content_width = self.dimen.w - shortcut_icon_dimen.w
+        - Size.span.horizontal_small - Size.span.horizontal_default
 
     -- we need this table per-instance, so we declare it here
     if Device:isTouchDevice() then
