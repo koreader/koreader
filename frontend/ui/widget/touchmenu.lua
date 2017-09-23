@@ -162,12 +162,13 @@ function TouchMenuBar:init()
     local icon_sep_width = Size.span.vertical_default
     local icons_sep_width = icon_sep_width * (#self.icons + 1)
     -- we assume all icons are of the same width
-    local tmp_ib = IconButton:new{icon_file = self.icons[1]}
+    local icon_width = Screen:scaleBySize(40)
+    local icon_height = icon_width
     -- content_width is the width of all the icon images
-    local content_width = tmp_ib:getSize().w * #self.icons + icons_sep_width
+    local content_width = icon_width * #self.icons + icons_sep_width
     local spacing_width = (self.width - content_width)/(#self.icons*2)
-    local icon_padding = math.min(spacing_width, Screen:scaleBySize(20))
-    self.height = tmp_ib:getSize().h + Screen:scaleBySize(10)
+    local icon_padding = math.min(spacing_width, Screen:scaleBySize(16))
+    self.height = icon_height + Size.span.vertical_large
     self.show_parent = self.show_parent or self
     self.bar_icon_group = HorizontalGroup:new{}
     -- build up image widget for menu icon bar
@@ -187,6 +188,9 @@ function TouchMenuBar:init()
         local ib = IconButton:new{
             show_parent = self.show_parent,
             icon_file = v,
+            width = icon_width,
+            height = icon_height,
+            scale_for_dpi = false,
             callback = nil,
             horizontal_padding = icon_padding,
         }
