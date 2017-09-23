@@ -866,6 +866,83 @@ function ReaderStatistics:getCurrentStat(id_book)
     }
 end
 
+function ReaderStatistics:getBookStat(id_book)
+    if id_book == nil then
+        return
+    end
+    local conn = SQ3.open(db_location)
+    local sql_stmt = [[
+        SELECT title, authors, notes, highlights, pages, last_open
+        FROM book
+        WHERE id = '%s'
+    ]]
+    local title, authors, notes, highlights, pages, last_open = conn:rowexec(string.format(sql_stmt, id_book))
+
+    sql_stmt = [[
+        SELECT count(*)
+        FROM   (
+                    SELECT strftime('%%Y-%%m-%%d', start_time, 'unixepoch', 'localtime') AS dates
+                    FROM   page_stat
+                    WHERE  id_book = '%s'
+                    GROUP  BY dates
+               )
+    ]]
+    local total_days = conn:rowexec(string.format(sql_stmt, id_book))
+
+    sql_stmt = [[
+        SELECT sum(period),
+               count(DISTINCT page)
+        FROM   page_stat
+        WHERE  id_book = '%s'
+    ]]
+    local total_time_book, total_read_pages = conn:rowexec(string.format(sql_stmt, id_book))
+
+    sql_stmt = [[
+        SELECT min(start_time)
+        FROM   page_stat
+        WHERE  id_book = '%s'
+    ]]
+    local first_open = conn:rowexec(string.format(sql_stmt, id_book))
+    conn:close()
+
+    if total_time_book == nil then
+        total_time_book = 0
+    end
+    if total_read_pages == nil then
+        total_read_pages = 0
+    end
+    total_time_book = tonumber(total_time_book)
+    total_read_pages = tonumber(total_read_pages)
+    pages = tonumber(pages)
+    if pages == nil or pages == 0 then
+        pages = 1
+    end
+    local avg_time_per_page = total_time_book / total_read_pages
+    return {
+        { _("Title"), title},
+        { _("Authors"), authors},
+        { _("First opened"), os.date("%Y-%m-%d (%H:%M)", tonumber(first_open))},
+        { _("Last opened"), os.date("%Y-%m-%d (%H:%M)", tonumber(last_open))},
+        { _("Total time"), util.secondsToClock(total_time_book, false) },
+        { _("Total highlights"), tonumber(highlights) },
+        { _("Total notes"), tonumber(notes) },
+        { _("Total days"), tonumber(total_days) },
+        { _("Average time per page"), util.secondsToClock(avg_time_per_page, false) },
+        { _("Read pages/Total pages"), total_read_pages .. "/" .. pages },
+        -- adding 0.5 rounds to nearest integer with math.floor
+        { _("Percentage completed"), math.floor(total_read_pages / pages * 100 + 0.5) .. "%" },
+        "----",
+        { _("Show days"), _("Tap to display"),
+            callback = function()
+                UIManager:show(KeyValuePage:new{
+                    title = _("Read in days"),
+                    kv_pairs = self:getDatesForBook(id_book),
+                })
+            end,
+        }
+    }
+end
+
 -- sdays -> number of days to show
 -- ptype -> daily - show daily without weekday name
 --          daily_weekday - show daily with weekday name
@@ -1064,7 +1141,7 @@ function ReaderStatistics:getReadingProgressStats(sdays)
     return results
 end
 
-local function getDatesForBook(id_book)
+function ReaderStatistics:getDatesForBook(id_book)
     local results = {}
     local conn = SQ3.open(db_location)
     local sql_stmt = [[
@@ -1139,7 +1216,7 @@ function ReaderStatistics:getTotalStats()
             callback = function()
                 UIManager:show(KeyValuePage:new{
                     title = book_title,
-                    kv_pairs = getDatesForBook(id_book),
+                    kv_pairs = self:getBookStat(id_book),
                 })
             end,
         })

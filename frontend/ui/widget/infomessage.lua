@@ -6,13 +6,14 @@ It vanishes on key press or after a given timeout.
 Example:
     local UIManager = require("ui/uimanager")
     local _ = require("gettext")
+    local Screen = require("device").screen
     local sample
     sample = InfoMessage:new{
         text = _("Some message"),
         -- Usually the hight of a InfoMessage is self-adaptive. If this field is actively set, a
         -- scrollbar may be shown. This variable is usually helpful to display a large chunk of text
         -- which may exceed the height of the screen.
-        height = 400,
+        height = Screen:scaleBySize(400),
         -- Set to false to hide the icon, and also the span between the icon and text.
         show_icon = false,
         timeout = 5,  -- This widget will vanish in 5 seconds.
@@ -33,6 +34,7 @@ local HorizontalSpan = require("ui/widget/horizontalspan")
 local ImageWidget = require("ui/widget/imagewidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local ScrollTextWidget = require("ui/widget/scrolltextwidget")
+local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -91,6 +93,7 @@ function InfoMessage:init()
         else
             image_widget = ImageWidget:new{
                 file = "resources/info-i.png",
+                scale_for_dpi = true,
             }
         end
     else
@@ -127,12 +130,11 @@ function InfoMessage:init()
     self[1] = CenterContainer:new{
         dimen = Screen:getSize(),
         FrameContainer:new{
-            margin = 2,
             background = Blitbuffer.COLOR_WHITE,
             HorizontalGroup:new{
                 align = "center",
                 image_widget,
-                HorizontalSpan:new{ width = (self.show_icon and 10 or 0) },
+                HorizontalSpan:new{ width = (self.show_icon and Size.span.horizontal_default or 0) },
                 text_widget,
             }
         }

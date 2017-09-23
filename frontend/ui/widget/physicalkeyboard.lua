@@ -8,6 +8,7 @@ local Geom = require("ui/geometry")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local TopContainer = require("ui/widget/container/topcontainer")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -27,7 +28,7 @@ local PhysicalNumericKey = WidgetContainer:new{
 
     width = nil,
     height = nil,
-    bordersize = 2,
+    bordersize = Size.border.button,
     face = Font:getFace("infont"),
     pkey_face = Font:getFace("infont", 14),
 }
@@ -41,7 +42,7 @@ function PhysicalNumericKey:init()
         margin = 0,
         bordersize = self.bordersize,
         background = Blitbuffer.COLOR_WHITE,
-        radius = 5,
+        radius = Size.radius.default,
         padding = 0,
         CenterContainer:new{
             dimen = Geom:new{
@@ -69,10 +70,10 @@ end
 local PhysicalKeyboard = InputContainer:new{
     is_always_active = true,
     inputbox = nil,  -- expect ui/widget/inputtext instance
-    bordersize = 2,
-    padding = 2,
+    bordersize = Size.border.button,
+    padding = Size.padding.button,
     height = math.max(Screen:getWidth(), Screen:getHeight())*0.33,
-    key_padding = Screen:scaleBySize(6),
+    key_padding = Size.padding.default,
 }
 
 function PhysicalKeyboard:init()
@@ -124,7 +125,7 @@ end
 
 function PhysicalKeyboard:setupNumericMappingUI()
     local key_rows = VerticalGroup:new{}
-    local key_margin = 1
+    local key_margin = Size.margin.tiny
     local row_len = #self.mapping[1]
     local base_key_width = math.floor((self.width - row_len*(self.key_padding+2*key_margin) - 2*self.padding)/10)
     local base_key_height = math.floor((self.height - self.key_padding - 2*self.padding)/4)

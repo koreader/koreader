@@ -11,6 +11,7 @@ local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local ProgressWidget = require("ui/widget/progresswidget")
+local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -23,7 +24,7 @@ local LINE_COLOR = Blitbuffer.gray(0.4)
 local BG_COLOR = Blitbuffer.gray(0.2)
 
 local ReaderProgress = InputContainer:new{
-    padding = Screen:scaleBySize(15),
+    padding = Size.padding.fullscreen,
 }
 
 local dayOfWeekTranslation = {
@@ -40,8 +41,8 @@ function ReaderProgress:init()
     self.small_font_face = Font:getFace("smallffont")
     self.medium_font_face = Font:getFace("ffont")
     self.large_font_face = Font:getFace("largeffont")
-    self.screen_width = Screen:getSize().w
-    self.screen_height = Screen:getSize().h
+    self.screen_width = Screen:getWidth()
+    self.screen_height = Screen:getHeight()
     UIManager:setDirty(self, function()
         return "ui", self.dimen
     end)
@@ -69,7 +70,7 @@ function ReaderProgress:getStatusContent(width)
     return VerticalGroup:new{
         align = "left",
         OverlapGroup:new{
-            dimen = Geom:new{ w = width, h = Screen:scaleBySize(30) },
+            dimen = Geom:new{ w = width, h = Size.item.height_default },
             CloseButton:new{ window = self },
         },
         self:genSingleHeader(_("Last week")),
@@ -95,7 +96,7 @@ function ReaderProgress:genSingleHeader(title)
             background = BG_COLOR,
             dimen = Geom:new{
                 w = line_width,
-                h = 2,
+                h = Size.line.thick,
             }
         }
     }
@@ -112,7 +113,7 @@ function ReaderProgress:genSingleHeader(title)
             line_container,
             padding_span,
         },
-        VerticalSpan:new{ width = Screen:scaleBySize(5), height = self.screen_height / 25 },
+        VerticalSpan:new{ width = Size.span.vertical_large, height = self.screen_height / 25 },
     }
 end
 
@@ -135,7 +136,7 @@ function ReaderProgress:genDoubleHeader(title_left, title_right)
             background = BG_COLOR,
             dimen = Geom:new{
                 w = line_width,
-                h = 2,
+                h = Size.line.thick,
             }
         }
     }
@@ -158,7 +159,7 @@ function ReaderProgress:genDoubleHeader(title_left, title_right)
             line_container,
             padding_span,
         },
-        VerticalSpan:new{ width = Screen:scaleBySize(5), height = self.screen_height / 25 },
+        VerticalSpan:new{ width = Size.span.vertical_large, height = self.screen_height / 25 },
     }
 end
 
@@ -210,11 +211,11 @@ function ReaderProgress:genWeekStats(stats_day)
         date_format_show = dayOfWeekTranslation[os.date("%A", diff_time)] .. os.date(" (%d.%m)", diff_time)
         local total_group = HorizontalGroup:new{
             align = "center",
-            padding = 2,
+            padding = Size.padding.small,
             LeftContainer:new{
                 dimen = Geom:new{ w = self.screen_width , h = height / 3 },
                 TextWidget:new{
-                    padding = 2,
+                    padding = Size.padding.small,
                     text = date_format_show .. " - " .. util.secondsToClock(select_day_time, true),
                     face = Font:getFace("smallffont"),
                 },
@@ -291,7 +292,7 @@ function ReaderProgress:genSummaryDay(width)
     local span_group = HorizontalGroup:new{
         align = "center",
         LeftContainer:new{
-            dimen = Geom:new{ h = Screen:scaleBySize(10) },
+            dimen = Geom:new{ h = Size.span.horizontal_default },
             padding_span
         },
     }
@@ -353,7 +354,7 @@ function ReaderProgress:genSummaryWeek(width)
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextWidget:new{
-                padding = 5,
+                padding = Size.padding.default,
                 text = _("Total"),
                 face = self.small_font_face,
             },
@@ -417,7 +418,7 @@ function ReaderProgress:genSummaryWeek(width)
     local span_group = HorizontalGroup:new{
         align = "center",
         LeftContainer:new{
-            dimen = Geom:new{ h = Screen:scaleBySize(10) },
+            dimen = Geom:new{ h = Size.span.horizontal_default },
             padding_span
         },
     }

@@ -9,6 +9,7 @@ local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local Input = Device.input
@@ -18,8 +19,8 @@ local Notification = InputContainer:new{
     face = Font:getFace("x_smallinfofont"),
     text = "Null Message",
     timeout = nil,
-    margin = 5,
-    padding = 5,
+    margin = Size.margin.default,
+    padding = Size.padding.default,
 }
 
 function Notification:init()

@@ -57,6 +57,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local InputText = require("ui/widget/inputtext")
 local LineWidget = require("ui/widget/linewidget")
 local RenderText = require("ui/rendertext")
+local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -82,11 +83,11 @@ local InputDialog = InputContainer:new{
     description_face = Font:getFace("x_smallinfofont"),
     input_face = Font:getFace("x_smallinfofont"),
 
-    title_padding = Screen:scaleBySize(5),
-    title_margin = Screen:scaleBySize(2),
-    input_padding = Screen:scaleBySize(10),
-    input_margin = Screen:scaleBySize(10),
-    button_padding = Screen:scaleBySize(14),
+    title_padding = Size.padding.default,
+    title_margin = Size.margin.title,
+    input_padding = Size.padding.large,
+    input_margin = Size.margin.default,
+    button_padding = Size.padding.large,
 }
 
 function InputDialog:init()
@@ -158,14 +159,13 @@ function InputDialog:init()
 
     self.title_bar = LineWidget:new{
         dimen = Geom:new{
-            w = self.button_table:getSize().w + self.button_padding,
-            h = Screen:scaleBySize(2),
+            w = self.button_table:getSize().w + 2*self.button_padding,
+            h = Size.line.thick,
         }
     }
 
     self.dialog_frame = FrameContainer:new{
-        radius = 8,
-        bordersize = 3,
+        radius = Size.radius.window,
         padding = 0,
         margin = 0,
         background = Blitbuffer.COLOR_WHITE,

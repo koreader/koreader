@@ -6,6 +6,7 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local InputDialog = require("ui/widget/inputdialog")
 local InputText = require("ui/widget/inputtext")
+local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -18,8 +19,8 @@ local MultiInputDialog = InputDialog:extend{
     field = {},
     field_hint = {},
     fields = {},
-    description_padding = Screen:scaleBySize(5),
-    description_margin = Screen:scaleBySize(2),
+    description_padding = Size.padding.default,
+    description_margin = Size.margin.small,
 }
 
 function MultiInputDialog:init()
@@ -84,8 +85,8 @@ function MultiInputDialog:init()
     })
 
     self.dialog_frame = FrameContainer:new{
-        radius = 8,
-        bordersize = 3,
+        radius = Size.radius.window,
+        bordersize = Size.border.window,
         padding = 0,
         margin = 0,
         background = Blitbuffer.COLOR_WHITE,

@@ -177,9 +177,9 @@ function ImageWidget:_render()
 
     -- scale_for_dpi setting: update scale_factor (even if not set) with it
     if self.scale_for_dpi then
+        local size_scale = math.min(Screen:getWidth(), Screen:getHeight())/600
         local dpi_scale = Screen:getDPI() / 167
-        -- rounding off to power of 2 to avoid alias with pow(2, floor(log(x)/log(2))
-        dpi_scale = math.pow(2, math.max(0, math.floor(math.log(dpi_scale)/0.69)))
+        dpi_scale = math.pow(2, math.max(0, math.log((size_scale+dpi_scale)/2)/0.69))
         if self.scale_factor == nil then
             self.scale_factor = 1
         end

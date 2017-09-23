@@ -35,6 +35,7 @@ local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local RenderText = require("ui/rendertext")
+local Size = require("ui/size")
 local TextViewer = require("ui/widget/textviewer")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
@@ -74,7 +75,7 @@ function KeyValueTitle:init()
     })
     -- page count and separation line
     self.page_cnt = FrameContainer:new{
-        padding = 4,
+        padding = Size.padding.default,
         margin = 0,
         bordersize = 0,
         background = Blitbuffer.COLOR_WHITE,
@@ -87,16 +88,16 @@ function KeyValueTitle:init()
         },
     }
     self.title_bottom = OverlapGroup:new{
-        dimen = { w = self.width, h = Screen:scaleBySize(2) },
+        dimen = { w = self.width, h = Size.line.thick },
         LineWidget:new{
-            dimen = Geom:new{ w = self.width, h = Screen:scaleBySize(2) },
+            dimen = Geom:new{ w = self.width, h = Size.line.thick },
             background = Blitbuffer.COLOR_GREY,
             style = "solid",
         },
         self.page_cnt,
     }
     table.insert(self, self.title_bottom)
-    table.insert(self, VerticalSpan:new{ width = Screen:scaleBySize(5) })
+    table.insert(self, VerticalSpan:new{ width = Size.span.vertical_large })
 end
 
 function KeyValueTitle:setPageCount(curr, total)
@@ -139,7 +140,7 @@ function KeyValueItem:init()
         }
     end
 
-    local frame_padding = Screen:scaleBySize(8)
+    local frame_padding = Size.padding.default
     local frame_internal_width = self.width - frame_padding * 2
     local key_w = frame_internal_width / 2
     local value_w = frame_internal_width / 2
@@ -321,9 +322,9 @@ function KeyValuePage:init()
         self.page_info,
     }
 
-    local padding = Screen:scaleBySize(10)
+    local padding = Size.padding.large
     self.item_width = self.dimen.w - 2 * padding
-    self.item_height = Screen:scaleBySize(30)
+    self.item_height = Size.item.height_default
     -- setup title bar
     self.title_bar = KeyValueTitle:new{
         title = self.title,
@@ -418,7 +419,7 @@ function KeyValuePage:_populateItems()
                     background = Blitbuffer.COLOR_LIGHT_GREY,
                     dimen = Geom:new{
                         w = self.item_width,
-                        h = Screen:scaleBySize(2)
+                        h = Size.line.thick
                     },
                     style = "solid",
                 })

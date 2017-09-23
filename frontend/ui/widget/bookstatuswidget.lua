@@ -15,6 +15,7 @@ local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local ProgressWidget = require("ui/widget/progresswidget")
+local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
 local TimeVal = require("ui/timeval")
@@ -22,10 +23,10 @@ local ToggleSwitch = require("ui/widget/toggleswitch")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
-local Screen = require("device").screen
-local template = require("ffi/util").template
 local util = require("util")
 local _ = require("gettext")
+local Screen = require("device").screen
+local template = require("ffi/util").template
 
 local stats_book = {}
 
@@ -38,7 +39,7 @@ local stats_book = {}
     ["modified"] = "24.01.2016"
 },]]
 local BookStatusWidget = InputContainer:new{
-    padding = Screen:scaleBySize(15),
+    padding = Size.padding.fullscreen,
     settings = nil,
     thumbnail = nil,
     props = nil,
@@ -118,7 +119,7 @@ function BookStatusWidget:getStatusContent(width)
     return VerticalGroup:new{
         align = "left",
         OverlapGroup:new{
-            dimen = Geom:new{ w = width, h = Screen:scaleBySize(30) },
+            dimen = Geom:new{ w = width, h = Size.item.height_default },
             CloseButton:new{ window = self },
         },
         self:genBookInfoGroup(),
@@ -132,7 +133,7 @@ function BookStatusWidget:getStatusContent(width)
 end
 
 function BookStatusWidget:genHeader(title)
-    local width, height = Screen:getWidth(), Screen:scaleBySize(35)
+    local width, height = Screen:getWidth(), Size.item.height_default
 
     local header_title = TextWidget:new{
         text = title,
@@ -148,13 +149,13 @@ function BookStatusWidget:genHeader(title)
             background = Blitbuffer.gray(0.2),
             dimen = Geom:new{
                 w = line_width,
-                h = 2,
+                h = Size.line.thick,
             }
         }
     }
 
     return VerticalGroup:new{
-        VerticalSpan:new{ width = Screen:scaleBySize(25) },
+        VerticalSpan:new{ width = Size.item.height_default },
         HorizontalGroup:new{
             align = "center",
             padding_span,
@@ -165,7 +166,7 @@ function BookStatusWidget:genHeader(title)
             line_container,
             padding_span,
         },
-        VerticalSpan:new{ width = Screen:scaleBySize(5) },
+        VerticalSpan:new{ width = Size.span.vertical_large },
     }
 end
 
@@ -246,7 +247,7 @@ function BookStatusWidget:genBookInfoGroup()
     local text_author = TextWidget:new{
         text = self.props.authors,
         face = self.small_font_face,
-        padding = 2,
+        padding = Size.padding.default
     }
     table.insert(book_meta_info_group,
         CenterContainer:new{
@@ -386,19 +387,19 @@ end
 function BookStatusWidget:genSummaryGroup(width)
     local height
     if Screen:getScreenMode() == "landscape" then
-        height = Screen:scaleBySize(60)
+        height = Screen:scaleBySize(80)
     else
-        height = Screen:scaleBySize(130)
+        height = Screen:scaleBySize(160)
     end
 
-    local text_padding = 5
+    local text_padding = Size.padding.default
     self.input_note = InputText:new{
         text = self.summary.note,
         face = self.medium_font_face,
         width = width - self.padding * 3,
         height = height * 0.75,
         scroll = true,
-        bordersize = 2,
+        bordersize = Size.border.default,
         focused = false,
         padding = text_padding,
         parent = self,
@@ -406,7 +407,7 @@ function BookStatusWidget:genSummaryGroup(width)
     }
 
     return VerticalGroup:new{
-        VerticalSpan:new{ width = Screen:scaleBySize(5) },
+        VerticalSpan:new{ width = Size.span.vertical_large },
         CenterContainer:new{
             dimen = Geom:new{ w = width, h = height },
             self.input_note
@@ -508,7 +509,7 @@ end
 
 function BookStatusWidget:onSwitchFocus(inputbox)
     self.note_dialog = InputDialog:new{
-        title = "Note",
+        title = _("Review"),
         input = self.input_note:getText(),
         input_hint = "",
         input_type = "text",
@@ -523,7 +524,7 @@ function BookStatusWidget:onSwitchFocus(inputbox)
                     end,
                 },
                 {
-                    text = _("OK"),
+                    text = _("Save review"),
                     is_enter_default = true,
                     callback = function()
                         self.input_note:setText(self.note_dialog:getInputText())

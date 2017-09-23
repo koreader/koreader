@@ -1,5 +1,12 @@
---[[
-Display some text in scrollable view
+--[[--
+Displays some text in a scrollable view.
+
+@usage
+    local textviewer = TextViewer:new{
+        title = _("I can scroll!"),
+        text = _("I'll need to be longer than this example to scroll."),
+    }
+    UIManager:show(textviewer)
 ]]
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")
@@ -14,6 +21,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local ScrollTextWidget = require("ui/widget/scrolltextwidget")
+local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -31,11 +39,11 @@ local TextViewer = InputContainer:new{
 
     title_face = Font:getFace("x_smalltfont"),
     text_face = Font:getFace("x_smallinfofont"),
-    title_padding = Screen:scaleBySize(5),
-    title_margin = Screen:scaleBySize(2),
-    text_padding = Screen:scaleBySize(10),
-    text_margin = Screen:scaleBySize(2),
-    button_padding = Screen:scaleBySize(14),
+    title_padding = Size.padding.default,
+    title_margin = Size.margin.title,
+    text_padding = Size.padding.large,
+    text_margin = Size.margin.small,
+    button_padding = Size.padding.large,
 }
 
 function TextViewer:init()
@@ -112,7 +120,7 @@ function TextViewer:init()
     local separator = LineWidget:new{
         dimen = Geom:new{
             w = self.width,
-            h = Screen:scaleBySize(2),
+            h = Size.line.thick,
         }
     }
 
@@ -132,7 +140,7 @@ function TextViewer:init()
         buttons = self.buttons_table
     end
     local button_table = ButtonTable:new{
-        width = self.width - self.button_padding,
+        width = self.width - 2*self.button_padding,
         button_font_face = "cfont",
         button_font_size = 20,
         buttons = buttons,
@@ -158,8 +166,7 @@ function TextViewer:init()
     }
 
     self.frame = FrameContainer:new{
-        radius = 8,
-        bordersize = 3,
+        radius = Size.radius.window,
         padding = 0,
         margin = 0,
         background = Blitbuffer.COLOR_WHITE,

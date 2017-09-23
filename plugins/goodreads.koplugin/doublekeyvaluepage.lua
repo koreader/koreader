@@ -53,7 +53,7 @@ function DoubleKeyValueTitle:init()
     })
     -- page count and separation line
     self.page_cnt = FrameContainer:new{
-        padding = 4,
+        padding = Screen:scaleBySize(4),
         margin = 0,
         bordersize = 0,
         background = Blitbuffer.COLOR_WHITE,
@@ -129,31 +129,31 @@ function DoubleKeyValueItem:init()
     local h = self.dimen.h / 2
     local w = self.dimen.w
     self[1] = FrameContainer:new{
-        padding = 10,
+        padding = Screen:scaleBySize(10),
         bordersize = 0,
         VerticalGroup:new{
             dimen = Geom:new{ h = h, w = w },
-            padding = 10,
+            padding = Screen:scaleBySize(10),
             LeftContainer:new{
-                padding = 10,
+                padding = Screen:scaleBySize(10),
                 dimen = Geom:new{ h = h, w = w },
                 TextWidget:new{
                     text = self.show_value,
-                    padding = 10,
+                    padding = Screen:scaleBySize(10),
                     face = self.cface_up,
                 }
             },
             LeftContainer:new{
-                padding = 10,
+                padding = Screen:scaleBySize(10),
                  dimen = Geom:new{ h = h / 5 , w = w },
                 HorizontalSpan:new{ width = Screen:scaleBySize(15), height = 3 }
             },
             LeftContainer:new{
-                padding = 10,
+                padding = Screen:scaleBySize(10),
                 dimen = Geom:new{ h = h, w = w },
                 TextWidget:new{
                     text = self.show_key,
-                    padding = 10,
+                    padding = Screen:scaleBySize(10),
                     face = self.cface_down,
                 }
             }

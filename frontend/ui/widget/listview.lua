@@ -4,8 +4,8 @@ Widget component that handles pagination for a list of items.
 Example:
 
     local list_view = ListView:new{
-        height = 400,
-        width = 200,
+        height = Screen:scaleBySize(400),
+        width = Screen:scaleBySize(200),
         page_update_cb = function(curr_page_num, total_pages)
             -- This callback function will be called whenever a page
             -- turn event is triggered. You can use it to update
@@ -33,17 +33,17 @@ Example:
     }
 
 Note that ListView is created mainly to be used as a building block for other
-widgets like NetworkSetting, so they can share the same pagination code.
+widgets like @{ui.widget.networksetting|NetworkSetting}, so they can share the same pagination code.
 ]]
 
-local InputContainer = require("ui/widget/container/inputcontainer")
-local FrameContainer = require("ui/widget/container/framecontainer")
-local VerticalGroup = require("ui/widget/verticalgroup")
-local GestureRange = require("ui/gesturerange")
 local Blitbuffer = require("ffi/blitbuffer")
 local Device = require("device")
-local Screen = Device.screen
+local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
+local GestureRange = require("ui/gesturerange")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local Size = require("ui/size")
+local VerticalGroup = require("ui/widget/verticalgroup")
 
 local ListView = InputContainer:new{
     width = nil,
@@ -68,7 +68,7 @@ function ListView:init()
         }
     end
 
-    local padding = self.padding or Screen:scaleBySize(10)
+    local padding = self.padding or Size.padding.large
     self.item_height = self.item_height or self.items[1]:getSize().h
     self.item_width = self.dimen.w - 2 * padding
     self.items_per_page = math.floor(self.height / self.item_height)

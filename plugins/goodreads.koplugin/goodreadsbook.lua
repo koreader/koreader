@@ -12,6 +12,7 @@ local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local Pic = require("ffi/pic")
+local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
@@ -23,15 +24,15 @@ local T = require("ffi/util").template
 local _ = require("gettext")
 
 local GoodreadsBook = InputContainer:new{
-    padding = Screen:scaleBySize(15),
+    padding = Size.padding.fullscreen,
 }
 
 function GoodreadsBook:init()
     self.small_font_face = Font:getFace("smallffont")
     self.medium_font_face = Font:getFace("ffont")
     self.large_font_face = Font:getFace("largeffont")
-    self.screen_width = Screen:getSize().w
-    self.screen_height = Screen:getSize().h
+    self.screen_width = Screen:getWidth()
+    self.screen_height = Screen:getHeight()
     UIManager:setDirty(self, function()
         return "ui", self.dimen
     end)
@@ -49,7 +50,7 @@ function GoodreadsBook:getStatusContent(width)
     return VerticalGroup:new{
         align = "left",
         OverlapGroup:new{
-            dimen = Geom:new{ w = width, h = Screen:scaleBySize(30) },
+            dimen = Geom:new{ w = width, h = Size.item.height_default },
             CloseButton:new{ window = self },
         },
         self:genHeader(_("Book info")),
@@ -73,13 +74,13 @@ function GoodreadsBook:genHeader(title)
             background = Blitbuffer.gray(0.2),
             dimen = Geom:new{
                 w = line_width,
-                h = 2,
+                h = Size.line.thick,
             }
         }
     }
 
     return VerticalGroup:new{
-        VerticalSpan:new{ width = Screen:scaleBySize(5) },
+        VerticalSpan:new{ width = Size.span.vertical_large },
         HorizontalGroup:new{
             align = "center",
             padding_span,
@@ -90,7 +91,7 @@ function GoodreadsBook:genHeader(title)
             line_container,
             padding_span,
         },
-        VerticalSpan:new{ width = Screen:scaleBySize(5) },
+        VerticalSpan:new{ width = Size.span.vertical_large },
     }
 end
 
@@ -112,7 +113,7 @@ function GoodreadsBook:genBookInfoGroup()
         TextBoxWidget:new{
             text = self.dates.title,
             face = self.medium_font_face,
-            padding = 2,
+            padding = Size.padding.small,
             alignment = "center",
             width = width,
         },
@@ -142,7 +143,7 @@ function GoodreadsBook:genBookInfoGroup()
     local text_series = TextWidget:new{
         text = T(_("Series: %1"), self.dates.series),
         face = self.small_font_face,
-        padding = 2,
+        padding = Size.padding.small,
     }
     table.insert(book_meta_info_group,
         CenterContainer:new{
@@ -154,7 +155,7 @@ function GoodreadsBook:genBookInfoGroup()
     local text_rating = TextWidget:new{
         text = T(_("Rating: %1"), self.dates.rating),
         face = self.small_font_face,
-        padding = 2,
+        padding = Size.padding.small,
     }
     table.insert(book_meta_info_group,
         CenterContainer:new{
@@ -166,7 +167,7 @@ function GoodreadsBook:genBookInfoGroup()
     local text_pages = TextWidget:new{
         text = T(_("Pages: %1"), self.dates.pages),
         face = self.small_font_face,
-        padding = 2,
+        padding = Size.padding.small,
     }
     table.insert(book_meta_info_group,
         CenterContainer:new{
@@ -178,7 +179,7 @@ function GoodreadsBook:genBookInfoGroup()
     local text_release = TextWidget:new{
         text = T(_("Release date: %1"), self.dates.release),
         face = self.small_font_face,
-        padding = 2,
+        padding = Size.padding.small,
     }
     table.insert(book_meta_info_group,
         CenterContainer:new{

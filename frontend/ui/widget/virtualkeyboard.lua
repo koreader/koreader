@@ -10,6 +10,7 @@ local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local ImageWidget = require("ui/widget/imagewidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -27,7 +28,7 @@ local VirtualKey = InputContainer:new{
 
     width = nil,
     height = math.max(Screen:getWidth(), Screen:getHeight())*0.33,
-    bordersize = 2,
+    bordersize = Size.border.default,
     face = Font:getFace("infont"),
 }
 
@@ -62,7 +63,7 @@ function VirtualKey:init()
         margin = 0,
         bordersize = self.bordersize,
         background = Blitbuffer.COLOR_WHITE,
-        radius = 5,
+        radius = Size.radius.window,
         padding = 0,
         CenterContainer:new{
             dimen = Geom:new{
@@ -159,9 +160,9 @@ local VirtualKeyboard = InputContainer:new{
 
     width = Screen:scaleBySize(600),
     height = nil,
-    bordersize = Screen:scaleBySize(2),
-    padding = Screen:scaleBySize(2),
-    key_padding = Screen:scaleBySize(6),
+    bordersize = Size.border.default,
+    padding = Size.padding.small,
+    key_padding = Size.padding.default,
 }
 
 local lang_to_keyboard_layout = {

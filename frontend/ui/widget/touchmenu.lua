@@ -1,3 +1,6 @@
+--[[--
+TouchMenu widget for hierarchical menus.
+]]
 local Blitbuffer = require("ffi/blitbuffer")
 local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
@@ -14,6 +17,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local RightContainer = require("ui/widget/container/rightcontainer")
+local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -155,7 +159,7 @@ local TouchMenuBar = InputContainer:new{
 }
 
 function TouchMenuBar:init()
-    local icon_sep_width = Screen:scaleBySize(2)
+    local icon_sep_width = Size.span.vertical_default
     local icons_sep_width = icon_sep_width * (#self.icons + 1)
     -- we assume all icons are of the same width
     local tmp_ib = IconButton:new{icon_file = self.icons[1]}
@@ -197,7 +201,7 @@ function TouchMenuBar:init()
             self.bar_sep = LineWidget:new{
                 dimen = Geom:new{
                     w = self.width,
-                    h = Screen:scaleBySize(2),
+                    h = Size.line.thick,
                 },
                 empty_segments = {
                     {
@@ -307,9 +311,9 @@ local TouchMenu = InputContainer:new{
     -- for returnning in multi-level menus
     item_table_stack = nil,
     item_table = nil,
-    item_height = Screen:scaleBySize(50),
-    bordersize = Screen:scaleBySize(2),
-    padding = Screen:scaleBySize(5),
+    item_height = Size.item.height_large,
+    bordersize = Size.border.default,
+    padding = Size.padding.default,
     fface = Font:getFace("ffont"),
     width = nil,
     height = nil,
@@ -403,7 +407,7 @@ function TouchMenu:init()
         end,
     }
     local footer_width = self.width - self.padding*2 - self.bordersize*2
-    local footer_height = up_button:getSize().h + Screen:scaleBySize(2)
+    local footer_height = up_button:getSize().h + Size.line.thick
     self.footer = HorizontalGroup:new{
         LeftContainer:new{
             dimen = Geom:new{ w = footer_width*0.33, h = footer_height},
@@ -431,16 +435,16 @@ function TouchMenu:init()
     self.item_width = self.width - self.padding*2 - self.bordersize*2
     self.split_line = HorizontalGroup:new{
         -- pad with 10 pixel to align with the up arrow in footer
-        HorizontalSpan:new{width = 10},
+        HorizontalSpan:new{width = Size.span.horizontal_default},
         LineWidget:new{
             background = Blitbuffer.gray(0.33),
             dimen = Geom:new{
-                w = self.item_width - 20,
-                h = Screen:scaleByDPI(1),
+                w = self.item_width - Screen:scaleBySize(20),
+                h = Size.line.medium,
             }
         }
     }
-    self.footer_top_margin = VerticalSpan:new{width = Screen:scaleBySize(2)}
+    self.footer_top_margin = VerticalSpan:new{width = Size.span.vertical_default}
     self.bar:switchToTab(self.last_index or 1)
 end
 

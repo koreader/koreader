@@ -3,6 +3,7 @@ local Device = require("device")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local Screen = Device.screen
 
@@ -10,7 +11,7 @@ local LinkBox = InputContainer:new{
     box = nil,
     color = Blitbuffer.COLOR_GREY,
     radius = 0,
-    bordersize = 2,
+    bordersize = Size.line.medium,
 }
 
 function LinkBox:init()
@@ -60,4 +61,3 @@ function LinkBox:onTapClose()
 end
 
 return LinkBox
-

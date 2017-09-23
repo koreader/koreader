@@ -8,6 +8,7 @@ local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LineWidget = require("ui/widget/linewidget")
+local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local UIManager = require("ui/uimanager")
@@ -42,12 +43,13 @@ function ButtonDialogTitle:init()
             }
         }
     end
+    local vertical_span = VerticalSpan:new{ width = Size.span.vertical_default }
     self[1] = CenterContainer:new{
         dimen = Screen:getSize(),
         FrameContainer:new{
             VerticalGroup:new{
                 align = "center",
-                VerticalSpan:new{ width = 2 },
+                vertical_span,
                 TextBoxWidget:new{
                     text = self.title,
                     width = Screen:getWidth() * 0.8 ,
@@ -55,14 +57,14 @@ function ButtonDialogTitle:init()
                     bold = true,
                     alignment = self.title_align or "left",
                 },
-                VerticalSpan:new{ width = 2 },
+                vertical_span,
                 LineWidget:new{
                     dimen = Geom:new{
                         w = Screen:getWidth() * 0.9,
-                        h = 1,
+                        h = Size.line.medium,
                     }
                 },
-                VerticalSpan:new{ width = 2 },
+                vertical_span,
                 ButtonTable:new{
                     width = Screen:getWidth() * 0.9,
                     buttons = self.buttons,
@@ -70,9 +72,9 @@ function ButtonDialogTitle:init()
                 },
             },
             background = Blitbuffer.COLOR_WHITE,
-            bordersize = 2,
-            radius = 7,
-            padding = 2,
+            bordersize = Size.border.window,
+            radius = Size.radius.window,
+            padding = Size.padding.button,
         }
     }
 end

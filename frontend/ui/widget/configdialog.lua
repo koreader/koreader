@@ -16,6 +16,7 @@ local ImageWidget = require("ui/widget/imagewidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local RightContainer = require("ui/widget/container/rightcontainer")
+local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local ToggleSwitch = require("ui/widget/toggleswitch")
 local UIManager = require("ui/uimanager")
@@ -145,7 +146,7 @@ function ConfigOption:init()
     local default_item_font_size = 16
     local default_items_spacing = 30
     local default_option_height = 50
-    local default_option_padding = 15
+    local default_option_padding = Size.padding.large
     local max_option_name_width = 0
     for c = 1, #self.options do
         local name_font_face = self.options[c].name_font_face and self.options[c].name_font_face or "cfont"
@@ -156,13 +157,13 @@ function ConfigOption:init()
         }:getSize().w
         max_option_name_width = math.max(max_option_name_width, option_name_width)
     end
-    local default_name_align_right = math.max((max_option_name_width + Screen:scaleByDPI(10))/Screen:getWidth(), 0.33)
+    local default_name_align_right = math.max((max_option_name_width + Screen:scaleBySize(10))/Screen:getWidth(), 0.33)
     local default_item_align_center = 1 - default_name_align_right
 
     -- fill vertical group of config tab
     local vertical_group = VerticalGroup:new{}
     table.insert(vertical_group, VerticalSpan:new{
-        width = Screen:scaleBySize(default_option_padding),
+        width = default_option_padding,
     })
     -- @TODO restore setting when there are more advanced settings
     --local show_advanced = G_reader_settings:readSetting("show_advanced") or false
@@ -177,7 +178,7 @@ function ConfigOption:init()
             local item_font_face = self.options[c].item_font_face and self.options[c].item_font_face or "cfont"
             local item_font_size = self.options[c].item_font_size and self.options[c].item_font_size or default_item_font_size
             local option_height = Screen:scaleBySize(self.options[c].height and self.options[c].height or default_option_height)
-            local item_spacing_with = self.options[c].spacing and self.options[c].spacing or default_items_spacing
+            local item_spacing_width = Screen:scaleBySize(self.options[c].spacing and self.options[c].spacing or default_items_spacing)
             local enabled = true
             if self.options[c].enabled_func then
                 enabled = self.options[c].enabled_func(self.config.configurable)
@@ -272,7 +273,7 @@ function ConfigOption:init()
                 local max_item_spacing = (Screen:getWidth() * item_align -
                         middle_item:getSize().w * items_count) / items_count
                 local items_spacing = HorizontalSpan:new{
-                    width = math.min(max_item_spacing, Screen:scaleBySize(item_spacing_with))
+                    width = math.min(max_item_spacing, item_spacing_width)
                 }
                 for d = 1, #self.options[c].item_text do
                     local option_item
@@ -283,7 +284,7 @@ function ConfigOption:init()
                                 face = Font:getFace(item_font_face, item_font_size[d]),
                                 fgcolor = Blitbuffer.gray(enabled and 1.0 or 0.5),
                             },
-                            padding = 3,
+                            padding = Size.padding.button,
                             color = d == current_item and Blitbuffer.gray(enabled and 1.0 or 0.5) or Blitbuffer.COLOR_WHITE,
                             enabled = enabled,
                         }
@@ -294,7 +295,7 @@ function ConfigOption:init()
                                 face = Font:getFace(item_font_face, item_font_size),
                                 fgcolor = Blitbuffer.gray(enabled and 1.0 or 0.5),
                             },
-                            padding = -3,
+                            padding = -Size.padding.button,
                             color = d == current_item and Blitbuffer.gray(enabled and 1.0 or 0.5) or Blitbuffer.COLOR_WHITE,
                             enabled = enabled,
                         }
@@ -326,7 +327,7 @@ function ConfigOption:init()
                 local max_item_spacing = (Screen:getWidth() * item_align -
                         first_item:getSize().w * items_count) / items_count
                 local items_spacing = HorizontalSpan:new{
-                    width = math.min(max_item_spacing, Screen:scaleBySize(item_spacing_with))
+                    width = math.min(max_item_spacing, item_spacing_width)
                 }
                 for d = 1, #self.options[c].item_icons do
                     local option_item = OptionIconItem:new{
@@ -334,7 +335,7 @@ function ConfigOption:init()
                             file = self.options[c].item_icons[d],
                             dim = not enabled,
                         },
-                        padding = -2,
+                        padding = -Size.padding.button,
                         color = d == current_item and Blitbuffer.gray(enabled and 1.0 or 0.5) or Blitbuffer.COLOR_WHITE,
                         enabled = enabled,
                     }
@@ -412,8 +413,8 @@ local MenuBar = FrameContainer:new{
     background = Blitbuffer.COLOR_WHITE,
 }
 function MenuBar:init()
-    local icon_sep_width = Screen:scaleBySize(2)
-    local line_thickness = Screen:scaleBySize(2)
+    local icon_sep_width = Size.padding.button
+    local line_thickness = Size.line.thick
     local config_options = self.config_dialog.config_options
     local menu_items = {}
     local icons_width = 0

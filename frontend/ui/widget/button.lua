@@ -1,19 +1,34 @@
-local CenterContainer = require("ui/widget/container/centercontainer")
-local InputContainer = require("ui/widget/container/inputcontainer")
-local FrameContainer = require("ui/widget/container/framecontainer")
-local ImageWidget = require("ui/widget/imagewidget")
-local TextWidget = require("ui/widget/textwidget")
-local GestureRange = require("ui/gesturerange")
+--[[--
+A button widget that shows text or an icon and handles callback when tapped.
+
+@usage
+    local Button = require("ui/widget/button")
+    local button = Button:new{
+        text = _("Press me!"),
+        enabled = false, -- defaults to true
+        callback = some_callback_function,
+        width = Screen:scaleBySize(50),
+        max_width = Screen:scaleBySize(100),
+        bordersize = Screen:scaleBySize(3),
+        margin = 0,
+        padding = Screen:scaleBySize(2),
+    }
+--]]
+
 local Blitbuffer = require("ffi/blitbuffer")
-local UIManager = require("ui/uimanager")
-local Geom = require("ui/geometry")
+local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
 local Font = require("ui/font")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local Geom = require("ui/geometry")
+local GestureRange = require("ui/gesturerange")
+local ImageWidget = require("ui/widget/imagewidget")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local Size = require("ui/size")
+local TextWidget = require("ui/widget/textwidget")
+local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 
---[[
-a button widget that shows text or a icon and handles callback when tapped
---]]
 local Button = InputContainer:new{
     text = nil, -- mandatory
     icon = nil,
@@ -21,10 +36,10 @@ local Button = InputContainer:new{
     callback = nil,
     enabled = true,
     margin = 0,
-    bordersize = 3,
+    bordersize = Size.border.button,
     background = Blitbuffer.COLOR_WHITE,
-    radius = 15,
-    padding = 2,
+    radius = Size.radius.button,
+    padding = Size.padding.button,
     width = nil,
     max_width = nil,
     text_font_face = "cfont",
@@ -45,6 +60,7 @@ function Button:init()
         self.label_widget = ImageWidget:new{
             file = self.icon,
             dim = not self.enabled,
+            scale_for_dpi = true,
         }
     end
     local widget_size = self.label_widget:getSize()
