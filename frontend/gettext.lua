@@ -106,9 +106,9 @@ end
 if isAndroid then
     local ffi = require("ffi")
     local buf = ffi.new("char[?]", 16)
-    ffi.C.AConfiguration_getLanguage(android.app.config, buf)
+    android.lib.AConfiguration_getLanguage(android.app.config, buf)
     local lang = ffi.string(buf)
-    ffi.C.AConfiguration_getCountry(android.app.config, buf)
+    android.lib.AConfiguration_getCountry(android.app.config, buf)
     local country = ffi.string(buf)
     if lang and country then
         GetText.changeLang(lang.."_"..country)

@@ -7,11 +7,13 @@ local AndroidPowerD = BasePowerD:new{
 }
 
 function AndroidPowerD:frontlightIntensityHW()
-    return android.getScreenBrightness()
+    return math.floor(android.getScreenBrightness() / 255 * self.fl_max)
 end
 
 function AndroidPowerD:setIntensityHW(intensity)
-    android.setScreenBrightness(math.floor(255 * intensity / 25))
+    if self.fl_intensity ~= intensity then
+        android.setScreenBrightness(math.floor(255 * intensity / self.fl_max))
+    end
 end
 
 function AndroidPowerD:getCapacityHW()
