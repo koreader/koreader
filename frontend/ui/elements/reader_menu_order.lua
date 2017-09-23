@@ -11,6 +11,7 @@ local order = {
     navi = {
         "table_of_contents",
         "bookmarks",
+        "bookmark_browsing_mode",
         "----------------------------",
         "go_to",
         "skim_to",
