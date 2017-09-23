@@ -206,7 +206,7 @@ Do you want to create an empty database?
                     text =_([[
 New version of statistics plugin is detected.
 Statistics data needs to be converted into the new database format.
-It make take a few minutes.
+It may a few minutes.
 Please wait…
 ]])}
                 UIManager:show(info)
