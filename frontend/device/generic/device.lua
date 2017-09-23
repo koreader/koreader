@@ -166,6 +166,9 @@ function Device:initNetworkManager() end
 
 function Device:supportsScreensaver() return false end
 
+-- Device specific method to set datetime
+function Device:setDateTime(year, month, day, hour, min, sec) end
+
 -- Device specific method if any setting needs being saved
 function Device:saveSettings() end
 

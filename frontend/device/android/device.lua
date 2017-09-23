@@ -13,7 +13,7 @@ local Device = Generic:new{
     isAndroid = yes,
     hasFrontlight = yes,
     firmware_rev = "none",
-    display_dpi = ffi.C.AConfiguration_getDensity(android.app.config),
+    display_dpi = android.lib.AConfiguration_getDensity(android.app.config),
 }
 
 function Device:init()
@@ -35,13 +35,13 @@ function Device:init()
     }
 
     -- check if we have a keyboard
-    if ffi.C.AConfiguration_getKeyboard(android.app.config)
+    if android.lib.AConfiguration_getKeyboard(android.app.config)
        == ffi.C.ACONFIGURATION_KEYBOARD_QWERTY
     then
         self.hasKeyboard = yes
     end
     -- check if we have a touchscreen
-    if ffi.C.AConfiguration_getTouchscreen(android.app.config)
+    if android.lib.AConfiguration_getTouchscreen(android.app.config)
        ~= ffi.C.ACONFIGURATION_TOUCHSCREEN_NOTOUCH
     then
         self.isTouchDevice = yes
