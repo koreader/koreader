@@ -921,8 +921,8 @@ function ReaderStatistics:getBookStat(id_book)
     return {
         { _("Title"), title},
         { _("Authors"), authors},
-        { _("First book open"), os.date("%Y-%m-%d (%H:%M)", tonumber(first_open))},
-        { _("Last book open"), os.date("%Y-%m-%d (%H:%M)", tonumber(last_open))},
+        { _("First opened"), os.date("%Y-%m-%d (%H:%M)", tonumber(first_open))},
+        { _("Last opened"), os.date("%Y-%m-%d (%H:%M)", tonumber(last_open))},
         { _("Total time"), util.secondsToClock(total_time_book, false) },
         { _("Total highlights"), tonumber(highlights) },
         { _("Total notes"), tonumber(notes) },
