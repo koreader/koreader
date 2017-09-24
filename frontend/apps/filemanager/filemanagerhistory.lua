@@ -127,6 +127,7 @@ function FileManagerHistory:onShowHist()
         width = Screen:getWidth(),
         height = Screen:getHeight(),
         is_borderless = true,
+        is_popout = false,
         onMenuHold = self.onMenuHold,
         _manager = self,
     }
