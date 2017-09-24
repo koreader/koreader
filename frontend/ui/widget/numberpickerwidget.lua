@@ -113,7 +113,7 @@ function NumberPickerWidget:paintWidget()
     if self.value_table == nil then
         callback_input =  function()
             input = InputDialog:new{
-                title = _("Enter value"),
+                title = _("Enter number"),
                 input_type = "number",
                 buttons = {
                     {
