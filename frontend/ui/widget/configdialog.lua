@@ -417,20 +417,21 @@ function MenuBar:init()
     local line_thickness = Size.line.thick
     local config_options = self.config_dialog.config_options
     local menu_items = {}
-    local icons_width = 0
-    local icons_height = 0
+    local icon_width = Screen:scaleBySize(40)
+    local icon_height = icon_width
+    local icons_width = (icon_width + 2*icon_sep_width) * #config_options
+    local icons_height = icon_height
     for c = 1, #config_options do
         local menu_icon = IconButton:new{
             show_parent = self.config_dialog,
             icon_file = config_options[c].icon,
+            width = icon_width,
+            height = icon_height,
+            scale_for_dpi = false,
             callback = function()
                 self.config_dialog:handleEvent(Event:new("ShowConfigPanel", c))
             end,
         }
-        local icon_dimen = menu_icon:getSize()
-        icons_width = icons_width + icon_dimen.w + 2*icon_sep_width
-        icons_height = icon_dimen.h > icons_height and icon_dimen.h or icons_height
-
         menu_items[c] = menu_icon
     end
 

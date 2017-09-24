@@ -200,8 +200,8 @@ function ImageWidget:_render()
     -- replace blitbuffer with a resizd one if needed
     local new_bb = nil
     if self.scale_factor == nil then
-        -- no scaling, but strech to width and height, only if provided
-        if self.width and self.height then
+        -- no scaling, but strech to width and height, only if provided and needed
+        if self.width and self.height and (self.width ~= bb_w or self.height ~= bb_h) then
             logger.dbg("ImageWidget: stretching")
             new_bb = self._bb:scale(self.width, self.height)
         end
