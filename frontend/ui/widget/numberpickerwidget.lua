@@ -5,7 +5,7 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local Font = require("ui/font")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local TextWidget = require("ui/widget/textboxwidget")
+local InputDialog = require("ui/widget/inputdialog")
 local RenderText = require("ui/rendertext")
 local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
@@ -108,12 +108,50 @@ function NumberPickerWidget:paintWidget()
         value = string.format(self.precision, value)
     end
 
-    local text_value = TextWidget:new{
+    local input
+    local callback_input = nil
+    if self.value_table == nil then
+        callback_input =  function()
+            input = InputDialog:new{
+                title = _("Enter number"),
+                input_type = "number",
+                buttons = {
+                    {
+                        {
+                            text = _("Cancel"),
+                            callback = function()
+                                UIManager:close(input)
+                            end,
+                        },
+                        {
+                            text = _("OK"),
+                            is_enter_default = true,
+                            callback = function()
+                                input:closeInputDialog()
+                                local input_value = tonumber(input:getInputText())
+                                if input_value and input_value >= self.value_min and input_value <= self.value_max then
+                                    self.value = input_value
+                                    self:update()
+                                end
+                                UIManager:close(input)
+                            end,
+                        },
+                    },
+                },
+            }
+            input:onShowKeyboard()
+            UIManager:show(input)
+        end
+    end
+
+    local text_value = Button:new{
         text = value,
-        alignment = "center",
-        face = self.spinner_face,
-        bold = true,
+        bordersize = 0,
+        padding = 0,
+        text_font_face = self.spinner_face_font,
+        text_font_size = self.spinner_face_size,
         width = self.width,
+        callback = callback_input,
     }
     return VerticalGroup:new{
         align = "center",
