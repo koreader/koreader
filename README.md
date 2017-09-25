@@ -191,8 +191,8 @@ environment variable:
 make KOR_BASE=../koreader-base
 ```
 
-This will be handy if you are developing koreader-base and want to test your
-modifications with kroeader frontend. NOTE: only support relative path for now.
+This will be handy if you are developing `koreader-base` and you want to test your
+modifications with the KOReader frontend. NOTE: only supports relative path for now.
 
 For EReader devices (kindle, kobo, pocketbook, ubuntu-touch)
 ---------------------
