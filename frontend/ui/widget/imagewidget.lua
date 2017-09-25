@@ -29,6 +29,14 @@ local Geom = require("ui/geometry")
 local Cache = require("cache")
 local logger = require("logger")
 
+-- DPI_SCALE can't change without a restart, so let's compute it now
+local function get_dpi_scale()
+    local size_scale = math.min(Screen:getWidth(), Screen:getHeight())/600
+    local dpi_scale = Screen:getDPI() / 167
+    return math.pow(2, math.max(0, math.log((size_scale+dpi_scale)/2)/0.69))
+end
+local DPI_SCALE = get_dpi_scale()
+
 local ImageCache = Cache:new{
     max_memsize = 2*1024*1024, -- 2M of image cache
     current_memsize = 0,
@@ -76,7 +84,6 @@ local ImageWidget = Widget:new{
     rotation_angle = 0,
 
     -- If scale_for_dpi is true image will be rescaled according to screen dpi
-    -- (x2 if DPI > 332) - (formerly known as 'autoscale')
     scale_for_dpi = false,
 
     -- When scale_factor is not nil, native image is scaled by this factor
@@ -84,7 +91,6 @@ local ImageWidget = Widget:new{
     -- Special case : scale_factor == 0 : image will be scaled to best fit provided
     -- width and height, keeping aspect ratio (scale_factor will be updated
     -- from 0 to the factor used at _render() time)
-    -- (former 'autostrech' setting removed, use "scale_factor=0" instead)
     scale_factor = nil,
 
     -- For initial positionning, if (possibly scaled) image overflows width/height
@@ -121,25 +127,44 @@ function ImageWidget:_loadfile()
     if itype == "png" or itype == "jpg" or itype == "jpeg"
             or itype == "tiff" then
         local hash = "image|"..self.file.."|"..(self.width or "").."|"..(self.height or "")
+        -- Do the scaling for DPI here, so it can be cached and not re-done
+        -- each time in _render()
+        -- In our use cases for files (icons), we either provide width and height,
+        -- or just scale_for_dpi, and scale_factor should stay nil.
+        -- Other combinations will result in double scaling anyway, and unexpected results.
+        local scale_for_dpi_here = false
+        if self.scale_for_dpi and DPI_SCALE ~= 1 then
+            scale_for_dpi_here = true -- we'll do it before caching
+            hash = hash .. "|d"
+            self.scale_for_dpi = false -- so it's not done in _render()
+        end
         local cache = ImageCache:check(hash)
         if cache then
             -- hit cache
             self._bb = cache.bb
             self._bb_disposable = false -- don't touch or free a cached _bb
         else
+            self._bb = Mupdf.renderImageFile(self.file, self.width, self.height)
+            if scale_for_dpi_here then
+                local new_bb
+                local bb_w, bb_h = self._bb:getWidth(), self._bb:getHeight()
+                if G_reader_settings:isTrue("legacy_image_scaling") then
+                    new_bb = self._bb:scale(bb_w * DPI_SCALE, bb_h * DPI_SCALE)
+                else
+                    new_bb = Mupdf.scaleBlitBuffer(self._bb, math.floor(bb_w * DPI_SCALE), math.floor(bb_h * DPI_SCALE))
+                end
+                self._bb:free()
+                self._bb = new_bb
+            end
             if not self.file_do_cache then
-                self._bb = Mupdf.renderImageFile(self.file, self.width, self.height)
                 self._bb_disposable = true -- we made it, we can modify and free it
             else
+                self._bb_disposable = false -- don't touch or free a cached _bb
                 -- cache this image
                 logger.dbg("cache", hash)
-                cache = ImageCacheItem:new{
-                    bb = Mupdf.renderImageFile(self.file, self.width, self.height),
-                }
+                cache = ImageCacheItem:new{ bb = self._bb }
                 cache.size = cache.bb.pitch * cache.bb.h * cache.bb:getBpp() / 8
                 ImageCache:insert(hash, cache)
-                self._bb = cache.bb
-                self._bb_disposable = false -- don't touch or free a cached _bb
             end
         end
     else
@@ -166,7 +191,7 @@ function ImageWidget:_render()
     -- First, rotation
     if self.rotation_angle ~= 0 then
         -- Allow for easy switch to former scaling via blitbuffer methods
-        if G_reader_settings:isTrue("use_legacy_image_scaling") then
+        if G_reader_settings:isTrue("legacy_image_scaling") then
             if not self._bb_disposable then
                 -- we can't modify _bb, make a copy
                 self._bb = self._bb:copy()
@@ -194,13 +219,10 @@ function ImageWidget:_render()
 
     -- scale_for_dpi setting: update scale_factor (even if not set) with it
     if self.scale_for_dpi then
-        local size_scale = math.min(Screen:getWidth(), Screen:getHeight())/600
-        local dpi_scale = Screen:getDPI() / 167
-        dpi_scale = math.pow(2, math.max(0, math.log((size_scale+dpi_scale)/2)/0.69))
         if self.scale_factor == nil then
             self.scale_factor = 1
         end
-        self.scale_factor = self.scale_factor * dpi_scale
+        self.scale_factor = self.scale_factor * DPI_SCALE
     end
 
     -- scale to best fit container : compute scale_factor for that
@@ -221,7 +243,7 @@ function ImageWidget:_render()
         if self.width and self.height and (self.width ~= bb_w or self.height ~= bb_h) then
             logger.dbg("ImageWidget: stretching")
             -- Allow for easy switch to former scaling via blitbuffer methods
-            if G_reader_settings:isTrue("use_legacy_image_scaling") then
+            if G_reader_settings:isTrue("legacy_image_scaling") then
                 -- Uses "simple nearest neighbour scaling"
                 new_bb = self._bb:scale(self.width, self.height)
             else
@@ -232,7 +254,7 @@ function ImageWidget:_render()
     elseif self.scale_factor ~= 1 then
         -- scale by scale_factor (not needed if scale_factor == 1)
         logger.dbg("ImageWidget: scaling by", self.scale_factor)
-        if G_reader_settings:isTrue("use_legacy_image_scaling") then
+        if G_reader_settings:isTrue("legacy_image_scaling") then
             new_bb = self._bb:scale(bb_w * self.scale_factor, bb_h * self.scale_factor)
         else
             -- Better to ensure we give integer width and height to MuPDF, to
