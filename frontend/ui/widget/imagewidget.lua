@@ -165,12 +165,29 @@ function ImageWidget:_render()
 
     -- First, rotation
     if self.rotation_angle ~= 0 then
-        if not self._bb_disposable then
-            -- we can't modify _bb, make a copy
-            self._bb = self._bb:copy()
+        -- Allow for easy switch to former scaling via blitbuffer methods
+        if G_reader_settings:isTrue("use_legacy_image_scaling") then
+            if not self._bb_disposable then
+                -- we can't modify _bb, make a copy
+                self._bb = self._bb:copy()
+                self._bb_disposable = true -- new object will have to be freed
+            end
+            self._bb:rotate(self.rotation_angle) -- rotate in-place
+        else
+            -- If we use MuPDF for scaling, we can't use bb:rotate() anymore,
+            -- as it only flags rotation in the blitbuffer and rotation is dealt
+            -- with at painting time. MuPDF does not like such a blitbuffer, and
+            -- we get corrupted images when using it for scaling such blitbuffers.
+            -- We need to make a real new blitbuffer with rotated content:
+            local rot_bb = self._bb:rotatedCopy(self.rotation_angle)
+            -- We made a new blitbuffer, we need to explicitely free
+            -- the old one to not leak memory
+            if self._bb_disposable then
+                self._bb:free()
+            end
+            self._bb = rot_bb
             self._bb_disposable = true -- new object will have to be freed
         end
-        self._bb:rotate(self.rotation_angle) -- rotate in-place
     end
 
     local bb_w, bb_h = self._bb:getWidth(), self._bb:getHeight()
@@ -203,12 +220,25 @@ function ImageWidget:_render()
         -- no scaling, but strech to width and height, only if provided and needed
         if self.width and self.height and (self.width ~= bb_w or self.height ~= bb_h) then
             logger.dbg("ImageWidget: stretching")
-            new_bb = self._bb:scale(self.width, self.height)
+            -- Allow for easy switch to former scaling via blitbuffer methods
+            if G_reader_settings:isTrue("use_legacy_image_scaling") then
+                -- Uses "simple nearest neighbour scaling"
+                new_bb = self._bb:scale(self.width, self.height)
+            else
+                -- Better quality scaling with MuPDF
+                new_bb = Mupdf.scaleBlitBuffer(self._bb, self.width, self.height)
+            end
         end
     elseif self.scale_factor ~= 1 then
         -- scale by scale_factor (not needed if scale_factor == 1)
         logger.dbg("ImageWidget: scaling by", self.scale_factor)
-        new_bb = self._bb:scale(bb_w * self.scale_factor, bb_h * self.scale_factor)
+        if G_reader_settings:isTrue("use_legacy_image_scaling") then
+            new_bb = self._bb:scale(bb_w * self.scale_factor, bb_h * self.scale_factor)
+        else
+            -- Better to ensure we give integer width and height to MuPDF, to
+            -- avoid a black 1-pixel line at right and bottom of image
+            new_bb = Mupdf.scaleBlitBuffer(self._bb, math.floor(bb_w * self.scale_factor), math.floor(bb_h * self.scale_factor))
+        end
     end
     if new_bb then
         -- We made a new blitbuffer, we need to explicitely free
