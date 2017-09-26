@@ -63,7 +63,7 @@ local ImageWidget = Widget:new{
     -- Whether BlitBuffer rendered from file should be cached
     file_do_cache = true,
     -- Whether provided BlitBuffer can be modified by us and SHOULD be free() by us,
-    -- normally true unless our caller wants to reuse it's provided image
+    -- normally true unless our caller wants to reuse its provided image
     image_disposable = true,
 
     -- Width and height of container, to limit rendering to this area
@@ -92,6 +92,9 @@ local ImageWidget = Widget:new{
     -- width and height, keeping aspect ratio (scale_factor will be updated
     -- from 0 to the factor used at _render() time)
     scale_factor = nil,
+
+    -- Whether to use former blitbuffer:scale() (default to using MuPDF)
+    use_legacy_image_scaling = G_reader_settings:isTrue("legacy_image_scaling"),
 
     -- For initial positionning, if (possibly scaled) image overflows width/height
     center_x_ratio = 0.5, -- default is centered on image's center
@@ -136,7 +139,7 @@ function ImageWidget:_loadfile()
         if self.scale_for_dpi and DPI_SCALE ~= 1 then
             scale_for_dpi_here = true -- we'll do it before caching
             hash = hash .. "|d"
-            self.scale_for_dpi = false -- so it's not done in _render()
+            self.already_scaled_for_dpi = true -- so we don't do it again in _render()
         end
         local cache = ImageCache:check(hash)
         if cache then
@@ -148,7 +151,7 @@ function ImageWidget:_loadfile()
             if scale_for_dpi_here then
                 local new_bb
                 local bb_w, bb_h = self._bb:getWidth(), self._bb:getHeight()
-                if G_reader_settings:isTrue("legacy_image_scaling") then
+                if self.use_legacy_image_scaling then
                     new_bb = self._bb:scale(bb_w * DPI_SCALE, bb_h * DPI_SCALE)
                 else
                     new_bb = Mupdf.scaleBlitBuffer(self._bb, math.floor(bb_w * DPI_SCALE), math.floor(bb_h * DPI_SCALE))
@@ -191,7 +194,7 @@ function ImageWidget:_render()
     -- First, rotation
     if self.rotation_angle ~= 0 then
         -- Allow for easy switch to former scaling via blitbuffer methods
-        if G_reader_settings:isTrue("legacy_image_scaling") then
+        if self.use_legacy_image_scaling then
             if not self._bb_disposable then
                 -- we can't modify _bb, make a copy
                 self._bb = self._bb:copy()
@@ -218,7 +221,7 @@ function ImageWidget:_render()
     local bb_w, bb_h = self._bb:getWidth(), self._bb:getHeight()
 
     -- scale_for_dpi setting: update scale_factor (even if not set) with it
-    if self.scale_for_dpi then
+    if self.scale_for_dpi and not self.already_scaled_for_dpi then
         if self.scale_factor == nil then
             self.scale_factor = 1
         end
@@ -236,14 +239,13 @@ function ImageWidget:_render()
         end
     end
 
-    -- replace blitbuffer with a resizd one if needed
+    -- replace blitbuffer with a resized one if needed
     local new_bb = nil
     if self.scale_factor == nil then
         -- no scaling, but strech to width and height, only if provided and needed
         if self.width and self.height and (self.width ~= bb_w or self.height ~= bb_h) then
             logger.dbg("ImageWidget: stretching")
-            -- Allow for easy switch to former scaling via blitbuffer methods
-            if G_reader_settings:isTrue("legacy_image_scaling") then
+            if self.use_legacy_image_scaling then
                 -- Uses "simple nearest neighbour scaling"
                 new_bb = self._bb:scale(self.width, self.height)
             else
@@ -254,7 +256,7 @@ function ImageWidget:_render()
     elseif self.scale_factor ~= 1 then
         -- scale by scale_factor (not needed if scale_factor == 1)
         logger.dbg("ImageWidget: scaling by", self.scale_factor)
-        if G_reader_settings:isTrue("legacy_image_scaling") then
+        if self.use_legacy_image_scaling then
             new_bb = self._bb:scale(bb_w * self.scale_factor, bb_h * self.scale_factor)
         else
             -- Better to ensure we give integer width and height to MuPDF, to
