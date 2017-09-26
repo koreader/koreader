@@ -441,7 +441,9 @@ function MenuBar:init()
     local padding = math.min(math.floor(available_width / #menu_items / 2), Screen:scaleBySize(20)) -- as in TouchMenuBar
     if padding > 0 then
         for c = 1, #menu_items do
-            menu_items[c]:setHorizontalPadding(padding)
+            menu_items[c].padding_left = padding
+            menu_items[c].padding_right = padding
+            menu_items[c]:update()
         end
         available_width = available_width - 2*padding*#menu_items
     end

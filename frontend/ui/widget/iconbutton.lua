@@ -8,6 +8,8 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local ImageWidget = require("ui/widget/imagewidget")
 local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local VerticalSpan = require("ui/widget/verticalspan")
 
 local IconButton = InputContainer:new{
     icon_file = "resources/info-confirm.png",
@@ -17,7 +19,11 @@ local IconButton = InputContainer:new{
     width = nil,
     height = nil,
     scale_for_dpi = true,
-    horizontal_padding = 0,
+    padding = 0,
+    padding_top = nil,
+    padding_right = nil,
+    padding_bottom = nil,
+    padding_left = nil,
     callback = function() end,
 }
 
@@ -31,26 +37,35 @@ function IconButton:init()
 
     self.show_parent = self.show_parent or self
 
-    self.button = HorizontalGroup:new{}
-    table.insert(self.button, HorizontalSpan:new{})
-    table.insert(self.button, self.image)
-    table.insert(self.button, HorizontalSpan:new{})
+    self.horizontal_group = HorizontalGroup:new{}
+    table.insert(self.horizontal_group, HorizontalSpan:new{})
+    table.insert(self.horizontal_group, self.image)
+    table.insert(self.horizontal_group, HorizontalSpan:new{})
+
+    self.button = VerticalGroup:new{}
+    table.insert(self.button, VerticalSpan:new{})
+    table.insert(self.button, self.horizontal_group)
+    table.insert(self.button, VerticalSpan:new{})
 
     self[1] = self.button
     self:update()
 end
 
 function IconButton:update()
-    self.button[1].width = self.horizontal_padding
-    self.button[3].width = self.horizontal_padding
-    self.dimen = self.image:getSize()
-    self.dimen.w = self.dimen.w + 2*self.horizontal_padding
-    self:initGesListener()
-end
+    if not self.padding_top then self.padding_top = self.padding end
+    if not self.padding_right then self.padding_right = self.padding end
+    if not self.padding_bottom then self.padding_bottom = self.padding end
+    if not self.padding_left then self.padding_left = self.padding end
 
-function IconButton:setHorizontalPadding(padding)
-    self.horizontal_padding = padding
-    self:update()
+    self.horizontal_group[1].width = self.padding_left
+    self.horizontal_group[3].width = self.padding_right
+    self.dimen = self.image:getSize()
+    self.dimen.w = self.dimen.w + self.padding_left+self.padding_right
+
+    self.button[1].width = self.padding_top
+    self.button[3].width = self.padding_bottom
+    self.dimen.h = self.dimen.h + self.padding_top+self.padding_bottom
+    self:initGesListener()
 end
 
 function IconButton:initGesListener()

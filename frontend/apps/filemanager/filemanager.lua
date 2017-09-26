@@ -1,5 +1,4 @@
 local Blitbuffer = require("ffi/blitbuffer")
-local Button = require("ui/widget/button")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
@@ -13,8 +12,7 @@ local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
 local FileManagerMenu = require("apps/filemanager/filemanagermenu")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
-local HorizontalGroup = require("ui/widget/horizontalgroup")
-local HorizontalSpan = require("ui/widget/horizontalspan")
+local IconButton = require("ui/widget/iconbutton")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
@@ -56,6 +54,17 @@ local FileManager = InputContainer:extend{
 function FileManager:init()
     self.show_parent = self.show_parent or self
 
+    local home_button = IconButton:new{
+        icon_file = "resources/icons/appbar.home.png",
+        width = Screen:scaleBySize(35),
+        height = Screen:scaleBySize(35),
+        padding = Size.padding.default,
+        padding_top = Size.padding.small,
+        padding_left = Size.padding.small,
+        callback = function() self:goHome() end,
+        hold_callback = function() self:setHome() end,
+    }
+
     self.path_text = TextWidget:new{
         face = Font:getFace("xx_smallinfofont"),
         text = filemanagerutil.abbreviate(self.root_path),
@@ -66,23 +75,7 @@ function FileManager:init()
         bordersize = 0,
         VerticalGroup:new{
             OverlapGroup:new{
-                HorizontalGroup:new{
-                    HorizontalSpan:new{ width = Size.span.horizontal_small },
-                    VerticalGroup:new{
-                        -- the button is awkwardly high so let's take some off the top
-                        VerticalSpan:new{ width = -Screen:scaleBySize(15) },
-                        Button:new{
-                            text = "⌂",
-                            text_font_size = 50,
-                            bordersize = 0,
-                            padding = 0,
-                            margin = 0,
-                            radius = 0,
-                            callback = function() self:goHome() end,
-                            hold_callback = function() self:setHome() end,
-                        },
-                    },
-                },
+                home_button,
                 VerticalGroup:new{
                     TextWidget:new{
                         face = Font:getFace("smalltfont"),
