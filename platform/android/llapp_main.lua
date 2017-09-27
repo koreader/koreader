@@ -48,7 +48,7 @@ end
 
 -- (Disabled, since we hide navbar on start now no need for this hack)
 -- run koreader patch before koreader startup
--- pcall(function() dofile("/sdcard/koreader/patch.lua") end)
+pcall(dofile, "/sdcard/koreader/patch.lua")
 
 -- set proper permission for sdcv
 A.execute("chmod", "755", "./sdcv")
