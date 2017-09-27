@@ -12,14 +12,17 @@ local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
 local FileManagerMenu = require("apps/filemanager/filemanagermenu")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
+local IconButton = require("ui/widget/iconbutton")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
+local OverlapGroup = require("ui/widget/overlapgroup")
 local PluginLoader = require("pluginloader")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local ReaderUI = require("apps/reader/readerui")
 local ReaderWikipedia = require("apps/reader/modules/readerwikipedia")
 local Screenshoter = require("ui/widget/screenshoter")
+local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
@@ -51,6 +54,17 @@ local FileManager = InputContainer:extend{
 function FileManager:init()
     self.show_parent = self.show_parent or self
 
+    local home_button = IconButton:new{
+        icon_file = "resources/icons/appbar.home.png",
+        width = Screen:scaleBySize(35),
+        height = Screen:scaleBySize(35),
+        padding = Size.padding.default,
+        padding_top = Size.padding.small,
+        padding_left = Size.padding.small,
+        callback = function() self:goHome() end,
+        hold_callback = function() self:setHome() end,
+    }
+
     self.path_text = TextWidget:new{
         face = Font:getFace("xx_smallinfofont"),
         text = filemanagerutil.abbreviate(self.root_path),
@@ -60,16 +74,21 @@ function FileManager:init()
         padding = 0,
         bordersize = 0,
         VerticalGroup:new{
-            TextWidget:new{
-                face = Font:getFace("smalltfont"),
-                text = self.title,
+            OverlapGroup:new{
+                home_button,
+                VerticalGroup:new{
+                    TextWidget:new{
+                        face = Font:getFace("smalltfont"),
+                        text = self.title,
+                    },
+                    CenterContainer:new{
+                        dimen = { w = Screen:getWidth(), h = nil },
+                        self.path_text,
+                    },
+                },
             },
-            CenterContainer:new{
-                dimen = { w = Screen:getWidth(), h = nil },
-                self.path_text,
-            },
-            VerticalSpan:new{ width = Screen:scaleBySize(10) }
-        }
+            VerticalSpan:new{ width = Screen:scaleBySize(10) },
+        },
     }
 
     local g_show_hidden = G_reader_settings:readSetting("show_hidden")
@@ -235,7 +254,7 @@ function FileManager:init()
                 {
                     text = _("Set as HOME directory"),
                     callback = function()
-                        G_reader_settings:saveSetting("home_dir", realpath)
+                        self:setHome(realpath)
                         UIManager:close(self.file_dialog)
                     end
                 }
@@ -338,6 +357,29 @@ end
 
 function FileManager:onRefresh()
     self.file_chooser:refreshPath()
+    return true
+end
+
+function FileManager:goHome()
+    local home_dir = G_reader_settings:readSetting("home_dir")
+    if home_dir then
+        self:showFiles(home_dir)
+    else
+        self:setHome()
+    end
+    return true
+end
+
+function FileManager:setHome(path)
+    path = path or self.file_chooser.path
+    local ConfirmBox = require("ui/widget/confirmbox")
+    UIManager:show(ConfirmBox:new{
+        text = util.template(_("Set '%1' as HOME directory?"), path),
+        ok_text = _("Set as HOME"),
+        ok_callback = function()
+            G_reader_settings:saveSetting("home_dir", path)
+        end,
+    })
     return true
 end
 

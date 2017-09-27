@@ -192,7 +192,8 @@ function TouchMenuBar:init()
             height = icon_height,
             scale_for_dpi = false,
             callback = nil,
-            horizontal_padding = icon_padding,
+            padding_left = icon_padding,
+            padding_right = icon_padding,
         }
 
         table.insert(self.icon_widgets, ib)
