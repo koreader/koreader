@@ -2,6 +2,7 @@
 Button with a big icon image! Designed for touch devices.
 --]]
 
+local Device = require("device")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -24,7 +25,8 @@ local IconButton = InputContainer:new{
     padding_right = nil,
     padding_bottom = nil,
     padding_left = nil,
-    callback = function() end,
+    enabled = true,
+    callback = nil,
 }
 
 function IconButton:init()
@@ -69,17 +71,27 @@ function IconButton:update()
 end
 
 function IconButton:initGesListener()
-    self.ges_events = {
-        TapClickButton = {
-            GestureRange:new{
-                ges = "tap",
-                range = self.dimen,
+    if Device:isTouchDevice() then
+        self.ges_events = {
+            TapIconButton = {
+                GestureRange:new{
+                    ges = "tap",
+                    range = self.dimen,
+                },
+                doc = "Tap IconButton",
+            },
+            HoldIconButton = {
+                GestureRange:new{
+                    ges = "hold",
+                    range = self.dimen,
+                },
+                doc = "Hold IconButton",
             }
-        },
-    }
+        }
+    end
 end
 
-function IconButton:onTapClickButton()
+function IconButton:onTapIconButton()
     UIManager:scheduleIn(0.0, function()
         self.image.invert = true
         UIManager:setDirty(self.show_parent, function()
@@ -94,6 +106,17 @@ function IconButton:onTapClickButton()
             return "ui", self[1].dimen
         end)
     end)
+    return true
+end
+
+function IconButton:onHoldIconButton()
+    if self.enabled and self.hold_callback then
+        self.hold_callback()
+    elseif self.hold_input then
+        self:onInput(self.hold_input)
+    elseif type(self.hold_input_func) == "function" then
+        self:onInput(self.hold_input_func())
+    end
     return true
 end
 
