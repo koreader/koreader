@@ -1,4 +1,3 @@
-local Device = require("device")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
@@ -38,12 +37,7 @@ local CoverBrowser = InputContainer:new{}
 
 function CoverBrowser:init()
     self.full_featured = true
-    -- As we don't know how to run and kill subprocesses on Android (for
-    -- background info extraction), this plugin is very limited on Android,
-    -- and will provide only a menu for managing a few core settings.
-    if Device.isAndroid() then
-        self.full_featured = false
-    end
+    -- Set to false to provide a fallback option with only a menu for managing a few core settings.
 
     self.ui.menu:registerToMainMenu(self)
 
