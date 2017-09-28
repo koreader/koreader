@@ -1,6 +1,7 @@
 local Blitbuffer = require("ffi/blitbuffer")
 local DataStorage = require("datastorage")
 local DocumentRegistry = require("document/documentregistry")
+local Mupdf = require("ffi/mupdf")
 local SQ3 = require("lua-ljsqlite3/init")
 local UIManager = require("ui/uimanager")
 local lfs = require("libs/libkoreader-lfs")
@@ -123,6 +124,8 @@ function BookInfoManager:init()
     self.subprocesses_last_added_ts = nil
     self.subprocesses_killall_timeout_seconds = 300 -- cleanup timeout for stuck subprocesses
     -- 300 seconds should be enough to open and get info from 9-10 books
+    -- Whether to use former blitbuffer:scale() (default to using MuPDF)
+    self.use_legacy_image_scaling = G_reader_settings:isTrue("legacy_image_scaling")
 end
 
 -- DB management
@@ -402,7 +405,12 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
                     scale_factor = math.min(spec_max_cover_w / cbb_w, spec_max_cover_h / cbb_h)
                     cbb_w = math.min(math.floor(cbb_w * scale_factor)+1, spec_max_cover_w)
                     cbb_h = math.min(math.floor(cbb_h * scale_factor)+1, spec_max_cover_h)
-                    local new_bb = cover_bb:scale(cbb_w, cbb_h)
+                    local new_bb
+                    if self.use_legacy_image_scaling then
+                        new_bb = cover_bb:scale(cbb_w, cbb_h)
+                    else
+                        new_bb = Mupdf.scaleBlitBuffer(cover_bb, cbb_w, cbb_h)
+                    end
                     cover_bb:free()
                     cover_bb = new_bb
                 end
