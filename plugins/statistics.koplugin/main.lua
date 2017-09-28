@@ -801,7 +801,7 @@ function ReaderStatistics:statMenu()
                 end,
             },
             "----",
-            { _("Book by week"),"",
+            { _("Books by week"),"",
                 callback = function()
                     local kv = self.kv
                     UIManager:close(self.kv)
