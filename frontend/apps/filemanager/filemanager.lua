@@ -116,7 +116,7 @@ function FileManager:init()
     function file_chooser:onPathChanged(path)  -- luacheck: ignore
         FileManager.instance.path_text:setText(filemanagerutil.abbreviate(path))
         UIManager:setDirty(FileManager.instance, function()
-            return "ui", FileManager.instance.banner.dimen
+            return "ui", FileManager.instance.path_text.dimen
         end)
         return true
     end
@@ -364,7 +364,7 @@ end
 function FileManager:goHome()
     local home_dir = G_reader_settings:readSetting("home_dir")
     if home_dir then
-        self:showFiles(home_dir)
+        self.file_chooser:changeToPath(home_dir)
     else
         self:setHome()
     end
