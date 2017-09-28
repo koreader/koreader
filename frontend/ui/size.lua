@@ -30,10 +30,10 @@ local Screen = require("device").screen
 
 local Size = {
     border = {
-        default = Screen:scaleBySize(2),
-        thin = Screen:scaleBySize(1),
-        button = Screen:scaleBySize(2),
-        window = Screen:scaleBySize(2),
+        default = Screen:scaleBySize(1),
+        thin = Screen:scaleBySize(0.5),
+        button = Screen:scaleBySize(1.5),
+        window = Screen:scaleBySize(1.5),
     },
     margin = {
         default = Screen:scaleBySize(5),
