@@ -132,6 +132,7 @@ function FileManager:init()
     local cutFile = function(file) self:cutFile(file) end
     local deleteFile = function(file) self:deleteFile(file) end
     local renameFile = function(file) self:renameFile(file) end
+    local setHome = function(path) self:setHome(path) end
     local fileManager = self
 
     function file_chooser:onFileHold(file)  -- luacheck: ignore
@@ -254,7 +255,7 @@ function FileManager:init()
                 {
                     text = _("Set as HOME directory"),
                     callback = function()
-                        self:setHome(realpath)
+                        setHome(realpath)
                         UIManager:close(self.file_dialog)
                     end
                 }
