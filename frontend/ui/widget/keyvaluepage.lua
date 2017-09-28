@@ -254,6 +254,13 @@ function KeyValuePage:init()
         }
     end
 
+    -- return button
+    self.page_return_arrow = Button:new{
+        icon = "resources/icons/appbar.arrow.left.up.png",
+        callback = function() self:onReturn() end,
+        bordersize = 0,
+        show_parent = self,
+    }
     -- group for page info
     self.page_info_left_chev = Button:new{
         icon = "resources/icons/appbar.chevron.left.png",
@@ -282,6 +289,16 @@ function KeyValuePage:init()
     self.page_info_spacer = HorizontalSpan:new{
         width = Screen:scaleBySize(32),
     }
+    self.page_return_spacer = HorizontalSpan:new{
+        width = self.page_return_arrow:getSize().w
+    }
+
+    if self.callback_return == nil and self.return_button == nil then
+        self.page_return_arrow:hide()
+    elseif self.callback_return == nil then
+        self.page_return_arrow:disable()
+    end
+
     self.page_info_left_chev:hide()
     self.page_info_right_chev:hide()
     self.page_info_first_chev:hide()
@@ -308,6 +325,7 @@ function KeyValuePage:init()
         text_font_bold = false,
     }
     self.page_info = HorizontalGroup:new{
+        self.page_return_arrow,
         self.page_info_first_chev,
         self.page_info_spacer,
         self.page_info_left_chev,
@@ -315,6 +333,7 @@ function KeyValuePage:init()
         self.page_info_right_chev,
         self.page_info_spacer,
         self.page_info_last_chev,
+        self.page_return_spacer,
     }
 
     local footer = BottomContainer:new{
@@ -406,6 +425,7 @@ function KeyValuePage:_populateItems()
                     key = entry[1],
                     value = entry[2],
                     callback = entry.callback,
+                    callback_back = entry.callback_back,
                     textviewer_width = self.textviewer_width,
                     textviewer_height = self.textviewer_height,
                 }
@@ -463,6 +483,13 @@ end
 function KeyValuePage:onClose()
     UIManager:close(self)
     return true
+end
+
+function KeyValuePage:onReturn()
+    if self.callback_return then
+        self:callback_return()
+        UIManager:close(self)
+    end
 end
 
 return KeyValuePage

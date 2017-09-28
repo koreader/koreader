@@ -673,16 +673,6 @@ function ReaderStatistics:addToMainMenu(menu_items)
                 enabled_func = function() return not self:isDocless() and self.is_enabled end,
             },
             {
-                text = _("All books"),
-                callback = function()
-                    local total_msg, kv_pairs = self:getTotalStats()
-                    UIManager:show(KeyValuePage:new{
-                        title = total_msg,
-                        kv_pairs = kv_pairs,
-                    })
-                end
-            },
-            {
                 text = _("Reading progress"),
                 callback = function()
                     self:insertDB(self.id_curr_book)
@@ -705,56 +695,145 @@ function ReaderStatistics:addToMainMenu(menu_items)
             },
             {
                 text = _("Time range"),
-                sub_item_table = {
-                    {
-                        text = _("Last week"),
-                        callback = function()
-                            UIManager:show(KeyValuePage:new{
-                                title = _("Last week"),
-                                kv_pairs = self:getDatesFromAll(7, "daily_weekday"),
-                            })
-                        end,
-                    },
-                    {
-                        text = _("Last month by day"),
-                        callback = function()
-                            UIManager:show(KeyValuePage:new{
-                                title = _("Last month by day"),
-                                kv_pairs = self:getDatesFromAll(30, "daily_weekday"),
-                            })
-                        end,
-                    },
-                    {
-                        text = _("Last year by day"),
-                        callback = function()
-                            UIManager:show(KeyValuePage:new{
-                                title = _("Last year by day"),
-                                kv_pairs = self:getDatesFromAll(365, "daily"),
-                            })
-                        end,
-                    },
-                    {
-                        text = _("Last year by week"),
-                        callback = function()
-                            UIManager:show(KeyValuePage:new{
-                                title = _("Last year by week"),
-                                kv_pairs = self:getDatesFromAll(365, "weekly"),
-                            })
-                        end,
-                    },
-                    {
-                        text = _("All stats by month"),
-                        callback = function()
-                            UIManager:show(KeyValuePage:new{
-                                title = _("All stats by month"),
-                                kv_pairs = self:getDatesFromAll(0, "monthly"),
-                            })
-                        end,
-                    },
-                }
+                callback = function()
+                    self:statMenu()
+                end
             },
         },
     }
+end
+
+function ReaderStatistics:statMenu()
+    self.kv = KeyValuePage:new{
+        title = _("Time range statistics"),
+        return_button = true,
+        kv_pairs = {
+            { _("All books"),"",
+                callback = function()
+                    local kv = self.kv
+                    UIManager:close(self.kv)
+                    local total_msg, kv_pairs = self:getTotalStats()
+                    self.kv = KeyValuePage:new{
+                        title = total_msg,
+                        kv_pairs = kv_pairs,
+                        callback_return = function()
+                            UIManager:show(kv)
+                            self.kv = kv
+                        end
+                    }
+                    UIManager:show(self.kv)
+                end,
+            },
+            "----",
+            { _("Last week"),"",
+                callback = function()
+                    local kv = self.kv
+                    UIManager:close(self.kv)
+                    self.kv = KeyValuePage:new{
+                        title = _("Last week"),
+                        kv_pairs = self:getDatesFromAll(7, "daily_weekday"),
+                        callback_return = function()
+                            UIManager:show(kv)
+                            self.kv = kv
+                        end
+                    }
+                    UIManager:show(self.kv)
+                end,
+            },
+            { _("Last month by day"),"",
+                callback = function()
+                    local kv = self.kv
+                    UIManager:close(self.kv)
+                    self.kv = KeyValuePage:new{
+                        title = _("Last month by day"),
+                        kv_pairs = self:getDatesFromAll(30, "daily_weekday"),
+                        callback_return = function()
+                            UIManager:show(kv)
+                            self.kv = kv
+                        end
+                    }
+                    UIManager:show(self.kv)
+                end,
+            },
+            { _("Last year by day"),"",
+                callback = function()
+                    local kv = self.kv
+                    UIManager:close(self.kv)
+                    self.kv = KeyValuePage:new{
+                        title = _("Last year by day"),
+                        kv_pairs = self:getDatesFromAll(365, "daily"),
+                        callback_return = function()
+                            UIManager:show(kv)
+                            self.kv = kv
+                        end
+                    }
+                    UIManager:show(self.kv)
+                end,
+            },
+            { _("Last year by week"),"",
+                callback = function()
+                    local kv = self.kv
+                    UIManager:close(self.kv)
+                    self.kv = KeyValuePage:new{
+                        title = _("Last year by week"),
+                        kv_pairs = self:getDatesFromAll(365, "weekly"),
+                        callback_return = function()
+                            UIManager:show(kv)
+                            self.kv = kv
+                        end
+                    }
+                    UIManager:show(self.kv)
+                end,
+            },
+            { _("All stats by month"),"",
+                callback = function()
+                    local kv = self.kv
+                    UIManager:close(self.kv)
+                    self.kv = KeyValuePage:new{
+                        title = _("All stats by month"),
+                        kv_pairs = self:getDatesFromAll(0, "monthly"),
+                        callback_return = function()
+                            UIManager:show(kv)
+                            self.kv = kv
+                        end
+                    }
+                    UIManager:show(self.kv)
+                end,
+            },
+            "----",
+            { _("Book by week"),"",
+                callback = function()
+                    local kv = self.kv
+                    UIManager:close(self.kv)
+                    self.kv = KeyValuePage:new{
+                        title = _("Books by week"),
+                        kv_pairs = self:getDatesFromAll(0, "weekly", true),
+                        callback_return = function()
+                            UIManager:show(kv)
+                            self.kv = kv
+                        end
+                    }
+                    UIManager:show(self.kv)
+                end,
+            },
+            { _("Books by month"),"",
+                callback = function()
+                    local kv = self.kv
+                    UIManager:close(self.kv)
+                    self.kv = KeyValuePage:new{
+                        title = _("Books by month"),
+                        kv_pairs = self:getDatesFromAll(0, "monthly", true),
+                        callback_return = function()
+                            UIManager:show(kv)
+                            self.kv = kv
+                        end
+                    }
+                    UIManager:show(self.kv)
+                end,
+            }
+        }
+    }
+    UIManager:show(self.kv)
 end
 
 function ReaderStatistics:getTodayBookStats()
@@ -934,34 +1013,25 @@ function ReaderStatistics:getBookStat(id_book)
         "----",
         { _("Show days"), _("Tap to display"),
             callback = function()
-                UIManager:show(KeyValuePage:new{
+                local kv = self.kv
+                UIManager:close(self.kv)
+                self.kv = KeyValuePage:new{
                     title = _("Read in days"),
                     kv_pairs = self:getDatesForBook(id_book),
-                })
+                    callback_return = function()
+                        UIManager:show(kv)
+                        self.kv = kv
+                    end
+                }
+                UIManager:show(self.kv)
             end,
         }
     }
 end
 
--- sdays -> number of days to show
--- ptype -> daily - show daily without weekday name
---          daily_weekday - show daily with weekday name
---          weekly - show weekly
---          monthly - show monthly
-function ReaderStatistics:getDatesFromAll(sdays, ptype)
-    local results = {}
-    local year_begin, year_end, month_begin, month_end
-    local now_t = os.date("*t")
-    local from_begin_day = now_t.hour *3600 + now_t.min*60 + now_t.sec
-    local now_stamp = os.time()
-    local one_day = 86400 -- one day in seconds
-    local sql_stmt_res_book
-    local period_begin
-    if sdays > 0 then
-        period_begin = now_stamp - ((sdays-1) * one_day) - from_begin_day
-    end
-    if ptype == "daily" or ptype == "daily_weekday" then
-        sql_stmt_res_book = [[
+local function sqlDaily()
+    return
+    [[
             SELECT dates,
                    count(*)             AS pages,
                    sum(sum_period)      AS periods,
@@ -976,9 +1046,12 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype)
                    )
             GROUP  BY dates
             ORDER  BY dates DESC
-        ]]
-    elseif ptype == "weekly" then
-        sql_stmt_res_book = [[
+    ]]
+end
+
+local function sqlWeekly()
+    return
+    [[
             SELECT dates,
                    count(*)             AS pages,
                    sum(sum_period)      AS periods,
@@ -993,9 +1066,12 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype)
                    )
             GROUP  BY dates
             ORDER  BY dates DESC
-        ]]
-    elseif ptype == "monthly" then
-        sql_stmt_res_book = [[
+    ]]
+end
+
+local function sqlMonthly()
+    return
+    [[
             SELECT dates,
                    count(*)             AS pages,
                    sum(sum_period)      AS periods,
@@ -1005,11 +1081,103 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype)
                                sum(period)                                                   AS sum_period,
                                start_time
                         FROM   page_stat
+                        WHERE  start_time >= '%s'
                         GROUP  BY id_book, page, dates
                    )
             GROUP  BY dates
             ORDER  BY dates DESC
-        ]]
+    ]]
+end
+
+function ReaderStatistics:callbackMonthly(begin, finish, date_text, book_mode)
+    local kv = self.kv
+    UIManager:close(kv)
+    if book_mode then
+        self.kv = KeyValuePage:new{
+            title = T(_("Books from: %1"), date_text),
+            kv_pairs = self:getBooksFromPeriod(begin, finish),
+            callback_return = function()
+                UIManager:show(kv)
+                self.kv = kv
+            end
+        }
+    else
+        self.kv = KeyValuePage:new{
+            title = date_text,
+            kv_pairs = self:getDaysFromPeriod(begin, finish),
+            callback_return = function()
+                UIManager:show(kv)
+                self.kv = kv
+            end
+        }
+    end
+    UIManager:show(self.kv)
+end
+
+function ReaderStatistics:callbackWeekly(begin, finish, date_text, book_mode)
+    local kv = self.kv
+    UIManager:close(kv)
+    if book_mode then
+        self.kv = KeyValuePage:new{
+            title = T(_("Books from: %1"), date_text),
+            kv_pairs = self:getBooksFromPeriod(begin, finish),
+            callback_return = function()
+                UIManager:show(kv)
+                self.kv = kv
+            end
+        }
+    else
+        self.kv = KeyValuePage:new{
+            title = date_text,
+            kv_pairs = self:getDaysFromPeriod(begin, finish),
+            callback_return = function()
+                UIManager:show(kv)
+                self.kv = kv
+            end
+        }
+    end
+    UIManager:show(self.kv)
+end
+
+function ReaderStatistics:callbackDaily(begin, finish, date_text)
+    local kv = self.kv
+    UIManager:close(kv)
+    self.kv = KeyValuePage:new{
+        title = date_text,
+        kv_pairs = self:getBooksFromPeriod(begin, finish),
+        callback_return = function()
+            UIManager:show(kv)
+            self.kv = kv
+        end
+    }
+    UIManager:show(self.kv)
+end
+
+-- sdays -> number of days to show
+-- ptype -> daily - show daily without weekday name
+--          daily_weekday - show daily with weekday name
+--          weekly - show weekly
+--          monthly - show monthly
+--          book_mode = if true than show book in this period
+function ReaderStatistics:getDatesFromAll(sdays, ptype, book_mode)
+    local results = {}
+    local year_begin, year_end, month_begin, month_end
+    local timestamp
+    local now_t = os.date("*t")
+    local from_begin_day = now_t.hour *3600 + now_t.min*60 + now_t.sec
+    local now_stamp = os.time()
+    local one_day = 86400 -- one day in seconds
+    local sql_stmt_res_book
+    local period_begin = 0
+    if sdays > 0 then
+        period_begin = now_stamp - ((sdays-1) * one_day) - from_begin_day
+    end
+    if ptype == "daily" or ptype == "daily_weekday" then
+        sql_stmt_res_book = sqlDaily()
+    elseif ptype == "weekly" then
+        sql_stmt_res_book = sqlWeekly()
+    elseif ptype == "monthly" then
+        sql_stmt_res_book = sqlMonthly()
     end
     self:insertDB(self.id_curr_book)
     local conn = SQ3.open(db_location)
@@ -1020,22 +1188,23 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype)
     end
     for i=1, #result_book.dates do
         local date_text
+        timestamp = tonumber(result_book[4][i])
         if ptype == "daily_weekday" then
             date_text = string.format("%s (%s)",
-                os.date("%Y-%m-%d", tonumber(result_book[4][i])),
-                shortDayOfWeekTranslation[os.date("%a", tonumber(result_book[4][i]))])
+                os.date("%Y-%m-%d", timestamp),
+                shortDayOfWeekTranslation[os.date("%a", timestamp)])
         elseif ptype == "daily" then
             date_text = result_book[1][i]
         elseif ptype == "weekly" then
-            date_text = T(_("%1 Week %2"), os.date("%Y", tonumber(result_book[4][i])), os.date(" %W", tonumber(result_book[4][i])))
+            date_text = T(_("%1 Week %2"), os.date("%Y", timestamp), os.date(" %W", timestamp))
         elseif ptype == "monthly" then
-            date_text = monthTranslation[os.date("%B", tonumber(result_book[4][i]))] .. os.date(" %Y", tonumber(result_book[4][i]))
+            date_text = monthTranslation[os.date("%B", timestamp)] .. os.date(" %Y", timestamp)
         else
             date_text = result_book[1][i]
         end
         if ptype == "monthly" then
-            year_begin = tonumber(os.date("%Y" , tonumber(result_book[4][i])))
-            month_begin = tonumber(os.date("%m" , tonumber(result_book[4][i])))
+            year_begin = tonumber(os.date("%Y", timestamp))
+            month_begin = tonumber(os.date("%m", timestamp))
             if month_begin == 12 then
                 year_end = year_begin + 1
                 month_end = 1
@@ -1049,16 +1218,33 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype)
                 date_text,
                 T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), util.secondsToClock(tonumber(result_book[3][i]), false)),
                 callback = function()
-                    UIManager:show(KeyValuePage:new{
-                        title = date_text,
-                        kv_pairs = self:getDaysFromPeriod(start_month, stop_month),
-                    })
+                    self:callbackMonthly(start_month, stop_month, date_text, book_mode)
+                end,
+            })
+        elseif ptype == "weekly" then
+            local time_book = os.date("%H%M%S%w", timestamp)
+            local begin_week = tonumber(result_book[4][i]) - 3600 * tonumber(string.sub(time_book,1,2))
+                - 60 * tonumber(string.sub(time_book,3,4)) - tonumber(string.sub(time_book,5,6))
+            local weekday = tonumber(string.sub(time_book,7,8))
+            if weekday == 0 then weekday = 6 else weekday = weekday - 1 end
+            begin_week = begin_week - weekday * 86400
+            table.insert(results, {
+                date_text,
+                T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), util.secondsToClock(tonumber(result_book[3][i]), false)),
+                callback = function()
+                    self:callbackWeekly(begin_week, begin_week + 7 * 86400, date_text, book_mode)
                 end,
             })
         else
+            local time_book = os.date("%H%M%S", timestamp)
+            local begin_day = tonumber(result_book[4][i]) - 3600 * tonumber(string.sub(time_book,1,2))
+                - 60 * tonumber(string.sub(time_book,3,4)) - tonumber(string.sub(time_book,5,6))
             table.insert(results, {
                 date_text,
-                T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), util.secondsToClock(tonumber(result_book[3][i]), false))
+                T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), util.secondsToClock(tonumber(result_book[3][i]), false)),
+                callback = function()
+                    self:callbackDaily(begin_day, begin_day + 86400, date_text)
+                end,
             })
         end
     end
@@ -1090,9 +1276,64 @@ function ReaderStatistics:getDaysFromPeriod(period_begin, period_end)
         return {}
     end
     for i=1, #result_book.dates do
+        local time_begin = os.time{year=string.sub(result_book[1][i],1,4), month=string.sub(result_book[1][i],6,7),
+            day=string.sub(result_book[1][i],9,10), hour=0, min=0, sec=0 }
         table.insert(results, {
             result_book[1][i],
-            T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), util.secondsToClock(tonumber(result_book[3][i]), false))
+            T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), util.secondsToClock(tonumber(result_book[3][i]), false)),
+            callback = function()
+                local kv = self.kv
+                UIManager:close(kv)
+                self.kv = KeyValuePage:new{
+                    title = T(_("Books in %1"), result_book[1][i]),
+                    kv_pairs = self:getBooksFromPeriod(time_begin, time_begin + 86400),
+                    callback_return = function()
+                        UIManager:show(kv)
+                        self.kv = kv
+                    end
+                }
+                UIManager:show(self.kv)
+            end,
+        })
+    end
+    return results
+end
+
+function ReaderStatistics:getBooksFromPeriod(period_begin, period_end)
+    local results = {}
+    local sql_stmt_res_book = [[
+        SELECT  book_tbl.title AS title,
+                sum(page_stat_tbl.period),
+                count(distinct page_stat_tbl.page),
+                book_tbl.id
+        FROM    page_stat AS page_stat_tbl, book AS book_tbl
+        WHERE   page_stat_tbl.id_book=book_tbl.id AND page_stat_tbl.start_time > '%s' AND page_stat_tbl.start_time <= '%s'
+        GROUP   BY book_tbl.id
+        ORDER   BY book_tbl.last_open DESC
+    ]]
+    local conn = SQ3.open(db_location)
+    local result_book = conn:exec(string.format(sql_stmt_res_book, period_begin, period_end))
+    conn:close()
+    if result_book == nil then
+        return {}
+    end
+    for i=1, #result_book.title do
+        table.insert(results, {
+            result_book[1][i],
+            T(_("%1 (%2)"), util.secondsToClock(tonumber(result_book[2][i]), false), tonumber(result_book[3][i])),
+            callback = function()
+                local kv = self.kv
+                UIManager:close(self.kv)
+                self.kv = KeyValuePage:new{
+                    title = _("Read in days"),
+                    kv_pairs = self:getDatesForBook(tonumber(result_book[4][i])),
+                    callback_return = function()
+                        UIManager:show(kv)
+                        self.kv = kv
+                    end
+                }
+                UIManager:show(self.kv)
+            end,
         })
     end
     return results
@@ -1214,10 +1455,18 @@ function ReaderStatistics:getTotalStats()
             book_title,
             util.secondsToClock(total_time_book, false),
             callback = function()
-                UIManager:show(KeyValuePage:new{
+                local kv = self.kv
+                UIManager:close(self.kv)
+
+                self.kv = KeyValuePage:new{
                     title = book_title,
                     kv_pairs = self:getBookStat(id_book),
-                })
+                    callback_return = function()
+                        UIManager:show(kv)
+                        self.kv = kv
+                    end
+                }
+                UIManager:show(self.kv)
             end,
         })
     end
