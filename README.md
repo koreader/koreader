@@ -185,7 +185,7 @@ You can also specify the size and DPI of the emulator's screen using
 `-w=X` (width), `-h=X` (height), and `-d=X` (DPI). There is also a convenience
 `-s` (simulate) flag with some presets like `kobo-aura-one`, `kindle3`, and
 `hidpi`. The latter is a fictional device with `--screen_width=1500`,
-`--screen_height=2000` and `screen_dpi=600` to help ensure DPI scaling works correctly.
+`--screen_height=2000` and `--screen_dpi=600` to help ensure DPI scaling works correctly.
 Sample usage:
 ```
 ./kodev run -s=kobo-aura-one
@@ -203,22 +203,22 @@ modifications with the KOReader frontend. NOTE: this only supports relative path
 For EReader devices (kindle, kobo, pocketbook, ubuntu-touch)
 ---------------------
 
-To build installable package for Kindle:
+To build an installable package for Kindle:
 ```
 ./kodev release kindle
 ```
 
-To build installable package for Kobo:
+To build an installable package for Kobo:
 ```
 ./kodev release kobo
 ```
 
-To build installable package for PocketBook:
+To build an installable package for PocketBook:
 ```
 ./kodev release pocketbook
 ```
 
-To build installable package for Ubuntu Touch
+To build an installable package for Ubuntu Touch
 ```
 ./kodev release ubuntu-touch
 ```
