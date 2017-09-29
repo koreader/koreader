@@ -181,8 +181,15 @@ then install `busted` with `luarocks`. The "eng" language data file for
 tesseract-ocr is also need to test OCR functionality. Finally, make sure
 that `luajit` in your system is at least of version 2.0.2.
 
-You can also specify size of emulator's screen via environment variables.
-For more information, please refer to [koreader-base's README][base-readme].
+You can also specify the size and DPI of the emulator's screen using
+`-w=X` (width), `-h=X` (height), and `-d=X` (DPI). There is also a convenience
+`-s` (simulate) flag with some presets like `kobo-aura-one`, `kindle3`, and
+`hidpi`. The latter is a fictional device with `--screen_width=1500`,
+`--screen_height=2000` and `screen_dpi=600` to help ensure DPI scaling works correctly.
+Sample usage:
+```
+./kodev run -s=kobo-aura-one
+```
 
 To use your own koreader-base repo instead of the default one change the `KOR_BASE`
 environment variable:
