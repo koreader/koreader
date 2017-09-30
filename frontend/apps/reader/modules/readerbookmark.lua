@@ -1,16 +1,19 @@
 local CenterContainer = require("ui/widget/container/centercontainer")
+local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
 local Font = require("ui/font")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
 local Screen = require("device").screen
+local T = require("ffi/util").template
 
 local ReaderBookmark = InputContainer:new{
     bm_menu_title = _("Bookmarks"),
@@ -186,7 +189,9 @@ function ReaderBookmark:onShowBookmark()
         if not self.ui.document.info.has_pages then
             page = self.ui.document:getPageFromXPointer(page)
         end
-        v.text = _("Page") .. " " .. page .. " " .. v.notes .. " @ " .. v.datetime
+        if v.text == nil or v.text == "" then
+            v.text = T(_("Page %1 %2 @ %3"), page, v.notes, v.datetime)
+        end
     end
 
     local bm_menu = Menu:new{
@@ -230,20 +235,40 @@ function ReaderBookmark:onShowBookmark()
             buttons_table = {
                 {
                     {
-                        text = _("Close"),
+                        text = _("Rename this bookmark"),
                         callback = function()
+                            bookmark:renameBookmark(item)
                             UIManager:close(self.textviewer)
                         end,
                     },
                     {
                         text = _("Remove this bookmark"),
                         callback = function()
-                            bookmark:removeHightligit(item)
-                            bm_menu:switchItemTable(nil, bookmark.bookmarks, -1)
-                            UIManager:close(self.textviewer)
+                            UIManager:show(ConfirmBox:new{
+                                text = _("Do you want remove this bookmark?"),
+                                cancel_text = _("Cancel"),
+                                cancel_callback = function()
+                                    return
+                                end,
+                                ok_text = _("Remove"),
+                                ok_callback = function()
+                                    bookmark:removeHightligit(item)
+                                    bm_menu:switchItemTable(nil, bookmark.bookmarks, -1)
+                                    UIManager:close(self.textviewer)
+                                end,
+                            })
                         end,
                     },
                 },
+                {
+                    {
+                        text = _("Close"),
+                        is_enter_default = true,
+                        callback = function()
+                            UIManager:close(self.textviewer)
+                        end,
+                    },
+                }
             }
         }
         UIManager:show(self.textviewer)
@@ -255,6 +280,10 @@ function ReaderBookmark:onShowBookmark()
     end
 
     bm_menu.show_parent = self.bookmark_menu
+    self.refresh = function()
+        bm_menu:updateItems()
+        self:onSaveSettings()
+    end
 
     UIManager:show(self.bookmark_menu)
     return true
@@ -362,6 +391,45 @@ function ReaderBookmark:removeBookmark(item)
             _start = _middle + 1
         end
     end
+end
+
+function ReaderBookmark:renameBookmark(item)
+    self.input = InputDialog:new{
+        title = _("Rename bookmark"),
+        input = item.text,
+        input_type = "text",
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    is_enter_default = true,
+                    callback = function()
+                        UIManager:close(self.input)
+                    end,
+                },
+                {
+                    text = _("Rename"),
+                    callback = function()
+                        local value = self.input:getInputValue()
+                        if value ~= "" then
+                            for i=1, #self.bookmarks do
+                                if item.text == self.bookmarks[i].text and  item.pos0 == self.bookmarks[i].pos0 and
+                                    item.pos1 == self.bookmarks[i].pos1 and item.page == self.bookmarks[i].page then
+                                    self.bookmarks[i].text = value
+                                    UIManager:close(self.input)
+                                    self.refresh()
+                                    break
+                                end
+                            end
+                        end
+                        UIManager:close(self.input)
+                    end,
+                },
+            }
+        },
+    }
+    self.input:onShowKeyboard()
+    UIManager:show(self.input)
 end
 
 function ReaderBookmark:toggleBookmark(pn_or_xp)
