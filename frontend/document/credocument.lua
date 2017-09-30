@@ -242,7 +242,7 @@ function CreDocument:drawCurrentView(target, x, y, rect, pos)
     end
     if not self.buffer then
         -- If we use TYPE_BBRGB32 (and LVColorDrawBuf drawBuf(..., 32) in cre.cpp),
-        -- we get inverted Red and Blue in the blitbuffer (could be that 
+        -- we get inverted Red and Blue in the blitbuffer (could be that
         -- crengine/src/lvdrawbuf.cpp treats our 32bits not as RGBA).
         -- But it is all fine if we use TYPE_BBRGB16.
         self.buffer = Blitbuffer.new(rect.w, rect.h, self.color and Blitbuffer.TYPE_BBRGB16 or nil)
