@@ -126,6 +126,8 @@ function BookInfoManager:init()
     -- 300 seconds should be enough to open and get info from 9-10 books
     -- Whether to use former blitbuffer:scale() (default to using MuPDF)
     self.use_legacy_image_scaling = G_reader_settings:isTrue("legacy_image_scaling")
+    -- We will use a temporary directory for crengine cache while indexing
+    self.tmpcr3cache = DataStorage:getDataDir() .. "/cache/tmpcr3cache"
 end
 
 -- DB management
@@ -302,12 +304,20 @@ end
 
 function BookInfoManager:extractBookInfo(filepath, cover_specs)
     -- This will be run in a subprocess
-    -- Disable cre cache (that will not affect parent process), so we don't
-    -- fill it with books we're not actually reading
-    if not self.cre_cache_disabled then
-        require "libs/libkoreader-cre"
-        cre.initCache("", 1024*1024*32) -- empty path = no cache
-        self.cre_cache_disabled = true
+    -- We use a temporary directory for cre cache (that will not affect parent process),
+    -- so we don't fill the main cache with books we're not actually reading
+    if not self.cre_cache_overriden then
+        -- We need to init engine (if no crengine book has yet been opened),
+        -- so it does not reset our temporary cache dir when we first open
+        -- a crengine book for extraction.
+        require("document/credocument"):engineInit()
+        local cre = require "libs/libkoreader-cre"
+        -- If we wanted to disallow caching completely:
+        -- cre.initCache("", 1024*1024*32) -- empty path = no cache
+        -- But it's best to use a cache for quicker and less memory
+        -- usage when opening big books:
+        cre.initCache(self.tmpcr3cache, 0) -- 0 = previous book caches are removed when opening a book
+        self.cre_cache_overriden = true
     end
 
     local directory, filename = splitFilePathName(filepath)
@@ -526,6 +536,12 @@ function BookInfoManager:collectSubprocesses()
             end
         else
             self.subprocesses_collector = nil
+            if self.delayed_cleanup then
+                self.delayed_cleanup = false
+                -- No more subprocesses = no more crengine indexing, we can remove our
+                -- temporary cache directory
+                self:cleanUp()
+            end
         end
     end
 end
@@ -566,6 +582,8 @@ function BookInfoManager:extractInBackground(files)
         logger.dbg("  BG extraction done")
     end
 
+    self.cleanup_needed = true -- so we will remove temporary cache directory created by subprocess
+
     -- Run task in sub-process, and remember its pid
     local task_pid = xutil.runInSubProcess(task)
     if not task_pid then
@@ -586,6 +604,20 @@ function BookInfoManager:extractInBackground(files)
         )
     end
     return true
+end
+
+function BookInfoManager:cleanUp()
+    if #self.subprocesses_pids > 0 then
+        -- Some background extraction may still use our tmpcr3cache,
+        -- cleanup will be dealt with by BookInfoManager:collectSubprocesses()
+        self.delayed_cleanup = true
+        return
+    end
+    if self.cleanup_needed then
+        logger.dbg("Removing directory", self.tmpcr3cache)
+        util.purgeDir(self.tmpcr3cache)
+        self.cleanup_needed = false
+    end
 end
 
 BookInfoManager:init()
