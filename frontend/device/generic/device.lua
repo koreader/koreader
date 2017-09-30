@@ -57,6 +57,11 @@ function Device:init()
         error("screen/framebuffer must be implemented")
     end
 
+    self.screen.isColorEnabled = function()
+        if G_reader_settings:has("color_rendering") then return G_reader_settings:isTrue("color_rendering") end
+        return self.screen.color
+    end
+
     local is_eink = G_reader_settings:readSetting("eink")
     self.screen.eink = (is_eink == nil) or is_eink
 
