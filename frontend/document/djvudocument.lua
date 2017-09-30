@@ -10,6 +10,7 @@ local DjvuDocument = Document:new{
     dc_null = DrawContext.new(),
     options = KoptOptions,
     koptinterface = nil,
+    color = false,
 }
 
 -- check DjVu magic string to validate
