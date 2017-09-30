@@ -58,7 +58,8 @@ function Device:init()
     end
 
     self.screen.isColorEnabled = function()
-        return G_reader_settings:has("color_rendering") and G_reader_settings:isTrue("color_rendering") or self.screen.color
+        if G_reader_settings:has("color_rendering") then return G_reader_settings:isTrue("color_rendering") end
+        return self.screen.color
     end
 
     local is_eink = G_reader_settings:readSetting("eink")
