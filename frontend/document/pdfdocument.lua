@@ -1,8 +1,9 @@
 local Cache = require("cache")
 local CacheItem = require("cacheitem")
-local KoptOptions = require("ui/data/koptoptions")
 local Document = require("document/document")
 local DrawContext = require("ffi/drawcontext")
+local KoptOptions = require("ui/data/koptoptions")
+local Screen = require("device").screen
 local logger = require("logger")
 local util = require("util")
 
@@ -16,7 +17,7 @@ local PdfDocument = Document:new{
 
 function PdfDocument:init()
     local pdf = require("ffi/mupdf")
-    pdf.color = G_reader_settings:isTrue("color_rendering")
+    pdf.color = Screen:isColorEnabled()
     self.koptinterface = require("document/koptinterface")
     self.configurable:loadDefaults(self.options)
     local ok

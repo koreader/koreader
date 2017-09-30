@@ -1,12 +1,13 @@
-local TileCacheItem = require("document/tilecacheitem")
-local DrawContext = require("ffi/drawcontext")
-local Configurable = require("configurable")
 local Blitbuffer = require("ffi/blitbuffer")
-local lfs = require("libs/libkoreader-lfs")
+local Cache = require("cache")
 local CacheItem = require("cacheitem")
+local Configurable = require("configurable")
+local DrawContext = require("ffi/drawcontext")
 local Geom = require("ui/geometry")
 local Math = require("optmath")
-local Cache = require("cache")
+local Screen = require("device").screen
+local TileCacheItem = require("document/tilecacheitem")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
 --[[
@@ -32,8 +33,9 @@ local Document = {
     -- flag to show that the document is edited and needs to write back to disk
     is_edited = false,
 
-    -- whether to use colored or greyscale blitbuffers
-    color = G_reader_settings:isTrue("color_rendering"),
+    -- whether this document can be rendered in color
+    is_color_capable = true,
+
 }
 
 function Document:new(from_o)
@@ -301,12 +303,16 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
     end
 
     -- prepare cache item with contained blitbuffer
+    local bbtype = nil -- use Blitbuffer default greyscale type
+    if self.is_color_capable and Screen:isColorEnabled() then
+        bbtype = Blitbuffer.TYPE_BBRGB32
+    end
     tile = TileCacheItem:new{
         persistent = true,
         size = size.w * size.h + 64, -- estimation
         excerpt = size,
         pageno = pageno,
-        bb = Blitbuffer.new(size.w, size.h, self.color and Blitbuffer.TYPE_BBRGB32 or nil)
+        bb = Blitbuffer.new(size.w, size.h, bbtype)
     }
 
     -- create a draw context

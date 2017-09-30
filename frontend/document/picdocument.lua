@@ -1,5 +1,6 @@
 local Document = require("document/document")
 local DrawContext = require("ffi/drawcontext")
+local Screen = require("device").screen
 local pic = nil
 
 local PicDocument = Document:new{
@@ -10,7 +11,7 @@ local PicDocument = Document:new{
 
 function PicDocument:init()
     if not pic then pic = require("ffi/pic") end
-    pic.color = G_reader_settings:isTrue("color_rendering")
+    pic.color = Screen:isColorEnabled()
     local ok
     ok, self._document = pcall(pic.openDocument, self.file)
     if not ok then
