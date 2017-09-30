@@ -16,6 +16,7 @@ local PdfDocument = Document:new{
 
 function PdfDocument:init()
     local pdf = require("ffi/mupdf")
+    pdf.color = G_reader_settings:isTrue("color_rendering")
     self.koptinterface = require("document/koptinterface")
     self.configurable:loadDefaults(self.options)
     local ok

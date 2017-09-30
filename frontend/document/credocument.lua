@@ -26,6 +26,7 @@ local CreDocument = Document:new{
     fallback_font = G_reader_settings:readSetting("fallback_font") or "Noto Sans CJK SC",
     default_css = "./data/cr3.css",
     options = CreOptions,
+    color = G_reader_settings:isTrue("color_rendering"),
 }
 
 -- NuPogodi, 20.05.12: inspect the zipfile content
@@ -240,9 +241,13 @@ function CreDocument:drawCurrentView(target, x, y, rect, pos)
         self.buffer = nil
     end
     if not self.buffer then
-        self.buffer = Blitbuffer.new(rect.w, rect.h)
+        -- If we use TYPE_BBRGB32 (and LVColorDrawBuf drawBuf(..., 32) in cre.cpp),
+        -- we get inverted Red and Blue in the blitbuffer (could be that 
+        -- crengine/src/lvdrawbuf.cpp treats our 32bits not as RGBA).
+        -- But it is all fine if we use TYPE_BBRGB16.
+        self.buffer = Blitbuffer.new(rect.w, rect.h, self.color and Blitbuffer.TYPE_BBRGB16 or nil)
     end
-    self._document:drawCurrentPage(self.buffer)
+    self._document:drawCurrentPage(self.buffer, self.color)
     target:blitFrom(self.buffer, x, y, 0, 0, rect.w, rect.h)
 end
 

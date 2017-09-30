@@ -31,6 +31,9 @@ local Document = {
 
     -- flag to show that the document is edited and needs to write back to disk
     is_edited = false,
+
+    -- whether to use colored or greyscale blitbuffers
+    color = G_reader_settings:isTrue("color_rendering"),
 }
 
 function Document:new(from_o)
@@ -303,7 +306,7 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
         size = size.w * size.h + 64, -- estimation
         excerpt = size,
         pageno = pageno,
-        bb = Blitbuffer.new(size.w, size.h)
+        bb = Blitbuffer.new(size.w, size.h, self.color and Blitbuffer.TYPE_BBRGB32 or nil)
     }
 
     -- create a draw context

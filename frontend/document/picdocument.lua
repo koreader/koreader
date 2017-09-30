@@ -10,6 +10,7 @@ local PicDocument = Document:new{
 
 function PicDocument:init()
     if not pic then pic = require("ffi/pic") end
+    pic.color = G_reader_settings:isTrue("color_rendering")
     local ok
     ok, self._document = pcall(pic.openDocument, self.file)
     if not ok then
