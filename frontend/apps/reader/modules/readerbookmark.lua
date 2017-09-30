@@ -13,6 +13,7 @@ local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
 local Screen = require("device").screen
+local T = require("ffi/util").template
 
 local ReaderBookmark = InputContainer:new{
     bm_menu_title = _("Bookmarks"),
@@ -189,7 +190,7 @@ function ReaderBookmark:onShowBookmark()
             page = self.ui.document:getPageFromXPointer(page)
         end
         if v.text == nil or v.text == "" then
-            v.text = _("Page") .. " " .. page .. " " .. v.notes .. " @ " .. v.datetime
+            v.text = T(_("Page %1 %2 @ %3"), page, v.notes, v.datetime)
         end
     end
 
