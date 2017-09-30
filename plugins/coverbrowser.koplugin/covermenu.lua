@@ -436,6 +436,7 @@ function CoverMenu:onCloseWidget()
     logger.dbg("CoverMenu:onCloseWidget: terminating jobs if needed")
     BookInfoManager:terminateBackgroundJobs()
     BookInfoManager:closeDbConnection() -- sqlite connection no more needed
+    BookInfoManager:cleanUp() -- clean temporary resources
 
     -- Cancel any still scheduled update
     if self.items_update_action then
