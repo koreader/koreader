@@ -383,7 +383,13 @@ OPTIONS:
                 screen_width=${VALUE}
                 ;;
             -h | --screen-height)
-                screen_height=${VALUE}
+                # simple numeric check due to overlap between -h for help and height
+                if [ ! -z "${VALUE##*[!0-9]*}" ]; then
+                    screen_height=${VALUE}
+                else
+                    echo "${RUN_HELP_MSG}"
+                    exit 0
+                fi
                 ;;
             -d | --screen-dpi)
                 screen_dpi=${VALUE}
@@ -410,7 +416,7 @@ OPTIONS:
                         ;;
                 esac
                 ;;
-            -h | --help)
+            --help)
                 echo "${RUN_HELP_MSG}"
                 exit 0
                 ;;
@@ -439,6 +445,12 @@ OPTIONS:
         gnuplot_wrapper "--parent $$" "reader.lua"
     fi
 
+    # run with catchsegv by default when it is available
+    # see https://github.com/koreader/koreader/issues/2878#issuecomment-326796777
+    if command -v catchsegv >/dev/null; then
+        CATCHSEGV=$(which catchsegv)
+    fi
+
     echo "[*] Running KOReader with arguments: $*..."
     pushd "${EMU_DIR}" && {
         if [ $# -lt 1 ]; then
@@ -451,7 +463,7 @@ OPTIONS:
         RETURN_VALUE=85
         while [ $RETURN_VALUE -eq 85 ]; do
             EMULATE_READER_W=${screen_width} EMULATE_READER_H=${screen_height} EMULATE_READER_DPI=${screen_dpi} \
-                ./reader.lua -d "$args"
+                $CATCHSEGV ./reader.lua -d "$args"
             RETURN_VALUE=$?
         done
     } && popd || exit
