@@ -14,6 +14,7 @@ local Device = Generic:new{
     hasFrontlight = yes,
     isTouchDevice = yes,
     needsScreenRefreshAfterResume = no,
+    hasColorScreen = yes,
 }
 
 if os.getenv("DISABLE_TOUCH") == "1" then

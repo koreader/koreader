@@ -24,6 +24,7 @@ local Device = {
     isTouchDevice = no,
     hasFrontlight = no,
     needsTouchScreenProbe = no,
+    hasColorScreen = no,
 
     -- use these only as a last resort. We should abstract the functionality
     -- and have device dependent implementations in the corresponting
@@ -57,9 +58,10 @@ function Device:init()
         error("screen/framebuffer must be implemented")
     end
 
+    self.screen.isColorScreen = self.hasColorScreen
     self.screen.isColorEnabled = function()
         if G_reader_settings:has("color_rendering") then return G_reader_settings:isTrue("color_rendering") end
-        return self.screen.color
+        return self.screen.isColorScreen()
     end
 
     local is_eink = G_reader_settings:readSetting("eink")
