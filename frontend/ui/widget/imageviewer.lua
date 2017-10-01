@@ -282,7 +282,7 @@ end
 
 function ImageViewer:onShow()
     UIManager:setDirty(self, function()
-        return "ui", self.main_frame.dimen
+        return "full", self.main_frame.dimen
     end)
     return true
 end
