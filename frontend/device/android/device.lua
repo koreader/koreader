@@ -14,6 +14,7 @@ local Device = Generic:new{
     hasFrontlight = yes,
     firmware_rev = "none",
     display_dpi = android.lib.AConfiguration_getDensity(android.app.config),
+    hasColorScreen = yes,
 }
 
 function Device:init()
