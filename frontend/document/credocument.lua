@@ -73,6 +73,7 @@ function CreDocument:engineInit()
 end
 
 function CreDocument:init()
+    self:updateColorRendering()
     self:engineInit()
     self.configurable:loadDefaults(self.options)
 
@@ -137,6 +138,20 @@ end
 
 function CreDocument:close()
     Document.close(self)
+    if self.buffer then
+        self.buffer:free()
+        self.buffer = nil
+    end
+end
+
+function CreDocument:updateColorRendering()
+    Document.updateColorRendering(self) -- will set self.render_color
+    -- Delete current buffer, a new one will be created according
+    -- to self.render_color
+    if self.buffer then
+        self.buffer:free()
+        self.buffer = nil
+    end
 end
 
 function CreDocument:getPageCount()
@@ -239,15 +254,15 @@ function CreDocument:drawCurrentView(target, x, y, rect, pos)
         self.buffer:free()
         self.buffer = nil
     end
-    local color = Screen:isColorEnabled()
     if not self.buffer then
+        -- Note about color rendering:
         -- If we use TYPE_BBRGB32 (and LVColorDrawBuf drawBuf(..., 32) in cre.cpp),
         -- we get inverted Red and Blue in the blitbuffer (could be that
         -- crengine/src/lvdrawbuf.cpp treats our 32bits not as RGBA).
         -- But it is all fine if we use TYPE_BBRGB16.
-        self.buffer = Blitbuffer.new(rect.w, rect.h, color and Blitbuffer.TYPE_BBRGB16 or nil)
+        self.buffer = Blitbuffer.new(rect.w, rect.h, self.render_color and Blitbuffer.TYPE_BBRGB16 or nil)
     end
-    self._document:drawCurrentPage(self.buffer, color)
+    self._document:drawCurrentPage(self.buffer, self.render_color)
     target:blitFrom(self.buffer, x, y, 0, 0, rect.w, rect.h)
 end
 
@@ -307,7 +322,7 @@ function CreDocument:getLinkFromPosition(pos)
     return self._document:getLinkFromPosition(pos.x, pos.y)
 end
 
-function Document:gotoPos(pos)
+function CreDocument:gotoPos(pos)
     logger.dbg("CreDocument: goto position", pos)
     self._document:gotoPos(pos)
 end

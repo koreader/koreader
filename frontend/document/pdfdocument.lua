@@ -3,9 +3,9 @@ local CacheItem = require("cacheitem")
 local Document = require("document/document")
 local DrawContext = require("ffi/drawcontext")
 local KoptOptions = require("ui/data/koptoptions")
-local Screen = require("device").screen
 local logger = require("logger")
 local util = require("util")
+local pdf = nil
 
 local PdfDocument = Document:new{
     _document = false,
@@ -16,8 +16,13 @@ local PdfDocument = Document:new{
 }
 
 function PdfDocument:init()
-    local pdf = require("ffi/mupdf")
-    pdf.color = Screen:isColorEnabled()
+    if not pdf then pdf = require("ffi/mupdf") end
+    -- mupdf.color has to stay false for kopt to work correctly
+    -- and be accurate (including its job about showing highlight
+    -- boxes). We will turn it on and off in PdfDocument:preRenderPage()
+    -- and :postRenderPage() when mupdf is called without kopt involved.
+    pdf.color = false
+    self:updateColorRendering()
     self.koptinterface = require("document/koptinterface")
     self.configurable:loadDefaults(self.options)
     local ok
@@ -37,6 +42,14 @@ function PdfDocument:init()
     -- if not (self.info.number_of_pages > 0) then
         --error("No page found in PDF file")
     -- end
+end
+
+function PdfDocument:preRenderPage()
+    pdf.color = self.render_color
+end
+
+function PdfDocument:postRenderPage()
+    pdf.color = false
 end
 
 function PdfDocument:unlock(password)

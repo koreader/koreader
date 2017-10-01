@@ -72,6 +72,10 @@ function Document:_init()
         author = "",
         date = ""
     }
+
+    -- Should be updated by a call to Document.updateColorRendering(self)
+    -- in subclasses
+    self.render_color = false
 end
 
 -- override this method to open a document
@@ -269,20 +273,38 @@ function Document:findText()
     return nil
 end
 
-function Document:getFullPageHash(pageno, zoom, rotation, gamma, render_mode)
+function Document:updateColorRendering()
+    if self.is_color_capable and Screen:isColorEnabled() then
+        self.render_color = true
+    else
+        self.render_color = false
+    end
+end
+
+function Document:preRenderPage()
+    return nil
+end
+
+function Document:postRenderPage()
+    return nil
+end
+
+function Document:getFullPageHash(pageno, zoom, rotation, gamma, render_mode, color)
     return "renderpg|"..self.file.."|"..self.mod_time.."|"..pageno.."|"
-                    ..zoom.."|"..rotation.."|"..gamma.."|"..render_mode
+                    ..zoom.."|"..rotation.."|"..gamma.."|"..render_mode..(color and "|color" or "")
 end
 
 function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
     local hash_excerpt
-    local hash = self:getFullPageHash(pageno, zoom, rotation, gamma, render_mode)
+    local hash = self:getFullPageHash(pageno, zoom, rotation, gamma, render_mode, self.render_color)
     local tile = Cache:check(hash, TileCacheItem)
     if not tile then
         hash_excerpt = hash.."|"..tostring(rect)
         tile = Cache:check(hash_excerpt)
     end
     if tile then return tile end
+
+    self:preRenderPage()
 
     local page_size = self:getPageDimensions(pageno, zoom, rotation)
     -- this will be the size we actually render
@@ -303,16 +325,12 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
     end
 
     -- prepare cache item with contained blitbuffer
-    local bbtype = nil -- use Blitbuffer default greyscale type
-    if self.is_color_capable and Screen:isColorEnabled() then
-        bbtype = Blitbuffer.TYPE_BBRGB32
-    end
     tile = TileCacheItem:new{
         persistent = true,
         size = size.w * size.h + 64, -- estimation
         excerpt = size,
         pageno = pageno,
-        bb = Blitbuffer.new(size.w, size.h, bbtype)
+        bb = Blitbuffer.new(size.w, size.h, self.render_color and Blitbuffer.TYPE_BBRGB32 or nil)
     }
 
     -- create a draw context
@@ -339,6 +357,7 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
     page:close()
     Cache:insert(hash, tile)
 
+    self:postRenderPage()
     return tile
 end
 

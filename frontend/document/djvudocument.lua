@@ -24,6 +24,7 @@ local function validDjvuFile(filename)
 end
 
 function DjvuDocument:init()
+    self:updateColorRendering()
     local djvu = require("libs/libkoreader-djvu")
     self.koptinterface = require("document/koptinterface")
     self.configurable:loadDefaults(self.options)

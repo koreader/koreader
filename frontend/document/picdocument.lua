@@ -10,8 +10,10 @@ local PicDocument = Document:new{
 }
 
 function PicDocument:init()
+    self:updateColorRendering()
     if not pic then pic = require("ffi/pic") end
-    pic.color = Screen:isColorEnabled()
+    -- pic.color needs to be true before opening document to allow toggling color
+    pic.color = Screen.isColorScreen()
     local ok
     ok, self._document = pcall(pic.openDocument, self.file)
     if not ok then

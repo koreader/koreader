@@ -530,6 +530,10 @@ function ReaderRolling:onChangeScreenMode(mode)
     self:onUpdatePos()
 end
 
+function ReaderRolling:onColorRenderingUpdate()
+    self.ui.document:updateColorRendering()
+end
+
 --[[
     PosUpdate event is used to signal other widgets that pos has been changed.
 --]]
