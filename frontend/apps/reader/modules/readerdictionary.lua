@@ -354,7 +354,7 @@ function ReaderDictionary:stardictLookup(word, box, link)
                 definition = _([[No dictionaries installed. Please search for "Dictionary support" in the KOReader Wiki to get more information about installing new dictionaries.]]),
             }
         }
-        self:showDict(word, final_results, box)
+        self:showDict(word, final_results, box, link)
         return
     end
     local lookup_cancelled = false
