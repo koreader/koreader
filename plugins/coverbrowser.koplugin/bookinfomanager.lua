@@ -373,6 +373,9 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
     local document = DocumentRegistry:openDocument(filepath)
     if document then
         if document.loadDocument then -- needed for crengine
+            -- Setting a default font before loading document
+            -- actually do prevent some crashes
+            document:setFontFace(document.default_font)
             document:loadDocument()
             -- Not needed for getting props:
             -- document:render()
