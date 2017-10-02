@@ -12,15 +12,17 @@ local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
 local FileManagerMenu = require("apps/filemanager/filemanagermenu")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
-local Geom = require("ui/geometry")
+local IconButton = require("ui/widget/iconbutton")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
+local OverlapGroup = require("ui/widget/overlapgroup")
 local PluginLoader = require("pluginloader")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local ReaderUI = require("apps/reader/readerui")
 local ReaderWikipedia = require("apps/reader/modules/readerwikipedia")
 local Screenshoter = require("ui/widget/screenshoter")
+local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
@@ -42,8 +44,6 @@ end
 local FileManager = InputContainer:extend{
     title = _("KOReader File Browser"),
     root_path = lfs.currentdir(),
-    -- our own size
-    dimen = Geom:new{ w = 400, h = 600 },
     onExit = function() end,
 
     mv_bin = Device:isAndroid() and "/system/bin/mv" or "/bin/mv",
@@ -54,6 +54,17 @@ local FileManager = InputContainer:extend{
 function FileManager:init()
     self.show_parent = self.show_parent or self
 
+    local home_button = IconButton:new{
+        icon_file = "resources/icons/appbar.home.png",
+        width = Screen:scaleBySize(35),
+        height = Screen:scaleBySize(35),
+        padding = Size.padding.default,
+        padding_top = Size.padding.small,
+        padding_left = Size.padding.small,
+        callback = function() self:goHome() end,
+        hold_callback = function() self:setHome() end,
+    }
+
     self.path_text = TextWidget:new{
         face = Font:getFace("xx_smallinfofont"),
         text = filemanagerutil.abbreviate(self.root_path),
@@ -63,16 +74,21 @@ function FileManager:init()
         padding = 0,
         bordersize = 0,
         VerticalGroup:new{
-            TextWidget:new{
-                face = Font:getFace("smalltfont"),
-                text = self.title,
+            OverlapGroup:new{
+                home_button,
+                VerticalGroup:new{
+                    TextWidget:new{
+                        face = Font:getFace("smalltfont"),
+                        text = self.title,
+                    },
+                    CenterContainer:new{
+                        dimen = { w = Screen:getWidth(), h = nil },
+                        self.path_text,
+                    },
+                },
             },
-            CenterContainer:new{
-                dimen = { w = Screen:getWidth(), h = nil },
-                self.path_text,
-            },
-            VerticalSpan:new{ width = Screen:scaleBySize(10) }
-        }
+            VerticalSpan:new{ width = Screen:scaleBySize(10) },
+        },
     }
 
     local g_show_hidden = G_reader_settings:readSetting("show_hidden")
@@ -100,7 +116,7 @@ function FileManager:init()
     function file_chooser:onPathChanged(path)  -- luacheck: ignore
         FileManager.instance.path_text:setText(filemanagerutil.abbreviate(path))
         UIManager:setDirty(FileManager.instance, function()
-            return "ui", FileManager.instance.banner.dimen
+            return "ui", FileManager.instance.path_text.dimen
         end)
         return true
     end
@@ -116,6 +132,7 @@ function FileManager:init()
     local cutFile = function(file) self:cutFile(file) end
     local deleteFile = function(file) self:deleteFile(file) end
     local renameFile = function(file) self:renameFile(file) end
+    local setHome = function(path) self:setHome(path) end
     local fileManager = self
 
     function file_chooser:onFileHold(file)  -- luacheck: ignore
@@ -146,28 +163,9 @@ function FileManager:init()
                             text = util.template(_("Purge .sdr to reset settings for this document?\n\n%1"), self.file_dialog.title),
                             ok_text = _("Purge"),
                             ok_callback = function()
-                                local file_abs_path = util.realpath(file)
-                                if file_abs_path then
-                                    local autoremove_deleted_items_from_history = G_reader_settings:readSetting("autoremove_deleted_items_from_history") or false
-                                    os.remove(DocSettings:getSidecarFile(file_abs_path))
-                                    -- also remove backup, otherwise it will be used if we re-open this document
-                                    -- (it also allows for the sidecar folder to be empty and removed)
-                                    os.remove(DocSettings:getSidecarFile(file_abs_path)..".old")
-                                    -- If the sidecar folder is empty, os.remove() can
-                                    -- delete it. Otherwise, the following statement has no
-                                    -- effect.
-                                    os.remove(DocSettings:getSidecarDir(file_abs_path))
-                                    self:refreshPath()
-                                    -- also delete from history and update lastfile to top item in
-                                    -- history if autoremove_deleted_items_from_history is enabled
-                                    if autoremove_deleted_items_from_history then
-                                        local readhistory = require("readhistory")
-                                        readhistory:removeItemByPath(file_abs_path)
-                                        if G_reader_settings:readSetting("lastfile") == file_abs_path then
-                                            G_reader_settings:saveSetting("lastfile", #readhistory.hist > 0 and readhistory.hist[1].file or nil)
-                                        end
-                                    end
-                                end
+                                filemanagerutil.purgeSettings(file)
+                                filemanagerutil.removeFileFromHistoryIfWanted(file)
+                                self:refreshPath()
                                 UIManager:close(self.file_dialog)
                             end,
                         })
@@ -186,26 +184,14 @@ function FileManager:init()
                     text = _("Delete"),
                     callback = function()
                         local ConfirmBox = require("ui/widget/confirmbox")
-                        UIManager:close(self.file_dialog)
                         UIManager:show(ConfirmBox:new{
                             text = _("Are you sure that you want to delete this file?\n") .. file .. ("\n") .. _("If you delete a file, it is permanently lost."),
                             ok_text = _("Delete"),
                             ok_callback = function()
-                                local autoremove_deleted_items_from_history = G_reader_settings:readSetting("autoremove_deleted_items_from_history") or false
-                                local file_abs_path = util.realpath(file)
                                 deleteFile(file)
-                                -- also delete from history and update lastfile to top item in
-                                -- history if autoremove_deleted_items_from_history is enabled
-                                if autoremove_deleted_items_from_history then
-                                    if file_abs_path then
-                                        local readhistory = require("readhistory")
-                                        readhistory:removeItemByPath(file_abs_path)
-                                        if G_reader_settings:readSetting("lastfile") == file_abs_path then
-                                            G_reader_settings:saveSetting("lastfile", #readhistory.hist > 0 and readhistory.hist[1].file or nil)
-                                        end
-                                    end
-                                end
+                                filemanagerutil.removeFileFromHistoryIfWanted(file)
                                 self:refreshPath()
+                                UIManager:close(self.file_dialog)
                             end,
                         })
                     end,
@@ -269,7 +255,7 @@ function FileManager:init()
                 {
                     text = _("Set as HOME directory"),
                     callback = function()
-                        G_reader_settings:saveSetting("home_dir", realpath)
+                        setHome(realpath)
                         UIManager:close(self.file_dialog)
                     end
                 }
@@ -362,6 +348,7 @@ end
 
 function FileManager:onClose()
     logger.dbg("close filemanager")
+    G_reader_settings:flush()
     UIManager:close(self)
     if self.onExit then
         self:onExit()
@@ -371,6 +358,29 @@ end
 
 function FileManager:onRefresh()
     self.file_chooser:refreshPath()
+    return true
+end
+
+function FileManager:goHome()
+    local home_dir = G_reader_settings:readSetting("home_dir")
+    if home_dir then
+        self.file_chooser:changeToPath(home_dir)
+    else
+        self:setHome()
+    end
+    return true
+end
+
+function FileManager:setHome(path)
+    path = path or self.file_chooser.path
+    local ConfirmBox = require("ui/widget/confirmbox")
+    UIManager:show(ConfirmBox:new{
+        text = util.template(_("Set '%1' as HOME directory?"), path),
+        ok_text = _("Set as HOME"),
+        ok_callback = function()
+            G_reader_settings:saveSetting("home_dir", path)
+        end,
+    })
     return true
 end
 

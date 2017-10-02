@@ -24,6 +24,7 @@ local Device = {
     isTouchDevice = no,
     hasFrontlight = no,
     needsTouchScreenProbe = no,
+    hasColorScreen = no,
 
     -- use these only as a last resort. We should abstract the functionality
     -- and have device dependent implementations in the corresponting
@@ -55,6 +56,12 @@ function Device:init()
     assert(self ~= nil)
     if not self.screen then
         error("screen/framebuffer must be implemented")
+    end
+
+    self.screen.isColorScreen = self.hasColorScreen
+    self.screen.isColorEnabled = function()
+        if G_reader_settings:has("color_rendering") then return G_reader_settings:isTrue("color_rendering") end
+        return self.screen.isColorScreen()
     end
 
     local is_eink = G_reader_settings:readSetting("eink")
@@ -165,6 +172,12 @@ function Device:reboot() end
 function Device:initNetworkManager() end
 
 function Device:supportsScreensaver() return false end
+
+-- Device specific method to set datetime
+function Device:setDateTime(year, month, day, hour, min, sec) end
+
+-- Device specific method if any setting needs being saved
+function Device:saveSettings() end
 
 --[[
 prepare for application shutdown

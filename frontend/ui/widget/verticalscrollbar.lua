@@ -1,14 +1,15 @@
 local Blitbuffer = require("ffi/blitbuffer")
 local Geom = require("ui/geometry")
+local Size = require("ui/size")
 local Widget = require("ui/widget/widget")
 
 local VerticalScrollBar = Widget:new{
     enable = true,
     low = 0,
     high = 1,
-    width = 6,
-    height = 50,
-    bordersize = 1,
+    width = Size.padding.default,
+    height = Size.item.height_large,
+    bordersize = Size.border.thin,
     bordercolor = Blitbuffer.COLOR_BLACK,
     radius = 0,
     rectcolor = Blitbuffer.COLOR_BLACK,

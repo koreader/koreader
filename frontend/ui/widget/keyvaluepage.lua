@@ -35,6 +35,7 @@ local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local RenderText = require("ui/rendertext")
+local Size = require("ui/size")
 local TextViewer = require("ui/widget/textviewer")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
@@ -74,7 +75,7 @@ function KeyValueTitle:init()
     })
     -- page count and separation line
     self.page_cnt = FrameContainer:new{
-        padding = 4,
+        padding = Size.padding.default,
         margin = 0,
         bordersize = 0,
         background = Blitbuffer.COLOR_WHITE,
@@ -87,16 +88,16 @@ function KeyValueTitle:init()
         },
     }
     self.title_bottom = OverlapGroup:new{
-        dimen = { w = self.width, h = Screen:scaleBySize(2) },
+        dimen = { w = self.width, h = Size.line.thick },
         LineWidget:new{
-            dimen = Geom:new{ w = self.width, h = Screen:scaleBySize(2) },
+            dimen = Geom:new{ w = self.width, h = Size.line.thick },
             background = Blitbuffer.COLOR_GREY,
             style = "solid",
         },
         self.page_cnt,
     }
     table.insert(self, self.title_bottom)
-    table.insert(self, VerticalSpan:new{ width = Screen:scaleBySize(5) })
+    table.insert(self, VerticalSpan:new{ width = Size.span.vertical_large })
 end
 
 function KeyValueTitle:setPageCount(curr, total)
@@ -139,7 +140,7 @@ function KeyValueItem:init()
         }
     end
 
-    local frame_padding = Screen:scaleBySize(8)
+    local frame_padding = Size.padding.default
     local frame_internal_width = self.width - frame_padding * 2
     local key_w = frame_internal_width / 2
     local value_w = frame_internal_width / 2
@@ -155,7 +156,8 @@ function KeyValueItem:init()
                 self.show_value = self.value
             else
                 key_w = key_w_rendered + space_w_rendered
-                self.show_value = RenderText:truncateTextByWidth(self.value, self.cface, frame_internal_width - key_w_rendered, true)
+                self.show_value = RenderText:truncateTextByWidth(self.value, self.cface, frame_internal_width - key_w_rendered,
+                    false, false, true)
                 self.show_key = self.key
             end
             -- allow for displaying the non-truncated texts with Hold
@@ -252,6 +254,13 @@ function KeyValuePage:init()
         }
     end
 
+    -- return button
+    self.page_return_arrow = Button:new{
+        icon = "resources/icons/appbar.arrow.left.up.png",
+        callback = function() self:onReturn() end,
+        bordersize = 0,
+        show_parent = self,
+    }
     -- group for page info
     self.page_info_left_chev = Button:new{
         icon = "resources/icons/appbar.chevron.left.png",
@@ -280,6 +289,16 @@ function KeyValuePage:init()
     self.page_info_spacer = HorizontalSpan:new{
         width = Screen:scaleBySize(32),
     }
+    self.page_return_spacer = HorizontalSpan:new{
+        width = self.page_return_arrow:getSize().w
+    }
+
+    if self.callback_return == nil and self.return_button == nil then
+        self.page_return_arrow:hide()
+    elseif self.callback_return == nil then
+        self.page_return_arrow:disable()
+    end
+
     self.page_info_left_chev:hide()
     self.page_info_right_chev:hide()
     self.page_info_first_chev:hide()
@@ -306,6 +325,7 @@ function KeyValuePage:init()
         text_font_bold = false,
     }
     self.page_info = HorizontalGroup:new{
+        self.page_return_arrow,
         self.page_info_first_chev,
         self.page_info_spacer,
         self.page_info_left_chev,
@@ -313,6 +333,7 @@ function KeyValuePage:init()
         self.page_info_right_chev,
         self.page_info_spacer,
         self.page_info_last_chev,
+        self.page_return_spacer,
     }
 
     local footer = BottomContainer:new{
@@ -320,9 +341,9 @@ function KeyValuePage:init()
         self.page_info,
     }
 
-    local padding = Screen:scaleBySize(10)
+    local padding = Size.padding.large
     self.item_width = self.dimen.w - 2 * padding
-    self.item_height = Screen:scaleBySize(30)
+    self.item_height = Size.item.height_default
     -- setup title bar
     self.title_bar = KeyValueTitle:new{
         title = self.title,
@@ -404,6 +425,7 @@ function KeyValuePage:_populateItems()
                     key = entry[1],
                     value = entry[2],
                     callback = entry.callback,
+                    callback_back = entry.callback_back,
                     textviewer_width = self.textviewer_width,
                     textviewer_height = self.textviewer_height,
                 }
@@ -417,7 +439,7 @@ function KeyValuePage:_populateItems()
                     background = Blitbuffer.COLOR_LIGHT_GREY,
                     dimen = Geom:new{
                         w = self.item_width,
-                        h = Screen:scaleBySize(2)
+                        h = Size.line.thick
                     },
                     style = "solid",
                 })
@@ -461,6 +483,14 @@ end
 function KeyValuePage:onClose()
     UIManager:close(self)
     return true
+end
+
+function KeyValuePage:onReturn()
+    if self.callback_return then
+        self:callback_return()
+        UIManager:close(self)
+        UIManager:setDirty("all", "ui")
+    end
 end
 
 return KeyValuePage

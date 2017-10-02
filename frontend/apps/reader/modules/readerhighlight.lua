@@ -3,6 +3,7 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
@@ -67,7 +68,7 @@ end
 function ReaderHighlight:addToMainMenu(menu_items)
     -- insert table to main reader menu
     menu_items.highlight_options = {
-        text = _("Highlight options"),
+        text = _("Highlighting"),
         sub_item_table = self:genHighlightDrawerMenu(),
     }
 end
@@ -109,7 +110,23 @@ function ReaderHighlight:genHighlightDrawerMenu()
     }
 end
 
-function ReaderHighlight:clear()
+-- Returns a unique id, that can be provided on delayed call to :clear(id)
+-- to ensure current highlight has not already been cleared, and that we
+-- are not going to clear a new highlight
+function ReaderHighlight:getClearId()
+    self.clear_id = TimeVal.now() -- can act as a unique id
+    return self.clear_id
+end
+
+function ReaderHighlight:clear(clear_id)
+    if clear_id then -- should be provided by delayed call to clear()
+        if clear_id ~= self.clear_id then
+            -- if clear_id is no more valid, highlight has already been
+            -- cleared since this clear_id was given
+            return
+        end
+    end
+    self.clear_id = nil -- invalidate id
     if self.ui.document.info.has_pages then
         self.view.highlight.temp = {}
     else
@@ -222,6 +239,7 @@ end
 function ReaderHighlight:onHold(arg, ges)
     -- disable hold gesture if highlighting is disabled
     if self.view.highlight.disabled then return true end
+    self:clear() -- clear previous highlight (delayed clear may not have done it yet)
     self.hold_pos = self.view:screenToPageTransform(ges.pos)
     logger.dbg("hold position in page", self.hold_pos)
     if not self.hold_pos then
@@ -250,6 +268,12 @@ function ReaderHighlight:onHold(arg, ges)
     if ok and word then
         logger.dbg("selected word:", word)
         self.selected_word = word
+        local link = self.ui.link:getLinkFromGes(ges)
+        self.selected_link = nil
+        if link then
+            logger.dbg("link:", link)
+            self.selected_link = link
+        end
         if self.ui.document.info.has_pages then
             local boxes = {}
             table.insert(boxes, self.selected_word.sbox)
@@ -259,6 +283,7 @@ function ReaderHighlight:onHold(arg, ges)
         -- TODO: only mark word?
         -- Unfortunately, CREngine does not return good coordinates
         -- UIManager:setDirty(self.dialog, "partial", self.selected_word.sbox)
+        self.hold_start_tv = TimeVal.now()
     end
     return true
 end
@@ -296,17 +321,17 @@ function ReaderHighlight:onHoldPan(_, ges)
     UIManager:setDirty(self.dialog, "ui")
 end
 
-function ReaderHighlight:lookup(selected_word)
+function ReaderHighlight:lookup(selected_word, selected_link)
     -- if we extracted text directly
     if selected_word.word then
         local word_box = self.view:pageToScreenTransform(self.hold_pos.page, selected_word.sbox)
-        self.ui:handleEvent(Event:new("LookupWord", selected_word.word, word_box, self))
+        self.ui:handleEvent(Event:new("LookupWord", selected_word.word, word_box, self, selected_link))
     -- or we will do OCR
     elseif selected_word.sbox and self.hold_pos then
         local word = self.ui.document:getOCRWord(self.hold_pos.page, selected_word)
         logger.dbg("OCRed word:", word)
         local word_box = self.view:pageToScreenTransform(self.hold_pos.page, selected_word.sbox)
-        self.ui:handleEvent(Event:new("LookupWord", word, word_box, self))
+        self.ui:handleEvent(Event:new("LookupWord", word, word_box, self, selected_link))
     end
 end
 
@@ -322,8 +347,19 @@ function ReaderHighlight:translate(selected_text)
 end
 
 function ReaderHighlight:onHoldRelease()
+    if self.hold_start_tv then
+        local hold_duration = TimeVal.now() - self.hold_start_tv
+        hold_duration = hold_duration.sec + hold_duration.usec/1000000
+        self.hold_start_tv = nil
+        if hold_duration > 3.0 and self.selected_word then
+            -- if we were holding for more than 3 seconds on a word, make
+            -- it behave like we panned and selected more words, so we can
+            -- directly access the highlight menu and avoid a dict lookup
+            self:onHoldPan(nil, {pos=self.hold_pos})
+        end
+    end
     if self.selected_word then
-        self:lookup(self.selected_word)
+        self:lookup(self.selected_word, self.selected_link)
         self.selected_word = nil
     elseif self.selected_text then
         logger.dbg("show highlight dialog")
@@ -348,13 +384,8 @@ function ReaderHighlight:onHoldRelease()
                 },
                 {
                     {
-                        text = _("Wikipedia"),
-                        callback = function()
-                            UIManager:scheduleIn(0.1, function()
-                                self:lookupWikipedia()
-                                self:onClose()
-                            end)
-                        end,
+                        text = "_",
+                        enabled = false,
                     },
                     {
                         text = _("Translate"),
@@ -367,10 +398,12 @@ function ReaderHighlight:onHoldRelease()
                 },
                 {
                     {
-                        text = _("Search"),
+                        text = _("Wikipedia"),
                         callback = function()
-                            self:onHighlightSearch()
-                            UIManager:close(self.highlight_dialog)
+                            UIManager:scheduleIn(0.1, function()
+                                self:lookupWikipedia()
+                                self:onClose()
+                            end)
                         end,
                     },
                     {
@@ -378,6 +411,23 @@ function ReaderHighlight:onHoldRelease()
                         callback = function()
                             self:onHighlightDictLookup()
                             self:onClose()
+                        end,
+                    },
+                },
+                {
+                    {
+                        text = _("Follow Link"),
+                        enabled = self.selected_link ~= nil,
+                        callback = function()
+                            self.ui.link:onGotoLink(self.selected_link)
+                            self:onClose()
+                        end,
+                    },
+                    {
+                        text = _("Search"),
+                        callback = function()
+                            self:onHighlightSearch()
+                            UIManager:close(self.highlight_dialog)
                         end,
                     },
                 },

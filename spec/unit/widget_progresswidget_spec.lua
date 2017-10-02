@@ -8,8 +8,8 @@ describe("ProgressWidget widget", function()
 
     it("should not crash with nil self.last", function()
         local progress = ProgressWidget:new{
-            width = 100,
-            height = 50,
+            width = Screen:scaleBySize(100),
+            height = Screen:scaleBySize(50),
             percentage = 5/100,
             ticks = {1},
         }

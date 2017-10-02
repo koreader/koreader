@@ -29,6 +29,7 @@ local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local ImageWidget = require("ui/widget/imagewidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -45,8 +46,8 @@ local ConfirmBox = InputContainer:new{
     ok_callback = function() end,
     cancel_callback = function() end,
     other_buttons = nil,
-    margin = 5,
-    padding = 5,
+    margin = Size.margin.default,
+    padding = Size.padding.default,
 }
 
 function ConfirmBox:init()
@@ -70,9 +71,10 @@ function ConfirmBox:init()
     local content = HorizontalGroup:new{
         align = "center",
         ImageWidget:new{
-            file = "resources/info-i.png"
+            file = "resources/info-i.png",
+            scale_for_dpi = true,
         },
-        HorizontalSpan:new{ width = 10 },
+        HorizontalSpan:new{ width = Size.span.horizontal_default },
         TextBoxWidget:new{
             text = self.text,
             face = self.face,

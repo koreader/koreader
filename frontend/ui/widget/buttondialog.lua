@@ -1,14 +1,15 @@
+local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")
-local InputContainer = require("ui/widget/container/inputcontainer")
-local FrameContainer = require("ui/widget/container/framecontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
-local GestureRange = require("ui/gesturerange")
+local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
-local Screen = require("device").screen
+local GestureRange = require("ui/gesturerange")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
-local Blitbuffer = require("ffi/blitbuffer")
+local Screen = require("device").screen
 
 local ButtonDialog = InputContainer:new{
     buttons = nil,
@@ -42,9 +43,9 @@ function ButtonDialog:init()
                 show_parent = self,
             },
             background = Blitbuffer.COLOR_WHITE,
-            bordersize = 2,
-            radius = 7,
-            padding = 2,
+            bordersize = Size.border.window,
+            radius = Size.radius.window,
+            padding = Size.padding.button,
         }
     }
 end

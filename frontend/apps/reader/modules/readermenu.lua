@@ -184,13 +184,18 @@ function ReaderMenu:setUpdateItemTable()
         self.menu_items[id] = common_setting
     end
 
+    self.menu_items.exit_menu = {
+        text = _("Exit"),
+        hold_callback = function()
+            self:exitOrRestart()
+        end,
+    }
     self.menu_items.exit = {
         text = _("Exit"),
         callback = function()
             self:exitOrRestart()
         end,
     }
-
     self.menu_items.restart_koreader = {
         text = _("Restart KOReader"),
         callback = function()
@@ -213,11 +218,31 @@ dbg:guard(ReaderMenu, 'setUpdateItemTable',
     end)
 
 function ReaderMenu:exitOrRestart(callback)
-    self:onTapCloseMenu()
+    if self.menu_container then self:onTapCloseMenu() end
     UIManager:nextTick(function()
         self.ui:onClose()
         if callback ~= nil then
-            callback()
+            -- show an empty widget so that the callback always happens
+            local Widget = require("ui/widget/widget")
+            local widget = Widget:new{
+                width = Screen:getWidth(),
+                height = Screen:getHeight(),
+            }
+            UIManager:show(widget)
+            local waiting = function(waiting)
+                -- if we don't do this you can get a situation where either the
+                -- program won't exit due to remaining widgets until they're
+                -- dismissed or if the callback forces all widgets to close,
+                -- that the save document ConfirmBox is also closed
+                if self.ui and self.ui.document and self.ui.document:isEdited() then
+                    logger.dbg("waiting for save settings")
+                    UIManager:scheduleIn(1, function() waiting(waiting) end)
+                else
+                    callback()
+                    UIManager:close(widget)
+                end
+            end
+            UIManager:scheduleIn(1, function() waiting(waiting) end)
         end
     end)
     local FileManager = require("apps/filemanager/filemanager")

@@ -43,7 +43,11 @@ local footerTextGeneratorMap = {
         if not Device:hasFrontlight() then return "L: NA" end
         local powerd = Device:getPowerDevice()
         if powerd:isFrontlightOn() then
-            return ("L: %d%%"):format(powerd:frontlightIntensity())
+            if Device:isKobo() then
+                return ("L: %d%%"):format(powerd:frontlightIntensity())
+            else
+                return ("L: %d"):format(powerd:frontlightIntensity())
+            end
         else
             return "L: Off"
         end
@@ -495,12 +499,14 @@ function ReaderFooter:setTocMarkers()
     return true
 end
 
+function ReaderFooter:getAvgTimePerPage()
+    return
+end
+
 function ReaderFooter:getDataFromStatistics(title, pages)
-    local statistics_data = self.ui.doc_settings:readSetting("stats")
     local sec = 'na'
-    if statistics_data and statistics_data.performance_in_pages then
-        local read_pages = util.tableSize(statistics_data.performance_in_pages)
-        local average_time_per_page = statistics_data.total_time_in_sec / read_pages
+    local average_time_per_page = self:getAvgTimePerPage()
+    if average_time_per_page then
         sec = util.secondsToClock(pages * average_time_per_page, true)
     end
     return title .. sec

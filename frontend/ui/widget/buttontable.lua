@@ -1,12 +1,13 @@
-local HorizontalGroup = require("ui/widget/horizontalgroup")
-local VerticalGroup = require("ui/widget/verticalgroup")
-local VerticalSpan = require("ui/widget/verticalspan")
-local FocusManager = require("ui/widget/focusmanager")
-local LineWidget = require("ui/widget/linewidget")
 local Blitbuffer = require("ffi/blitbuffer")
 local Button = require("ui/widget/button")
-local Geom = require("ui/geometry")
 local Device = require("device")
+local FocusManager = require("ui/widget/focusmanager")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local LineWidget = require("ui/widget/linewidget")
+local Size = require("ui/size")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local VerticalSpan = require("ui/widget/verticalspan")
+local Geom = require("ui/geometry")
 local Screen = Device.screen
 
 local ButtonTable = FocusManager:new{
@@ -17,8 +18,8 @@ local ButtonTable = FocusManager:new{
             {text="Cancel", enabled=false, callback=nil},
         },
     },
-    sep_width = Screen:scaleBySize(1),
-    padding = Screen:scaleBySize(2),
+    sep_width = Size.line.medium,
+    padding = Size.padding.button,
 
     zero_sep = false,
     button_font_face = "cfont",
@@ -46,6 +47,7 @@ function ButtonTable:init()
                 enabled = btn_entry.enabled,
                 callback = btn_entry.callback,
                 width = (self.width - sizer_space)/column_cnt,
+                max_width = (self.width - sizer_space)/column_cnt - 2*self.sep_width - 2*self.padding,
                 bordersize = 0,
                 margin = 0,
                 padding = 0,
@@ -83,7 +85,7 @@ end
 
 function ButtonTable:addHorizontalSep()
     table.insert(self.container,
-                 VerticalSpan:new{ width = Screen:scaleBySize(2) })
+                 VerticalSpan:new{ width = Size.span.vertical_default })
     table.insert(self.container, LineWidget:new{
         background = Blitbuffer.COLOR_GREY,
         dimen = Geom:new{
@@ -92,7 +94,7 @@ function ButtonTable:addHorizontalSep()
         }
     })
     table.insert(self.container,
-                 VerticalSpan:new{ width = Screen:scaleBySize(2) })
+                 VerticalSpan:new{ width = Size.span.vertical_default })
 end
 
 function ButtonTable:onSelectByKeyPress()

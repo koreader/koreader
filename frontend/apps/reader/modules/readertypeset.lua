@@ -8,7 +8,7 @@ local Screen = require("device").screen
 local T = require("ffi/util").template
 
 local ReaderTypeset = InputContainer:new{
-    css_menu_title = _("Set render style"),
+    css_menu_title = _("Style"),
     css = nil,
     internal_css = true,
 }
@@ -26,9 +26,24 @@ function ReaderTypeset:onReadSettings(config)
         self.css = self.ui.document.default_css
     end
 
+    self.embedded_fonts = config:readSetting("embedded_fonts")
+    if self.embedded_fonts == nil then
+        -- default to enable embedded fonts
+        -- note that it's a bit confusing here:
+        -- global settins store 0/1, while document settings store false/true
+        -- we leave it that way for now to maintain backwards compatibility
+        local global = G_reader_settings:readSetting("copt_embedded_fonts")
+        self.embedded_fonts = (global == nil or global == 1) and true or false
+    end
+    -- As this is new, call it only when embedded_fonts are explicitely disabled
+    -- self.ui.document:setEmbeddedFonts(self.embedded_fonts and 1 or 0)
+    if not self.embedded_fonts then
+        self.ui.document:setEmbeddedFonts(0)
+    end
+
     self.embedded_css = config:readSetting("embedded_css")
     if self.embedded_css == nil then
-        -- default to enable embedded css
+        -- default to enable embedded CSS
         -- note that it's a bit confusing here:
         -- global settins store 0/1, while document settings store false/true
         -- we leave it that way for now to maintain backwards compatibility
@@ -51,7 +66,7 @@ function ReaderTypeset:onReadSettings(config)
         G_reader_settings:readSetting("floating_punctuation") or 1
     self:toggleFloatingPunctuation(self.floating_punctuation)
 
-    -- default to disable txt formatting as it does more harm than good
+    -- default to disable TXT formatting as it does more harm than good
     self.txt_preformatted = config:readSetting("txt_preformatted") or
         G_reader_settings:readSetting("txt_preformatted") or 1
     self:toggleTxtPreFormatted(self.txt_preformatted)
@@ -61,10 +76,16 @@ function ReaderTypeset:onSaveSettings()
     self.ui.doc_settings:saveSetting("css", self.css)
     self.ui.doc_settings:saveSetting("embedded_css", self.embedded_css)
     self.ui.doc_settings:saveSetting("floating_punctuation", self.floating_punctuation)
+    self.ui.doc_settings:saveSetting("embedded_fonts", self.embedded_fonts)
 end
 
 function ReaderTypeset:onToggleEmbeddedStyleSheet(toggle)
     self:toggleEmbeddedStyleSheet(toggle)
+    return true
+end
+
+function ReaderTypeset:onToggleEmbeddedFonts(toggle)
+    self:toggleEmbeddedFonts(toggle)
     return true
 end
 
@@ -88,6 +109,7 @@ function ReaderTypeset:genStyleSheetMenu()
             })
         end
     end
+    table.sort(file_list, function(v1,v2) return v1.text < v2.text end) -- sort by name
     for i,file in ipairs(file_list) do
         table.insert(style_table, {
             text = file["text"],
@@ -136,6 +158,17 @@ function ReaderTypeset:toggleEmbeddedStyleSheet(toggle)
     self.ui:handleEvent(Event:new("UpdatePos"))
 end
 
+function ReaderTypeset:toggleEmbeddedFonts(toggle)
+    if not toggle then
+        self.embedded_fonts = false
+        self.ui.document:setEmbeddedFonts(0)
+    else
+        self.embedded_fonts = true
+        self.ui.document:setEmbeddedFonts(1)
+    end
+    self.ui:handleEvent(Event:new("UpdatePos"))
+end
+
 function ReaderTypeset:toggleFloatingPunctuation(toggle)
     -- for some reason the toggle value read from history files may stay boolean
     -- and there seems no more elegant way to convert boolean values to numbers
@@ -165,7 +198,7 @@ function ReaderTypeset:addToMainMenu(menu_items)
         callback = function()
             self.floating_punctuation = self.floating_punctuation == 1 and 0 or 1
             self:toggleFloatingPunctuation(self.floating_punctuation)
-    end,
+        end,
         hold_callback = function() self:makeDefaultFloatingPunctuation() end,
     }
 end

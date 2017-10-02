@@ -11,6 +11,7 @@ local order = {
     navi = {
         "table_of_contents",
         "bookmarks",
+        "bookmark_browsing_mode",
         "----------------------------",
         "go_to",
         "skim_to",
@@ -86,17 +87,14 @@ local order = {
         "book_status",
         "book_info",
         "----------------------------",
+        "system_statistics",
+        "----------------------------",
         "ota_update", --[[ if Device:isKindle() or Device:isKobo() or
                            Device:isPocketBook() or Device:isAndroid() ]]--
         "version",
         "help",
-        "system_statistics",
         "----------------------------",
-        "restart_koreader",
-        "poweroff", -- if Device:isKobo()
-        "reboot",   -- if Device:isKobo()
-        "----------------------------",
-        "exit",
+        "exit_menu",
     },
     help = {
         "quickstart_guide",
@@ -105,6 +103,15 @@ local order = {
         "----------------------------",
         "about",
     },
+    exit_menu = {
+        "restart_koreader",
+        "----------------------------",
+        "sleep", -- if Device:isKindle() or Device:isKobo()
+        "poweroff", -- if Device:isKobo()
+        "reboot",   -- if Device:isKobo()
+        "----------------------------",
+        "exit",
+    }
 }
 
 return order

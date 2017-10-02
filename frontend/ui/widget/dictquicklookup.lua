@@ -15,6 +15,7 @@ local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local ScrollTextWidget = require("ui/widget/scrolltextwidget")
+local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -44,10 +45,10 @@ local DictQuickLookup = InputContainer:new{
     -- box of highlighted word, quick lookup window tries to not hide the word
     word_box = nil,
 
-    title_padding = Screen:scaleBySize(5),
-    title_margin = Screen:scaleBySize(2),
-    word_padding = Screen:scaleBySize(5),
-    word_margin = Screen:scaleBySize(2),
+    title_padding = Size.padding.default,
+    title_margin = Size.margin.title,
+    word_padding = Size.padding.default,
+    word_margin = Size.margin.default,
     -- alt padding/margin for wiki to compensate for reduced font size
     wiki_word_padding = Screen:scaleBySize(7),
     wiki_word_margin = Screen:scaleBySize(3),
@@ -56,6 +57,11 @@ local DictQuickLookup = InputContainer:new{
     button_padding = Screen:scaleBySize(14),
     -- refresh_callback will be called before we trigger full refresh in onSwipe
     refresh_callback = nil,
+}
+
+local highlight_strings = {
+    highlight =_("Highlight"),
+    unhighlight = _("Unhighlight"),
 }
 
 function DictQuickLookup:init()
@@ -299,7 +305,7 @@ function DictQuickLookup:update()
                                             })
                                         else
                                             UIManager:show(InfoMessage:new{
-                                                text = _("Saving Wikipedia page failed."),
+                                                text = _("Saving Wikipedia page failed or canceled."),
                                             })
                                         end
                                     end)
@@ -320,7 +326,7 @@ function DictQuickLookup:update()
         buttons = {
             {
                 {
-                    text = "<<",
+                    text = "◁◁",
                     enabled = self:isPrevDictAvaiable(),
                     callback = function()
                         self:changeToPrevDict()
@@ -330,7 +336,7 @@ function DictQuickLookup:update()
                     text = self:getHighlightText(),
                     enabled = true,
                     callback = function()
-                        if self:getHighlightText() == "Highlight" then
+                        if self:getHighlightText() == highlight_strings.highlight then
                             self.ui:handleEvent(Event:new("Highlight"))
                         else
                             self.ui:handleEvent(Event:new("Unhighlight"))
@@ -339,7 +345,7 @@ function DictQuickLookup:update()
                     end,
                 },
                 {
-                    text = ">>",
+                    text = "▷▷",
                     enabled = self:isNextDictAvaiable(),
                     callback = function()
                         self:changeToNextDict()
@@ -362,12 +368,17 @@ function DictQuickLookup:update()
                 {
                     -- if more than one language, enable it and display "current lang > next lang"
                     -- otherwise, just display current lang
-                    text = self.is_wiki and ( #self.wiki_languages > 1 and self.wiki_languages[1].." > "..self.wiki_languages[2] or self.wiki_languages[1] ) or "-",
-                    enabled = self.is_wiki and #self.wiki_languages > 1,
+                    text = self.is_wiki and ( #self.wiki_languages > 1 and self.wiki_languages[1].." > "..self.wiki_languages[2] or self.wiki_languages[1] ) or _("Follow Link"),
+                    enabled = (self.is_wiki and #self.wiki_languages > 1) or self.selected_link ~= nil,
                     callback = function()
-                        self:resyncWikiLanguages(true) -- rotate & resync them
-                        UIManager:close(self)
-                        self:lookupWikipedia()
+                        if self.is_wiki then
+                            self:resyncWikiLanguages(true) -- rotate & resync them
+                            UIManager:close(self)
+                            self:lookupWikipedia()
+                        else
+                            self:onClose()
+                            self.ui.link:onGotoLink(self.selected_link)
+                        end
                     end,
                 },
                 {
@@ -394,7 +405,7 @@ function DictQuickLookup:update()
     local title_bar = LineWidget:new{
         dimen = Geom:new{
             w = button_table:getSize().w + self.button_padding,
-            h = Screen:scaleBySize(2),
+            h = Size.line.thick,
         }
     }
 
@@ -408,8 +419,8 @@ function DictQuickLookup:update()
     }
 
     self.dict_frame = FrameContainer:new{
-        radius = 8,
-        bordersize = 3,
+        radius = Size.radius.window,
+        bordersize = Size.border.window,
         padding = 0,
         margin = 0,
         background = Blitbuffer.COLOR_WHITE,
@@ -448,7 +459,7 @@ function DictQuickLookup:update()
         dimen = self.region,
         FrameContainer:new{
             bordersize = 0,
-            padding = Screen:scaleBySize(5),
+            padding = Size.padding.default,
             self.dict_frame,
         }
     }
@@ -481,11 +492,11 @@ end
 function DictQuickLookup:getHighlightText()
     local item = self:getHighlightedItem()
     if not item then
-        return _("Highlight"), false
+        return highlight_strings.highlight, false
     elseif self.ui.bookmark:isBookmarkAdded(item) then
-        return _("Unhighlight"), false
+        return highlight_strings.unhighlight, false
     else
-        return _("Highlight"), true
+        return highlight_strings.highlight, true
     end
 end
 
@@ -603,8 +614,9 @@ function DictQuickLookup:onClose()
     if self.highlight then
         -- delay unhighlight of selection, so we can see where we stopped when
         -- back from our journey into dictionary or wikipedia
-        UIManager:scheduleIn(1, function()
-            self.highlight:clear()
+        local clear_id = self.highlight:getClearId()
+        UIManager:scheduleIn(0.5, function()
+            self.highlight:clear(clear_id)
         end)
     end
     return true
@@ -616,8 +628,9 @@ function DictQuickLookup:onHoldClose(no_clear)
         local window = self.window_list[i]
         -- if one holds a highlight, let's clear it like in onClose()
         if window.highlight and not no_clear then
-            UIManager:scheduleIn(1, function()
-                window.highlight:clear()
+            local clear_id = window.highlight:getClearId()
+            UIManager:scheduleIn(0.5, function()
+                window.highlight:clear(clear_id)
             end)
         end
         UIManager:close(window)

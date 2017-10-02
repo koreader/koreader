@@ -162,6 +162,43 @@ describe("UIManager spec", function()
         assert.is_true(UIManager._task_queue_dirty)
     end)
 
+    describe("modal widgets", function()
+        it("should insert modal widget on top", function()
+            -- first modal widget
+            UIManager:show({
+                x_prefix_test_number = 1,
+                modal = true,
+                handleEvent = function()
+                    return true
+                end
+            })
+            -- regular widget, should go under modal widget
+            UIManager:show({
+                x_prefix_test_number = 2,
+                modal = nil,
+                handleEvent = function()
+                    return true
+                end
+            })
+
+            assert.equals(UIManager._window_stack[1].widget.x_prefix_test_number, 2)
+            assert.equals(UIManager._window_stack[2].widget.x_prefix_test_number, 1)
+        end)
+        it("should insert second modal widget on top of first modal widget", function()
+            UIManager:show({
+                x_prefix_test_number = 3,
+                modal = true,
+                handleEvent = function()
+                    return true
+                end
+            })
+
+            assert.equals(UIManager._window_stack[1].widget.x_prefix_test_number, 2)
+            assert.equals(UIManager._window_stack[2].widget.x_prefix_test_number, 1)
+            assert.equals(UIManager._window_stack[3].widget.x_prefix_test_number, 3)
+        end)
+    end)
+
     it("should check active widgets in order", function()
         local call_signals = {false, false, false}
         UIManager._window_stack = {

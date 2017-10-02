@@ -16,6 +16,7 @@ return {
     [44] = " ", -- Spacebar
     [58] = "Menu", -- F[1]
     [59] = "Power", -- F[2]
+    [61] = "F4", -- F[4]
     [63] = "LPgBack", -- F[6]
     [64] = "LPgFwd", -- F[7]
     [68] = "VPlus", -- F[11]

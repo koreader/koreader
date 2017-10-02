@@ -6,8 +6,8 @@ Example:
 
     local frame
     frame = FrameContainer:new{
-        radius = 8,
-        bordersize = 3,
+        radius = Size.radius.window,
+        bordersize = Size.border.window,
         padding = 0,
         margin = 0,
         background = Blitbuffer.COLOR_WHITE,
@@ -18,17 +18,18 @@ Example:
 
 --]]
 
-local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local Geom = require("ui/geometry")
 local Blitbuffer = require("ffi/blitbuffer")
+local Geom = require("ui/geometry")
+local Size = require("ui/size")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 
 local FrameContainer = WidgetContainer:new{
     background = nil,
     color = Blitbuffer.COLOR_BLACK,
     margin = 0,
     radius = 0,
-    bordersize = 2,
-    padding = 5,
+    bordersize = Size.border.window,
+    padding = Size.padding.default,
     width = nil,
     height = nil,
     invert = false,

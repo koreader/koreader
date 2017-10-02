@@ -8,8 +8,8 @@ KOReader
 
 KOReader is a document viewer application, originally created for Kindle
 e-ink readers. It currently runs on Kindle, Kobo, PocketBook, Ubuntu Touch
-and Android (2.3+) devices. Developers can also run KOReader emulator
-for development purpose on desktop PC with Linux and Windows and 
+and Android (2.3+) devices. Developers can also run a KOReader emulator
+for development purposes on desktop PCs with Linux, Windows and 
 Mac OSX (experimental for now).
 
 Main features for users
@@ -95,8 +95,8 @@ sudo apt-get install gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
 sudo apt-get install gcc-mingw-w64-i686 g++-mingw-w64-i686
 ```
 
-Packages pkg-config-arm-linux-gnueabihf and pkg-config-arm-linux-gnueabi may
-block you to build for Kobo or Kindle, remove them if you got ld error,
+The packages `pkg-config-arm-linux-gnueabihf` and `pkg-config-arm-linux-gnueabi` may
+block you from building for Kobo or Kindle. Remove them if you get an ld error,
 `/usr/lib/gcc-cross/arm-linux-gnueabihf/4.8/../../../../arm-linux-gnueabihf/bin/
 ld: cannot find -lglib-2.0`
 
@@ -105,10 +105,9 @@ Mac OSX users may need to install these tools:
 brew install nasm binutils libtool autoconf automake sdl2 lua51
 ```
 
-A recent version of Android SDK (including platform support for API version 19)/NDK, `ant` and `openjdk-8-jdk` are needed
-in order to build KOReader for Android devices.
+The KOReader Android build requires `ant`, `openjdk-8-jdk` and `p7zip-full`. A compatible version of the Android NDK and SDK will be downloaded automatically by `.kodev build android` if no NDK or SDK is provided in environment variables. For that purpose you can use `NDK=/ndk/location SDK=/sdk/location ./kodev build android`.
 
-Users of Debian first need to configure the `backports` repository:
+Users of Debian Jessie first need to configure the `backports` repository:
 ```
 sudo echo "deb http://ftp.debian.org/debian jessie-backports main" > /etc/apt/sources.list.d/backports.list
 sudo apt-get update
@@ -130,7 +129,7 @@ sudo apt-get install click
 
 You might also need SDL library packages if you want to compile and run
 KOReader on Linux PC. Fedora users can install `SDL` and `SDL-devel` package.
-Ubuntu users probably need to install `libsdl2-dev` package:
+Ubuntu users probably need to install the `libsdl2-dev` package:
 
 Getting the source
 ==================
@@ -146,7 +145,7 @@ Building, Running and Testing
 For emulating KOReader on Linux, Windows and Mac OSX
 -------------
 
-To build an emulator on current Linux or OSX machine:
+To build an emulator on your current Linux or OSX machine:
 ```
 ./kodev build
 ```
@@ -156,7 +155,7 @@ If you want to compile the emulator for Windows run:
 ./kodev build win32
 ```
 
-To run KOReader on your developing machine:
+To run KOReader on your development machine:
 ```
 ./kodev run
 ```
@@ -167,14 +166,14 @@ To run unit tests:
 ./kodev test front
 ```
 
-NOTE: Extra dependencies for tests: busted and ansicolors from luarocks
+NOTE: Extra dependencies for tests: `busted` and `ansicolors` from luarocks.
 
 To run Lua static analysis:
 ```
 make static-check
 ```
 
-NOTE: Extra dependencies for tests: luacheck from luarocks
+NOTE: Extra dependencies for tests: `luacheck` from luarocks
 
 You may need to checkout the [travis config file][travis-conf] to setup up
 a proper testing environment. Briefly, you need to install `luarocks` and
@@ -182,37 +181,44 @@ then install `busted` with `luarocks`. The "eng" language data file for
 tesseract-ocr is also need to test OCR functionality. Finally, make sure
 that `luajit` in your system is at least of version 2.0.2.
 
-You can also specify size of emulator's screen via environment variables.
-For more information, please refer to [koreader-base's README][base-readme].
+You can also specify the size and DPI of the emulator's screen using
+`-w=X` (width), `-h=X` (height), and `-d=X` (DPI). There is also a convenience
+`-s` (simulate) flag with some presets like `kobo-aura-one`, `kindle3`, and
+`hidpi`. The latter is a fictional device with `--screen_width=1500`,
+`--screen_height=2000` and `--screen_dpi=600` to help ensure DPI scaling works correctly.
+Sample usage:
+```
+./kodev run -s=kobo-aura-one
+```
 
-To use your own koreader-base repo instead of the default one change KOR_BASE
+To use your own koreader-base repo instead of the default one change the `KOR_BASE`
 environment variable:
 ```
 make KOR_BASE=../koreader-base
 ```
 
-This will be handy if you are developing koreader-base and want to test your
-modifications with kroeader frontend. NOTE: only support relative path for now.
+This will be handy if you are developing `koreader-base` and you want to test your
+modifications with the KOReader frontend. NOTE: this only supports relative path for now.
 
 For EReader devices (kindle, kobo, pocketbook, ubuntu-touch)
 ---------------------
 
-To build installable package for Kindle:
+To build an installable package for Kindle:
 ```
 ./kodev release kindle
 ```
 
-To build installable package for Kobo:
+To build an installable package for Kobo:
 ```
 ./kodev release kobo
 ```
 
-To build installable package for PocketBook:
+To build an installable package for PocketBook:
 ```
 ./kodev release pocketbook
 ```
 
-To build installable package for Ubuntu Touch
+To build an installable package for Ubuntu Touch
 ```
 ./kodev release ubuntu-touch
 ```
@@ -223,10 +229,13 @@ package from scratch.
 For Android devices
 -------------------
 
-Make sure the "android" and "ndk-build" tools are in your PATH environment
-variable and the NDK variable points to the root directory of the Android NDK.
+A compatible version of the Android NDK and SDK will be downloaded automatically by the
+`kodev` command. If you already have an Android NDK and SDK installed that you would like
+to use instead, make sure that the `android` and `ndk-build` tools can be found in your
+`PATH` environment variable. Additionally, the `NDK` and `SDK` variables should point
+to the root directory of the Android NDK and SDK respectively.
 
-Then, run this command to build installable package for Android:
+Then, run this command to build an installable package for Android:
 ```
 ./kodev release android
 ```
@@ -268,10 +277,9 @@ Use ccache
 ==========
 
 Ccache can speed up recompilation by caching previous compilations and detecting
-when the same compilation is being done again. In other words, it will decrease
-build time when the source have been built. Ccache support has been added to
-KOReader's build system. Before using it, you need to install a ccache in your
-system.
+when the same compilation is repeated. In other words, it will decrease
+build time when the sources have been built before. Ccache support has been added to
+KOReader's build system. To install a ccache:
 
 * in Ubuntu use:`sudo apt-get install ccache`
 * in Fedora use:`sudo yum install ccache`

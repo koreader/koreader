@@ -1,6 +1,6 @@
-local KoptOptions = require("ui/data/koptoptions")
 local Document = require("document/document")
 local DrawContext = require("ffi/drawcontext")
+local KoptOptions = require("ui/data/koptoptions")
 
 local DjvuDocument = Document:new{
     _document = false,
@@ -10,6 +10,7 @@ local DjvuDocument = Document:new{
     dc_null = DrawContext.new(),
     options = KoptOptions,
     koptinterface = nil,
+    is_color_capable = false,
 }
 
 -- check DjVu magic string to validate
@@ -23,6 +24,7 @@ local function validDjvuFile(filename)
 end
 
 function DjvuDocument:init()
+    self:updateColorRendering()
     local djvu = require("libs/libkoreader-djvu")
     self.koptinterface = require("document/koptinterface")
     self.configurable:loadDefaults(self.options)

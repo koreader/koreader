@@ -2,8 +2,8 @@ local Blitbuffer = require("ffi/blitbuffer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local CloseButton = require("ui/widget/closebutton")
 local Font = require("ui/font")
-local Geom = require("ui/geometry")
 local FrameContainer = require("ui/widget/container/framecontainer")
+local Geom = require("ui/geometry")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -11,6 +11,7 @@ local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local ProgressWidget = require("ui/widget/progresswidget")
+local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -23,7 +24,7 @@ local LINE_COLOR = Blitbuffer.gray(0.4)
 local BG_COLOR = Blitbuffer.gray(0.2)
 
 local ReaderProgress = InputContainer:new{
-    padding = Screen:scaleBySize(15),
+    padding = Size.padding.fullscreen,
 }
 
 local dayOfWeekTranslation = {
@@ -36,22 +37,12 @@ local dayOfWeekTranslation = {
     ["Sunday"] = _("Sunday"),
 }
 
-local shortDayOfWeekTranslation = {
-    ["Mon"] = _("Mon"),
-    ["Tue"] = _("Tue"),
-    ["Wed"] = _("Wed"),
-    ["Thu"] = _("Thu"),
-    ["Fri"] = _("Fri"),
-    ["Sat"] = _("Sat"),
-    ["Sun"] = _("Sun"),
-}
-
 function ReaderProgress:init()
     self.small_font_face = Font:getFace("smallffont")
     self.medium_font_face = Font:getFace("ffont")
     self.large_font_face = Font:getFace("largeffont")
-    self.screen_width = Screen:getSize().w
-    self.screen_height = Screen:getSize().h
+    self.screen_width = Screen:getWidth()
+    self.screen_height = Screen:getHeight()
     UIManager:setDirty(self, function()
         return "ui", self.dimen
     end)
@@ -65,35 +56,21 @@ function ReaderProgress:init()
     }
 end
 
-function ReaderProgress:getTotalStats(dates)
+function ReaderProgress:getTotalStats(stats_day)
     local total_time = 0
     local total_pages = 0
-    for _, v in pairs(dates) do
-        total_pages = total_pages + v. count
-        total_time = total_time + v.read
+    for i=1, stats_day do
+        total_pages = total_pages + self.dates[i][1]
+        total_time = total_time + self.dates[i][2]
     end
     return total_time, total_pages
-end
-
-function ReaderProgress:getTodayStats(dates)
-    local today_time = 0
-    local today_pages = 0
-    local now_time = os.time()
-    local today = string.format("%s (%s)",
-        os.date("%Y-%m-%d", now_time),
-        shortDayOfWeekTranslation[os.date("%a", now_time)])
-    if dates[today] ~= nil then
-        today_time = dates[today].read
-        today_pages = dates[today].count
-    end
-    return today_time, today_pages
 end
 
 function ReaderProgress:getStatusContent(width)
     return VerticalGroup:new{
         align = "left",
         OverlapGroup:new{
-            dimen = Geom:new{ w = width, h = Screen:scaleBySize(30) },
+            dimen = Geom:new{ w = width, h = Size.item.height_default },
             CloseButton:new{ window = self },
         },
         self:genSingleHeader(_("Last week")),
@@ -119,7 +96,7 @@ function ReaderProgress:genSingleHeader(title)
             background = BG_COLOR,
             dimen = Geom:new{
                 w = line_width,
-                h = 2,
+                h = Size.line.thick,
             }
         }
     }
@@ -136,7 +113,7 @@ function ReaderProgress:genSingleHeader(title)
             line_container,
             padding_span,
         },
-        VerticalSpan:new{ width = Screen:scaleBySize(5), height = self.screen_height / 25 },
+        VerticalSpan:new{ width = Size.span.vertical_large, height = self.screen_height / 25 },
     }
 end
 
@@ -159,7 +136,7 @@ function ReaderProgress:genDoubleHeader(title_left, title_right)
             background = BG_COLOR,
             dimen = Geom:new{
                 w = line_width,
-                h = 2,
+                h = Size.line.thick,
             }
         }
     }
@@ -182,13 +159,12 @@ function ReaderProgress:genDoubleHeader(title_left, title_right)
             line_container,
             padding_span,
         },
-        VerticalSpan:new{ width = Screen:scaleBySize(5), height = self.screen_height / 25 },
+        VerticalSpan:new{ width = Size.span.vertical_large, height = self.screen_height / 25 },
     }
 end
 
 function ReaderProgress:genWeekStats(stats_day)
     local second_in_day = 86400
-    local date_format
     local date_format_show
     local select_day_time
     local diff_time
@@ -199,10 +175,11 @@ function ReaderProgress:genWeekStats(stats_day)
     }
     local statistics_group = VerticalGroup:new{ align = "left" }
     local max_week_time = -1
-    for _, v in pairs(self.dates) do
-        if v.read > max_week_time then max_week_time = v.read end
+    local day_time
+    for i=1, stats_day do
+        day_time = self.dates[i][2]
+        if day_time > max_week_time then max_week_time = day_time end
     end
-
     local top_padding_span = HorizontalSpan:new{ width = Screen:scaleBySize(15) }
     local top_span_group = HorizontalGroup:new{
         align = "center",
@@ -222,24 +199,23 @@ function ReaderProgress:genWeekStats(stats_day)
         },
     }
 
-    for i = 1, stats_day , 1 do
+    local j = 1
+    for i = 1, stats_day do
         diff_time = now_time - second_in_day * (i - 1)
-        date_format = string.format("%s (%s)",
-            os.date("%Y-%m-%d", diff_time),
-            shortDayOfWeekTranslation[os.date("%a", diff_time)])
-        if self.dates[date_format] ~= nil then
-            select_day_time = self.dates[date_format].read
+        if self.dates[j][3] == os.date("%Y-%m-%d", diff_time) then
+            select_day_time = self.dates[j][2]
+            j = j + 1
         else
             select_day_time = 0
         end
         date_format_show = dayOfWeekTranslation[os.date("%A", diff_time)] .. os.date(" (%d.%m)", diff_time)
         local total_group = HorizontalGroup:new{
             align = "center",
-            padding = 2,
+            padding = Size.padding.small,
             LeftContainer:new{
                 dimen = Geom:new{ w = self.screen_width , h = height / 3 },
                 TextWidget:new{
-                    padding = 2,
+                    padding = Size.padding.small,
                     text = date_format_show .. " - " .. util.secondsToClock(select_day_time, true),
                     face = Font:getFace("smallffont"),
                 },
@@ -272,7 +248,6 @@ function ReaderProgress:genWeekStats(stats_day)
 end
 
 function ReaderProgress:genSummaryDay(width)
-    local today_time, today_pages = self:getTodayStats(self.dates)
     local height = Screen:scaleBySize(60)
     local statistics_container = CenterContainer:new{
         dimen = Geom:new{ w = width, h = height },
@@ -317,7 +292,7 @@ function ReaderProgress:genSummaryDay(width)
     local span_group = HorizontalGroup:new{
         align = "center",
         LeftContainer:new{
-            dimen = Geom:new{ h = Screen:scaleBySize(10) },
+            dimen = Geom:new{ h = Size.span.horizontal_default },
             padding_span
         },
     }
@@ -341,14 +316,14 @@ function ReaderProgress:genSummaryDay(width)
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextWidget:new{
-                text = today_pages,
+                text = self.today_pages,
                 face = self.medium_font_face,
             },
         },
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextWidget:new{
-                text = util.secondsToClock(today_time, true),
+                text = util.secondsToClock(self.today_period, true),
                 face = self.medium_font_face,
             },
         },
@@ -367,7 +342,7 @@ end
 
 function ReaderProgress:genSummaryWeek(width)
     local height = Screen:scaleBySize(60)
-    local total_time, total_pages = self:getTotalStats(self.dates)
+    local total_time, total_pages = self:getTotalStats(#self.dates)
     local statistics_container = CenterContainer:new{
         dimen = Geom:new{ w = width, h = height },
     }
@@ -379,7 +354,7 @@ function ReaderProgress:genSummaryWeek(width)
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextWidget:new{
-                padding = 5,
+                padding = Size.padding.default,
                 text = _("Total"),
                 face = self.small_font_face,
             },
@@ -443,7 +418,7 @@ function ReaderProgress:genSummaryWeek(width)
     local span_group = HorizontalGroup:new{
         align = "center",
         LeftContainer:new{
-            dimen = Geom:new{ h = Screen:scaleBySize(10) },
+            dimen = Geom:new{ h = Size.span.horizontal_default },
             padding_span
         },
     }

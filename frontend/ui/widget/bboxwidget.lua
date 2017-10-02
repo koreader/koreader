@@ -8,12 +8,13 @@ local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local Math = require("optmath")
+local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 
 local BBoxWidget = InputContainer:new{
     page_bbox = nil,
     screen_bbox = nil,
-    linesize = 2,
+    linesize = Size.line.thick,
     fine_factor = 10,
     dimen = Geom:new(),
 }

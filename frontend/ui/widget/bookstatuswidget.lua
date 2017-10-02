@@ -15,6 +15,7 @@ local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local ProgressWidget = require("ui/widget/progresswidget")
+local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
 local TimeVal = require("ui/timeval")
@@ -22,10 +23,12 @@ local ToggleSwitch = require("ui/widget/toggleswitch")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
-local Screen = require("device").screen
-local template = require("ffi/util").template
 local util = require("util")
 local _ = require("gettext")
+local Screen = require("device").screen
+local template = require("ffi/util").template
+
+local stats_book = {}
 
 --[[
 --Save into sdr folder addtional section
@@ -36,7 +39,7 @@ local _ = require("gettext")
     ["modified"] = "24.01.2016"
 },]]
 local BookStatusWidget = InputContainer:new{
-    padding = Screen:scaleBySize(15),
+    padding = Size.padding.fullscreen,
     settings = nil,
     thumbnail = nil,
     props = nil,
@@ -47,16 +50,9 @@ local BookStatusWidget = InputContainer:new{
         status = "",
         modified = "",
     },
-    stats = nil
 }
 
 function BookStatusWidget:init()
-    self.stats = {
-        total_time_in_sec = 0,
-        performance_in_pages = {},
-        total_pages = self.document:getPageCount(),
-    }
-    self:getStatisticsSettings()
     if self.settings then
         self.summary = self.settings:readSetting("summary") or {
             rating = nil,
@@ -65,6 +61,8 @@ function BookStatusWidget:init()
             modified = "",
         }
     end
+    self.total_pages = self.view.document:getPageCount()
+    stats_book = self:getStats()
 
     self.small_font_face = Font:getFace("smallffont")
     self.medium_font_face = Font:getFace("ffont")
@@ -89,11 +87,39 @@ function BookStatusWidget:init()
     }
 end
 
+function BookStatusWidget:getStats()
+    return {}
+end
+
+function BookStatusWidget:getStatDays()
+    if stats_book.days then
+        return stats_book.days
+    else
+        return _("N/A")
+    end
+end
+
+function BookStatusWidget:getStatHours()
+    if stats_book.time then
+        return util.secondsToClock(stats_book.time, false)
+    else
+        return _("N/A")
+    end
+end
+
+function BookStatusWidget:getStatReadPages()
+    if stats_book.pages then
+        return string.format("%s/%s",stats_book.pages, self.total_pages)
+    else
+        return _("N/A")
+    end
+end
+
 function BookStatusWidget:getStatusContent(width)
     return VerticalGroup:new{
         align = "left",
         OverlapGroup:new{
-            dimen = Geom:new{ w = width, h = Screen:scaleBySize(30) },
+            dimen = Geom:new{ w = width, h = Size.item.height_default },
             CloseButton:new{ window = self },
         },
         self:genBookInfoGroup(),
@@ -106,33 +132,8 @@ function BookStatusWidget:getStatusContent(width)
     }
 end
 
-function BookStatusWidget:getStatDays(stats)
-    if stats and stats.performance_in_pages then
-        local dates = {}
-        for k, v in pairs(stats.performance_in_pages) do
-            dates[os.date("%Y-%m-%d", k)] = ""
-        end
-        return util.tableSize(dates)
-    end
-    return "none"
-end
-
-function BookStatusWidget:getStatHours(stats)
-    if stats and stats.total_time_in_sec then
-        return util.secondsToClock(stats.total_time_in_sec, false)
-    end
-    return "none"
-end
-
-function BookStatusWidget:getReadPages(stats)
-    if stats and stats.performance_in_pages and stats.total_pages then
-        return util.tableSize(stats.performance_in_pages) .. "/" .. stats.total_pages
-    end
-    return "none"
-end
-
 function BookStatusWidget:genHeader(title)
-    local width, height = Screen:getWidth(), Screen:scaleBySize(35)
+    local width, height = Screen:getWidth(), Size.item.height_default
 
     local header_title = TextWidget:new{
         text = title,
@@ -148,13 +149,13 @@ function BookStatusWidget:genHeader(title)
             background = Blitbuffer.gray(0.2),
             dimen = Geom:new{
                 w = line_width,
-                h = 2,
+                h = Size.line.thick,
             }
         }
     }
 
     return VerticalGroup:new{
-        VerticalSpan:new{ width = Screen:scaleBySize(25) },
+        VerticalSpan:new{ width = Size.item.height_default },
         HorizontalGroup:new{
             align = "center",
             padding_span,
@@ -165,7 +166,7 @@ function BookStatusWidget:genHeader(title)
             line_container,
             padding_span,
         },
-        VerticalSpan:new{ width = Screen:scaleBySize(5) },
+        VerticalSpan:new{ width = Size.span.vertical_large },
     }
 end
 
@@ -246,7 +247,7 @@ function BookStatusWidget:genBookInfoGroup()
     local text_author = TextWidget:new{
         text = self.props.authors,
         face = self.small_font_face,
-        padding = 2,
+        padding = Size.padding.default
     }
     table.insert(book_meta_info_group,
         CenterContainer:new{
@@ -255,8 +256,7 @@ function BookStatusWidget:genBookInfoGroup()
         }
     )
     -- progress bar
-    local total_pages = self.stats.total_pages
-    local read_percentage = self.view.state.page / total_pages
+    local read_percentage = self.view.state.page / self.total_pages
     local progress_bar = ProgressWidget:new{
         width = width * 0.7,
         height = Screen:scaleBySize(10),
@@ -357,21 +357,21 @@ function BookStatusWidget:genStatisticsGroup(width)
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextWidget:new{
-                text = self:getStatDays(self.stats),
+                text = self:getStatDays(),
                 face = self.medium_font_face,
             },
         },
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextWidget:new{
-                text = self:getStatHours(self.stats),
+                text = self:getStatHours(),
                 face = self.medium_font_face,
             },
         },
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextWidget:new{
-                text = self:getReadPages(self.stats),
+                text = self:getStatReadPages(),
                 face = self.medium_font_face,
             }
         }
@@ -387,19 +387,19 @@ end
 function BookStatusWidget:genSummaryGroup(width)
     local height
     if Screen:getScreenMode() == "landscape" then
-        height = Screen:scaleBySize(60)
+        height = Screen:scaleBySize(80)
     else
-        height = Screen:scaleBySize(130)
+        height = Screen:scaleBySize(160)
     end
 
-    local text_padding = 5
+    local text_padding = Size.padding.default
     self.input_note = InputText:new{
         text = self.summary.note,
         face = self.medium_font_face,
         width = width - self.padding * 3,
         height = height * 0.75,
         scroll = true,
-        bordersize = 2,
+        bordersize = Size.border.default,
         focused = false,
         padding = text_padding,
         parent = self,
@@ -407,7 +407,7 @@ function BookStatusWidget:genSummaryGroup(width)
     }
 
     return VerticalGroup:new{
-        VerticalSpan:new{ width = Screen:scaleBySize(5) },
+        VerticalSpan:new{ width = Size.span.vertical_large },
         CenterContainer:new{
             dimen = Geom:new{ w = width, h = height },
             self.input_note
@@ -507,21 +507,9 @@ function BookStatusWidget:onClose()
     return true
 end
 
-function BookStatusWidget:getStatisticsSettings()
-    if self.settings then
-        local stats = self.settings:readSetting("stats")
-        if stats then
-            self.stats.total_time_in_sec = self.stats.total_time_in_sec + stats.total_time_in_sec
-            for k, v in pairs(stats.performance_in_pages) do
-                self.stats.performance_in_pages[k] = v
-            end
-        end
-    end
-end
-
 function BookStatusWidget:onSwitchFocus(inputbox)
     self.note_dialog = InputDialog:new{
-        title = "Note",
+        title = _("Review"),
         input = self.input_note:getText(),
         input_hint = "",
         input_type = "text",
@@ -536,7 +524,7 @@ function BookStatusWidget:onSwitchFocus(inputbox)
                     end,
                 },
                 {
-                    text = _("OK"),
+                    text = _("Save review"),
                     is_enter_default = true,
                     callback = function()
                         self.input_note:setText(self.note_dialog:getInputText())

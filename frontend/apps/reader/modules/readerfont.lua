@@ -15,7 +15,7 @@ local ReaderFont = InputContainer:new{
     font_face = nil,
     font_size = nil,
     line_space_percent = nil,
-    font_menu_title = _("Change font"),
+    font_menu_title = _("Font"),
     face_table = nil,
     -- default gamma from crengine's lvfntman.cpp
     gamma_index = nil,
@@ -116,6 +116,10 @@ function ReaderFont:onReadSettings(config)
             or G_reader_settings:readSetting("copt_font_weight") or 0
     self.ui.document:toggleFontBolder(self.font_embolden)
 
+    self.font_hinting = config:readSetting("font_hinting")
+            or G_reader_settings:readSetting("copt_font_hinting") or 2 -- default in cre.cpp
+    self.ui.document:setFontHinting(self.font_hinting)
+
     self.line_space_percent = config:readSetting("line_space_percent")
             or G_reader_settings:readSetting("copt_line_spacing")
             or DCREREADER_CONFIG_LINE_SPACE_PERCENT_MEDIUM
@@ -206,6 +210,13 @@ function ReaderFont:onToggleFontBolder(toggle)
     return true
 end
 
+function ReaderFont:onSetFontHinting(mode)
+    self.font_hinting = mode
+    self.ui.document:setFontHinting(mode)
+    self.ui:handleEvent(Event:new("UpdatePos"))
+    return true
+end
+
 function ReaderFont:onSetFontGamma(gamma)
     self.gamma_index = gamma
     UIManager:show(Notification:new{
@@ -222,6 +233,7 @@ function ReaderFont:onSaveSettings()
     self.ui.doc_settings:saveSetting("header_font_face", self.header_font_face)
     self.ui.doc_settings:saveSetting("font_size", self.font_size)
     self.ui.doc_settings:saveSetting("font_embolden", self.font_embolden)
+    self.ui.doc_settings:saveSetting("font_hinting", self.font_hinting)
     self.ui.doc_settings:saveSetting("line_space_percent", self.line_space_percent)
     self.ui.doc_settings:saveSetting("gamma_index", self.gamma_index)
 end

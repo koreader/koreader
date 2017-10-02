@@ -12,7 +12,6 @@ local DocumentRegistry = require("document/documentregistry")
 local Event = require("ui/event")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
-local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
@@ -60,8 +59,6 @@ local ReaderUI = InputContainer:new{
     },
     active_widgets = {},
 
-    -- our own size
-    dimen = Geom:new{ w = 400, h = 600 },
     -- if we have a parent container, it must be referenced for now
     dialog = nil,
 

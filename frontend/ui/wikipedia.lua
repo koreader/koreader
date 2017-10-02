@@ -286,25 +286,19 @@ local ext_to_mimetype = {
 
 
 -- Create an epub file (with possibly images)
--- This is non-UI code (for batch creation or emulator test), but it accepts
--- a progress_callback function that will be feed with progress information
--- that could be shown to the user.
-function Wikipedia:createEpub(epub_path, page, lang, with_images, progress_callback)
-    if not progress_callback then
-        -- Make our own logging only process_callback
-        progress_callback = function(text, confirm)
-            logger.info("progress", confirm and "confirm" or "info", text)
-            return true -- always select "OK" in ConfirmBox
-        end
-    end
+function Wikipedia:createEpub(epub_path, page, lang, with_images)
+    -- Use Trapper to display progress and ask questions through the UI.
+    -- We need to have been Trapper.wrap()'ed for UI to be used, otherwise
+    -- Trapper:info() and Trapper:confirm() will just use logger.
+    local UI = require("ui/trapper")
 
-    progress_callback(_("Fetching Wikipedia page…"))
+    UI:info(_("Fetching Wikipedia page…"))
     local ok, phtml = pcall(self.wikiphtml, self, page, lang)
     if not ok then
-        progress_callback(phtml)
+        UI:info(phtml) -- display error in InfoMessage
         -- Sleep a bit to make that error seen
         util.sleep(2)
-        progress_callback() -- close last progress info
+        UI:reset()
         return false
     end
 
@@ -352,8 +346,8 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images, progress_callb
             local imgid = string.format("img%05d", imagenum)
             local imgpath = string.format("images/%s.%s", imgid, ext)
             local mimetype = ext_to_mimetype[ext] or ""
-            local width = img_tag:match([[width="([^"]*)"]])
-            local height = img_tag:match([[height="([^"]*)"]])
+            local width = tonumber(img_tag:match([[width="([^"]*)"]]))
+            local height = tonumber(img_tag:match([[height="([^"]*)"]]))
             -- Get higher resolution (2x) image url
             local src2x = nil
             local srcset = img_tag:match([[srcset="([^"]*)"]])
@@ -380,7 +374,7 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images, progress_callb
             table.insert(images, cur_image)
             seen_images[src] = cur_image
             -- Use first image of reasonable size (not an icon) and portrait-like as cover-image
-            if cover_imgid == "" and tonumber(width) > 50 and tonumber(height) > 50 and tonumber(height) > tonumber(width) then
+            if cover_imgid == "" and width and width > 50 and height and height > 50 and height > width then
                 cover_imgid = imgid
             end
             imagenum = imagenum + 1
@@ -390,7 +384,15 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images, progress_callb
         -- If we get src2x images, crengine will scale them down to the 1x image size
         -- (less space wasted by images while reading), but the 2x quality will be
         -- there when image is viewed full screen with ImageViewer widget.
-        return string.format([[<img src="%s" style="width: %spx; height: %spx" alt=""/>]], cur_image.imgpath, cur_image.width, cur_image.height)
+        local style_props = {}
+        if cur_image.width then
+            table.insert(style_props, string.format("width: %spx", cur_image.width))
+        end
+        if cur_image.height then
+            table.insert(style_props, string.format("height: %spx", cur_image.height))
+        end
+        local style = table.concat(style_props, "; ")
+        return string.format([[<img src="%s" style="%s" alt=""/>]], cur_image.imgpath, style)
     end
     html = html:gsub("(<%s*img [^>]*>)", processImg)
     logger.dbg("Images found in html:", images)
@@ -399,14 +401,14 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images, progress_callb
     local include_images = false
     local use_img_2x = false
     if with_images then
-        -- if no progress_callback (non UI), our fake one will return true
+        -- If no UI (Trapper:wrap() not called), UI:confirm() will answer true
         if #images > 0 then
-            include_images = progress_callback(T(_("The page contains %1 images.\nWould you like to download and include them in the generated EPUB file?"), #images), true)
+            include_images = UI:confirm(T(_("The page contains %1 images.\nWould you like to download and include them in the generated EPUB file?"), #images), _("Don't include"), _("Include"))
             if include_images then
-                use_img_2x = progress_callback(_("Would you like to use slightly higher quality images? This will result in a bigger file size."), true)
+                use_img_2x = UI:confirm(_("Would you like to use slightly higher quality images? This will result in a bigger file size."), _("Standard quality"), _("Higher quality"))
             end
         else
-            progress_callback(_("The page does not contain any images."))
+            UI:info(_("The page does not contain any images."))
             util.sleep(1) -- Let the user see that
         end
     end
@@ -419,6 +421,7 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images, progress_callb
         -- the images he chose to not get.
     end
 
+    UI:info(_("Building EPUB…"))
     -- Open the zip file (with .tmp for now, as crengine may still
     -- have a handle to the final epub_path, and we don't want to
     -- delete a good one if we fail/cancel later)
@@ -749,7 +752,13 @@ time, abbr, sup {
     if include_images then
         local nb_images = #images
         for inum, img in ipairs(images) do
-            progress_callback(T(_("Fetching image %1 / %2 …"), inum, nb_images))
+            -- Process can be interrupted at this point between each image download
+            -- by tapping while the InfoMessage is displayed
+            local go_on = UI:info(T(_("Fetching image %1 / %2 …"), inum, nb_images))
+            if not go_on then
+                cancelled = true
+                break
+            end
             local src = img.src
             if use_img_2x and img.src2x then
                 src = img.src2x
@@ -765,7 +774,7 @@ time, abbr, sup {
             if success then
                 epub:add("OEBPS/"..img.imgpath, content)
             else
-                local go_on = progress_callback(T(_("Downloading image %1 failed. Continue anyway?"), inum), true)
+                go_on = UI:confirm(T(_("Downloading image %1 failed. Continue anyway?"), inum), _("Stop"), _("Continue"))
                 if not go_on then
                     cancelled = true
                     break
@@ -776,14 +785,19 @@ time, abbr, sup {
 
     -- Done with adding files
     if cancelled then
-        progress_callback(_("Cleaning up…"))
+        if UI:confirm(_("Download did not complete.\nDo you want to create an EPUB with the already downloaded images?"), _("Don't create"), _("Create")) then
+            cancelled = false
+        end
+    end
+    if cancelled then
+        UI:info(_("Canceled. Cleaning up…"))
     else
-        progress_callback(_("Packing EPUB…"))
+        UI:info(_("Packing EPUB…"))
     end
     epub:close()
     -- This was nearly a no-op, so sleep a bit to make that progress step seen
     util.usleep(300000)
-    progress_callback() -- close last progress info
+    UI:reset() -- close last InfoMessage
 
     if cancelled then
         -- Build was cancelled, remove half created .epub
@@ -800,78 +814,29 @@ time, abbr, sup {
 end
 
 
--- Wrapper to Wikipedia:createEpub() with UI progress info
+-- Wrap Wikipedia:createEpub() with UI progress info, provided
+-- by Trapper module.
 function Wikipedia:createEpubWithUI(epub_path, page, lang, result_callback)
-    -- For progress_callback to be able to wait when needed
-    -- for user confirmation, we need to wrap Wikipedia:createEpub
-    -- in a coroutine, that can be resumed by these confirm callbacks.
-    local UIManager = require("ui/uimanager")
-    local InfoMessage = require("ui/widget/infomessage")
-    local ConfirmBox = require("ui/widget/confirmbox")
-
-    -- Visual progress callback
-    local cur_progress_box = nil
-    local function ui_progress_callback(text, confirmbox)
-        if cur_progress_box then
-            -- close previous progress info
-            UIManager:close(cur_progress_box)
-            -- no repaint here, we'll do that below when new stuff is shown
-        end
-        if not text then
-            -- no text given, used to just close previous progress info when done
-            -- a repaint is needed
-            UIManager:forceRePaint()
-            return true
-        end
-        if confirmbox then
-            -- ConfirmBox requested: callbacks will resume coroutine
-            local _coroutine = coroutine.running()
-            cur_progress_box = ConfirmBox:new{
-                text = text,
-                ok_callback = function()
-                    coroutine.resume(_coroutine, true)
-                end,
-                cancel_callback = function()
-                    coroutine.resume(_coroutine, false)
-                end,
-            }
-        else
-            -- simple InfoMessage requested
-            cur_progress_box = InfoMessage:new{text = text}
-        end
-        logger.dbg("Showing", confirmbox and "ConfirmBox" or "InfoMessage", text)
-        UIManager:show(cur_progress_box)
-        UIManager:forceRePaint()
-        if not confirmbox then
-            return true -- nothing more to do
-        end
-        -- we need to wait for ConfirmBox callback
-        logger.dbg("waiting for coroutine to resume")
-        if coroutine.running() then
-            local result = coroutine.yield()
-            logger.dbg("  coroutine ran and returned", result)
-            return result
-        end
-    end
-
-    -- Coroutine wrapping Wikipedia:createEpub()
-    local co = coroutine.create(function()
-        -- If errors in Wikipedia:createEpub(), the coroutine
-        -- would just abort without crashing the reader, so
-        -- pcall would not be needed. But if that happens,
-        -- pcall will let us know and returns the error,
-        -- that we can log.
-        local ok, success = pcall(self.createEpub, self, epub_path, page, lang, true, ui_progress_callback)
+    -- To do any UI interaction while building the EPUB, we need
+    -- to use a coroutine, so that our code can be suspended while waiting
+    -- for user interaction, and resumed by UI widgets callbacks.
+    -- All this is hidden and done by Trapper with a simple API.
+    local Trapper = require("ui/trapper")
+    Trapper:wrap(function()
+        Trapper:setPausedText("Download paused")
+        -- If errors in Wikipedia:createEpub(), the coroutine (used by
+        -- Trapper) would just abort (no reader crash, no error logged).
+        -- So we use pcall to catch any errors, log it, and report
+        -- the failure via result_callback.
+        local ok, success = pcall(self.createEpub, self, epub_path, page, lang, true)
         if ok and success then
             result_callback(true)
         else
-            ui_progress_callback() -- close any last progress info not cleaned
+            Trapper:reset() -- close any last widget not cleaned if error
             logger.warn("Wikipedia.createEpub pcall:", ok, success)
             result_callback(false)
         end
     end)
-    -- Execute coroutine
-    coroutine.resume(co)
 end
 
 return Wikipedia

@@ -1,3 +1,6 @@
+--[[--
+TouchMenu widget for hierarchical menus.
+]]
 local Blitbuffer = require("ffi/blitbuffer")
 local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
@@ -14,6 +17,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local RightContainer = require("ui/widget/container/rightcontainer")
+local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -155,45 +159,44 @@ local TouchMenuBar = InputContainer:new{
 }
 
 function TouchMenuBar:init()
-    local icon_sep_width = Screen:scaleBySize(2)
+    local icon_sep_width = Size.span.vertical_default
     local icons_sep_width = icon_sep_width * (#self.icons + 1)
     -- we assume all icons are of the same width
-    local tmp_ib = IconButton:new{icon_file = self.icons[1]}
-    local content_width = tmp_ib:getSize().w * #self.icons + icons_sep_width
+    local icon_width = Screen:scaleBySize(40)
+    local icon_height = icon_width
+    -- content_width is the width of all the icon images
+    local content_width = icon_width * #self.icons + icons_sep_width
     local spacing_width = (self.width - content_width)/(#self.icons*2)
-    local spacing = HorizontalSpan:new{
-        width = math.min(spacing_width, Screen:scaleBySize(20))
-    }
-    self.height = tmp_ib:getSize().h + Screen:scaleBySize(10)
+    local icon_padding = math.min(spacing_width, Screen:scaleBySize(16))
+    self.height = icon_height + Size.span.vertical_large
     self.show_parent = self.show_parent or self
     self.bar_icon_group = HorizontalGroup:new{}
     -- build up image widget for menu icon bar
     self.icon_widgets = {}
     -- hold icon seperators
     self.icon_seps = {}
-    -- hold all icon buttons
-    self.icon_buttons = {}
     -- the start_seg for first icon_widget should be 0
     -- we asign negative here to offset it in the loop
     local start_seg = -icon_sep_width
     local end_seg = start_seg
     -- self.width is the screen width
-    -- content_width is the width of the icons
-    -- (math.min(spacing_width, Screen:scaleBySize(20)) * #self.icons *2) is the combined width of spacing/separators
-    local stretch_width = self.width - content_width - (math.min(spacing_width, Screen:scaleBySize(20)) * #self.icons * 2) + icon_sep_width
+    -- content_width is the width of all the icon images
+    -- (2 * icon_padding * #self.icons) is the combined width of icons paddings
+    local stretch_width = self.width - content_width - (2 * icon_padding * #self.icons) + icon_sep_width
 
     for k, v in ipairs(self.icons) do
         local ib = IconButton:new{
             show_parent = self.show_parent,
             icon_file = v,
+            width = icon_width,
+            height = icon_height,
+            scale_for_dpi = false,
             callback = nil,
+            padding_left = icon_padding,
+            padding_right = icon_padding,
         }
 
-        table.insert(self.icon_widgets, HorizontalGroup:new{
-            spacing, ib, spacing,
-        })
-
-        table.insert(self.icon_buttons, ib)
+        table.insert(self.icon_widgets, ib)
 
         -- we have to use local variable here for closure callback
         local _start_seg = end_seg + icon_sep_width
@@ -203,7 +206,7 @@ function TouchMenuBar:init()
             self.bar_sep = LineWidget:new{
                 dimen = Geom:new{
                     w = self.width,
-                    h = Screen:scaleBySize(2),
+                    h = Size.line.thick,
                 },
                 empty_segments = {
                     {
@@ -299,10 +302,10 @@ end
 function TouchMenuBar:switchToTab(index)
     -- a little safety check
     -- don't auto-activate a non-existent index
-    if index > #self.icon_buttons then
+    if index > #self.icon_widgets then
         index = 1
     end
-    self.icon_buttons[index].callback()
+    self.icon_widgets[index].callback()
 end
 
 --[[
@@ -313,9 +316,9 @@ local TouchMenu = InputContainer:new{
     -- for returnning in multi-level menus
     item_table_stack = nil,
     item_table = nil,
-    item_height = Screen:scaleBySize(50),
-    bordersize = Screen:scaleBySize(2),
-    padding = Screen:scaleBySize(5),
+    item_height = Size.item.height_large,
+    bordersize = Size.border.default,
+    padding = Size.padding.default,
     fface = Font:getFace("ffont"),
     width = nil,
     height = nil,
@@ -409,7 +412,7 @@ function TouchMenu:init()
         end,
     }
     local footer_width = self.width - self.padding*2 - self.bordersize*2
-    local footer_height = up_button:getSize().h + Screen:scaleBySize(2)
+    local footer_height = up_button:getSize().h + Size.line.thick
     self.footer = HorizontalGroup:new{
         LeftContainer:new{
             dimen = Geom:new{ w = footer_width*0.33, h = footer_height},
@@ -437,16 +440,16 @@ function TouchMenu:init()
     self.item_width = self.width - self.padding*2 - self.bordersize*2
     self.split_line = HorizontalGroup:new{
         -- pad with 10 pixel to align with the up arrow in footer
-        HorizontalSpan:new{width = 10},
+        HorizontalSpan:new{width = Size.span.horizontal_default},
         LineWidget:new{
             background = Blitbuffer.gray(0.33),
             dimen = Geom:new{
-                w = self.item_width - 20,
-                h = Screen:scaleByDPI(1),
+                w = self.item_width - Screen:scaleBySize(20),
+                h = Size.line.medium,
             }
         }
     }
-    self.footer_top_margin = VerticalSpan:new{width = Screen:scaleBySize(2)}
+    self.footer_top_margin = VerticalSpan:new{width = Size.span.vertical_default}
     self.bar:switchToTab(self.last_index or 1)
 end
 

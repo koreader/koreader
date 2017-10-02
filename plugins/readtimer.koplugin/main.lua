@@ -1,6 +1,5 @@
-
 local InfoMessage = require("ui/widget/infomessage")
-local InputDialog = require("ui/widget/inputdialog")
+local TimeWidget = require("ui/widget/timewidget")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local T = require("ffi/util").template
@@ -46,7 +45,7 @@ function ReadTimer:addToMainMenu(menu_items)
         text_func = function()
             if self:scheduled() then
                 return T(_("Read timer (%1m)"),
-                         string.format("%.2f", self:remainingMinutes()))
+                    string.format("%.2f", self:remainingMinutes()))
             else
                 return _("Read timer")
             end
@@ -54,50 +53,83 @@ function ReadTimer:addToMainMenu(menu_items)
         checked_func = function()
             return self:scheduled()
         end,
-        callback = function()
-            local description = _("When should the countdown timer notify you?")
-            local buttons = {{
-                text = _("Close"),
+        sub_item_table = {
+            {
+                text = _("Time"),
                 callback = function()
-                    UIManager:close(self.input)
+                    local now_t = os.date("*t")
+                    local curr_hour = now_t.hour
+                    local curr_min = now_t.min
+                    local curr_sec_from_midnight = curr_hour*3600 + curr_min*60
+                    local time_widget = TimeWidget:new{
+                        hour = curr_hour,
+                        min = curr_min,
+                        ok_text = _("Set timer"),
+                        title_text =  _("Set reader timer"),
+                        callback = function(time)
+                            self:unschedule()
+                            local timer_sec_from_mignight = time.hour*3600 + time.min*60
+                            local seconds
+                            if timer_sec_from_mignight > curr_sec_from_midnight then
+                                seconds = timer_sec_from_mignight - curr_sec_from_midnight
+                            else
+                                seconds = 24*3600 - (curr_sec_from_midnight - timer_sec_from_mignight)
+                            end
+                            if seconds > 0 and seconds < 18*3600 then
+                                self.time = os.time() + seconds
+                                UIManager:scheduleIn(seconds, self.alarm_callback)
+                                UIManager:show(InfoMessage:new{
+                                    text = T(_("Timer set at: %1:%2"), string.format("%02d", time.hour),
+                                        string.format("%02d", time.min)),
+                                    timeout = 3,
+                                })
+                            --current time or time > 18h
+                            elseif seconds == 0 or seconds >= 18*3600 then
+                                UIManager:show(InfoMessage:new{
+                                    text = _("Timer could not be set. You have selected current time or time in past"),
+                                    timeout = 3,
+                                })
+                            end
+                        end
+                    }
+                    UIManager:show(time_widget)
                 end,
-            }, {
-                text = _("Start timer"),
+            },
+            {
+                text = _("Minutes from now"),
+                callback = function()
+                    local time_widget = TimeWidget:new{
+                        hour = 0,
+                        min = 0,
+                        hour_max = 17,
+                        ok_text = _("Set timer"),
+                        title_text =  _("Set reader timer from now (hours:minutes)"),
+                        callback = function(time)
+                            self:unschedule()
+                            local seconds = time.hour * 3600 + time.min * 60
+                            if seconds > 0 then
+                                self.time = os.time() + seconds
+                                UIManager:scheduleIn(seconds, self.alarm_callback)
+                                UIManager:show(InfoMessage:new{
+                                    text = T(_("Timer is set to %1 hour(s) and %2 minute(s)"), time.hour, time.min),
+                                    timeout = 3,
+                                })
+                            end
+                        end
+                    }
+                    UIManager:show(time_widget)
+                end,
+            },
+            {
+                text = _("Stop timer"),
+                enabled_func = function()
+                    return self:scheduled()
+                end,
                 callback = function()
                     self:unschedule()
-                    local seconds = self.input:getInputValue() * 60
-                    if seconds > 0 then
-                        self.time = os.time() + seconds
-                        UIManager:scheduleIn(seconds, self.alarm_callback)
-                    end
-                    UIManager:close(self.input)
-                    self.ui.menu:onTapCloseMenu()
                 end,
-            }}
-            if self:scheduled() then
-                description = description ..
-                    T(_("\n\nYou have already set up a timer for %1 minutes from now. Setting a new one will overwrite it."),
-                      string.format("%.2f", self:remainingMinutes()))
-                table.insert(buttons, {
-                    text = _("Stop"),
-                    callback = function()
-                        self:unschedule()
-                        UIManager:close(self.input)
-                    end,
-                })
-            end
-            description = description .. _("\n\n  - Positive number is required.")
-
-            self.input = InputDialog:new{
-                title = _("Read timer"),
-                description = description,
-                input_type = "number",
-                input_hint = _("time in minutes"),
-                buttons = { buttons },
-            }
-            self.input:onShowKeyboard()
-            UIManager:show(self.input)
-        end,
+            },
+        },
     }
 end
 

@@ -1,12 +1,16 @@
-local Event = require("ui/event")
-local TimeVal = require("ui/timeval")
-local input = require("ffi/input")
+--[[--
+An interface to get input events.
+]]
+
 local DEBUG = require("dbg")
-local logger = require("logger")
-local _ = require("gettext")
+local Event = require("ui/event")
 local Key = require("device/key")
 local GestureDetector = require("device/gesturedetector")
+local TimeVal = require("ui/timeval")
 local framebuffer = require("ffi/framebuffer")
+local input = require("ffi/input")
+local logger = require("logger")
+local _ = require("gettext")
 
 -- luacheck: push
 -- luacheck: ignore
@@ -56,9 +60,6 @@ local DEVICE_ORIENTATION_LANDSCAPE_ROTATED = 22
 
 -- luacheck: pop
 
---[[
-an interface to get input events
-]]
 local Input = {
     -- this depends on keyboard layout and should be overridden:
     event_map = {},
@@ -155,7 +156,7 @@ function Input:init()
     end
 end
 
---[[
+--[[--
 wrapper for FFI input open
 
 Note that we adhere to the "." syntax here for compatibility.
@@ -165,7 +166,7 @@ function Input.open(device, is_emu_events)
     input.open(device, is_emu_events and 1 or 0)
 end
 
---[[
+--[[--
 Different device models can implement their own hooks
 and register them.
 --]]
@@ -193,7 +194,7 @@ function Input:gestureAdjustHook(ges)
     -- do nothing by default
 end
 
--- catalogue of predefined hooks:
+--- Catalog of predefined hooks.
 function Input:adjustTouchSwitchXY(ev)
     if ev.type == EV_ABS then
         if ev.code == ABS_X then
@@ -298,6 +299,32 @@ function Input:handleKeyBoardEv(ev)
         end
     end
 
+    -- quit on Alt + F4
+    -- this is also emitted by the close event in SDL
+    if self.modifiers["Alt"] and keycode == "F4" then
+        local Device = require("frontend/device")
+        local UIManager = require("ui/uimanager")
+
+        local savequit_caller = nil
+        local save_quit = function()
+            Device:saveSettings()
+            UIManager:quit()
+        end
+
+        local FileManager = require("apps/filemanager/filemanager")
+        if FileManager.instance then
+            savequit_caller =  FileManager.instance.menu
+        end
+
+        local ReaderUI = require("apps/reader/readerui")
+        local readerui_instance = ReaderUI:_getRunningInstance()
+        if readerui_instance then
+            savequit_caller = readerui_instance.menu
+        end
+
+        savequit_caller:exitOrRestart(save_quit)
+    end
+
     -- handle modifier keys
     if self.modifiers[keycode] ~= nil then
         if ev.value == EVENT_VALUE_KEY_PRESS then
@@ -321,8 +348,8 @@ function Input:handleMiscEv(ev)
     -- should be handled by a misc event protocol plugin
 end
 
---[[
-parse each touch ev from kernel and build up tev.
+--[[--
+Parse each touch ev from kernel and build up tev.
 tev will be sent to GestureDetector:feedEvent
 
 Events for a single tap motion from Linux kernel (MT protocol B):
@@ -536,11 +563,10 @@ function Input:isEvKeyRelease(ev)
 end
 
 
--- main event handling:
-
+--- Main event handling.
 function Input:waitEvent(timeout_us)
-    -- wrapper for input.waitForEvents that will retry for some cases
     local ok, ev
+    -- wrapper for input.waitForEvents that will retry for some cases
     while true do
         if #self.timer_callbacks > 0 then
             local wait_deadline = TimeVal:now() + TimeVal:new{

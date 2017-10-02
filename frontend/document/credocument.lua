@@ -73,6 +73,7 @@ function CreDocument:engineInit()
 end
 
 function CreDocument:init()
+    self:updateColorRendering()
     self:engineInit()
     self.configurable:loadDefaults(self.options)
 
@@ -137,6 +138,20 @@ end
 
 function CreDocument:close()
     Document.close(self)
+    if self.buffer then
+        self.buffer:free()
+        self.buffer = nil
+    end
+end
+
+function CreDocument:updateColorRendering()
+    Document.updateColorRendering(self) -- will set self.render_color
+    -- Delete current buffer, a new one will be created according
+    -- to self.render_color
+    if self.buffer then
+        self.buffer:free()
+        self.buffer = nil
+    end
 end
 
 function CreDocument:getPageCount()
@@ -240,9 +255,14 @@ function CreDocument:drawCurrentView(target, x, y, rect, pos)
         self.buffer = nil
     end
     if not self.buffer then
-        self.buffer = Blitbuffer.new(rect.w, rect.h)
+        -- Note about color rendering:
+        -- If we use TYPE_BBRGB32 (and LVColorDrawBuf drawBuf(..., 32) in cre.cpp),
+        -- we get inverted Red and Blue in the blitbuffer (could be that
+        -- crengine/src/lvdrawbuf.cpp treats our 32bits not as RGBA).
+        -- But it is all fine if we use TYPE_BBRGB16.
+        self.buffer = Blitbuffer.new(rect.w, rect.h, self.render_color and Blitbuffer.TYPE_BBRGB16 or nil)
     end
-    self._document:drawCurrentPage(self.buffer)
+    self._document:drawCurrentPage(self.buffer, self.render_color)
     target:blitFrom(self.buffer, x, y, 0, 0, rect.w, rect.h)
 end
 
@@ -302,7 +322,7 @@ function CreDocument:getLinkFromPosition(pos)
     return self._document:getLinkFromPosition(pos.x, pos.y)
 end
 
-function Document:gotoPos(pos)
+function CreDocument:gotoPos(pos)
     logger.dbg("CreDocument: goto position", pos)
     self._document:gotoPos(pos)
 end
@@ -335,6 +355,26 @@ function CreDocument:setFontFace(new_font_face)
     if new_font_face then
         logger.dbg("CreDocument: set font face", new_font_face)
         self._document:setStringProperty("font.face.default", new_font_face)
+
+        -- The following makes FontManager prefer this font in its match
+        -- algorithm, with the bias given (applies only to rendering of
+        -- elements with css font-family)
+        -- See: crengine/src/lvfntman.cpp LVFontDef::CalcMatch():
+        -- it will compute a score for each font, where it adds:
+        --  + 25600 if standard font family matches (inherit serif sans-serif
+        --     cursive fantasy monospace) (note that crengine registers all fonts as
+        --     "sans-serif", except if their name is "Times" or "Times New Roman")
+        --  + 6400 if they don't and none are monospace (ie:serif vs sans-serif,
+        --      prefer a sans-serif to a monospace if looking for a serif)
+        --  +256000 if font names match
+        -- So, here, we can bump the score of our default font, and we could use:
+        --      +1: uses existing real font-family, but use our font for
+        --          font-family: serif, sans-serif..., and fonts not found (or
+        --          embedded fonts disabled)
+        --  +25601: uses existing real font-family, but use our font even
+        --          for font-family: monospace
+        -- +256001: prefer our font to any existing font-family font
+        self._document:setAsPreferredFontWithBias(new_font_face, 1)
     end
 end
 
@@ -404,6 +444,11 @@ function CreDocument:setGammaIndex(index)
     cre.setGammaIndex(index)
 end
 
+function CreDocument:setFontHinting(mode)
+    logger.dbg("CreDocument: set font hinting mode", mode)
+    self._document:setIntProperty("font.hinting.mode", mode)
+end
+
 function CreDocument:setStyleSheet(new_css)
     logger.dbg("CreDocument: set style sheet", new_css)
     self._document:setStyleSheet(new_css)
@@ -413,6 +458,11 @@ function CreDocument:setEmbeddedStyleSheet(toggle)
     -- FIXME: occasional segmentation fault when switching embedded style sheet
     logger.dbg("CreDocument: set embedded style sheet", toggle)
     self._document:setIntProperty("crengine.doc.embedded.styles.enabled", toggle)
+end
+
+function CreDocument:setEmbeddedFonts(toggle)
+    logger.dbg("CreDocument: set embedded fonts", toggle)
+    self._document:setIntProperty("crengine.doc.embedded.fonts.enabled", toggle)
 end
 
 function CreDocument:setPageMargins(left, top, right, bottom)

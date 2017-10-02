@@ -172,9 +172,9 @@ Clock = AlphaContainer:new{
 
     FrameContainer:new{
         background = Blitbuffer.COLOR_WHITE,
-        bordersize = 1,
+        bordersize = Screen:scaleBySize(1),
         margin = 0,
-        padding = 1
+        padding = Screen:scaleBySize(1),
     }
 }
 
@@ -206,7 +206,7 @@ end
 -----------------------------------------------------
 Quiz = ConfirmBox:new{
     text = "Tell me the truth, isn't it COOL?!",
-    width = 300,
+    width = Screen:scaleBySize(300),
     ok_text = "Yes, of course.",
     cancel_text = "No, it's ugly.",
     cancel_callback = function()
@@ -242,8 +242,8 @@ menu_items = {
 M = Menu:new{
     title = "Test Menu",
     item_table = menu_items,
-    width = 500,
-    height = 600,
+    width = Screen:scaleBySize(500),
+    height = Screen:scaleBySize(600),
 }
 
 -----------------------------------------------------
@@ -329,7 +329,7 @@ touch_menu = TouchMenu:new{
 -- input box widget
 -----------------------------------------------------
 local TestInputText = InputText:new{
-    width = 400,
+    width = Screen:scaleBySize(400),
     enter_callback = function() print("Entered") end,
     scroll = false,
     input_type = "number",

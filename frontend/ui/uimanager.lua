@@ -55,6 +55,7 @@ function UIManager:init()
         require("ui/screensaver"):show("poweroff", _("Powered off"))
         Screen:refreshFull()
         UIManager:nextTick(function()
+            Device:saveSettings()
             self:broadcastEvent(Event:new("Close"))
             Device:powerOff()
         end)
@@ -65,6 +66,7 @@ function UIManager:init()
         require("ui/screensaver"):show("reboot", _("Rebooting..."))
         Screen:refreshFull()
         UIManager:nextTick(function()
+            Device:saveSettings()
             self:broadcastEvent(Event:new("Close"))
             Device:reboot()
         end)
@@ -189,7 +191,7 @@ function UIManager:show(widget, refreshtype, refreshregion, x, y)
     for i = #self._window_stack, 0, -1 do
         local top_window = self._window_stack[i]
         -- skip modal window
-        if not top_window or not top_window.widget.modal then
+        if widget.modal or not top_window or not top_window.widget.modal then
             table.insert(self._window_stack, i + 1, window)
             break
         end
@@ -631,7 +633,7 @@ function UIManager:_repaint()
     -- we should have at least one refresh if we did repaint.  If we don't, we
     -- add one now and log a warning if we are debugging
     if dirty and #self._refresh_stack == 0 then
-        logger.warn("no refresh got enqueued. Will do a partial full screen refresh, which might be inefficient")
+        logger.dbg("no refresh got enqueued. Will do a partial full screen refresh, which might be inefficient")
         self:_refresh("partial")
     end
 

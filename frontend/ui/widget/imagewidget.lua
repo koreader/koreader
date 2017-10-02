@@ -29,6 +29,14 @@ local Geom = require("ui/geometry")
 local Cache = require("cache")
 local logger = require("logger")
 
+-- DPI_SCALE can't change without a restart, so let's compute it now
+local function get_dpi_scale()
+    local size_scale = math.min(Screen:getWidth(), Screen:getHeight())/600
+    local dpi_scale = Screen:getDPI() / 167
+    return math.pow(2, math.max(0, math.log((size_scale+dpi_scale)/2)/0.69))
+end
+local DPI_SCALE = get_dpi_scale()
+
 local ImageCache = Cache:new{
     max_memsize = 2*1024*1024, -- 2M of image cache
     current_memsize = 0,
@@ -55,7 +63,7 @@ local ImageWidget = Widget:new{
     -- Whether BlitBuffer rendered from file should be cached
     file_do_cache = true,
     -- Whether provided BlitBuffer can be modified by us and SHOULD be free() by us,
-    -- normally true unless our caller wants to reuse it's provided image
+    -- normally true unless our caller wants to reuse its provided image
     image_disposable = true,
 
     -- Width and height of container, to limit rendering to this area
@@ -76,7 +84,6 @@ local ImageWidget = Widget:new{
     rotation_angle = 0,
 
     -- If scale_for_dpi is true image will be rescaled according to screen dpi
-    -- (x2 if DPI > 332) - (formerly known as 'autoscale')
     scale_for_dpi = false,
 
     -- When scale_factor is not nil, native image is scaled by this factor
@@ -84,8 +91,10 @@ local ImageWidget = Widget:new{
     -- Special case : scale_factor == 0 : image will be scaled to best fit provided
     -- width and height, keeping aspect ratio (scale_factor will be updated
     -- from 0 to the factor used at _render() time)
-    -- (former 'autostrech' setting removed, use "scale_factor=0" instead)
     scale_factor = nil,
+
+    -- Whether to use former blitbuffer:scale() (default to using MuPDF)
+    use_legacy_image_scaling = G_reader_settings:isTrue("legacy_image_scaling"),
 
     -- For initial positionning, if (possibly scaled) image overflows width/height
     center_x_ratio = 0.5, -- default is centered on image's center
@@ -121,25 +130,44 @@ function ImageWidget:_loadfile()
     if itype == "png" or itype == "jpg" or itype == "jpeg"
             or itype == "tiff" then
         local hash = "image|"..self.file.."|"..(self.width or "").."|"..(self.height or "")
+        -- Do the scaling for DPI here, so it can be cached and not re-done
+        -- each time in _render()
+        -- In our use cases for files (icons), we either provide width and height,
+        -- or just scale_for_dpi, and scale_factor should stay nil.
+        -- Other combinations will result in double scaling anyway, and unexpected results.
+        local scale_for_dpi_here = false
+        if self.scale_for_dpi and DPI_SCALE ~= 1 then
+            scale_for_dpi_here = true -- we'll do it before caching
+            hash = hash .. "|d"
+            self.already_scaled_for_dpi = true -- so we don't do it again in _render()
+        end
         local cache = ImageCache:check(hash)
         if cache then
             -- hit cache
             self._bb = cache.bb
             self._bb_disposable = false -- don't touch or free a cached _bb
         else
+            self._bb = Mupdf.renderImageFile(self.file, self.width, self.height)
+            if scale_for_dpi_here then
+                local new_bb
+                local bb_w, bb_h = self._bb:getWidth(), self._bb:getHeight()
+                if self.use_legacy_image_scaling then
+                    new_bb = self._bb:scale(bb_w * DPI_SCALE, bb_h * DPI_SCALE)
+                else
+                    new_bb = Mupdf.scaleBlitBuffer(self._bb, math.floor(bb_w * DPI_SCALE), math.floor(bb_h * DPI_SCALE))
+                end
+                self._bb:free()
+                self._bb = new_bb
+            end
             if not self.file_do_cache then
-                self._bb = Mupdf.renderImageFile(self.file, self.width, self.height)
                 self._bb_disposable = true -- we made it, we can modify and free it
             else
+                self._bb_disposable = false -- don't touch or free a cached _bb
                 -- cache this image
                 logger.dbg("cache", hash)
-                cache = ImageCacheItem:new{
-                    bb = Mupdf.renderImageFile(self.file, self.width, self.height),
-                }
+                cache = ImageCacheItem:new{ bb = self._bb }
                 cache.size = cache.bb.pitch * cache.bb.h * cache.bb:getBpp() / 8
                 ImageCache:insert(hash, cache)
-                self._bb = cache.bb
-                self._bb_disposable = false -- don't touch or free a cached _bb
             end
         end
     else
@@ -165,25 +193,39 @@ function ImageWidget:_render()
 
     -- First, rotation
     if self.rotation_angle ~= 0 then
-        if not self._bb_disposable then
-            -- we can't modify _bb, make a copy
-            self._bb = self._bb:copy()
+        -- Allow for easy switch to former scaling via blitbuffer methods
+        if self.use_legacy_image_scaling then
+            if not self._bb_disposable then
+                -- we can't modify _bb, make a copy
+                self._bb = self._bb:copy()
+                self._bb_disposable = true -- new object will have to be freed
+            end
+            self._bb:rotate(self.rotation_angle) -- rotate in-place
+        else
+            -- If we use MuPDF for scaling, we can't use bb:rotate() anymore,
+            -- as it only flags rotation in the blitbuffer and rotation is dealt
+            -- with at painting time. MuPDF does not like such a blitbuffer, and
+            -- we get corrupted images when using it for scaling such blitbuffers.
+            -- We need to make a real new blitbuffer with rotated content:
+            local rot_bb = self._bb:rotatedCopy(self.rotation_angle)
+            -- We made a new blitbuffer, we need to explicitely free
+            -- the old one to not leak memory
+            if self._bb_disposable then
+                self._bb:free()
+            end
+            self._bb = rot_bb
             self._bb_disposable = true -- new object will have to be freed
         end
-        self._bb:rotate(self.rotation_angle) -- rotate in-place
     end
 
     local bb_w, bb_h = self._bb:getWidth(), self._bb:getHeight()
 
     -- scale_for_dpi setting: update scale_factor (even if not set) with it
-    if self.scale_for_dpi then
-        local dpi_scale = Screen:getDPI() / 167
-        -- rounding off to power of 2 to avoid alias with pow(2, floor(log(x)/log(2))
-        dpi_scale = math.pow(2, math.max(0, math.floor(math.log(dpi_scale)/0.69)))
+    if self.scale_for_dpi and not self.already_scaled_for_dpi then
         if self.scale_factor == nil then
             self.scale_factor = 1
         end
-        self.scale_factor = self.scale_factor * dpi_scale
+        self.scale_factor = self.scale_factor * DPI_SCALE
     end
 
     -- scale to best fit container : compute scale_factor for that
@@ -197,18 +239,30 @@ function ImageWidget:_render()
         end
     end
 
-    -- replace blitbuffer with a resizd one if needed
+    -- replace blitbuffer with a resized one if needed
     local new_bb = nil
     if self.scale_factor == nil then
-        -- no scaling, but strech to width and height, only if provided
-        if self.width and self.height then
+        -- no scaling, but strech to width and height, only if provided and needed
+        if self.width and self.height and (self.width ~= bb_w or self.height ~= bb_h) then
             logger.dbg("ImageWidget: stretching")
-            new_bb = self._bb:scale(self.width, self.height)
+            if self.use_legacy_image_scaling then
+                -- Uses "simple nearest neighbour scaling"
+                new_bb = self._bb:scale(self.width, self.height)
+            else
+                -- Better quality scaling with MuPDF
+                new_bb = Mupdf.scaleBlitBuffer(self._bb, self.width, self.height)
+            end
         end
     elseif self.scale_factor ~= 1 then
         -- scale by scale_factor (not needed if scale_factor == 1)
         logger.dbg("ImageWidget: scaling by", self.scale_factor)
-        new_bb = self._bb:scale(bb_w * self.scale_factor, bb_h * self.scale_factor)
+        if self.use_legacy_image_scaling then
+            new_bb = self._bb:scale(bb_w * self.scale_factor, bb_h * self.scale_factor)
+        else
+            -- Better to ensure we give integer width and height to MuPDF, to
+            -- avoid a black 1-pixel line at right and bottom of image
+            new_bb = Mupdf.scaleBlitBuffer(self._bb, math.floor(bb_w * self.scale_factor), math.floor(bb_h * self.scale_factor))
+        end
     end
     if new_bb then
         -- We made a new blitbuffer, we need to explicitely free

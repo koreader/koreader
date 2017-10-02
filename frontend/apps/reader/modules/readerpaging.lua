@@ -219,6 +219,10 @@ function ReaderPaging:addToMainMenu(menu_items)
     }
 end
 
+function ReaderPaging:onColorRenderingUpdate()
+    self.ui.document:updateColorRendering()
+end
+
 --[[
 Set reading position on certain page
 Page position is a fractional number ranging from 0 to 1, indicating the read

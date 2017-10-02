@@ -1,5 +1,4 @@
 local ffi = require("ffi")
-local util = require("ffi/util")
 local C = ffi.C
 
 -- Utilities functions needed by this plugin, but that may be added to
@@ -9,24 +8,19 @@ local xutil = {}
 
 -- Sub-process management (may be put into base/ffi/util.lua)
 function xutil.runInSubProcess(func)
-    if util.isAndroid() then
-        -- not sure how to do that on android
-        return nil
-    else
-        local pid = C.fork()
-        if pid == 0 then -- child process
-            -- Just run the provided lua code object in this new process,
-            -- and exit immediatly (so we do not release drivers and
-            -- resources still used by parent process)
-            func()
-            os.exit(0)
-        end
-        -- parent/main process, return pid of child
-        if pid == -1 then -- On failure, -1 is returned in the parent
-            return false
-        end
-        return pid
+    local pid = C.fork()
+    if pid == 0 then -- child process
+        -- Just run the provided lua code object in this new process,
+        -- and exit immediatly (so we do not release drivers and
+        -- resources still used by parent process)
+        func()
+        os.exit(0)
     end
+    -- parent/main process, return pid of child
+    if pid == -1 then -- On failure, -1 is returned in the parent
+        return false
+    end
+    return pid
 end
 
 function xutil.isSubProcessDone(pid)

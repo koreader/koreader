@@ -16,11 +16,12 @@ local Blitbuffer = require("ffi/blitbuffer")
 local Geom = require("ui/geometry")
 local LineWidget = require("ui/widget/linewidget")
 local RenderText = require("ui/rendertext")
-local Screen = require("device").screen
+local Size = require("ui/size")
 local TimeVal = require("ui/timeval")
 local Widget = require("ui/widget/widget")
 local logger = require("logger")
 local util = require("util")
+local Screen = require("device").screen
 
 local TextBoxWidget = Widget:new{
     text = nil,
@@ -35,7 +36,7 @@ local TextBoxWidget = Widget:new{
     bold = nil,
     line_height = 0.3, -- in em
     fgcolor = Blitbuffer.COLOR_BLACK,
-    width = 400, -- in pixels
+    width = Screen:scaleBySize(400), -- in pixels
     height = nil, -- nil value indicates unscrollable text widget
     virtual_line_num = 1, -- used by scroll bar
     _bb = nil,
@@ -45,7 +46,7 @@ function TextBoxWidget:init()
     self.line_height_px = (1 + self.line_height) * self.face.size
     self.cursor_line = LineWidget:new{
         dimen = Geom:new{
-            w = Screen:scaleBySize(1),
+            w = Size.line.medium,
             h = self.line_height_px,
         }
     }

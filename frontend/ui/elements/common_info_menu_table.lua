@@ -1,3 +1,4 @@
+local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
@@ -52,17 +53,38 @@ common_info.report_bug = {
         })
     end
 }
+
+if Device:isKindle() or Device:isKobo() then
+    common_info.sleep = {
+        text = _("Sleep"),
+        callback = function()
+            UIManager:suspend()
+        end,
+    }
+end
 if Device:isKobo() then
     common_info.reboot = {
         text = _("Reboot the device"),
         callback = function()
-            UIManager:nextTick(UIManager.reboot_action)
+            UIManager:show(ConfirmBox:new{
+                text = _("Are you sure you want to reboot the device?"),
+                ok_text = _("Reboot"),
+                ok_callback = function()
+                    UIManager:nextTick(UIManager.reboot_action)
+                end,
+            })
         end
     }
     common_info.poweroff = {
         text = _("Power off"),
         callback = function()
-            UIManager:nextTick(UIManager.poweroff_action)
+            UIManager:show(ConfirmBox:new{
+                text = _("Are you sure you want to power off the device?"),
+                ok_text = _("Power off"),
+                ok_callback = function()
+                    UIManager:nextTick(UIManager.poweroff_action)
+                end,
+            })
         end
     }
 end

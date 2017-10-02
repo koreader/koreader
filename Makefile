@@ -292,6 +292,8 @@ utupdate: all
 androidupdate: all
 	mkdir -p $(ANDROID_LAUNCHER_DIR)/assets/module
 	-rm $(ANDROID_LAUNCHER_DIR)/assets/module/koreader-*
+	# in runtime luajit-launcher's libluajit.so will be loaded
+	-rm $(INSTALL_DIR)/koreader/libs/libluajit.so
 	# create zip package
 	cd $(INSTALL_DIR)/koreader && \
 		zip -9 -r \

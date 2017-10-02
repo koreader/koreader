@@ -17,6 +17,64 @@ function check_submodules() {
     fi
 }
 
+# Takes two arguments:
+# $1 arguments to pass to pgrep
+# $2 process name to pgrep for
+function gnuplot_wrapper() {
+    # inspired by https://gist.github.com/nicolasazrak/32d68ed6c845a095f75f037ecc2f0436
+    trap capture_ctrl_c INT
+    TEMP_DIR=$(mktemp --directory /tmp/tmp.koreaderXXX)
+    LOG="$TEMP_DIR/memory.log"
+    SCRIPT_PNG="$TEMP_DIR/script_png.p"
+    SCRIPT_SHOW="$TEMP_DIR/script_show.p"
+    IMAGE_PNG="$TEMP_DIR/graph.png"
+
+    echo "Memory plot output to $TEMP_DIR"
+
+    cat >"$SCRIPT_PNG" <<EOL
+set term pngcairo size 1600,1200
+set output "$IMAGE_PNG"
+set ylabel "RSS"
+set y2label "VSZ"
+set ytics nomirror
+set y2tics nomirror in
+set yrange [0:*]
+set y2range [0:*]
+plot "$LOG" using 3 with lines axes x1y1 title "RSS", "$LOG" using 2 with lines axes x1y2 title "VSZ"
+EOL
+
+    cat >"$SCRIPT_SHOW" <<EOL
+set term wxt noraise
+set ylabel "RSS"
+set y2label "VSZ"
+set ytics nomirror
+set y2tics nomirror in
+set yrange [0:*]
+set y2range [0:*]
+plot "$LOG" using 3 with lines axes x1y1 title "RSS", "$LOG" using 2 with lines axes x1y2 title "VSZ"
+pause 1
+reread
+EOL
+
+    function capture_ctrl_c() {
+        kill "$LOOP_PID"
+        kill "$GNUPLOT_PID"
+        gnuplot "$SCRIPT_PNG"
+        exit
+    }
+
+    # initialize at 0 so gnuplot has something to show
+    echo "0 0 0" >"${LOG}"
+    while true; do
+        # shellcheck disable=SC2086
+        ps -p "$(pgrep --delimiter ' ' $1 "$2")" -o pid=,vsz=,rss= >>"${LOG}"
+        sleep 1
+    done &
+    LOOP_PID=$!
+    gnuplot "$SCRIPT_SHOW" &
+    GNUPLOT_PID=$!
+}
+
 function setup_env() {
     files=$(ls -d ./koreader-emulator-*/koreader)
     assert_ret_zero $? "Emulator not found, please build it first."
@@ -99,7 +157,7 @@ ${SUPPORTED_TARGETS}"
                     # some distributions use `ANDROID_NDK` instead, fall back to it
                     export NDK="${ANDROID_NDK}"
                 else
-                    export NDK="${CURDIR}/base/toolchain/android-ndk-r12b"
+                    export NDK="${CURDIR}/base/toolchain/android-ndk-r15c"
                 fi
             fi
             [ -e "${CURDIR}/base/toolchain/android-toolchain/bin/arm-linux-androideabi-gcc" ] || {
@@ -288,8 +346,7 @@ function kodev-wbuilder() {
     echo "[*] Running wbuilder.lua..."
     pushd "${EMU_DIR}" && {
         EMULATE_READER_W=540 EMULATE_READER_H=720 ./luajit ./tools/wbuilder.lua
-    } || exit
-    popd
+    } && popd || exit
 }
 
 function kodev-run() {
@@ -300,10 +357,12 @@ OPTIONS:
 
     -h=X, --screen-height=X  set height of the emulator screen (default: 720)
     -w=X, --screen-width=X   set width of the emulator screen (default: 540)
+    -d=X, --screen-dpi=X     set DPI of the emulator screen (default: 160)
     --no-build               run reader without rebuilding
     --disable-touch          use this if you want to simulate keyboard only devices
     -s=FOO --simulate=FOO    simulate dimension and other specs for a given device model
-                             supported model: kobo-aura-one, kindle3
+                             supported model: kobo-aura-one, kindle3, hidpi
+    --graph                  graph memory use (requires gnuplot)
     "
     screen_width=540
     screen_height=720
@@ -317,11 +376,23 @@ OPTIONS:
             --no-build)
                 no_build=true
                 ;;
+            --graph)
+                graph_memory=true
+                ;;
             -w | --screen-width)
                 screen_width=${VALUE}
                 ;;
             -h | --screen-height)
-                screen_height=${VALUE}
+                # simple numeric check due to overlap between -h for help and height
+                if [ ! -z "${VALUE##*[!0-9]*}" ]; then
+                    screen_height=${VALUE}
+                else
+                    echo "${RUN_HELP_MSG}"
+                    exit 0
+                fi
+                ;;
+            -d | --screen-dpi)
+                screen_dpi=${VALUE}
                 ;;
             -s | --simulate)
                 device_model=${VALUE}
@@ -333,13 +404,19 @@ OPTIONS:
                     kobo-aura-one)
                         screen_width=1404
                         screen_height=1872
+                        screen_dpi=300
+                        ;;
+                    hidpi)
+                        screen_width=1500
+                        screen_height=2000
+                        screen_dpi=600
                         ;;
                     *)
                         echo "ERROR: spec unknown for ${device_model}."
                         ;;
                 esac
                 ;;
-            -h | --help)
+            --help)
                 echo "${RUN_HELP_MSG}"
                 exit 0
                 ;;
@@ -364,6 +441,16 @@ OPTIONS:
         exit 1
     fi
 
+    if [ ${graph_memory} ]; then
+        gnuplot_wrapper "--parent $$" "reader.lua"
+    fi
+
+    # run with catchsegv by default when it is available
+    # see https://github.com/koreader/koreader/issues/2878#issuecomment-326796777
+    if command -v catchsegv >/dev/null; then
+        CATCHSEGV=$(which catchsegv)
+    fi
+
     echo "[*] Running KOReader with arguments: $*..."
     pushd "${EMU_DIR}" && {
         if [ $# -lt 1 ]; then
@@ -375,12 +462,15 @@ OPTIONS:
 
         RETURN_VALUE=85
         while [ $RETURN_VALUE -eq 85 ]; do
-            EMULATE_READER_W=${screen_width} EMULATE_READER_H=${screen_height} \
-                ./reader.lua -d "$args"
+            EMULATE_READER_W=${screen_width} EMULATE_READER_H=${screen_height} EMULATE_READER_DPI=${screen_dpi} \
+                $CATCHSEGV ./reader.lua -d "$args"
             RETURN_VALUE=$?
         done
-    } || exit
-    popd
+    } && popd || exit
+
+    if [ ${graph_memory} ]; then
+        capture_ctrl_c
+    fi
 }
 
 function kodev-test() {
@@ -397,6 +487,9 @@ OPTIONS:
         PARAM=$(echo "$1" | awk -F= '{print $1}')
         VALUE=$(echo "$1" | awk -F= '{print $2}')
         case $PARAM in
+            --graph)
+                graph_memory=true
+                ;;
             --tags)
                 opts="--tags=${VALUE}"
                 ;;
@@ -425,6 +518,7 @@ OPTIONS:
 
     check_submodules && make
     setup_env
+
     make "${EMU_DIR}/.busted"
     pushd "${EMU_DIR}" && {
         test_path="./spec/$1/unit"
@@ -440,8 +534,7 @@ OPTIONS:
             --lazy \
             -o "./spec/$1/unit/verbose_print" \
             --exclude-tags=notest "${test_path}"
-    } || exit
-    popd
+    } && popd || exit
 }
 
 function kodev-cov() {
@@ -504,8 +597,7 @@ OPTIONS:
                 +$((LUACOV_REPORT_SUMMARY - 1)) \
                 luacov.report.out
         fi
-    } || exit
-    popd
+    } && popd || exit
 }
 
 function kodev-log() {
@@ -599,8 +691,7 @@ case $1 in
         kodev-build
         pushd "${EMU_DIR}" && {
             ./luajit -i setupkoenv.lua
-        } || exit
-        popd
+        } && popd || exit
         ;;
     log)
         shift 1

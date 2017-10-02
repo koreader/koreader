@@ -1,4 +1,6 @@
+local Blitbuffer = require("ffi/blitbuffer")
 local Device = require("device")
+local Geom = require("ui/geometry")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Event = require("ui/event")
 local ReaderPanning = require("apps/reader/modules/readerpanning")
@@ -140,18 +142,31 @@ function ReaderRolling:onReadSettings(config)
     self.inverse_reading_order = config:readSetting("inverse_reading_order") or false
 end
 
+-- in scroll mode percent_finished must be save before close document
+-- we cannot do it in onSaveSettings() because getLastPercent() uses self.ui.document
+function ReaderRolling:onCloseDocument()
+    self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
+end
+
 function ReaderRolling:onSaveSettings()
     -- remove last_percent config since its deprecated
     self.ui.doc_settings:saveSetting("last_percent", nil)
     self.ui.doc_settings:saveSetting("last_xpointer", self.xpointer)
-    self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
+    -- in scrolling mode, the document may already be closed,
+    -- so we have to check the condition to avoid crash function self:getLastPercent()
+    -- that uses self.ui.document
+    if self.ui.document then
+        self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
+    end
     self.ui.doc_settings:saveSetting("show_overlap_enable", self.show_overlap_enable)
     self.ui.doc_settings:saveSetting("inverse_reading_order", self.inverse_reading_order)
 end
 
 function ReaderRolling:onReaderReady()
     self:setupTouchZones()
-    self.setupXpointer()
+    self.ui:registerPostReadyCallback(function()
+        self.setupXpointer()
+    end)
 end
 
 function ReaderRolling:setupTouchZones()
@@ -380,6 +395,23 @@ end
 function ReaderRolling:onGotoXPointer(xp)
     self:_gotoXPointer(xp)
     self.xpointer = xp
+    -- Show a mark on left side of screen to give a visual feedback
+    -- of where xpointer target is (removed after 1 second)
+    if string.sub(xp, 1, 1) == "#" then -- only for links, not page top fragment identifier
+        local doc_y = self.ui.document:getPosFromXPointer(xp)
+        local top_y = self.ui.document:getCurrentPos()
+        local doc_margins = self.ui.document._document:getPageMargins()
+        local screen_y = doc_y - top_y + doc_margins["top"]
+        local marker_w = math.max(doc_margins["left"] - Screen:scaleBySize(5), Screen:scaleBySize(5))
+        local marker_h = Screen:scaleBySize(self.ui.font.font_size * 1.1 * self.ui.font.line_space_percent/100.0)
+        UIManager:scheduleIn(0.5, function()
+            Screen.bb:paintRect(0, screen_y, marker_w, marker_h, Blitbuffer.COLOR_BLACK)
+            Screen["refreshPartial"](Screen, 0, screen_y, marker_w, marker_h)
+            UIManager:scheduleIn(1, function()
+                UIManager:setDirty(self.view.dialog, "partial", Geom:new({x=0, y=screen_y, w=marker_w, h=marker_h}))
+            end)
+        end)
+    end
     return true
 end
 
@@ -496,6 +528,10 @@ function ReaderRolling:onChangeScreenMode(mode)
     self.ui.document:setViewDimen(Screen:getSize())
     self:onChangeViewMode()
     self:onUpdatePos()
+end
+
+function ReaderRolling:onColorRenderingUpdate()
+    self.ui.document:updateColorRendering()
 end
 
 --[[

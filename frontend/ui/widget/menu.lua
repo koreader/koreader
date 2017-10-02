@@ -1,3 +1,7 @@
+--[[--
+Widget that displays a shortcut icon for menu item.
+--]]
+
 local Blitbuffer = require("ffi/blitbuffer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local Button = require("ui/widget/button")
@@ -16,6 +20,7 @@ local LeftContainer = require("ui/widget/container/leftcontainer")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local RenderText = require("ui/rendertext")
 local RightContainer = require("ui/widget/container/rightcontainer")
+local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local UnderlineContainer = require("ui/widget/container/underlinecontainer")
@@ -29,13 +34,10 @@ local Input = Device.input
 local Screen = Device.screen
 local getMenuText = require("util").getMenuText
 
---[[
-Widget that displays a shortcut icon for menu item
---]]
 local ItemShortCutIcon = WidgetContainer:new{
-    dimen = Geom:new{ w = 22, h = 22 },
+    dimen = Geom:new{ w = Screen:scaleBySize(22), h = Screen:scaleBySize(22) },
     key = nil,
-    bordersize = 2,
+    bordersize = Size.border.default,
     radius = 0,
     style = "square",
 }
@@ -136,8 +138,9 @@ function MenuItem:init()
     end
 
     self.detail = self.text
-    -- 15 for HorizontalSpan,
-    self.content_width = self.dimen.w - shortcut_icon_dimen.w - 15
+    -- account for added HorizontalSpans
+    self.content_width = self.dimen.w - shortcut_icon_dimen.w
+        - Size.span.horizontal_small - Size.span.horizontal_default
 
     -- we need this table per-instance, so we declare it here
     if Device:isTouchDevice() then
@@ -209,6 +212,7 @@ function MenuItem:init()
                 text = self.text,
                 face = self.face,
                 bold = self.bold,
+                fgcolor = self.dim and Blitbuffer.COLOR_GREY or nil,
             }
         }
     }
@@ -219,6 +223,7 @@ function MenuItem:init()
             text = mandatory,
             face = self.info_face,
             bold = self.bold,
+            fgcolor = self.dim and Blitbuffer.COLOR_GREY or nil,
         }
     }
 
@@ -243,13 +248,13 @@ function MenuItem:init()
         padding = 0,
         HorizontalGroup:new{
             align = "center",
-            HorizontalSpan:new{ width = 5 },
+            HorizontalSpan:new{ width = Size.span.horizontal_small },
             ItemShortCutIcon:new{
                 dimen = shortcut_icon_dimen,
                 key = self.shortcut,
                 style = self.shortcut_style,
             },
-            HorizontalSpan:new{ width = 10 },
+            HorizontalSpan:new{ width = Size.span.horizontal_default },
             self._underline_container
         }
     }
@@ -330,10 +335,10 @@ local Menu = FocusManager:new{
 
     title = "No Title",
     -- default width and height
-    width = 500,
+    width = nil,
     -- height will be calculated according to item number if not given
     height = nil,
-    header_padding = Screen:scaleBySize(10),
+    header_padding = Size.padding.large,
     dimen = Geom:new{},
     item_table = {},
     item_shortcuts = {
@@ -475,7 +480,7 @@ function Menu:init()
     self.page_return_arrow:hide()
     self.return_button = HorizontalGroup:new{
         HorizontalSpan:new{
-            width = Screen:scaleBySize(5),
+            width = Size.span.horizontal_small,
         },
         self.page_return_arrow,
     }
@@ -651,6 +656,7 @@ function Menu:updateItems(select_number)
                 text = getMenuText(self.item_table[i]),
                 mandatory = self.item_table[i].mandatory,
                 bold = self.item_table.current == i or self.item_table[i].bold == true,
+                dim = self.item_table[i].dim,
                 face = self.cface,
                 dimen = self.item_dimen:new(),
                 shortcut = item_shortcut,

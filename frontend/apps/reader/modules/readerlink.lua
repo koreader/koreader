@@ -1,13 +1,17 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
+--[[--
+ReaderLink is an abstraction for document-specific link interfaces.
+]]
+
+local Device = require("device")
+local Event = require("ui/event")
+local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
+local InputContainer = require("ui/widget/container/inputcontainer")
 local LinkBox = require("ui/widget/linkbox")
 local UIManager = require("ui/uimanager")
-local Geom = require("ui/geometry")
-local Screen = require("device").screen
-local Device = require("device")
 local logger = require("logger")
-local Event = require("ui/event")
 local _ = require("gettext")
+local Screen = Device.screen
 local T = require("ffi/util").template
 
 local ReaderLink = InputContainer:new{
@@ -55,8 +59,8 @@ function ReaderLink:initGesListener()
     end
 end
 
-local function isFollowLinksOn()
-    return G_reader_settings:readSetting("follow_links") ~= false
+local function isTapToFollowLinksOn()
+    return not G_reader_settings:isFalse("tap_to_follow_links")
 end
 
 local function isSwipeToGoBackEnabled()
@@ -67,25 +71,35 @@ local function isSwipeToFollowFirstLinkEnabled()
     return G_reader_settings:readSetting("swipe_to_follow_first_link") == true
 end
 
+local function isSwipeToFollowNearestLinkEnabled()
+    return G_reader_settings:readSetting("swipe_to_follow_nearest_link") == true
+end
+
+local function isSwipeToJumpToLatestBookmarkEnabled()
+    return G_reader_settings:readSetting("swipe_to_jump_to_latest_bookmark") == true
+end
+
 function ReaderLink:addToMainMenu(menu_items)
     -- insert table to main reader menu
     menu_items.follow_links = {
-        text = _("Follow links"),
+        text = _("Links"),
         sub_item_table = {
             {
-                text_func = function()
-                    return isFollowLinksOn() and _("Disable") or _("Enable")
-                end,
-                callback = function()
-                    G_reader_settings:saveSetting("follow_links",
-                        not isFollowLinksOn())
-                end
-            },
-            {
-                text = _("Go back"),
+                text = _("Go back to previous location"),
                 enabled_func = function() return #self.location_stack > 0 end,
                 callback = function() self:onGoBackLink() end,
+                separator = true,
             },
+            {
+                text = _("Tap to follow links"),
+                checked_func = isTapToFollowLinksOn,
+                callback = function()
+                    G_reader_settings:saveSetting("tap_to_follow_links",
+                        not isTapToFollowLinksOn())
+                end,
+                separator = true,
+            },
+
             {
                 text = _("Swipe to go back"),
                 checked_func = isSwipeToGoBackEnabled,
@@ -95,15 +109,80 @@ function ReaderLink:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Swipe to follow first link"),
+                text = _("Swipe to follow first link on page"),
                 checked_func = isSwipeToFollowFirstLinkEnabled,
                 callback = function()
                     G_reader_settings:saveSetting("swipe_to_follow_first_link",
                         not isSwipeToFollowFirstLinkEnabled())
+                    if isSwipeToFollowFirstLinkEnabled() then
+                        G_reader_settings:delSetting("swipe_to_follow_nearest_link") -- can't have both
+                    end
+                end,
+            },
+            {
+                text = _("Swipe to follow nearest link"),
+                checked_func = isSwipeToFollowNearestLinkEnabled,
+                callback = function()
+                    G_reader_settings:saveSetting("swipe_to_follow_nearest_link",
+                        not isSwipeToFollowNearestLinkEnabled())
+                    if isSwipeToFollowNearestLinkEnabled() then
+                        G_reader_settings:delSetting("swipe_to_follow_first_link") -- can't have both
+                    end
+                end,
+                separator = true,
+            },
+            {
+                text = _("Swipe to jump to latest bookmark"),
+                checked_func = isSwipeToJumpToLatestBookmarkEnabled,
+                callback = function()
+                    G_reader_settings:saveSetting("swipe_to_jump_to_latest_bookmark",
+                        not isSwipeToJumpToLatestBookmarkEnabled())
                 end,
             },
         }
     }
+end
+
+--- Gets link from gesture.
+-- `Document:getLinkFromPosition()` behaves differently depending on
+-- document type, so this function provides a wrapper.
+function ReaderLink:getLinkFromGes(ges)
+    if self.ui.document.info.has_pages then
+        local pos = self.view:screenToPageTransform(ges.pos)
+        if pos then
+            -- link box in native page
+            local link, lbox = self.ui.document:getLinkFromPosition(pos.page, pos)
+            if link and lbox then
+                return link, lbox, pos
+            end
+        end
+    else
+        local link = self.ui.document:getLinkFromPosition(ges.pos)
+        if link ~= "" then
+            return link
+        end
+    end
+end
+
+--- Highlights a linkbox if available and goes to it.
+function ReaderLink:showLinkBox(link, lbox, pos)
+    if link and lbox then
+        -- screen box that holds the link
+        local sbox = self.view:pageToScreenTransform(pos.page,
+            self.ui.document:nativeToPageRectTransform(pos.page, lbox))
+        if sbox then
+            UIManager:show(LinkBox:new{
+                box = sbox,
+                timeout = FOLLOW_LINK_TIMEOUT,
+                callback = function() self:onGotoLink(link) end
+            })
+            return true
+        end
+    else
+        if link ~= "" then
+            return self:onGotoLink(link)
+        end
+    end
 end
 
 function ReaderLink:onSetDimensions(dimen)
@@ -114,34 +193,14 @@ function ReaderLink:onSetDimensions(dimen)
 end
 
 function ReaderLink:onTap(_, ges)
-    if not isFollowLinksOn() then return end
-    if self.ui.document.info.has_pages then
-        local pos = self.view:screenToPageTransform(ges.pos)
-        if pos then
-            -- link box in native page
-            local link, lbox = self.ui.document:getLinkFromPosition(pos.page, pos)
-            if link and lbox then
-                -- screen box that holds the link
-                local sbox = self.view:pageToScreenTransform(pos.page,
-                    self.ui.document:nativeToPageRectTransform(pos.page, lbox))
-                if sbox then
-                    UIManager:show(LinkBox:new{
-                        box = sbox,
-                        timeout = FOLLOW_LINK_TIMEOUT,
-                        callback = function() self:onGotoLink(link) end
-                    })
-                    return true
-                end
-            end
-        end
-    else
-        local link = self.ui.document:getLinkFromPosition(ges.pos)
-        if link ~= "" then
-            return self:onGotoLink(link)
-        end
+    if not isTapToFollowLinksOn() then return end
+    local link, lbox, pos = self:getLinkFromGes(ges)
+    if link then
+        return self:showLinkBox(link, lbox, pos)
     end
 end
 
+--- Goes to link.
 function ReaderLink:onGotoLink(link)
     logger.dbg("onGotoLink:", link)
     if self.ui.document.info.has_pages then
@@ -196,6 +255,7 @@ function ReaderLink:onGotoLink(link)
     return true
 end
 
+--- Goes back to previous location.
 function ReaderLink:onGoBackLink()
     local saved_location = table.remove(self.location_stack)
     if saved_location then
@@ -210,15 +270,24 @@ function ReaderLink:onSwipe(_, ges)
             return self:onGoBackLink()
         end
     elseif ges.direction == "west" then
+        local ret = false
         if isSwipeToFollowFirstLinkEnabled() then
-            return self:onGoToFirstLink(ges)
+            ret = self:onGoToPageLink(ges, true)
+        elseif isSwipeToFollowNearestLinkEnabled() then
+            ret = self:onGoToPageLink(ges)
         end
+        -- If no link found, or no follow link option enabled,
+        -- jump to latest bookmark (if enabled)
+        if not ret and isSwipeToJumpToLatestBookmarkEnabled() then
+            ret = self:onGoToLatestBookmark(ges)
+        end
+        return ret
     end
 end
 
-function ReaderLink:onGoToFirstLink(ges)
-    if not isFollowLinksOn() then return end
-    local firstlink = nil
+--- Goes to link nearest to the gesture (or first link in page)
+function ReaderLink:onGoToPageLink(ges, use_page_first_link)
+    local selected_link = nil
     if self.ui.document.info.has_pages then
         local pos = self.view:screenToPageTransform(ges.pos)
         if not pos then
@@ -239,16 +308,28 @@ function ReaderLink:onGoToFirstLink(ges)
         --         ["x0"] = 97,
         --         ["page"] = 347
         --     },
-        -- Links may not be in the order they are in the page, so let's
-        -- find the one with the smallest y0.
+        local pos_x, pos_y = ges.pos.x, ges.pos.y
+        local shortest_dist = nil
         local first_y0 = nil
         for _, link in ipairs(links) do
             if link["page"] then
-                if first_y0 == nil or link["y0"] < first_y0 then
-                    -- onGotoLink()'s GotoPage event needs the link
-                    -- itself, and will use its "page" value
-                    firstlink = link
-                    first_y0 = link["y0"]
+                if use_page_first_link then
+                    -- Links may not be in the order they are in the page, so let's
+                    -- find the one with the smallest y0.
+                    if first_y0 == nil or link["y0"] < first_y0 then
+                        selected_link = link
+                        first_y0 = link["y0"]
+                    end
+                else
+                    local start_dist = math.pow(link.x0 - pos_x, 2) + math.pow(link.y0 - pos_y, 2)
+                    local end_dist = math.pow(link.x1 - pos_x, 2) + math.pow(link.y1 - pos_y, 2)
+                    local min_dist = math.min(start_dist, end_dist)
+                    if shortest_dist == nil or min_dist < shortest_dist then
+                        -- onGotoLink()'s GotoPage event needs the link
+                        -- itself, and will use its "page" value
+                        selected_link = link
+                        shortest_dist = min_dist
+                    end
                 end
             end
         end
@@ -275,16 +356,28 @@ function ReaderLink:onGoToFirstLink(ges)
         --         ["start_x"] = 352,
         --         ["start_y"] = 1201
         --     },
-        -- links may not be in the order they are in the page, so let's
-        -- find the one with the smallest start_y.
+        local pos_x, pos_y = ges.pos.x, ges.pos.y
+        local shortest_dist = nil
         local first_start_y = nil
         for _, link in ipairs(links) do
             if link["section"] then
-                if first_start_y == nil or link["start_y"] < first_start_y then
-                    -- onGotoLink()'s GotoXPointer event needs
-                    -- the "section" value
-                    firstlink = link["section"]
-                    first_start_y = link["start_y"]
+                if use_page_first_link then
+                    -- links may not be in the order they are in the page, so let's
+                    -- find the one with the smallest start_y.
+                    if first_start_y == nil or link["start_y"] < first_start_y then
+                        selected_link = link["section"]
+                        first_start_y = link["start_y"]
+                    end
+                else
+                    local start_dist = math.pow(link.start_x - pos_x, 2) + math.pow(link.start_y - pos_y, 2)
+                    local end_dist = math.pow(link.end_x - pos_x, 2) + math.pow(link.end_y - pos_y, 2)
+                    local min_dist = math.min(start_dist, end_dist)
+                    if shortest_dist == nil or min_dist < shortest_dist then
+                        -- onGotoLink()'s GotoXPointer event needs
+                        -- the "section" value
+                        selected_link = link["section"]
+                        shortest_dist = min_dist
+                    end
                 end
             end
         end
@@ -294,8 +387,27 @@ function ReaderLink:onGoToFirstLink(ges)
         -- So let's clear them now.
         self.ui.document:clearSelection()
     end
-    if firstlink then
-        return self:onGotoLink(firstlink)
+    if selected_link then
+        return self:onGotoLink(selected_link)
+    end
+end
+
+function ReaderLink:onGoToLatestBookmark(ges)
+    local latest_bookmark = self.ui.bookmark:getLatestBookmark()
+    if latest_bookmark then
+        if self.ui.document.info.has_pages then
+            -- self:onGotoLink() needs something with a page attribute.
+            -- we need to substract 1 to bookmark page, as links start from 0
+            -- and onGotoLink will add 1 - we need a fake_link (with a single
+            -- page attribute) so we don't touch the bookmark itself
+            local fake_link = {}
+            fake_link.page = latest_bookmark.page - 1
+            return self:onGotoLink(fake_link)
+        else
+            -- self:onGotoLink() needs a xpointer, that we find
+            -- as the bookmark page attribute
+            return self:onGotoLink(latest_bookmark.page)
+        end
     end
 end
 

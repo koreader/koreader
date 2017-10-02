@@ -19,31 +19,32 @@ Configurable attributes:
 Example:
 
     local foo_bar = ProgressWidget:new{
-        width = 400,
-        height = 10,
+        width = Screen:scaleBySize(400),
+        height = Screen:scaleBySize(10),
         percentage = 50/100,
     }
     UIManager:show(foo_bar)
 
 ]]
 
-local Widget = require("ui/widget/widget")
-local Geom = require("ui/geometry")
 local Blitbuffer = require("ffi/blitbuffer")
+local Geom = require("ui/geometry")
+local Widget = require("ui/widget/widget")
+local Screen = require("device").screen
 
 local ProgressWidget = Widget:new{
     width = nil,
     height = nil,
-    margin_h = 3,
-    margin_v = 1,
-    radius = 2,
-    bordersize = 1,
+    margin_h = Screen:scaleBySize(3),
+    margin_v = Screen:scaleBySize(1),
+    radius = Screen:scaleBySize(2),
+    bordersize = Screen:scaleBySize(1),
     bordercolor = Blitbuffer.COLOR_BLACK,
     bgcolor = Blitbuffer.COLOR_WHITE,
     rectcolor = Blitbuffer.gray(0.7),
     percentage = nil,
     ticks = nil,
-    tick_width = 3,
+    tick_width = Screen:scaleBySize(3),
     last = nil,
 }
 
