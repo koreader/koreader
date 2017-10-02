@@ -30,11 +30,15 @@ function NetworkPoller:_schedule(settings_id)
         return true
     end
 
+    -- Microsoft uses `dns.msftncsi.com` for Windows, see
+    -- <https://technet.microsoft.com/en-us/library/ee126135#BKMK_How> for
+    -- more information. They also check whether <http://www.msftncsi.com/ncsi.txt>
+    -- returns `Microsoft NCSI`.
     table.insert(PluginShare.backgroundJobs, {
         insert_sec = 0,  -- Actively set the insert_sec to start it immediately.
         when = 30,       -- Checks network connectivity once per 30 seconds.
         repeated = enabled,
-        executable = "ping -W 1 -c 1 www.example.com",
+        executable = "ping -W 1 -c 1 dns/msftncsi.com",
         callback = function(job)
             self:_writeResult(job)
         end,
