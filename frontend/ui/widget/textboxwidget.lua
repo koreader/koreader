@@ -282,6 +282,7 @@ end
 -- Click event: Move the cursor to a new location with (x, y), in pixels.
 -- Be aware of virtual line number of the scorllTextWidget.
 function TextBoxWidget:moveCursor(x, y)
+    if x < 0 or y < 0 then return end
     if #self.vertical_string_list == 0 then
         -- if there's no text at all, nothing to do
         return 1
@@ -354,6 +355,26 @@ function TextBoxWidget:getSize()
         return Geom:new{ w = self.width, h = self.height}
     else
         return Geom:new{ w = self.width, h = self._bb:getHeight()}
+    end
+end
+
+function TextBoxWidget:moveCursorUp()
+    if self.vertical_string_list and #self.vertical_string_list < 2 then return end
+    local x, y
+    x, y = self:_findCharPos()
+    local charpos = self:moveCursor(x, y - self.line_height_px +1)
+    if charpos then
+        self:moveCursorToCharpos(charpos)
+    end
+end
+
+function TextBoxWidget:moveCursorDown()
+    if self.vertical_string_list and #self.vertical_string_list < 2 then return end
+    local x, y
+    x, y = self:_findCharPos()
+    local charpos = self:moveCursor(x, y + self.line_height_px +1)
+    if charpos then
+        self:moveCursorToCharpos(charpos)
     end
 end
 
