@@ -112,6 +112,7 @@ end
 local PocketBook840 = PocketBook:new{
     isTouchDevice = yes,
     hasKeys = yes,
+    hasFrontlight = yes,
     display_dpi = 250,
     emu_events_dev = "/var/dev/shm/emu_events",
 }

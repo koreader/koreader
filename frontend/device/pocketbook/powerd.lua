@@ -1,9 +1,11 @@
 local BasePowerD = require("device/generic/powerd")
 local ffi = require("ffi")
--- local inkview = ffi.load("inkview")
+local inkview = ffi.load("inkview")
 
 ffi.cdef[[
-int IsCharging();
+void OpenScreen();
+int GetFrontlightState(void);
+void SetFrontlightState(int flstate);
 ]]
 
 local PocketBookPowerD = BasePowerD:new{
@@ -13,6 +15,22 @@ local PocketBookPowerD = BasePowerD:new{
 }
 
 function PocketBookPowerD:init()
+-- needed for SetFrontlightState / GetFrontlightState
+    inkview.OpenScreen()
+end
+
+function PocketBookPowerD:frontlightIntensityHW()
+    if not self.device.hasFrontlight() then return 0 end
+    state = inkview.GetFrontlightState()
+    return math.floor(state / 10)
+end
+
+function PocketBookPowerD:setIntensityHW(intensity)
+    if intensity == 0 then
+        inkview.SetFrontlightState(-1)
+    else
+        inkview.SetFrontlightState(10 * intensity)
+    end
 end
 
 function PocketBookPowerD:getCapacityHW()
