@@ -21,7 +21,7 @@ end
 
 function PocketBookPowerD:frontlightIntensityHW()
     if not self.device.hasFrontlight() then return 0 end
-    state = inkview.GetFrontlightState()
+    local state = inkview.GetFrontlightState()
     return math.floor(state / 10)
 end
 
