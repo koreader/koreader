@@ -96,9 +96,9 @@ function CreDocument:init()
     -- @TODO check the default view_mode to a global user configurable
     -- variable  22.12 2012 (houqp)
     local ok
-    ok, self._document = pcall(cre.newDocView,
-        Screen:getWidth(), Screen:getHeight(), self.PAGE_VIEW_MODE
-    )
+    ok, self._document = pcall(cre.newDocView, Screen:getWidth(), Screen:getHeight(),
+        DCREREADER_VIEW_MODE == "scroll" and self.SCROLL_VIEW_MODE or self.PAGE_VIEW_MODE
+    ) -- this mode must be the same as the default one set as ReaderView.view_mode
     if not ok then
         error(self._document)  -- will contain error message
     end
