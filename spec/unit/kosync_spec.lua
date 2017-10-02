@@ -1,6 +1,6 @@
 local service = [[
 {
-    "base_url" : "https://vislab.bjmu.edu.cn:7200",
+    "base_url" : "https://sync.koreader.rocks:443/",
     "name" : "api",
     "methods" : {
         "register" : {
