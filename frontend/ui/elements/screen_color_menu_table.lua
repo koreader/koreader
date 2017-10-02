@@ -8,7 +8,7 @@ return {
     enabled_func = Screen.isColorScreen,
     checked_func = Screen.isColorEnabled,
     callback = function()
-        G_reader_settings:flipNilOrTrue("color_rendering")
+        G_reader_settings:saveSetting("color_rendering", not Screen.isColorEnabled())
         UIManager:broadcastEvent(Event:new("ColorRenderingUpdate"))
     end
 }
