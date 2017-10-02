@@ -1,7 +1,5 @@
 local Generic = require("device/generic/device") -- <= look at this file!
 local logger = require("logger")
-local ffi = require("ffi")
-local inkview = ffi.load("inkview")
 
 -- luacheck: push
 -- luacheck: ignore
@@ -38,16 +36,12 @@ local KEY_COVEROPEN	= 0x02
 local KEY_COVERCLOSE	= 0x03
 -- luacheck: pop
 
-ffi.cdef[[
-int sscanf(const char *str, const char *fmt, ...);
-char *GetSoftwareVersion(void);
-]]
-
 local function yes() return true end
 
 local function pocketbookEnableWifi(toggle)
     os.execute("/ebrmain/bin/netagent " .. (toggle == 1 and "connect" or "disconnect"))
 end
+
 
 local PocketBook = Generic:new{
     model = "PocketBook",
@@ -131,12 +125,5 @@ function PocketBook840:init()
     PocketBook.init(self)
 end
 
-local device_type = ffi.new("int[1]")
-
-ffi.C.sscanf(inkview.GetSoftwareVersion(), "%*[^0-9]%u.%*u.%*u.%*u", device_type)
-
-if device_type[0] == 840 then
-    return PocketBook840
-else
-    return PocketBook
-end
+-- should check device model before return to support other PocketBook models
+return PocketBook840
