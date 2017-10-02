@@ -94,6 +94,8 @@ function ReaderRolling:init()
     table.insert(self.ui.postInitCallback, function()
         self.doc_height = self.ui.document.info.doc_height
         self.old_doc_height = self.doc_height
+        self.ui.document:_readMetadata()
+        self.old_page = self.ui.document.info.number_of_pages
     end)
     self.ui.menu:registerToMainMenu(self)
 end

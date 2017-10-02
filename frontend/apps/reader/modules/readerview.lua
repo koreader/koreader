@@ -746,9 +746,11 @@ function ReaderView:onMarginUpdate()
 end
 
 function ReaderView:onSetViewMode(new_mode)
-    self.view_mode = new_mode
-    self.ui.document:setViewMode(new_mode)
-    self.ui:handleEvent(Event:new("ChangeViewMode"))
+    if new_mode ~= self.view_mode then
+        self.view_mode = new_mode
+        self.ui.document:setViewMode(new_mode)
+        self.ui:handleEvent(Event:new("ChangeViewMode"))
+    end
     return true
 end
 
