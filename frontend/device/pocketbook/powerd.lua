@@ -10,7 +10,7 @@ void SetFrontlightState(int flstate);
 
 local PocketBookPowerD = BasePowerD:new{
     is_charging = nil,
-    fl_min = -1,
+    fl_min = 0,
     fl_max = 100,
     batt_capacity_file = "/sys/devices/platform/sun5i-i2c.0/i2c-0/0-0034/axp20-supplyer.28/power_supply/battery/capacity",
     is_charging_file = "/sys/devices/platform/sun5i-i2c.0/i2c-0/0-0034/axp20-supplyer.28/power_supply/battery/status",
@@ -27,7 +27,11 @@ function PocketBookPowerD:frontlightIntensityHW()
 end
 
 function PocketBookPowerD:setIntensityHW(intensity)
-    inkview.SetFrontlightState(intensity)
+    if intensity == 0 then
+        inkview.SetFrontlightState(-1)
+    else
+        inkview.SetFrontlightState(intensity)
+    end
 end
 
 function PocketBookPowerD:getCapacityHW()
