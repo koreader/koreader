@@ -4,7 +4,7 @@ Handles append-mostly data such as KOReader's bookmarks and dictionary search hi
 
 local LuaSettings = require("luasettings")
 local dump = require("dump")
-local logger = require("logger")
+--local logger = require("logger")
 local util = require("util")
 
 local LuaData = LuaSettings:new{
