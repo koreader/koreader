@@ -166,9 +166,7 @@ end
 
 function ReaderRolling:onReaderReady()
     self:setupTouchZones()
-    self.ui:registerPostReadyCallback(function()
-        self.setupXpointer()
-    end)
+    self.setupXpointer()
 end
 
 function ReaderRolling:setupTouchZones()
@@ -282,11 +280,7 @@ end
 
 function ReaderRolling:getLastPercent()
     if self.view.view_mode == "page" then
-        if self.old_page then
-            return self.current_page / self.old_page
-        else
-            return nil
-        end
+        return self.current_page / self.old_page
     else
         -- FIXME: the calculated percent is not accurate in "scroll" mode.
         return self.ui.document:getPosFromXPointer(
@@ -483,9 +477,7 @@ function ReaderRolling:updatePos()
     local new_height = self.ui.document.info.doc_height
     local new_page = self.ui.document.info.number_of_pages
     if self.old_doc_height ~= new_height or self.old_page ~= new_page then
-        if self.old_page then
-            self:_gotoXPointer(self.xpointer)
-        end
+        self:_gotoXPointer(self.xpointer)
         self.old_doc_height = new_height
         self.old_page = new_page
         self.ui:handleEvent(Event:new("UpdateToc"))
@@ -499,12 +491,11 @@ end
 function ReaderRolling:onChangeViewMode()
     self.ui.document:_readMetadata()
     self.old_doc_height = self.ui.document.info.doc_height
-    local old_page = self.old_page
     self.old_page = self.ui.document.info.number_of_pages
     self.ui:handleEvent(Event:new("UpdateToc"))
-    if self.xpointer and old_page then
+    if self.xpointer then
         self:_gotoXPointer(self.xpointer)
-    elseif self.xpointer == nil then
+    else
         table.insert(self.ui.postInitCallback, function()
             self:_gotoXPointer(self.xpointer)
         end)
