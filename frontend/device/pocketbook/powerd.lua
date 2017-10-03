@@ -1,18 +1,37 @@
 local BasePowerD = require("device/generic/powerd")
 local ffi = require("ffi")
--- local inkview = ffi.load("inkview")
+local inkview = ffi.load("inkview")
 
 ffi.cdef[[
-int IsCharging();
+void OpenScreen();
+int GetFrontlightState(void);
+void SetFrontlightState(int flstate);
 ]]
 
 local PocketBookPowerD = BasePowerD:new{
     is_charging = nil,
+    fl_min = 0,
+    fl_max = 100,
     batt_capacity_file = "/sys/devices/platform/sun5i-i2c.0/i2c-0/0-0034/axp20-supplyer.28/power_supply/battery/capacity",
     is_charging_file = "/sys/devices/platform/sun5i-i2c.0/i2c-0/0-0034/axp20-supplyer.28/power_supply/battery/status",
 }
 
 function PocketBookPowerD:init()
+    -- needed for SetFrontlightState / GetFrontlightState
+    inkview.OpenScreen()
+end
+
+function PocketBookPowerD:frontlightIntensityHW()
+    if not self.device.hasFrontlight() then return 0 end
+    return inkview.GetFrontlightState()
+end
+
+function PocketBookPowerD:setIntensityHW(intensity)
+    if intensity == 0 then
+        inkview.SetFrontlightState(-1)
+    else
+        inkview.SetFrontlightState(intensity)
+    end
 end
 
 function PocketBookPowerD:getCapacityHW()
