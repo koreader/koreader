@@ -14,7 +14,9 @@ normally be found in the KOReader directory:
 * `.adds/koreader/` directory for Kobo
 * `applications/koreader/` directory for Pocketbook
 
-Please try to include only the relevant sections or otherwise a link to the full log.
-You can use one of these services, but don't forget to set a high expiration date.
+Please try to include the relevant sections in your issue description.
+You can upload the whole `crash.log` file on GitHub by dragging and
+dropping it onto this textbox, or you can use one of these paste services.
+Please don't forget to set a high expiration date if you do.
 https://pastebin.com https://slexy.org https://paste2.org https://fpaste.org
-http://ix.io https://paste.kde.org https://paste.debian.net
+http://ix.io https://paste.kde.org https://paste.debian.net.
