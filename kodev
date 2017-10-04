@@ -1,6 +1,7 @@
 #!/bin/bash
 
 CURDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VERSION=$(git describe HEAD)
 
 function assert_ret_zero() {
     if [ "$1" -ne 0 ]; then
@@ -351,7 +352,7 @@ function kodev-wbuilder() {
 
 function kodev-run() {
     RUN_HELP_MSG="
-usage: run <OPTIONS> <ARGS>
+usage: run <OPTIONS> <TARGET>
 
 OPTIONS:
 
@@ -363,6 +364,10 @@ OPTIONS:
     -s=FOO --simulate=FOO    simulate dimension and other specs for a given device model
                              supported model: kobo-aura-one, kindle3, hidpi
     --graph                  graph memory use (requires gnuplot)
+
+TARGET:
+
+    android         install and run KOReader on an Android device connected through ADB
     "
     screen_width=540
     screen_height=720
@@ -429,48 +434,68 @@ OPTIONS:
         shift
     done
 
-    if [ ! ${no_build} ]; then
-        echo "[*] Building KOReader..."
-        kodev-build
-    else
-        setup_env
-    fi
+    case $1 in
+        android)
+            command -v adb >/dev/null && {
+                if [ ! ${no_build} ]; then
+                    echo "[*] Building KOReader for Android…"
+                    kodev-release --ignore-translation android
+                fi
+                # clear logcat to get rid of useless cruft
+                adb logcat -c
+                # uninstall existing package to make sure *everything* is gone from memory
+                adb uninstall "org.koreader.launcher"
+                adb install "koreader-android-arm-linux-androideabi-${VERSION}.apk"
+                # there's no adb run so we do this…
+                adb shell monkey -p org.koreader.launcher -c android.intent.category.LAUNCHER 1
+                adb logcat
+            } || echo "Failed to find adb in PATH to interact with Android device."
+            ;;
+        *)
+            if [ ! ${no_build} ]; then
+                echo "[*] Building KOReader…"
+                kodev-build
+            else
+                setup_env
+            fi
 
-    if [ ! -d "${EMU_DIR}" ]; then
-        echo "Failed to find emulator directory! Please try build command first."
-        exit 1
-    fi
+            if [ ! -d "${EMU_DIR}" ]; then
+                echo "Failed to find emulator directory! Please try build command first."
+                exit 1
+            fi
 
-    if [ ${graph_memory} ]; then
-        gnuplot_wrapper "--parent $$" "reader.lua"
-    fi
+            if [ ${graph_memory} ]; then
+                gnuplot_wrapper "--parent $$" "reader.lua"
+            fi
 
-    # run with catchsegv by default when it is available
-    # see https://github.com/koreader/koreader/issues/2878#issuecomment-326796777
-    if command -v catchsegv >/dev/null; then
-        CATCHSEGV=$(which catchsegv)
-    fi
+            # run with catchsegv by default when it is available
+            # see https://github.com/koreader/koreader/issues/2878#issuecomment-326796777
+            if command -v catchsegv >/dev/null; then
+                CATCHSEGV=$(which catchsegv)
+            fi
 
-    echo "[*] Running KOReader with arguments: $*..."
-    pushd "${EMU_DIR}" && {
-        if [ $# -lt 1 ]; then
-            args=${CURDIR}/test
-        else
-            args="$*"
-            [[ $args != /* ]] && args="${CURDIR}/${args}"
-        fi
+            echo "[*] Running KOReader with arguments: $*..."
+            pushd "${EMU_DIR}" && {
+                if [ $# -lt 1 ]; then
+                    args=${CURDIR}/test
+                else
+                    args="$*"
+                    [[ $args != /* ]] && args="${CURDIR}/${args}"
+                fi
 
-        RETURN_VALUE=85
-        while [ $RETURN_VALUE -eq 85 ]; do
-            EMULATE_READER_W=${screen_width} EMULATE_READER_H=${screen_height} EMULATE_READER_DPI=${screen_dpi} \
-                $CATCHSEGV ./reader.lua -d "$args"
-            RETURN_VALUE=$?
-        done
-    } && popd || exit
+                RETURN_VALUE=85
+                while [ $RETURN_VALUE -eq 85 ]; do
+                    EMULATE_READER_W=${screen_width} EMULATE_READER_H=${screen_height} EMULATE_READER_DPI=${screen_dpi} \
+                        $CATCHSEGV ./reader.lua -d "$args"
+                    RETURN_VALUE=$?
+                done
+            } && popd || exit
 
-    if [ ${graph_memory} ]; then
-        capture_ctrl_c
-    fi
+            if [ ${graph_memory} ]; then
+                capture_ctrl_c
+            fi
+            ;;
+    esac
 }
 
 function kodev-test() {
