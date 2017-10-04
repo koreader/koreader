@@ -97,6 +97,9 @@ function ReaderRolling:init()
         self.ui.document:_readMetadata()
         self.old_page = self.ui.document.info.number_of_pages
     end)
+    table.insert(self.ui.postReaderCallback, function()
+        self:updatePos()
+    end)
     self.ui.menu:registerToMainMenu(self)
 end
 
@@ -466,6 +469,12 @@ end
     Note that xpointer should not be changed.
 --]]
 function ReaderRolling:onUpdatePos()
+    if self.ui.postReaderCallback ~= nil then -- ReaderUI:init() not yet done
+        -- Don't schedule any updatePos as long as ReaderUI:init() is
+        -- not finished (one will be called in the ui.postReaderCallback
+        -- we have set above) to avoid multiple refreshs.
+        return true
+    end
     UIManager:scheduleIn(0.1, function () self:updatePos() end)
     return true
 end
