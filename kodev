@@ -3,6 +3,10 @@
 CURDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VERSION=$(git describe HEAD)
 
+# Default to Android 4.0+; required for NDK 15 but with a custom NDK the strict minimum is 9.
+NDKABI=${NDKABI:-14}
+export NDKABI
+
 function assert_ret_zero() {
     if [ "$1" -ne 0 ]; then
         if [ ! -z "$2" ]; then
