@@ -1569,7 +1569,7 @@ function ReaderStatistics:deleteBook(id_book)
 end
 
 function ReaderStatistics:onPageUpdate(pageno)
-    if self:isDocless() or not self.is_enabled then
+    if self:isDocless() or not self.is_enabled or pageno == self.curr_page then
         return
     end
     self.curr_page = pageno
