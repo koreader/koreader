@@ -20,6 +20,7 @@ local Screen = require("device").screen
 local ScrollTextWidget = require("ui/widget/scrolltextwidget")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
+local https = require('ssl.https')
 local T = require("ffi/util").template
 local _ = require("gettext")
 
@@ -192,8 +193,7 @@ function GoodreadsBook:genBookInfoGroup()
         HorizontalSpan:new{ width =  split_span_width }
     }
     -- thumbnail
-    local http = require("socket.http")
-    local body = http.request(self.dates.image)
+    local body = https.request(self.dates.image)
     local image = false
     if body then image = Pic.openJPGDocumentFromMem(body) end
     if image then
