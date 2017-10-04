@@ -360,8 +360,9 @@ OPTIONS:
     -d=X, --screen-dpi=X     set DPI of the emulator screen (default: 160)
     --no-build               run reader without rebuilding
     --disable-touch          use this if you want to simulate keyboard only devices
-    -s=FOO --simulate=FOO    simulate dimension and other specs for a given device model
+    -s=FOO, --simulate=FOO   simulate dimension and other specs for a given device model
                              supported model: kobo-aura-one, kindle3, hidpi
+    -c=X, --commit=X         run commit or tag (git checkout X && git submodule update --recursive)
     --graph                  graph memory use (requires gnuplot)
     "
     screen_width=540
@@ -378,6 +379,9 @@ OPTIONS:
                 ;;
             --graph)
                 graph_memory=true
+                ;;
+            -c | --commit)
+                checkout_hash=${VALUE}
                 ;;
             -w | --screen-width)
                 screen_width=${VALUE}
@@ -428,6 +432,11 @@ OPTIONS:
         esac
         shift
     done
+
+    if [ -n "${checkout_hash+x}" ]; then
+        git checkout "${checkout_hash}"
+        git submodule update --recursive
+    fi
 
     if [ ! ${no_build} ]; then
         echo "[*] Building KOReader..."
