@@ -4,7 +4,6 @@ local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local url = require('socket.url')
 local socket = require('socket')
-local http = require('socket.http')
 local https = require('ssl.https')
 local ltn12 = require('ltn12')
 local _ = require("gettext")
@@ -26,7 +25,7 @@ local function genSearchURL(text_search, userApi, search_type, npage)
         text_search = string.gsub (text_search, " ", "+")
     end
     return (string.format(
-        "http://www.goodreads.com/search?q=%s&search[field]=%s&format=xml&key=%s&page=%s",
+        "https://www.goodreads.com/search?q=%s&search[field]=%s&format=xml&key=%s&page=%s",
         text_search,
         search_type,
         userApi,
@@ -48,10 +47,9 @@ function GoodreadsApi:fetchXml(s_url)
     request['url'] = s_url
     request['method'] = 'GET'
     request['sink'] = ltn12.sink.table(sink)
-    http.TIMEOUT = 5
     https.TIMEOUT = 5
-    local httpRequest = parsed.scheme == 'http' and http.request or https.request
-    local headers = socket.skip(1, httpRequest(request))
+    local httpsRequest = parsed.scheme == 'https' and https.request
+    local headers = socket.skip(1, httpsRequest(request))
     if headers == nil then
         return nil
     end
