@@ -472,7 +472,7 @@ function ReaderRolling:onUpdatePos()
     if self.ui.postReaderCallback ~= nil then -- ReaderUI:init() not yet done
         -- Don't schedule any updatePos as long as ReaderUI:init() is
         -- not finished (one will be called in the ui.postReaderCallback
-        -- we have set above) to avoid multiple refreshs.
+        -- we have set above) to avoid multiple refreshes.
         return true
     end
     UIManager:scheduleIn(0.1, function () self:updatePos() end)
