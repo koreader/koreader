@@ -1568,6 +1568,10 @@ function ReaderStatistics:deleteBook(id_book)
     conn:close()
 end
 
+function ReaderStatistics:onPageUpdate(pos, pageno)
+    self:onPageUpdate(pageno)
+end
+
 function ReaderStatistics:onPageUpdate(pageno)
     if self:isDocless() or not self.is_enabled then
         return

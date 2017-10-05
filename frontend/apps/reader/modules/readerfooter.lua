@@ -568,9 +568,14 @@ function ReaderFooter:onPageUpdate(pageno)
     self:updateFooterPage()
 end
 
-function ReaderFooter:onPosUpdate(pos)
+function ReaderFooter:onPosUpdate(pos, pageno)
     self.position = pos
     self.doc_height = self.view.document.info.doc_height
+    if pageno then
+        self.pageno = pageno
+        self.pages = self.view.document:getPageCount()
+        self.ui.doc_settings:saveSetting("doc_pages", self.pages) -- for Book information
+    end
     self:updateFooterPos()
 end
 
