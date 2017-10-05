@@ -72,6 +72,10 @@ function ReaderToc:onPageUpdate(pageno)
     self.pageno = pageno
 end
 
+function ReaderToc:onPosUpdate(pos, pageno)
+    self.pageno = pageno
+end
+
 function ReaderToc:fillToc()
     if self.toc and #self.toc > 0 then return end
     self.toc = self.ui.document:getToc()

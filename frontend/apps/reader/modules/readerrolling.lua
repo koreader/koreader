@@ -43,6 +43,7 @@ local ReaderRolling = InputContainer:new{
     panning_steps = ReaderPanning.panning_steps,
     show_overlap_enable = nil,
     overlap = 20,
+    cre_top_bar_enabled = false,
 }
 
 function ReaderRolling:init()
@@ -145,6 +146,8 @@ function ReaderRolling:onReadSettings(config)
         self.show_overlap_enable = DSHOWOVERLAP
     end
     self.inverse_reading_order = config:readSetting("inverse_reading_order") or false
+
+    self:onSetStatusLine(config:readSetting("copt_status_line") or DCREREADER_PROGRESS_BAR)
 end
 
 -- in scroll mode percent_finished must be save before close document
@@ -555,7 +558,10 @@ function ReaderRolling:_gotoPos(new_pos)
             self.view.dim_area.y = 0
         end
     end
-    self.ui:handleEvent(Event:new("PosUpdate", new_pos))
+    -- The current page we get in scroll mode may be a bit innacurate,
+    -- but we give it anyway to onPosUpdate so footer and statistics can
+    -- keep up with page.
+    self.ui:handleEvent(Event:new("PosUpdate", new_pos, self.ui.document:getCurrentPage()))
 end
 
 function ReaderRolling:_gotoPercent(new_percent)
@@ -585,9 +591,13 @@ function ReaderRolling:updatePageLink()
     self.view.links = links
 end
 
+function ReaderRolling:onSetStatusLine(status_line)
+    self.cre_top_bar_enabled = status_line == 0
+end
+
 function ReaderRolling:updateBatteryState()
-    logger.dbg("update battery state")
-    if self.view.view_mode == "page" then
+    if self.view.view_mode == "page" and self.cre_top_bar_enabled then
+        logger.dbg("update battery state")
         local powerd = Device:getPowerDevice()
         -- -1 is CR_BATTERY_STATE_CHARGING @ crengine/crengine/include/lvdocview.h
         local state = powerd:isCharging() and -1 or powerd:getCapacity()
