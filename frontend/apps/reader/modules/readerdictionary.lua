@@ -152,8 +152,10 @@ function ReaderDictionary:addToMainMenu(menu_items)
         end,
         callback = function()
             local lookup_history = LuaData:open(self.ui.doc_settings.sidecar .. "/lookup_history.lua", "LookupHistory")
+            local lookup_history_table = lookup_history:readSetting("lookup_history")
             local kv_pairs = {}
-            for key, value in ipairs(lookup_history:readSetting("lookup_history")) do
+            for i = #lookup_history_table, 1, -1 do
+            local value = lookup_history_table[i]
                 table.insert(kv_pairs, {
                     os.date("%Y-%m-%d %H:%M:%S", value.time),
                     value.word,
