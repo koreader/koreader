@@ -402,7 +402,9 @@ function ReaderHighlight:onHoldRelease()
                         callback = function()
                             UIManager:scheduleIn(0.1, function()
                                 self:lookupWikipedia()
-                                self:onClose()
+                                -- We don't call self:onClose(), we need the highlight
+                                -- to still be there, as we may Highlight it from the
+                                -- dict lookup widget
                             end)
                         end,
                     },
@@ -410,7 +412,7 @@ function ReaderHighlight:onHoldRelease()
                         text = _("Dictionary"),
                         callback = function()
                             self:onHighlightDictLookup()
-                            self:onClose()
+                            -- We don't call self:onClose(), same reason as above
                         end,
                     },
                 },
