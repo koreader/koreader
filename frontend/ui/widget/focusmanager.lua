@@ -73,8 +73,15 @@ function FocusManager:onFocusMove(args)
             end
         else
             self.selected.y = self.selected.y + dy
+            if #self.layout[self.selected.y] == 0 then -- horizontal separator
+                self.selected.y = self.selected.y + dy -- skip it
+            end
         end
         self.selected.x = self.selected.x + dx
+        if self.selected.x > #self.layout[self.selected.y] then
+            -- smaller nb of items on new row than on prev row
+            self.selected.x = #self.layout[self.selected.y]
+        end
 
         if self.layout[self.selected.y][self.selected.x] ~= current_item
         or not self.layout[self.selected.y][self.selected.x].is_inactive then
