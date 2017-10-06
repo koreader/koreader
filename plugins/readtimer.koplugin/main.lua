@@ -82,7 +82,7 @@ function ReadTimer:addToMainMenu(menu_items)
                                     text = T(_("Timer set at: %1:%2\nIt's %3 hour(s) and %4 minute(s) from now"),
                                         string.format("%02d", time.hour), string.format("%02d", time.min),
                                         math.floor(seconds/3600), math.floor((seconds%3600)/60)),
-                                    timeout = 3,
+                                    timeout = 5,
                                 })
                             --current time or time > 18h
                             elseif seconds == 0 or seconds >= 18*3600 then
