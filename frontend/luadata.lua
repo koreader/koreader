@@ -59,15 +59,23 @@ function LuaData:delSetting(key)
     return self
 end
 
---- Adds item to the front of a table.
-function LuaSettings:addTableItem(table_name, value)
+--- Adds item to table.
+function LuaData:addTableItem(table_name, value)
     local settings_table = self:has(table_name) and self:readSetting(table_name) or {}
     table.insert(settings_table, value)
     self.data[table_name] = settings_table
-    self:append({
+    self:append{
         index = table_name,
         data = {[#settings_table] = value},
-    })
+    }
+end
+
+local _orig_removeTableItem = LuaSettings.removeTableItem
+--- Removes index from table.
+function LuaData:removeTableItem(key, index)
+    _orig_removeTableItem(self, key, index)
+    self:flush()
+    return self
 end
 
 --- Appends settings to disk.
@@ -84,9 +92,26 @@ function LuaData:append(data)
     return self
 end
 
--- none of this for LuaData
-LuaData.reset = nil
-LuaData.flush = nil
-LuaData.close = nil
+--- Replaces existing settings with table.
+function LuaData:reset(table)
+    self.data = table
+    self:flush()
+    return self
+end
+
+--- Writes all settings to disk (does not append).
+function LuaData:flush()
+    if not self.file then return end
+    local f_out = io.open(self.file, "w")
+    if f_out ~= nil then
+        os.setlocale('C', 'numeric')
+        f_out:write("-- we can read Lua syntax here!\n")
+        f_out:write(self.name.."Entry")
+        f_out:write(dump(self.data))
+        f_out:write("\n")
+        f_out:close()
+    end
+    return self
+end
 
 return LuaData
