@@ -60,14 +60,10 @@ return {
         {
             text = _("Show bottom menu"),
             checked_func = function()
-                return G_reader_settings:readSetting("show_bottom_menu") ~= false
+                return G_reader_settings:nilOrTrue("show_bottom_menu")
             end,
             callback = function()
-                local disabled = G_reader_settings:readSetting("show_bottom_menu") ~= false
-                G_reader_settings:saveSetting("show_bottom_menu", not disabled)
-                UIManager:show(InfoMessage:new{
-                    text = _("This will take effect on next restart."),
-                })
+                G_reader_settings:flipNilOrTrue("show_bottom_menu")
             end,
         },
     }
