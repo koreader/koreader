@@ -79,15 +79,16 @@ function ReadTimer:addToMainMenu(menu_items)
                                 self.time = os.time() + seconds
                                 UIManager:scheduleIn(seconds, self.alarm_callback)
                                 UIManager:show(InfoMessage:new{
-                                    text = T(_("Timer set at: %1:%2"), string.format("%02d", time.hour),
-                                        string.format("%02d", time.min)),
-                                    timeout = 3,
+                                    text = T(_("Timer set to: %1:%2\nIt's %3 hour(s) and %4 minute(s) from now"),
+                                        string.format("%02d", time.hour), string.format("%02d", time.min),
+                                        math.floor(seconds/3600), math.floor((seconds%3600)/60)),
+                                    timeout = 5,
                                 })
                             --current time or time > 18h
                             elseif seconds == 0 or seconds >= 18*3600 then
                                 UIManager:show(InfoMessage:new{
                                     text = _("Timer could not be set. You have selected current time or time in past"),
-                                    timeout = 3,
+                                    timeout = 5,
                                 })
                             end
                         end
@@ -112,7 +113,7 @@ function ReadTimer:addToMainMenu(menu_items)
                                 UIManager:scheduleIn(seconds, self.alarm_callback)
                                 UIManager:show(InfoMessage:new{
                                     text = T(_("Timer is set to %1 hour(s) and %2 minute(s)"), time.hour, time.min),
-                                    timeout = 3,
+                                    timeout = 5,
                                 })
                             end
                         end
