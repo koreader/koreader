@@ -4,11 +4,12 @@ Handles append-mostly data such as KOReader's bookmarks and dictionary search hi
 
 local LuaSettings = require("luasettings")
 local dump = require("dump")
---local logger = require("logger")
+local logger = require("logger")
 local util = require("util")
 
 local LuaData = LuaSettings:new{
-    name = nil,
+    name = "",
+    max_backups = 9,
 }
 --- Opens a LuaData file.
 function LuaData:open(file_path, name)
@@ -32,10 +33,30 @@ function LuaData:open(file_path, name)
             else
                 new.data[table.index] = table.data
             end
+        -- we've got it all at once
+        else
+            new.data = table
         end
     end
 
-    pcall(dofile, new.file)
+    local ok = pcall(dofile, new.file)
+
+    if ok then
+        logger.dbg("data is read from ", new.file)
+    else
+        logger.dbg(new.file, " is invalid, remove.")
+        os.remove(new.file)
+        for i=1, self.max_backups, 1 do
+            local backup_file = new.file..".old."..i
+            if pcall(dofile, backup_file) then
+                logger.dbg("data is read from ", backup_file)
+                break
+            else
+                logger.dbg(backup_file, " is invalid, remove.")
+                os.remove(backup_file)
+            end
+        end
+    end
 
     return setmetatable(new, {__index = LuaData})
 end
@@ -43,19 +64,19 @@ end
 --- Saves a setting.
 function LuaData:saveSetting(key, value)
     self.data[key] = value
-    self:append({
+    self:append{
         index = key,
         data = value,
-    })
+    }
     return self
 end
 
 --- Deletes a setting.
 function LuaData:delSetting(key)
     self.data[key] = nil
-    self:append({
+    self:append{
         index = key,
-    })
+    }
     return self
 end
 
@@ -102,6 +123,21 @@ end
 --- Writes all settings to disk (does not append).
 function LuaData:flush()
     if not self.file then return end
+
+    if lfs.attributes(self.file, "mode") == "file" then
+        for i=1, self.max_backups, 1 do
+            if lfs.attributes(self.file..".old."..i, "mode") == "file" then
+                logger.dbg("LuaData: Rename ", self.file .. ".old." .. i, " to ", self.file .. ".old." .. i+1)
+                os.rename(self.file, self.file .. ".old." .. i+1)
+            else
+                break
+            end
+        end
+        logger.dbg("LuaData: Rename ", self.file, " to ", self.file .. ".old.1")
+        os.rename(self.file, self.file .. ".old.1")
+    end
+
+    logger.dbg("LuaData: Write to ", self.file)
     local f_out = io.open(self.file, "w")
     if f_out ~= nil then
         os.setlocale('C', 'numeric')
