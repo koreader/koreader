@@ -18,6 +18,7 @@ local T = require("ffi/util").template
 -- We'll store the list of available dictionaries as a module local
 -- so we only have to look for them on the first :init()
 local available_ifos = nil
+local lookup_history = nil
 
 local function getIfosInDir(path)
     -- Get all the .ifo under directory path.
@@ -98,6 +99,9 @@ function ReaderDictionary:init()
     end
     -- Prepare the -u options to give to sdcv if some dictionaries are disabled
     self:updateSdcvDictNamesOptions()
+    if not lookup_history then
+        lookup_history = LuaData:open(DataStorage:getSettingsDir() .. "/lookup_history.lua", { name = "LookupHistory" })
+    end
 end
 
 function ReaderDictionary:updateSdcvDictNamesOptions()
@@ -147,15 +151,18 @@ function ReaderDictionary:addToMainMenu(menu_items)
     menu_items.dictionary_lookup_history = {
         text = _("Dictionary lookup history"),
         enabled_func = function()
-            local lookup_history = LuaData:open(self.ui.doc_settings.sidecar .. "/lookup_history.lua", "LookupHistory")
             return lookup_history:has("lookup_history")
         end,
         callback = function()
-            local lookup_history = LuaData:open(self.ui.doc_settings.sidecar .. "/lookup_history.lua", "LookupHistory")
             local lookup_history_table = lookup_history:readSetting("lookup_history")
             local kv_pairs = {}
+            local previous_title
             for i = #lookup_history_table, 1, -1 do
-            local value = lookup_history_table[i]
+                local value = lookup_history_table[i]
+                if value.book_title ~= previous_title then
+                    table.insert(kv_pairs, { value.book_title..":", "" })
+                end
+                previous_title = value.book_title
                 table.insert(kv_pairs, {
                     os.date("%Y-%m-%d %H:%M:%S", value.time),
                     value.word,
@@ -358,8 +365,9 @@ function ReaderDictionary:stardictLookup(word, box, link)
         return
     end
 
-    local lookup_history = LuaData:open(self.ui.doc_settings.sidecar .. "/lookup_history.lua", "LookupHistory")
+    local book_title = self.ui.doc_settings and self.ui.doc_settings:readSetting("doc_props").title or _("Dictionary lookup")
     lookup_history:addTableItem("lookup_history", {
+        book_title = book_title,
         time = os.time(),
         word = word,
     })
