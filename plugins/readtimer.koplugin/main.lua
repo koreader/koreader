@@ -79,7 +79,7 @@ function ReadTimer:addToMainMenu(menu_items)
                                 self.time = os.time() + seconds
                                 UIManager:scheduleIn(seconds, self.alarm_callback)
                                 UIManager:show(InfoMessage:new{
-                                    text = T(_("Timer set at: %1:%2\nIt's %3 hour(s) and %4 minute(s) from now"),
+                                    text = T(_("Timer set to: %1:%2\nIt's %3 hour(s) and %4 minute(s) from now"),
                                         string.format("%02d", time.hour), string.format("%02d", time.min),
                                         math.floor(seconds/3600), math.floor((seconds%3600)/60)),
                                     timeout = 5,
