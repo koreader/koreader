@@ -11,9 +11,13 @@ local LuaData = LuaSettings:new{
     name = "",
     max_backups = 9,
 }
---- Opens a LuaData file.
-function LuaData:open(file_path, name)
-    if name then self.name = name end
+
+--- Creates a new LuaData instance.
+function LuaData:open(file_path, o) -- luacheck: ignore 312
+    -- always initiate a new instance
+    -- careful, `o` is already a table so we use parentheses
+    self = LuaData:new(o)
+
     local new = {file=file_path, data={}}
 
     -- some magic to allow for self-describing function names
@@ -58,7 +62,7 @@ function LuaData:open(file_path, name)
         end
     end
 
-    return setmetatable(new, {__index = LuaData})
+    return setmetatable(new, {__index = self})
 end
 
 --- Saves a setting.
