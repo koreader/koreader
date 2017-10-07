@@ -1,5 +1,7 @@
 local Generic = require("device/generic/device") -- <= look at this file!
 local logger = require("logger")
+local ffi = require("ffi")
+local inkview = ffi.load("inkview")
 
 -- luacheck: push
 -- luacheck: ignore
@@ -36,12 +38,16 @@ local KEY_COVEROPEN	= 0x02
 local KEY_COVERCLOSE	= 0x03
 -- luacheck: pop
 
+ffi.cdef[[
+char *GetSoftwareVersion(void);
+char *GetDeviceModel(void);
+]]
+
 local function yes() return true end
 
 local function pocketbookEnableWifi(toggle)
     os.execute("/ebrmain/bin/netagent " .. (toggle == 1 and "connect" or "disconnect"))
 end
-
 
 local PocketBook = Generic:new{
     model = "PocketBook",
@@ -103,6 +109,18 @@ function PocketBook:initNetworkManager(NetworkMgr)
     end
 end
 
+function PocketBook:getSoftwareVersion()
+    version =  ffi.string(inkview.GetSoftwareVersion())
+    logger.info("SoftwareVersion: ", version)
+    return version
+end
+
+function PocketBook:getDeviceModel()
+    model =  ffi.string(inkview.GetDeviceModel())
+    logger.info("DeviceModel: ", model)
+    return model
+end
+
 local PocketBook840 = PocketBook:new{
     isTouchDevice = yes,
     hasKeys = yes,
@@ -125,5 +143,7 @@ function PocketBook840:init()
     PocketBook.init(self)
 end
 
--- should check device model before return to support other PocketBook models
+PocketBook:getSoftwareVersion()
+PocketBook:getDeviceModel()
+
 return PocketBook840
