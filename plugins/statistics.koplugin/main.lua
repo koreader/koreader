@@ -1690,6 +1690,7 @@ end
 function ReaderStatistics:onReaderReady()
     -- we have correct page count now, do the actual initialization work
     self:initData()
+    self.view.footer:updateFooter()
 end
 
 return ReaderStatistics
