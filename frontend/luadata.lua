@@ -3,6 +3,7 @@ Handles append-mostly data such as KOReader's bookmarks and dictionary search hi
 ]]
 
 local LuaSettings = require("luasettings")
+local dbg = require("dbg")
 local dump = require("dump")
 local logger = require("logger")
 local util = require("util")
@@ -14,6 +15,13 @@ local LuaData = LuaSettings:new{
 
 --- Creates a new LuaData instance.
 function LuaData:open(file_path, o) -- luacheck: ignore 312
+    if o and type(o) ~= "table" then
+        if dbg.is_on then
+            error("LuaData: got "..type(o)..", table expected")
+        else
+            o = {}
+        end
+    end
     -- always initiate a new instance
     -- careful, `o` is already a table so we use parentheses
     self = LuaData:new(o)
