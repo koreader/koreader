@@ -27,6 +27,7 @@ local ButtonTable = FocusManager:new{
 }
 
 function ButtonTable:init()
+    self.selected = { x = 1, y = 1 }
     self.buttons_layout = {}
     self.container = VerticalGroup:new{ width = self.width }
     table.insert(self, self.container)
