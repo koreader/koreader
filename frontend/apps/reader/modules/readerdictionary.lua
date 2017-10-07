@@ -53,6 +53,7 @@ end
 local ReaderDictionary = InputContainer:new{
     data_dir = nil,
     dict_window_list = {},
+    disable_lookup_history = G_reader_settings:isTrue("disable_lookup_history"),
     lookup_msg = _("Searching dictionary for:\n%1"),
 }
 
@@ -217,6 +218,29 @@ If you'd like to change the order in which dictionaries are queried (and their r
                     self:makeDisableFuzzyDefault(self.disable_fuzzy_search)
                 end,
             },
+            {
+                text = _("Disable dictionary lookup history"),
+                checked_func = function()
+                    return self.disable_lookup_history
+                end,
+                callback = function()
+                    self.disable_lookup_history = not self.disable_lookup_history
+                    G_reader_settings:saveSetting("disable_lookup_history", self.disable_lookup_history)
+                end,
+            },
+            {
+                text = _("Clean dictionary lookup history"),
+                callback = function()
+                    UIManager:show(ConfirmBox:new{
+                        text = _("Clean dictionary lookup history?"),
+                        ok_text = _("Clean"),
+                        ok_callback = function()
+                            -- empty data table to replace current one
+                            lookup_history:reset{}
+                        end,
+                    })
+                end,
+            },
             { -- setting used by dictquicklookup
                 text = _("Justify text"),
                 checked_func = function()
@@ -365,12 +389,14 @@ function ReaderDictionary:stardictLookup(word, box, link)
         return
     end
 
-    local book_title = self.ui.doc_settings and self.ui.doc_settings:readSetting("doc_props").title or _("Dictionary lookup")
-    lookup_history:addTableItem("lookup_history", {
-        book_title = book_title,
-        time = os.time(),
-        word = word,
-    })
+    if not self.disable_lookup_history then
+        local book_title = self.ui.doc_settings and self.ui.doc_settings:readSetting("doc_props").title or _("Dictionary lookup")
+        lookup_history:addTableItem("lookup_history", {
+            book_title = book_title,
+            time = os.time(),
+            word = word,
+        })
+    end
 
     if not self.disable_fuzzy_search then
         self:showLookupInfo(word)
@@ -545,6 +571,11 @@ function ReaderDictionary:makeDisableFuzzyDefault(disable_fuzzy_search)
             disable_fuzzy_search
             and _("Disable fuzzy search by default?")
             or _("Enable fuzzy search by default?")
+        ),
+        ok_text = T(
+            disable_fuzzy_search
+            and _("Disable")
+            or _("Enable")
         ),
         ok_callback = function()
             G_reader_settings:saveSetting("disable_fuzzy_search", disable_fuzzy_search)
