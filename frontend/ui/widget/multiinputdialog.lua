@@ -10,6 +10,7 @@ local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
+local VerticalSpan = require("ui/widget/verticalspan")
 local _ = require("gettext")
 local Screen = Device.screen
 
@@ -75,6 +76,14 @@ function MultiInputDialog:init()
         })
     end
 
+    -- Add same vertical space after than before InputText
+    table.insert(VerticalGroupData,CenterContainer:new{
+        dimen = Geom:new{
+            w = self.title_bar:getSize().w,
+            h = self.description_padding + self.description_margin,
+        },
+        VerticalSpan:new{ width = self.description_padding + self.description_margin },
+    })
     -- buttons
     table.insert(VerticalGroupData,CenterContainer:new{
         dimen = Geom:new{
