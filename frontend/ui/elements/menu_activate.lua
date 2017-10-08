@@ -58,7 +58,7 @@ return {
             separator = true,
         },
         {
-            text = _("Show bottom menu"),
+            text = _("Auto-show bottom menu"),
             checked_func = function()
                 return G_reader_settings:nilOrTrue("show_bottom_menu")
             end,
