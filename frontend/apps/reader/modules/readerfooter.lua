@@ -116,6 +116,7 @@ local ReaderFooter = WidgetContainer:extend{
     height = Screen:scaleBySize(DMINIBAR_CONTAINER_HEIGHT),
     horizontal_margin = Screen:scaleBySize(10),
     text_left_margin = Screen:scaleBySize(10),
+    bottom_padding = Screen:scaleBySize(1),
     settings = {},
     -- added to expose them to unit tests
     textGeneratorMap = footerTextGeneratorMap,
@@ -186,6 +187,7 @@ function ReaderFooter:init()
         background = Blitbuffer.COLOR_WHITE,
         bordersize = 0,
         padding = 0,
+        padding_bottom = self.bottom_padding,
     }
     self.footer_container = BottomContainer:new{
         dimen = Geom:new{ w = 0, h = self.height*2 },
