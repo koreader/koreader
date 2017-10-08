@@ -305,7 +305,9 @@ end
 
 function ReaderMenu:onSwipeShowMenu(ges)
     if self.activation_menu ~= "tap" and ges.direction == "south" then
-        self.ui:handleEvent(Event:new("ShowConfigMenu"))
+        if G_reader_settings:nilOrTrue("show_bottom_menu") then
+            self.ui:handleEvent(Event:new("ShowConfigMenu"))
+        end
         self.ui:handleEvent(Event:new("ShowReaderMenu"))
         return true
     end
@@ -313,7 +315,9 @@ end
 
 function ReaderMenu:onTapShowMenu()
     if self.activation_menu ~= "swipe" then
-        self.ui:handleEvent(Event:new("ShowConfigMenu"))
+        if G_reader_settings:nilOrTrue("show_bottom_menu") then
+            self.ui:handleEvent(Event:new("ShowConfigMenu"))
+        end
         self.ui:handleEvent(Event:new("ShowReaderMenu"))
         return true
     end
