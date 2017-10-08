@@ -384,7 +384,7 @@ function ReaderHighlight:onHoldRelease()
                 },
                 {
                     {
-                        text = "_",
+                        text = "-",
                         enabled = false,
                     },
                     {

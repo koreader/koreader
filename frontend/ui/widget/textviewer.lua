@@ -43,7 +43,7 @@ local TextViewer = InputContainer:new{
     title_margin = Size.margin.title,
     text_padding = Size.padding.large,
     text_margin = Size.margin.small,
-    button_padding = Size.padding.large,
+    button_padding = Size.padding.default,
 }
 
 function TextViewer:init()

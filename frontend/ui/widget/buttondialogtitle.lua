@@ -7,7 +7,6 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local LineWidget = require("ui/widget/linewidget")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -19,13 +18,14 @@ local Screen = Device.screen
 local ButtonDialogTitle = InputContainer:new{
     title = nil,
     title_align = nil,
+    title_face = Font:getFace("x_smalltfont"),
+    title_padding = Size.padding.large,
+    title_margin = Size.margin.title,
     buttons = nil,
     tap_close_callback = nil,
 }
 
 function ButtonDialogTitle:init()
-    self.medium_font_face = Font:getFace("ffont")
-    self.large_font_face = Font:getFace("largeffont")
     if Device:hasKeys() then
         self.key_events = {
             Close = { {"Back"}, doc = "close button dialog" }
@@ -43,31 +43,27 @@ function ButtonDialogTitle:init()
             }
         }
     end
-    local vertical_span = VerticalSpan:new{ width = Size.span.vertical_default }
     self[1] = CenterContainer:new{
         dimen = Screen:getSize(),
         FrameContainer:new{
             VerticalGroup:new{
                 align = "center",
-                vertical_span,
-                TextBoxWidget:new{
-                    text = self.title,
-                    width = Screen:getWidth() * 0.8 ,
-                    face = self.medium_font_face,
-                    bold = true,
-                    alignment = self.title_align or "left",
+                FrameContainer:new{
+                    padding = self.title_padding,
+                    margin = self.title_margin,
+                    bordersize = 0,
+                    TextBoxWidget:new{
+                        text = self.title,
+                        width = Screen:getWidth() * 0.8 ,
+                        face = self.title_face,
+                        alignment = self.title_align or "left",
+                    },
                 },
-                vertical_span,
-                LineWidget:new{
-                    dimen = Geom:new{
-                        w = Screen:getWidth() * 0.9,
-                        h = Size.line.medium,
-                    }
-                },
-                vertical_span,
+                VerticalSpan:new{ width = Size.span.vertical_default },
                 ButtonTable:new{
                     width = Screen:getWidth() * 0.9,
                     buttons = self.buttons,
+                    zero_sep = true,
                     show_parent = self,
                 },
             },
@@ -75,6 +71,7 @@ function ButtonDialogTitle:init()
             bordersize = Size.border.window,
             radius = Size.radius.window,
             padding = Size.padding.button,
+            padding_bottom = 0, -- no padding below buttontable
         }
     }
 end

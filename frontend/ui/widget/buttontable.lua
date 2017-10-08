@@ -32,7 +32,12 @@ function ButtonTable:init()
     self.container = VerticalGroup:new{ width = self.width }
     table.insert(self, self.container)
     if self.zero_sep then
-        self:addHorizontalSep()
+        -- If we're asked to add a first line, don't add a vspan before: caller
+        -- must do its own padding before.
+        -- Things look better when the first line is gray like the others.
+        self:addHorizontalSep(false, true, true)
+    else
+        self:addHorizontalSep(false, false, true)
     end
     local row_cnt = #self.buttons
     for i = 1, row_cnt do
@@ -72,9 +77,10 @@ function ButtonTable:init()
         end -- end for each button
         table.insert(self.container, horizontal_group)
         if i < row_cnt then
-            self:addHorizontalSep()
+            self:addHorizontalSep(true, true, true)
         end
     end -- end for each button line
+    self:addHorizontalSep(true, false, false)
     if Device:hasDPad() or Device:hasKeyboard() then
         self.layout = self.buttons_layout
         self.layout[1][1]:onFocus()
@@ -84,18 +90,24 @@ function ButtonTable:init()
     end
 end
 
-function ButtonTable:addHorizontalSep()
-    table.insert(self.container,
-                 VerticalSpan:new{ width = Size.span.vertical_default })
-    table.insert(self.container, LineWidget:new{
-        background = Blitbuffer.COLOR_GREY,
-        dimen = Geom:new{
-            w = self.width,
-            h = self.sep_width,
-        }
-    })
-    table.insert(self.container,
-                 VerticalSpan:new{ width = Size.span.vertical_default })
+function ButtonTable:addHorizontalSep(vspan_before, add_line, vspan_after, black_line)
+    if vspan_before then
+        table.insert(self.container,
+                     VerticalSpan:new{ width = Size.span.vertical_default })
+    end
+    if add_line then
+        table.insert(self.container, LineWidget:new{
+            background = black_line and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_GREY,
+            dimen = Geom:new{
+                w = self.width,
+                h = self.sep_width,
+            }
+        })
+    end
+    if vspan_after then
+        table.insert(self.container,
+                     VerticalSpan:new{ width = Size.span.vertical_default })
+    end
 end
 
 function ButtonTable:onSelectByKeyPress()

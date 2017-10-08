@@ -47,7 +47,7 @@ local ImageViewer = InputContainer:new{
     title_padding = Size.padding.default,
     title_margin = Size.margin.title,
     image_padding = Size.margin.small,
-    button_padding = Size.padding.large,
+    button_padding = Size.padding.default,
 
     -- sensitivity for hold (trigger full refresh) vs pan (move image)
     pan_threshold = Screen:scaleBySize(5),
@@ -155,7 +155,7 @@ function ImageViewer:update()
         },
     }
     local button_table = ButtonTable:new{
-        width = self.width,
+        width = self.width - 2*self.button_padding,
         button_font_face = "cfont",
         button_font_size = 20,
         buttons = buttons,
