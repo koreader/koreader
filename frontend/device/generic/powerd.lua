@@ -21,10 +21,20 @@ function BasePowerD:new(o)
     if o.device and o.device.hasFrontlight() then
         o.fl_intensity = o:frontlightIntensityHW()
         o:_decideFrontlightState()
-        if o:isFrontlightOn() then
-            o:turnOnFrontlightHW()
-        else
-            o:turnOffFrontlightHW()
+        -- Note added by @Frenzie 2017-10-08
+        -- I believe this should be `if isKobo()`, or better yet that the entire
+        -- block should be moved to `KoboPowerD:init()` because afaik that is the
+        -- only platform where the system doesn't provide trustworthy frontlight
+        -- information. But to be absolutely sure that I don't break anything (and I
+        -- don't want to spend any time on this atm) I'm temporarily excluding only
+        -- Android where this behavior is known to be problematic.
+        -- See discussion in https://github.com/koreader/koreader/issues/3118#issuecomment-334995879
+        if not o.device:isAndroid() then
+            if o:isFrontlightOn() then
+                o:turnOnFrontlightHW()
+            else
+                o:turnOffFrontlightHW()
+            end
         end
     end
     return o
