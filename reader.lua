@@ -153,10 +153,10 @@ if Device.hasColorScreen() and not G_reader_settings:has("color_rendering") then
     })
 end
 
-local exit_code = nil
+local exit_code
 
 if ARGV[argidx] and ARGV[argidx] ~= "" then
-    local file = nil
+    local file
     if lfs.attributes(ARGV[argidx], "mode") == "file" then
         file = ARGV[argidx]
     elseif open_last and last_file then

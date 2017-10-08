@@ -5,6 +5,8 @@ jobs:
       - image: houqp/kobase:0.0.5
         environment:
           EMULATE_READER: 1
+          # this is for shellcheck 0.4.5 and lower; can be removed for 0.4.6
+          LC_ALL: en_US.UTF8
     steps:
       - checkout
       - restore_cache:
