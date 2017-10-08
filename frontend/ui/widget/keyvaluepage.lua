@@ -210,7 +210,19 @@ function KeyValueItem:init()
 end
 
 function KeyValueItem:onTap()
-    self.callback()
+    if self.callback then
+        self[1].invert = true
+        UIManager:setDirty(self.show_parent, function()
+            return "ui", self[1].dimen
+        end)
+        UIManager:scheduleIn(0.1, function()
+            self.callback()
+            self[1].invert = false
+            UIManager:setDirty(self.show_parent, function()
+                return "ui", self[1].dimen
+            end)
+        end)
+    end
     return true
 end
 
@@ -428,6 +440,7 @@ function KeyValuePage:_populateItems()
                     callback_back = entry.callback_back,
                     textviewer_width = self.textviewer_width,
                     textviewer_height = self.textviewer_height,
+                    show_parent = self,
                 }
             )
         elseif type(entry) == "string" then
