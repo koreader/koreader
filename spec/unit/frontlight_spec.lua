@@ -12,7 +12,10 @@ describe("Frontlight function in PowerD", function()
             fl_min = 1,
             fl_max = 5,
             device = {
-                hasFrontlight = function() return true end
+                hasFrontlight = function() return true end,
+                -- TODO @Frenzie remove this once possibly turning on frontlight
+                -- on init is Kobo-only; see device/generic/powerd 2017-10-08
+                isAndroid = function() return false end,
             },
         }
     end)
