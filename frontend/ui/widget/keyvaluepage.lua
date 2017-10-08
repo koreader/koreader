@@ -210,7 +210,17 @@ function KeyValueItem:init()
 end
 
 function KeyValueItem:onTap()
-    self.callback()
+    if self.callback then
+        UIManager:scheduleIn(0.0, function()
+            self[1].invert = true
+            UIManager:setDirty("all", 'ui')
+        end)
+        UIManager:scheduleIn(0.1, function()
+            self.callback()
+            self[1].invert = false
+            UIManager:setDirty("all", 'ui')
+        end)
+    end
     return true
 end
 
