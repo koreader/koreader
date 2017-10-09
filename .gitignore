@@ -17,6 +17,7 @@ install/
 spec/unit/data
 doc/html
 git-rev
+git-rev-base
 emu
 luacov.stats.out
 trace-out.txt

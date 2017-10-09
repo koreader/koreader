@@ -11,10 +11,16 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - deps
-            - build
+            # binary dependencies require {{ arch }} because there are different CPUs in use on the servers
+            - deps-{{ arch }}-{{ checksum ".ci/install.sh" }}
+      # need to init some stuff first or git will complain when sticking in base cache
+      - run: git submodule init base && git submodule update base && pushd base && git submodule init && git submodule update && popd
+      # we can't use command output directly for cache check so we write it to git-rev-base
+      - run: pushd base && git_rev_base=$(git describe HEAD) && popd && echo $git_rev_base && echo $git_rev_base >git-rev-base
+      - restore_cache:
+          keys:
+            - build-{{ arch }}-{{ checksum "git-rev-base" }}
       - run: echo 'export PATH=${HOME}/bin:${PATH}' >> $BASH_ENV
-
       - run:
           name: setup
           command: .ci/before_install.sh
@@ -41,12 +47,12 @@ jobs:
           name: clean up cache
           command: rm -frv ./base/build/*/{spec,cache/*}
       - save_cache:
-          key: build
+          key: build-{{ arch }}-{{ checksum "git-rev-base" }}
           paths:
             - "/home/ko/.ccache"
             - "base"
       - save_cache:
-          key: deps
+          key: deps-{{ arch }}-{{ checksum ".ci/install.sh" }}
           paths:
             - "/home/ko/bin"
             - "/home/ko/.luarocks"

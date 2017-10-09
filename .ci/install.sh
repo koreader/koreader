@@ -13,7 +13,7 @@ ls
 # if [ "$(git status --ignore-submodules=dirty --porcelain)" ]; then
 # "--ignore-submodules=dirty", removed temporarily, as it did not notice as
 # expected that base was updated and kept using old cached base
-if [ "$(git status --porcelain)" ]; then
+if [ "$(git status --ignore-submodules=dirty --porcelain)" ]; then
     # what changed?
     git status
     # purge and reinit submodules
