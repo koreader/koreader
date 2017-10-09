@@ -1568,7 +1568,7 @@ function ReaderStatistics:deleteBook(id_book)
     conn:close()
 end
 
-function ReaderStatistics:onPageUpdate(pos, pageno)
+function ReaderStatistics:onPosUpdate(pos, pageno)
     self:onPageUpdate(pageno)
 end
 
