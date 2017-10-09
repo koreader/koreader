@@ -9,12 +9,8 @@ set +e
 # if [ "${TRAVIS_PULL_REQUEST}" = false ] && [ "${TRAVIS_BRANCH}" = 'master' ]; then
 if [ -z "${CIRCLE_PULL_REQUEST}" ] && [ "${CIRCLE_BRANCH}" = 'master' ]; then
     travis_retry luarocks --local install ldoc
-    # get deploy key for doc repo
-    openssl aes-256-cbc -k "${doc_build_secret:?}" -in .ci/koreader_doc.enc -out ~/.ssh/koreader_doc -d
-    chmod 600 ~/.ssh/koreader_doc # make agent happy
-    eval "$(ssh-agent)" >/dev/null
-    ssh-add ~/.ssh/koreader_doc >/dev/null
-    echo -e "\n${ANSI_GREEN}Check out koreader/doc for update."
+
+    echo -e "\n${ANSI_GREEN}Checking out koreader/doc for update."
     git clone git@github.com:koreader/doc.git koreader_doc
 
     # push doc update
@@ -42,7 +38,8 @@ if [ -z "${CIRCLE_PULL_REQUEST}" ] && [ "${CIRCLE_BRANCH}" = 'master' ]; then
     make all
     travis_retry make coverage
     pushd koreader-*/koreader && {
-        luajit "$(which luacov-coveralls)" --verbose
+        # temporarily use || true so builds won't fail until we figure out the coverage issue
+        luajit "$(which luacov-coveralls)" --verbose || true
     } || exit
     popd
 else
