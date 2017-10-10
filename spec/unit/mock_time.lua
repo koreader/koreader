@@ -1,3 +1,4 @@
+require("commonrequire")
 local logger = require("logger")
 
 local MockTime = {
