@@ -7,7 +7,7 @@ jobs:
           EMULATE_READER: 1
           # this is for shellcheck 0.4.5 and lower; can be removed for 0.4.6
           LC_ALL: en_US.UTF8
-    parallelism: 4
+    parallelism: 3
     steps:
       - checkout
       - restore_cache:
@@ -25,9 +25,20 @@ jobs:
       - run:
           name: setup
           command: .ci/before_install.sh
+
+      # installs and caches testing tools
       - run:
           name: install
           command: .ci/install.sh
+      - save_cache:
+          key: deps-{{ arch }}-{{ checksum ".ci/install.sh" }}
+          paths:
+            - "/home/ko/bin"
+            - "/home/ko/.luarocks"
+            # compiled luarocks binaries
+            - "install"
+
+      # installs everything and caches base
       - run:
           name: fetch
           command: .ci/fetch.sh
@@ -37,25 +48,19 @@ jobs:
       - run:
           name: build
           command: .ci/build.sh
-      - run:
-          name: test
-          command: .ci/test.sh
-      - run:
-          name: cleanup
-          command: .ci/after_success.sh
-
-      - run:
-          name: clean up cache
-          command: rm -frv ./base/build/*/{spec,cache/*}
+      # we want to save cache prior to testing so we don't have to clean it up
       - save_cache:
           key: build-{{ arch }}-{{ checksum "git-rev-base" }}
           paths:
             - "/home/ko/.ccache"
             - "base"
-      - save_cache:
-          key: deps-{{ arch }}-{{ checksum ".ci/install.sh" }}
-          paths:
-            - "/home/ko/bin"
-            - "/home/ko/.luarocks"
-            # compiled luarocks binaries
-            - "install"
+
+      # our lovely unit tests
+      - run:
+          name: test
+          command: .ci/test.sh
+
+      # docs and coverage, master branch only
+      - run:
+          name: docs-and-coverage
+          command: .ci/after_success.sh

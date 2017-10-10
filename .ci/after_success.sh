@@ -6,12 +6,10 @@ source "${CI_DIR}/common.sh"
 
 set +e
 
-echo "$CIRCLE_NODE_INDEX"
+echo "CIRCLE_NODE_INDEX: ${CIRCLE_NODE_INDEX}"
 if [ ! "$CIRCLE_NODE_INDEX" = 0 ]; then
     echo -e "\\n${ANSI_GREEN}Not on first node. Skipping documentation update and coverage."
 elif [ -z "${CIRCLE_PULL_REQUEST}" ] && [ "${CIRCLE_BRANCH}" = 'master' ]; then
-    travis_retry luarocks --local install ldoc
-
     echo -e "\\n${ANSI_GREEN}Checking out koreader/doc for update."
     git clone git@github.com:koreader/doc.git koreader_doc
 
@@ -34,13 +32,10 @@ elif [ -z "${CIRCLE_PULL_REQUEST}" ] && [ "${CIRCLE_BRANCH}" = 'master' ]; then
         echo -e "\\n${ANSI_GREEN}Documentation update pushed."
     } && popd || exit
 
-    # rerun make to regenerate /spec dir (was deleted to prevent uploading to cache)
-    echo -e "\\n${ANSI_GREEN}make all"
-    make all
     travis_retry make coverage
     pushd koreader-*/koreader && {
-        # temporarily use || true so builds won't fail until we figure out the coverage issue
-        luajit "$(which luacov-coveralls)" --verbose || true
+        # see https://github.com/codecov/example-lua
+        bash <(curl -s https://codecov.io/bash)
     } && popd || exit
 else
     echo -e "\\n${ANSI_GREEN}Not on official master branch. Skipping documentation update and coverage."
