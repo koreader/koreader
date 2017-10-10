@@ -85,6 +85,7 @@ NOTICE:
 --]]
 local MenuCloseButton = InputContainer:new{
     overlap_align = "right",
+    padding_right = 0,
     menu = nil,
     dimen = Geom:new{},
 }
@@ -92,13 +93,17 @@ local MenuCloseButton = InputContainer:new{
 function MenuCloseButton:init()
     self[1] = TextWidget:new{
         text = "×",
-        face = Font:getFace("cfont", 32),
+        face = Font:getFace("cfont", 30), -- this font size align nicely with title
     }
 
     local text_size = self[1]:getSize()
+    -- The text box height is greater than its width, and we want this × to
+    -- be diagonally aligned with our top right border
+    local text_width_pad = (text_size.h - text_size.w) / 2
+    -- We also add the provided padding_right
     self.dimen = Geom:new{
-        w = text_size.w*2,
-        h = text_size.h*2,
+        w = text_size.w + text_width_pad + self.padding_right,
+        h = text_size.h,
     }
 
     self.ges_events.Close = {
@@ -131,16 +136,15 @@ local MenuItem = InputContainer:new{
 }
 
 function MenuItem:init()
+    self.content_width = self.dimen.w - 2 * Size.padding.fullscreen
     local shortcut_icon_dimen = Geom:new()
     if self.shortcut then
         shortcut_icon_dimen.w = math.floor(self.dimen.h*4/5)
         shortcut_icon_dimen.h = shortcut_icon_dimen.w
+        self.content_width = self.content_width - shortcut_icon_dimen.w - Size.span.horizontal_default
     end
 
     self.detail = self.text
-    -- account for added HorizontalSpans
-    self.content_width = self.dimen.w - shortcut_icon_dimen.w
-        - Size.span.horizontal_small - Size.span.horizontal_default
 
     -- we need this table per-instance, so we declare it here
     if Device:isTouchDevice() then
@@ -167,7 +171,7 @@ function MenuItem:init()
         }
     end
 
-    local mandatory = self.mandatory and ""..self.mandatory.." " or ""
+    local mandatory = self.mandatory and ""..self.mandatory or ""
     local mandatory_w = RenderText:sizeUtf8Text(0, self.dimen.w, self.info_face,
                     ""..mandatory, true, self.bold).x
 
@@ -243,20 +247,24 @@ function MenuItem:init()
             },
         }
     }
+    local hgroup = HorizontalGroup:new{
+        align = "center",
+        HorizontalSpan:new{ width = Size.padding.fullscreen },
+    }
+    if self.shortcut then
+        table.insert(hgroup, ItemShortCutIcon:new{
+            dimen = shortcut_icon_dimen,
+            key = self.shortcut,
+            style = self.shortcut_style,
+        })
+        table.insert(hgroup, HorizontalSpan:new{ width = Size.span.horizontal_default })
+    end
+    table.insert(hgroup, self._underline_container)
+
     self[1] = FrameContainer:new{
         bordersize = 0,
         padding = 0,
-        HorizontalGroup:new{
-            align = "center",
-            HorizontalSpan:new{ width = Size.span.horizontal_small },
-            ItemShortCutIcon:new{
-                dimen = shortcut_icon_dimen,
-                key = self.shortcut,
-                style = self.shortcut_style,
-            },
-            HorizontalSpan:new{ width = Size.span.horizontal_default },
-            self._underline_container
-        }
+        hgroup,
     }
 end
 
@@ -543,8 +551,10 @@ function Menu:init()
     ------------------------------------------
     if Device:isTouchDevice() then
         if self.has_close_button then
-            table.insert(self.title_bar,
-                         MenuCloseButton:new{ menu = self })
+            table.insert(self.title_bar, MenuCloseButton:new{
+                menu = self,
+                padding_right = self.header_padding,
+            })
         end
         -- watch for outer region if it's a self contained widget
         if self.is_popout then
