@@ -7,13 +7,13 @@ jobs:
           EMULATE_READER: 1
           # this is for shellcheck 0.4.5 and lower; can be removed for 0.4.6
           LC_ALL: en_US.UTF8
-    parallelism: 3
+    parallelism: 2
     steps:
       - checkout
       - restore_cache:
           keys:
             # binary dependencies require {{ arch }} because there are different CPUs in use on the servers
-            - deps-{{ arch }}-{{ checksum ".ci/install.sh" }}
+            - deps-{{ arch }}-{{ checksum ".ci/install.sh" }}-{{ checksum ".ci/helper_luarocks.sh" }}
       # need to init some stuff first or git will complain when sticking in base cache
       - run: git submodule init base && git submodule update base && pushd base && git submodule init && git submodule update && popd
       # we can't use command output directly for cache check so we write it to git-rev-base
@@ -31,7 +31,7 @@ jobs:
           name: install
           command: .ci/install.sh
       - save_cache:
-          key: deps-{{ arch }}-{{ checksum ".ci/install.sh" }}
+          key: deps-{{ arch }}-{{ checksum ".ci/install.sh" }}-{{ checksum ".ci/helper_luarocks.sh" }}
           paths:
             - "/home/ko/bin"
             - "/home/ko/.luarocks"
@@ -60,7 +60,10 @@ jobs:
           name: test
           command: .ci/test.sh
 
-      # docs and coverage, master branch only
+      # docs, coverage, and test timing (can we use two outputs at once?); master branch only
       - run:
           name: docs-and-coverage
           command: .ci/after_success.sh
+      # by storing the test results CircleCI automatically distributes tests based on execution time
+      - store_test_results:
+          path: koreader-emulator-x86_64-linux-gnu/koreader/junit-test-results.xml

@@ -102,7 +102,8 @@ testfront: $(INSTALL_DIR)/koreader/.busted
 	cd $(INSTALL_DIR)/koreader && ./luajit $(shell which busted) \
 		--sort-files \
 		--no-auto-insulate \
-		-o verbose_print --exclude-tags=notest $(BUSTED_SPEC_FILE)
+		--output=gtest \
+		--exclude-tags=notest $(BUSTED_OVERRIDES) $(BUSTED_SPEC_FILE)
 
 test: $(INSTALL_DIR)/koreader/.busted
 	$(MAKE) -C $(KOR_BASE) test
