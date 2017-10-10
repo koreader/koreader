@@ -558,6 +558,7 @@ function ReaderRolling:_gotoPos(new_pos)
             self.view.dim_area.y = 0
         end
     end
+    self.ui.document:gotoPos(new_pos)
     -- The current page we get in scroll mode may be a bit innacurate,
     -- but we give it anyway to onPosUpdate so footer and statistics can
     -- keep up with page.
@@ -570,7 +571,11 @@ end
 
 function ReaderRolling:_gotoPage(new_page)
     self.ui.document:gotoPage(new_page)
-    self.ui:handleEvent(Event:new("PageUpdate", self.ui.document:getCurrentPage()))
+    if self.view.view_mode == "page" then
+        self.ui:handleEvent(Event:new("PageUpdate", self.ui.document:getCurrentPage()))
+    else
+        self.ui:handleEvent(Event:new("PosUpdate", self.ui.document:getCurrentPos(), self.ui.document:getCurrentPage()))
+    end
 end
 
 function ReaderRolling:_gotoXPointer(xpointer)
