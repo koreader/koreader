@@ -92,20 +92,24 @@ function IconButton:initGesListener()
 end
 
 function IconButton:onTapIconButton()
-    UIManager:scheduleIn(0.0, function()
-        self.image.invert = true
-        UIManager:setDirty(self.show_parent, function()
-            return "ui", self[1].dimen
-        end)
-    end)
-    -- make sure button reacts before doing callback
-    UIManager:scheduleIn(0.1, function()
+    if G_reader_settings:isFalse("flash_ui") then
         self.callback()
-        self.image.invert = false
-        UIManager:setDirty(self.show_parent, function()
-            return "ui", self[1].dimen
+    else
+        UIManager:scheduleIn(0.0, function()
+            self.image.invert = true
+            UIManager:setDirty(self.show_parent, function()
+                return "ui", self[1].dimen
+            end)
         end)
-    end)
+        -- make sure button reacts before doing callback
+        UIManager:scheduleIn(0.1, function()
+            self.callback()
+            self.image.invert = false
+            UIManager:setDirty(self.show_parent, function()
+                return "ui", self[1].dimen
+            end)
+        end)
+    end
     return true
 end
 
