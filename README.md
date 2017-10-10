@@ -41,7 +41,7 @@ Highlights for developers
 --------------------------
 
 * frontend written in Lua scripting language
-  * multi-platform support a single code-base
+  * multi-platform support through a single code-base
   * you can help develop KOReader in any editor without compilation
   * high runtime efficiency through LuaJIT acceleration
   * light-weight self-contained widget toolkit with small memory footprint
