@@ -211,17 +211,21 @@ end
 
 function KeyValueItem:onTap()
     if self.callback then
-        self[1].invert = true
-        UIManager:setDirty(self.show_parent, function()
-            return "ui", self[1].dimen
-        end)
-        UIManager:scheduleIn(0.1, function()
+        if G_reader_settings:isFalse("flash_ui") then
             self.callback()
-            self[1].invert = false
+        else
+            self[1].invert = true
             UIManager:setDirty(self.show_parent, function()
                 return "ui", self[1].dimen
             end)
-        end)
+            UIManager:scheduleIn(0.1, function()
+                self.callback()
+                self[1].invert = false
+                UIManager:setDirty(self.show_parent, function()
+                    return "ui", self[1].dimen
+                end)
+            end)
+        end
     end
     return true
 end

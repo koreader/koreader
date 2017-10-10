@@ -107,18 +107,22 @@ function TouchMenuItem:onTapSelect(arg, ges)
     end
     if enabled == false then return end
 
-    self.item_frame.invert = true
-    UIManager:setDirty(self.show_parent, function()
-        return "ui", self.dimen
-    end)
-    -- yield to main UI loop to invert item
-    UIManager:scheduleIn(0.1, function()
+    if G_reader_settings:isFalse("flash_ui") then
         self.menu:onMenuSelect(self.item)
-        self.item_frame.invert = false
+    else
+        self.item_frame.invert = true
         UIManager:setDirty(self.show_parent, function()
             return "ui", self.dimen
         end)
-    end)
+        -- yield to main UI loop to invert item
+        UIManager:scheduleIn(0.1, function()
+            self.menu:onMenuSelect(self.item)
+            self.item_frame.invert = false
+            UIManager:setDirty(self.show_parent, function()
+                return "ui", self.dimen
+            end)
+        end)
+    end
     return true
 end
 
@@ -129,21 +133,25 @@ function TouchMenuItem:onHoldSelect(arg, ges)
     end
     if enabled == false then return end
 
-    UIManager:scheduleIn(0.0, function()
-        self.item_frame.invert = true
-        UIManager:setDirty(self.show_parent, function()
-            return "ui", self.dimen
-        end)
-    end)
-    UIManager:scheduleIn(0.1, function()
+    if G_reader_settings:isFalse("flash_ui") then
         self.menu:onMenuHold(self.item)
-    end)
-    UIManager:scheduleIn(0.5, function()
-        self.item_frame.invert = false
-        UIManager:setDirty(self.show_parent, function()
-            return "ui", self.dimen
+    else
+        UIManager:scheduleIn(0.0, function()
+            self.item_frame.invert = true
+            UIManager:setDirty(self.show_parent, function()
+                return "ui", self.dimen
+            end)
         end)
-    end)
+        UIManager:scheduleIn(0.1, function()
+            self.menu:onMenuHold(self.item)
+        end)
+        UIManager:scheduleIn(0.5, function()
+            self.item_frame.invert = false
+            UIManager:setDirty(self.show_parent, function()
+                return "ui", self.dimen
+            end)
+        end)
+    end
     return true
 end
 
