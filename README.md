@@ -300,8 +300,8 @@ http://ccache.samba.org
 [linux-vm]:http://www.howtogeek.com/howto/11287/how-to-run-ubuntu-in-windows-7-with-vmware-player/
 [l10n-readme]:https://github.com/koreader/koreader/blob/master/l10n/README.md
 [koreader-transifex]:https://www.transifex.com/projects/p/koreader/
-[coverage-badge]:https://coveralls.io/repos/github/koreader/koreader/badge.svg?branch=master
-[coverage-link]:https://coveralls.io/github/koreader/koreader?branch=master
+[coverage-badge]:https://codecov.io/gh/koreader/koreader/branch/master/graph/badge.svg
+[coverage-link]:https://codecov.io/gh/koreader/koreader
 [licence-badge]:http://img.shields.io/badge/licence-AGPL-brightgreen.svg
 [gitter-badge]:https://badges.gitter.im/Join%20Chat.svg
 [gitter-link]:https://gitter.im/koreader/koreader?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
