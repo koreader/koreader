@@ -50,7 +50,7 @@ Highlights for developers
   * high quality document backend libraries like MuPDF, DjvuLibre and CREngine
   * interacting with frontend via LuaJIT FFI for best performence
 * in active development
-  * contribution by developers around the world
+  * with contributions from developers around the world
   * continuous integration with CircleCI
   * with unit tests (busted), static code analysis (luacheck) and code coverage test (luacov/coveralls)
   * automated nightly builds available at http://build.koreader.rocks/download/nightly/
