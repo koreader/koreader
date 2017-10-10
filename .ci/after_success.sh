@@ -6,11 +6,13 @@ source "${CI_DIR}/common.sh"
 
 set +e
 
-# if [ "${TRAVIS_PULL_REQUEST}" = false ] && [ "${TRAVIS_BRANCH}" = 'master' ]; then
-if [ -z "${CIRCLE_PULL_REQUEST}" ] && [ "${CIRCLE_BRANCH}" = 'master' ]; then
+echo "$CIRCLE_NODE_INDEX"
+if [ ! "$CIRCLE_NODE_INDEX" = 0 ]; then
+    echo -e "\\n${ANSI_GREEN}Not on first node. Skipping documentation update and coverage."
+elif [ -z "${CIRCLE_PULL_REQUEST}" ] && [ "${CIRCLE_BRANCH}" = 'master' ]; then
     travis_retry luarocks --local install ldoc
 
-    echo -e "\n${ANSI_GREEN}Checking out koreader/doc for update."
+    echo -e "\\n${ANSI_GREEN}Checking out koreader/doc for update."
     git clone git@github.com:koreader/doc.git koreader_doc
 
     # push doc update
@@ -20,28 +22,26 @@ if [ -z "${CIRCLE_PULL_REQUEST}" ] && [ "${CIRCLE_BRANCH}" = 'master' ]; then
             echo "Failed to generate documents..."
             exit 1
         fi
-    } || exit
-    popd
+    } && popd || exit
+
     cp -r doc/html/* koreader_doc/
     pushd koreader_doc && {
         git add -A
-        echo -e "\n${ANSI_GREEN}Pushing document update..."
+        echo -e "\\n${ANSI_GREEN}Pushing document update..."
         git -c user.name="KOReader build bot" -c user.email="non-reply@koreader.rocks" \
             commit -a --amend -m 'Automated documentation build from travis-ci.'
         git push -f --quiet origin gh-pages >/dev/null
-        echo -e "\n${ANSI_GREEN}Documentation update pushed."
-    } || exit
-    popd
+        echo -e "\\n${ANSI_GREEN}Documentation update pushed."
+    } && popd || exit
 
     # rerun make to regenerate /spec dir (was deleted to prevent uploading to cache)
-    echo -e "\n${ANSI_GREEN}make all"
+    echo -e "\\n${ANSI_GREEN}make all"
     make all
     travis_retry make coverage
     pushd koreader-*/koreader && {
         # temporarily use || true so builds won't fail until we figure out the coverage issue
         luajit "$(which luacov-coveralls)" --verbose || true
-    } || exit
-    popd
+    } && popd || exit
 else
-    echo -e "\n${ANSI_GREEN}Not on official master branch, skip documentation update and coverage."
+    echo -e "\\n${ANSI_GREEN}Not on official master branch. Skipping documentation update and coverage."
 fi
