@@ -75,7 +75,8 @@ function MultiConfirmBox:init()
     local content = HorizontalGroup:new{
         align = "center",
         ImageWidget:new{
-            file = "resources/info-i.png"
+            file = "resources/info-i.png",
+            scale_for_dpi = true,
         },
         HorizontalSpan:new{ width = Size.span.horizontal_default },
         TextBoxWidget:new{
