@@ -561,7 +561,7 @@ OPTIONS:
         busted --lua="./luajit" "${opts}" \
             --no-auto-insulate \
             --lazy \
-            -o "./spec/$1/unit/verbose_print" \
+            --output=gtest \
             --exclude-tags=notest "${test_path}"
     } && popd || exit
 }
