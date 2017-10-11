@@ -36,7 +36,8 @@ end
 -- we only implement a sane subset for now
 
 function GetText_mt.__index.changeLang(new_lang)
-    if new_lang == "en_US:en" then return end
+    -- can be various things such as `en_US` or `en_US:en`
+    if new_lang:match("^en_US") == "en_US" then return end
 
     GetText.translation = {}
     GetText.current_lang = "C"
