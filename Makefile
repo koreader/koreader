@@ -112,7 +112,7 @@ test: $(INSTALL_DIR)/koreader/.busted
 coverage: $(INSTALL_DIR)/koreader/.luacov
 	-rm -rf $(INSTALL_DIR)/koreader/luacov.*.out
 	cd $(INSTALL_DIR)/koreader && \
-		./luajit $(shell which busted) -o verbose_print \
+		./luajit $(shell which busted) --output=gtest \
 			--sort-files \
 			--no-auto-insulate \
 			--coverage --exclude-tags=nocov
