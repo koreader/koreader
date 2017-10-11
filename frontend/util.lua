@@ -80,8 +80,9 @@ function util.secondsToClock(seconds, withoutSeconds)
             return "00:00:00";
         end
     else
+        local round = withoutSeconds and require("optmath").round or math.floor
         local hours = string.format("%02.f", math.floor(seconds / 3600));
-        local mins = string.format("%02.f", math.floor(seconds / 60 - (hours * 60)));
+        local mins = string.format("%02.f", round(seconds / 60 - (hours * 60)));
         if withoutSeconds then
             return hours .. ":" .. mins
         end
