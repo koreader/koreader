@@ -121,7 +121,11 @@ function BookInfo:show(file, book_props)
     table.insert(kv_pairs, { _("Authors:"), authors })
 
     local series = book_props.series
-    if series == "" or series == nil then series = _("N/A") end
+    if series == "" or series == nil then
+        series = _("N/A")
+    else -- Shorten calibre series decimal number (#4.0 => #4)
+        series = series:gsub("(#%d+)%.0$", "%1")
+    end
     table.insert(kv_pairs, { _("Series:"), series })
 
     local pages = book_props.pages

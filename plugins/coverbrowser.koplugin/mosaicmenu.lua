@@ -481,6 +481,8 @@ function MosaicMenuItem:update()
                 -- add Series metadata if requested
                 if bookinfo.series then
                     if BookInfoManager:getSetting("append_series_to_title") then
+                        -- Shorten calibre series decimal number (#4.0 => #4)
+                        bookinfo.series = bookinfo.series:gsub("(#%d+)%.0$", "%1")
                         if bookinfo.title then
                             bookinfo.title = bookinfo.title .. " - " .. bookinfo.series
                         else
@@ -488,6 +490,7 @@ function MosaicMenuItem:update()
                         end
                     end
                     if BookInfoManager:getSetting("append_series_to_authors") then
+                        bookinfo.series = bookinfo.series:gsub("(#%d+)%.0$", "%1")
                         if bookinfo.authors then
                             bookinfo.authors = bookinfo.authors .. " - " .. bookinfo.series
                         else
