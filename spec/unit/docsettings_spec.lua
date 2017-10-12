@@ -144,64 +144,66 @@ describe("docsettings module", function()
         assert.Equals("file", lfs.attributes(d.sidecar_file .. ".old", "mode"))
     end)
 
-    it("should ignore empty file", function()
-        local file = "file.pdf"
-        local d = docsettings:open(file)
-        d:saveSetting("a", "a")
-        d:flush()
-        -- metadata.pdf.lua should be generated.
-        assert.Equals("file", lfs.attributes(d.sidecar_file, "mode"))
-        d:close()
-        -- metadata.pdf.lua and metadata.pdf.lua.old should be generated.
-        assert.Equals("file", lfs.attributes(d.sidecar_file, "mode"))
-        assert.Equals("file", lfs.attributes(d.sidecar_file .. ".old", "mode"))
+    describe("ignore empty sidecar file", function()
+        it("should ignore empty file", function()
+            local file = "file.pdf"
+            local d = docsettings:open(file)
+            d:saveSetting("a", "a")
+            d:flush()
+            -- metadata.pdf.lua should be generated.
+            assert.Equals("file", lfs.attributes(d.sidecar_file, "mode"))
+            d:close()
+            -- metadata.pdf.lua and metadata.pdf.lua.old should be generated.
+            assert.Equals("file", lfs.attributes(d.sidecar_file, "mode"))
+            assert.Equals("file", lfs.attributes(d.sidecar_file .. ".old", "mode"))
 
-        -- reset the sidecar_file to an empty file.
-        local f_out = io.open(d.sidecar_file, "w")
-        f_out:close()
+            -- reset the sidecar_file to an empty file.
+            local f_out = io.open(d.sidecar_file, "w")
+            f_out:close()
 
-        d = docsettings:open(file)
-        -- metadata.pdf.lua should be removed.
-        assert.are.not_equal("file", lfs.attributes(d.sidecar_file, "mode"))
-        assert.Equals("file", lfs.attributes(d.sidecar_file .. ".old", "mode"))
-        assert.Equals("a", d:readSetting("a"))
-        d:saveSetting("a", "b")
-        d:close()
-        -- metadata.pdf.lua should be generated.
-        assert.Equals("file", lfs.attributes(d.sidecar_file, "mode"))
-        assert.Equals("file", lfs.attributes(d.sidecar_file .. ".old", "mode"))
-        -- The contents in sidecar_file and sidecar_file.old are different.
-        -- a:b v.s. a:a
-    end)
+            d = docsettings:open(file)
+            -- metadata.pdf.lua should be removed.
+            assert.are.not_equal("file", lfs.attributes(d.sidecar_file, "mode"))
+            assert.Equals("file", lfs.attributes(d.sidecar_file .. ".old", "mode"))
+            assert.Equals("a", d:readSetting("a"))
+            d:saveSetting("a", "b")
+            d:close()
+            -- metadata.pdf.lua should be generated.
+            assert.Equals("file", lfs.attributes(d.sidecar_file, "mode"))
+            assert.Equals("file", lfs.attributes(d.sidecar_file .. ".old", "mode"))
+            -- The contents in sidecar_file and sidecar_file.old are different.
+            -- a:b v.s. a:a
+        end)
 
-    it("should ignore empty table", function()
-        local file = "file.pdf"
-        local d = docsettings:open(file)
-        d:saveSetting("a", "a")
-        d:flush()
-        -- metadata.pdf.lua should be generated.
-        assert.Equals("file", lfs.attributes(d.sidecar_file, "mode"))
-        d:close()
-        -- metadata.pdf.lua and metadata.pdf.lua.old should be generated.
-        assert.Equals("file", lfs.attributes(d.sidecar_file, "mode"))
-        assert.Equals("file", lfs.attributes(d.sidecar_file .. ".old", "mode"))
+        it("should ignore empty table", function()
+            local file = "file.pdf"
+            local d = docsettings:open(file)
+            d:saveSetting("a", "a")
+            d:flush()
+            -- metadata.pdf.lua should be generated.
+            assert.Equals("file", lfs.attributes(d.sidecar_file, "mode"))
+            d:close()
+            -- metadata.pdf.lua and metadata.pdf.lua.old should be generated.
+            assert.Equals("file", lfs.attributes(d.sidecar_file, "mode"))
+            assert.Equals("file", lfs.attributes(d.sidecar_file .. ".old", "mode"))
 
-        -- reset the sidecar_file to an empty file.
-        local f_out = io.open(d.sidecar_file, "w")
-        f_out:write("{                               }                 ")
-        f_out:close()
+            -- reset the sidecar_file to an empty file.
+            local f_out = io.open(d.sidecar_file, "w")
+            f_out:write("{                               }                 ")
+            f_out:close()
 
-        d = docsettings:open(file)
-        -- metadata.pdf.lua should be removed.
-        assert.are.not_equal("file", lfs.attributes(d.sidecar_file, "mode"))
-        assert.Equals("file", lfs.attributes(d.sidecar_file .. ".old", "mode"))
-        assert.Equals("a", d:readSetting("a"))
-        d:saveSetting("a", "b")
-        d:close()
-        -- metadata.pdf.lua should be generated.
-        assert.Equals("file", lfs.attributes(d.sidecar_file, "mode"))
-        assert.Equals("file", lfs.attributes(d.sidecar_file .. ".old", "mode"))
-        -- The contents in sidecar_file and sidecar_file.old are different.
-        -- a:b v.s. a:a
+            d = docsettings:open(file)
+            -- metadata.pdf.lua should be removed.
+            assert.are.not_equal("file", lfs.attributes(d.sidecar_file, "mode"))
+            assert.Equals("file", lfs.attributes(d.sidecar_file .. ".old", "mode"))
+            assert.Equals("a", d:readSetting("a"))
+            d:saveSetting("a", "b")
+            d:close()
+            -- metadata.pdf.lua should be generated.
+            assert.Equals("file", lfs.attributes(d.sidecar_file, "mode"))
+            assert.Equals("file", lfs.attributes(d.sidecar_file .. ".old", "mode"))
+            -- The contents in sidecar_file and sidecar_file.old are different.
+            -- a:b v.s. a:a
+        end)
     end)
 end)
