@@ -175,7 +175,8 @@ function FileChooser:genItemTableFromPath(path)
         table.insert(item_table, {
             text = dir.name == ".." and  "⬆ ../" or dir.name.."/",
             mandatory = istr,
-            path = subdir_path
+            path = subdir_path,
+            is_go_up = dir.name == ".."
         })
     end
 
@@ -230,11 +231,27 @@ function FileChooser:refreshPath()
     self:switchItemTable(nil, self:genItemTableFromPath(self.path), self.path_items[self.path])
 end
 
-function FileChooser:changeToPath(path)
+function FileChooser:changeToPath(path, focused_path)
     path = util.realpath(path)
     self.path = path
     self:refreshPath()
+    if focused_path then
+        self:changePageToPath(focused_path)
+    end
     self:onPathChanged(path)
+end
+
+function FileChooser:changePageToPath(path)
+    if not path then return end
+    for num, item in ipairs(self.item_table) do
+        if item.path == path then
+            local page = math.floor((num-1) / self.perpage) + 1
+            if page ~= self.page then
+                self:onGotoPage(page)
+            end
+            break
+        end
+    end
 end
 
 function FileChooser:toggleHiddenFiles()
@@ -258,7 +275,7 @@ function FileChooser:onMenuSelect(item)
     if lfs.attributes(item.path, "mode") == "file" then
         self:onFileSelect(item.path)
     else
-        self:changeToPath(item.path)
+        self:changeToPath(item.path, item.is_go_up and self.path)
     end
     return true
 end

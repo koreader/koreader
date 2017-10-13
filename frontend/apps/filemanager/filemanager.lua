@@ -317,7 +317,7 @@ function FileManager:init()
     self:handleEvent(Event:new("SetDimensions", self.dimen))
 end
 
-function FileManager:reinit(path)
+function FileManager:reinit(path, focused_file)
     self.dimen = Screen:getSize()
     -- backup the root path and path items
     self.root_path = path or self.file_chooser.path
@@ -329,6 +329,9 @@ function FileManager:reinit(path)
     self:init()
     self.file_chooser.path_items = path_items_backup
     self:onRefresh()
+    if focused_file then
+        self.file_chooser:changePageToPath(focused_file)
+    end
 end
 
 function FileManager:toggleHiddenFiles()
@@ -547,7 +550,7 @@ function FileManager:getStartWithMenuTable()
     }
 end
 
-function FileManager:showFiles(path)
+function FileManager:showFiles(path, focused_file)
     path = path or G_reader_settings:readSetting("lastdir") or filemanagerutil.getDefaultDir()
     G_reader_settings:saveSetting("lastdir", path)
     restoreScreenMode()
@@ -558,6 +561,9 @@ function FileManager:showFiles(path)
             self.instance = nil
         end
     }
+    if focused_file then
+        file_manager.file_chooser:changePageToPath(focused_file)
+    end
     UIManager:show(file_manager)
     self.instance = file_manager
 end
