@@ -171,6 +171,13 @@ function MenuItem:init()
         }
     end
 
+    local text_mandatory_padding = 0
+    local text_ellipsis_mandatory_padding = 0
+    if self.mandatory then
+        text_mandatory_padding = Size.span.horizontal_default
+        -- Smaller padding when ellipsis for better visual feeling
+        text_ellipsis_mandatory_padding = Size.span.horizontal_small
+    end
     local mandatory = self.mandatory and ""..self.mandatory or ""
     local mandatory_w = RenderText:sizeUtf8Text(0, self.dimen.w, self.info_face,
                     ""..mandatory, true, self.bold).x
@@ -178,7 +185,7 @@ function MenuItem:init()
     local state_button_width = self.state_size.w or 0
     local my_text = self.text and ""..self.text or ""
     local w = RenderText:sizeUtf8Text(0, self.dimen.w, self.face, my_text, true, self.bold).x
-    if w + mandatory_w + state_button_width >= self.content_width then
+    if w + mandatory_w + state_button_width + text_mandatory_padding >= self.content_width then
         if Device:hasKeyboard() then
             self.active_key_events.ShowItemDetail = {
                 {"Right"}, doc = "show item detail"
@@ -188,7 +195,7 @@ function MenuItem:init()
         local indicator_w = RenderText:sizeUtf8Text(0, self.dimen.w, self.face,
                         indicator, true, self.bold).x
         self.text = RenderText:getSubTextByWidth(my_text, self.face,
-            self.content_width - indicator_w - mandatory_w - state_button_width,
+            self.content_width - indicator_w - mandatory_w - state_button_width - text_ellipsis_mandatory_padding,
             true, self.bold) .. indicator
     end
 
