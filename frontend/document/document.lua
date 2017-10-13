@@ -120,13 +120,18 @@ end
 -- Note that if PDF file size is around 1024, 4096, 16384, 65536, 262144
 -- 1048576, 4194304, 16777216, 67108864, 268435456 or 1073741824, appending data
 -- by highlighting in KOReader may change the digest value.
-function Document:fastDigest()
+function Document:fastDigest(docsettings)
     if not self.file then return end
     local file = io.open(self.file, 'rb')
     if file then
-        local docsettings = require("docsettings"):open(self.file)
+        local own_docsettings = false
+        if not docsettings then -- if not provided, open/create it
+            docsettings = require("docsettings"):open(self.file)
+            own_docsettings = true
+        end
         local result = docsettings:readSetting("partial_md5_checksum")
         if not result then
+            logger.dbg("computing and storing partial_md5_checksum")
             local md5 = require("ffi/MD5")
             local lshift = bit.lshift
             local step, size = 1024, 1024
@@ -143,7 +148,9 @@ function Document:fastDigest()
             result = m:sum()
             docsettings:saveSetting("partial_md5_checksum", result)
         end
-        docsettings:close()
+        if own_docsettings then
+            docsettings:close()
+        end
         file:close()
         return result
     end
