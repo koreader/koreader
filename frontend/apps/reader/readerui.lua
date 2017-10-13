@@ -365,16 +365,16 @@ end
 function ReaderUI:showFileManager()
     local FileManager = require("apps/filemanager/filemanager")
     local QuickStart = require("ui/quickstart")
-    local lastdir
+    local last_dir
     local last_file = G_reader_settings:readSetting("lastfile")
     -- ignore quickstart guide as last_file so we can go back to home dir
     if last_file and last_file ~= QuickStart.quickstart_filename then
-        lastdir = last_file:match("(.*)/")
+        last_dir = last_file:match("(.*)/")
     end
     if FileManager.instance then
-        FileManager.instance:reinit(lastdir)
+        FileManager.instance:reinit(last_dir, last_file)
     else
-        FileManager:showFiles(lastdir)
+        FileManager:showFiles(last_dir, last_file)
     end
 end
 
