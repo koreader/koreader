@@ -124,10 +124,10 @@ function Document:fastDigest(docsettings)
     if not self.file then return end
     local file = io.open(self.file, 'rb')
     if file then
-        local own_docsettings = false
+        local tmp_docsettings = false
         if not docsettings then -- if not provided, open/create it
             docsettings = require("docsettings"):open(self.file)
-            own_docsettings = true
+            tmp_docsettings = true
         end
         local result = docsettings:readSetting("partial_md5_checksum")
         if not result then
@@ -148,7 +148,7 @@ function Document:fastDigest(docsettings)
             result = m:sum()
             docsettings:saveSetting("partial_md5_checksum", result)
         end
-        if own_docsettings then
+        if tmp_docsettings then
             docsettings:close()
         end
         file:close()
