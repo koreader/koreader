@@ -452,7 +452,6 @@ function TouchMenu:init()
     }
     -- This CenterContainer will make the left and right borders drawn
     -- off-screen
-    local CenterContainer = require("ui/widget/container/centercontainer")
     self[1] = CenterContainer:new{
         dimen = Screen:getSize(),
         ignore = "height",
