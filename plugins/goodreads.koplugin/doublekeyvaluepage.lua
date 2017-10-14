@@ -140,7 +140,7 @@ function DoubleKeyValueItem:init()
         VerticalGroup:new{
             LeftContainer:new{
                 padding = 0,
-                dimen = Geom:new{ h = h   , w = w },
+                dimen = Geom:new{ h = h, w = w },
                 TextWidget:new{
                     text = self.show_value,
                     face = self.cface_up,
@@ -148,7 +148,7 @@ function DoubleKeyValueItem:init()
             },
             LeftContainer:new{
                 padding = 0,
-                dimen = Geom:new{ h = h  , w = w },
+                dimen = Geom:new{ h = h, w = w },
                 TextWidget:new{
                     text = self.show_key,
                     face = self.cface_down,
@@ -307,7 +307,7 @@ function DoubleKeyValuePage:init()
         padding = padding,
         bordersize = 0,
         background = Blitbuffer.COLOR_WHITE,
-        content
+        content,
     }
 end
 
