@@ -1,4 +1,6 @@
 local Blitbuffer = require("ffi/blitbuffer")
+local BottomContainer = require("ui/widget/container/bottomcontainer")
+local Button = require("ui/widget/button")
 local CloseButton = require("ui/widget/closebutton")
 local DataStorage = require("datastorage")
 local Device = require("device")
@@ -7,21 +9,22 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local GoodreadsApi = require("goodreadsapi")
-local OverlapGroup = require("ui/widget/overlapgroup")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
+local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/topcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local LuaSettings = require("luasettings")
+local OverlapGroup = require("ui/widget/overlapgroup")
 local RenderText = require("ui/rendertext")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
-local Screen = Device.screen
-
 local _ = require("gettext")
-local InfoMessage = require("ui/widget/infomessage")
+local Screen = Device.screen
+local T = require("ffi/util").template
 
 local DoubleKeyValueTitle = VerticalGroup:new{
     kv_page = nil,
@@ -106,6 +109,7 @@ local DoubleKeyValueItem = InputContainer:new{
 
 function DoubleKeyValueItem:init()
     self.dimen = Geom:new{align = "left", w = self.width, h = self.height}
+    local padding = Screen:scaleBySize(20)
     if self.callback and Device:isTouchDevice() then
         self.ges_events.Tap = {
             GestureRange:new{
@@ -116,44 +120,37 @@ function DoubleKeyValueItem:init()
     end
     local key_w = RenderText:sizeUtf8Text(0, self.width, self.cface_down, self.key).x
     local value_w = RenderText:sizeUtf8Text(0, self.width, self.cface_up, self.value).x
-    if key_w > self.width then
-        self.show_key = RenderText:truncateTextByWidth(self.key, self.cface_down, self.width)
+    if key_w > self.width - padding then
+        self.show_key = RenderText:truncateTextByWidth(self.key, self.cface_down, self.width - padding)
     else
         self.show_key = self.key
     end
-    if value_w > self.width then
-        self.show_value = RenderText:truncateTextByWidth(self.value, self.cface_up, self.width)
+    if value_w > self.width - padding then
+        self.show_value = RenderText:truncateTextByWidth(self.value, self.cface_up, self.width - padding)
     else
         self.show_value = self.value
     end
     local h = self.dimen.h / 2
     local w = self.dimen.w
     self[1] = FrameContainer:new{
-        padding = Screen:scaleBySize(10),
+        padding = padding,
         bordersize = 0,
+        width = self.width,
+        height = self.height,
         VerticalGroup:new{
-            dimen = Geom:new{ h = h, w = w },
-            padding = Screen:scaleBySize(10),
             LeftContainer:new{
-                padding = Screen:scaleBySize(10),
-                dimen = Geom:new{ h = h, w = w },
+                padding = 0,
+                dimen = Geom:new{ h = h   , w = w },
                 TextWidget:new{
                     text = self.show_value,
-                    padding = Screen:scaleBySize(10),
                     face = self.cface_up,
                 }
             },
             LeftContainer:new{
-                padding = Screen:scaleBySize(10),
-                 dimen = Geom:new{ h = h / 5 , w = w },
-                HorizontalSpan:new{ width = Screen:scaleBySize(15), height = 3 }
-            },
-            LeftContainer:new{
-                padding = Screen:scaleBySize(10),
-                dimen = Geom:new{ h = h, w = w },
+                padding = 0,
+                dimen = Geom:new{ h = h  , w = w },
                 TextWidget:new{
                     text = self.show_key,
-                    padding = Screen:scaleBySize(10),
                     face = self.cface_down,
                 }
             }
@@ -162,11 +159,28 @@ function DoubleKeyValueItem:init()
 end
 
 function DoubleKeyValueItem:onTap()
-    local info = InfoMessage:new{text = _("Please wait…")}
-    UIManager:show(info)
-    UIManager:forceRePaint()
-    self.callback()
-    UIManager:close(info)
+    if self.callback then
+        local info = InfoMessage:new{text = _("Please wait…")}
+        UIManager:show(info)
+        if G_reader_settings:isFalse("flash_ui") then
+            UIManager:forceRePaint()
+            self.callback()
+            UIManager:close(info)
+        else
+            self[1].invert = true
+            UIManager:setDirty(self.show_parent, function()
+                return "ui", self[1].dimen
+            end)
+            UIManager:scheduleIn(0.1, function()
+                self.callback()
+                UIManager:close(info)
+                self[1].invert = false
+                UIManager:setDirty(self.show_parent, function()
+                    return "ui", self[1].dimen
+                end)
+            end)
+        end
+    end
     return true
 end
 
@@ -220,9 +234,47 @@ function DoubleKeyValuePage:init()
             }
         }
     end
+    self.page_info_text = Button:new{
+        text = "",
+        bordersize = 0,
+        margin = Screen:scaleBySize(20),
+        text_font_face = "pgfont",
+        text_font_bold = false,
+    }
+    -- group for page info
+    self.page_info_left_chev = Button:new{
+        icon = "resources/icons/appbar.chevron.left.png",
+        callback = function() self:prevPage() end,
+        bordersize = 0,
+        show_parent = self,
+    }
+    self.page_info_right_chev = Button:new{
+        icon = "resources/icons/appbar.chevron.right.png",
+        callback = function() self:_nextPage() end,
+        bordersize = 0,
+        show_parent = self,
+    }
+    self.page_info_spacer = HorizontalSpan:new{
+        width = Screen:scaleBySize(32),
+    }
+
+    self.page_info_left_chev:hide()
+    self.page_info_right_chev:hide()
+
+    self.page_info = HorizontalGroup:new{
+        self.page_info_left_chev,
+        self.page_info_text,
+        self.page_info_right_chev,
+    }
+
+    local footer = BottomContainer:new{
+        dimen = self.dimen:copy(),
+        self.page_info,
+    }
+
     local padding = Screen:scaleBySize(10)
     self.item_width = self.dimen.w - 2 * padding
-    self.item_height = Screen:scaleBySize(45)
+    self.item_height = Screen:scaleBySize(55)
     -- setup title bar
     self.title_bar = DoubleKeyValueTitle:new{
         title = self.title,
@@ -231,24 +283,31 @@ function DoubleKeyValuePage:init()
         kv_page = self,
     }
     -- setup main content
-    self.item_margin = self.item_height / 4
+    self.item_margin = self.item_height / 6
     local line_height = self.item_height + 2 * self.item_margin
-    local content_height = self.dimen.h - self.title_bar:getSize().h
+    local content_height = self.dimen.h - self.title_bar:getSize().h - self.page_info:getSize().h
     self.max_loaded_pages = 1
     self.items_per_page = math.floor(content_height / line_height)
     self.pages = math.ceil(self.total_res / self.items_per_page)
     self.main_content = VerticalGroup:new{}
     self:_populateItems()
+
+    local content = OverlapGroup:new{
+        dimen = self.dimen:copy(),
+        VerticalGroup:new{
+            align = "left",
+            self.title_bar,
+            self.main_content,
+        },
+        footer,
+    }
     -- assemble page
-        self[1] = FrameContainer:new{
+    self[1] = FrameContainer:new{
         height = self.dimen.h,
         padding = padding,
         bordersize = 0,
         background = Blitbuffer.COLOR_WHITE,
-        VerticalGroup:new{
-            self.title_bar,
-            self.main_content,
-        },
+        content
     }
 end
 
@@ -283,6 +342,7 @@ end
 
 -- make sure self.item_margin and self.item_height are set before calling this
 function DoubleKeyValuePage:_populateItems()
+    self.page_info:resetLayout()
     self.main_content:clear()
     local idx_offset = (self.show_page - 1) * self.items_per_page
     for idx = 1, self.items_per_page do
@@ -300,6 +360,7 @@ function DoubleKeyValuePage:_populateItems()
                     value = entry[2],
                     align = "left",
                     callback = entry.callback,
+                    show_parent = self,
                 }
             )
         elseif type(entry) == "string" then
@@ -319,24 +380,34 @@ function DoubleKeyValuePage:_populateItems()
                      VerticalSpan:new{ width = self.item_margin })
     end
     self.title_bar:setPageCount(self.show_page, self.pages)
+    self.page_info_text:setText(T(_("page %1 of %2"), self.show_page, self.pages))
+    self.page_info_left_chev:showHide(self.pages > 1)
+    self.page_info_right_chev:showHide(self.pages > 1)
+    self.page_info_left_chev:enableDisable(self.show_page > 1)
+    self.page_info_right_chev:enableDisable(self.show_page < self.pages)
+
     UIManager:setDirty(self, function()
         return "ui", self.dimen
     end)
 end
 
+function DoubleKeyValuePage:_nextPage()
+    local new_page = math.min(self.show_page + 1, self.pages)
+    if (new_page * self.items_per_page > #self.kv_pairs) and (self.max_loaded_pages < new_page)
+        and #self.kv_pairs < self.total_res  then
+        local info = InfoMessage:new{text = _("Please wait…")}
+        UIManager:show(info)
+        UIManager:forceRePaint()
+        self:nextPage()
+        UIManager:close(info)
+    else
+        self:nextPage()
+    end
+end
+
 function DoubleKeyValuePage:onSwipe(arg, ges_ev)
     if ges_ev.direction == "west" then
-        local new_page = math.min(self.show_page + 1, self.pages)
-        if (new_page * self.items_per_page > #self.kv_pairs) and (self.max_loaded_pages < new_page)
-            and #self.kv_pairs < self.total_res  then
-            local info = InfoMessage:new{text = _("Please wait…")}
-            UIManager:show(info)
-            UIManager:forceRePaint()
-            self:nextPage()
-            UIManager:close(info)
-        else
-            self:nextPage()
-        end
+        self:_nextPage()
         return true
     elseif ges_ev.direction == "east" then
         self:prevPage()

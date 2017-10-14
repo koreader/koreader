@@ -199,19 +199,20 @@ function Goodreads:search(search_type)
                     callback = function()
                         text_input = search_input:getInputText()
                         if text_input ~= nil and text_input ~= "" then
-                            info = InfoMessage:new{text = _("Please wait…"), timeout = 0.0}
-                            UIManager:show(info)
-                            UIManager:nextTick(function()
-                                result = DoubleKeyValuePage:new{
-                                    title = _("Select book"),
-                                    text_input = text_input,
-                                    search_type = search_type,
-                                }
-                                if #result.kv_pairs > 0 then
-                                    UIManager:show(result)
-                                end
-                            end)
+                            info = InfoMessage:new{text = _("Please wait…")}
                             UIManager:close(search_input)
+                            UIManager:show(info)
+                            UIManager:forceRePaint()
+                            result = DoubleKeyValuePage:new{
+                                title = _("Select book"),
+                                text_input = text_input,
+                                search_type = search_type,
+                            }
+                            if #result.kv_pairs > 0 then
+                                UIManager:show(result)
+                            end
+                            UIManager:close(info)
+
                         else
                             UIManager:show(InfoMessage:new{
                                 text =_("Please enter text"),
