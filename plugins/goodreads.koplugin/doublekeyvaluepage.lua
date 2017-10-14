@@ -120,13 +120,13 @@ function DoubleKeyValueItem:init()
     end
     local key_w = RenderText:sizeUtf8Text(0, self.width, self.cface_down, self.key).x
     local value_w = RenderText:sizeUtf8Text(0, self.width, self.cface_up, self.value).x
-    if key_w > self.width - padding then
-        self.show_key = RenderText:truncateTextByWidth(self.key, self.cface_down, self.width - padding)
+    if key_w > self.width - 2*padding then
+        self.show_key = RenderText:truncateTextByWidth(self.key, self.cface_down, self.width - 2*padding)
     else
         self.show_key = self.key
     end
-    if value_w > self.width - padding then
-        self.show_value = RenderText:truncateTextByWidth(self.value, self.cface_up, self.width - padding)
+    if value_w > self.width - 2*padding then
+        self.show_value = RenderText:truncateTextByWidth(self.value, self.cface_up, self.width - 2*padding)
     else
         self.show_value = self.value
     end
