@@ -276,20 +276,20 @@ Use ccache
 ==========
 
 Ccache can speed up recompilation by caching previous compilations and detecting
-when the same compilation is repeated. In other words, it will decrease
+when the same compilation is being repeated. In other words, it will decrease
 build time when the sources have been built before. Ccache support has been added to
-KOReader's build system. To install a ccache:
+KOReader's build system. To install ccache:
 
 * in Ubuntu use:`sudo apt-get install ccache`
 * in Fedora use:`sudo yum install ccache`
-* install from source:
-  * get latest ccache source from http://ccache.samba.org/download.html
-  * unarchieve the source package in a directory
-  * cd to that directory and use:`./configure && make && sudo make install`
+* from source:
+  * download the latest ccache source from http://ccache.samba.org/download.html
+  * extract the source package in a directory
+  * `cd` to that directory and use:`./configure && make && sudo make install`
 * to disable ccache, use `export USE_NO_CCACHE=1` before make.
-* for more detail about ccache. visit:
+* for more information about ccache, visit:
 
-http://ccache.samba.org
+https://ccache.samba.org/
 
 
 [base-readme]:https://github.com/koreader/koreader-base/blob/master/README.md
