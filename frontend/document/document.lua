@@ -35,6 +35,8 @@ local Document = {
 
     -- whether this document can be rendered in color
     is_color_capable = true,
+    -- bb type needed by engine for color rendering
+    color_bb_type = Blitbuffer.TYPE_BBRGB32,
 
 }
 
@@ -337,7 +339,7 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
         size = size.w * size.h + 64, -- estimation
         excerpt = size,
         pageno = pageno,
-        bb = Blitbuffer.new(size.w, size.h, self.render_color and Blitbuffer.TYPE_BBRGB32 or nil)
+        bb = Blitbuffer.new(size.w, size.h, self.render_color and self.color_bb_type or nil)
     }
 
     -- create a draw context
