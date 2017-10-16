@@ -93,7 +93,8 @@ function TimeWidget:update()
     }
 
     local time_title = FrameContainer:new{
-        margin = Size.margin.small,
+        padding = Size.padding.default,
+        margin = Size.margin.title,
         bordersize = 0,
         TextWidget:new{
             text = self.title_text,
@@ -114,7 +115,7 @@ function TimeWidget:update()
             h = time_title:getSize().h
         },
         time_title,
-        CloseButton:new{ window = self, },
+        CloseButton:new{ window = self, padding_top = Size.margin.title, },
     }
     local buttons = {
         {

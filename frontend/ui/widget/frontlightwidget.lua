@@ -238,6 +238,7 @@ end
 function FrontLightWidget:update()
     -- header
     self.light_title = FrameContainer:new{
+        padding = Size.padding.default,
         margin = Size.margin.title,
         bordersize = 0,
         TextWidget:new{
@@ -266,7 +267,7 @@ function FrontLightWidget:update()
             h = self.light_title:getSize().h
         },
         self.light_title,
-        CloseButton:new{ window = self, },
+        CloseButton:new{ window = self, padding_top = Size.margin.title, },
     }
     self.light_frame = FrameContainer:new{
         radius = Size.radius.window,

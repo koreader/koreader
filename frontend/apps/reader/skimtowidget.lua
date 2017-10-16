@@ -69,7 +69,7 @@ function SkimToWidget:init()
 
     self.skimto_title = FrameContainer:new{
         padding = Size.padding.default,
-        margin = Size.margin.default,
+        margin = Size.margin.title,
         bordersize = 0,
         TextWidget:new{
             text = self.dialog_title,
@@ -112,7 +112,7 @@ function SkimToWidget:init()
             h = self.skimto_title:getSize().h
         },
         self.skimto_title,
-        CloseButton:new{ window = self, },
+        CloseButton:new{ window = self, padding_top = Size.margin.title, },
     }
     self.button_minus = Button:new{
         text = "-1",
