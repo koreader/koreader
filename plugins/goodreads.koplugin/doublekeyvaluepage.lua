@@ -18,6 +18,7 @@ local LineWidget = require("ui/widget/linewidget")
 local LuaSettings = require("luasettings")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local RenderText = require("ui/rendertext")
+local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -31,6 +32,7 @@ local DoubleKeyValueTitle = VerticalGroup:new{
     title = "",
     tface = Font:getFace("tfont"),
     align = "left",
+    use_top_page_count = false,
 }
 
 function DoubleKeyValueTitle:init()
@@ -55,19 +57,6 @@ function DoubleKeyValueTitle:init()
         self.close_button,
     })
     -- page count and separation line
-    self.page_cnt = FrameContainer:new{
-        padding = Screen:scaleBySize(4),
-        margin = 0,
-        bordersize = 0,
-        background = Blitbuffer.COLOR_WHITE,
-        -- overlap offset x will be updated in setPageCount method
-        overlap_offset = {0, -15},
-        TextWidget:new{
-            text = "",  -- page count
-            fgcolor = Blitbuffer.COLOR_GREY,
-            face = Font:getFace("x_smallinfofont"),
-        },
-    }
     self.title_bottom = OverlapGroup:new{
         dimen = { w = self.width, h = Screen:scaleBySize(2) },
         LineWidget:new{
@@ -75,8 +64,23 @@ function DoubleKeyValueTitle:init()
             background = Blitbuffer.COLOR_GREY,
             style = "solid",
         },
-        self.page_cnt,
     }
+    if self.use_top_page_count then
+        self.page_cnt = FrameContainer:new{
+            padding = Size.padding.default,
+            margin = 0,
+            bordersize = 0,
+            background = Blitbuffer.COLOR_WHITE,
+            -- overlap offset x will be updated in setPageCount method
+            overlap_offset = {0, -15},
+            TextWidget:new{
+                text = "",  -- page count
+                fgcolor = Blitbuffer.COLOR_GREY,
+                face = Font:getFace("smallffont"),
+            },
+        }
+        table.insert(self.title_bottom, self.page_cnt)
+    end
     table.insert(self, self.title_bottom)
     table.insert(self, VerticalSpan:new{ width = Screen:scaleBySize(5) })
 end
@@ -189,6 +193,7 @@ local DoubleKeyValuePage = InputContainer:new{
     width = nil,
     height = nil,
     show_page = 1,
+    use_top_page_count = false,
     text_input = "",
     pages = 1,
     goodreads_key = "",
@@ -280,6 +285,7 @@ function DoubleKeyValuePage:init()
         title = self.title,
         width = self.item_width,
         height = self.item_height,
+        use_top_page_count = self.use_top_page_count,
         kv_page = self,
     }
     -- setup main content
@@ -379,7 +385,6 @@ function DoubleKeyValuePage:_populateItems()
         table.insert(self.main_content,
                      VerticalSpan:new{ width = self.item_margin })
     end
-    self.title_bar:setPageCount(self.show_page, self.pages)
     self.page_info_text:setText(T(_("page %1 of %2"), self.show_page, self.pages))
     self.page_info_left_chev:showHide(self.pages > 1)
     self.page_info_right_chev:showHide(self.pages > 1)
