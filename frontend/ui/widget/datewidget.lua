@@ -107,7 +107,7 @@ function DateWidget:update()
 
     local date_title = FrameContainer:new{
         padding = Size.padding.default,
-        margin = Size.margin.default,
+        margin = Size.margin.title,
         bordersize = 0,
         TextWidget:new{
             text = self.title_text,
@@ -128,7 +128,7 @@ function DateWidget:update()
             h = date_title:getSize().h
         },
         date_title,
-        CloseButton:new{ window = self, },
+        CloseButton:new{ window = self, padding_top = Size.margin.title, },
     }
     local buttons = {
         {

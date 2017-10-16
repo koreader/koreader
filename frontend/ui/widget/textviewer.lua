@@ -89,7 +89,7 @@ function TextViewer:init()
         }
     end
 
-    local closeb = CloseButton:new{ window = self, }
+    local closeb = CloseButton:new{ window = self, padding_top = Size.padding.tiny, }
     local title_text = TextBoxWidget:new{
         text = self.title,
         face = self.title_face,
@@ -98,15 +98,14 @@ function TextViewer:init()
     }
     local titlew = FrameContainer:new{
         padding = self.title_padding,
+        -- TextBoxWidget has less text top & bottom padding than TextWidget
+        -- (for a reasonable line height with multi lines), but we
+        -- can get the same as TextWidget by simply adding Size.padding.small
+        padding_top = self.title_padding + Size.padding.small,
+        padding_bottom = self.title_padding + Size.padding.small,
         margin = self.title_margin,
         bordersize = 0,
-        CenterContainer:new{
-            dimen = Geom:new{
-                w = self.width,
-                h = title_text:getSize().h,
-            },
-            title_text
-        }
+        title_text
     }
     titlew = OverlapGroup:new{
         dimen = {

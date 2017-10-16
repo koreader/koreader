@@ -24,23 +24,32 @@ local Screen = require("device").screen
 local CloseButton = InputContainer:new{
     overlap_align = "right",
     window = nil,
+    padding_left = Screen:scaleBySize(14), -- for larger touch area
+    padding_right = 0,
+    padding_top = 0,
+    padding_bottom = 0,
 }
 
 function CloseButton:init()
     local text_widget = TextWidget:new{
         text = "×",
-        face = Font:getFace("cfont", 32),
+        face = Font:getFace("cfont", 30),
     }
-    local padding_span = HorizontalSpan:new{ width = Screen:scaleBySize(14) }
+
+    local text_size = text_widget:getSize()
+    -- The text box height is greater than its width, and we want this × to
+    -- be diagonally aligned with our top right border
+    local text_width_pad = (text_size.h - text_size.w) / 2
+    -- We also add the provided padding_right
 
     self[1] = FrameContainer:new{
         bordersize = 0,
         padding = 0,
-        HorizontalGroup:new{
-            padding_span,
-            text_widget,
-            padding_span,
-        }
+        padding_top = self.padding_top,
+        padding_bottom = self.padding_bottom,
+        padding_left = self.padding_left,
+        padding_right = self.padding_right + text_width_pad,
+        text_widget,
     }
 
     self.ges_events.Close = {

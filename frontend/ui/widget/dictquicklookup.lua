@@ -415,7 +415,7 @@ function DictQuickLookup:update()
             h = self.dict_title:getSize().h
         },
         self.dict_title,
-        CloseButton:new{ window = self, },
+        CloseButton:new{ window = self, padding_top = self.title_margin, },
     }
 
     self.dict_frame = FrameContainer:new{
