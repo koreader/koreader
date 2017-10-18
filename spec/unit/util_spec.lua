@@ -329,6 +329,14 @@ describe("util module", function()
                             util.secondsToClock(110, true))
             assert.is_equal("00:02",
                             util.secondsToClock(120, true))
+            assert.is_equal("01:00",
+                            util.secondsToClock(3600, true))
+            assert.is_equal("01:00",
+                            util.secondsToClock(3599, true))
+            assert.is_equal("01:00",
+                            util.secondsToClock(3570, true))
+            assert.is_equal("00:59",
+                            util.secondsToClock(3569, true))
         end)
         it("should convert seconds to 00:00:00 format", function()
             assert.is_equal("00:00:00",

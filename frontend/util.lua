@@ -81,12 +81,16 @@ function util.secondsToClock(seconds, withoutSeconds)
         end
     else
         local round = withoutSeconds and require("optmath").round or math.floor
-        local hours = string.format("%02.f", math.floor(seconds / 3600));
-        local mins = string.format("%02.f", round(seconds / 60 - (hours * 60)));
+        local hours = string.format("%02.f", math.floor(seconds / 3600))
+        local mins = string.format("%02.f", round(seconds / 60 - (hours * 60)))
+        if mins == "60" then
+            mins = string.format("%02.f", 0)
+            hours = string.format("%02.f", hours + 1)
+        end
         if withoutSeconds then
             return hours .. ":" .. mins
         end
-        local secs = string.format("%02.f", math.floor(seconds - hours * 3600 - mins * 60));
+        local secs = string.format("%02.f", math.floor(seconds - hours * 3600 - mins * 60))
         return hours .. ":" .. mins .. ":" .. secs
     end
 end
