@@ -75,9 +75,9 @@ function util.secondsToClock(seconds, withoutSeconds)
     seconds = tonumber(seconds)
     if seconds == 0 or seconds ~= seconds then
         if withoutSeconds then
-            return "00:00";
+            return "00:00"
         else
-            return "00:00:00";
+            return "00:00:00"
         end
     else
         local round = withoutSeconds and require("optmath").round or math.floor
