@@ -9,6 +9,7 @@ local util = require("ffi/util")
 local _ = require("gettext")
 local Screen = Device.screen
 local getFileNameSuffix = require("util").getFileNameSuffix
+local getFriendlySize = require("util").getFriendlySize
 
 ffi.cdef[[
 int strcoll (const char *str1, const char *str2);
@@ -188,14 +189,7 @@ function FileChooser:genItemTableFromPath(path)
     for _, file in ipairs(files) do
         local full_path = self.path.."/"..file.name
         local file_size = lfs.attributes(full_path, "size") or 0
-        local sstr
-        if file_size > 1024*1024 then
-            sstr = string.format("%4.1f MB", file_size/1024/1024)
-        elseif file_size > 1024 then
-            sstr = string.format("%4.1f KB", file_size/1024)
-        else
-            sstr = string.format("%d B", file_size)
-        end
+        local sstr = getFriendlySize(file_size)
         local file_item = {
             text = file.name,
             mandatory = sstr,

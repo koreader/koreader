@@ -133,15 +133,7 @@ end
 -- DB management
 function BookInfoManager:getDbSize()
     local file_size = lfs.attributes(self.db_location, "size") or 0
-    local sstr
-    if file_size > 1024*1024 then
-        sstr = string.format("%4.1f MB", file_size/1024/1024)
-    elseif file_size > 1024 then
-        sstr = string.format("%4.1f KB", file_size/1024)
-    else
-        sstr = string.format("%d B", file_size)
-    end
-    return sstr
+    return require("util").getFriendlySize(file_size)
 end
 
 function BookInfoManager:createDB()
