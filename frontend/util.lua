@@ -352,6 +352,21 @@ function util.getFileNameSuffix(file)
     return suffix
 end
 
+--- Gets human friendly size as string
+---- @int size (bytes)
+---- @treturn string
+function util.getFriendlySize(size)
+    local s
+    if size > 1024*1024 then
+        s = string.format("%4.1f MB", size/1024/1024)
+    elseif size > 1024 then
+        s = string.format("%4.1f KB", size/1024)
+    else
+        s = string.format("%d B", size)
+    end
+    return s
+end
+
 --- Adds > to touch menu items with a submenu
 function util.getMenuText(item)
     local text
