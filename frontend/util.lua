@@ -357,7 +357,9 @@ end
 ---- @treturn string
 function util.getFriendlySize(size)
     local s
-    if size > 1024*1024 then
+    if size > 1024*1024*1024 then
+        s = string.format("%4.1f GB", size/1024/1024/1024)
+    elseif size > 1024*1024 then
         s = string.format("%4.1f MB", size/1024/1024)
     elseif size > 1024 then
         s = string.format("%4.1f KB", size/1024)
