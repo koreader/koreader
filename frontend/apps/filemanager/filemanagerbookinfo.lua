@@ -52,7 +52,9 @@ function BookInfo:show(file, book_props)
     local directory, filename = util.splitFilePathName(file)
     local filename_without_suffix, filetype = util.splitFileNameSuffix(filename) -- luacheck: no unused
     local file_size = lfs.attributes(file, "size") or 0
-    local size = util.getFriendlySize(file_size)
+    local size_f = util.getFriendlySize(file_size)
+    local size_b = util.getFormattedSize(file_size)
+    local size = string.format("%s (%s bytes)", size_f, size_b)
     table.insert(kv_pairs, { _("Filename:"), filename })
     table.insert(kv_pairs, { _("Format:"), filetype:upper() })
     table.insert(kv_pairs, { _("Size:"), size })

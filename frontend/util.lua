@@ -369,6 +369,16 @@ function util.getFriendlySize(size)
     return s
 end
 
+--- Gets formatted size as string (1273334 => "1,273,334")
+---- @int size (bytes)
+---- @treturn string
+function util.getFormattedSize(size)
+    local s = tostring(size)
+    s = s:reverse():gsub("(%d%d%d)", "%1,")
+    s = s:reverse():gsub("^,", "")
+    return s
+end
+
 --- Adds > to touch menu items with a submenu
 function util.getMenuText(item)
     local text
