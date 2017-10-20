@@ -77,7 +77,7 @@ function ProgressWidget:paintTo(bb, x, y)
         local bar_height = my_size.h-2*(self.margin_v+self.bordersize)
         for i=1, #self.ticks do
             bb:paintRect(
-                x + bar_width*(self.ticks[i]/self.last),
+                x + bar_width*(self.ticks[i]/self.last) + self.margin_h,
                 y_pos,
                 self.tick_width,
                 bar_height,
