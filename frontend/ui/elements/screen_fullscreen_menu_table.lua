@@ -1,4 +1,5 @@
 local isAndroid, android = pcall(require, "android")
+local Geom = require("ui/geometry")
 local logger = require("logger")
 local _ = require("gettext")
 
