@@ -304,21 +304,32 @@ function ListMenuItem:update()
                 fileinfo_str = self.mandatory .. "  " .. fileinfo_str
             end
             -- Current page / pages are available or more accurate in .sdr/metadata.lua
+            -- We use a cache (cleaned at end of this browsing session) to store
+            -- page and percent read from sidecar files, to avoid re-parsing them
+            -- when re-rendering a visited page
+            if not self.menu.cover_info_cache then
+                self.menu.cover_info_cache = {}
+            end
             local pages_str = ""
             local percent_finished
             local pages = bookinfo.pages -- default to those in bookinfo db
             if DocSettings:hasSidecarFile(self.filepath) then
                 self.been_opened = true
-                local docinfo = DocSettings:open(self.filepath)
-                -- We can get nb of page in the new 'doc_pages' setting, or from the old 'stats.page'
-                if docinfo.data.doc_pages then
-                    pages = docinfo.data.doc_pages
-                elseif docinfo.data.stats and docinfo.data.stats.pages then
-                    if docinfo.data.stats.pages ~= 0 then -- crengine with statistics disabled stores 0
-                        pages = docinfo.data.stats.pages
+                if self.menu.cover_info_cache[self.filepath] then
+                    pages, percent_finished = unpack(self.menu.cover_info_cache[self.filepath])
+                else
+                    local docinfo = DocSettings:open(self.filepath)
+                    -- We can get nb of page in the new 'doc_pages' setting, or from the old 'stats.page'
+                    if docinfo.data.doc_pages then
+                        pages = docinfo.data.doc_pages
+                    elseif docinfo.data.stats and docinfo.data.stats.pages then
+                        if docinfo.data.stats.pages ~= 0 then -- crengine with statistics disabled stores 0
+                            pages = docinfo.data.stats.pages
+                        end
                     end
+                    percent_finished = docinfo.data.percent_finished
+                    self.menu.cover_info_cache[self.filepath] = {pages, percent_finished}
                 end
-                percent_finished = docinfo.data.percent_finished
             end
             if percent_finished then
                 if pages then
@@ -664,9 +675,10 @@ function ListMenu:_recalculateDimen()
         -- a self.perpage higher than it should be: Menu:init() will set a wrong self.page.
         -- We'll have to update it, if we want FileManager to get back to the original page.
         self.page_recalc_needed_next_time = true
-        -- Also remember original position, which will be changed by Menu/FileChooser
-        -- to a probably wrong value
+        -- Also remember original position (and focused_path), which will be changed by
+        -- Menu/FileChooser to a probably wrong value
         self.itemnum_orig = self.path_items[self.path]
+        self.focused_path_orig = self.focused_path
     end
     local available_height = self.dimen.h - self.others_height
 
@@ -675,6 +687,8 @@ function ListMenu:_recalculateDimen()
     local item_height_min = Screen:scaleBySize(64)
     self.perpage = math.floor(available_height / item_height_min)
     self.page_num = math.ceil(#self.item_table / self.perpage)
+    -- fix current page if out of range
+    if self.page_num > 0 and self.page > self.page_num then self.page = self.page_num end
 
     local height_remaining = available_height - self.perpage * item_height_min
     height_remaining = height_remaining - (self.perpage+1) -- N+1 LineWidget separators
@@ -686,13 +700,23 @@ function ListMenu:_recalculateDimen()
     }
 
     if self.page_recalc_needed then
-        -- self.page has probably been set to a wrong value,
-        -- we recalculate it here as done in Menu:init()
+        -- self.page has probably been set to a wrong value, we recalculate
+        -- it here as done in Menu:init() or Menu:switchItemTable()
         if #self.item_table > 0 then
             self.page = math.ceil((self.itemnum_orig or 1) / self.perpage)
         end
+        if self.focused_path_orig then
+            for num, item in ipairs(self.item_table) do
+                if item.path == self.focused_path_orig then
+                    self.page = math.floor((num-1) / self.perpage) + 1
+                    break
+                end
+            end
+        end
+        if self.page_num > 0 and self.page > self.page_num then self.page = self.page_num end
         self.page_recalc_needed = nil
         self.itemnum_orig = nil
+        self.focused_path_orig = nil
     end
     if self.page_recalc_needed_next_time then
         self.page_recalc_needed = true
