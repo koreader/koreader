@@ -61,6 +61,4 @@ function Device:initNetworkManager(NetworkMgr)
     end
 end
 
-
-
 return Device
