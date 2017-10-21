@@ -93,6 +93,22 @@ function ReaderBookmark:isBookmarkInReversePageOrder(a, b)
     end
 end
 
+function ReaderBookmark:isBookmarkPageInPageOrder(a, b)
+    if self.ui.document.info.has_pages then
+        return a > b.page
+    else
+        return a > self.ui.document:getPageFromXPointer(b.page)
+    end
+end
+
+function ReaderBookmark:isBookmarkPageInReversePageOrder(a, b)
+    if self.ui.document.info.has_pages then
+        return a < b.page
+    else
+        return a < self.ui.document:getPageFromXPointer(b.page)
+    end
+end
+
 function ReaderBookmark:fixBookmarkSort(config)
     -- for backward compatibility, since previously bookmarks for credocuments
     -- are not well sorted. We need to do a whole sorting for at least once.
@@ -497,6 +513,24 @@ function ReaderBookmark:getNextBookmarkedPage(pn_or_xp)
     logger.dbg("go to next bookmark from", pn_or_xp)
     for i = #self.bookmarks, 1, -1 do
         if self:isBookmarkInReversePageOrder({page = pn_or_xp}, self.bookmarks[i]) then
+            return self.bookmarks[i].page
+        end
+    end
+end
+
+function ReaderBookmark:getPreviousBookmarkedPageFromPage(pn_or_xp)
+    logger.dbg("go to next bookmark from", pn_or_xp)
+    for i = 1, #self.bookmarks do
+        if self:isBookmarkPageInPageOrder(pn_or_xp, self.bookmarks[i]) then
+            return self.bookmarks[i].page
+        end
+    end
+end
+
+function ReaderBookmark:getNextBookmarkedPageFromPage(pn_or_xp)
+    logger.dbg("go to next bookmark from", pn_or_xp)
+    for i = #self.bookmarks, 1, -1 do
+        if self:isBookmarkPageInReversePageOrder(pn_or_xp, self.bookmarks[i]) then
             return self.bookmarks[i].page
         end
     end

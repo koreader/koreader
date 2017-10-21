@@ -107,9 +107,9 @@ function Button:init()
     end
 end
 
-function Button:setText(text)
+function Button:setText(text, width)
     self.text = text
-    self.width = nil
+    self.width = width
     self:init()
 end
 
