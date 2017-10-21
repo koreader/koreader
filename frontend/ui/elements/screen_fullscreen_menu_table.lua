@@ -1,8 +1,10 @@
 local isAndroid, android = pcall(require, "android")
+local Device = require("device")
 local Geom = require("ui/geometry")
 local logger = require("logger")
 local _ = require("gettext")
-local Screen = require("device").screen
+local Input = Device.input
+local Screen = Device.screen
 
 if not isAndroid then return end
 
@@ -29,6 +31,9 @@ return {
         local new_height = screen_height - status_bar_height
         local viewport = Geom:new{x=0, y=status_bar_height, w=screen_width, h=new_height}
         Screen:setViewport(viewport)
+        Input:registerEventAdjustHook(
+            Input.adjustTouchTranslate,
+            {x = 0 - viewport.x, y = 0 - viewport.y})
 
         G_reader_settings:saveSetting("disabled_fullscreen", enabled_fullscreen)
     end,
