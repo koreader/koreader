@@ -3,6 +3,7 @@ local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("frontend/luasettings")
 local UIManager = require("ui/uimanager")
+local NetworkMgr = require("ui/network/manager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffi = require("ffi")
 local http = require("socket.http")
@@ -82,6 +83,18 @@ function NewsDownloader:addToMainMenu(menu_items)
                 callback = function() self:removeNewsButKeepFeedConfig() end,
             },
             {
+                text = _("Turn on/off WiFi"),
+                callback = function()
+                    if not NetworkMgr:isOnline() then
+                        NetworkMgr:promptWifiOn()
+                        return
+                    else
+                        NetworkMgr:promptWifiOff()
+                        return
+                    end
+                end,
+            },
+            {
                 text = _("Set custom download directory"),
                 callback = function() self:setCustomDownloadDirectory() end,
             },
@@ -133,6 +146,10 @@ function NewsDownloader:lazyInitialization()
 end
 
 function NewsDownloader:loadConfigAndProcessFeeds()
+    if not NetworkMgr:isOnline() then
+        NetworkMgr:promptWifiOn()
+        return
+    end
     local info = InfoMessage:new{ text = _("Loading news feed config…") }
     UIManager:show(info)
     logger.dbg("force repaint due to upcoming blocking calls")
