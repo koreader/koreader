@@ -1,23 +1,23 @@
 local isAndroid, android = pcall(require, "android")
+local Device = require("device")
 local Geom = require("ui/geometry")
 local logger = require("logger")
 local _ = require("gettext")
-local Screen = require("device").screen
+local Input = Device.input
+local Screen = Device.screen
 
 if not isAndroid then return end
 
 return {
     text = _("Fullscreen"),
     checked_func = function()
-        local disabled_fullscreen = G_reader_settings:isTrue("disabled_fullscreen")
-        logger.dbg("screen_fullscreen_menu_table.lua: Is fullscreen disabled", disabled_fullscreen)
-        return disabled_fullscreen
+        return G_reader_settings:isFalse("disabled_fullscreen")
     end,
     callback = function()
-        local enabled_fullscreen = G_reader_settings:isFalse("disabled_fullscreen")
+        local disabled_fullscreen = G_reader_settings:isTrue("disabled_fullscreen")
 
-        logger.dbg("screen_fullscreen_menu_table.lua:  Fullscreen swiching to: ", enabled_fullscreen)
-        android.setFullscreen(enabled_fullscreen)
+        logger.dbg("screen_fullscreen_menu_table.lua:  Fullscreen swiching to: ", disabled_fullscreen)
+        android.setFullscreen(disabled_fullscreen)
 
         local status_bar_height = android.getStatusBarHeight()
         logger.dbg("screen_fullscreen_menu_table.lua: Status bar height: ", status_bar_height)
@@ -28,8 +28,20 @@ return {
 
         local new_height = screen_height - status_bar_height
         local viewport = Geom:new{x=0, y=status_bar_height, w=screen_width, h=new_height}
-        Screen:setViewport(viewport)
 
-        G_reader_settings:saveSetting("disabled_fullscreen", enabled_fullscreen)
+        if not disabled_fullscreen and Screen.viewport then
+            -- reset touchTranslate to normal
+            Input:registerEventAdjustHook(
+                Input.adjustTouchTranslate,
+                {x = 0 + Screen.viewport.x, y = 0 + Screen.viewport.y})
+        end
+        Screen:setViewport(viewport)
+        if disabled_fullscreen then
+            Input:registerEventAdjustHook(
+                Input.adjustTouchTranslate,
+                {x = 0 - Screen.viewport.x, y = 0 - Screen.viewport.y})
+        end
+
+        G_reader_settings:saveSetting("disabled_fullscreen", not disabled_fullscreen)
     end,
 }
