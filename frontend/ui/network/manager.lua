@@ -82,7 +82,7 @@ end
 function NetworkMgr:getWifiMenuTable()
     return {
         text = _("Wi-Fi connection"),
-        enabled_func = function() return Device:isKindle() or Device:isKobo() or Device:isAndroid() end,
+        enabled_func = function() return Device:isAndroid() or Device:isKindle() or Device:isKobo() end,
         checked_func = function() return NetworkMgr:isOnline() end,
         callback = function(menu)
             local wifi_status = NetworkMgr:isOnline()
