@@ -26,7 +26,6 @@ return {
         logger.dbg("screen_fullscreen_menu_table.lua: Screen height: ", screen_height)
 
         local new_height = screen_height - status_bar_height
-        logger.dbg("screen_fullscreen_menu_table.lua: Setting viewport to {x= 0, y=" .. status_bar_height ..", w=" .. screen_width .. ", h=" .. new_height .. "}")
         local viewport = Geom:new{x=0, y= status_bar_height, w=screen_width, h= new_height}
         android.screen:setViewport(viewport)
 
