@@ -2,6 +2,7 @@ local isAndroid, android = pcall(require, "android")
 local Geom = require("ui/geometry")
 local logger = require("logger")
 local _ = require("gettext")
+local Screen = require("device").screen
 
 if not isAndroid then return end
 
@@ -26,8 +27,8 @@ return {
         logger.dbg("screen_fullscreen_menu_table.lua: Screen height: ", screen_height)
 
         local new_height = screen_height - status_bar_height
-        local viewport = Geom:new{x=0, y= status_bar_height, w=screen_width, h= new_height}
-        android.screen:setViewport(viewport)
+        local viewport = Geom:new{x=0, y=status_bar_height, w=screen_width, h=new_height}
+        Screen:setViewport(viewport)
 
         G_reader_settings:saveSetting("disabled_fullscreen", enabled_fullscreen)
     end,
