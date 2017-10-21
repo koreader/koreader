@@ -11,7 +11,6 @@ if not isAndroid then return end
 return {
     text = _("Fullscreen"),
     checked_func = function()
-        logger.dbg("screen_fullscreen_menu_table.lua: Is fullscreen disabled", disabled_fullscreen)
         return G_reader_settings:isFalse("disabled_fullscreen")
     end,
     callback = function()
