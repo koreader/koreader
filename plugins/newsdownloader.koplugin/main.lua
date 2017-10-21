@@ -83,22 +83,6 @@ function NewsDownloader:addToMainMenu(menu_items)
                 callback = function() self:removeNewsButKeepFeedConfig() end,
             },
             {
-                text = _("Turn on/off WiFi"),
-                callback = function()
-                    if not NetworkMgr:isOnline() then
-                        NetworkMgr:turnOnWifi()
-                        local info = InfoMessage:new{ text = _("Turning Wifi On…") }
-                        UIManager:show(info)
-                        return
-                    else
-                        NetworkMgr:turnOffWifi()
-                        local info = InfoMessage:new{ text = _("Turning Wifi Off…") }
-                        UIManager:show(info)
-                        return
-                    end
-                end,
-            },
-            {
                 text = _("Set custom download directory"),
                 callback = function() self:setCustomDownloadDirectory() end,
             },
@@ -205,6 +189,7 @@ function NewsDownloader:loadConfigAndProcessFeeds()
             text = T(_("Downloading news finished. Could not process some feeds. Unsupported format in: %1"), unsupported_urls)
         })
     end
+    NetworkMgr:promptWifiOff()
 end
 
 function NewsDownloader:processFeedSource(url, limit, unsupported_feeds_urls)
