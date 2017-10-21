@@ -96,6 +96,7 @@ function FileManager:init()
     local file_chooser = FileChooser:new{
         -- remeber to adjust the height when new item is added to the group
         path = self.root_path,
+        focused_path = self.focused_file,
         collate = G_reader_settings:readSetting("collate") or "strcoll",
         show_parent = self.show_parent,
         show_hidden = show_hidden,
@@ -112,6 +113,7 @@ function FileManager:init()
         close_callback = function() return self:onClose() end,
     }
     self.file_chooser = file_chooser
+    self.focused_file = nil -- use it only once
 
     function file_chooser:onPathChanged(path)  -- luacheck: ignore
         FileManager.instance.path_text:setText(filemanagerutil.abbreviate(path))
@@ -326,12 +328,13 @@ function FileManager:reinit(path, focused_file)
         path_items_backup[k] = v
     end
     -- reinit filemanager
+    self.focused_file = focused_file
     self:init()
     self.file_chooser.path_items = path_items_backup
-    self:onRefresh()
-    if focused_file then
-        self.file_chooser:changePageToPath(focused_file)
-    end
+    -- self:init() has already done file_chooser:refreshPath(), so this one
+    -- looks like not necessary (cheap with classic mode, less cheap with
+    -- CoverBrowser plugin's cover image renderings)
+    -- self:onRefresh()
 end
 
 function FileManager:toggleHiddenFiles()
@@ -557,13 +560,11 @@ function FileManager:showFiles(path, focused_file)
     local file_manager = FileManager:new{
         dimen = Screen:getSize(),
         root_path = path,
+        focused_file = focused_file,
         onExit = function()
             self.instance = nil
         end
     }
-    if focused_file then
-        file_manager.file_chooser:changePageToPath(focused_file)
-    end
     UIManager:show(file_manager)
     self.instance = file_manager
 end

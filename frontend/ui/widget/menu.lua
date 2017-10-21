@@ -411,6 +411,8 @@ function Menu:_recalculateDimen()
     -- header and footer should approximately take up space of 2 items
     self.perpage = math.floor(self.dimen.h / self.item_dimen.h) - (self.no_title and 1 or 2)
     self.page_num = math.ceil(#self.item_table / self.perpage)
+    -- fix current page if out of range
+    if self.page_num > 0 and self.page > self.page_num then self.page = self.page_num end
 end
 
 function Menu:init()
@@ -740,8 +742,12 @@ end
     3. itemnumber is negative number
         the page number is not changed, used when item_table is appended with
         new entries
+
+    alternatively, itemmatch may be provided as a {key = value} table,
+    and the page number will be the page containing the first item for
+    which item.key = value
 --]]
-function Menu:switchItemTable(new_title, new_item_table, itemnumber)
+function Menu:switchItemTable(new_title, new_item_table, itemnumber, itemmatch)
     if self.menu_title and new_title then
         self.menu_title.text = new_title
     end
@@ -750,6 +756,16 @@ function Menu:switchItemTable(new_title, new_item_table, itemnumber)
         self.page = 1
     elseif itemnumber >= 0 then
         self.page = math.ceil(itemnumber / self.perpage)
+    end
+
+    if type(itemmatch) == "table" then
+        local key, value = next(itemmatch)
+        for num, item in ipairs(new_item_table) do
+            if item[key] == value then
+                self.page = math.floor((num-1) / self.perpage) + 1
+                break
+            end
+        end
     end
 
     -- make sure current page is in right page range

@@ -179,7 +179,7 @@ function ImageWidget:_render()
     if self._bb then -- already rendered
         return
     end
-    logger.dbg("ImageWidget: _render'ing")
+    logger.dbg("ImageWidget: _render'ing", self.file and self.file or "data", self.width, self.height)
     if self.image then
         self:_loadimage()
     elseif self.file then
