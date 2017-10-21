@@ -672,6 +672,8 @@ function MosaicMenu:_recalculateDimen()
     end
     self.perpage = self.nb_rows * self.nb_cols
     self.page_num = math.ceil(#self.item_table / self.perpage)
+    -- fix current page if out of range
+    if self.page_num > 0 and self.page > self.page_num then self.page = self.page_num end
 
     -- Find out available height from other UI elements made in Menu
     self.others_height = 0
