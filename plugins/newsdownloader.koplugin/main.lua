@@ -86,10 +86,14 @@ function NewsDownloader:addToMainMenu(menu_items)
                 text = _("Turn on/off WiFi"),
                 callback = function()
                     if not NetworkMgr:isOnline() then
-                        NetworkMgr:promptWifiOn()
+                        NetworkMgr:turnOnWifi()
+                        local info = InfoMessage:new{ text = _("Turning Wifi On…") }
+                        UIManager:show(info)
                         return
                     else
-                        NetworkMgr:promptWifiOff()
+                        NetworkMgr:turnOffWifi()
+                        local info = InfoMessage:new{ text = _("Turning Wifi Off…") }
+                        UIManager:show(info)
                         return
                     end
                 end,
