@@ -100,7 +100,7 @@ function SkimToWidget:init()
         height = Screen:scaleBySize(30),
         percentage = self.curr_page / self.page_count,
         ticks = self.ticks_candidates,
-        tick_width = 1,
+        tick_width = Size.line.medium,
         last = self.page_count,
     }
     self.skimto_progress = FrameContainer:new{
