@@ -33,6 +33,7 @@ local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
+local VerticalSpan = require("ui/widget/verticalspan")
 local logger = require("logger")
 local _ = require("gettext")
 local Screen = Device.screen
@@ -48,25 +49,28 @@ local ConfirmBox = InputContainer:new{
     other_buttons = nil,
     margin = Size.margin.default,
     padding = Size.padding.default,
+    dismissable = true, -- set to false if any button callback is required
 }
 
 function ConfirmBox:init()
-    if Device:isTouchDevice() then
-        self.ges_events.TapClose = {
-            GestureRange:new{
-                ges = "tap",
-                range = Geom:new{
-                    x = 0, y = 0,
-                    w = Screen:getWidth(),
-                    h = Screen:getHeight(),
+    if self.dismissable then
+        if Device:isTouchDevice() then
+            self.ges_events.TapClose = {
+                GestureRange:new{
+                    ges = "tap",
+                    range = Geom:new{
+                        x = 0, y = 0,
+                        w = Screen:getWidth(),
+                        h = Screen:getHeight(),
+                    }
                 }
             }
-        }
-    end
-    if Device:hasKeys() then
-        self.key_events = {
-            Close = { {"Back"}, doc = "cancel" }
-        }
+        end
+        if Device:hasKeys() then
+            self.key_events = {
+                Close = { {"Back"}, doc = "cancel" }
+            }
+        end
     end
     local content = HorizontalGroup:new{
         align = "center",
@@ -127,9 +131,12 @@ function ConfirmBox:init()
             background = Blitbuffer.COLOR_WHITE,
             margin = self.margin,
             padding = self.padding,
+            padding_bottom = 0, -- no padding below buttontable
             VerticalGroup:new{
                 align = "left",
                 content,
+                -- Add same vertical space after than before content
+                VerticalSpan:new{ width = self.margin + self.padding },
                 button_table,
             }
         }

@@ -19,8 +19,11 @@ Example:
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
+local Device = require("device")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
+local Geom = require("ui/geometry")
+local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local ImageWidget = require("ui/widget/imagewidget")
@@ -29,6 +32,7 @@ local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
+local VerticalSpan = require("ui/widget/verticalspan")
 local logger = require("logger")
 local _ = require("gettext")
 local Screen = require("device").screen
@@ -45,13 +49,34 @@ local MultiConfirmBox = InputContainer:new{
     cancel_callback = function() end,
     margin = Size.margin.default,
     padding = Size.padding.default,
+    dismissable = true, -- set to false if any button callback is required
 }
 
 function MultiConfirmBox:init()
+    if self.dismissable then
+        if Device:isTouchDevice() then
+            self.ges_events.TapClose = {
+                GestureRange:new{
+                    ges = "tap",
+                    range = Geom:new{
+                        x = 0, y = 0,
+                        w = Screen:getWidth(),
+                        h = Screen:getHeight(),
+                    }
+                }
+            }
+        end
+        if Device:hasKeys() then
+            self.key_events = {
+                Close = { {"Back"}, doc = "cancel" }
+            }
+        end
+    end
     local content = HorizontalGroup:new{
         align = "center",
         ImageWidget:new{
-            file = "resources/info-i.png"
+            file = "resources/info-i.png",
+            scale_for_dpi = true,
         },
         HorizontalSpan:new{ width = Size.span.horizontal_default },
         TextBoxWidget:new{
@@ -100,9 +125,12 @@ function MultiConfirmBox:init()
             background = Blitbuffer.COLOR_WHITE,
             margin = self.margin,
             padding = self.padding,
+            padding_bottom = 0, -- no padding below buttontable
             VerticalGroup:new{
                 align = "left",
                 content,
+                -- Add same vertical space after than before content
+                VerticalSpan:new{ width = self.margin + self.padding },
                 button_table,
             }
         }
@@ -124,6 +152,14 @@ end
 function MultiConfirmBox:onClose()
     UIManager:close(self)
     return true
+end
+
+function MultiConfirmBox:onTapClose(arg, ges)
+    if ges.pos:notIntersectWith(self[1][1].dimen) then
+        self:onClose()
+        return true
+    end
+    return false
 end
 
 function MultiConfirmBox:onSelect()

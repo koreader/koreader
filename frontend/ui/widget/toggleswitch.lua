@@ -29,7 +29,7 @@ local ToggleLabel = TextWidget:new{
 }
 
 function ToggleLabel:paintTo(bb, x, y)
-    RenderText:renderUtf8Text(bb, x, y+self._height*0.75, self.face, self.text, true, self.bold, self.fgcolor)
+    RenderText:renderUtf8Text(bb, x, y+self._baseline_h, self.face, self.text, true, self.bold, self.fgcolor)
 end
 
 local ToggleSwitch = InputContainer:new{

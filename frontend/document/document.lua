@@ -35,6 +35,8 @@ local Document = {
 
     -- whether this document can be rendered in color
     is_color_capable = true,
+    -- bb type needed by engine for color rendering
+    color_bb_type = Blitbuffer.TYPE_BBRGB32,
 
 }
 
@@ -120,13 +122,18 @@ end
 -- Note that if PDF file size is around 1024, 4096, 16384, 65536, 262144
 -- 1048576, 4194304, 16777216, 67108864, 268435456 or 1073741824, appending data
 -- by highlighting in KOReader may change the digest value.
-function Document:fastDigest()
+function Document:fastDigest(docsettings)
     if not self.file then return end
     local file = io.open(self.file, 'rb')
     if file then
-        local docsettings = require("docsettings"):open(self.file)
+        local tmp_docsettings = false
+        if not docsettings then -- if not provided, open/create it
+            docsettings = require("docsettings"):open(self.file)
+            tmp_docsettings = true
+        end
         local result = docsettings:readSetting("partial_md5_checksum")
         if not result then
+            logger.dbg("computing and storing partial_md5_checksum")
             local md5 = require("ffi/MD5")
             local lshift = bit.lshift
             local step, size = 1024, 1024
@@ -143,7 +150,9 @@ function Document:fastDigest()
             result = m:sum()
             docsettings:saveSetting("partial_md5_checksum", result)
         end
-        docsettings:close()
+        if tmp_docsettings then
+            docsettings:close()
+        end
         file:close()
         return result
     end
@@ -330,7 +339,7 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
         size = size.w * size.h + 64, -- estimation
         excerpt = size,
         pageno = pageno,
-        bb = Blitbuffer.new(size.w, size.h, self.render_color and Blitbuffer.TYPE_BBRGB32 or nil)
+        bb = Blitbuffer.new(size.w, size.h, self.render_color and self.color_bb_type or nil)
     }
 
     -- create a draw context

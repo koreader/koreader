@@ -36,13 +36,13 @@ end
 -- we only implement a sane subset for now
 
 function GetText_mt.__index.changeLang(new_lang)
-    if new_lang == "en_US:en" then return end
-
     GetText.translation = {}
     GetText.current_lang = "C"
 
-    -- the "C" locale disables localization alltogether
-    if new_lang == "C" or new_lang == nil then return end
+    -- the "C" locale disables localization altogether
+    -- can be various things such as `en_US` or `en_US:en`
+    if new_lang == "C" or new_lang == nil or new_lang == ""
+       or new_lang:match("^en_US") == "en_US" then return end
 
     -- strip encoding suffix in locale like "zh_CN.utf8"
     new_lang = new_lang:sub(1, new_lang:find(".%."))
@@ -52,7 +52,7 @@ function GetText_mt.__index.changeLang(new_lang)
 
     if not po then
         logger.err("cannot open translation file:", file)
-        return
+        return false
     end
 
     local data = {}

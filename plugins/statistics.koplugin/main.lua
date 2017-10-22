@@ -1568,8 +1568,10 @@ function ReaderStatistics:deleteBook(id_book)
     conn:close()
 end
 
-function ReaderStatistics:onPageUpdate(pos, pageno)
-    self:onPageUpdate(pageno)
+function ReaderStatistics:onPosUpdate(pos, pageno)
+    if self.curr_page ~= pageno then
+        self:onPageUpdate(pageno)
+    end
 end
 
 function ReaderStatistics:onPageUpdate(pageno)
@@ -1626,6 +1628,7 @@ end
 function ReaderStatistics:onCloseDocument()
     if not self:isDocless() and self.is_enabled then
         self.ui.doc_settings:saveSetting("stats", self.data)
+        self:insertDB(self.id_curr_book)
     end
 end
 
@@ -1649,7 +1652,6 @@ function ReaderStatistics:onSaveSettings()
     self:saveSettings()
     if not self:isDocless() then
         self.ui.doc_settings:saveSetting("stats", self.data)
-        self:insertDB(self.id_curr_book)
     end
 end
 

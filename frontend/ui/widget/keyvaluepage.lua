@@ -50,6 +50,7 @@ local KeyValueTitle = VerticalGroup:new{
     title = "",
     tface = Font:getFace("tfont"),
     align = "left",
+    use_top_page_count = false,
 }
 
 function KeyValueTitle:init()
@@ -74,19 +75,6 @@ function KeyValueTitle:init()
         self.close_button,
     })
     -- page count and separation line
-    self.page_cnt = FrameContainer:new{
-        padding = Size.padding.default,
-        margin = 0,
-        bordersize = 0,
-        background = Blitbuffer.COLOR_WHITE,
-        -- overlap offset x will be updated in setPageCount method
-        overlap_offset = {0, -15},
-        TextWidget:new{
-            text = "",  -- page count
-            fgcolor = Blitbuffer.COLOR_GREY,
-            face = Font:getFace("smallffont"),
-        },
-    }
     self.title_bottom = OverlapGroup:new{
         dimen = { w = self.width, h = Size.line.thick },
         LineWidget:new{
@@ -94,8 +82,23 @@ function KeyValueTitle:init()
             background = Blitbuffer.COLOR_GREY,
             style = "solid",
         },
-        self.page_cnt,
     }
+    if self.use_top_page_count then
+        self.page_cnt = FrameContainer:new{
+            padding = Size.padding.default,
+            margin = 0,
+            bordersize = 0,
+            background = Blitbuffer.COLOR_WHITE,
+            -- overlap offset x will be updated in setPageCount method
+            overlap_offset = {0, -15},
+            TextWidget:new{
+                text = "",  -- page count
+                fgcolor = Blitbuffer.COLOR_GREY,
+                face = Font:getFace("smallffont"),
+            },
+        }
+        table.insert(self.title_bottom, self.page_cnt)
+    end
     table.insert(self, self.title_bottom)
     table.insert(self, VerticalSpan:new{ width = Size.span.vertical_large })
 end
@@ -210,7 +213,23 @@ function KeyValueItem:init()
 end
 
 function KeyValueItem:onTap()
-    self.callback()
+    if self.callback then
+        if G_reader_settings:isFalse("flash_ui") then
+            self.callback()
+        else
+            self[1].invert = true
+            UIManager:setDirty(self.show_parent, function()
+                return "ui", self[1].dimen
+            end)
+            UIManager:scheduleIn(0.1, function()
+                self.callback()
+                self[1].invert = false
+                UIManager:setDirty(self.show_parent, function()
+                    return "ui", self[1].dimen
+                end)
+            end)
+        end
+    end
     return true
 end
 
@@ -232,6 +251,7 @@ local KeyValuePage = InputContainer:new{
     height = nil,
     -- index for the first item to show
     show_page = 1,
+    use_top_page_count = false,
 }
 
 function KeyValuePage:init()
@@ -349,6 +369,7 @@ function KeyValuePage:init()
         title = self.title,
         width = self.item_width,
         height = self.item_height,
+        use_top_page_count = self.use_top_page_count,
         kv_page = self,
     }
     -- setup main content
@@ -428,6 +449,7 @@ function KeyValuePage:_populateItems()
                     callback_back = entry.callback_back,
                     textviewer_width = self.textviewer_width,
                     textviewer_height = self.textviewer_height,
+                    show_parent = self,
                 }
             )
         elseif type(entry) == "string" then

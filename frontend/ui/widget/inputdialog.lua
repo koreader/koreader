@@ -60,9 +60,9 @@ local RenderText = require("ui/rendertext")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
-local VerticalGroup = require("ui/widget/verticalgroup")
-local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local UIManager = require("ui/uimanager")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local VerticalSpan = require("ui/widget/verticalspan")
 local Screen = require("device").screen
 
 local InputDialog = InputContainer:new{
@@ -87,7 +87,7 @@ local InputDialog = InputContainer:new{
     title_margin = Size.margin.title,
     input_padding = Size.padding.large,
     input_margin = Size.margin.default,
-    button_padding = Size.padding.large,
+    button_padding = Size.padding.default,
 }
 
 function InputDialog:init()
@@ -120,11 +120,11 @@ function InputDialog:init()
             TextBoxWidget:new{
                 text = self.description,
                 face = self.description_face,
-                width = self.width,
+                width = self.width - 2*self.title_padding - 2*self.title_margin,
             }
         }
     else
-        self.description = WidgetContainer:new()
+        self.description = VerticalSpan:new{ width = self.title_margin + self.title_padding }
     end
 
     self._input_widget = InputText:new{
@@ -149,7 +149,7 @@ function InputDialog:init()
         parent = self,
     }
     self.button_table = ButtonTable:new{
-        width = self.width,
+        width = self.width - 2*self.button_padding,
         button_font_face = "cfont",
         button_font_size = 20,
         buttons = self.buttons,
@@ -159,7 +159,7 @@ function InputDialog:init()
 
     self.title_bar = LineWidget:new{
         dimen = Geom:new{
-            w = self.button_table:getSize().w + 2*self.button_padding,
+            w = self.width,
             h = Size.line.thick,
         }
     }
@@ -182,6 +182,8 @@ function InputDialog:init()
                 },
                 self._input_widget,
             },
+            -- Add same vertical space after than before InputText
+            VerticalSpan:new{ width = self.title_margin + self.title_padding },
             -- buttons
             CenterContainer:new{
                 dimen = Geom:new{

@@ -223,9 +223,8 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
                 },
                 {
                     text = _("Edit"),
-                    enabled = false,
                     callback = function()
-                        self:editHighlight()
+                        self:editHighlight(page, index)
                         UIManager:close(self.edit_highlight_dialog)
                     end,
                 },
@@ -384,7 +383,7 @@ function ReaderHighlight:onHoldRelease()
                 },
                 {
                     {
-                        text = "_",
+                        text = "-",
                         enabled = false,
                     },
                     {
@@ -454,31 +453,65 @@ function ReaderHighlight:onHighlight()
     self:saveHighlight()
 end
 
-function ReaderHighlight:onUnhighlight(item)
+function ReaderHighlight:onUnhighlight(bookmark_item)
     local page
     local sel_text
     local sel_pos0
+    local datetime
     local idx
-    if item then
-        local bookmark_text = item.text
-        local words = {}
-        for word in bookmark_text:gmatch("%S+") do table.insert(words, word) end
-        page = tonumber(words[2])
-        sel_text = item.notes
-        sel_pos0 = item.pos0
-    else
+    if bookmark_item then -- called from Bookmarks menu onHold
+        page = bookmark_item.page
+        sel_text = bookmark_item.notes
+        sel_pos0 = bookmark_item.pos0
+        datetime = bookmark_item.datetime
+    else -- called from DictQuickLookup Unhighlight button
         page = self.hold_pos.page
         sel_text = self.selected_text.text
         sel_pos0 = self.selected_text.pos0
     end
-    for index = 1, #self.view.highlight.saved[page] do
-        if self.view.highlight.saved[page][index].text == sel_text and
-            self.view.highlight.saved[page][index].pos0 == sel_pos0 then
-            idx = index
-            break
+    if self.ui.document.info.has_pages then -- We can safely use page
+        for index = 1, #self.view.highlight.saved[page] do
+            local highlight = self.view.highlight.saved[page][index]
+            -- pos0 are tables and can't be compared directly, except when from
+            -- DictQuickLookup where these are the same object.
+            -- If bookmark_item provided, just check datetime
+            if highlight.text == sel_text and (
+                    (datetime == nil and highlight.pos0 == sel_pos0) or
+                    (datetime ~= nil and highlight.datetime == datetime)) then
+                idx = index
+                break
+            end
+        end
+    else -- page is a xpointer
+        -- The original page could be found in bookmark_item.text, but
+        -- no more if it has been renamed: we need to loop through all
+        -- highlights on all page slots
+        for p, highlights in pairs(self.view.highlight.saved) do
+            for index = 1, #highlights do
+                local highlight = highlights[index]
+                -- pos0 are strings and can be compared directly
+                if highlight.text == sel_text and (
+                        (datetime == nil and highlight.pos0 == sel_pos0) or
+                        (datetime ~= nil and highlight.datetime == datetime)) then
+                    page = p -- this is the original page slot
+                    idx = index
+                    break
+                end
+            end
+            if idx then
+                break
+            end
         end
     end
-    self:deleteHighlight(page, idx)
+    if bookmark_item and not idx then
+        logger.warn("unhighlight: bookmark_item not found among highlights", bookmark_item)
+        -- Remove it from bookmarks anyway, so we're not stuck with an
+        -- unremovable bookmark
+        self.ui.bookmark:removeBookmark(bookmark_item)
+        return
+    end
+    logger.dbg("found highlight to delete on page", page, idx)
+    self:deleteHighlight(page, idx, bookmark_item)
     return true
 end
 
@@ -598,18 +631,27 @@ function ReaderHighlight:moreAction()
     logger.info("more action")
 end
 
-function ReaderHighlight:deleteHighlight(page, i)
+function ReaderHighlight:deleteHighlight(page, i, bookmark_item)
     self.ui:handleEvent(Event:new("DelHighlight"))
-    logger.dbg("delete highlight")
+    logger.dbg("delete highlight", page, i)
     local removed = table.remove(self.view.highlight.saved[page], i)
-    self.ui.bookmark:removeBookmark({
-        page = self.ui.document.info.has_pages and page or removed.pos0,
-        datetime = removed.datetime,
-    })
+    if bookmark_item then
+        self.ui.bookmark:removeBookmark(bookmark_item)
+    else
+        self.ui.bookmark:removeBookmark({
+            page = self.ui.document.info.has_pages and page or removed.pos0,
+            datetime = removed.datetime,
+        })
+    end
 end
 
-function ReaderHighlight:editHighlight()
-    logger.info("edit highlight")
+function ReaderHighlight:editHighlight(page, i)
+    logger.info("edit highlight", page, i)
+    local item = self.view.highlight.saved[page][i]
+    self.ui.bookmark:renameBookmark({
+        page = self.ui.document.info.has_pages and page or item.pos0,
+        datetime = item.datetime,
+    }, true)
 end
 
 function ReaderHighlight:onReadSettings(config)

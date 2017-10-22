@@ -9,6 +9,7 @@ local util = require("ffi/util")
 local _ = require("gettext")
 local Screen = Device.screen
 local getFileNameSuffix = require("util").getFileNameSuffix
+local getFriendlySize = require("util").getFriendlySize
 
 ffi.cdef[[
 int strcoll (const char *str1, const char *str2);
@@ -175,7 +176,8 @@ function FileChooser:genItemTableFromPath(path)
         table.insert(item_table, {
             text = dir.name == ".." and  "⬆ ../" or dir.name.."/",
             mandatory = istr,
-            path = subdir_path
+            path = subdir_path,
+            is_go_up = dir.name == ".."
         })
     end
 
@@ -187,14 +189,7 @@ function FileChooser:genItemTableFromPath(path)
     for _, file in ipairs(files) do
         local full_path = self.path.."/"..file.name
         local file_size = lfs.attributes(full_path, "size") or 0
-        local sstr
-        if file_size > 1024*1024 then
-            sstr = string.format("%4.1f MB", file_size/1024/1024)
-        elseif file_size > 1024 then
-            sstr = string.format("%4.1f KB", file_size/1024)
-        else
-            sstr = string.format("%d B", file_size)
-        end
+        local sstr = getFriendlySize(file_size)
         local file_item = {
             text = file.name,
             mandatory = sstr,
@@ -227,14 +222,38 @@ function FileChooser:updateItems(select_number)
 end
 
 function FileChooser:refreshPath()
-    self:switchItemTable(nil, self:genItemTableFromPath(self.path), self.path_items[self.path])
+    local itemmatch = nil
+    if self.focused_path then
+        itemmatch = {path = self.focused_path}
+        -- We use focused_path only once, but remember it
+        -- for CoverBrower to re-apply it on startup if needed
+        self.prev_focused_path = self.focused_path
+        self.focused_path = nil
+    end
+    self:switchItemTable(nil, self:genItemTableFromPath(self.path), self.path_items[self.path], itemmatch)
 end
 
-function FileChooser:changeToPath(path)
+function FileChooser:changeToPath(path, focused_path)
     path = util.realpath(path)
     self.path = path
+    if focused_path then
+        self.focused_path = focused_path
+    end
     self:refreshPath()
     self:onPathChanged(path)
+end
+
+function FileChooser:changePageToPath(path)
+    if not path then return end
+    for num, item in ipairs(self.item_table) do
+        if item.path == path then
+            local page = math.floor((num-1) / self.perpage) + 1
+            if page ~= self.page then
+                self:onGotoPage(page)
+            end
+            break
+        end
+    end
 end
 
 function FileChooser:toggleHiddenFiles()
@@ -258,7 +277,7 @@ function FileChooser:onMenuSelect(item)
     if lfs.attributes(item.path, "mode") == "file" then
         self:onFileSelect(item.path)
     else
-        self:changeToPath(item.path)
+        self:changeToPath(item.path, item.is_go_up and self.path)
     end
     return true
 end

@@ -33,30 +33,31 @@ local DISPLAY_MODES = {
     list_image_filename = true, -- image with filename (no metadata)
 }
 
+-- Store some states as locals, to be permanent across instantiations
+local init_done = false
+local filemanager_display_mode = false -- not initialized yet
+local history_display_mode = false -- not initialized yet
+
 local CoverBrowser = InputContainer:new{}
 
 function CoverBrowser:init()
     self.full_featured = true
-    -- Set to false to provide a fallback option with only a menu for managing a few core settings.
+    -- (Could be set to false for some platforms to provide a fallback
+    -- option with only a menu for managing a few core settings)
 
     self.ui.menu:registerToMainMenu(self)
 
-    if not self.full_featured then
+    if not self.full_featured then -- nothing else than menu registration
         return
     end
 
-    self.filemanager_display_mode = BookInfoManager:getSetting("filemanager_display_mode")
-    self:setupFileManagerDisplayMode()
+    if init_done then -- things already patched according to current modes
+        return
+    end
 
-    self.history_display_mode = BookInfoManager:getSetting("history_display_mode")
-    self:setupHistoryDisplayMode()
-
-    -- If KOReader has started directly to FileManager, the FileManager
-    -- instance is being init()'ed and there is no FileManager.instance yet,
-    -- but there'll be one at next tick.
-    UIManager:nextTick(function()
-        self:refreshFileManagerInstance()
-    end)
+    self:setupFileManagerDisplayMode(BookInfoManager:getSetting("filemanager_display_mode"))
+    self:setupHistoryDisplayMode(BookInfoManager:getSetting("history_display_mode"))
+    init_done = true
 end
 
 function CoverBrowser:addToMainMenu(menu_items)
@@ -153,42 +154,42 @@ function CoverBrowser:addToMainMenu(menu_items)
             -- so one can see how they look below the menu
             {
                 text = _("Classic (filename only)"),
-                checked_func = function() return not self.filemanager_display_mode end,
+                checked_func = function() return not filemanager_display_mode end,
                 callback = function()
                    self:setupFileManagerDisplayMode("")
                 end,
             },
             {
                 text = _("Mosaic with cover images"),
-                checked_func = function() return self.filemanager_display_mode == "mosaic_image" end,
+                checked_func = function() return filemanager_display_mode == "mosaic_image" end,
                 callback = function()
                    self:setupFileManagerDisplayMode("mosaic_image")
                 end,
             },
             {
                 text = _("Mosaic with text covers"),
-                checked_func = function() return self.filemanager_display_mode == "mosaic_text" end,
+                checked_func = function() return filemanager_display_mode == "mosaic_text" end,
                 callback = function()
                    self:setupFileManagerDisplayMode("mosaic_text")
                 end,
             },
             {
                 text = _("Detailed list with cover images and metadata"),
-                checked_func = function() return self.filemanager_display_mode == "list_image_meta" end,
+                checked_func = function() return filemanager_display_mode == "list_image_meta" end,
                 callback = function()
                    self:setupFileManagerDisplayMode("list_image_meta")
                 end,
             },
             {
                 text = _("Detailed list with metadata, no images"),
-                checked_func = function() return self.filemanager_display_mode == "list_only_meta" end,
+                checked_func = function() return filemanager_display_mode == "list_only_meta" end,
                 callback = function()
                    self:setupFileManagerDisplayMode("list_only_meta")
                 end,
             },
             {
                 text = _("Detailed list with cover images and filenames"),
-                checked_func = function() return self.filemanager_display_mode == "list_image_filename" end,
+                checked_func = function() return filemanager_display_mode == "list_image_filename" end,
                 callback = function()
                    self:setupFileManagerDisplayMode("list_image_filename")
                 end,
@@ -201,42 +202,42 @@ function CoverBrowser:addToMainMenu(menu_items)
                 sub_item_table = {
                     {
                         text = _("Classic (filename only)"),
-                        checked_func = function() return not self.history_display_mode end,
+                        checked_func = function() return not history_display_mode end,
                         callback = function()
                            self:setupHistoryDisplayMode("")
                         end,
                     },
                     {
                         text = _("Mosaic with cover images"),
-                        checked_func = function() return self.history_display_mode == "mosaic_image" end,
+                        checked_func = function() return history_display_mode == "mosaic_image" end,
                         callback = function()
                            self:setupHistoryDisplayMode("mosaic_image")
                         end,
                     },
                     {
                         text = _("Mosaic with text covers"),
-                        checked_func = function() return self.history_display_mode == "mosaic_text" end,
+                        checked_func = function() return history_display_mode == "mosaic_text" end,
                         callback = function()
                            self:setupHistoryDisplayMode("mosaic_text")
                         end,
                     },
                     {
                         text = _("Detailed list with cover images and metadata"),
-                        checked_func = function() return self.history_display_mode == "list_image_meta" end,
+                        checked_func = function() return history_display_mode == "list_image_meta" end,
                         callback = function()
                            self:setupHistoryDisplayMode("list_image_meta")
                         end,
                     },
                     {
                         text = _("Detailed list with metadata, no images"),
-                        checked_func = function() return self.history_display_mode == "list_only_meta" end,
+                        checked_func = function() return history_display_mode == "list_only_meta" end,
                         callback = function()
                            self:setupHistoryDisplayMode("list_only_meta")
                         end,
                     },
                     {
                         text = _("Detailed list with cover images and filenames"),
-                        checked_func = function() return self.history_display_mode == "list_image_filename" end,
+                        checked_func = function() return history_display_mode == "list_image_filename" end,
                         callback = function()
                            self:setupHistoryDisplayMode("list_image_filename")
                         end,
@@ -379,7 +380,7 @@ function CoverBrowser:addToMainMenu(menu_items)
     end
 end
 
-function CoverBrowser:refreshFileManagerInstance(cleanup)
+function CoverBrowser:refreshFileManagerInstance(cleanup, post_init)
     local FileManager = require("apps/filemanager/filemanager")
     local fm = FileManager.instance
     if fm then
@@ -392,8 +393,16 @@ function CoverBrowser:refreshFileManagerInstance(cleanup)
                 fc.onFileHold_ours = nil
             end
         end
-        if self.filemanager_display_mode then
-            fc:updateItems()
+        if filemanager_display_mode then
+            if post_init then
+                -- FileBrowser was initialized in classic mode, but we changed
+                -- display mode: items per page may have changed, and we want
+                -- to re-position on the focused_file
+                fc:_recalculateDimen()
+                fc:changeToPath(fc.path, fc.prev_focused_path)
+            else
+                fc:updateItems()
+            end
         else -- classic file_chooser needs this for a full redraw
             fc:refreshPath()
         end
@@ -401,15 +410,22 @@ function CoverBrowser:refreshFileManagerInstance(cleanup)
 end
 
 function CoverBrowser:setupFileManagerDisplayMode(display_mode)
-    if not display_mode then -- if none provided, use current one
-        display_mode = self.filemanager_display_mode
-    end
     if not DISPLAY_MODES[display_mode] then
-        display_mode = nil
+        display_mode = nil -- unknow mode, fallback to classic
     end
-    self.filemanager_display_mode = display_mode
-    BookInfoManager:saveSetting("filemanager_display_mode", self.filemanager_display_mode)
+    if init_done and display_mode == filemanager_display_mode then -- no change
+        return
+    end
+    if init_done then -- save new mode in db
+        BookInfoManager:saveSetting("filemanager_display_mode", display_mode)
+    end
+    -- remember current mode in module variable
+    filemanager_display_mode = display_mode
     logger.dbg("CoverBrowser: setting FileManager display mode to:", display_mode or "classic")
+
+    if not init_done and not display_mode then
+        return -- starting in classic mode, nothing to patch
+    end
 
     if not display_mode then -- classic mode
         -- Put back original methods
@@ -459,7 +475,17 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
         FileChooser._do_hint_opened = true -- dogear at bottom
     end
 
-    self:refreshFileManagerInstance()
+    if init_done then
+        self:refreshFileManagerInstance()
+    else
+        -- If KOReader has started directly to FileManager, the FileManager
+        -- instance is being init()'ed and there is no FileManager.instance yet,
+        -- but there'll be one at next tick.
+        UIManager:nextTick(function()
+            self:refreshFileManagerInstance(false, true)
+        end)
+    end
+
 end
 
 local function _FileManagerHistory_updateItemTable(self)
@@ -512,15 +538,22 @@ local function _FileManagerHistory_updateItemTable(self)
 end
 
 function CoverBrowser:setupHistoryDisplayMode(display_mode)
-    if not display_mode then -- if none provided, use current one
-        display_mode = self.history_display_mode
-    end
     if not DISPLAY_MODES[display_mode] then
-        display_mode = nil
+        display_mode = nil -- unknow mode, fallback to classic
     end
-    self.history_display_mode = display_mode
-    BookInfoManager:saveSetting("history_display_mode", self.history_display_mode)
+    if init_done and display_mode == history_display_mode then -- no change
+        return
+    end
+    if init_done then -- save new mode in db
+        BookInfoManager:saveSetting("history_display_mode", display_mode)
+    end
+    -- remember current mode in module variable
+    history_display_mode = display_mode
     logger.dbg("CoverBrowser: setting History display mode to:", display_mode or "classic")
+
+    if not init_done and not display_mode then
+        return -- starting in classic mode, nothing to patch
+    end
 
     -- We only need to replace one FileManagerHistory method
     if not display_mode then -- classic mode

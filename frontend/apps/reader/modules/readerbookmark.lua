@@ -93,6 +93,22 @@ function ReaderBookmark:isBookmarkInReversePageOrder(a, b)
     end
 end
 
+function ReaderBookmark:isBookmarkPageInPageOrder(a, b)
+    if self.ui.document.info.has_pages then
+        return a > b.page
+    else
+        return a > self.ui.document:getPageFromXPointer(b.page)
+    end
+end
+
+function ReaderBookmark:isBookmarkPageInReversePageOrder(a, b)
+    if self.ui.document.info.has_pages then
+        return a < b.page
+    else
+        return a < self.ui.document:getPageFromXPointer(b.page)
+    end
+end
+
 function ReaderBookmark:fixBookmarkSort(config)
     -- for backward compatibility, since previously bookmarks for credocuments
     -- are not well sorted. We need to do a whole sorting for at least once.
@@ -252,7 +268,7 @@ function ReaderBookmark:onShowBookmark()
                                 end,
                                 ok_text = _("Remove"),
                                 ok_callback = function()
-                                    bookmark:removeHightligit(item)
+                                    bookmark:removeHighlight(item)
                                     bm_menu:switchItemTable(nil, bookmark.bookmarks, -1)
                                     UIManager:close(self.textviewer)
                                 end,
@@ -368,7 +384,7 @@ function ReaderBookmark:isBookmarkAdded(item)
     return false
 end
 
-function ReaderBookmark:removeHightligit(item)
+function ReaderBookmark:removeHighlight(item)
     if item.pos0 then
         self.ui:handleEvent(Event:new("Unhighlight", item))
     else
@@ -391,9 +407,41 @@ function ReaderBookmark:removeBookmark(item)
             _start = _middle + 1
         end
     end
+    -- If we haven't found item, it may be because there are multiple
+    -- bookmarks on the same page, and the above binary search decided to
+    -- not search on one side of one it found on page, where item could be.
+    -- Fallback to do a full scan.
+    logger.dbg("removeBookmark: binary search didn't find bookmark, doing full scan")
+    for i=1, #self.bookmarks do
+        local v = self.bookmarks[i]
+        if item.datetime == v.datetime and item.page == v.page then
+            return table.remove(self.bookmarks, i)
+        end
+    end
+    logger.warn("removeBookmark: full scan search didn't find bookmark")
 end
 
-function ReaderBookmark:renameBookmark(item)
+function ReaderBookmark:renameBookmark(item, from_highlight)
+    if from_highlight then
+        -- Called by ReaderHighlight:editHighlight, we need to find the bookmark
+        for i=1, #self.bookmarks do
+            if item.datetime == self.bookmarks[i].datetime and item.page == self.bookmarks[i].page then
+                item = self.bookmarks[i]
+                if item.text == nil or item.text == "" then
+                    -- Make up bookmark text as done in onShowBookmark
+                    local page = item.page
+                    if not self.ui.document.info.has_pages then
+                        page = self.ui.document:getPageFromXPointer(page)
+                    end
+                    item.text = T(_("Page %1 %2 @ %3"), page, item.notes, item.datetime)
+                end
+                break
+            end
+        end
+        if item.text == nil then -- bookmark not found
+            return
+        end
+    end
     self.input = InputDialog:new{
         title = _("Rename bookmark"),
         input = item.text,
@@ -417,7 +465,9 @@ function ReaderBookmark:renameBookmark(item)
                                     item.pos1 == self.bookmarks[i].pos1 and item.page == self.bookmarks[i].page then
                                     self.bookmarks[i].text = value
                                     UIManager:close(self.input)
-                                    self.refresh()
+                                    if not from_highlight then
+                                        self.refresh()
+                                    end
                                     break
                                 end
                             end
@@ -463,6 +513,24 @@ function ReaderBookmark:getNextBookmarkedPage(pn_or_xp)
     logger.dbg("go to next bookmark from", pn_or_xp)
     for i = #self.bookmarks, 1, -1 do
         if self:isBookmarkInReversePageOrder({page = pn_or_xp}, self.bookmarks[i]) then
+            return self.bookmarks[i].page
+        end
+    end
+end
+
+function ReaderBookmark:getPreviousBookmarkedPageFromPage(pn_or_xp)
+    logger.dbg("go to next bookmark from", pn_or_xp)
+    for i = 1, #self.bookmarks do
+        if self:isBookmarkPageInPageOrder(pn_or_xp, self.bookmarks[i]) then
+            return self.bookmarks[i].page
+        end
+    end
+end
+
+function ReaderBookmark:getNextBookmarkedPageFromPage(pn_or_xp)
+    logger.dbg("go to next bookmark from", pn_or_xp)
+    for i = #self.bookmarks, 1, -1 do
+        if self:isBookmarkPageInReversePageOrder(pn_or_xp, self.bookmarks[i]) then
             return self.bookmarks[i].page
         end
     end

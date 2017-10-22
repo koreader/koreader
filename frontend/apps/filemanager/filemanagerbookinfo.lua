@@ -51,8 +51,13 @@ function BookInfo:show(file, book_props)
 
     local directory, filename = util.splitFilePathName(file)
     local filename_without_suffix, filetype = util.splitFileNameSuffix(filename) -- luacheck: no unused
+    local file_size = lfs.attributes(file, "size") or 0
+    local size_f = util.getFriendlySize(file_size)
+    local size_b = util.getFormattedSize(file_size)
+    local size = string.format("%s (%s bytes)", size_f, size_b)
     table.insert(kv_pairs, { _("Filename:"), filename })
     table.insert(kv_pairs, { _("Format:"), filetype:upper() })
+    table.insert(kv_pairs, { _("Size:"), size })
     table.insert(kv_pairs, { _("Directory:"), filemanagerutil.abbreviate(directory) })
     table.insert(kv_pairs, "----")
 
@@ -121,7 +126,11 @@ function BookInfo:show(file, book_props)
     table.insert(kv_pairs, { _("Authors:"), authors })
 
     local series = book_props.series
-    if series == "" or series == nil then series = _("N/A") end
+    if series == "" or series == nil then
+        series = _("N/A")
+    else -- Shorten calibre series decimal number (#4.0 => #4)
+        series = series:gsub("(#%d+)%.0$", "%1")
+    end
     table.insert(kv_pairs, { _("Series:"), series })
 
     local pages = book_props.pages

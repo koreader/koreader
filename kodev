@@ -3,6 +3,17 @@
 CURDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VERSION=$(git describe HEAD)
 
+# Default Android build to arm.
+ANDROID_ARCH=${ANDROID_ARCH:-arm}
+if [ -z "${ANDROID_FULL_ARCH+x}" ]; then
+    if [ "$ANDROID_ARCH" = arm ]; then
+        ANDROID_FULL_ARCH_APK="${ANDROID_FULL_ARCH_APK:-arm-linux-androideabi}"
+    elif [ "$ANDROID_ARCH" = x86 ]; then
+        ANDROID_FULL_ARCH_APK="${ANDROID_FULL_ARCH_APK:-i686-linux-android}"
+    else
+        ANDROID_FULL_ARCH_APK="${ANDROID_ARCH}"
+    fi
+fi
 # Default to Android 4.0+; required for NDK 15 but with a custom NDK the strict minimum is 9.
 NDKABI=${NDKABI:-14}
 export NDKABI
@@ -165,7 +176,7 @@ ${SUPPORTED_TARGETS}"
                     export NDK="${CURDIR}/base/toolchain/android-ndk-r15c"
                 fi
             fi
-            [ -e "${CURDIR}/base/toolchain/android-toolchain/bin/arm-linux-androideabi-gcc" ] || {
+            [ -e "${CURDIR}/base/toolchain/android-toolchain-${ANDROID_ARCH}/bin/" ] || {
                 { [ -e "${NDK}" ] || make -C "${CURDIR}/base/toolchain" android-ndk; }
                 make android-toolchain
                 assert_ret_zero $?
@@ -252,6 +263,7 @@ usage: release <OPTIONS> <TARGET>
 
 OPTIONS:
 
+    --debug               debug-enabled release (for remote gdb)
     --ignore-translation  do not fetch translation for release
 
 TARGET:
@@ -267,6 +279,9 @@ ${SUPPORTED_RELEASE_TARGETS}"
         PARAM=$(echo "$1" | awk -F= '{print $1}')
         VALUE=$(echo "$1" | awk -F= '{print $2}')
         case $PARAM in
+            --debug)
+                export KODEBUG=1
+                ;;
             --ignore-translation)
                 ignore_translation=1
                 ;;
@@ -364,10 +379,13 @@ OPTIONS:
     -w=X, --screen-width=X   set width of the emulator screen (default: 540)
     -d=X, --screen-dpi=X     set DPI of the emulator screen (default: 160)
     --no-build               run reader without rebuilding
+    --no-debug               no debugging symbols (requires rebuilding)
     --disable-touch          use this if you want to simulate keyboard only devices
     -s=FOO --simulate=FOO    simulate dimension and other specs for a given device model
                              supported model: kobo-aura-one, kindle3, hidpi
+    --gdb=X                  run with debugger (default: nemiver)
     --graph                  graph memory use (requires gnuplot)
+    --valgrind=X             run with valgrind (default: valgrind --trace-children=yes)
 
 TARGET:
 
@@ -375,6 +393,7 @@ TARGET:
     "
     screen_width=540
     screen_height=720
+    export KODEBUG=1
     while [[ $1 == '-'* ]]; do
         PARAM=$(echo "$1" | awk -F= '{print $1}')
         VALUE=$(echo "$1" | awk -F= '{print $2}')
@@ -385,8 +404,47 @@ TARGET:
             --no-build)
                 no_build=true
                 ;;
+            --no-debug)
+                export KODEBUG=
+                ;;
+            --gdb)
+                if [ ! -z "${VALUE}" ]; then
+                    gdb=${VALUE}
+                else
+                    # Try to use friendly defaults for gdb
+                    if command -v nemiver >/dev/null; then
+                        # Nemiver is a nice GUI
+                        gdb=nemiver
+                    elif command -v ddd >/dev/null; then
+                        # DDD is a slightly less nice GUI
+                        gdb=ddd
+                    elif command -v cgdb >/dev/null; then
+                        # cgdb is a nice curses-based gdb front
+                        gdb=cgdb
+                    elif command -v gdb >/dev/null; then
+                        # gdb -tui is a slightly less nice terminal user interface
+                        gdb="gdb -tui"
+                    else
+                        echo "Couldn't find gdb."
+                        exit 1
+                    fi
+                fi
+                ;;
             --graph)
                 graph_memory=true
+                ;;
+            --valgrind)
+                if [ ! -z "${VALUE}" ]; then
+                    valgrind=${VALUE}
+                else
+                    # Try to use sensible defaults for valgrind
+                    if command -v valgrind >/dev/null; then
+                        valgrind="valgrind --trace-children=yes"
+                    else
+                        echo "Couldn't find valgrind."
+                        exit 1
+                    fi
+                fi
                 ;;
             -w | --screen-width)
                 screen_width=${VALUE}
@@ -397,7 +455,7 @@ TARGET:
                     screen_height=${VALUE}
                 else
                     echo "${RUN_HELP_MSG}"
-                    exit 0
+                    exit 1
                 fi
                 ;;
             -d | --screen-dpi)
@@ -449,7 +507,7 @@ TARGET:
                 adb logcat -c
                 # uninstall existing package to make sure *everything* is gone from memory
                 adb uninstall "org.koreader.launcher"
-                adb install "koreader-android-arm-linux-androideabi-${VERSION}.apk"
+                adb install "koreader-android-${ANDROID_FULL_ARCH_APK}-${VERSION}.apk"
                 # there's no adb run so we do this…
                 adb shell monkey -p org.koreader.launcher -c android.intent.category.LAUNCHER 1
                 adb logcat
@@ -478,6 +536,16 @@ TARGET:
                 CATCHSEGV=$(which catchsegv)
             fi
 
+            KOREADER_COMMAND="${CATCHSEGV} ./reader.lua -d ${args}"
+
+            if [ ! -z "${gdb}" ]; then
+                KOREADER_COMMAND="${gdb} ./luajit reader.lua -d ${args}"
+            fi
+
+            if [ ! -z "${valgrind}" ]; then
+                KOREADER_COMMAND="${valgrind} ./luajit reader.lua -d ${args}"
+            fi
+
             echo "[*] Running KOReader with arguments: $*..."
             pushd "${EMU_DIR}" && {
                 if [ $# -lt 1 ]; then
@@ -490,7 +558,7 @@ TARGET:
                 RETURN_VALUE=85
                 while [ $RETURN_VALUE -eq 85 ]; do
                     EMULATE_READER_W=${screen_width} EMULATE_READER_H=${screen_height} EMULATE_READER_DPI=${screen_dpi} \
-                        $CATCHSEGV ./reader.lua -d "$args"
+                        ${KOREADER_COMMAND}
                     RETURN_VALUE=$?
                 done
             } && popd || exit
@@ -561,7 +629,7 @@ OPTIONS:
         busted --lua="./luajit" "${opts}" \
             --no-auto-insulate \
             --lazy \
-            -o "./spec/$1/unit/verbose_print" \
+            --output=gtest \
             --exclude-tags=notest "${test_path}"
     } && popd || exit
 }

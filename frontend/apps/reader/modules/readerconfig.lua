@@ -105,6 +105,7 @@ end
 
 function ReaderConfig:onCloseCallback()
     self.last_panel_index = self.config_dialog.panel_index
+    self.config_dialog = nil
     self.ui:handleEvent(Event:new("RestoreHinting"))
 end
 

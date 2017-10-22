@@ -111,6 +111,7 @@ common_settings.screen = {
         require("ui/elements/screen_eink_opt_menu_table"),
         require("ui/elements/menu_activate"),
         require("ui/elements/screen_disable_double_tap_table"),
+        require("ui/elements/flash_ui"),
         require("ui/elements/flash_keyboard"),
     },
 }

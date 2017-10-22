@@ -415,7 +415,7 @@ function DictQuickLookup:update()
             h = self.dict_title:getSize().h
         },
         self.dict_title,
-        CloseButton:new{ window = self, },
+        CloseButton:new{ window = self, padding_top = self.title_margin, },
     }
 
     self.dict_frame = FrameContainer:new{
@@ -466,7 +466,7 @@ function DictQuickLookup:update()
     UIManager:setDirty("all", function()
         local update_region = self.dict_frame.dimen:combine(orig_dimen)
         logger.dbg("update dict region", update_region)
-        return "partial", update_region
+        return "ui", update_region
     end)
 end
 

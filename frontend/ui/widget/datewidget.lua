@@ -107,7 +107,7 @@ function DateWidget:update()
 
     local date_title = FrameContainer:new{
         padding = Size.padding.default,
-        margin = Size.margin.default,
+        margin = Size.margin.title,
         bordersize = 0,
         TextWidget:new{
             text = self.title_text,
@@ -128,7 +128,7 @@ function DateWidget:update()
             h = date_title:getSize().h
         },
         date_title,
-        CloseButton:new{ window = self, },
+        CloseButton:new{ window = self, padding_top = Size.margin.title, },
     }
     local buttons = {
         {
@@ -154,8 +154,9 @@ function DateWidget:update()
     }
 
     local ok_cancel_buttons = ButtonTable:new{
-        width = Screen:getWidth()*0.9,
+        width = self.width - 2*Size.padding.default,
         buttons = buttons,
+        zero_sep = true,
         show_parent = self,
     }
 
@@ -176,8 +177,13 @@ function DateWidget:update()
                 },
                 date_group
             },
-            date_line,
-            ok_cancel_buttons
+            CenterContainer:new{
+                dimen = Geom:new{
+                    w = self.width,
+                    h = ok_cancel_buttons:getSize().h,
+                },
+                ok_cancel_buttons
+            }
         }
     }
     self[1] = WidgetContainer:new{

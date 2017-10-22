@@ -5,6 +5,8 @@ local DictQuickLookup = require("ui/widget/dictquicklookup")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local JSON = require("json")
+local KeyValuePage = require("ui/widget/keyvaluepage")
+local LuaData = require("luadata")
 local Trapper = require("ui/trapper")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
@@ -16,6 +18,7 @@ local T = require("ffi/util").template
 -- We'll store the list of available dictionaries as a module local
 -- so we only have to look for them on the first :init()
 local available_ifos = nil
+local lookup_history = nil
 
 local function getIfosInDir(path)
     -- Get all the .ifo under directory path.
@@ -50,7 +53,8 @@ end
 local ReaderDictionary = InputContainer:new{
     data_dir = nil,
     dict_window_list = {},
-    lookup_msg = _("Searching dictionary for:\n%1")
+    disable_lookup_history = G_reader_settings:isTrue("disable_lookup_history"),
+    lookup_msg = _("Searching dictionary for:\n%1"),
 }
 
 function ReaderDictionary:init()
@@ -96,6 +100,9 @@ function ReaderDictionary:init()
     end
     -- Prepare the -u options to give to sdcv if some dictionaries are disabled
     self:updateSdcvDictNamesOptions()
+    if not lookup_history then
+        lookup_history = LuaData:open(DataStorage:getSettingsDir() .. "/lookup_history.lua", { name = "LookupHistory" })
+    end
 end
 
 function ReaderDictionary:updateSdcvDictNamesOptions()
@@ -142,6 +149,35 @@ function ReaderDictionary:addToMainMenu(menu_items)
             end,
         },
     }
+    menu_items.dictionary_lookup_history = {
+        text = _("Dictionary lookup history"),
+        enabled_func = function()
+            return lookup_history:has("lookup_history")
+        end,
+        callback = function()
+            local lookup_history_table = lookup_history:readSetting("lookup_history")
+            local kv_pairs = {}
+            local previous_title
+            for i = #lookup_history_table, 1, -1 do
+                local value = lookup_history_table[i]
+                if value.book_title ~= previous_title then
+                    table.insert(kv_pairs, { value.book_title..":", "" })
+                end
+                previous_title = value.book_title
+                table.insert(kv_pairs, {
+                    os.date("%Y-%m-%d %H:%M:%S", value.time),
+                    value.word,
+                    callback = function()
+                        self:onLookupWord(value.word)
+                    end
+                })
+            end
+            UIManager:show(KeyValuePage:new{
+                title = _("Dictionary lookup history"),
+                kv_pairs = kv_pairs,
+            })
+        end,
+    }
     menu_items.dictionary_settings = {
         text = _("Dictionary settings"),
         sub_item_table = {
@@ -180,6 +216,29 @@ If you'd like to change the order in which dictionaries are queried (and their r
                 end,
                 hold_callback = function()
                     self:makeDisableFuzzyDefault(self.disable_fuzzy_search)
+                end,
+            },
+            {
+                text = _("Disable dictionary lookup history"),
+                checked_func = function()
+                    return self.disable_lookup_history
+                end,
+                callback = function()
+                    self.disable_lookup_history = not self.disable_lookup_history
+                    G_reader_settings:saveSetting("disable_lookup_history", self.disable_lookup_history)
+                end,
+            },
+            {
+                text = _("Clean dictionary lookup history"),
+                callback = function()
+                    UIManager:show(ConfirmBox:new{
+                        text = _("Clean dictionary lookup history?"),
+                        ok_text = _("Clean"),
+                        ok_callback = function()
+                            -- empty data table to replace current one
+                            lookup_history:reset{}
+                        end,
+                    })
                 end,
             },
             { -- setting used by dictquicklookup
@@ -329,6 +388,16 @@ function ReaderDictionary:stardictLookup(word, box, link)
     if word == "" then
         return
     end
+
+    if not self.disable_lookup_history then
+        local book_title = self.ui.doc_settings and self.ui.doc_settings:readSetting("doc_props").title or _("Dictionary lookup")
+        lookup_history:addTableItem("lookup_history", {
+            book_title = book_title,
+            time = os.time(),
+            word = word,
+        })
+    end
+
     if not self.disable_fuzzy_search then
         self:showLookupInfo(word)
     end
@@ -502,6 +571,11 @@ function ReaderDictionary:makeDisableFuzzyDefault(disable_fuzzy_search)
             disable_fuzzy_search
             and _("Disable fuzzy search by default?")
             or _("Enable fuzzy search by default?")
+        ),
+        ok_text = T(
+            disable_fuzzy_search
+            and _("Disable")
+            or _("Enable")
         ),
         ok_callback = function()
             G_reader_settings:saveSetting("disable_fuzzy_search", disable_fuzzy_search)

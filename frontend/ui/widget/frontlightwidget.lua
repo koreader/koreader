@@ -47,13 +47,20 @@ function FrontLightWidget:init()
         self.steps = self.steps + 1
     end
     self.steps = math.min(self.steps , steps_fl)
+
     -- button width to fit screen size
-    self.button_width = math.floor(self.screen_width * 0.9 / self.steps) - 12
+    local button_margin = Size.margin.tiny
+    local button_padding = Size.padding.button
+    local button_bordersize = Size.border.button
+    self.button_width = math.floor(self.screen_width * 0.9 / self.steps) -
+            2 * (button_margin + button_padding + button_bordersize)
 
     self.fl_prog_button = Button:new{
         text = "",
         radius = 0,
-        margin = Size.margin.tiny,
+        margin = button_margin,
+        padding = button_padding,
+        bordersize = button_bordersize,
         enabled = true,
         width = self.button_width,
         show_parent = self,
@@ -124,9 +131,7 @@ function FrontLightWidget:setProgress(num, step)
         for i = step_min, step_num do
             table.insert(fl_group, self.fl_prog_button:new{
                 text= "",
-                margin = Size.margin.tiny,
                 preselect = true,
-                width = self.button_width,
                 callback = function()
                     if i == step_min then
                         self:setProgress(self.fl_min, step)
@@ -215,12 +220,16 @@ function FrontLightWidget:setProgress(num, step)
     }
     table.insert(button_group_up, button_table_up)
     table.insert(button_group_down, button_table_down)
+    table.insert(vertical_group,padding_span)
     table.insert(vertical_group,button_group_up)
     table.insert(vertical_group,padding_span)
     table.insert(vertical_group,fl_group)
     table.insert(vertical_group,padding_span)
     table.insert(vertical_group,button_group_down)
+    table.insert(vertical_group,padding_span)
     table.insert(self.fl_container, vertical_group)
+    -- Reset container height to what it actually contains
+    self.fl_container.dimen.h = vertical_group:getSize().h
 
     UIManager:setDirty("all", "ui")
     return true
@@ -229,6 +238,7 @@ end
 function FrontLightWidget:update()
     -- header
     self.light_title = FrameContainer:new{
+        padding = Size.padding.default,
         margin = Size.margin.title,
         bordersize = 0,
         TextWidget:new{
@@ -257,7 +267,7 @@ function FrontLightWidget:update()
             h = self.light_title:getSize().h
         },
         self.light_title,
-        CloseButton:new{ window = self, },
+        CloseButton:new{ window = self, padding_top = Size.margin.title, },
     }
     self.light_frame = FrameContainer:new{
         radius = Size.radius.window,

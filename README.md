@@ -1,4 +1,4 @@
-[![Build Status][travis-badge]][travis-link]
+[![Build Status][circleci-badge]][circleci-link]
 [![Coverage Status][coverage-badge]][coverage-link]
 [![AGPL Licence][licence-badge]](COPYING)
 KOReader
@@ -41,19 +41,19 @@ Highlights for developers
 --------------------------
 
 * frontend written in Lua scripting language
-  * running on multi-platform with only one code-base maintained
-  * developing koreader in any editor without compilation
-  * high runtime efficiency by LuaJIT acceleration
+  * multi-platform support through a single code-base
+  * you can help develop KOReader in any editor without compilation
+  * high runtime efficiency through LuaJIT acceleration
   * light-weight self-contained widget toolkit with small memory footprint
   * extensible with plugin system
 * interfaced backends for documents parsing and rendering
   * high quality document backend libraries like MuPDF, DjvuLibre and CREngine
   * interacting with frontend via LuaJIT FFI for best performence
 * in active development
-  * contributed by developers around the world
-  * continuous integration with Travis CI
-  * with unit tests, static analysis and code coverage test
-  * automatic release of nightly builds
+  * with contributions from developers around the world
+  * continuous integration with CircleCI
+  * with unit tests (busted), static code analysis (luacheck) and code coverage test (luacov/coveralls)
+  * automated nightly builds available at http://build.koreader.rocks/download/nightly/
 * free as in free speech
   * licensed under Affero GPL v3
   * all dependencies are free software
@@ -174,7 +174,7 @@ make static-check
 
 NOTE: Extra dependencies for tests: `luacheck` from luarocks
 
-You may need to checkout the [travis config file][travis-conf] to setup up
+You may need to checkout the [circleci config file][circleci-conf] to setup up
 a proper testing environment. Briefly, you need to install `luarocks` and
 then install `busted` with `luarocks`. The "eng" language data file for
 tesseract-ocr is also need to test OCR functionality. Finally, make sure
@@ -276,32 +276,32 @@ Use ccache
 ==========
 
 Ccache can speed up recompilation by caching previous compilations and detecting
-when the same compilation is repeated. In other words, it will decrease
+when the same compilation is being repeated. In other words, it will decrease
 build time when the sources have been built before. Ccache support has been added to
-KOReader's build system. To install a ccache:
+KOReader's build system. To install ccache:
 
 * in Ubuntu use:`sudo apt-get install ccache`
 * in Fedora use:`sudo yum install ccache`
-* install from source:
-  * get latest ccache source from http://ccache.samba.org/download.html
-  * unarchieve the source package in a directory
-  * cd to that directory and use:`./configure && make && sudo make install`
+* from source:
+  * download the latest ccache source from http://ccache.samba.org/download.html
+  * extract the source package in a directory
+  * `cd` to that directory and use:`./configure && make && sudo make install`
 * to disable ccache, use `export USE_NO_CCACHE=1` before make.
-* for more detail about ccache. visit:
+* for more information about ccache, visit:
 
-http://ccache.samba.org
+https://ccache.samba.org/
 
 
 [base-readme]:https://github.com/koreader/koreader-base/blob/master/README.md
 [nb-script]:https://gitlab.com/koreader/nightly-builds/blob/master/build_release.sh
-[travis-badge]:https://travis-ci.org/koreader/koreader.svg?branch=master
-[travis-link]:https://travis-ci.org/koreader/koreader
-[travis-conf]:https://github.com/koreader/koreader-base/blob/master/.travis.yml
+[circleci-badge]:https://circleci.com/gh/koreader/koreader.svg?style=shield
+[circleci-link]:https://circleci.com/gh/koreader/koreader
+[circleci-conf]:https://github.com/koreader/koreader-base/blob/master/.circleci/config.yml
 [linux-vm]:http://www.howtogeek.com/howto/11287/how-to-run-ubuntu-in-windows-7-with-vmware-player/
 [l10n-readme]:https://github.com/koreader/koreader/blob/master/l10n/README.md
 [koreader-transifex]:https://www.transifex.com/projects/p/koreader/
-[coverage-badge]:https://coveralls.io/repos/github/koreader/koreader/badge.svg?branch=master
-[coverage-link]:https://coveralls.io/github/koreader/koreader?branch=master
+[coverage-badge]:https://codecov.io/gh/koreader/koreader/branch/master/graph/badge.svg
+[coverage-link]:https://codecov.io/gh/koreader/koreader
 [licence-badge]:http://img.shields.io/badge/licence-AGPL-brightgreen.svg
 [gitter-badge]:https://badges.gitter.im/Join%20Chat.svg
 [gitter-link]:https://gitter.im/koreader/koreader?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge

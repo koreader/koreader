@@ -85,6 +85,7 @@ NOTICE:
 --]]
 local MenuCloseButton = InputContainer:new{
     overlap_align = "right",
+    padding_right = 0,
     menu = nil,
     dimen = Geom:new{},
 }
@@ -92,13 +93,17 @@ local MenuCloseButton = InputContainer:new{
 function MenuCloseButton:init()
     self[1] = TextWidget:new{
         text = "×",
-        face = Font:getFace("cfont", 32),
+        face = Font:getFace("cfont", 30), -- this font size align nicely with title
     }
 
     local text_size = self[1]:getSize()
+    -- The text box height is greater than its width, and we want this × to
+    -- be diagonally aligned with our top right border
+    local text_width_pad = (text_size.h - text_size.w) / 2
+    -- We also add the provided padding_right
     self.dimen = Geom:new{
-        w = text_size.w*2,
-        h = text_size.h*2,
+        w = text_size.w + text_width_pad + self.padding_right,
+        h = text_size.h,
     }
 
     self.ges_events.Close = {
@@ -131,16 +136,15 @@ local MenuItem = InputContainer:new{
 }
 
 function MenuItem:init()
+    self.content_width = self.dimen.w - 2 * Size.padding.fullscreen
     local shortcut_icon_dimen = Geom:new()
     if self.shortcut then
         shortcut_icon_dimen.w = math.floor(self.dimen.h*4/5)
         shortcut_icon_dimen.h = shortcut_icon_dimen.w
+        self.content_width = self.content_width - shortcut_icon_dimen.w - Size.span.horizontal_default
     end
 
     self.detail = self.text
-    -- account for added HorizontalSpans
-    self.content_width = self.dimen.w - shortcut_icon_dimen.w
-        - Size.span.horizontal_small - Size.span.horizontal_default
 
     -- we need this table per-instance, so we declare it here
     if Device:isTouchDevice() then
@@ -167,14 +171,21 @@ function MenuItem:init()
         }
     end
 
-    local mandatory = self.mandatory and ""..self.mandatory.." " or ""
+    local text_mandatory_padding = 0
+    local text_ellipsis_mandatory_padding = 0
+    if self.mandatory then
+        text_mandatory_padding = Size.span.horizontal_default
+        -- Smaller padding when ellipsis for better visual feeling
+        text_ellipsis_mandatory_padding = Size.span.horizontal_small
+    end
+    local mandatory = self.mandatory and ""..self.mandatory or ""
     local mandatory_w = RenderText:sizeUtf8Text(0, self.dimen.w, self.info_face,
                     ""..mandatory, true, self.bold).x
 
     local state_button_width = self.state_size.w or 0
     local my_text = self.text and ""..self.text or ""
     local w = RenderText:sizeUtf8Text(0, self.dimen.w, self.face, my_text, true, self.bold).x
-    if w + mandatory_w + state_button_width >= self.content_width then
+    if w + mandatory_w + state_button_width + text_mandatory_padding >= self.content_width then
         if Device:hasKeyboard() then
             self.active_key_events.ShowItemDetail = {
                 {"Right"}, doc = "show item detail"
@@ -184,7 +195,7 @@ function MenuItem:init()
         local indicator_w = RenderText:sizeUtf8Text(0, self.dimen.w, self.face,
                         indicator, true, self.bold).x
         self.text = RenderText:getSubTextByWidth(my_text, self.face,
-            self.content_width - indicator_w - mandatory_w - state_button_width,
+            self.content_width - indicator_w - mandatory_w - state_button_width - text_ellipsis_mandatory_padding,
             true, self.bold) .. indicator
     end
 
@@ -243,20 +254,24 @@ function MenuItem:init()
             },
         }
     }
+    local hgroup = HorizontalGroup:new{
+        align = "center",
+        HorizontalSpan:new{ width = Size.padding.fullscreen },
+    }
+    if self.shortcut then
+        table.insert(hgroup, ItemShortCutIcon:new{
+            dimen = shortcut_icon_dimen,
+            key = self.shortcut,
+            style = self.shortcut_style,
+        })
+        table.insert(hgroup, HorizontalSpan:new{ width = Size.span.horizontal_default })
+    end
+    table.insert(hgroup, self._underline_container)
+
     self[1] = FrameContainer:new{
         bordersize = 0,
         padding = 0,
-        HorizontalGroup:new{
-            align = "center",
-            HorizontalSpan:new{ width = Size.span.horizontal_small },
-            ItemShortCutIcon:new{
-                dimen = shortcut_icon_dimen,
-                key = self.shortcut,
-                style = self.shortcut_style,
-            },
-            HorizontalSpan:new{ width = Size.span.horizontal_default },
-            self._underline_container
-        }
+        hgroup,
     }
 end
 
@@ -287,35 +302,47 @@ end
 
 function MenuItem:onTapSelect(arg, ges)
     local pos = self:getGesPosition(ges)
-    self[1].invert = true
-    local refreshfunc = function()
-        return "ui", self[1].dimen
-    end
-    UIManager:setDirty(self.show_parent, refreshfunc)
-    UIManager:scheduleIn(0.1, function()
-        self[1].invert = false
-        UIManager:setDirty(self.show_parent, refreshfunc)
+    if G_reader_settings:isFalse("flash_ui") then
         logger.dbg("creating coroutine for menu select")
         local co = coroutine.create(function()
             self.menu:onMenuSelect(self.table, pos)
         end)
         coroutine.resume(co)
-    end)
+    else
+        self[1].invert = true
+        local refreshfunc = function()
+            return "ui", self[1].dimen
+        end
+        UIManager:setDirty(self.show_parent, refreshfunc)
+        UIManager:scheduleIn(0.1, function()
+            self[1].invert = false
+            UIManager:setDirty(self.show_parent, refreshfunc)
+            logger.dbg("creating coroutine for menu select")
+            local co = coroutine.create(function()
+                self.menu:onMenuSelect(self.table, pos)
+            end)
+            coroutine.resume(co)
+        end)
+    end
     return true
 end
 
 function MenuItem:onHoldSelect(arg, ges)
     local pos = self:getGesPosition(ges)
-    self[1].invert = true
-    local refreshfunc = function()
-        return "ui", self[1].dimen
-    end
-    UIManager:setDirty(self.show_parent, refreshfunc)
-    UIManager:scheduleIn(0.1, function()
-        self[1].invert = false
-        UIManager:setDirty(self.show_parent, refreshfunc)
+    if G_reader_settings:isFalse("flash_ui") then
         self.menu:onMenuHold(self.table, pos)
-    end)
+    else
+        self[1].invert = true
+        local refreshfunc = function()
+            return "ui", self[1].dimen
+        end
+        UIManager:setDirty(self.show_parent, refreshfunc)
+        UIManager:scheduleIn(0.1, function()
+            self[1].invert = false
+            UIManager:setDirty(self.show_parent, refreshfunc)
+            self.menu:onMenuHold(self.table, pos)
+        end)
+    end
     return true
 end
 
@@ -384,6 +411,8 @@ function Menu:_recalculateDimen()
     -- header and footer should approximately take up space of 2 items
     self.perpage = math.floor(self.dimen.h / self.item_dimen.h) - (self.no_title and 1 or 2)
     self.page_num = math.ceil(#self.item_table / self.perpage)
+    -- fix current page if out of range
+    if self.page_num > 0 and self.page > self.page_num then self.page = self.page_num end
 end
 
 function Menu:init()
@@ -543,8 +572,10 @@ function Menu:init()
     ------------------------------------------
     if Device:isTouchDevice() then
         if self.has_close_button then
-            table.insert(self.title_bar,
-                         MenuCloseButton:new{ menu = self })
+            table.insert(self.title_bar, MenuCloseButton:new{
+                menu = self,
+                padding_right = self.header_padding,
+            })
         end
         -- watch for outer region if it's a self contained widget
         if self.is_popout then
@@ -711,8 +742,12 @@ end
     3. itemnumber is negative number
         the page number is not changed, used when item_table is appended with
         new entries
+
+    alternatively, itemmatch may be provided as a {key = value} table,
+    and the page number will be the page containing the first item for
+    which item.key = value
 --]]
-function Menu:switchItemTable(new_title, new_item_table, itemnumber)
+function Menu:switchItemTable(new_title, new_item_table, itemnumber, itemmatch)
     if self.menu_title and new_title then
         self.menu_title.text = new_title
     end
@@ -721,6 +756,16 @@ function Menu:switchItemTable(new_title, new_item_table, itemnumber)
         self.page = 1
     elseif itemnumber >= 0 then
         self.page = math.ceil(itemnumber / self.perpage)
+    end
+
+    if type(itemmatch) == "table" then
+        local key, value = next(itemmatch)
+        for num, item in ipairs(new_item_table) do
+            if item[key] == value then
+                self.page = math.floor((num-1) / self.perpage) + 1
+                break
+            end
+        end
     end
 
     -- make sure current page is in right page range

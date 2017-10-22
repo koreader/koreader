@@ -15,6 +15,7 @@ local DocSettings = {}
 local HISTORY_DIR = DataStorage:getHistoryDir()
 
 local function buildCandidate(file_path)
+    -- Ignore empty files.
     if lfs.attributes(file_path, "mode") == "file" then
         return { file_path, lfs.attributes(file_path, "modification") }
     else
@@ -92,7 +93,6 @@ end
 function DocSettings:open(docfile)
     -- TODO(zijiehe): Remove history_path, use only sidecar.
     local new = {}
-    local ok, stored
     new.history_file = self:getHistoryPath(docfile)
 
     local sidecar = self:getSidecarDir(docfile)
@@ -130,15 +130,19 @@ function DocSettings:open(docfile)
                                    return l[2] > r[2]
                                end
                            end)
+    local ok, stored
     for _, k in pairs(candidates) do
-        ok, stored = pcall(dofile, k[1])
-        if ok then
-            logger.dbg("data is read from ", k[1])
-            break
-        else
-            logger.dbg(k[1], " is invalid, remove.")
-            os.remove(k[1])
+        -- Ignore empty files
+        if lfs.attributes(k[1], "size") > 0 then
+            ok, stored = pcall(dofile, k[1])
+            -- Ignore the empty table.
+            if ok and next(stored) ~= nil then
+                logger.dbg("data is read from ", k[1])
+                break
+            end
         end
+        logger.dbg(k[1], " is invalid, remove.")
+        os.remove(k[1])
     end
     if ok and stored then
         new.data = stored

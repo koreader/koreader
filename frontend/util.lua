@@ -75,17 +75,22 @@ function util.secondsToClock(seconds, withoutSeconds)
     seconds = tonumber(seconds)
     if seconds == 0 or seconds ~= seconds then
         if withoutSeconds then
-            return "00:00";
+            return "00:00"
         else
-            return "00:00:00";
+            return "00:00:00"
         end
     else
-        local hours = string.format("%02.f", math.floor(seconds / 3600));
-        local mins = string.format("%02.f", math.floor(seconds / 60 - (hours * 60)));
+        local round = withoutSeconds and require("optmath").round or math.floor
+        local hours = string.format("%02.f", math.floor(seconds / 3600))
+        local mins = string.format("%02.f", round(seconds / 60 - (hours * 60)))
+        if mins == "60" then
+            mins = string.format("%02.f", 0)
+            hours = string.format("%02.f", hours + 1)
+        end
         if withoutSeconds then
             return hours .. ":" .. mins
         end
-        local secs = string.format("%02.f", math.floor(seconds - hours * 3600 - mins * 60));
+        local secs = string.format("%02.f", math.floor(seconds - hours * 3600 - mins * 60))
         return hours .. ":" .. mins .. ":" .. secs
     end
 end
@@ -345,6 +350,33 @@ end
 function util.getFileNameSuffix(file)
     local _, suffix = util.splitFileNameSuffix(file)
     return suffix
+end
+
+--- Gets human friendly size as string
+---- @int size (bytes)
+---- @treturn string
+function util.getFriendlySize(size)
+    local s
+    if size > 1024*1024*1024 then
+        s = string.format("%4.1f GB", size/1024/1024/1024)
+    elseif size > 1024*1024 then
+        s = string.format("%4.1f MB", size/1024/1024)
+    elseif size > 1024 then
+        s = string.format("%4.1f KB", size/1024)
+    else
+        s = string.format("%d B", size)
+    end
+    return s
+end
+
+--- Gets formatted size as string (1273334 => "1,273,334")
+---- @int size (bytes)
+---- @treturn string
+function util.getFormattedSize(size)
+    local s = tostring(size)
+    s = s:reverse():gsub("(%d%d%d)", "%1,")
+    s = s:reverse():gsub("^,", "")
+    return s
 end
 
 --- Adds > to touch menu items with a submenu
