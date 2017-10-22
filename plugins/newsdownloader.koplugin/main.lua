@@ -184,6 +184,7 @@ function NewsDownloader:loadConfigAndProcessFeeds()
             text = T(_("Downloading news finished. Could not process some feeds. Unsupported format in: %1"), unsupported_urls)
         })
     end
+    NetworkMgr:promptWifiOff()
 end
 
 function NewsDownloader:processFeedSource(url, limit, unsupported_feeds_urls)
