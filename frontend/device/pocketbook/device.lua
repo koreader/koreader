@@ -110,13 +110,11 @@ function PocketBook:initNetworkManager(NetworkMgr)
 end
 
 function PocketBook:getSoftwareVersion()
-    version =  ffi.string(inkview.GetSoftwareVersion())
-    return version
+    return ffi.string(inkview.GetSoftwareVersion())
 end
 
 function PocketBook:getDeviceModel()
-    model =  ffi.string(inkview.GetDeviceModel())
-    return model
+    return ffi.string(inkview.GetDeviceModel())
 end
 
 -- PocketBook InkPad
