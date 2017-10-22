@@ -9,6 +9,7 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
+local HorizontalSpan = require("ui/widget/horizontalspan")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
@@ -58,63 +59,72 @@ function SkimToWidget:init()
             },
          }
     end
+    local dialog_title
     if self.document.info.has_pages then
-        self.dialog_title = _("Go to Page")
+        dialog_title = _("Go to Page")
         self.curr_page = self.ui.paging.current_page
     else
-        self.dialog_title = _("Go to Location")
+        dialog_title = _("Go to Location")
         self.curr_page = self.document:getCurrentPage()
     end
     self.page_count = self.document:getPageCount()
 
-    self.skimto_title = FrameContainer:new{
+    local ticks_candidates = {}
+    if self.ui.toc then
+        local max_level = self.ui.toc:getMaxDepth()
+        for i = 0, -max_level, -1 do
+            local ticks = self.ui.toc:getTocTicks(i)
+            table.insert(ticks_candidates, ticks)
+        end
+        -- find the finest toc ticks by sorting out the largest one
+        table.sort(ticks_candidates, function(a, b) return #a > #b end)
+    end
+    if #ticks_candidates > 0 then
+        self.ticks_candidates = ticks_candidates[1]
+    end
+
+    local skimto_title = FrameContainer:new{
         padding = Size.padding.default,
         margin = Size.margin.title,
         bordersize = 0,
         TextWidget:new{
-            text = self.dialog_title,
+            text = dialog_title,
             face = self.title_face,
             bold = true,
             width = self.screen_width * 0.95,
         },
     }
 
-    self.skimto_container = CenterContainer:new{
-        dimen = Geom:new{ w = self.screen_width * 0.95, h = self.screen_height * 0.075 },
-    }
-    local progress_bar = ProgressWidget:new{
+    self.progress_bar = ProgressWidget:new{
         width = self.screen_width * 0.9,
         height = Screen:scaleBySize(30),
         percentage = self.curr_page / self.page_count,
-        ticks = nil,
-        last = nil,
+        ticks = self.ticks_candidates,
+        tick_width = Size.line.medium,
+        last = self.page_count,
     }
-    local vertical_group = VerticalGroup:new{ align = "center" }
-    table.insert(vertical_group, progress_bar)
-    table.insert(self.skimto_container, vertical_group)
-
     self.skimto_progress = FrameContainer:new{
         padding = Size.padding.button,
         margin = Size.margin.small,
         bordersize = 0,
-        self.skimto_container
+        self.progress_bar,
     }
 
-    self.skimto_line = LineWidget:new{
+    local skimto_line = LineWidget:new{
         dimen = Geom:new{
             w = self.width,
             h = Size.line.thick,
         }
     }
-    self.skimto_bar = OverlapGroup:new{
+    local skimto_bar = OverlapGroup:new{
         dimen = {
             w = self.width,
-            h = self.skimto_title:getSize().h
+            h = skimto_title:getSize().h
         },
-        self.skimto_title,
+        skimto_title,
         CloseButton:new{ window = self, padding_top = Size.margin.title, },
     }
-    self.button_minus = Button:new{
+    local button_minus = Button:new{
         text = "-1",
         bordersize = self.button_bordersize,
         margin = self.button_margin,
@@ -128,7 +138,7 @@ function SkimToWidget:init()
             self:update()
         end,
     }
-    self.button_minus_ten = Button:new{
+    local button_minus_ten = Button:new{
         text = "-10",
         bordersize = self.button_bordersize,
         margin = self.button_margin,
@@ -142,7 +152,7 @@ function SkimToWidget:init()
             self:update()
         end,
     }
-    self.button_plus = Button:new{
+    local button_plus = Button:new{
         text = "+1",
         bordersize = self.button_bordersize,
         margin = self.button_margin,
@@ -156,7 +166,7 @@ function SkimToWidget:init()
             self:update()
         end,
     }
-    self.button_plus_ten = Button:new{
+    local button_plus_ten = Button:new{
         text = "+10",
         bordersize = self.button_bordersize,
         margin = self.button_margin,
@@ -170,11 +180,12 @@ function SkimToWidget:init()
             self:update()
         end,
     }
-    local current_page_text = Button:new{
+    self.current_page_text = Button:new{
         text = self.curr_page,
         bordersize = 0,
         margin = self.button_margin,
         radius = 0,
+        padding = 0,
         enabled = true,
         width = self.screen_width * 0.2 - (2*self.button_margin),
         show_parent = self,
@@ -183,20 +194,125 @@ function SkimToWidget:init()
         end,
     }
 
-    local button_group_up = HorizontalGroup:new{ align = "center" }
-    local button_table_up = HorizontalGroup:new{
-        align = "center",
-        self.button_minus,
-        self.button_minus_ten,
-        current_page_text,
-        self.button_plus_ten,
-        self.button_plus,
+    local button_chapter_next = Button:new{
+        text = '▷│',
+        bordersize = self.button_bordersize,
+        margin = self.button_margin,
+        radius = 0,
+        enabled = true,
+        width = self.button_width,
+        show_parent = self,
+        callback = function()
+            local page = self:getNextChapter(self.curr_page)
+            if page and page >=1 and page <= self.page_count then
+                self.curr_page = page
+                self.ui:handleEvent(Event:new("GotoPage", self.curr_page))
+                self:update()
+            end
+        end,
     }
-    local vertical_group_control= VerticalGroup:new{ align = "center" }
-    local padding_span = VerticalSpan:new{ width = self.screen_height * 0.01 }
-    table.insert(button_group_up, button_table_up)
-    table.insert(vertical_group_control,button_group_up)
-    table.insert(vertical_group_control,padding_span)
+
+    local button_chapter_prev = Button:new{
+        text = "│◁",
+        bordersize = self.button_bordersize,
+        margin = self.button_margin,
+        radius = 0,
+        enabled = true,
+        width = self.button_width,
+        show_parent = self,
+        callback = function()
+            local page = self:getPrevChapter(self.curr_page)
+            if page and page >=1 and page <= self.page_count then
+                self.curr_page = page
+                self.ui:handleEvent(Event:new("GotoPage", self.curr_page))
+                self:update()
+            end
+        end,
+    }
+
+    local button_bookmark_next = Button:new{
+        text = "☆▷",
+        bordersize = self.button_bordersize,
+        margin = self.button_margin,
+        radius = 0,
+        enabled = true,
+        width = self.button_width,
+        show_parent = self,
+        callback = function()
+            local page
+            if self.document.info.has_pages then
+                page = self.ui.bookmark:getNextBookmarkedPageFromPage(self.ui.paging.current_page)
+            else
+                page = self.ui.bookmark:getNextBookmarkedPageFromPage(self.curr_page)
+            end
+            if page then
+                self.ui.bookmark:gotoBookmark(page)
+                if self.document.info.has_pages then
+                    self.curr_page = self.ui.paging.current_page
+                else
+                    self.curr_page = self.document:getCurrentPage()
+                end
+                self:update()
+            end
+        end,
+    }
+
+    local button_bookmark_prev = Button:new{
+        text = "◁☆",
+        bordersize = self.button_bordersize,
+        margin = self.button_margin,
+        radius = 0,
+        enabled = true,
+        width = self.button_width,
+        show_parent = self,
+        callback = function()
+            local page
+            if self.document.info.has_pages then
+                page = self.ui.bookmark:getPreviousBookmarkedPageFromPage(self.ui.paging.current_page)
+            else
+                page = self.ui.bookmark:getPreviousBookmarkedPageFromPage(self.curr_page)
+            end
+            if page then
+                self.ui.bookmark:gotoBookmark(page)
+                if self.document.info.has_pages then
+                    self.curr_page = self.ui.paging.current_page
+                else
+                    self.curr_page = self.document:getCurrentPage()
+                end
+                self:update()
+            end
+        end,
+    }
+
+    local horizontal_span_up = HorizontalSpan:new{ width = self.screen_width * 0.2 }
+       local button_table_up = HorizontalGroup:new{
+        align = "center",
+        button_chapter_prev,
+        button_bookmark_prev,
+        horizontal_span_up,
+        button_bookmark_next,
+        button_chapter_next,
+    }
+
+    local vertical_group_up = VerticalGroup:new{ align = "center" }
+    local padding_span_up = VerticalSpan:new{ width = math.ceil(self.screen_height * 0.015) }
+    table.insert(vertical_group_up, padding_span_up)
+    table.insert(vertical_group_up, button_table_up)
+    table.insert(vertical_group_up, padding_span_up)
+
+    local button_table_down = HorizontalGroup:new{
+        align = "center",
+        button_minus,
+        button_minus_ten,
+        self.current_page_text,
+        button_plus_ten,
+        button_plus,
+    }
+    local vertical_group_down = VerticalGroup:new{ align = "center" }
+    local padding_span = VerticalSpan:new{ width = math.ceil(self.screen_height * 0.015) }
+    table.insert(vertical_group_down, padding_span)
+    table.insert(vertical_group_down, button_table_down)
+    table.insert(vertical_group_down, padding_span)
 
     self.skimto_frame = FrameContainer:new{
         radius = Size.radius.window,
@@ -206,16 +322,17 @@ function SkimToWidget:init()
         background = Blitbuffer.COLOR_WHITE,
         VerticalGroup:new{
             align = "center",
-            self.skimto_bar,
-            self.skimto_line,
+            skimto_bar,
+            skimto_line,
+            vertical_group_up,
             CenterContainer:new{
                 dimen = Geom:new{
-                    w = self.skimto_line:getSize().w,
+                    w = skimto_line:getSize().w,
                     h = self.skimto_progress:getSize().h,
                 },
                 self.skimto_progress,
             },
-            vertical_group_control
+            vertical_group_down,
         }
     }
     self[1] = WidgetContainer:new{
@@ -234,90 +351,41 @@ function SkimToWidget:init()
 end
 
 function SkimToWidget:update()
-    self.skimto_container:clear()
-    UIManager:setDirty("all", "ui")
     if self.curr_page <= 0 then
         self.curr_page = 1
     end
     if self.curr_page > self.page_count then
         self.curr_page = self.page_count
     end
-    local progress_bar = ProgressWidget:new{
-        width = self.screen_width * 0.9,
-        height = Screen:scaleBySize(30),
-        percentage = self.curr_page / self.page_count,
-        ticks = nil,
-        last = nil,
-    }
-    local vertical_group = VerticalGroup:new{ align = "center" }
-    table.insert(vertical_group, progress_bar)
-    table.insert(self.skimto_container, vertical_group)
+    self.progress_bar.percentage = self.curr_page / self.page_count
+    self.current_page_text:setText(self.curr_page, self.current_page_text.width)
+end
 
-    local current_page_text = Button:new{
-        text = self.curr_page,
-        bordersize = 0,
-        margin = self.button_margin,
-        radius = 0,
-        enabled = true,
-        width = self.screen_width * 0.2 - (2*self.button_margin),
-        show_parent = self,
-        callback = function()
-            self.callback_switch_to_goto()
-        end,
-    }
+function SkimToWidget:getNextChapter(cur_pageno)
+    local next_chapter = nil
+    for i = 1, #self.ticks_candidates do
+        if self.ticks_candidates[i] > cur_pageno then
+            next_chapter = self.ticks_candidates[i]
+            break
+        end
+    end
+    return next_chapter
+end
 
-    local button_group_up = HorizontalGroup:new{ align = "center" }
-    local button_table_up = HorizontalGroup:new{
-        align = "center",
-        self.button_minus,
-        self.button_minus_ten,
-        current_page_text,
-        self.button_plus_ten,
-        self.button_plus,
-    }
-    local vertical_group_control= VerticalGroup:new{ align = "center" }
-    local padding_span = VerticalSpan:new{ width = self.screen_height * 0.01 }
-    table.insert(button_group_up, button_table_up)
-    table.insert(vertical_group_control,button_group_up)
-    table.insert(vertical_group_control,padding_span)
-
-    self.skimto_frame = FrameContainer:new{
-        radius = Size.radius.window,
-        bordersize = Size.border.window,
-        padding = 0,
-        margin = 0,
-        background = Blitbuffer.COLOR_WHITE,
-        VerticalGroup:new{
-            align = "center",
-            self.skimto_bar,
-            self.skimto_line,
-            CenterContainer:new{
-                dimen = Geom:new{
-                    w = self.skimto_line:getSize().w,
-                    h = self.skimto_progress:getSize().h,
-                },
-                self.skimto_progress,
-            },
-            vertical_group_control
-        }
-    }
-    self[1] = WidgetContainer:new{
-        align = "center",
-        dimen =Geom:new{
-            x = 0, y = 0,
-            w = self.screen_width,
-            h = self.screen_height,
-        },
-        FrameContainer:new{
-            bordersize = 0,
-            self.skimto_frame,
-        }
-    }
+function SkimToWidget:getPrevChapter(cur_pageno)
+    local previous_chapter = nil
+    for i = 1, #self.ticks_candidates do
+        if self.ticks_candidates[i] >= cur_pageno then
+            break
+        end
+        previous_chapter = self.ticks_candidates[i]
+    end
+    return previous_chapter
 end
 
 function SkimToWidget:onCloseWidget()
     UIManager:setDirty(nil, function()
-        return "partial", self.skimto_frame.dimen
+        return "ui", self.skimto_frame.dimen
     end)
     return true
 end
