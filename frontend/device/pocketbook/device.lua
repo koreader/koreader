@@ -1,5 +1,7 @@
 local Generic = require("device/generic/device") -- <= look at this file!
 local logger = require("logger")
+local ffi = require("ffi")
+local inkview = ffi.load("inkview")
 
 -- luacheck: push
 -- luacheck: ignore
@@ -36,12 +38,16 @@ local KEY_COVEROPEN	= 0x02
 local KEY_COVERCLOSE	= 0x03
 -- luacheck: pop
 
+ffi.cdef[[
+char *GetSoftwareVersion(void);
+char *GetDeviceModel(void);
+]]
+
 local function yes() return true end
 
 local function pocketbookEnableWifi(toggle)
     os.execute("/ebrmain/bin/netagent " .. (toggle == 1 and "connect" or "disconnect"))
 end
-
 
 local PocketBook = Generic:new{
     model = "PocketBook",
@@ -103,12 +109,30 @@ function PocketBook:initNetworkManager(NetworkMgr)
     end
 end
 
+function PocketBook:getSoftwareVersion()
+    return ffi.string(inkview.GetSoftwareVersion())
+end
+
+function PocketBook:getDeviceModel()
+    return ffi.string(inkview.GetDeviceModel())
+end
+
+-- PocketBook InkPad
 local PocketBook840 = PocketBook:new{
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = yes,
     display_dpi = 250,
     emu_events_dev = "/var/dev/shm/emu_events",
+}
+
+-- PocketBook HD Touch
+local PocketBook631 = PocketBook:new{
+    isTouchDevice = yes,
+    hasKeys = yes,
+    hasFrontlight = yes,
+    display_dpi = 300,
+    emu_events_dev = "/dev/shm/emu_events",
 }
 
 function PocketBook840:init()
@@ -125,5 +149,29 @@ function PocketBook840:init()
     PocketBook.init(self)
 end
 
--- should check device model before return to support other PocketBook models
-return PocketBook840
+function PocketBook631:init()
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
+    self.powerd = require("device/pocketbook/powerd"):new{device = self}
+    self.input = require("device/input"):new{
+        device = self,
+        event_map = {
+            [23] = "Menu",
+            [24] = "LPgBack",
+            [25] = "LPgFwd",
+            [1002] = "Power",
+        }
+    }
+    PocketBook.init(self)
+end
+
+logger.info('SoftwareVersion: ', PocketBook:getSoftwareVersion())
+
+local codename = PocketBook:getDeviceModel()
+
+if codename == "PocketBook 840" then
+    return PocketBook840
+elseif codename == "PB631" then
+    return PocketBook631
+else
+    error("unrecognized PocketBook model " .. codename)
+end
