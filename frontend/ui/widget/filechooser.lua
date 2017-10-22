@@ -222,16 +222,24 @@ function FileChooser:updateItems(select_number)
 end
 
 function FileChooser:refreshPath()
-    self:switchItemTable(nil, self:genItemTableFromPath(self.path), self.path_items[self.path])
+    local itemmatch = nil
+    if self.focused_path then
+        itemmatch = {path = self.focused_path}
+        -- We use focused_path only once, but remember it
+        -- for CoverBrower to re-apply it on startup if needed
+        self.prev_focused_path = self.focused_path
+        self.focused_path = nil
+    end
+    self:switchItemTable(nil, self:genItemTableFromPath(self.path), self.path_items[self.path], itemmatch)
 end
 
 function FileChooser:changeToPath(path, focused_path)
     path = util.realpath(path)
     self.path = path
-    self:refreshPath()
     if focused_path then
-        self:changePageToPath(focused_path)
+        self.focused_path = focused_path
     end
+    self:refreshPath()
     self:onPathChanged(path)
 end
 
