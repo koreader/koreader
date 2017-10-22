@@ -195,7 +195,7 @@ function SkimToWidget:init()
     }
 
     local button_chapter_next = Button:new{
-        text = "▷|",
+        text = '▷│',
         bordersize = self.button_bordersize,
         margin = self.button_margin,
         radius = 0,
@@ -213,7 +213,7 @@ function SkimToWidget:init()
     }
 
     local button_chapter_prev = Button:new{
-        text = "|◁",
+        text = "│◁",
         bordersize = self.button_bordersize,
         margin = self.button_margin,
         radius = 0,
