@@ -25,6 +25,7 @@ end
 -- NetworkMgr:setWirelessBackend
 function NetworkMgr:turnOnWifi() end
 function NetworkMgr:turnOffWifi() end
+function NetworkMgr:isWifiOn() end
 function NetworkMgr:getNetworkList() end
 function NetworkMgr:getCurrentNetwork() end
 function NetworkMgr:authenticateNetwork() end
