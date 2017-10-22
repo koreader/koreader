@@ -111,22 +111,30 @@ end
 
 function PocketBook:getSoftwareVersion()
     version =  ffi.string(inkview.GetSoftwareVersion())
-    logger.info("SoftwareVersion: ", version)
     return version
 end
 
 function PocketBook:getDeviceModel()
     model =  ffi.string(inkview.GetDeviceModel())
-    logger.info("DeviceModel: ", model)
     return model
 end
 
+-- PocketBook InkPad
 local PocketBook840 = PocketBook:new{
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = yes,
     display_dpi = 250,
     emu_events_dev = "/var/dev/shm/emu_events",
+}
+
+-- PocketBook HD Touch
+local PocketBook631 = PocketBook:new{
+    isTouchDevice = yes,
+    hasKeys = yes,
+    hasFrontlight = yes,
+    display_dpi = 300,
+    emu_events_dev = "/dev/shm/emu_events",
 }
 
 function PocketBook840:init()
@@ -143,7 +151,29 @@ function PocketBook840:init()
     PocketBook.init(self)
 end
 
-PocketBook:getSoftwareVersion()
-PocketBook:getDeviceModel()
+function PocketBook631:init()
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
+    self.powerd = require("device/pocketbook/powerd"):new{device = self}
+    self.input = require("device/input"):new{
+        device = self,
+        event_map = {
+            [23] = "Menu",
+            [24] = "LPgBack",
+            [25] = "LPgFwd",
+            [1002] = "Power",
+        }
+    }
+    PocketBook.init(self)
+end
 
-return PocketBook840
+logger.info('SoftwareVersion: ', PocketBook:getSoftwareVersion())
+
+local codename = PocketBook:getDeviceModel()
+
+if codename == "PocketBook 840" then
+    return PocketBook840
+elseif codename == "PB631" then
+    return PocketBook631
+else
+    error("unrecognized PocketBook model " .. codename)
+end
