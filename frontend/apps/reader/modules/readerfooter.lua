@@ -105,7 +105,7 @@ local footerTextGeneratorMap = {
     end,
     wifi_status = function()
         local NetworkMgr = require("ui/network/manager")
-        if NetworkMgr.isWifiOn() then
+        if NetworkMgr:isWifiOn() then
             return "W:On"
         else
             return "W:Off"
