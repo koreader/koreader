@@ -174,7 +174,7 @@ function KeyValueItem:init()
             end
         -- misalign to fit all info
         else
-            key_w = key_w_rendered + space_w_rendered
+            key_w = frame_internal_width - value_w_rendered
             self.show_key = self.key
             self.show_value = self.value
         end
