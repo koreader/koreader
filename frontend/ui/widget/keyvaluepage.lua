@@ -129,6 +129,7 @@ local KeyValueItem = InputContainer:new{
     height = nil,
     textviewer_width = nil,
     textviewer_height = nil,
+    half_overflow_right_align = false,
 }
 
 function KeyValueItem:init()
@@ -174,7 +175,11 @@ function KeyValueItem:init()
             end
         -- misalign to fit all info
         else
-            key_w = frame_internal_width - value_w_rendered
+            if self.half_overflow_right_align then
+                key_w = frame_internal_width - value_w_rendered
+            else
+                key_w = key_w_rendered + space_w_rendered
+            end
             self.show_key = self.key
             self.show_value = self.value
         end
@@ -252,6 +257,7 @@ local KeyValuePage = InputContainer:new{
     -- index for the first item to show
     show_page = 1,
     use_top_page_count = false,
+    half_overflow_right_align = false,
 }
 
 function KeyValuePage:init()
@@ -449,6 +455,7 @@ function KeyValuePage:_populateItems()
                     callback_back = entry.callback_back,
                     textviewer_width = self.textviewer_width,
                     textviewer_height = self.textviewer_height,
+                    half_overflow_right_align = self.half_overflow_right_align,
                     show_parent = self,
                 }
             )
