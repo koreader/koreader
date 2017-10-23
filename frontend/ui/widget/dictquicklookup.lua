@@ -188,6 +188,7 @@ function DictQuickLookup:update()
         self.height = math.min(self.region.h*0.7, Screen:getHeight()*0.5)
     end
     -- dictionary title
+    local close_button = CloseButton:new{ window = self, padding_top = self.title_margin, }
     local dict_title_text = TextWidget:new{
         text = self.dictionary,
         face = self.title_face,
@@ -415,8 +416,10 @@ function DictQuickLookup:update()
             h = self.dict_title:getSize().h
         },
         self.dict_title,
-        CloseButton:new{ window = self, padding_top = self.title_margin, },
+        close_button,
     }
+    -- Fix dict title max width now that we know the final width
+    dict_title_text.width = self.dict_bar.dimen.w - close_button:getSize().w
 
     self.dict_frame = FrameContainer:new{
         radius = Size.radius.window,
