@@ -129,6 +129,7 @@ local KeyValueItem = InputContainer:new{
     height = nil,
     textviewer_width = nil,
     textviewer_height = nil,
+    value_overflow_align = "left",
 }
 
 function KeyValueItem:init()
@@ -174,7 +175,11 @@ function KeyValueItem:init()
             end
         -- misalign to fit all info
         else
-            key_w = key_w_rendered + space_w_rendered
+            if self.value_overflow_align == "right" then
+                key_w = frame_internal_width - value_w_rendered
+            else
+                key_w = key_w_rendered + space_w_rendered
+            end
             self.show_key = self.key
             self.show_value = self.value
         end
@@ -252,6 +257,9 @@ local KeyValuePage = InputContainer:new{
     -- index for the first item to show
     show_page = 1,
     use_top_page_count = false,
+    -- aligment of value when key or value overflows its reserved width (for
+    -- now: 50%): "left" (stick to key), "right" (stick to scren right border)
+    value_overflow_align = "left",
 }
 
 function KeyValuePage:init()
@@ -449,6 +457,7 @@ function KeyValuePage:_populateItems()
                     callback_back = entry.callback_back,
                     textviewer_width = self.textviewer_width,
                     textviewer_height = self.textviewer_height,
+                    value_overflow_align = self.value_overflow_align,
                     show_parent = self,
                 }
             )
