@@ -342,7 +342,7 @@ local option_titles = {
     chapter_time_to_read = _("Chapter time to read"),
     frontlight = _("Frontlight level"),
     mem_usage = _("KOReader memory usage"),
-    wifi_status = _("WiFi status"),
+    wifi_status = _("Wi-Fi status"),
 }
 
 function ReaderFooter:addToMainMenu(menu_items)
@@ -470,7 +470,9 @@ function ReaderFooter:addToMainMenu(menu_items)
         table.insert(sub_items, getMinibarOption("frontlight"))
     end
     table.insert(sub_items, getMinibarOption("mem_usage"))
-    table.insert(sub_items, getMinibarOption("wifi_status"))
+    if Device:isAndroid() then
+        table.insert(sub_items, getMinibarOption("wifi_status"))
+    end
 end
 
 -- this method will be updated at runtime based on user setting
