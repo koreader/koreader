@@ -95,6 +95,7 @@ function util.secondsToClock(seconds, withoutSeconds)
     end
 end
 
+<<<<<<< HEAD
 --[[--
 Compares values in two different tables.
 
@@ -133,6 +134,21 @@ function util.tableEquals(o1, o2, ignore_mt)
         if not keySet[key2] then return false end
     end
     return true
+=======
+--- Makes a shallow copy of a table.
+function util.tableShallowCopy(orig)
+    local orig_type = type(orig)
+    local copy
+    if orig_type == 'table' then
+        copy = {}
+        for orig_key, orig_value in pairs(orig) do
+            copy[orig_key] = orig_value
+        end
+    else -- number, string, boolean, etc
+        copy = orig
+    end
+    return copy
+>>>>>>> trying some random stuff
 end
 
 --- Returns number of keys in a table.
@@ -690,6 +706,42 @@ function util.checkLuaSyntax(lua_text)
     -- with: Line 3: '=' expected near '123'
     err = err:gsub("%[string \".-%\"]:", "Line ")
     return err
+end
+
+-- ssl.https doesn't do redirects
+-- should probably put this somewhere more generic
+function util.httpsRequest(request)
+local logger = require "logger"
+logger.dbg(request)
+
+    
+
+    local https = require("ssl.https")
+    local r, c, h
+    
+    local orig_request = util.tableShallowCopy(request)
+
+    request.method = "HEAD"
+    r, c, h = https.request(request)
+local logger = require "logger"
+print"ADFSDFSDFSDFSD"
+logger.dbg(c)
+logger.dbg(h)
+    if (c == 301 or c == 302) and h.location then
+print("redirecting baby")
+        -- redirect, call self again with new URL
+        orig_request.url = h.location
+        orig_request.method = "GET"
+        if h["set-cookie"] then
+            orig_request.headers = orig_request.headers or {}
+            orig_request.headers["set-cookie"] = h["set-cookie"]
+        end
+        r, c, h = nil
+        r, c, h = util.httpsRequest(orig_request)
+        return r, c, h
+    end
+
+    return r, c, h
 end
 
 --- Unpack an archive.

@@ -776,23 +776,31 @@ function ReaderDictionary:downloadDictionaryPrep(dict, size)
     end
 end
 
+
+
 function ReaderDictionary:downloadDictionary(dict, download_location, continue)
     continue = continue or false
-    local http = require('socket.http')
-    local https = require('ssl.https')
+    local socket = require("socket")
+    local http = socket.http
+    local https = require("ssl.https")
     local ltn12 = require("ltn12")
-    local url = require('socket.url')
+    local url = socket.url
 
     local parsed = url.parse(dict.url)
-    local httpRequest = parsed.scheme == 'http' and http.request or https.request
+    local httpRequest = parsed.scheme == 'http' and http.request or util.httpsRequest
     
     if not continue then
         local file_size
-        local r, c, h = httpRequest {
+        --local r, c, h = httpRequest {
+        local code, headers, status = socket.skip(1, httpRequest{
             method = "HEAD",
             url = dict.url,
-        }
-        file_size = h["content-length"]
+            --redirect = true,
+        })
+logger.dbg(status)
+logger.dbg(headers)
+logger.dbg(code)
+        file_size = headers and headers["content-length"]
 
         UIManager:show(ConfirmBox:new{
             text =  T(_("Dictionary filesize is %1 (%2 bytes). Continue with download?"), util.getFriendlySize(file_size), util.getFormattedSize(file_size)),
