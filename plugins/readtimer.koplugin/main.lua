@@ -41,6 +41,10 @@ function ReadTimer:unschedule()
 end
 
 function ReadTimer:addToMainMenu(menu_items)
+    local hour_string = _("hour")
+    local hours_string = _("hours")
+    local minute_string = _("minute")
+    local minutes_string = _("minutes")
     menu_items.read_timer = {
         text_func = function()
             if self:scheduled() then
@@ -78,10 +82,24 @@ function ReadTimer:addToMainMenu(menu_items)
                             if seconds > 0 and seconds < 18*3600 then
                                 self.time = os.time() + seconds
                                 UIManager:scheduleIn(seconds, self.alarm_callback)
+                                local hr_str = ""
+                                local min_str = ""
+                                local hr = math.floor(seconds/3600)
+                                if hr == 1 then
+                                    hr_str = string.format("1 %s", hour_string)
+                                elseif hr > 1 then
+                                    hr_str = string.format("%d %s", hr, hours_string)
+                                end
+                                local min = math.floor((seconds%3600)/60)
+                                if min == 1 then
+                                    min_str = string.format("1 %s", minute_string)
+                                elseif min > 1 then
+                                    min_str = string.format("%d %s", min, minutes_string)
+                                end
                                 UIManager:show(InfoMessage:new{
-                                    text = T(_("Timer set to: %1:%2\nIt's %3 hour(s) and %4 minute(s) from now"),
+                                    text = T(_("Timer set to: %1:%2\nIt's %3 %4 from now"),
                                         string.format("%02d", time.hour), string.format("%02d", time.min),
-                                        math.floor(seconds/3600), math.floor((seconds%3600)/60)),
+                                        hr_str, min_str),
                                     timeout = 5,
                                 })
                             --current time or time > 18h
@@ -111,8 +129,22 @@ function ReadTimer:addToMainMenu(menu_items)
                             if seconds > 0 then
                                 self.time = os.time() + seconds
                                 UIManager:scheduleIn(seconds, self.alarm_callback)
+                                local hr_str = ""
+                                local min_str = ""
+                                local hr = time.hour
+                                if hr == 1 then
+                                    hr_str = string.format("1 %s", hour_string)
+                                elseif hr > 1 then
+                                    hr_str = string.format("%d %s", hr, hours_string)
+                                end
+                                local min = time.min
+                                if min == 1 then
+                                    min_str = string.format("1 %s", minute_string)
+                                elseif min > 1 then
+                                    min_str = string.format("%d %s", min, minutes_string)
+                                end
                                 UIManager:show(InfoMessage:new{
-                                    text = T(_("Timer is set to %1 hour(s) and %2 minute(s)"), time.hour, time.min),
+                                    text = T(_("Timer is set to %1 %2"), hr_str, min_str),
                                     timeout = 5,
                                 })
                             end
