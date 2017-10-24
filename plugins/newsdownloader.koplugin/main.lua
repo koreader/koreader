@@ -18,6 +18,7 @@ local T = FFIUtil.template
 local NewsDownloader = WidgetContainer:new{}
 
 local initialized = false
+local wifi_enabled_before_action = true
 local feed_config_file = "feed_config.lua"
 local news_downloader_config_file = "news_downloader_settings.lua"
 local config_key_custom_dl_dir = "custom_dl_dir";
@@ -135,6 +136,7 @@ end
 
 function NewsDownloader:loadConfigAndProcessFeeds()
     if not NetworkMgr:isOnline() then
+        wifi_enabled_before_action = false
         NetworkMgr:promptWifiOn()
         return
     end
@@ -189,7 +191,7 @@ function NewsDownloader:loadConfigAndProcessFeeds()
             text = T(_("Downloading news finished. Could not process some feeds. Unsupported format in: %1"), unsupported_urls)
         })
     end
-    NetworkMgr:promptWifiOff()
+    afterWifiAction()
 end
 
 function NewsDownloader:processFeedSource(url, limit, unsupported_feeds_urls)
@@ -314,6 +316,12 @@ function NewsDownloader:setCustomDownloadDirectory()
            self:lazyInitialization()
        end,
     }:chooseDir()
+end
+
+local function afterWifiAction()
+    if not wifi_enabled_before_action then
+        NetworkMgr:promptWifiOff()
+    end
 end
 
 return NewsDownloader
