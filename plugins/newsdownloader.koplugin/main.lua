@@ -54,6 +54,12 @@ local function getFeedLink(possible_link)
     end
 end
 
+local function afterWifiAction()
+    if not wifi_enabled_before_action then
+        NetworkMgr:promptWifiOff()
+    end
+end
+
 function NewsDownloader:init()
     self.ui.menu:registerToMainMenu(self)
 end
@@ -316,12 +322,6 @@ function NewsDownloader:setCustomDownloadDirectory()
            self:lazyInitialization()
        end,
     }:chooseDir()
-end
-
-local function afterWifiAction()
-    if not wifi_enabled_before_action then
-        NetworkMgr:promptWifiOff()
-    end
 end
 
 return NewsDownloader
