@@ -298,6 +298,10 @@ function DictQuickLookup:update()
                                                         local ReaderUI = require("apps/reader/readerui")
                                                         local reader = ReaderUI:_getRunningInstance()
                                                         if reader then
+                                                            -- close Highlight menu if any still shown
+                                                            if reader.highlight then
+                                                                reader.highlight:onClose()
+                                                            end
                                                             reader:onClose()
                                                         end
                                                         ReaderUI:showReader(epub_path)
