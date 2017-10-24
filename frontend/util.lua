@@ -702,11 +702,8 @@ function util.unpackArchive(archive, extract_to)
     assert(type(archive) == "string")
 
     local ok
-    if archive:match("%.tar%.gz$") or archive:match("%.tar%.bz2$") or archive:match("%.tgz$") then
+    if archive:match("%.tar%.bz2$") or archive:match("%.tar%.gz$") or archive:match("%.tar%.lz$") or archive:match("%.tgz$") then
         ok = os.execute(("./tar xf %q -C %q"):format(archive, extract_to))
-    elseif archive:match("%.zip$") then
-        -- @todo add uncompress to ffi/zipwriter or compile unzip instead of depending on system
-        ok = os.execute(("unzip -o %q -d %q"):format(archive, extract_to))
     else
         return false, "Couldn't extract archive "..archive..": unrecognized filename extension"
     end

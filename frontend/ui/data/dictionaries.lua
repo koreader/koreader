@@ -8,7 +8,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 2577,
         license = _("Public Domain"),
-        url = "https://tovotu.de/data/stardict/factbook.zip",
+        url = "https://github.com/koreader/stardict-dictionaries/releases/download/v0.1/factbook.tar.lz",
     },
     {
         name = "GNU Collaborative International Dictionary of English",
@@ -16,7 +16,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 108121,
         license = "GPLv3+",
-        url = "https://tovotu.de/data/stardict/gcide.zip",
+        url = "https://github.com/koreader/stardict-dictionaries/releases/download/v0.1/gcide.tar.lz",
     },
     {
         name = "Douglas Harper's Online Etymology Dictionary",
@@ -24,7 +24,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 46133,
         license = "Unknown/©Douglas Harper",
-        url = "https://tovotu.de/data/stardict/etymonline.zip",
+        url = "https://github.com/koreader/stardict-dictionaries/releases/download/v0.1/etymonline.tar.lz",
     },
     {
         name = "Folkets lexikon",
@@ -32,7 +32,7 @@ local dictionaries = {
         lang_out = "Swedish",
         entries = 53618,
         license = "CC-BY-SA 2.5",
-        url = "https://tovotu.de/data/stardict/folkets_en-sv.zip",
+        url = "https://github.com/koreader/stardict-dictionaries/releases/download/v0.1/folkets_en-sv.tar.lz",
     },
     {
         name = "Folkets lexikon",
@@ -40,7 +40,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 36513,
         license = "CC-BY-SA 2.5",
-        url = "https://tovotu.de/data/stardict/folkets_sv-en.zip",
+        url = "https://github.com/koreader/stardict-dictionaries/releases/download/v0.1/folkets_sv-en.tar.lz",
     },
     {
         name = "Dictionnaire Littré (xmlittre)",
@@ -48,7 +48,6 @@ local dictionaries = {
         lang_out = "French",
         entries = 78428,
         license = "CC-BY-SA 3.0",
-        --url = "https://tovotu.de/data/stardict/xmlittre.zip",
         url = "http://http.debian.net/debian/pool/main/s/stardict-xmlittre/stardict-xmlittre_1.0.orig.tar.gz",
     },
     {
@@ -57,7 +56,7 @@ local dictionaries = {
         lang_out = "French",
         entries = 31934,
         license = _("Public Domain (copyright expired, published 1935)"),
-        url = "https://tovotu.de/data/stardict/acadfran.zip",
+        url = "https://github.com/koreader/stardict-dictionaries/releases/download/v0.1/acadfran.tar.lz",
     },
     {
         name = "Pape: Handwörterbuch der griechischen Sprache",
@@ -65,7 +64,7 @@ local dictionaries = {
         lang_out = "German",
         entries = 98893,
         license = _("Public Domain (copyright expired, published 1880)"),
-        url = "http://tovotu.de/data/stardict/pape_gr-de.zip",
+        url = "https://github.com/koreader/stardict-dictionaries/releases/download/v0.1/pape_gr-de.tar.lz",
     },
     {
         name = "Georges: Ausführliches lateinisch-deutsches Handwörterbuch",
@@ -73,7 +72,7 @@ local dictionaries = {
         lang_out = "German",
         entries = 54831,
         license = _("Public Domain (copyright expired, published 1913)"),
-        url = "http://tovotu.de/data/stardict/georges_lat-de.zip",
+        url = "https://github.com/koreader/stardict-dictionaries/releases/download/v0.1/georges_lat-de.tar.lz",
     },
     {
         name = "Georges: Kleines deutsch-lateinisches Handwörterbuch",
@@ -81,7 +80,7 @@ local dictionaries = {
         lang_out = "Latin",
         entries = 26608,
         license = _("Public Domain (copyright expired, published 1910)"),
-        url = "http://tovotu.de/data/stardict/georges_de-lat.zip",
+        url = "https://github.com/koreader/stardict-dictionaries/releases/download/v0.1/georges_de-lat.tar.lz",
     },
     {
         name = "Dicionário Aberto",
