@@ -93,16 +93,32 @@ local dictionaries = {
     },
     {
         name = "GNU/FDL Anglicko/Český slovník",
-        lang_in = "English/Czech",
-        lang_out = "English/Czech",
+        lang_in = "English",
+        lang_out = "Czech",
+        entries = 178904, -- ~90000 each way
+        license = _("GNU/FDL"),
+        url = "http://http.debian.net/debian/pool/non-free/s/stardict-english-czech/stardict-english-czech_20161201.orig.tar.gz",
+    },
+    {
+        name = "GNU/FDL Anglicko/Český slovník",
+        lang_in = "Czech",
+        lang_out = "English",
         entries = 178904, -- ~90000 each way
         license = _("GNU/FDL"),
         url = "http://http.debian.net/debian/pool/non-free/s/stardict-english-czech/stardict-english-czech_20161201.orig.tar.gz",
     },
     {
         name = "GNU/FDL Německo/Český slovník",
-        lang_in = "German/Czech",
-        lang_out = "German/Czech",
+        lang_in = "German",
+        lang_out = "Czech",
+        entries = 2341, -- ~1200 each way
+        license = _("GNU/FDL"),
+        url = "http://http.debian.net/debian/pool/non-free/s/stardict-german-czech/stardict-german-czech_20161201.orig.tar.gz",
+    },
+    {
+        name = "GNU/FDL Německo/Český slovník",
+        lang_in = "Czech",
+        lang_out = "German",
         entries = 2341, -- ~1200 each way
         license = _("GNU/FDL"),
         url = "http://http.debian.net/debian/pool/non-free/s/stardict-german-czech/stardict-german-czech_20161201.orig.tar.gz",

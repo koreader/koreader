@@ -8,6 +8,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local JSON = require("json")
 local KeyValuePage = require("ui/widget/keyvaluepage")
 local LuaData = require("luadata")
+local NetworkMgr = require("ui/network/manager")
 local Trapper = require("ui/trapper")
 local UIManager = require("ui/uimanager")
 local ffiUtil  = require("ffi/util")
@@ -733,6 +734,10 @@ function ReaderDictionary:showDownload(downloadable_dicts)
     for dummy, dict in ipairs(downloadable_dicts) do
         table.insert(kv_pairs, {dict.name, "",
             callback = function()
+                if not NetworkMgr:isOnline() then
+                    NetworkMgr:promptWifiOn()
+                    return
+                end
                 self:downloadDictionaryPrep(dict)
             end})
         local lang
@@ -753,13 +758,12 @@ function ReaderDictionary:showDownload(downloadable_dicts)
     UIManager:show(self.download_window)
 end
 
-function ReaderDictionary:downloadDictionaryPrep(dict, size, continue)
-    continue = continue or false
+function ReaderDictionary:downloadDictionaryPrep(dict, size)
     local dummy, filename = util.splitFilePathName(dict.url)
     local download_location = string.format("%s/%s", self.data_dir, filename)
 
     local lfs = require("libs/libkoreader-lfs")
-    if continue and lfs.attributes(download_location) then
+    if lfs.attributes(download_location) then
         UIManager:show(ConfirmBox:new{
             text =  _("File already exists. Overwrite?"),
             ok_text =  _("Overwrite"),
@@ -767,27 +771,13 @@ function ReaderDictionary:downloadDictionaryPrep(dict, size, continue)
                 self:downloadDictionary(dict, download_location)
             end,
         })
-    elseif continue then
-        UIManager:show(InfoMessage:new{
-            text = _("Downloading…"),
-            timeout = 3,
-        })
-        UIManager:nextTick(function()
-            self:downloadDictionary(dict, download_location)
-        end)
     else
-        UIManager:show(ConfirmBox:new{
-            text =  _("Dictionary filesize is %1. Continue with download?"),
-            ok_text =  _("Download"),
-            ok_callback = function()
-                -- call ourselves with continue = true
-                self:downloadDictionaryPrep(dict, size, true)
-            end,
-        })
+        self:downloadDictionary(dict, download_location)
     end
 end
 
-function ReaderDictionary:downloadDictionary(dict, download_location)
+function ReaderDictionary:downloadDictionary(dict, download_location, continue)
+    continue = continue or false
     local http = require('socket.http')
     local https = require('ssl.https')
     local ltn12 = require("ltn12")
@@ -795,6 +785,32 @@ function ReaderDictionary:downloadDictionary(dict, download_location)
 
     local parsed = url.parse(dict.url)
     local httpRequest = parsed.scheme == 'http' and http.request or https.request
+    
+    if not continue then
+        local file_size
+        local r, c, h = httpRequest {
+            method = "HEAD",
+            url = dict.url,
+        }
+        file_size = h["content-length"]
+
+        UIManager:show(ConfirmBox:new{
+            text =  T(_("Dictionary filesize is %1 (%2 bytes). Continue with download?"), util.getFriendlySize(file_size), util.getFormattedSize(file_size)),
+            ok_text =  _("Download"),
+            ok_callback = function()
+                -- call ourselves with continue = true
+                self:downloadDictionary(dict, download_location, true)
+            end,
+        })
+        return
+    else
+        UIManager:nextTick(function()
+            UIManager:show(InfoMessage:new{
+                text = _("Downloading…"),
+                timeout = 3,
+            })
+        end)
+    end
 
     local dummy, c, dummy = httpRequest{
         url = dict.url,
