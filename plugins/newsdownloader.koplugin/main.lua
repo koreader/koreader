@@ -322,6 +322,7 @@ function NewsDownloader:onCloseDocument()
     logger.dbg("NewsDownloader: news_download_dir: ", news_download_dir_without_dot)
     if  document_path ~= nil and string.match(document_path, news_download_dir_without_dot) then
         logger.dbg("NewsDownloader: news downloader files shouldn't be visible in history. Removing.")
+        local ReadHistory = require("readhistory")
         ReadHistory:removeItemByPath(document_path)
     end
 end
