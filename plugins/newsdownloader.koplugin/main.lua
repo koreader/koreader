@@ -1,4 +1,5 @@
 local DataStorage = require("datastorage")
+local ReadHistory = require("readhistory")
 local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("frontend/luasettings")
@@ -316,14 +317,14 @@ function NewsDownloader:setCustomDownloadDirectory()
 end
 
 function NewsDownloader:onCloseDocument()
-    local document_path = self.ui.document._document.filename
-    logger.dbg("NewsDownloader: document_path ", document_path)
+    local document_full_path = self.ui.document.file
+    logger.dbg("NewsDownloader: document_full_path ", document_full_path)
+    local document_path =  util.splitFilePathName(self.ui.document.file)
     local news_download_dir_without_dot = string.sub(news_download_dir_path,2)
     logger.dbg("NewsDownloader: news_download_dir: ", news_download_dir_without_dot)
-    if  document_path ~= nil and string.match(document_path, news_download_dir_without_dot) then
+    if  document_path and string.match(document_path, news_download_dir_without_dot) then
         logger.dbg("NewsDownloader: news downloader files shouldn't be visible in history. Removing.")
-        local ReadHistory = require("readhistory")
-        ReadHistory:removeItemByPath(document_path)
+        ReadHistory:removeItemByPath(document_full_path)
     end
 end
 
