@@ -160,12 +160,13 @@ function NewsDownloader:loadConfigAndProcessFeeds()
     for idx, feed in ipairs(feed_config) do
         local url = feed[1]
         local limit = feed.limit
+        local createNewsFromDescription = feed.createNewsFromDescription == "true" or feed.createNewsFromDescription == true
         if url and limit then
             info = InfoMessage:new{ text = T(_("Processing: %1"), url) }
             UIManager:show(info)
             -- processFeedSource is a blocking call, so manually force a UI refresh beforehand
             UIManager:forceRePaint()
-            self:processFeedSource(url, tonumber(limit), unsupported_feeds_urls)
+            self:processFeedSource(url, tonumber(limit), unsupported_feeds_urls, createNewsFromDescription)
             UIManager:close(info)
         else
             logger.warn('NewsDownloader: invalid feed config entry', feed)
@@ -191,7 +192,7 @@ function NewsDownloader:loadConfigAndProcessFeeds()
     end
 end
 
-function NewsDownloader:processFeedSource(url, limit, unsupported_feeds_urls)
+function NewsDownloader:processFeedSource(url, limit, unsupported_feeds_urls, createNewsFromDescription)
     local resp_lines = {}
     local parsed = socket_url.parse(url)
     local httpRequest = parsed.scheme == 'http' and http.request or https.request
@@ -207,9 +208,9 @@ function NewsDownloader:processFeedSource(url, limit, unsupported_feeds_urls)
     local is_atom = feeds.feed and feeds.feed.title and feeds.feed.entry[1] and feeds.feed.entry[1].title and feeds.feed.entry[1].link
 
     if is_atom then
-        self:processAtom(feeds, limit)
+        self:processAtom(feeds, limit, createNewsFromDescription)
     elseif is_rss then
-        self:processRSS(feeds, limit)
+        self:processRSS(feeds, limit, createNewsFromDescription)
     else
         table.insert(unsupported_feeds_urls, url)
         return
@@ -233,7 +234,7 @@ function NewsDownloader:deserializeXMLString(xml_str)
     return xmlhandler.root
 end
 
-function NewsDownloader:processAtom(feeds, limit)
+function NewsDownloader:processAtom(feeds, limit, createNewsFromDescription)
     local feed_output_dir = string.format("%s%s/",
                                           news_download_dir_path,
                                           util.replaceInvalidChars(getFeedTitle(feeds.feed.title)))
@@ -245,11 +246,15 @@ function NewsDownloader:processAtom(feeds, limit)
         if limit ~= 0 and index - 1 == limit then
             break
         end
-        self:downloadFeed(feed, feed_output_dir)
+        if createNewsFromDescription then
+           self:createFromDescription(feed, feed_output_dir)
+        else
+           self:downloadFeed(feed, feed_output_dir)
+        end
     end
 end
 
-function NewsDownloader:processRSS(feeds, limit)
+function NewsDownloader:processRSS(feeds, limit, createNewsFromDescription)
     local feed_output_dir = ("%s%s/"):format(
         news_download_dir_path, util.replaceInvalidChars(feeds.rss.channel.title))
     if not lfs.attributes(feed_output_dir, "mode") then
@@ -260,7 +265,11 @@ function NewsDownloader:processRSS(feeds, limit)
         if limit ~= 0 and index - 1 == limit then
             break
         end
-        self:downloadFeed(feed, feed_output_dir)
+        if createNewsFromDescription then
+          self:createFromDescription(feed, feed_output_dir)
+        else
+          self:downloadFeed(feed, feed_output_dir)
+        end
     end
 end
 
@@ -274,6 +283,17 @@ function NewsDownloader:downloadFeed(feed, feed_output_dir)
     local parsed = socket_url.parse(link)
     local httpRequest = parsed.scheme == 'http' and http.request or https.request
     httpRequest({ url = link, sink = ltn12.sink.file(io.open(news_dl_path, 'w')), })
+end
+
+function NewsDownloader:createFromDescription(feed, feed_output_dir)
+    local news_file_path = ("%s%s%s"):format(feed_output_dir,
+                                           util.replaceInvalidChars(getFeedTitle(feed.title)),
+                                           file_extension)
+    logger.dbg("NewsDownloader: News file will be created :", news_file_path)
+    local io = require("io")
+    local file = io.open(news_file_path, "w")
+    file:write("<!DOCTYPE html><html><head><meta charset='UTF-8'></head><body><header><h2>".. feed.title .. "</h2></header><article>" ..feed.description .."</article></body></html>")
+    file:close()
 end
 
 function NewsDownloader:removeNewsButKeepFeedConfig()
