@@ -318,7 +318,7 @@ end
 function NewsDownloader:onCloseDocument()
     local document_path = self.ui.document._document.filename
     logger.dbg("NewsDownloader: document_path ", document_path)
-    local = news_download_dir_without_dot = string.sub(news_download_dir_path)
+    local news_download_dir_without_dot = string.sub(news_download_dir_path,2)
     logger.dbg("NewsDownloader: news_download_dir: ", news_download_dir_without_dot)
     if  document_path ~= nil and string.match(document_path, news_download_dir_without_dot) then
         logger.dbg("NewsDownloader: news downloader files shouldn't be visible in history. Removing.")
