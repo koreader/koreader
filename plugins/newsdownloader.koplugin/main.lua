@@ -247,9 +247,9 @@ function NewsDownloader:processAtom(feeds, limit, download_full_article)
             break
         end
         if download_full_article then
-            self:createFromDescription(feed, feed.context, feed_output_dir)
-        else
             self:downloadFeed(feed, feed_output_dir)
+        else
+            self:createFromDescription(feed, feed.context, feed_output_dir)
         end
     end
 end
@@ -266,9 +266,9 @@ function NewsDownloader:processRSS(feeds, limit, download_full_article)
             break
         end
         if download_full_article then
-            self:createFromDescription(feed, feed.description, feed_output_dir)
-        else
             self:downloadFeed(feed, feed_output_dir)
+        else
+            self:createFromDescription(feed, feed.description, feed_output_dir)
         end
     end
 end
