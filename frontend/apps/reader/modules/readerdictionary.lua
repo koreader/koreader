@@ -427,7 +427,7 @@ function ReaderDictionary:stardictLookup(word, box, link)
         return
     end
     local lookup_cancelled = false
-    local common_options = self.disable_fuzzy_search and "-njf" or "-nj"
+    local common_options = self.disable_fuzzy_search and "-nje" or "-nj"
     for _, dict_dir in ipairs(dict_dirs) do
         if lookup_cancelled then
             break -- don't do any more lookup on additional dict_dirs
