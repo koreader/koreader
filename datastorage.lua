@@ -33,6 +33,14 @@ function DataStorage:getSettingsDir()
     return self:getDataDir() .. "/settings"
 end
 
+function DataStorage:getAbsoluteDirPath(path)
+    if string.sub(path,1,1) == "." then
+        return lfs.currentdir() .. string.sub(path,2)
+    else
+        return path
+    end
+end
+
 local function initDataDir()
     local sub_data_dirs = {
         "cache", "clipboard", "data", "data/dict", "history",

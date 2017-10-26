@@ -318,11 +318,10 @@ end
 
 function NewsDownloader:onCloseDocument()
     local document_full_path = self.ui.document.file
-    logger.dbg("NewsDownloader: document_full_path ", document_full_path)
-    local document_path =  util.splitFilePathName(self.ui.document.file)
-    local news_download_dir_without_dot = string.sub(news_download_dir_path,2)
-    logger.dbg("NewsDownloader: news_download_dir: ", news_download_dir_without_dot)
-    if  document_path and string.match(document_path, news_download_dir_without_dot) then
+    logger.dbg("NewsDownloader: document_full_path:", document_full_path)
+    local news_download_full_dir_path = DataStorage:getAbsoluteDirPath(news_download_dir_path)
+    logger.dbg("NewsDownloader: news_download_dir:", news_download_full_dir_path)
+    if  document_full_path and news_download_full_dir_path == string.sub(document_full_path,1,string.len(news_download_full_dir_path)) then
         logger.dbg("NewsDownloader: news downloader files shouldn't be visible in history. Removing.")
         ReadHistory:removeItemByPath(document_full_path)
     end
