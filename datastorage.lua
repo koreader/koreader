@@ -16,7 +16,7 @@ function DataStorage:getDataDir()
         -- confinded ubuntu app has write access to this dir
         data_dir = string.format("%s/%s", os.getenv("XDG_DATA_HOME"), package_name)
     else
-        data_dir = lfs.currentdir() or "."
+        data_dir = "."
     end
     if lfs.attributes(data_dir, "mode") ~= "directory" then
         lfs.mkdir(data_dir)
