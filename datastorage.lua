@@ -14,7 +14,7 @@ function DataStorage:getDataDir()
         local app_id = os.getenv("APP_ID")
         local package_name = app_id:match("^(.-)_")
         -- confinded ubuntu app has write access to this dir
-        data_dir = os.getenv("XDG_DATA_HOME") .. "/" .. package_name
+        data_dir = string.format("%s/%s", os.getenv("XDG_DATA_HOME"), package_name)
     else
         data_dir = "."
     end
@@ -35,11 +35,13 @@ end
 
 local function initDataDir()
     local sub_data_dirs = {
-        "cache", "clipboard", "data", "data/dict", "history",
+        "cache", "clipboard",
+        "data", "data/dict", "data/tessdata",
+        "history",
         "ota", "screenshots", "settings",
     }
     for _, dir in ipairs(sub_data_dirs) do
-        local sub_data_dir = DataStorage:getDataDir() .. "/" .. dir
+        local sub_data_dir = string.format("%s/%s", DataStorage:getDataDir(), dir)
         if lfs.attributes(sub_data_dir, "mode") ~= "directory" then
             lfs.mkdir(sub_data_dir)
         end
