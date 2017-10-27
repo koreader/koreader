@@ -1,4 +1,5 @@
 local DataStorage = require("datastorage")
+local ReadHistory = require("readhistory")
 local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("frontend/luasettings")
@@ -115,7 +116,7 @@ function NewsDownloader:lazyInitialization()
         if news_downloader_settings:has(config_key_custom_dl_dir) then
             news_download_dir_path = news_downloader_settings:readSetting(config_key_custom_dl_dir)
         else
-            news_download_dir_path = ("%s/%s/"):format(DataStorage:getDataDir(), news_download_dir_name)
+            news_download_dir_path = ("%s/%s/"):format(DataStorage:getFullDataDir(), news_download_dir_name)
         end
 
         if not lfs.attributes(news_download_dir_path, "mode") then
@@ -341,6 +342,16 @@ function NewsDownloader:setCustomDownloadDirectory()
            self:lazyInitialization()
        end,
     }:chooseDir()
+end
+
+function NewsDownloader:onCloseDocument()
+    local document_full_path = self.ui.document.file
+    if  document_full_path and news_download_dir_path == string.sub(document_full_path, 1, string.len(news_download_dir_path)) then
+        logger.dbg("NewsDownloader: document_full_path:", document_full_path)
+        logger.dbg("NewsDownloader: news_download_dir_path:", news_download_dir_path)
+        logger.dbg("NewsDownloader: removing NewsDownloader file from history.")
+        ReadHistory:removeItemByPath(document_full_path)
+    end
 end
 
 return NewsDownloader
