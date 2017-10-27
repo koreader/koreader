@@ -54,7 +54,7 @@ local function getFeedLink(possible_link)
     end
 end
 
-local function afterWifiAction()
+function NewsDownloader:afterWifiAction()
     if not wifi_enabled_before_action then
         NetworkMgr:promptWifiOff()
     end
@@ -197,7 +197,7 @@ function NewsDownloader:loadConfigAndProcessFeeds()
             text = T(_("Downloading news finished. Could not process some feeds. Unsupported format in: %1"), unsupported_urls)
         })
     end
-    afterWifiAction()
+ .  NewsDownloader:afterWifiAction()
 end
 
 function NewsDownloader:processFeedSource(url, limit, unsupported_feeds_urls)
