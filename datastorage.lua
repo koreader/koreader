@@ -5,6 +5,8 @@ local lfs = require("libs/libkoreader-lfs")
 local DataStorage = {}
 
 local data_dir
+local full_data_dir
+
 function DataStorage:getDataDir()
     if data_dir then return data_dir end
 
@@ -33,12 +35,17 @@ function DataStorage:getSettingsDir()
     return self:getDataDir() .. "/settings"
 end
 
-function DataStorage:getAbsoluteDirPath(path)
-    if string.sub(path,1,1) == "." then
-        return lfs.currentdir() .. string.sub(path,2)
-    else
-        return path
+
+function DataStorage:getFullDataDir()
+    if full_data_dir then return full_data_dir end
+
+    if string.sub(self:getDataDir(), 1, 1) == "/" then
+        full_data_dir = self:getDataDir()
+    elseif self:getDataDir() == "." then
+        full_data_dir = lfs.currentdir()
     end
+
+    return full_data_dir
 end
 
 local function initDataDir()
