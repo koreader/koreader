@@ -318,10 +318,10 @@ end
 
 function NewsDownloader:onCloseDocument()
     local document_full_path = self.ui.document.file
-    logger.dbg("NewsDownloader: document_full_path:", document_full_path)
-    logger.dbg("NewsDownloader: news_download_dir_path:", news_download_dir_path)
     if  document_full_path and news_download_dir_path == string.sub(document_full_path, 1, string.len(news_download_dir_path)) then
-        logger.dbg("NewsDownloader: news downloader files shouldn't be visible in history. Removing.")
+        logger.dbg("NewsDownloader: document_full_path:", document_full_path)
+        logger.dbg("NewsDownloader: news_download_dir_path:", news_download_dir_path)
+        logger.dbg("NewsDownloader: removing NewsDownloader file from history.")
         ReadHistory:removeItemByPath(document_full_path)
     end
 end
