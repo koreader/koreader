@@ -17,6 +17,9 @@ else ifeq ($(TARGET), pocketbook)
 endif
 
 MACHINE=$(shell PATH=$(PATH) $(CC) -dumpmachine 2>/dev/null)
+ifdef KODEBUG
+	MACHINE:=$(MACHINE)-debug
+endif
 
 ifdef TARGET
 	DIST:=$(TARGET)
