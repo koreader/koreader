@@ -178,6 +178,7 @@ ${SUPPORTED_TARGETS}"
             fi
             [ -e "${CURDIR}/base/toolchain/android-toolchain-${ANDROID_ARCH}/bin/" ] || {
                 { [ -e "${NDK}" ] || make -C "${CURDIR}/base/toolchain" android-ndk; }
+                assert_ret_zero $?
                 make android-toolchain
                 assert_ret_zero $?
             }
