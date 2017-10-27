@@ -92,8 +92,11 @@ EOL
 }
 
 function setup_env() {
-    files=$(ls -d ./koreader-emulator-*/koreader)
-    assert_ret_zero $? "Emulator not found, please build it first."
+    if [ -n "${KODEBUG+x}" ]; then
+        KODEBUG_SUFFIX=-debug
+    fi
+    files=$(ls -d ./koreader-emulator-*${KODEBUG_SUFFIX}/koreader)
+    assert_ret_zero $? "Emulator not found. Please build it first."
     export EMU_DIR=${files[0]}
 }
 
@@ -503,14 +506,18 @@ TARGET:
                 if [ ! ${no_build} ]; then
                     echo "[*] Building KOReader for Android…"
                     kodev-release --ignore-translation android
+                    assert_ret_zero $?
                 fi
                 # clear logcat to get rid of useless cruft
                 adb logcat -c
                 # uninstall existing package to make sure *everything* is gone from memory
+                # no assert_ret_zero; uninstall is allowed to fail if there's nothing to uninstall
                 adb uninstall "org.koreader.launcher"
-                adb install "koreader-android-${ANDROID_FULL_ARCH_APK}-${VERSION}.apk"
+                adb install "koreader-android-${ANDROID_FULL_ARCH_APK}${KODEBUG_SUFFIX}-${VERSION}.apk"
+                assert_ret_zero $?
                 # there's no adb run so we do this…
                 adb shell monkey -p org.koreader.launcher -c android.intent.category.LAUNCHER 1
+                assert_ret_zero $?
                 adb logcat
             } || echo "Failed to find adb in PATH to interact with Android device."
             ;;
