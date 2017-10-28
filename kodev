@@ -508,6 +508,7 @@ TARGET:
                     kodev-release --ignore-translation android
                     assert_ret_zero $?
                 fi
+                setup_env
                 # clear logcat to get rid of useless cruft
                 adb logcat -c
                 # uninstall existing package to make sure *everything* is gone from memory
