@@ -57,7 +57,6 @@ local footerTextGeneratorMap = {
         local powerd = Device:getPowerDevice()
         return "B:" .. (powerd:isCharging() and "+" or "") .. powerd:getCapacity() .. "%"
     end,
-
     time = function()
         return os.date("%H:%M")
     end,
