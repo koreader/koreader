@@ -151,6 +151,8 @@ function ConfigOption:init()
     local default_option_padding = Size.padding.large
     local max_option_name_width = 0
     local txt_width = 0
+    local padding_small = Size.padding.small
+    local padding_button = Size.padding.button
     for c = 1, #self.options do
         local name_font_face = self.options[c].name_font_face and self.options[c].name_font_face or "cfont"
         local name_font_size = self.options[c].name_font_size and self.options[c].name_font_size or default_name_font_size
@@ -200,8 +202,8 @@ function ConfigOption:init()
                 local text = self.options[c].name_text
                 local face = Font:getFace(name_font_face, name_font_size)
                 local width_name_text = RenderText:sizeUtf8Text(0, Screen:getWidth(), face, text).x
-                if math.floor(name_align * Screen:getWidth()) - 2*Size.padding.small < width_name_text then
-                    text = RenderText:truncateTextByWidth(text, face, name_align * Screen:getWidth() - 2*Size.padding.small)
+                if math.floor(name_align * Screen:getWidth()) - 2*padding_small < width_name_text then
+                    text = RenderText:truncateTextByWidth(text, face, name_align * Screen:getWidth() - 2*padding_small)
                 end
 
                 local option_name_container = RightContainer:new{
@@ -212,7 +214,7 @@ function ConfigOption:init()
                     bordersize = 0,
                     face = face,
                     enabled = enabled,
-                    padding = Size.padding.small,
+                    padding = padding_small,
                     text_font_face = name_font_face,
                     text_font_size = name_font_size,
                     text_font_bold = false,
@@ -317,7 +319,7 @@ function ConfigOption:init()
                                 face = Font:getFace(item_font_face, item_font_size[d]),
                                 fgcolor = Blitbuffer.gray(enabled and 1.0 or 0.5),
                             },
-                            padding = Size.padding.button,
+                            padding = padding_button,
                             color = d == current_item and Blitbuffer.gray(enabled and 1.0 or 0.5) or Blitbuffer.COLOR_WHITE,
                             enabled = enabled,
                         }
@@ -334,7 +336,7 @@ function ConfigOption:init()
                                 face = face,
                                 fgcolor = Blitbuffer.gray(enabled and 1.0 or 0.5),
                             },
-                            padding = -Size.padding.button,
+                            padding = -padding_button,
                             color = d == current_item and Blitbuffer.gray(enabled and 1.0 or 0.5) or Blitbuffer.COLOR_WHITE,
                             enabled = enabled,
                         }
@@ -374,7 +376,7 @@ function ConfigOption:init()
                             file = self.options[c].item_icons[d],
                             dim = not enabled,
                         },
-                        padding = -Size.padding.button,
+                        padding = -padding_button,
                         color = d == current_item and Blitbuffer.gray(enabled and 1.0 or 0.5) or Blitbuffer.COLOR_WHITE,
                         enabled = enabled,
                     }
