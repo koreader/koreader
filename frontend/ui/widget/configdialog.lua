@@ -1,3 +1,4 @@
+local Button = require("ui/widget/button")
 local Blitbuffer = require("ffi/blitbuffer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
@@ -15,6 +16,7 @@ local IconButton = require("ui/widget/iconbutton")
 local ImageWidget = require("ui/widget/imagewidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LineWidget = require("ui/widget/linewidget")
+local RenderText = require("ui/rendertext")
 local RightContainer = require("ui/widget/container/rightcontainer")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
@@ -144,20 +146,23 @@ function ConfigOption:init()
     -- make default styles
     local default_name_font_size = 20
     local default_item_font_size = 16
-    local default_items_spacing = 30
+    local default_items_spacing = 40
     local default_option_height = 50
     local default_option_padding = Size.padding.large
     local max_option_name_width = 0
+    local txt_width = 0
     for c = 1, #self.options do
         local name_font_face = self.options[c].name_font_face and self.options[c].name_font_face or "cfont"
         local name_font_size = self.options[c].name_font_size and self.options[c].name_font_size or default_name_font_size
-        local option_name_width = TextWidget:new{
-            text = self.options[c].name_text,
-            face = Font:getFace(name_font_face, name_font_size),
-        }:getSize().w
-        max_option_name_width = math.max(max_option_name_width, option_name_width)
+        local text = self.options[c].name_text
+        local face = Font:getFace(name_font_face, name_font_size)
+        if text ~= nil then
+            txt_width = RenderText:sizeUtf8Text(0, Screen:getWidth(), face, text).x
+        end
+        max_option_name_width = math.max(max_option_name_width, txt_width)
     end
     local default_name_align_right = math.max((max_option_name_width + Screen:scaleBySize(10))/Screen:getWidth(), 0.33)
+    default_name_align_right = math.min(default_name_align_right, 0.5)
     local default_item_align_center = 1 - default_name_align_right
 
     -- fill vertical group of config tab
@@ -180,18 +185,38 @@ function ConfigOption:init()
             local option_height = Screen:scaleBySize(self.options[c].height and self.options[c].height or default_option_height)
             local item_spacing_width = Screen:scaleBySize(self.options[c].spacing and self.options[c].spacing or default_items_spacing)
             local enabled = true
+            if item_align == 1.0 then
+                name_align = 0
+            end
+            if name_align + item_align > 1 then
+                name_align = 0.5
+                item_align = 0.5
+            end
             if self.options[c].enabled_func then
                 enabled = self.options[c].enabled_func(self.config.configurable)
             end
             local horizontal_group = HorizontalGroup:new{}
             if self.options[c].name_text then
+                local text = self.options[c].name_text
+                local face = Font:getFace(name_font_face, name_font_size)
+                local width_name_text = RenderText:sizeUtf8Text(0, Screen:getWidth(), face, text).x
+                if math.floor(name_align * Screen:getWidth()) - 2*Size.padding.small < width_name_text then
+                    text = RenderText:truncateTextByWidth(text, face, name_align * Screen:getWidth() - 2*Size.padding.small)
+                end
+
                 local option_name_container = RightContainer:new{
                     dimen = Geom:new{ w = Screen:getWidth()*name_align, h = option_height},
                 }
-                local option_name = TextWidget:new{
-                    text = self.options[c].name_text,
-                    face = Font:getFace(name_font_face, name_font_size),
-                    fgcolor = Blitbuffer.gray(enabled and 1.0 or 0.5),
+                local option_name = Button:new{
+                    text = text,
+                    bordersize = 0,
+                    face = face,
+                    enabled = enabled,
+                    padding = Size.padding.small,
+                    text_font_face = name_font_face,
+                    text_font_size = name_font_size,
+                    text_font_bold = false,
+                    hold_callback = self.options[c].name_text_hold_callback,
                 }
                 table.insert(option_name_container, option_name)
                 table.insert(horizontal_group, option_name_container)
@@ -261,20 +286,28 @@ function ConfigOption:init()
             end
             if self.options[c].item_text then
                 local items_count = #self.options[c].item_text
-                local middle_index = math.ceil(items_count/2)
-                local middle_item = OptionTextItem:new{
-                    TextWidget:new{
-                        text = self.options[c].item_text[middle_index],
-                        face = Font:getFace(item_font_face,
-                            option_items_fixed and item_font_size[middle_index]
+                local items_width = 0
+                for d = 1, #self.options[c].item_text do
+                    local item = OptionTextItem:new{
+                        TextWidget:new{
+                            text = self.options[c].item_text[d],
+                            face = Font:getFace(item_font_face,
+                            option_items_fixed and item_font_size[d]
                             or item_font_size),
+                        }
                     }
-                }
-                local max_item_spacing = (Screen:getWidth() * item_align -
-                        middle_item:getSize().w * items_count) / items_count
+                    items_width = items_width + item:getSize().w
+                end
+                local max_item_spacing = (Screen:getWidth() * item_align - items_width) / items_count
+                local width = math.min(max_item_spacing, item_spacing_width)
+
+                if max_item_spacing < item_spacing_width / 2 then
+                    width = item_spacing_width / 2
+                end
                 local items_spacing = HorizontalSpan:new{
-                    width = math.min(max_item_spacing, item_spacing_width)
+                    width = width
                 }
+                local max_item_text_width = (Screen:getWidth() * item_align - items_count * width) / items_count
                 for d = 1, #self.options[c].item_text do
                     local option_item
                     if option_items_fixed then
@@ -289,10 +322,16 @@ function ConfigOption:init()
                             enabled = enabled,
                         }
                     else
+                        local text = self.options[c].item_text[d]
+                        local face = Font:getFace(item_font_face, item_font_size)
+                        local width_item_text = RenderText:sizeUtf8Text(0, Screen:getWidth(), face, text).x
+                        if max_item_text_width < width_item_text then
+                            text = RenderText:truncateTextByWidth(text, face, max_item_text_width)
+                        end
                         option_item = OptionTextItem:new{
                             TextWidget:new{
-                                text = self.options[c].item_text[d],
-                                face = Font:getFace(item_font_face, item_font_size),
+                                text = text,
+                                face = face,
                                 fgcolor = Blitbuffer.gray(enabled and 1.0 or 0.5),
                             },
                             padding = -Size.padding.button,
@@ -356,9 +395,8 @@ function ConfigOption:init()
             end
 
             if self.options[c].toggle then
-                local max_toggle_width = Screen:getWidth() / 2
-                local toggle_width = Screen:scaleBySize(self.options[c].width
-                                                        or 216)
+                local max_toggle_width = Screen:getWidth() * 0.5
+                local toggle_width = Screen:scaleBySize(self.options[c].width or max_toggle_width)
                 local row_count = self.options[c].row_count or 1
                 local toggle_height = Screen:scaleBySize(self.options[c].height
                                                          or 30 * row_count)
