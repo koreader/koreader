@@ -59,6 +59,9 @@ function Device:initNetworkManager(NetworkMgr)
     NetworkMgr.turnOffWifi = function()
         android.setWifiEnabled(false)
     end
+    NetworkMgr.isWifiOn = function()
+        return android.isWifiEnabled()
+    end
 end
 
 return Device

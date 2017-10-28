@@ -27,6 +27,7 @@ local MODE = {
     chapter_time_to_read = 7,
     frontlight = 8,
     mem_usage = 9,
+    wifi_status = 10,
 }
 
 local MODE_NB = 0
@@ -101,6 +102,14 @@ local footerTextGeneratorMap = {
         end
         return ""
     end,
+    wifi_status = function()
+        local NetworkMgr = require("ui/network/manager")
+        if NetworkMgr:isWifiOn() then
+            return "W:On"
+        else
+            return "W:Off"
+        end
+    end,
 }
 
 local ReaderFooter = WidgetContainer:extend{
@@ -138,6 +147,7 @@ function ReaderFooter:init()
         chapter_time_to_read = true,
         frontlight = false,
         mem_usage = false,
+        wifi_status = false,
     }
 
     if self.settings.disabled then
@@ -331,6 +341,7 @@ local option_titles = {
     chapter_time_to_read = _("Chapter time to read"),
     frontlight = _("Frontlight level"),
     mem_usage = _("KOReader memory usage"),
+    wifi_status = _("Wi-Fi status"),
 }
 
 function ReaderFooter:addToMainMenu(menu_items)
@@ -458,6 +469,9 @@ function ReaderFooter:addToMainMenu(menu_items)
         table.insert(sub_items, getMinibarOption("frontlight"))
     end
     table.insert(sub_items, getMinibarOption("mem_usage"))
+    if Device:isAndroid() then
+        table.insert(sub_items, getMinibarOption("wifi_status"))
+    end
 end
 
 -- this method will be updated at runtime based on user setting
@@ -606,6 +620,7 @@ function ReaderFooter:applyFooterMode(mode)
     -- 7 for from statistics chapter time to read
     -- 8 for front light level
     -- 9 for memory usage
+    -- 10 for wifi status
     if mode ~= nil then self.mode = mode end
     self.view.footer_visible = (self.mode ~= MODE.off)
     if not self.view.footer_visible or self.settings.all_at_once then return end
