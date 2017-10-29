@@ -161,7 +161,7 @@ function NewsDownloader:loadConfigAndProcessFeeds()
     for idx, feed in ipairs(feed_config) do
         local url = feed[1]
         local limit = feed.limit
-        local download_full_article = feed.download_full_article == nil or feed.download_full_article == "" or feed.download_full_article
+        local download_full_article = feed.download_full_article == nil or or feed.download_full_article
         if url and limit then
             info = InfoMessage:new{ text = T(_("Processing: %1"), url) }
             UIManager:show(info)
