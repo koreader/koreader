@@ -1,12 +1,12 @@
 return {
 	-- list your feeds here:
 
-    { "http://feeds.reuters.com/Reuters/worldNews?format=xml", limit = 2, download_full_article=false},
+    { "http://feeds.reuters.com/Reuters/worldNews?format=xml", limit = 2, download_full_article=true},
 
-    { "https://www.pcworld.com/index.rss", limit = 7 , download_full_article=true},
+    { "https://www.pcworld.com/index.rss", limit = 7 , download_full_article=false},
 
 		-- comment out line ("--" at line start) to stop downloading source
-    --{ "http://www.football.co.uk/international/rss.xml", limit = 0 , download_full_article=true},
+    --{ "http://www.football.co.uk/international/rss.xml", limit = 0 , download_full_article=false},
 
 
 
