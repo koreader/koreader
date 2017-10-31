@@ -21,7 +21,7 @@ Main features for users
   * scanned PDF/DjVu documents can also be reflowed with built-in K2pdfopt
 * use StarDict dictionaries / Wikipedia to lookup words
 * highlights can be exported to Evernote cloud account
-* highly customizable reader view and typeset
+* highly customizable reader view and typesetting
   * setting arbitrary page margins / line space
   * choosing external fonts and styles
   * built-in multi-lingual hyphenation dictionaries
