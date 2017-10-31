@@ -184,7 +184,8 @@ function ConfigOption:init()
             local name_font_size = self.options[c].name_font_size and self.options[c].name_font_size or default_name_font_size
             local item_font_face = self.options[c].item_font_face and self.options[c].item_font_face or "cfont"
             local item_font_size = self.options[c].item_font_size and self.options[c].item_font_size or default_item_font_size
-            local option_height = Screen:scaleBySize(self.options[c].height and self.options[c].height or default_option_height)
+            local option_height = Screen:scaleBySize(self.options[c].height and self.options[c].height or
+                    default_option_height + (self.options[c].height or 30) * ((self.options[c].row_count or 1) -1))
             local item_spacing_width = Screen:scaleBySize(self.options[c].spacing and self.options[c].spacing or default_items_spacing)
             local enabled = true
             if item_align == 1.0 then
@@ -397,7 +398,7 @@ function ConfigOption:init()
             end
 
             if self.options[c].toggle then
-                local max_toggle_width = Screen:getWidth() * 0.5
+                local max_toggle_width = Screen:getWidth() * item_align
                 local toggle_width = Screen:scaleBySize(self.options[c].width or max_toggle_width)
                 local row_count = self.options[c].row_count or 1
                 local toggle_height = Screen:scaleBySize(self.options[c].height
