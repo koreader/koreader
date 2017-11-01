@@ -339,7 +339,7 @@ function DictQuickLookup:update()
                 },
                 {
                     text = self:getHighlightText(),
-                    enabled = true,
+                    enabled = self.highlight ~= nil,
                     callback = function()
                         if self:getHighlightText() == highlight_strings.highlight then
                             self.ui:handleEvent(Event:new("Highlight"))
