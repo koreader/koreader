@@ -12,3 +12,5 @@ luarocks --local install busted 2.0.rc12-1
 Then you can set up the environment variables with `./kodev activate`.
 
 If all went well, you'll now be able to run `./kodev test front` (for the frontend) or `./kodev test base` (for koreader-base).
+
+You can run individual tests using `./kodev test front testname_spec.lua`.
