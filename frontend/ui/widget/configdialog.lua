@@ -437,7 +437,7 @@ function ConfigOption:init()
                     num_buttons = #self.options[c].values,
                     position = self.options[c].default_pos,
                     callback = function(arg)
-                        UIManager:scheduleIn(0.05, function()
+                        UIManager:nextTick(function()
                             self.config:onConfigChoice(self.options[c].name, self.options[c].values[arg])
                             self.config:onConfigEvent(self.options[c].event, self.options[c].args[arg])
                             UIManager:setDirty("all")
