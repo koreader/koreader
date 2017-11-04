@@ -1,4 +1,5 @@
 local Button = require("ui/widget/button")
+local ButtonProgressWidget = require("ui/widget/buttonprogresswidget")
 local Blitbuffer = require("ffi/blitbuffer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
@@ -398,7 +399,7 @@ function ConfigOption:init()
             end
 
             if self.options[c].toggle then
-                local max_toggle_width = Screen:getWidth() * item_align
+                local max_toggle_width = Screen:getWidth() * item_align * 0.95
                 local toggle_width = Screen:scaleBySize(self.options[c].width or max_toggle_width)
                 local row_count = self.options[c].row_count or 1
                 local toggle_height = Screen:scaleBySize(self.options[c].height
@@ -425,6 +426,34 @@ function ConfigOption:init()
                 table.insert(option_items_group, switch)
             end
 
+            if self.options[c].buttonprogress then
+                local max_buttonprogress_width = Screen:getWidth() * item_align * 0.95
+                local buttonprogress_width = Screen:scaleBySize(self.options[c].width or max_buttonprogress_width)
+                local switch = ButtonProgressWidget:new{
+                    width = math.min(max_buttonprogress_width, buttonprogress_width),
+                    height = option_height,
+                    font_face = item_font_face,
+                    font_size = item_font_size,
+                    num_buttons = #self.options[c].values,
+                    position = self.options[c].default_pos,
+                    callback = function(arg)
+                        UIManager:scheduleIn(0.05, function()
+                            self.config:onConfigChoice(self.options[c].name, self.options[c].values[arg])
+                            self.config:onConfigEvent(self.options[c].event, self.options[c].args[arg])
+                            UIManager:setDirty("all")
+                        end)
+                    end,
+                    hold_callback = function(arg)
+                        self.config:onMakeDefault(self.options[c].name, self.options[c].name_text, self.options[c].values,
+                            self.options[c].args, arg)
+                    end,
+                    show_parrent = self.config,
+                    enabled = enabled,
+                }
+                local position = current_item
+                switch:setPosition(position)
+                table.insert(option_items_group, switch)
+            end
             table.insert(option_items_container, option_items_group)
             table.insert(horizontal_group, option_items_container)
             table.insert(vertical_group, horizontal_group)
