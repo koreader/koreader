@@ -24,6 +24,7 @@ local Device = {
     isTouchDevice = no,
     hasFrontlight = no,
     needsTouchScreenProbe = no,
+    hasClipboard = no,
     hasColorScreen = no,
 
     -- use these only as a last resort. We should abstract the functionality

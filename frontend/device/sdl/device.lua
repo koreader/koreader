@@ -34,10 +34,22 @@ function Device:init()
     end
 
     if util.haveSDL2() then
+        self.hasClipboard = yes
         self.screen = require("ffi/framebuffer_SDL2_0"):new{device = self, debug = logger.dbg}
+
+        local input = require("ffi/input")
         self.input = require("device/input"):new{
             device = self,
             event_map = require("device/sdl/event_map_sdl2"),
+            hasClipboardText = function()
+                return input.hasClipboardText()
+            end,
+            getClipboardText = function()
+                return input.getClipboardText()
+            end,
+            setClipboardText = function(text)
+                return input.setClipboardText(text)
+            end,
         }
     else
         self.screen = require("ffi/framebuffer_SDL1_2"):new{device = self, debug = logger.dbg}
