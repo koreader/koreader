@@ -157,7 +157,7 @@ function NewsDownloader:loadConfigAndProcessFeeds()
         local url = feed[1]
         local limit = feed.limit
         if url and limit then
-            info = InfoMessage:new{ text = T(_("Processing %1/%2: %3"), idx, total_feed_entries, url) }
+            info = InfoMessage:new{ text = T(_("Processing %1/%2:\n%3"), idx, total_feed_entries, url) }
             UIManager:show(info)
             -- processFeedSource is a blocking call, so manually force a UI refresh beforehand
             UIManager:forceRePaint()
