@@ -167,12 +167,13 @@ function NewsDownloader:loadConfigAndProcessFeeds()
 
     local unsupported_feeds_urls = {}
 
+    local total_feed_entries = table.getn(feed_config)
     for idx, feed in ipairs(feed_config) do
         local url = feed[1]
         local limit = feed.limit
         local download_full_article = feed.download_full_article == nil or feed.download_full_article
         if url and limit then
-            info = InfoMessage:new{ text = T(_("Processing: %1"), url) }
+            info = InfoMessage:new{ text = T(_("Processing %1/%2:\n%3"), idx, total_feed_entries, url) }
             UIManager:show(info)
             -- processFeedSource is a blocking call, so manually force a UI refresh beforehand
             UIManager:forceRePaint()
