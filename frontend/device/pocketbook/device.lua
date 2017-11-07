@@ -135,6 +135,15 @@ local PocketBook631 = PocketBook:new{
     emu_events_dev = "/dev/shm/emu_events",
 }
 
+-- PocketBook Lux 3
+local PocketBook626 = PocketBook:new{
+    isTouchDevice = yes,
+    hasKeys = yes,
+    hasFrontlight = yes,
+    display_dpi = 212,
+    emu_events_dev = "/var/dev/shm/emu_events",
+}
+
 function PocketBook840:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/pocketbook/powerd"):new{device = self}
@@ -164,6 +173,20 @@ function PocketBook631:init()
     PocketBook.init(self)
 end
 
+function PocketBook626:init()
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
+    self.powerd = require("device/pocketbook/powerd"):new{device = self}
+    self.input = require("device/input"):new{
+        device = self,
+        event_map = {
+            [24] = "LPgBack",
+            [25] = "LPgFwd",
+            [1002] = "Power",
+        }
+    }
+    PocketBook.init(self)
+end
+
 logger.info('SoftwareVersion: ', PocketBook:getSoftwareVersion())
 
 local codename = PocketBook:getDeviceModel()
@@ -172,6 +195,8 @@ if codename == "PocketBook 840" then
     return PocketBook840
 elseif codename == "PB631" then
     return PocketBook631
+elseif codename == "PocketBook 626" then
+    return PocketBook626
 else
     error("unrecognized PocketBook model " .. codename)
 end
