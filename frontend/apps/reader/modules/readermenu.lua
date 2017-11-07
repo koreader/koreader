@@ -126,7 +126,7 @@ function ReaderMenu:setUpdateItemTable()
         self.menu_items.djvu_render_mode = self.view:getRenderModeMenuTable()
     end
 
-    if Device:supportsScreensaver() and Screensaver:isUsingBookCover() then
+    if Device:supportsScreensaver() then
         local excluded = function()
             return self.ui.doc_settings:readSetting("exclude_screensaver") or false
         end
@@ -153,6 +153,7 @@ function ReaderMenu:setUpdateItemTable()
                 {
                     text = _("Exclude this book's cover from screensaver"),
                     checked_func = excluded,
+                    enabled_func = Screensaver.isUsingBookCover,
                     callback = function()
                         if excluded() then
                             self.ui.doc_settings:delSetting("exclude_screensaver")
@@ -165,6 +166,7 @@ function ReaderMenu:setUpdateItemTable()
                 {
                     text = _("Auto stretch this book's cover image in screensaver"),
                     checked_func = proportional,
+                    enabled_func = Screensaver.isUsingBookCover,
                     callback = function()
                         if proportional() then
                             self.ui.doc_settings:delSetting("proportional_screensaver")
