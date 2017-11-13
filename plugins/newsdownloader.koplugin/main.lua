@@ -145,8 +145,21 @@ end
 function NewsDownloader:loadConfigAndProcessFeeds()
     if not NetworkMgr:isOnline() then
         wifi_enabled_before_action = false
-        NetworkMgr:promptWifiOn()
-        return
+        NetworkMgr:turnOnWifi()
+        local timeout = 60;
+        local retry_count = 0;
+        local info = InfoMessage:new{ text = T(_("Enabling WiFi, waiting for Internet connection...\nTimeout %1 seconds."), timeout)}
+        UIManager:show(info)
+        UIManager:forceRePaint()
+        while not NetworkMgr:isOnline() and retry_count < timeout do
+            FFIUtil.sleep(1)
+            retry_count = retry_count + 1
+        end
+        UIManager:close(info)
+        if retry_count == timeout then
+            UIManager:show(InfoMessage:new{ text = _("Error obtaining Internet connection. Download failed…") })
+            return
+        end
     end
     local info = InfoMessage:new{ text = _("Loading news feed config…") }
     UIManager:show(info)
