@@ -383,8 +383,11 @@ function ReaderHighlight:onHoldRelease()
                 },
                 {
                     {
-                        text = "-",
-                        enabled = false,
+                        text = "Copy",
+                        enabled = Device:hasClipboard(),
+                        callback = function()
+                            Device.input.setClipboardText(self.selected_text.text)
+                        end,
                     },
                     {
                         text = _("Translate"),
