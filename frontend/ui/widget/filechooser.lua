@@ -25,7 +25,7 @@ local function kobostrcoll(str1, str2)
 end
 
 local FileChooser = Menu:extend{
-    cface = Font:getFace("smallinfofont"),
+    cface = Font:getFace("smallinfofont", FILE_BROWSER_ITEMS_FONT_SIZE),
     no_title = true,
     path = lfs.currentdir(),
     parent = nil,
