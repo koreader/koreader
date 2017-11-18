@@ -252,6 +252,15 @@ If you'd like to change the order in which dictionaries are queried (and their r
                 end,
             },
             { -- setting used by dictquicklookup
+                text = _("Full screen"),
+                checked_func = function()
+                    return G_reader_settings:isTrue("dict_fullscreen")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrFalse("dict_fullscreen")
+                end,
+            },
+            { -- setting used by dictquicklookup
                 text = _("Justify text"),
                 checked_func = function()
                     return G_reader_settings:nilOrTrue("dict_justify")
