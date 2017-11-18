@@ -287,9 +287,7 @@ KOReader's build system. To install ccache:
   * extract the source package in a directory
   * `cd` to that directory and use:`./configure && make && sudo make install`
 * to disable ccache, use `export USE_NO_CCACHE=1` before make.
-* for more information about ccache, visit:
-
-https://ccache.samba.org/
+* for more information about ccache, visit: https://ccache.samba.org/
 
 
 [base-readme]:https://github.com/koreader/koreader-base/blob/master/README.md
