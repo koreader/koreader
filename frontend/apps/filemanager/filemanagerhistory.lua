@@ -42,12 +42,14 @@ function FileManagerHistory:onSetDimensions(dimen)
 end
 
 function FileManagerHistory:onMenuHold(item)
+    local readerui_instance = require("apps/reader/readerui"):_getRunningInstance()
+    local currently_opened_file = readerui_instance and readerui_instance.document.file
     self.histfile_dialog = nil
     local buttons = {
         {
             {
                 text = _("Purge .sdr"),
-                enabled = DocSettings:hasSidecarFile(util.realpath(item.file)),
+                enabled = item.file ~= currently_opened_file and DocSettings:hasSidecarFile(util.realpath(item.file)),
                 callback = function()
                     local ConfirmBox = require("ui/widget/confirmbox")
                     UIManager:show(ConfirmBox:new{
@@ -74,7 +76,7 @@ function FileManagerHistory:onMenuHold(item)
         {
             {
                 text = _("Delete"),
-                enabled = lfs.attributes(item.file, "mode") and true or false,
+                enabled = (item.file ~= currently_opened_file and lfs.attributes(item.file, "mode")) and true or false,
                 callback = function()
                     local ConfirmBox = require("ui/widget/confirmbox")
                     UIManager:show(ConfirmBox:new{
