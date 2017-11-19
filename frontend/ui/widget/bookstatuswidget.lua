@@ -153,9 +153,17 @@ function BookStatusWidget:genHeader(title)
             }
         }
     }
+    local span_top, span_bottom
+    if Screen:getScreenMode() == "landscape" then
+        span_top = VerticalSpan:new{ width = Size.span.horizontal_default }
+        span_bottom = VerticalSpan:new{ width = Size.span.horizontal_default }
+    else
+        span_top = VerticalSpan:new{ width = Size.item.height_default }
+        span_bottom = VerticalSpan:new{ width = Size.span.vertical_large }
+    end
 
     return VerticalGroup:new{
-        VerticalSpan:new{ width = Size.item.height_default },
+        span_top,
         HorizontalGroup:new{
             align = "center",
             padding_span,
@@ -166,7 +174,7 @@ function BookStatusWidget:genHeader(title)
             line_container,
             padding_span,
         },
-        VerticalSpan:new{ width = Size.span.vertical_large },
+        span_bottom,
     }
 end
 
