@@ -252,12 +252,12 @@ If you'd like to change the order in which dictionaries are queried (and their r
                 end,
             },
             { -- setting used by dictquicklookup
-                text = _("Full screen"),
+                text = _("Large window"),
                 checked_func = function()
-                    return G_reader_settings:isTrue("dict_fullscreen")
+                    return G_reader_settings:isTrue("dict_largewindow")
                 end,
                 callback = function()
-                    G_reader_settings:flipNilOrFalse("dict_fullscreen")
+                    G_reader_settings:flipNilOrFalse("dict_largewindow")
                 end,
             },
             { -- setting used by dictquicklookup
