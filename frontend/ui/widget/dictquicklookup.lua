@@ -165,7 +165,7 @@ function DictQuickLookup:update()
         w = Screen:getWidth(),
         h = Screen:getHeight(),
     }
-    if self.is_fullpage then
+    if self.is_fullpage or G_reader_settings:isTrue("dict_largewindow") then
         -- bigger window if fullpage being shown - this will let
         -- some room anyway for footer display (time, battery...)
         self.height = Screen:getHeight()
