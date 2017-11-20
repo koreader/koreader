@@ -178,7 +178,7 @@ function ReaderHighlight:onTapPageSavedHighlight(ges)
                 if boxes then
                     for index, box in pairs(boxes) do
                         if inside_box(pos, box) then
-                            logger.dbg("Tap on hightlight")
+                            logger.dbg("Tap on highlight")
                             return self:onShowHighlightDialog(page, i)
                         end
                     end
@@ -192,7 +192,7 @@ function ReaderHighlight:onTapXPointerSavedHighlight(ges)
     local cur_page
     -- In scroll mode, we'll need to check for highlights in previous or next
     -- page too as some parts of them may be displayed
-    local neigbour_pages = self.view.view_mode ~= "page" and 1 or 0
+    local neighbour_pages = self.view.view_mode ~= "page" and 1 or 0
     local pos = self.view:screenToPageTransform(ges.pos)
     for page, _ in pairs(self.view.highlight.saved) do
         local items = self.view.highlight.saved[page]
@@ -208,12 +208,18 @@ function ReaderHighlight:onTapXPointerSavedHighlight(ges)
                 local page1 = self.ui.document:getPageFromXPointer(pos1)
                 local start_page = math.min(page0, page1)
                 local end_page = math.max(page0, page1)
-                if start_page <= cur_page + neigbour_pages and end_page >= cur_page - neigbour_pages then
+                -- In scroll mode, we may be displaying cur_page and cur_page+1, so
+                -- we have to check the highlight start_page is <= cur_page+1.
+                -- Same thinking with highlight's end_page >= cur_page-1 as we may
+                -- be displaying a part of cur_page-1.
+                -- (A highlight starting on cur_page-17 and ending on cur_page+13 is
+                -- a highlight to consider)
+                if start_page <= cur_page + neighbour_pages and end_page >= cur_page - neighbour_pages then
                     local boxes = self.ui.document:getScreenBoxesFromPositions(pos0, pos1)
                     if boxes then
                         for index, box in pairs(boxes) do
                             if inside_box(pos, box) then
-                                logger.dbg("Tap on hightlight")
+                                logger.dbg("Tap on highlight")
                                 return self:onShowHighlightDialog(page, i)
                             end
                         end
@@ -576,7 +582,7 @@ function ReaderHighlight:saveHighlight()
             self.ui.bookmark:addBookmark(bookmark_item)
         end
         --[[
-        -- disable exporting hightlights to My Clippings
+        -- disable exporting highlights to My Clippings
         -- since it's not portable and there is a better Evernote plugin
         -- to do the same thing
         if self.selected_text.text ~= "" then
