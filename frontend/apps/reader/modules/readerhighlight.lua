@@ -189,18 +189,33 @@ function ReaderHighlight:onTapPageSavedHighlight(ges)
 end
 
 function ReaderHighlight:onTapXPointerSavedHighlight(ges)
+    local cur_page
+    -- In scroll mode, we'll need to check for highlights in previous or next
+    -- page too as some parts of them may be displayed
+    local neigbour_pages = self.view.view_mode ~= "page" and 1 or 0
     local pos = self.view:screenToPageTransform(ges.pos)
     for page, _ in pairs(self.view.highlight.saved) do
         local items = self.view.highlight.saved[page]
         if items then
             for i = 1, #items do
+                if not cur_page then
+                    cur_page = self.ui.document:getPageFromXPointer(self.ui.document:getXPointer())
+                end
                 local pos0, pos1 = items[i].pos0, items[i].pos1
-                local boxes = self.ui.document:getScreenBoxesFromPositions(pos0, pos1)
-                if boxes then
-                    for index, box in pairs(boxes) do
-                        if inside_box(pos, box) then
-                            logger.dbg("Tap on hightlight")
-                            return self:onShowHighlightDialog(page, i)
+                -- document:getScreenBoxesFromPositions() is expensive, so we
+                -- first check this item is on current page
+                local page0 = self.ui.document:getPageFromXPointer(pos0)
+                local page1 = self.ui.document:getPageFromXPointer(pos1)
+                local start_page = math.min(page0, page1)
+                local end_page = math.max(page0, page1)
+                if start_page <= cur_page + neigbour_pages and end_page >= cur_page - neigbour_pages then
+                    local boxes = self.ui.document:getScreenBoxesFromPositions(pos0, pos1)
+                    if boxes then
+                        for index, box in pairs(boxes) do
+                            if inside_box(pos, box) then
+                                logger.dbg("Tap on hightlight")
+                                return self:onShowHighlightDialog(page, i)
+                            end
                         end
                     end
                 end
