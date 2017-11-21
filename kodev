@@ -92,10 +92,11 @@ EOL
 }
 
 function setup_env() {
+    SETUP_ENV_GREP_COMMAND="grep -v debug"
     if [ -n "${KODEBUG+x}" ]; then
-        KODEBUG_SUFFIX=-debug
+        SETUP_ENV_GREP_COMMAND="grep debug"
     fi
-    files=$(ls -d ./koreader-emulator-*${KODEBUG_SUFFIX}/koreader)
+    files=$(find . -maxdepth 1 -name 'koreader-emulator-*' | ${SETUP_ENV_GREP_COMMAND})/koreader
     assert_ret_zero $? "Emulator not found. Please build it first."
     export EMU_DIR=${files[0]}
 }
