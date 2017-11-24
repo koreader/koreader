@@ -74,7 +74,14 @@ function NewsDownloader:addToMainMenu(menu_items)
         sub_item_table = {
             {
                 text = _("Download news"),
-                callback = function() self:loadConfigAndProcessFeeds() end,
+                callback = function()
+                    if not NetworkMgr:isOnline() then
+                        wifi_enabled_before_action = false
+                        NetworkMgr:turnOnWifiAndWaitForConnection(self.loadConfigAndProcessFeeds)
+                    else
+                        self:loadConfigAndProcessFeeds()
+                    end
+                end,
             },
             {
                 text = _("Go to news folder"),
@@ -143,24 +150,7 @@ function NewsDownloader:lazyInitialization()
 end
 
 function NewsDownloader:loadConfigAndProcessFeeds()
-    if not NetworkMgr:isOnline() then
-        wifi_enabled_before_action = false
-        NetworkMgr:turnOnWifi()
-        local timeout = 60;
-        local retry_count = 0;
-        local info = InfoMessage:new{ text = T(_("Enabling WiFi, waiting for Internet connection...\nTimeout %1 seconds."), timeout)}
-        UIManager:show(info)
-        UIManager:forceRePaint()
-        while not NetworkMgr:isOnline() and retry_count < timeout do
-            FFIUtil.sleep(1)
-            retry_count = retry_count + 1
-        end
-        UIManager:close(info)
-        if retry_count == timeout then
-            UIManager:show(InfoMessage:new{ text = _("Error obtaining Internet connection. Download failed…") })
-            return
-        end
-    end
+
     local info = InfoMessage:new{ text = _("Loading news feed config…") }
     UIManager:show(info)
     logger.dbg("force repaint due to upcoming blocking calls")
@@ -190,7 +180,7 @@ function NewsDownloader:loadConfigAndProcessFeeds()
             UIManager:show(info)
             -- processFeedSource is a blocking call, so manually force a UI refresh beforehand
             UIManager:forceRePaint()
-            self:processFeedSource(url, tonumber(limit), unsupported_feeds_urls, download_full_article)
+            NewsDownloader:processFeedSource(url, tonumber(limit), unsupported_feeds_urls, download_full_article)
             UIManager:close(info)
         else
             logger.warn('NewsDownloader: invalid feed config entry', feed)

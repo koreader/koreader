@@ -6,6 +6,7 @@ local LuaSettings = require("luasettings")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 local T = require("ffi/util").template
+local FFIUtil = require("ffi/util")
 
 local NetworkMgr = {}
 
@@ -58,6 +59,26 @@ function NetworkMgr:promptWifiOff(complete_callback)
             self:turnOffWifi(complete_callback)
         end,
     })
+end
+
+
+function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
+    NetworkMgr:turnOnWifi()
+    local timeout = 60;
+    local retry_count = 0;
+    local info = InfoMessage:new{ text = T(_("Enabling Wi-Fi. Waiting for Internet connection...\nTimeout %1 seconds."), timeout)}
+    UIManager:show(info)
+    UIManager:forceRePaint()
+    while not NetworkMgr:isOnline() and retry_count < timeout do
+        FFIUtil.sleep(1)
+        retry_count = retry_count + 1
+    end
+    UIManager:close(info)
+    if retry_count == timeout then
+        UIManager:show(InfoMessage:new{ text = _("Error obtaining Internet connection. Operation aborted...") })
+        return
+    end
+    callback()
 end
 
 function NetworkMgr:isOnline()
