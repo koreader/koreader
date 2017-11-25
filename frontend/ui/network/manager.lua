@@ -61,7 +61,6 @@ function NetworkMgr:promptWifiOff(complete_callback)
     })
 end
 
-
 function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
     NetworkMgr:turnOnWifi()
     local timeout = 60;
