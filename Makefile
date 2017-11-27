@@ -312,9 +312,9 @@ androidupdate: all
 	cp $(INSTALL_DIR)/koreader/git-rev $(INSTALL_DIR)/koreader/ota-rev
 	# don't update the git-rev so that the next start won't revert back
 	# the older 7z version in the assets
-	sed -i '/git-rev/d' $(INSTALL_DIR)/koreader/ota/package.index
+	$(ISED) '/git-rev/d' $(INSTALL_DIR)/koreader/ota/package.index
 	# make gzip android update for zsync OTA update
-	cd $(INSTALL_DIR)/koreader && \
+	-cd $(INSTALL_DIR)/koreader && \
 		tar czafh ../../koreader-android-$(MACHINE)-$(VERSION).targz \
 		-T ota/package.index --no-recursion
 	# make android update apk
