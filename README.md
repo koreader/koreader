@@ -160,10 +160,20 @@ To run KOReader on your development machine:
 ./kodev run
 ```
 
+To automatically set up a number of primarily luarocks-related environment variables:
+```
+./kodev activate
+```
+
 To run unit tests:
 ```
 ./kodev test base
 ./kodev test front
+```
+
+To run a specific unit test (for test development):
+```
+./kodev test front readerbookmark_spec.lua
 ```
 
 NOTE: Extra dependencies for tests: `busted` and `ansicolors` from luarocks.
