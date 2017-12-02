@@ -44,6 +44,7 @@ char *GetDeviceModel(void);
 ]]
 
 local function yes() return true end
+local function no() return false end
 
 local function pocketbookEnableWifi(toggle)
     os.execute("/ebrmain/bin/netagent " .. (toggle == 1 and "connect" or "disconnect"))
