@@ -44,6 +44,7 @@ char *GetDeviceModel(void);
 ]]
 
 local function yes() return true end
+local function no() return false end
 
 local function pocketbookEnableWifi(toggle)
     os.execute("/ebrmain/bin/netagent " .. (toggle == 1 and "connect" or "disconnect"))
@@ -144,6 +145,15 @@ local PocketBook626 = PocketBook:new{
     emu_events_dev = "/var/dev/shm/emu_events",
 }
 
+-- PocketBook Basic Touch
+local PocketBook624 = PocketBook:new{
+    isTouchDevice = yes,
+    hasKeys = yes,
+    hasFrontlight = no,
+    display_dpi = 166,
+    emu_events_dev = "/var/dev/shm/emu_events",
+}
+
 function PocketBook840:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/pocketbook/powerd"):new{device = self}
@@ -187,6 +197,20 @@ function PocketBook626:init()
     PocketBook.init(self)
 end
 
+function PocketBook624:init()
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
+    self.powerd = require("device/pocketbook/powerd"):new{device = self}
+    self.input = require("device/input"):new{
+        device = self,
+        event_map = {
+            [24] = "LPgBack",
+            [25] = "LPgFwd",
+            [1002] = "Power",
+        }
+    }
+    PocketBook.init(self)
+end
+
 logger.info('SoftwareVersion: ', PocketBook:getSoftwareVersion())
 
 local codename = PocketBook:getDeviceModel()
@@ -197,6 +221,8 @@ elseif codename == "PB631" then
     return PocketBook631
 elseif codename == "PocketBook 626" then
     return PocketBook626
+elseif codename == "PocketBook 624" then
+    return PocketBook624
 else
     error("unrecognized PocketBook model " .. codename)
 end
