@@ -98,6 +98,7 @@ function FileManager:init()
         path = self.root_path,
         focused_path = self.focused_file,
         collate = G_reader_settings:readSetting("collate") or "strcoll",
+        reverse_collate = G_reader_settings:isTrue("reverse_collate"),
         show_parent = self.show_parent,
         show_hidden = show_hidden,
         width = Screen:getWidth(),
