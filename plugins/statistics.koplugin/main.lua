@@ -8,6 +8,7 @@ local MultiInputDialog = require("ui/widget/multiinputdialog")
 local ReaderFooter = require("apps/reader/modules/readerfooter")
 local ReaderProgress = require("readerprogress")
 local ReadHistory = require("readhistory")
+local Screensaver = require("ui/screensaver")
 local SQ3 = require("lua-ljsqlite3/init")
 local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
@@ -103,6 +104,24 @@ function ReaderStatistics:init()
         if self.is_enabled then
             return self.avg_time
         end
+    end
+    Screensaver.getReaderProgress = function()
+        local readingprogress
+        self:insertDB(self.id_curr_book)
+        local current_period, current_pages = self:getCurrentBookStats()
+        local today_period, today_pages = self:getTodayBookStats()
+        local dates_stats = self:getReadingProgressStats(7)
+        if dates_stats then
+            readingprogress = ReaderProgress:new{
+                dates = dates_stats,
+                current_period = current_period,
+                current_pages = current_pages,
+                today_period = today_period,
+                today_pages = today_pages,
+                readonly = true,
+            }
+        end
+        return readingprogress
     end
 end
 

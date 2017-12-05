@@ -161,7 +161,13 @@ function ToggleSwitch:calculatePosition(gev)
 end
 
 function ToggleSwitch:onTapSelect(arg, gev)
-    if not self.enabled then return true end
+    if not self.enabled then
+        if self.readonly ~= true then
+            return true
+        else
+            return
+        end
+    end
     local position = self:calculatePosition(gev)
     self:togglePosition(position)
     --[[

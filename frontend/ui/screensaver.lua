@@ -1,42 +1,19 @@
+local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
+local BookStatusWidget = require("ui/widget/bookstatuswidget")
 local Device = require("device")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
+local InfoMessage = require("ui/widget/infomessage")
+local ImageWidget = require("ui/widget/imagewidget")
+local ScreenSaverWidget = require("ui/widget/screensaverwidget")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
+local _ = require("gettext")
 local Screen = Device.screen
+local T = require("ffi/util").template
 
-local Screensaver = {
-}
-
-local function createWidgetFromImage(image_widget)
-    if image_widget then
-        local AlphaContainer = require("ui/widget/container/alphacontainer")
-        local CenterContainer = require("ui/widget/container/centercontainer")
-        return AlphaContainer:new{
-            alpha = 1,
-            height = Screen:getHeight(),
-            width = Screen:getWidth(),
-            CenterContainer:new{
-                dimen = Screen:getSize(),
-                image_widget,
-            }
-        }
-    end
-end
-
-local function createWidgetFromFile(file)
-    if lfs.attributes(file, "mode") == "file" then
-        local ImageWidget = require("ui/widget/imagewidget")
-        return createWidgetFromImage(
-            ImageWidget:new{
-                file = file,
-                file_do_cache = false,
-                height = Screen:getHeight(),
-                width = Screen:getWidth(),
-                scale_factor = 0, -- scale to fit height/width
-            })
-    end
-end
+local defalut_screensaver_message = _("Sleeping")
+local Screensaver = {}
 
 local function getRandomImage(dir)
     if string.sub(dir, string.len(dir)) ~= "/" then
@@ -60,82 +37,177 @@ local function getRandomImage(dir)
     if i == 0 then
         return nil
     end
-    return createWidgetFromFile(dir .. pics[math.random(i)])
+    return dir .. pics[math.random(i)]
 end
 
-function Screensaver:isUsingBookCover()
-    -- this setting is on by default
-    return G_reader_settings:readSetting('use_lastfile_as_screensaver') ~= false
+function Screensaver:chooseFolder()
+    local buttons = {}
+    table.insert(buttons, {
+        {
+            text = _("Choose screensaver directory by long-pressing"),
+            callback = function()
+                UIManager:close(self.choose_dialog)
+                require("ui/downloadmgr"):new{
+                    title = _("Choose screensaver directory"),
+                    onConfirm = function(path)
+                        logger.dbg("set screensaver directory to", path)
+                        G_reader_settings:saveSetting("screensaver_dir", path)
+                        UIManager:show(InfoMessage:new{
+                            text = T(_("Screensaver directory set to:\n%1"), path),
+                            timeout = 3,
+                        })
+                    end,
+                }:chooseDir()
+            end,
+        }
+    })
+    table.insert(buttons, {
+        {
+            text = _("Close"),
+            callback = function()
+                UIManager:close(self.choose_dialog)
+            end,
+        }
+    })
+    local screensaver_dir = G_reader_settings:readSetting("screensaver_dir")
+    if screensaver_dir == nil then
+        local DataStorage = require("datastorage")
+        screensaver_dir = DataStorage:getDataDir() .. "/screenshots/"
+    end
+    self.choose_dialog = ButtonDialogTitle:new{
+        title = T(_("Current screensaver image directory:\n %1"), screensaver_dir),
+        buttons = buttons
+    }
+    UIManager:show(self.choose_dialog)
 end
 
-function Screensaver:getCoverImage(file)
-    local ImageWidget = require("ui/widget/imagewidget")
-    local doc = DocumentRegistry:openDocument(file)
-    if not doc then return end
-
-    local image = doc:getCoverPageImage()
-    doc:close()
+function Screensaver:proportional()
     local lastfile = G_reader_settings:readSetting("lastfile")
     local doc_settings = DocSettings:open(lastfile)
-    if image then
-        local img_widget = ImageWidget:new{
-            image = image,
-            height = Screen:getHeight(),
-            width = Screen:getWidth(),
-            scale_factor = doc_settings:readSetting("proportional_screensaver") and 0 or nil,
-        }
-        return createWidgetFromImage(img_widget)
+    local proprtional_ss = doc_settings:readSetting("proportional_screensaver")
+    doc_settings:close()
+    if  proprtional_ss ~= nil then
+        return proprtional_ss
     end
+    return G_reader_settings:readSetting("stretch_cover_defalut") or false
 end
 
-function Screensaver:show(kind, default_msg)
-    logger.dbg("show screensaver")
-    local InfoMessage = require("ui/widget/infomessage")
-    local screensaver_settings = G_reader_settings:readSetting(kind .. "_screensaver") or {}
-    -- first check book cover image, on by default
-    local screensaver_last_book = screensaver_settings.use_last_file or
-        G_reader_settings:readSetting("use_lastfile_as_screensaver")
-    if screensaver_last_book == nil or screensaver_last_book then
+function Screensaver:excluded()
+    local lastfile = G_reader_settings:readSetting("lastfile")
+    local doc_settings = DocSettings:open(lastfile)
+    local exclude_ss = doc_settings:readSetting("exclude_screensaver")
+    doc_settings:close()
+    return exclude_ss or false
+end
+
+function Screensaver:setMessage()
+    local InputDialog = require("ui/widget/inputdialog")
+    local screensaver_message = G_reader_settings:readSetting("screensaver_message")
+    if screensaver_message == nil then
+        screensaver_message = defalut_screensaver_message
+    end
+    self.input_dialog = InputDialog:new{
+        title = "Screensaver message",
+        input = screensaver_message,
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    callback = function()
+                        UIManager:close(self.input_dialog)
+                    end,
+                },
+                {
+                    text = _("Set message"),
+                    is_enter_default = true,
+                    callback = function()
+                        G_reader_settings:saveSetting("screensaver_message", self.input_dialog:getInputText())
+                        UIManager:close(self.input_dialog)
+                    end,
+                },
+            },
+        },
+    }
+    self.input_dialog:onShowKeyboard()
+    UIManager:show(self.input_dialog)
+end
+
+function Screensaver:show()
+    local screensaver_type = G_reader_settings:readSetting("screensaver_type")
+    local widget = nil
+    self.left_msg = nil
+    if screensaver_type == "cover" then
         local lastfile = G_reader_settings:readSetting("lastfile")
-        if lastfile then
-            local doc_settings = DocSettings:open(lastfile)
-            local exclude = doc_settings:readSetting("exclude_screensaver")
-            if not exclude then
-                self.left_msg = self:getCoverImage(lastfile)
-            end
+        local doc_settings = DocSettings:open(lastfile)
+        local exclude = doc_settings:readSetting("exclude_screensaver")
+        if exclude ~= true then
+            local doc = DocumentRegistry:openDocument(lastfile)
+            local image = doc:getCoverPageImage()
+            doc:close()
+            widget = ImageWidget:new{
+                image = image,
+                image_disposable = false,
+                alpha = true,
+                height = Screen:getHeight(),
+                width = Screen:getWidth(),
+                scale_factor = self:proportional() and 0 or nil,
+            }
         end
+        doc_settings:close()
+    elseif screensaver_type == "bookstatus" then
+        local lastfile = G_reader_settings:readSetting("lastfile")
+        local doc = DocumentRegistry:openDocument(lastfile)
+        local doc_settings = DocSettings:open(lastfile)
+        local instance = require("apps/reader/readerui"):_getRunningInstance()
+
+        widget = BookStatusWidget:new {
+            thumbnail = doc:getCoverPageImage(),
+            props = doc:getProps(),
+            document = doc,
+            settings = doc_settings,
+            view = instance.view,
+            readonly = true,
+        }
+        doc:close()
+        doc_settings:close()
+    elseif screensaver_type == "random_image" then
+        local screensaver_dir = G_reader_settings:readSetting("screensaver_dir")
+        if screensaver_dir == nil then
+            local DataStorage = require("datastorage")
+            screensaver_dir = DataStorage:getDataDir() .. "/screenshots/"
+        end
+        local image_file = getRandomImage(screensaver_dir)
+        if image_file == nil then
+            widget = nil
+        else
+            widget = ImageWidget:new{
+                file = image_file,
+                image_disposable = false,
+                alpha = true,
+                height = Screen:getHeight(),
+                width = Screen:getWidth(),
+                scale_factor = 0,
+            }
+        end
+    elseif screensaver_type == "readingprogress" then
+        if Screensaver.getReaderProgress ~= nil then
+            widget = Screensaver.getReaderProgress()
+        end
+    elseif screensaver_type == "message" then
+        local screensaver_message = G_reader_settings:readSetting("screensaver_message")
+        if screensaver_message == nil then
+            screensaver_message = defalut_screensaver_message
+        end
+        widget = InfoMessage:new{
+            text = screensaver_message,
+            readonly = true,
+        }
     end
-    -- then screensaver directory or file image
-    if not self.left_msg then
-        -- FIXME: rename screensaver_folder to screensaver_path
-        local screensaver_path = screensaver_settings.path or
-            G_reader_settings:readSetting("screensaver_folder")
-        if screensaver_path == nil
-        and Device.internal_storage_mount_point ~= nil then
-            screensaver_path =
-                Device.internal_storage_mount_point .. "screensaver"
-        end
-        if screensaver_path then
-            local mode = lfs.attributes(screensaver_path, "mode")
-            if mode ~= nil then
-                if mode == "directory" then
-                    self.left_msg = getRandomImage(screensaver_path)
-                else
-                    self.left_msg = createWidgetFromFile(screensaver_path)
-                end
-            end
-        end
-    end
-    -- fallback to message box
-    if not self.left_msg then
-        local msg = screensaver_settings.message or default_msg
-        if msg then
-            self.left_msg = InfoMessage:new{ text = msg }
-            UIManager:show(self.left_msg)
-        end
-    else
-        -- set modal to put screensaver on top of everything else
-        -- NB InfoMessage (in case of no image) defaults to modal
+
+    if widget then
+        self.left_msg = ScreenSaverWidget:new{
+            widget = widget,
+        }
         self.left_msg.modal = true
         -- refresh whole screen for other types
         UIManager:show(self.left_msg, "full")
@@ -143,10 +215,26 @@ function Screensaver:show(kind, default_msg)
 end
 
 function Screensaver:close()
-    logger.dbg("close screensaver")
-    if self.left_msg then
-        UIManager:close(self.left_msg)
-        self.left_msg = nil
+    if self.left_msg == nil then return end
+    local screensaver_delay = G_reader_settings:readSetting("screensaver_delay")
+    local screensaver_delay_number = tonumber(screensaver_delay)
+    if screensaver_delay_number then
+        UIManager:scheduleIn(screensaver_delay_number, function()
+            logger.dbg("close screensaver")
+            if self.left_msg then
+                UIManager:close(self.left_msg)
+                UIManager:setDirty("all", "full")
+                self.left_msg = nil
+            end
+        end)
+    elseif screensaver_delay == "disable" or screensaver_delay == nil then
+        logger.dbg("close screensaver")
+        if self.left_msg then
+            UIManager:close(self.left_msg)
+            self.left_msg = nil
+        end
+    else
+        logger.dbg("tap to exit from screensaver")
     end
 end
 

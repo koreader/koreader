@@ -67,11 +67,15 @@ function ReaderProgress:getTotalStats(stats_day)
 end
 
 function ReaderProgress:getStatusContent(width)
+    local close_button = nil
+    if self.readonly ~= true then
+        close_button = CloseButton:new{ window = self }
+    end
     return VerticalGroup:new{
         align = "left",
         OverlapGroup:new{
             dimen = Geom:new{ w = width, h = Size.item.height_default },
-            CloseButton:new{ window = self },
+            close_button,
         },
         self:genSingleHeader(_("Last week")),
         self:genSummaryWeek(width),

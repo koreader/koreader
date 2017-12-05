@@ -127,36 +127,21 @@ function ReaderMenu:setUpdateItemTable()
     end
 
     if Device:supportsScreensaver() then
-        local excluded = function()
-            return self.ui.doc_settings:readSetting("exclude_screensaver") or false
-        end
-        local proportional = function()
-            return self.ui.doc_settings:readSetting("proportional_screensaver") or false
-        end
-        self.menu_items.screensaver = {
-            text = _("Screensaver"),
+        local ss_book_settings = {
+            text = _("Current book cover settings"),
+            enabled_func = function()
+                return not (self.ui == nil or self.ui.document == nil)
+                    and G_reader_settings:readSetting('screensaver_type') == "cover"
+            end,
             sub_item_table = {
                 {
-                    text = _("Use last book's cover as screensaver"),
-                    checked_func = Screensaver.isUsingBookCover,
-                    callback = function()
-                        if Screensaver:isUsingBookCover() then
-                            G_reader_settings:saveSetting(
-                                "use_lastfile_as_screensaver", false)
-                        else
-                            G_reader_settings:delSetting(
-                                "use_lastfile_as_screensaver")
-                        end
-                        G_reader_settings:flush()
-                    end
-                },
-                {
                     text = _("Exclude this book's cover from screensaver"),
-                    checked_func = excluded,
-                    enabled_func = Screensaver.isUsingBookCover,
+                    checked_func = function()
+                        return self.ui.doc_settings:readSetting("exclude_screensaver") == true
+                    end,
                     callback = function()
-                        if excluded() then
-                            self.ui.doc_settings:delSetting("exclude_screensaver")
+                        if Screensaver:excluded() then
+                            self.ui.doc_settings:saveSetting("exclude_screensaver", false)
                         else
                             self.ui.doc_settings:saveSetting("exclude_screensaver", true)
                         end
@@ -165,20 +150,44 @@ function ReaderMenu:setUpdateItemTable()
                 },
                 {
                     text = _("Auto stretch this book's cover image in screensaver"),
-                    checked_func = proportional,
-                    enabled_func = Screensaver.isUsingBookCover,
-                    callback = function()
-                        if proportional() then
-                            self.ui.doc_settings:delSetting("proportional_screensaver")
+                    checked_func = function()
+                        local settings_proportional = self.ui.doc_settings:readSetting("proportional_screensaver")
+                        if  settings_proportional == nil and G_reader_settings:readSetting("stretch_cover_defalut") then
+                            return true
                         else
-                            self.ui.doc_settings:saveSetting(
-                                "proportional_screensaver", not proportional())
+                            return self.ui.doc_settings:readSetting("proportional_screensaver") == true
                         end
+                    end,
+                    callback = function()
+                        self.ui.doc_settings:saveSetting("proportional_screensaver", not Screensaver:proportional())
                         self.ui:saveSettings()
-                    end
-                }
+                    end,
+                    hold_callback = function()
+                        local ConfirmBox = require("ui/widget/confirmbox")
+                        UIManager:show(ConfirmBox:new {
+                            text = _("Set auto stretch all book's cover image in screensaver"),
+                            cancel_text = _("Disable by defalut"),
+                            cancel_callback = function()
+                                G_reader_settings:delSetting("stretch_cover_defalut")
+                                return
+                            end,
+                            ok_text = _("Enable by default"),
+                            ok_callback = function()
+                                G_reader_settings:saveSetting("stretch_cover_defalut", true)
+                                return
+                            end,
+                        })
+                    end,
+                },
             }
         }
+
+        self.menu_items.screensaver = {
+            text = _("Screensaver"),
+            sub_item_table = require("ui/elements/screensaver_menu"),
+        }
+        table.remove(self.menu_items.screensaver.sub_item_table, 8)
+        table.insert(self.menu_items.screensaver.sub_item_table, ss_book_settings)
     end
     -- main menu tab
     -- insert common info
