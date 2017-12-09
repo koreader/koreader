@@ -75,19 +75,18 @@ function ReaderConfig:onShowConfigMenu()
     self.config_dialog:onShowConfigPanel(self.last_panel_index)
     UIManager:show(self.config_dialog)
 
-    return true
 end
 
 function ReaderConfig:onTapShowConfigMenu()
     if self.activation_menu ~= "swipe" then
-        self:onShowConfigMenu()
+        self.ui:handleEvent(Event:new("ShowConfigMenu"))
         return true
     end
 end
 
 function ReaderConfig:onSwipeShowConfigMenu(ges)
     if self.activation_menu ~= "tap" and ges.direction == "north" then
-        self:onShowConfigMenu()
+        self.ui:handleEvent(Event:new("ShowConfigMenu"))
         return true
     end
 end
@@ -107,6 +106,7 @@ function ReaderConfig:onCloseCallback()
     self.last_panel_index = self.config_dialog.panel_index
     self.config_dialog = nil
     self.ui:handleEvent(Event:new("RestoreHinting"))
+    self.ui:handleEvent(Event:new("CloseConfigMenu"))
 end
 
 -- event handler for readercropping
