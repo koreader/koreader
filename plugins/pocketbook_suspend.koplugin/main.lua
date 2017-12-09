@@ -4,27 +4,27 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 
 if Device:isSDL() then
-    Device.enableHwSuspend = function() 
+    Device.enableHwSuspend = function()
         logger.dbg("called enableHwSuspend()")
     end
-    Device.disableHwSuspend = function() 
+    Device.disableHwSuspend = function()
         logger.dbg("called disableHwSuspend()")
     end
 elseif not Device:isPocketBook() then
     return { disabled = true, }
 end
 
-local PocketBookInsomnia = WidgetContainer:new{
-    name = 'PocketBookInsomnia',
+local PocketBookSuspend = WidgetContainer:new{
+    name = 'PocketBookSuspend',
     enabled = true,
 }
 
-function PocketBookInsomnia:init()
+function PocketBookSuspend:init()
     self.reader_menu_active = false
     self.config_menu_active = false
 end
 
-function PocketBookInsomnia:setSuspendState(on, postpone_ms)
+function PocketBookSuspend:setSuspendState(on, postpone_ms)
     if Device:isSDL() then
         logger.dbg("called setSuspendState("
             .. on  .. "," .. postpone_ms .. ")")
@@ -35,41 +35,41 @@ end
 
 -- wait 2000ms before enabeling suspend so the ReaderUI-Widget is
 -- drawn first
-function PocketBookInsomnia:onReaderReady()
+function PocketBookSuspend:onReaderReady()
     logger.dbg("called onReaderReady()")
-    PocketBookInsomnia:setSuspendState(1,2000)
+    PocketBookSuspend:setSuspendState(1,2000)
 end
 
-function PocketBookInsomnia:onShowReaderMenu()
+function PocketBookSuspend:onShowReaderMenu()
     logger.dbg("called onShowReaderMenu()")
     if not self.config_menu_active then
-        PocketBookInsomnia:setSuspendState(0,0)
+        PocketBookSuspend:setSuspendState(0,0)
     end
     self.reader_menu_active = true
 end
 
-function PocketBookInsomnia:onCloseReaderMenu()
+function PocketBookSuspend:onCloseReaderMenu()
     logger.dbg("called onCloseReaderMenu()")
     self.reader_menu_active = false
     if not self.config_menu_active then
-        PocketBookInsomnia:setSuspendState(1,2000)
+        PocketBookSuspend:setSuspendState(1,2000)
     end
 end
 
-function PocketBookInsomnia:onShowConfigMenu()
+function PocketBookSuspend:onShowConfigMenu()
     logger.dbg("called onShowConfigMenu()")
     if not self.reader_menu_active then
-        PocketBookInsomnia:setSuspendState(0,0)
+        PocketBookSuspend:setSuspendState(0,0)
     end
     self.config_menu_active = true
 end
 
-function PocketBookInsomnia:onCloseConfigMenu()
+function PocketBookSuspend:onCloseConfigMenu()
     logger.dbg("called onCloseConfigMenu()")
     self.config_menu_active = false
     if not self.reader_menu_active then
-        PocketBookInsomnia:setSuspendState(1,2000)
+        PocketBookSuspend:setSuspendState(1,2000)
     end
 end
 
-return PocketBookInsomnia
+return PocketBookSuspend
