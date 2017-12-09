@@ -294,15 +294,12 @@ function ReaderMenu:onShowReaderMenu()
     -- maintain a reference to menu_container
     self.menu_container = menu_container
     UIManager:show(menu_container)
-
-    return true
 end
 
 function ReaderMenu:onCloseReaderMenu()
     self.last_tab_index = self.menu_container[1].last_index
     self:onSaveSettings()
     UIManager:close(self.menu_container)
-    return true
 end
 
 function ReaderMenu:onSwipeShowMenu(ges)
