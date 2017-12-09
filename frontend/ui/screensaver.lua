@@ -12,7 +12,7 @@ local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
 
-local defalut_screensaver_message = _("Sleeping")
+local default_screensaver_message = _("Sleeping")
 local Screensaver = {}
 
 local function getRandomImage(dir)
@@ -89,7 +89,7 @@ function Screensaver:proportional()
     if  proprtional_ss ~= nil then
         return proprtional_ss
     end
-    return G_reader_settings:readSetting("stretch_cover_defalut") or false
+    return G_reader_settings:readSetting("stretch_cover_default") or false
 end
 
 function Screensaver:excluded()
@@ -104,7 +104,7 @@ function Screensaver:setMessage()
     local InputDialog = require("ui/widget/inputdialog")
     local screensaver_message = G_reader_settings:readSetting("screensaver_message")
     if screensaver_message == nil then
-        screensaver_message = defalut_screensaver_message
+        screensaver_message = default_screensaver_message
     end
     self.input_dialog = InputDialog:new{
         title = "Screensaver message",
@@ -146,7 +146,7 @@ function Screensaver:show()
             doc:close()
             widget = ImageWidget:new{
                 image = image,
-                image_disposable = false,
+                image_disposable = true,
                 alpha = true,
                 height = Screen:getHeight(),
                 width = Screen:getWidth(),
@@ -159,15 +159,16 @@ function Screensaver:show()
         local doc = DocumentRegistry:openDocument(lastfile)
         local doc_settings = DocSettings:open(lastfile)
         local instance = require("apps/reader/readerui"):_getRunningInstance()
-
-        widget = BookStatusWidget:new {
-            thumbnail = doc:getCoverPageImage(),
-            props = doc:getProps(),
-            document = doc,
-            settings = doc_settings,
-            view = instance.view,
-            readonly = true,
-        }
+        if instance ~= nil then
+            widget = BookStatusWidget:new {
+                thumbnail = doc:getCoverPageImage(),
+                props = doc:getProps(),
+                document = doc,
+                settings = doc_settings,
+                view = instance.view,
+                readonly = true,
+            }
+        end
         doc:close()
         doc_settings:close()
     elseif screensaver_type == "random_image" then
@@ -182,7 +183,6 @@ function Screensaver:show()
         else
             widget = ImageWidget:new{
                 file = image_file,
-                image_disposable = false,
                 alpha = true,
                 height = Screen:getHeight(),
                 width = Screen:getWidth(),
@@ -196,7 +196,7 @@ function Screensaver:show()
     elseif screensaver_type == "message" then
         local screensaver_message = G_reader_settings:readSetting("screensaver_message")
         if screensaver_message == nil then
-            screensaver_message = defalut_screensaver_message
+            screensaver_message = default_screensaver_message
         end
         widget = InfoMessage:new{
             text = screensaver_message,

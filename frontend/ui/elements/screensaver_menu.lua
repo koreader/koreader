@@ -75,7 +75,7 @@ return {
         end
     },
     {
-        text = _("Disable screensaver"),
+        text = _("Disabled (let screen/page as it is)"),
         checked_func = function()
             if screensaverType() == nil or screensaverType() == "disable" then
                 return true
@@ -182,9 +182,3 @@ return {
         }
     }
 }
-
-
-
-
-
-
