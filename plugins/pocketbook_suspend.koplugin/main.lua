@@ -1,6 +1,5 @@
 local Device = require("device")
 local logger = require("logger")
-local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 
