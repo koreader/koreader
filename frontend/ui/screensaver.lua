@@ -133,9 +133,12 @@ function Screensaver:setMessage()
 end
 
 function Screensaver:show()
+    if self.left_msg then
+        UIManager:close(self.left_msg)
+        self.left_msg = nil
+    end
     local screensaver_type = G_reader_settings:readSetting("screensaver_type")
     local widget = nil
-    self.left_msg = nil
     if screensaver_type == "cover" then
         local lastfile = G_reader_settings:readSetting("lastfile")
         local doc_settings = DocSettings:open(lastfile)
