@@ -4,6 +4,7 @@ local _ = require("gettext")
 local function screensaverType() return G_reader_settings:readSetting("screensaver_type") end
 local function screensaverDelay() return G_reader_settings:readSetting("screensaver_delay") end
 local function lastFile() return G_reader_settings:readSetting("lastfile") end
+local function messageBackground() return G_reader_settings:isTrue("message_background") end
 
 return {
     {
@@ -92,20 +93,23 @@ return {
         sub_item_table = {
             {
                 text = _("Screensaver folder"),
-                enabled_func = function()
-                    return screensaverType() == "random_image"
-                end,
                 callback = function()
                     Screensaver:chooseFolder()
                 end,
             },
             {
                 text = _("Screensaver message"),
-                enabled_func = function()
-                    return screensaverType() == "message"
-                end,
                 callback = function()
                     Screensaver:setMessage()
+                end,
+            },
+            {
+                text = _("White background in message"),
+                checked_func = function()
+                    return messageBackground()
+                end,
+                callback = function()
+                    G_reader_settings:saveSetting("message_background", not messageBackground())
                 end,
                 separator = true,
             },

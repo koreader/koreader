@@ -1,3 +1,4 @@
+local Blitbuffer = require("ffi/blitbuffer")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local BookStatusWidget = require("ui/widget/bookstatuswidget")
 local Device = require("device")
@@ -139,6 +140,7 @@ function Screensaver:show()
     end
     local screensaver_type = G_reader_settings:readSetting("screensaver_type")
     local widget = nil
+    local background = Blitbuffer.COLOR_WHITE
     if screensaver_type == "cover" then
         local lastfile = G_reader_settings:readSetting("lastfile")
         local doc_settings = DocSettings:open(lastfile)
@@ -198,6 +200,9 @@ function Screensaver:show()
         end
     elseif screensaver_type == "message" then
         local screensaver_message = G_reader_settings:readSetting("screensaver_message")
+        if G_reader_settings:nilOrFalse("message_background") then
+            background = nil
+        end
         if screensaver_message == nil then
             screensaver_message = default_screensaver_message
         end
@@ -210,6 +215,7 @@ function Screensaver:show()
     if widget then
         self.left_msg = ScreenSaverWidget:new{
             widget = widget,
+            background = background,
         }
         self.left_msg.modal = true
         -- refresh whole screen for other types

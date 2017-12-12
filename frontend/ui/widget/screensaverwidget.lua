@@ -1,4 +1,3 @@
-local Blitbuffer = require("ffi/blitbuffer")
 local Device = require("device")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
@@ -9,6 +8,7 @@ local Screen = Device.screen
 
 local ScreenSaverWidget = InputContainer:new{
     widget = nil,
+    background = nil,
 }
 
 function ScreenSaverWidget:init()
@@ -44,7 +44,7 @@ function ScreenSaverWidget:update()
         bordersize = 0,
         padding = 0,
         margin = 0,
-        background = Blitbuffer.COLOR_WHITE,
+        background = self.background,
         width = self.width,
         height = self.height,
         self.widget,
