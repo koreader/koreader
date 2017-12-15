@@ -140,27 +140,29 @@ function PdfDocument:saveHighlight(pageno, item)
     -- will also need mupdf_h.lua to be evaluated once
     -- but this is guaranteed at this point
     local n = #item.pboxes
-    local quadpoints = ffi.new("fz_point[?]", 4*n)
+    local quadpoints = ffi.new("float[?]", 8*n)
     for i=1, n do
-        quadpoints[4*i-4].x = item.pboxes[i].x
-        quadpoints[4*i-4].y = item.pboxes[i].y + item.pboxes[i].h
-        quadpoints[4*i-3].x = item.pboxes[i].x + item.pboxes[i].w
-        quadpoints[4*i-3].y = item.pboxes[i].y + item.pboxes[i].h
-        quadpoints[4*i-2].x = item.pboxes[i].x + item.pboxes[i].w
-        quadpoints[4*i-2].y = item.pboxes[i].y
-        quadpoints[4*i-1].x = item.pboxes[i].x
-        quadpoints[4*i-1].y = item.pboxes[i].y
+        -- The order must be left bottom, right bottom, left top, right top.
+        -- https://bugs.ghostscript.com/show_bug.cgi?id=695130
+        quadpoints[8*i-8] = item.pboxes[i].x
+        quadpoints[8*i-7] = item.pboxes[i].y + item.pboxes[i].h
+        quadpoints[8*i-6] = item.pboxes[i].x + item.pboxes[i].w
+        quadpoints[8*i-5] = item.pboxes[i].y + item.pboxes[i].h
+        quadpoints[8*i-4] = item.pboxes[i].x
+        quadpoints[8*i-3] = item.pboxes[i].y
+        quadpoints[8*i-2] = item.pboxes[i].x + item.pboxes[i].w
+        quadpoints[8*i-1] = item.pboxes[i].y
     end
     local page = self._document:openPage(pageno)
-    local annot_type = ffi.C.FZ_ANNOT_HIGHLIGHT
+    local annot_type = ffi.C.PDF_ANNOT_HIGHLIGHT
     if item.drawer == "lighten" then
-        annot_type = ffi.C.FZ_ANNOT_HIGHLIGHT
+        annot_type = ffi.C.PDF_ANNOT_HIGHLIGHT
     elseif item.drawer == "underscore" then
-        annot_type = ffi.C.FZ_ANNOT_UNDERLINE
+        annot_type = ffi.C.PDF_ANNOT_UNDERLINE
     elseif item.drawer == "strikeout" then
-        annot_type = ffi.C.FZ_ANNOT_STRIKEOUT
+        annot_type = ffi.C.PDF_ANNOT_STRIKEOUT
     end
-    page:addMarkupAnnotation(quadpoints, 4*n, annot_type)
+    page:addMarkupAnnotation(quadpoints, n, annot_type)
     page:close()
 end
 
