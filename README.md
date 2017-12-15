@@ -101,7 +101,8 @@ ld: cannot find -lglib-2.0`
 
 Mac OSX users may need to install these tools:
 ```
-brew install nasm binutils libtool autoconf automake cmake makedepend sdl2 lua51
+brew install nasm binutils libtool autoconf automake cmake makedepend sdl2 lua51 gettext
+echo 'export PATH="/usr/local/opt/gettext/bin:$PATH"' >> ~/.bash_profile
 ```
 
 The KOReader Android build requires `ant`, `openjdk-8-jdk` and `p7zip-full`. A compatible version of the Android NDK and SDK will be downloaded automatically by `./kodev build android` if no NDK or SDK is provided in environment variables. For that purpose you can use `NDK=/ndk/location SDK=/sdk/location ./kodev build android`.
@@ -159,10 +160,20 @@ To run KOReader on your development machine:
 ./kodev run
 ```
 
+To automatically set up a number of primarily luarocks-related environment variables:
+```
+./kodev activate
+```
+
 To run unit tests:
 ```
 ./kodev test base
 ./kodev test front
+```
+
+To run a specific unit test (for test development):
+```
+./kodev test front readerbookmark_spec.lua
 ```
 
 NOTE: Extra dependencies for tests: `busted` and `ansicolors` from luarocks.
@@ -287,9 +298,7 @@ KOReader's build system. To install ccache:
   * extract the source package in a directory
   * `cd` to that directory and use:`./configure && make && sudo make install`
 * to disable ccache, use `export USE_NO_CCACHE=1` before make.
-* for more information about ccache, visit:
-
-https://ccache.samba.org/
+* for more information about ccache, visit: https://ccache.samba.org/
 
 
 [base-readme]:https://github.com/koreader/koreader-base/blob/master/README.md

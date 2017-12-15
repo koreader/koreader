@@ -542,7 +542,7 @@ hr.koreaderwikifrontpage {
 a {
     display:inline;
     text-decoration: underline;
-    color: black,
+    color: black;
     font-weight: normal;
 }
 /* No underline for links without their href that we removed */

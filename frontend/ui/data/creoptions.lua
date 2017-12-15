@@ -123,7 +123,7 @@ local CreOptions = {
             {
                 name = "font_gamma",
                 name_text = S.CONTRAST,
-                item_text = {S.LIGHTER, S.DEFAULT, S.DARKER},
+                toggle = {S.LIGHTER, S.DEFAULT, S.DARKER},
                 default_value = DCREREADER_CONFIG_DEFAULT_FONT_GAMMA,
                 values = {
                     DCREREADER_CONFIG_LIGHTER_FONT_GAMMA,

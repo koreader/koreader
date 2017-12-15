@@ -50,7 +50,7 @@ function WidgetContainer:getSize()
 end
 
 --[[--
-Delete all child widgets
+Deletes all child widgets.
 ]]
 function WidgetContainer:clear()
     while table.remove(self) do end
@@ -98,7 +98,7 @@ methods. If no child consumes the event (by returning true), it will try
 to react to the event by itself.
 
 @tparam ui.event.Event event
-@treturn bool true if event is consumed, othewise false. A consumed event will
+@treturn bool true if event is consumed, otherwise false. A consumed event will
 not be sent to other widgets.
 ]]
 function WidgetContainer:handleEvent(event)
