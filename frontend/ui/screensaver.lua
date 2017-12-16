@@ -157,6 +157,25 @@ function Screensaver:show()
                 width = Screen:getWidth(),
                 scale_factor = self:proportional() and 0 or nil,
             }
+        --fallback to random images if this book cover is excluded
+        else
+            local screensaver_dir = G_reader_settings:readSetting("screensaver_dir")
+            if screensaver_dir == nil then
+                local DataStorage = require("datastorage")
+                screensaver_dir = DataStorage:getDataDir() .. "/screenshots/"
+            end
+            local image_file = getRandomImage(screensaver_dir)
+            if image_file == nil then
+                widget = nil
+            else
+                widget = ImageWidget:new{
+                    file = image_file,
+                    alpha = true,
+                    height = Screen:getHeight(),
+                    width = Screen:getWidth(),
+                    scale_factor = 0,
+                }
+            end
         end
         doc_settings:close()
     elseif screensaver_type == "bookstatus" then
