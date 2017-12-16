@@ -155,7 +155,7 @@ function ReaderMenu:setUpdateItemTable()
                         if  settings_proportional == nil and G_reader_settings:readSetting("stretch_cover_default") then
                             return true
                         else
-                            return self.ui.doc_settings:readSetting("proportional_screensaver") == true
+                            return self.ui.doc_settings:readSetting("proportional_screensaver") == false
                         end
                     end,
                     callback = function()

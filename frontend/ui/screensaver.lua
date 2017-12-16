@@ -90,7 +90,7 @@ function Screensaver:proportional()
     if  proprtional_ss ~= nil then
         return proprtional_ss
     end
-    return G_reader_settings:readSetting("stretch_cover_default") or false
+    return not G_reader_settings:readSetting("stretch_cover_default") and true
 end
 
 function Screensaver:excluded()
@@ -141,11 +141,15 @@ function Screensaver:show()
     local screensaver_type = G_reader_settings:readSetting("screensaver_type")
     local widget = nil
     local background = Blitbuffer.COLOR_WHITE
+    if screensaver_type == "disable" or screensaver_type == nil then
+        return
+    end
     if screensaver_type == "cover" then
         local lastfile = G_reader_settings:readSetting("lastfile")
         local doc_settings = DocSettings:open(lastfile)
         local exclude = doc_settings:readSetting("exclude_screensaver")
         if exclude ~= true then
+            background = Blitbuffer.COLOR_BLACK
             local doc = DocumentRegistry:openDocument(lastfile)
             local image = doc:getCoverPageImage()
             doc:close()
@@ -159,26 +163,11 @@ function Screensaver:show()
             }
         --fallback to random images if this book cover is excluded
         else
-            local screensaver_dir = G_reader_settings:readSetting("screensaver_dir")
-            if screensaver_dir == nil then
-                local DataStorage = require("datastorage")
-                screensaver_dir = DataStorage:getDataDir() .. "/screenshots/"
-            end
-            local image_file = getRandomImage(screensaver_dir)
-            if image_file == nil then
-                widget = nil
-            else
-                widget = ImageWidget:new{
-                    file = image_file,
-                    alpha = true,
-                    height = Screen:getHeight(),
-                    width = Screen:getWidth(),
-                    scale_factor = 0,
-                }
-            end
+            screensaver_type = "random_image"
         end
         doc_settings:close()
-    elseif screensaver_type == "bookstatus" then
+    end
+    if screensaver_type == "bookstatus" then
         local lastfile = G_reader_settings:readSetting("lastfile")
         local doc = DocumentRegistry:openDocument(lastfile)
         local doc_settings = DocSettings:open(lastfile)
@@ -192,10 +181,13 @@ function Screensaver:show()
                 view = instance.view,
                 readonly = true,
             }
+        else
+            screensaver_type = "message"
         end
         doc:close()
         doc_settings:close()
-    elseif screensaver_type == "random_image" then
+    end
+    if screensaver_type == "random_image" then
         local screensaver_dir = G_reader_settings:readSetting("screensaver_dir")
         if screensaver_dir == nil then
             local DataStorage = require("datastorage")
@@ -203,7 +195,7 @@ function Screensaver:show()
         end
         local image_file = getRandomImage(screensaver_dir)
         if image_file == nil then
-            widget = nil
+            screensaver_type = "message"
         else
             widget = ImageWidget:new{
                 file = image_file,
@@ -213,11 +205,15 @@ function Screensaver:show()
                 scale_factor = 0,
             }
         end
-    elseif screensaver_type == "readingprogress" then
+    end
+    if screensaver_type == "readingprogress" then
         if Screensaver.getReaderProgress ~= nil then
             widget = Screensaver.getReaderProgress()
+        else
+            screensaver_type = "message"
         end
-    elseif screensaver_type == "message" then
+    end
+    if screensaver_type == "message" then
         local screensaver_message = G_reader_settings:readSetting("screensaver_message")
         if G_reader_settings:nilOrFalse("message_background") then
             background = nil
