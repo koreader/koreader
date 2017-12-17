@@ -8,6 +8,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local ImageWidget = require("ui/widget/imagewidget")
 local ScreenSaverWidget = require("ui/widget/screensaverwidget")
 local UIManager = require("ui/uimanager")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local _ = require("gettext")
 local Screen = Device.screen
@@ -82,22 +83,25 @@ function Screensaver:chooseFolder()
     UIManager:show(self.choose_dialog)
 end
 
-function Screensaver:proportional()
+function Screensaver:stretchCover()
     local lastfile = G_reader_settings:readSetting("lastfile")
     local doc_settings = DocSettings:open(lastfile)
-    local proprtional_ss = doc_settings:readSetting("proportional_screensaver")
+    local stretch_cover_ss = doc_settings:readSetting("stretch_cover")
     doc_settings:close()
-    if  proprtional_ss ~= nil then
-        return proprtional_ss
+    if  stretch_cover_ss ~= nil then
+        return stretch_cover_ss
     end
-    return not G_reader_settings:readSetting("stretch_cover_default") and true
+    return G_reader_settings:readSetting("stretch_cover_default") or false
 end
 
 function Screensaver:excluded()
     local lastfile = G_reader_settings:readSetting("lastfile")
-    local doc_settings = DocSettings:open(lastfile)
-    local exclude_ss = doc_settings:readSetting("exclude_screensaver")
-    doc_settings:close()
+    local exclude_ss = false -- consider it not excluded if there's no docsetting
+    if DocSettings:hasSidecarFile(lastfile) then
+        local doc_settings = DocSettings:open(lastfile)
+        exclude_ss = doc_settings:readSetting("exclude_screensaver")
+        doc_settings:close()
+    end
     return exclude_ss or false
 end
 
@@ -146,46 +150,68 @@ function Screensaver:show()
     end
     if screensaver_type == "cover" then
         local lastfile = G_reader_settings:readSetting("lastfile")
-        local doc_settings = DocSettings:open(lastfile)
-        local exclude = doc_settings:readSetting("exclude_screensaver")
+        local exclude = false -- consider it not excluded if there's no docsetting
+        local remove_sidecarfile = false
+        if DocSettings:hasSidecarFile(lastfile) then
+            local doc_settings = DocSettings:open(lastfile)
+            exclude = doc_settings:readSetting("exclude_screensaver")
+            doc_settings:close()
+        else
+            remove_sidecarfile = true
+        end
         if exclude ~= true then
             background = Blitbuffer.COLOR_BLACK
-            local doc = DocumentRegistry:openDocument(lastfile)
-            local image = doc:getCoverPageImage()
-            doc:close()
-            widget = ImageWidget:new{
-                image = image,
-                image_disposable = true,
-                alpha = true,
-                height = Screen:getHeight(),
-                width = Screen:getWidth(),
-                scale_factor = self:proportional() and 0 or nil,
-            }
-        --fallback to random images if this book cover is excluded
-        else
+            if lfs.attributes(lastfile, "mode") == "file" then
+                local doc = DocumentRegistry:openDocument(lastfile)
+                local image = doc:getCoverPageImage()
+                doc:close()
+                if image ~= nil then
+                    widget = ImageWidget:new{
+                        image = image,
+                        image_disposable = true,
+                        alpha = true,
+                        height = Screen:getHeight(),
+                        width = Screen:getWidth(),
+                        scale_factor = not self:stretchCover() and 0 or nil,
+                    }
+                else
+                    screensaver_type = "random_image"
+                end
+            else
+                screensaver_type = "random_image"
+            end
+        else  --fallback to random images if this book cover is excluded
             screensaver_type = "random_image"
         end
-        doc_settings:close()
+        if remove_sidecarfile then
+            local filemanagerutil = require("apps/filemanager/filemanagerutil")
+            filemanagerutil.purgeSettings(lastfile)
+            filemanagerutil.removeFileFromHistoryIfWanted(lastfile)
+        end
     end
     if screensaver_type == "bookstatus" then
         local lastfile = G_reader_settings:readSetting("lastfile")
-        local doc = DocumentRegistry:openDocument(lastfile)
-        local doc_settings = DocSettings:open(lastfile)
-        local instance = require("apps/reader/readerui"):_getRunningInstance()
-        if instance ~= nil then
-            widget = BookStatusWidget:new {
-                thumbnail = doc:getCoverPageImage(),
-                props = doc:getProps(),
-                document = doc,
-                settings = doc_settings,
-                view = instance.view,
-                readonly = true,
-            }
+        if lfs.attributes(lastfile, "mode") == "file" then
+            local doc = DocumentRegistry:openDocument(lastfile)
+            local doc_settings = DocSettings:open(lastfile)
+            local instance = require("apps/reader/readerui"):_getRunningInstance()
+            if instance ~= nil then
+                widget = BookStatusWidget:new {
+                    thumbnail = doc:getCoverPageImage(),
+                    props = doc:getProps(),
+                    document = doc,
+                    settings = doc_settings,
+                    view = instance.view,
+                    readonly = true,
+                }
+            else
+                screensaver_type = "message"
+            end
+            doc:close()
+            doc_settings:close()
         else
             screensaver_type = "message"
         end
-        doc:close()
-        doc_settings:close()
     end
     if screensaver_type == "random_image" then
         local screensaver_dir = G_reader_settings:readSetting("screensaver_dir")

@@ -149,23 +149,23 @@ function ReaderMenu:setUpdateItemTable()
                     end
                 },
                 {
-                    text = _("Auto stretch this book's cover image in screensaver"),
+                    text = _("Stretch book cover to fit screen"),
                     checked_func = function()
-                        local settings_proportional = self.ui.doc_settings:readSetting("proportional_screensaver")
-                        if  settings_proportional == nil and G_reader_settings:readSetting("stretch_cover_default") then
+                        local settings_stretch_cover = self.ui.doc_settings:readSetting("stretch_cover")
+                        if  settings_stretch_cover == nil and G_reader_settings:readSetting("stretch_cover_default") then
                             return true
                         else
-                            return self.ui.doc_settings:readSetting("proportional_screensaver") == false
+                            return self.ui.doc_settings:readSetting("stretch_cover") == true
                         end
                     end,
                     callback = function()
-                        self.ui.doc_settings:saveSetting("proportional_screensaver", not Screensaver:proportional())
+                        self.ui.doc_settings:saveSetting("stretch_cover", not Screensaver:stretchCover())
                         self.ui:saveSettings()
                     end,
                     hold_callback = function()
                         local ConfirmBox = require("ui/widget/confirmbox")
                         UIManager:show(ConfirmBox:new {
-                            text = _("Set auto stretch all book's cover image in screensaver"),
+                            text = _("Stretch all book's cover image in screensaver?"),
                             cancel_text = _("Disable by default"),
                             cancel_callback = function()
                                 G_reader_settings:delSetting("stretch_cover_default")

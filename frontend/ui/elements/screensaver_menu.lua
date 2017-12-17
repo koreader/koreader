@@ -3,7 +3,13 @@ local _ = require("gettext")
 
 local function screensaverType() return G_reader_settings:readSetting("screensaver_type") end
 local function screensaverDelay() return G_reader_settings:readSetting("screensaver_delay") end
-local function lastFile() return G_reader_settings:readSetting("lastfile") end
+local function lastFile()
+    local lfs = require("libs/libkoreader-lfs")
+    local last_file = G_reader_settings:readSetting("lastfile")
+    if last_file and lfs.attributes(last_file, "mode") == "file" then
+        return last_file
+    end
+end
 local function messageBackground() return G_reader_settings:isTrue("message_background") end
 
 return {
