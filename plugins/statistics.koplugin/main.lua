@@ -686,7 +686,6 @@ function ReaderStatistics:addToMainMenu(menu_items)
                 callback = function()
                     UIManager:show(KeyValuePage:new{
                         title = _("Statistics"),
-                        value_overflow_align = "right",
                         kv_pairs = self:getCurrentStat(self.id_curr_book),
                     })
                 end,
@@ -735,7 +734,7 @@ function ReaderStatistics:statMenu()
                     local total_msg, kv_pairs = self:getTotalStats()
                     self.kv = KeyValuePage:new{
                         title = total_msg,
-                        value_overflow_align = "right",
+                        value_align = "right",
                         kv_pairs = kv_pairs,
                         callback_return = function()
                             UIManager:show(kv)
@@ -1124,7 +1123,7 @@ function ReaderStatistics:callbackMonthly(begin, finish, date_text, book_mode)
     if book_mode then
         self.kv = KeyValuePage:new{
             title = T(_("Books from: %1"), date_text),
-            value_overflow_align = "right",
+            value_align = "right",
             kv_pairs = self:getBooksFromPeriod(begin, finish),
             callback_return = function()
                 UIManager:show(kv)
@@ -1134,7 +1133,7 @@ function ReaderStatistics:callbackMonthly(begin, finish, date_text, book_mode)
     else
         self.kv = KeyValuePage:new{
             title = date_text,
-            value_overflow_align = "right",
+            value_align = "right",
             kv_pairs = self:getDaysFromPeriod(begin, finish),
             callback_return = function()
                 UIManager:show(kv)
@@ -1151,7 +1150,7 @@ function ReaderStatistics:callbackWeekly(begin, finish, date_text, book_mode)
     if book_mode then
         self.kv = KeyValuePage:new{
             title = T(_("Books from: %1"), date_text),
-            value_overflow_align = "right",
+            value_align = "right",
             kv_pairs = self:getBooksFromPeriod(begin, finish),
             callback_return = function()
                 UIManager:show(kv)
@@ -1161,7 +1160,7 @@ function ReaderStatistics:callbackWeekly(begin, finish, date_text, book_mode)
     else
         self.kv = KeyValuePage:new{
             title = date_text,
-            value_overflow_align = "right",
+            value_align = "right",
             kv_pairs = self:getDaysFromPeriod(begin, finish),
             callback_return = function()
                 UIManager:show(kv)
@@ -1177,7 +1176,7 @@ function ReaderStatistics:callbackDaily(begin, finish, date_text)
     UIManager:close(kv)
     self.kv = KeyValuePage:new{
         title = date_text,
-        value_overflow_align = "right",
+        value_align = "right",
         kv_pairs = self:getBooksFromPeriod(begin, finish),
         callback_return = function()
             UIManager:show(kv)
@@ -1580,7 +1579,7 @@ function ReaderStatistics:resetBook()
     end
     kv_reset_book = KeyValuePage:new{
         title = _("Reset book statistics"),
-        value_overflow_align = "right",
+        value_align = "right",
         kv_pairs = total_stats,
     }
     UIManager:show(kv_reset_book)
