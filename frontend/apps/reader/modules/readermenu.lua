@@ -165,7 +165,7 @@ function ReaderMenu:setUpdateItemTable()
                     hold_callback = function()
                         local ConfirmBox = require("ui/widget/confirmbox")
                         UIManager:show(ConfirmBox:new {
-                            text = _("Stretch all book's cover image in screensaver?"),
+                            text = _("Stretch all book covers to fit screen"),
                             cancel_text = _("Disable by default"),
                             cancel_callback = function()
                                 G_reader_settings:delSetting("stretch_cover_default")

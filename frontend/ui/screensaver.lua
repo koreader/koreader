@@ -85,11 +85,13 @@ end
 
 function Screensaver:stretchCover()
     local lastfile = G_reader_settings:readSetting("lastfile")
-    local doc_settings = DocSettings:open(lastfile)
-    local stretch_cover_ss = doc_settings:readSetting("stretch_cover")
-    doc_settings:close()
-    if  stretch_cover_ss ~= nil then
-        return stretch_cover_ss
+    if DocSettings:hasSidecarFile(lastfile) then
+        local doc_settings = DocSettings:open(lastfile)
+        local stretch_cover_ss = doc_settings:readSetting("stretch_cover")
+        doc_settings:close()
+        if  stretch_cover_ss ~= nil then
+            return stretch_cover_ss
+        end
     end
     return G_reader_settings:readSetting("stretch_cover_default") or false
 end
@@ -151,13 +153,10 @@ function Screensaver:show()
     if screensaver_type == "cover" then
         local lastfile = G_reader_settings:readSetting("lastfile")
         local exclude = false -- consider it not excluded if there's no docsetting
-        local remove_sidecarfile = false
         if DocSettings:hasSidecarFile(lastfile) then
             local doc_settings = DocSettings:open(lastfile)
             exclude = doc_settings:readSetting("exclude_screensaver")
             doc_settings:close()
-        else
-            remove_sidecarfile = true
         end
         if exclude ~= true then
             background = Blitbuffer.COLOR_BLACK
@@ -182,11 +181,6 @@ function Screensaver:show()
             end
         else  --fallback to random images if this book cover is excluded
             screensaver_type = "random_image"
-        end
-        if remove_sidecarfile then
-            local filemanagerutil = require("apps/filemanager/filemanagerutil")
-            filemanagerutil.purgeSettings(lastfile)
-            filemanagerutil.removeFileFromHistoryIfWanted(lastfile)
         end
     end
     if screensaver_type == "bookstatus" then
