@@ -57,6 +57,7 @@ local order = {
         "dictionary_settings",
         "----------------------------",
         "wikipedia_lookup",
+        "wikipedia_history",
         "wikipedia_settings",
         "----------------------------",
         "find_book_in_calibre_catalog",

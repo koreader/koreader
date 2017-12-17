@@ -214,12 +214,12 @@ If you'd like to change the order in which dictionaries are queried (and their r
 - move all dictionary directories out of %1.
 - move them back there, one by one, in the order you want them to be used.]]), self.data_dir)
                     })
-                end
+                end,
             },
             {
-                text = _("Disable dictionary fuzzy search"),
+                text = _("Enable fuzzy search"),
                 checked_func = function()
-                    return self.disable_fuzzy_search == true
+                    return not self.disable_fuzzy_search == true
                 end,
                 callback = function()
                     self.disable_fuzzy_search = not self.disable_fuzzy_search
@@ -227,11 +227,12 @@ If you'd like to change the order in which dictionaries are queried (and their r
                 hold_callback = function()
                     self:makeDisableFuzzyDefault(self.disable_fuzzy_search)
                 end,
+                separator = true,
             },
             {
-                text = _("Disable dictionary lookup history"),
+                text = _("Enable dictionary lookup history"),
                 checked_func = function()
-                    return self.disable_lookup_history
+                    return not self.disable_lookup_history
                 end,
                 callback = function()
                     self.disable_lookup_history = not self.disable_lookup_history
@@ -250,6 +251,7 @@ If you'd like to change the order in which dictionaries are queried (and their r
                         end,
                     })
                 end,
+                separator = true,
             },
             { -- setting used by dictquicklookup
                 text = _("Large window"),
