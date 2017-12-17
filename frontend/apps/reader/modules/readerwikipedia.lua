@@ -1,5 +1,9 @@
+local ConfirmBox = require("ui/widget/confirmbox")
+local DataStorage = require("datastorage")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
+local KeyValuePage = require("ui/widget/keyvaluepage")
+local LuaData = require("luadata")
 local NetworkMgr = require("ui/network/manager")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local Translator = require("ui/translator")
@@ -10,16 +14,22 @@ local util  = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
+local wikipedia_history = nil
+
 -- Wikipedia as a special dictionary
 local ReaderWikipedia = ReaderDictionary:extend{
     -- identify itself
     is_wiki = true,
     wiki_languages = {},
     no_page = _("No wiki page found."),
+    disable_history = G_reader_settings:isTrue("wikipedia_disable_history"),
 }
 
 function ReaderWikipedia:init()
     self.ui.menu:registerToMainMenu(self)
+    if not wikipedia_history then
+        wikipedia_history = LuaData:open(DataStorage:getSettingsDir() .. "/wikipedia_history.lua", { name = "WikipediaHistory" })
+    end
 end
 
 function ReaderWikipedia:lookupInput()
@@ -60,6 +70,46 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                 NetworkMgr:promptWifiOn()
             end
         end
+    }
+    menu_items.wikipedia_history = {
+        text = _("Wikipedia history"),
+        enabled_func = function()
+            return wikipedia_history:has("wikipedia_history")
+        end,
+        callback = function()
+            local wikipedia_history_table = wikipedia_history:readSetting("wikipedia_history")
+            local kv_pairs = {}
+            local previous_title
+            self:initLanguages() -- so current lang is set
+            for i = #wikipedia_history_table, 1, -1 do
+                local value = wikipedia_history_table[i]
+                if value.book_title ~= previous_title then
+                    table.insert(kv_pairs, { value.book_title..":", "" })
+                end
+                previous_title = value.book_title
+                local type_s = "▱ " -- lookup: small white parallelogram
+                if value.page then
+                    type_s = "▤ " -- full page: large square with lines
+                end
+                local lang_s = ""
+                if value.lang ~= self.wiki_languages[1]:lower() then
+                    -- We show item's lang only when different from current lang
+                    lang_s = " ["..value.lang:upper().."]"
+                end
+                local text = type_s .. value.word .. lang_s
+                table.insert(kv_pairs, {
+                    os.date("%Y-%m-%d %H:%M:%S", value.time),
+                    text,
+                    callback = function()
+                        self:onLookupWikipedia(value.word, nil, value.page, value.lang)
+                    end
+                })
+            end
+            UIManager:show(KeyValuePage:new{
+                title = _("Wikipedia history"),
+                kv_pairs = kv_pairs,
+            })
+        end,
     }
     menu_items.wikipedia_settings = {
         text = _("Wikipedia settings"),
@@ -197,6 +247,30 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                     folder_path_input:onShowKeyboard()
                     UIManager:show(folder_path_input)
                 end,
+                separator = true,
+            },
+            {
+                text = _("Enable Wikipedia history"),
+                checked_func = function()
+                    return not self.disable_history
+                end,
+                callback = function()
+                    self.disable_history = not self.disable_history
+                    G_reader_settings:saveSetting("wikipedia_disable_history", self.disable_history)
+                end,
+            },
+            {
+                text = _("Clean Wikipedia history"),
+                callback = function()
+                    UIManager:show(ConfirmBox:new{
+                        text = _("Clean Wikipedia history?"),
+                        ok_text = _("Clean"),
+                        ok_callback = function()
+                            -- empty data table to replace current one
+                            wikipedia_history:reset{}
+                        end,
+                    })
+                end,
             }
         }
     }
@@ -271,6 +345,18 @@ function ReaderWikipedia:onLookupWikipedia(word, box, get_fullpage, forced_lang)
     if word == "" then
         return
     end
+    local display_word = word:gsub("_", " ")
+
+    if not self.disable_history then
+        local book_title = self.ui.doc_settings and self.ui.doc_settings:readSetting("doc_props").title or _("Wikipedia lookup")
+        wikipedia_history:addTableItem("wikipedia_history", {
+            book_title = book_title,
+            time = os.time(),
+            word = display_word,
+            lang = lang:lower(),
+            page = get_fullpage,
+        })
+    end
 
     -- Fix lookup message to include lang
     if get_fullpage then
@@ -278,7 +364,7 @@ function ReaderWikipedia:onLookupWikipedia(word, box, get_fullpage, forced_lang)
     else
         self.lookup_msg = T(_("Searching Wikipedia %2 for:\n%1"), "%1", lang:upper())
     end
-    self:showLookupInfo(word)
+    self:showLookupInfo(display_word)
     local results = {}
     local ok, pages
     if get_fullpage then
@@ -319,7 +405,7 @@ function ReaderWikipedia:onLookupWikipedia(word, box, get_fullpage, forced_lang)
             }
             table.insert(results, result)
         end
-        logger.dbg("lookup result:", word, results)
+        -- logger.dbg of results will be done by ReaderDictionary:showDict()
     else
         logger.dbg("error:", pages)
         -- dummy results
