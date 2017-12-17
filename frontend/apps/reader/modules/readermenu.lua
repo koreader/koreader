@@ -165,13 +165,13 @@ function ReaderMenu:setUpdateItemTable()
                     hold_callback = function()
                         local ConfirmBox = require("ui/widget/confirmbox")
                         UIManager:show(ConfirmBox:new {
-                            text = _("Stretch all book covers to fit screen"),
-                            cancel_text = _("Disable by default"),
+                            text = _("Stretch all book covers to fit screen?"),
+                            cancel_text = _("Don't stretch"),
                             cancel_callback = function()
                                 G_reader_settings:delSetting("stretch_cover_default")
                                 return
                             end,
-                            ok_text = _("Enable by default"),
+                            ok_text = _("Stretch"),
                             ok_callback = function()
                                 G_reader_settings:saveSetting("stretch_cover_default", true)
                                 return
