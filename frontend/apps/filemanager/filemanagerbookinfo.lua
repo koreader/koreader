@@ -181,7 +181,6 @@ function BookInfo:show(file, book_props)
 
     local widget = KeyValuePage:new{
         title = _("Book information"),
-        value_overflow_align = "right",
         kv_pairs = kv_pairs,
     }
     UIManager:show(widget)

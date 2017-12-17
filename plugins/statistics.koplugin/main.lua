@@ -686,7 +686,6 @@ function ReaderStatistics:addToMainMenu(menu_items)
                 callback = function()
                     UIManager:show(KeyValuePage:new{
                         title = _("Statistics"),
-                        value_overflow_align = "right",
                         kv_pairs = self:getCurrentStat(self.id_curr_book),
                     })
                 end,

@@ -184,6 +184,9 @@ function KeyValueItem:init()
             self.show_value = self.value
         end
     else
+        if self.value_overflow_align == "right" then
+            key_w = frame_internal_width - value_w_rendered
+        end
         self.show_key = self.key
         self.show_value = self.value
     end
