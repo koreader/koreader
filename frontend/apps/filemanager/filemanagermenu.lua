@@ -4,8 +4,6 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local FileSearcher = require("apps/filemanager/filemanagerfilesearcher")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local InputDialog = require("ui/widget/inputdialog")
-local Screensaver = require("ui/screensaver")
 local Search = require("apps/filemanager/filemanagersearch")
 local SetDefaults = require("apps/filemanager/filemanagersetdefaults")
 local UIManager = require("ui/uimanager")
@@ -103,58 +101,7 @@ function FileManagerMenu:setUpdateItemTable()
     if Device:supportsScreensaver() then
         self.menu_items.screensaver = {
             text = _("Screensaver"),
-            sub_item_table = {
-                {
-                    text = _("Use last book's cover as screensaver"),
-                    checked_func = Screensaver.isUsingBookCover,
-                    callback = function()
-                        if Screensaver:isUsingBookCover() then
-                            G_reader_settings:saveSetting(
-                                "use_lastfile_as_screensaver", false)
-                        else
-                            G_reader_settings:delSetting(
-                                "use_lastfile_as_screensaver")
-                        end
-                        G_reader_settings:flush()
-                    end
-                },
-                {
-                    text = _("Screensaver folder"),
-                    callback = function()
-                        local ss_folder_path_input
-                        local function save_folder_path()
-                            G_reader_settings:saveSetting(
-                                "screensaver_folder", ss_folder_path_input:getInputText())
-                            G_reader_settings:flush()
-                            UIManager:close(ss_folder_path_input)
-                        end
-                        local curr_path = G_reader_settings:readSetting("screensaver_folder")
-                        ss_folder_path_input = InputDialog:new{
-                            title = _("Screensaver folder"),
-                            input = curr_path,
-                            input_hint = "/mnt/onboard/screensaver",
-                            input_type = "text",
-                            buttons = {
-                                {
-                                    {
-                                        text = _("Cancel"),
-                                        callback = function()
-                                            UIManager:close(ss_folder_path_input)
-                                        end,
-                                    },
-                                    {
-                                        text = _("Save"),
-                                        is_enter_default = true,
-                                        callback = save_folder_path,
-                                    },
-                                }
-                            },
-                        }
-                        ss_folder_path_input:onShowKeyboard()
-                        UIManager:show(ss_folder_path_input)
-                    end,
-                },
-            }
+            sub_item_table = require("ui/elements/screensaver_menu"),
         }
     end
     -- insert common settings

@@ -68,13 +68,19 @@ function BookStatusWidget:init()
     self.medium_font_face = Font:getFace("ffont")
     self.large_font_face = Font:getFace("largeffont")
 
+    local button_enabled = true
+    if self.readonly then
+        button_enabled = false
+    end
+
     self.star = Button:new{
         icon = "resources/icons/stats.star.empty.png",
         bordersize = 0,
         radius = 0,
         margin = 0,
-        enabled = true,
+        enabled = button_enabled,
         show_parent = self,
+        readonly = self.readonly,
     }
     local screen_size = Screen:getSize()
     self[1] = FrameContainer:new{
@@ -116,20 +122,28 @@ function BookStatusWidget:getStatReadPages()
 end
 
 function BookStatusWidget:getStatusContent(width)
-    return VerticalGroup:new{
+    local close_button = nil
+    local status_header = self:genHeader(_("Book Status"))
+
+    if self.readonly ~= true then
+        close_button = CloseButton:new{ window = self }
+        status_header = self:genHeader(_("Update Status"))
+    end
+    local content = VerticalGroup:new{
         align = "left",
         OverlapGroup:new{
             dimen = Geom:new{ w = width, h = Size.item.height_default },
-            CloseButton:new{ window = self },
+            close_button,
         },
         self:genBookInfoGroup(),
         self:genHeader(_("Statistics")),
         self:genStatisticsGroup(width),
         self:genHeader(_("Review")),
         self:genSummaryGroup(width),
-        self:genHeader(_("Update Status")),
+        status_header,
         self:generateSwitchGroup(width),
     }
+    return content
 end
 
 function BookStatusWidget:genHeader(title)
@@ -411,6 +425,7 @@ function BookStatusWidget:genSummaryGroup(width)
         focused = false,
         padding = text_padding,
         parent = self,
+        readonly = self.readonly,
         hint = _("A few words about the book"),
     }
 
@@ -468,6 +483,10 @@ function BookStatusWidget:generateSwitchGroup(width)
         enabled = true,
     }
 
+    if self.readonly then
+        config.enable = false
+    end
+
     local switch = ToggleSwitch:new{
         width = width * 0.6,
         default_value = config.default_value,
@@ -481,6 +500,7 @@ function BookStatusWidget:generateSwitchGroup(width)
         values = config.values,
         enabled = config.enable,
         config = self,
+        readonly = self.readonly,
     }
     switch:setPosition(position)
 
