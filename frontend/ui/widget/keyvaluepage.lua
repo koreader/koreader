@@ -175,7 +175,7 @@ function KeyValueItem:init()
             end
         -- misalign to fit all info
         else
-            if self.value_overflow_align == "right" then
+            if self.value_overflow_align == "right" or self.value_align == "right" then
                 key_w = frame_internal_width - value_w_rendered
             else
                 key_w = key_w_rendered + space_w_rendered
@@ -184,7 +184,7 @@ function KeyValueItem:init()
             self.show_value = self.value
         end
     else
-        if self.value_overflow_align == "right" then
+        if self.value_align == "right" then
             key_w = frame_internal_width - value_w_rendered
         end
         self.show_key = self.key
@@ -461,6 +461,7 @@ function KeyValuePage:_populateItems()
                     textviewer_width = self.textviewer_width,
                     textviewer_height = self.textviewer_height,
                     value_overflow_align = self.value_overflow_align,
+                    value_align = self.value_align,
                     show_parent = self,
                 }
             )
