@@ -685,7 +685,18 @@ time, abbr, sup {
     -- when we should have get "\xc3\xa7" ...
     -- We can avoid that by putting in the url plain unencoded UTF8
     local hex_to_char = function(x) return string.char(tonumber(x, 16)) end
+    -- Do that first (need to be done first) for full links to other language wikipedias
+    local fixEncodedOtherLangWikiPageTitle = function(wiki_lang, wiki_page)
+        -- First, remove any "?otherkey=othervalue" from url (a real "?" part of the wiki_page word
+        -- would be encoded as %3f), that could cause problem when used.
+        wiki_page = wiki_page:gsub("%?.*", "")
+        wiki_page = wiki_page:gsub("%%(%x%x)", hex_to_char)
+        return string.format([[href="https://%s.wikipedia.org/wiki/%s"]], wiki_lang, wiki_page)
+    end
+    html = html:gsub([[href="https?://([^%.]+).wikipedia.org/wiki/([^"]*)"]], fixEncodedOtherLangWikiPageTitle)
+    -- Now, do it for same wikipedia short urls
     local fixEncodedWikiPageTitle = function(wiki_page)
+        wiki_page = wiki_page:gsub("%?.*", "")
         wiki_page = wiki_page:gsub("%%(%x%x)", hex_to_char)
         return string.format([[href="%s/wiki/%s"]], wiki_base_url, wiki_page)
     end
@@ -747,6 +758,11 @@ time, abbr, sup {
 </html>
 ]], page_cleaned, page_htmltitle, lang:upper(), saved_on, see_online_version, html))
 
+    -- Force a GC to free the memory we used till now (the second call may
+    -- help reclaming more memory).
+    collectgarbage()
+    collectgarbage()
+
     -- ----------------------------------------------------------------
     -- OEBPS/images/*
     if include_images then
@@ -754,7 +770,8 @@ time, abbr, sup {
         for inum, img in ipairs(images) do
             -- Process can be interrupted at this point between each image download
             -- by tapping while the InfoMessage is displayed
-            local go_on = UI:info(T(_("Fetching image %1 / %2 …"), inum, nb_images))
+            -- We use the fast_refresh option from image #2 for a quicker download
+            local go_on = UI:info(T(_("Fetching image %1 / %2 …"), inum, nb_images), inum >= 2)
             if not go_on then
                 cancelled = true
                 break
@@ -810,6 +827,11 @@ time, abbr, sup {
     -- Finally move the .tmp to the final file
     os.rename(epub_path_tmp, epub_path)
     logger.info("successfully created:", epub_path)
+
+    -- Force a GC to free the memory we used (the second call may help
+    -- reclaming more memory).
+    collectgarbage()
+    collectgarbage()
     return true
 end
 
