@@ -759,7 +759,7 @@ time, abbr, sup {
 ]], page_cleaned, page_htmltitle, lang:upper(), saved_on, see_online_version, html))
 
     -- Force a GC to free the memory we used till now (the second call may
-    -- help reclaming more memory).
+    -- help reclaim more memory).
     collectgarbage()
     collectgarbage()
 
@@ -829,7 +829,7 @@ time, abbr, sup {
     logger.info("successfully created:", epub_path)
 
     -- Force a GC to free the memory we used (the second call may help
-    -- reclaming more memory).
+    -- reclaim more memory).
     collectgarbage()
     collectgarbage()
     return true
