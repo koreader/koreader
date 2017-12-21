@@ -125,7 +125,6 @@ function IconButton:onHoldIconButton()
 end
 
 function IconButton:onSetDimensions(new_dimen)
-    self.dimen = new_dimen
 end
 
 return IconButton

@@ -1,4 +1,5 @@
 local Blitbuffer = require("ffi/blitbuffer")
+local Button = require("ui/widget/button")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
@@ -12,11 +13,11 @@ local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
 local FileManagerMenu = require("apps/filemanager/filemanagermenu")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
 local IconButton = require("ui/widget/iconbutton")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
-local OverlapGroup = require("ui/widget/overlapgroup")
 local PluginLoader = require("pluginloader")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local ReaderUI = require("apps/reader/readerui")
@@ -33,6 +34,7 @@ local logger = require("logger")
 local util = require("ffi/util")
 local _ = require("gettext")
 local Screen = Device.screen
+local T = require("ffi/util").template
 
 local function restoreScreenMode()
     local screen_mode = G_reader_settings:readSetting("fm_screen_mode")
@@ -48,7 +50,6 @@ local FileManager = InputContainer:extend{
 
     mv_bin = Device:isAndroid() and "/system/bin/mv" or "/bin/mv",
     cp_bin = Device:isAndroid() and "/system/bin/cp" or "/bin/cp",
-    rm_bin = Device:isAndroid() and "/system/bin/rm" or "/bin/rm",
 }
 
 function FileManager:init()
@@ -59,10 +60,22 @@ function FileManager:init()
         width = Screen:scaleBySize(35),
         height = Screen:scaleBySize(35),
         padding = Size.padding.default,
-        padding_top = Size.padding.small,
-        padding_left = Size.padding.small,
+        padding_left = Size.padding.large,
+        padding_right = Size.padding.large,
+        padding_bottom = 0,
         callback = function() self:goHome() end,
         hold_callback = function() self:setHome() end,
+    }
+
+    local plus_button = IconButton:new{
+        icon_file = "resources/icons/appbar.plus.png",
+        width = Screen:scaleBySize(35),
+        height = Screen:scaleBySize(35),
+        padding = Size.padding.default,
+        padding_left = Size.padding.large,
+        padding_right = Size.padding.large,
+        padding_bottom = 0,
+        callback = function() self:tapPlus() end,
     }
 
     self.path_text = TextWidget:new{
@@ -73,22 +86,31 @@ function FileManager:init()
     self.banner = FrameContainer:new{
         padding = 0,
         bordersize = 0,
-        VerticalGroup:new{
-            OverlapGroup:new{
-                home_button,
-                VerticalGroup:new{
-                    TextWidget:new{
-                        face = Font:getFace("smalltfont"),
-                        text = self.title,
+        VerticalGroup:new {
+            CenterContainer:new {
+                dimen = { w = Screen:getWidth(), h = nil },
+                HorizontalGroup:new {
+                    home_button,
+                    VerticalGroup:new {
+                        Button:new {
+                            bordersize = 0,
+                            padding = 0,
+                            text_font_bold = false,
+                            text_font_face = "smalltfont",
+                            text_font_size = 24,
+                            text = self.title,
+                            width = Screen:getWidth() - 2 * Screen:scaleBySize(35) - 4 * Size.padding.large,
+                        },
                     },
-                    CenterContainer:new{
-                        dimen = { w = Screen:getWidth(), h = nil },
-                        self.path_text,
-                    },
-                },
+                    plus_button,
+                }
             },
-            VerticalSpan:new{ width = Screen:scaleBySize(10) },
-        },
+            CenterContainer:new{
+                dimen = { w = Screen:getWidth(), h = nil },
+                self.path_text,
+            },
+            VerticalSpan:new{ width = Screen:scaleBySize(5) },
+        }
     }
 
     local g_show_hidden = G_reader_settings:readSetting("show_hidden")
@@ -320,6 +342,81 @@ function FileManager:init()
     self:handleEvent(Event:new("SetDimensions", self.dimen))
 end
 
+function FileManager:tapPlus()
+    local buttons = {
+        {
+            {
+                text = _("New folder"),
+                callback = function()
+                    UIManager:close(self.file_dialog)
+                    self.input_dialog = InputDialog:new{
+                        title = _("Create new folder"),
+                        input_type = "text",
+                        buttons = {
+                            {
+                                {
+                                    text = _("Cancel"),
+                                    callback = function()
+                                        self:closeInputDialog()
+                                    end,
+                                },
+                                {
+                                    text = _("Create"),
+                                    callback = function()
+                                        self:closeInputDialog()
+                                        local new_folder = self.input_dialog:getInputText()
+                                        if new_folder and new_folder ~= "" then
+                                            self:createFolder(self.file_chooser.path, new_folder)
+                                        end
+                                    end,
+                                },
+                            }
+                        },
+                    }
+                    self.input_dialog:onShowKeyboard()
+                    UIManager:show(self.input_dialog)
+                end,
+            },
+        },
+        {
+            {
+                text = _("Paste"),
+                enabled = self.clipboard and true or false,
+                callback = function()
+                    self:pasteHere(self.file_chooser.path)
+                    self:onRefresh()
+                    UIManager:close(self.file_dialog)
+                end,
+            },
+        },
+        {
+            {
+                text = _("Set as HOME directory"),
+                callback = function()
+                    self:setHome(self.file_chooser.path)
+                    UIManager:close(self.file_dialog)
+                end
+            }
+        },
+        {
+            {
+                text = _("Go to HOME directory"),
+                callback = function()
+                    self:goHome()
+                    UIManager:close(self.file_dialog)
+                end
+            }
+        }
+    }
+
+    self.file_dialog = ButtonDialogTitle:new{
+        title = filemanagerutil.abbreviate(self.file_chooser.path),
+        title_align = "center",
+        buttons = buttons,
+    }
+    UIManager:show(self.file_dialog)
+end
+
 function FileManager:reinit(path, focused_file)
     self.dimen = Screen:getSize()
     -- backup the root path and path items
@@ -417,6 +514,22 @@ function FileManager:pasteHere(file)
             util.execute(self.cp_bin, "-r", orig, dest)
         end
     end
+end
+
+function FileManager:createFolder(curr_folder, new_folder)
+    local folder = curr_folder .. "/" .. new_folder
+    local code = util.execute(self.mkdir_bin, folder)
+    local text
+    if code == 0 then
+        self:onRefresh()
+        text = T(_("Folder created:\n %1"), new_folder)
+    else
+        text = _("The folder has not been created")
+    end
+    UIManager:show(InfoMessage:new{
+        text = text,
+        timeout = 2,
+    })
 end
 
 function FileManager:deleteFile(file)
