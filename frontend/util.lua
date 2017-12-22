@@ -304,6 +304,32 @@ function util.isEmptyDir(path)
     return true
 end
 
+--- Checks if the given path exists. Doesn't care if it's a file or directory.
+---- @string path
+---- @treturn bool
+function util.pathExists(path)
+    local lfs = require("libs/libkoreader-lfs")
+    return lfs.attributes(path, "mode") ~= nil
+end
+
+--- As `mkdir -p`.
+--- Unlike lfs.mkdir(), does not error if the directory already exists, and
+--- creates intermediate directories as needed.
+---- @string path the directory to create
+---- @treturn bool true on success; nil,err_message on error
+function util.makePath(path)
+    path = path:gsub("/+$", "")
+    if util.pathExists(path) then return true end
+
+    local success,err = util.makePath((util.splitFilePathName(path)))
+    if not success then
+        return nil,err.." (creating "..path..")"
+    end
+
+    local lfs = require("libs/libkoreader-lfs")
+    return lfs.mkdir(path)
+end
+
 --- Replaces characters that are invalid filenames.
 --
 -- Replaces the characters <code>\/:*?"<>|</code> with an <code>_</code>.
@@ -326,7 +352,9 @@ function util.replaceSlashChar(str)
     end
 end
 
---- Splits a file into its path and name
+--- Splits a file into its directory path and file name.
+--- If the given path has a trailing /, returns the entire path as the directory
+--- path and "" as the file name.
 ---- @string file
 ---- @treturn string path, filename
 function util.splitFilePathName(file)
