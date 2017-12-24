@@ -16,7 +16,7 @@ Main features for users
 -----------------------
 
 * supports multi-format documents including:
-  * paged fixed-layout formats: PDF, DjVu and CBZ
+  * paged fixed-layout formats: PDF, DjVu, CBT, and CBZ
   * reflowable e-book formats: ePub, fb2, mobi, doc, chm and plain text
   * scanned PDF/DjVu documents can also be reflowed with built-in K2pdfopt
 * use StarDict dictionaries / Wikipedia to lookup words
