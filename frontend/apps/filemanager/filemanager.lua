@@ -414,6 +414,9 @@ function FileManager:pasteHere(file)
             end
             self:moveFile(orig, dest)
         else
+            if DocSettings:hasSidecarFile(orig) then
+                util.execute(self.cp_bin, "-r", DocSettings:getSidecarDir(orig), dest)
+            end
             util.execute(self.cp_bin, "-r", orig, dest)
         end
     end
