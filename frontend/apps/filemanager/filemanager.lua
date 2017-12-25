@@ -430,7 +430,11 @@ function FileManager:deleteFile(file)
     end
 
     local is_doc = DocumentRegistry:getProvider(file_abs_path)
-    ok, err = os.remove(file_abs_path)
+    if lfs.attributes(file_abs_path, "mode") == "file" then
+        ok, err = os.remove(file_abs_path)
+    else
+        ok, err = util.purgeDir(file_abs_path)
+    end
     if ok and err == nil then
         if is_doc ~= nil then
             DocSettings:open(file):purge()
