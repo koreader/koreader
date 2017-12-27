@@ -80,14 +80,16 @@ function CalibreCompanion:find_calibre_server()
 end
 
 function CalibreCompanion:addToMainMenu(menu_items)
-    menu_items.calibre_wireless_connection = {
-        text = _("calibre wireless connection"),
+    menu_items.calibre_companion = {
+        text = _("calibre companion"),
         sub_item_table = {
             {
                 text_func = function()
-                    return not self.calibre_socket
-                        and _("Connect")
-                        or _("Disconnect")
+                  if self.calibre_socket then
+                    return _("Disconnect")
+                  else
+                    return _("Connect")
+                  end
                 end,
                 callback = function()
                     if not self.calibre_socket then
@@ -97,6 +99,12 @@ function CalibreCompanion:addToMainMenu(menu_items)
                     end
                 end
             },
+            {
+              text = _("Set inbox directory"),
+              callback = function()
+                CalibreCompanion:setInboxDir()
+                end
+            }
         }
     }
 end
@@ -129,7 +137,9 @@ function CalibreCompanion:setInboxDir(host, port)
         onConfirm = function(inbox)
             DEBUG("set inbox directory", inbox)
             G_reader_settings:saveSetting("inbox_dir", inbox)
-            calibre_device:initCalibreMQ(host, port)
+            if host and port then
+              calibre_device:initCalibreMQ(host, port)
+            end
         end,
     }:chooseDir()
 end
@@ -320,7 +330,11 @@ function CalibreCompanion:sendBook(arg)
     local inbox_dir = G_reader_settings:readSetting("inbox_dir")
     local filename = inbox_dir .. "/" .. arg.lpath
     DEBUG("write to file", filename)
-    local outfile = io.open(filename, "wb")
+    local lfs = require("libs/libkoreader-lfs")
+    local dir, name = string.match(filename, "(.-)([^\\/]-%.?([^%.\\/]*))$")
+    lfs.mkdir(dir)
+    lfs.chdir(dir)
+    local outfile = io.open(name, "wb")
     local to_write_bytes = arg.length
     local calibre_device = self
     local calibre_socket = self.calibre_socket

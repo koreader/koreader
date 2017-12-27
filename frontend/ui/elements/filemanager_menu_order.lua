@@ -29,7 +29,7 @@ local order = {
         -- end common settings
     },
     tools = {
-        "calibre_wireless_connection",
+        "calibre_companion",
         "evernote",
         "statistics",
         "storage_stat",
