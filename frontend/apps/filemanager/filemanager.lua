@@ -50,15 +50,17 @@ local FileManager = InputContainer:extend{
 
     mv_bin = Device:isAndroid() and "/system/bin/mv" or "/bin/mv",
     cp_bin = Device:isAndroid() and "/system/bin/cp" or "/bin/cp",
+    mkdir_bin =  Device:isAndroid() and "/system/bin/mkdir" or "/bin/mkdir",
 }
 
 function FileManager:init()
     self.show_parent = self.show_parent or self
-
+    local icon_size = Screen:scaleBySize(35)
     local home_button = IconButton:new{
         icon_file = "resources/icons/appbar.home.png",
-        width = Screen:scaleBySize(35),
-        height = Screen:scaleBySize(35),
+        scale_for_dpi = false,
+        width = icon_size,
+        height = icon_size,
         padding = Size.padding.default,
         padding_left = Size.padding.large,
         padding_right = Size.padding.large,
@@ -69,8 +71,9 @@ function FileManager:init()
 
     local plus_button = IconButton:new{
         icon_file = "resources/icons/appbar.plus.png",
-        width = Screen:scaleBySize(35),
-        height = Screen:scaleBySize(35),
+        scale_for_dpi = false,
+        width = icon_size,
+        height = icon_size,
         padding = Size.padding.default,
         padding_left = Size.padding.large,
         padding_right = Size.padding.large,
@@ -99,7 +102,7 @@ function FileManager:init()
                             text_font_face = "smalltfont",
                             text_font_size = 24,
                             text = self.title,
-                            width = Screen:getWidth() - 2 * Screen:scaleBySize(35) - 4 * Size.padding.large,
+                            width = Screen:getWidth() - 2 * icon_size - 4 * Size.padding.large,
                         },
                     },
                     plus_button,
