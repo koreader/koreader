@@ -71,6 +71,16 @@ function UIManager:init()
             Device:reboot()
         end)
     end
+    if Device:isPocketBook() then
+        self.event_handlers["Suspend"] = function()
+            self:_beforeSuspend()
+            Device:onPowerEvent("Power")
+        end
+        self.event_handlers["Resume"] = function()
+            Device:onPowerEvent("Power")
+            self:_afterResume()
+        end
+    end
     if Device:isKobo() then
         -- We do not want auto suspend procedure to waste battery during
         -- suspend. So let's unschedule it when suspending, and restart it after
