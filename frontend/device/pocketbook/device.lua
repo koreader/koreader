@@ -57,7 +57,6 @@ local PocketBook = Generic:new{
 }
 
 function PocketBook:init()
-
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/pocketbook/powerd"):new{device = self}
     self.input = require("device/input"):new{
@@ -86,7 +85,6 @@ function PocketBook:init()
     -- here.
     -- Unhandled events will leave Input:waitEvent() as "GenericInput"
     self.input:registerEventAdjustHook(function(_input, ev)
-        -- han
         if ev.type == EVT_KEYDOWN or ev.type == EVT_KEYUP then
             ev.value = ev.type == EVT_KEYDOWN and 1 or 0
             ev.type = 1 -- linux/input.h Key-Event
