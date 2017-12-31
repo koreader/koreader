@@ -21,6 +21,7 @@ local PluginLoader = require("pluginloader")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local ReaderUI = require("apps/reader/readerui")
 local ReaderWikipedia = require("apps/reader/modules/readerwikipedia")
+local RenderText = require("ui/rendertext")
 local Screenshoter = require("ui/widget/screenshoter")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
@@ -39,6 +40,20 @@ local function restoreScreenMode()
     if Screen:getScreenMode() ~= screen_mode then
         Screen:setScreenMode(screen_mode or "portrait")
     end
+end
+
+local function truncatePath(text)
+    local screen_width = Screen:getWidth()
+    local face = Font:getFace("xx_smallinfofont")
+    local reversed_text = string.reverse(text)
+    local txt_width = RenderText:sizeUtf8Text(0, screen_width, face, reversed_text, nil, false).x
+    if  screen_width - 2 * Size.padding.small < txt_width then
+        reversed_text = RenderText:truncateTextByWidth(reversed_text, face, screen_width - 2 * Size.padding.small, nil, false)
+        -- string.reverse() breaks "…" so we delete it
+        reversed_text = reversed_text:sub(1, -5)
+        text = "…" .. string.reverse(reversed_text)
+    end
+    return text
 end
 
 local FileManager = InputContainer:extend{
@@ -67,7 +82,7 @@ function FileManager:init()
 
     self.path_text = TextWidget:new{
         face = Font:getFace("xx_smallinfofont"),
-        text = filemanagerutil.abbreviate(self.root_path),
+        text = truncatePath(filemanagerutil.abbreviate(self.root_path)),
     }
 
     self.banner = FrameContainer:new{
@@ -117,7 +132,7 @@ function FileManager:init()
     self.focused_file = nil -- use it only once
 
     function file_chooser:onPathChanged(path)  -- luacheck: ignore
-        FileManager.instance.path_text:setText(filemanagerutil.abbreviate(path))
+        FileManager.instance.path_text:setText(truncatePath(filemanagerutil.abbreviate(path)))
         UIManager:setDirty(FileManager.instance, function()
             return "ui", FileManager.instance.path_text.dimen
         end)
