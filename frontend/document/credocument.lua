@@ -112,6 +112,9 @@ function CreDocument:init()
     -- some crashes
     self._document:setStringProperty("font.face.default", self.default_font)
 
+    -- avoid initial blank page (and make unit tests not fail ?)
+    self._document:setIntProperty("crengine.file.txt.preformatted", 1)
+
     -- Make crengine actually parse the document now, so we can
     -- return an error if it is not recognized (instead of segfaulting
     -- when calling other methods on self._document)
