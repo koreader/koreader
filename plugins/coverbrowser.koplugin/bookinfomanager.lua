@@ -364,19 +364,13 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
     -- Proceed with extracting info
     local document = DocumentRegistry:openDocument(filepath)
     if document then
-        if document.loadDocument then -- needed for crengine
-            -- Setting a default font before loading document
-            -- actually do prevent some crashes
-            document:setFontFace(document.default_font)
-            document:loadDocument()
-            -- Not needed for getting props:
-            -- document:render()
-            -- It would be needed to get nb of pages, but the nb obtained
-            -- by simply calling here document:getPageCount() is wrong,
-            -- often 2 to 3 times the nb of pages we see when opening
-            -- the document (may be some other cre settings should be applied
-            -- before calling render() ?)
-        else
+        -- For CreDocuments, we would need:
+        -- document:render()
+        -- to get nb of pages, but the nb obtained by simply calling
+        -- here document:getPageCount() is wrong, often 2 to 3 times
+        -- the nb of pages we see when opening the document (may be some
+        -- other cre settings should be applied before calling render() ?)
+        if not document.render then -- it's not a CreDocument
             -- for all others than crengine, we seem to get an accurate nb of pages
             local pages = document:getPageCount()
             dbrow.pages = pages
