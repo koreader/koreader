@@ -100,21 +100,34 @@ function BookInfo:show(file, book_props)
     if not book_props then
         local document = DocumentRegistry:openDocument(file)
         if document then
-            book_props = document:getProps()
-            -- For CreDocuments, we would need:
-            -- document:render()
-            -- to get nb of pages, but the nb obtained by simply calling
-            -- here document:getPageCount() is wrong, often 2 to 3 times
-            -- the nb of pages we see when opening the document (may be some
-            -- other cre settings should be applied before calling render() ?)
-            if not document.render then -- it's not a CreDocument
+            local loaded = true
+            local pages
+            if document.loadDocument then -- CreDocument
+                if not document:loadDocument() then
+                    -- failed loading, calling other methods would segfault
+                    loaded = false
+                end
+                -- For CreDocument, we would need to call document:render()
+                -- to get nb of pages, but the nb obtained by simply calling
+                -- here document:getPageCount() is wrong, often 2 to 3 times
+                -- the nb of pages we see when opening the document (may be
+                -- some other cre settings should be applied before calling
+                -- render() ?)
+            else
                 -- for all others than crengine, we seem to get an accurate nb of pages
-                book_props.pages = document:getPageCount()
+                pages = document:getPageCount()
+            end
+            if loaded then
+                book_props = document:getProps()
+                book_props.pages = pages
             end
             DocumentRegistry:closeDocument(file)
-        else
-            book_props = {}
         end
+    end
+
+    -- If still no book_props, fall back to empty ones
+    if not book_props then
+        book_props = {}
     end
 
     local title = book_props.title

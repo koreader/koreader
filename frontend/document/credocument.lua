@@ -18,6 +18,7 @@ local CreDocument = Document:new{
     PAGE_VIEW_MODE = 1,
 
     _document = false,
+    _loaded = false,
 
     line_space_percent = 100,
     default_font = G_reader_settings:readSetting("cre_font") or "Noto Serif",
@@ -108,20 +109,10 @@ function CreDocument:init()
     -- set fallback font face
     self._document:setStringProperty("crengine.font.fallback.face", self.fallback_font)
 
-    -- setting a default font before loading document actually do prevent
-    -- some crashes
-    self._document:setStringProperty("font.face.default", self.default_font)
-
-    -- avoid initial blank page (and make unit tests not fail ?)
-    self._document:setIntProperty("crengine.file.txt.preformatted", 1)
-
-    -- Make crengine actually parse the document now, so we can
-    -- return an error if it is not recognized (instead of segfaulting
-    -- when calling other methods on self._document)
-    if not self._document:loadDocument(self.file) then
-        self._document:close()
-        error("cre:loadDocument() failed")
-    end
+    -- We would have liked to call self._document:loadDocument(self.file)
+    -- here, to detect early if file is a supported document, but we
+    -- need to delay it till after some crengine settings are set for a
+    -- consistent behaviour.
 
     self.is_open = true
     self.info.has_pages = false
@@ -129,7 +120,18 @@ function CreDocument:init()
     self.info.configurable = true
 end
 
+function CreDocument:loadDocument()
+    if not self._loaded then
+        if self._document:loadDocument(self.file) then
+            self._loaded = true
+        end
+    end
+    return self._loaded
+end
+
 function CreDocument:render()
+    -- load document before rendering
+    self:loadDocument()
     -- set visible page count in landscape
     if math.max(Screen:getWidth(), Screen:getHeight()) / Screen:getDPI()
         < DCREREADER_TWO_PAGE_THRESHOLD then
@@ -165,6 +167,9 @@ end
 
 function CreDocument:getCoverPageImage()
     -- don't need to render document in order to get cover image
+    if not self:loadDocument() then
+        return nil -- no recognized by crengine
+    end
     local data, size = self._document:getCoverPageImageData()
     if data and size then
         local Mupdf = require("ffi/mupdf")
