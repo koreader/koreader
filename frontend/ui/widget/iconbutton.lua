@@ -124,7 +124,4 @@ function IconButton:onHoldIconButton()
     return true
 end
 
-function IconButton:onSetDimensions(new_dimen)
-end
-
 return IconButton
