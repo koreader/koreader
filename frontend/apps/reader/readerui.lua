@@ -320,9 +320,6 @@ function ReaderUI:init()
         document = self.document,
         ui = self,
     })
-if not self.document.info.has_pages then
-self.document:loadDocument()
-end
     -- koreader plugins
     for _, plugin_module in ipairs(PluginLoader:loadPlugins()) do
         local ok, plugin_or_err = PluginLoader:createPluginInstance(
@@ -343,6 +340,9 @@ end
     -- we only read settings after all the widgets are initialized
     self:handleEvent(Event:new("ReadSettings", self.doc_settings))
 
+if not self.document.info.has_pages then
+self.document:loadDocument()
+end
     for _,v in ipairs(self.postInitCallback) do
         v()
     end
