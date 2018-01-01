@@ -108,6 +108,7 @@ function CreDocument:init()
 
     -- set fallback font face
     self._document:setStringProperty("crengine.font.fallback.face", self.fallback_font)
+self._document:setStringProperty("font.face.default", self.default_font)
 
     self.is_open = true
     self.info.has_pages = false
