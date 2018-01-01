@@ -89,7 +89,7 @@ end
 function ReaderUI:init()
     -- cap screen refresh on pan to 2 refreshes per second
     local pan_rate = Screen.eink and 2.0 or 30.0
-if self.document.info.has_pages then
+if not self.document.info.has_pages then
 self.document:loadDocument()
 end
 
