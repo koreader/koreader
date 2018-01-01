@@ -337,12 +337,12 @@ function ReaderUI:init()
         end
     end
 
-if not self.document.info.has_pages then
-self.document:loadDocument()
-end
     -- we only read settings after all the widgets are initialized
     self:handleEvent(Event:new("ReadSettings", self.doc_settings))
 
+if not self.document.info.has_pages then
+self.document:loadDocument()
+end
     for _,v in ipairs(self.postInitCallback) do
         v()
     end
