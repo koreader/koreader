@@ -18,6 +18,7 @@ local CreDocument = Document:new{
     PAGE_VIEW_MODE = 1,
 
     _document = false,
+    _loaded = false,
 
     line_space_percent = 100,
     default_font = G_reader_settings:readSetting("cre_font") or "Noto Serif",
@@ -108,25 +109,22 @@ function CreDocument:init()
     -- set fallback font face
     self._document:setStringProperty("crengine.font.fallback.face", self.fallback_font)
 
-    -- setting a default font before loading document actually do prevent
-    -- some crashes
-    -- self._document:setStringProperty("font.face.default", self.default_font)
-
-    -- Make crengine actually parse the document now, so we can
-    -- return an error if it is not recognized (instead of segfaulting
-    -- when calling other methods on self._document)
-    if not self._document:loadDocument(self.file) then
-        self._document:close()
-        error("cre:loadDocument() failed")
-    end
-
     self.is_open = true
     self.info.has_pages = false
     self:_readMetadata()
     self.info.configurable = true
 end
 
+function CreDocument:loadDocument()
+    if not self._loaded then
+        self._document:loadDocument(self.file)
+        self._loaded = true
+    end
+end
+
 function CreDocument:render()
+    -- load document before rendering
+    self:loadDocument()
     -- set visible page count in landscape
     if math.max(Screen:getWidth(), Screen:getHeight()) / Screen:getDPI()
         < DCREREADER_TWO_PAGE_THRESHOLD then
@@ -162,6 +160,7 @@ end
 
 function CreDocument:getCoverPageImage()
     -- don't need to render document in order to get cover image
+    self:loadDocument()
     local data, size = self._document:getCoverPageImageData()
     if data and size then
         local Mupdf = require("ffi/mupdf")
