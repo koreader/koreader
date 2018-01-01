@@ -168,7 +168,7 @@ end
 function CreDocument:getCoverPageImage()
     -- don't need to render document in order to get cover image
     if not self:loadDocument() then
-        return nil -- no recognized by crengine
+        return nil -- not recognized by crengine
     end
     local data, size = self._document:getCoverPageImageData()
     if data and size then
