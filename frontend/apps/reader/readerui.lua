@@ -263,7 +263,6 @@ function ReaderUI:init()
     else
         -- make sure we render document first before calling any callback
         self:registerPostInitCallback(function()
-
             -- used to read additional settings after the document has been
             -- loaded (but not rendered yet)
             self:handleEvent(Event:new("PreRenderDocument", self.doc_settings))
@@ -340,9 +339,6 @@ function ReaderUI:init()
     -- we only read settings after all the widgets are initialized
     self:handleEvent(Event:new("ReadSettings", self.doc_settings))
 
-if not self.document.info.has_pages then
-self.document:loadDocument()
-end
     for _,v in ipairs(self.postInitCallback) do
         v()
     end
