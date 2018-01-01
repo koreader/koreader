@@ -2,6 +2,7 @@ local Blitbuffer = require("ffi/blitbuffer")
 local Button = require("ui/widget/button")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local CenterContainer = require("ui/widget/container/centercontainer")
+local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
@@ -193,7 +194,6 @@ function FileManager:init()
                     enabled = fileManager.clipboard and true or false,
                     callback = function()
                         pasteHere(file)
-                        self:refreshPath()
                         UIManager:close(self.file_dialog)
                     end,
                 },
@@ -201,7 +201,6 @@ function FileManager:init()
                     text = _("Purge .sdr"),
                     enabled = DocSettings:hasSidecarFile(util.realpath(file)),
                     callback = function()
-                        local ConfirmBox = require("ui/widget/confirmbox")
                         UIManager:show(ConfirmBox:new{
                             text = util.template(_("Purge .sdr to reset settings for this document?\n\n%1"), self.file_dialog.title),
                             ok_text = _("Purge"),
@@ -226,7 +225,6 @@ function FileManager:init()
                 {
                     text = _("Delete"),
                     callback = function()
-                        local ConfirmBox = require("ui/widget/confirmbox")
                         UIManager:show(ConfirmBox:new{
                             text = _("Are you sure that you want to delete this file?\n") .. file .. ("\n") .. _("If you delete a file, it is permanently lost."),
                             ok_text = _("Delete"),
@@ -495,7 +493,6 @@ end
 
 function FileManager:setHome(path)
     path = path or self.file_chooser.path
-    local ConfirmBox = require("ui/widget/confirmbox")
     UIManager:show(ConfirmBox:new{
         text = util.template(_("Set '%1' as HOME directory?"), path),
         ok_text = _("Set as HOME"),
@@ -522,35 +519,66 @@ function FileManager:pasteHere(file)
         local orig = util.realpath(self.clipboard)
         local dest = lfs.attributes(file, "mode") == "directory" and
             file or file:match("(.*/)")
-        if self.cutfile then
+
+        local function infoCopyFile()
+            -- if we copy a file, also copy its sidecar directory
+            if DocSettings:hasSidecarFile(orig) then
+                util.execute(self.cp_bin, "-r", DocSettings:getSidecarDir(orig), dest)
+            end
+            if util.execute(self.cp_bin, "-r", orig, dest) == 0 then
+                UIManager:show(InfoMessage:new {
+                    text = T(_("Copied to: %1"), dest),
+                    timeout = 2,
+                })
+            else
+                UIManager:show(InfoMessage:new {
+                    text = T(_("An error occurred while trying to copy %1"), orig),
+                    timeout = 2,
+                })
+            end
+        end
+
+        local function infoMoveFile()
             -- if we move a file, also move its sidecar directory
             if DocSettings:hasSidecarFile(orig) then
                 self:moveFile(DocSettings:getSidecarDir(orig), dest) -- dest is always a directory
             end
-            self:moveFile(orig, dest)
-        else
-            if DocSettings:hasSidecarFile(orig) then
-                util.execute(self.cp_bin, "-r", DocSettings:getSidecarDir(orig), dest)
+            if self:moveFile(orig, dest) then
+                UIManager:show(InfoMessage:new {
+                    text = T(_("Moved to: %1"), dest),
+                    timeout = 2,
+                })
+            else
+                UIManager:show(InfoMessage:new {
+                    text = T(_("An error occurred while trying to move %1"), orig),
+                    timeout = 2,
+                })
             end
             util.execute(self.cp_bin, "-r", orig, dest)
         end
-    end
-end
 
-function FileManager:createFolder(curr_folder, new_folder)
-    local folder = curr_folder .. "/" .. new_folder
-    local code = util.execute(self.mkdir_bin, folder)
-    local text
-    if code == 0 then
-        self:onRefresh()
-        text = T(_("Folder created:\n %1"), new_folder)
-    else
-        text = _("The folder has not been created")
+        local info_file
+        if self.cutfile then
+            info_file = infoMoveFile
+        else
+            info_file = infoCopyFile
+        end
+        local basename = util.basename(self.clipboard)
+        local mode = lfs.attributes(dest .."/" .. basename, "mode")
+        if mode == "file" or mode == "directory" then
+            UIManager:show(ConfirmBox:new {
+                text = T(_("The %1 %2 already exists. Do you want to overwrite it?"), mode, basename),
+                ok_text = _("Overwrite"),
+                ok_callback = function()
+                    info_file()
+                    self:onRefresh()
+                end,
+            })
+        else
+            info_file()
+            self:onRefresh()
+        end
     end
-    UIManager:show(InfoMessage:new{
-        text = text,
-        timeout = 2,
-    })
 end
 
 function FileManager:deleteFile(file)
