@@ -89,9 +89,6 @@ end
 function ReaderUI:init()
     -- cap screen refresh on pan to 2 refreshes per second
     local pan_rate = Screen.eink and 2.0 or 30.0
---if not self.document.info.has_pages then
---self.document:loadDocument()
---end
 
     self.postInitCallback = {}
     self.postReaderCallback = {}
@@ -266,7 +263,6 @@ function ReaderUI:init()
     else
         -- make sure we render document first before calling any callback
         self:registerPostInitCallback(function()
-self.document:loadDocument()
 
             -- used to read additional settings after the document has been
             -- loaded (but not rendered yet)
@@ -324,6 +320,9 @@ self.document:loadDocument()
         document = self.document,
         ui = self,
     })
+if not self.document.info.has_pages then
+self.document:loadDocument()
+end
     -- koreader plugins
     for _, plugin_module in ipairs(PluginLoader:loadPlugins()) do
         local ok, plugin_or_err = PluginLoader:createPluginInstance(
