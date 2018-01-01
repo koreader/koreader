@@ -110,7 +110,7 @@ function CreDocument:init()
 
     -- setting a default font before loading document actually do prevent
     -- some crashes
-    self._document:setStringProperty("font.face.default", self.default_font)
+    -- self._document:setStringProperty("font.face.default", self.default_font)
 
     -- Make crengine actually parse the document now, so we can
     -- return an error if it is not recognized (instead of segfaulting
