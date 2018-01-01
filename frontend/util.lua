@@ -316,14 +316,14 @@ end
 --- Unlike lfs.mkdir(), does not error if the directory already exists, and
 --- creates intermediate directories as needed.
 ---- @string path the directory to create
----- @treturn bool true on success; nil,err_message on error
+---- @treturn bool true on success; nil, err_message on error
 function util.makePath(path)
     path = path:gsub("/+$", "")
     if util.pathExists(path) then return true end
 
-    local success,err = util.makePath((util.splitFilePathName(path)))
+    local success, err = util.makePath((util.splitFilePathName(path)))
     if not success then
-        return nil,err.." (creating "..path..")"
+        return nil, err.." (creating "..path..")"
     end
 
     local lfs = require("libs/libkoreader-lfs")
