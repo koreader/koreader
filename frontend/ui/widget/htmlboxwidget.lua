@@ -22,11 +22,11 @@ function HtmlBoxWidget:setContent(body, css, default_font_size)
     -- fz_set_user_css is tied to the context instead of the document so to easily support multiple
     -- HTML dictionaries with different CSS, we embed the stylesheet into the HTML instead of using
     -- that function.
-    local html = "<html>"
+    local head = ""
     if css then
-        html = html .. "<head><style>" .. css .. "</style></head>"
+        head = string.format("<head><style>%s</style></head>", css)
     end
-    html = html .. "<body>" .. body .. "</body></html>"
+    local html = string.format("<html>%s<body>%s</body></html>", head, body)
 
     local ok
     ok, self.document = pcall(Mupdf.openDocumentFromText, html, "html")

@@ -159,8 +159,18 @@ function DictQuickLookup:isDocless()
 end
 
 function DictQuickLookup:getHtmlDictionaryCss()
-    -- Using Noto Sans becaue Nimbus doesn't contain the IPA symbols.
-    local css = "@page { margin: 0; font-family: 'Noto Sans'; } body { margin: 0; } "
+    -- Using Noto Sans because Nimbus doesn't contain the IPA symbols.
+    local css = [[
+        @page {
+            margin: 0;
+            font-family: 'Noto Sans';
+        }
+
+        body {
+            margin: 0;
+        }
+    ]]
+
     if self.css then
         return css .. self.css
     end
