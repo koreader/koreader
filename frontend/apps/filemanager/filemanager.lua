@@ -566,8 +566,15 @@ function FileManager:pasteHere(file)
         local basename = util.basename(self.clipboard)
         local mode = lfs.attributes(dest .."/" .. basename, "mode")
         if mode == "file" or mode == "directory" then
+            local text
+            if mode == "file" then
+                text = T(_("The file %1 already exists. Do you want to overwrite it?"), basename)
+            else
+                text = T(_("The directory %1 already exists. Do you want to overwrite it?"), basename)
+            end
+
             UIManager:show(ConfirmBox:new {
-                text = T(_("The %1 %2 already exists. Do you want to overwrite it?"), mode, basename),
+                text = text,
                 ok_text = _("Overwrite"),
                 ok_callback = function()
                     info_file()
