@@ -67,6 +67,17 @@ local ReaderDictionary = InputContainer:new{
     lookup_msg = _("Searching dictionary for:\n%1"),
 }
 
+local function readDictionaryCss(path)
+    local f = io.open(path, "r")
+    if not f then
+        return nil
+    end
+
+    local content = f:read("*all")
+    f:close()
+    return content
+end
+
 function ReaderDictionary:init()
     self.ui.menu:registerToMainMenu(self)
     self.data_dir = os.getenv("STARDICT_DATA_DIR") or
@@ -90,11 +101,14 @@ function ReaderDictionary:init()
                 local content = f:read("*all")
                 f:close()
                 local dictname = content:match("\nbookname=(.-)\n")
+                local is_html = content:find("sametypesequence=h", 1, true) ~= nil
                 -- sdcv won't use dict that don't have a bookname=
                 if dictname then
                     table.insert(available_ifos, {
                         file = ifo_file,
                         name = dictname,
+                        is_html = is_html,
+                        css = readDictionaryCss(ifo_file:gsub("%.ifo$", ".css"))
                     })
                 end
             end
@@ -331,26 +345,39 @@ local function dictDirsEmpty(dict_dirs)
     return true
 end
 
+local function getHtmlDictionary(dictionary_name)
+    for _, ifo in ipairs(available_ifos) do
+        if ifo.name == dictionary_name then
+            return ifo.is_html, ifo.css
+        end
+    end
+
+    return false
+end
+
 local function tidyMarkup(results)
     local cdata_tag = "<!%[CDATA%[(.-)%]%]>"
     local format_escape = "&[29Ib%+]{(.-)}"
     for _, result in ipairs(results) do
-        local def = result.definition
-        -- preserve the <br> tag for line break
-        def = def:gsub("<[bB][rR] ?/?>", "\n")
-        -- parse CDATA text in XML
-        if def:find(cdata_tag) then
-            def = def:gsub(cdata_tag, "%1")
-            -- ignore format strings
-            while def:find(format_escape) do
-                def = def:gsub(format_escape, "%1")
+        result.is_html, result.css = getHtmlDictionary(result.dict)
+        if not result.is_html then
+            local def = result.definition
+            -- preserve the <br> tag for line break
+            def = def:gsub("<[bB][rR] ?/?>", "\n")
+            -- parse CDATA text in XML
+            if def:find(cdata_tag) then
+                def = def:gsub(cdata_tag, "%1")
+                -- ignore format strings
+                while def:find(format_escape) do
+                    def = def:gsub(format_escape, "%1")
+                end
             end
+            -- ignore all markup tags
+            def = def:gsub("%b<>", "")
+            -- strip all leading empty lines/spaces
+            def = def:gsub("^%s+", "")
+            result.definition = def
         end
-        -- ignore all markup tags
-        def = def:gsub("%b<>", "")
-        -- strip all leading empty lines/spaces
-        def = def:gsub("^%s+", "")
-        result.definition = def
     end
     return results
 end
