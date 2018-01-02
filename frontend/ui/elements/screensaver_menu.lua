@@ -71,7 +71,7 @@ return {
     {
         text = _("Use message as screensaver"),
         checked_func = function()
-            if screensaverType() == "message" then
+            if screensaverType() == "message" or screensaverType() == nil then
                 return true
             else
                 return false
@@ -84,7 +84,7 @@ return {
     {
         text = _("Leave screen as it is"),
         checked_func = function()
-            if screensaverType() == nil or screensaverType() == "disable" then
+            if screensaverType() == "disable" then
                 return true
             else
                 return false
