@@ -125,6 +125,8 @@ usage: build <OPTIONS> <TARGET>
 OPTIONS:
 
     -v, --verbose   Build in verbose mode.
+    --debug         include debugging symbols (default for emulator)
+    --no-debug      no debugging symbols (default for target devices)
 
 TARGET:
 ${SUPPORTED_TARGETS}"
@@ -139,6 +141,14 @@ ${SUPPORTED_TARGETS}"
             -h | --help)
                 echo "${BUILD_HELP_MSG}"
                 exit 0
+                ;;
+            --no-debug)
+                export KODEBUG=
+                KODEBUG_NO_DEFAULT=1
+                ;;
+            --debug)
+                export KODEBUG=1
+                KODEBUG_NO_DEFAULT=1
                 ;;
             *)
                 echo "ERROR: unknown option \"$PARAM\""
@@ -207,9 +217,10 @@ ${SUPPORTED_TARGETS}"
             assert_ret_zero $?
             ;;
         *)
-            # As kodev-run (to run the emulator) builds by default a debug build,
-            # let's do that here too.
-            export KODEBUG=1
+            if [ -z "${KODEBUG_NO_DEFAULT+x}" ]; then # no explicite --debug / --no-debug
+                # Builds by default a debug build, as kodev-run does
+                export KODEBUG=1
+            fi
             make
             assert_ret_zero $? "Failed to build emulator! Try run with -v for more information."
             setup_env
