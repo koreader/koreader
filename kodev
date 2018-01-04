@@ -207,6 +207,9 @@ ${SUPPORTED_TARGETS}"
             assert_ret_zero $?
             ;;
         *)
+            # As kodev-run (to run the emulator) builds by default a debug build,
+            # let's do that here too.
+            export KODEBUG=1
             make
             assert_ret_zero $? "Failed to build emulator! Try run with -v for more information."
             setup_env
@@ -546,14 +549,14 @@ TARGET:
                 CATCHSEGV=$(which catchsegv)
             fi
 
-            KOREADER_COMMAND="${CATCHSEGV} ./reader.lua -d ${args}"
+            KOREADER_COMMAND="${CATCHSEGV} ./reader.lua -d"
 
             if [ ! -z "${gdb}" ]; then
-                KOREADER_COMMAND="${gdb} ./luajit reader.lua -d ${args}"
+                KOREADER_COMMAND="${gdb} ./luajit reader.lua -d"
             fi
 
             if [ ! -z "${valgrind}" ]; then
-                KOREADER_COMMAND="${valgrind} ./luajit reader.lua -d ${args}"
+                KOREADER_COMMAND="${valgrind} ./luajit reader.lua -d"
             fi
 
             echo "[*] Running KOReader with arguments: $*..."
@@ -564,6 +567,7 @@ TARGET:
                     args="$*"
                     [[ $args != /* ]] && args="${CURDIR}/${args}"
                 fi
+                KOREADER_COMMAND="$KOREADER_COMMAND ${args}"
 
                 RETURN_VALUE=85
                 while [ $RETURN_VALUE -eq 85 ]; do
