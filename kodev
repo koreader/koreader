@@ -217,8 +217,8 @@ ${SUPPORTED_TARGETS}"
             assert_ret_zero $?
             ;;
         *)
-            if [ -z "${KODEBUG_NO_DEFAULT+x}" ]; then # no explicite --debug / --no-debug
-                # Builds by default a debug build, as kodev-run does
+            if [ -z "${KODEBUG_NO_DEFAULT+x}" ]; then # no explicit --debug / --no-debug
+                # builds a debug build by default, like kodev-run
                 export KODEBUG=1
             fi
             make
