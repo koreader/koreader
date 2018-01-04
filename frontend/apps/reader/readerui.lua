@@ -263,7 +263,9 @@ function ReaderUI:init()
     else
         -- make sure we render document first before calling any callback
         self:registerPostInitCallback(function()
-            self.document:loadDocument()
+            if not self.document:loadDocument() then
+                self:dealWithLoadDocumentFailure()
+            end
 
             -- used to read additional settings after the document has been
             -- loaded (but not rendered yet)
@@ -559,6 +561,36 @@ function ReaderUI:onClose()
     if _running_instance == self then
         _running_instance = nil
     end
+end
+
+function ReaderUI:dealWithLoadDocumentFailure()
+    -- Sadly, we had to delay loadDocument() to about now, so we only
+    -- know now this document is not valid or recognized.
+    -- We can't do much more than crash properly here (still better than
+    -- going on and segfaulting when calling other methods on unitiliazed
+    -- _document)
+    -- We must still remove it from lastfile and history (as it has
+    -- already been added there) so that koreader don't crash again
+    -- at next launch...
+    local readhistory = require("readhistory")
+    readhistory:removeItemByPath(self.document.file)
+    if G_reader_settings:readSetting("lastfile") == self.document.file then
+        G_reader_settings:saveSetting("lastfile", #readhistory.hist > 0 and readhistory.hist[1].file or nil)
+    end
+    -- As we are in a coroutine, we can pause and show an InfoMessage before exiting
+    local _coroutine = coroutine.running()
+    if coroutine then
+        logger.warn("crengine failed recognizing or parsing this file: unsupported or invalid document")
+        UIManager:show(InfoMessage:new{
+            text = _("Failed recognizing or parsing this file: unsupported or invalid document.\nKOReader will exit now."),
+            dismiss_callback = function()
+                coroutine.resume(_coroutine, false)
+            end,
+        })
+        coroutine.yield() -- pause till InfoMessage is dismissed
+    end
+    -- We have to error and exit the coroutine anyway to avoid any segfault
+    error("crengine failed recognizing or parsing this file: unsupported or invalid document")
 end
 
 return ReaderUI
