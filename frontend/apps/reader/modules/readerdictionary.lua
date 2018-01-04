@@ -345,22 +345,25 @@ local function dictDirsEmpty(dict_dirs)
     return true
 end
 
-local function getHtmlDictionary(dictionary_name)
+local function getAvailableIfoByName(dictionary_name)
     for _, ifo in ipairs(available_ifos) do
         if ifo.name == dictionary_name then
-            return ifo.is_html, ifo.css
+            return ifo
         end
     end
 
-    return false
+    return nil
 end
 
 local function tidyMarkup(results)
     local cdata_tag = "<!%[CDATA%[(.-)%]%]>"
     local format_escape = "&[29Ib%+]{(.-)}"
     for _, result in ipairs(results) do
-        result.is_html, result.css = getHtmlDictionary(result.dict)
-        if not result.is_html then
+        local ifo = getAvailableIfoByName(result.dict)
+        if ifo and ifo.is_html then
+            result.is_html = ifo.is_html
+            result.css = ifo.css
+        else
             local def = result.definition
             -- preserve the <br> tag for line break
             def = def:gsub("<[bB][rR] ?/?>", "\n")
