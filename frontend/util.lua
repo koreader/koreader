@@ -564,4 +564,18 @@ function util.htmlToPlainTextIfHtml(text)
     return text
 end
 
+-- Encode the HTML entities in a string.
+-- @string text the string to escape
+-- Taken from https://github.com/kernelsauce/turbo/blob/master/turbo/escape.lua
+function util.htmlEscape(text)
+    return text:gsub("[}{\">/<'&]", {
+        ["&"] = "&amp;",
+        ["<"] = "&lt;",
+        [">"] = "&gt;",
+        ['"'] = "&quot;",
+        ["'"] = "&#39;",
+        ["/"] = "&#47;",
+    })
+end
+
 return util

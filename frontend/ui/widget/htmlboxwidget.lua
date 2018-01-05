@@ -5,7 +5,9 @@ HTML widget (without scroll bars).
 local DrawContext = require("ffi/drawcontext")
 local Geom = require("ui/geometry")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local logger = require("logger")
 local Mupdf = require("ffi/mupdf")
+local util  = require("util")
 local TimeVal = require("ui/timeval")
 
 local HtmlBoxWidget = InputContainer:new{
@@ -31,7 +33,18 @@ function HtmlBoxWidget:setContent(body, css, default_font_size)
     local ok
     ok, self.document = pcall(Mupdf.openDocumentFromText, html, "html")
     if not ok then
-        error(self.document) -- will contain error message
+        -- self.document contains the error
+        logger.warn("HTML loading error:", self.document)
+
+        body = util.htmlToPlainText(body)
+        body = util.htmlEscape(body)
+        body = body:gsub("\n", "<br/>")
+        html = string.format("<html>%s<body>%s</body></html>", head, body)
+
+        ok, self.document = pcall(Mupdf.openDocumentFromText, html, "html")
+        if not ok then
+            error(self.document)
+        end
     end
 
     self.document:layoutDocument(self.dimen.w, self.dimen.h, default_font_size)
