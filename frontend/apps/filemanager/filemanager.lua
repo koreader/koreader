@@ -112,6 +112,7 @@ function FileManager:init()
                     home_button,
                     VerticalGroup:new {
                         Button:new {
+                            readonly = true,
                             bordersize = 0,
                             padding = 0,
                             text_font_bold = false,
@@ -586,6 +587,22 @@ function FileManager:pasteHere(file)
             self:onRefresh()
         end
     end
+end
+
+function FileManager:createFolder(curr_folder, new_folder)
+    local folder = curr_folder .. "/" .. new_folder
+    local code = util.execute(self.mkdir_bin, folder)
+    local text
+    if code == 0 then
+        self:onRefresh()
+        text = T(_("Folder created:\n%1"), new_folder)
+    else
+        text = _("The folder has not been created.")
+    end
+    UIManager:show(InfoMessage:new{
+        text = text,
+        timeout = 2,
+    })
 end
 
 function FileManager:deleteFile(file)
