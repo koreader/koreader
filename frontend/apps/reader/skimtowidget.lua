@@ -134,8 +134,8 @@ function SkimToWidget:init()
         show_parent = self,
         callback = function()
             self.curr_page = self.curr_page - 1
-            self.ui:handleEvent(Event:new("GotoPage", self.curr_page))
             self:update()
+            self.ui:handleEvent(Event:new("GotoPage", self.curr_page))
         end,
     }
     local button_minus_ten = Button:new{
@@ -148,8 +148,8 @@ function SkimToWidget:init()
         show_parent = self,
         callback = function()
             self.curr_page = self.curr_page - 10
-            self.ui:handleEvent(Event:new("GotoPage", self.curr_page))
             self:update()
+            self.ui:handleEvent(Event:new("GotoPage", self.curr_page))
         end,
     }
     local button_plus = Button:new{
@@ -162,8 +162,8 @@ function SkimToWidget:init()
         show_parent = self,
         callback = function()
             self.curr_page = self.curr_page + 1
-            self.ui:handleEvent(Event:new("GotoPage", self.curr_page))
             self:update()
+            self.ui:handleEvent(Event:new("GotoPage", self.curr_page))
         end,
     }
     local button_plus_ten = Button:new{
@@ -176,8 +176,8 @@ function SkimToWidget:init()
         show_parent = self,
         callback = function()
             self.curr_page = self.curr_page + 10
+           self:update()
             self.ui:handleEvent(Event:new("GotoPage", self.curr_page))
-            self:update()
         end,
     }
     self.current_page_text = Button:new{
