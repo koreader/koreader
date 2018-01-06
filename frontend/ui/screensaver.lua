@@ -139,17 +139,23 @@ function Screensaver:setMessage()
     UIManager:show(self.input_dialog)
 end
 
-function Screensaver:show()
+function Screensaver:show(event, fallback_message)
+    -- These 2 (optional) parameters are to support poweroff and reboot actions
+    -- on Kobo (see uimanager.lua)
     if self.left_msg then
         UIManager:close(self.left_msg)
         self.left_msg = nil
     end
-    local screensaver_type = G_reader_settings:readSetting("screensaver_type")
-    local widget = nil
-    local background = Blitbuffer.COLOR_WHITE
-    if screensaver_type == "disable" or screensaver_type == nil then
+    local prefix = event and event.."_" or "" -- "", "poweroff_" or "reboot_"
+    local screensaver_type = G_reader_settings:readSetting(prefix.."screensaver_type")
+    if screensaver_type == nil then
+        screensaver_type = "message"
+    end
+    if screensaver_type == "disable" then
         return
     end
+    local widget = nil
+    local background = Blitbuffer.COLOR_WHITE
     if screensaver_type == "cover" then
         local lastfile = G_reader_settings:readSetting("lastfile")
         local exclude = false -- consider it not excluded if there's no docsetting
@@ -208,7 +214,7 @@ function Screensaver:show()
         end
     end
     if screensaver_type == "random_image" then
-        local screensaver_dir = G_reader_settings:readSetting("screensaver_dir")
+        local screensaver_dir = G_reader_settings:readSetting(prefix.."screensaver_dir")
         if screensaver_dir == nil then
             local DataStorage = require("datastorage")
             screensaver_dir = DataStorage:getDataDir() .. "/screenshots/"
@@ -234,12 +240,12 @@ function Screensaver:show()
         end
     end
     if screensaver_type == "message" then
-        local screensaver_message = G_reader_settings:readSetting("screensaver_message")
+        local screensaver_message = G_reader_settings:readSetting(prefix.."screensaver_message")
         if G_reader_settings:nilOrFalse("message_background") then
             background = nil
         end
         if screensaver_message == nil then
-            screensaver_message = default_screensaver_message
+            screensaver_message = fallback_message or default_screensaver_message
         end
         widget = InfoMessage:new{
             text = screensaver_message,
