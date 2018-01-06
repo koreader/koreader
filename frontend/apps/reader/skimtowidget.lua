@@ -176,7 +176,7 @@ function SkimToWidget:init()
         show_parent = self,
         callback = function()
             self.curr_page = self.curr_page + 10
-           self:update()
+	    self:update()
             self.ui:handleEvent(Event:new("GotoPage", self.curr_page))
         end,
     }
