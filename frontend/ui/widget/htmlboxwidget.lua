@@ -30,6 +30,11 @@ function HtmlBoxWidget:setContent(body, css, default_font_size)
     end
     local html = string.format("<html>%s<body>%s</body></html>", head, body)
 
+    -- For some reason in MuPDF <br/> always creates both a line break and an empty line, so we have to
+    -- simulate the normal <br/> behavior.
+    -- https://bugs.ghostscript.com/show_bug.cgi?id=698351
+    html = html:gsub("%<br ?/?%>", "&nbsp;<div></div>")
+
     local ok
     ok, self.document = pcall(Mupdf.openDocumentFromText, html, "html")
     if not ok then
@@ -38,7 +43,8 @@ function HtmlBoxWidget:setContent(body, css, default_font_size)
 
         body = util.htmlToPlainText(body)
         body = util.htmlEscape(body)
-        body = body:gsub("\n", "<br/>")
+        -- Normally \n would be replaced with <br/>. See the previous comment regarding the bug in MuPDF.
+        body = body:gsub("\n", "&nbsp;<div></div>")
         html = string.format("<html>%s<body>%s</body></html>", head, body)
 
         ok, self.document = pcall(Mupdf.openDocumentFromText, html, "html")
