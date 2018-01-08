@@ -264,7 +264,7 @@ function DictQuickLookup:update()
         text_widget = ScrollHtmlWidget:new{
             html_body = self.definition,
             css = self:getHtmlDictionaryCss(),
-            default_font_size = DDICT_FONT_SIZE,
+            default_font_size = Screen:scaleBySize(DDICT_FONT_SIZE),
             width = self.width,
             height = self.is_fullpage and self.height*0.75 or self.height*0.7,
             dialog = self,
@@ -587,7 +587,12 @@ function DictQuickLookup:changeDictionary(index)
         -- add queried word to 1st result's definition, so we can see
         -- what was the selected text and if we selected wrong
         if index == 1 then
-            self.definition = self.definition.."\n_______\n"..T(_("(query : %1)"), self.word)
+            if self.is_html then
+                self.definition = self.definition.."<br/>_______<br/>"
+            else
+                self.definition = self.definition.."\n_______\n"
+            end
+            self.definition = self.definition..T(_("(query : %1)"), self.word)
         end
     end
 
