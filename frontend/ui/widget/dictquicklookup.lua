@@ -160,6 +160,9 @@ end
 
 function DictQuickLookup:getHtmlDictionaryCss()
     -- Using Noto Sans because Nimbus doesn't contain the IPA symbols.
+    -- 'line-height: 1.3em' to have it similar to textboxwidget,
+    -- and follow user's choice on justification
+    local css_justify = G_reader_settings:nilOrTrue("dict_justify") and "text-align: justify;" or ""
     local css = [[
         @page {
             margin: 0;
@@ -168,6 +171,8 @@ function DictQuickLookup:getHtmlDictionaryCss()
 
         body {
             margin: 0;
+            line-height: 1.3em;
+            ]]..css_justify..[[
         }
     ]]
 
