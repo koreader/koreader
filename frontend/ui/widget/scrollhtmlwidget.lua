@@ -57,7 +57,7 @@ function ScrollHtmlWidget:init()
 
     if Device:isTouchDevice() then
         self.ges_events = {
-            SwipeScrollText = {
+            ScrollText = {
                 GestureRange:new{
                     ges = "swipe",
                     range = function() return self.dimen end,
