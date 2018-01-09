@@ -304,11 +304,16 @@ end
 -- @treturn int nb_disabled
 function ReaderDictionary:getNumberOfDictionaries()
     local nb_available = #available_ifos
+    local nb_enabled = 0
     local nb_disabled = 0
-    for _ in pairs(G_reader_settings:readSetting("dicts_disabled")) do
-        nb_disabled = nb_disabled + 1
+    local dicts_disabled = G_reader_settings:readSetting("dicts_disabled")
+    for _, ifo in pairs(available_ifos) do
+        if dicts_disabled[ifo.file] then
+            nb_disabled = nb_disabled + 1
+        else
+            nb_enabled = nb_enabled + 1
+        end
     end
-    local nb_enabled = nb_available - nb_disabled
     return nb_available, nb_enabled, nb_disabled
 end
 
