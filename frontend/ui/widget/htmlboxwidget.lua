@@ -5,10 +5,11 @@ HTML widget (without scroll bars).
 local DrawContext = require("ffi/drawcontext")
 local Geom = require("ui/geometry")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local logger = require("logger")
 local Mupdf = require("ffi/mupdf")
-local util  = require("util")
+local Screen = require("device").screen
 local TimeVal = require("ui/timeval")
+local logger = require("logger")
+local util  = require("util")
 
 local HtmlBoxWidget = InputContainer:new{
     bb = nil,
@@ -63,10 +64,17 @@ function HtmlBoxWidget:_render()
         return
     end
 
+    -- In pdfdocument.lua, color is activated only at the moment of
+    -- rendering and then immediately disabled, for safety with kopt.
+    -- We do the same here.
+    Mupdf.color = Screen:isColorEnabled()
+
     local page = self.document:openPage(self.page_number)
     local dc = DrawContext.new()
     self.bb = page:draw_new(dc, self.dimen.w, self.dimen.h, 0, 0)
     page:close()
+
+    Mupdf.color = false
 end
 
 function HtmlBoxWidget:getSize()
@@ -99,8 +107,10 @@ end
 function HtmlBoxWidget:free()
     self:freeBb()
 
-    self.document:close()
-    self.document = nil
+    if self.document then
+        self.document:close()
+        self.document = nil
+    end
 end
 
 function HtmlBoxWidget:onCloseWidget()
