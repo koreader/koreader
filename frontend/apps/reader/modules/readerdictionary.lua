@@ -67,6 +67,8 @@ local ReaderDictionary = InputContainer:new{
     lookup_msg = _("Searching dictionary for:\n%1"),
 }
 
+-- For a HTML dict, one can specify a specific stylesheet
+-- in a file named as the .ifo with a .css extension
 local function readDictionaryCss(path)
     local f = io.open(path, "r")
     if not f then
@@ -76,6 +78,26 @@ local function readDictionaryCss(path)
     local content = f:read("*all")
     f:close()
     return content
+end
+
+-- For a HTML dict, one can specify a function called on
+-- the raw returned definition to "fix" the HTML if needed
+-- (as MuPDF, used for rendering, is quite sensitive to the
+-- HTML quality) in a file named as the .ifo with a .lua
+-- extension, containing for example:
+--    return function(html)
+--	html = html:gsub("<hr>", "<hr/>")
+--	return html
+--    end
+local function getDictionaryFixHtmlFunc(path)
+    if lfs.attributes(path, "mode") == "file" then
+        local ok, func = pcall(dofile, path)
+        if ok and func then
+            return func
+        else
+            logger.warn("Dict's user provided file failed:", func)
+        end
+    end
 end
 
 function ReaderDictionary:init()
@@ -108,7 +130,8 @@ function ReaderDictionary:init()
                         file = ifo_file,
                         name = dictname,
                         is_html = is_html,
-                        css = readDictionaryCss(ifo_file:gsub("%.ifo$", ".css"))
+                        css = readDictionaryCss(ifo_file:gsub("%.ifo$", ".css")),
+                        fix_html_func = getDictionaryFixHtmlFunc(ifo_file:gsub("%.ifo$", ".lua")),
                     })
                 end
             end
@@ -368,6 +391,14 @@ local function tidyMarkup(results)
         if ifo and ifo.is_html then
             result.is_html = ifo.is_html
             result.css = ifo.css
+            if ifo.fix_html_func then
+                local ok, fixed_definition = pcall(ifo.fix_html_func, result.definition)
+                if ok then
+                    result.definition = fixed_definition
+                else
+                    logger.warn("Dict's user provided funcion failed:", fixed_definition)
+                end
+            end
         else
             local def = result.definition
             -- preserve the <br> tag for line break
