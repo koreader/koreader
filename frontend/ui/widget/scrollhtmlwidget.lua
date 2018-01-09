@@ -128,7 +128,7 @@ function ScrollHtmlWidget:onTapScrollText(arg, ges)
             return true
         end
     else
-        if self.htmlbox_widget.page_number <= self.htmlbox_widget.page_count then
+        if self.htmlbox_widget.page_number < self.htmlbox_widget.page_count then
             self:scrollText(1)
             return true
         end
