@@ -8,6 +8,7 @@ local order = {
     setting = {
         "filemanager_display_mode",
         "show_hidden_files",
+        "items_per_page",
         "----------------------------",
         "sort_by",
         "reverse_sorting",

@@ -34,6 +34,7 @@ local FileChooser = Menu:extend{
     collate = "strcoll", -- or collate = "access",
     reverse_collate = false,
     path_items = {}, -- store last browsed location(item index) for each path
+    perpage = G_reader_settings:readSetting("items_per_page"),
 }
 
 function FileChooser:init()
@@ -221,7 +222,10 @@ function FileChooser:updateItems(select_number)
     self.path_items[self.path] = (self.page - 1) * self.perpage + (select_number or 1)
 end
 
-function FileChooser:refreshPath()
+function FileChooser:refreshPath(update_perpage)
+    if update_perpage then
+        self.perpage = G_reader_settings:readSetting("items_per_page")
+    end
     local itemmatch = nil
     if self.focused_path then
         itemmatch = {path = self.focused_path}

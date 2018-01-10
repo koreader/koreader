@@ -21,6 +21,7 @@ local OverlapGroup = require("ui/widget/overlapgroup")
 local RenderText = require("ui/rendertext")
 local RightContainer = require("ui/widget/container/rightcontainer")
 local Size = require("ui/size")
+local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local UnderlineContainer = require("ui/widget/container/underlinecontainer")
@@ -129,10 +130,15 @@ local MenuItem = InputContainer:new{
     detail = nil,
     face = Font:getFace("cfont", 30),
     info_face = Font:getFace("infont", 15),
+    font = "cfont",
+    font_size = 24,
+    infont = "infont",
+    infont_size = 18,
     dimen = nil,
     shortcut = nil,
     shortcut_style = "square",
     _underline_container = nil,
+    linesize = Size.line.medium,
 }
 
 function MenuItem:init()
@@ -179,38 +185,114 @@ function MenuItem:init()
         text_ellipsis_mandatory_padding = Size.span.horizontal_small
     end
     local mandatory = self.mandatory and ""..self.mandatory or ""
-    local mandatory_w = RenderText:sizeUtf8Text(0, self.dimen.w, self.info_face,
-                    ""..mandatory, true, self.bold).x
 
     local state_button_width = self.state_size.w or 0
-    local my_text = self.text and ""..self.text or ""
-    local w = RenderText:sizeUtf8Text(0, self.dimen.w, self.face, my_text, true, self.bold).x
-    if w + mandatory_w + state_button_width + text_mandatory_padding >= self.content_width then
-        if Device:hasKeyboard() then
-            self.active_key_events.ShowItemDetail = {
-                {"Right"}, doc = "show item detail"
-            }
-        end
-        local indicator = "\226\128\166 " -- an ellipsis
-        local indicator_w = RenderText:sizeUtf8Text(0, self.dimen.w, self.face,
-                        indicator, true, self.bold).x
-        self.text = RenderText:getSubTextByWidth(my_text, self.face,
-            self.content_width - indicator_w - mandatory_w - state_button_width - text_ellipsis_mandatory_padding,
-            true, self.bold) .. indicator
-    end
-
     local state_button = self.state or HorizontalSpan:new{
         width = state_button_width,
     }
     local state_indent = self.state and self.state.indent or ""
+    local item_name
+    local mandatory_widget
+
+    if self.single_line then  -- items only in single line
+        self.info_face = Font:getFace(self.infont, self.infont_size)
+        self.face = Font:getFace(self.font, self.font_size)
+
+        local mandatory_w = RenderText:sizeUtf8Text(0, self.dimen.w, self.info_face, ""..mandatory, true, self.bold).x
+
+        local my_text = self.text and ""..self.text or ""
+        local w = RenderText:sizeUtf8Text(0, self.dimen.w, self.face, my_text, true, self.bold).x
+        if w + mandatory_w + state_button_width + text_mandatory_padding >= self.content_width then
+            if Device:hasKeyboard() then
+                self.active_key_events.ShowItemDetail = {
+                    {"Right"}, doc = "show item detail"
+                }
+            end
+            local indicator = "\226\128\166 " -- an ellipsis
+            local indicator_w = RenderText:sizeUtf8Text(0, self.dimen.w, self.face,
+                indicator, true, self.bold).x
+            self.text = RenderText:getSubTextByWidth(my_text, self.face,
+                self.content_width - indicator_w - mandatory_w - state_button_width - text_ellipsis_mandatory_padding,
+                true, self.bold) .. indicator
+        end
+
+        item_name = TextWidget:new{
+            text = self.text,
+            face = self.face,
+            bold = self.bold,
+            fgcolor = self.dim and Blitbuffer.COLOR_GREY or nil,
+        }
+        mandatory_widget = TextWidget:new{
+            text = mandatory,
+            face = self.info_face,
+            bold = self.bold,
+            fgcolor = self.dim and Blitbuffer.COLOR_GREY or nil,
+        }
+    else
+        while true do
+            -- Free previously made widgets to avoid memory leaks
+            if mandatory_widget then
+                mandatory_widget:free()
+            end
+            mandatory_widget = TextWidget:new {
+                text = mandatory,
+                face = Font:getFace(self.infont, self.infont_size),
+                bold = self.bold,
+                fgcolor = self.dim and Blitbuffer.COLOR_GREY or nil,
+            }
+            local height = mandatory_widget:getSize().h
+
+
+            if height < self.dimen.h - 2 * self.linesize then -- we fit !
+                break
+            end
+            -- Don't go too low
+            if self.infont_size < 12 then
+                break;
+            else
+                -- If we don't fit, decrease font size
+                self.infont_size = self.infont_size - 1
+            end
+        end
+        self.info_face = Font:getFace(self.infont, self.infont_size)
+
+        local mandatory_w = RenderText:sizeUtf8Text(0, self.dimen.w, self.info_face, "" .. mandatory, true, self.bold).x
+        while true do
+            -- Free previously made widgets to avoid memory leaks
+            if item_name then
+                item_name:free()
+            end
+            item_name = TextBoxWidget:new {
+                text = self.text,
+                face = Font:getFace(self.font, self.font_size),
+                width = self.content_width - mandatory_w - state_button_width - text_mandatory_padding,
+                alignment = "left",
+                bold = self.bold,
+                fgcolor = self.dim and Blitbuffer.COLOR_GREY or nil,
+            }
+            local height = item_name:getSize().h
+            if height < self.dimen.h - 2 * self.linesize then -- we fit !
+                break
+            end
+            -- Don't go too low, and then truncate text
+            if self.font_size < 12 then
+                self.text = self.text:sub(1, -5) .. "…"
+            else
+                -- If we don't fit, decrease font size
+                self.font_size = self.font_size - 2
+            end
+        end
+        self.face = Font:getFace(self.font, self.font_size)
+    end
+
     local state_container = LeftContainer:new{
         dimen = Geom:new{w = self.content_width/2, h = self.dimen.h},
         HorizontalGroup:new{
             HorizontalSpan:new{
                 width = RenderText:sizeUtf8Text(0, self.dimen.w, self.face,
-                                state_indent, true, self.bold).x,
+                    state_indent, true, self.bold).x,
             },
-            state_button
+            state_button,
         }
     }
     local text_container = LeftContainer:new{
@@ -219,27 +301,20 @@ function MenuItem:init()
             HorizontalSpan:new{
                 width = self.state_size.w,
             },
-            TextWidget:new{
-                text = self.text,
-                face = self.face,
-                bold = self.bold,
-                fgcolor = self.dim and Blitbuffer.COLOR_GREY or nil,
-            }
+            item_name,
         }
     }
 
     local mandatory_container = RightContainer:new{
         dimen = Geom:new{w = self.content_width, h = self.dimen.h},
-        TextWidget:new{
-            text = mandatory,
-            face = self.info_face,
-            bold = self.bold,
-            fgcolor = self.dim and Blitbuffer.COLOR_GREY or nil,
-        }
+        mandatory_widget,
     }
 
     self._underline_container = UnderlineContainer:new{
+        color = Blitbuffer.COLOR_GREY,
+        linesize = self.linesize,
         vertical_align = "center",
+        padding = 0,
         dimen = Geom:new{
             w = self.content_width,
             h = self.dimen.h
@@ -394,22 +469,35 @@ local Menu = FocusManager:new{
     has_close_button = true,
     -- close_callback is a function, which is executed when menu is closed
     -- it is usually set by the widget which creates the menu
-    close_callback = nil
+    close_callback = nil,
+    linesize = Size.line.medium,
+    perpage = G_reader_settings:readSetting("items_per_page") or 14,
 }
 
 function Menu:_recalculateDimen()
+    self.span_width = 0
     self.dimen.w = self.width
-    self.item_dimen = Geom:new{
-        w = self.dimen.w,
-        h = Screen:scaleBySize(46), -- hardcoded for now
-    }
-    -- if height not given, dynamically calculate it
-    self.dimen.h = self.height or (#self.item_table + 2) * self.item_dimen.h
-    if self.dimen.h > Screen:getHeight() then
+    self.dimen.h = self.height
+    if self.dimen.h > Screen:getHeight() or self.dimen.h == nil then
         self.dimen.h = Screen:getHeight()
     end
-    -- header and footer should approximately take up space of 2 items
-    self.perpage = math.floor(self.dimen.h / self.item_dimen.h) - (self.no_title and 1 or 2)
+    self.item_dimen = Geom:new{
+        w = self.dimen.w,
+        h = Screen:scaleBySize(46),
+    }
+    local height_dim
+    local bottom_height = 0
+    local top_height = 0
+    if self.page_return_arrow and self.page_info_text then
+        bottom_height = math.max(self.page_return_arrow:getSize().h, self.page_info_text:getSize().h)
+            + 2 * Size.padding.button
+    end
+    if self.menu_title and not self.no_title then
+        top_height = self.menu_title:getSize().h + 2 * Size.padding.small
+    end
+    height_dim = self.dimen.h - bottom_height - top_height
+    self.item_dimen.h = math.floor(height_dim / self.perpage)
+    self.span_width = math.floor((height_dim - (self.perpage * (self.item_dimen.h ))) / 2 -1 )
     self.page_num = math.ceil(#self.item_table / self.perpage)
     -- fix current page if out of range
     if self.page_num > 0 and self.page > self.page_num then self.page = self.page_num end
@@ -418,7 +506,11 @@ end
 function Menu:init()
     self.show_parent = self.show_parent or self
     self.item_table_stack = {}
-    self:_recalculateDimen()
+    self.dimen.w = self.width
+    self.dimen.h = self.height
+    if self.dimen.h > Screen:getHeight() or self.dimen.h == nil then
+        self.dimen.h = Screen:getHeight()
+    end
     self.page = 1
 
     -----------------------------------
@@ -534,29 +626,30 @@ function Menu:init()
         }
     }
 
-    local content
+    self:_recalculateDimen()
+    self.vertical_span = HorizontalGroup:new{
+        VerticalSpan:new{ width = self.span_width }
+    }
     if self.no_title then
-        content = OverlapGroup:new{
-            dimen = self.dimen:copy(),
-            VerticalGroup:new{
-                align = "left",
-                body,
-            },
-            page_return,
-            footer,
+        self.content_group = VerticalGroup:new{
+            align = "left",
+            self.vertical_span,
+            body,
         }
     else
-        content = OverlapGroup:new{
-            dimen = self.dimen:copy(),
-            VerticalGroup:new{
-                align = "left",
-                header,
-                body,
-            },
-            page_return,
-            footer,
+        self.content_group = VerticalGroup:new{
+            align = "left",
+            header,
+            self.vertical_span,
+            body,
         }
     end
+    local content = OverlapGroup:new{
+        dimen = self.dimen:copy(),
+        self.content_group,
+        page_return,
+        footer,
+    }
 
     self[1] = FrameContainer:new{
         background = Blitbuffer.COLOR_WHITE,
@@ -566,7 +659,6 @@ function Menu:init()
         radius = self.is_popout and math.floor(self.dimen.w/20) or 0,
         content
     }
-
     ------------------------------------------
     -- start to set up input event callback --
     ------------------------------------------
@@ -655,12 +747,18 @@ function Menu:updateItems(select_number)
     self.item_group:clear()
     self.page_info:resetLayout()
     self.return_button:resetLayout()
+    self.vertical_span:clear()
+    self.content_group:resetLayout()
     self:_recalculateDimen()
 
     -- default to select the first item
     if not select_number then
         select_number = 1
     end
+    --font size between 12 and 18 for better matching
+    local infont_size = math.floor(18 - (self.perpage - 6) / 3)
+    --font size between 14 and 24 for better matching
+    local font_size = math.floor(24 - ((self.perpage - 6)/ 18) * 10 )
 
     for c = 1, math.min(self.perpage, #self.item_table) do
         -- calculate index in item_table
@@ -688,12 +786,17 @@ function Menu:updateItems(select_number)
                 mandatory = self.item_table[i].mandatory,
                 bold = self.item_table.current == i or self.item_table[i].bold == true,
                 dim = self.item_table[i].dim,
-                face = self.cface,
+                font = "smallinfofont",
+                font_size = font_size,
+                infont = "infont",
+                infont_size = infont_size,
                 dimen = self.item_dimen:new(),
                 shortcut = item_shortcut,
                 shortcut_style = shortcut_style,
                 table = self.item_table[i],
                 menu = self,
+                linesize = self.linesize,
+                single_line = self.single_line,
             }
             table.insert(self.item_group, item_tmp)
             -- this is for focus manager
