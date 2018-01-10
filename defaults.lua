@@ -146,6 +146,9 @@ DDICT_FONT_SIZE = 20
 -- e.g. 2 changes the sensitivity by 1/2, 3 by 1/3 etc.
 FRONTLIGHT_SENSITIVITY_DECREASE = 2
 
+-- File Manager a.k.a KOReader File Browser files and dirs font size
+FILE_BROWSER_ITEMS_FONT_SIZE = 22
+
 -- Normally, KOReader will present file lists sorted in case insensitive manner
 -- when presenting an alphatically sorted list. So the Order is "A, b, C, d".
 -- You can switch to a case sensitive sort ("A", "C", "b", "d") by disabling
