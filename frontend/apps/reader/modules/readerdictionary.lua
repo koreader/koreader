@@ -27,32 +27,25 @@ local function getIfosInDir(path)
     -- - No sorting, entries are processed in the order the dir_read_name() call
     --   returns them (inodes linked list)
     -- - If entry is a directory, Walk in it first and recurse
-    -- With a small optimisation to avoid walking dict subdirectories that
-    -- may contain many images: if .ifo found, don't recurse subdirectories.
+    -- Don't walk into "res/" subdirectories, as per Stardict specs, they
+    -- may contain possibly many resource files (image, audio files...)
+    -- that could slow down our walk here.
     local ifos = {}
     local ok, iter, dir_obj = pcall(lfs.dir, path)
     if ok then
-        local ifo_found = false
-        local subdirs = {}
         for name in iter, dir_obj do
-            if name ~= "." and name ~= ".." then
+            if name ~= "." and name ~= ".." and name ~= "res" then
                 local fullpath = path.."/"..name
-                if fullpath:match("%.ifo$") then
-                    table.insert(ifos, fullpath)
-                    ifo_found = true
-                elseif not ifo_found then -- don't check for dirs anymore if we found one .ifo
-                    local attributes = lfs.attributes(fullpath)
-                    if attributes ~= nil and attributes.mode == "directory" then
-                        table.insert(subdirs, fullpath)
+                local attributes = lfs.attributes(fullpath)
+                if attributes ~= nil then
+                    if attributes.mode == "directory" then
+                        local dirifos = getIfosInDir(fullpath) -- recurse
+                        for _, ifo in pairs(dirifos) do
+                            table.insert(ifos, ifo)
+                        end
+                    elseif fullpath:match("%.ifo$") then
+                        table.insert(ifos, fullpath)
                     end
-                end
-            end
-        end
-        if not ifo_found and #subdirs > 0 then
-            for _, subdir in pairs(subdirs) do
-                local dirifos = getIfosInDir(subdir)
-                for _, ifo in pairs(dirifos) do
-                    table.insert(ifos, ifo)
                 end
             end
         end
