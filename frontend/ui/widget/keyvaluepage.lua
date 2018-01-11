@@ -41,6 +41,7 @@ local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
+local Input = Device.input
 local Screen = Device.screen
 local T = require("ffi/util").template
 local _ = require("gettext")
@@ -274,6 +275,8 @@ function KeyValuePage:init()
     if Device:hasKeys() then
         self.key_events = {
             Close = { {"Back"}, doc = "close page" },
+            NextPage = {{Input.group.PgFwd}, doc = "next page"},
+            PrevPage = {{Input.group.PgBack}, doc = "prev page"},
         }
     end
     if Device:isTouchDevice() then
@@ -497,6 +500,16 @@ function KeyValuePage:_populateItems()
     UIManager:setDirty(self, function()
         return "ui", self.dimen
     end)
+end
+
+function KeyValuePage:onNextPage()
+    self:nextPage()
+    return true
+end
+
+function KeyValuePage:onPrevPage()
+    self:prevPage()
+    return true
 end
 
 function KeyValuePage:onSwipe(arg, ges_ev)
