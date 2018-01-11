@@ -137,7 +137,7 @@ function SpinWidget:update()
             CenterContainer:new{
                 dimen = Geom:new{
                     w = self.width,
-                    h = self.screen_height * 0.25,
+                    h = value_group:getSize().h + self.screen_height * 0.1,
                 },
                 value_group
             },

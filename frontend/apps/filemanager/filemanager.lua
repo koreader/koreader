@@ -478,8 +478,8 @@ function FileManager:onClose()
     return true
 end
 
-function FileManager:onRefresh(value)
-    self.file_chooser:refreshPath(value)
+function FileManager:onRefresh()
+    self.file_chooser:refreshPath()
     return true
 end
 

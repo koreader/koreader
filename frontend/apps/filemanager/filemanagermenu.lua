@@ -105,7 +105,7 @@ function FileManagerMenu:setUpdateItemTable()
                 title_text =  _("Items per page"),
                 callback = function(spin)
                     G_reader_settings:saveSetting("items_per_page", spin.value)
-                    self.ui:onRefresh(true)
+                    self.ui:onRefresh()
                 end
             }
             UIManager:show(items)

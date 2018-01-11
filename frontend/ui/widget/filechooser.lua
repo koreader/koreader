@@ -222,10 +222,8 @@ function FileChooser:updateItems(select_number)
     self.path_items[self.path] = (self.page - 1) * self.perpage + (select_number or 1)
 end
 
-function FileChooser:refreshPath(update_perpage)
-    if update_perpage then
-        self.perpage = G_reader_settings:readSetting("items_per_page")
-    end
+function FileChooser:refreshPath()
+    self.perpage = G_reader_settings:readSetting("items_per_page")
     local itemmatch = nil
     if self.focused_path then
         itemmatch = {path = self.focused_path}
