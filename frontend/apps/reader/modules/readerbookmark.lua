@@ -218,6 +218,7 @@ function ReaderBookmark:onShowBookmark()
         width = Screen:getWidth(),
         height = Screen:getHeight(),
         cface = Font:getFace("x_smallinfofont"),
+        line_color = require("ffi/blitbuffer").COLOR_WHITE,
         on_close_ges = {
             GestureRange:new{
                 ges = "two_finger_swipe",

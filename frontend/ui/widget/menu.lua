@@ -311,7 +311,7 @@ function MenuItem:init()
     }
 
     self._underline_container = UnderlineContainer:new{
-        color = Blitbuffer.COLOR_GREY,
+        color = self.line_color,
         linesize = self.linesize,
         vertical_align = "center",
         padding = 0,
@@ -472,6 +472,7 @@ local Menu = FocusManager:new{
     close_callback = nil,
     linesize = Size.line.medium,
     perpage = G_reader_settings:readSetting("items_per_page") or 14,
+    line_color = Blitbuffer.COLOR_GREY,
 }
 
 function Menu:_recalculateDimen()
@@ -797,6 +798,7 @@ function Menu:updateItems(select_number)
                 menu = self,
                 linesize = self.linesize,
                 single_line = self.single_line,
+                line_color = self.line_color,
             }
             table.insert(self.item_group, item_tmp)
             -- this is for focus manager
