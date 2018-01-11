@@ -60,6 +60,15 @@ function NetworkMgr:promptWifiOff(complete_callback)
     })
 end
 
+function NetworkMgr:isConnected()
+    if Device:isAndroid() then
+        return self:isWifiOn()
+    else
+        -- `-c1` try only once; `-w2` wait 2 seconds
+        return os.execute([[ping -c1 -w2 $(/sbin/route -n | awk '$4 == "UG" {print $2}')]])
+    end
+end
+
 function NetworkMgr:isOnline()
     local socket = require("socket")
     -- Microsoft uses `dns.msftncsi.com` for Windows, see
