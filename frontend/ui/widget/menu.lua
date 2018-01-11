@@ -357,7 +357,7 @@ function MenuItem:onFocus()
 end
 
 function MenuItem:onUnfocus()
-    self._underline_container.color = Blitbuffer.COLOR_WHITE
+    self._underline_container.color = self.line_color
     self.key_events = {}
     return true
 end
