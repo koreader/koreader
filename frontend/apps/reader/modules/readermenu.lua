@@ -285,7 +285,7 @@ function ReaderMenu:onShowReaderMenu(tab_index)
         local Menu = require("ui/widget/menu")
         main_menu = Menu:new{
             title = _("Document menu"),
-            item_table = Menu.itemTableFromTouchMenu(self.last_tab_index),
+            item_table = Menu.itemTableFromTouchMenu(self.tab_item_table),
             width = Screen:getWidth() - 100,
             show_parent = menu_container,
         }
