@@ -14,6 +14,7 @@ local InputDialog = require("ui/widget/inputdialog")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
+local ScrollHtmlWidget = require("ui/widget/scrollhtmlwidget")
 local ScrollTextWidget = require("ui/widget/scrolltextwidget")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
@@ -37,6 +38,7 @@ local DictQuickLookup = InputContainer:new{
     displayword = nil,
     is_wiki = false,
     is_fullpage = false,
+    is_html = false,
     dict_index = 1,
     title_face = Font:getFace("x_smalltfont"),
     content_face = Font:getFace("cfont", DDICT_FONT_SIZE),
@@ -156,6 +158,30 @@ function DictQuickLookup:isDocless()
     return self.ui == nil or self.ui.highlight == nil
 end
 
+function DictQuickLookup:getHtmlDictionaryCss()
+    -- Using Noto Sans because Nimbus doesn't contain the IPA symbols.
+    -- 'line-height: 1.3' to have it similar to textboxwidget,
+    -- and follow user's choice on justification
+    local css_justify = G_reader_settings:nilOrTrue("dict_justify") and "text-align: justify;" or ""
+    local css = [[
+        @page {
+            margin: 0;
+            font-family: 'Noto Sans';
+        }
+
+        body {
+            margin: 0;
+            line-height: 1.3;
+            ]]..css_justify..[[
+        }
+    ]]
+
+    if self.css then
+        return css .. self.css
+    end
+    return css
+end
+
 function DictQuickLookup:update()
     local orig_dimen = self.dict_frame and self.dict_frame.dimen or Geom:new{}
     -- calculate window dimension
@@ -236,12 +262,20 @@ function DictQuickLookup:update()
         text_font_size = lookup_word_font_size,
         hold_callback = function() self:lookupInputWord(self.lookupword) end,
     }
-    -- word definition
-    local definition = FrameContainer:new{
-        padding = self.definition_padding,
-        margin = self.definition_margin,
-        bordersize = 0,
-        ScrollTextWidget:new{
+
+    local text_widget
+
+    if self.is_html then
+        text_widget = ScrollHtmlWidget:new{
+            html_body = self.definition,
+            css = self:getHtmlDictionaryCss(),
+            default_font_size = Screen:scaleBySize(DDICT_FONT_SIZE),
+            width = self.width,
+            height = self.is_fullpage and self.height*0.75 or self.height*0.7,
+            dialog = self,
+         }
+    else
+        text_widget = ScrollTextWidget:new{
             text = self.definition,
             face = self.content_face,
             width = self.width,
@@ -250,7 +284,15 @@ function DictQuickLookup:update()
             dialog = self,
             -- allow for disabling justification
             justified = G_reader_settings:nilOrTrue("dict_justify"),
-        },
+        }
+    end
+
+    -- word definition
+    local definition = FrameContainer:new{
+        padding = self.definition_padding,
+        margin = self.definition_margin,
+        bordersize = 0,
+        text_widget,
     }
     -- Different sets of buttons if fullpage or not
     local buttons
@@ -538,6 +580,8 @@ function DictQuickLookup:changeDictionary(index)
     self.lookupword = self.results[index].word
     self.definition = self.results[index].definition
     self.is_fullpage = self.results[index].is_fullpage
+    self.is_html = self.results[index].is_html
+    self.css = self.results[index].css
     self.lang = self.results[index].lang
     if self.is_fullpage then
         self.displayword = self.lookupword
@@ -548,7 +592,12 @@ function DictQuickLookup:changeDictionary(index)
         -- add queried word to 1st result's definition, so we can see
         -- what was the selected text and if we selected wrong
         if index == 1 then
-            self.definition = self.definition.."\n_______\n"..T(_("(query : %1)"), self.word)
+            if self.is_html then
+                self.definition = self.definition.."<br/>_______<br/>"
+            else
+                self.definition = self.definition.."\n_______\n"
+            end
+            self.definition = self.definition..T(_("(query : %1)"), self.word)
         end
     end
 
