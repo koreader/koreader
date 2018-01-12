@@ -27,32 +27,25 @@ local function getIfosInDir(path)
     -- - No sorting, entries are processed in the order the dir_read_name() call
     --   returns them (inodes linked list)
     -- - If entry is a directory, Walk in it first and recurse
-    -- With a small optimisation to avoid walking dict subdirectories that
-    -- may contain many images: if .ifo found, don't recurse subdirectories.
+    -- Don't walk into "res/" subdirectories, as per Stardict specs, they
+    -- may contain possibly many resource files (image, audio files...)
+    -- that could slow down our walk here.
     local ifos = {}
     local ok, iter, dir_obj = pcall(lfs.dir, path)
     if ok then
-        local ifo_found = false
-        local subdirs = {}
         for name in iter, dir_obj do
-            if name ~= "." and name ~= ".." then
+            if name ~= "." and name ~= ".." and name ~= "res" then
                 local fullpath = path.."/"..name
-                if fullpath:match("%.ifo$") then
-                    table.insert(ifos, fullpath)
-                    ifo_found = true
-                elseif not ifo_found then -- don't check for dirs anymore if we found one .ifo
-                    local attributes = lfs.attributes(fullpath)
-                    if attributes ~= nil and attributes.mode == "directory" then
-                        table.insert(subdirs, fullpath)
+                local attributes = lfs.attributes(fullpath)
+                if attributes ~= nil then
+                    if attributes.mode == "directory" then
+                        local dirifos = getIfosInDir(fullpath) -- recurse
+                        for _, ifo in pairs(dirifos) do
+                            table.insert(ifos, ifo)
+                        end
+                    elseif fullpath:match("%.ifo$") then
+                        table.insert(ifos, fullpath)
                     end
-                end
-            end
-        end
-        if not ifo_found and #subdirs > 0 then
-            for _, subdir in pairs(subdirs) do
-                local dirifos = getIfosInDir(subdir)
-                for _, ifo in pairs(dirifos) do
-                    table.insert(ifos, ifo)
                 end
             end
         end
@@ -66,6 +59,39 @@ local ReaderDictionary = InputContainer:new{
     disable_lookup_history = G_reader_settings:isTrue("disable_lookup_history"),
     lookup_msg = _("Searching dictionary for:\n%1"),
 }
+
+-- For a HTML dict, one can specify a specific stylesheet
+-- in a file named as the .ifo with a .css extension
+local function readDictionaryCss(path)
+    local f = io.open(path, "r")
+    if not f then
+        return nil
+    end
+
+    local content = f:read("*all")
+    f:close()
+    return content
+end
+
+-- For a HTML dict, one can specify a function called on
+-- the raw returned definition to "fix" the HTML if needed
+-- (as MuPDF, used for rendering, is quite sensitive to the
+-- HTML quality) in a file named as the .ifo with a .lua
+-- extension, containing for example:
+--    return function(html)
+--	html = html:gsub("<hr>", "<hr/>")
+--	return html
+--    end
+local function getDictionaryFixHtmlFunc(path)
+    if lfs.attributes(path, "mode") == "file" then
+        local ok, func = pcall(dofile, path)
+        if ok and func then
+            return func
+        else
+            logger.warn("Dict's user provided file failed:", func)
+        end
+    end
+end
 
 function ReaderDictionary:init()
     self.ui.menu:registerToMainMenu(self)
@@ -90,11 +116,15 @@ function ReaderDictionary:init()
                 local content = f:read("*all")
                 f:close()
                 local dictname = content:match("\nbookname=(.-)\n")
+                local is_html = content:find("sametypesequence=h", 1, true) ~= nil
                 -- sdcv won't use dict that don't have a bookname=
                 if dictname then
                     table.insert(available_ifos, {
                         file = ifo_file,
                         name = dictname,
+                        is_html = is_html,
+                        css = readDictionaryCss(ifo_file:gsub("%.ifo$", ".css")),
+                        fix_html_func = getDictionaryFixHtmlFunc(ifo_file:gsub("%.ifo$", ".lua")),
                     })
                 end
             end
@@ -290,11 +320,16 @@ end
 -- @treturn int nb_disabled
 function ReaderDictionary:getNumberOfDictionaries()
     local nb_available = #available_ifos
+    local nb_enabled = 0
     local nb_disabled = 0
-    for _ in pairs(G_reader_settings:readSetting("dicts_disabled")) do
-        nb_disabled = nb_disabled + 1
+    local dicts_disabled = G_reader_settings:readSetting("dicts_disabled")
+    for _, ifo in pairs(available_ifos) do
+        if dicts_disabled[ifo.file] then
+            nb_disabled = nb_disabled + 1
+        else
+            nb_enabled = nb_enabled + 1
+        end
     end
-    local nb_enabled = nb_available - nb_disabled
     return nb_available, nb_enabled, nb_disabled
 end
 
@@ -331,26 +366,50 @@ local function dictDirsEmpty(dict_dirs)
     return true
 end
 
+local function getAvailableIfoByName(dictionary_name)
+    for _, ifo in ipairs(available_ifos) do
+        if ifo.name == dictionary_name then
+            return ifo
+        end
+    end
+
+    return nil
+end
+
 local function tidyMarkup(results)
     local cdata_tag = "<!%[CDATA%[(.-)%]%]>"
     local format_escape = "&[29Ib%+]{(.-)}"
     for _, result in ipairs(results) do
-        local def = result.definition
-        -- preserve the <br> tag for line break
-        def = def:gsub("<[bB][rR] ?/?>", "\n")
-        -- parse CDATA text in XML
-        if def:find(cdata_tag) then
-            def = def:gsub(cdata_tag, "%1")
-            -- ignore format strings
-            while def:find(format_escape) do
-                def = def:gsub(format_escape, "%1")
+        local ifo = getAvailableIfoByName(result.dict)
+        if ifo and ifo.is_html then
+            result.is_html = ifo.is_html
+            result.css = ifo.css
+            if ifo.fix_html_func then
+                local ok, fixed_definition = pcall(ifo.fix_html_func, result.definition)
+                if ok then
+                    result.definition = fixed_definition
+                else
+                    logger.warn("Dict's user provided funcion failed:", fixed_definition)
+                end
             end
+        else
+            local def = result.definition
+            -- preserve the <br> tag for line break
+            def = def:gsub("<[bB][rR] ?/?>", "\n")
+            -- parse CDATA text in XML
+            if def:find(cdata_tag) then
+                def = def:gsub(cdata_tag, "%1")
+                -- ignore format strings
+                while def:find(format_escape) do
+                    def = def:gsub(format_escape, "%1")
+                end
+            end
+            -- ignore all markup tags
+            def = def:gsub("%b<>", "")
+            -- strip all leading empty lines/spaces
+            def = def:gsub("^%s+", "")
+            result.definition = def
         end
-        -- ignore all markup tags
-        def = def:gsub("%b<>", "")
-        -- strip all leading empty lines/spaces
-        def = def:gsub("^%s+", "")
-        result.definition = def
     end
     return results
 end
