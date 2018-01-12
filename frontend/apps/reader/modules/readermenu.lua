@@ -262,16 +262,9 @@ function ReaderMenu:exitOrRestart(callback)
     end
 end
 
-function ReaderMenu:onShowReaderMenu(pull_down_location)
-
+function ReaderMenu:onShowReaderMenu(tab_index)
     if self.tab_item_table == nil then
         self:setUpdateItemTable()
-    end
-
-    if pull_down_location == "left" then
-        self.last_tab_index = 1
-    elseif pull_down_location == "right" then
-        self.last_tab_index = #self.tab_item_table
     end
 
     local menu_container = CenterContainer:new{
@@ -284,7 +277,7 @@ function ReaderMenu:onShowReaderMenu(pull_down_location)
         local TouchMenu = require("ui/widget/touchmenu")
         main_menu = TouchMenu:new{
             width = Screen:getWidth(),
-            last_index = self.last_tab_index,
+            last_index = tab_index,
             tab_item_table = self.tab_item_table,
             show_parent = menu_container,
         }
@@ -292,7 +285,7 @@ function ReaderMenu:onShowReaderMenu(pull_down_location)
         local Menu = require("ui/widget/menu")
         main_menu = Menu:new{
             title = _("Document menu"),
-            item_table = Menu.itemTableFromTouchMenu(self.tab_item_table),
+            item_table = Menu.itemTableFromTouchMenu(self.last_tab_index),
             width = Screen:getWidth() - 100,
             show_parent = menu_container,
         }
@@ -320,15 +313,19 @@ function ReaderMenu:onCloseReaderMenu()
     return true
 end
 
-function ReaderMenu:_getPullDownLocation(ges)
+function ReaderMenu:_getTabIndexFromLocation(ges)
+    if self.tab_item_table == nil then
+        self:setUpdateItemTable()
+    end
     -- if the start position is far right
     if ges.pos.x > 2 * Screen:getWidth() / 3 then
-        return "right"
+        return #self.tab_item_table
     -- if the start position is far left
     elseif ges.pos.x < Screen:getWidth() / 3 then
-        return "left"
-    else
-        return "center"
+        return 1
+    -- if center return the last index
+    else 
+        return self.last_tab_index
     end
 end
 
@@ -337,7 +334,7 @@ function ReaderMenu:onSwipeShowMenu(ges)
         if G_reader_settings:nilOrTrue("show_bottom_menu") then
             self.ui:handleEvent(Event:new("ShowConfigMenu"))
         end
-        self.ui:handleEvent(Event:new("ShowReaderMenu", self:_getPullDownLocation(ges)))
+        self.ui:handleEvent(Event:new("ShowReaderMenu", self:_getTabIndexFromLocation(ges)))
         return true
     end
 end
@@ -347,7 +344,7 @@ function ReaderMenu:onTapShowMenu(ges)
         if G_reader_settings:nilOrTrue("show_bottom_menu") then
             self.ui:handleEvent(Event:new("ShowConfigMenu"))
         end
-        self.ui:handleEvent(Event:new("ShowReaderMenu", self:_getPullDownLocation(ges)))
+        self.ui:handleEvent(Event:new("ShowReaderMenu", self:_getTabIndexFromLocation(ges)))
         return true
     end
 end
