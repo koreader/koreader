@@ -262,15 +262,15 @@ function ReaderMenu:exitOrRestart(callback)
     end
 end
 
-function ReaderMenu:onShowReaderMenu(touch_location)
+function ReaderMenu:onShowReaderMenu(pull_down_location)
 
     if self.tab_item_table == nil then
         self:setUpdateItemTable()
     end
 
-    if touch_location == "left" then
+    if pull_down_location == "left" then
         self.last_tab_index = 1
-    elseif touch_location == "right" then
+    elseif pull_down_location == "right" then
         self.last_tab_index = #self.tab_item_table
     end
 
