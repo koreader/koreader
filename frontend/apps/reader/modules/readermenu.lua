@@ -262,14 +262,15 @@ function ReaderMenu:exitOrRestart(callback)
     end
 end
 
-function ReaderMenu:onShowReaderMenu(is_show_main_tab)
+function ReaderMenu:onShowReaderMenu(touch_location)
 
     if self.tab_item_table == nil then
         self:setUpdateItemTable()
     end
-    -- if it's requested to show the main tab
-    -- make the last_tab_index to the last index
-    if is_show_main_tab == true then
+
+    if touch_location == "left" then
+        self.last_tab_index = 1
+    elseif touch_location == "right" then
         self.last_tab_index = #self.tab_item_table
     end
 
@@ -309,8 +310,6 @@ function ReaderMenu:onShowReaderMenu(is_show_main_tab)
     -- maintain a reference to menu_container
     self.menu_container = menu_container
     UIManager:show(menu_container)
-
-
     return true
 end
 
@@ -321,31 +320,34 @@ function ReaderMenu:onCloseReaderMenu()
     return true
 end
 
+function ReaderMenu:_getPullDownLocation(ges)
+    -- if the start position is far right
+    if ges.pos.x > 2 * Screen:getWidth() / 3 then           
+        return "right"
+    -- if the start position is far left  
+    elseif ges.pos.x < Screen:getWidth() / 3 then
+        return "left"
+    else
+        return "center"
+    end
+end
+
 function ReaderMenu:onSwipeShowMenu(ges)
     if self.activation_menu ~= "tap" and ges.direction == "south" then
-        local is_right_swipe = false
-        -- if the start position is far right
-        if ges.pos.x > 2 * Screen:getWidth()/3 then
-            is_right_swipe = true
-        end
         if G_reader_settings:nilOrTrue("show_bottom_menu") then
             self.ui:handleEvent(Event:new("ShowConfigMenu"))
         end
-        self.ui:handleEvent(Event:new("ShowReaderMenu",is_right_swipe))
+        self.ui:handleEvent(Event:new("ShowReaderMenu", self:_getPullDownLocation(ges)))
         return true
     end
 end
 
 function ReaderMenu:onTapShowMenu(ges)
     if self.activation_menu ~= "swipe" then
-        local is_right_tap = false
-        if ges.pos.x > 2 * Screen:getWidth()/3 then
-            is_right_tap = true
-        end
         if G_reader_settings:nilOrTrue("show_bottom_menu") then
             self.ui:handleEvent(Event:new("ShowConfigMenu"))
         end
-        self.ui:handleEvent(Event:new("ShowReaderMenu",is_right_tap))
+        self.ui:handleEvent(Event:new("ShowReaderMenu", self:_getPullDownLocation(ges)))
         return true
     end
 end
