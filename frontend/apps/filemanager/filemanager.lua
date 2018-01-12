@@ -48,13 +48,11 @@ end
 local function truncatePath(text)
     local screen_width = Screen:getWidth()
     local face = Font:getFace("xx_smallinfofont")
-    local reversed_text = string.reverse(text)
+    local reversed_text = require("util").utf8Reverse(text)
     local txt_width = RenderText:sizeUtf8Text(0, screen_width, face, reversed_text, nil, false).x
     if  screen_width - 2 * Size.padding.small < txt_width then
         reversed_text = RenderText:truncateTextByWidth(reversed_text, face, screen_width - 2 * Size.padding.small, nil, false)
-        -- string.reverse() breaks "…" so we delete it
-        reversed_text = reversed_text:sub(1, -5)
-        text = "…" .. string.reverse(reversed_text)
+        text = require("util").utf8Reverse(reversed_text)
     end
     return text
 end

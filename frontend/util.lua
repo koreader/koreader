@@ -578,4 +578,12 @@ function util.htmlEscape(text)
     })
 end
 
+--- Reverse the individual greater-than-single-byte characters
+-- @string string to reverse
+-- Taken from https://github.com/blitmap/lua-utf8-simple#utf8reverses
+function util.utf8Reverse(text)
+    text = text:gsub('[%z\1-\127\194-\244][\128-\191]*', function (c) return #c > 1 and c:reverse() end)
+    return text:reverse()
+end
+
 return util
