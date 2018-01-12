@@ -324,7 +324,7 @@ function ReaderMenu:_getTabIndexFromLocation(ges)
     elseif ges.pos.x < Screen:getWidth() / 3 then
         return 1
     -- if center return the last index
-    else 
+    else
         return self.last_tab_index
     end
 end
