@@ -267,6 +267,10 @@ function ReaderMenu:onShowReaderMenu(tab_index)
         self:setUpdateItemTable()
     end
 
+    if not tab_index then
+        tab_index = self.last_tab_index
+    end
+    
     local menu_container = CenterContainer:new{
         ignore = "height",
         dimen = Screen:getSize(),
