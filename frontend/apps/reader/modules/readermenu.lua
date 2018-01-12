@@ -324,14 +324,11 @@ end
 
 function ReaderMenu:onSwipeShowMenu(ges)
     if self.activation_menu ~= "tap" and ges.direction == "south" then
-        
         local is_right_swipe = false
-
         -- if the start position is far right
         if ges.pos.x > 2 * Screen:getWidth()/3 then
             is_right_swipe = true
         end
-
         if G_reader_settings:nilOrTrue("show_bottom_menu") then
             self.ui:handleEvent(Event:new("ShowConfigMenu"))
         end
