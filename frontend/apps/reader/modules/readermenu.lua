@@ -322,9 +322,9 @@ end
 
 function ReaderMenu:_getPullDownLocation(ges)
     -- if the start position is far right
-    if ges.pos.x > 2 * Screen:getWidth() / 3 then           
+    if ges.pos.x > 2 * Screen:getWidth() / 3 then
         return "right"
-    -- if the start position is far left  
+    -- if the start position is far left
     elseif ges.pos.x < Screen:getWidth() / 3 then
         return "left"
     else
