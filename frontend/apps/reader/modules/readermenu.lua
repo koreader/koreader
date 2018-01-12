@@ -262,9 +262,16 @@ function ReaderMenu:exitOrRestart(callback)
     end
 end
 
-function ReaderMenu:onShowReaderMenu()
+function ReaderMenu:onShowReaderMenu(is_show_main_tab)
+
     if self.tab_item_table == nil then
         self:setUpdateItemTable()
+    end
+ 
+    -- if it's requested to show the main tab
+    -- make the last_tab_index to the last index
+    if is_show_main_tab == true then
+        self.last_tab_index = #self.tab_item_table
     end
 
     local menu_container = CenterContainer:new{
@@ -304,6 +311,7 @@ function ReaderMenu:onShowReaderMenu()
     self.menu_container = menu_container
     UIManager:show(menu_container)
 
+
     return true
 end
 
@@ -316,20 +324,32 @@ end
 
 function ReaderMenu:onSwipeShowMenu(ges)
     if self.activation_menu ~= "tap" and ges.direction == "south" then
+        
+        local is_right_swipe = false
+
+        -- if the start position is far right
+        if ges.pos.x > 2 * Screen:getWidth()/3 then
+            is_right_swipe = true
+        end
+
         if G_reader_settings:nilOrTrue("show_bottom_menu") then
             self.ui:handleEvent(Event:new("ShowConfigMenu"))
         end
-        self.ui:handleEvent(Event:new("ShowReaderMenu"))
+        self.ui:handleEvent(Event:new("ShowReaderMenu",is_right_swipe))
         return true
     end
 end
 
-function ReaderMenu:onTapShowMenu()
+function ReaderMenu:onTapShowMenu(ges)
     if self.activation_menu ~= "swipe" then
+        local is_right_tap = false
+        if ges.pos.x > 2 * Screen:getWidth()/3 then
+            is_right_tap = true
+        end
         if G_reader_settings:nilOrTrue("show_bottom_menu") then
             self.ui:handleEvent(Event:new("ShowConfigMenu"))
         end
-        self.ui:handleEvent(Event:new("ShowReaderMenu"))
+        self.ui:handleEvent(Event:new("ShowReaderMenu",is_right_tap))
         return true
     end
 end
