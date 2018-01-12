@@ -267,7 +267,6 @@ function ReaderMenu:onShowReaderMenu(is_show_main_tab)
     if self.tab_item_table == nil then
         self:setUpdateItemTable()
     end
- 
     -- if it's requested to show the main tab
     -- make the last_tab_index to the last index
     if is_show_main_tab == true then
