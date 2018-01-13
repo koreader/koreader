@@ -476,6 +476,7 @@ local Menu = FocusManager:new{
 }
 
 function Menu:_recalculateDimen()
+    self.perpage = G_reader_settings:readSetting("items_per_page") or 14
     self.span_width = 0
     self.dimen.w = self.width
     self.dimen.h = self.height
