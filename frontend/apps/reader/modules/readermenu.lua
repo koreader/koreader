@@ -262,9 +262,13 @@ function ReaderMenu:exitOrRestart(callback)
     end
 end
 
-function ReaderMenu:onShowReaderMenu()
+function ReaderMenu:onShowReaderMenu(tab_index)
     if self.tab_item_table == nil then
         self:setUpdateItemTable()
+    end
+
+    if not tab_index then
+        tab_index = self.last_tab_index
     end
 
     local menu_container = CenterContainer:new{
@@ -277,7 +281,7 @@ function ReaderMenu:onShowReaderMenu()
         local TouchMenu = require("ui/widget/touchmenu")
         main_menu = TouchMenu:new{
             width = Screen:getWidth(),
-            last_index = self.last_tab_index,
+            last_index = tab_index,
             tab_item_table = self.tab_item_table,
             show_parent = menu_container,
         }
@@ -303,7 +307,6 @@ function ReaderMenu:onShowReaderMenu()
     -- maintain a reference to menu_container
     self.menu_container = menu_container
     UIManager:show(menu_container)
-
     return true
 end
 
@@ -314,22 +317,38 @@ function ReaderMenu:onCloseReaderMenu()
     return true
 end
 
+function ReaderMenu:_getTabIndexFromLocation(ges)
+    if self.tab_item_table == nil then
+        self:setUpdateItemTable()
+    end
+    -- if the start position is far right
+    if ges.pos.x > 2 * Screen:getWidth() / 3 then
+        return #self.tab_item_table
+    -- if the start position is far left
+    elseif ges.pos.x < Screen:getWidth() / 3 then
+        return 1
+    -- if center return the last index
+    else
+        return self.last_tab_index
+    end
+end
+
 function ReaderMenu:onSwipeShowMenu(ges)
     if self.activation_menu ~= "tap" and ges.direction == "south" then
         if G_reader_settings:nilOrTrue("show_bottom_menu") then
             self.ui:handleEvent(Event:new("ShowConfigMenu"))
         end
-        self.ui:handleEvent(Event:new("ShowReaderMenu"))
+        self.ui:handleEvent(Event:new("ShowReaderMenu", self:_getTabIndexFromLocation(ges)))
         return true
     end
 end
 
-function ReaderMenu:onTapShowMenu()
+function ReaderMenu:onTapShowMenu(ges)
     if self.activation_menu ~= "swipe" then
         if G_reader_settings:nilOrTrue("show_bottom_menu") then
             self.ui:handleEvent(Event:new("ShowConfigMenu"))
         end
-        self.ui:handleEvent(Event:new("ShowReaderMenu"))
+        self.ui:handleEvent(Event:new("ShowReaderMenu", self:_getTabIndexFromLocation(ges)))
         return true
     end
 end
