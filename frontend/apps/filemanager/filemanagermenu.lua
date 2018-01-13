@@ -91,6 +91,26 @@ function FileManagerMenu:setUpdateItemTable()
         checked_func = function() return self.ui.file_chooser.show_hidden end,
         callback = function() self.ui:toggleHiddenFiles() end
     }
+    self.menu_items.items_per_page = {
+        text = _("Items per page"),
+        callback = function()
+            local SpinWidget = require("ui/widget/spinwidget")
+            local curr_items = G_reader_settings:readSetting("items_per_page") or 14
+            local items = SpinWidget:new{
+                width = Screen:getWidth() * 0.6,
+                value = curr_items,
+                value_min = 6,
+                value_max = 24,
+                ok_text = _("Set items"),
+                title_text =  _("Items per page"),
+                callback = function(spin)
+                    G_reader_settings:saveSetting("items_per_page", spin.value)
+                    self.ui:onRefresh()
+                end
+            }
+            UIManager:show(items)
+        end
+    }
     self.menu_items.sort_by = self.ui:getSortingMenuTable()
     self.menu_items.reverse_sorting = {
         text = _("Reverse sorting"),

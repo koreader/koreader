@@ -148,6 +148,7 @@ function FileManager:init()
         is_popout = false,
         is_borderless = true,
         has_close_button = true,
+        perpage = G_reader_settings:readSetting("items_per_page"),
         file_filter = function(filename)
             if DocumentRegistry:getProvider(filename) then
                 return true

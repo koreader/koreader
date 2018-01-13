@@ -152,6 +152,7 @@ function FileSearcher:showSearchResults()
         show_parent = menu_container,
         onMenuHold = self.onMenuHold,
         cface = Font:getFace("smallinfofont"),
+        perpage = G_reader_settings:readSetting("items_per_page") or 14,
         _manager = self,
     }
     table.insert(menu_container, self.search_menu)
