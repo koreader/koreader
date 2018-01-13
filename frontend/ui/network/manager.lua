@@ -65,7 +65,7 @@ function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
     NetworkMgr:turnOnWifi()
     local timeout = 60;
     local retry_count = 0;
-    local info = InfoMessage:new{ text = T(_("Enabling Wi-Fi. Waiting for Internet connection...\nTimeout %1 seconds."), timeout)}
+    local info = InfoMessage:new{ text = T(_("Enabling Wi-Fi. Waiting for Internet connection…\nTimeout %1 seconds."), timeout)}
     UIManager:show(info)
     UIManager:forceRePaint()
     while not NetworkMgr:isOnline() and retry_count < timeout do

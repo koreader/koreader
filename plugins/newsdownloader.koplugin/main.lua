@@ -26,6 +26,7 @@ local config_key_custom_dl_dir = "custom_dl_dir";
 local file_extension = ".html"
 local news_download_dir_name = "news"
 local news_download_dir_path, feed_config_path
+local function nd_action_when_wifi_off() return G_reader_settings:readSetting("nd_action_when_wifi_off") end
 
 -- if a title looks like <title>blabla</title> it'll just be feed.title
 -- if a title looks like <title attr="alb">blabla</title> then we get a table
@@ -68,16 +69,23 @@ end
 
 function NewsDownloader:addToMainMenu(menu_items)
     self:lazyInitialization()
-
     menu_items.news_downloader = {
         text = _("News (RSS/Atom) downloader"),
         sub_item_table = {
             {
                 text = _("Download news"),
                 callback = function()
-                    if not NetworkMgr:isOnline() then
-                        wifi_enabled_before_action = false
-                        NetworkMgr:turnOnWifiAndWaitForConnection(self.loadConfigAndProcessFeeds)
+                    if  nd_action_when_wifi_off() == "ask" or nd_action_when_wifi_off() == "turn_on" then
+                        if not NetworkMgr:isOnline() then
+                            wifi_enabled_before_action = false
+                            if nd_action_when_wifi_off() == "ask" then
+                                NetworkMgr:promptWifiOn(self.loadConfigAndProcessFeeds)
+                            else
+                                NetworkMgr:turnOnWifiAndWaitForConnection(self.loadConfigAndProcessFeeds)
+                            end
+                        else
+                            self:loadConfigAndProcessFeeds()
+                        end
                     else
                         self:loadConfigAndProcessFeeds()
                     end
@@ -110,6 +118,38 @@ function NewsDownloader:addToMainMenu(menu_items)
                                  feed_config_path)
                     })
                 end,
+            },
+            {
+                text = _("Action when Wi-Fi is off"),
+                sub_item_table = {
+                    {
+                        text = _("Turn on"),
+                        checked_func = function()
+                            return nd_action_when_wifi_off() == "turn_on"
+                        end,
+                        callback = function()
+                            G_reader_settings:saveSetting("nd_action_when_wifi_off", "turn_on")
+                        end
+                    },
+                    {
+                        text = _("Ask to turn on"),
+                        checked_func = function()
+                            return nd_action_when_wifi_off() == "ask"
+                        end,
+                        callback = function()
+                            G_reader_settings:saveSetting("nd_action_when_wifi_off", "ask")
+                        end
+                    },
+                    {
+                        text = _("Do nothing"),
+                        checked_func = function()
+                            return G_reader_settings:nilOrTrue("nd_action_when_wifi_off")
+                        end,
+                        callback = function()
+                            G_reader_settings:flipNilOrTrue("nd_action_when_wifi_off")
+                        end,
+                    },
+                }
             },
             {
                 text = _("Help"),
