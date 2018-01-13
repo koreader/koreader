@@ -24,6 +24,7 @@ local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local _ = require("gettext")
+local Input = Device.input
 local Screen = Device.screen
 local T = require("ffi/util").template
 
@@ -231,6 +232,13 @@ function DoubleKeyValuePage:init()
         w = self.width or self.screen_width,
         h = self.height or self.screen_height,
     }
+    if Device:hasKeys() then
+        self.key_events = {
+            Close = { {"Back"}, doc = "close page" },
+            NextPage = {{Input.group.PgFwd}, doc = "next page"},
+            PrevPage = {{Input.group.PgBack}, doc = "prev page"},
+        }
+    end
     if Device:isTouchDevice() then
         self.ges_events.Swipe = {
             GestureRange:new{
@@ -408,6 +416,16 @@ function DoubleKeyValuePage:_nextPage()
     else
         self:nextPage()
     end
+end
+
+function DoubleKeyValuePage:onNextPage()
+    self:_nextPage()
+    return true
+end
+
+function DoubleKeyValuePage:onPrevPage()
+    self:prevPage()
+    return true
 end
 
 function DoubleKeyValuePage:onSwipe(arg, ges_ev)
