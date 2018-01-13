@@ -75,16 +75,17 @@ function NewsDownloader:addToMainMenu(menu_items)
             {
                 text = _("Download news"),
                 callback = function()
-                    if  nd_action_when_wifi_off() == "ask" or nd_action_when_wifi_off() == "turn_on" then
-                        if not NetworkMgr:isOnline() then
-                            wifi_enabled_before_action = false
-                            if nd_action_when_wifi_off() == "ask" then
-                                NetworkMgr:promptWifiOn(self.loadConfigAndProcessFeeds)
-                            else
-                                NetworkMgr:turnOnWifiAndWaitForConnection(self.loadConfigAndProcessFeeds)
-                            end
+                    if not NetworkMgr:isOnline() then
+                        wifi_enabled_before_action = false
+                        if nd_action_when_wifi_off() == "turn_on" then
+                            NetworkMgr:turnOnWifiAndWaitForConnection(self.loadConfigAndProcessFeeds)
+                        elseif nd_action_when_wifi_off() == "ask" then
+                            NetworkMgr:promptWifiOn(self.loadConfigAndProcessFeeds)
                         else
-                            self:loadConfigAndProcessFeeds()
+                            UIManager:show(InfoMessage:new{
+                                text = T(_("No Internet connection. Please manualy enable Wi-Fi, or change settings to e.g. auto-enable."))
+                            })
+                            return
                         end
                     else
                         self:loadConfigAndProcessFeeds()
@@ -112,43 +113,48 @@ function NewsDownloader:addToMainMenu(menu_items)
             },
             {
                 text = _("Settings"),
-                callback = function()
-                    UIManager:show(InfoMessage:new{
-                        text = T(_("To change feed (Atom/RSS) sources please manually edit the configuration file:\n%1\n\nIt is very simple and contains comments as well as sample configuration."),
-                                 feed_config_path)
-                    })
-                end,
-            },
-            {
-                text = _("Action when Wi-Fi is off"),
                 sub_item_table = {
                     {
-                        text = _("Turn on"),
-                        checked_func = function()
-                            return nd_action_when_wifi_off() == "turn_on"
-                        end,
+                        text = _("Change feeds configuration"),
                         callback = function()
-                            G_reader_settings:saveSetting("nd_action_when_wifi_off", "turn_on")
-                        end
+                            UIManager:show(InfoMessage:new{
+                                text = T(_("To change feed (Atom/RSS) sources please manually edit the configuration file:\n%1\n\nIt is very simple and contains comments as well as sample configuration."),
+                                         feed_config_path)
+                            })
+                        end,
                     },
                     {
-                        text = _("Ask to turn on"),
-                        checked_func = function()
-                            return nd_action_when_wifi_off() == "ask"
-                        end,
-                        callback = function()
-                            G_reader_settings:saveSetting("nd_action_when_wifi_off", "ask")
-                        end
-                    },
-                    {
-                        text = _("Do nothing"),
-                        checked_func = function()
-                            return G_reader_settings:nilOrTrue("nd_action_when_wifi_off")
-                        end,
-                        callback = function()
-                            G_reader_settings:flipNilOrTrue("nd_action_when_wifi_off")
-                        end,
-                    },
+                        text = _("Action when Wi-Fi is off"),
+                        sub_item_table = {
+                            {
+                                text = _("Turn on"),
+                                checked_func = function()
+                                    return nd_action_when_wifi_off() == "turn_on"
+                                end,
+                                callback = function()
+                                    G_reader_settings:saveSetting("nd_action_when_wifi_off", "turn_on")
+                                end
+                            },
+                            {
+                                text = _("Ask to turn on"),
+                                checked_func = function()
+                                    return nd_action_when_wifi_off() == "ask"
+                                end,
+                                callback = function()
+                                    G_reader_settings:saveSetting("nd_action_when_wifi_off", "ask")
+                                end
+                            },
+                            {
+                                text = _("Do nothing"),
+                                checked_func = function()
+                                    return G_reader_settings:nilOrTrue("nd_action_when_wifi_off")
+                                end,
+                                callback = function()
+                                    G_reader_settings:flipNilOrTrue("nd_action_when_wifi_off")
+                                end,
+                            }
+                        }
+                    }
                 }
             },
             {
