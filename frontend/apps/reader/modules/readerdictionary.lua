@@ -327,9 +327,13 @@ function ReaderDictionary:onHtmlDictionaryLinkTapped(dictionary, link)
     -- https://github.com/koreader/koreader/issues/3588#issuecomment-357088125
     local url_prefix = "bword://"
     local word
-    if link.uri:sub(1,url_prefix:len()) == url_prefix then word = link.uri:sub(url_prefix:len() + 1)
-    elseif link.uri:find("://") then return
-    else word = link.uri end
+    if link.uri:sub(1,url_prefix:len()) == url_prefix then
+        word = link.uri:sub(url_prefix:len() + 1)
+    elseif link.uri:find("://") then
+        return
+    else
+        word = link.uri
+    end
 
     if word == "" then
         return
