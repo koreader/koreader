@@ -324,11 +324,15 @@ function ReaderDictionary:onHtmlDictionaryLinkTapped(dictionary, link)
         return
     end
 
-    url_prefix = "bword://"
-    if link.uri:sub(1,url_prefix:len()) ~= url_prefix then
+    -- The protocol is either "bword" or there is no protocol, only the word.
+    -- https://github.com/koreader/koreader/issues/3588#issuecomment-357088125
+    local word = link.uri
+    local url_prefix = "bword://"
+    if link.uri:sub(1,url_prefix:len()) == url_prefix then
+        word = link.uri:sub(url_prefix:len() + 1)
+    elseif link.uri:find("://") then
         return
     end
-    local word = link.uri:sub(url_prefix:len() + 1)
 
     local link_box = Geom:new{
         x = link.x0,
