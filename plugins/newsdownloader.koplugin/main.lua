@@ -26,8 +26,6 @@ local config_key_custom_dl_dir = "custom_dl_dir";
 local file_extension = ".html"
 local news_download_dir_name = "news"
 local news_download_dir_path, feed_config_path
-local function wifi_enable_action() return G_reader_settings:readSetting("wifi_enable_action") end
-
 
 
 -- if a title looks like <title>blabla</title> it'll just be feed.title
@@ -67,6 +65,40 @@ end
 
 function NewsDownloader:init()
     self.ui.menu:registerToMainMenu(self)
+end
+
+local function getWifiEnableAction()
+   local wifi_enable_action_setting = G_reader_settings:readSetting("wifi_enable_action") or "prompt"
+   local wifi_enable_actions = {
+       turn_on = {_("turn on"), _("Turn on")},
+       prompt = {_("prompt"), _("Prompt")},
+       no_action = {_("no action"), _("Do nothing")},
+   }
+   local action_table = function(wifi_enable_action)
+       return {
+           text = wifi_enable_actions[wifi_enable_action][2],
+           checked_func = function()
+               return wifi_enable_action_setting == wifi_enable_action
+           end,
+           callback = function()
+               wifi_enable_action_setting = wifi_enable_action
+               G_reader_settings:saveSetting("wifi_enable_action", wifi_enable_action)
+           end,
+       }
+   end
+   return {
+       text_func = function()
+           return FFIUtil.template(
+               _("Action when Wi-Fi is off: %1"),
+               wifi_enable_actions[wifi_enable_action_setting][1]
+           )
+       end,
+       sub_item_table = {
+           action_table("turn_on"),
+           action_table("prompt"),
+           action_table("no_action"),
+       }
+   }
 end
 
 function NewsDownloader:addToMainMenu(menu_items)
@@ -116,39 +148,7 @@ function NewsDownloader:addToMainMenu(menu_items)
                             })
                         end,
                     },
-                    {
-                        text = _("Action when Wi-Fi is off"),
-                        sub_item_table = {
-                            {
-                                text = _("Turn on"),
-                                checked_func = function()
-                                    return wifi_enable_action() == "turn_on"
-                                end,
-                                callback = function()
-                                    G_reader_settings:saveSetting("wifi_enable_action", "turn_on")
-                                end
-                            },
-                            {
-                                text = _("Prompt to turn on"),
-                                checked_func = function()
-                                    return wifi_enable_action() == "prompt"
-                                end,
-                                callback = function()
-                                    G_reader_settings:saveSetting("wifi_enable_action", "prompt")
-                                end
-                            },
-                            {
-                                text = _("Do nothing"),
-                                checked_func = function()
-                                    return G_reader_settings:nilOrTrue("wifi_enable_action")
-                                end,
-                                callback = function()
-                                    G_reader_settings:flipNilOrTrue("wifi_enable_action")
-                                end,
-                            }
-                        }
-                    }
-                }
+                },
             },
             {
                 text = _("Help"),
@@ -161,7 +161,9 @@ function NewsDownloader:addToMainMenu(menu_items)
             },
         },
     }
+    menu_items.news_downloader.sub_item_table[5].sub_item_table[2] = getWifiEnableAction()
 end
+
 
 function NewsDownloader:lazyInitialization()
    if not initialized then
