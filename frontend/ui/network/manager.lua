@@ -80,6 +80,20 @@ function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
     callback()
 end
 
+function NetworkMgr:wifiEnableAction(callback)
+    local wifi_enable_action = G_reader_settings:readSetting("wifi_enable_action")
+    if wifi_enable_action == "turn_on" then
+        NetworkMgr:turnOnWifiAndWaitForConnection(callback)
+    elseif wifi_enable_action == "prompt" then
+        NetworkMgr:promptWifiOn(callback)
+    else
+        UIManager:show(InfoMessage:new{
+            text = T(_("No Internet connection. Please manualy enable Wi-Fi, or change settings to e.g. auto-enable."))
+        })
+        return
+    end
+end
+
 function NetworkMgr:isOnline()
     local socket = require("socket")
     -- Microsoft uses `dns.msftncsi.com` for Windows, see

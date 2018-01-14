@@ -26,7 +26,9 @@ local config_key_custom_dl_dir = "custom_dl_dir";
 local file_extension = ".html"
 local news_download_dir_name = "news"
 local news_download_dir_path, feed_config_path
-local function nd_action_when_wifi_off() return G_reader_settings:readSetting("nd_action_when_wifi_off") end
+local function wifi_enable_action() return G_reader_settings:readSetting("wifi_enable_action") end
+
+
 
 -- if a title looks like <title>blabla</title> it'll just be feed.title
 -- if a title looks like <title attr="alb">blabla</title> then we get a table
@@ -76,17 +78,8 @@ function NewsDownloader:addToMainMenu(menu_items)
                 text = _("Download news"),
                 callback = function()
                     if not NetworkMgr:isOnline() then
-                        wifi_enabled_before_action = false
-                        if nd_action_when_wifi_off() == "turn_on" then
-                            NetworkMgr:turnOnWifiAndWaitForConnection(self.loadConfigAndProcessFeeds)
-                        elseif nd_action_when_wifi_off() == "ask" then
-                            NetworkMgr:promptWifiOn(self.loadConfigAndProcessFeeds)
-                        else
-                            UIManager:show(InfoMessage:new{
-                                text = T(_("No Internet connection. Please manualy enable Wi-Fi, or change settings to e.g. auto-enable."))
-                            })
-                            return
-                        end
+                      wifi_enabled_before_action = false
+                      NetworkMgr:wifiEnableAction(self:loadConfigAndProcessFeeds())
                     else
                         self:loadConfigAndProcessFeeds()
                     end
@@ -129,28 +122,28 @@ function NewsDownloader:addToMainMenu(menu_items)
                             {
                                 text = _("Turn on"),
                                 checked_func = function()
-                                    return nd_action_when_wifi_off() == "turn_on"
+                                    return wifi_enable_action() == "turn_on"
                                 end,
                                 callback = function()
-                                    G_reader_settings:saveSetting("nd_action_when_wifi_off", "turn_on")
+                                    G_reader_settings:saveSetting("wifi_enable_action", "turn_on")
                                 end
                             },
                             {
-                                text = _("Ask to turn on"),
+                                text = _("Prompt to turn on"),
                                 checked_func = function()
-                                    return nd_action_when_wifi_off() == "ask"
+                                    return wifi_enable_action() == "prompt"
                                 end,
                                 callback = function()
-                                    G_reader_settings:saveSetting("nd_action_when_wifi_off", "ask")
+                                    G_reader_settings:saveSetting("wifi_enable_action", "prompt")
                                 end
                             },
                             {
                                 text = _("Do nothing"),
                                 checked_func = function()
-                                    return G_reader_settings:nilOrTrue("nd_action_when_wifi_off")
+                                    return G_reader_settings:nilOrTrue("wifi_enable_action")
                                 end,
                                 callback = function()
-                                    G_reader_settings:flipNilOrTrue("nd_action_when_wifi_off")
+                                    G_reader_settings:flipNilOrTrue("wifi_enable_action")
                                 end,
                             }
                         }
@@ -196,7 +189,6 @@ function NewsDownloader:lazyInitialization()
 end
 
 function NewsDownloader:loadConfigAndProcessFeeds()
-
     local info = InfoMessage:new{ text = _("Loading news feed config…") }
     UIManager:show(info)
     logger.dbg("force repaint due to upcoming blocking calls")
