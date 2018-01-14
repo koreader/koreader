@@ -22,6 +22,7 @@ local ScrollHtmlWidget = InputContainer:new{
     htmlbox_widget = nil,
     v_scroll_bar = nil,
     dialog = nil,
+    html_link_tapped_callback = nil,
     dimen = nil,
     width = 0,
     height = 0,
@@ -35,6 +36,7 @@ function ScrollHtmlWidget:init()
             w = self.width - self.scroll_bar_width - self.text_scroll_span,
             h = self.height,
         },
+        html_link_tapped_callback = self.html_link_tapped_callback,
     }
 
     self.htmlbox_widget:setContent(self.html_body, self.css, self.default_font_size)

@@ -2,8 +2,10 @@
 HTML widget (without scroll bars).
 --]]
 
+local Device = require("device")
 local DrawContext = require("ffi/drawcontext")
 local Geom = require("ui/geometry")
+local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Mupdf = require("ffi/mupdf")
 local Screen = require("device").screen
@@ -19,7 +21,21 @@ local HtmlBoxWidget = InputContainer:new{
     page_number = 1,
     hold_start_pos = nil,
     hold_start_tv = nil,
+    html_link_tapped_callback = nil,
 }
+
+function HtmlBoxWidget:init()
+    if Device:isTouchDevice() then
+        self.ges_events = {
+            TapText = {
+                GestureRange:new{
+                    ges = "tap",
+                    range = function() return self.dimen end,
+                },
+            },
+        }
+    end
+end
 
 function HtmlBoxWidget:setContent(body, css, default_font_size)
     -- fz_set_user_css is tied to the context instead of the document so to easily support multiple
@@ -196,6 +212,33 @@ function HtmlBoxWidget:onHoldReleaseText(callback, ges)
     callback(selected_text, hold_duration)
 
     return true
+end
+
+function HtmlBoxWidget:getLinkByPosition(pos)
+    local page = self.document:openPage(self.page_number)
+    local links = page:getPageLinks()
+    page:close()
+
+    for _, link in pairs(links) do
+        if pos.x >= link.x0 and pos.x < link.x1 and pos.y >= link.y0 and pos.y < link.y1 then
+            return link
+        end
+    end
+
+    return nil
+end
+
+function HtmlBoxWidget:onTapText(arg, ges)
+    if self.html_link_tapped_callback then
+        pos = self:getPosFromAbsPos(ges.pos)
+        if pos then
+            link = self:getLinkByPosition(pos)
+            if link then
+                self.html_link_tapped_callback(link)
+                return true
+            end
+        end
+    end
 end
 
 return HtmlBoxWidget
