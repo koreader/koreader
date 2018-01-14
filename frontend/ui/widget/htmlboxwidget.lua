@@ -228,7 +228,12 @@ function HtmlBoxWidget:getLinkByPosition(pos)
     return nil
 end
 
+
 function HtmlBoxWidget:onTapText(arg, ges)
+    if G_reader_settings:isFalse("tap_to_follow_links") then
+        return
+    end
+
     if self.html_link_tapped_callback then
         pos = self:getPosFromAbsPos(ges.pos)
         if pos then
