@@ -304,10 +304,10 @@ If you'd like to change the order in which dictionaries are queried (and their r
 end
 
 function ReaderDictionary:onLookupWord(word, box, highlight, link)
-    logger.dbg("lookup word:", word, box)
+    logger.dbg("dict lookup word:", word, box)
     -- escape quotes and other funny characters in word
     word = self:cleanSelection(word)
-    logger.dbg("stripped word:", word)
+    logger.dbg("dict stripped word:", word)
 
     self.highlight = highlight
 
@@ -325,11 +325,13 @@ function ReaderDictionary:onHtmlDictionaryLinkTapped(dictionary, link)
 
     -- The protocol is either "bword" or there is no protocol, only the word.
     -- https://github.com/koreader/koreader/issues/3588#issuecomment-357088125
-    local word = link.uri
     local url_prefix = "bword://"
-    if link.uri:sub(1,url_prefix:len()) == url_prefix then
-        word = link.uri:sub(url_prefix:len() + 1)
-    elseif link.uri:find("://") then
+    local word
+    if link.uri:sub(1,url_prefix:len()) == url_prefix then word = link.uri:sub(url_prefix:len() + 1)
+    elseif link.uri:find("://") then return
+    else word = link.uri end
+
+    if word == "" then
         return
     end
 
@@ -339,8 +341,6 @@ function ReaderDictionary:onHtmlDictionaryLinkTapped(dictionary, link)
         w = math.abs(link.x1 - link.x0),
         h = math.abs(link.y1 - link.y0),
     }
-
-    self.highlight = nil
 
     -- Wrapped through Trapper, as we may be using Trapper:dismissablePopen() in it
     Trapper:wrap(function()
