@@ -118,12 +118,22 @@ function HtmlBoxWidget:onCloseWidget()
     self:free()
 end
 
-function HtmlBoxWidget:onHoldStartText(_, ges)
-    self.hold_start_pos = Geom:new{
-        x = ges.pos.x - self.dimen.x,
-        y = ges.pos.y - self.dimen.y,
+function HtmlBoxWidget:getPosFromAbsPos(abs_pos)
+    local pos = Geom:new{
+        x = abs_pos.x - self.dimen.x,
+        y = abs_pos.y - self.dimen.y,
     }
 
+    -- check if the coordinates are actually inside our area
+    if pos.x < 0 or pos.x >= self.dimen.w or pos.y < 0 or pos.y >= self.dimen.h then
+        return nil
+    end
+
+    return pos
+end
+
+function HtmlBoxWidget:onHoldStartText(_, ges)
+    self.hold_start_pos = self:getPosFromAbsPos(ges.pos)
     self.hold_start_tv = TimeVal.now()
 
     return true
@@ -167,18 +177,10 @@ function HtmlBoxWidget:onHoldReleaseText(callback, ges)
     end
 
     local start_pos = self.hold_start_pos
-    local end_pos = Geom:new{
-        x = ges.pos.x - self.dimen.x,
-        y = ges.pos.y - self.dimen.y,
-    }
-
     self.hold_start_pos = nil
 
-    -- check start and end coordinates are actually inside our area
-    if start_pos.x < 0 or end_pos.x < 0 or
-        start_pos.x >= self.dimen.w or end_pos.x >= self.dimen.w or
-        start_pos.y < 0 or end_pos.y < 0 or
-        start_pos.y >= self.dimen.h or end_pos.y >= self.dimen.h then
+    local end_pos = self:getPosFromAbsPos(ges.pos)
+    if not end_pos then
         return false
     end
 
