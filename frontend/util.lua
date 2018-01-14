@@ -582,7 +582,7 @@ end
 --- @table args the list of arguments to escape
 --- @treturn string the escaped and concatenated arguments
 function util.shell_escape(args)
-    escaped_args = {}
+    local escaped_args = {}
     for _, arg in ipairs(args) do
         arg = "'" .. arg:gsub("'", "'\\''") .. "'"
         table.insert(escaped_args, arg)

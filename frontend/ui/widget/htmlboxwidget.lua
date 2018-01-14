@@ -235,9 +235,9 @@ function HtmlBoxWidget:onTapText(arg, ges)
     end
 
     if self.html_link_tapped_callback then
-        pos = self:getPosFromAbsPos(ges.pos)
+        local pos = self:getPosFromAbsPos(ges.pos)
         if pos then
-            link = self:getLinkByPosition(pos)
+            local link = self:getLinkByPosition(pos)
             if link then
                 self.html_link_tapped_callback(link)
                 return true

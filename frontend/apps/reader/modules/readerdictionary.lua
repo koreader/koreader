@@ -165,7 +165,6 @@ function ReaderDictionary:updateSdcvDictNamesOptions()
     if not next(dicts_disabled) then
         return
     end
-    local u_options_raw = {} -- for android call (individual unesscaped elements)
     for _, ifo in pairs(available_ifos) do
         if not dicts_disabled[ifo.file] then
             if not self.enabled_dict_names then
@@ -622,7 +621,7 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, box, li
         self:showLookupInfo(word)
     end
 
-    results = self:startSdcv(word, dict_names, fuzzy_search)
+    local results = self:startSdcv(word, dict_names, fuzzy_search)
     self:showDict(word, tidyMarkup(results), box, link)
 end
 
@@ -652,8 +651,8 @@ function ReaderDictionary:showDict(word, results, box, link)
                     self.view.footer:updateFooter()
                 end
             end,
-            html_dictionary_link_tapped_callback = function(dictionary, link)
-                self:onHtmlDictionaryLinkTapped(dictionary, link)
+            html_dictionary_link_tapped_callback = function(dictionary, html_link)
+                self:onHtmlDictionaryLinkTapped(dictionary, html_link)
             end,
         }
         table.insert(self.dict_window_list, self.dict_window)
