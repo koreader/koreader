@@ -27,7 +27,6 @@ local file_extension = ".html"
 local news_download_dir_name = "news"
 local news_download_dir_path, feed_config_path
 
-
 -- if a title looks like <title>blabla</title> it'll just be feed.title
 -- if a title looks like <title attr="alb">blabla</title> then we get a table
 -- where [1] is the title string and the attributes are also available
@@ -163,7 +162,6 @@ function NewsDownloader:addToMainMenu(menu_items)
     }
     menu_items.news_downloader.sub_item_table[5].sub_item_table[2] = getWifiEnableAction()
 end
-
 
 function NewsDownloader:lazyInitialization()
    if not initialized then
