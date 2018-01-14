@@ -59,6 +59,7 @@ local DictQuickLookup = InputContainer:new{
     button_padding = Screen:scaleBySize(14),
     -- refresh_callback will be called before we trigger full refresh in onSwipe
     refresh_callback = nil,
+    html_dictionary_link_tapped_callback = nil,
 }
 
 local highlight_strings = {
@@ -273,6 +274,9 @@ function DictQuickLookup:update()
             width = self.width,
             height = self.is_fullpage and self.height*0.75 or self.height*0.7,
             dialog = self,
+            html_link_tapped_callback = function(link)
+                self.html_dictionary_link_tapped_callback(self.dictionary, link)
+            end,
          }
     else
         text_widget = ScrollTextWidget:new{
