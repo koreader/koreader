@@ -111,9 +111,9 @@ function NewsDownloader:addToMainMenu(menu_items)
                 callback = function()
                     if not NetworkMgr:isOnline() then
                         wifi_enabled_before_action = false
-                        NetworkMgr:wifiEnableAction(self:loadConfigAndProcessFeeds())
+                        NetworkMgr:wifiEnableAction(loadConfigAndProcessFeeds)
                     else
-                        self:loadConfigAndProcessFeeds()
+                        loadConfigAndProcessFeeds()
                     end
                 end,
             },
@@ -190,7 +190,7 @@ function NewsDownloader:lazyInitialization()
     end
 end
 
-function NewsDownloader:loadConfigAndProcessFeeds()
+local function loadConfigAndProcessFeeds()
     local info = InfoMessage:new{ text = _("Loading news feed config…") }
     UIManager:show(info)
     logger.dbg("force repaint due to upcoming blocking calls")
