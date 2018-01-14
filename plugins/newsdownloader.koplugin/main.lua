@@ -78,8 +78,8 @@ function NewsDownloader:addToMainMenu(menu_items)
                 text = _("Download news"),
                 callback = function()
                     if not NetworkMgr:isOnline() then
-                      wifi_enabled_before_action = false
-                      NetworkMgr:wifiEnableAction(self:loadConfigAndProcessFeeds())
+                        wifi_enabled_before_action = false
+                        NetworkMgr:wifiEnableAction(self:loadConfigAndProcessFeeds())
                     else
                         self:loadConfigAndProcessFeeds()
                     end
