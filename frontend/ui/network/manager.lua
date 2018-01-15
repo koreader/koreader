@@ -1,12 +1,12 @@
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
+local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("luasettings")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 local T = require("ffi/util").template
-local FFIUtil = require("ffi/util")
 
 local NetworkMgr = {}
 
@@ -63,8 +63,8 @@ end
 
 function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
     NetworkMgr:turnOnWifi()
-    local timeout = 60;
-    local retry_count = 0;
+    local timeout = 30
+    local retry_count = 0
     local info = InfoMessage:new{ text = T(_("Enabling Wi-Fi. Waiting for Internet connection…\nTimeout %1 seconds."), timeout)}
     UIManager:show(info)
     UIManager:forceRePaint()
@@ -74,10 +74,10 @@ function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
     end
     UIManager:close(info)
     if retry_count == timeout then
-        UIManager:show(InfoMessage:new{ text = _("Error obtaining Internet connection. Operation aborted...") })
+        UIManager:show(InfoMessage:new{ text = _("Error connecting to the network") })
         return
     end
-    callback()
+    if callback then callback() end
 end
 
 function NetworkMgr:wifiEnableAction(callback)
@@ -208,12 +208,48 @@ function NetworkMgr:getInfoMenuTable()
     }
 end
 
+
+function NetworkMgr:getWifiEnableAction()
+   local wifi_enable_action_setting = G_reader_settings:readSetting("wifi_enable_action") or "prompt"
+   local wifi_enable_actions = {
+       turn_on = {_("turn on"), _("Turn on")},
+       prompt = {_("prompt"), _("Prompt")},
+       no_action = {_("no action"), _("Do nothing")},
+   }
+   local action_table = function(wifi_enable_action)
+       return {
+           text = wifi_enable_actions[wifi_enable_action][2],
+           checked_func = function()
+               return wifi_enable_action_setting == wifi_enable_action
+           end,
+           callback = function()
+               wifi_enable_action_setting = wifi_enable_action
+               G_reader_settings:saveSetting("wifi_enable_action", wifi_enable_action)
+           end,
+       }
+   end
+   return {
+       text_func = function()
+           return FFIUtil.template(
+               _("Action when Wi-Fi is off: %1"),
+               wifi_enable_actions[wifi_enable_action_setting][1]
+           )
+       end,
+       sub_item_table = {
+           action_table("turn_on"),
+           action_table("prompt"),
+           action_table("no_action"),
+       }
+   }
+end
+
 function NetworkMgr:getMenuTable()
     return {
         self:getWifiMenuTable(),
         self:getProxyMenuTable(),
         self:getRestoreMenuTable(),
         self:getInfoMenuTable(),
+        self:getWifiEnableAction(),
     }
 end
 

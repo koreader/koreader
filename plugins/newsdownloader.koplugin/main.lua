@@ -66,39 +66,6 @@ function NewsDownloader:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
-local function getWifiEnableAction()
-   local wifi_enable_action_setting = G_reader_settings:readSetting("wifi_enable_action") or "prompt"
-   local wifi_enable_actions = {
-       turn_on = {_("turn on"), _("Turn on")},
-       prompt = {_("prompt"), _("Prompt")},
-       no_action = {_("no action"), _("Do nothing")},
-   }
-   local action_table = function(wifi_enable_action)
-       return {
-           text = wifi_enable_actions[wifi_enable_action][2],
-           checked_func = function()
-               return wifi_enable_action_setting == wifi_enable_action
-           end,
-           callback = function()
-               wifi_enable_action_setting = wifi_enable_action
-               G_reader_settings:saveSetting("wifi_enable_action", wifi_enable_action)
-           end,
-       }
-   end
-   return {
-       text_func = function()
-           return FFIUtil.template(
-               _("Action when Wi-Fi is off: %1"),
-               wifi_enable_actions[wifi_enable_action_setting][1]
-           )
-       end,
-       sub_item_table = {
-           action_table("turn_on"),
-           action_table("prompt"),
-           action_table("no_action"),
-       }
-   }
-end
 
 function NewsDownloader:addToMainMenu(menu_items)
     self:lazyInitialization()
@@ -110,9 +77,9 @@ function NewsDownloader:addToMainMenu(menu_items)
                 callback = function()
                     if not NetworkMgr:isOnline() then
                         wifi_enabled_before_action = false
-                        NetworkMgr:wifiEnableAction(loadConfigAndProcessFeeds)
+                        NetworkMgr:wifiEnableAction(self.loadConfigAndProcessFeeds)
                     else
-                        loadConfigAndProcessFeeds()
+                        self:loadConfigAndProcessFeeds()
                     end
                 end,
             },
@@ -160,7 +127,6 @@ function NewsDownloader:addToMainMenu(menu_items)
             },
         },
     }
-    menu_items.news_downloader.sub_item_table[5].sub_item_table[2] = getWifiEnableAction()
 end
 
 function NewsDownloader:lazyInitialization()
@@ -188,7 +154,7 @@ function NewsDownloader:lazyInitialization()
     end
 end
 
-local function loadConfigAndProcessFeeds()
+function NewsDownloader:loadConfigAndProcessFeeds()
     local info = InfoMessage:new{ text = _("Loading news feed config…") }
     UIManager:show(info)
     logger.dbg("force repaint due to upcoming blocking calls")
