@@ -2,6 +2,7 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
 local DictQuickLookup = require("ui/widget/dictquicklookup")
+local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local JSON = require("json")
@@ -146,6 +147,8 @@ function ReaderDictionary:init()
 end
 
 function ReaderDictionary:updateSdcvDictNamesOptions()
+    self.enabled_dict_names = nil
+
     -- We cannot tell sdcv which dictionaries to ignore, but we
     -- can tell it which dictionaries to use, by using multiple
     -- -u <dictname> options.
@@ -153,28 +156,16 @@ function ReaderDictionary:updateSdcvDictNamesOptions()
     -- them for ordering queries and results)
     local dicts_disabled = G_reader_settings:readSetting("dicts_disabled")
     if not next(dicts_disabled) then
-        -- no dict disabled, no need to use any -u option
-        self.sdcv_dictnames_options_raw = nil
-        self.sdcv_dictnames_options_escaped = nil
         return
     end
-    local u_options_raw = {} -- for android call (individual unesscaped elements)
-    local u_options_escaped = {} -- for other devices call via shell
     for _, ifo in pairs(available_ifos) do
         if not dicts_disabled[ifo.file] then
-            table.insert(u_options_raw, "-u")
-            table.insert(u_options_raw, ifo.name)
-            -- Escape chars in dictname so it's ok for the shell command
-            -- local u_esc = ("-u %q"):format(ifo.name)
-            -- This may be safer than using lua's %q:
-            local u_esc = "-u '" .. ifo.name:gsub("'", "'\\''") .. "'"
-            table.insert(u_options_escaped, u_esc)
+            if not self.enabled_dict_names then
+                self.enabled_dict_names = {}
+            end
+            table.insert(self.enabled_dict_names, ifo.name)
         end
-        -- Note: if all dicts are disabled, we won't get any -u, and so
-        -- all dicts will be queried.
     end
-    self.sdcv_dictnames_options_raw = u_options_raw
-    self.sdcv_dictnames_options_escaped = table.concat(u_options_escaped, " ")
 end
 
 function ReaderDictionary:addToMainMenu(menu_items)
@@ -306,12 +297,56 @@ If you'd like to change the order in which dictionaries are queried (and their r
 end
 
 function ReaderDictionary:onLookupWord(word, box, highlight, link)
+    logger.dbg("dict lookup word:", word, box)
+    -- escape quotes and other funny characters in word
+    word = self:cleanSelection(word)
+    logger.dbg("dict stripped word:", word)
+
     self.highlight = highlight
+
     -- Wrapped through Trapper, as we may be using Trapper:dismissablePopen() in it
     Trapper:wrap(function()
-        self:stardictLookup(word, box, link)
+        self:stardictLookup(word, self.enabled_dict_names, not self.disable_fuzzy_search, box, link)
     end)
     return true
+end
+
+function ReaderDictionary:onHtmlDictionaryLinkTapped(dictionary, link)
+    if not link.uri then
+        return
+    end
+
+    -- The protocol is either "bword" or there is no protocol, only the word.
+    -- https://github.com/koreader/koreader/issues/3588#issuecomment-357088125
+    local url_prefix = "bword://"
+    local word
+    if link.uri:sub(1,url_prefix:len()) == url_prefix then
+        word = link.uri:sub(url_prefix:len() + 1)
+    elseif link.uri:find("://") then
+        return
+    else
+        word = link.uri
+    end
+
+    if word == "" then
+        return
+    end
+
+    local link_box = Geom:new{
+        x = link.x0,
+        y = link.y0,
+        w = math.abs(link.x1 - link.x0),
+        h = math.abs(link.y1 - link.y0),
+    }
+
+    -- Only the first dictionary window stores the highlight, this way the highlight
+    -- is only removed when there are no more dictionary windows open.
+    self.highlight = nil
+
+    -- Wrapped through Trapper, as we may be using Trapper:dismissablePopen() in it
+    Trapper:wrap(function()
+        self:stardictLookup(word, {dictionary}, false, link_box, nil)
+    end)
 end
 
 --- Gets number of available, enabled, and disabled dictionaries
@@ -460,27 +495,7 @@ function ReaderDictionary:dismissLookupInfo()
     self.lookup_progress_msg = nil
 end
 
-function ReaderDictionary:stardictLookup(word, box, link)
-    logger.dbg("lookup word:", word, box)
-    -- escape quotes and other funny characters in word
-    word = self:cleanSelection(word)
-    logger.dbg("stripped word:", word)
-    if word == "" then
-        return
-    end
-
-    if not self.disable_lookup_history then
-        local book_title = self.ui.doc_settings and self.ui.doc_settings:readSetting("doc_props").title or _("Dictionary lookup")
-        lookup_history:addTableItem("lookup_history", {
-            book_title = book_title,
-            time = os.time(),
-            word = word,
-        })
-    end
-
-    if not self.disable_fuzzy_search then
-        self:showLookupInfo(word)
-    end
+function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
     local final_results = {}
     local seen_results = {}
     -- Allow for two sdcv calls : one in the classic data/dict, and
@@ -503,30 +518,31 @@ function ReaderDictionary:stardictLookup(word, box, link)
                 definition = _([[No dictionaries installed. Please search for "Dictionary support" in the KOReader Wiki to get more information about installing new dictionaries.]]),
             }
         }
-        self:showDict(word, final_results, box, link)
-        return
+        return final_results
     end
     local lookup_cancelled = false
-    local common_options = self.disable_fuzzy_search and "-nje" or "-nj"
     for _, dict_dir in ipairs(dict_dirs) do
         if lookup_cancelled then
             break -- don't do any more lookup on additional dict_dirs
         end
+
+        local args = {"./sdcv", "--utf8-input", "--utf8-output", "--json-output", "--non-interactive", "--data-dir", dict_dir, word}
+        if not fuzzy_search then
+            table.insert(args, "--exact-search")
+        end
+        if dict_names then
+            for _, opt in pairs(dict_names) do
+                table.insert(args, "-u")
+                table.insert(args, opt)
+            end
+        end
+
         local results_str = nil
         if Device:isAndroid() then
             local A = require("android")
-            local args = {"./sdcv", "--utf8-input", "--utf8-output", common_options, word, "--data-dir", dict_dir}
-            if self.sdcv_dictnames_options_raw then
-                for _, opt in pairs(self.sdcv_dictnames_options_raw) do
-                    table.insert(args, opt)
-                end
-            end
             results_str = A.stdout(unpack(args))
         else
-            local cmd = ("./sdcv --utf8-input --utf8-output %q %q --data-dir %q"):format(common_options, word, dict_dir)
-            if self.sdcv_dictnames_options_escaped then
-                cmd = cmd .. " " .. self.sdcv_dictnames_options_escaped
-            end
+            local cmd = util.shell_escape(args)
             -- cmd = "sleep 7 ; " .. cmd     -- uncomment to simulate long lookup time
 
             if self.lookup_progress_msg then
@@ -584,7 +600,30 @@ function ReaderDictionary:stardictLookup(word, box, link)
             }
         }
     end
-    self:showDict(word, tidyMarkup(final_results), box, link)
+
+    return final_results
+end
+
+function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, box, link)
+    if word == "" then
+        return
+    end
+
+    if not self.disable_lookup_history then
+        local book_title = self.ui.doc_settings and self.ui.doc_settings:readSetting("doc_props").title or _("Dictionary lookup")
+        lookup_history:addTableItem("lookup_history", {
+            book_title = book_title,
+            time = os.time(),
+            word = word,
+        })
+    end
+
+    if fuzzy_search then
+        self:showLookupInfo(word)
+    end
+
+    local results = self:startSdcv(word, dict_names, fuzzy_search)
+    self:showDict(word, tidyMarkup(results), box, link)
 end
 
 function ReaderDictionary:showDict(word, results, box, link)
@@ -612,6 +651,9 @@ function ReaderDictionary:showDict(word, results, box, link)
                     -- update info in footer (time, battery, etc)
                     self.view.footer:updateFooter()
                 end
+            end,
+            html_dictionary_link_tapped_callback = function(dictionary, html_link)
+                self:onHtmlDictionaryLinkTapped(dictionary, html_link)
             end,
         }
         table.insert(self.dict_window_list, self.dict_window)

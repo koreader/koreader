@@ -572,7 +572,7 @@ function util.htmlToPlainTextIfHtml(text)
 end
 
 --- Encode the HTML entities in a string
--- @string text the string to escape
+--- @string text the string to escape
 -- Taken from https://github.com/kernelsauce/turbo/blob/e4a35c2e3fb63f07464f8f8e17252bea3a029685/turbo/escape.lua#L58-L70
 function util.htmlEscape(text)
     return text:gsub("[}{\">/<'&]", {
@@ -583,6 +583,18 @@ function util.htmlEscape(text)
         ["'"] = "&#39;",
         ["/"] = "&#47;",
     })
+end
+
+--- Escape list for shell usage
+--- @table args the list of arguments to escape
+--- @treturn string the escaped and concatenated arguments
+function util.shell_escape(args)
+    local escaped_args = {}
+    for _, arg in ipairs(args) do
+        arg = "'" .. arg:gsub("'", "'\\''") .. "'"
+        table.insert(escaped_args, arg)
+    end
+    return table.concat(escaped_args, " ")
 end
 
 return util

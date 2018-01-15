@@ -2,8 +2,10 @@
 HTML widget (without scroll bars).
 --]]
 
+local Device = require("device")
 local DrawContext = require("ffi/drawcontext")
 local Geom = require("ui/geometry")
+local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Mupdf = require("ffi/mupdf")
 local Screen = require("device").screen
@@ -19,7 +21,21 @@ local HtmlBoxWidget = InputContainer:new{
     page_number = 1,
     hold_start_pos = nil,
     hold_start_tv = nil,
+    html_link_tapped_callback = nil,
 }
+
+function HtmlBoxWidget:init()
+    if Device:isTouchDevice() then
+        self.ges_events = {
+            TapText = {
+                GestureRange:new{
+                    ges = "tap",
+                    range = function() return self.dimen end,
+                },
+            },
+        }
+    end
+end
 
 function HtmlBoxWidget:setContent(body, css, default_font_size)
     -- fz_set_user_css is tied to the context instead of the document so to easily support multiple
@@ -118,12 +134,22 @@ function HtmlBoxWidget:onCloseWidget()
     self:free()
 end
 
-function HtmlBoxWidget:onHoldStartText(_, ges)
-    self.hold_start_pos = Geom:new{
-        x = ges.pos.x - self.dimen.x,
-        y = ges.pos.y - self.dimen.y,
+function HtmlBoxWidget:getPosFromAbsPos(abs_pos)
+    local pos = Geom:new{
+        x = abs_pos.x - self.dimen.x,
+        y = abs_pos.y - self.dimen.y,
     }
 
+    -- check if the coordinates are actually inside our area
+    if pos.x < 0 or pos.x >= self.dimen.w or pos.y < 0 or pos.y >= self.dimen.h then
+        return nil
+    end
+
+    return pos
+end
+
+function HtmlBoxWidget:onHoldStartText(_, ges)
+    self.hold_start_pos = self:getPosFromAbsPos(ges.pos)
     self.hold_start_tv = TimeVal.now()
 
     return true
@@ -167,18 +193,10 @@ function HtmlBoxWidget:onHoldReleaseText(callback, ges)
     end
 
     local start_pos = self.hold_start_pos
-    local end_pos = Geom:new{
-        x = ges.pos.x - self.dimen.x,
-        y = ges.pos.y - self.dimen.y,
-    }
-
     self.hold_start_pos = nil
 
-    -- check start and end coordinates are actually inside our area
-    if start_pos.x < 0 or end_pos.x < 0 or
-        start_pos.x >= self.dimen.w or end_pos.x >= self.dimen.w or
-        start_pos.y < 0 or end_pos.y < 0 or
-        start_pos.y >= self.dimen.h or end_pos.y >= self.dimen.h then
+    local end_pos = self:getPosFromAbsPos(ges.pos)
+    if not end_pos then
         return false
     end
 
@@ -194,6 +212,35 @@ function HtmlBoxWidget:onHoldReleaseText(callback, ges)
     callback(selected_text, hold_duration)
 
     return true
+end
+
+function HtmlBoxWidget:getLinkByPosition(pos)
+    local page = self.document:openPage(self.page_number)
+    local links = page:getPageLinks()
+    page:close()
+
+    for _, link in pairs(links) do
+        if pos.x >= link.x0 and pos.x < link.x1 and pos.y >= link.y0 and pos.y < link.y1 then
+            return link
+        end
+    end
+end
+
+function HtmlBoxWidget:onTapText(arg, ges)
+    if G_reader_settings:isFalse("tap_to_follow_links") then
+        return
+    end
+
+    if self.html_link_tapped_callback then
+        local pos = self:getPosFromAbsPos(ges.pos)
+        if pos then
+            local link = self:getLinkByPosition(pos)
+            if link then
+                self.html_link_tapped_callback(link)
+                return true
+            end
+        end
+    end
 end
 
 return HtmlBoxWidget
