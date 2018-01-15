@@ -1,11 +1,11 @@
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
-local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("luasettings")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
+local FFIUtil = require("ffi/util")
 local T = require("ffi/util").template
 
 local NetworkMgr = {}
@@ -84,11 +84,6 @@ function NetworkMgr:wifiEnableAction(callback)
     local wifi_enable_action = G_reader_settings:readSetting("wifi_enable_action")
     if wifi_enable_action == "turn_on" then
         NetworkMgr:turnOnWifiAndWaitForConnection(callback)
-    elseif wifi_enable_action == "no_action" then
-        UIManager:show(InfoMessage:new{
-            text = T(_("No Internet connection. Please manualy enable Wi-Fi, or change settings to e.g. auto-enable."))
-        })
-        return
     else
         NetworkMgr:promptWifiOn(callback)
     end
@@ -209,12 +204,11 @@ function NetworkMgr:getInfoMenuTable()
 end
 
 
-function NetworkMgr:getWifiEnableAction()
+function NetworkMgr:getWifiEnableActionMenuTable()
    local wifi_enable_action_setting = G_reader_settings:readSetting("wifi_enable_action") or "prompt"
    local wifi_enable_actions = {
        turn_on = {_("turn on"), _("Turn on")},
        prompt = {_("prompt"), _("Prompt")},
-       no_action = {_("no action"), _("Do nothing")},
    }
    local action_table = function(wifi_enable_action)
        return {
@@ -230,15 +224,13 @@ function NetworkMgr:getWifiEnableAction()
    end
    return {
        text_func = function()
-           return FFIUtil.template(
-               _("Action when Wi-Fi is off: %1"),
+           return T(_("Action when Wi-Fi is off: %1"),
                wifi_enable_actions[wifi_enable_action_setting][1]
            )
        end,
        sub_item_table = {
            action_table("turn_on"),
            action_table("prompt"),
-           action_table("no_action"),
        }
    }
 end
@@ -249,7 +241,7 @@ function NetworkMgr:getMenuTable()
         self:getProxyMenuTable(),
         self:getRestoreMenuTable(),
         self:getInfoMenuTable(),
-        self:getWifiEnableAction(),
+        self:getWifiEnableActionMenuTable(),
     }
 end
 
