@@ -545,6 +545,13 @@ function FileManager:pasteHere(file)
                 self:moveFile(DocSettings:getSidecarDir(orig), dest) -- dest is always a directory
             end
             if self:moveFile(orig, dest) then
+                --update history
+                local dest_file = dest .."/" .. util.basename(orig)
+                require("readhistory"):updateItemByPath(orig, dest_file)
+                --update last open file
+                if G_reader_settings:readSetting("lastfile") == orig then
+                    G_reader_settings:saveSetting("lastfile", dest_file)
+                end
                 UIManager:show(InfoMessage:new {
                     text = T(_("Moved to: %1"), dest),
                     timeout = 2,
