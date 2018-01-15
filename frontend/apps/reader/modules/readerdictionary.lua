@@ -346,6 +346,10 @@ function ReaderDictionary:onHtmlDictionaryLinkTapped(dictionary, link)
         h = math.abs(link.y1 - link.y0),
     }
 
+    -- Only the first dictionary window stores the highlight, this way the highlight
+    -- is only removed when there are no more dictionary windows open.
+    self.highlight = nil
+
     -- Wrapped through Trapper, as we may be using Trapper:dismissablePopen() in it
     Trapper:wrap(function()
         self:stardictLookup(word, {dictionary}, false, link_box, nil)
