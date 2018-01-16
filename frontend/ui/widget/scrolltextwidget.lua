@@ -28,6 +28,7 @@ local ScrollTextWidget = InputContainer:new{
     scroll_bar_width = Screen:scaleBySize(6),
     text_scroll_span = Screen:scaleBySize(12),
     dialog = nil,
+    images = nil,
 }
 
 function ScrollTextWidget:init()
@@ -38,9 +39,11 @@ function ScrollTextWidget:init()
         editable = self.editable,
         justified = self.justified,
         face = self.face,
+        image_alt_face = self.image_alt_face,
         fgcolor = self.fgcolor,
         width = self.width - self.scroll_bar_width - self.text_scroll_span,
-        height = self.height
+        height = self.height,
+        images = self.images,
     }
     local visible_line_count = self.text_widget:getVisLineCount()
     local total_line_count = self.text_widget:getAllLineCount()
