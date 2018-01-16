@@ -6,6 +6,7 @@ local KeyValuePage = require("ui/widget/keyvaluepage")
 local LuaData = require("luadata")
 local NetworkMgr = require("ui/network/manager")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
+local Trapper = require("ui/trapper")
 local Translator = require("ui/translator")
 local UIManager = require("ui/uimanager")
 local Wikipedia = require("ui/wikipedia")
@@ -21,7 +22,6 @@ local ReaderWikipedia = ReaderDictionary:extend{
     -- identify itself
     is_wiki = true,
     wiki_languages = {},
-    no_page = _("No wiki page found."),
     disable_history = G_reader_settings:isTrue("wikipedia_disable_history"),
 }
 
@@ -271,7 +271,29 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                         end,
                     })
                 end,
-            }
+                separator = true,
+            },
+            { -- setting used in wikipedia.lua
+                text = _("Show image in search results"),
+                checked_func = function()
+                    return G_reader_settings:nilOrTrue("wikipedia_show_image")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrTrue("wikipedia_show_image")
+                end,
+            },
+            { -- setting used in wikipedia.lua
+                text = _("Show more images in full article"),
+                enabled_func = function()
+                    return G_reader_settings:nilOrTrue("wikipedia_show_image")
+                end,
+                checked_func = function()
+                    return G_reader_settings:nilOrTrue("wikipedia_show_more_images") and G_reader_settings:nilOrTrue("wikipedia_show_image")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrTrue("wikipedia_show_more_images")
+                end,
+            },
         }
     }
 end
@@ -319,6 +341,14 @@ function ReaderWikipedia:initLanguages(word)
 end
 
 function ReaderWikipedia:onLookupWikipedia(word, box, get_fullpage, forced_lang)
+    -- Wrapped through Trapper, as we may be using Trapper:dismissableRunInSubprocess() in it
+    Trapper:wrap(function()
+        self:lookupWikipedia(word, box, get_fullpage, forced_lang)
+    end)
+    return true
+end
+
+function ReaderWikipedia:lookupWikipedia(word, box, get_fullpage, forced_lang)
     if not NetworkMgr:isOnline() then
         NetworkMgr:promptWifiOn()
         return
@@ -358,19 +388,35 @@ function ReaderWikipedia:onLookupWikipedia(word, box, get_fullpage, forced_lang)
         })
     end
 
-    -- Fix lookup message to include lang
+    -- Fix lookup message to include lang and set appropriate error texts
+    local no_result_text, req_failure_text
     if get_fullpage then
-        self.lookup_msg = T(_("Getting Wikipedia %2 page:\n%1"), "%1", lang:upper())
+        self.lookup_msg = T(_("Retrieving Wikipedia %2 article:\n%1"), "%1", lang:upper())
+        req_failure_text = _("Failed to retrieve Wikipedia article.")
+        no_result_text = _("Wikipedia article not found.")
     else
         self.lookup_msg = T(_("Searching Wikipedia %2 for:\n%1"), "%1", lang:upper())
+        req_failure_text = _("Failed searching Wikipedia.")
+        no_result_text = _("No Wikipedia articles matching search term.")
     end
     self:showLookupInfo(display_word)
+
     local results = {}
     local ok, pages
+    local lookup_cancelled = false
+    Wikipedia:setTrapWidget(self.lookup_progress_msg)
     if get_fullpage then
-        ok, pages = pcall(Wikipedia.wikifull, Wikipedia, word, lang)
+        ok, pages = pcall(Wikipedia.getFullPage, Wikipedia, word, lang)
     else
-        ok, pages = pcall(Wikipedia.wikintro, Wikipedia, word, lang)
+        ok, pages = pcall(Wikipedia.searchAndGetIntros, Wikipedia, word, lang)
+    end
+    Wikipedia:resetTrapWidget()
+    if not ok and pages and string.find(pages, Wikipedia.dismissed_error_code) then
+        -- So we can display an alternate dummy result
+        lookup_cancelled = true
+        -- Or we could just not show anything with:
+        -- self:dismissLookupInfo()
+        -- return
     end
     if ok and pages then
         -- sort pages according to 'index' attribute if present (not present
@@ -387,14 +433,14 @@ function ReaderWikipedia:onLookupWikipedia(word, box, get_fullpage, forced_lang)
             pages = sorted_pages
         end
         for pageid, page in pairs(pages) do
-            local definition = page.extract or self.no_page
+            local definition = page.extract or no_result_text
             if page.length then
                 -- we get 'length' only for intro results
                 -- let's append it to definition so we know
                 -- how big/valuable the full page is
                 local fullkb = math.ceil(page.length/1024)
                 local more_factor = math.ceil( page.length / (1+definition:len()) ) -- +1 just in case len()=0
-                definition = definition .. "\n" .. T(_("(full page : %1 kB, = %2 x this intro length)"), fullkb, more_factor)
+                definition = definition .. "\n" .. T(_("(full article : %1 kB, = %2 x this intro length)"), fullkb, more_factor)
             end
             local result = {
                 dict = T(_("Wikipedia %1"), lang:upper()),
@@ -402,18 +448,27 @@ function ReaderWikipedia:onLookupWikipedia(word, box, get_fullpage, forced_lang)
                 definition = definition,
                 is_fullpage = get_fullpage,
                 lang = lang,
+                images = page.images,
             }
             table.insert(results, result)
         end
         -- logger.dbg of results will be done by ReaderDictionary:showDict()
     else
-        logger.dbg("error:", pages)
         -- dummy results
+        local definition
+        if lookup_cancelled then
+            definition = _("Wikipedia request canceled.")
+        elseif ok then
+            definition = no_result_text
+        else
+            definition = req_failure_text
+            logger.dbg("error:", pages)
+        end
         results = {
             {
                 dict = T(_("Wikipedia %1"), lang:upper()),
                 word = word,
-                definition = self.no_page,
+                definition = definition,
                 is_fullpage = get_fullpage,
                 lang = lang,
             }
