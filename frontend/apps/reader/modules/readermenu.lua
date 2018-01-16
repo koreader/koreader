@@ -82,7 +82,7 @@ function ReaderMenu:onReaderReady()
                 ratio_x = DTAP_ZONE_MENU.x, ratio_y = DTAP_ZONE_MENU.y,
                 ratio_w = DTAP_ZONE_MENU.w, ratio_h = DTAP_ZONE_MENU.h,
             },
-            handler = function(ges) return self:_tapShowMenu(ges) end,
+            handler = function(ges) return self:onTapShowMenu(ges) end,
         },
         {
             id = "readermenu_swipe",
@@ -92,7 +92,7 @@ function ReaderMenu:onReaderReady()
                 ratio_w = DTAP_ZONE_MENU.w, ratio_h = DTAP_ZONE_MENU.h,
             },
             overrides = { "rolling_swipe", "paging_swipe", },
-            handler = function(ges) return self:_swipeShowMenu(ges) end,
+            handler = function(ges) return self:onSwipeShowMenu(ges) end,
         },
         {
             id = "readermenu_pan",
@@ -102,7 +102,7 @@ function ReaderMenu:onReaderReady()
                 ratio_w = DTAP_ZONE_MENU.w, ratio_h = DTAP_ZONE_MENU.h,
             },
             overrides = { "rolling_pan", "paging_pan", },
-            handler = function(ges) return self:_swipeShowMenu(ges) end,
+            handler = function(ges) return self:onSwipeShowMenu(ges) end,
         },
     })
 end
