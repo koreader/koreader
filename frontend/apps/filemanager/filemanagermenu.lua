@@ -5,8 +5,6 @@ local Device = require("device")
 local Event = require("ui/event")
 local FileSearcher = require("apps/filemanager/filemanagerfilesearcher")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local InputDialog = require("ui/widget/inputdialog")
-local Screensaver = require("ui/screensaver")
 local Search = require("apps/filemanager/filemanagersearch")
 local SetDefaults = require("apps/filemanager/filemanagersetdefaults")
 local UIManager = require("ui/uimanager")
@@ -94,6 +92,26 @@ function FileManagerMenu:setUpdateItemTable()
         checked_func = function() return self.ui.file_chooser.show_hidden end,
         callback = function() self.ui:toggleHiddenFiles() end
     }
+    self.menu_items.items_per_page = {
+        text = _("Items per page"),
+        callback = function()
+            local SpinWidget = require("ui/widget/spinwidget")
+            local curr_items = G_reader_settings:readSetting("items_per_page") or 14
+            local items = SpinWidget:new{
+                width = Screen:getWidth() * 0.6,
+                value = curr_items,
+                value_min = 6,
+                value_max = 24,
+                ok_text = _("Set items"),
+                title_text =  _("Items per page"),
+                callback = function(spin)
+                    G_reader_settings:saveSetting("items_per_page", spin.value)
+                    self.ui:onRefresh()
+                end
+            }
+            UIManager:show(items)
+        end
+    }
     self.menu_items.sort_by = self.ui:getSortingMenuTable()
     self.menu_items.reverse_sorting = {
         text = _("Reverse sorting"),
@@ -104,58 +122,7 @@ function FileManagerMenu:setUpdateItemTable()
     if Device:supportsScreensaver() then
         self.menu_items.screensaver = {
             text = _("Screensaver"),
-            sub_item_table = {
-                {
-                    text = _("Use last book's cover as screensaver"),
-                    checked_func = Screensaver.isUsingBookCover,
-                    callback = function()
-                        if Screensaver:isUsingBookCover() then
-                            G_reader_settings:saveSetting(
-                                "use_lastfile_as_screensaver", false)
-                        else
-                            G_reader_settings:delSetting(
-                                "use_lastfile_as_screensaver")
-                        end
-                        G_reader_settings:flush()
-                    end
-                },
-                {
-                    text = _("Screensaver folder"),
-                    callback = function()
-                        local ss_folder_path_input
-                        local function save_folder_path()
-                            G_reader_settings:saveSetting(
-                                "screensaver_folder", ss_folder_path_input:getInputText())
-                            G_reader_settings:flush()
-                            UIManager:close(ss_folder_path_input)
-                        end
-                        local curr_path = G_reader_settings:readSetting("screensaver_folder")
-                        ss_folder_path_input = InputDialog:new{
-                            title = _("Screensaver folder"),
-                            input = curr_path,
-                            input_hint = "/mnt/onboard/screensaver",
-                            input_type = "text",
-                            buttons = {
-                                {
-                                    {
-                                        text = _("Cancel"),
-                                        callback = function()
-                                            UIManager:close(ss_folder_path_input)
-                                        end,
-                                    },
-                                    {
-                                        text = _("Save"),
-                                        is_enter_default = true,
-                                        callback = save_folder_path,
-                                    },
-                                }
-                            },
-                        }
-                        ss_folder_path_input:onShowKeyboard()
-                        UIManager:show(ss_folder_path_input)
-                    end,
-                },
-            }
+            sub_item_table = require("ui/elements/screensaver_menu"),
         }
     end
     -- insert common settings

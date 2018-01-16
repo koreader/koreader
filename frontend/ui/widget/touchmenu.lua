@@ -107,18 +107,22 @@ function TouchMenuItem:onTapSelect(arg, ges)
     end
     if enabled == false then return end
 
-    self.item_frame.invert = true
-    UIManager:setDirty(self.show_parent, function()
-        return "ui", self.dimen
-    end)
-    -- yield to main UI loop to invert item
-    UIManager:scheduleIn(0.1, function()
+    if G_reader_settings:isFalse("flash_ui") then
         self.menu:onMenuSelect(self.item)
-        self.item_frame.invert = false
+    else
+        self.item_frame.invert = true
         UIManager:setDirty(self.show_parent, function()
             return "ui", self.dimen
         end)
-    end)
+        -- yield to main UI loop to invert item
+        UIManager:scheduleIn(0.1, function()
+            self.menu:onMenuSelect(self.item)
+            self.item_frame.invert = false
+            UIManager:setDirty(self.show_parent, function()
+                return "ui", self.dimen
+            end)
+        end)
+    end
     return true
 end
 
@@ -129,21 +133,25 @@ function TouchMenuItem:onHoldSelect(arg, ges)
     end
     if enabled == false then return end
 
-    UIManager:scheduleIn(0.0, function()
-        self.item_frame.invert = true
-        UIManager:setDirty(self.show_parent, function()
-            return "ui", self.dimen
-        end)
-    end)
-    UIManager:scheduleIn(0.1, function()
+    if G_reader_settings:isFalse("flash_ui") then
         self.menu:onMenuHold(self.item)
-    end)
-    UIManager:scheduleIn(0.5, function()
-        self.item_frame.invert = false
-        UIManager:setDirty(self.show_parent, function()
-            return "ui", self.dimen
+    else
+        UIManager:scheduleIn(0.0, function()
+            self.item_frame.invert = true
+            UIManager:setDirty(self.show_parent, function()
+                return "ui", self.dimen
+            end)
         end)
-    end)
+        UIManager:scheduleIn(0.1, function()
+            self.menu:onMenuHold(self.item)
+        end)
+        UIManager:scheduleIn(0.5, function()
+            self.item_frame.invert = false
+            UIManager:setDirty(self.show_parent, function()
+                return "ui", self.dimen
+            end)
+        end)
+    end
     return true
 end
 
@@ -317,7 +325,7 @@ local TouchMenu = InputContainer:new{
     item_table_stack = nil,
     item_table = nil,
     item_height = Size.item.height_large,
-    bordersize = Size.border.default,
+    bordersize = Size.border.window,
     padding = Size.padding.default,
     fface = Font:getFace("ffont"),
     width = nil,
@@ -331,6 +339,10 @@ local TouchMenu = InputContainer:new{
 }
 
 function TouchMenu:init()
+    -- We won't include self.bordersize in our width calculations, so that
+    -- borders are pushed off-(screen-)width and so not visible.
+    -- We'll then be similar to bottom menu ConfigDialog (where this
+    -- nice effect is caused by some width calculations bug).
     if not self.dimen then self.dimen = Geom:new{} end
     self.show_parent = self.show_parent or self
     if not self.close_callback then
@@ -363,14 +375,14 @@ function TouchMenu:init()
         table.insert(icons, v.icon)
     end
     self.bar = TouchMenuBar:new{
-        width = self.width - self.padding * 2 - self.bordersize * 2,
+        width = self.width, -- will impose width and push left and right borders offscreen
         icons = icons,
         show_parent = self.show_parent,
         menu = self,
     }
 
     self.item_group = VerticalGroup:new{
-        align = "left",
+        align = "center",
     }
     -- group for page info
     self.page_info_left_chev = Button:new{
@@ -403,6 +415,8 @@ function TouchMenu:init()
     }
     self.device_info = HorizontalGroup:new{
         self.time_info,
+        -- Add some span to balance up_button image included padding
+        HorizontalSpan:new{width = Size.span.horizontal_default},
     }
     local up_button = IconButton:new{
         icon_file = "resources/icons/appbar.chevron.up.png",
@@ -411,7 +425,7 @@ function TouchMenu:init()
             self:backToUpperMenu()
         end,
     }
-    local footer_width = self.width - self.padding*2 - self.bordersize*2
+    local footer_width = self.width - self.padding*2
     local footer_height = up_button:getSize().h + Size.line.thick
     self.footer = HorizontalGroup:new{
         LeftContainer:new{
@@ -428,7 +442,7 @@ function TouchMenu:init()
         }
     }
 
-    self[1] = FrameContainer:new{
+    self.menu_frame = FrameContainer:new{
         padding = self.padding,
         bordersize = self.bordersize,
         background = Blitbuffer.COLOR_WHITE,
@@ -436,18 +450,26 @@ function TouchMenu:init()
         -- item_group in updateItems
         self.item_group,
     }
+    -- This CenterContainer will make the left and right borders drawn
+    -- off-screen
+    self[1] = CenterContainer:new{
+        dimen = Screen:getSize(),
+        ignore = "height",
+        self.menu_frame
+    }
 
-    self.item_width = self.width - self.padding*2 - self.bordersize*2
+    self.item_width = self.width - self.padding*2
     self.split_line = HorizontalGroup:new{
         -- pad with 10 pixel to align with the up arrow in footer
         HorizontalSpan:new{width = Size.span.horizontal_default},
         LineWidget:new{
             background = Blitbuffer.gray(0.33),
             dimen = Geom:new{
-                w = self.item_width - Screen:scaleBySize(20),
+                w = self.item_width - 2*Size.span.horizontal_default,
                 h = Size.line.medium,
             }
-        }
+        },
+        HorizontalSpan:new{width = Size.span.horizontal_default},
     }
     self.footer_top_margin = VerticalSpan:new{width = Size.span.vertical_default}
     self.bar:switchToTab(self.last_index or 1)

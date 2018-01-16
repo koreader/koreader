@@ -126,36 +126,22 @@ function ReaderMenu:setUpdateItemTable()
         self.menu_items.djvu_render_mode = self.view:getRenderModeMenuTable()
     end
 
-    if Device:supportsScreensaver() and Screensaver:isUsingBookCover() then
-        local excluded = function()
-            return self.ui.doc_settings:readSetting("exclude_screensaver") or false
-        end
-        local proportional = function()
-            return self.ui.doc_settings:readSetting("proportional_screensaver") or false
-        end
-        self.menu_items.screensaver = {
-            text = _("Screensaver"),
+    if Device:supportsScreensaver() then
+        local ss_book_settings = {
+            text = _("Current book cover settings"),
+            enabled_func = function()
+                return not (self.ui == nil or self.ui.document == nil)
+                    and G_reader_settings:readSetting('screensaver_type') == "cover"
+            end,
             sub_item_table = {
                 {
-                    text = _("Use last book's cover as screensaver"),
-                    checked_func = Screensaver.isUsingBookCover,
-                    callback = function()
-                        if Screensaver:isUsingBookCover() then
-                            G_reader_settings:saveSetting(
-                                "use_lastfile_as_screensaver", false)
-                        else
-                            G_reader_settings:delSetting(
-                                "use_lastfile_as_screensaver")
-                        end
-                        G_reader_settings:flush()
-                    end
-                },
-                {
                     text = _("Exclude this book's cover from screensaver"),
-                    checked_func = excluded,
+                    checked_func = function()
+                        return self.ui.doc_settings:readSetting("exclude_screensaver") == true
+                    end,
                     callback = function()
-                        if excluded() then
-                            self.ui.doc_settings:delSetting("exclude_screensaver")
+                        if Screensaver:excluded() then
+                            self.ui.doc_settings:saveSetting("exclude_screensaver", false)
                         else
                             self.ui.doc_settings:saveSetting("exclude_screensaver", true)
                         end
@@ -163,20 +149,45 @@ function ReaderMenu:setUpdateItemTable()
                     end
                 },
                 {
-                    text = _("Auto stretch this book's cover image in screensaver"),
-                    checked_func = proportional,
-                    callback = function()
-                        if proportional() then
-                            self.ui.doc_settings:delSetting("proportional_screensaver")
+                    text = _("Stretch book cover to fit screen"),
+                    checked_func = function()
+                        local settings_stretch_cover = self.ui.doc_settings:readSetting("stretch_cover")
+                        if  settings_stretch_cover == nil and G_reader_settings:readSetting("stretch_cover_default") then
+                            return true
                         else
-                            self.ui.doc_settings:saveSetting(
-                                "proportional_screensaver", not proportional())
+                            return self.ui.doc_settings:readSetting("stretch_cover") == true
                         end
+                    end,
+                    callback = function()
+                        self.ui.doc_settings:saveSetting("stretch_cover", not Screensaver:stretchCover())
                         self.ui:saveSettings()
-                    end
-                }
+                    end,
+                    hold_callback = function()
+                        local ConfirmBox = require("ui/widget/confirmbox")
+                        UIManager:show(ConfirmBox:new {
+                            text = _("Stretch all book covers to fit screen?"),
+                            cancel_text = _("Don't stretch"),
+                            cancel_callback = function()
+                                G_reader_settings:delSetting("stretch_cover_default")
+                                return
+                            end,
+                            ok_text = _("Stretch"),
+                            ok_callback = function()
+                                G_reader_settings:saveSetting("stretch_cover_default", true)
+                                return
+                            end,
+                        })
+                    end,
+                },
             }
         }
+
+        self.menu_items.screensaver = {
+            text = _("Screensaver"),
+            sub_item_table = require("ui/elements/screensaver_menu"),
+        }
+        table.remove(self.menu_items.screensaver.sub_item_table, 8)
+        table.insert(self.menu_items.screensaver.sub_item_table, ss_book_settings)
     end
     -- main menu tab
     -- insert common info
@@ -251,9 +262,13 @@ function ReaderMenu:exitOrRestart(callback)
     end
 end
 
-function ReaderMenu:onShowReaderMenu()
+function ReaderMenu:onShowReaderMenu(tab_index)
     if self.tab_item_table == nil then
         self:setUpdateItemTable()
+    end
+
+    if not tab_index then
+        tab_index = self.last_tab_index
     end
 
     local menu_container = CenterContainer:new{
@@ -266,7 +281,7 @@ function ReaderMenu:onShowReaderMenu()
         local TouchMenu = require("ui/widget/touchmenu")
         main_menu = TouchMenu:new{
             width = Screen:getWidth(),
-            last_index = self.last_tab_index,
+            last_index = tab_index,
             tab_item_table = self.tab_item_table,
             show_parent = menu_container,
         }
@@ -292,7 +307,6 @@ function ReaderMenu:onShowReaderMenu()
     -- maintain a reference to menu_container
     self.menu_container = menu_container
     UIManager:show(menu_container)
-
     return true
 end
 
@@ -303,18 +317,38 @@ function ReaderMenu:onCloseReaderMenu()
     return true
 end
 
-function ReaderMenu:_swipeShowMenu(ges)
+function ReaderMenu:_getTabIndexFromLocation(ges)
+    if self.tab_item_table == nil then
+        self:setUpdateItemTable()
+    end
+    -- if the start position is far right
+    if ges.pos.x > 2 * Screen:getWidth() / 3 then
+        return #self.tab_item_table
+    -- if the start position is far left
+    elseif ges.pos.x < Screen:getWidth() / 3 then
+        return 1
+    -- if center return the last index
+    else
+        return self.last_tab_index
+    end
+end
+
+function ReaderMenu:onSwipeShowMenu(ges)
     if self.activation_menu ~= "tap" and ges.direction == "south" then
-        self.ui:handleEvent(Event:new("ShowConfigMenu"))
-        self.ui:handleEvent(Event:new("ShowReaderMenu"))
+        if G_reader_settings:nilOrTrue("show_bottom_menu") then
+            self.ui:handleEvent(Event:new("ShowConfigMenu"))
+        end
+        self.ui:handleEvent(Event:new("ShowReaderMenu", self:_getTabIndexFromLocation(ges)))
         return true
     end
 end
 
-function ReaderMenu:_tapShowMenu()
+function ReaderMenu:onTapShowMenu(ges)
     if self.activation_menu ~= "swipe" then
-        self.ui:handleEvent(Event:new("ShowConfigMenu"))
-        self.ui:handleEvent(Event:new("ShowReaderMenu"))
+        if G_reader_settings:nilOrTrue("show_bottom_menu") then
+            self.ui:handleEvent(Event:new("ShowConfigMenu"))
+        end
+        self.ui:handleEvent(Event:new("ShowReaderMenu", self:_getTabIndexFromLocation(ges)))
         return true
     end
 end

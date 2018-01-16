@@ -51,8 +51,13 @@ function BookInfo:show(file, book_props)
 
     local directory, filename = util.splitFilePathName(file)
     local filename_without_suffix, filetype = util.splitFileNameSuffix(filename) -- luacheck: no unused
+    local file_size = lfs.attributes(file, "size") or 0
+    local size_f = util.getFriendlySize(file_size)
+    local size_b = util.getFormattedSize(file_size)
+    local size = string.format("%s (%s bytes)", size_f, size_b)
     table.insert(kv_pairs, { _("Filename:"), filename })
     table.insert(kv_pairs, { _("Format:"), filetype:upper() })
+    table.insert(kv_pairs, { _("Size:"), size })
     table.insert(kv_pairs, { _("Directory:"), filemanagerutil.abbreviate(directory) })
     table.insert(kv_pairs, "----")
 
@@ -93,23 +98,36 @@ function BookInfo:show(file, book_props)
     -- If still no book_props (book never opened or empty 'stats'), open the
     -- document to get them
     if not book_props then
-        local pages
         local document = DocumentRegistry:openDocument(file)
-        if document.loadDocument then -- needed for crengine
-            document:loadDocument()
-            -- document:render()
-            -- It would be needed to get nb of pages, but the nb obtained
-            -- by simply calling here document:getPageCount() is wrong,
-            -- often 2 to 3 times the nb of pages we see when opening
-            -- the document (may be some other cre settings should be applied
-            -- before calling render() ?)
-        else
-            -- for all others than crengine, we seem to get an accurate nb of pages
-            pages = document:getPageCount()
+        if document then
+            local loaded = true
+            local pages
+            if document.loadDocument then -- CreDocument
+                if not document:loadDocument() then
+                    -- failed loading, calling other methods would segfault
+                    loaded = false
+                end
+                -- For CreDocument, we would need to call document:render()
+                -- to get nb of pages, but the nb obtained by simply calling
+                -- here document:getPageCount() is wrong, often 2 to 3 times
+                -- the nb of pages we see when opening the document (may be
+                -- some other cre settings should be applied before calling
+                -- render() ?)
+            else
+                -- for all others than crengine, we seem to get an accurate nb of pages
+                pages = document:getPageCount()
+            end
+            if loaded then
+                book_props = document:getProps()
+                book_props.pages = pages
+            end
+            DocumentRegistry:closeDocument(file)
         end
-        book_props = document:getProps()
-        book_props.pages = pages
-        DocumentRegistry:closeDocument(file)
+    end
+
+    -- If still no book_props, fall back to empty ones
+    if not book_props then
+        book_props = {}
     end
 
     local title = book_props.title
@@ -121,7 +139,11 @@ function BookInfo:show(file, book_props)
     table.insert(kv_pairs, { _("Authors:"), authors })
 
     local series = book_props.series
-    if series == "" or series == nil then series = _("N/A") end
+    if series == "" or series == nil then
+        series = _("N/A")
+    else -- Shorten calibre series decimal number (#4.0 => #4)
+        series = series:gsub("(#%d+)%.0$", "%1")
+    end
     table.insert(kv_pairs, { _("Series:"), series })
 
     local pages = book_props.pages
@@ -172,6 +194,7 @@ function BookInfo:show(file, book_props)
 
     local widget = KeyValuePage:new{
         title = _("Book information"),
+        value_overflow_align = "right",
         kv_pairs = kv_pairs,
     }
     UIManager:show(widget)

@@ -4,7 +4,6 @@ local _ = require("gettext")
 
 local function activateMenu() return G_reader_settings:readSetting("activate_menu") end
 
-
 return {
     text = _("Activate menu"),
     sub_item_table = {
@@ -55,7 +54,17 @@ return {
                 UIManager:show(InfoMessage:new{
                     text = _("This will take effect on next restart."),
                 })
-            end
+            end,
+            separator = true,
+        },
+        {
+            text = _("Auto-show bottom menu"),
+            checked_func = function()
+                return G_reader_settings:nilOrTrue("show_bottom_menu")
+            end,
+            callback = function()
+                G_reader_settings:flipNilOrTrue("show_bottom_menu")
+            end,
         },
     }
 }

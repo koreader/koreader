@@ -8,6 +8,7 @@ local order = {
     setting = {
         "filemanager_display_mode",
         "show_hidden_files",
+        "items_per_page",
         "----------------------------",
         "sort_by",
         "reverse_sorting",
@@ -54,9 +55,11 @@ local order = {
     },
     search = {
         "dictionary_lookup",
+        "dictionary_lookup_history",
         "dictionary_settings",
         "----------------------------",
         "wikipedia_lookup",
+        "wikipedia_history",
         "wikipedia_settings",
         "----------------------------",
         "find_book_in_calibre_catalog",

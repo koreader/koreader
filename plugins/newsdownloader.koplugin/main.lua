@@ -1,8 +1,10 @@
 local DataStorage = require("datastorage")
+local ReadHistory = require("readhistory")
 local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("frontend/luasettings")
 local UIManager = require("ui/uimanager")
+local NetworkMgr = require("ui/network/manager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffi = require("ffi")
 local http = require("socket.http")
@@ -17,6 +19,7 @@ local T = FFIUtil.template
 local NewsDownloader = WidgetContainer:new{}
 
 local initialized = false
+local wifi_enabled_before_action = true
 local feed_config_file = "feed_config.lua"
 local news_downloader_config_file = "news_downloader_settings.lua"
 local config_key_custom_dl_dir = "custom_dl_dir";
@@ -49,6 +52,13 @@ local function getFeedLink(possible_link)
         return possible_link._attr.href
     elseif ((possible_link[1] or E)._attr or E).href then
         return possible_link[1]._attr.href
+    end
+end
+
+-- TODO: implement as NetworkMgr:afterWifiAction with configuration options
+function NewsDownloader:afterWifiAction()
+    if not wifi_enabled_before_action then
+        NetworkMgr:promptWifiOff()
     end
 end
 
@@ -114,7 +124,7 @@ function NewsDownloader:lazyInitialization()
         if news_downloader_settings:has(config_key_custom_dl_dir) then
             news_download_dir_path = news_downloader_settings:readSetting(config_key_custom_dl_dir)
         else
-            news_download_dir_path = ("%s/%s/"):format(DataStorage:getDataDir(), news_download_dir_name)
+            news_download_dir_path = ("%s/%s/"):format(DataStorage:getFullDataDir(), news_download_dir_name)
         end
 
         if not lfs.attributes(news_download_dir_path, "mode") then
@@ -133,6 +143,11 @@ function NewsDownloader:lazyInitialization()
 end
 
 function NewsDownloader:loadConfigAndProcessFeeds()
+    if not NetworkMgr:isOnline() then
+        wifi_enabled_before_action = false
+        NetworkMgr:promptWifiOn()
+        return
+    end
     local info = InfoMessage:new{ text = _("Loading news feed config…") }
     UIManager:show(info)
     logger.dbg("force repaint due to upcoming blocking calls")
@@ -152,15 +167,17 @@ function NewsDownloader:loadConfigAndProcessFeeds()
 
     local unsupported_feeds_urls = {}
 
+    local total_feed_entries = table.getn(feed_config)
     for idx, feed in ipairs(feed_config) do
         local url = feed[1]
         local limit = feed.limit
+        local download_full_article = feed.download_full_article == nil or feed.download_full_article
         if url and limit then
-            info = InfoMessage:new{ text = T(_("Processing: %1"), url) }
+            info = InfoMessage:new{ text = T(_("Processing %1/%2:\n%3"), idx, total_feed_entries, url) }
             UIManager:show(info)
             -- processFeedSource is a blocking call, so manually force a UI refresh beforehand
             UIManager:forceRePaint()
-            self:processFeedSource(url, tonumber(limit), unsupported_feeds_urls)
+            self:processFeedSource(url, tonumber(limit), unsupported_feeds_urls, download_full_article)
             UIManager:close(info)
         else
             logger.warn('NewsDownloader: invalid feed config entry', feed)
@@ -184,9 +201,10 @@ function NewsDownloader:loadConfigAndProcessFeeds()
             text = T(_("Downloading news finished. Could not process some feeds. Unsupported format in: %1"), unsupported_urls)
         })
     end
+    NewsDownloader:afterWifiAction()
 end
 
-function NewsDownloader:processFeedSource(url, limit, unsupported_feeds_urls)
+function NewsDownloader:processFeedSource(url, limit, unsupported_feeds_urls, download_full_article)
     local resp_lines = {}
     local parsed = socket_url.parse(url)
     local httpRequest = parsed.scheme == 'http' and http.request or https.request
@@ -202,9 +220,9 @@ function NewsDownloader:processFeedSource(url, limit, unsupported_feeds_urls)
     local is_atom = feeds.feed and feeds.feed.title and feeds.feed.entry[1] and feeds.feed.entry[1].title and feeds.feed.entry[1].link
 
     if is_atom then
-        self:processAtom(feeds, limit)
+        self:processAtom(feeds, limit, download_full_article)
     elseif is_rss then
-        self:processRSS(feeds, limit)
+        self:processRSS(feeds, limit, download_full_article)
     else
         table.insert(unsupported_feeds_urls, url)
         return
@@ -228,7 +246,7 @@ function NewsDownloader:deserializeXMLString(xml_str)
     return xmlhandler.root
 end
 
-function NewsDownloader:processAtom(feeds, limit)
+function NewsDownloader:processAtom(feeds, limit, download_full_article)
     local feed_output_dir = string.format("%s%s/",
                                           news_download_dir_path,
                                           util.replaceInvalidChars(getFeedTitle(feeds.feed.title)))
@@ -240,11 +258,15 @@ function NewsDownloader:processAtom(feeds, limit)
         if limit ~= 0 and index - 1 == limit then
             break
         end
-        self:downloadFeed(feed, feed_output_dir)
+        if download_full_article then
+            self:downloadFeed(feed, feed_output_dir)
+        else
+            self:createFromDescription(feed, feed.context, feed_output_dir)
+        end
     end
 end
 
-function NewsDownloader:processRSS(feeds, limit)
+function NewsDownloader:processRSS(feeds, limit, download_full_article)
     local feed_output_dir = ("%s%s/"):format(
         news_download_dir_path, util.replaceInvalidChars(feeds.rss.channel.title))
     if not lfs.attributes(feed_output_dir, "mode") then
@@ -255,7 +277,11 @@ function NewsDownloader:processRSS(feeds, limit)
         if limit ~= 0 and index - 1 == limit then
             break
         end
-        self:downloadFeed(feed, feed_output_dir)
+        if download_full_article then
+            self:downloadFeed(feed, feed_output_dir)
+        else
+            self:createFromDescription(feed, feed.description, feed_output_dir)
+        end
     end
 end
 
@@ -269,6 +295,25 @@ function NewsDownloader:downloadFeed(feed, feed_output_dir)
     local parsed = socket_url.parse(link)
     local httpRequest = parsed.scheme == 'http' and http.request or https.request
     httpRequest({ url = link, sink = ltn12.sink.file(io.open(news_dl_path, 'w')), })
+end
+
+function NewsDownloader:createFromDescription(feed, context, feed_output_dir)
+    local news_file_path = ("%s%s%s"):format(feed_output_dir,
+                                           util.replaceInvalidChars(getFeedTitle(feed.title)),
+                                           file_extension)
+    logger.dbg("NewsDownloader: News file will be created :", news_file_path)
+    local file = io.open(news_file_path, "w")
+    local footer = _("This is just description of the feed. To download full article go to News Downloader settings and change 'download_full_article' to 'true'")
+
+    local html = string.format([[<!DOCTYPE html>
+<html>
+<head><meta charset='UTF-8'><title>%s</title></head>
+<body><header><h2>%s</h2></header><article>%s</article>
+<br><footer><small>%s</small></footer>
+</body>
+</html>]], feed.title, feed.title, context, footer)
+    file:write(html)
+    file:close()
 end
 
 function NewsDownloader:removeNewsButKeepFeedConfig()
@@ -308,6 +353,16 @@ function NewsDownloader:setCustomDownloadDirectory()
            self:lazyInitialization()
        end,
     }:chooseDir()
+end
+
+function NewsDownloader:onCloseDocument()
+    local document_full_path = self.ui.document.file
+    if  document_full_path and news_download_dir_path == string.sub(document_full_path, 1, string.len(news_download_dir_path)) then
+        logger.dbg("NewsDownloader: document_full_path:", document_full_path)
+        logger.dbg("NewsDownloader: news_download_dir_path:", news_download_dir_path)
+        logger.dbg("NewsDownloader: removing NewsDownloader file from history.")
+        ReadHistory:removeItemByPath(document_full_path)
+    end
 end
 
 return NewsDownloader

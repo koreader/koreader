@@ -51,4 +51,17 @@ function Device:init()
     Generic.init(self)
 end
 
+function Device:initNetworkManager(NetworkMgr)
+    NetworkMgr.turnOnWifi = function()
+        android.setWifiEnabled(true)
+    end
+
+    NetworkMgr.turnOffWifi = function()
+        android.setWifiEnabled(false)
+    end
+    NetworkMgr.isWifiOn = function()
+        return android.isWifiEnabled()
+    end
+end
+
 return Device

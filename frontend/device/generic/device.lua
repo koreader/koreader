@@ -24,6 +24,7 @@ local Device = {
     isTouchDevice = no,
     hasFrontlight = no,
     needsTouchScreenProbe = no,
+    hasClipboard = no,
     hasColorScreen = no,
 
     -- use these only as a last resort. We should abstract the functionality
@@ -136,7 +137,7 @@ function Device:onPowerEvent(ev)
         -- always suspend in portrait mode
         self.orig_rotation_mode = self.screen:getRotationMode()
         self.screen:setRotationMode(0)
-        require("ui/screensaver"):show("suspend", _("Sleeping"))
+        require("ui/screensaver"):show()
         self.screen:refreshFull()
         self.screen_saver_mode = true
         UIManager:scheduleIn(0.1, function()

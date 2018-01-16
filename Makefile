@@ -17,6 +17,9 @@ else ifeq ($(TARGET), pocketbook)
 endif
 
 MACHINE=$(shell PATH=$(PATH) $(CC) -dumpmachine 2>/dev/null)
+ifdef KODEBUG
+	MACHINE:=$(MACHINE)-debug
+endif
 
 ifdef TARGET
 	DIST:=$(TARGET)
@@ -102,7 +105,8 @@ testfront: $(INSTALL_DIR)/koreader/.busted
 	cd $(INSTALL_DIR)/koreader && ./luajit $(shell which busted) \
 		--sort-files \
 		--no-auto-insulate \
-		-o verbose_print --exclude-tags=notest
+		--output=gtest \
+		--exclude-tags=notest $(BUSTED_OVERRIDES) $(BUSTED_SPEC_FILE)
 
 test: $(INSTALL_DIR)/koreader/.busted
 	$(MAKE) -C $(KOR_BASE) test
@@ -111,7 +115,7 @@ test: $(INSTALL_DIR)/koreader/.busted
 coverage: $(INSTALL_DIR)/koreader/.luacov
 	-rm -rf $(INSTALL_DIR)/koreader/luacov.*.out
 	cd $(INSTALL_DIR)/koreader && \
-		./luajit $(shell which busted) -o verbose_print \
+		./luajit $(shell which busted) --output=gtest \
 			--sort-files \
 			--no-auto-insulate \
 			--coverage --exclude-tags=nocov
@@ -308,9 +312,9 @@ androidupdate: all
 	cp $(INSTALL_DIR)/koreader/git-rev $(INSTALL_DIR)/koreader/ota-rev
 	# don't update the git-rev so that the next start won't revert back
 	# the older 7z version in the assets
-	sed -i '/git-rev/d' $(INSTALL_DIR)/koreader/ota/package.index
+	$(ISED) '/git-rev/d' $(INSTALL_DIR)/koreader/ota/package.index
 	# make gzip android update for zsync OTA update
-	cd $(INSTALL_DIR)/koreader && \
+	-cd $(INSTALL_DIR)/koreader && \
 		tar czafh ../../koreader-android-$(MACHINE)-$(VERSION).targz \
 		-T ota/package.index --no-recursion
 	# make android update apk

@@ -46,6 +46,10 @@ function ButtonDialog:init()
             bordersize = Size.border.window,
             radius = Size.radius.window,
             padding = Size.padding.button,
+            -- No padding at top or bottom to make all buttons
+            -- look the same size
+            padding_top = 0,
+            padding_bottom = 0,
         }
     }
 end

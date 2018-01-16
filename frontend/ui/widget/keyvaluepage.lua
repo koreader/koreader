@@ -41,6 +41,7 @@ local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
+local Input = Device.input
 local Screen = Device.screen
 local T = require("ffi/util").template
 local _ = require("gettext")
@@ -50,6 +51,7 @@ local KeyValueTitle = VerticalGroup:new{
     title = "",
     tface = Font:getFace("tfont"),
     align = "left",
+    use_top_page_count = false,
 }
 
 function KeyValueTitle:init()
@@ -74,19 +76,6 @@ function KeyValueTitle:init()
         self.close_button,
     })
     -- page count and separation line
-    self.page_cnt = FrameContainer:new{
-        padding = Size.padding.default,
-        margin = 0,
-        bordersize = 0,
-        background = Blitbuffer.COLOR_WHITE,
-        -- overlap offset x will be updated in setPageCount method
-        overlap_offset = {0, -15},
-        TextWidget:new{
-            text = "",  -- page count
-            fgcolor = Blitbuffer.COLOR_GREY,
-            face = Font:getFace("smallffont"),
-        },
-    }
     self.title_bottom = OverlapGroup:new{
         dimen = { w = self.width, h = Size.line.thick },
         LineWidget:new{
@@ -94,8 +83,23 @@ function KeyValueTitle:init()
             background = Blitbuffer.COLOR_GREY,
             style = "solid",
         },
-        self.page_cnt,
     }
+    if self.use_top_page_count then
+        self.page_cnt = FrameContainer:new{
+            padding = Size.padding.default,
+            margin = 0,
+            bordersize = 0,
+            background = Blitbuffer.COLOR_WHITE,
+            -- overlap offset x will be updated in setPageCount method
+            overlap_offset = {0, -15},
+            TextWidget:new{
+                text = "",  -- page count
+                fgcolor = Blitbuffer.COLOR_GREY,
+                face = Font:getFace("smallffont"),
+            },
+        }
+        table.insert(self.title_bottom, self.page_cnt)
+    end
     table.insert(self, self.title_bottom)
     table.insert(self, VerticalSpan:new{ width = Size.span.vertical_large })
 end
@@ -126,6 +130,7 @@ local KeyValueItem = InputContainer:new{
     height = nil,
     textviewer_width = nil,
     textviewer_height = nil,
+    value_overflow_align = "left",
 }
 
 function KeyValueItem:init()
@@ -171,11 +176,18 @@ function KeyValueItem:init()
             end
         -- misalign to fit all info
         else
-            key_w = key_w_rendered + space_w_rendered
+            if self.value_overflow_align == "right" or self.value_align == "right" then
+                key_w = frame_internal_width - value_w_rendered
+            else
+                key_w = key_w_rendered + space_w_rendered
+            end
             self.show_key = self.key
             self.show_value = self.value
         end
     else
+        if self.value_align == "right" then
+            key_w = frame_internal_width - value_w_rendered
+        end
         self.show_key = self.key
         self.show_value = self.value
     end
@@ -210,7 +222,23 @@ function KeyValueItem:init()
 end
 
 function KeyValueItem:onTap()
-    self.callback()
+    if self.callback then
+        if G_reader_settings:isFalse("flash_ui") then
+            self.callback()
+        else
+            self[1].invert = true
+            UIManager:setDirty(self.show_parent, function()
+                return "ui", self[1].dimen
+            end)
+            UIManager:scheduleIn(0.1, function()
+                self.callback()
+                self[1].invert = false
+                UIManager:setDirty(self.show_parent, function()
+                    return "ui", self[1].dimen
+                end)
+            end)
+        end
+    end
     return true
 end
 
@@ -232,6 +260,10 @@ local KeyValuePage = InputContainer:new{
     height = nil,
     -- index for the first item to show
     show_page = 1,
+    use_top_page_count = false,
+    -- aligment of value when key or value overflows its reserved width (for
+    -- now: 50%): "left" (stick to key), "right" (stick to scren right border)
+    value_overflow_align = "left",
 }
 
 function KeyValuePage:init()
@@ -243,6 +275,8 @@ function KeyValuePage:init()
     if Device:hasKeys() then
         self.key_events = {
             Close = { {"Back"}, doc = "close page" },
+            NextPage = {{Input.group.PgFwd}, doc = "next page"},
+            PrevPage = {{Input.group.PgBack}, doc = "prev page"},
         }
     end
     if Device:isTouchDevice() then
@@ -349,6 +383,7 @@ function KeyValuePage:init()
         title = self.title,
         width = self.item_width,
         height = self.item_height,
+        use_top_page_count = self.use_top_page_count,
         kv_page = self,
     }
     -- setup main content
@@ -428,6 +463,9 @@ function KeyValuePage:_populateItems()
                     callback_back = entry.callback_back,
                     textviewer_width = self.textviewer_width,
                     textviewer_height = self.textviewer_height,
+                    value_overflow_align = self.value_overflow_align,
+                    value_align = self.value_align,
+                    show_parent = self,
                 }
             )
         elseif type(entry) == "string" then
@@ -462,6 +500,16 @@ function KeyValuePage:_populateItems()
     UIManager:setDirty(self, function()
         return "ui", self.dimen
     end)
+end
+
+function KeyValuePage:onNextPage()
+    self:nextPage()
+    return true
+end
+
+function KeyValuePage:onPrevPage()
+    self:prevPage()
+    return true
 end
 
 function KeyValuePage:onSwipe(arg, ges_ev)

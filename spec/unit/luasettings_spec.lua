@@ -41,6 +41,8 @@ describe("luasettings module", function()
     end)
 
     it("should create child settings", function()
+        Settings:delSetting("key")
+
         Settings:saveSetting("key", {
             a = "b",
             c = "true",
@@ -62,5 +64,26 @@ describe("luasettings module", function()
 
         child = Settings:child("key")
         assert.True(child:isTrue("e"))
+    end)
+
+    describe("table wrapper", function()
+        Settings:delSetting("key")
+
+        it("should add item to table", function()
+            Settings:addTableItem("key", 1)
+            Settings:addTableItem("key", 2)
+            Settings:addTableItem("key", 3)
+
+            assert.are.equal(1, Settings:readSetting("key")[1])
+            assert.are.equal(2, Settings:readSetting("key")[2])
+            assert.are.equal(3, Settings:readSetting("key")[3])
+        end)
+
+        it("should remove item from table", function()
+            Settings:removeTableItem("key", 1)
+
+            assert.are.equal(2, Settings:readSetting("key")[1])
+            assert.are.equal(3, Settings:readSetting("key")[2])
+        end)
     end)
 end)

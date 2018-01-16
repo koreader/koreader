@@ -27,6 +27,7 @@ end
 -- NetworkMgr:setWirelessBackend
 function NetworkMgr:turnOnWifi() end
 function NetworkMgr:turnOffWifi() end
+function NetworkMgr:isWifiOn() end
 function NetworkMgr:getNetworkList() end
 function NetworkMgr:getCurrentNetwork() end
 function NetworkMgr:authenticateNetwork() end
@@ -99,7 +100,7 @@ end
 function NetworkMgr:getWifiMenuTable()
     return {
         text = _("Wi-Fi connection"),
-        enabled_func = function() return Device:isKindle() or Device:isKobo() end,
+        enabled_func = function() return Device:isAndroid() or Device:isKindle() or Device:isKobo() end,
         checked_func = function() return NetworkMgr:isOnline() end,
         callback = function(menu)
             local wifi_status = NetworkMgr:isOnline()

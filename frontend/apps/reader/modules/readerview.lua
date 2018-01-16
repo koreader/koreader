@@ -34,7 +34,7 @@ local ReaderView = OverlapGroup:extend{
         bbox = nil,
     },
     outer_page_color = Blitbuffer.gray(DOUTER_PAGE_COLOR/15),
-    -- hightlight with "lighten" or "underscore" or "invert"
+    -- highlight with "lighten" or "underscore" or "invert"
     highlight = {
         lighten_factor = 0.2,
         temp_drawer = "invert",
@@ -473,21 +473,42 @@ function ReaderView:drawPageSavedHighlight(bb, x, y)
 end
 
 function ReaderView:drawXPointerSavedHighlight(bb, x, y)
+    local cur_page
+    -- In scroll mode, we'll need to check for highlights in previous or next
+    -- page too as some parts of them may be displayed
+    local neighbour_pages = self.view_mode ~= "page" and 1 or 0
     for page, _ in pairs(self.highlight.saved) do
         local items = self.highlight.saved[page]
         if not items then items = {} end
         for j = 1, #items do
+            if not cur_page then
+                cur_page = self.ui.document:getPageFromXPointer(self.ui.document:getXPointer())
+            end
             local item = items[j]
             local pos0, pos1 = item.pos0, item.pos1
-            local boxes = self.ui.document:getScreenBoxesFromPositions(pos0, pos1)
-            if boxes then
-                for _, box in pairs(boxes) do
-                    local rect = self:pageToScreenTransform(page, box)
-                    if rect then
-                        self:drawHighlightRect(bb, x, y, rect, item.drawer or self.highlight.saved_drawer)
-                    end
-                end -- end for each box
-            end -- end if boxes
+            -- document:getScreenBoxesFromPositions() is expensive, so we
+            -- first check this item is on current page
+            local page0 = self.ui.document:getPageFromXPointer(pos0)
+            local page1 = self.ui.document:getPageFromXPointer(pos1)
+            local start_page = math.min(page0, page1)
+            local end_page = math.max(page0, page1)
+            -- In scroll mode, we may be displaying cur_page and cur_page+1, so
+            -- we have to check the highlight start_page is <= cur_page+1.
+            -- Same thinking with highlight's end_page >= cur_page-1 as we may
+            -- be displaying a part of cur_page-1.
+            -- (A highlight starting on cur_page-17 and ending on cur_page+13 is
+            -- a highlight to consider)
+            if start_page <= cur_page + neighbour_pages and end_page >= cur_page - neighbour_pages then
+                local boxes = self.ui.document:getScreenBoxesFromPositions(pos0, pos1)
+                if boxes then
+                    for _, box in pairs(boxes) do
+                        local rect = self:pageToScreenTransform(page, box)
+                        if rect then
+                            self:drawHighlightRect(bb, x, y, rect, item.drawer or self.highlight.saved_drawer)
+                        end
+                    end -- end for each box
+                end -- end if boxes
+            end
         end -- end for each highlight
     end -- end for all saved highlight
 end
@@ -746,9 +767,11 @@ function ReaderView:onMarginUpdate()
 end
 
 function ReaderView:onSetViewMode(new_mode)
-    self.view_mode = new_mode
-    self.ui.document:setViewMode(new_mode)
-    self.ui:handleEvent(Event:new("ChangeViewMode"))
+    if new_mode ~= self.view_mode then
+        self.view_mode = new_mode
+        self.ui.document:setViewMode(new_mode)
+        self.ui:handleEvent(Event:new("ChangeViewMode"))
+    end
     return true
 end
 

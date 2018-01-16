@@ -72,9 +72,11 @@ local order = {
     },
     search = {
         "dictionary_lookup",
+        "dictionary_lookup_history",
         "dictionary_settings",
         "----------------------------",
         "wikipedia_lookup",
+        "wikipedia_history",
         "wikipedia_settings",
         "----------------------------",
         "goodreads",

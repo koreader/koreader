@@ -1,6 +1,8 @@
 local Blitbuffer = require("ffi/blitbuffer")
+local Button = require("ui/widget/button")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local CenterContainer = require("ui/widget/container/centercontainer")
+local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
@@ -12,15 +14,16 @@ local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
 local FileManagerMenu = require("apps/filemanager/filemanagermenu")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
 local IconButton = require("ui/widget/iconbutton")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
-local OverlapGroup = require("ui/widget/overlapgroup")
 local PluginLoader = require("pluginloader")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local ReaderUI = require("apps/reader/readerui")
 local ReaderWikipedia = require("apps/reader/modules/readerwikipedia")
+local RenderText = require("ui/rendertext")
 local Screenshoter = require("ui/widget/screenshoter")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
@@ -33,12 +36,26 @@ local logger = require("logger")
 local util = require("ffi/util")
 local _ = require("gettext")
 local Screen = Device.screen
+local T = require("ffi/util").template
 
 local function restoreScreenMode()
     local screen_mode = G_reader_settings:readSetting("fm_screen_mode")
     if Screen:getScreenMode() ~= screen_mode then
         Screen:setScreenMode(screen_mode or "portrait")
     end
+end
+
+local function truncatePath(text)
+    local screen_width = Screen:getWidth()
+    local face = Font:getFace("xx_smallinfofont")
+    -- we want to truncate text on the left, so work with the reverse of text (which is fine as we don't use kerning)
+    local reversed_text = require("util").utf8Reverse(text)
+    local txt_width = RenderText:sizeUtf8Text(0, screen_width, face, reversed_text, false, false).x
+    if  screen_width - 2 * Size.padding.small < txt_width then
+        reversed_text = RenderText:truncateTextByWidth(reversed_text, face, screen_width - 2 * Size.padding.small, false, false)
+        text = require("util").utf8Reverse(reversed_text)
+    end
+    return text
 end
 
 local FileManager = InputContainer:extend{
@@ -48,47 +65,71 @@ local FileManager = InputContainer:extend{
 
     mv_bin = Device:isAndroid() and "/system/bin/mv" or "/bin/mv",
     cp_bin = Device:isAndroid() and "/system/bin/cp" or "/bin/cp",
-    rm_bin = Device:isAndroid() and "/system/bin/rm" or "/bin/rm",
+    mkdir_bin =  Device:isAndroid() and "/system/bin/mkdir" or "/bin/mkdir",
 }
 
 function FileManager:init()
     self.show_parent = self.show_parent or self
-
+    local icon_size = Screen:scaleBySize(35)
     local home_button = IconButton:new{
         icon_file = "resources/icons/appbar.home.png",
-        width = Screen:scaleBySize(35),
-        height = Screen:scaleBySize(35),
+        scale_for_dpi = false,
+        width = icon_size,
+        height = icon_size,
         padding = Size.padding.default,
-        padding_top = Size.padding.small,
-        padding_left = Size.padding.small,
+        padding_left = Size.padding.large,
+        padding_right = Size.padding.large,
+        padding_bottom = 0,
         callback = function() self:goHome() end,
         hold_callback = function() self:setHome() end,
     }
 
+    local plus_button = IconButton:new{
+        icon_file = "resources/icons/appbar.plus.png",
+        scale_for_dpi = false,
+        width = icon_size,
+        height = icon_size,
+        padding = Size.padding.default,
+        padding_left = Size.padding.large,
+        padding_right = Size.padding.large,
+        padding_bottom = 0,
+        callback = function() self:tapPlus() end,
+    }
+
     self.path_text = TextWidget:new{
         face = Font:getFace("xx_smallinfofont"),
-        text = filemanagerutil.abbreviate(self.root_path),
+        text = truncatePath(filemanagerutil.abbreviate(self.root_path)),
     }
 
     self.banner = FrameContainer:new{
         padding = 0,
         bordersize = 0,
-        VerticalGroup:new{
-            OverlapGroup:new{
-                home_button,
-                VerticalGroup:new{
-                    TextWidget:new{
-                        face = Font:getFace("smalltfont"),
-                        text = self.title,
+        VerticalGroup:new {
+            CenterContainer:new {
+                dimen = { w = Screen:getWidth(), h = nil },
+                HorizontalGroup:new {
+                    home_button,
+                    VerticalGroup:new {
+                        Button:new {
+                            readonly = true,
+                            bordersize = 0,
+                            padding = 0,
+                            text_font_bold = false,
+                            text_font_face = "smalltfont",
+                            text_font_size = 24,
+                            text = self.title,
+                            width = Screen:getWidth() - 2 * icon_size - 4 * Size.padding.large,
+                        },
                     },
-                    CenterContainer:new{
-                        dimen = { w = Screen:getWidth(), h = nil },
-                        self.path_text,
-                    },
-                },
+                    plus_button,
+                }
             },
-            VerticalSpan:new{ width = Screen:scaleBySize(10) },
-        },
+            CenterContainer:new{
+                dimen = { w = Screen:getWidth(), h = nil },
+                self.path_text,
+            },
+            VerticalSpan:new{ width = Screen:scaleBySize(5) },
+        }
     }
 
     local g_show_hidden = G_reader_settings:readSetting("show_hidden")
@@ -96,7 +137,9 @@ function FileManager:init()
     local file_chooser = FileChooser:new{
         -- remeber to adjust the height when new item is added to the group
         path = self.root_path,
+        focused_path = self.focused_file,
         collate = G_reader_settings:readSetting("collate") or "strcoll",
+        reverse_collate = G_reader_settings:isTrue("reverse_collate"),
         show_parent = self.show_parent,
         show_hidden = show_hidden,
         width = Screen:getWidth(),
@@ -104,6 +147,7 @@ function FileManager:init()
         is_popout = false,
         is_borderless = true,
         has_close_button = true,
+        perpage = G_reader_settings:readSetting("items_per_page"),
         file_filter = function(filename)
             if DocumentRegistry:getProvider(filename) then
                 return true
@@ -112,9 +156,10 @@ function FileManager:init()
         close_callback = function() return self:onClose() end,
     }
     self.file_chooser = file_chooser
+    self.focused_file = nil -- use it only once
 
     function file_chooser:onPathChanged(path)  -- luacheck: ignore
-        FileManager.instance.path_text:setText(filemanagerutil.abbreviate(path))
+        FileManager.instance.path_text:setText(truncatePath(filemanagerutil.abbreviate(path)))
         UIManager:setDirty(FileManager.instance, function()
             return "ui", FileManager.instance.path_text.dimen
         end)
@@ -150,7 +195,6 @@ function FileManager:init()
                     enabled = fileManager.clipboard and true or false,
                     callback = function()
                         pasteHere(file)
-                        self:refreshPath()
                         UIManager:close(self.file_dialog)
                     end,
                 },
@@ -158,7 +202,6 @@ function FileManager:init()
                     text = _("Purge .sdr"),
                     enabled = DocSettings:hasSidecarFile(util.realpath(file)),
                     callback = function()
-                        local ConfirmBox = require("ui/widget/confirmbox")
                         UIManager:show(ConfirmBox:new{
                             text = util.template(_("Purge .sdr to reset settings for this document?\n\n%1"), self.file_dialog.title),
                             ok_text = _("Purge"),
@@ -183,7 +226,6 @@ function FileManager:init()
                 {
                     text = _("Delete"),
                     callback = function()
-                        local ConfirmBox = require("ui/widget/confirmbox")
                         UIManager:show(ConfirmBox:new{
                             text = _("Are you sure that you want to delete this file?\n") .. file .. ("\n") .. _("If you delete a file, it is permanently lost."),
                             ok_text = _("Delete"),
@@ -317,7 +359,82 @@ function FileManager:init()
     self:handleEvent(Event:new("SetDimensions", self.dimen))
 end
 
-function FileManager:reinit(path)
+function FileManager:tapPlus()
+    local buttons = {
+        {
+            {
+                text = _("New folder"),
+                callback = function()
+                    UIManager:close(self.file_dialog)
+                    self.input_dialog = InputDialog:new{
+                        title = _("Create new folder"),
+                        input_type = "text",
+                        buttons = {
+                            {
+                                {
+                                    text = _("Cancel"),
+                                    callback = function()
+                                        self:closeInputDialog()
+                                    end,
+                                },
+                                {
+                                    text = _("Create"),
+                                    callback = function()
+                                        self:closeInputDialog()
+                                        local new_folder = self.input_dialog:getInputText()
+                                        if new_folder and new_folder ~= "" then
+                                            self:createFolder(self.file_chooser.path, new_folder)
+                                        end
+                                    end,
+                                },
+                            }
+                        },
+                    }
+                    self.input_dialog:onShowKeyboard()
+                    UIManager:show(self.input_dialog)
+                end,
+            },
+        },
+        {
+            {
+                text = _("Paste"),
+                enabled = self.clipboard and true or false,
+                callback = function()
+                    self:pasteHere(self.file_chooser.path)
+                    self:onRefresh()
+                    UIManager:close(self.file_dialog)
+                end,
+            },
+        },
+        {
+            {
+                text = _("Set as HOME directory"),
+                callback = function()
+                    self:setHome(self.file_chooser.path)
+                    UIManager:close(self.file_dialog)
+                end
+            }
+        },
+        {
+            {
+                text = _("Go to HOME directory"),
+                callback = function()
+                    self:goHome()
+                    UIManager:close(self.file_dialog)
+                end
+            }
+        }
+    }
+
+    self.file_dialog = ButtonDialogTitle:new{
+        title = filemanagerutil.abbreviate(self.file_chooser.path),
+        title_align = "center",
+        buttons = buttons,
+    }
+    UIManager:show(self.file_dialog)
+end
+
+function FileManager:reinit(path, focused_file)
     self.dimen = Screen:getSize()
     -- backup the root path and path items
     self.root_path = path or self.file_chooser.path
@@ -326,9 +443,13 @@ function FileManager:reinit(path)
         path_items_backup[k] = v
     end
     -- reinit filemanager
+    self.focused_file = focused_file
     self:init()
     self.file_chooser.path_items = path_items_backup
-    self:onRefresh()
+    -- self:init() has already done file_chooser:refreshPath(), so this one
+    -- looks like not necessary (cheap with classic mode, less cheap with
+    -- CoverBrowser plugin's cover image renderings)
+    -- self:onRefresh()
 end
 
 function FileManager:toggleHiddenFiles()
@@ -373,7 +494,6 @@ end
 
 function FileManager:setHome(path)
     path = path or self.file_chooser.path
-    local ConfirmBox = require("ui/widget/confirmbox")
     UIManager:show(ConfirmBox:new{
         text = util.template(_("Set '%1' as HOME directory?"), path),
         ok_text = _("Set as HOME"),
@@ -400,16 +520,89 @@ function FileManager:pasteHere(file)
         local orig = util.realpath(self.clipboard)
         local dest = lfs.attributes(file, "mode") == "directory" and
             file or file:match("(.*/)")
-        if self.cutfile then
+
+        local function infoCopyFile()
+            -- if we copy a file, also copy its sidecar directory
+            if DocSettings:hasSidecarFile(orig) then
+                util.execute(self.cp_bin, "-r", DocSettings:getSidecarDir(orig), dest)
+            end
+            if util.execute(self.cp_bin, "-r", orig, dest) == 0 then
+                UIManager:show(InfoMessage:new {
+                    text = T(_("Copied to: %1"), dest),
+                    timeout = 2,
+                })
+            else
+                UIManager:show(InfoMessage:new {
+                    text = T(_("An error occurred while trying to copy %1"), orig),
+                    timeout = 2,
+                })
+            end
+        end
+
+        local function infoMoveFile()
             -- if we move a file, also move its sidecar directory
             if DocSettings:hasSidecarFile(orig) then
                 self:moveFile(DocSettings:getSidecarDir(orig), dest) -- dest is always a directory
             end
-            self:moveFile(orig, dest)
-        else
+            if self:moveFile(orig, dest) then
+                UIManager:show(InfoMessage:new {
+                    text = T(_("Moved to: %1"), dest),
+                    timeout = 2,
+                })
+            else
+                UIManager:show(InfoMessage:new {
+                    text = T(_("An error occurred while trying to move %1"), orig),
+                    timeout = 2,
+                })
+            end
             util.execute(self.cp_bin, "-r", orig, dest)
         end
+
+        local info_file
+        if self.cutfile then
+            info_file = infoMoveFile
+        else
+            info_file = infoCopyFile
+        end
+        local basename = util.basename(self.clipboard)
+        local mode = lfs.attributes(dest .."/" .. basename, "mode")
+        if mode == "file" or mode == "directory" then
+            local text
+            if mode == "file" then
+                text = T(_("The file %1 already exists. Do you want to overwrite it?"), basename)
+            else
+                text = T(_("The directory %1 already exists. Do you want to overwrite it?"), basename)
+            end
+
+            UIManager:show(ConfirmBox:new {
+                text = text,
+                ok_text = _("Overwrite"),
+                ok_callback = function()
+                    info_file()
+                    self:onRefresh()
+                end,
+            })
+        else
+            info_file()
+            self:onRefresh()
+        end
     end
+end
+
+function FileManager:createFolder(curr_folder, new_folder)
+    local folder = curr_folder .. "/" .. new_folder
+    local code = util.execute(self.mkdir_bin, folder)
+    local text
+    if code == 0 then
+        self:onRefresh()
+        text = T(_("Folder created:\n%1"), new_folder)
+    else
+        text = _("The folder has not been created.")
+    end
+    UIManager:show(InfoMessage:new{
+        text = text,
+        timeout = 2,
+    })
 end
 
 function FileManager:deleteFile(file)
@@ -423,7 +616,11 @@ function FileManager:deleteFile(file)
     end
 
     local is_doc = DocumentRegistry:getProvider(file_abs_path)
-    ok, err = os.remove(file_abs_path)
+    if lfs.attributes(file_abs_path, "mode") == "file" then
+        ok, err = os.remove(file_abs_path)
+    else
+        ok, err = util.purgeDir(file_abs_path)
+    end
     if ok and err == nil then
         if is_doc ~= nil then
             DocSettings:open(file):purge()
@@ -547,13 +744,14 @@ function FileManager:getStartWithMenuTable()
     }
 end
 
-function FileManager:showFiles(path)
+function FileManager:showFiles(path, focused_file)
     path = path or G_reader_settings:readSetting("lastdir") or filemanagerutil.getDefaultDir()
     G_reader_settings:saveSetting("lastdir", path)
     restoreScreenMode()
     local file_manager = FileManager:new{
         dimen = Screen:getSize(),
         root_path = path,
+        focused_file = focused_file,
         onExit = function()
             self.instance = nil
         end

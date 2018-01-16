@@ -6,6 +6,13 @@ local dump = require("dump")
 
 local LuaSettings = {}
 
+function LuaSettings:new(o)
+    o = o or {}
+    setmetatable(o, self)
+    self.__index = self
+    return o
+end
+
 --- Opens a settings file.
 function LuaSettings:open(file_path)
     local new = {file=file_path}
@@ -130,6 +137,22 @@ function LuaSettings:flipFalse(key)
     else
         self:saveSetting(key, true)
     end
+    return self
+end
+
+--- Adds item to table.
+function LuaSettings:addTableItem(key, value)
+    local settings_table = self:has(key) and self:readSetting(key) or {}
+    table.insert(settings_table, value)
+    self:saveSetting(key, settings_table)
+    return self
+end
+
+--- Removes index from table.
+function LuaSettings:removeTableItem(key, index)
+    local settings_table = self:has(key) and self:readSetting(key) or {}
+    table.remove(settings_table, index)
+    self:saveSetting(key, settings_table)
     return self
 end
 

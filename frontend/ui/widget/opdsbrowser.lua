@@ -2,6 +2,7 @@ local ButtonDialog = require("ui/widget/buttondialog")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local Cache = require("cache")
 local CacheItem = require("cacheitem")
+local ConfirmBox = require("ui/widget/confirmbox")
 local InfoMessage = require("ui/widget/infomessage")
 local LoginDialog = require("ui/widget/logindialog")
 local Menu = require("ui/widget/menu")
@@ -13,6 +14,7 @@ local UIManager = require("ui/uimanager")
 local gettext = require("gettext")
 local http = require('socket.http')
 local https = require('ssl.https')
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local ltn12 = require('ltn12')
 local mime = require('mime')
@@ -501,28 +503,48 @@ function OPDSBrowser:downloadFile(item, format, remote_url)
         item.title = util.replaceSlashChar(item.title)
     end
     local local_path = download_dir .. "/" .. item.author .. ' - ' .. item.title .. "." .. string.lower(format)
-    logger.dbg("downloading file", local_path, "from", remote_url)
-
     local_path = util.fixUtf8(local_path, "_")
-    local parsed = url.parse(remote_url)
-    http.TIMEOUT, https.TIMEOUT = 20, 20
-    local httpRequest = parsed.scheme == 'http' and http.request or https.request
-    local _, c, _ = httpRequest{
-        url = remote_url,
-        headers = self:getAuthorizationHeader(parsed.host),
-        sink = ltn12.sink.file(io.open(local_path, "w")),
-    }
 
-    if c == 200 then
-        logger.dbg("file downloaded to", local_path)
-        if self.file_downloaded_callback then
-            self.file_downloaded_callback(local_path)
-        end
-    else
+    local function download()
+        UIManager:scheduleIn(1, function()
+            logger.dbg("downloading file", local_path, "from", remote_url)
+            local parsed = url.parse(remote_url)
+            http.TIMEOUT, https.TIMEOUT = 20, 20
+            local httpRequest = parsed.scheme == 'http' and http.request or https.request
+            local _, c, _ = httpRequest {
+                url = remote_url,
+                headers = self:getAuthorizationHeader(parsed.host),
+                sink = ltn12.sink.file(io.open(local_path, "w")),
+            }
+            if c == 200 then
+                logger.dbg("file downloaded to", local_path)
+                if self.file_downloaded_callback then
+                    self.file_downloaded_callback(local_path)
+                end
+            else
+                UIManager:show(InfoMessage:new {
+                    text = gettext("Could not save file to:\n") .. local_path,
+                    timeout = 3,
+                })
+            end
+        end)
+
         UIManager:show(InfoMessage:new{
-            text = gettext("Could not save file to:\n") .. local_path,
-            timeout = 3,
+            text = gettext("Downloading may take several minutes…"),
+            timeout = 1,
         })
+    end
+
+    if lfs.attributes(local_path, "mode") == "file" then
+        UIManager:show(ConfirmBox:new {
+            text = T(gettext("The file %1 already exists. Do you want to overwrite it?"), local_path),
+            ok_text = gettext("Overwrite"),
+            ok_callback = function()
+                download()
+            end,
+        })
+    else
+        download()
     end
 end
 
@@ -550,14 +572,8 @@ function OPDSBrowser:showDownloads(item)
                     -- append DOWNWARDS BLACK ARROW ⬇ U+2B07 to format
                     button.text = format .. "\xE2\xAC\x87"
                     button.callback = function()
-                        UIManager:scheduleIn(1, function()
-                            self:downloadFile(item, format, acquisition.href)
-                        end)
+                        self:downloadFile(item, format, acquisition.href)
                         UIManager:close(self.download_dialog)
-                        UIManager:show(InfoMessage:new{
-                            text = gettext("Downloading may take several minutes…"),
-                            timeout = 1,
-                        })
                     end
                     table.insert(line, button)
                 end

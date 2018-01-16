@@ -141,10 +141,22 @@ if Device:needsTouchScreenProbe() then
     Device:touchScreenProbe()
 end
 
-local exit_code = nil
+-- Inform once about color rendering on newly supported devices
+-- (there are some android devices that may not have a color screen,
+-- and we are not (yet?) able to guess that fact)
+if Device.hasColorScreen() and not G_reader_settings:has("color_rendering") then
+    -- enable it to prevent further display of this message
+    G_reader_settings:saveSetting("color_rendering", true)
+    local InfoMessage = require("ui/widget/infomessage")
+    UIManager:show(InfoMessage:new{
+        text = _("Documents will be rendered in color on this device.\nIf your device is grayscale, you can disable color rendering in the screen sub-menu for reduced memory usage."),
+    })
+end
+
+local exit_code
 
 if ARGV[argidx] and ARGV[argidx] ~= "" then
-    local file = nil
+    local file
     if lfs.attributes(ARGV[argidx], "mode") == "file" then
         file = ARGV[argidx]
     elseif open_last and last_file then

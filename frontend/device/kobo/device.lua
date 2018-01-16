@@ -96,6 +96,17 @@ local KoboPhoenix = Kobo:new{
     viewport = Geom:new{x=0, y=0, w=758, h=1012},
 }
 
+-- Kobo Aura H2O2:
+local KoboSnow = Kobo:new{
+    model = "Kobo_snow",
+    hasFrontlight = yes,
+    touch_alyssum_protocol = true,
+    touch_probe_ev_epoch_time = true,
+    display_dpi = 265,
+    -- the bezel covers the top 11 pixels:
+    viewport = Geom:new{x=0, y=11, w=1080, h=1429},
+}
+
 -- Kobo Aura second edition:
 local KoboStar = Kobo:new{
     model = "Kobo_star",
@@ -103,8 +114,8 @@ local KoboStar = Kobo:new{
     touch_probe_ev_epoch_time = true,
     touch_phoenix_protocol = true,
     display_dpi = 212,
-    -- the bezel covers 12 pixels at the bottom:
-    viewport = Geom:new{x=0, y=0, w=758, h=1012},
+    -- the bezel covers 1-2 pixels on each side:
+    viewport = Geom:new{x=1, y=0, w=756, h=1024},
 }
 
 -- Kobo Glo HD:
@@ -534,6 +545,8 @@ elseif codename == "star" then
     return KoboStar
 elseif codename == "daylight" then
     return KoboDaylight
+elseif codename == "snow" then
+    return KoboSnow
 else
     error("unrecognized Kobo model "..codename)
 end

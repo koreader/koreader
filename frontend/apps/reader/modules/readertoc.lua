@@ -72,6 +72,10 @@ function ReaderToc:onPageUpdate(pageno)
     self.pageno = pageno
 end
 
+function ReaderToc:onPosUpdate(pos, pageno)
+    self.pageno = pageno
+end
+
 function ReaderToc:fillToc()
     if self.toc and #self.toc > 0 then return end
     self.toc = self.ui.document:getToc()
@@ -313,6 +317,9 @@ function ReaderToc:onShowToc()
         width = Screen:getWidth(),
         height = Screen:getHeight(),
         cface = Font:getFace("x_smallinfofont"),
+        single_line = true,
+        perpage = G_reader_settings:readSetting("items_per_page") or 14,
+        line_color = require("ffi/blitbuffer").COLOR_WHITE,
         on_close_ges = {
             GestureRange:new{
                 ges = "two_finger_swipe",

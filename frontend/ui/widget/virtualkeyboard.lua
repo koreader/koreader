@@ -44,6 +44,14 @@ function VirtualKey:init()
     elseif self.label == "Backspace" then
         self.callback = function () self.keyboard:delChar() end
         self.hold_callback = function () self.keyboard:clear() end
+    elseif self.label =="←" then
+        self.callback = function() self.keyboard:leftChar() end
+    elseif self.label == "→" then
+        self.callback = function() self.keyboard:rightChar() end
+    elseif self.label == "↑" then
+        self.callback = function() self.keyboard:upLine() end
+    elseif self.label == "↓" then
+        self.callback = function() self.keyboard:downLine() end
     else
         self.callback = function () self.keyboard:addChar(self.key) end
     end
@@ -305,6 +313,22 @@ end
 function VirtualKeyboard:delChar()
     logger.dbg("delete char")
     self.inputbox:delChar()
+end
+
+function VirtualKeyboard:leftChar()
+    self.inputbox:leftChar()
+end
+
+function VirtualKeyboard:rightChar()
+    self.inputbox:rightChar()
+end
+
+function VirtualKeyboard:upLine()
+    self.inputbox:upLine()
+end
+
+function VirtualKeyboard:downLine()
+    self.inputbox:downLine()
 end
 
 function VirtualKeyboard:clear()

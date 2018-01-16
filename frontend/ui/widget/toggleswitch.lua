@@ -29,7 +29,7 @@ local ToggleLabel = TextWidget:new{
 }
 
 function ToggleLabel:paintTo(bb, x, y)
-    RenderText:renderUtf8Text(bb, x, y+self._height*0.75, self.face, self.text, true, self.bold, self.fgcolor)
+    RenderText:renderUtf8Text(bb, x, y+self._baseline_h, self.face, self.text, true, self.bold, self.fgcolor)
 end
 
 local ToggleSwitch = InputContainer:new{
@@ -66,11 +66,18 @@ function ToggleSwitch:init()
         w = self.width / self.n_pos,
         h = self.height / self.row_count,
     }
+    local button_width = math.floor(self.width / self.n_pos)
     for i = 1, #self.toggle do
+        local text = self.toggle[i]
+        local face = Font:getFace(self.font_face, self.font_size)
+        local txt_width = RenderText:sizeUtf8Text(0, Screen:getWidth(), face, text, nil, self.bold).x
+        if  button_width - Size.padding.default < txt_width then
+            text = RenderText:truncateTextByWidth(text, face, button_width - Size.padding.default, nil, self.bold)
+        end
         local label = ToggleLabel:new{
             align = "center",
-            text = self.toggle[i],
-            face = Font:getFace(self.font_face, self.font_size),
+            text = text,
+            face = face,
         }
         local content = CenterContainer:new{
             dimen = center_dimen,
@@ -154,7 +161,13 @@ function ToggleSwitch:calculatePosition(gev)
 end
 
 function ToggleSwitch:onTapSelect(arg, gev)
-    if not self.enabled then return true end
+    if not self.enabled then
+        if self.readonly ~= true then
+            return true
+        else
+            return
+        end
+    end
     local position = self:calculatePosition(gev)
     self:togglePosition(position)
     --[[

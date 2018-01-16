@@ -88,19 +88,23 @@ end
 
 function CheckButton:onTapCheckButton()
     if self.enabled and self.callback then
-        UIManager:scheduleIn(0.0, function()
-            self.invert = true
-            UIManager:setDirty(self.show_parent, function()
-                return "ui", self.dimen
-            end)
-        end)
-        UIManager:scheduleIn(0.1, function()
+        if G_reader_settings:isFalse("flash_ui") then
             self.callback()
-            self.invert = false
-            UIManager:setDirty(self.show_parent, function()
-                return "ui", self.dimen
+        else
+            UIManager:scheduleIn(0.0, function()
+                self.invert = true
+                UIManager:setDirty(self.show_parent, function()
+                    return "ui", self.dimen
+                end)
             end)
-        end)
+            UIManager:scheduleIn(0.1, function()
+                self.callback()
+                self.invert = false
+                UIManager:setDirty(self.show_parent, function()
+                    return "ui", self.dimen
+                end)
+            end)
+        end
     elseif self.tap_input then
         self:onInput(self.tap_input)
     elseif type(self.tap_input_func) == "function" then

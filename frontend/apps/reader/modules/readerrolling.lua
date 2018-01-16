@@ -43,6 +43,7 @@ local ReaderRolling = InputContainer:new{
     panning_steps = ReaderPanning.panning_steps,
     show_overlap_enable = nil,
     overlap = 20,
+    cre_top_bar_enabled = false,
 }
 
 function ReaderRolling:init()
@@ -94,6 +95,11 @@ function ReaderRolling:init()
     table.insert(self.ui.postInitCallback, function()
         self.doc_height = self.ui.document.info.doc_height
         self.old_doc_height = self.doc_height
+        self.ui.document:_readMetadata()
+        self.old_page = self.ui.document.info.number_of_pages
+    end)
+    table.insert(self.ui.postReaderCallback, function()
+        self:updatePos()
     end)
     self.ui.menu:registerToMainMenu(self)
 end
@@ -140,6 +146,8 @@ function ReaderRolling:onReadSettings(config)
         self.show_overlap_enable = DSHOWOVERLAP
     end
     self.inverse_reading_order = config:readSetting("inverse_reading_order") or false
+
+    self:onSetStatusLine(config:readSetting("copt_status_line") or DCREREADER_PROGRESS_BAR)
 end
 
 -- in scroll mode percent_finished must be save before close document
@@ -164,9 +172,7 @@ end
 
 function ReaderRolling:onReaderReady()
     self:setupTouchZones()
-    self.ui:registerPostReadyCallback(function()
-        self.setupXpointer()
-    end)
+    self.setupXpointer()
 end
 
 function ReaderRolling:setupTouchZones()
@@ -280,11 +286,7 @@ end
 
 function ReaderRolling:getLastPercent()
     if self.view.view_mode == "page" then
-        if self.old_page then
-            return self.current_page / self.old_page
-        else
-            return nil
-        end
+        return self.current_page / self.old_page
     else
         -- FIXME: the calculated percent is not accurate in "scroll" mode.
         return self.ui.document:getPosFromXPointer(
@@ -470,6 +472,12 @@ end
     Note that xpointer should not be changed.
 --]]
 function ReaderRolling:onUpdatePos()
+    if self.ui.postReaderCallback ~= nil then -- ReaderUI:init() not yet done
+        -- Don't schedule any updatePos as long as ReaderUI:init() is
+        -- not finished (one will be called in the ui.postReaderCallback
+        -- we have set above) to avoid multiple refreshes.
+        return true
+    end
     UIManager:scheduleIn(0.1, function () self:updatePos() end)
     return true
 end
@@ -481,9 +489,7 @@ function ReaderRolling:updatePos()
     local new_height = self.ui.document.info.doc_height
     local new_page = self.ui.document.info.number_of_pages
     if self.old_doc_height ~= new_height or self.old_page ~= new_page then
-        if self.old_page then
-            self:_gotoXPointer(self.xpointer)
-        end
+        self:_gotoXPointer(self.xpointer)
         self.old_doc_height = new_height
         self.old_page = new_page
         self.ui:handleEvent(Event:new("UpdateToc"))
@@ -497,12 +503,11 @@ end
 function ReaderRolling:onChangeViewMode()
     self.ui.document:_readMetadata()
     self.old_doc_height = self.ui.document.info.doc_height
-    local old_page = self.old_page
     self.old_page = self.ui.document.info.number_of_pages
     self.ui:handleEvent(Event:new("UpdateToc"))
-    if self.xpointer and old_page then
+    if self.xpointer then
         self:_gotoXPointer(self.xpointer)
-    elseif self.xpointer == nil then
+    else
         table.insert(self.ui.postInitCallback, function()
             self:_gotoXPointer(self.xpointer)
         end)
@@ -553,7 +558,11 @@ function ReaderRolling:_gotoPos(new_pos)
             self.view.dim_area.y = 0
         end
     end
-    self.ui:handleEvent(Event:new("PosUpdate", new_pos))
+    self.ui.document:gotoPos(new_pos)
+    -- The current page we get in scroll mode may be a bit innacurate,
+    -- but we give it anyway to onPosUpdate so footer and statistics can
+    -- keep up with page.
+    self.ui:handleEvent(Event:new("PosUpdate", new_pos, self.ui.document:getCurrentPage()))
 end
 
 function ReaderRolling:_gotoPercent(new_percent)
@@ -562,7 +571,11 @@ end
 
 function ReaderRolling:_gotoPage(new_page)
     self.ui.document:gotoPage(new_page)
-    self.ui:handleEvent(Event:new("PageUpdate", self.ui.document:getCurrentPage()))
+    if self.view.view_mode == "page" then
+        self.ui:handleEvent(Event:new("PageUpdate", self.ui.document:getCurrentPage()))
+    else
+        self.ui:handleEvent(Event:new("PosUpdate", self.ui.document:getCurrentPos(), self.ui.document:getCurrentPage()))
+    end
 end
 
 function ReaderRolling:_gotoXPointer(xpointer)
@@ -583,9 +596,13 @@ function ReaderRolling:updatePageLink()
     self.view.links = links
 end
 
+function ReaderRolling:onSetStatusLine(status_line)
+    self.cre_top_bar_enabled = status_line == 0
+end
+
 function ReaderRolling:updateBatteryState()
-    logger.dbg("update battery state")
-    if self.view.view_mode == "page" then
+    if self.view.view_mode == "page" and self.cre_top_bar_enabled then
+        logger.dbg("update battery state")
         local powerd = Device:getPowerDevice()
         -- -1 is CR_BATTERY_STATE_CHARGING @ crengine/crengine/include/lvdocview.h
         local state = powerd:isCharging() and -1 or powerd:getCapacity()

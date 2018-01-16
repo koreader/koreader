@@ -72,8 +72,10 @@ end
 
 function InputText:init()
     self:initTextBox(self.text)
-    self:initKeyboard()
-    self:initEventListener()
+    if self.readonly ~= true then
+        self:initKeyboard()
+        self:initEventListener()
+    end
 end
 
 function InputText:initTextBox(text, char_added, is_password_type)
@@ -237,6 +239,30 @@ function InputText:delChar()
     self.charpos = self.charpos - 1
     table.remove(self.charlist, self.charpos)
     self:initTextBox(table.concat(self.charlist))
+end
+
+function InputText:leftChar()
+    if self.charpos == 1 then return end
+    self.charpos = self.charpos -1
+    self:initTextBox(table.concat(self.charlist))
+end
+
+function InputText:rightChar()
+    if self.charpos > #table.concat(self.charlist) then return end
+    self.charpos = self.charpos +1
+    self:initTextBox(table.concat(self.charlist))
+end
+
+function InputText:upLine()
+    if self.text_widget.moveCursorUp then
+        self.text_widget:moveCursorUp()
+    end
+end
+
+function InputText:downLine()
+    if self.text_widget.moveCursorDown then
+        self.text_widget:moveCursorDown()
+    end
 end
 
 function InputText:clear()

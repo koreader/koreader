@@ -1,6 +1,22 @@
 #!/bin/bash
 
 CURDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VERSION=$(git describe HEAD)
+
+# Default Android build to arm.
+ANDROID_ARCH=${ANDROID_ARCH:-arm}
+if [ -z "${ANDROID_FULL_ARCH+x}" ]; then
+    if [ "$ANDROID_ARCH" = arm ]; then
+        ANDROID_FULL_ARCH_APK="${ANDROID_FULL_ARCH_APK:-arm-linux-androideabi}"
+    elif [ "$ANDROID_ARCH" = x86 ]; then
+        ANDROID_FULL_ARCH_APK="${ANDROID_FULL_ARCH_APK:-i686-linux-android}"
+    else
+        ANDROID_FULL_ARCH_APK="${ANDROID_ARCH}"
+    fi
+fi
+# Default to Android 4.0+; required for NDK 15 but with a custom NDK the strict minimum is 9.
+NDKABI=${NDKABI:-14}
+export NDKABI
 
 function assert_ret_zero() {
     if [ "$1" -ne 0 ]; then
@@ -76,8 +92,12 @@ EOL
 }
 
 function setup_env() {
-    files=$(ls -d ./koreader-emulator-*/koreader)
-    assert_ret_zero $? "Emulator not found, please build it first."
+    SETUP_ENV_GREP_COMMAND="grep -v debug"
+    if [ -n "${KODEBUG+x}" ]; then
+        SETUP_ENV_GREP_COMMAND="grep debug"
+    fi
+    files=$(find . -maxdepth 1 -name 'koreader-emulator-*' | ${SETUP_ENV_GREP_COMMAND})/koreader
+    assert_ret_zero $? "Emulator not found. Please build it first."
     export EMU_DIR=${files[0]}
 }
 
@@ -105,6 +125,8 @@ usage: build <OPTIONS> <TARGET>
 OPTIONS:
 
     -v, --verbose   Build in verbose mode.
+    --debug         include debugging symbols (default for emulator)
+    --no-debug      no debugging symbols (default for target devices)
 
 TARGET:
 ${SUPPORTED_TARGETS}"
@@ -119,6 +141,14 @@ ${SUPPORTED_TARGETS}"
             -h | --help)
                 echo "${BUILD_HELP_MSG}"
                 exit 0
+                ;;
+            --no-debug)
+                export KODEBUG=
+                KODEBUG_NO_DEFAULT=1
+                ;;
+            --debug)
+                export KODEBUG=1
+                KODEBUG_NO_DEFAULT=1
                 ;;
             *)
                 echo "ERROR: unknown option \"$PARAM\""
@@ -160,8 +190,9 @@ ${SUPPORTED_TARGETS}"
                     export NDK="${CURDIR}/base/toolchain/android-ndk-r15c"
                 fi
             fi
-            [ -e "${CURDIR}/base/toolchain/android-toolchain/bin/arm-linux-androideabi-gcc" ] || {
+            [ -e "${CURDIR}/base/toolchain/android-toolchain-${ANDROID_ARCH}/bin/" ] || {
                 { [ -e "${NDK}" ] || make -C "${CURDIR}/base/toolchain" android-ndk; }
+                assert_ret_zero $?
                 make android-toolchain
                 assert_ret_zero $?
             }
@@ -186,6 +217,10 @@ ${SUPPORTED_TARGETS}"
             assert_ret_zero $?
             ;;
         *)
+            if [ -z "${KODEBUG_NO_DEFAULT+x}" ]; then # no explicit --debug / --no-debug
+                # builds a debug build by default, like kodev-run
+                export KODEBUG=1
+            fi
             make
             assert_ret_zero $? "Failed to build emulator! Try run with -v for more information."
             setup_env
@@ -247,6 +282,7 @@ usage: release <OPTIONS> <TARGET>
 
 OPTIONS:
 
+    --debug               debug-enabled release (for remote gdb)
     --ignore-translation  do not fetch translation for release
 
 TARGET:
@@ -262,6 +298,9 @@ ${SUPPORTED_RELEASE_TARGETS}"
         PARAM=$(echo "$1" | awk -F= '{print $1}')
         VALUE=$(echo "$1" | awk -F= '{print $2}')
         case $PARAM in
+            --debug)
+                export KODEBUG=1
+                ;;
             --ignore-translation)
                 ignore_translation=1
                 ;;
@@ -351,7 +390,7 @@ function kodev-wbuilder() {
 
 function kodev-run() {
     RUN_HELP_MSG="
-usage: run <OPTIONS> <ARGS>
+usage: run <OPTIONS> <TARGET>
 
 OPTIONS:
 
@@ -359,13 +398,21 @@ OPTIONS:
     -w=X, --screen-width=X   set width of the emulator screen (default: 540)
     -d=X, --screen-dpi=X     set DPI of the emulator screen (default: 160)
     --no-build               run reader without rebuilding
+    --no-debug               no debugging symbols (requires rebuilding)
     --disable-touch          use this if you want to simulate keyboard only devices
     -s=FOO --simulate=FOO    simulate dimension and other specs for a given device model
                              supported model: kobo-aura-one, kindle3, hidpi
+    --gdb=X                  run with debugger (default: nemiver)
     --graph                  graph memory use (requires gnuplot)
+    --valgrind=X             run with valgrind (default: valgrind --trace-children=yes)
+
+TARGET:
+
+    android         install and run KOReader on an Android device connected through ADB
     "
     screen_width=540
     screen_height=720
+    export KODEBUG=1
     while [[ $1 == '-'* ]]; do
         PARAM=$(echo "$1" | awk -F= '{print $1}')
         VALUE=$(echo "$1" | awk -F= '{print $2}')
@@ -376,8 +423,47 @@ OPTIONS:
             --no-build)
                 no_build=true
                 ;;
+            --no-debug)
+                export KODEBUG=
+                ;;
+            --gdb)
+                if [ ! -z "${VALUE}" ]; then
+                    gdb=${VALUE}
+                else
+                    # Try to use friendly defaults for gdb
+                    if command -v nemiver >/dev/null; then
+                        # Nemiver is a nice GUI
+                        gdb=nemiver
+                    elif command -v ddd >/dev/null; then
+                        # DDD is a slightly less nice GUI
+                        gdb=ddd
+                    elif command -v cgdb >/dev/null; then
+                        # cgdb is a nice curses-based gdb front
+                        gdb=cgdb
+                    elif command -v gdb >/dev/null; then
+                        # gdb -tui is a slightly less nice terminal user interface
+                        gdb="gdb -tui"
+                    else
+                        echo "Couldn't find gdb."
+                        exit 1
+                    fi
+                fi
+                ;;
             --graph)
                 graph_memory=true
+                ;;
+            --valgrind)
+                if [ ! -z "${VALUE}" ]; then
+                    valgrind=${VALUE}
+                else
+                    # Try to use sensible defaults for valgrind
+                    if command -v valgrind >/dev/null; then
+                        valgrind="valgrind --trace-children=yes"
+                    else
+                        echo "Couldn't find valgrind."
+                        exit 1
+                    fi
+                fi
                 ;;
             -w | --screen-width)
                 screen_width=${VALUE}
@@ -388,7 +474,7 @@ OPTIONS:
                     screen_height=${VALUE}
                 else
                     echo "${RUN_HELP_MSG}"
-                    exit 0
+                    exit 1
                 fi
                 ;;
             -d | --screen-dpi)
@@ -429,48 +515,84 @@ OPTIONS:
         shift
     done
 
-    if [ ! ${no_build} ]; then
-        echo "[*] Building KOReader..."
-        kodev-build
-    else
-        setup_env
-    fi
+    case $1 in
+        android)
+            command -v adb >/dev/null && {
+                if [ ! ${no_build} ]; then
+                    echo "[*] Building KOReader for Android…"
+                    kodev-release --ignore-translation android
+                    assert_ret_zero $?
+                fi
+                setup_env
+                # clear logcat to get rid of useless cruft
+                adb logcat -c
+                # uninstall existing package to make sure *everything* is gone from memory
+                # no assert_ret_zero; uninstall is allowed to fail if there's nothing to uninstall
+                adb uninstall "org.koreader.launcher"
+                adb install "koreader-android-${ANDROID_FULL_ARCH_APK}${KODEBUG_SUFFIX}-${VERSION}.apk"
+                assert_ret_zero $?
+                # there's no adb run so we do this…
+                adb shell monkey -p org.koreader.launcher -c android.intent.category.LAUNCHER 1
+                assert_ret_zero $?
+                adb logcat
+            } || echo "Failed to find adb in PATH to interact with Android device."
+            ;;
+        *)
+            if [ ! ${no_build} ]; then
+                echo "[*] Building KOReader…"
+                kodev-build
+            else
+                setup_env
+            fi
 
-    if [ ! -d "${EMU_DIR}" ]; then
-        echo "Failed to find emulator directory! Please try build command first."
-        exit 1
-    fi
+            if [ ! -d "${EMU_DIR}" ]; then
+                echo "Failed to find emulator directory! Please try build command first."
+                exit 1
+            fi
 
-    if [ ${graph_memory} ]; then
-        gnuplot_wrapper "--parent $$" "reader.lua"
-    fi
+            if [ ${graph_memory} ]; then
+                gnuplot_wrapper "--parent $$" "reader.lua"
+            fi
 
-    # run with catchsegv by default when it is available
-    # see https://github.com/koreader/koreader/issues/2878#issuecomment-326796777
-    if command -v catchsegv >/dev/null; then
-        CATCHSEGV=$(which catchsegv)
-    fi
+            # run with catchsegv by default when it is available
+            # see https://github.com/koreader/koreader/issues/2878#issuecomment-326796777
+            if command -v catchsegv >/dev/null; then
+                CATCHSEGV=$(which catchsegv)
+            fi
 
-    echo "[*] Running KOReader with arguments: $*..."
-    pushd "${EMU_DIR}" && {
-        if [ $# -lt 1 ]; then
-            args=${CURDIR}/test
-        else
-            args="$*"
-            [[ $args != /* ]] && args="${CURDIR}/${args}"
-        fi
+            KOREADER_COMMAND="${CATCHSEGV} ./reader.lua -d"
 
-        RETURN_VALUE=85
-        while [ $RETURN_VALUE -eq 85 ]; do
-            EMULATE_READER_W=${screen_width} EMULATE_READER_H=${screen_height} EMULATE_READER_DPI=${screen_dpi} \
-                $CATCHSEGV ./reader.lua -d "$args"
-            RETURN_VALUE=$?
-        done
-    } && popd || exit
+            if [ ! -z "${gdb}" ]; then
+                KOREADER_COMMAND="${gdb} ./luajit reader.lua -d"
+            fi
 
-    if [ ${graph_memory} ]; then
-        capture_ctrl_c
-    fi
+            if [ ! -z "${valgrind}" ]; then
+                KOREADER_COMMAND="${valgrind} ./luajit reader.lua -d"
+            fi
+
+            echo "[*] Running KOReader with arguments: $*..."
+            pushd "${EMU_DIR}" && {
+                if [ $# -lt 1 ]; then
+                    args=${CURDIR}/test
+                else
+                    args="$*"
+                    [[ $args != /* ]] && args="${CURDIR}/${args}"
+                fi
+                KOREADER_COMMAND="$KOREADER_COMMAND ${args}"
+
+                RETURN_VALUE=85
+                while [ $RETURN_VALUE -eq 85 ]; do
+                    EMULATE_READER_W=${screen_width} EMULATE_READER_H=${screen_height} EMULATE_READER_DPI=${screen_dpi} \
+                        ${KOREADER_COMMAND}
+                    RETURN_VALUE=$?
+                done
+            } && popd || exit
+
+            if [ ${graph_memory} ]; then
+                capture_ctrl_c
+            fi
+            ;;
+    esac
 }
 
 function kodev-test() {
@@ -532,7 +654,7 @@ OPTIONS:
         busted --lua="./luajit" "${opts}" \
             --no-auto-insulate \
             --lazy \
-            -o "./spec/$1/unit/verbose_print" \
+            --output=gtest \
             --exclude-tags=notest "${test_path}"
     } && popd || exit
 }

@@ -5,6 +5,7 @@ local JSON = require("json")
 local DEBUG = require("dbg")
 local _ = require("gettext")
 local NetworkMgr = require("ui/network/manager")
+local util = require("frontend/util")
 
 require("ffi/zeromq_h")
 
@@ -320,6 +321,7 @@ function CalibreCompanion:sendBook(arg)
     local inbox_dir = G_reader_settings:readSetting("inbox_dir")
     local filename = inbox_dir .. "/" .. arg.lpath
     DEBUG("write to file", filename)
+    util.makePath((util.splitFilePathName(filename)))
     local outfile = io.open(filename, "wb")
     local to_write_bytes = arg.length
     local calibre_device = self

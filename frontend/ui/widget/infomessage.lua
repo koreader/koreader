@@ -143,7 +143,7 @@ end
 
 function InfoMessage:onCloseWidget()
     UIManager:setDirty(nil, function()
-        return "partial", self[1][1].dimen
+        return "ui", self[1][1].dimen
     end)
     return true
 end
@@ -163,13 +163,17 @@ function InfoMessage:onAnyKeyPressed()
     -- triggered by our defined key events
     self.dismiss_callback()
     UIManager:close(self)
-    return true
+    if self.readonly ~= true then
+        return true
+    end
 end
 
 function InfoMessage:onTapClose()
     self.dismiss_callback()
     UIManager:close(self)
-    return true
+    if self.readonly ~= true then
+        return true
+    end
 end
 
 return InfoMessage
