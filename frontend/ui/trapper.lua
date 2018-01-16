@@ -11,8 +11,10 @@ Mostly done with coroutines, but hides their usage for simplicity.
 
 local ConfirmBox = require("ui/widget/confirmbox")
 local InfoMessage = require("ui/widget/infomessage")
+local TrapWidget = require("ui/widget/trapwidget")
 local UIManager = require("ui/uimanager")
 local ffiutil = require("ffi/util")
+local dump = require("dump")
 local logger = require("logger")
 local _ = require("gettext")
 
@@ -307,10 +309,11 @@ Notes and limitations:
 2) `cmd` needs to output something (we will wait till some data is available)
    If there are chances for it to not output anything, append `"; echo"` to `cmd`
 
-3) We need an @{ui.widget.infomessage|InfoMessage}, that, as a modal, will catch
-   any @{ui.event|Tap event} happening during `cmd` execution. This can be
-   provided as a string (a new InfoMessage will be created), or can be an
-   existing already displayed InfoMessage.
+3) We need a @{ui.widget.trapwidget|TrapWidget} or @{ui.widget.infomessage|InfoMessage},
+   that, as a modal, will catch any @{ui.event|Tap event} happening during
+   `cmd` execution. This can be an existing already displayed widget, or
+   provided as a string (a new TrapWidget will be created). If nil, an invisible
+   TrapWidget will be used instead.
 
 If we really need to have more control, we would need to use `select()` via `ffi`
 or do low level non-blocking reading on the file descriptor.
@@ -319,12 +322,11 @@ collect indefinitely, the best option would be to compile any `timeout.c`
 and use it as a wrapper.
 
 @string cmd shell `cmd` to execute and get output from
-@param infomessage string or already shown @{ui.widget.infomessage|InfoMessage} widget instance
-@int check_interval_sec[opt=0.1] float interval in second for checking pipe for available output
+@param trap_widget_or_string already shown widget, string or nil
 @treturn boolean completed (`true` if not interrupted, `false` if dismissed)
 @treturn string output of command
 ]]
-function Trapper:dismissablePopen(cmd, infomessage, check_interval_sec)
+function Trapper:dismissablePopen(cmd, trap_widget_or_string)
     local _coroutine = coroutine.running()
     -- assert(_coroutine ~= nil, "Need to be called from a coroutine")
     if not _coroutine then
@@ -338,34 +340,58 @@ function Trapper:dismissablePopen(cmd, infomessage, check_interval_sec)
         return false
     end
 
-    local own_infomessage = false
-    if type(infomessage) == "string" then
-        infomessage = InfoMessage:new{text = infomessage}
-        UIManager:show(infomessage)
-        UIManager:forceRePaint()
-        own_infomessage = true
+    local trap_widget
+    local own_trap_widget = false
+    local own_trap_widget_invisible = false
+    if type(trap_widget_or_string) == "table" then
+        -- Assume it is a usable already displayed trap'able widget with
+        -- a dismiss_callback (ie: InfoMessage or TrapWidget)
+        trap_widget = trap_widget_or_string
+    else
+        if type(trap_widget_or_string) == "string" then
+            -- Use a TrapWidget with this as text
+            trap_widget = TrapWidget:new{
+                text = trap_widget_or_string,
+            }
+            UIManager:show(trap_widget)
+            UIManager:forceRePaint()
+        else
+            -- Use an invisible TrapWidget that resend event
+            trap_widget = TrapWidget:new{
+                text = nil,
+                resend_event = true,
+            }
+            UIManager:show(trap_widget)
+            own_trap_widget_invisible = true
+        end
+        own_trap_widget = true
     end
-    infomessage.dismiss_callback = function()
+    trap_widget.dismiss_callback = function()
         -- this callback will resume us at coroutine.yield() below
         -- with a go_on = false
         coroutine.resume(_coroutine, false)
     end
 
-    if not check_interval_sec then
-        check_interval_sec = 0.1 -- default: check for output every 100ms
-    end
     local collect_interval_sec = 5 -- collect cancelled cmd every 5 second, no hurry
+    local check_interval_sec = 0.125 -- start with checking for output every 125ms
+    local check_num = 0
+
     local completed = false
     local output = nil
 
     local std_out = io.popen(cmd, "r")
     if std_out then
-        -- We check regularly if data is available to be read, and we give
-        -- control in the meantime to UIManager so our InfoMessage.dismiss_callback
+        -- We check regularly if data is available to be read, and we give control
+        -- in the meantime to UIManager so our trap_widget's dismiss_callback
         -- get a chance to be triggered, in which case we won't wait for reading,
         -- We'll schedule a background function to collect the uneeded output and
         -- close the pipe later.
         while true do
+            -- Every 10 iterations, increase interval until a max of 1 sec is reached
+            check_num = check_num + 1
+            if check_interval_sec < 1 and check_num % 10 == 0 then
+                check_interval_sec = math.min(check_interval_sec * 2, 1)
+            end
             -- The following function will resume us at coroutine.yield() below
             -- with a go_on = true
             local go_on_func = function() coroutine.resume(_coroutine, true) end
@@ -390,7 +416,8 @@ function Trapper:dismissablePopen(cmd, infomessage, check_interval_sec)
                 UIManager:scheduleIn(collect_interval_sec, collect_and_clean)
                 break
             end
-            -- the go_on_func resumed us, check if pipe is ready to be read
+            -- The go_on_func resumed us: we have not been dismissed.
+            -- Check if pipe is ready to be read
             if ffiutil.getNonBlockingReadSize(std_out) ~= 0 then
                 -- Some data is available for reading: read it all,
                 -- but we may block from now on
@@ -402,13 +429,233 @@ function Trapper:dismissablePopen(cmd, infomessage, check_interval_sec)
             -- logger.dbg("no cmd output yet, will check again soon")
         end
     end
-    if own_infomessage then
-        -- Remove our own infomessage
-        UIManager:close(infomessage)
-        UIManager:forceRePaint()
+    if own_trap_widget then
+        -- Remove our own trap_widget
+        UIManager:close(trap_widget)
+        if not own_trap_widget_invisible then
+            UIManager:forceRePaint()
+        end
     end
     -- return what we got or not to our caller
     return completed, output
+end
+
+--[[--
+Run a function (task) in a sub-process, allowing it to be dismissed,
+and returns its return value(s).
+
+Notes and limitations:
+
+1) As function is run in a sub-process, it can't modify the main
+   KOReader process (its parent). It has access to the state of
+   KOReader at the time the sub-process was started. It should not
+   use any service/driver that would make the parent process vision
+   of the device state incoherent (ie: it should not use UIManager,
+   display widgets, change settings, enable wifi...).
+   It is allowed to modify the filesystem, as long as KOreader
+   has not a cached vision of this filesystem part.
+   Its returned value(s) are returned to the parent.
+
+2) task may return complex data structures (but with simple lua types,
+   no function) or a single string. If task returns a string or nil,
+   set task_returns_simple_string to true, allowing for some
+   optimisations to be made.
+
+3) If dismissed, the sub-process is killed with SIGKILL, and
+   task is aborted without any chance for cleanup work: use of temporary
+   files should so be limited (do some cleanup of dirty files from
+   previous aborted executions at the start of each new execution if
+   needed), and try to keep important operations as atomic as possible.
+
+4) We need a @{ui.widget.trapwidget|TrapWidget} or @{ui.widget.infomessage|InfoMessage},
+   that, as a modal, will catch any @{ui.event|Tap event} happening during
+   `cmd` execution. This can be an existing already displayed widget, or
+   provided as a string (a new TrapWidget will be created). If nil, an invisible
+   TrapWidget will be used instead.
+
+@function task lua function to execute and get return values from
+@param trap_widget_or_string already shown widget, string or nil
+@boolean task_returns_simple_string[opt=false] true if task returns a single string
+@treturn boolean completed (`true` if not interrupted, `false` if dismissed)
+@return ... return values of task
+]]
+function Trapper:dismissableRunInSubprocess(task, trap_widget_or_string, task_returns_simple_string)
+    local _coroutine = coroutine.running()
+    if not _coroutine then
+        logger.warn("unwrapped dismissableRunInSubprocess(), falling back to blocking in-process run")
+        return true, task()
+    end
+
+    local trap_widget
+    local own_trap_widget = false
+    local own_trap_widget_invisible = false
+    if type(trap_widget_or_string) == "table" then
+        -- Assume it is a usable already displayed trap'able widget with
+        -- a dismiss_callback (ie: InfoMessage or TrapWidget)
+        trap_widget = trap_widget_or_string
+    else
+        if type(trap_widget_or_string) == "string" then
+            -- Use a TrapWidget with this as text
+            trap_widget = TrapWidget:new{
+                text = trap_widget_or_string,
+            }
+            UIManager:show(trap_widget)
+            UIManager:forceRePaint()
+        else
+            -- Use an invisible TrapWidget that resend event
+            trap_widget = TrapWidget:new{
+                text = nil,
+                resend_event = true,
+            }
+            UIManager:show(trap_widget)
+            own_trap_widget_invisible = true
+        end
+        own_trap_widget = true
+    end
+    trap_widget.dismiss_callback = function()
+        -- this callback will resume us at coroutine.yield() below
+        -- with a go_on = false
+        coroutine.resume(_coroutine, false)
+    end
+
+    local collect_interval_sec = 5 -- collect cancelled cmd every 5 second, no hurry
+    local check_interval_sec = 0.125 -- start with checking for output every 125ms
+    local check_num = 0
+
+    local completed = false
+    local ret_values = nil
+
+    local pid, parent_read_fd = ffiutil.runInSubProcess(function(pid, child_write_fd)
+        local output_str = ""
+        if task_returns_simple_string then
+            -- task is assumed to return only a string or nil, avoid
+            -- possibly expensive dump()/dofile()
+            local result = task()
+            if type(result) == "string" then
+                output_str = result
+            elseif result ~= nil then
+                logger.warn("returned value from task is not a string:", result)
+            end
+        else
+            -- task may return complex data structures, that we dump()
+            -- Note: be sure these data structures contain only classic types,
+            -- and no function (dofile() with fail if it meets
+            -- "function: 0x55949671c670"...)
+            -- task may also return multiple return values, so we
+            -- wrap them in a table (beware the { } construct may stop
+            -- at the first nil met)
+            local results = { task() }
+            output_str = "return "..dump(results).."\n"
+        end
+        ffiutil.writeToFD(child_write_fd, output_str, true)
+    end, true) -- with_pipe = true
+
+    if pid then
+        -- We check regularly if subprocess is done, and we give control
+        -- in the meantime to UIManager so our trap_widget's dismiss_callback
+        -- get a chance to be triggered, in which case we'll terminate the
+        -- subprocess and schedule a background function to collect it.
+        while true do
+            -- Every 10 iterations, increase interval until a max of 1 sec is reached
+            check_num = check_num + 1
+            if check_interval_sec < 1 and check_num % 10 == 0 then
+                check_interval_sec = math.min(check_interval_sec * 2, 1)
+            end
+            -- The following function will resume us at coroutine.yield() below
+            -- with a go_on = true
+            local go_on_func = function() coroutine.resume(_coroutine, true) end
+            UIManager:scheduleIn(check_interval_sec, go_on_func) -- called in 100ms by default
+            local go_on = coroutine.yield() -- gives control back to UIManager
+            if not go_on then -- the dismiss_callback resumed us
+                UIManager:unschedule(go_on_func)
+                -- We kill and forget the sub-process here, but something has
+                -- to collect it so it does not become a zombie
+                ffiutil.terminateSubProcess(pid)
+                local collect_and_clean
+                collect_and_clean = function()
+                    if ffiutil.isSubProcessDone(pid) then
+                        if parent_read_fd then
+                            ffiutil.readAllFromFD(parent_read_fd) -- close it
+                        end
+                        logger.dbg("collected previously dismissed subprocess")
+                    else
+                        if parent_read_fd and ffiutil.getNonBlockingReadSize(parent_read_fd) ~= 0 then
+                            -- If subprocess started outputing to fd, read from it,
+                            -- so its write() stops blocking and subprocess can exit
+                            ffiutil.readAllFromFD(parent_read_fd)
+                            -- We closed our fd, don't try again to read or close it
+                            parent_read_fd = nil
+                        end
+                        -- reschedule to collect it
+                        UIManager:scheduleIn(collect_interval_sec, collect_and_clean)
+                        logger.dbg("previously dismissed subprocess not yet collectable")
+                    end
+                end
+                UIManager:scheduleIn(collect_interval_sec, collect_and_clean)
+                break
+            end
+            -- The go_on_func resumed us: we have not been dismissed.
+            -- Check if sub process has ended
+            -- Depending on the the size of what the child has to write,
+            -- it may has ended (if data fits in the kernel pipe buffer) or
+            -- it may still be alive blocking on write() (if data exceeds
+            -- the kernel pipe buffer)
+            local subprocess_done = ffiutil.isSubProcessDone(pid)
+            local stuff_to_read = parent_read_fd and ffiutil.getNonBlockingReadSize(parent_read_fd) ~=0
+            logger.dbg("subprocess_done:", subprocess_done, " stuff_to_read:", stuff_to_read)
+            if subprocess_done or stuff_to_read then
+                -- Subprocess is gone or nearly gone
+                completed = true
+                if stuff_to_read then
+                    local ret_str = ffiutil.readAllFromFD(parent_read_fd)
+                    if task_returns_simple_string then
+                        ret_values = { ret_str }
+                    else
+                        local ok, results = pcall(load(ret_str))
+                        if ok and results then
+                            ret_values = results
+                        else
+                            logger.warn("load() failed:", results)
+                        end
+                    end
+                    if not subprocess_done then
+                        -- We read the output while process was still alive.
+                        -- It may be dead now, or it may exit soon, and we
+                        -- need to collect it.
+                        -- Schedule that in 1 second (it should be dead), so
+                        -- we can return our result now.
+                        local collect_and_clean
+                        collect_and_clean = function()
+                            if ffiutil.isSubProcessDone(pid) then
+                                logger.dbg("collected subprocess")
+                            else -- reschedule
+                                UIManager:scheduleIn(1, collect_and_clean)
+                                logger.dbg("subprocess not yet collectable")
+                            end
+                        end
+                        UIManager:scheduleIn(1, collect_and_clean)
+                    end
+                else -- subprocess_done: process exited with no output
+                    ffiutil.readAllFromFD(parent_read_fd) -- close our fd
+                    -- no ret_values
+                end
+                break
+            end
+            logger.dbg("process not yet done, will check again soon")
+        end
+    end
+    if own_trap_widget then
+        -- Remove our own trap_widget
+        UIManager:close(trap_widget)
+        if not own_trap_widget_invisible then
+            UIManager:forceRePaint()
+        end
+    end
+    -- return what we got or not to our caller
+    if ret_values then
+        return completed, unpack(ret_values)
+    end
+    return completed
 end
 
 return Trapper

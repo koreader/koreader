@@ -252,7 +252,7 @@ function UIManager:close(widget, refreshtype, refreshregion)
             Input.disable_double_tap = false
         end
     end
-    if dirty then
+    if dirty and not widget.invisible then
         -- schedule remaining widgets to be painted
         for i = 1, #self._window_stack do
             self:setDirty(self._window_stack[i].widget)
@@ -368,7 +368,7 @@ function UIManager:setDirty(widget, refreshtype, refreshregion)
             for i = 1, #self._window_stack do
                 self._dirty[self._window_stack[i].widget] = true
             end
-        else
+        elseif not widget.invisible then
             self._dirty[widget] = true
         end
     end
