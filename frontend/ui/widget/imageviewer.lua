@@ -16,6 +16,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local Size = require("ui/size")
+local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -37,6 +38,10 @@ local ImageViewer = InputContainer:new{
     fullscreen = false, -- false will add some padding around widget (so footer can be visible)
     with_title_bar = true,
     title_text = _("Viewing image"), -- default title text
+    -- A caption can be toggled with tap on title_text (so, it needs with_title_bar=true):
+    caption = nil,
+    caption_visible = true, -- caption visible by default
+    caption_tap_area = nil,
 
     width = nil,
     height = nil,
@@ -46,6 +51,8 @@ local ImageViewer = InputContainer:new{
     title_face = Font:getFace("x_smalltfont"),
     title_padding = Size.padding.default,
     title_margin = Size.margin.title,
+    caption_face = Font:getFace("xx_smallinfofont"),
+    caption_padding = Size.padding.large,
     image_padding = Size.margin.small,
     button_padding = Size.padding.default,
 
@@ -98,7 +105,7 @@ end
 
 function ImageViewer:_clean_image_wg()
     -- To be called before re-using / not needing self._image_wg
-    -- otherwise ressources used by its blitbuffer won't be freed
+    -- otherwise resources used by its blitbuffer won't be freed
     if self._image_wg then
         logger.dbg("ImageViewer:_clean_image_wg()")
         self._image_wg:free()
@@ -175,25 +182,83 @@ function ImageViewer:update()
 
     local title_bar, title_sep
     if self.with_title_bar then
-        local title_text = FrameContainer:new{
+        -- Toggler (white arrow) for caption, on the left of title
+        local ctoggler
+        local ctoggler_width = 0
+        if self.caption then
+            local ctoggler_text
+            if self.caption_visible then
+                ctoggler_text = "▽ " -- white arrow (nicer than smaller black arrow ▼)
+            else
+                ctoggler_text = "▷ " -- white arrow (nicer than smaller black arrow ►)
+            end
+            -- paddings chosen to align nicely with titlew
+            ctoggler = FrameContainer:new{
+                bordersize = 0,
+                padding = self.title_padding,
+                padding_top = self.title_padding + Size.padding.small,
+                padding_right = 0,
+                TextWidget:new{
+                    text = ctoggler_text,
+                    face = self.title_face,
+                }
+            }
+            ctoggler_width = ctoggler:getSize().w
+        end
+        local closeb = CloseButton:new{ window = self, padding_top = Size.padding.tiny, }
+        local title_tbw = TextBoxWidget:new{
+            text = self.title_text,
+            face = self.title_face,
+            -- bold = true, -- we're already using a bold font
+            width = self.width - 2*self.title_padding - 2*self.title_margin - closeb:getSize().w - ctoggler_width,
+        }
+        local title_tbw_padding_bottom = self.title_padding + Size.padding.small
+        if self.caption and self.caption_visible then
+            title_tbw_padding_bottom = 0 -- save room between title and caption
+        end
+        local titlew = FrameContainer:new{
             padding = self.title_padding,
+            padding_top = self.title_padding + Size.padding.small,
+            padding_bottom = title_tbw_padding_bottom,
+            padding_left = ctoggler and ctoggler_width or self.title_padding,
             margin = self.title_margin,
             bordersize = 0,
-            TextWidget:new{
-                text = self.title_text,
-                face = self.title_face,
-                bold = true,
-                width = self.width,
-            }
+            title_tbw,
         }
+        if self.caption then
+            self.caption_tap_area = titlew
+        end
         title_bar = OverlapGroup:new{
             dimen = {
                 w = self.width,
-                h = title_text:getSize().h
+                h = titlew:getSize().h
             },
-            title_text,
-            CloseButton:new{ window = self, },
+            titlew,
+            closeb
         }
+        if ctoggler then
+            table.insert(title_bar, 1, ctoggler)
+        end
+        if self.caption and self.caption_visible then
+            local caption_tbw = TextBoxWidget:new{
+                text = self.caption,
+                face = self.caption_face,
+                width = self.width - 2*self.title_padding - 2*self.title_margin - 2*self.caption_padding,
+            }
+            local captionw = FrameContainer:new{
+                padding = self.caption_padding,
+                padding_top = 0, -- don't waste vertical room for bigger image
+                padding_bottom = 0,
+                margin = self.title_margin,
+                bordersize = 0,
+                caption_tbw,
+            }
+            title_bar = VerticalGroup:new{
+                align = "left",
+                title_bar,
+                captionw
+            }
+        end
         title_sep = LineWidget:new{
             dimen = Geom:new{
                 w = self.width,
@@ -291,6 +356,10 @@ function ImageViewer:onTap(_, ges)
     if ges.pos:notIntersectWith(self.main_frame.dimen) then
         self:onClose()
         return true
+    end
+    if self.caption_tap_area and ges.pos:intersectWith(self.caption_tap_area.dimen) then
+        self.caption_visible = not self.caption_visible
+        self:update()
     end
     return true
 end
