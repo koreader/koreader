@@ -36,12 +36,14 @@ local DictQuickLookup = InputContainer:new{
     dictionary = nil,
     definition = nil,
     displayword = nil,
+    images = nil,
     is_wiki = false,
     is_fullpage = false,
     is_html = false,
     dict_index = 1,
     title_face = Font:getFace("x_smalltfont"),
     content_face = Font:getFace("cfont", DDICT_FONT_SIZE),
+    image_alt_face = Font:getFace("cfont", DDICT_FONT_SIZE-4),
     width = nil,
     height = nil,
     -- box of highlighted word, quick lookup window tries to not hide the word
@@ -185,6 +187,12 @@ end
 
 function DictQuickLookup:update()
     local orig_dimen = self.dict_frame and self.dict_frame.dimen or Geom:new{}
+    -- Free our previous widget and subwidgets' resources (especially
+    -- definitions' TextBoxWidget bb, HtmlBoxWidget bb and MuPDF instance,
+    -- and scheduled image_update_action)
+    if self[1] then
+        self[1]:free()
+    end
     -- calculate window dimension
     self.align = "center"
     self.region = Geom:new{
@@ -288,6 +296,8 @@ function DictQuickLookup:update()
             dialog = self,
             -- allow for disabling justification
             justified = G_reader_settings:nilOrTrue("dict_justify"),
+            image_alt_face = self.image_alt_face,
+            images = self.images,
         }
     end
 
@@ -335,7 +345,7 @@ function DictQuickLookup:update()
                                     Wikipedia:createEpubWithUI(epub_path, self.lookupword, lang, function(success)
                                         if success then
                                             UIManager:show(ConfirmBox:new{
-                                                text = T(_("Page saved to:\n%1\n\nWould you like to read the downloaded page now?"), epub_path),
+                                                text = T(_("Article saved to:\n%1\n\nWould you like to read the downloaded article now?"), epub_path),
                                                 ok_callback = function()
                                                     -- close all dict/wiki windows, without scheduleIn(highlight.clear())
                                                     self:onHoldClose(true)
@@ -356,7 +366,7 @@ function DictQuickLookup:update()
                                             })
                                         else
                                             UIManager:show(InfoMessage:new{
-                                                text = _("Saving Wikipedia page failed or canceled."),
+                                                text = _("Saving Wikipedia article failed or canceled."),
                                             })
                                         end
                                     end)
@@ -524,6 +534,23 @@ function DictQuickLookup:update()
 end
 
 function DictQuickLookup:onCloseWidget()
+    -- Free our widget and subwidgets' resources (especially
+    -- definitions' TextBoxWidget bb, HtmlBoxWidget bb and MuPDF instance,
+    -- and scheduled image_update_action)
+    if self[1] then
+        self[1]:free()
+    end
+    if self.images_cleanup_needed then
+        logger.dbg("freeing lookup results images blitbuffers")
+        for _, r in ipairs(self.results) do
+            if r.images and #r.images > 0 then
+                for _, im in ipairs(r.images) do
+                    if im.bb then im.bb:free() end
+                    if im.hi_bb then im.hi_bb:free() end
+                end
+            end
+        end
+    end
     UIManager:setDirty(nil, function()
         return "partial", self.dict_frame.dimen
     end)
@@ -587,6 +614,13 @@ function DictQuickLookup:changeDictionary(index)
     self.is_html = self.results[index].is_html
     self.css = self.results[index].css
     self.lang = self.results[index].lang
+    self.images = self.results[index].images
+    if self.images and #self.images > 0 then
+        -- We'll be giving some images to textboxwidget that will
+        -- load and display them. We'll need to free these blitbuffers
+        -- when we're done.
+        self.images_cleanup_needed = true
+    end
     if self.is_fullpage then
         self.displayword = self.lookupword
     else
