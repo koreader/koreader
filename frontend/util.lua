@@ -597,4 +597,9 @@ function util.shell_escape(args)
     return table.concat(escaped_args, " ")
 end
 
+table.clear = function(t)
+    local c = #t
+    for i = 0, c do t[i] = nil end
+end
+
 return util
