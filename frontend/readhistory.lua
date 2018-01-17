@@ -155,6 +155,21 @@ function ReadHistory:removeItemByPath(path)
     end
 end
 
+function ReadHistory:updateItemByPath(old_path, new_path)
+    assert(self ~= nil)
+    for i = #self.hist, 1, -1 do
+        if self.hist[i].file == old_path then
+            self.hist[i].file = new_path
+            self:_flush()
+            self.hist[i].callback = function()
+                local ReaderUI = require("apps/reader/readerui")
+                ReaderUI:showReader(new_path)
+            end
+            break
+        end
+    end
+end
+
 function ReadHistory:removeItem(item)
     assert(self ~= nil)
     table.remove(self.hist, item.index)

@@ -545,6 +545,13 @@ function FileManager:pasteHere(file)
                 self:moveFile(DocSettings:getSidecarDir(orig), dest) -- dest is always a directory
             end
             if self:moveFile(orig, dest) then
+                --update history
+                local dest_file = string.format("%s/%s", dest, util.basename(orig))
+                require("readhistory"):updateItemByPath(orig, dest_file)
+                --update last open file
+                if G_reader_settings:readSetting("lastfile") == orig then
+                    G_reader_settings:saveSetting("lastfile", dest_file)
+                end
                 UIManager:show(InfoMessage:new {
                     text = T(_("Moved to: %1"), dest),
                     timeout = 2,
@@ -565,7 +572,7 @@ function FileManager:pasteHere(file)
             info_file = infoCopyFile
         end
         local basename = util.basename(self.clipboard)
-        local mode = lfs.attributes(dest .."/" .. basename, "mode")
+        local mode = lfs.attributes(string.format("%s/%s", dest, basename), "mode")
         if mode == "file" or mode == "directory" then
             local text
             if mode == "file" then
@@ -590,7 +597,7 @@ function FileManager:pasteHere(file)
 end
 
 function FileManager:createFolder(curr_folder, new_folder)
-    local folder = curr_folder .. "/" .. new_folder
+    local folder = string.format("%s/%s", curr_folder, new_folder)
     local code = util.execute(self.mkdir_bin, folder)
     local text
     if code == 0 then
