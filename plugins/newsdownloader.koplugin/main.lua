@@ -66,15 +66,22 @@ function NewsDownloader:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
+
 function NewsDownloader:addToMainMenu(menu_items)
     self:lazyInitialization()
-
     menu_items.news_downloader = {
         text = _("News (RSS/Atom) downloader"),
         sub_item_table = {
             {
                 text = _("Download news"),
-                callback = function() self:loadConfigAndProcessFeeds() end,
+                callback = function()
+                    if not NetworkMgr:isOnline() then
+                        wifi_enabled_before_action = false
+                        NetworkMgr:beforeWifiAction(self.loadConfigAndProcessFeeds)
+                    else
+                        self:loadConfigAndProcessFeeds()
+                    end
+                end,
             },
             {
                 text = _("Go to news folder"),
@@ -97,12 +104,17 @@ function NewsDownloader:addToMainMenu(menu_items)
             },
             {
                 text = _("Settings"),
-                callback = function()
-                    UIManager:show(InfoMessage:new{
-                        text = T(_("To change feed (Atom/RSS) sources please manually edit the configuration file:\n%1\n\nIt is very simple and contains comments as well as sample configuration."),
-                                 feed_config_path)
-                    })
-                end,
+                sub_item_table = {
+                    {
+                        text = _("Change feeds configuration"),
+                        callback = function()
+                            UIManager:show(InfoMessage:new{
+                                text = T(_("To change feed (Atom/RSS) sources please manually edit the configuration file:\n%1\n\nIt is very simple and contains comments as well as sample configuration."),
+                                         feed_config_path)
+                            })
+                        end,
+                    },
+                },
             },
             {
                 text = _("Help"),
@@ -143,11 +155,6 @@ function NewsDownloader:lazyInitialization()
 end
 
 function NewsDownloader:loadConfigAndProcessFeeds()
-    if not NetworkMgr:isOnline() then
-        wifi_enabled_before_action = false
-        NetworkMgr:promptWifiOn()
-        return
-    end
     local info = InfoMessage:new{ text = _("Loading news feed config…") }
     UIManager:show(info)
     logger.dbg("force repaint due to upcoming blocking calls")
@@ -177,7 +184,7 @@ function NewsDownloader:loadConfigAndProcessFeeds()
             UIManager:show(info)
             -- processFeedSource is a blocking call, so manually force a UI refresh beforehand
             UIManager:forceRePaint()
-            self:processFeedSource(url, tonumber(limit), unsupported_feeds_urls, download_full_article)
+            NewsDownloader:processFeedSource(url, tonumber(limit), unsupported_feeds_urls, download_full_article)
             UIManager:close(info)
         else
             logger.warn('NewsDownloader: invalid feed config entry', feed)
