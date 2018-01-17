@@ -399,7 +399,7 @@ function ConfigOption:init()
             end
 
             if self.options[c].toggle then
-                local max_toggle_width = Screen:getWidth() * item_align * 0.95
+                local max_toggle_width = Screen:getWidth() * item_align * 0.85
                 local toggle_width = Screen:scaleBySize(self.options[c].width or max_toggle_width)
                 local row_count = self.options[c].row_count or 1
                 local toggle_height = Screen:scaleBySize(self.options[c].height
@@ -427,7 +427,7 @@ function ConfigOption:init()
             end
 
             if self.options[c].buttonprogress then
-                local max_buttonprogress_width = Screen:getWidth() * item_align * 0.95
+                local max_buttonprogress_width = Screen:getWidth() * item_align * 0.85
                 local buttonprogress_width = Screen:scaleBySize(self.options[c].width or max_buttonprogress_width)
                 local switch = ButtonProgressWidget:new{
                     width = math.min(max_buttonprogress_width, buttonprogress_width),
@@ -437,7 +437,7 @@ function ConfigOption:init()
                     num_buttons = #self.options[c].values,
                     position = self.options[c].default_pos,
                     callback = function(arg)
-                        UIManager:nextTick(function()
+                        UIManager:scheduleIn(0.05, function()
                             self.config:onConfigChoice(self.options[c].name, self.options[c].values[arg])
                             self.config:onConfigEvent(self.options[c].event, self.options[c].args[arg])
                             UIManager:setDirty("all")

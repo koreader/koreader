@@ -105,14 +105,19 @@ steps of the work, to provide good responsiveness.
 Trapper:info() is a shortcut to get dismiss info while keeping
 the existing InfoMessage displayed.
 
+Optional fast_refresh parameter should only be used when
+displaying an InfoMessage over a previous InfoMessage of the
+exact same size.
+
 @string text text to display as an InfoMessage (or nil to keep existing one)
+@boolean fast_refresh[opt=false] true for faster refresh
 @treturn boolean true if InfoMessage was not dismissed, false if dismissed
 
 @usage
     Trapper:info("some text about step or progress")
     go_on = Trapper:info()
 ]]
-function Trapper:info(text)
+function Trapper:info(text, fast_refresh)
     local _coroutine = coroutine.running()
     if not _coroutine then
         logger.info("unwrapped info:", text)
@@ -181,23 +186,34 @@ function Trapper:info(text)
     -- events won't be considered action on the yet to be displayed
     -- widget
 
-    -- We're going to display a new widget, close previous one
-    if self.current_widget then
-        UIManager:close(self.current_widget)
-        -- no repaint here, we'll do that below when a new one is shown
-    end
+    -- If fast_refresh option, avoid UIManager refresh overhead
+    if fast_refresh and self.current_widget and self.current_widget.is_infomessage then
+        self.current_widget:free()
+        self.current_widget.text = text
+        self.current_widget:init()
+        local Screen = require("device").screen
+        self.current_widget:paintTo(Screen.bb, 0,0)
+        local d = self.current_widget[1][1].dimen
+        Screen.refreshUI(Screen, d.x, d.y, d.w, d.h)
+    else
+        -- We're going to display a new widget, close previous one
+        if self.current_widget then
+            UIManager:close(self.current_widget)
+            -- no repaint here, we'll do that below when a new one is shown
+        end
 
-    -- dismiss_callback will be checked for at start of next call
-    self.current_widget = InfoMessage:new{
-        text = text,
-        dismiss_callback = function()
-            coroutine.resume(_coroutine, false)
-        end,
-        is_infomessage = true -- flag on our InfoMessages
-    }
-    logger.dbg("Showing InfoMessage:", text)
-    UIManager:show(self.current_widget)
-    UIManager:forceRePaint()
+        -- dismiss_callback will be checked for at start of next call
+        self.current_widget = InfoMessage:new{
+            text = text,
+            dismiss_callback = function()
+                coroutine.resume(_coroutine, false)
+            end,
+            is_infomessage = true -- flag on our InfoMessages
+        }
+        logger.dbg("Showing InfoMessage:", text)
+        UIManager:show(self.current_widget)
+        UIManager:forceRePaint()
+    end
     return true
 end
 

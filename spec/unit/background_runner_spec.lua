@@ -21,6 +21,10 @@ describe("BackgroundRunner widget tests", function()
         stopBackgroundRunner()
     end)
 
+    before_each(function()
+        require("util").clearTable(PluginShare.backgroundJobs)
+    end)
+
     it("should start job", function()
         local executed = false
         table.insert(PluginShare.backgroundJobs, {
@@ -287,5 +291,66 @@ describe("BackgroundRunner widget tests", function()
         MockTime:increase(2)
         UIManager:handleInput()
         assert.are.equal(2, executed)
+    end)
+
+    it("should stop executing when suspending", function()
+        local executed = 0
+        local job = {
+            when = 1,
+            repeated = true,
+            executable = function()
+                executed = executed + 1
+            end,
+        }
+        table.insert(PluginShare.backgroundJobs, job)
+
+        MockTime:increase(2)
+        UIManager:handleInput()
+        MockTime:increase(2)
+        UIManager:handleInput()
+        assert.are.equal(1, executed)
+        -- Simulate a suspend event.
+        requireBackgroundRunner():onSuspend()
+        for i = 1, 10 do
+            MockTime:increase(2)
+            UIManager:handleInput()
+            assert.are.equal(2, executed)
+        end
+        -- Simulate a resume event.
+        requireBackgroundRunner():onResume()
+        MockTime:increase(2)
+        UIManager:handleInput()
+        assert.are.equal(3, executed)
+        MockTime:increase(2)
+        UIManager:handleInput()
+        assert.are.equal(4, executed)
+    end)
+
+    it("should not start multiple times after multiple onResume", function()
+        local executed = 0
+        local job = {
+            when = 1,
+            repeated = true,
+            executable = function()
+                executed = executed + 1
+            end,
+        }
+        table.insert(PluginShare.backgroundJobs, job)
+
+        for i = 1, 10 do
+            requireBackgroundRunner():onResume()
+        end
+
+        MockTime:increase(2)
+        UIManager:handleInput()
+        MockTime:increase(2)
+        UIManager:handleInput()
+        assert.are.equal(1, executed)
+        MockTime:increase(2)
+        UIManager:handleInput()
+        assert.are.equal(2, executed)
+        MockTime:increase(2)
+        UIManager:handleInput()
+        assert.are.equal(3, executed)
     end)
 end)

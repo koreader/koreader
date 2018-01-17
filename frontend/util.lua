@@ -129,6 +129,13 @@ function util.lastIndexOf(string, ch)
     if i == nil then return -1 else return i - 1 end
 end
 
+--- Reverse the individual greater-than-single-byte characters
+-- @string string to reverse
+-- Taken from https://github.com/blitmap/lua-utf8-simple#utf8reverses
+function util.utf8Reverse(text)
+    text = text:gsub('[%z\1-\127\194-\244][\128-\191]*', function (c) return #c > 1 and c:reverse() end)
+    return text:reverse()
+end
 
 --- Splits string into a list of UTF-8 characters.
 ---- @string text the string to be split.
@@ -304,6 +311,32 @@ function util.isEmptyDir(path)
     return true
 end
 
+--- Checks if the given path exists. Doesn't care if it's a file or directory.
+---- @string path
+---- @treturn bool
+function util.pathExists(path)
+    local lfs = require("libs/libkoreader-lfs")
+    return lfs.attributes(path, "mode") ~= nil
+end
+
+--- As `mkdir -p`.
+--- Unlike lfs.mkdir(), does not error if the directory already exists, and
+--- creates intermediate directories as needed.
+---- @string path the directory to create
+---- @treturn bool true on success; nil, err_message on error
+function util.makePath(path)
+    path = path:gsub("/+$", "")
+    if util.pathExists(path) then return true end
+
+    local success, err = util.makePath((util.splitFilePathName(path)))
+    if not success then
+        return nil, err.." (creating "..path..")"
+    end
+
+    local lfs = require("libs/libkoreader-lfs")
+    return lfs.mkdir(path)
+end
+
 --- Replaces characters that are invalid filenames.
 --
 -- Replaces the characters <code>\/:*?"<>|</code> with an <code>_</code>.
@@ -326,7 +359,9 @@ function util.replaceSlashChar(str)
     end
 end
 
---- Splits a file into its path and name
+--- Splits a file into its directory path and file name.
+--- If the given path has a trailing /, returns the entire path as the directory
+--- path and "" as the file name.
 ---- @string file
 ---- @treturn string path, filename
 function util.splitFilePathName(file)
@@ -534,6 +569,39 @@ function util.htmlToPlainTextIfHtml(text)
         text = text:gsub("]]>%s*$", "")
     end
     return text
+end
+
+--- Encode the HTML entities in a string
+--- @string text the string to escape
+-- Taken from https://github.com/kernelsauce/turbo/blob/e4a35c2e3fb63f07464f8f8e17252bea3a029685/turbo/escape.lua#L58-L70
+function util.htmlEscape(text)
+    return text:gsub("[}{\">/<'&]", {
+        ["&"] = "&amp;",
+        ["<"] = "&lt;",
+        [">"] = "&gt;",
+        ['"'] = "&quot;",
+        ["'"] = "&#39;",
+        ["/"] = "&#47;",
+    })
+end
+
+--- Escape list for shell usage
+--- @table args the list of arguments to escape
+--- @treturn string the escaped and concatenated arguments
+function util.shell_escape(args)
+    local escaped_args = {}
+    for _, arg in ipairs(args) do
+        arg = "'" .. arg:gsub("'", "'\\''") .. "'"
+        table.insert(escaped_args, arg)
+    end
+    return table.concat(escaped_args, " ")
+end
+
+--- Clear all the elements from a table without reassignment.
+--- @table t the table to be cleared
+function util.clearTable(t)
+    local c = #t
+    for i = 0, c do t[i] = nil end
 end
 
 return util

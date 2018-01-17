@@ -363,78 +363,85 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
 
     -- Proceed with extracting info
     local document = DocumentRegistry:openDocument(filepath)
+    local loaded = true
     if document then
+        local pages
         if document.loadDocument then -- needed for crengine
             -- Setting a default font before loading document
             -- actually do prevent some crashes
             document:setFontFace(document.default_font)
-            document:loadDocument()
-            -- Not needed for getting props:
-            -- document:render()
-            -- It would be needed to get nb of pages, but the nb obtained
-            -- by simply calling here document:getPageCount() is wrong,
-            -- often 2 to 3 times the nb of pages we see when opening
-            -- the document (may be some other cre settings should be applied
-            -- before calling render() ?)
+            if not document:loadDocument() then
+                -- failed loading, calling other methods would segfault
+                loaded = false
+            end
+            -- For CreDocument, we would need to call document:render()
+            -- to get nb of pages, but the nb obtained by simply calling
+            -- here document:getPageCount() is wrong, often 2 to 3 times
+            -- the nb of pages we see when opening the document (may be
+            -- some other cre settings should be applied before calling
+            -- render() ?)
         else
             -- for all others than crengine, we seem to get an accurate nb of pages
-            local pages = document:getPageCount()
+            pages = document:getPageCount()
+        end
+        if loaded then
             dbrow.pages = pages
-        end
-        local props = document:getProps()
-        if next(props) then -- there's at least one item
-            dbrow.has_meta = 'Y'
-        end
-        if props.title and props.title ~= "" then dbrow.title = props.title end
-        if props.authors and props.authors ~= "" then dbrow.authors = props.authors end
-        if props.series and props.series ~= "" then dbrow.series = props.series end
-        if props.language and props.language ~= "" then dbrow.language = props.language end
-        if props.keywords and props.keywords ~= "" then dbrow.keywords = props.keywords end
-        if props.description and props.description ~= "" then dbrow.description = props.description end
-        if cover_specs then
-            local spec_sizetag = cover_specs.sizetag
-            local spec_max_cover_w = cover_specs.max_cover_w
-            local spec_max_cover_h = cover_specs.max_cover_h
+            local props = document:getProps()
+            if next(props) then -- there's at least one item
+                dbrow.has_meta = 'Y'
+            end
+            if props.title and props.title ~= "" then dbrow.title = props.title end
+            if props.authors and props.authors ~= "" then dbrow.authors = props.authors end
+            if props.series and props.series ~= "" then dbrow.series = props.series end
+            if props.language and props.language ~= "" then dbrow.language = props.language end
+            if props.keywords and props.keywords ~= "" then dbrow.keywords = props.keywords end
+            if props.description and props.description ~= "" then dbrow.description = props.description end
+            if cover_specs then
+                local spec_sizetag = cover_specs.sizetag
+                local spec_max_cover_w = cover_specs.max_cover_w
+                local spec_max_cover_h = cover_specs.max_cover_h
 
-            dbrow.cover_fetched = 'Y' -- we had a try at getting a cover
-            -- XXX make picdocument return a blitbuffer of the image
-            local cover_bb = document:getCoverPageImage()
-            if cover_bb then
-                dbrow.has_cover = 'Y'
-                dbrow.cover_sizetag = spec_sizetag
-                -- we should scale down the cover to our max size
-                local cbb_w, cbb_h = cover_bb:getWidth(), cover_bb:getHeight()
-                local scale_factor = 1
-                if cbb_w > spec_max_cover_w or cbb_h > spec_max_cover_h then
-                    -- scale down if bigger than what we will display
-                    scale_factor = math.min(spec_max_cover_w / cbb_w, spec_max_cover_h / cbb_h)
-                    cbb_w = math.min(math.floor(cbb_w * scale_factor)+1, spec_max_cover_w)
-                    cbb_h = math.min(math.floor(cbb_h * scale_factor)+1, spec_max_cover_h)
-                    local new_bb
-                    if self.use_legacy_image_scaling then
-                        new_bb = cover_bb:scale(cbb_w, cbb_h)
-                    else
-                        new_bb = Mupdf.scaleBlitBuffer(cover_bb, cbb_w, cbb_h)
+                dbrow.cover_fetched = 'Y' -- we had a try at getting a cover
+                -- XXX make picdocument return a blitbuffer of the image
+                local cover_bb = document:getCoverPageImage()
+                if cover_bb then
+                    dbrow.has_cover = 'Y'
+                    dbrow.cover_sizetag = spec_sizetag
+                    -- we should scale down the cover to our max size
+                    local cbb_w, cbb_h = cover_bb:getWidth(), cover_bb:getHeight()
+                    local scale_factor = 1
+                    if cbb_w > spec_max_cover_w or cbb_h > spec_max_cover_h then
+                        -- scale down if bigger than what we will display
+                        scale_factor = math.min(spec_max_cover_w / cbb_w, spec_max_cover_h / cbb_h)
+                        cbb_w = math.min(math.floor(cbb_w * scale_factor)+1, spec_max_cover_w)
+                        cbb_h = math.min(math.floor(cbb_h * scale_factor)+1, spec_max_cover_h)
+                        local new_bb
+                        if self.use_legacy_image_scaling then
+                            new_bb = cover_bb:scale(cbb_w, cbb_h)
+                        else
+                            new_bb = Mupdf.scaleBlitBuffer(cover_bb, cbb_w, cbb_h)
+                        end
+                        cover_bb:free()
+                        cover_bb = new_bb
                     end
-                    cover_bb:free()
-                    cover_bb = new_bb
+                    dbrow.cover_w = cbb_w
+                    dbrow.cover_h = cbb_h
+                    dbrow.cover_btype = cover_bb:getType()
+                    dbrow.cover_bpitch = cover_bb.pitch
+                    local cover_data = Blitbuffer.tostring(cover_bb)
+                    cover_bb:free() -- free bb before compressing to save memory
+                    dbrow.cover_datalen = cover_data:len()
+                    local cover_dataz = xutil.zlib_compress(cover_data)
+                    -- release memory used by uncompressed data:
+                    cover_data = nil -- luacheck: no unused
+                    dbrow.cover_dataz = SQ3.blob(cover_dataz) -- cast to blob for sqlite
+                    logger.dbg("cover for", filename, "scaled by", scale_factor, "=>", cbb_w, "x", cbb_h, "(compressed from ", dbrow.cover_datalen, " to ", cover_dataz:len())
                 end
-                dbrow.cover_w = cbb_w
-                dbrow.cover_h = cbb_h
-                dbrow.cover_btype = cover_bb:getType()
-                dbrow.cover_bpitch = cover_bb.pitch
-                local cover_data = Blitbuffer.tostring(cover_bb)
-                cover_bb:free() -- free bb before compressing to save memory
-                dbrow.cover_datalen = cover_data:len()
-                local cover_dataz = xutil.zlib_compress(cover_data)
-                -- release memory used by uncompressed data:
-                cover_data = nil -- luacheck: no unused
-                dbrow.cover_dataz = SQ3.blob(cover_dataz) -- cast to blob for sqlite
-                logger.dbg("cover for", filename, "scaled by", scale_factor, "=>", cbb_w, "x", cbb_h, "(compressed from ", dbrow.cover_datalen, " to ", cover_dataz:len())
             end
         end
         DocumentRegistry:closeDocument(filepath)
-    else
+    end
+    if not loaded then
         dbrow.unsupported = _("not readable by engine")
         dbrow.cover_fetched = 'Y' -- so we don't try again if we're called later if cover_specs
     end

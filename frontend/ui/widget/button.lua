@@ -210,7 +210,9 @@ function Button:onTapSelectButton()
     elseif type(self.tap_input_func) == "function" then
         self:onInput(self.tap_input_func())
     end
-    return true
+    if self.readonly ~= true then
+        return true
+    end
 end
 
 function Button:onHoldSelectButton()

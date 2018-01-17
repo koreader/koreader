@@ -72,8 +72,10 @@ end
 
 function InputText:init()
     self:initTextBox(self.text)
-    self:initKeyboard()
-    self:initEventListener()
+    if self.readonly ~= true then
+        self:initKeyboard()
+        self:initEventListener()
+    end
 end
 
 function InputText:initTextBox(text, char_added, is_password_type)

@@ -94,8 +94,8 @@ end
 
 function Kindle:intoScreenSaver()
     local Screensaver = require("ui/screensaver")
-    if self:supportsScreensaver() and Screensaver:isUsingBookCover() then
-        Screensaver:show("suspend")
+    if self:supportsScreensaver() then
+        Screensaver:show()
     end
     self.powerd:beforeSuspend()
     if self.charging_mode == false and self.screen_saver_mode == false then
@@ -114,7 +114,7 @@ function Kindle:outofScreenSaver()
             os.execute("killall -stop awesome")
         end
         local Screensaver = require("ui/screensaver")
-        if self:supportsScreensaver() and Screensaver.isUsingBookCover() then
+        if self:supportsScreensaver() then
             Screensaver:close()
         end
         local UIManager = require("ui/uimanager")

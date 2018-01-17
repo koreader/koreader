@@ -131,7 +131,7 @@ Background = InputContainer:new{
     },
     -- contains a gray rectangular desktop
     FrameContainer:new{
-        background = 3,
+        background = Blitbuffer.COLOR_GREY,
         bordersize = 0,
         dimen = Screen:getSize(),
         Widget:new{
@@ -252,7 +252,7 @@ M = Menu:new{
 readerwindow = CenterContainer:new{
     dimen = Screen:getSize(),
     FrameContainer:new{
-        background = 0
+        background = Blitbuffer.COLOR_BLACK,
     }
 }
 reader = ReaderUI:new{

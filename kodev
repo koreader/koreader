@@ -92,10 +92,11 @@ EOL
 }
 
 function setup_env() {
+    SETUP_ENV_GREP_COMMAND="grep -v debug"
     if [ -n "${KODEBUG+x}" ]; then
-        KODEBUG_SUFFIX=-debug
+        SETUP_ENV_GREP_COMMAND="grep debug"
     fi
-    files=$(ls -d ./koreader-emulator-*${KODEBUG_SUFFIX}/koreader)
+    files=$(find . -maxdepth 1 -name 'koreader-emulator-*' | ${SETUP_ENV_GREP_COMMAND})/koreader
     assert_ret_zero $? "Emulator not found. Please build it first."
     export EMU_DIR=${files[0]}
 }
@@ -124,6 +125,8 @@ usage: build <OPTIONS> <TARGET>
 OPTIONS:
 
     -v, --verbose   Build in verbose mode.
+    --debug         include debugging symbols (default for emulator)
+    --no-debug      no debugging symbols (default for target devices)
 
 TARGET:
 ${SUPPORTED_TARGETS}"
@@ -138,6 +141,14 @@ ${SUPPORTED_TARGETS}"
             -h | --help)
                 echo "${BUILD_HELP_MSG}"
                 exit 0
+                ;;
+            --no-debug)
+                export KODEBUG=
+                KODEBUG_NO_DEFAULT=1
+                ;;
+            --debug)
+                export KODEBUG=1
+                KODEBUG_NO_DEFAULT=1
                 ;;
             *)
                 echo "ERROR: unknown option \"$PARAM\""
@@ -206,6 +217,10 @@ ${SUPPORTED_TARGETS}"
             assert_ret_zero $?
             ;;
         *)
+            if [ -z "${KODEBUG_NO_DEFAULT+x}" ]; then # no explicit --debug / --no-debug
+                # builds a debug build by default, like kodev-run
+                export KODEBUG=1
+            fi
             make
             assert_ret_zero $? "Failed to build emulator! Try run with -v for more information."
             setup_env
@@ -545,14 +560,14 @@ TARGET:
                 CATCHSEGV=$(which catchsegv)
             fi
 
-            KOREADER_COMMAND="${CATCHSEGV} ./reader.lua -d ${args}"
+            KOREADER_COMMAND="${CATCHSEGV} ./reader.lua -d"
 
             if [ ! -z "${gdb}" ]; then
-                KOREADER_COMMAND="${gdb} ./luajit reader.lua -d ${args}"
+                KOREADER_COMMAND="${gdb} ./luajit reader.lua -d"
             fi
 
             if [ ! -z "${valgrind}" ]; then
-                KOREADER_COMMAND="${valgrind} ./luajit reader.lua -d ${args}"
+                KOREADER_COMMAND="${valgrind} ./luajit reader.lua -d"
             fi
 
             echo "[*] Running KOReader with arguments: $*..."
@@ -563,6 +578,7 @@ TARGET:
                     args="$*"
                     [[ $args != /* ]] && args="${CURDIR}/${args}"
                 fi
+                KOREADER_COMMAND="$KOREADER_COMMAND ${args}"
 
                 RETURN_VALUE=85
                 while [ $RETURN_VALUE -eq 85 ]; do

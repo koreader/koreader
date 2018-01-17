@@ -44,6 +44,7 @@ char *GetDeviceModel(void);
 ]]
 
 local function yes() return true end
+local function no() return false end
 
 local function pocketbookEnableWifi(toggle)
     os.execute("/ebrmain/bin/netagent " .. (toggle == 1 and "connect" or "disconnect"))
@@ -56,24 +57,52 @@ local PocketBook = Generic:new{
 }
 
 function PocketBook:init()
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
+    self.powerd = require("device/pocketbook/powerd"):new{device = self}
+    self.input = require("device/input"):new{
+        device = self,
+        event_map = {
+            [KEY_MENU] = "Menu",
+            [KEY_PREV] = "LPgBack",
+            [KEY_NEXT] = "LPgFwd",
+        },
+        handleMiscEv = function(this, ev)
+            if ev.code == EVT_BACKGROUND then
+                self.isInBackGround = true
+                return "Suspend"
+            elseif ev.code == EVT_FOREGROUND then
+                if self.isInBackGround then
+                    self.isInBackGround = false
+                    return "Resume"
+                end
+            end
+        end,
+    }
+
+    -- in contrast to kobo/kindle, pocketbook-devices do not use linux/input
+    -- events directly. To be able to use input.lua nevertheless, we make
+    -- inkview-events look like linux/input events or handle them directly
+    -- here.
+    -- Unhandled events will leave Input:waitEvent() as "GenericInput"
     self.input:registerEventAdjustHook(function(_input, ev)
         if ev.type == EVT_KEYDOWN or ev.type == EVT_KEYUP then
-            ev.code = ev.code
             ev.value = ev.type == EVT_KEYDOWN and 1 or 0
-            ev.type = 1 -- EV_KEY
-        elseif ev.type == EVT_BACKGROUND then
-            self.isInBackGround = true
-            self:onPowerEvent("Power")
-        elseif self.isInBackGround and ev.type == EVT_FOREGROUND then
-            self.isInBackGround = false
-            self:onPowerEvent("Power")
-        elseif ev.type == EVT_EXIT then
-            -- auto shutdown event from inkview framework, gracefully close
-            -- everything and let the framework shutdown the device
+            ev.type = 1 -- linux/input.h Key-Event
+        end
+
+        -- handle EVT_BACKGROUND and EVT_FOREGROUND as MiscEvent as this makes
+        -- it easy to return a string directly which can be used in
+        -- uimanager.lua as event_handler index.
+        if ev.type == EVT_BACKGROUND or ev.type == EVT_FOREGROUND then
+            ev.code = ev.type
+            ev.type = 4 -- handle as MiscEvent, see above
+        end
+
+        -- auto shutdown event from inkview framework, gracefully close
+        -- everything and let the framework shutdown the device
+        if ev.type == EVT_EXIT then
             require("ui/uimanager"):broadcastEvent(
                 require("ui/event"):new("Close"))
-        elseif not self.isInBackGround and ev.type == EVT_FOREGROUND then
-            self.screen:refreshPartial()
         end
     end)
 
@@ -82,6 +111,8 @@ function PocketBook:init()
     self.input.open(self.emu_events_dev, 1)
     Generic.init(self)
 end
+
+function PocketBook:supportsScreensaver() return true end
 
 function PocketBook:setDateTime(year, month, day, hour, min, sec)
     if hour == nil or min == nil then return true end
@@ -144,48 +175,23 @@ local PocketBook626 = PocketBook:new{
     emu_events_dev = "/var/dev/shm/emu_events",
 }
 
-function PocketBook840:init()
-    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
-    self.powerd = require("device/pocketbook/powerd"):new{device = self}
-    self.input = require("device/input"):new{
-        device = self,
-        event_map = {
-            [24] = "LPgBack",
-            [25] = "LPgFwd",
-            [1002] = "Power",
-        }
-    }
-    PocketBook.init(self)
-end
+-- PocketBook Basic Touch
+local PocketBook624 = PocketBook:new{
+    isTouchDevice = yes,
+    hasKeys = yes,
+    hasFrontlight = no,
+    display_dpi = 166,
+    emu_events_dev = "/var/dev/shm/emu_events",
+}
 
-function PocketBook631:init()
-    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
-    self.powerd = require("device/pocketbook/powerd"):new{device = self}
-    self.input = require("device/input"):new{
-        device = self,
-        event_map = {
-            [23] = "Menu",
-            [24] = "LPgBack",
-            [25] = "LPgFwd",
-            [1002] = "Power",
-        }
-    }
-    PocketBook.init(self)
-end
-
-function PocketBook626:init()
-    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
-    self.powerd = require("device/pocketbook/powerd"):new{device = self}
-    self.input = require("device/input"):new{
-        device = self,
-        event_map = {
-            [24] = "LPgBack",
-            [25] = "LPgFwd",
-            [1002] = "Power",
-        }
-    }
-    PocketBook.init(self)
-end
+-- PocketBook Touch Lux
+local PocketBook623 = PocketBook:new{
+    isTouchDevice = yes,
+    hasKeys = yes,
+    hasFrontlight = yes,
+    display_dpi = 212,
+    emu_events_dev = "/var/dev/shm/emu_events",
+}
 
 logger.info('SoftwareVersion: ', PocketBook:getSoftwareVersion())
 
@@ -197,6 +203,10 @@ elseif codename == "PB631" then
     return PocketBook631
 elseif codename == "PocketBook 626" then
     return PocketBook626
+elseif codename == "PocketBook 624" then
+    return PocketBook624
+elseif codename == "PocketBook 623" then
+    return PocketBook623
 else
     error("unrecognized PocketBook model " .. codename)
 end
