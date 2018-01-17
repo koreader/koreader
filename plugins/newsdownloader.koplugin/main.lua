@@ -1,5 +1,5 @@
 local DataStorage = require("datastorage")
-local DownloadBackend = require("internal_download_backend")
+local DownloadBackend = require("internaldownloadbackend")
 local ReadHistory = require("readhistory")
 local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
