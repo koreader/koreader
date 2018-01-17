@@ -66,6 +66,7 @@ local logger = require("logger")
 
 local BackgroundRunner = {
     jobs = PluginShare.backgroundJobs,
+    running = false,
 }
 
 --- Copies required fields from |job|.
@@ -160,6 +161,7 @@ function BackgroundRunner:_execute()
         local round = 0
         while #self.jobs > 0 do
             local job = table.remove(self.jobs, 1)
+            logger.dbg("BackgroundRunner: run job ", job, " @ ", os.time())
             if job.insert_sec == nil then
                 -- Jobs are first inserted to jobs table from external users. So
                 -- they may not have insert_sec field.
@@ -206,14 +208,24 @@ function BackgroundRunner:_execute()
         end
     end
 
+    self.running = false
     if PluginShare.stopBackgroundRunner == nil then
         self:_schedule()
+    else
+        logger.dbg("BackgroundRunnerWidget: stop running @ ", os.time())
     end
 end
 
 function BackgroundRunner:_schedule()
     assert(self ~= nil)
-    UIManager:scheduleIn(2, function() self:_execute() end)
+    if self.running == false then
+        logger.dbg("BackgroundRunnerWidget: start running @ ", os.time())
+        self.running = true
+        UIManager:scheduleIn(2, function() self:_execute() end)
+    else
+        logger.dbg("BackgroundRunnerWidget: a schedule is pending @ ",
+                   os.time())
+    end
 end
 
 function BackgroundRunner:_insert(job)
@@ -228,5 +240,16 @@ local BackgroundRunnerWidget = WidgetContainer:new{
     name = "backgroundrunner",
     runner = BackgroundRunner,
 }
+
+function BackgroundRunnerWidget:onSuspend()
+    logger.dbg("BackgroundRunnerWidget:onSuspend() @ ", os.time())
+    PluginShare.stopBackgroundRunner = true
+end
+
+function BackgroundRunnerWidget:onResume()
+    logger.dbg("BackgroundRunnerWidget:onResume() @ ", os.time())
+    PluginShare.stopBackgroundRunner = nil
+    BackgroundRunner:_schedule()
+end
 
 return BackgroundRunnerWidget

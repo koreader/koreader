@@ -597,4 +597,11 @@ function util.shell_escape(args)
     return table.concat(escaped_args, " ")
 end
 
+--- Clear all the elements from a table without reassignment.
+--- @table t the table to be cleared
+function util.clearTable(t)
+    local c = #t
+    for i = 0, c do t[i] = nil end
+end
+
 return util
