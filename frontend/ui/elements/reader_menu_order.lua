@@ -16,6 +16,7 @@ local order = {
         "go_to",
         "skim_to",
         "----------------------------",
+        "go_to_previous_location",
         "follow_links",
     },
     typeset = {
