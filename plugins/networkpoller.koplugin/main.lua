@@ -38,7 +38,7 @@ function NetworkPoller:_schedule(settings_id)
         insert_sec = 0,  -- Actively set the insert_sec to start it immediately.
         when = 30,       -- Checks network connectivity once per 30 seconds.
         repeated = enabled,
-        executable = "ping -W 1 -c 1 dns/msftncsi.com",
+        executable = "ping -W 1 -c 1 dns.msftncsi.com",
         callback = function(job)
             self:_writeResult(job)
         end,
