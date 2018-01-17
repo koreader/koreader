@@ -1,4 +1,5 @@
 local DataStorage = require("datastorage")
+local DownloadBackend = require("internal_download_backend")
 local ReadHistory = require("readhistory")
 local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
@@ -7,14 +8,11 @@ local UIManager = require("ui/uimanager")
 local NetworkMgr = require("ui/network/manager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffi = require("ffi")
-local http = require("socket.http")
-local https = require("ssl.https")
 local logger = require("logger")
-local ltn12 = require("ltn12")
-local socket_url = require("socket.url")
 local util = require("util")
 local _ = require("gettext")
 local T = FFIUtil.template
+
 
 local NewsDownloader = WidgetContainer:new{}
 
@@ -212,11 +210,8 @@ function NewsDownloader:loadConfigAndProcessFeeds()
 end
 
 function NewsDownloader:processFeedSource(url, limit, unsupported_feeds_urls, download_full_article)
-    local resp_lines = {}
-    local parsed = socket_url.parse(url)
-    local httpRequest = parsed.scheme == 'http' and http.request or https.request
-    httpRequest({ url = url, sink = ltn12.sink.table(resp_lines), })
-    local feeds = self:deserializeXMLString(table.concat(resp_lines))
+
+    local feeds = self:deserializeXMLString(DownloadBackend:getResponseAsString(url))
 
     if not feeds then
         table.insert(unsupported_feeds_urls, url)
@@ -299,9 +294,7 @@ function NewsDownloader:downloadFeed(feed, feed_output_dir)
                                                file_extension)
     logger.dbg("NewsDownloader: News file will be stored to :", news_dl_path)
 
-    local parsed = socket_url.parse(link)
-    local httpRequest = parsed.scheme == 'http' and http.request or https.request
-    httpRequest({ url = link, sink = ltn12.sink.file(io.open(news_dl_path, 'w')), })
+    DownloadBackend:download(link, news_dl_path)
 end
 
 function NewsDownloader:createFromDescription(feed, context, feed_output_dir)
