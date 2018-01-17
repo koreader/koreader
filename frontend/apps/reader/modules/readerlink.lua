@@ -85,12 +85,6 @@ function ReaderLink:addToMainMenu(menu_items)
         text = _("Links"),
         sub_item_table = {
             {
-                text = _("Go back to previous location"),
-                enabled_func = function() return #self.location_stack > 0 end,
-                callback = function() self:onGoBackLink() end,
-                separator = true,
-            },
-            {
                 text = _("Tap to follow links"),
                 checked_func = isTapToFollowLinksOn,
                 callback = function()
@@ -140,6 +134,11 @@ function ReaderLink:addToMainMenu(menu_items)
                 end,
             },
         }
+    }
+    menu_items.go_to_previous_location = {
+        text = _("Go back to previous location"),
+        enabled_func = function() return #self.location_stack > 0 end,
+        callback = function() self:onGoBackLink() end,
     }
 end
 
