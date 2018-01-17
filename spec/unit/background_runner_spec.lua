@@ -22,8 +22,7 @@ describe("BackgroundRunner widget tests", function()
     end)
 
     before_each(function()
-        require("util")
-        table.clear(PluginShare.backgroundJobs)
+        require("util").clearTable(PluginShare.backgroundJobs)
     end)
 
     it("should start job", function()
