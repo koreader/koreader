@@ -4,9 +4,9 @@ local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("luasettings")
 local UIManager = require("ui/uimanager")
+local ffiutil = require("ffi/util")
 local _ = require("gettext")
-local FFIUtil = require("ffi/util")
-local T = require("ffi/util").template
+local T = ffiutil.template
 
 local NetworkMgr = {}
 
@@ -69,7 +69,7 @@ function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
     UIManager:show(info)
     UIManager:forceRePaint()
     while not NetworkMgr:isOnline() and retry_count < timeout do
-        FFIUtil.sleep(1)
+        ffiutil.sleep(1)
         retry_count = retry_count + 1
     end
     UIManager:close(info)
@@ -80,7 +80,7 @@ function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
     if callback then callback() end
 end
 
-function NetworkMgr:wifiEnableAction(callback)
+function NetworkMgr:beforeWifiAction(callback)
     local wifi_enable_action = G_reader_settings:readSetting("wifi_enable_action")
     if wifi_enable_action == "turn_on" then
         NetworkMgr:turnOnWifiAndWaitForConnection(callback)
@@ -204,10 +204,10 @@ function NetworkMgr:getInfoMenuTable()
 end
 
 
-function NetworkMgr:getWifiEnableActionMenuTable()
+function NetworkMgr:getBeforeWifiActionMenuTable()
    local wifi_enable_action_setting = G_reader_settings:readSetting("wifi_enable_action") or "prompt"
    local wifi_enable_actions = {
-       turn_on = {_("turn on"), _("Turn on")},
+       turn_on = {_("turn on"), _("Turn on (experimental)")},
        prompt = {_("prompt"), _("Prompt")},
    }
    local action_table = function(wifi_enable_action)
@@ -241,7 +241,7 @@ function NetworkMgr:getMenuTable()
         self:getProxyMenuTable(),
         self:getRestoreMenuTable(),
         self:getInfoMenuTable(),
-        self:getWifiEnableActionMenuTable(),
+        self:getBeforeWifiActionMenuTable(),
     }
 end
 

@@ -77,7 +77,7 @@ function NewsDownloader:addToMainMenu(menu_items)
                 callback = function()
                     if not NetworkMgr:isOnline() then
                         wifi_enabled_before_action = false
-                        NetworkMgr:wifiEnableAction(self.loadConfigAndProcessFeeds)
+                        NetworkMgr:beforeWifiAction(self.loadConfigAndProcessFeeds)
                     else
                         self:loadConfigAndProcessFeeds()
                     end
