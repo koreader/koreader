@@ -144,7 +144,7 @@ function CalibreCompanion:connect()
         else
             self:setInboxDir(host, port)
         end
-    elseif not NetworkMgr:isOnline() then
+    elseif not NetworkMgr:isConnected() then
         NetworkMgr:promptWifiOn()
     else
         DEBUG("cannot connect to calibre server")
