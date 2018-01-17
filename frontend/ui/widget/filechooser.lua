@@ -64,10 +64,19 @@ function FileChooser:init()
                             end
                         elseif attributes.mode == "file" then
                             if self.file_filter == nil or self.file_filter(filename) then
+                                local percent_finished = 0
+                                if DocSettings:hasSidecarFile(filename) then
+                                    local docinfo = DocSettings:open(filename)
+                                    percent_finished = docinfo.data.percent_finished
+                                    if percent_finished == nil then
+                                        percent_finished = 0
+                                    end
+                                end
                                 table.insert(files, {name = f,
                                                      suffix = getFileNameSuffix(f),
                                                      fullpath = filename,
-                                                     attr = attributes})
+                                                     attr = attributes,
+                                                     percent_finished = percent_finished })
                             end
                         end
                     end
@@ -144,6 +153,31 @@ function FileChooser:genItemTableFromPath(path)
             else
                 return self.strcoll(a.suffix, b.suffix)
             end
+        end
+    elseif self.collate == "percent_unopened_first" or self.collate == "percent_unopened_last" then
+        sorting = function(a, b)
+            if DocSettings:hasSidecarFile(a.fullpath) and not DocSettings:hasSidecarFile(b.fullpath) then
+                if self.collate == "percent_unopened_first" then
+                    return false
+                else
+                    return true
+                end
+            end
+            if not DocSettings:hasSidecarFile(a.fullpath) and DocSettings:hasSidecarFile(b.fullpath) then
+                if self.collate == "percent_unopened_first" then
+                    return true
+                else
+                    return false
+                end
+            end
+            if not DocSettings:hasSidecarFile(a.fullpath) and not DocSettings:hasSidecarFile(b.fullpath) then
+                return a.name < b.name
+            end
+
+            if a.attr.mode == "directory" then return a.name < b.name end
+            if b.attr.mode == "directory" then return a.name < b.name end
+
+            return a.percent_finished < b.percent_finished
         end
     else
         sorting = function(a, b)
