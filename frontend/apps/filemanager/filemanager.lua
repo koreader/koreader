@@ -689,6 +689,8 @@ function FileManager:getSortingMenuTable()
         modification = {_("date modified"), _("Sort by date modified")},
         size = {_("size"), _("Sort by size")},
         type = {_("type"), _("Sort by type")},
+        percent_unopened_first = {_("percent - unopened first"), _("Sort by percent - unopened first")},
+        percent_unopened_last = {_("percent - unopened last"), _("Sort by percent - unopened last")},
     }
     local set_collate_table = function(collate)
         return {
@@ -713,6 +715,8 @@ function FileManager:getSortingMenuTable()
             set_collate_table("modification"),
             set_collate_table("size"),
             set_collate_table("type"),
+            set_collate_table("percent_unopened_first"),
+            set_collate_table("percent_unopened_last"),
         }
     }
 end
