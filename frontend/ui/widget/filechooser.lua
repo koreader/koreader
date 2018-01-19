@@ -65,11 +65,13 @@ function FileChooser:init()
                         elseif attributes.mode == "file" then
                             if self.file_filter == nil or self.file_filter(filename) then
                                 local percent_finished = 0
-                                if DocSettings:hasSidecarFile(filename) then
-                                    local docinfo = DocSettings:open(filename)
-                                    percent_finished = docinfo.data.percent_finished
-                                    if percent_finished == nil then
-                                        percent_finished = 0
+                                if self.collate == "percent_unopened_first" or self.collate == "percent_unopened_last" then
+                                    if DocSettings:hasSidecarFile(filename) then
+                                        local docinfo = DocSettings:open(filename)
+                                        percent_finished = docinfo.data.percent_finished
+                                        if percent_finished == nil then
+                                            percent_finished = 0
+                                        end
                                     end
                                 end
                                 table.insert(files, {name = f,
