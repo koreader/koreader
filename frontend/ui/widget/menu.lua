@@ -807,7 +807,7 @@ function Menu:updateItems(select_number)
         end -- if i <= self.items
     end -- for c=1, self.perpage
     if self.item_group[1] then
-        if not Device:isTouchDevice() then
+        if not Device:isTouchDevice() or Device:hasKeys() then
             -- only draw underline for nontouch device
             -- reset focus manager accordingly
             self.selected = { x = 1, y = select_number }
