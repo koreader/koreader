@@ -128,58 +128,22 @@ function ReaderMenu:setUpdateItemTable()
 
     if Device:supportsScreensaver() then
         local ss_book_settings = {
-            text = _("Current book cover settings"),
+            text = _("Exclude this book's cover from screensaver"),
             enabled_func = function()
                 return not (self.ui == nil or self.ui.document == nil)
                     and G_reader_settings:readSetting('screensaver_type') == "cover"
             end,
-            sub_item_table = {
-                {
-                    text = _("Exclude this book's cover from screensaver"),
-                    checked_func = function()
-                        return self.ui.doc_settings:readSetting("exclude_screensaver") == true
-                    end,
-                    callback = function()
-                        if Screensaver:excluded() then
-                            self.ui.doc_settings:saveSetting("exclude_screensaver", false)
-                        else
-                            self.ui.doc_settings:saveSetting("exclude_screensaver", true)
-                        end
-                        self.ui:saveSettings()
-                    end
-                },
-                {
-                    text = _("Stretch book cover to fit screen"),
-                    checked_func = function()
-                        local settings_stretch_cover = self.ui.doc_settings:readSetting("stretch_cover")
-                        if  settings_stretch_cover == nil and G_reader_settings:readSetting("stretch_cover_default") then
-                            return true
-                        else
-                            return self.ui.doc_settings:readSetting("stretch_cover") == true
-                        end
-                    end,
-                    callback = function()
-                        self.ui.doc_settings:saveSetting("stretch_cover", not Screensaver:stretchCover())
-                        self.ui:saveSettings()
-                    end,
-                    hold_callback = function()
-                        local ConfirmBox = require("ui/widget/confirmbox")
-                        UIManager:show(ConfirmBox:new {
-                            text = _("Stretch all book covers to fit screen?"),
-                            cancel_text = _("Don't stretch"),
-                            cancel_callback = function()
-                                G_reader_settings:delSetting("stretch_cover_default")
-                                return
-                            end,
-                            ok_text = _("Stretch"),
-                            ok_callback = function()
-                                G_reader_settings:saveSetting("stretch_cover_default", true)
-                                return
-                            end,
-                        })
-                    end,
-                },
-            }
+            checked_func = function()
+                return self.ui and self.ui.doc_settings and self.ui.doc_settings:readSetting("exclude_screensaver") == true
+            end,
+            callback = function()
+                if Screensaver:excluded() then
+                    self.ui.doc_settings:saveSetting("exclude_screensaver", false)
+                else
+                    self.ui.doc_settings:saveSetting("exclude_screensaver", true)
+                end
+                self.ui:saveSettings()
+            end
         }
 
         self.menu_items.screensaver = {

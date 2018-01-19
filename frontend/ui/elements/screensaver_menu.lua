@@ -10,7 +10,8 @@ local function lastFile()
         return last_file
     end
 end
-local function messageBackground() return G_reader_settings:isTrue("message_background") end
+local function whiteBackground() return G_reader_settings:isTrue("screensaver_white_background") end
+local function stretchImages() return G_reader_settings:isTrue("screensaver_stretch_images") end
 
 return {
     {
@@ -110,12 +111,17 @@ return {
                 end,
             },
             {
-                text = _("White background in message"),
-                checked_func = function()
-                    return messageBackground()
-                end,
+                text = _("White background behind message and images"),
+                checked_func = whiteBackground,
                 callback = function()
-                    G_reader_settings:saveSetting("message_background", not messageBackground())
+                    G_reader_settings:saveSetting("screensaver_white_background", not whiteBackground())
+                end,
+            },
+            {
+                text = _("Stretch covers and images to fit screen"),
+                checked_func = stretchImages,
+                callback = function()
+                    G_reader_settings:saveSetting("screensaver_stretch_images", not stretchImages())
                 end,
                 separator = true,
             },

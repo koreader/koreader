@@ -83,17 +83,12 @@ function Screensaver:chooseFolder()
     UIManager:show(self.choose_dialog)
 end
 
-function Screensaver:stretchCover()
-    local lastfile = G_reader_settings:readSetting("lastfile")
-    if DocSettings:hasSidecarFile(lastfile) then
-        local doc_settings = DocSettings:open(lastfile)
-        local stretch_cover_ss = doc_settings:readSetting("stretch_cover")
-        doc_settings:close()
-        if  stretch_cover_ss ~= nil then
-            return stretch_cover_ss
-        end
-    end
-    return G_reader_settings:readSetting("stretch_cover_default") or false
+function Screensaver:stretchImages()
+    return G_reader_settings:isTrue("screensaver_stretch_images")
+end
+
+function Screensaver:whiteBackground()
+    return G_reader_settings:isTrue("screensaver_white_background")
 end
 
 function Screensaver:excluded()
@@ -146,8 +141,19 @@ function Screensaver:show(event, fallback_message)
         UIManager:close(self.left_msg)
         self.left_msg = nil
     end
+    local overlay_message
     local prefix = event and event.."_" or "" -- "", "poweroff_" or "reboot_"
     local screensaver_type = G_reader_settings:readSetting(prefix.."screensaver_type")
+    if prefix and not screensaver_type then
+        -- No manually added setting for poweroff/reboot, fallback to using the
+        -- same settings as for suspend that could be set via menus
+        screensaver_type = G_reader_settings:readSetting("screensaver_type")
+        prefix = ""
+        -- And display fallback_message over the common screensaver,
+        -- so user can distinguish between suspend (no message) and
+        -- poweroff (overlay message)
+        overlay_message = fallback_message
+    end
     if screensaver_type == nil then
         screensaver_type = "message"
     end
@@ -165,7 +171,6 @@ function Screensaver:show(event, fallback_message)
             doc_settings:close()
         end
         if exclude ~= true then
-            background = Blitbuffer.COLOR_BLACK
             if lfs.attributes(lastfile, "mode") == "file" then
                 local doc = DocumentRegistry:openDocument(lastfile)
                 local image = doc:getCoverPageImage()
@@ -177,8 +182,11 @@ function Screensaver:show(event, fallback_message)
                         alpha = true,
                         height = Screen:getHeight(),
                         width = Screen:getWidth(),
-                        scale_factor = not self:stretchCover() and 0 or nil,
+                        scale_factor = not self:stretchImages() and 0 or nil,
                     }
+                    if not self:whiteBackground() then
+                        background = Blitbuffer.COLOR_BLACK
+                    end
                 else
                     screensaver_type = "random_image"
                 end
@@ -225,11 +233,15 @@ function Screensaver:show(event, fallback_message)
         else
             widget = ImageWidget:new{
                 file = image_file,
+                file_do_cache = false,
                 alpha = true,
                 height = Screen:getHeight(),
                 width = Screen:getWidth(),
-                scale_factor = 0,
+                scale_factor = not self:stretchImages() and 0 or nil,
             }
+            if not self:whiteBackground() then
+                background = Blitbuffer.COLOR_BLACK
+            end
         end
     end
     if screensaver_type == "readingprogress" then
@@ -241,8 +253,8 @@ function Screensaver:show(event, fallback_message)
     end
     if screensaver_type == "message" then
         local screensaver_message = G_reader_settings:readSetting(prefix.."screensaver_message")
-        if G_reader_settings:nilOrFalse("message_background") then
-            background = nil
+        if not self:whiteBackground() then
+            background = nil -- no background filling, let book text visible
         end
         if screensaver_message == nil then
             screensaver_message = fallback_message or default_screensaver_message
@@ -251,6 +263,12 @@ function Screensaver:show(event, fallback_message)
             text = screensaver_message,
             readonly = true,
         }
+        -- No overlay needed as we just displayed the message
+        overlay_message = nil
+    end
+
+    if overlay_message then
+        widget = self:addOverlayMessage(widget, overlay_message)
     end
 
     if widget then
@@ -286,6 +304,58 @@ function Screensaver:close()
     else
         logger.dbg("tap to exit from screensaver")
     end
+end
+
+function Screensaver:addOverlayMessage(widget, text)
+    local Font = require("ui/font")
+    local FrameContainer = require("ui/widget/container/framecontainer")
+    local OverlapGroup = require("ui/widget/overlapgroup")
+    local RenderText = require("ui/rendertext")
+    local RightContainer = require("ui/widget/container/rightcontainer")
+    local Size = require("ui/size")
+    local TextBoxWidget = require("ui/widget/textboxwidget")
+    local TextWidget = require("ui/widget/textwidget")
+
+    local face = Font:getFace("infofont")
+    local screen_w, screen_h = Screen:getWidth(), Screen:getHeight()
+
+    local textw
+    -- Don't make our message reach full screen width
+    local tsize = RenderText:sizeUtf8Text(0, screen_w, face, text)
+    if tsize.x < screen_w * 0.9 then
+        textw = TextWidget:new{
+            text = text,
+            face = face,
+        }
+    else -- if text too wide, use TextBoxWidget for multi lines display
+        textw = TextBoxWidget:new{
+            text = text,
+            face = face,
+            width = math.floor(screen_w * 0.9)
+        }
+    end
+    textw = FrameContainer:new{
+        background = Blitbuffer.COLOR_WHITE,
+        bordersize = Size.border.default,
+        margin = 0,
+        textw,
+    }
+    textw = RightContainer:new{
+        dimen = {
+            w = screen_w,
+            h = textw:getSize().h,
+        },
+        textw,
+    }
+    widget = OverlapGroup:new{
+        dimen = {
+            h = screen_w,
+            w = screen_h,
+        },
+        widget,
+        textw,
+    }
+    return widget
 end
 
 return Screensaver

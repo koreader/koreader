@@ -38,7 +38,7 @@ end
 local DPI_SCALE = get_dpi_scale()
 
 local ImageCache = Cache:new{
-    max_memsize = 2*1024*1024, -- 2M of image cache
+    max_memsize = 5*1024*1024, -- 5M of image cache
     current_memsize = 0,
     cache = {},
     -- this will hold the LRU order of the cache
@@ -129,12 +129,20 @@ function ImageWidget:_loadfile()
     local itype = string.lower(string.match(self.file, ".+%.([^.]+)") or "")
     if itype == "png" or itype == "jpg" or itype == "jpeg"
             or itype == "tiff" then
-        local hash = "image|"..self.file.."|"..(self.width or "").."|"..(self.height or "")
-        -- Do the scaling for DPI here, so it can be cached and not re-done
-        -- each time in _render()
         -- In our use cases for files (icons), we either provide width and height,
         -- or just scale_for_dpi, and scale_factor should stay nil.
-        -- Other combinations will result in double scaling anyway, and unexpected results.
+        -- Other combinations will result in double scaling, and unexpected results.
+        -- We should anyway only give self.width and self.height to Mupdf.renderImageFile(),
+        -- and use them in cache hash, when self.scale_factor is nil, when we are sure
+        -- we don't need to keep aspect ratio.
+        local width, height
+        if self.scale_factor == nil then
+            width = self.width
+            height = self.height
+        end
+        local hash = "image|"..self.file.."|"..(width or "").."|"..(height or "")
+        -- Do the scaling for DPI here, so it can be cached and not re-done
+        -- each time in _render()
         local scale_for_dpi_here = false
         if self.scale_for_dpi and DPI_SCALE ~= 1 then
             scale_for_dpi_here = true -- we'll do it before caching
@@ -147,7 +155,7 @@ function ImageWidget:_loadfile()
             self._bb = cache.bb
             self._bb_disposable = false -- don't touch or free a cached _bb
         else
-            self._bb = Mupdf.renderImageFile(self.file, self.width, self.height)
+            self._bb = Mupdf.renderImageFile(self.file, width, height)
             if scale_for_dpi_here then
                 local new_bb
                 local bb_w, bb_h = self._bb:getWidth(), self._bb:getHeight()
