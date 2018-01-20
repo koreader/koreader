@@ -405,7 +405,7 @@ function ListMenuItem:update()
                 if authors and authors:find("\n") then
                     authors = util.splitToArray(authors, "\n")
                     if #authors > 2 then
-                        authors = { authors[1], authors[2].."  et al." }
+                        authors = { authors[1], T(_("%1 et al."), authors[2]) }
                     end
                     authors = table.concat(authors, "\n")
                 end

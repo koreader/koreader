@@ -143,7 +143,7 @@ function FakeCover:init()
     if authors and authors:find("\n") then
         authors = util.splitToArray(authors, "\n")
         if #authors > 3 then
-            authors = { authors[1], authors[2], authors[3], "et al." }
+            authors = { authors[1], authors[2], authors[3], _("et al.") }
         end
         authors = table.concat(authors, "\n")
     end
