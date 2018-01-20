@@ -281,6 +281,15 @@ function ReaderMenu:onCloseReaderMenu()
     return true
 end
 
+function ReaderMenu:onCloseDocument()
+    if Device:supportsScreensaver() then
+        -- Remove the 8th item we added (which cleans up references to document
+        -- and doc_settings embedded in functions)
+        local screensaver_sub_item_table = require("ui/elements/screensaver_menu")
+        table.remove(screensaver_sub_item_table, 8)
+    end
+end
+
 function ReaderMenu:_getTabIndexFromLocation(ges)
     if self.tab_item_table == nil then
         self:setUpdateItemTable()
