@@ -145,12 +145,19 @@ function KeyValueItem:init()
         }
     end
 
+    -- self.value may contain some control characters (\n \t...) that would
+    -- be rendered as a square. Replace them with a shorter and nicer '|'.
+    -- (Let self.value untouched, as with Hold, the original value can be
+    -- displayed correctly in TextViewer.)
+    local tvalue = tostring(self.value)
+    tvalue = tvalue:gsub("[\n\t]", "|")
+
     local frame_padding = Size.padding.default
     local frame_internal_width = self.width - frame_padding * 2
     local key_w = frame_internal_width / 2
     local value_w = frame_internal_width / 2
     local key_w_rendered = RenderText:sizeUtf8Text(0, frame_internal_width, self.tface, self.key).x
-    local value_w_rendered = RenderText:sizeUtf8Text(0, frame_internal_width, self.cface, self.value).x
+    local value_w_rendered = RenderText:sizeUtf8Text(0, frame_internal_width, self.cface, tvalue).x
     local space_w_rendered = RenderText:sizeUtf8Text(0, frame_internal_width, self.cface, " ").x
     if key_w_rendered > key_w or value_w_rendered > value_w then
         -- truncate key or value so they fit in one row
@@ -158,10 +165,10 @@ function KeyValueItem:init()
             if key_w_rendered >= value_w_rendered then
                 key_w = frame_internal_width - value_w_rendered
                 self.show_key = RenderText:truncateTextByWidth(self.key, self.tface, frame_internal_width - value_w_rendered)
-                self.show_value = self.value
+                self.show_value = tvalue
             else
                 key_w = key_w_rendered + space_w_rendered
-                self.show_value = RenderText:truncateTextByWidth(self.value, self.cface, frame_internal_width - key_w_rendered,
+                self.show_value = RenderText:truncateTextByWidth(tvalue, self.cface, frame_internal_width - key_w_rendered,
                     false, false, true)
                 self.show_key = self.key
             end
@@ -182,14 +189,14 @@ function KeyValueItem:init()
                 key_w = key_w_rendered + space_w_rendered
             end
             self.show_key = self.key
-            self.show_value = self.value
+            self.show_value = tvalue
         end
     else
         if self.value_align == "right" then
             key_w = frame_internal_width - value_w_rendered
         end
         self.show_key = self.key
-        self.show_value = self.value
+        self.show_value = tvalue
     end
 
     self[1] = FrameContainer:new{
