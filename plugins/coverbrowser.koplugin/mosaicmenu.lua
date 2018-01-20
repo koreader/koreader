@@ -26,6 +26,7 @@ local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
+local T = require("ffi/util").template
 local getMenuText = require("util").getMenuText
 
 local BookInfoManager = require("bookinfomanager")
@@ -143,7 +144,7 @@ function FakeCover:init()
     if authors and authors:find("\n") then
         authors = util.splitToArray(authors, "\n")
         if #authors > 3 then
-            authors = { authors[1], authors[2], authors[3], _("et al.") }
+            authors = { authors[1], authors[2], T(_("%1 et al."), authors[3]) }
         end
         authors = table.concat(authors, "\n")
     end
