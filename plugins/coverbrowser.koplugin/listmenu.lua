@@ -399,6 +399,16 @@ function ListMenuItem:update()
             else
                 title = bookinfo.title and bookinfo.title or filename_without_suffix
                 authors = bookinfo.authors
+                -- If multiple authors (crengine separates them with \n), we
+                -- can display them on multiple lines, but limit to 2, and
+                -- append "et al." to the 2nd if there are more
+                if authors and authors:find("\n") then
+                    authors = util.splitToArray(authors, "\n")
+                    if #authors > 2 then
+                        authors = { authors[1], T(_("%1 et al."), authors[2]) }
+                    end
+                    authors = table.concat(authors, "\n")
+                end
             end
             -- add Series metadata if requested
             if bookinfo.series then

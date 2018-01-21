@@ -23,8 +23,10 @@ local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
+local T = require("ffi/util").template
 local getMenuText = require("util").getMenuText
 
 local BookInfoManager = require("bookinfomanager")
@@ -135,6 +137,16 @@ function FakeCover:init()
         title = title:gsub("|", "\n")
         -- Also replace underscores with spaces
         title = title:gsub("_", " ")
+    end
+    -- If multiple authors (crengine separates them with \n), we
+    -- can display them on multiple lines, but limit to 3, and
+    -- append "et al." on a 4th line if there are more
+    if authors and authors:find("\n") then
+        authors = util.splitToArray(authors, "\n")
+        if #authors > 3 then
+            authors = { authors[1], authors[2], T(_("%1 et al."), authors[3]) }
+        end
+        authors = table.concat(authors, "\n")
     end
 
     -- We build the VerticalGroup widget with decreasing font sizes till

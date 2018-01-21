@@ -266,10 +266,11 @@ function BookStatusWidget:genBookInfoGroup()
 
     }
     -- author
-    local text_author = TextWidget:new{
+    local text_author = TextBoxWidget:new{
         text = self.props.authors,
         face = self.small_font_face,
-        padding = Size.padding.default
+        width = width,
+        alignment = "center",
     }
     table.insert(book_meta_info_group,
         CenterContainer:new{
