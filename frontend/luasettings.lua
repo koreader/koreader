@@ -3,6 +3,8 @@ This module handles generic settings as well as KOReader's global settings syste
 ]]
 
 local dump = require("dump")
+local lfs = require("libs/libkoreader-lfs")
+local logger = require("logger")
 
 local LuaSettings = {}
 
@@ -18,11 +20,24 @@ function LuaSettings:open(file_path)
     local new = {file=file_path}
     local ok, stored
 
+    -- File being absent and returning an empty table is a use case,
+    -- so logger.warn() only if there was an existing file
+    local existing = lfs.attributes(new.file, "mode") == "file"
+
     ok, stored = pcall(dofile, new.file)
     if ok and stored then
         new.data = stored
     else
-        new.data = {}
+        if existing then logger.warn("Failed reading", new.file, "(probably corrupted).") end
+        -- Fallback to .old if it exists
+        ok, stored = pcall(dofile, new.file..".old")
+        if ok and stored then
+            if existing then logger.warn("read from backup file", new.file..".old") end
+            new.data = stored
+        else
+            if existing then logger.warn("no usable backup file for", new.file, "to read from") end
+            new.data = {}
+        end
     end
 
     return setmetatable(new, {__index = LuaSettings})
@@ -165,6 +180,9 @@ end
 --- Writes settings to disk.
 function LuaSettings:flush()
     if not self.file then return end
+    if lfs.attributes(self.file, "mode") == "file" then
+        os.rename(self.file, self.file .. ".old")
+    end
     local f_out = io.open(self.file, "w")
     if f_out ~= nil then
         os.setlocale('C', 'numeric')
