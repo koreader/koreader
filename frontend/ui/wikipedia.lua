@@ -574,8 +574,8 @@ end
 -- have a quite consistent size/weight in all fonts.
 local th1_sym = "\xE2\x96\x88"         -- full block (big black rectangle) (never met, only for web page title?)
 local th2_sym = "\xE2\x96\x89"         -- big black square
-local th3_sym = "\xC2\xA0\xE2\x97\x86" -- black diamond (indented, nicer)
-local th4_sym = "\xE2\x97\xA4"         -- black upper left triangle
+local th3_sym = "\xC2\xA0\xE2\x97\xA4" -- black upper left triangle (indented, nicer)
+local th4_sym = "\xE2\x97\x86"         -- black diamond
 local th5_sym = "\xE2\x9C\xBF"         -- black florette
 local th6_sym = "\xE2\x9D\x96"         -- black diamond minus white x
 -- Others available in most fonts
@@ -615,8 +615,8 @@ end
 -- have a quite consistent size/weight in all fonts.
 local h1_sym = "\xE2\x96\x88"     -- full block (big black rectangle) (never met, only for web page title?)
 local h2_sym = "\xE2\x96\x89"     -- big black square
-local h3_sym = "\xE2\x97\x86"     -- black diamond
-local h4_sym = "\xE2\x97\xA4"     -- black upper left triangle
+local h3_sym = "\xE2\x97\xA4"     -- black upper left triangle
+local h4_sym = "\xE2\x97\x86"     -- black diamond
 local h5_sym = "\xE2\x9C\xBF"     -- black florette
 local h6_sym = "\xE2\x9D\x96"     -- black diamond minus white x
 -- Other available ones in most fonts
