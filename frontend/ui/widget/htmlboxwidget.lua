@@ -162,9 +162,14 @@ function HtmlBoxWidget:getSelectedText(lines, start_pos, end_pos)
     for _, line in pairs(lines) do
         for _, w in pairs(line) do
             if type(w) == 'table' then
-                if (not found_start) and
-                    (start_pos.x >= w.x0 and start_pos.x < w.x1 and start_pos.y >= w.y0 and start_pos.y < w.y1) then
-                    found_start = true
+                if not found_start then
+                    if start_pos.x >= w.x0 and start_pos.x < w.x1 and start_pos.y >= w.y0 and start_pos.y < w.y1 then
+                        found_start = true
+                    elseif end_pos.x >= w.x0 and end_pos.x < w.x1 and end_pos.y >= w.y0 and end_pos.y < w.y1 then
+                        -- We found end_pos before start_pos, switch them
+                        found_start = true
+                        start_pos, end_pos = end_pos, start_pos
+                    end
                 end
 
                 if found_start then
