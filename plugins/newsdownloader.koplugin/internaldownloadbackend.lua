@@ -6,7 +6,7 @@ local socket_url = require("socket.url")
 
 local InternalDownloadBackend = {}
 
-function InternalDownloadBackend:getResponseAsString(url)
+local function processDownloadAndReturnSink(url)
     local request, sink = {}, {}
     request['sink'] = ltn12.sink.table(sink)
     request['url'] = url
@@ -25,15 +25,18 @@ function InternalDownloadBackend:getResponseAsString(url)
         logger.warn("translator HTTP status not okay:", status)
         return
     end
+    return sink
+end
+
+function InternalDownloadBackend:getResponseAsString(url)
+    local sink = processDownloadAndReturnSink(url)
     return table.concat(sink)
 end
 
 
-function InternalDownloadBackend:download(link, path)
-    logger.dbg("InternalDownloadBackend: News file will be stored to :", path)
-    local parsed = socket_url.parse(link)
-    local httpRequest = parsed.scheme == 'http' and http.request or https.request
-   httpRequest({ url = link, sink = ltn12.sink.file(io.open(path, 'w')), })
+function InternalDownloadBackend:download(url, path)
+   local sink = processDownloadAndReturnSink(url)
+   ltn12.sink.file(io.open(path, 'w'))
 end
 
 
