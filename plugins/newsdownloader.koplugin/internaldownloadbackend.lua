@@ -22,8 +22,20 @@ local function processDownloadAndReturnSink(url)
     end
 
     if status ~= "HTTP/1.1 200 OK" then
-        logger.warn("translator HTTP status not okay:", status)
-        return
+        if status and string.sub(status, 1, 1) ~= "3" then -- handle 301, 302...
+           if headers and headers["location"] then
+            local redirected_url = headers["location"]
+            logger.dbg("HTTP response code: ", status)
+            logger.dbg("Redirecting to url: ", redirected_url)
+            -- clean up stuff, and recursively recall your download function
+            -- (you may want to add a counter, so you're not in an infinite loop
+            -- if the remote server is misconfigured and keeps redirecting)
+            return processDownloadAndReturnSink(redirected_url)
+           end
+        else
+           logger.warn("translator HTTP status not okay:", status)
+           return
+        end
     end
     return sink
 end
