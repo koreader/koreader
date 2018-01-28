@@ -6,20 +6,15 @@ local socket_url = require("socket.url")
 
 local InternalDownloadBackend = {}
 
-
---function InternalDownloadBackend:processFeedSource(url, limit, unsupported_feeds_urls, download_full_article)
 function InternalDownloadBackend:getResponseAsString(url)
     local resp_lines = {}
     local parsed = socket_url.parse(url)
     local httpRequest = parsed.scheme == 'http' and http.request or https.request
     httpRequest({ url = url, sink = ltn12.sink.table(resp_lines), })
     return table.concat(resp_lines)
-    --local feeds = self:deserializeXMLString(table.concat(resp_lines))
 end
 
 
-
---function InternalDownloadBackend:downloadFeed(feed, feed_output_dir)
 function InternalDownloadBackend:download(link, path)
     logger.dbg("InternalDownloadBackend: News file will be stored to :", path)
     local parsed = socket_url.parse(link)
