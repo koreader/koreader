@@ -379,6 +379,12 @@ function ReaderWikipedia:lookupWikipedia(word, box, get_fullpage, forced_lang)
 
     if not self.disable_history then
         local book_title = self.ui.doc_settings and self.ui.doc_settings:readSetting("doc_props").title or _("Wikipedia lookup")
+        if book_title == "" then -- no or empty metadata title
+            if self.ui.document and self.ui.document.file then
+                local directory, filename = util.splitFilePathName(self.ui.document.file) -- luacheck: no unused
+                book_title = util.splitFileNameSuffix(filename)
+            end
+        end
         wikipedia_history:addTableItem("wikipedia_history", {
             book_title = book_title,
             time = os.time(),

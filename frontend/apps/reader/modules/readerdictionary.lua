@@ -611,6 +611,12 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, box, li
 
     if not self.disable_lookup_history then
         local book_title = self.ui.doc_settings and self.ui.doc_settings:readSetting("doc_props").title or _("Dictionary lookup")
+        if book_title == "" then -- no or empty metadata title
+            if self.ui.document and self.ui.document.file then
+                local directory, filename = util.splitFilePathName(self.ui.document.file) -- luacheck: no unused
+                book_title = util.splitFileNameSuffix(filename)
+            end
+        end
         lookup_history:addTableItem("lookup_history", {
             book_title = book_title,
             time = os.time(),
