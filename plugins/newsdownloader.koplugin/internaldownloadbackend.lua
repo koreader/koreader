@@ -5,8 +5,15 @@ local ltn12 = require("ltn12")
 local socket_url = require("socket.url")
 
 local InternalDownloadBackend = {}
+local max_redirects = 10;
 
-function InternalDownloadBackend:getResponseAsString(url)
+function InternalDownloadBackend:getResponseAsString(url, redirectCount)
+    if not redirectCount then
+        redirectCount = 0
+    elseif redirectCount == max_redirects then
+        error("InternalDownloadBackend: reached max redirects: ", redirectCount)
+    end
+
     local request, sink = {}, {}
     request['sink'] = ltn12.sink.table(sink)
     request['url'] = url
@@ -22,7 +29,7 @@ function InternalDownloadBackend:getResponseAsString(url)
            if headers and headers["location"] then
               local redirected_url = headers["location"]
               logger.dbg("InternalDownloadBackend: Redirecting to url: ", redirected_url)
-              return self:getResponseAsString(redirected_url)
+              return self:getResponseAsString(redirected_url, redirectCount + 1)
            end
         else
            error("InternalDownloadBackend: Don't know how to handle HTTP status:", status)
