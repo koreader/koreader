@@ -23,17 +23,15 @@ function InternalDownloadBackend:getResponseAsString(url, redirectCount)
     local httpRequest = parsed.scheme == 'http' and http.request or https.request
     -- first argument returned by skip is code
     local _, headers, status = socket.skip(1, httpRequest(request))
-logger.dbg("InternalDownloadBackend: HTTP response code <> 200. Response code: ", status)
+
     if status ~= "HTTP/1.1 200 OK" then
         logger.dbg("InternalDownloadBackend: HTTP response code <> 200. Response code: ", status)
-        if status and string.sub(status, 9, 1) == "3" then -- handle 301, 302...
-           if headers and headers["location"] then
-              local redirected_url = headers["location"]
-              logger.dbg("InternalDownloadBackend: Redirecting to url: ", redirected_url)
-              return self:getResponseAsString(redirected_url, redirectCount + 1)
-           end
+        if status and string.sub(string.sub(status, 10), 1,1) == "3" and headers and headers["location"] then -- handle 301, 302...
+           local redirected_url = headers["location"]
+           logger.dbg("InternalDownloadBackend: Redirecting to url: ", redirected_url)
+           return self:getResponseAsString(redirected_url, redirectCount + 1)
         else
-           error("InternalDownloadBackend: Don't know how to handle HTTP status:", status)
+           logger.warn("InternalDownloadBackend: Don't know how to handle HTTP status: ", status)
         end
     end
     return table.concat(sink)
@@ -41,7 +39,7 @@ end
 
 function InternalDownloadBackend:download(url, path)
    local response = self:getResponseAsString(url)
-   local file = assert(io.open(path, 'w'))
+   local file = io.open(path, 'w')
    file:write(response)
    file:close()
 end

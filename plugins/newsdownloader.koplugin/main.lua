@@ -212,9 +212,13 @@ end
 
 function NewsDownloader:processFeedSource(url, limit, unsupported_feeds_urls, download_full_article)
 
-    local feeds = self:deserializeXMLString(DownloadBackend:getResponseAsString(url))
+    local response = DownloadBackend:getResponseAsString(url)
+    local feeds
+    if response then
+        feeds = self:deserializeXMLString(response)
+    end
 
-    if not feeds then
+    if not response or not feeds then
         table.insert(unsupported_feeds_urls, url)
         return
     end
