@@ -2,6 +2,7 @@ local http = require("socket.http")
 local https = require("ssl.https")
 local logger = require("logger")
 local ltn12 = require("ltn12")
+local socket = require('socket')
 local socket_url = require("socket.url")
 
 local InternalDownloadBackend = {}
@@ -13,7 +14,7 @@ function InternalDownloadBackend:getResponseAsString(url, redirectCount)
     elseif redirectCount == max_redirects then
         error("InternalDownloadBackend: reached max redirects: ", redirectCount)
     end
-
+    logger.dbg("InternalDownloadBackend: url :", url)
     local request, sink = {}, {}
     request['sink'] = ltn12.sink.table(sink)
     request['url'] = url
