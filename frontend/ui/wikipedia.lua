@@ -690,14 +690,36 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images)
         elseif src:sub(1,1) == "/" then -- non absolute url
             src = wiki_base_url .. src
         end
+        -- Some SVG urls don't have any extension, like:
+        -- "/api/rest_v1/media/math/render/svg/154a342afea5a9f13caf1a5bb6acd5c4e69733b6""
+        -- Furthermore, as of early 2018, it looks like most (all?) mathematical SVG
+        -- obtained from such urls use features not supported by crengine's nanosvg
+        -- renderer (so, they are displayed as a blank square).
+        -- But we can get a PNG version of it thanks to wikipedia APIs :
+        --   https://wikimedia.org/api/rest_v1/#!/Math/get_media_math_render_format_hash
+        -- We tweak the url now (and fix the mimetype below), before checking for
+        -- duplicates in seen_images.
+        -- Think about disabling that when nanosvg gets better!
+        if src:find("/math/render/svg/") then
+            src = src:gsub("/math/render/svg/", "/math/render/png/")
+        end
         local cur_image
         if seen_images[src] then -- already seen
             cur_image = seen_images[src]
         else
-            local ext = src:match(".*%.(%S+)")
-            if ext == nil or ext == "" then -- we won't know what mimetype to use, ignore it
-                logger.info("no file extension found in ", src)
-                return nil
+            local src_ext = src
+            if src_ext:find("?") then -- "/w/extensions/wikihiero/img/hiero_D22.png?0b8f1"
+                src_ext = src_ext:match("(.-)%?") -- remove ?blah
+            end
+            local ext = src_ext:match(".*%.(%S%S%S?%S?%S?)$") -- extensions are only 2 to 5 chars
+            if ext == nil or ext == "" then
+                if src_ext:find("/math/render/png/") then -- tweaked above
+                    ext = "png"
+                else
+                    -- we won't know what mimetype to use, ignore it
+                    logger.info("no file extension found in ", src)
+                    return nil
+                end
             end
             ext = ext:lower()
             local imgid = string.format("img%05d", imagenum)
@@ -1039,6 +1061,16 @@ time, abbr, sup {
     -- want to remove or replace those that should be considered 'inline' elements
     html = html:gsub("</?time[^>]*>", "")
 
+    -- crengine does not support the <math> family of tags for displaying formulas,
+    -- which results in lots of space taken by individual character in the formula, each
+    -- on a single line...
+    -- Also, usally, these <math> tags are followed by a <img> tag pointing to a
+    -- SVG version of the formula, that we took care earlier to change the url to
+    -- point to a PNG version of the formula (which is still not perfect, as it does
+    -- not adjust to the current html font size, but it is at least readable).
+    -- So, remove the whole <math>...</math> content
+    html = html:gsub([[<math xmlns="http://www.w3.org/1998/Math/MathML".-</math>]], "")
+
     -- Fix internal wikipedia links with full server url (including lang) so
     -- ReaderLink can notice them and deal with them with a LookupWikipedia event.
     --   html = html:gsub([[href="/wiki/]], [[href="]]..wiki_base_url..[[/wiki/]])
@@ -1154,7 +1186,12 @@ time, abbr, sup {
                 logger.info("failed fetching:", src)
             end
             if success then
-                epub:add("OEBPS/"..img.imgpath, content)
+                -- Images do not need to be compressed, so spare some cpu cycles
+                local no_compression = true
+                if img.mimetype == "image/svg+xml" then -- except for SVG images (which are XML text)
+                    no_compression = false
+                end
+                epub:add("OEBPS/"..img.imgpath, content, no_compression)
             else
                 go_on = UI:confirm(T(_("Downloading image %1 failed. Continue anyway?"), inum), _("Stop"), _("Continue"))
                 if not go_on then
