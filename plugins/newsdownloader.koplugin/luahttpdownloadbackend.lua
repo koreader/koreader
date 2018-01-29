@@ -1,9 +1,8 @@
 local logger = require("logger")
 local http_request = require "http.request"
 
-
+-- NOT READY YET. TODO ADD LUA-HTTP AS LIBRARY
 local LuaHttpDownloadBackend = {}
-
 
 function LuaHttpDownloadBackend:getResponseAsString(url)
    local _, stream = assert(http_request.new_from_uri(url):go())
@@ -12,14 +11,10 @@ function LuaHttpDownloadBackend:getResponseAsString(url)
    return body
 end
 
-
-
 function LuaHttpDownloadBackend:download(link, path)
    local _, stream = assert(http_request.new_from_uri(link):go())
    stream:save_body_to_file(path)
    stream:shutdown()
 end
-
-
 
 return LuaHttpDownloadBackend

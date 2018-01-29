@@ -6,7 +6,7 @@ local socket_url = require("socket.url")
 
 local InternalDownloadBackend = {}
 
-local function processDownloadAndReturnSink(url)
+function InternalDownloadBackend:getResponseAsString(url)
     local request, sink = {}, {}
     request['sink'] = ltn12.sink.table(sink)
     request['url'] = url
@@ -16,41 +16,26 @@ local function processDownloadAndReturnSink(url)
     -- first argument returned by skip is code
     local _, headers, status = socket.skip(1, httpRequest(request))
 
-    -- raise error message when network is unavailable
-    if headers == nil then
-        error("Network is unreachable")
-    end
-
     if status ~= "HTTP/1.1 200 OK" then
+        logger.dbg("InternalDownloadBackend: HTTP response code <> 200. Response code: ", status)
         if status and string.sub(status, 1, 1) ~= "3" then -- handle 301, 302...
            if headers and headers["location"] then
-            local redirected_url = headers["location"]
-            logger.dbg("HTTP response code: ", status)
-            logger.dbg("Redirecting to url: ", redirected_url)
-            -- clean up stuff, and recursively recall your download function
-            -- (you may want to add a counter, so you're not in an infinite loop
-            -- if the remote server is misconfigured and keeps redirecting)
-            return processDownloadAndReturnSink(redirected_url)
+              local redirected_url = headers["location"]
+              logger.dbg("InternalDownloadBackend: Redirecting to url: ", redirected_url)
+              return self:getResponseAsString(redirected_url)
            end
         else
-           logger.warn("translator HTTP status not okay:", status)
-           return
+           error("InternalDownloadBackend: Don't know how to handle HTTP status:", status)
         end
     end
-    return sink
-end
-
-function InternalDownloadBackend:getResponseAsString(url)
-    local sink = processDownloadAndReturnSink(url)
     return table.concat(sink)
 end
 
-
 function InternalDownloadBackend:download(url, path)
-   local sink = processDownloadAndReturnSink(url)
-   ltn12.sink.file(io.open(path, 'w'))
+   local response = self:getResponseAsString(url)
+   local file = assert(io.open(path, 'w'))
+   file:write(response)
+   file:close()
 end
-
-
 
 return InternalDownloadBackend
