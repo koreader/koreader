@@ -23,10 +23,10 @@ function InternalDownloadBackend:getResponseAsString(url, redirectCount)
     local httpRequest = parsed.scheme == 'http' and http.request or https.request
     -- first argument returned by skip is code
     local _, headers, status = socket.skip(1, httpRequest(request))
-
+logger.dbg("InternalDownloadBackend: HTTP response code <> 200. Response code: ", status)
     if status ~= "HTTP/1.1 200 OK" then
         logger.dbg("InternalDownloadBackend: HTTP response code <> 200. Response code: ", status)
-        if status and string.sub(status, 1, 1) ~= "3" then -- handle 301, 302...
+        if status and string.sub(status, 9, 1) == "3" then -- handle 301, 302...
            if headers and headers["location"] then
               local redirected_url = headers["location"]
               logger.dbg("InternalDownloadBackend: Redirecting to url: ", redirected_url)
