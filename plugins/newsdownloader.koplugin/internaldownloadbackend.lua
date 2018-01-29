@@ -12,7 +12,7 @@ function InternalDownloadBackend:getResponseAsString(url, redirectCount)
     if not redirectCount then
         redirectCount = 0
     elseif redirectCount == max_redirects then
-        error("InternalDownloadBackend: reached max redirects: ", redirectCount)
+        logger.warn("InternalDownloadBackend: reached max redirects: ", redirectCount)
     end
     logger.dbg("InternalDownloadBackend: url :", url)
     local request, sink = {}, {}
