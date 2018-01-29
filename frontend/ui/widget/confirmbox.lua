@@ -29,6 +29,7 @@ local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local ImageWidget = require("ui/widget/imagewidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local MovableContainer = require("ui/widget/container/movablecontainer")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
@@ -127,17 +128,19 @@ function ConfirmBox:init()
 
     self[1] = CenterContainer:new{
         dimen = Screen:getSize(),
-        FrameContainer:new{
-            background = Blitbuffer.COLOR_WHITE,
-            margin = self.margin,
-            padding = self.padding,
-            padding_bottom = 0, -- no padding below buttontable
-            VerticalGroup:new{
-                align = "left",
-                content,
-                -- Add same vertical space after than before content
-                VerticalSpan:new{ width = self.margin + self.padding },
-                button_table,
+        MovableContainer:new{
+            FrameContainer:new{
+                background = Blitbuffer.COLOR_WHITE,
+                margin = self.margin,
+                padding = self.padding,
+                padding_bottom = 0, -- no padding below buttontable
+                VerticalGroup:new{
+                    align = "left",
+                    content,
+                    -- Add same vertical space after than before content
+                    VerticalSpan:new{ width = self.margin + self.padding },
+                    button_table,
+                }
             }
         }
     }

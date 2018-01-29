@@ -806,7 +806,7 @@ function TextBoxWidget:onHoldReleaseText(callback, ges)
                 local Trapper = require("ui/trapper")
                 UIManager:scheduleIn(0.1, function() Trapper:wrap(load_and_show_image) end)
                 -- And we return without calling the "Hold on text" callback
-                return
+                return true
             end
         end
     end

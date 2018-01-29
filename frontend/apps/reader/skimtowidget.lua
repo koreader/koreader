@@ -12,6 +12,8 @@ local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LineWidget = require("ui/widget/linewidget")
+local Math = require("optmath")
+local MovableContainer = require("ui/widget/container/movablecontainer")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local ProgressWidget = require("ui/widget/progresswidget")
 local Size = require("ui/size")
@@ -342,9 +344,8 @@ function SkimToWidget:init()
             w = self.screen_width,
             h = self.screen_height,
         },
-        FrameContainer:new{
-            bordersize = 0,
-            padding = Size.padding.default,
+        MovableContainer:new{
+            -- alpha = 0.8,
             self.skimto_frame,
         }
     }
@@ -403,17 +404,19 @@ function SkimToWidget:onAnyKeyPressed()
 end
 
 function SkimToWidget:onTapProgress(arg, ges_ev)
-    if ges_ev.pos:intersectWith(self.skimto_progress.dimen) then
-        local width = self.screen_width * 0.89
-        local pos = ges_ev.pos.x - width * 0.05 - 3
+    if ges_ev.pos:intersectWith(self.progress_bar.dimen) then
+        local width = self.progress_bar.dimen.w
+        local pos = ges_ev.pos.x - self.progress_bar.dimen.x
         local perc = pos / width
-        local page = math.floor(perc * self.page_count)
+        local page = Math.round(perc * self.page_count)
         self.ui:handleEvent(Event:new("GotoPage", page ))
         self.curr_page = page
         self:update()
-    else
+    elseif not ges_ev.pos:intersectWith(self.skimto_frame.dimen) then
+        -- close if tap outside
         self:onClose()
     end
+    -- otherwise, do nothing (it's easy missing taping a button)
     return true
 end
 
