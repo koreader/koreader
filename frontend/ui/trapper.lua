@@ -190,9 +190,11 @@ function Trapper:info(text, fast_refresh)
 
     -- If fast_refresh option, avoid UIManager refresh overhead
     if fast_refresh and self.current_widget and self.current_widget.is_infomessage then
+        local orig_moved_offset = self.current_widget.movable:getMovedOffset()
         self.current_widget:free()
         self.current_widget.text = text
         self.current_widget:init()
+        self.current_widget.movable:setMovedOffset(orig_moved_offset)
         local Screen = require("device").screen
         self.current_widget:paintTo(Screen.bb, 0,0)
         local d = self.current_widget[1][1].dimen

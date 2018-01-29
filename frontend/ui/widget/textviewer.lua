@@ -19,6 +19,7 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LineWidget = require("ui/widget/linewidget")
+local MovableContainer = require("ui/widget/container/movablecontainer")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local ScrollTextWidget = require("ui/widget/scrolltextwidget")
 local Size = require("ui/size")
@@ -150,14 +151,14 @@ function TextViewer:init()
     local textw_height = self.height - titlew:getSize().h - separator:getSize().h - button_table:getSize().h
 
     self.scroll_text_w = ScrollTextWidget:new{
-            text = self.text,
-            face = self.text_face,
-            width = self.width - 2*self.text_padding - 2*self.text_margin,
-            height = textw_height - 2*self.text_padding -2*self.text_margin,
-            dialog = self,
-            justified = true,
+        text = self.text,
+        face = self.text_face,
+        width = self.width - 2*self.text_padding - 2*self.text_margin,
+        height = textw_height - 2*self.text_padding -2*self.text_margin,
+        dialog = self,
+        justified = true,
     }
-    local textw = FrameContainer:new{
+    self.textw = FrameContainer:new{
         padding = self.text_padding,
         margin = self.text_margin,
         bordersize = 0,
@@ -176,9 +177,9 @@ function TextViewer:init()
             CenterContainer:new{
                 dimen = Geom:new{
                     w = self.width,
-                    h = textw:getSize().h,
+                    h = self.textw:getSize().h,
                 },
-                textw,
+                self.textw,
             },
             CenterContainer:new{
                 dimen = Geom:new{
@@ -189,10 +190,14 @@ function TextViewer:init()
             }
         }
     }
+    self.movable = MovableContainer:new{
+        ignore_events = {"swipe"},
+        self.frame,
+    }
     self[1] = WidgetContainer:new{
         align = self.align,
         dimen = self.region,
-        self.frame,
+        self.movable,
     }
     UIManager:setDirty("all", function()
         local update_region = self.frame.dimen:combine(orig_dimen)
@@ -233,19 +238,23 @@ function TextViewer:onClose()
 end
 
 function TextViewer:onSwipe(arg, ges)
-    if ges.direction == "west" then
-        self.scroll_text_w:scrollText(1)
-        return true
-    elseif ges.direction == "east" then
-        self.scroll_text_w:scrollText(-1)
-        return true
-    else
-        -- trigger full refresh
-        UIManager:setDirty(nil, "full")
-        -- a long diagonal swipe may also be used for taking a screenshot,
-        -- so let it propagate
-        return false
+    if ges.pos:intersectWith(self.textw.dimen) then
+        if ges.direction == "west" then
+            self.scroll_text_w:scrollText(1)
+            return true
+        elseif ges.direction == "east" then
+            self.scroll_text_w:scrollText(-1)
+            return true
+        else
+            -- trigger full refresh
+            UIManager:setDirty(nil, "full")
+            -- a long diagonal swipe may also be used for taking a screenshot,
+            -- so let it propagate
+            return false
+        end
     end
+    -- Let our MovableContainer handle swipe outside of text
+    return self.movable:onMovableSwipe(arg, ges)
 end
 
 return TextViewer

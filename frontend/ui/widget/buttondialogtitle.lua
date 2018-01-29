@@ -7,6 +7,7 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local MovableContainer = require("ui/widget/container/movablecontainer")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -45,33 +46,35 @@ function ButtonDialogTitle:init()
     end
     self[1] = CenterContainer:new{
         dimen = Screen:getSize(),
-        FrameContainer:new{
-            VerticalGroup:new{
-                align = "center",
-                FrameContainer:new{
-                    padding = self.title_padding,
-                    margin = self.title_margin,
-                    bordersize = 0,
-                    TextBoxWidget:new{
-                        text = self.title,
-                        width = Screen:getWidth() * 0.8 ,
-                        face = self.title_face,
-                        alignment = self.title_align or "left",
+        MovableContainer:new{
+            FrameContainer:new{
+                VerticalGroup:new{
+                    align = "center",
+                    FrameContainer:new{
+                        padding = self.title_padding,
+                        margin = self.title_margin,
+                        bordersize = 0,
+                        TextBoxWidget:new{
+                            text = self.title,
+                            width = Screen:getWidth() * 0.8 ,
+                            face = self.title_face,
+                            alignment = self.title_align or "left",
+                        },
+                    },
+                    VerticalSpan:new{ width = Size.span.vertical_default },
+                    ButtonTable:new{
+                        width = Screen:getWidth() * 0.9,
+                        buttons = self.buttons,
+                        zero_sep = true,
+                        show_parent = self,
                     },
                 },
-                VerticalSpan:new{ width = Size.span.vertical_default },
-                ButtonTable:new{
-                    width = Screen:getWidth() * 0.9,
-                    buttons = self.buttons,
-                    zero_sep = true,
-                    show_parent = self,
-                },
-            },
-            background = Blitbuffer.COLOR_WHITE,
-            bordersize = Size.border.window,
-            radius = Size.radius.window,
-            padding = Size.padding.button,
-            padding_bottom = 0, -- no padding below buttontable
+                background = Blitbuffer.COLOR_WHITE,
+                bordersize = Size.border.window,
+                radius = Size.radius.window,
+                padding = Size.padding.button,
+                padding_bottom = 0, -- no padding below buttontable
+            }
         }
     }
 end

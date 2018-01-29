@@ -42,7 +42,7 @@ function ReaderSearch:onShowSearchDialog(text)
         end
     end
     self.search_dialog = ButtonDialog:new{
-        alpha = 0.5,
+        -- alpha = 0.7,
         buttons = {
             {
                 {

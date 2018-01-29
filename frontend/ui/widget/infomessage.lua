@@ -33,6 +33,7 @@ local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local ImageWidget = require("ui/widget/imagewidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local MovableContainer = require("ui/widget/container/movablecontainer")
 local ScrollTextWidget = require("ui/widget/scrolltextwidget")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
@@ -126,9 +127,7 @@ function InfoMessage:init()
             width = text_width,
         }
     end
-    -- we construct the actual content here because self.text is only available now
-    self[1] = CenterContainer:new{
-        dimen = Screen:getSize(),
+    self.movable = MovableContainer:new{
         FrameContainer:new{
             background = Blitbuffer.COLOR_WHITE,
             HorizontalGroup:new{
@@ -138,6 +137,10 @@ function InfoMessage:init()
                 text_widget,
             }
         }
+    }
+    self[1] = CenterContainer:new{
+        dimen = Screen:getSize(),
+        self.movable,
     }
 end
 

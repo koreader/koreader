@@ -56,6 +56,7 @@ local Geom = require("ui/geometry")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputText = require("ui/widget/inputtext")
 local LineWidget = require("ui/widget/linewidget")
+local MovableContainer = require("ui/widget/container/movablecontainer")
 local RenderText = require("ui/rendertext")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
@@ -200,7 +201,9 @@ function InputDialog:init()
             w = Screen:getWidth(),
             h = Screen:getHeight() - self._input_widget:getKeyboardDimen().h,
         },
-        self.dialog_frame,
+        MovableContainer:new{
+            self.dialog_frame,
+        },
     }
 end
 

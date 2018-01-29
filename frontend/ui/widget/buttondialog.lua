@@ -6,6 +6,7 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local MovableContainer = require("ui/widget/container/movablecontainer")
 local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
@@ -14,6 +15,7 @@ local Screen = require("device").screen
 local ButtonDialog = InputContainer:new{
     buttons = nil,
     tap_close_callback = nil,
+    alpha = nil, -- passed to MovableContainer
 }
 
 function ButtonDialog:init()
@@ -36,20 +38,23 @@ function ButtonDialog:init()
     end
     self[1] = CenterContainer:new{
         dimen = Screen:getSize(),
-        FrameContainer:new{
-            ButtonTable:new{
-                width = Screen:getWidth()*0.9,
-                buttons = self.buttons,
-                show_parent = self,
-            },
-            background = Blitbuffer.COLOR_WHITE,
-            bordersize = Size.border.window,
-            radius = Size.radius.window,
-            padding = Size.padding.button,
-            -- No padding at top or bottom to make all buttons
-            -- look the same size
-            padding_top = 0,
-            padding_bottom = 0,
+        MovableContainer:new{
+            alpha = self.alpha,
+            FrameContainer:new{
+                ButtonTable:new{
+                    width = Screen:getWidth()*0.9,
+                    buttons = self.buttons,
+                    show_parent = self,
+                },
+                background = Blitbuffer.COLOR_WHITE,
+                bordersize = Size.border.window,
+                radius = Size.radius.window,
+                padding = Size.padding.button,
+                -- No padding at top or bottom to make all buttons
+                -- look the same size
+                padding_top = 0,
+                padding_bottom = 0,
+            }
         }
     }
 end

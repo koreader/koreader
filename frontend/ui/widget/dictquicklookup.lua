@@ -13,6 +13,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
+local MovableContainer = require("ui/widget/container/movablecontainer")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local ScrollHtmlWidget = require("ui/widget/scrollhtmlwidget")
 local ScrollTextWidget = require("ui/widget/scrolltextwidget")
@@ -187,6 +188,7 @@ end
 
 function DictQuickLookup:update()
     local orig_dimen = self.dict_frame and self.dict_frame.dimen or Geom:new{}
+    local orig_moved_offset = self.movable and self.movable:getMovedOffset()
     -- Free our previous widget and subwidgets' resources (especially
     -- definitions' TextBoxWidget bb, HtmlBoxWidget bb and MuPDF instance,
     -- and scheduled image_update_action)
@@ -302,7 +304,7 @@ function DictQuickLookup:update()
     end
 
     -- word definition
-    local definition = FrameContainer:new{
+    self.definition_widget = FrameContainer:new{
         padding = self.definition_padding,
         margin = self.definition_margin,
         bordersize = 0,
@@ -456,7 +458,7 @@ function DictQuickLookup:update()
     end
 
     local button_table = ButtonTable:new{
-        width = math.max(self.width, definition:getSize().w),
+        width = math.max(self.width, self.definition_widget:getSize().w),
         button_font_face = "cfont",
         button_font_size = 20,
         buttons = buttons,
@@ -503,9 +505,9 @@ function DictQuickLookup:update()
             CenterContainer:new{
                 dimen = Geom:new{
                     w = title_bar:getSize().w,
-                    h = definition:getSize().h,
+                    h = self.definition_widget:getSize().h,
                 },
-                definition,
+                self.definition_widget,
             },
             -- buttons
             CenterContainer:new{
@@ -517,14 +519,19 @@ function DictQuickLookup:update()
             }
         }
     }
+
+    self.movable = MovableContainer:new{
+        -- We'll handle these events ourselves, and call appropriate
+        -- MovableContainer's methods when we didn't process the event
+        ignore_events = {"swipe", "hold", "hold_release"},
+        self.dict_frame,
+    }
+    self.movable:setMovedOffset(orig_moved_offset)
+
     self[1] = WidgetContainer:new{
         align = self.align,
         dimen = self.region,
-        FrameContainer:new{
-            bordersize = 0,
-            padding = Size.padding.default,
-            self.dict_frame,
-        }
+        self.movable,
     }
     UIManager:setDirty("all", function()
         local update_region = self.dict_frame.dimen:combine(orig_dimen)
@@ -734,19 +741,37 @@ function DictQuickLookup:onHoldClose(no_clear)
 end
 
 function DictQuickLookup:onSwipe(arg, ges)
-    if ges.direction == "west" then
-        self:changeToNextDict()
-    elseif ges.direction == "east" then
-        self:changeToPrevDict()
-    else
-        if self.refresh_callback then self.refresh_callback() end
-        -- trigger full refresh
-        UIManager:setDirty(nil, "full")
-        -- a long diagonal swipe may also be used for taking a screenshot,
-        -- so let it propagate
-        return false
+    if ges.pos:intersectWith(self.definition_widget.dimen) then
+    -- if we want changeDict to still work with swipe outside window :
+    -- or not ges.pos:intersectWith(self.dict_frame.dimen) then
+        if ges.direction == "west" then
+            self:changeToNextDict()
+        elseif ges.direction == "east" then
+            self:changeToPrevDict()
+        else
+            if self.refresh_callback then self.refresh_callback() end
+            -- trigger full refresh
+            UIManager:setDirty(nil, "full")
+            -- a long diagonal swipe may also be used for taking a screenshot,
+            -- so let it propagate
+            return false
+        end
+        return true
     end
-    return true
+    -- Let our MovableContainer handle swipe outside of definition
+    return self.movable:onMovableSwipe(arg, ges)
+end
+
+function DictQuickLookup:onHoldStartText(_, ges)
+    -- Forward Hold events not processed by TextBoxWidget event handler
+    -- to our MovableContainer
+    return self.movable:onMovableHold(_, ges)
+end
+
+function DictQuickLookup:onHoldReleaseText(_, ges)
+    -- Forward Hold events not processed by TextBoxWidget event handler
+    -- to our MovableContainer
+    return self.movable:onMovableHoldRelease(_, ges)
 end
 
 function DictQuickLookup:lookupInputWord(hint)
