@@ -212,13 +212,15 @@ end
 
 function NewsDownloader:processFeedSource(url, limit, unsupported_feeds_urls, download_full_article)
 
-    local response = DownloadBackend:getResponseAsString(url)
+    local ok, response = pcall(function()
+        return DownloadBackend:getResponseAsString(url)
+    end)
     local feeds
-    if response then
+    if ok then
         feeds = self:deserializeXMLString(response)
     end
 
-    if not response or not feeds then
+    if not ok or not feeds then
         table.insert(unsupported_feeds_urls, url)
         return
     end
@@ -226,13 +228,21 @@ function NewsDownloader:processFeedSource(url, limit, unsupported_feeds_urls, do
     local is_rss = feeds.rss and feeds.rss.channel and feeds.rss.channel.title and feeds.rss.channel.item and feeds.rss.channel.item[1] and feeds.rss.channel.item[1].title and feeds.rss.channel.item[1].link
     local is_atom = feeds.feed and feeds.feed.title and feeds.feed.entry[1] and feeds.feed.entry[1].title and feeds.feed.entry[1].link
 
+
     if is_atom then
-        self:processAtom(feeds, limit, download_full_article)
+        ok = pcall(function()
+            return self:processAtom(feeds, limit, download_full_article)
+        end)
     elseif is_rss then
-        self:processRSS(feeds, limit, download_full_article)
+        ok = pcall(function()
+            return self:processRSS(feeds, limit, download_full_article)
+        end)
     else
         table.insert(unsupported_feeds_urls, url)
         return
+    end
+    if not ok then
+        table.insert(unsupported_feeds_urls, url)
     end
 end
 

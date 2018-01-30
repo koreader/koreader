@@ -12,8 +12,7 @@ function InternalDownloadBackend:getResponseAsString(url, redirectCount)
     if not redirectCount then
         redirectCount = 0
     elseif redirectCount == max_redirects then
-        logger.warn("InternalDownloadBackend: reached max redirects: ", redirectCount)
-        return
+        error("InternalDownloadBackend: reached max redirects: ", redirectCount)
     end
     logger.dbg("InternalDownloadBackend: url :", url)
     local request, sink = {}, {}
@@ -31,8 +30,7 @@ function InternalDownloadBackend:getResponseAsString(url, redirectCount)
            logger.dbg("InternalDownloadBackend: Redirecting to url: ", redirected_url)
            return self:getResponseAsString(redirected_url, redirectCount + 1)
         else
-           logger.warn("InternalDownloadBackend: Don't know how to handle HTTP response status: ", status)
-           return
+           error("InternalDownloadBackend: Don't know how to handle HTTP response status: ", status)
         end
     end
     return table.concat(sink)
