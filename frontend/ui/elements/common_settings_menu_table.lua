@@ -125,37 +125,51 @@ if Device:isAndroid() then
     table.insert(common_settings.screen.sub_item_table, require("ui/elements/screen_fullscreen_menu_table"))
 end
 
-common_settings.save_document = {
-    text = _("Save document"),
+common_settings.document = {
+    text = _("Document"),
     sub_item_table = {
         {
-            text = _("Prompt"),
-            checked_func = function()
-                local setting = G_reader_settings:readSetting("save_document")
-                return setting == "prompt" or setting == nil
-            end,
-            callback = function()
-                G_reader_settings:delSetting("save_document")
-            end,
+            text = _("Save document (write highlights into PDF)"),
+            sub_item_table = {
+                {
+                    text = _("Prompt"),
+                    checked_func = function()
+                        local setting = G_reader_settings:readSetting("save_document")
+                        return setting == "prompt" or setting == nil
+                    end,
+                    callback = function()
+                        G_reader_settings:delSetting("save_document")
+                    end,
+                },
+                {
+                    text = _("Always"),
+                    checked_func = function()
+                        return G_reader_settings:readSetting("save_document")
+                                   == "always"
+                    end,
+                    callback = function()
+                        G_reader_settings:saveSetting("save_document", "always")
+                    end,
+                },
+                {
+                    text = _("Disable"),
+                    checked_func = function()
+                        return G_reader_settings:readSetting("save_document")
+                                   == "disable"
+                    end,
+                    callback = function()
+                        G_reader_settings:saveSetting("save_document", "disable")
+                    end,
+                },
+            },
         },
         {
-            text = _("Always"),
+            text = _("Show book status at end of document "),
             checked_func = function()
-                return G_reader_settings:readSetting("save_document")
-                           == "always"
+                return G_reader_settings:nilOrTrue("auto_book_status")
             end,
             callback = function()
-                G_reader_settings:saveSetting("save_document", "always")
-            end,
-        },
-        {
-            text = _("Disable"),
-            checked_func = function()
-                return G_reader_settings:readSetting("save_document")
-                           == "disable"
-            end,
-            callback = function()
-                G_reader_settings:saveSetting("save_document", "disable")
+                G_reader_settings:flipNilOrTrue("auto_book_status")
             end,
         },
     },
