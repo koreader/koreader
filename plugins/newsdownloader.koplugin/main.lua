@@ -163,12 +163,12 @@ function NewsDownloader:loadConfigAndProcessFeeds()
 
     local ok, feed_config = pcall(dofile, feed_config_path)
     if not ok or not feed_config then
-        logger.error("NewsDownloader: Feed config not found.")
+        logger.err("NewsDownloader: Feed config not found.")
         return
     end
 
     if #feed_config <= 0 then
-        logger.error('NewsDownloader: empty feed list.', feed_config_path)
+        logger.err('NewsDownloader: empty feed list.', feed_config_path)
         return
     end
 
