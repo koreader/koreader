@@ -6,13 +6,14 @@ local socket = require('socket')
 local socket_url = require("socket.url")
 
 local InternalDownloadBackend = {}
-local max_redirects = 10;
+local max_redirects = 10; --prevent infinite redirects
 
 function InternalDownloadBackend:getResponseAsString(url, redirectCount)
     if not redirectCount then
         redirectCount = 0
     elseif redirectCount == max_redirects then
         logger.warn("InternalDownloadBackend: reached max redirects: ", redirectCount)
+        return
     end
     logger.dbg("InternalDownloadBackend: url :", url)
     local request, sink = {}, {}
@@ -21,16 +22,17 @@ function InternalDownloadBackend:getResponseAsString(url, redirectCount)
     local parsed = socket_url.parse(url)
 
     local httpRequest = parsed.scheme == 'http' and http.request or https.request;
-    local code, headers = socket.skip(1, httpRequest(request))
+    local code, headers, status = socket.skip(1, httpRequest(request))
 
     if code ~= 200 then
-        logger.dbg("InternalDownloadBackend: HTTP response code <> 200. Response code: ", code)
+        logger.dbg("InternalDownloadBackend: HTTP response code <> 200. Response status: ", status)
         if code and code > 299 and code < 400  and headers and headers["location"] then -- handle 301, 302...
            local redirected_url = headers["location"]
            logger.dbg("InternalDownloadBackend: Redirecting to url: ", redirected_url)
            return self:getResponseAsString(redirected_url, redirectCount + 1)
         else
-           logger.warn("InternalDownloadBackend: Don't know how to handle HTTP response code: ", code)
+           logger.warn("InternalDownloadBackend: Don't know how to handle HTTP response status: ", status)
+           return
         end
     end
     return table.concat(sink)
