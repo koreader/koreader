@@ -23,7 +23,7 @@ local order = {
         "----------------------------",
         "network",
         "screen",
-        "save_document",
+        "document",
         "----------------------------",
         "language",
         "time",

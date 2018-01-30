@@ -42,7 +42,7 @@ local order = {
         "network",
         "screen",
         "screensaver",
-        "save_document",
+        "document",
         "----------------------------",
         "language",
         "time",
