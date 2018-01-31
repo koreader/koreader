@@ -1,6 +1,7 @@
 local logger = require("logger")
 local http_request = require "http.request"
 
+-- Currently unused. TODO @mwoz123 ADD LUA-HTTP AS LIBRARY
 local LuaHttpDownloadBackend = {}
 
 function LuaHttpDownloadBackend:getResponseAsString(url)
