@@ -697,7 +697,13 @@ function DictQuickLookup:onTapCloseDict(arg, ges_ev)
     -- will pop it up for us here when it can't scroll anymore).
     -- This allow for continuous reading of results' definitions with tap.
     if ges_ev.pos.x < Screen:getWidth()/2 then
+        local prev_index = self.dict_index
         self:changeToPrevDict()
+        if self.dict_index ~= prev_index then
+            -- Jump directly to bottom of previous dict definition
+            -- to keep "continuous reading with tap" consistent
+            self.definition_widget[1]:scrollToRatio(1) -- 1 = 100% = bottom
+        end
     else
         self:changeToNextDict()
     end
