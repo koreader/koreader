@@ -14,7 +14,6 @@ local util = require("util")
 local _ = require("gettext")
 local T = FFIUtil.template
 
-
 local NewsDownloader = WidgetContainer:new{}
 
 local initialized = false
