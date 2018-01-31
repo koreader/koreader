@@ -65,7 +65,6 @@ function NewsDownloader:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
-
 function NewsDownloader:addToMainMenu(menu_items)
     self:lazyInitialization()
     menu_items.news_downloader = {
