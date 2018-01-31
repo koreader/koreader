@@ -12,6 +12,7 @@ local DjvuDocument = Document:new{
     options = KoptOptions,
     koptinterface = nil,
     color_bb_type = Blitbuffer.TYPE_BBRGB24,
+    provider_name = "DjVu Libre",
 }
 
 -- check DjVu magic string to validate
@@ -136,8 +137,8 @@ function DjvuDocument:drawPage(target, x, y, rect, pageno, zoom, rotation, gamma
 end
 
 function DjvuDocument:register(registry)
-    registry:addProvider("djvu", "application/djvu", self)
-    registry:addProvider("djv", "application/djvu", self)
+    registry:addProvider("djv", "image/vnd.djvu", self, 100)
+    registry:addProvider("djvu", "image/vnd.djvu", self, 100)
 end
 
 return DjvuDocument

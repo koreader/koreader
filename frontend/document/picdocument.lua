@@ -6,7 +6,8 @@ local pic = nil
 local PicDocument = Document:new{
     _document = false,
     is_pic = true,
-    dc_null = DrawContext.new()
+    dc_null = DrawContext.new(),
+    provider_name = "Picture Document",
 }
 
 function PicDocument:init()
@@ -53,10 +54,10 @@ function PicDocument:getCoverPageImage()
 end
 
 function PicDocument:register(registry)
-    registry:addProvider("jpeg", "image/jpeg", self)
-    registry:addProvider("jpg", "image/jpeg", self)
-    registry:addProvider("png", "image/png", self)
-    registry:addProvider("gif", "image/gif", self)
+    registry:addProvider("gif", "image/gif", self, 100)
+    registry:addProvider("jpg", "image/jpeg", self, 100)
+    registry:addProvider("jpeg", "image/jpeg", self, 100)
+    registry:addProvider("png", "image/png", self, 100)
 end
 
 return PicDocument
