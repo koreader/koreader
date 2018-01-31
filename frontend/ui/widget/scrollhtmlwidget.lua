@@ -11,7 +11,7 @@ local HorizontalSpan = require("ui/widget/horizontalspan")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
 local VerticalScrollBar = require("ui/widget/verticalscrollbar")
-
+local Math = require("optmath")
 local Input = Device.input
 local Screen = Device.screen
 
@@ -80,6 +80,21 @@ function ScrollHtmlWidget:init()
             ScrollUp = {{Input.group.PgBack}, doc = "scroll up"},
         }
     end
+end
+
+function ScrollHtmlWidget:scrollToRatio(ratio)
+    ratio = math.max(0, math.min(1, ratio)) -- ensure ratio is between 0 and 1 (100%)
+    local page_num = 1 + Math.round((self.htmlbox_widget.page_count - 1) * ratio)
+    if page_num == self.htmlbox_widget.page_number then
+        return
+    end
+    self.htmlbox_widget.page_number = page_num
+    self.v_scroll_bar:set((page_num-1) / self.htmlbox_widget.page_count, page_num / self.htmlbox_widget.page_count)
+    self.htmlbox_widget:freeBb()
+    self.htmlbox_widget:_render()
+    UIManager:setDirty(self.dialog, function()
+        return "partial", self.dimen
+    end)
 end
 
 function ScrollHtmlWidget:scrollText(direction)

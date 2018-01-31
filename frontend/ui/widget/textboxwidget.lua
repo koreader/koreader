@@ -26,6 +26,7 @@ local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
+local Math = require("optmath")
 local logger = require("logger")
 local util = require("util")
 local Screen = require("device").screen
@@ -638,6 +639,21 @@ function TextBoxWidget:scrollUp()
         else
             self.virtual_line_num = self.virtual_line_num - visible_line_count
         end
+        self:_renderText(self.virtual_line_num, self.virtual_line_num + visible_line_count - 1)
+    end
+    return (self.virtual_line_num - 1) / #self.vertical_string_list, (self.virtual_line_num - 1 + visible_line_count) / #self.vertical_string_list
+end
+
+function TextBoxWidget:scrollToRatio(ratio)
+    self.image_show_alt_text = nil
+    ratio = math.max(0, math.min(1, ratio)) -- ensure ratio is between 0 and 1 (100%)
+    local visible_line_count = self:getVisLineCount()
+    local page_count = 1 + math.floor((#self.vertical_string_list - 1) / visible_line_count)
+    local page_num = 1 + Math.round((page_count - 1) * ratio)
+    local line_num = 1 + (page_num - 1) * visible_line_count
+    if line_num ~= self.virtual_line_num then
+        self:free()
+        self.virtual_line_num = line_num
         self:_renderText(self.virtual_line_num, self.virtual_line_num + visible_line_count - 1)
     end
     return (self.virtual_line_num - 1) / #self.vertical_string_list, (self.virtual_line_num - 1 + visible_line_count) / #self.vertical_string_list

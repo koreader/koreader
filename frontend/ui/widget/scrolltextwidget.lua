@@ -110,6 +110,14 @@ function ScrollTextWidget:scrollText(direction)
     end)
 end
 
+function ScrollTextWidget:scrollToRatio(ratio)
+    local low, high = self.text_widget:scrollToRatio(ratio)
+    self.v_scroll_bar:set(low, high)
+    UIManager:setDirty(self.dialog, function()
+        return "partial", self.dimen
+    end)
+end
+
 function ScrollTextWidget:onScrollText(arg, ges)
     if ges.direction == "north" then
         self:scrollText(1)
