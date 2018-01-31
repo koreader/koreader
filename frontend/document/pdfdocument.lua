@@ -13,6 +13,7 @@ local PdfDocument = Document:new{
     dc_null = DrawContext.new(),
     options = KoptOptions,
     koptinterface = nil,
+    provider_name = "MuPDF",
 }
 
 function PdfDocument:init()
@@ -237,11 +238,40 @@ function PdfDocument:drawPage(target, x, y, rect, pageno, zoom, rotation, gamma,
 end
 
 function PdfDocument:register(registry)
-    registry:addProvider("pdf", "application/pdf", self)
-    registry:addProvider("cbz", "application/cbz", self)
-    registry:addProvider("cbt", "application/cbt", self)
-    registry:addProvider("zip", "application/zip", self)
-    registry:addProvider("xps", "application/xps", self)
+    --- Document types ---
+    registry:addProvider("cbt", "application/vnd.comicbook+tar", self, 100)
+    registry:addProvider("cbz", "application/vnd.comicbook+zip", self, 100)
+    registry:addProvider("epub", "application/epub+zip", self, 50)
+    registry:addProvider("fb2", "application/fb2", self, 80)
+    registry:addProvider("htm", "text/html", self, 90)
+    registry:addProvider("html", "text/html", self, 90)
+    registry:addProvider("pdf", "application/pdf", self, 100)
+    registry:addProvider("tar", "application/x-tar", self, 10)
+    registry:addProvider("xhtml", "application/xhtml+xml", self, 100)
+    registry:addProvider("xml", "application/xml", self, 10)
+    registry:addProvider("xps", "application/oxps", self, 100)
+    registry:addProvider("zip", "application/zip", self, 100)
+
+    --- Picture types ---
+    registry:addProvider("gif", "image/gif", self, 90)
+    -- MS HD Photo == JPEG XR
+    registry:addProvider("hdp", "image/vnd.ms-photo", self, 90)
+    registry:addProvider("j2k", "image/jp2", self, 90)
+    registry:addProvider("jp2", "image/jp2", self, 90)
+    registry:addProvider("jpeg", "image/jpeg", self, 90)
+    registry:addProvider("jpg", "image/jpeg", self, 90)
+    -- JPEG XR
+    registry:addProvider("jxr", "image/jxr", self, 90)
+    registry:addProvider("pam", "image/x-portable-arbitrarymap", self, 90)
+    registry:addProvider("pbm", "image/x‑portable‑bitmap", self, 90)
+    registry:addProvider("pgm", "image/x‑portable‑bitmap", self, 90)
+    registry:addProvider("png", "image/png", self, 90)
+    registry:addProvider("pnm", "image/x‑portable‑bitmap", self, 90)
+    registry:addProvider("ppm", "image/gif", self, 90)
+    registry:addProvider("tif", "image/tiff", self, 90)
+    registry:addProvider("tiff", "image/tiff", self, 90)
+    -- Windows Media Photo == JPEG XR
+    registry:addProvider("wdp", "image/vnd.ms-photo", self, 90)
 end
 
 return PdfDocument

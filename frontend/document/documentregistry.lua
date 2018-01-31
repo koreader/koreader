@@ -9,21 +9,48 @@ local DocumentRegistry = {
     providers = {},
 }
 
-function DocumentRegistry:addProvider(extension, mimetype, provider)
-    table.insert(self.providers, { extension = extension, mimetype = mimetype, provider = provider })
+function DocumentRegistry:addProvider(extension, mimetype, provider, weight)
+    table.insert(self.providers, {
+        extension = extension,
+        mimetype = mimetype,
+        provider = provider,
+        weight = weight or 100,
+    })
 end
 
---- Returns the registered document handler.
+--- Returns the preferred registered document handler.
 -- @string file
 -- @treturn string provider, or nil
 function DocumentRegistry:getProvider(file)
+    local providers = self:getProviders(file)
+
+    if providers then
+        return providers[1].provider
+    end
+end
+
+--- Returns the registered document handlers.
+-- @string file
+-- @treturn table providers, or nil
+function DocumentRegistry:getProviders(file)
+    local providers = {}
+
     -- TODO: some implementation based on mime types?
     for _, provider in ipairs(self.providers) do
         local suffix = string.sub(file, -string.len(provider.extension) - 1)
         if string.lower(suffix) == "."..provider.extension then
         -- if extension == provider.extension then
-            return provider.provider
+            -- stick highest weighted provider at the front
+            if #providers >= 1 and provider.weight > providers[1].weight then
+                table.insert(providers, 1, provider)
+            else
+                table.insert(providers, provider)
+            end
         end
+    end
+
+    if #providers >= 1 then
+        return providers
     end
 end
 

@@ -26,6 +26,7 @@ local CreDocument = Document:new{
     fallback_font = G_reader_settings:readSetting("fallback_font") or "Noto Sans CJK SC",
     default_css = "./data/cr3.css",
     options = CreOptions,
+    provider_name = "Cool Reader Engine",
 }
 
 -- NuPogodi, 20.05.12: inspect the zipfile content
@@ -524,27 +525,31 @@ function CreDocument:findText(pattern, origin, reverse, caseInsensitive)
 end
 
 function CreDocument:register(registry)
-    registry:addProvider("azw", "application/azw", self)
-    registry:addProvider("epub", "application/epub", self)
-    registry:addProvider("chm", "application/chm", self)
-    registry:addProvider("doc", "application/doc", self)
-    registry:addProvider("fb2", "application/fb2", self)
-    registry:addProvider("fb2.zip", "application/zip", self)
-    registry:addProvider("html", "application/html", self)
-    registry:addProvider("html.zip", "application/zip", self)
-    registry:addProvider("htm", "application/htm", self)
-    registry:addProvider("htm.zip", "application/zip", self)
+    registry:addProvider("azw", "application/vnd.amazon.mobi8-ebook", self, 90)
+    registry:addProvider("chm", "application/vnd.ms-htmlhelp", self, 90)
+    registry:addProvider("doc", "application/msword", self, 90)
+    registry:addProvider("epub", "application/epub+zip", self, 100)
+    registry:addProvider("fb2", "application/fb2", self, 90)
+    registry:addProvider("fb2.zip", "application/zip", self, 90)
+    registry:addProvider("htm", "text/html", self, 100)
+    registry:addProvider("html", "text/html", self, 100)
+    registry:addProvider("htm.zip", "application/zip", self, 100)
+    registry:addProvider("html.zip", "application/zip", self, 100)
     registry:addProvider("log", "text/plain", self)
     registry:addProvider("log.zip", "application/zip", self)
     registry:addProvider("md", "text/plain", self)
     registry:addProvider("md.zip", "application/zip", self)
-    registry:addProvider("mobi", "application/mobi", self)
-    registry:addProvider("pdb", "application/pdb", self)
-    registry:addProvider("prc", "application/prc", self)
+    registry:addProvider("mobi", "application/x-mobipocket-ebook", self, 90)
+    -- Palmpilot Document File
+    registry:addProvider("pdb", "application/vnd.palm", self, 90)
+    -- Palmpilot Resource File
+    registry:addProvider("prc", "application/vnd.palm", self)
     registry:addProvider("tcr", "application/tcr", self)
-    registry:addProvider("txt", "text/plain", self)
-    registry:addProvider("txt.zip", "application/zip", self)
-    registry:addProvider("rtf", "application/rtf", self)
+    registry:addProvider("txt", "text/plain", self, 90)
+    registry:addProvider("txt.zip", "application/zip", self, 90)
+    registry:addProvider("rtf", "application/rtf", self, 90)
+    registry:addProvider("xhtml", "application/xhtml+xml", self, 90)
+    registry:addProvider("zip", "application/zip", self, 10)
 end
 
 return CreDocument
