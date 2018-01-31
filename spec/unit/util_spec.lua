@@ -313,6 +313,38 @@ describe("util module", function()
         end)
     end)
 
+    describe("getFriendlySize()", function()
+        describe("should convert bytes to friendly size as string", function()
+            it("to 100.0 GB", function()
+                assert.is_equal("100.0 GB",
+                                util.getFriendlySize(100*1024*1024*1024))
+            end)
+            it("to 1.0 GB with minimum field width alignment", function()
+                assert.is_equal(" 1.0 GB",
+                                util.getFriendlySize(1024*1024*1024+1))
+            end)
+            it("to 1.0 MB with minimum field width alignment", function()
+                assert.is_equal(" 1.0 MB",
+                                util.getFriendlySize(1024*1024+1))
+            end)
+            it("to 1.0 KB with minimum field width alignment", function()
+                assert.is_equal(" 1.0 KB",
+                                util.getFriendlySize(1024+1))
+            end)
+            it("to B", function()
+                assert.is_equal("100 B",
+                                util.getFriendlySize(100))
+            end)
+        end)
+        it("should return nil when input is nil or false", function()
+            assert.is_nil(util.getFriendlySize(nil))
+            assert.is_nil(util.getFriendlySize(false))
+        end)
+        it("should return nil when input is not a number", function()
+            assert.is_nil(util.getFriendlySize("a string"))
+        end)
+    end)
+
     describe("secondsToClock()", function()
         it("should convert seconds to 00:00 format", function()
             assert.is_equal("00:00",

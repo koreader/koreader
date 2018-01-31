@@ -391,6 +391,7 @@ end
 ---- @int size (bytes)
 ---- @treturn string
 function util.getFriendlySize(size)
+    if not size or type(size) ~= "number" then return end
     local s
     if size > 1024*1024*1024 then
         s = string.format("%4.1f GB", size/1024/1024/1024)
