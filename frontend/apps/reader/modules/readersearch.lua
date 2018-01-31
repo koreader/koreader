@@ -28,16 +28,19 @@ function ReaderSearch:addToMainMenu(menu_items)
 end
 
 function ReaderSearch:onShowSearchDialog(text)
+    local neglect_current_location = false
     local do_search = function(search_func, _text, param)
         return function()
             local res = search_func(self, _text, param)
             if res then
                 if self.ui.document.info.has_pages then
-                    self.ui.link:onGotoLink({page = res.page - 1})
+                    self.ui.link:onGotoLink({page = res.page - 1}, neglect_current_location)
                     self.view.highlight.temp[res.page] = res
                 else
-                    self.ui.link:onGotoLink(res[1].start)
+                    self.ui.link:onGotoLink(res[1].start, neglect_current_location)
                 end
+                -- Don't add result pages to location ("Go back") stack
+                neglect_current_location = true
             end
         end
     end

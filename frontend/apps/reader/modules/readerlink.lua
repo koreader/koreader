@@ -209,13 +209,15 @@ function ReaderLink:addCurrentLocationToStack()
 end
 
 --- Goes to link.
-function ReaderLink:onGotoLink(link)
+function ReaderLink:onGotoLink(link, neglect_current_location)
     logger.dbg("onGotoLink:", link)
     if self.ui.document.info.has_pages then
         -- internal pdf links have a "page" attribute, while external ones have an "uri" attribute
         if link.page then -- Internal link
             logger.dbg("Internal link:", link)
-            self:addCurrentLocationToStack()
+            if not neglect_current_location then
+                self:addCurrentLocationToStack()
+            end
             self.ui:handleEvent(Event:new("GotoPage", link.page + 1))
             return true
         end
@@ -229,7 +231,9 @@ function ReaderLink:onGotoLink(link)
         -- which accepts both of the above legitimate xpointer as input.
         if self.ui.document:isXPointerInDocument(link) then
             logger.dbg("Internal link:", link)
-            self:addCurrentLocationToStack()
+            if not neglect_current_location then
+                self:addCurrentLocationToStack()
+            end
             self.ui:handleEvent(Event:new("GotoXPointer", link))
             return true
         end
