@@ -14,14 +14,11 @@ function InternalDownloadBackend:getResponseAsString(url)
     return table.concat(resp_lines)
 end
 
-
 function InternalDownloadBackend:download(link, path)
     logger.dbg("InternalDownloadBackend: News file will be stored to :", path)
     local parsed = socket_url.parse(link)
     local httpRequest = parsed.scheme == 'http' and http.request or https.request
-    httpRequest({ url = link, sink = ltn12.sink.file(io.open(path, 'w')), })
+    httpRequest({ url = link, sink = ltn12.sink.file(io.open(path, "w")), })
 end
-
-
 
 return InternalDownloadBackend
