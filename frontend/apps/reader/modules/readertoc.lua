@@ -345,6 +345,7 @@ function ReaderToc:onShowToc()
             item.state.callback()
         else
             toc_menu:close_callback()
+            self.ui.link:addCurrentLocationToStack()
             self.ui:handleEvent(Event:new("GotoPage", item.page))
         end
     end

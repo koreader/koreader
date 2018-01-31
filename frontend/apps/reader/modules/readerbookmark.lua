@@ -241,6 +241,7 @@ function ReaderBookmark:onShowBookmark()
     -- buid up menu widget method as closure
     local bookmark = self
     function bm_menu:onMenuChoice(item)
+        bookmark.ui.link:addCurrentLocationToStack()
         bookmark:gotoBookmark(item.page)
     end
 
