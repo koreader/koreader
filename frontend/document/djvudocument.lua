@@ -12,6 +12,7 @@ local DjvuDocument = Document:new{
     options = KoptOptions,
     koptinterface = nil,
     color_bb_type = Blitbuffer.TYPE_BBRGB24,
+    provider = "djvulibre",
     provider_name = "DjVu Libre",
 }
 

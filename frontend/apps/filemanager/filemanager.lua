@@ -273,6 +273,15 @@ function FileManager:init()
             {},
             {
                 {
+                    text = _("Open with…"),
+                    enabled = lfs.attributes(file, "mode") == "file"
+                        and #(DocumentRegistry:getProviders(file)) > 1,
+                    callback = function()
+                        UIManager:close(self.file_dialog)
+                        DocumentRegistry:showSetProviderButtons(file, FileManager.instance, self, ReaderUI)
+                    end,
+                },
+                {
                     text = _("Convert"),
                     enabled = lfs.attributes(file, "mode") == "file"
                         and FileManagerConverter:isSupported(file),

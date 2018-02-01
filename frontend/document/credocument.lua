@@ -26,6 +26,7 @@ local CreDocument = Document:new{
     fallback_font = G_reader_settings:readSetting("fallback_font") or "Noto Sans CJK SC",
     default_css = "./data/cr3.css",
     options = CreOptions,
+    provider = "crengine",
     provider_name = "Cool Reader Engine",
 }
 
