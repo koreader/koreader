@@ -257,6 +257,8 @@ function MenuItem:init()
         self.info_face = Font:getFace(self.infont, self.infont_size)
 
         local mandatory_w = RenderText:sizeUtf8Text(0, self.dimen.w, self.info_face, "" .. mandatory, true, self.bold).x
+        local lines, offset, max_lines
+        local max_item_height = self.dimen.h - 2 * self.linesize
         while true do
             -- Free previously made widgets to avoid memory leaks
             if item_name then
@@ -271,12 +273,18 @@ function MenuItem:init()
                 fgcolor = self.dim and Blitbuffer.COLOR_GREY or nil,
             }
             local height = item_name:getSize().h
-            if height < self.dimen.h - 2 * self.linesize then -- we fit !
+            if height < max_item_height then -- we fit !
                 break
             end
-            -- Don't go too low, and then truncate text
-            if self.font_size < 12 then
-                self.text = self.text:sub(1, -5) .. "…"
+            -- Don't go too low, and then decrease lines
+            if self.font_size <= 12 then
+                max_lines = #item_name.vertical_string_list
+                lines = math.floor(max_lines * (max_item_height - 1) / height)
+                if lines >= max_lines  then
+                    lines = max_lines - 1
+                end
+                offset = item_name.vertical_string_list[lines + 1].offset
+                self.text = table.concat(table.move(item_name.charlist, 1, offset - 4, 1, {})) .. "…"
             else
                 -- If we don't fit, decrease font size
                 self.font_size = self.font_size - 2
