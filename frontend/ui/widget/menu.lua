@@ -255,10 +255,9 @@ function MenuItem:init()
             end
         end
         self.info_face = Font:getFace(self.infont, self.infont_size)
-
         local mandatory_w = RenderText:sizeUtf8Text(0, self.dimen.w, self.info_face, "" .. mandatory, true, self.bold).x
-        local lines, offset, max_lines
         local max_item_height = self.dimen.h - 2 * self.linesize
+        local flag_fit = false
         while true do
             -- Free previously made widgets to avoid memory leaks
             if item_name then
@@ -273,18 +272,24 @@ function MenuItem:init()
                 fgcolor = self.dim and Blitbuffer.COLOR_GREY or nil,
             }
             local height = item_name:getSize().h
-            if height < max_item_height then -- we fit !
+            if height < max_item_height or flag_fit then -- we fit !
                 break
             end
             -- Don't go too low, and then decrease lines
             if self.font_size <= 12 then
-                max_lines = #item_name.vertical_string_list
-                lines = math.floor(max_lines * (max_item_height - 1) / height)
-                if lines >= max_lines  then
-                    lines = max_lines - 1
+                local line_height = height / #item_name.vertical_string_list -- should be an integer
+                local lines = math.floor(max_item_height / line_height)
+                local offset = item_name.vertical_string_list[lines + 1].offset - 2
+                local ellipsis_size = RenderText:sizeUtf8Text(0, self.content_width,
+                    Font:getFace(self.font, self.font_size), "…", true, self.bold).x
+                local removed_char_width= 0
+                while removed_char_width < ellipsis_size  do
+                    -- the width of each char has already been calculated by TextBoxWidget
+                    removed_char_width = removed_char_width + item_name.char_width_list[offset].width
+                    offset = offset - 1
                 end
-                offset = item_name.vertical_string_list[lines + 1].offset
-                self.text = table.concat(table.move(item_name.charlist, 1, offset - 4, 1, {})) .. "…"
+                self.text = table.concat(item_name.charlist, '', 1, offset) .. "…"
+                flag_fit = true
             else
                 -- If we don't fit, decrease font size
                 self.font_size = self.font_size - 2
