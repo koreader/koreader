@@ -7,6 +7,7 @@ local PicDocument = Document:new{
     _document = false,
     is_pic = true,
     dc_null = DrawContext.new(),
+    provider = "picdocument",
     provider_name = "Picture Document",
 }
 

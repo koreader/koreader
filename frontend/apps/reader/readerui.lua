@@ -380,15 +380,44 @@ function ReaderUI:showFileManager()
     end
 end
 
-function ReaderUI:showReader(file)
+function ReaderUI:showReader(file, provider)
     logger.dbg("show reader ui")
     require("readhistory"):addItem(file)
+
     if lfs.attributes(file, "mode") ~= "file" then
         UIManager:show(InfoMessage:new{
              text = T(_("File '%1' does not exist."), file)
         })
         return
     end
+
+    -- prevent crash due to incompatible bookmarks
+    -- @TODO split bookmarks from metadata and do per-engine in conversion
+    provider = provider or DocumentRegistry:getProvider(file)
+    if provider.provider then
+        local doc_settings = DocSettings:open(file)
+        local bookmarks = doc_settings:readSetting("bookmarks") or {}
+        if #bookmarks >= 1 and
+           ((provider.provider == "crengine" and type(bookmarks[1].page) == "number") or
+            (provider.provider == "mupdf" and type(bookmarks[1].page) == "string")) then
+                UIManager:show(ConfirmBox:new{
+                    text = T(_("The document '%1' with bookmarks or highlights was previously opened with a different engine. To prevent issues, bookmarks need to be deleted before continuing."),
+                        file),
+                    ok_text = _("Delete"),
+                    ok_callback = function()
+                        doc_settings:delSetting("bookmarks")
+                        doc_settings:close()
+                        self:showReaderCoroutine(file, provider)
+                    end,
+                    cancel_callback = self.showFileManager,
+                })
+        else
+            self:showReaderCoroutine(file, provider)
+        end
+    end
+end
+
+function ReaderUI:showReaderCoroutine(file, provider)
     UIManager:show(InfoMessage:new{
         text = T(_("Opening file '%1'."), file),
         timeout = 0.0,
@@ -398,7 +427,7 @@ function ReaderUI:showReader(file)
     UIManager:nextTick(function()
         logger.dbg("creating coroutine for showing reader")
         local co = coroutine.create(function()
-            self:doShowReader(file)
+            self:doShowReader(file, provider)
         end)
         local ok, err = coroutine.resume(co)
         if err ~= nil or ok == false then
@@ -410,13 +439,13 @@ function ReaderUI:showReader(file)
 end
 
 local _running_instance = nil
-function ReaderUI:doShowReader(file)
+function ReaderUI:doShowReader(file, provider)
     logger.info("opening file", file)
     -- keep only one instance running
     if _running_instance then
         _running_instance:onClose()
     end
-    local document = DocumentRegistry:openDocument(file)
+    local document = DocumentRegistry:openDocument(file, provider)
     if not document then
         UIManager:show(InfoMessage:new{
             text = _("No reader engine for this file or invalid file.")
