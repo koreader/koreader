@@ -279,7 +279,12 @@ function MenuItem:init()
             if self.font_size <= 12 then
                 local line_height = height / #item_name.vertical_string_list -- should be an integer
                 local lines = math.floor(max_item_height / line_height)
-                local offset = item_name.vertical_string_list[lines + 1].offset - 2
+                local offset
+                if item_name.vertical_string_list[lines + 1] then
+                    offset = item_name.vertical_string_list[lines + 1].offset
+                else -- shouldn't happen, but just in case
+                    offset = #item_name.char_width_list
+                end
                 local ellipsis_size = RenderText:sizeUtf8Text(0, self.content_width,
                     Font:getFace(self.font, self.font_size), "…", true, self.bold).x
                 local removed_char_width= 0
