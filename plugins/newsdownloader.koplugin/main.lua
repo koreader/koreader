@@ -160,7 +160,7 @@ function NewsDownloader:loadConfigAndProcessFeeds()
 
     local ok, feed_config = pcall(dofile, feed_config_path)
     if not ok or not feed_config then
-        info = InfoMessage:new{ text = T(_("Invalid configuration file. Technical problem details: \n%1"), feed_config) }
+        info = InfoMessage:new{ text = T(_("Invalid configuration file. Detailed error message:\n%1"), feed_config) }
         UIManager:show(info)
         return
     end
