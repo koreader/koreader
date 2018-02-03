@@ -2,8 +2,8 @@
 This is a registry for document providers
 ]]--
 
-local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local ConfirmBox = require("ui/widget/confirmbox")
+local OpenWithDialog = require("ui/widget/openwithdialog")
 local UIManager = require("ui/uimanager")
 local gettext = require("gettext")
 local logger = require("logger")
@@ -124,30 +124,36 @@ function DocumentRegistry:showSetProviderButtons(file, filemanager_instance,  ui
     local filename_suffix = util.getFileNameSuffix(file)
 
     local buttons = {}
+    local radio_buttons = {}
     local providers = self:getProviders(file)
 
     for _, provider in ipairs(providers) do
         -- we have no need for extension, mimetype, weights, etc. here
         provider = provider.provider
-        table.insert(buttons, {
+        table.insert(radio_buttons, {
             {
-                text = string.format("** %s **", provider.provider_name),
+                text = provider.provider_name,
+                checked = self:getProvider(file) == provider,
+                provider = provider,
             },
         })
-        table.insert(buttons, {
-            {
-                text = gettext("Just once"),
-                callback = function()
-                    filemanager_instance:onClose()
-                    reader_ui:showReader(file, provider)
-                    UIManager:close(self.set_provider_dialog)
-                end,
-            },
-        })
-        table.insert(buttons, {
-            {
-                text = gettext("This document"),
-                callback = function()
+    end
+
+    table.insert(buttons, {
+        {
+            text = gettext("Cancel"),
+            callback = function()
+                UIManager:close(self.set_provider_dialog)
+            end,
+        },
+        {
+            text = gettext("Open"),
+            is_enter_default = true,
+            callback = function()
+                local provider = self.set_provider_dialog.radio_button_table.checked_button.provider
+
+                -- always for this file
+                if self.set_provider_dialog._check_file_button.checked then
                     UIManager:show(ConfirmBox:new{
                         text = T(gettext("Always open '%2' with %1?"),
                                          provider.provider_name, filename_pure),
@@ -160,13 +166,8 @@ function DocumentRegistry:showSetProviderButtons(file, filemanager_instance,  ui
                             UIManager:close(self.set_provider_dialog)
                         end,
                     })
-                end,
-            },
-        })
-        table.insert(buttons, {
-            {
-                text = gettext("All documents"),
-                callback = function()
+                -- always for all files of this file type
+                elseif self.set_provider_dialog._check_global_button.checked then
                     UIManager:show(ConfirmBox:new{
                         text = T(gettext("Always open %2 files with %1?"),
                                          provider.provider_name, filename_suffix),
@@ -179,15 +180,19 @@ function DocumentRegistry:showSetProviderButtons(file, filemanager_instance,  ui
                             UIManager:close(self.set_provider_dialog)
                         end,
                     })
-                end,
-            },
-        })
-        -- little trick for visual separation
-        table.insert(buttons, {})
-    end
+                else
+                    -- just once
+                    filemanager_instance:onClose()
+                    reader_ui:showReader(file, provider)
+                    UIManager:close(self.set_provider_dialog)
+                end
+            end,
+        },
+    })
 
-    self.set_provider_dialog = ButtonDialogTitle:new{
+    self.set_provider_dialog = OpenWithDialog:new{
         title = T(gettext("Open %1 with:"), filename_pure),
+        radio_buttons = radio_buttons,
         buttons = buttons,
     }
     UIManager:show(self.set_provider_dialog)
