@@ -494,10 +494,10 @@ local Menu = FocusManager:new{
 }
 
 function Menu:_recalculateDimen()
-    self.perpage = G_reader_settings:readSetting("items_per_page") or 14
+    self.perpage = self.perpage_custom or G_reader_settings:readSetting("items_per_page") or 14
     self.span_width = 0
     self.dimen.w = self.width
-    self.dimen.h = self.height
+    self.dimen.h = self.height or Screen:getHeight()
     if self.dimen.h > Screen:getHeight() or self.dimen.h == nil then
         self.dimen.h = Screen:getHeight()
     end
@@ -527,7 +527,7 @@ function Menu:init()
     self.show_parent = self.show_parent or self
     self.item_table_stack = {}
     self.dimen.w = self.width
-    self.dimen.h = self.height
+    self.dimen.h = self.height or Screen:getHeight()
     if self.dimen.h > Screen:getHeight() or self.dimen.h == nil then
         self.dimen.h = Screen:getHeight()
     end
