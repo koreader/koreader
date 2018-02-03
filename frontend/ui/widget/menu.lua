@@ -281,7 +281,7 @@ function MenuItem:init()
                 local lines = math.floor(max_item_height / line_height)
                 local offset
                 if item_name.vertical_string_list[lines + 1] then
-                    offset = item_name.vertical_string_list[lines + 1].offset
+                    offset = item_name.vertical_string_list[lines + 1].offset - 2
                 else -- shouldn't happen, but just in case
                     offset = #item_name.char_width_list
                 end
