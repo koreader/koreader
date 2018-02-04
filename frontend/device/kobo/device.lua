@@ -6,6 +6,7 @@ local _ = require("gettext")
 local logger = require("logger")
 
 local function yes() return true end
+local function no() return false end
 
 local function koboEnableWifi(toggle)
     if toggle == 1 then
@@ -28,7 +29,9 @@ local Kobo = Generic:new{
     -- enforce protrait mode on Kobos:
     isAlwaysPortrait = yes,
     -- the internal storage mount point users can write to
-    internal_storage_mount_point = "/mnt/onboard/"
+    internal_storage_mount_point = "/mnt/onboard/",
+    -- currently only Aura One has coloured frontlight
+    hasNaturalLight = no,
 }
 
 -- TODO: hasKeys for some devices?
@@ -60,6 +63,7 @@ local KoboDaylight = Kobo:new{
     touch_probe_ev_epoch_time = true,
     touch_phoenix_protocol = true,
     display_dpi = 300,
+    hasNaturalLight = yes,
 }
 
 -- Kobo Aura H2O:
