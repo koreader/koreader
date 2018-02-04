@@ -1,5 +1,6 @@
 local BasePowerD = require("device/generic/powerd")
 local NickelConf = require("device/kobo/nickel_conf")
+local SysfsLight = require ("device/kobo/sysfs_light")
 
 local batt_state_folder =
         "/sys/devices/platform/pmic_battery.1/power_supply/mc13892_bat/"
@@ -15,6 +16,7 @@ local KoboPowerD = BasePowerD:new{
 
     batt_capacity_file = batt_state_folder .. "capacity",
     is_charging_file = batt_state_folder .. "status",
+    fl_warmth = nil,
 }
 
 -- TODO: Remove KOBO_LIGHT_ON_START
@@ -77,11 +79,19 @@ function KoboPowerD:init()
     self.initial_is_fl_on = true
 
     if self.device.hasFrontlight() then
-        local kobolight = require("ffi/kobolight")
-        local ok, light = pcall(kobolight.open)
-        if ok then
-            self.fl = light
+        -- If this device has natural light (currently only KA1)
+        -- use the SysFS interface, and ioctl otherwise.
+        if self.device.hasNaturalLight() then
+            self.fl = SysfsLight
+            self.fl_warmth = 0
             self:_syncKoboLightOnStart()
+        else
+            local kobolight = require("ffi/kobolight")
+            local ok, light = pcall(kobolight.open)
+            if ok then
+                self.fl = light
+                self:_syncKoboLightOnStart()
+            end
         end
     end
 end
@@ -135,12 +145,22 @@ end
 
 function KoboPowerD:setIntensityHW(intensity)
     if self.fl == nil then return end
-    self.fl:setBrightness(intensity)
+    if self.fl_warmth == nil then
+        self.fl:setBrightness(intensity)
+    else
+        self.fl:setNaturalBrightness(intensity, self.fl_warmth)
+    end
     self.hw_intensity = intensity
     -- Now that we have set intensity, we need to let BasePowerD
     -- know about possibly changed frontlight state (if we came
     -- from light toggled off to some intensity > 0).
     self:_decideFrontlightState()
+end
+
+function KoboPowerD:setWarmth(warmth)
+    if self.fl == nil then return end
+    self.fl_warmth = warmth
+    self.fl:setWarmth(warmth)
 end
 
 function KoboPowerD:getCapacityHW()
@@ -162,7 +182,11 @@ end
 function KoboPowerD:afterResume()
     if self.fl == nil then return end
     -- just re-set it to self.hw_intensity that we haven't change on Suspend
-    self.fl:setBrightness(self.hw_intensity)
+    if self.fl_warmth == nil then
+        self.fl:setBrightness(self.hw_intensity)
+    else
+        self.fl:setNaturalBrightness(self.hw_intensity, self.fl_warmth)
+    end
 end
 
 return KoboPowerD
