@@ -37,6 +37,7 @@ local order = {
         "cloud_storage",
         "read_timer",
         "news_downloader",
+        "send_to_koreader",
         "----------------------------",
         "more_plugins",
         "----------------------------",

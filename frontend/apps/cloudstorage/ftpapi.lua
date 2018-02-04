@@ -6,6 +6,20 @@ local url = require("socket.url")
 local FtpApi = {
 }
 
+function FtpApi:generateUrl(address, user, pass)
+    local colon_sign = ""
+    local at_sign = ""
+    if user ~= "" then
+        at_sign = "@"
+    end
+    if pass ~= "" then
+        colon_sign = ":"
+    end
+    local replace = "://" .. user .. colon_sign .. pass .. at_sign
+    local url = string.gsub(address, "://", replace)
+    return url
+end
+
 function FtpApi:nlst(u)
     local t = {}
     local p = url.parse(u)
@@ -68,5 +82,15 @@ end
 function FtpApi:downloadFile(file_path)
     return ftp.get(file_path ..";type=i")
 end
+
+function FtpApi:delete(file_path)
+    local p = url.parse(file_path)
+    p.argument = string.gsub(p.path, "^/", "")
+    p.command = "dele"
+    --if p.argument == "" then p.argument = nil end
+    p.check = 250
+    return ftp.command(p)
+end
+
 
 return FtpApi

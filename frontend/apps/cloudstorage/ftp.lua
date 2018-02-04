@@ -8,30 +8,20 @@ local UIManager = require("ui/uimanager")
 local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
+local logger = require("logger")
 
 local Ftp = {
 }
-local function generateUrl(address, user, pass)
-    local colon_sign = ""
-    local at_sign = ""
-    if user ~= "" then
-        at_sign = "@"
-    end
-    if pass ~= "" then
-        colon_sign = ":"
-    end
-    local replace = "://" .. user .. colon_sign .. pass .. at_sign
-    local url = string.gsub(address, "://", replace)
-    return url
-end
+
 
 function Ftp:run(address, user, pass, path)
-    local url = generateUrl(address, user, pass) .. path
+    local url = FtpApi:generateUrl(address, user, pass) .. path
     return FtpApi:listFolder(url, path)
 end
 
 function Ftp:downloadFile(item, address, user, pass, path, close)
-    local url = generateUrl(address, user, pass) .. item.url
+    local url = FtpApi:generateUrl(address, user, pass) .. item.url
+    logger.dbg("downloadFile url", url)
     local response = FtpApi:downloadFile(url)
     if response ~= nil then
         path = util.fixUtf8(path, "_")
