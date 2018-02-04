@@ -23,6 +23,7 @@ local KoboPowerD = BasePowerD:new{
 function KoboPowerD:_syncKoboLightOnStart()
     local new_intensity = nil
     local is_frontlight_on = nil
+    local new_warmth = nil
     local kobo_light_on_start = tonumber(KOBO_LIGHT_ON_START)
     if kobo_light_on_start then
         if kobo_light_on_start > 0 then
@@ -34,6 +35,14 @@ function KoboPowerD:_syncKoboLightOnStart()
         elseif kobo_light_on_start == -2 then -- get values from NickelConf
             new_intensity = NickelConf.frontLightLevel.get()
             is_frontlight_on = NickelConf.frontLightState:get()
+            if self.fl_warmth ~= nil then
+                local new_color = NickelConf.colorSetting.get()
+                if new_color ~= nil then
+                    -- ColorSetting is in [1500,6400], with '1500'
+                    -- being maximum warmth, so normalize this to [0,100]
+                    new_warmth = (100 - math.floor((new_color - 1500) / 49))
+                end
+            end
             if is_frontlight_on == nil then
                 -- this device does not support frontlight toggle,
                 -- we set the value based on frontlight intensity.
@@ -54,6 +63,9 @@ function KoboPowerD:_syncKoboLightOnStart()
             -- stored in koreader settings
             new_intensity = G_reader_settings:readSetting("frontlight_intensity")
             is_frontlight_on = G_reader_settings:readSetting("is_frontlight_on")
+            if self.fl_warmth ~= nil then
+                new_warmth = G_reader_settings:readSetting("frontlight_warmth")
+            end
         end
     end
 
@@ -63,6 +75,9 @@ function KoboPowerD:_syncKoboLightOnStart()
     if is_frontlight_on ~= nil then
         -- will only be used to give initial state to BasePowerD:_decideFrontlightState()
         self.initial_is_fl_on = is_frontlight_on
+    end
+    if new_warmth ~= nil then
+        self.fl_warmth = new_warmth
     end
 
     -- In any case frontlight is off, ensure intensity is non-zero so untoggle works
@@ -103,9 +118,13 @@ function KoboPowerD:saveSettings()
         -- untoggled intensity and toggle state at next startup)
         local cur_intensity = self.fl_intensity
         local cur_is_fl_on = self.is_fl_on
+        local cur_warmth = self.fl_warmth
         -- Save intensity to koreader settings
         G_reader_settings:saveSetting("frontlight_intensity", cur_intensity)
         G_reader_settings:saveSetting("is_frontlight_on", cur_is_fl_on)
+        if cur_warmth ~= nil then
+            G_reader_settings:saveSetting("frontlight_warmth", cur_warmth)
+        end
         -- And to "Kobo eReader.conf" if needed
         if KOBO_SYNC_BRIGHTNESS_WITH_NICKEL then
             if NickelConf.frontLightState.get() ~= nil then
@@ -119,6 +138,12 @@ function KoboPowerD:saveSettings()
             end
             if NickelConf.frontLightLevel.get() ~= cur_intensity then
                 NickelConf.frontLightLevel.set(cur_intensity)
+            end
+            if cur_warmth ~= nil then
+                local warmth_rescaled = (100 - cur_warmth) * 49 + 1500
+                if NickelConf.colorSetting.get() ~= warmth_rescaled then
+                    NickelConf.colorSetting.set(warmth_rescaled)
+                end
             end
         end
     end
