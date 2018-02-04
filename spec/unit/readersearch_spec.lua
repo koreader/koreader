@@ -81,13 +81,29 @@ describe("Readersearch module", function()
         it("should find all occurrences", function()
             local count = 0
             rolling:onGotoPage(1)
+            local cur_page = doc:getCurrentPage()
             local words = search:searchFromCurrent("Verona", 0)
             while words do
-                count = count + #words
+                local new_page = nil
                 for _, word in ipairs(words) do
                     --dbg("found word", word.start)
+                    local word_page = doc:getPageFromXPointer(word.start)
+                    if word_page ~= cur_page then -- ignore words on current page
+                        if not new_page then -- first word on a new page
+                            new_page = word_page
+                            count = count + 1
+                            doc:gotoXPointer(word.start) -- go to this new page
+                        else -- new page seen
+                            if word_page == new_page then -- only count words on this new page
+                                count = count + 1
+                            end
+                        end
+                    end
                 end
-                doc:gotoXPointer(words[#words].start)
+                if not new_page then -- no word seen on any new page
+                    break
+                end
+                cur_page = doc:getCurrentPage()
                 words = search:searchNext("Verona", 0)
             end
             assert.are.equal(13, count)

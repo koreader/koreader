@@ -255,8 +255,9 @@ function MenuItem:init()
             end
         end
         self.info_face = Font:getFace(self.infont, self.infont_size)
-
         local mandatory_w = RenderText:sizeUtf8Text(0, self.dimen.w, self.info_face, "" .. mandatory, true, self.bold).x
+        local max_item_height = self.dimen.h - 2 * self.linesize
+        local flag_fit = false
         while true do
             -- Free previously made widgets to avoid memory leaks
             if item_name then
@@ -271,12 +272,29 @@ function MenuItem:init()
                 fgcolor = self.dim and Blitbuffer.COLOR_GREY or nil,
             }
             local height = item_name:getSize().h
-            if height < self.dimen.h - 2 * self.linesize then -- we fit !
+            if height < max_item_height or flag_fit then -- we fit !
                 break
             end
-            -- Don't go too low, and then truncate text
-            if self.font_size < 12 then
-                self.text = self.text:sub(1, -5) .. "…"
+            -- Don't go too low, and then decrease lines
+            if self.font_size <= 12 then
+                local line_height = height / #item_name.vertical_string_list -- should be an integer
+                local lines = math.floor(max_item_height / line_height)
+                local offset
+                if item_name.vertical_string_list[lines + 1] then
+                    offset = item_name.vertical_string_list[lines + 1].offset - 2
+                else -- shouldn't happen, but just in case
+                    offset = #item_name.char_width_list
+                end
+                local ellipsis_size = RenderText:sizeUtf8Text(0, self.content_width,
+                    Font:getFace(self.font, self.font_size), "…", true, self.bold).x
+                local removed_char_width= 0
+                while removed_char_width < ellipsis_size  do
+                    -- the width of each char has already been calculated by TextBoxWidget
+                    removed_char_width = removed_char_width + item_name.char_width_list[offset].width
+                    offset = offset - 1
+                end
+                self.text = table.concat(item_name.charlist, '', 1, offset) .. "…"
+                flag_fit = true
             else
                 -- If we don't fit, decrease font size
                 self.font_size = self.font_size - 2
@@ -476,10 +494,10 @@ local Menu = FocusManager:new{
 }
 
 function Menu:_recalculateDimen()
-    self.perpage = G_reader_settings:readSetting("items_per_page") or 14
+    self.perpage = self.perpage_custom or G_reader_settings:readSetting("items_per_page") or 14
     self.span_width = 0
     self.dimen.w = self.width
-    self.dimen.h = self.height
+    self.dimen.h = self.height or Screen:getHeight()
     if self.dimen.h > Screen:getHeight() or self.dimen.h == nil then
         self.dimen.h = Screen:getHeight()
     end
@@ -509,7 +527,7 @@ function Menu:init()
     self.show_parent = self.show_parent or self
     self.item_table_stack = {}
     self.dimen.w = self.width
-    self.dimen.h = self.height
+    self.dimen.h = self.height or Screen:getHeight()
     if self.dimen.h > Screen:getHeight() or self.dimen.h == nil then
         self.dimen.h = Screen:getHeight()
     end

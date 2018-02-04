@@ -13,6 +13,7 @@ local PdfDocument = Document:new{
     dc_null = DrawContext.new(),
     options = KoptOptions,
     koptinterface = nil,
+    provider = "mupdf",
     provider_name = "MuPDF",
 }
 
@@ -250,7 +251,7 @@ function PdfDocument:register(registry)
     registry:addProvider("xhtml", "application/xhtml+xml", self, 100)
     registry:addProvider("xml", "application/xml", self, 10)
     registry:addProvider("xps", "application/oxps", self, 100)
-    registry:addProvider("zip", "application/zip", self, 100)
+    registry:addProvider("zip", "application/zip", self, 20)
 
     --- Picture types ---
     registry:addProvider("gif", "image/gif", self, 90)
@@ -267,7 +268,8 @@ function PdfDocument:register(registry)
     registry:addProvider("pgm", "image/x‑portable‑bitmap", self, 90)
     registry:addProvider("png", "image/png", self, 90)
     registry:addProvider("pnm", "image/x‑portable‑bitmap", self, 90)
-    registry:addProvider("ppm", "image/gif", self, 90)
+    registry:addProvider("ppm", "image/x‑portable‑bitmap", self, 90)
+    registry:addProvider("svg", "image/svg+xml", self, 90)
     registry:addProvider("tif", "image/tiff", self, 90)
     registry:addProvider("tiff", "image/tiff", self, 90)
     -- Windows Media Photo == JPEG XR

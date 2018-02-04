@@ -160,7 +160,8 @@ function NewsDownloader:loadConfigAndProcessFeeds()
 
     local ok, feed_config = pcall(dofile, feed_config_path)
     if not ok or not feed_config then
-        logger.err("NewsDownloader: Feed config not found.")
+        info = InfoMessage:new{ text = T(_("Invalid configuration file. Detailed error message:\n%1"), feed_config) }
+        UIManager:show(info)
         return
     end
 
