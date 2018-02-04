@@ -1,6 +1,7 @@
 local Device = require("device")
 
 local with_frontlight = (Device:isKindle() or Device:isKobo()) and Device:hasFrontlight()
+local with_natural_light = Device:isKobo() and Device:hasNaturalLight()
 if not (with_frontlight or Device:isSDL()) then
     return { disabled = true, }
 end
@@ -17,6 +18,7 @@ local _ = require("gettext")
 
 local tap_touch_zone_ratio = { x = 0, y = 15/16, w = 1/10, h = 1/16, }
 local swipe_touch_zone_ratio = { x = 0, y = 1/8, w = 1/10, h = 7/8, }
+local swipe_touch_zone_ratio_warmth = { x = 7/8, y = 1/8, w = 1/8, h = 7/8, }
 
 local KoboLight = WidgetContainer:new{
     name = 'kobolight',
@@ -50,6 +52,12 @@ function KoboLight:setupTouchZones()
     local swipe_zone = {
         ratio_x = swipe_touch_zone_ratio.x, ratio_y = swipe_touch_zone_ratio.y,
         ratio_w = swipe_touch_zone_ratio.w, ratio_h = swipe_touch_zone_ratio.h,
+    }
+    local swipe_zone_warmth = {
+        ratio_x = swipe_touch_zone_ratio_warmth.x,
+        ratio_y = swipe_touch_zone_ratio_warmth.y,
+        ratio_w = swipe_touch_zone_ratio_warmth.w,
+        ratio_h = swipe_touch_zone_ratio_warmth.h,
     }
     self.ui:registerTouchZones({
         {
@@ -86,6 +94,33 @@ function KoboLight:setupTouchZones()
             overrides = { 'paging_pan_release', },
         },
     })
+    if with_natural_light then
+        self.ui:registerTouchZones({
+        {
+            id = "plugin_kobolight_swipe_warmth",
+            ges = "swipe",
+            screen_zone = swipe_zone_warmth,
+            handler = function(ges) return self:onSwipeWarmth(nil, ges) end,
+            overrides = { 'paging_swipe', 'rolling_swipe', },
+        },
+        {
+            -- dummy zone to disable reader panning
+            id = "plugin_kobolight_pan_warmth",
+            ges = "pan",
+            screen_zone = swipe_zone_warmth,
+            handler = function(ges) return true end,
+            overrides = { 'paging_pan', 'rolling_pan', },
+        },
+        {
+            -- dummy zone to disable reader panning
+            id = "plugin_kobolight_pan_release_warmth",
+            ges = "pan_release",
+            screen_zone = swipe_zone_warmth,
+            handler = function(ges) return true end,
+            overrides = { 'paging_pan_release', },
+        },
+        })
+    end
 end
 
 function KoboLight:resetLayout()
@@ -98,6 +133,17 @@ function KoboLight:onShowIntensity()
     if powerd.fl_intensity ~= nil then
         UIManager:show(Notification:new{
             text = T(_("Frontlight intensity is set to %1."), powerd.fl_intensity),
+            timeout = 1.0,
+        })
+    end
+    return true
+end
+
+function KoboLight:onShowWarmth(value)
+    local powerd = Device:getPowerDevice()
+    if powerd.fl_warmth ~= nil then
+        UIManager:show(Notification:new{
+            text = T(_("Warmth is set to %1."), powerd.fl_warmth),
             timeout = 1.0,
         })
     end
@@ -153,19 +199,47 @@ function KoboLight:onSwipe(_, ges)
     return true
 end
 
+function KoboLight:onSwipeWarmth(_, ges)
+    local powerd = Device:getPowerDevice()
+    if powerd.fl_warmth == nil then return false end
+
+    local step = math.ceil(#self.steps * ges.distance / self.gestureScale)
+    local delta_int = self.steps[step] or self.steps[#self.steps]
+    local warmth
+    if ges.direction == "north" then
+        warmth = math.min(powerd.fl_warmth + delta_int, 100)
+    elseif ges.direction == "south" then
+        warmth = math.max(powerd.fl_warmth - delta_int, 0)
+    else
+        return false  -- don't consume swipe event if it's not matched
+    end
+
+    powerd:setWarmth(warmth)
+    self:onShowWarmth()
+    return true
+end
+
 function KoboLight:addToMainMenu(menu_items)
     menu_items.frontlight_gesture_controller = {
         text = _("Frontlight gesture controller"),
         callback = function()
+            local image_name
+            local nl_text = ""
+            if with_natural_light then
+                image_name = "/demo_ka1.png"
+                nl_text = _("\n- Change frontlight warmth by swiping up or down on the right of the screen.")
+            else
+                image_name = "/demo.png"
+            end
             local image = ImageWidget:new{
-                file = self.path .. "/demo.png",
+                file = self.path .. image_name,
                 height = Screen:getHeight(),
                 width = Screen:getWidth(),
                 scale_factor = 0,
             }
             UIManager:show(image)
             UIManager:show(ConfirmBox:new{
-                text = T(_("Frontlight gesture controller can:\n- Turn on or off frontlight by tapping bottom left of the screen.\n- Change frontlight intensity by swiping up or down on the left of the screen.\n\nDo you want to %1 it?"),
+                text = T(_("Frontlight gesture controller can:\n- Turn on or off frontlight by tapping bottom left of the screen.\n- Change frontlight intensity by swiping up or down on the left of the screen." .. nl_text .. "\n\nDo you want to %1 it?"),
                          self:disabled() and _("enable") or _("disable")),
                 ok_text = self:disabled() and _("Enable") or _("Disable"),
                 ok_callback = function()
