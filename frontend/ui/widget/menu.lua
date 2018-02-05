@@ -368,8 +368,20 @@ function MenuItem:init()
     }
 end
 
-function MenuItem:onFocus()
-    self._underline_container.color = Blitbuffer.COLOR_BLACK
+function MenuItem:onFocus(initial_focus)
+    if Device:isTouchDevice() then
+        -- Devices which are Keys capable will get this onFocus called by
+        -- updateItems(), which will toggle the underline color of first item.
+        -- If the device is also Touch capable, let's not show the initial
+        -- underline for a prettier display (it will be shown only when keys
+        -- are used).
+        if not initial_focus or self.menu.did_focus_with_keys then
+            self._underline_container.color = Blitbuffer.COLOR_BLACK
+            self.menu.did_focus_with_keys = true
+        end
+    else
+        self._underline_container.color = Blitbuffer.COLOR_BLACK
+    end
     self.key_events = self.active_key_events
     return true
 end
@@ -830,7 +842,7 @@ function Menu:updateItems(select_number)
             -- reset focus manager accordingly
             self.selected = { x = 1, y = select_number }
             -- set focus to requested menu item
-            self.item_group[select_number]:onFocus()
+            self.item_group[select_number]:onFocus(true)
         end
         -- update page information
         self.page_info_text:setText(util.template(_("page %1 of %2"), self.page, self.page_num))
