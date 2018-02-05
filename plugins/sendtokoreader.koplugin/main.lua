@@ -28,20 +28,20 @@ local function stringEnds(String,End)
    return End=='' or string.sub(String,-string.len(End))==End
 end
 
-
-function SendToKoreader:downloadFileAndRemove(item, address, user, pass, path, close)
-    local url = FtpApi:generateUrl(address, user, pass) .. item
+function SendToKoreader:downloadFileAndRemove(connectionUrl, remotePath, localDownloadPath)
+    local url = connectionUrl .. remotePath
     local response = FtpApi:downloadFile(url)
 
     if response ~= nil then
-        path = util.fixUtf8(path, "_")
-        local file = io.open(path, "w")
+        localDownloadPath = util.fixUtf8(localDownloadPath, "_")
+        local file = io.open(localDownloadPath, "w")
         file:write(response)
         file:close()
         FtpApi:delete(url)
+        return 1
     else
-        logger.err("Invalid address: ", url)
-        return
+        logger.err("Error. Invalid connection data? ")
+        return 0
     end
 end
 
@@ -60,16 +60,21 @@ end
 function SendToKoreader:addToMainMenu(menu_items)
     self:lazyInitialization()
     menu_items.send_to_koreader = {
-        text = _("Send to Koreader"),
+        text = _("Send to Koreader (Receiver)"),
         sub_item_table = {
             {
                 text = _("Download and remove from server"),
                 callback = function()
-                    self:process()
+                  if not NetworkMgr:isOnline() then
+                      wifi_enabled_before_action = false
+                      NetworkMgr:beforeWifiAction(self.process)
+                  else
+                      self:process()
+                  end
                 end,
             },
             {
-                text = _("Go to news folder"),
+                text = _("Go to download folder"),
                 callback = function()
                     local FileManager = require("apps/filemanager/filemanager")
                     if FileManager.instance then
@@ -80,7 +85,7 @@ function SendToKoreader:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Remove news"),
+                text = _("Remove all from download folder"),
                 callback = function() self:removeNewsButKeepConfig() end,
             },
             {
@@ -88,24 +93,10 @@ function SendToKoreader:addToMainMenu(menu_items)
                 callback = function() self:setCustomDownloadDirectory() end,
             },
             {
-                text = _("Settings"),
-                sub_item_table = {
-                    {
-                        text = _("Change feeds configuration"),
-                        callback = function()
-                            UIManager:show(InfoMessage:new{
-                                text = T(_("To change feed (Atom/RSS) sources please manually edit the configuration file:\n%1\n\nIt is very simple and contains comments as well as sample configuration."),
-                                         feed_config_path)
-                            })
-                        end,
-                    },
-                },
-            },
-            {
                 text = _("Help"),
                 callback = function()
                     UIManager:show(InfoMessage:new{
-                        text = T(_("News downloader retrieves RSS and Atom news entries and stores them to:\n%1\n\nEach entry is a separate html file, that can be browsed by KOReader file manager.\nItems download limit can be configured in Settings."),
+                        text = T(_("Downloads article using plugin SendToKoreader. To local folder:"),
                                  download_dir_path)
                     })
                 end,
@@ -116,7 +107,7 @@ end
 
 function SendToKoreader:lazyInitialization()
    if not initialized then
-        logger.dbg("SendToKoreader: obtaining news folder")
+        logger.dbg("SendToKoreader: obtaining download folder")
         local send_to_koreader_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), send_to_koreader_config_file))
         if send_to_koreader_settings:has(config_key_custom_dl_dir) then
             download_dir_path = send_to_koreader_settings:readSetting(config_key_custom_dl_dir)
@@ -140,34 +131,40 @@ function SendToKoreader:process()
 
     local host = "ftp://mkwk018.cba.pl"
     local user = "koreader"
-    local passwd = "Koreader123"
+    local passwd = "****"
     local folder = "/" .. user .. ".cba.pl"
 
-    local count = 0
-      local fileTable = Ftp:run(host, user, passwd, folder)
-          local total_entries = table.getn(fileTable)
+    local count = 1
+    local connection_url = FtpApi:generateUrl(host, user, passwd)
+
+    local fileTable = FtpApi:listFolder(connection_url .. folder, folder) --args looks strange but otherwise resonse with invalid paths
+
+    if not fileTable then
+      info = InfoMessage:new{ text = T(_("Could not get file list for server: %1, user: %2, folder: %3"), host, user, folder) }
+    else
+      local total_entries = table.getn(fileTable)
+      logger.dbg("total_entries ", total_entries)
+      if total_entries > 1 then total_entries = total_entries -2 end --remove result "../" (upper folder) and "./" (current folder)
       for idx, ftpFile in ipairs(fileTable) do
-      logger.dbg("ftpFile ", ftpFile)
+          logger.dbg("ftpFile ", ftpFile)
           if ftpFile["type"] == "file" and stringEnds(ftpFile["text"], ".epub") then
 
-          info = InfoMessage:new{ text = T(_("Processing %1/%2"), idx, total_entries) }
-          UIManager:show(info)
-          UIManager:forceRePaint()
-          UIManager:close(info)
+              info = InfoMessage:new{ text = T(_("Processing %1/%2"), count, total_entries) }
+              UIManager:show(info)
+              UIManager:forceRePaint()
+              UIManager:close(info)
 
-          local remote_file_path = ftpFile["url"]
-          logger.dbg("remote_file_path", remote_file_path)
-          local local_file_path = download_dir_path .. ftpFile["text"]
-          self:downloadFileAndRemove(remote_file_path, host, user, passwd, local_file_path)
-          count = count +1
+              local remote_file_path = ftpFile["url"]
+              logger.dbg("remote_file_path", remote_file_path)
+              local local_file_path = download_dir_path .. ftpFile["text"]
+              count = count + self:downloadFileAndRemove(connection_url, remote_file_path, local_file_path)
+              end
+          info = InfoMessage:new{ text = T(_("Processing finished. Success: %1"), count -1) }
           end
-      end
-      info = InfoMessage:new{ text = T(_("Processing finished. Processed: %1"), count) }
-      UIManager:show(info)
-
+    end
+    UIManager:show(info)
     SendToKoreader:afterWifiAction()
 end
-
 
 function SendToKoreader:removeNewsButKeepConfig()
     logger.dbg("SendToKoreader: Removing news from :", download_dir_path)
@@ -217,7 +214,5 @@ function SendToKoreader:onCloseDocument()
         ReadHistory:removeItemByPath(document_full_path)
     end
 end
-
-
 
 return SendToKoreader
