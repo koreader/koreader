@@ -631,7 +631,7 @@ function Menu:init()
                     --TODO support utf8 lowercase
                     local filename = util.basename(v.path):lower()
                     local search_string = self.page_info_text.input_dialog:getInputText():lower()
-                    local i, j = filename:find(search_string)
+                    local i, _ = filename:find(search_string)
                     if i == 1 and v.is_go_up == nil then
                         self:onGotoPage(math.ceil(k / self.perpage))
                         break
