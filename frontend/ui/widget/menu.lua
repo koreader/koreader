@@ -593,20 +593,68 @@ function Menu:init()
     self.page_info_first_chev:hide()
     self.page_info_last_chev:hide()
 
+    local title_goto, type_goto, hint_func
+    local buttons = {
+        {
+            {
+                text = _("Cancel"),
+                callback = function()
+                    self.page_info_text:closeInputDialog()
+                end,
+            },
+            {
+                text = _("Go to page"),
+                is_enter_default = true,
+                callback = function()
+                    local page = tonumber(self.page_info_text.input_dialog:getInputText())
+                    if page and page >= 1 and page <= self.page_num then
+                        self:onGotoPage(page)
+                    end
+                    self.page_info_text:closeInputDialog()
+                end,
+            },
+        },
+    }
+
+    if self.goto_letter then
+        title_goto = _("Input page number or letter")
+        type_goto = "string"
+        hint_func = function()
+            return string.format("(1 - %s) or (a - z)", self.page_num)
+        end
+        table.insert(buttons[1], {
+            text = _("Go to letter"),
+            is_enter_default = true,
+            callback = function()
+                logger.info(self.item_table)
+                for k, v in ipairs(self.item_table) do
+                    --TODO support utf8 lowercase
+                    local filename = util.basename(v.path):lower()
+                    local search_string = self.page_info_text.input_dialog:getInputText():lower()
+                    local i, j = filename:find(search_string)
+                    if i == 1 and v.is_go_up == nil then
+                        self:onGotoPage(math.ceil(k / self.perpage))
+                        break
+                    end
+                end
+                self.page_info_text:closeInputDialog()
+            end,
+        })
+    else
+        title_goto = _("Input page number")
+        type_goto = "number"
+        hint_func = function()
+            return string.format("(1 - %s)", self.page_num)
+        end
+    end
+
     self.page_info_text = Button:new{
         text = "",
         hold_input = {
-            title = _("Input page number"),
-            type = "number",
-            hint_func = function()
-                return "(" .. "1 - " .. self.page_num .. ")"
-            end,
-            callback = function(input)
-                local page = tonumber(input)
-                if page and page >= 1 and page <= self.page_num then
-                    self:onGotoPage(page)
-                end
-            end,
+            title = title_goto ,
+            type = type_goto,
+            hint_func = hint_func,
+            buttons = buttons,
         },
         bordersize = 0,
         text_font_face = "cfont",

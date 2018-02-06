@@ -217,7 +217,7 @@ function InputContainer:onInput(input)
         input = input.input,
         input_hint = input.hint_func and input.hint_func() or input.hint or "",
         input_type = input.type or "number",
-        buttons = {
+        buttons =  input.buttons or {
             {
                 {
                     text = input.cancel_text or _("Cancel"),
