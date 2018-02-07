@@ -40,12 +40,12 @@ function TimeWidget:init()
     self.width = self.screen_width * 0.95
     if Device:hasKeys() then
         self.key_events = {
-            Close = { {"Back"}, doc = "close time" }
+            Close = { {"Back"}, doc = "close time widget" }
         }
     end
     if Device:isTouchDevice() then
         self.ges_events = {
-            TapCloseFL = {
+            TapClose = {
                 GestureRange:new{
                     ges = "tap",
                     range = Geom:new{
@@ -158,7 +158,7 @@ function TimeWidget:update()
             CenterContainer:new{
                 dimen = Geom:new{
                     w = self.screen_width * 0.95,
-                    h = self.screen_height * 0.25,
+                    h = time_group:getSize().h * 1.2,
                 },
                 time_group
             },
@@ -173,7 +173,7 @@ function TimeWidget:update()
     }
     self[1] = WidgetContainer:new{
         align = "center",
-        dimen =Geom:new{
+        dimen = Geom:new{
             x = 0, y = 0,
             w = self.screen_width,
             h = self.screen_height,
@@ -207,7 +207,7 @@ function TimeWidget:onAnyKeyPressed()
     return true
 end
 
-function TimeWidget:onTapCloseFL(arg, ges_ev)
+function TimeWidget:onTapClose(arg, ges_ev)
     if ges_ev.pos:notIntersectWith(self.time_frame.dimen) then
         self:onClose()
     end
