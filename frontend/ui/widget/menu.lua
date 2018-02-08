@@ -626,13 +626,12 @@ function Menu:init()
             text = _("Go to letter"),
             is_enter_default = true,
             callback = function()
-                logger.info(self.item_table)
                 for k, v in ipairs(self.item_table) do
                     --TODO support utf8 lowercase
                     local filename = util.basename(v.path):lower()
                     local search_string = self.page_info_text.input_dialog:getInputText():lower()
                     local i, _ = filename:find(search_string)
-                    if i == 1 and v.is_go_up == nil then
+                    if i == 1 and not v.is_go_up then
                         self:onGotoPage(math.ceil(k / self.perpage))
                         break
                     end
