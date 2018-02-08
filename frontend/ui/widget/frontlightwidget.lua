@@ -36,10 +36,10 @@ function FrontLightWidget:init()
     self.screen_height = Screen:getHeight()
     self.span = math.ceil(self.screen_height * 0.01)
     self.width = self.screen_width * 0.95
-    local powerd = Device:getPowerDevice()
-    self.fl_min = powerd.fl_min
-    self.fl_max = powerd.fl_max
-    self.fl_cur = powerd:frontlightIntensity()
+    self.powerd = Device:getPowerDevice()
+    self.fl_min = self.powerd.fl_min
+    self.fl_max = self.powerd.fl_max
+    self.fl_cur = self.powerd:frontlightIntensity()
     local steps_fl = self.fl_max - self.fl_min + 1
     self.one_step = math.ceil(steps_fl / 25)
     self.steps = math.ceil(steps_fl / self.one_step)
@@ -113,14 +113,13 @@ function FrontLightWidget:setProgress(num, step)
         -- don't touch frontlight on first call (no self[1] means not yet out of update()),
         -- so that we don't untoggle light
         if self[1] then
-            local powerd = Device:getPowerDevice()
             if set_fl == self.fl_min then -- fl_min (which is always 0) means toggle
-                powerd:toggleFrontlight()
+                self.powerd:toggleFrontlight()
             else
-                powerd:setIntensity(set_fl)
+                self.powerd:setIntensity(set_fl)
             end
             -- get back the real level (different from set_fl if untoggle)
-            self.fl_cur = powerd:frontlightIntensity()
+            self.fl_cur = self.powerd:frontlightIntensity()
             -- and update our step_num with it for accurate progress bar
             step_num = math.floor(self.fl_cur / step)
         end
