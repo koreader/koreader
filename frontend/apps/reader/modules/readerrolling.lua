@@ -1,6 +1,5 @@
 local Blitbuffer = require("ffi/blitbuffer")
 local Device = require("device")
-local Geom = require("ui/geometry")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Event = require("ui/event")
 local ReaderPanning = require("apps/reader/modules/readerpanning")

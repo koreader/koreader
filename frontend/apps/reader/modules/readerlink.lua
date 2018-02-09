@@ -161,7 +161,7 @@ function ReaderLink:isXpointerCoherent(a_xpointer)
     local screen_y = doc_y - top_y + doc_margins["top"]
     local screen_x = doc_x + doc_margins["left"]
     -- Get again link and a_xpointer from this position
-    local re_link_xpointer, re_a_xpointer = self.ui.document:getLinkFromPosition({x = screen_x, y = screen_y})
+    local re_link_xpointer, re_a_xpointer = self.ui.document:getLinkFromPosition({x = screen_x, y = screen_y}) -- luacheck: no unused
     -- We should get the same a_xpointer. If not, crengine has messed up
     -- and we should not trust this xpointer to get back to this link.
     if re_a_xpointer ~= a_xpointer then
