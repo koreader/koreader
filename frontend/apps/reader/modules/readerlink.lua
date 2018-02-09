@@ -143,6 +143,7 @@ function ReaderLink:addToMainMenu(menu_items)
         callback = function() self:onGoBackLink() end,
         hold_callback = function() UIManager:show(ConfirmBox:new{
             text = _("Clear location history?"),
+            ok_text = _("Clear"),
             ok_callback = function()
                 self.location_stack = {}
             end,
