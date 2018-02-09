@@ -142,7 +142,7 @@ function ReaderLink:addToMainMenu(menu_items)
         enabled_func = function() return #self.location_stack > 0 end,
         callback = function() self:onGoBackLink() end,
         hold_callback = function() UIManager:show(ConfirmBox:new{
-            text = _("Clear previous locations stack?"),
+            text = _("Clear location history?"),
             ok_callback = function()
                 self.location_stack = {}
             end,
@@ -203,10 +203,10 @@ function ReaderLink:getLinkFromGes(ges)
         end
 
         if link_xpointer ~= "" then
+            -- This link's target xpointer is more precise than a classic
+            -- xpointer to top of a page: we can show a marker at its
+            -- y-position in target page
             return {
-                -- this link's target xpointer is more precise than a classic
-                -- xpointer to top of a page: we can show a marker at its
-                -- y-position in target page
                 xpointer = link_xpointer,
                 marker_xpointer = link_xpointer,
                 from_xpointer = a_xpointer,
