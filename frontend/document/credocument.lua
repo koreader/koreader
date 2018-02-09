@@ -47,7 +47,8 @@ function CreDocument:cacheInit()
     if lfs.attributes("./cr3cache", "mode") == "directory" then
         os.execute("rm -r ./cr3cache")
     end
-    cre.initCache(DataStorage:getDataDir() .. "/cache/cr3cache", 1024*1024*32)
+    cre.initCache(DataStorage:getDataDir() .. "/cache/cr3cache", 1024*1024*32,
+        G_reader_settings:nilOrTrue("cre_compress_cached_data"))
 end
 
 function CreDocument:engineInit()
