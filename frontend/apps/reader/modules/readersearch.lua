@@ -103,7 +103,7 @@ function ReaderSearch:onShowSearchDialog(text)
                         end
                     end
                     if valid_link then
-                        self.ui.link:onGotoLink(valid_link, neglect_current_location)
+                        self.ui.link:onGotoLink({xpointer=valid_link}, neglect_current_location)
                     end
                 end
                 -- Don't add result pages to location ("Go back") stack
