@@ -637,8 +637,8 @@ function FileManager:deleteFile(file)
     else
         ok, err = util.purgeDir(file_abs_path)
     end
-    if ok and err == nil then
-        if is_doc ~= nil then
+    if ok and not err then
+        if is_doc then
             DocSettings:open(file):purge()
         end
         UIManager:show(InfoMessage:new{
