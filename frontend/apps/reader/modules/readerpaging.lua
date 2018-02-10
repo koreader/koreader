@@ -776,7 +776,7 @@ function ReaderPaging:onGotoPageRel(diff)
             -- or switch to another page (we are crossing the end of a column)
 
             x_pan_off = self.visible_area.w * diff
-            x_pan_off = Math.roundAwayFromZero(y_pan_off)
+            x_pan_off = Math.roundAwayFromZero(x_pan_off)
             new_va.x = Math.roundAwayFromZero(self.visible_area.x+x_pan_off)
             new_va.y = Math.roundAwayFromZero(self.visible_area.y)
             -- inter-column displacement (horizontal)
