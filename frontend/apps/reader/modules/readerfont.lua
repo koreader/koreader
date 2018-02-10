@@ -181,7 +181,7 @@ function ReaderFont:onChangeSize(direction, font_delta)
 end
 
 function ReaderFont:onSetFontSize(new_size)
-    if new_size > 72 then new_size = 72 end
+    if new_size > 255 then new_size = 255 end
     if new_size < 12 then new_size = 12 end
 
     self.font_size = new_size
