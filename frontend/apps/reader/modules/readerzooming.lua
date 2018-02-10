@@ -63,6 +63,11 @@ function ReaderZooming:init()
                 doc = "zoom to fit content height",
                 event = "SetZoomMode", args = "contentheight"
             },
+            ZoomToFitColumn = {
+                { "Shift", "C" },
+                doc = "zoom to fit column",
+                event = "SetZoomMode", args = "colu"
+            },
         }
     end
     if Device:isTouchDevice() then
@@ -226,7 +231,8 @@ function ReaderZooming:getZoom(pageno)
     local page_size = self.ui.document:getNativePageDimensions(pageno)
     if self.zoom_mode == "content"
     or self.zoom_mode == "contentwidth"
-    or self.zoom_mode == "contentheight" then
+    or self.zoom_mode == "contentheight"
+    or self.zoom_mode == "column" then
         local ubbox_dimen = self.ui.document:getUsedBBoxDimensions(pageno, 1)
         -- if bbox is larger than the native page dimension render the full page
         -- See discussion in koreader/koreader#970.
@@ -263,6 +269,8 @@ function ReaderZooming:getZoom(pageno)
         end
     elseif self.zoom_mode == "contentwidth" or self.zoom_mode == "pagewidth" then
         zoom = zoom_w
+    elseif self.zoom_mode == "column" then
+        zoom = zoom_w * 2
     elseif self.zoom_mode == "contentheight" or self.zoom_mode == "pageheight" then
         zoom = zoom_h
     elseif self.zoom_mode == "free" then
@@ -351,6 +359,12 @@ function ReaderZooming:addToMainMenu(menu_items)
                     checked_func = function() return self.zoom_mode == "page" end,
                     callback = self:genSetZoomModeCallBack("page"),
                     hold_callback = function() self:makeDefault("page") end,
+                },
+                {
+                    text = _("Zoom to fit column"),
+                    checked_func = function() return self.zoom_mode == "column" end,
+                    callback = self:genSetZoomModeCallBack("column"),
+                    hold_callback = function() self:makeDefault("column") end,
                 },
             }
         }
