@@ -367,7 +367,7 @@ function ReaderLink:onSwipe(arg, ges)
                 -- Make that gesture don't do anything, and show a Notification
                 -- so the user knows why
                 UIManager:show(Notification:new{
-                    text = _("Previous locations stack is empty"),
+                    text = _("Location history is empty"),
                     timeout = 1.0,
                 })
                 return true
