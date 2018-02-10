@@ -335,6 +335,7 @@ function ReaderZooming:addToMainMenu(menu_items)
                     checked_func = function() return self.zoom_mode == "contentheight" end,
                     callback = self:genSetZoomModeCallBack("contentheight"),
                     hold_callback = function() self:makeDefault("contentheight") end,
+                    separator = true,
                 },
                 {
                     text = _("Zoom to fit page width"),
@@ -347,6 +348,13 @@ function ReaderZooming:addToMainMenu(menu_items)
                     checked_func = function() return self.zoom_mode == "pageheight" end,
                     callback = self:genSetZoomModeCallBack("pageheight"),
                     hold_callback = function() self:makeDefault("pageheight") end,
+                    separator = true,
+                },
+                {
+                    text = _("Zoom to fit column"),
+                    checked_func = function() return self.zoom_mode == "column" end,
+                    callback = self:genSetZoomModeCallBack("column"),
+                    hold_callback = function() self:makeDefault("column") end,
                 },
                 {
                     text = _("Zoom to fit content"),
@@ -359,12 +367,6 @@ function ReaderZooming:addToMainMenu(menu_items)
                     checked_func = function() return self.zoom_mode == "page" end,
                     callback = self:genSetZoomModeCallBack("page"),
                     hold_callback = function() self:makeDefault("page") end,
-                },
-                {
-                    text = _("Zoom to fit column"),
-                    checked_func = function() return self.zoom_mode == "column" end,
-                    callback = self:genSetZoomModeCallBack("column"),
-                    hold_callback = function() self:makeDefault("column") end,
                 },
             }
         }
