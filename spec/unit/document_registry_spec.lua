@@ -16,10 +16,10 @@ describe("document registry module", function()
 
     it("should return all supported rendering engines", function()
         local providers = DocumentRegistry:getProviders("bla.epub")
-        assert.is_equal("Cool Reader Engine",
-                        providers[1].provider.provider_name)
-        assert.is_equal("MuPDF",
-                        providers[2].provider.provider_name)
+        assert.is_equal("crengine",
+                        providers[1].provider.provider)
+        assert.is_equal("mupdf",
+                        providers[2].provider.provider)
     end)
 
     it("should set per-document setting for rendering engine", function()

@@ -149,7 +149,7 @@ function FileManager:init()
         has_close_button = true,
         perpage = G_reader_settings:readSetting("items_per_page"),
         file_filter = function(filename)
-            if DocumentRegistry:getProvider(filename) then
+            if DocumentRegistry:hasProvider(filename) then
                 return true
             end
         end,
@@ -631,7 +631,7 @@ function FileManager:deleteFile(file)
         return
     end
 
-    local is_doc = DocumentRegistry:getProvider(file_abs_path)
+    local is_doc = DocumentRegistry:hasProvider(file_abs_path)
     if lfs.attributes(file_abs_path, "mode") == "file" then
         ok, err = os.remove(file_abs_path)
     else
