@@ -13,6 +13,7 @@ local T = require("ffi/util").template
 local DocumentRegistry = {
     registry = {},
     providers = {},
+    filetype_provider = {},
 }
 
 function DocumentRegistry:addProvider(extension, mimetype, provider, weight)
@@ -22,6 +23,19 @@ function DocumentRegistry:addProvider(extension, mimetype, provider, weight)
         provider = provider,
         weight = weight or 100,
     })
+    self.filetype_provider[extension] = true
+end
+
+--- Returns true if file has provider.
+-- @string file
+-- @treturn boolean
+function DocumentRegistry:hasProvider(file)
+    local filename_suffix = util.getFileNameSuffix(file)
+
+    if self.filetype_provider[filename_suffix] then
+        return true
+    end
+    return false
 end
 
 --- Returns the preferred registered document handler.
@@ -32,12 +46,14 @@ function DocumentRegistry:getProvider(file)
 
     if providers then
         -- provider for document
-        local doc_settings_provider = require("docsettings"):open(file):readSetting("provider")
-
-        if doc_settings_provider then
-            for _, provider in ipairs(providers) do
-                if provider.provider.provider == doc_settings_provider then
-                    return provider.provider
+        local DocSettings = require("docsettings")
+        if DocSettings:hasSidecarFile(file) then
+            local doc_settings_provider = DocSettings:open(file):readSetting("provider")
+            if doc_settings_provider then
+                for _, provider in ipairs(providers) do
+                    if provider.provider.provider == doc_settings_provider then
+                        return provider.provider
+                    end
                 end
             end
         end

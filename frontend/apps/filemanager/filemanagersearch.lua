@@ -346,7 +346,7 @@ function Search:find(option)
                             self.browse_tags[string.sub(j,2)] = (self.browse_tags[string.sub(j,2)] or 0) + 1
                         end
                     end
-                    if DocumentRegistry:getProvider(self.data[i][self.path]) then
+                    if DocumentRegistry:hasProvider(self.data[i][self.path]) then
                         if upsearch ~= "" then
                             if string.find(search_content,upsearch,nil,true) then
                                 i = i + 1

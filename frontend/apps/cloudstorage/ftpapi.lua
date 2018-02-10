@@ -38,7 +38,7 @@ function FtpApi:listFolder(address_path,folder_path)
                     type = type,
                 })
             --show only file with supported formats
-            elseif extension  and DocumentRegistry:getProvider(item) then
+            elseif extension  and DocumentRegistry:hasProvider(item) then
                 type = "file"
                 table.insert(ftp_file, {
                     text = file_name,
