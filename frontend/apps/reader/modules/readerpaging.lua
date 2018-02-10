@@ -760,7 +760,6 @@ function ReaderPaging:onGotoPageRel(diff)
         -- negative x panning if writing direction is right to left
         local direction = self.ui.document.configurable.writing_direction
         x_pan_off = self.visible_area.w * diff * (direction == 1 and -1 or 1)
-
     elseif self.zoom_mode:find("column") then
         -- zoom mode for two-column navigation
 
