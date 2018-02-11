@@ -151,7 +151,7 @@ function RadioButton:check(callback)
     self.checked = true
     self:update()
     UIManager:setDirty(self.parent, function()
-        return "partial", self.dimen
+        return "ui", self.dimen
     end)
 end
 
@@ -160,7 +160,7 @@ function RadioButton:unCheck()
     self.checked = false
     self:update()
     UIManager:setDirty(self.parent, function()
-        return "partial", self.dimen
+        return "ui", self.dimen
     end)
 end
 
