@@ -153,7 +153,7 @@ function Send2Ebook:process()
               local remote_file_path = ftpFile["url"]
               logger.dbg("remote_file_path", remote_file_path)
               local local_file_path = download_dir_path .. ftpFile["text"]
-              count = count + self:downloadFileAndRemove(connection_url, remote_file_path, local_file_path)
+              count = count + Send2Ebook:downloadFileAndRemove(connection_url, remote_file_path, local_file_path)
               end
           info = InfoMessage:new{ text = T(_("Processing finished. Success: %1"), count -1) }
           end
