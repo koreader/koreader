@@ -1,7 +1,6 @@
 local DataStorage = require("datastorage")
 local ReadHistory = require("readhistory")
 local FFIUtil = require("ffi/util")
-local Ftp = require("apps/cloudstorage/ftp")
 local FtpApi = require("apps/cloudstorage/ftpapi")
 local FtpConnectionConfig = require("ftpconnectionconfigfile")
 local InfoMessage = require("ui/widget/infomessage")
@@ -23,7 +22,7 @@ local ftp_connection_config_file = "ftpconnectionconfig.lua"
 local send_to_koreader_config_file = "send_to_koreader_settings.lua"
 local config_key_custom_dl_dir = "custom_dl_dir";
 local default_download_dir_name = "Send2Ebook"
-local download_dir_path, feed_config_path
+local download_dir_path
 
 local function stringEnds(String,End)
    return End=='' or string.sub(String,-string.len(End))==End
@@ -191,9 +190,6 @@ function Send2Ebook:setCustomDownloadDirectory()
            local send_to_koreader_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), send_to_koreader_config_file))
            send_to_koreader_settings:saveSetting(config_key_custom_dl_dir, ("%s/"):format(path))
            send_to_koreader_settings:flush()
-
-           logger.dbg("Send2Ebook: Coping to new download folder previous ftp_connection_config_file from: ", feed_config_path)
-           FFIUtil.copyFile(feed_config_path, ("%s/%s"):format(path, ftp_connection_config_file))
 
            initialized = false
            self:lazyInitialization()

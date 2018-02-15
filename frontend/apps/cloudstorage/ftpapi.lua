@@ -16,8 +16,8 @@ function FtpApi:generateUrl(address, user, pass)
         colon_sign = ":"
     end
     local replace = "://" .. user .. colon_sign .. pass .. at_sign
-    local url = string.gsub(address, "://", replace)
-    return url
+    local generated_url = string.gsub(address, "://", replace)
+    return generated_url
 end
 
 function FtpApi:nlst(u)
