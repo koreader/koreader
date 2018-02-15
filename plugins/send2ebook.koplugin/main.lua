@@ -3,6 +3,7 @@ local ReadHistory = require("readhistory")
 local FFIUtil = require("ffi/util")
 local Ftp = require("apps/cloudstorage/ftp")
 local FtpApi = require("apps/cloudstorage/ftpapi")
+local FtpConnectionConfig = require("ftpconnectionconfigfile")
 local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("frontend/luasettings")
 local UIManager = require("ui/uimanager")
@@ -14,21 +15,21 @@ local util = require("util")
 local _ = require("gettext")
 local T = FFIUtil.template
 
-local SendToKoreader = WidgetContainer:new{}
+local Send2Ebook = WidgetContainer:new{}
 
 local initialized = false
 local wifi_enabled_before_action = true
-local feed_config_file = "feed_config.lua"
+local ftp_connection_config_file = "ftpconnectionconfig.lua"
 local send_to_koreader_config_file = "send_to_koreader_settings.lua"
 local config_key_custom_dl_dir = "custom_dl_dir";
-local default_download_dir_name = "sendToKoreader"
+local default_download_dir_name = "Send2Ebook"
 local download_dir_path, feed_config_path
 
 local function stringEnds(String,End)
    return End=='' or string.sub(String,-string.len(End))==End
 end
 
-function SendToKoreader:downloadFileAndRemove(connectionUrl, remotePath, localDownloadPath)
+function Send2Ebook:downloadFileAndRemove(connectionUrl, remotePath, localDownloadPath)
     local url = connectionUrl .. remotePath
     local response = FtpApi:downloadFile(url)
 
@@ -47,20 +48,20 @@ end
 
 
 -- TODO: implement as NetworkMgr:afterWifiAction with configuration options
-function SendToKoreader:afterWifiAction()
+function Send2Ebook:afterWifiAction()
     if not wifi_enabled_before_action then
         NetworkMgr:promptWifiOff()
     end
 end
 
-function SendToKoreader:init()
+function Send2Ebook:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
-function SendToKoreader:addToMainMenu(menu_items)
+function Send2Ebook:addToMainMenu(menu_items)
     self:lazyInitialization()
     menu_items.send_to_koreader = {
-        text = _("Send to Koreader (Receiver)"),
+        text = _("Send2Ebook (Receiver)"),
         sub_item_table = {
             {
                 text = _("Download and remove from server"),
@@ -96,7 +97,7 @@ function SendToKoreader:addToMainMenu(menu_items)
                 text = _("Help"),
                 callback = function()
                     UIManager:show(InfoMessage:new{
-                        text = T(_("Downloads article using plugin SendToKoreader. To local folder:"),
+                        text = T(_('Send2Ebook lets you send artiles found on PC/Android phone to your Ebook reader (using ftp server). Please manually edit "ftpconnectionconfig.lua". Downloads to local folder:'),
                                  download_dir_path)
                     })
                 end,
@@ -105,9 +106,9 @@ function SendToKoreader:addToMainMenu(menu_items)
     }
 end
 
-function SendToKoreader:lazyInitialization()
+function Send2Ebook:lazyInitialization()
    if not initialized then
-        logger.dbg("SendToKoreader: obtaining download folder")
+        logger.dbg("Send2Ebook: obtaining download folder")
         local send_to_koreader_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), send_to_koreader_config_file))
         if send_to_koreader_settings:has(config_key_custom_dl_dir) then
             download_dir_path = send_to_koreader_settings:readSetting(config_key_custom_dl_dir)
@@ -116,31 +117,26 @@ function SendToKoreader:lazyInitialization()
         end
 
         if not lfs.attributes(download_dir_path, "mode") then
-            logger.dbg("SendToKoreader: Creating initial directory")
+            logger.dbg("Send2Ebook: Creating initial directory")
             lfs.mkdir(download_dir_path)
         end
     end
 end
 
-function SendToKoreader:process()
+function Send2Ebook:process()
     local info = InfoMessage:new{ text = _("Connecting ...") }
     UIManager:show(info)
-    logger.dbg("force repaint due to upcoming blocking calls")
+    logger.dbg("Send2Ebook: force repaint due to upcoming blocking calls")
     UIManager:forceRePaint()
     UIManager:close(info)
 
-    local host = "ftp://mkwk018.cba.pl"
-    local user = "koreader"
-    local passwd = "****"
-    local folder = "/" .. user .. ".cba.pl"
-
     local count = 1
-    local connection_url = FtpApi:generateUrl(host, user, passwd)
+    local connection_url = FtpApi:generateUrl(FtpConnectionConfig.host, FtpConnectionConfig.user, FtpConnectionConfig.password)
 
-    local fileTable = FtpApi:listFolder(connection_url .. folder, folder) --args looks strange but otherwise resonse with invalid paths
+    local fileTable = FtpApi:listFolder(connection_url .. FtpConnectionConfig.folder, FtpConnectionConfig.folder) --args looks strange but otherwise resonse with invalid paths
 
     if not fileTable then
-      info = InfoMessage:new{ text = T(_("Could not get file list for server: %1, user: %2, folder: %3"), host, user, folder) }
+      info = InfoMessage:new{ text = T(_("Could not get file list for server: %1, user: %2, folder: %3"), FtpConnectionConfig.host, FtpConnectionConfig.user, FtpConnectionConfig.folder) }
     else
       local total_entries = table.getn(fileTable)
       logger.dbg("total_entries ", total_entries)
@@ -163,13 +159,13 @@ function SendToKoreader:process()
           end
     end
     UIManager:show(info)
-    SendToKoreader:afterWifiAction()
+    Send2Ebook:afterWifiAction()
 end
 
-function SendToKoreader:removeNewsButKeepConfig()
-    logger.dbg("SendToKoreader: Removing news from :", download_dir_path)
+function Send2Ebook:removeNewsButKeepConfig()
+    logger.dbg("Send2Ebook: Removing news from :", download_dir_path)
     for entry in lfs.dir(download_dir_path) do
-        if entry ~= "." and entry ~= ".." and entry ~= feed_config_file then
+        if entry ~= "." and entry ~= ".." and entry ~= ftp_connection_config_file then
             local entry_path = download_dir_path .. "/" .. entry
             local entry_mode = lfs.attributes(entry_path, "mode")
             if entry_mode == "file" then
@@ -184,20 +180,20 @@ function SendToKoreader:removeNewsButKeepConfig()
     })
 end
 
-function SendToKoreader:setCustomDownloadDirectory()
+function Send2Ebook:setCustomDownloadDirectory()
     UIManager:show(InfoMessage:new{
        text = _("To select a folder press down and hold it for 1 second.")
     })
     require("ui/downloadmgr"):new{
        title = _("Choose download directory"),
        onConfirm = function(path)
-           logger.dbg("SendToKoreader: set download directory to: ", path)
+           logger.dbg("Send2Ebook: set download directory to: ", path)
            local send_to_koreader_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), send_to_koreader_config_file))
            send_to_koreader_settings:saveSetting(config_key_custom_dl_dir, ("%s/"):format(path))
            send_to_koreader_settings:flush()
 
-           logger.dbg("SendToKoreader: Coping to new download folder previous feed_config_file from: ", feed_config_path)
-           FFIUtil.copyFile(feed_config_path, ("%s/%s"):format(path, feed_config_file))
+           logger.dbg("Send2Ebook: Coping to new download folder previous ftp_connection_config_file from: ", feed_config_path)
+           FFIUtil.copyFile(feed_config_path, ("%s/%s"):format(path, ftp_connection_config_file))
 
            initialized = false
            self:lazyInitialization()
@@ -205,14 +201,14 @@ function SendToKoreader:setCustomDownloadDirectory()
     }:chooseDir()
 end
 
-function SendToKoreader:onCloseDocument()
+function Send2Ebook:onCloseDocument()
     local document_full_path = self.ui.document.file
     if  document_full_path and download_dir_path == string.sub(document_full_path, 1, string.len(download_dir_path)) then
-        logger.dbg("SendToKoreader: document_full_path:", document_full_path)
-        logger.dbg("SendToKoreader: download_dir_path:", download_dir_path)
-        logger.dbg("SendToKoreader: removing SendToKoreader file from history.")
+        logger.dbg("Send2Ebook: document_full_path:", document_full_path)
+        logger.dbg("Send2Ebook: download_dir_path:", download_dir_path)
+        logger.dbg("Send2Ebook: removing Send2Ebook file from history.")
         ReadHistory:removeItemByPath(document_full_path)
     end
 end
 
-return SendToKoreader
+return Send2Ebook
