@@ -10,9 +10,7 @@ local _ = require("gettext")
 local T = require("ffi/util").template
 local logger = require("logger")
 
-local Ftp = {
-}
-
+local Ftp = {}
 
 function Ftp:run(address, user, pass, path)
     local url = FtpApi:generateUrl(address, user, pass) .. path

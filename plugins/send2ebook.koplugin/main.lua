@@ -25,17 +25,17 @@ local config_key_custom_dl_dir = "custom_dl_dir";
 local default_download_dir_name = "Send2Ebook"
 local download_dir_path
 
-local function stringEnds(String,End)
-   return End=='' or string.sub(String,-string.len(End))==End
+local function stringEnds(str,end)
+   return end=="" or string.sub(str,-string.len(end))==end
 end
 
-function Send2Ebook:downloadFileAndRemove(connectionUrl, remotePath, localDownloadPath)
-    local url = connectionUrl .. remotePath
+function Send2Ebook:downloadFileAndRemove(connection_url, remote_path, local_download_path)
+    local url = connection_url .. remote_path
     local response = FtpApi:downloadFile(url)
 
     if response ~= nil then
-        localDownloadPath = util.fixUtf8(localDownloadPath, "_")
-        local file = io.open(localDownloadPath, "w")
+        local_download_path = util.fixUtf8(local_download_path, "_")
+        local file = io.open(local_download_path, "w")
         file:write(response)
         file:close()
         FtpApi:delete(url)
@@ -124,7 +124,7 @@ function Send2Ebook:lazyInitialization()
 end
 
 function Send2Ebook:process()
-    local info = InfoMessage:new{ text = _("Connecting ...") }
+    local info = InfoMessage:new{ text = _("Connecting …") }
     UIManager:show(info)
     logger.dbg("Send2Ebook: force repaint due to upcoming blocking calls")
     UIManager:forceRePaint()
