@@ -1,4 +1,5 @@
 local DataStorage = require("datastorage")
+local DocSettings = require("frontend/docsettings")
 local ReadHistory = require("readhistory")
 local FFIUtil = require("ffi/util")
 local FtpApi = require("apps/cloudstorage/ftpapi")
@@ -85,8 +86,8 @@ function Send2Ebook:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Remove all from download folder"),
-                callback = function() self:removeNewsButKeepConfig() end,
+                text = _("Remove read articles"),
+                callback = function() self:removeReadActicles() end,
             },
             {
                 text = _("Set custom download directory"),
@@ -161,16 +162,18 @@ function Send2Ebook:process()
     Send2Ebook:afterWifiAction()
 end
 
-function Send2Ebook:removeNewsButKeepConfig()
+function Send2Ebook:removeReadActicles()
     logger.dbg("Send2Ebook: Removing news from :", download_dir_path)
     for entry in lfs.dir(download_dir_path) do
         if entry ~= "." and entry ~= ".." and entry ~= ftp_connection_config_file then
             local entry_path = download_dir_path .. "/" .. entry
-            local entry_mode = lfs.attributes(entry_path, "mode")
-            if entry_mode == "file" then
-                ffi.C.remove(entry_path)
-            elseif entry_mode == "directory" then
-                FFIUtil.purgeDir(entry_path)
+            if DocSettings:hasSidecarFile(entry_path) then
+               local entry_mode = lfs.attributes(entry_path, "mode")
+               if entry_mode == "file" then
+                   ffi.C.remove(entry_path)
+               elseif entry_mode == "directory" then
+                   FFIUtil.purgeDir(entry_path)
+               end
             end
         end
     end
