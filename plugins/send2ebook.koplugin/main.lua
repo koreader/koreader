@@ -25,8 +25,8 @@ local config_key_custom_dl_dir = "custom_dl_dir";
 local default_download_dir_name = "Send2Ebook"
 local download_dir_path
 
-local function stringEnds(str,end)
-   return end=="" or string.sub(str,-string.len(end))==end
+local function stringEnds(str,suffix)
+   return suffix=="" or string.sub(str,-string.len(suffix))==suffix
 end
 
 function Send2Ebook:downloadFileAndRemove(connection_url, remote_path, local_download_path)
@@ -97,7 +97,7 @@ function Send2Ebook:addToMainMenu(menu_items)
                 text = _("Help"),
                 callback = function()
                     UIManager:show(InfoMessage:new{
-                        text = T(_('Send2Ebook lets you send artiles found on PC/Android phone to your Ebook reader (using ftp server). Please manually edit "ftpconnectionconfig.lua". Downloads to local folder:'),
+                        text = T(_('Send2Ebook lets you send articles found on PC/Android phone to your Ebook reader (using ftp server). More details: https://github.com/koreader/android-send2ebook\n Configuration - please manually edit: "ftpconnectionconfig.lua". Downloads to local folder:', download_dir_path),
                                  download_dir_path)
                     })
                 end,
