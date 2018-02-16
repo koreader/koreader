@@ -163,22 +163,23 @@ function Send2Ebook:process()
 end
 
 function Send2Ebook:removeReadActicles()
-    logger.dbg("Send2Ebook: Removing news from :", download_dir_path)
+    logger.dbg("Send2Ebook: Removing read articles from :", download_dir_path)
     for entry in lfs.dir(download_dir_path) do
         if entry ~= "." and entry ~= ".." and entry ~= ftp_connection_config_file then
-            local entry_path = download_dir_path .. "/" .. entry
+            local entry_path = download_dir_path .. entry
             if DocSettings:hasSidecarFile(entry_path) then
                local entry_mode = lfs.attributes(entry_path, "mode")
                if entry_mode == "file" then
                    ffi.C.remove(entry_path)
-               elseif entry_mode == "directory" then
-                   FFIUtil.purgeDir(entry_path)
+                   local sdr_dir = DocSettings:getSidecarDir(entry_path)
+                   logger.dbg("Send2Ebook: sdr dir to be removed:", sdr_dir)
+                   FFIUtil.purgeDir(sdr_dir)
                end
             end
         end
     end
     UIManager:show(InfoMessage:new{
-       text = _("All news removed.")
+       text = _("All read articles removed.")
     })
 end
 
