@@ -54,6 +54,8 @@ function Ftp:config(item, callback)
     local text_username = ""
     local hint_password = _("FTP password")
     local text_password = ""
+    local hint_folder = _("FTP folder")
+    local text_folder = "/"
     local title
     local text_button_right = _("Add")
     if item then
@@ -63,6 +65,7 @@ function Ftp:config(item, callback)
         text_address = item.address
         text_username = item.username
         text_password = item.password
+        text_folder = item.folder
     else
         title = _("Add FTP account")
     end
@@ -88,6 +91,11 @@ function Ftp:config(item, callback)
                 text = text_password,
                 input_type = "string",
                 hint = hint_password,
+            },
+            {
+                text = text_folder,
+                input_type = "string",
+                hint = hint_folder,
             },
         },
         buttons = {

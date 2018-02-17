@@ -2,14 +2,13 @@ local DataStorage = require("datastorage")
 local DocSettings = require("frontend/docsettings")
 local ReadHistory = require("readhistory")
 local FFIUtil = require("ffi/util")
+local Ftp = require("apps/cloudstorage/ftp")
 local FtpApi = require("apps/cloudstorage/ftpapi")
-local FtpConnectionConfig = require("ftpconnectionconfigfile")
 local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("frontend/luasettings")
 local UIManager = require("ui/uimanager")
 local NetworkMgr = require("ui/network/manager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local ffi = require("ffi")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
@@ -19,11 +18,11 @@ local Send2Ebook = WidgetContainer:new{}
 
 local initialized = false
 local wifi_enabled_before_action = true
-local ftp_connection_config_file = "ftpconnectionconfig.lua"
 local send_to_koreader_config_file = "send_to_koreader_settings.lua"
 local config_key_custom_dl_dir = "custom_dl_dir";
 local default_download_dir_name = "Send2Ebook"
 local download_dir_path
+local send_to_koreader_settings
 
 local function stringEnds(str,suffix)
    return suffix=="" or string.sub(str,-string.len(suffix))==suffix
@@ -45,7 +44,6 @@ function Send2Ebook:downloadFileAndRemove(connection_url, remote_path, local_dow
         return 0
     end
 end
-
 
 -- TODO: implement as NetworkMgr:afterWifiAction with configuration options
 function Send2Ebook:afterWifiAction()
@@ -94,6 +92,10 @@ function Send2Ebook:addToMainMenu(menu_items)
                 callback = function() self:setCustomDownloadDirectory() end,
             },
             {
+                text = _("Settings"),
+                callback = function() self:editFtpConnection() end,
+            },
+            {
                 text = _("Help"),
                 callback = function()
                     UIManager:show(InfoMessage:new{
@@ -109,7 +111,7 @@ end
 function Send2Ebook:lazyInitialization()
    if not initialized then
         logger.dbg("Send2Ebook: obtaining download folder")
-        local send_to_koreader_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), send_to_koreader_config_file))
+        send_to_koreader_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), send_to_koreader_config_file))
         if send_to_koreader_settings:has(config_key_custom_dl_dir) then
             download_dir_path = send_to_koreader_settings:readSetting(config_key_custom_dl_dir)
         else
@@ -131,12 +133,14 @@ function Send2Ebook:process()
     UIManager:close(info)
 
     local count = 1
-    local connection_url = FtpApi:generateUrl(FtpConnectionConfig.host, FtpConnectionConfig.user, FtpConnectionConfig.password)
+    local ftp_config = send_to_koreader_settings:readSetting("ftp_config")
 
-    local fileTable = FtpApi:listFolder(connection_url .. FtpConnectionConfig.folder, FtpConnectionConfig.folder) --args looks strange but otherwise resonse with invalid paths
+    local connection_url = FtpApi:generateUrl(ftp_config.address, ftp_config.username, ftp_config.password)
+
+    local fileTable = FtpApi:listFolder(connection_url .. ftp_config.folder, ftp_config.folder) --args looks strange but otherwise resonse with invalid paths
 
     if not fileTable then
-      info = InfoMessage:new{ text = T(_("Could not get file list for server: %1, user: %2, folder: %3"), FtpConnectionConfig.host, FtpConnectionConfig.user, FtpConnectionConfig.folder) }
+      info = InfoMessage:new{ text = T(_("Could not get file list for server: %1, user: %2, folder: %3"), ftp_config.address, ftp_config.username, ftp_config.folder) }
     else
       local total_entries = table.getn(fileTable)
       logger.dbg("total_entries ", total_entries)
@@ -165,7 +169,7 @@ end
 function Send2Ebook:removeReadActicles()
     logger.dbg("Send2Ebook: Removing read articles from :", download_dir_path)
     for entry in lfs.dir(download_dir_path) do
-        if entry ~= "." and entry ~= ".." and entry ~= ftp_connection_config_file then
+        if entry ~= "." and entry ~= ".." then
             local entry_path = download_dir_path .. entry
             if DocSettings:hasSidecarFile(entry_path) then
                local entry_mode = lfs.attributes(entry_path, "mode")
@@ -191,7 +195,6 @@ function Send2Ebook:setCustomDownloadDirectory()
        title = _("Choose download directory"),
        onConfirm = function(path)
            logger.dbg("Send2Ebook: set download directory to: ", path)
-           local send_to_koreader_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), send_to_koreader_config_file))
            send_to_koreader_settings:saveSetting(config_key_custom_dl_dir, ("%s/"):format(path))
            send_to_koreader_settings:flush()
 
@@ -199,6 +202,18 @@ function Send2Ebook:setCustomDownloadDirectory()
            self:lazyInitialization()
        end,
     }:chooseDir()
+end
+
+function Send2Ebook:editFtpConnection()
+    local item = send_to_koreader_settings:readSetting("ftp_config") or {text="name doesn't matter;)", address="ftp://", username="",password="" , folder="/"}
+    local callbackEdit = function(updated_config, fields)
+        local data = {text=fields[1], address=fields[2], username=fields[3],password=fields[4] , folder=fields[5]}
+        send_to_koreader_settings:saveSetting("ftp_config", data)
+        send_to_koreader_settings:flush()
+        initialized = false
+        self:lazyInitialization()
+    end
+    Ftp:config(item, callbackEdit)
 end
 
 function Send2Ebook:onCloseDocument()
