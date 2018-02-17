@@ -319,7 +319,7 @@ function CloudStorage:editCloudServer(item)
                     server.address = fields[2]
                     server.username = fields[3]
                     server.password = fields[4]
-                    server.folder = fields[5],
+                    server.folder = fields[5]
                     cs_servers[i] = server
                     break
                 end
