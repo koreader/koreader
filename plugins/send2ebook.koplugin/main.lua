@@ -99,8 +99,7 @@ function Send2Ebook:addToMainMenu(menu_items)
                 text = _("Help"),
                 callback = function()
                     UIManager:show(InfoMessage:new{
-                        text = T(_('Send2Ebook lets you send articles found on PC/Android phone to your Ebook reader (using ftp server). More details: https://github.com/mwoz123/send2ebook\n Configuration - please manually edit: "ftpconnectionconfig.lua". Downloads to local folder:', download_dir_path),
-                                 download_dir_path)
+                        text = T(_('Send2Ebook lets you send articles found on PC/Android phone to your Ebook reader (using ftp server).\n\nMore details: https://github.com/mwoz123/send2ebook\n\nDownloads to local folder: %1'), download_dir_path)
                     })
                 end,
             },
