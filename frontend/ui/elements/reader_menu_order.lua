@@ -58,7 +58,7 @@ local order = {
         "progress_sync",
         "zsync",
         "news_downloader",
-        "send_to_koreader",
+        "send2ebook",
         "----------------------------",
         "more_plugins",
     },

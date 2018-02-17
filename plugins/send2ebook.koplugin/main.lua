@@ -60,7 +60,7 @@ end
 
 function Send2Ebook:addToMainMenu(menu_items)
     self:lazyInitialization()
-    menu_items.send_to_koreader = {
+    menu_items.send2ebook = {
         text = _("Send2Ebook (Receiver)"),
         sub_item_table = {
             {
@@ -97,7 +97,7 @@ function Send2Ebook:addToMainMenu(menu_items)
                 text = _("Help"),
                 callback = function()
                     UIManager:show(InfoMessage:new{
-                        text = T(_('Send2Ebook lets you send articles found on PC/Android phone to your Ebook reader (using ftp server). More details: https://github.com/koreader/android-send2ebook\n Configuration - please manually edit: "ftpconnectionconfig.lua". Downloads to local folder:', download_dir_path),
+                        text = T(_('Send2Ebook lets you send articles found on PC/Android phone to your Ebook reader (using ftp server). More details: https://github.com/mwoz123/send2ebook\n Configuration - please manually edit: "ftpconnectionconfig.lua". Downloads to local folder:', download_dir_path),
                                  download_dir_path)
                     })
                 end,
@@ -170,7 +170,7 @@ function Send2Ebook:removeReadActicles()
             if DocSettings:hasSidecarFile(entry_path) then
                local entry_mode = lfs.attributes(entry_path, "mode")
                if entry_mode == "file" then
-                   ffi.C.remove(entry_path)
+                   os.remove(entry_path)
                    local sdr_dir = DocSettings:getSidecarDir(entry_path)
                    logger.dbg("Send2Ebook: sdr dir to be removed:", sdr_dir)
                    FFIUtil.purgeDir(sdr_dir)
