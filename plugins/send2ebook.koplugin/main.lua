@@ -18,11 +18,12 @@ local Send2Ebook = WidgetContainer:new{}
 
 local initialized = false
 local wifi_enabled_before_action = true
-local send_to_koreader_config_file = "send_to_koreader_settings.lua"
+local send2ebook_config_file = "send2ebook_settings.lua"
 local config_key_custom_dl_dir = "custom_dl_dir";
-local default_download_dir_name = "Send2Ebook"
+local default_download_dir_name = "send2Ebook"
+local supported_ftp_file_type = ".epub"
 local download_dir_path
-local send_to_koreader_settings
+local send2ebook_settings
 
 local function stringEnds(str,suffix)
    return suffix=="" or string.sub(str,-string.len(suffix))==suffix
@@ -110,9 +111,9 @@ end
 function Send2Ebook:lazyInitialization()
    if not initialized then
         logger.dbg("Send2Ebook: obtaining download folder")
-        send_to_koreader_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), send_to_koreader_config_file))
-        if send_to_koreader_settings:has(config_key_custom_dl_dir) then
-            download_dir_path = send_to_koreader_settings:readSetting(config_key_custom_dl_dir)
+        send2ebook_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), send2ebook_config_file))
+        if send2ebook_settings:has(config_key_custom_dl_dir) then
+            download_dir_path = send2ebook_settings:readSetting(config_key_custom_dl_dir)
         else
             download_dir_path = ("%s/%s/"):format(DataStorage:getFullDataDir(), default_download_dir_name)
         end
@@ -132,7 +133,7 @@ function Send2Ebook:process()
     UIManager:close(info)
 
     local count = 1
-    local ftp_config = send_to_koreader_settings:readSetting("ftp_config")
+    local ftp_config = send2ebook_settings:readSetting("ftp_config")
 
     local connection_url = FtpApi:generateUrl(ftp_config.address, ftp_config.username, ftp_config.password)
 
@@ -146,7 +147,7 @@ function Send2Ebook:process()
       if total_entries > 1 then total_entries = total_entries -2 end --remove result "../" (upper folder) and "./" (current folder)
       for idx, ftpFile in ipairs(fileTable) do
           logger.dbg("ftpFile ", ftpFile)
-          if ftpFile["type"] == "file" and stringEnds(ftpFile["text"], ".epub") then
+          if ftpFile["type"] == "file" and stringEnds(ftpFile["text"], supported_ftp_file_type) then
 
               info = InfoMessage:new{ text = T(_("Processing %1/%2"), count, total_entries) }
               UIManager:show(info)
@@ -194,8 +195,8 @@ function Send2Ebook:setCustomDownloadDirectory()
        title = _("Choose download directory"),
        onConfirm = function(path)
            logger.dbg("Send2Ebook: set download directory to: ", path)
-           send_to_koreader_settings:saveSetting(config_key_custom_dl_dir, ("%s/"):format(path))
-           send_to_koreader_settings:flush()
+           send2ebook_settings:saveSetting(config_key_custom_dl_dir, ("%s/"):format(path))
+           send2ebook_settings:flush()
 
            initialized = false
            self:lazyInitialization()
@@ -204,11 +205,11 @@ function Send2Ebook:setCustomDownloadDirectory()
 end
 
 function Send2Ebook:editFtpConnection()
-    local item = send_to_koreader_settings:readSetting("ftp_config") or {text="name doesn't matter;)", address="ftp://", username="",password="" , folder="/"}
+    local item = send2ebook_settings:readSetting("ftp_config") or {text="name doesn't matter;)", address="ftp://", username="",password="" , folder="/"}
     local callbackEdit = function(updated_config, fields)
         local data = {text=fields[1], address=fields[2], username=fields[3],password=fields[4] , folder=fields[5]}
-        send_to_koreader_settings:saveSetting("ftp_config", data)
-        send_to_koreader_settings:flush()
+        send2ebook_settings:saveSetting("ftp_config", data)
+        send2ebook_settings:flush()
         initialized = false
         self:lazyInitialization()
     end
