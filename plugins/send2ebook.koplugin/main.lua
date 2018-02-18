@@ -85,7 +85,7 @@ function Send2Ebook:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Remove read articles"),
+                text = _("Remove read (opened) articles"),
                 callback = function() self:removeReadActicles() end,
             },
             {
