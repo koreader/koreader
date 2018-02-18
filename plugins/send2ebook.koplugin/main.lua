@@ -86,15 +86,15 @@ function Send2Ebook:addToMainMenu(menu_items)
             },
             {
                 text = _("Remove read (opened) articles"),
-                callback = function() self:removeReadActicles() end,
+                callback = self.removeReadActicles,
             },
             {
                 text = _("Set custom download directory"),
-                callback = function() self:setCustomDownloadDirectory() end,
+                callback =  self.setCustomDownloadDirectory,
             },
             {
                 text = _("Settings"),
-                callback = function() self:editFtpConnection() end,
+                callback = self.editFtpConnection,
             },
             {
                 text = _("Help"),
@@ -205,7 +205,7 @@ function Send2Ebook:setCustomDownloadDirectory()
 end
 
 function Send2Ebook:editFtpConnection()
-    local item = send2ebook_settings:readSetting("ftp_config") or {text="name doesn't matter;)", address="ftp://", username="",password="" , folder="/"}
+    local item = send2ebook_settings:readSetting("ftp_config") or {text="ignore this field, it's not used here;) fill rest", address="ftp://", username="",password="" , folder="/"}
     local callbackEdit = function(updated_config, fields)
         local data = {text=fields[1], address=fields[2], username=fields[3],password=fields[4] , folder=fields[5]}
         send2ebook_settings:saveSetting("ftp_config", data)
