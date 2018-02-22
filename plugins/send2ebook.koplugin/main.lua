@@ -41,7 +41,7 @@ function Send2Ebook:downloadFileAndRemove(connection_url, remote_path, local_dow
         FtpApi:delete(url)
         return 1
     else
-        logger.err("Error. Invalid connection data? ")
+        logger.err("Send2Ebook: Error. Invalid connection data? ")
         return 0
     end
 end
@@ -133,30 +133,30 @@ function Send2Ebook:process()
     UIManager:close(info)
 
     local count = 1
-    local ftp_config = send2ebook_settings:readSetting("ftp_config") or {address='ftp://Please_setup_ftp_settings_first;)', username="", password="", folder=""}
+    local ftp_config = send2ebook_settings:readSetting("ftp_config") or {address="Please setup ftp in settings", username="", password="", folder=""}
 
     local connection_url = FtpApi:generateUrl(ftp_config.address, ftp_config.username, ftp_config.password)
 
-    local fileTable = FtpApi:listFolder(connection_url .. ftp_config.folder, ftp_config.folder) --args looks strange but otherwise resonse with invalid paths
+    local ftp_files_table = FtpApi:listFolder(connection_url .. ftp_config.folder, ftp_config.folder) --args looks strange but otherwise resonse with invalid paths
 
-    if not fileTable then
+    if not ftp_files_table then
       info = InfoMessage:new{ text = T(_("Could not get file list for server: %1, user: %2, folder: %3"), ftp_config.address, ftp_config.username, ftp_config.folder) }
     else
-      local total_entries = table.getn(fileTable)
-      logger.dbg("total_entries ", total_entries)
+      local total_entries = table.getn(ftp_files_table)
+      logger.dbg("Send2Ebook: total_entries ", total_entries)
       if total_entries > 1 then total_entries = total_entries -2 end --remove result "../" (upper folder) and "./" (current folder)
-      for idx, ftpFile in ipairs(fileTable) do
-          logger.dbg("ftpFile ", ftpFile)
-          if ftpFile["type"] == "file" and stringEnds(ftpFile["text"], supported_ftp_file_type) then
+      for idx, ftp_file in ipairs(ftp_files_table) do
+          logger.dbg("Send2Ebook: processing ftp_file:", ftp_file)
+          if ftp_file["type"] == "file" and stringEnds(ftp_file["text"], supported_ftp_file_type) then
 
               info = InfoMessage:new{ text = T(_("Processing %1/%2"), count, total_entries) }
               UIManager:show(info)
               UIManager:forceRePaint()
               UIManager:close(info)
 
-              local remote_file_path = ftpFile["url"]
-              logger.dbg("remote_file_path", remote_file_path)
-              local local_file_path = download_dir_path .. ftpFile["text"]
+              local remote_file_path = ftp_file["url"]
+              logger.dbg("Send2Ebook: remote_file_path", remote_file_path)
+              local local_file_path = download_dir_path .. ftp_file["text"]
               count = count + Send2Ebook:downloadFileAndRemove(connection_url, remote_file_path, local_file_path)
               end
           info = InfoMessage:new{ text = T(_("Processing finished. Success: %1"), count -1) }
@@ -211,7 +211,7 @@ function Send2Ebook:editFtpConnection()
         send2ebook_settings:saveSetting("ftp_config", data)
         send2ebook_settings:flush()
         initialized = false
-        self:lazyInitialization()
+        Send2Ebook:lazyInitialization()
     end
     Ftp:config(item, callbackEdit)
 end
