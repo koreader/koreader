@@ -20,7 +20,7 @@ local initialized = false
 local wifi_enabled_before_action = true
 local send2ebook_config_file = "send2ebook_settings.lua"
 local config_key_custom_dl_dir = "custom_dl_dir";
-local default_download_dir_name = "send2Ebook"
+local default_download_dir_name = "send2ebook"
 local supported_ftp_file_type = ".epub"
 local download_dir_path
 local send2ebook_settings
