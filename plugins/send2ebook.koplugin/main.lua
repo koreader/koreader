@@ -133,7 +133,7 @@ function Send2Ebook:process()
     UIManager:close(info)
 
     local count = 1
-    local ftp_config = send2ebook_settings:readSetting("ftp_config")
+    local ftp_config = send2ebook_settings:readSetting("ftp_config") or {address='ftp://Please_setup_ftp_settings_first;)', username="", password="", folder=""}
 
     local connection_url = FtpApi:generateUrl(ftp_config.address, ftp_config.username, ftp_config.password)
 
