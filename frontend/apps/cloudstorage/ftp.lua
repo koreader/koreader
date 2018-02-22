@@ -5,10 +5,10 @@ local MultiInputDialog = require("ui/widget/multiinputdialog")
 local ReaderUI = require("apps/reader/readerui")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
+local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
-local logger = require("logger")
 
 local Ftp = {}
 
