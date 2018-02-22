@@ -3,17 +3,23 @@
     Only PowerOptions:FrontLightLevel is currently supported .
 ]]
 
+local dbg = require("dbg")
+
 local NickelConf = {}
 NickelConf.frontLightLevel = {}
 NickelConf.frontLightState = {}
+NickelConf.colorSetting = {}
 
 local kobo_conf_path = '/mnt/onboard/.kobo/Kobo/Kobo eReader.conf'
 local front_light_level_str = "FrontLightLevel"
 local front_light_state_str = "FrontLightState"
+local color_setting_str = "ColorSetting"
 -- Nickel will set FrontLightLevel to 0 - 100
 local re_FrontLightLevel = "^" .. front_light_level_str .. "%s*=%s*([0-9]+)%s*$"
 -- Nickel will set FrontLightState to true (light on) or false (light off)
 local re_FrontLightState = "^" .. front_light_state_str .. "%s*=%s*(.+)%s*$"
+-- Nickel will set ColorSetting to 1500 - 6400
+local re_ColorSetting = "^" .. color_setting_str .. "%s*=%s*([0-9]+)%s*$"
 local re_PowerOptionsSection = "^%[PowerOptions%]%s*"
 local re_AnySection = "^%[.*%]%s*"
 
@@ -67,6 +73,14 @@ function NickelConf.frontLightState.get()
     -- for devices that do not have toggle button, the entry will be missing
     -- and we return nil in this case.
     return new_state
+end
+
+function NickelConf.colorSetting.get()
+    local new_colorsetting = NickelConf._read_kobo_conf(re_ColorSetting)
+    if new_colorsetting then
+        return tonumber(new_colorsetting)
+    end
+    return nil
 end
 
 function NickelConf._write_kobo_conf(re_Match, key, value, dont_create)
@@ -142,5 +156,17 @@ function NickelConf.frontLightState.set(new_state)
                                        -- do not create this entry is missing
                                        true)
 end
+
+function NickelConf.colorSetting.set(new_color)
+    return NickelConf._write_kobo_conf(re_ColorSetting,
+                                       color_setting_str,
+                                       new_color)
+end
+
+dbg:guard(NickelConf.colorSetting, 'set',
+          function(self, new_color)
+              assert(new_color >= 1500 and new_color <= 6400,
+                     "Wrong colorSetting value given!")
+          end)
 
 return NickelConf

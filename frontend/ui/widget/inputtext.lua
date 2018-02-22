@@ -48,7 +48,13 @@ if Device.isTouchDevice() then
                     ges = "tap",
                     range = self.dimen
                 }
-            }
+            },
+            HoldTextBox = {
+                GestureRange:new{
+                    ges = "hold",
+                    range = self.dimen
+                }
+            },
         }
     end
 
@@ -60,6 +66,23 @@ if Device.isTouchDevice() then
         local y = ges.pos.y - self._frame_textwidget.dimen.y - self.bordersize - self.padding
         if x > 0 and y > 0 then
             self.charpos = self.text_widget:moveCursor(x, y)
+            UIManager:setDirty(self.parent, function()
+                return "ui", self.dimen
+            end)
+        end
+    end
+
+    function InputText:onHoldTextBox(arg, ges)
+        if self.parent.onSwitchFocus then
+            self.parent:onSwitchFocus(self)
+        end
+        local x = ges.pos.x - self._frame_textwidget.dimen.x - self.bordersize - self.padding
+        local y = ges.pos.y - self._frame_textwidget.dimen.y - self.bordersize - self.padding
+        if x > 0 and y > 0 then
+            self.charpos = self.text_widget:moveCursor(x, y)
+            if Device:hasClipboard() and Device.input.hasClipboardText() then
+                self:addChar(Device.input.getClipboardText())
+            end
             UIManager:setDirty(self.parent, function()
                 return "ui", self.dimen
             end)
@@ -230,7 +253,7 @@ function InputText:addChar(char)
         return
     end
     table.insert(self.charlist, self.charpos, char)
-    self.charpos = self.charpos + 1
+    self.charpos = self.charpos + string.len(char)
     self:initTextBox(table.concat(self.charlist), true)
 end
 

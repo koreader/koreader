@@ -2,12 +2,14 @@
 ReaderLink is an abstraction for document-specific link interfaces.
 ]]
 
+local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LinkBox = require("ui/widget/linkbox")
+local Notification = require("ui/widget/notification")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
@@ -139,7 +141,35 @@ function ReaderLink:addToMainMenu(menu_items)
         text = _("Go back to previous location"),
         enabled_func = function() return #self.location_stack > 0 end,
         callback = function() self:onGoBackLink() end,
+        hold_callback = function() UIManager:show(ConfirmBox:new{
+            text = _("Clear location history?"),
+            ok_text = _("Clear"),
+            ok_callback = function()
+                self.location_stack = {}
+            end,
+        })
+        end,
     }
+end
+
+--- Check if a xpointer to <a> node really points to itself
+function ReaderLink:isXpointerCoherent(a_xpointer)
+    -- Get screen coordinates of xpointer
+    local doc_margins = self.ui.document._document:getPageMargins()
+    local doc_y, doc_x = self.ui.document:getPosFromXPointer(a_xpointer)
+    local top_y = self.ui.document:getCurrentPos()
+    -- (strange, but using doc_margins.top is accurate even in scroll mode)
+    local screen_y = doc_y - top_y + doc_margins["top"]
+    local screen_x = doc_x + doc_margins["left"]
+    -- Get again link and a_xpointer from this position
+    local re_link_xpointer, re_a_xpointer = self.ui.document:getLinkFromPosition({x = screen_x, y = screen_y}) -- luacheck: no unused
+    -- We should get the same a_xpointer. If not, crengine has messed up
+    -- and we should not trust this xpointer to get back to this link.
+    if re_a_xpointer ~= a_xpointer then
+        logger.info("not coherent a_xpointer:", a_xpointer)
+        return false
+    end
+    return true
 end
 
 --- Gets link from gesture.
@@ -152,35 +182,56 @@ function ReaderLink:getLinkFromGes(ges)
             -- link box in native page
             local link, lbox = self.ui.document:getLinkFromPosition(pos.page, pos)
             if link and lbox then
-                return link, lbox, pos
+                return {
+                    link = link,
+                    lbox = lbox,
+                    pos = pos,
+                }
             end
         end
     else
-        local link = self.ui.document:getLinkFromPosition(ges.pos)
-        if link ~= "" then
-            return link
+        local link_xpointer, a_xpointer = self.ui.document:getLinkFromPosition(ges.pos)
+        logger.dbg("getLinkFromPosition link_xpointer:", link_xpointer)
+        logger.dbg("getLinkFromPosition a_xpointer:",  a_xpointer)
+
+        -- On some documents, crengine may sometimes give a wrong a_xpointer
+        -- (in some Wikipedia saved as EPUB, it would point to some other <A>
+        -- element in the same paragraph). If followed then back, we could get
+        -- to a different page. So, we check here how valid it is, and if not,
+        -- we just discard it so that addCurrentLocationToStack() is used.
+        if a_xpointer and not self:isXpointerCoherent(a_xpointer) then
+            a_xpointer = nil
+        end
+
+        if link_xpointer ~= "" then
+            -- This link's target xpointer is more precise than a classic
+            -- xpointer to top of a page: we can show a marker at its
+            -- y-position in target page
+            return {
+                xpointer = link_xpointer,
+                marker_xpointer = link_xpointer,
+                from_xpointer = a_xpointer,
+            }
         end
     end
 end
 
 --- Highlights a linkbox if available and goes to it.
-function ReaderLink:showLinkBox(link, lbox, pos)
-    if link and lbox then
+function ReaderLink:showLinkBox(link)
+    if link and link.lbox then -- pdfdocument
         -- screen box that holds the link
-        local sbox = self.view:pageToScreenTransform(pos.page,
-            self.ui.document:nativeToPageRectTransform(pos.page, lbox))
+        local sbox = self.view:pageToScreenTransform(link.pos.page,
+            self.ui.document:nativeToPageRectTransform(link.pos.page, link.lbox))
         if sbox then
             UIManager:show(LinkBox:new{
                 box = sbox,
                 timeout = FOLLOW_LINK_TIMEOUT,
-                callback = function() self:onGotoLink(link) end
+                callback = function() self:onGotoLink(link.link) end
             })
             return true
         end
-    else
-        if link ~= "" then
-            return self:onGotoLink(link)
-        end
+    elseif link and link.xpointer ~= "" then -- credocument
+        return self:onGotoLink(link)
     end
 end
 
@@ -193,9 +244,9 @@ end
 
 function ReaderLink:onTap(_, ges)
     if not isTapToFollowLinksOn() then return end
-    local link, lbox, pos = self:getLinkFromGes(ges)
+    local link = self:getLinkFromGes(ges)
     if link then
-        return self:showLinkBox(link, lbox, pos)
+        return self:showLinkBox(link)
     end
 end
 
@@ -204,7 +255,9 @@ function ReaderLink:addCurrentLocationToStack()
     if self.ui.document.info.has_pages then
         table.insert(self.location_stack, self.ui.paging:getBookLocation())
     else
-        table.insert(self.location_stack, self.ui.rolling:getBookLocation())
+        table.insert(self.location_stack, {
+            xpointer = self.ui.rolling:getBookLocation(),
+        })
     end
 end
 
@@ -229,24 +282,47 @@ function ReaderLink:onGotoLink(link, neglect_current_location)
         -- If the XPointer does not exist (or is a full url), we will jump to page 1
         -- Best to check that this link exists in document with the following,
         -- which accepts both of the above legitimate xpointer as input.
-        if self.ui.document:isXPointerInDocument(link) then
+        if self.ui.document:isXPointerInDocument(link.xpointer) then
             logger.dbg("Internal link:", link)
             if not neglect_current_location then
-                self:addCurrentLocationToStack()
+                if link.from_xpointer then
+                    -- We have a more precise xpointer than the xpointer to top of
+                    -- current page that addCurrentLocationToStack() would give, and
+                    -- we may be able to show a marker when back
+                    local saved_location
+                    if self.view.view_mode == "scroll" then
+                        -- In scroll mode, we still use the top of page as the
+                        -- xpointer to go back to, so we get back to the same view.
+                        -- We can still show the marker at the link position
+                        saved_location = {
+                            xpointer = self.ui.rolling:getBookLocation(),
+                            marker_xpointer = link.from_xpointer,
+                        }
+                    else
+                        -- In page mode, we use the same for go to and for marker,
+                        -- as 'page mode' ensures we get back to the same view.
+                        saved_location = {
+                            xpointer = link.from_xpointer,
+                            marker_xpointer = link.from_xpointer,
+                        }
+                    end
+                    table.insert(self.location_stack, saved_location)
+                else
+                    self:addCurrentLocationToStack()
+                end
             end
-            self.ui:handleEvent(Event:new("GotoXPointer", link))
+            self.ui:handleEvent(Event:new("GotoXPointer", link.xpointer, link.marker_xpointer))
             return true
         end
     end
     logger.dbg("External link:", link)
     -- Check if it is a wikipedia link
-    local wiki_lang, wiki_page = link:match([[https?://([^%.]+).wikipedia.org/wiki/([^/]+)]])
+    local wiki_lang, wiki_page = link.xpointer:match([[https?://([^%.]+).wikipedia.org/wiki/([^/]+)]])
     if wiki_lang and wiki_page then
         logger.dbg("Wikipedia link:", wiki_lang, wiki_page)
         -- Ask for user confirmation before launching lookup (on a
         -- wikipedia page saved as epub, full of wikipedia links, it's
         -- too easy to click on links when wanting to change page...)
-        local ConfirmBox = require("ui/widget/confirmbox")
         UIManager:show(ConfirmBox:new{
             text = T(_("Would you like to read this Wikipedia %1 article?\n\n%2\n"), wiki_lang:upper(), wiki_page:gsub("_", " ")),
             ok_callback = function()
@@ -256,11 +332,10 @@ function ReaderLink:onGotoLink(link, neglect_current_location)
             end
         })
     else
-        -- local Notification = require("ui/widget/notification")
         local InfoMessage = require("ui/widget/infomessage")
         UIManager:show(InfoMessage:new{
-            text = T(_("Invalid or external link:\n%1"), link),
-            timeout = 1.0,
+            text = T(_("Invalid or external link:\n%1"), link.xpointer),
+            -- no timeout to allow user to type that link in his web browser
         })
     end
     -- don't propagate, user will notice and tap elsewhere if he wants to change page
@@ -271,15 +346,32 @@ end
 function ReaderLink:onGoBackLink()
     local saved_location = table.remove(self.location_stack)
     if saved_location then
+        logger.dbg("GoBack: restoring:", saved_location)
         self.ui:handleEvent(Event:new('RestoreBookLocation', saved_location))
         return true
     end
 end
 
-function ReaderLink:onSwipe(_, ges)
+function ReaderLink:onSwipe(arg, ges)
     if ges.direction == "east" then
         if isSwipeToGoBackEnabled() then
-            return self:onGoBackLink()
+            if #self.location_stack > 0 then
+                -- Remember if location stack is going to be empty, so we
+                -- can stop the propagation of next swipe back: so the user
+                -- knows it is empty and that next swipe back will get him
+                -- to previous page (and not to previous location)
+                self.swipe_back_resist = #self.location_stack == 1
+                return self:onGoBackLink()
+            elseif self.swipe_back_resist then
+                self.swipe_back_resist = false
+                -- Make that gesture don't do anything, and show a Notification
+                -- so the user knows why
+                UIManager:show(Notification:new{
+                    text = _("Location history is empty"),
+                    timeout = 1.0,
+                })
+                return true
+            end
         end
     elseif ges.direction == "west" then
         local ret = false
@@ -320,7 +412,7 @@ function ReaderLink:onGoToPageLink(ges, use_page_first_link)
         --         ["x0"] = 97,
         --         ["page"] = 347
         --     },
-        local pos_x, pos_y = ges.pos.x, ges.pos.y
+        local pos_x, pos_y = pos.x, pos.y
         local shortest_dist = nil
         local first_y0 = nil
         for _, link in ipairs(links) do
@@ -367,7 +459,11 @@ function ReaderLink:onGoToPageLink(ges, use_page_first_link)
         --         ["end_y"] = 1201,
         --         ["start_x"] = 352,
         --         ["start_y"] = 1201
+        --         ["a_xpointer"] = "/body/DocFragment/body/div/p[12]/sup[3]/a[3].0",
         --     },
+        -- Note: with some documents and some links, crengine may give wrong
+        -- coordinates, and our code below may miss or give the wrong first
+        -- or nearest link...
         local pos_x, pos_y = ges.pos.x, ges.pos.y
         local shortest_dist = nil
         local first_start_y = nil
@@ -377,7 +473,7 @@ function ReaderLink:onGoToPageLink(ges, use_page_first_link)
                     -- links may not be in the order they are in the page, so let's
                     -- find the one with the smallest start_y.
                     if first_start_y == nil or link["start_y"] < first_start_y then
-                        selected_link = link["section"]
+                        selected_link = link
                         first_start_y = link["start_y"]
                     end
                 else
@@ -385,9 +481,7 @@ function ReaderLink:onGoToPageLink(ges, use_page_first_link)
                     local end_dist = math.pow(link.end_x - pos_x, 2) + math.pow(link.end_y - pos_y, 2)
                     local min_dist = math.min(start_dist, end_dist)
                     if shortest_dist == nil or min_dist < shortest_dist then
-                        -- onGotoLink()'s GotoXPointer event needs
-                        -- the "section" value
-                        selected_link = link["section"]
+                        selected_link = link
                         shortest_dist = min_dist
                     end
                 end
@@ -398,6 +492,24 @@ function ReaderLink:onGoToPageLink(ges, use_page_first_link)
         -- and we'll find them highlighted when back from link.
         -- So let's clear them now.
         self.ui.document:clearSelection()
+        -- (Comment out previous line to visually see which links on the
+        -- page are not coherent: those not highlighted)
+
+        if selected_link then
+            logger.dbg("original selected_link", selected_link)
+            -- Make it a link as expected by onGotoLink
+            selected_link = {
+                xpointer = selected_link["section"],
+                marker_xpointer = selected_link["section"],
+                from_xpointer = selected_link["a_xpointer"],
+            }
+            logger.dbg("selected_link", selected_link)
+            -- Check from_xpointer is coherent, and unset it if not
+            if selected_link.from_xpointer and not self:isXpointerCoherent(selected_link.from_xpointer) then
+                selected_link.from_xpointer = nil
+            end
+
+        end
     end
     if selected_link then
         return self:onGotoLink(selected_link)
@@ -416,9 +528,19 @@ function ReaderLink:onGoToLatestBookmark(ges)
             fake_link.page = latest_bookmark.page - 1
             return self:onGotoLink(fake_link)
         else
-            -- self:onGotoLink() needs a xpointer, that we find
-            -- as the bookmark page attribute
-            return self:onGotoLink(latest_bookmark.page)
+            -- Make it a link as expected by onGotoLink
+            local link
+            if latest_bookmark.pos0 then -- text highlighted, precise xpointer
+                link = {
+                    xpointer = latest_bookmark.pos0,
+                    marker_xpointer = latest_bookmark.pos0,
+                }
+            else -- page bookmarked, 'page' is a xpointer to top of page
+                link = {
+                    xpointer = latest_bookmark.page,
+                }
+            end
+            return self:onGotoLink(link)
         end
     end
 end

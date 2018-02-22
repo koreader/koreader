@@ -40,12 +40,12 @@ function DateWidget:init()
     self.width = self.screen_width * 0.95
     if Device:hasKeys() then
         self.key_events = {
-            Close = { {"Back"}, doc = "close date" }
+            Close = { {"Back"}, doc = "close date widget" }
         }
     end
     if Device:isTouchDevice() then
         self.ges_events = {
-            TapCloseFL = {
+            TapClose = {
                 GestureRange:new{
                     ges = "tap",
                     range = Geom:new{
@@ -173,7 +173,7 @@ function DateWidget:update()
             CenterContainer:new{
                 dimen = Geom:new{
                     w = self.screen_width * 0.95,
-                    h = self.screen_height * 0.25,
+                    h = date_group:getSize().h * 1.2,
                 },
                 date_group
             },
@@ -188,7 +188,7 @@ function DateWidget:update()
     }
     self[1] = WidgetContainer:new{
         align = "center",
-        dimen =Geom:new{
+        dimen = Geom:new{
             x = 0, y = 0,
             w = self.screen_width,
             h = self.screen_height,
@@ -223,7 +223,7 @@ function DateWidget:onAnyKeyPressed()
     return true
 end
 
-function DateWidget:onTapCloseFL(arg, ges_ev)
+function DateWidget:onTapClose(arg, ges_ev)
     if ges_ev.pos:notIntersectWith(self.date_frame.dimen) then
         self:onClose()
     end

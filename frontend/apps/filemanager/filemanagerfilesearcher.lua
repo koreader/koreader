@@ -41,7 +41,7 @@ function FileSearcher:readDir()
                 if attributes.mode == "directory" and f ~= "." and f~=".." then
                     table.insert(new_dirs, fullpath)
                     table.insert(self.files, {name = f, path = fullpath, attr = attributes})
-                elseif attributes.mode == "file" and DocumentRegistry:getProvider(fullpath) then
+                elseif attributes.mode == "file" and DocumentRegistry:hasProvider(fullpath) then
                     table.insert(self.files, {name = f, path = fullpath, attr = attributes})
                 end
             end
