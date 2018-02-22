@@ -91,5 +91,4 @@ function FtpApi:delete(file_path)
     return ftp.command(p)
 end
 
-
 return FtpApi
