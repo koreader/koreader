@@ -126,7 +126,7 @@ function Send2Ebook:lazyInitialization()
 end
 
 function Send2Ebook:process()
-    local info = InfoMessage:new{ text = _("Connecting …") }
+    local info = InfoMessage:new{ text = _("Connecting…") }
     UIManager:show(info)
     logger.dbg("Send2Ebook: force repaint due to upcoming blocking calls")
     UIManager:forceRePaint()
