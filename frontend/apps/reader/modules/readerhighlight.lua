@@ -260,6 +260,7 @@ function ReaderHighlight:onHold(arg, ges)
     -- disable hold gesture if highlighting is disabled
     if self.view.highlight.disabled then return true end
     self:clear() -- clear previous highlight (delayed clear may not have done it yet)
+    self.hold_ges_pos = ges.pos -- remember hold original gesture position
     self.hold_pos = self.view:screenToPageTransform(ges.pos)
     logger.dbg("hold position in page", self.hold_pos)
     if not self.hold_pos then
@@ -375,13 +376,10 @@ function ReaderHighlight:onHoldRelease()
             -- if we were holding for more than 3 seconds on a word, make
             -- it behave like we panned and selected more words, so we can
             -- directly access the highlight menu and avoid a dict lookup
-            self:onHoldPan(nil, {pos=self.hold_pos})
+            self:onHoldPan(nil, {pos=self.hold_ges_pos})
         end
     end
-    if self.selected_word then
-        self:lookup(self.selected_word, self.selected_link)
-        self.selected_word = nil
-    elseif self.selected_text then
+    if self.selected_text then
         logger.dbg("show highlight dialog")
         self.highlight_dialog = ButtonDialog:new{
             buttons = {
@@ -460,6 +458,9 @@ function ReaderHighlight:onHoldRelease()
             tap_close_callback = function() self:handleEvent(Event:new("Tap")) end,
         }
         UIManager:show(self.highlight_dialog)
+    elseif self.selected_word then
+        self:lookup(self.selected_word, self.selected_link)
+        self.selected_word = nil
     end
     return true
 end
