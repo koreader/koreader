@@ -69,6 +69,11 @@ case "${kmodel}" in
                     EIPS_X_RES=16
                     EIPS_Y_RES=24
                     ;;
+                "0P8" | "0S1" | "0SA")
+                    # Oasis 2
+                    SCREEN_X_RES=1264
+                    SCREEN_Y_RES=1680
+                    ;;
                 "0DT" | "0K9" | "0KA")
                     # KT3... NOTE: Hopefully matches the KT2...
                     SCREEN_X_RES=608
