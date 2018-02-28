@@ -48,7 +48,8 @@ function CreDocument:cacheInit()
         os.execute("rm -r ./cr3cache")
     end
     cre.initCache(DataStorage:getDataDir() .. "/cache/cr3cache", 1024*1024*32,
-        G_reader_settings:nilOrTrue("cre_compress_cached_data"))
+        G_reader_settings:nilOrTrue("cre_compress_cached_data"),
+        G_reader_settings:readSetting("cre_storage_size_factor"))
 end
 
 function CreDocument:engineInit()
