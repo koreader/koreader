@@ -21,13 +21,8 @@ local wifi_enabled_before_action = true
 local send2ebook_config_file = "send2ebook_settings.lua"
 local config_key_custom_dl_dir = "custom_dl_dir";
 local default_download_dir_name = "send2ebook"
-local supported_ftp_file_type = ".epub"
 local download_dir_path
 local send2ebook_settings
-
-local function stringEnds(str,suffix)
-   return suffix=="" or string.sub(str,-string.len(suffix))==suffix
-end
 
 function Send2Ebook:downloadFileAndRemove(connection_url, remote_path, local_download_path)
     local url = connection_url .. remote_path
@@ -147,7 +142,7 @@ function Send2Ebook:process()
       if total_entries > 1 then total_entries = total_entries -2 end --remove result "../" (upper folder) and "./" (current folder)
       for idx, ftp_file in ipairs(ftp_files_table) do
           logger.dbg("Send2Ebook: processing ftp_file:", ftp_file)
-          if ftp_file["type"] == "file" and stringEnds(ftp_file["text"], supported_ftp_file_type) then
+          if ftp_file["type"] == "file" then
 
               info = InfoMessage:new{ text = T(_("Processing %1/%2"), count, total_entries) }
               UIManager:show(info)
@@ -159,7 +154,7 @@ function Send2Ebook:process()
               local local_file_path = download_dir_path .. ftp_file["text"]
               count = count + Send2Ebook:downloadFileAndRemove(connection_url, remote_file_path, local_file_path)
               end
-          info = InfoMessage:new{ text = T(_("Processing finished. Success: %1"), count -1) }
+          info = InfoMessage:new{ text = T(_("Processing finished. Success: %1, failed: %2"), count -1, total_entries +1 - count) }
           end
     end
     UIManager:show(info)
