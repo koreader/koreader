@@ -1,5 +1,4 @@
 local ffi = require("ffi")
-local C = ffi.C
 
 -- Utilities functions needed by this plugin, but that may be added to
 -- existing base/ffi/ files
