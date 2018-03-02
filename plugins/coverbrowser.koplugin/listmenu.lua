@@ -305,18 +305,18 @@ function ListMenuItem:update()
             end
             -- Current page / pages are available or more accurate in .sdr/metadata.lua
             -- We use a cache (cleaned at end of this browsing session) to store
-            -- page and percent read from sidecar files, to avoid re-parsing them
-            -- when re-rendering a visited page
+            -- page, percent read and book status from sidecar files, to avoid
+            -- re-parsing them when re-rendering a visited page
             if not self.menu.cover_info_cache then
                 self.menu.cover_info_cache = {}
             end
             local pages_str = ""
-            local percent_finished
+            local percent_finished, status
             local pages = bookinfo.pages -- default to those in bookinfo db
             if DocSettings:hasSidecarFile(self.filepath) then
                 self.been_opened = true
                 if self.menu.cover_info_cache[self.filepath] then
-                    pages, percent_finished = unpack(self.menu.cover_info_cache[self.filepath])
+                    pages, percent_finished, status = unpack(self.menu.cover_info_cache[self.filepath])
                 else
                     local docinfo = DocSettings:open(self.filepath)
                     -- We can get nb of page in the new 'doc_pages' setting, or from the old 'stats.page'
@@ -327,11 +327,25 @@ function ListMenuItem:update()
                             pages = docinfo.data.stats.pages
                         end
                     end
+                    if docinfo.data.summary and docinfo.data.summary.status then
+                        status = docinfo.data.summary.status
+                    end
                     percent_finished = docinfo.data.percent_finished
-                    self.menu.cover_info_cache[self.filepath] = {pages, percent_finished}
+                    self.menu.cover_info_cache[self.filepath] = {pages, percent_finished, status}
                 end
             end
-            if percent_finished then
+            if status == "complete" or status == "abandoned" then
+                -- Display these instead of the read %
+                if pages then
+                    if status == "complete" then
+                        pages_str = T(_("Finished - %1 pages"), pages)
+                    else
+                        pages_str = T(_("On hold - %1 pages"), pages)
+                    end
+                else
+                    pages_str = status == "complete" and _("Finished") or _("On hold")
+                end
+            elseif percent_finished then
                 if pages then
                     pages_str = T(_("%1 % of %2 pages"), math.floor(100*percent_finished), pages)
                 else
