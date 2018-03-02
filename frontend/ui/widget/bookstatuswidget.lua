@@ -477,7 +477,7 @@ function BookStatusWidget:generateSwitchGroup(width)
         default_value = 2,
         args = args,
         default_arg = "reading",
-        toggle = { _("Complete"), _("Reading"), _("Abandoned") },
+        toggle = { _("Finished"), _("Reading"), _("Abandoned") },
         values = { 1, 2, 3 },
         name = "book_status",
         alternate = false,
