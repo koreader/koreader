@@ -40,10 +40,6 @@ function PdfDocument:init()
     else
         self:_readMetadata()
     end
-    -- TODO: handle this
-    -- if not (self.info.number_of_pages > 0) then
-        --error("No page found in PDF file")
-    -- end
 end
 
 function PdfDocument:preRenderPage()
