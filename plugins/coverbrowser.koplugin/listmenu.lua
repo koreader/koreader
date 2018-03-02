@@ -340,10 +340,10 @@ function ListMenuItem:update()
                     if status == "complete" then
                         pages_str = T(_("Finished - %1 pages"), pages)
                     else
-                        pages_str = T(_("Abandoned - %1 pages"), pages)
+                        pages_str = T(_("On hold - %1 pages"), pages)
                     end
                 else
-                    pages_str = status == "complete" and _("Finished") or _("Abandoned")
+                    pages_str = status == "complete" and _("Finished") or _("On hold")
                 end
             elseif percent_finished then
                 if pages then
