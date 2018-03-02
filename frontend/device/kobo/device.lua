@@ -109,6 +109,12 @@ local KoboSnow = Kobo:new{
     display_dpi = 265,
     -- the bezel covers the top 11 pixels:
     viewport = Geom:new{x=0, y=11, w=1080, h=1429},
+    hasNaturalLight = yes,
+    frontlight_settings = {
+        frontlight_white = "/sys/class/backlight/lm3630a_ledb",
+        frontlight_red = "/sys/class/backlight/lm3630a_led",
+        frontlight_green = "/sys/class/backlight/lm3630a_leda",
+    },
 }
 
 -- Kobo Aura second edition:
