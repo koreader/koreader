@@ -376,21 +376,15 @@ end.  Upon receiving an MT event, one simply updates the appropriate
 attribute of the current slot.
 --]]
 function Input:handleTouchEv(ev)
-    local function switchSlotTo(value)
-        if self.cur_slot ~= value then
-            table.insert(self.MTSlots, self:getMtSlot(value))
-        end
-        self.cur_slot = value
-    end
     if ev.type == EV_ABS then
         if #self.MTSlots == 0 then
             table.insert(self.MTSlots, self:getMtSlot(self.cur_slot))
         end
         if ev.code == ABS_MT_SLOT then
-            switchSlotTo(ev.value)
+            self:addSlotIfChanged(ev.value)
         elseif ev.code == ABS_MT_TRACKING_ID then
             if self.snow_protocol then
-                switchSlotTo(ev.value)
+                self:addSlotIfChanged(ev.value)
             end
             self:setCurrentMtSlot("id", ev.value)
         elseif ev.code == ABS_MT_POSITION_X then
@@ -488,10 +482,7 @@ function Input:handleTouchEvPhoenix(ev)
             table.insert(self.MTSlots, self:getMtSlot(self.cur_slot))
         end
         if ev.code == ABS_MT_TRACKING_ID then
-            if self.cur_slot ~= ev.value then
-                table.insert(self.MTSlots, self:getMtSlot(ev.value))
-            end
-            self.cur_slot = ev.value
+            self:addSlotIfChanged(ev.value)
             self:setCurrentMtSlot("id", ev.value)
         elseif ev.code == ABS_MT_TOUCH_MAJOR and ev.value == 0 then
             self:setCurrentMtSlot("id", -1)
@@ -571,6 +562,14 @@ end
 function Input:getCurrentMtSlot()
     return self:getMtSlot(self.cur_slot)
 end
+
+function Input:addSlotIfChanged(value)
+    if self.cur_slot ~= value then
+        table.insert(self.MTSlots, self:getMtSlot(value))
+    end
+    self.cur_slot = value
+end
+    
 
 function Input:confirmAbsxy()
     self:setCurrentMtSlot("x", self.ev_slots[self.cur_slot]["abs_x"])
