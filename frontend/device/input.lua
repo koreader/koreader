@@ -376,12 +376,6 @@ end.  Upon receiving an MT event, one simply updates the appropriate
 attribute of the current slot.
 --]]
 function Input:handleTouchEv(ev)
-    local function switchSlotTo(value)
-        if self.cur_slot ~= value then
-            table.insert(self.MTSlots, self:getMtSlot(value))
-        end
-        self.cur_slot = value
-    end
     if ev.type == EV_ABS then
         if #self.MTSlots == 0 then
             table.insert(self.MTSlots, self:getMtSlot(self.cur_slot))
@@ -575,7 +569,6 @@ function Input:addSlotIfChanged(value)
     end
     self.cur_slot = value
 end
-    
 
 function Input:confirmAbsxy()
     self:setCurrentMtSlot("x", self.ev_slots[self.cur_slot]["abs_x"])
