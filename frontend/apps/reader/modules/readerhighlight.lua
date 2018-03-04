@@ -2,6 +2,7 @@ local ButtonDialog = require("ui/widget/buttondialog")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
+local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
@@ -342,6 +343,16 @@ function ReaderHighlight:onHoldPan(_, ges)
     UIManager:setDirty(self.dialog, "ui")
 end
 
+local info_message_ocr_text = _([[
+No OCR results or no language data.
+
+KOReader has a build-in OCR engine for recognizing words in scanned PDF and DjVu documents. In order to use OCR in scanned pages, you need to install tesseract trained data for your document language.
+
+You can download language data files from https://sourceforge.net/projects/tesseract-ocr-alt/files/
+
+Copy language data files for Tesseract 3.02 (e.g. eng.* in tesseract-ocr-3.02.eng.tar.gz for English and spa.* in tesseract-ocr-3.02.spa.tar.gz for Spanish) into koreader/data/tessdata
+]])
+
 function ReaderHighlight:lookup(selected_word, selected_link)
     -- if we extracted text directly
     if selected_word.word then
@@ -351,8 +362,14 @@ function ReaderHighlight:lookup(selected_word, selected_link)
     elseif selected_word.sbox and self.hold_pos then
         local word = self.ui.document:getOCRWord(self.hold_pos.page, selected_word)
         logger.dbg("OCRed word:", word)
-        local word_box = self.view:pageToScreenTransform(self.hold_pos.page, selected_word.sbox)
-        self.ui:handleEvent(Event:new("LookupWord", word, word_box, self, selected_link))
+        if word and word ~= "" then
+            local word_box = self.view:pageToScreenTransform(self.hold_pos.page, selected_word.sbox)
+            self.ui:handleEvent(Event:new("LookupWord", word, word_box, self, selected_link))
+        else
+            UIManager:show(InfoMessage:new{
+                text = info_message_ocr_text,
+            })
+        end
     end
 end
 
@@ -363,7 +380,13 @@ function ReaderHighlight:translate(selected_text)
     else
         local text = self.ui.document:getOCRText(self.hold_pos.page, selected_text)
         logger.dbg("OCRed text:", text)
-        self.ui:handleEvent(Event:new("TranslateText", self, text))
+        if text and text ~= "" then
+            self.ui:handleEvent(Event:new("TranslateText", self, text))
+        else
+            UIManager:show(InfoMessage:new{
+                text = info_message_ocr_text,
+            })
+        end
     end
 end
 
