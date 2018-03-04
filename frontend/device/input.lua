@@ -376,7 +376,7 @@ end.  Upon receiving an MT event, one simply updates the appropriate
 attribute of the current slot.
 --]]
 function Input:handleTouchEv(ev)
-    local switch_slot_to = function (value)
+    local function switchSlotTo(value)
         if self.cur_slot ~= value then
             table.insert(self.MTSlots, self:getMtSlot(value))
         end
@@ -387,10 +387,10 @@ function Input:handleTouchEv(ev)
             table.insert(self.MTSlots, self:getMtSlot(self.cur_slot))
         end
         if ev.code == ABS_MT_SLOT then
-            switch_slot_to(ev.value)
+            switchSlotTo(ev.value)
         elseif ev.code == ABS_MT_TRACKING_ID then
             if self.snow_protocol then
-                switch_slot_to(ev.value)
+                switchSlotTo(ev.value)
             end
             self:setCurrentMtSlot("id", ev.value)
         elseif ev.code == ABS_MT_POSITION_X then
