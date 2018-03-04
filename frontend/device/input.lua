@@ -376,7 +376,7 @@ end.  Upon receiving an MT event, one simply updates the appropriate
 attribute of the current slot.
 --]]
 function Input:handleTouchEv(ev)
-    function switch_slot_to(value)
+    local switch_slot_to = function (value)
         if self.cur_slot ~= value then
             table.insert(self.MTSlots, self:getMtSlot(value))
         end
