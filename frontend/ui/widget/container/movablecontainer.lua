@@ -40,7 +40,7 @@ local MovableContainer = InputContainer:new{
     _moved_offset_y = 0,
     -- Internal state between events
     _touch_pre_pan_was_inside = false,
-    _moving = true,
+    _moving = false,
     _move_relative_x = nil,
     _move_relative_y = nil,
     -- Original painting position from outer widget
