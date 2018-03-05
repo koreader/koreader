@@ -8,7 +8,9 @@ io.stdout:write([[
  | . \ |_| |  _ <  __/ (_| | (_| |  __/ |
  |_|\_\___/|_| \_\___|\__,_|\__,_|\___|_|
 
- [*] Current time: ]], os.date("%x-%X"), "\n\n")
+ It's a scroll... It's a codex... It's KOReader!
+
+ [*] Current time: ]], os.date("%x-%X"), "\n")
 io.stdout:flush()
 
 -- load default settings
@@ -17,6 +19,9 @@ local DataStorage = require("datastorage")
 pcall(dofile, DataStorage:getDataDir() .. "/defaults.persistent.lua")
 
 require("setupkoenv")
+
+io.stdout:write(" [*] Version: ", require("version"):getCurrentRevision(), "\n\n")
+io.stdout:flush()
 
 -- read settings and check for language override
 -- has to be done before requiring other files because
