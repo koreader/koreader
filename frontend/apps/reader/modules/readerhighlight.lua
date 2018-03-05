@@ -348,7 +348,7 @@ No OCR results or no language data.
 
 KOReader has a build-in OCR engine for recognizing words in scanned PDF and DjVu documents. In order to use OCR in scanned pages, you need to install tesseract trained data for your document language.
 
-You can download language data files from https://github.com/tesseract-ocr/tesseract/wiki/Data-Files#data-files-for-version-304305
+You can download language data files for version 3.04 from https://github.com/tesseract-ocr/tesseract/wiki/Data-Files
 
 Copy the language data files for Tesseract 3.04 (e.g., eng.traineddata for English and spa.traineddata for Spanish) into koreader/data/tessdata
 ]])
