@@ -95,6 +95,8 @@ function setup_env() {
     SETUP_ENV_GREP_COMMAND="grep -v debug"
     if [ -n "${KODEBUG+x}" ]; then
         SETUP_ENV_GREP_COMMAND="grep debug"
+        # for android adb install
+        KODEBUG_SUFFIX=-debug
     fi
     files=$(find . -maxdepth 1 -name 'koreader-emulator-*' | ${SETUP_ENV_GREP_COMMAND})/koreader
     assert_ret_zero $? "Emulator not found. Please build it first."
