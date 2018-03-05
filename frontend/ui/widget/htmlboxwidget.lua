@@ -148,10 +148,21 @@ function HtmlBoxWidget:getPosFromAbsPos(abs_pos)
     return pos
 end
 
-function HtmlBoxWidget:onHoldStartText(_, ges)
+function HtmlBoxWidget:onHoldStartText(callback, ges)
     self.hold_start_pos = self:getPosFromAbsPos(ges.pos)
+
+    if not self.hold_start_pos then
+        if callback then
+            callback(false) -- let know we are not selecting
+        end
+        return false -- let event be processed by other widgets
+    end
+
     self.hold_start_tv = TimeVal.now()
 
+    if callback then
+        callback(true) -- let know we are selecting
+    end
     return true
 end
 

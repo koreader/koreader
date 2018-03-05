@@ -63,6 +63,7 @@ local DictQuickLookup = InputContainer:new{
     -- refresh_callback will be called before we trigger full refresh in onSwipe
     refresh_callback = nil,
     html_dictionary_link_tapped_callback = nil,
+    text_selection_in_progress = false,
 }
 
 local highlight_strings = {
@@ -78,25 +79,22 @@ function DictQuickLookup:init()
         }
     end
     if Device:isTouchDevice() then
+        local range = Geom:new{
+            x = 0, y = 0,
+            w = Screen:getWidth(),
+            h = Screen:getHeight(),
+        }
         self.ges_events = {
             TapCloseDict = {
                 GestureRange:new{
                     ges = "tap",
-                    range = Geom:new{
-                        x = 0, y = 0,
-                        w = Screen:getWidth(),
-                        h = Screen:getHeight(),
-                    }
+                    range = range,
                 },
             },
             Swipe = {
                 GestureRange:new{
                     ges = "swipe",
-                    range = Geom:new{
-                        x = 0, y = 0,
-                        w = Screen:getWidth(),
-                        h = Screen:getHeight(),
-                    }
+                    range = range,
                 },
             },
             -- This was for selection of a single word with simple hold
@@ -120,22 +118,25 @@ function DictQuickLookup:init()
             HoldStartText = {
                 GestureRange:new{
                     ges = "hold",
-                    range = function()
-                        return self.region
-                    end,
+                    range = range,
                 },
+                -- callback function when HoldStartText is handled as args
+                args = function(selecting)
+                    -- store the fact we are selecting text in definition,
+                    -- so we don't forward any event to MovableContainer
+                    self.text_selection_in_progress = selecting
+                end
             },
             HoldReleaseText = {
                 GestureRange:new{
                     ges = "hold_release",
-                    range = function()
-                        return self.region
-                    end,
+                    range = range,
                 },
                 -- callback function when HoldReleaseText is handled as args
                 args = function(text, hold_duration)
+                    self.text_selection_in_progress = false
                     local lookup_target
-                    if hold_duration < 2.0 then
+                    if hold_duration < 3.0 then
                         -- do this lookup in the same domain (dict/wikipedia)
                         lookup_target = self.is_wiki and "LookupWikipedia" or "LookupWord"
                     else
@@ -153,6 +154,12 @@ function DictQuickLookup:init()
                     )
                 end
             },
+            -- These will be forwarded to MovableContainer if we are not currently
+            -- selecting text in the definition widget
+            ForwardingTouch = { GestureRange:new{ ges = "touch", range = range, }, },
+            ForwardingHoldPan = { GestureRange:new{ ges = "hold_pan", range = range, }, },
+            ForwardingPan = { GestureRange:new{ ges = "pan", range = range, }, },
+            ForwardingPanRelease = { GestureRange:new{ ges = "pan_release", range = range, }, },
         }
     end
 end
@@ -523,7 +530,16 @@ function DictQuickLookup:update()
     self.movable = MovableContainer:new{
         -- We'll handle these events ourselves, and call appropriate
         -- MovableContainer's methods when we didn't process the event
-        ignore_events = {"swipe", "hold", "hold_release"},
+        ignore_events = {
+            -- These have effects over the definition widget, and may
+            -- or may not be processed by it
+            "swipe", "hold", "hold_release",
+            -- These do not have direct effect over the definition widget,
+            -- but may happen while selecting text: we need to check
+            -- we're not doing text selection and a few other things
+            -- before forwarding them
+            "touch", "pan", "pan_release", "hold_pan",
+        },
         self.dict_frame,
     }
     self.movable:setMovedOffset(orig_moved_offset)
@@ -769,15 +785,59 @@ function DictQuickLookup:onSwipe(arg, ges)
 end
 
 function DictQuickLookup:onHoldStartText(_, ges)
+    -- Event was not processed by definition widget: we are not selecting
+    self.text_selection_in_progress = false
     -- Forward Hold events not processed by TextBoxWidget event handler
     -- to our MovableContainer
     return self.movable:onMovableHold(_, ges)
 end
 
 function DictQuickLookup:onHoldReleaseText(_, ges)
+    -- Event was not processed by definition widget: we are not selecting
+    self.text_selection_in_progress = false
     -- Forward Hold events not processed by TextBoxWidget event handler
     -- to our MovableContainer
     return self.movable:onMovableHoldRelease(_, ges)
+end
+
+-- These 4 event processors are just used to forward these events
+-- to our MovableContainer, under certain conditions, to avoid
+-- unwanted moves of the window while we are selecting text in
+-- the definition widget.
+function DictQuickLookup:onForwardingTouch(arg, ges)
+    -- This Touch may be used as the Hold we don't get (for example,
+    -- when we start our Hold on the bottom buttons)
+    if not ges.pos:intersectWith(self.definition_widget.dimen) then
+        return self.movable:onMovableTouch(arg, ges)
+    else
+        -- Ensure this is unset, so we can use it to not forward HoldPan
+        self.movable._touch_pre_pan_was_inside = false
+    end
+end
+
+function DictQuickLookup:onForwardingHoldPan(arg, ges)
+    if not self.text_selection_in_progress then -- don't forward it as we are selecting
+        -- We only forward it if we did forward the Touch
+        if self.movable._touch_pre_pan_was_inside then
+            return self.movable:onMovableHoldPan(arg, ges)
+        end
+    end
+end
+
+function DictQuickLookup:onForwardingPan(arg, ges)
+    if not self.text_selection_in_progress then -- don't forward it as we are selecting
+        -- We only forward it if we did forward the Touch or are currently moving
+        if self.movable._touch_pre_pan_was_inside or self.movable._moving then
+            return self.movable:onMovablePan(arg, ges)
+        end
+    end
+end
+
+function DictQuickLookup:onForwardingPanRelease(arg, ges)
+    if not self.text_selection_in_progress then -- don't forward it as we are selecting
+        -- We can forward onMovablePanRelease() does enough checks
+        return self.movable:onMovablePanRelease(arg, ges)
+    end
 end
 
 function DictQuickLookup:lookupInputWord(hint)
