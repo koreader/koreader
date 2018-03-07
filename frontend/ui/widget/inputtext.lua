@@ -81,7 +81,7 @@ if Device.isTouchDevice() then
         if x > 0 and y > 0 then
             self.charpos = self.text_widget:moveCursor(x, y)
             if Device:hasClipboard() and Device.input.hasClipboardText() then
-                self:addChar(Device.input.getClipboardText())
+                self:addChars(Device.input.getClipboardText())
             end
             UIManager:setDirty(self.parent, function()
                 return "ui", self.dimen
@@ -247,13 +247,13 @@ function InputText:getKeyboardDimen()
     return self.keyboard.dimen
 end
 
-function InputText:addChar(char)
+function InputText:addChars(char)
     if self.enter_callback and char == '\n' then
         UIManager:scheduleIn(0.3, function() self.enter_callback() end)
         return
     end
     table.insert(self.charlist, self.charpos, char)
-    self.charpos = self.charpos + string.len(char)
+    self.charpos = self.charpos + #util.splitToChars(char)
     self:initTextBox(table.concat(self.charlist), true)
 end
 
