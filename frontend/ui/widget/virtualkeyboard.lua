@@ -307,7 +307,7 @@ end
 
 function VirtualKeyboard:addChar(key)
     logger.dbg("add char", key)
-    self.inputbox:addChar(key)
+    self.inputbox:addChars(key)
 end
 
 function VirtualKeyboard:delChar()

@@ -1,13 +1,12 @@
 describe("InputText widget module", function()
     local InputText
+    local equals
     setup(function()
         require("commonrequire")
         InputText = require("ui/widget/inputtext")
-    end)
 
-    describe("addChar()", function()
         -- thanks to https://stackoverflow.com/a/32660766/2470572
-        local function equals(o1, o2, ignore_mt)
+        equals = function(o1, o2, ignore_mt)
             if o1 == o2 then return true end
             local o1Type = type(o1)
             local o2Type = type(o2)
@@ -37,21 +36,22 @@ describe("InputText widget module", function()
             end
             return true
         end
+    end)
 
+    describe("addChars()", function()
         it("should add regular text", function()
             InputText:initTextBox("")
-            InputText:addChar("a")
+            InputText:addChars("a")
             assert.is_true( equals({"a"}, InputText.charlist) )
-            InputText:addChar("aa")
+            InputText:addChars("aa")
             assert.is_true( equals({"a", "a", "a"}, InputText.charlist) )
         end)
         it("should add unicode text", function()
             InputText:initTextBox("")
-            InputText:addChar("Л")
+            InputText:addChars("Л")
             assert.is_true( equals({"Л"}, InputText.charlist) )
-            InputText:addChar("Луа")
+            InputText:addChars("Луа")
             assert.is_true( equals({"Л", "Л", "у", "а"}, InputText.charlist) )
         end)
     end)
-
 end)
