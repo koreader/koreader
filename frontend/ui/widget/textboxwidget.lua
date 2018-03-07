@@ -762,7 +762,7 @@ end
 local FIND_START = 1
 local FIND_END = 2
 
-function TextBoxWidget:onHoldStartText(callback, ges)
+function TextBoxWidget:onHoldStartText(_, ges)
     -- store hold start position and timestamp, will be used on release
     self.hold_start_x = ges.pos.x - self.dimen.x
     self.hold_start_y = ges.pos.y - self.dimen.y
@@ -771,16 +771,20 @@ function TextBoxWidget:onHoldStartText(callback, ges)
     if self.hold_start_x < 0 or self.hold_start_x > self.dimen.w or
         self.hold_start_y < 0 or self.hold_start_y > self.dimen.h then
         self.hold_start_tv = nil -- don't process coming HoldRelease event
-        if callback then
-            callback(false) -- let know we are not selecting
-        end
         return false -- let event be processed by other widgets
     end
 
     self.hold_start_tv = TimeVal.now()
-    if callback then
-        callback(true) -- let know we are selecting
+    return true
+end
+
+function TextBoxWidget:onHoldPanText(_, ges)
+    -- We don't highlight the currently selected text, but just let this
+    -- event pop up if we are not currently selecting text
+    if not self.hold_start_tv then
+        return false
     end
+    -- Don't let that event be processed by other widget
     return true
 end
 
