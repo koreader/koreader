@@ -253,7 +253,7 @@ function InputText:addChar(char)
         return
     end
     table.insert(self.charlist, self.charpos, char)
-    self.charpos = self.charpos + string.len(char)
+    self.charpos = self.charpos + #util.splitToChars(char)
     self:initTextBox(table.concat(self.charlist), true)
 end
 
