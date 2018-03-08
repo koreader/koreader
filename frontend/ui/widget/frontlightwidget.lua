@@ -11,6 +11,7 @@ local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LineWidget = require("ui/widget/linewidget")
+local NaturalLight = require("ui/widget/naturallightwidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
@@ -27,6 +28,8 @@ local FrontLightWidget = InputContainer:new{
     title_face = Font:getFace("x_smalltfont"),
     width = nil,
     height = nil,
+    -- This should stay active during natural light configuration
+    is_always_active = true,
 }
 
 function FrontLightWidget:init()
@@ -243,8 +246,21 @@ function FrontLightWidget:setProgress(num, step, num_warmth)
     table.insert(vertical_group,button_group_down)
     table.insert(vertical_group,padding_span)
     if self.natural_light then
-        -- If the device supports natural light, add the widgets for 'warmth'.
+        -- If the device supports natural light, add the widgets for 'warmth'
+        -- and a 'Configure' button
         self:addWarmthWidgets(num_warmth, step, vertical_group)
+        self.configure_button =  Button:new{
+            text = _("Configure"),
+            margin = Size.margin.small,
+            radius = 0,
+            width = self.screen_width * 0.20,
+            enabled = not self.nl_configure_open,
+            show_parent = self,
+            callback = function()
+                UIManager:show(NaturalLight:new{fl_widget = self})
+            end,
+        }
+        table.insert(vertical_group, self.configure_button)
     end
     table.insert(self.fl_container, vertical_group)
     -- Reset container height to what it actually contains
@@ -455,8 +471,11 @@ function FrontLightWidget:onAnyKeyPressed()
 end
 
 function FrontLightWidget:onTapCloseFL(arg, ges_ev)
-    if ges_ev.pos:notIntersectWith(self.light_frame.dimen) then
-        self:onClose()
+    -- Do not close when natural light configuration is open
+    if not self.nl_configure_open then
+        if ges_ev.pos:notIntersectWith(self.light_frame.dimen) then
+            self:onClose()
+        end
     end
     return true
 end
@@ -464,6 +483,28 @@ end
 function FrontLightWidget:onClose()
     UIManager:close(self)
     return true
+end
+
+-- This is called when natural light configuration is shown
+function FrontLightWidget:naturalLightConfigOpen()
+    -- Remove the close button
+    table.remove(self.light_bar)
+    -- Disable the 'configure' button
+    self.configure_button:disable()
+    self.nl_configure_open = true
+    -- Move to the bottom to make place for the new widget
+    self[1].align="bottom"
+    UIManager:setDirty("all", "ui")
+end
+
+function FrontLightWidget:naturalLightConfigClose()
+    table.insert(self.light_bar,
+                 CloseButton:new{window = self,
+                                 padding_top = Size.margin.title})
+    self.configure_button:enable()
+    self.nl_configure_open = false
+    self[1].align="center"
+    UIManager:setDirty("all", "ui")
 end
 
 return FrontLightWidget
