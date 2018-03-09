@@ -55,14 +55,21 @@ function KoboSysfsLight:setNaturalBrightness(brightness, warmth)
         warmth = self.current_warmth
     end
 
-    -- On Nickel, the values for white/red/green are roughly linearly dependent
-    -- on the 4th root of brightness and warmth.
-    local white = math.min(self.white_gain * math.pow(brightness, 0.25) *
-                       math.pow(100 - warmth, 0.25) + self.white_offset, 255)
-    local red = math.min(self.red_gain * math.pow(brightness, 0.25) *
-                     math.pow(warmth, 0.25) + self.red_offset, 255)
-    local green = math.min(self.green_gain * math.pow(brightness, 0.25) *
-                       math.pow(warmth, 0.25) + self.green_offset, 255)
+    local red = 0
+    local green = 0
+    local white = 0
+    if brightness > 0 then
+        -- On Nickel, the values for white/red/green are roughly linearly dependent
+        -- on the 4th root of brightness and warmth.
+        white = math.min(self.white_gain * math.pow(brightness, 0.25) *
+                             math.pow(100 - warmth, 0.25) + self.white_offset, 255)
+    end
+    if warmth > 0 then
+        red = math.min(self.red_gain * math.pow(brightness, 0.25) *
+                           math.pow(warmth, 0.25) + self.red_offset, 255)
+        green = math.min(self.green_gain * math.pow(brightness, 0.25) *
+                             math.pow(warmth, 0.25) + self.green_offset, 255)
+    end
 
     white = math.max(white, 0)
     red = math.max(red, 0)
