@@ -132,9 +132,9 @@ function CreDocument:init()
     self.info.configurable = true
 end
 
-function CreDocument:loadDocument()
+function CreDocument:loadDocument(only_metadata)
     if not self._loaded then
-        if self._document:loadDocument(self.file) then
+        if self._document:loadDocument(self.file, only_metadata) then
             self._loaded = true
         end
     end
