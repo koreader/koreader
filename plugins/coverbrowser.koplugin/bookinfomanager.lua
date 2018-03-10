@@ -372,7 +372,7 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
             -- Setting a default font before loading document
             -- actually do prevent some crashes
             document:setFontFace(document.default_font)
-            if not document:loadDocument() then
+            if not document:loadDocument(false) then -- load only metadata
                 -- failed loading, calling other methods would segfault
                 loaded = false
             end
