@@ -127,7 +127,7 @@ function ReaderFont:onReadSettings(config)
 
     self.gamma_index = config:readSetting("gamma_index")
             or G_reader_settings:readSetting("copt_font_gamma")
-            or DCREREADER_CONFIG_DEFAULT_FONT_GAMMA
+            or DCREREADER_CONFIG_DEFAULT_FONT_GAMMA or 15 -- gamma = 1.0
     self.ui.document:setGammaIndex(self.gamma_index)
 
     -- Dirty hack: we have to add following call in order to set
@@ -222,11 +222,12 @@ end
 
 function ReaderFont:onSetFontGamma(gamma)
     self.gamma_index = gamma
+    self.ui.document:setGammaIndex(self.gamma_index)
+    local gamma_level = self.ui.document:getGammaLevel()
     UIManager:show(Notification:new{
-        text = T( _("Font gamma set to %1."), self.gamma_index),
+        text = T( _("Font gamma set to %1."), gamma_level),
         timeout = 1
     })
-    self.ui.document:setGammaIndex(self.gamma_index)
     self.ui:handleEvent(Event:new("RedrawCurrentView"))
     return true
 end

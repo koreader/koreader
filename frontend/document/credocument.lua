@@ -461,6 +461,10 @@ function CreDocument:toggleFontBolder(toggle)
     self._document:setIntProperty("font.face.weight.embolden", toggle)
 end
 
+function CreDocument:getGammaLevel()
+    return cre.getGammaLevel()
+end
+
 function CreDocument:setGammaIndex(index)
     logger.dbg("CreDocument: set gamma index", index)
     cre.setGammaIndex(index)
