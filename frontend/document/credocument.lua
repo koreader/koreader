@@ -548,8 +548,10 @@ function CreDocument:disableInternalHistory()
     -- (It has to be called late in the document opening process, otherwise
     -- we stay on book first page.)
     logger.dbg("CreDocument: unset bookmarks highlight and internal history")
-    logger.warn("seting internal history to 2")
-    self._document:setIntProperty("crengine.highlight.bookmarks", 2)
+    --logger.warn("seting internal history to 2")
+    --self._document:setIntProperty("crengine.highlight.bookmarks", 2)
+    logger.warn("seting another unrelated setting")
+    self._document:setIntProperty("window.status.clock", 1)
 end
 
 function CreDocument:register(registry)
