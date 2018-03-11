@@ -97,6 +97,12 @@ function KoboPowerD:init()
         -- If this device has natural light (currently only KA1)
         -- use the SysFS interface, and ioctl otherwise.
         if self.device.hasNaturalLight() then
+            local nl_config = G_reader_settings:readSetting("natural_light_config")
+            if nl_config then
+                for key,val in pairs(nl_config) do
+                    self.device.frontlight_settings[key] = val
+                end
+            end
             self.fl = SysfsLight:new(self.device.frontlight_settings)
             self.fl_warmth = 0
             self:_syncKoboLightOnStart()
