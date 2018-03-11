@@ -123,19 +123,14 @@ local CreOptions = {
             {
                 name = "font_gamma",
                 name_text = S.CONTRAST,
-                toggle = {S.LIGHTER, S.DEFAULT, S.DARKER},
-                default_value = DCREREADER_CONFIG_DEFAULT_FONT_GAMMA,
-                values = {
-                    DCREREADER_CONFIG_LIGHTER_FONT_GAMMA,
-                    DCREREADER_CONFIG_DEFAULT_FONT_GAMMA,
-                    DCREREADER_CONFIG_DARKER_FONT_GAMMA,
-                },
+                buttonprogress = true,
+                default_value = 15, -- gamma = 1.0
+                default_pos = 2,
+                values = {10, 15, 25, 30, 36, 43, 49, 56},
                 event = "SetFontGamma",
-                args = {
-                    DCREREADER_CONFIG_LIGHTER_FONT_GAMMA,
-                    DCREREADER_CONFIG_DEFAULT_FONT_GAMMA,
-                    DCREREADER_CONFIG_DARKER_FONT_GAMMA,
-                },
+                args = {10, 15, 25, 30, 36, 43, 49, 56},
+                -- gamma values for these indexes are:
+                labels = {0.8, 1.0, 1.45, 1.90, 2.50, 4.0, 8.0, 15.0},
             },
             {
                 name = "font_hinting",
