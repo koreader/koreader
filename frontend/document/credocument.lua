@@ -551,7 +551,7 @@ function CreDocument:disableInternalHistory()
     --logger.warn("seting internal history to 2")
     --self._document:setIntProperty("crengine.highlight.bookmarks", 2)
     logger.warn("seting another unrelated setting")
-    self._document:setIntProperty("font.hinting.mode", 2)
+    self._document:setIntProperty("font.hinting.mode", 1)
 end
 
 function CreDocument:register(registry)
