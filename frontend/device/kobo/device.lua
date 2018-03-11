@@ -32,6 +32,7 @@ local Kobo = Generic:new{
     internal_storage_mount_point = "/mnt/onboard/",
     -- currently only Aura One has coloured frontlight
     hasNaturalLight = no,
+    frontlight_settings = {},
 }
 
 -- TODO: hasKeys for some devices?
