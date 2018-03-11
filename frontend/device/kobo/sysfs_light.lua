@@ -48,6 +48,13 @@ dbg:guard(KoboSysfsLight, 'setWarmth',
           end)
 
 function KoboSysfsLight:setNaturalBrightness(brightness, warmth)
+    if not brightness then
+        brightness = self.current_brightness
+    end
+    if not warmth then
+        warmth = self.current_warmth
+    end
+
     -- On Nickel, the values for white/red/green are roughly linearly dependent
     -- on the 4th root of brightness and warmth.
     local white = math.min(self.white_gain * math.pow(brightness, 0.25) *
