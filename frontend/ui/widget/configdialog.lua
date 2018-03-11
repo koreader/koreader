@@ -445,7 +445,7 @@ function ConfigOption:init()
                     end,
                     hold_callback = function(arg)
                         self.config:onMakeDefault(self.options[c].name, self.options[c].name_text, self.options[c].values,
-                            self.options[c].args, arg)
+                            self.options[c].labels or self.options[c].args, arg)
                     end,
                     show_parrent = self.config,
                     enabled = enabled,

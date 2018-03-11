@@ -130,7 +130,7 @@ local CreOptions = {
                 event = "SetFontGamma",
                 args = {10, 15, 25, 30, 36, 43, 49, 56},
                 -- gamma values for these indexes are:
-                -- {0.8, 1.0, 1.45, 1.90, 2.50, 4.0, 8.0, 15.0},
+                labels = {0.8, 1.0, 1.45, 1.90, 2.50, 4.0, 8.0, 15.0},
             },
             {
                 name = "font_hinting",
