@@ -213,7 +213,7 @@ end
 
 function Send2Ebook:onCloseDocument()
     local document_full_path = self.ui.document.file
-    if  document_full_path and download_dir_path == string.sub(document_full_path, 1, string.len(download_dir_path)) then
+    if  document_full_path and download_dir_path and download_dir_path == string.sub(document_full_path, 1, string.len(download_dir_path)) then
         logger.dbg("Send2Ebook: document_full_path:", document_full_path)
         logger.dbg("Send2Ebook: download_dir_path:", download_dir_path)
         logger.dbg("Send2Ebook: removing Send2Ebook file from history.")
