@@ -13,13 +13,11 @@ describe("ReaderLink module", function()
     end)
 
     it("should jump to links in epub #nocov", function()
-        require("logger"):setLevel(1)
         local readerui = ReaderUI:new{
             document = DocumentRegistry:openDocument(sample_epub),
         }
         readerui.rolling:onGotoPage(4)
         readerui.link:onTap(nil, {pos = {x = 336, y = 668}})
-        require("logger"):setLevel(2)
         assert.is.same(36, readerui.rolling.current_page)
     end)
 
