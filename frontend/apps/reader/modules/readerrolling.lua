@@ -101,6 +101,7 @@ function ReaderRolling:init()
         self:updatePos()
         self.ui.document:disableInternalHistory()
         self:onGotoPage(1) -- that helps
+        self:updatePos()
     end)
     self.ui.menu:registerToMainMenu(self)
 end
