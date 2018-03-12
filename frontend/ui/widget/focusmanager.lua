@@ -57,56 +57,52 @@ function FocusManager:onFocusMove(args)
     end
     local current_item = self.layout[self.selected.y][self.selected.x]
     while true do
-        if self.selected.x + dx > #self.layout[self.selected.y]
-        or self.selected.x + dx < 1 then
-            break  -- abort when we run into horizontal borders
-        end
 
-        -- call widget wrap callbacks in vertical direction
-        if self.selected.y + dy > #self.layout then
-            if not self:onWrapLast() then
+        if not self.layout[self.selected.y + dy] then
+            --vertical borders, try to wraparound
+            if not self:warpAround(dy) then
                 break
-            end
-        elseif self.selected.y + dy < 1 then
-            if not self:onWrapFirst() then
-                break
-            end
+    	    end
         else
             self.selected.y = self.selected.y + dy
-            if #self.layout[self.selected.y] == 0 then -- horizontal separator
-                self.selected.y = self.selected.y + dy -- skip it
-            end
         end
-        self.selected.x = self.selected.x + dx
-        if self.selected.x > #self.layout[self.selected.y] then
-            -- smaller nb of items on new row than on prev row
-            self.selected.x = #self.layout[self.selected.y]
-        end
+
+        if not self.layout[self.selected.y][self.selected.x + dx] then 
+                --vertical border, no wraparound
+            break
+        else
+            self.selected.x = self.selected.x + dx 
+        end 
 
         if self.layout[self.selected.y][self.selected.x] ~= current_item
         or not self.layout[self.selected.y][self.selected.x].is_inactive then
             -- we found a different object to focus
             current_item:handleEvent(Event:new("Unfocus"))
             self.layout[self.selected.y][self.selected.x]:handleEvent(Event:new("Focus"))
-            -- trigger a repaint (we need to be the registered widget!)
+            -- trigger a fast repaint, this seem to not count toward a fullscreen eink resfresh
             -- TODO: is this really needed?
-            UIManager:setDirty(self.show_parent or self, "partial")
+            UIManager:setDirty(self.show_parent or self, "fast")
             break
         end
     end
 
     return true
 end
-
-function FocusManager:onWrapFirst()
-    self.selected.y = #self.layout
-    return true
+function FocusManager:warpAround(dy)
+    --go to the last valid item directly above or below the current item
+    --return false if none could be found
+	local y = self.selected.y
+	while self.layout[y - dy] and self.layout[y - dy][self.selected.x] do
+        y = y - dy
+    end
+    if y ~= self.selected.y then
+        self.selected.y = y
+        return true
+    else
+        return false
+    end
 end
 
-function FocusManager:onWrapLast()
-    self.selected.y = 1
-    return true
-end
 
 function FocusManager:getFocusItem()
     return self.layout[self.selected.y][self.selected.x]
