@@ -540,18 +540,16 @@ function CreDocument:findText(pattern, origin, reverse, caseInsensitive)
         pattern, origin, reverse, caseInsensitive and 1 or 0)
 end
 
-function CreDocument:disableInternalHistory()
-    -- This unsets crengine internal bookmarks highlighting, and as
-    -- a side effect, disable internal history and the need to build
+function CreDocument:enableInternalHistory(toggle)
+    -- Setting this to 0 unsets crengine internal bookmarks highlighting,
+    -- and as a side effect, disable internal history and the need to build
     -- a bookmark at each page turn: this speeds up a lot page turning
     -- and menu opening on big books.
-    -- (It has to be called late in the document opening process, otherwise
-    -- we stay on book first page.)
-    logger.dbg("CreDocument: unset bookmarks highlight and internal history")
-    -- logger.warn("seting internal history to 2")
-    self._document:setIntProperty("crengine.highlight.bookmarks", 0)
-    --logger.warn("seting another unrelated setting")
-    --self._document:setIntProperty("font.hinting.mode", 1)
+    -- (It has to be called late in the document opening process, otherwise we
+    -- stay on book first page - and it may need to be temporarily re-enabled
+    -- at some occasions for crengine to keep track of page location)
+    logger.dbg("CreDocument: set bookmarks highlight and internal history", toggle)
+    self._document:setIntProperty("crengine.highlight.bookmarks", toggle and 2 or 0)
 end
 
 function CreDocument:register(registry)
