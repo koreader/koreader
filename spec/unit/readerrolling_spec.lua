@@ -13,6 +13,7 @@ describe("Readerrolling module", function()
             document = DocumentRegistry:openDocument(sample_epub),
         }
         rolling = readerui.rolling
+        rolling:onRedrawCurrentView()
     end)
 
     describe("test in portrait screen mode", function()
