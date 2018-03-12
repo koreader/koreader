@@ -545,9 +545,10 @@ function CreDocument:enableInternalHistory(toggle)
     -- and as a side effect, disable internal history and the need to build
     -- a bookmark at each page turn: this speeds up a lot page turning
     -- and menu opening on big books.
-    -- (It has to be called late in the document opening process, otherwise we
-    -- stay on book first page - and it may need to be temporarily re-enabled
-    -- at some occasions for crengine to keep track of page location)
+    -- It has to be called late in the document opening process, and setting
+    -- it to false needs to be followed by a redraw.
+    -- It needs to be temporarily re-enabled on page resize for crengine to
+    -- keep track of position in page and restore it after resize.
     logger.dbg("CreDocument: set bookmarks highlight and internal history", toggle)
     self._document:setIntProperty("crengine.highlight.bookmarks", toggle and 2 or 0)
 end
