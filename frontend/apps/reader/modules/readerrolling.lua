@@ -100,7 +100,7 @@ function ReaderRolling:init()
     table.insert(self.ui.postReaderCallback, function()
         self:updatePos()
         self.ui.document:disableInternalHistory()
-        -- self:onGotoPage(1) -- that helped
+        self:onGotoPage(1) -- that helps
     end)
     self.ui.menu:registerToMainMenu(self)
 end
