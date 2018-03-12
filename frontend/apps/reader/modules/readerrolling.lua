@@ -575,7 +575,7 @@ function ReaderRolling:onChangeScreenMode(mode)
     self:onChangeViewMode()
     self:onUpdatePos()
     self.ui.document:enableInternalHistory(false)
-    self:onRedrawCurrentView()
+    -- self:onRedrawCurrentView()
 end
 
 function ReaderRolling:onColorRenderingUpdate()
