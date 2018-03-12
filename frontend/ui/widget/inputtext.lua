@@ -89,7 +89,7 @@ if Device.isTouchDevice() then
         end
     end
 
-  
+
 elseif not Device.hasKeyboard() then
         Keyboard = require("ui/widget/virtualkeyboard")
         function InputText:initEventListener() end --do nothing but doesnt crash for now

@@ -62,17 +62,17 @@ function FocusManager:onFocusMove(args)
             --vertical borders, try to wraparound
             if not self:warpAround(dy) then
                 break
-    	    end
+            end
         else
             self.selected.y = self.selected.y + dy
         end
 
-        if not self.layout[self.selected.y][self.selected.x + dx] then 
+        if not self.layout[self.selected.y][self.selected.x + dx] then
                 --vertical border, no wraparound
             break
         else
-            self.selected.x = self.selected.x + dx 
-        end 
+            self.selected.x = self.selected.x + dx
+        end
 
         if self.layout[self.selected.y][self.selected.x] ~= current_item
         or not self.layout[self.selected.y][self.selected.x].is_inactive then

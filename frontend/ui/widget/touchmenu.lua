@@ -30,7 +30,6 @@ local FocusManager = require("ui/widget/focusmanager")
 local Event = require("ui/event")
 local Input = Device.input
 local UnderlineContainer = require("ui/widget/container/underlinecontainer")
-local Size = require("ui/size")
 
 --[[
 TouchMenuItem widget
@@ -565,7 +564,7 @@ function TouchMenu:updateItems()
                 show_parent = self.show_parent,
             }
             table.insert(self.item_group, item_tmp)
-            if item_tmp:isEnabled() then   
+            if item_tmp:isEnabled() then
                 table.insert(self.layout, {[self.cur_tab] = item_tmp}) --for the focusmanager
             end
             if item.separator and c ~= self.perpage then
@@ -754,7 +753,7 @@ function TouchMenu:onPrec()
 end
 function TouchMenu:onPress()
     self:getFocusItem():handleEvent(Event:new("TapSelect"))
-    
+
 end
 
 return TouchMenu
