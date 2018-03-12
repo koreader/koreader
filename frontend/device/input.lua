@@ -381,11 +381,11 @@ function Input:handleTouchEv(ev)
             table.insert(self.MTSlots, self:getMtSlot(self.cur_slot))
         end
         if ev.code == ABS_MT_SLOT then
-            if self.cur_slot ~= ev.value then
-                table.insert(self.MTSlots, self:getMtSlot(ev.value))
-            end
-            self.cur_slot = ev.value
+            self:addSlotIfChanged(ev.value)
         elseif ev.code == ABS_MT_TRACKING_ID then
+            if self.snow_protocol then
+                self:addSlotIfChanged(ev.value)
+            end
             self:setCurrentMtSlot("id", ev.value)
         elseif ev.code == ABS_MT_POSITION_X then
             self:setCurrentMtSlot("x", ev.value)
@@ -411,10 +411,32 @@ function Input:handleTouchEv(ev)
         if ev.code == SYN_REPORT then
             for _, MTSlot in pairs(self.MTSlots) do
                 self:setMtSlot(MTSlot.slot, "timev", TimeVal:new(ev.time))
+                if self.snow_protocol then
+                    -- if a slot appears in the current touch event, set "used"
+                    self:setMtSlot(MTSlot.slot, "used", true)
+                end
+            end
+            if self.snow_protocol then
+                -- reset every slot that doesn't appear in the current touch event
+                -- (because on the H2O2, this is the only way we detect finger-up)
+                self.MTSlots = {}
+                for _, slot in pairs(self.ev_slots) do
+                    table.insert(self.MTSlots, slot)
+                    if not slot.used then
+                        slot.id = -1
+                        slot.timev = TimeVal:new(ev.time)
+                    end
+                end
             end
             -- feed ev in all slots to state machine
             local touch_ges = self.gesture_detector:feedEvent(self.MTSlots)
             self.MTSlots = {}
+            if self.snow_protocol then
+                -- go through all the ev_slots and clear used
+                for _, slot in pairs(self.ev_slots) do
+                    slot.used = nil
+                end
+            end
             if touch_ges then
                 self:gestureAdjustHook(touch_ges)
                 return Event:new("Gesture",
@@ -460,10 +482,7 @@ function Input:handleTouchEvPhoenix(ev)
             table.insert(self.MTSlots, self:getMtSlot(self.cur_slot))
         end
         if ev.code == ABS_MT_TRACKING_ID then
-            if self.cur_slot ~= ev.value then
-                table.insert(self.MTSlots, self:getMtSlot(ev.value))
-            end
-            self.cur_slot = ev.value
+            self:addSlotIfChanged(ev.value)
             self:setCurrentMtSlot("id", ev.value)
         elseif ev.code == ABS_MT_TOUCH_MAJOR and ev.value == 0 then
             self:setCurrentMtSlot("id", -1)
@@ -542,6 +561,13 @@ end
 
 function Input:getCurrentMtSlot()
     return self:getMtSlot(self.cur_slot)
+end
+
+function Input:addSlotIfChanged(value)
+    if self.cur_slot ~= value then
+        table.insert(self.MTSlots, self:getMtSlot(value))
+    end
+    self.cur_slot = value
 end
 
 function Input:confirmAbsxy()

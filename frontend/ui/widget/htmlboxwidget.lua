@@ -150,8 +150,22 @@ end
 
 function HtmlBoxWidget:onHoldStartText(_, ges)
     self.hold_start_pos = self:getPosFromAbsPos(ges.pos)
+
+    if not self.hold_start_pos then
+        return false -- let event be processed by other widgets
+    end
+
     self.hold_start_tv = TimeVal.now()
 
+    return true
+end
+
+function HtmlBoxWidget:onHoldPan(_, ges)
+    -- We don't highlight the currently selected text, but just let this
+    -- event pop up if we are not currently selecting text
+    if not self.hold_start_pos then
+        return false
+    end
     return true
 end
 

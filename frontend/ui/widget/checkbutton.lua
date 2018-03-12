@@ -49,6 +49,8 @@ function CheckButton:initCheckButton(checked)
     self.checked = checked
     self._checkmark = CheckMark:new{
         checked = self.checked,
+        parent = self.parent or self,
+        show_parent = self.show_parent or self,
     }
     self._textwidget = TextWidget:new{
         text = self.text,
@@ -64,8 +66,9 @@ function CheckButton:initCheckButton(checked)
         padding = 0,
         self._horizontalgroup,
     }
-    self[1] = self._frame
     self.dimen = self._frame:getSize()
+    self[1] = self._frame
+
     if Device:isTouchDevice() then
         self.ges_events = {
             TapCheckButton = {

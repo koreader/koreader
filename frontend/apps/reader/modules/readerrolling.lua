@@ -1,6 +1,5 @@
 local Blitbuffer = require("ffi/blitbuffer")
 local Device = require("device")
-local Geom = require("ui/geometry")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Event = require("ui/event")
 local ReaderPanning = require("apps/reader/modules/readerpanning")
@@ -100,6 +99,9 @@ function ReaderRolling:init()
     end)
     table.insert(self.ui.postReaderCallback, function()
         self:updatePos()
+        -- Disable crengine internal history, with required redraw
+        self.ui.document:enableInternalHistory(false)
+        self:onRedrawCurrentView()
     end)
     self.ui.menu:registerToMainMenu(self)
 end
@@ -394,25 +396,63 @@ function ReaderRolling:onGotoRelativePage(number)
     return true
 end
 
-function ReaderRolling:onGotoXPointer(xp)
+function ReaderRolling:onGotoXPointer(xp, marker_xp)
+    if self.mark_func then
+        -- unschedule previous marker as it's no more accurate
+        UIManager:unschedule(self.mark_func)
+        self.mark_func = nil
+    end
+    if self.unmark_func then
+        -- execute scheduled unmark now to clean previous marker
+        self.unmark_func()
+        self.unmark_func = nil
+    end
     self:_gotoXPointer(xp)
     self.xpointer = xp
-    -- Show a mark on left side of screen to give a visual feedback
-    -- of where xpointer target is (removed after 1 second)
-    if string.sub(xp, 1, 1) == "#" then -- only for links, not page top fragment identifier
-        local doc_y = self.ui.document:getPosFromXPointer(xp)
+
+    -- Allow tweaking this marker behaviour with a manual setting:
+    --   followed_link_marker = false: no marker shown
+    --   followed_link_marker = true: maker shown and not auto removed
+    --   followed_link_marker = <number>: removed after <number> seconds
+    -- (no real need for a menu item, the default is the finest)
+    local marker_setting = G_reader_settings:readSetting("followed_link_marker")
+    if marker_setting == nil then
+        marker_setting = 1 -- default is: shown and removed after 1 second
+    end
+
+    if marker_xp and marker_setting then
+        -- Show a mark on left side of screen to give a visual feedback of
+        -- where xpointer target is (and remove if after 1s)
+        local doc_y = self.ui.document:getPosFromXPointer(marker_xp)
         local top_y = self.ui.document:getCurrentPos()
+        local screen_y = doc_y - top_y
         local doc_margins = self.ui.document._document:getPageMargins()
-        local screen_y = doc_y - top_y + doc_margins["top"]
-        local marker_w = math.max(doc_margins["left"] - Screen:scaleBySize(5), Screen:scaleBySize(5))
+        if self.view.view_mode == "page" then
+            screen_y = screen_y + doc_margins["top"]
+        end
         local marker_h = Screen:scaleBySize(self.ui.font.font_size * 1.1 * self.ui.font.line_space_percent/100.0)
-        UIManager:scheduleIn(0.5, function()
+        -- Make it 4/5 of left margin wide (and bigger when huge margin)
+        local marker_w = math.floor(math.max(doc_margins["left"] - Screen:scaleBySize(5), doc_margins["left"] * 4/5))
+
+        self.mark_func = function()
+            self.mark_func = nil
             Screen.bb:paintRect(0, screen_y, marker_w, marker_h, Blitbuffer.COLOR_BLACK)
-            Screen["refreshPartial"](Screen, 0, screen_y, marker_w, marker_h)
-            UIManager:scheduleIn(1, function()
-                UIManager:setDirty(self.view.dialog, "partial", Geom:new({x=0, y=screen_y, w=marker_w, h=marker_h}))
-            end)
-        end)
+            Screen["refreshUI"](Screen, 0, screen_y, marker_w, marker_h)
+            if type(marker_setting) == "number" then -- hide it
+                self.unmark_func = function()
+                    self.unmark_func = nil
+                    -- UIManager:setDirty(self.view.dialog, "ui", Geom:new({x=0, y=screen_y, w=marker_w, h=marker_h}))
+                    -- No need to use setDirty (which would ask crengine to
+                    -- re-render the page, which may take a few seconds on big
+                    -- documents): we drew our black marker in the margin, we
+                    -- can just draw a white one to make it disappear
+                    Screen.bb:paintRect(0, screen_y, marker_w, marker_h, Blitbuffer.COLOR_WHITE)
+                    Screen["refreshUI"](Screen, 0, screen_y, marker_w, marker_h)
+                end
+                UIManager:scheduleIn(marker_setting, self.unmark_func)
+            end
+        end
+        UIManager:scheduleIn(0.5, self.mark_func)
     end
     return true
 end
@@ -422,7 +462,7 @@ function ReaderRolling:getBookLocation()
 end
 
 function ReaderRolling:onRestoreBookLocation(saved_location)
-    return self:onGotoXPointer(saved_location)
+    return self:onGotoXPointer(saved_location.xpointer, saved_location.marker_xpointer)
 end
 
 function ReaderRolling:onGotoViewRel(diff)
@@ -529,10 +569,16 @@ function ReaderRolling:onSetDimensions(dimen)
 end
 
 function ReaderRolling:onChangeScreenMode(mode)
+    -- We need to temporarily re-enable internal history as crengine
+    -- uses it to reposition after resize
+    self.ui.document:enableInternalHistory(true)
     self.ui:handleEvent(Event:new("SetScreenMode", mode))
     self.ui.document:setViewDimen(Screen:getSize())
     self:onChangeViewMode()
     self:onUpdatePos()
+    -- Re-disable internal history, with required redraw
+    self.ui.document:enableInternalHistory(false)
+    self:onRedrawCurrentView()
 end
 
 function ReaderRolling:onColorRenderingUpdate()

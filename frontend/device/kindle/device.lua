@@ -242,6 +242,14 @@ local KindleOasis = Kindle:new{
     touch_dev = "/dev/input/by-path/platform-imx-i2c.1-event",
 }
 
+local KindleOasis2 = Kindle:new{
+    model = "KindleOasis2",
+    isTouchDevice = yes,
+    hasFrontlight = yes,
+    display_dpi = 300,
+    touch_dev = "/dev/input/by-path/platform-30a30000.i2c-event",
+}
+
 local KindleBasic2 = Kindle:new{
     model = "KindleBasic2",
     isTouchDevice = yes,
@@ -582,6 +590,7 @@ local kindle_devcode = string.sub(kindle_sn,3,4)
 local kindle_devcode_v2 = string.sub(kindle_sn,4,6)
 
 -- NOTE: Update me when new devices come out :)
+-- Also refer to https://wiki.mobileread.com/wiki/Kindle_Serial_Numbers
 local k2_set = Set { "02", "03" }
 local dx_set = Set { "04", "05" }
 local dxg_set = Set { "09" }
@@ -596,6 +605,7 @@ local kv_set = Set { "13", "54", "2A", "4F", "52", "53" }
 local pw3_set = Set { "0G1", "0G2", "0G4", "0G5", "0G6", "0G7",
                   "0KB", "0KC", "0KD", "0KE", "0KF", "0KG", "0LK", "0LL" }
 local koa_set = Set { "0GC", "0GD", "0GR", "0GS", "0GT", "0GU" }
+local koa2_set = Set { "0P8", "0S1", "0SA" }
 local kt3_set = Set { "0DU", "0K9", "0KA" }
 
 if k2_set[kindle_devcode] then
@@ -622,6 +632,8 @@ elseif pw3_set[kindle_devcode_v2] then
     return KindlePaperWhite3
 elseif koa_set[kindle_devcode_v2] then
     return KindleOasis
+elseif koa2_set[kindle_devcode_v2] then
+    return KindleOasis2
 elseif kt3_set[kindle_devcode_v2] then
     return KindleBasic2
 end

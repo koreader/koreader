@@ -104,14 +104,14 @@ function DropBoxApi:listFolder(path, token)
             table.insert(dropbox_list, {
                 text = text,
                 url = files.path_display,
-                type = tag
+                type = tag,
             })
         --show only file with supported formats
-        elseif tag == "file" and DocumentRegistry:getProvider(text) then
+        elseif tag == "file" and DocumentRegistry:hasProvider(text) then
             table.insert(dropbox_file, {
                 text = text,
                 url = files.path_display,
-                type = tag
+                type = tag,
             })
         end
     end
@@ -126,7 +126,7 @@ function DropBoxApi:listFolder(path, token)
         table.insert(dropbox_list, {
             text = files.text,
             url = files.url,
-            type = files.type
+            type = files.type,
         })
     end
     return dropbox_list

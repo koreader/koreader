@@ -308,7 +308,9 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
         -- cre.initCache("", 1024*1024*32) -- empty path = no cache
         -- But it's best to use a cache for quicker and less memory
         -- usage when opening big books:
-        cre.initCache(self.tmpcr3cache, 0) -- 0 = previous book caches are removed when opening a book
+        local default_cre_storage_size_factor = 20 -- note: keep in sync with the one in credocument.lua
+        cre.initCache(self.tmpcr3cache, 0, -- 0 = previous book caches are removed when opening a book
+            true, G_reader_settings:readSetting("cre_storage_size_factor") or default_cre_storage_size_factor)
         self.cre_cache_overriden = true
     end
 
@@ -370,7 +372,7 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
             -- Setting a default font before loading document
             -- actually do prevent some crashes
             document:setFontFace(document.default_font)
-            if not document:loadDocument() then
+            if not document:loadDocument(false) then -- load only metadata
                 -- failed loading, calling other methods would segfault
                 loaded = false
             end
@@ -440,6 +442,8 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
             end
         end
         DocumentRegistry:closeDocument(filepath)
+    else
+        loaded = false
     end
     if not loaded then
         dbrow.unsupported = _("not readable by engine")
@@ -513,7 +517,7 @@ function BookInfoManager:collectSubprocesses()
         local i = 1
         while i <= #self.subprocesses_pids do -- clean in-place
             local pid = self.subprocesses_pids[i]
-            if xutil.isSubProcessDone(pid) then
+            if util.isSubProcessDone(pid) then
                 table.remove(self.subprocesses_pids, i)
             else
                 i = i + 1
@@ -551,7 +555,7 @@ end
 function BookInfoManager:terminateBackgroundJobs()
     logger.dbg("terminating", #self.subprocesses_pids, "subprocesses")
     for i=1, #self.subprocesses_pids do
-        xutil.terminateSubProcess(self.subprocesses_pids[i])
+        util.terminateSubProcess(self.subprocesses_pids[i])
     end
 end
 
@@ -587,7 +591,7 @@ function BookInfoManager:extractInBackground(files)
     self.cleanup_needed = true -- so we will remove temporary cache directory created by subprocess
 
     -- Run task in sub-process, and remember its pid
-    local task_pid = xutil.runInSubProcess(task)
+    local task_pid = util.runInSubProcess(task)
     if not task_pid then
         logger.warn("Failed lauching background extraction sub-process (fork failed)")
         return false -- let caller know it failed

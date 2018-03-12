@@ -19,6 +19,14 @@ local KoboSysfsLight = {
     green_offset = -65,
 }
 
+function KoboSysfsLight:new(o)
+    o = o or {}
+    setmetatable(o, self)
+    self.__index = self
+    if o.init then o:init() end
+    return o
+end
+
 function KoboSysfsLight:setBrightness(brightness)
     self:setNaturalBrightness(brightness, self.current_warmth)
 end

@@ -14,6 +14,7 @@ local Device = Generic:new{
     hasFrontlight = yes,
     firmware_rev = "none",
     display_dpi = android.lib.AConfiguration_getDensity(android.app.config),
+    hasClipboard = yes,
     hasColorScreen = yes,
 }
 
@@ -32,6 +33,15 @@ function Device:init()
             elseif ev.code == ffi.C.APP_CMD_WINDOW_REDRAW_NEEDED then
                 this.device.screen:refreshFull()
             end
+        end,
+        hasClipboardText = function()
+            return android.hasClipboardText()
+        end,
+        getClipboardText = function()
+            return android.getClipboardText()
+        end,
+        setClipboardText = function(text)
+            return android.setClipboardText(text)
         end,
     }
 

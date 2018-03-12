@@ -5,33 +5,21 @@ local MultiInputDialog = require("ui/widget/multiinputdialog")
 local ReaderUI = require("apps/reader/readerui")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
+local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
-local Ftp = {
-}
-local function generateUrl(address, user, pass)
-    local colon_sign = ""
-    local at_sign = ""
-    if user ~= "" then
-        at_sign = "@"
-    end
-    if pass ~= "" then
-        colon_sign = ":"
-    end
-    local replace = "://" .. user .. colon_sign .. pass .. at_sign
-    local url = string.gsub(address, "://", replace)
-    return url
-end
+local Ftp = {}
 
 function Ftp:run(address, user, pass, path)
-    local url = generateUrl(address, user, pass) .. path
+    local url = FtpApi:generateUrl(address, user, pass) .. path
     return FtpApi:listFolder(url, path)
 end
 
 function Ftp:downloadFile(item, address, user, pass, path, close)
-    local url = generateUrl(address, user, pass) .. item.url
+    local url = FtpApi:generateUrl(address, user, pass) .. item.url
+    logger.dbg("downloadFile url", url)
     local response = FtpApi:downloadFile(url)
     if response ~= nil then
         path = util.fixUtf8(path, "_")
@@ -66,6 +54,8 @@ function Ftp:config(item, callback)
     local text_username = ""
     local hint_password = _("FTP password")
     local text_password = ""
+    local hint_folder = _("FTP folder")
+    local text_folder = "/"
     local title
     local text_button_right = _("Add")
     if item then
@@ -75,6 +65,7 @@ function Ftp:config(item, callback)
         text_address = item.address
         text_username = item.username
         text_password = item.password
+        text_folder = item.folder
     else
         title = _("Add FTP account")
     end
@@ -100,6 +91,11 @@ function Ftp:config(item, callback)
                 text = text_password,
                 input_type = "string",
                 hint = hint_password,
+            },
+            {
+                text = text_folder,
+                input_type = "string",
+                hint = hint_folder,
             },
         },
         buttons = {

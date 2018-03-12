@@ -119,7 +119,7 @@ function PhysicalKeyboard:onKeyPress(ev)
         if self.key_transformer then
             key = self.key_transformer[key]
         end
-        self.inputbox:addChar(key)
+        self.inputbox:addChars(key)
     end
 end
 

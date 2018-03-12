@@ -47,7 +47,17 @@ function CreDocument:cacheInit()
     if lfs.attributes("./cr3cache", "mode") == "directory" then
         os.execute("rm -r ./cr3cache")
     end
-    cre.initCache(DataStorage:getDataDir() .. "/cache/cr3cache", 1024*1024*32)
+    -- crengine various in-memory caches max-sizes are rather small
+    -- (2.5 / 4.5 / 1.5 / 1 MB), and we can avoid some bugs if we
+    -- increase them. Let's multiply them by 20 (each cache would
+    -- grow only when needed, depending on book characteristics).
+    -- People who would get out of memory crashes with big books on
+    -- older devices can decrease that with setting:
+    --   "cre_storage_size_factor"=1    (or 2, or 5)
+    local default_cre_storage_size_factor = 20
+    cre.initCache(DataStorage:getDataDir() .. "/cache/cr3cache", 1024*1024*32,
+        G_reader_settings:nilOrTrue("cre_compress_cached_data"),
+        G_reader_settings:readSetting("cre_storage_size_factor") or default_cre_storage_size_factor)
 end
 
 function CreDocument:engineInit()
@@ -122,9 +132,10 @@ function CreDocument:init()
     self.info.configurable = true
 end
 
-function CreDocument:loadDocument()
+function CreDocument:loadDocument(full_document)
     if not self._loaded then
-        if self._document:loadDocument(self.file) then
+        local only_metadata = full_document == false
+        if self._document:loadDocument(self.file, only_metadata) then
             self._loaded = true
         end
     end
@@ -450,6 +461,10 @@ function CreDocument:toggleFontBolder(toggle)
     self._document:setIntProperty("font.face.weight.embolden", toggle)
 end
 
+function CreDocument:getGammaLevel()
+    return cre.getGammaLevel()
+end
+
 function CreDocument:setGammaIndex(index)
     logger.dbg("CreDocument: set gamma index", index)
     cre.setGammaIndex(index)
@@ -523,6 +538,19 @@ function CreDocument:findText(pattern, origin, reverse, caseInsensitive)
     logger.dbg("CreDocument: find text", pattern, origin, reverse, caseInsensitive)
     return self._document:findText(
         pattern, origin, reverse, caseInsensitive and 1 or 0)
+end
+
+function CreDocument:enableInternalHistory(toggle)
+    -- Setting this to 0 unsets crengine internal bookmarks highlighting,
+    -- and as a side effect, disable internal history and the need to build
+    -- a bookmark at each page turn: this speeds up a lot page turning
+    -- and menu opening on big books.
+    -- It has to be called late in the document opening process, and setting
+    -- it to false needs to be followed by a redraw.
+    -- It needs to be temporarily re-enabled on page resize for crengine to
+    -- keep track of position in page and restore it after resize.
+    logger.dbg("CreDocument: set bookmarks highlight and internal history", toggle)
+    self._document:setIntProperty("crengine.highlight.bookmarks", toggle and 2 or 0)
 end
 
 function CreDocument:register(registry)

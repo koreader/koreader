@@ -6,7 +6,8 @@ KOR_BASE?=base
 -include $(KOR_BASE)/Makefile.defs
 
 # we want VERSION to carry the version of koreader, not koreader-base
-VERSION=$(shell git describe HEAD)
+VERSION:=$(shell git describe HEAD)
+VERSION:=$(VERSION)_$(shell git describe HEAD | xargs git show -s --format=format:"%cd" --date=short)
 REVISION=$(shell git rev-parse --short HEAD)
 
 # set PATH to find CC in managed toolchains
@@ -49,7 +50,7 @@ INSTALL_FILES=reader.lua setupkoenv.lua frontend resources defaults.lua datastor
 all: $(if $(ANDROID),,$(KOR_BASE)/$(OUTPUT_DIR)/luajit)
 	$(MAKE) -C $(KOR_BASE)
 	install -d $(INSTALL_DIR)/koreader
-	rm -f $(INSTALL_DIR)/koreader/git-rev; echo $(VERSION) > $(INSTALL_DIR)/koreader/git-rev
+	rm -f $(INSTALL_DIR)/koreader/git-rev; echo "$(VERSION)" > $(INSTALL_DIR)/koreader/git-rev
 ifneq ($(or $(EMULATE_READER),$(WIN32)),)
 	cp -f $(KOR_BASE)/ev_replay.py $(INSTALL_DIR)/koreader/
 	@echo "[*] create symlink instead of copying files in development mode"

@@ -149,7 +149,7 @@ function FileManager:init()
         has_close_button = true,
         perpage = G_reader_settings:readSetting("items_per_page"),
         file_filter = function(filename)
-            if DocumentRegistry:getProvider(filename) then
+            if DocumentRegistry:hasProvider(filename) then
                 return true
             end
         end,
@@ -632,14 +632,14 @@ function FileManager:deleteFile(file)
         return
     end
 
-    local is_doc = DocumentRegistry:getProvider(file_abs_path)
+    local is_doc = DocumentRegistry:hasProvider(file_abs_path)
     if lfs.attributes(file_abs_path, "mode") == "file" then
         ok, err = os.remove(file_abs_path)
     else
         ok, err = util.purgeDir(file_abs_path)
     end
-    if ok and err == nil then
-        if is_doc ~= nil then
+    if ok and not err then
+        if is_doc then
             DocSettings:open(file):purge()
         end
         UIManager:show(InfoMessage:new{

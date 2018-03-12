@@ -1,15 +1,15 @@
-local TileCacheItem = require("document/tilecacheitem")
-local KOPTContext = require("ffi/koptcontext")
-local Document = require("document/document")
-local DataStorage = require("datastorage")
-local CacheItem = require("cacheitem")
-local Screen = require("device").screen
-local Geom = require("ui/geometry")
-local serial = require("serialize")
 local Cache = require("cache")
+local CacheItem = require("cacheitem")
+local DataStorage = require("datastorage")
 local DEBUG = require("dbg")
+local Document = require("document/document")
+local Geom = require("ui/geometry")
+local KOPTContext = require("ffi/koptcontext")
+local TileCacheItem = require("document/tilecacheitem")
 local logger = require("logger")
+local serial = require("serialize")
 local util = require("ffi/util")
+local Screen = require("device").screen
 
 local KoptInterface = {
     ocrengine = "ocrengine",

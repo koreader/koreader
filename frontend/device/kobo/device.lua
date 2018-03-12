@@ -104,11 +104,18 @@ local KoboPhoenix = Kobo:new{
 local KoboSnow = Kobo:new{
     model = "Kobo_snow",
     hasFrontlight = yes,
-    touch_alyssum_protocol = true,
+    touch_snow_protocol = true,
+    touch_mirrored_x = false,
     touch_probe_ev_epoch_time = true,
     display_dpi = 265,
     -- the bezel covers the top 11 pixels:
     viewport = Geom:new{x=0, y=11, w=1080, h=1429},
+    hasNaturalLight = yes,
+    frontlight_settings = {
+        frontlight_white = "/sys/class/backlight/lm3630a_ledb",
+        frontlight_red = "/sys/class/backlight/lm3630a_led",
+        frontlight_green = "/sys/class/backlight/lm3630a_leda",
+    },
 }
 
 -- Kobo Aura second edition:
@@ -294,6 +301,10 @@ function Kobo:initEventAdjustHooks()
 
     if self.touch_alyssum_protocol then
         self.input:registerEventAdjustHook(adjustTouchAlyssum)
+    end
+
+    if self.touch_snow_protocol then
+        self.input.snow_protocol = true
     end
 
     if self.touch_probe_ev_epoch_time then
