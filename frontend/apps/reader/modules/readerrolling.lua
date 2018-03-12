@@ -98,8 +98,9 @@ function ReaderRolling:init()
         self.old_page = self.ui.document.info.number_of_pages
     end)
     table.insert(self.ui.postReaderCallback, function()
+        self:updatePos()
         self.ui.document:disableInternalHistory()
-        self:updatePos() -- after ?
+        self:onGotoPage(1)
     end)
     self.ui.menu:registerToMainMenu(self)
 end
