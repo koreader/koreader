@@ -362,7 +362,8 @@ function FileManager:init()
     end
 
     if Device:hasKeys() then
-        self.key_events.Close = { {"Home"}, doc = "Close file manager" }
+        self.key_events.Home = { {"Home"}, doc = "go home" }
+        self.file_chooser.key_events.Close = nil
     end
 
     self:handleEvent(Event:new("SetDimensions", self.dimen))
@@ -786,6 +787,12 @@ Returns a boolean value to indicate the result of mv command.
 --]]
 function FileManager:moveFile(from, to)
     return util.execute(self.mv_bin, from, to) == 0
+end
+
+function FileManager:onHome()
+    print('go home')
+    return self:goHome()
+
 end
 
 return FileManager

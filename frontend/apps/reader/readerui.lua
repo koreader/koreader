@@ -54,8 +54,8 @@ local ReaderUI = InputContainer:new{
     name = "ReaderUI",
 
     key_events = {
-        Close = { { "Home" },
-            doc = "close document", event = "Close" },
+        Home = { { "Home" },
+            doc = "open file browser", event = "Home" },
     },
     active_widgets = {},
 
@@ -95,12 +95,6 @@ function ReaderUI:init()
     -- if we are not the top level dialog ourselves, it must be given in the table
     if not self.dialog then
         self.dialog = self
-    end
-
-    if Device:hasKeys() then
-        self.key_events.Back = {
-            { "Back" }, doc = "close document",
-            event = "Close" }
     end
 
     self.doc_settings = DocSettings:open(self.document.file)
@@ -620,6 +614,11 @@ function ReaderUI:dealWithLoadDocumentFailure()
     end
     -- We have to error and exit the coroutine anyway to avoid any segfault
     error("crengine failed recognizing or parsing this file: unsupported or invalid document")
+end
+
+function ReaderUI:onHome()
+    print("go home2")
+    return self:showFileManager()
 end
 
 return ReaderUI

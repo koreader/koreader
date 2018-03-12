@@ -27,6 +27,8 @@ local util = require("util")
 local _ = require("gettext")
 local Screen = require("device").screen
 local template = require("ffi/util").template
+local Device = require("device")
+
 
 local stats_book = {}
 
@@ -82,6 +84,14 @@ function BookStatusWidget:init()
         show_parent = self,
         readonly = self.readonly,
     }
+
+    if Device:hasKeys() then
+    self.key_events = {
+        AnyKeyPressed = { { Device.input.group.Any },
+            seqtext = "any key", doc = "close dialog" }
+        }
+    end
+
     local screen_size = Screen:getSize()
     self[1] = FrameContainer:new{
         width = screen_size.w,

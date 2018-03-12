@@ -53,7 +53,6 @@ function ReaderMenu:init()
     self.registered_widgets = {}
 
     if Device:hasKeys() then
-        self.key_events = { Close = { { "Back" }, doc = "close menu" }, }
         if Device:isTouchDevice() then
             self.key_events.TapShowMenu = { { "Menu" }, doc = "show menu", }
         else
@@ -241,7 +240,7 @@ function ReaderMenu:onShowReaderMenu(tab_index)
     }
 
     local main_menu
-    if Device:isTouchDevice() then
+    if Device:hasKeys() then
         local TouchMenu = require("ui/widget/touchmenu")
         main_menu = TouchMenu:new{
             width = Screen:getWidth(),
