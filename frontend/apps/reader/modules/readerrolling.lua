@@ -569,7 +569,7 @@ end
 
 function ReaderRolling:onChangeScreenMode(mode)
     self.ui.document:enableInternalHistory(true)
-    self:onRedrawCurrentView()
+    -- self:onRedrawCurrentView()
     self.ui:handleEvent(Event:new("SetScreenMode", mode))
     self.ui.document:setViewDimen(Screen:getSize())
     self:onChangeViewMode()
