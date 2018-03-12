@@ -306,7 +306,7 @@ function FileManagerMenu:onShowMenu()
     }
 
     local main_menu
-    if Device:isTouchDevice() then
+    if Device:hasKeys() then
         local TouchMenu = require("ui/widget/touchmenu")
         main_menu = TouchMenu:new{
             width = Screen:getWidth(),
