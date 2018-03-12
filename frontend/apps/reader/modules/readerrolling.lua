@@ -99,6 +99,9 @@ function ReaderRolling:init()
     end)
     table.insert(self.ui.postReaderCallback, function()
         self:updatePos()
+        -- Disable crengine internal history, with required redraw
+        self.ui.document:enableInternalHistory(false)
+        self:onRedrawCurrentView()
     end)
     self.ui.menu:registerToMainMenu(self)
 end
@@ -566,10 +569,16 @@ function ReaderRolling:onSetDimensions(dimen)
 end
 
 function ReaderRolling:onChangeScreenMode(mode)
+    -- We need to temporarily re-enable internal history as crengine
+    -- uses it to reposition after resize
+    self.ui.document:enableInternalHistory(true)
     self.ui:handleEvent(Event:new("SetScreenMode", mode))
     self.ui.document:setViewDimen(Screen:getSize())
     self:onChangeViewMode()
     self:onUpdatePos()
+    -- Re-disable internal history, with required redraw
+    self.ui.document:enableInternalHistory(false)
+    self:onRedrawCurrentView()
 end
 
 function ReaderRolling:onColorRenderingUpdate()
