@@ -309,6 +309,7 @@ function Kindle4:init()
     }
     self.input.open("/dev/input/event0")
     self.input.open("/dev/input/event1")
+    self.input.open("fake_events")
     Kindle.init(self)
 end
 
