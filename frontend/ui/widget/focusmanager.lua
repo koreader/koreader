@@ -9,18 +9,16 @@ supports a 2D model of active elements
 
 e.g.:
     layout = {
-        { textinput, textinput },
-        { okbutton,  cancelbutton }
+        { textinput, textinput,    item },
+        { okbutton,  cancelbutton, item },
+	{ nil,       item,         nil  },
+	{ nil,       item,         nil  },
+	{ nil,       item,         nil  },
     }
-
-this is a dialog with 2 rows. in the top row, there is the
-single (!) widget <textinput>. when the focus is in this
-group, left/right movement seems (!) to be doing nothing.
-
-in the second row, there are two widgets and you can move
-left/right. also, you can go up from both to reach <textinput>,
-and from that go down and (depending on internat coordinates)
-reach either <okbutton> or <cancelbutton>.
+Naviguate the layout by trying to avoid not set or nil value.
+Provide a simple wrap around in the vertical direction.
+The first element of the first table must be valid to ensure
+to not get stuck in an invalid position.
 
 but notice that this does _not_ do the layout for you,
 it rather defines an abstract layout.
@@ -60,7 +58,7 @@ function FocusManager:onFocusMove(args)
 
         if not self.layout[self.selected.y + dy] then
             --vertical borders, try to wraparound
-            if not self:warpAround(dy) then
+            if not self:wrapAround(dy) then
                 break
             end
         else
@@ -88,7 +86,7 @@ function FocusManager:onFocusMove(args)
 
     return true
 end
-function FocusManager:warpAround(dy)
+function FocusManager:wrapAround(dy)
     --go to the last valid item directly above or below the current item
     --return false if none could be found
 	local y = self.selected.y
