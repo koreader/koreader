@@ -617,7 +617,6 @@ function ReaderUI:dealWithLoadDocumentFailure()
 end
 
 function ReaderUI:onHome()
-    print("go home2")
     return self:showFileManager()
 end
 
