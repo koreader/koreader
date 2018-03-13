@@ -15,7 +15,7 @@ local Blitbuffer = require("ffi/blitbuffer")
 
 local PerceptionExpander = Widget:extend{
     is_enabled = nil,
-    name = "percepton_expander",
+    name = "perception_expander",
     page_counter = 0,
     shift_each_pages = 100,
     margin = 0.1,
