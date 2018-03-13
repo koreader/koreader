@@ -53,9 +53,10 @@ function ReaderMenu:init()
     self.registered_widgets = {}
 
     if Device:hasKeys() then
+        self.key_events.Close = { { "Back" }, doc = "close menu" }
         if Device:isTouchDevice() then
             self.key_events.TapShowMenu = { { "Menu" }, doc = "show menu", }
-        else
+    	else
             -- map menu key to only top menu because bottom menu is only
             -- designed for touch devices
             self.key_events.ShowReaderMenu = { { "Menu" }, doc = "show menu", }
@@ -240,7 +241,7 @@ function ReaderMenu:onShowReaderMenu(tab_index)
     }
 
     local main_menu
-    if Device:isTouchDevice() or Device:hasKeys() then
+    if Device:isTouchDevice() or Device:hasDPad() then
         local TouchMenu = require("ui/widget/touchmenu")
         main_menu = TouchMenu:new{
             width = Screen:getWidth(),
@@ -293,8 +294,10 @@ function ReaderMenu:_getTabIndexFromLocation(ges)
     if self.tab_item_table == nil then
         self:setUpdateItemTable()
     end
+    if not ges then 
+	    return self.last_tab_index
     -- if the start position is far right
-    if ges.pos.x > 2 * Screen:getWidth() / 3 then
+    elseif ges.pos.x > 2 * Screen:getWidth() / 3 then
         return #self.tab_item_table
     -- if the start position is far left
     elseif ges.pos.x < Screen:getWidth() / 3 then
@@ -320,7 +323,7 @@ function ReaderMenu:onTapShowMenu(ges)
         if G_reader_settings:nilOrTrue("show_bottom_menu") then
             self.ui:handleEvent(Event:new("ShowConfigMenu"))
         end
-        self.ui:handleEvent(Event:new("ShowReaderMenu", self:_getTabIndexFromLocation(ges)))
+        self.ui:handleEvent(Event:new("ShowReaderMenu", self:_getTabIndexFromLocation(ges) or 1))
         return true
     end
 end
