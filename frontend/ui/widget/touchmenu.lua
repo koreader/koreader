@@ -6,6 +6,8 @@ local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local CheckMark = require("ui/widget/checkmark")
 local Device = require("device")
+local Event = require("ui/event")
+local FocusManager = require("ui/widget/focusmanager")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
@@ -20,16 +22,14 @@ local RightContainer = require("ui/widget/container/rightcontainer")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
+local UnderlineContainer = require("ui/widget/container/underlinecontainer")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local util = require("ffi/util")
 local _ = require("gettext")
-local Screen = Device.screen
 local getMenuText = require("util").getMenuText
-local FocusManager = require("ui/widget/focusmanager")
-local Event = require("ui/event")
 local Input = Device.input
-local UnderlineContainer = require("ui/widget/container/underlinecontainer")
+local Screen = Device.screen
 
 --[[
 TouchMenuItem widget
@@ -102,22 +102,17 @@ function TouchMenuItem:init()
         },
     }
 
-
     self._underline_container = UnderlineContainer:new{
         vertical_align = "center",
         dimen =self.dimen,
         self.item_frame
     }
 
-
     self[1] = self._underline_container
-
     function self:isEnabled()
         return item_enabled ~= false and true
     end
-
 end
-
 
 function TouchMenuItem:onFocus()
     self._underline_container.color = Blitbuffer.COLOR_BLACK
@@ -125,7 +120,7 @@ function TouchMenuItem:onFocus()
 end
 
 function TouchMenuItem:onUnfocus()
-       self._underline_container.color = Blitbuffer.COLOR_WHITE
+    self._underline_container.color = Blitbuffer.COLOR_WHITE
     return true
 end
 
@@ -748,12 +743,13 @@ end
 function TouchMenu:onClose()
     self:closeMenu()
 end
-function TouchMenu:onPrec()
+
+function TouchMenu:onBack()
     self:backToUpperMenu()
 end
+
 function TouchMenu:onPress()
     self:getFocusItem():handleEvent(Event:new("TapSelect"))
-
 end
 
 return TouchMenu

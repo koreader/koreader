@@ -2,6 +2,7 @@ local Blitbuffer = require("ffi/blitbuffer")
 local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local CloseButton = require("ui/widget/closebutton")
+local Device = require("device")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
@@ -25,10 +26,8 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local util = require("util")
 local _ = require("gettext")
-local Screen = require("device").screen
+local Screen = Device.screen
 local template = require("ffi/util").template
-local Device = require("device")
-
 
 local stats_book = {}
 
@@ -87,6 +86,7 @@ function BookStatusWidget:init()
 
     if Device:hasKeys() then
     self.key_events = {
+	--don't get locked in on non touch devices  
         AnyKeyPressed = { { Device.input.group.Any },
             seqtext = "any key", doc = "close dialog" }
         }

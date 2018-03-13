@@ -15,7 +15,7 @@ e.g.:
         { nil,       item,         nil  },
         { nil,       item,         nil  },
     }
-Naviguate the layout by trying to avoid not set or nil value.
+Navigate the layout by trying to avoid not set or nil value.
 Provide a simple wrap around in the vertical direction.
 The first element of the first table must be valid to ensure
 to not get stuck in an invalid position.

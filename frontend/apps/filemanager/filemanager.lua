@@ -791,7 +791,6 @@ end
 
 function FileManager:onHome()
     return self:goHome()
-
 end
 
 return FileManager

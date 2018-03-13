@@ -53,7 +53,6 @@ function ReaderMenu:init()
     self.registered_widgets = {}
 
     if Device:hasKeys() then
-        self.key_events.Close = { { "Back" }, doc = "close menu" }
         if Device:isTouchDevice() then
             self.key_events.TapShowMenu = { { "Menu" }, doc = "show menu", }
     	else
