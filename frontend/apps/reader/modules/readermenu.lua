@@ -55,7 +55,7 @@ function ReaderMenu:init()
     if Device:hasKeys() then
         if Device:isTouchDevice() then
             self.key_events.TapShowMenu = { { "Menu" }, doc = "show menu", }
-    	else
+        else
             -- map menu key to only top menu because bottom menu is only
             -- designed for touch devices
             self.key_events.ShowReaderMenu = { { "Menu" }, doc = "show menu", }
@@ -293,7 +293,7 @@ function ReaderMenu:_getTabIndexFromLocation(ges)
     if self.tab_item_table == nil then
         self:setUpdateItemTable()
     end
-    if not ges then 
+    if not ges then
 	    return self.last_tab_index
     -- if the start position is far right
     elseif ges.pos.x > 2 * Screen:getWidth() / 3 then
