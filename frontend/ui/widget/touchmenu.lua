@@ -401,7 +401,7 @@ function TouchMenu:init()
         }
     }
 
-    self.key_events.Prec = { {"Back"}, doc = "back" }
+    self.key_events.Back = { {"Back"}, doc = "back to upper menu or close touchmenu" }
     self.key_events.NextPage = { {Input.group.PgFwd}, doc = "next page" }
     self.key_events.PrevPage = { {Input.group.PgBack}, doc = "previous page" }
     self.key_events.Press = { {"Press"}, doc = "chose selected item" }
@@ -545,7 +545,7 @@ function TouchMenu:updateItems()
     local old_dimen = self.dimen and self.dimen:copy()
     self:_recalculatePageLayout()
     self.item_group:clear()
-    self.layout = {} --aurel
+    self.layout = {}
     table.insert(self.item_group, self.bar)
     table.insert(self.layout, self.bar.icon_widgets) --for the focusmanager
 

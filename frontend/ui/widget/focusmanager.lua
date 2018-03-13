@@ -11,9 +11,9 @@ e.g.:
     layout = {
         { textinput, textinput,    item },
         { okbutton,  cancelbutton, item },
-	{ nil,       item,         nil  },
-	{ nil,       item,         nil  },
-	{ nil,       item,         nil  },
+        { nil,       item,         nil  },
+        { nil,       item,         nil  },
+        { nil,       item,         nil  },
     }
 Naviguate the layout by trying to avoid not set or nil value.
 Provide a simple wrap around in the vertical direction.

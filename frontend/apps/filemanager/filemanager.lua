@@ -790,7 +790,6 @@ function FileManager:moveFile(from, to)
 end
 
 function FileManager:onHome()
-    print('go home')
     return self:goHome()
 
 end
