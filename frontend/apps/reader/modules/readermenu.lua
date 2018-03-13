@@ -322,7 +322,7 @@ function ReaderMenu:onTapShowMenu(ges)
         if G_reader_settings:nilOrTrue("show_bottom_menu") then
             self.ui:handleEvent(Event:new("ShowConfigMenu"))
         end
-        self.ui:handleEvent(Event:new("ShowReaderMenu", self:_getTabIndexFromLocation(ges) or 1))
+        self.ui:handleEvent(Event:new("ShowReaderMenu", self:_getTabIndexFromLocation(ges)))
         return true
     end
 end
