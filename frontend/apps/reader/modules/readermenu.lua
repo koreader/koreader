@@ -240,7 +240,7 @@ function ReaderMenu:onShowReaderMenu(tab_index)
     }
 
     local main_menu
-    if Device:hasKeys() then
+    if Device:isTouchDevice() or Device:hasKeys() then
         local TouchMenu = require("ui/widget/touchmenu")
         main_menu = TouchMenu:new{
             width = Screen:getWidth(),
