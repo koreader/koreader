@@ -1,6 +1,7 @@
 local Blitbuffer = require("ffi/blitbuffer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local CloseButton = require("ui/widget/closebutton")
+local Device = require("device")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
@@ -18,7 +19,7 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local util = require("util")
 local _ = require("gettext")
-local Screen = require("device").screen
+local Screen = Device.screen
 
 local LINE_COLOR = Blitbuffer.gray(0.4)
 local BG_COLOR = Blitbuffer.gray(0.2)
@@ -46,6 +47,13 @@ function ReaderProgress:init()
     UIManager:setDirty(self, function()
         return "ui", self.dimen
     end)
+    if Device:hasKeys() then
+        self.key_events = {
+            --don't get locked in on non touch devices
+            AnyKeyPressed = { { Device.input.group.Any },
+            seqtext = "any key", doc = "close dialog" }
+        }
+    end
     self[1] = FrameContainer:new{
         width = self.width,
         height = self.height,

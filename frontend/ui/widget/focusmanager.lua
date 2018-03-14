@@ -9,18 +9,16 @@ supports a 2D model of active elements
 
 e.g.:
     layout = {
-        { textinput, textinput },
-        { okbutton,  cancelbutton }
+        { textinput, textinput,    item },
+        { okbutton,  cancelbutton, item },
+        { nil,       item,         nil  },
+        { nil,       item,         nil  },
+        { nil,       item,         nil  },
     }
-
-this is a dialog with 2 rows. in the top row, there is the
-single (!) widget <textinput>. when the focus is in this
-group, left/right movement seems (!) to be doing nothing.
-
-in the second row, there are two widgets and you can move
-left/right. also, you can go up from both to reach <textinput>,
-and from that go down and (depending on internat coordinates)
-reach either <okbutton> or <cancelbutton>.
+Navigate the layout by trying to avoid not set or nil value.
+Provide a simple wrap around in the vertical direction.
+The first element of the first table must be valid to ensure
+to not get stuck in an invalid position.
 
 but notice that this does _not_ do the layout for you,
 it rather defines an abstract layout.
@@ -57,30 +55,17 @@ function FocusManager:onFocusMove(args)
     end
     local current_item = self.layout[self.selected.y][self.selected.x]
     while true do
-        if self.selected.x + dx > #self.layout[self.selected.y]
-        or self.selected.x + dx < 1 then
-            break  -- abort when we run into horizontal borders
-        end
-
-        -- call widget wrap callbacks in vertical direction
-        if self.selected.y + dy > #self.layout then
-            if not self:onWrapLast() then
+        if not self.layout[self.selected.y + dy] then
+            --vertical borders, try to wraparound
+            if not self:wrapAround(dy) then
                 break
             end
-        elseif self.selected.y + dy < 1 then
-            if not self:onWrapFirst() then
-                break
-            end
+        elseif not self.layout[self.selected.y + dy][self.selected.x + dx] then
+           --vertical border, no wraparound
+            break
         else
             self.selected.y = self.selected.y + dy
-            if #self.layout[self.selected.y] == 0 then -- horizontal separator
-                self.selected.y = self.selected.y + dy -- skip it
-            end
-        end
-        self.selected.x = self.selected.x + dx
-        if self.selected.x > #self.layout[self.selected.y] then
-            -- smaller nb of items on new row than on prev row
-            self.selected.x = #self.layout[self.selected.y]
+            self.selected.x = self.selected.x + dx
         end
 
         if self.layout[self.selected.y][self.selected.x] ~= current_item
@@ -88,24 +73,28 @@ function FocusManager:onFocusMove(args)
             -- we found a different object to focus
             current_item:handleEvent(Event:new("Unfocus"))
             self.layout[self.selected.y][self.selected.x]:handleEvent(Event:new("Focus"))
-            -- trigger a repaint (we need to be the registered widget!)
+            -- trigger a fast repaint, this seem to not count toward a fullscreen eink resfresh
             -- TODO: is this really needed?
-            UIManager:setDirty(self.show_parent or self, "partial")
+            UIManager:setDirty(self.show_parent or self, "fast")
             break
         end
     end
-
     return true
 end
 
-function FocusManager:onWrapFirst()
-    self.selected.y = #self.layout
-    return true
-end
-
-function FocusManager:onWrapLast()
-    self.selected.y = 1
-    return true
+function FocusManager:wrapAround(dy)
+    --go to the last valid item directly above or below the current item
+    --return false if none could be found
+    local y = self.selected.y
+    while self.layout[y - dy] and self.layout[y - dy][self.selected.x] do
+        y = y - dy
+    end
+    if y ~= self.selected.y then
+        self.selected.y = y
+        return true
+    else
+        return false
+    end
 end
 
 function FocusManager:getFocusItem()

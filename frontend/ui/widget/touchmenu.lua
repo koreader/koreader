@@ -6,6 +6,8 @@ local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local CheckMark = require("ui/widget/checkmark")
 local Device = require("device")
+local Event = require("ui/event")
+local FocusManager = require("ui/widget/focusmanager")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
@@ -20,12 +22,14 @@ local RightContainer = require("ui/widget/container/rightcontainer")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
+local UnderlineContainer = require("ui/widget/container/underlinecontainer")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local util = require("ffi/util")
 local _ = require("gettext")
-local Screen = Device.screen
 local getMenuText = require("util").getMenuText
+local Input = Device.input
+local Screen = Device.screen
 
 --[[
 TouchMenuItem widget
@@ -97,7 +101,27 @@ function TouchMenuItem:init()
             },
         },
     }
-    self[1] = self.item_frame
+
+    self._underline_container = UnderlineContainer:new{
+        vertical_align = "center",
+        dimen =self.dimen,
+        self.item_frame
+    }
+
+    self[1] = self._underline_container
+    function self:isEnabled()
+        return item_enabled ~= false and true
+    end
+end
+
+function TouchMenuItem:onFocus()
+    self._underline_container.color = Blitbuffer.COLOR_BLACK
+    return true
+end
+
+function TouchMenuItem:onUnfocus()
+    self._underline_container.color = Blitbuffer.COLOR_WHITE
+    return true
 end
 
 function TouchMenuItem:onTapSelect(arg, ges)
@@ -202,9 +226,11 @@ function TouchMenuBar:init()
             callback = nil,
             padding_left = icon_padding,
             padding_right = icon_padding,
+            menu = self.menu,
         }
 
         table.insert(self.icon_widgets, ib)
+        table.insert(self.menu.layout, ib) -- for the focusmanager
 
         -- we have to use local variable here for closure callback
         local _start_seg = end_seg + icon_sep_width
@@ -319,7 +345,7 @@ end
 --[[
 TouchMenu widget for hierarchical menus
 --]]
-local TouchMenu = InputContainer:new{
+local TouchMenu = FocusManager:new{
     tab_item_table = {},
     -- for returnning in multi-level menus
     item_table_stack = nil,
@@ -351,6 +377,8 @@ function TouchMenu:init()
         end
     end
 
+    self.layout = {}
+
     self.ges_events.TapCloseAllMenus = {
         GestureRange:new{
             ges = "tap",
@@ -368,7 +396,10 @@ function TouchMenu:init()
         }
     }
 
-    self.key_events.Close = { {"Back"}, doc = "close touch menu" }
+    self.key_events.Back = { {"Back"}, doc = "back to upper menu or close touchmenu" }
+    self.key_events.NextPage = { {Input.group.PgFwd}, doc = "next page" }
+    self.key_events.PrevPage = { {Input.group.PgBack}, doc = "previous page" }
+    self.key_events.Press = { {"Press"}, doc = "chose selected item" }
 
     local icons = {}
     for _,v in ipairs(self.tab_item_table) do
@@ -509,7 +540,9 @@ function TouchMenu:updateItems()
     local old_dimen = self.dimen and self.dimen:copy()
     self:_recalculatePageLayout()
     self.item_group:clear()
+    self.layout = {}
     table.insert(self.item_group, self.bar)
+    table.insert(self.layout, self.bar.icon_widgets) --for the focusmanager
 
     for c = 1, self.perpage do
         -- calculate index in item_table
@@ -526,6 +559,9 @@ function TouchMenu:updateItems()
                 show_parent = self.show_parent,
             }
             table.insert(self.item_group, item_tmp)
+            if item_tmp:isEnabled() then
+                table.insert(self.layout, {[self.cur_tab] = item_tmp}) --for the focusmanager
+            end
             if item.separator and c ~= self.perpage then
                 -- insert split line
                 table.insert(self.item_group, self.split_line)
@@ -553,6 +589,7 @@ function TouchMenu:updateItems()
     -- recalculate dimen based on new layout
     self.dimen.w = self.width
     self.dimen.h = self.item_group:getSize().h + self.bordersize*2 + self.padding*2
+    self.selected = { x = self.cur_tab, y = 1 } --reset the position of the focusmanager
 
     UIManager:setDirty("all", function()
         local refresh_dimen =
@@ -705,6 +742,14 @@ end
 
 function TouchMenu:onClose()
     self:closeMenu()
+end
+
+function TouchMenu:onBack()
+    self:backToUpperMenu()
+end
+
+function TouchMenu:onPress()
+    self:getFocusItem():handleEvent(Event:new("TapSelect"))
 end
 
 return TouchMenu

@@ -52,11 +52,6 @@ local T = require("ffi/util").template
 
 local ReaderUI = InputContainer:new{
     name = "ReaderUI",
-
-    key_events = {
-        Close = { { "Home" },
-            doc = "close document", event = "Close" },
-    },
     active_widgets = {},
 
     -- if we have a parent container, it must be referenced for now
@@ -97,13 +92,16 @@ function ReaderUI:init()
         self.dialog = self
     end
 
-    if Device:hasKeys() then
-        self.key_events.Back = {
-            { "Back" }, doc = "close document",
-            event = "Close" }
-    end
-
     self.doc_settings = DocSettings:open(self.document.file)
+
+    if Device:hasKeys() then
+        self.key_events.Home = { {"Home"}, doc = "open file browser" }
+        if Device:isSDL() then
+            --if in the desktop emulator
+            --add the old Back key to exit koreader
+            self.key_events.Close = { {"Back"}, doc = "Exit koreader" }
+        end
+    end
 
     -- a view container (so it must be child #1!)
     -- all paintable widgets need to be a child of reader view
@@ -620,6 +618,10 @@ function ReaderUI:dealWithLoadDocumentFailure()
     end
     -- We have to error and exit the coroutine anyway to avoid any segfault
     error("crengine failed recognizing or parsing this file: unsupported or invalid document")
+end
+
+function ReaderUI:onHome()
+    return self:showFileManager()
 end
 
 return ReaderUI

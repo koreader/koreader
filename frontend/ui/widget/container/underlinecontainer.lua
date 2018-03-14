@@ -18,10 +18,6 @@ local UnderlineContainer = WidgetContainer:new{
 }
 
 function UnderlineContainer:getSize()
-    return self:getContentSize()
-end
-
-function UnderlineContainer:getContentSize()
     local contentSize = self[1]:getSize()
     return Geom:new{
         w = contentSize.w,
@@ -36,7 +32,7 @@ function UnderlineContainer:paintTo(bb, x, y)
         w = container_size.w,
         h = container_size.h
     }
-    local content_size = self:getContentSize()
+    local content_size = self[1]:getSize()
     local p_y = y
     if self.vertical_align == "center" then
         p_y = math.floor((container_size.h - content_size.h) / 2) + y

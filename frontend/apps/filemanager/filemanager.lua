@@ -362,7 +362,12 @@ function FileManager:init()
     end
 
     if Device:hasKeys() then
-        self.key_events.Close = { {"Home"}, doc = "Close file manager" }
+        self.key_events.Home = { {"Home"}, doc = "go home" }
+        if not Device:isSDL() then
+            --if not in the desktop emulator
+            --remove the old Back key to exit koreader
+            self.file_chooser.key_events.Close = nil
+        end
     end
 
     self:handleEvent(Event:new("SetDimensions", self.dimen))
@@ -786,6 +791,10 @@ Returns a boolean value to indicate the result of mv command.
 --]]
 function FileManager:moveFile(from, to)
     return util.execute(self.mv_bin, from, to) == 0
+end
+
+function FileManager:onHome()
+    return self:goHome()
 end
 
 return FileManager
