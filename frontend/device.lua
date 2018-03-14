@@ -32,7 +32,7 @@ local function probeDevice()
     --     return require("device/newport/device")
     -- end
 
-    error("did not find a hardware abstraction for this platform")
+    error("did not find a hardware abstraction for this platform, maybe you need to install SDL if you're on Linux?")
 end
 
 local dev = probeDevice()
