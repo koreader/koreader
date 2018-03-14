@@ -55,20 +55,16 @@ function FocusManager:onFocusMove(args)
     end
     local current_item = self.layout[self.selected.y][self.selected.x]
     while true do
-
         if not self.layout[self.selected.y + dy] then
             --vertical borders, try to wraparound
             if not self:wrapAround(dy) then
                 break
             end
-        else
-            self.selected.y = self.selected.y + dy
-        end
-
-        if not self.layout[self.selected.y][self.selected.x + dx] then
-                --vertical border, no wraparound
+        elseif not self.layout[self.selected.y + dy][self.selected.x + dx] then
+           --vertical border, no wraparound
             break
         else
+            self.selected.y = self.selected.y + dy
             self.selected.x = self.selected.x + dx
         end
 
@@ -83,14 +79,14 @@ function FocusManager:onFocusMove(args)
             break
         end
     end
-
     return true
 end
+
 function FocusManager:wrapAround(dy)
     --go to the last valid item directly above or below the current item
     --return false if none could be found
-	local y = self.selected.y
-	while self.layout[y - dy] and self.layout[y - dy][self.selected.x] do
+    local y = self.selected.y
+    while self.layout[y - dy] and self.layout[y - dy][self.selected.x] do
         y = y - dy
     end
     if y ~= self.selected.y then
@@ -100,7 +96,6 @@ function FocusManager:wrapAround(dy)
         return false
     end
 end
-
 
 function FocusManager:getFocusItem()
     return self.layout[self.selected.y][self.selected.x]

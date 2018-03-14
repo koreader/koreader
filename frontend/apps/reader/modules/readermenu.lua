@@ -294,7 +294,7 @@ function ReaderMenu:_getTabIndexFromLocation(ges)
         self:setUpdateItemTable()
     end
     if not ges then
-	    return self.last_tab_index
+        return self.last_tab_index
     -- if the start position is far right
     elseif ges.pos.x > 2 * Screen:getWidth() / 3 then
         return #self.tab_item_table
