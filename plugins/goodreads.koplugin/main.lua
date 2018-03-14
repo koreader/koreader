@@ -76,11 +76,15 @@ function Goodreads:updateSettings()
     local text_top
     local hint_bottom
     local text_bottom
-    local text_info = "How to generate a key and a secret key:\n"..
-    "1. Go to https://www.goodreads.com/user/sign_up and create an account\n" ..
-    "2. Register for a development key on the following page: https://www.goodreads.com/user/sign_in?rd=true\n" ..
-    "3. Your key and secret key will now be available on https://www.goodreads.com/api/keys\n" ..
-    "4. Enter your generated key and your secret key in the settings dialog (Login to Goodreads window)"
+    local text_info = _([[
+How to generate a key and a secret key:
+
+1. Go to https://www.goodreads.com/user/sign_up and create an account
+2. Register for a development key on the following page: https://www.goodreads.com/user/sign_in?rd=true
+3. Your key and secret key will now be available on https://www.goodreads.com/api/key
+4. Enter your generated key and your secret key in the settings dialog (Login to Goodreads window)
+]])
+
     if self.goodreads_key == "" then
         hint_top = _("Goodreads key left empty")
         text_top = ""
