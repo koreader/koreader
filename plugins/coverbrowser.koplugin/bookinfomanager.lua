@@ -788,7 +788,7 @@ Do you want to prune cache of removed books?
                 end
             elseif not files or #files == 0 then
                 UIManager:close(info)
-                info = InfoMessage:new{text = _("No books were found that would need indexing.")}
+                info = InfoMessage:new{text = _("No books were found that need to be indexed.")}
                 UIManager:show(info)
                 return
             else
