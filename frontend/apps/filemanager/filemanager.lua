@@ -363,7 +363,11 @@ function FileManager:init()
 
     if Device:hasKeys() then
         self.key_events.Home = { {"Home"}, doc = "go home" }
-        self.file_chooser.key_events.Close = nil
+        if not Device:isSDL() then
+            --if not in the desktop emulator
+            --remove the old Back key to exit koreader
+            self.file_chooser.key_events.Close = nil
+        end
     end
 
     self:handleEvent(Event:new("SetDimensions", self.dimen))
