@@ -85,10 +85,10 @@ function BookStatusWidget:init()
     }
 
     if Device:hasKeys() then
-    self.key_events = {
-        --don't get locked in on non touch devices
-        AnyKeyPressed = { { Device.input.group.Any },
-            seqtext = "any key", doc = "close dialog" }
+        self.key_events = {
+            --don't get locked in on non touch devices
+            AnyKeyPressed = { { Device.input.group.Any },
+                seqtext = "any key", doc = "close dialog" }
         }
     end
 

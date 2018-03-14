@@ -124,21 +124,19 @@ function IconButton:onHoldIconButton()
     return true
 end
 
-
 function IconButton:onFocus()
-   --quick and dirty, need better way to show focus
-     self.image.invert=true
-     return true
+    --quick and dirty, need better way to show focus
+    self.image.invert=true
+    return true
 end
 
 function IconButton:onUnfocus()
-      self.image.invert=false
-      return true
+    self.image.invert=false
+    return true
 end
 
 function IconButton:onTapSelect()
-        self:onTapIconButton()
-    end
-
+    self:onTapIconButton()
+end
 
 return IconButton

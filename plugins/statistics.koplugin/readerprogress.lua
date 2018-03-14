@@ -48,7 +48,7 @@ function ReaderProgress:init()
         return "ui", self.dimen
     end)
     if Device:hasKeys() then
-       self.key_events = {
+        self.key_events = {
             --don't get locked in on non touch devices
             AnyKeyPressed = { { Device.input.group.Any },
             seqtext = "any key", doc = "close dialog" }
