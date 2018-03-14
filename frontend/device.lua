@@ -32,7 +32,7 @@ local function probeDevice()
     --     return require("device/newport/device")
     -- end
 
-    error("did not find a hardware abstraction for this platform")
+    error("Could not find hardware abstraction for this platform. If you are trying to run the emulator, please ensure SDL is installed.")
 end
 
 local dev = probeDevice()
