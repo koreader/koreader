@@ -404,7 +404,6 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
                 local spec_max_cover_h = cover_specs.max_cover_h
 
                 dbrow.cover_fetched = 'Y' -- we had a try at getting a cover
-                -- XXX make picdocument return a blitbuffer of the image
                 local cover_bb = document:getCoverPageImage()
                 if cover_bb then
                     dbrow.has_cover = 'Y'
@@ -455,6 +454,7 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
     end
     self.set_stmt:step()
     self.set_stmt:clearbind():reset() -- get ready for next query
+    return loaded
 end
 
 function BookInfoManager:setBookInfoProperties(filepath, props)
@@ -624,6 +624,245 @@ function BookInfoManager:cleanUp()
         util.purgeDir(self.tmpcr3cache)
         self.cleanup_needed = false
     end
+end
+
+local function findFilesInDir(path, recursive)
+    local dirs = {path}
+    local files = {}
+    while #dirs ~= 0 do
+        local new_dirs = {}
+        -- handle each dir
+        for __, d in pairs(dirs) do
+            -- handle files in d
+            for f in lfs.dir(d) do
+                local fullpath = d.."/"..f
+                local attributes = lfs.attributes(fullpath)
+                if recursive and attributes.mode == "directory" and f ~= "." and f~=".." then
+                    table.insert(new_dirs, fullpath)
+                elseif attributes.mode == "file" and DocumentRegistry:hasProvider(fullpath) then
+                    table.insert(files, fullpath)
+                end
+            end
+        end
+        dirs = new_dirs
+    end
+    return files
+end
+
+-- Batch extraction
+function BookInfoManager:extractBooksInDirectory(path, cover_specs)
+    local Geom = require("ui/geometry")
+    local InfoMessage = require("ui/widget/infomessage")
+    local TopContainer = require("ui/widget/container/topcontainer")
+    local Trapper = require("ui/trapper")
+    local Screen = require("device").screen
+
+    local go_on = Trapper:confirm(_([[
+
+This will extract metadata and cover images for books in current directory.
+Once extraction has started, you can abort at any moment by taping on the screen.
+
+Cover images will be saved with the adequate size for the current display mode.
+If you later change display mode, they may need to be extracted again.
+
+This extraction may take time and use some battery power: you may wish to keep your device plugged in.
+]]) , _("Cancel"), _("Continue"))
+    if not go_on then
+        return
+    end
+
+    local recursive = Trapper:confirm(_([[
+
+Do you want to extract book information for books in sub-directories too?
+]]) , _("Here only"), _("Here and under"))
+
+    local refresh_existing = Trapper:confirm(_([[
+
+Do you want to refresh metadata and covers that have already been extracted?
+]]) , _("Don't refresh"), _("Refresh"))
+
+    local prune = Trapper:confirm(_([[
+
+If you have removed many books, or have renamed some directories, it is good to remove them from the cache database.
+
+Do you want to prune cache of removed books?
+]]) , _("Don't prune"), _("Prune"))
+
+    Trapper:clear()
+
+    local confirm_abort = function()
+        return Trapper:confirm(_("Do you want to abort extraction?"), _("Don't abort"), _("Abort"))
+    end
+
+    -- Cancel any background job, before we launch new ones
+    self:terminateBackgroundJobs()
+
+    local info, completed
+    if prune then
+        local summary
+        while true do
+            info = InfoMessage:new{text = _("Pruning cache of removed books…")}
+            UIManager:show(info)
+            UIManager:forceRePaint()
+            completed, summary = Trapper:dismissableRunInSubprocess(function()
+                return self:removeNonExistantEntries()
+            end, info)
+            if not completed then
+                if confirm_abort() then
+                    return
+                end
+            else
+                UIManager:close(info)
+                info = InfoMessage:new{text = summary}
+                UIManager:show(info)
+                UIManager:forceRePaint()
+                util.sleep(2) -- Let the user see that
+                break
+            end
+        end
+        UIManager:close(info)
+    end
+
+    local files
+    while true do
+        info = InfoMessage:new{text = _("Looking for books to index…")}
+        UIManager:show(info)
+        UIManager:forceRePaint()
+        completed, files = Trapper:dismissableRunInSubprocess(function()
+            local filepaths = findFilesInDir(path, recursive)
+            table.sort(filepaths)
+            return filepaths
+        end, info)
+        if not completed then
+            if confirm_abort() then
+                return
+            end
+        elseif not files or #files == 0 then
+            UIManager:close(info)
+            info = InfoMessage:new{text = _("No book were found.")}
+            UIManager:show(info)
+            return
+        else
+            break
+        end
+    end
+    UIManager:close(info)
+
+    if refresh_existing then
+        info = InfoMessage:new{text = T(_("Found %1 books to index."), #files)}
+        UIManager:show(info)
+        UIManager:forceRePaint()
+        util.sleep(2) -- Let the user see that
+    else
+        local all_files = files
+        while true do
+            info = InfoMessage:new{text = T(_("Found %1 books.\nLooking for those not already present in cache database…"), #all_files)}
+            UIManager:show(info)
+            UIManager:forceRePaint()
+            util.sleep(2) -- Let the user see that
+            completed, files = Trapper:dismissableRunInSubprocess(function()
+                files = {}
+                for _, filepath in pairs(all_files) do
+                    local bookinfo = self:getBookInfo(filepath)
+                    local to_extract = not bookinfo
+                    if bookinfo and cover_specs and not bookinfo.ignore_cover then
+                        if bookinfo.cover_fetched then
+                            if bookinfo.has_cover and cover_specs.sizetag ~= bookinfo.cover_sizetag then
+                                if bookinfo.cover_sizetag ~= "M" then -- keep the bigger "M"
+                                    to_extract = true
+                                end
+                            end
+                        else
+                            to_extract = true
+                        end
+                    end
+                    if to_extract then
+                        table.insert(files, filepath)
+                    end
+                end
+                return files
+            end, info)
+            if not completed then
+                if confirm_abort() then
+                    return
+                end
+            elseif not files or #files == 0 then
+                UIManager:close(info)
+                info = InfoMessage:new{text = _("No books were found that need to be indexed.")}
+                UIManager:show(info)
+                return
+            else
+                break
+            end
+        end
+        UIManager:close(info)
+        info = InfoMessage:new{text = T(_("Found %1 books to index."), #files)}
+        UIManager:show(info)
+        UIManager:forceRePaint()
+        util.sleep(2) -- Let the user see that
+    end
+    UIManager:close(info)
+
+    local nb_files = #files
+    local nb_done = 0
+    local nb_success = 0
+    local i = 1
+
+    -- We use a little hack to InfoMessage for a consistent height and
+    -- fast refresh to avoid flicking
+    info = InfoMessage:new{text = "dummy"}
+    UIManager:show(info) -- but not yet painted
+    local info_max_seen_height = 0
+    local success
+
+    while i <= nb_files do
+        local filepath = files[i]
+        local filename = util.basename(filepath)
+
+        local orig_moved_offset = info.movable:getMovedOffset()
+        info:free()
+        info.text = T(_("Indexing %1 / %2…\n\n%3"), i, nb_files, filename)
+        info:init()
+        local text_widget = table.remove(info.movable[1][1], 3)
+        local text_widget_size = text_widget:getSize()
+        if text_widget_size.h > info_max_seen_height then
+            info_max_seen_height = text_widget_size.h
+        end
+        table.insert(info.movable[1][1], TopContainer:new{
+            dimen = Geom:new{
+                w = text_widget_size.w,
+                h = info_max_seen_height,
+            },
+            text_widget
+        })
+        info.movable:setMovedOffset(orig_moved_offset)
+        info:paintTo(Screen.bb, 0,0)
+        local d = info.movable[1].dimen
+        Screen.refreshUI(Screen, d.x, d.y, d.w, d.h)
+
+        completed, success = Trapper:dismissableRunInSubprocess(function()
+            return self:extractBookInfo(filepath, cover_specs)
+        end, info)
+        if not completed then
+            if confirm_abort() then
+                break
+            end
+            -- Recreate the infomessage that was dismissed
+            info = InfoMessage:new{text = "dummy"}
+            info.movable:setMovedOffset(orig_moved_offset)
+            UIManager:show(info) -- but not yet painted
+            -- don't increment i, re-process the one we interrupted
+        else
+            nb_done = nb_done + 1
+            if success then
+                nb_success = nb_success + 1
+            end
+            i = i + 1
+        end
+    end
+    UIManager:close(info)
+    info = InfoMessage:new{text = T(_("Processed %1 / %2 books.\n%3 extracted succesfully."), nb_done, nb_files, nb_success)}
+    UIManager:show(info)
 end
 
 BookInfoManager:init()

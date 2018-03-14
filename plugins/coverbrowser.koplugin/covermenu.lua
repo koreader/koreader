@@ -28,6 +28,12 @@ local BookInfoManager = require("bookinfomanager")
 -- not found item to self.items_to_update for us to update() them
 -- regularly.
 
+-- Store these as local, to be set by some object and re-used by
+-- another object (as we plug the methods below to different objects,
+-- we can't store them in 'self' if we want another one to use it)
+local current_path = nil
+local current_cover_specs = false
+
 -- Simple holder of methods that will replace those
 -- in the real Menu class or instance
 local CoverMenu = {}
@@ -75,6 +81,10 @@ function CoverMenu:updateItems(select_number)
 
     -- Specific UI building implementation (defined in some other module)
     self:_updateItemsBuildUI()
+
+    -- Set the local variables with the things we know
+    current_path = self.path
+    current_cover_specs = self.cover_specs
 
     -- As done in Menu:updateItems()
     if self.item_group[1] then
@@ -474,6 +484,45 @@ function CoverMenu:onSwipe(arg, ges_ev)
         -- trigger full refresh
         UIManager:setDirty(nil, "full")
     end
+end
+
+function CoverMenu:tapPlus()
+    -- Call original function: it will create a ButtonDialogTitle
+    -- and store it as self.file_dialog, and UIManager:show() it.
+    CoverMenu._FileManager_tapPlus_orig(self)
+
+    -- Remember some of this original ButtonDialogTitle properties
+    local orig_title = self.file_dialog.title
+    local orig_title_align = self.file_dialog.title_align
+    local orig_buttons = self.file_dialog.buttons
+    -- Close original ButtonDialogTitle (it has not yet been painted
+    -- on screen, so we won't see it)
+    UIManager:close(self.file_dialog)
+
+    -- Add a new button to original buttons set
+    table.insert(orig_buttons, {}) -- separator
+    table.insert(orig_buttons, {
+        {
+            text = _("Extract and cache book information"),
+            callback = function()
+                UIManager:close(self.file_dialog)
+                local Trapper = require("ui/trapper")
+                Trapper:wrap(function()
+                    BookInfoManager:extractBooksInDirectory(current_path, current_cover_specs)
+                end)
+            end,
+        },
+    })
+
+    -- Create the new ButtonDialogTitle, and let UIManager show it
+    local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
+    self.file_dialog = ButtonDialogTitle:new{
+        title = orig_title,
+        title_align = orig_title_align,
+        buttons = orig_buttons,
+    }
+    UIManager:show(self.file_dialog)
+    return true
 end
 
 return CoverMenu

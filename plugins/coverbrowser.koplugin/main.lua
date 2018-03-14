@@ -23,6 +23,9 @@ local _FileChooser_onSwipe_orig = FileChooser.onSwipe
 local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
 local _FileManagerHistory_updateItemTable_orig = FileManagerHistory.updateItemTable
 
+local FileManager = require("apps/filemanager/filemanager")
+local _FileManager_tapPlus_orig = FileManager.tapPlus
+
 -- Available display modes
 local DISPLAY_MODES = {
     -- nil or ""                -- classic : filename only
@@ -120,11 +123,9 @@ function CoverBrowser:addToMainMenu(menu_items)
             callback = function()
                 if G_reader_settings:readSetting("home_dir_display_name") then
                     G_reader_settings:delSetting("home_dir_display_name")
-                    local FileManager = require("apps/filemanager/filemanager")
                     if FileManager.instance then FileManager.instance:reinit() end
                 else
                     G_reader_settings:saveSetting("home_dir_display_name", "~")
-                    local FileManager = require("apps/filemanager/filemanager")
                     if FileManager.instance then FileManager.instance:reinit() end
                 end
             end,
@@ -381,7 +382,6 @@ function CoverBrowser:addToMainMenu(menu_items)
 end
 
 function CoverBrowser:refreshFileManagerInstance(cleanup, post_init)
-    local FileManager = require("apps/filemanager/filemanager")
     local fm = FileManager.instance
     if fm then
         local fc = fm.file_chooser
@@ -433,6 +433,7 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
         FileChooser.onCloseWidget = _FileChooser_onCloseWidget_orig
         FileChooser.onSwipe = _FileChooser_onSwipe_orig
         FileChooser._recalculateDimen = _FileChooser__recalculateDimen_orig
+        FileManager.tapPlus = _FileManager_tapPlus_orig
         -- Also clean-up what we added, even if it does not bother original code
         FileChooser._updateItemsBuildUI = nil
         FileChooser._do_cover_images = nil
@@ -474,6 +475,12 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
         FileChooser._do_filename_only = display_mode == "list_image_filename"
         FileChooser._do_hint_opened = true -- dogear at bottom
     end
+
+    -- Replace this FileManager method with the one from CoverMenu
+    -- (but first, make the original method saved here as local available
+    -- to CoverMenu)
+    CoverMenu._FileManager_tapPlus_orig = _FileManager_tapPlus_orig
+    FileManager.tapPlus = CoverMenu.tapPlus
 
     if init_done then
         self:refreshFileManagerInstance()

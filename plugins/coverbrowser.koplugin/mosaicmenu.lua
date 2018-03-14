@@ -374,13 +374,32 @@ function MosaicMenuItem:update()
         h = self.height - self.underline_h
     }
 
+    -- We'll draw a border around cover images, it may not be
+    -- needed with some covers, but it's nicer when cover is
+    -- a pure white background (like rendered text page)
+    local border_size = 1
+    local max_img_w = dimen.w - 2*border_size
+    local max_img_h = dimen.h - 2*border_size
+    local cover_specs = {
+        sizetag = "M",
+        max_cover_w = max_img_w,
+        max_cover_h = max_img_h,
+    }
+    -- Make it available to our menu, for batch extraction
+    -- to know what size is needed for current view
+    if self.do_cover_image then
+        self.menu.cover_specs = cover_specs
+    else
+        self.menu.cover_specs = false
+    end
+
     local file_mode = lfs.attributes(self.filepath, "mode")
     if file_mode == "directory" then
         self.is_directory = true
         -- Directory : rounded corners
         local margin = Screen:scaleBySize(5) -- make directories less wide
         local padding = Screen:scaleBySize(5)
-        local border_size = Screen:scaleBySize(2) -- make directories bolder
+        border_size = Screen:scaleBySize(2) -- make directories bolder
         local dimen_in = Geom:new{
             w = dimen.w - (margin + padding + border_size)*2,
             h = dimen.h - (margin + padding + border_size)*2
@@ -420,12 +439,6 @@ function MosaicMenuItem:update()
             self.file_deleted = true
         end
         -- File : various appearances
-        -- We'll draw a border around cover images, it may not be
-        -- needed with some covers, but it's nicer when cover is
-        -- a pure white background (like rendered text page)
-        local border_size = 1
-        local max_img_w = dimen.w - 2*border_size
-        local max_img_h = dimen.h - 2*border_size
 
         if self.do_hint_opened and DocSettings:hasSidecarFile(self.filepath) then
             self.been_opened = true
@@ -544,11 +557,7 @@ function MosaicMenuItem:update()
             -- a new extraction will have to be made when one switch to image mode
             if self.do_cover_image then
                 -- Not in db, we're going to fetch some cover
-                self.cover_specs = {
-                    sizetag = "M",
-                    max_cover_w = max_img_w,
-                    max_cover_h = max_img_h,
-                }
+                self.cover_specs = cover_specs
             end
             -- Same as real FakeCover, but let it be squared (like a file)
             local hint = "…" -- display hint it's being loaded
