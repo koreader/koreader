@@ -188,6 +188,25 @@ function ListMenuItem:update()
         h = self.height - 2 * self.underline_h
     }
 
+    -- We'll draw a border around cover images, it may not be
+    -- needed with some covers, but it's nicer when cover is
+    -- a pure white background (like rendered text page)
+    local border_size = 1
+    local max_img_w = dimen.h - 2*border_size -- width = height, squared
+    local max_img_h = dimen.h - 2*border_size
+    local cover_specs = {
+        sizetag = "s",
+        max_cover_w = max_img_w,
+        max_cover_h = max_img_h,
+    }
+    -- Make it available to our menu, for batch extraction
+    -- to know what size is needed for current view
+    if self.do_cover_image then
+        self.menu.cover_specs = cover_specs
+    else
+        self.menu.cover_specs = false
+    end
+
     local file_mode = lfs.attributes(self.filepath, "mode")
     if file_mode == "directory" then
         self.is_directory = true
@@ -226,9 +245,6 @@ function ListMenuItem:update()
             self.file_deleted = true
         end
         -- File
-        local border_size = 1
-        local max_img_w = dimen.h - 2*border_size -- width = height, squared
-        local max_img_h = dimen.h - 2*border_size
 
         local bookinfo = BookInfoManager:getBookInfo(self.filepath, self.do_cover_image)
         if bookinfo and self.do_cover_image and not bookinfo.ignore_cover then
@@ -550,11 +566,7 @@ function ListMenuItem:update()
             -- a new extraction will have to be made when one switch to image mode
             if self.do_cover_image then
                 -- Not in db, we're going to fetch some cover
-                self.cover_specs = {
-                    sizetag = "s",
-                    max_cover_w = max_img_w,
-                    max_cover_h = max_img_h,
-                }
+                self.cover_specs = cover_specs
             end
             --
             if self.do_hint_opened and DocSettings:hasSidecarFile(self.filepath) then
