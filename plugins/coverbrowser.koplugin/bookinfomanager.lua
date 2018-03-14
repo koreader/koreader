@@ -627,8 +627,8 @@ function BookInfoManager:cleanUp()
 end
 
 local function findFilesInDir(path, recursive)
-    dirs = {path}
-    files = {}
+    local dirs = {path}
+    local files = {}
     while #dirs ~= 0 do
         local new_dirs = {}
         -- handle each dir
@@ -665,7 +665,7 @@ Once extraction has started, you can abort at any moment by taping on the screen
 Cover images will be saved with the adequate size for the current display mode.
 If you later change display mode, they may need to be extracted again.
 
-This extraction may take time and use some battery power: you may wish to keep your device plugged.
+This extraction may take time and use some battery power: you may wish to keep your device plugged in.
 ]]) , _("Cancel"), _("Continue"))
     if not go_on then
         return
@@ -683,17 +683,21 @@ Do you want to refresh metadata and covers that have already been extracted?
 
     local prune = Trapper:confirm(_([[
 
-If you have removed many books, or have renamed some directories, it is good to remove them from cache database.
+If you have removed many books, or have renamed some directories, it is good to remove them from the cache database.
 
 Do you want to prune cache of removed books?
 ]]) , _("Don't prune"), _("Prune"))
 
     Trapper:clear()
 
+    local confirm_abort = function()
+        return Trapper:confirm(_("Do you want to abort extraction?"), _("Don't abort"), _("Abort"))
+    end
+
     -- Cancel any background job, before we launch new ones
     self:terminateBackgroundJobs()
 
-    local info, abort, completed
+    local info, completed
     if prune then
         local summary
         while true do
@@ -704,8 +708,7 @@ Do you want to prune cache of removed books?
                 return self:removeNonExistantEntries()
             end, info)
             if not completed then
-                abort = Trapper:confirm(_("Do you want to abort extraction?"), _("No"), _("Yes"))
-                if abort then
+                if confirm_abort() then
                     return
                 end
             else
@@ -726,13 +729,12 @@ Do you want to prune cache of removed books?
         UIManager:show(info)
         UIManager:forceRePaint()
         completed, files = Trapper:dismissableRunInSubprocess(function()
-            local files = findFilesInDir(path, recursive)
-            table.sort(files)
-            return files
+            local filepaths = findFilesInDir(path, recursive)
+            table.sort(filepaths)
+            return filepaths
         end, info)
         if not completed then
-            abort = Trapper:confirm(_("Do you want to abort extraction?"), _("No"), _("Yes"))
-            if abort then
+            if confirm_abort() then
                 return
             end
         elseif not files or #files == 0 then
@@ -781,13 +783,12 @@ Do you want to prune cache of removed books?
                 return files
             end, info)
             if not completed then
-                abort = Trapper:confirm(_("Do you want to abort extraction?"), _("No"), _("Yes"))
-                if abort then
+                if confirm_abort() then
                     return
                 end
             elseif not files or #files == 0 then
                 UIManager:close(info)
-                info = InfoMessage:new{text = _("No book were found that would need indexing.")}
+                info = InfoMessage:new{text = _("No books were found that would need indexing.")}
                 UIManager:show(info)
                 return
             else
@@ -843,8 +844,7 @@ Do you want to prune cache of removed books?
             return self:extractBookInfo(filepath, cover_specs)
         end, info)
         if not completed then
-            abort = Trapper:confirm(_("Do you want to abort extraction?"), _("No"), _("Yes"))
-            if abort then
+            if confirm_abort() then
                 break
             end
             -- Recreate the infomessage that was dismissed

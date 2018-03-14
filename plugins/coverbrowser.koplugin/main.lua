@@ -123,11 +123,9 @@ function CoverBrowser:addToMainMenu(menu_items)
             callback = function()
                 if G_reader_settings:readSetting("home_dir_display_name") then
                     G_reader_settings:delSetting("home_dir_display_name")
-                    local FileManager = require("apps/filemanager/filemanager")
                     if FileManager.instance then FileManager.instance:reinit() end
                 else
                     G_reader_settings:saveSetting("home_dir_display_name", "~")
-                    local FileManager = require("apps/filemanager/filemanager")
                     if FileManager.instance then FileManager.instance:reinit() end
                 end
             end,
@@ -384,7 +382,6 @@ function CoverBrowser:addToMainMenu(menu_items)
 end
 
 function CoverBrowser:refreshFileManagerInstance(cleanup, post_init)
-    local FileManager = require("apps/filemanager/filemanager")
     local fm = FileManager.instance
     if fm then
         local fc = fm.file_chooser
