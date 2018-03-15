@@ -739,7 +739,7 @@ Do you want to prune cache of removed books?
             end
         elseif not files or #files == 0 then
             UIManager:close(info)
-            info = InfoMessage:new{text = _("No book were found.")}
+            info = InfoMessage:new{text = _("No books were found.")}
             UIManager:show(info)
             return
         else
@@ -756,7 +756,7 @@ Do you want to prune cache of removed books?
     else
         local all_files = files
         while true do
-            info = InfoMessage:new{text = T(_("Found %1 books.\nLooking for those not already present in cache database…"), #all_files)}
+            info = InfoMessage:new{text = T(_("Found %1 books.\nLooking for those not already present in the cache database…"), #all_files)}
             UIManager:show(info)
             UIManager:forceRePaint()
             util.sleep(2) -- Let the user see that
