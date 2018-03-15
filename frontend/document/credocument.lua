@@ -47,6 +47,9 @@ function CreDocument:cacheInit()
     if lfs.attributes("./cr3cache", "mode") == "directory" then
         os.execute("rm -r ./cr3cache")
     end
+    -- crengine saves caches on disk for faster re-openings, and cleans
+    -- the less recently used ones when this limit is reached
+    local default_cre_disk_cache_max_size = 64 -- in MB units
     -- crengine various in-memory caches max-sizes are rather small
     -- (2.5 / 4.5 / 1.5 / 1 MB), and we can avoid some bugs if we
     -- increase them. Let's multiply them by 20 (each cache would
@@ -55,7 +58,8 @@ function CreDocument:cacheInit()
     -- older devices can decrease that with setting:
     --   "cre_storage_size_factor"=1    (or 2, or 5)
     local default_cre_storage_size_factor = 20
-    cre.initCache(DataStorage:getDataDir() .. "/cache/cr3cache", 1024*1024*32,
+    cre.initCache(DataStorage:getDataDir() .. "/cache/cr3cache",
+        (G_reader_settings:readSetting("cre_disk_cache_max_size") or default_cre_disk_cache_max_size)*1024*1024,
         G_reader_settings:nilOrTrue("cre_compress_cached_data"),
         G_reader_settings:readSetting("cre_storage_size_factor") or default_cre_storage_size_factor)
 end
