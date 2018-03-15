@@ -148,7 +148,7 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                         input = curr_languages,
                         input_hint = "en fr zh",
                         input_type = "text",
-                        description = _("Enter one or more Wikipedia language codes (the 2 or 3 letters before .wikipedia.org), in the order you wish to see them available, separated by space (example: en fr zh)\nFull list at https://en.wikipedia.org/wiki/List_of_Wikipedias"),
+                        description = _("Enter one or more Wikipedia language codes (the 2 or 3 letters before .wikipedia.org), in the order you wish to see them available, separated by a space. For example:\n    en fr zh\n\nFull list at https://en.wikipedia.org/wiki/List_of_Wikipedias"),
                         buttons = {
                             {
                                 {
@@ -172,79 +172,124 @@ function ReaderWikipedia:addToMainMenu(menu_items)
             { -- setting used by dictquicklookup
                 text = _("Set Wikipedia 'Save as EPUB' directory"),
                 callback = function()
-                    -- Default directory as chosen by DictQuickLookup
-                    local default_dir = G_reader_settings:readSetting("wikipedia_save_dir")
-                    if not default_dir then default_dir = G_reader_settings:readSetting("home_dir") end
-                    if not default_dir then default_dir = require("apps/filemanager/filemanagerutil").getDefaultDir() end
-                    local dialog
-                    dialog = ButtonDialogTitle:new{
-                        title = T(_("Current Wikipedia 'Save as EPUB' directory:\n\n%1\n"), default_dir),
-                        buttons = {
-                            {
+                    local choose_directory = function()
+                        -- Default directory as chosen by DictQuickLookup
+                        local default_dir = G_reader_settings:readSetting("wikipedia_save_dir")
+                        if not default_dir then default_dir = G_reader_settings:readSetting("home_dir") end
+                        if not default_dir then default_dir = require("apps/filemanager/filemanagerutil").getDefaultDir() end
+                        local dialog
+                        dialog = ButtonDialogTitle:new{
+                            title = T(_("Current Wikipedia 'Save as EPUB' directory:\n\n%1\n"), default_dir),
+                            buttons = {
                                 {
-                                    text = "Keep this directory",
+                                    {
+                                        text = "Keep this directory",
+                                        callback = function()
+                                            UIManager:close(dialog)
+                                        end,
+                                    },
+                                },
+                                {
+                                    {
+                                    text = _("Change (select directory by long-pressing"),
                                     callback = function()
                                         UIManager:close(dialog)
+                                        -- Use currently read book's directory as starting point,
+                                        -- so a user reading a wikipedia article can quickly select
+                                        -- it to save related new articles in the same directory
+                                        local dir = G_reader_settings:readSetting("wikipedia_save_dir")
+                                        if not dir then dir = G_reader_settings:readSetting("home_dir") end
+                                        if not dir then dir = require("apps/filemanager/filemanagerutil").getDefaultDir() end
+                                        if not dir then dir = "/" end
+                                        -- If this directory has no subdirectory, we would be displaying
+                                        -- a single "..", so use parent directory in that case.
+                                        local has_subdirectory = false
+                                        for f in lfs.dir(dir) do
+                                            local attributes = lfs.attributes(dir.."/"..f)
+                                            if attributes and attributes.mode == "directory" then
+                                                if f ~= "." and f ~= ".." and f:sub(-4) ~= ".sdr"then
+                                                    has_subdirectory = true
+                                                    break
+                                                end
+                                            end
+                                        end
+                                        if not has_subdirectory then
+                                            dir = dir:match("(.*)/")
+                                        end
+                                        local PathChooser = require("ui/widget/pathchooser")
+                                        local path_chooser = PathChooser:new{
+                                            title = _("Wikipedia 'Save as EPUB' directory"),
+                                            path = dir,
+                                            show_hidden = G_reader_settings:readSetting("show_hidden"),
+                                            onConfirm = function(path)
+                                                -- hack to remove additional parent
+                                                if path:sub(-3, -1) == "/.." then
+                                                    path = path:sub(1, -4)
+                                                end
+                                                path = require("ffi/util").realpath(path)
+                                                G_reader_settings:saveSetting("wikipedia_save_dir", path)
+                                                UIManager:show(InfoMessage:new{
+                                                    text = T(_("Wikipedia 'Save as EPUB' directory set to:\n%1"), path),
+                                                })
+                                            end
+                                        }
+                                        UIManager:show(path_chooser)
                                     end,
+                                    },
                                 },
                             },
-                            {
-                                {
-                                text = _("Change (select directory by long-pressing"),
-                                callback = function()
-                                    UIManager:close(dialog)
-                                    -- Use currently read book's directory as starting point,
-                                    -- so a user reading a wikipedia article can quickly select
-                                    -- it to save related new articles in the same directory
-                                    local dir
-                                    local last_file = G_reader_settings:readSetting("lastfile")
-                                    if last_file then
-                                        dir = last_file:match("(.*)/")
+                        }
+                        UIManager:show(dialog)
+                    end
+                    -- If wikipedia_save_dir has not yet been set, propose to use
+                    -- home_dir/Wikipedia/
+                    if not G_reader_settings:readSetting("wikipedia_save_dir") then
+                        local home_dir = G_reader_settings:readSetting("home_dir")
+                        if not home_dir or not lfs.attributes(home_dir, "mode") == "directory" then
+                            home_dir = require("apps/filemanager/filemanagerutil").getDefaultDir()
+                        end
+                        home_dir = home_dir:gsub("^(.-)/*$", "%1") -- remove trailing slash
+                        if home_dir and lfs.attributes(home_dir, "mode") == "directory" then
+                            local wikipedia_dir = home_dir.."/Wikipedia"
+                            local text = _([[
+
+Wikipedia articles can be saved as EPUB for more confortable reading.
+
+You can select an existing directory, or use a default directory named "Wikipedia" in your reader's home directory.
+
+Where do you want them saved?
+]])
+                            UIManager:show(ConfirmBox:new{
+                                text = text,
+                                ok_text = _("Use ~/Wikipedia/"),
+                                ok_callback = function()
+                                    if not util.pathExists(wikipedia_dir) then
+                                        lfs.mkdir(wikipedia_dir)
                                     end
-                                    if not dir then dir = G_reader_settings:readSetting("wikipedia_save_dir") end
-                                    if not dir then dir = G_reader_settings:readSetting("home_dir") end
-                                    if not dir then dir = require("apps/filemanager/filemanagerutil").getDefaultDir() end
-                                    if not dir then dir = "/" end
-                                    -- If this directory has no subdirectory, we would be displaying a single "..",
-                                    -- so use parent directory in that case.
-                                    local has_subdirectory = false
-                                    for f in lfs.dir(dir) do
-                                        local attributes = lfs.attributes(dir.."/"..f)
-                                        if attributes and attributes.mode == "directory" then
-                                            if f ~= "." and f ~= ".." and f:sub(-4) ~= ".sdr"then
-                                                has_subdirectory = true
-                                                break
-                                            end
-                                        end
-                                    end
-                                    if not has_subdirectory then
-                                        dir = dir:match("(.*)/")
-                                    end
-                                    local PathChooser = require("ui/widget/pathchooser")
-                                    local path_chooser = PathChooser:new{
-                                        title = _("Wikipedia 'Save as EPUB' directory"),
-                                        path = dir,
-                                        show_hidden = G_reader_settings:readSetting("show_hidden"),
-                                        onConfirm = function(path)
-                                            -- hack to remove additional parent
-                                            if path:sub(-3, -1) == "/.." then
-                                                path = path:sub(1, -4)
-                                            end
-                                            path = require("ffi/util").realpath(path)
-                                            G_reader_settings:saveSetting("wikipedia_save_dir", path)
-                                            UIManager:show(InfoMessage:new{
-                                                text = T(_("Wikipedia 'Save as EPUB' directory set to:\n%1"), path),
-                                                timeout = 2,
-                                            })
-                                        end
-                                    }
-                                    UIManager:show(path_chooser)
+                                    G_reader_settings:saveSetting("wikipedia_save_dir", wikipedia_dir)
+                                    UIManager:show(InfoMessage:new{
+                                        text = T(_("Wikipedia 'Save as EPUB' directory set to:\n%1"), wikipedia_dir),
+                                    })
                                 end,
-                                },
-                            },
-                        },
-                    }
-                    UIManager:show(dialog)
+                                cancel_text = _("Select directory"),
+                                cancel_callback = function()
+                                    choose_directory()
+                                end,
+                            })
+                            return
+                        end
+                    end
+                    -- If setting exists, or no home_dir found, let use choose directory
+                    choose_directory()
+                end,
+            },
+            { -- setting used by dictquicklookup
+                text = _("Save Wikipedia EPUB in current book directory"),
+                checked_func = function()
+                    return G_reader_settings:isTrue("wikipedia_save_in_book_dir")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrFalse("wikipedia_save_in_book_dir")
                 end,
                 separator = true,
             },
