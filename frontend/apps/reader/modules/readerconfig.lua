@@ -118,7 +118,11 @@ end
 
 function ReaderConfig:onReadSettings(config)
     self.configurable:loadSettings(config, self.options.prefix.."_")
-    self.last_panel_index = config:readSetting("config_panel_index") or 1
+    local config_panel_index = config:readSetting("config_panel_index")
+    if config_panel_index then
+        config_panel_index = math.min(config_panel_index, #self.options)
+    end
+    self.last_panel_index = config_panel_index or 1
 end
 
 function ReaderConfig:onSaveSettings()
