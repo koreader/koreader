@@ -660,7 +660,7 @@ function BookInfoManager:extractBooksInDirectory(path, cover_specs)
     local go_on = Trapper:confirm(_([[
 
 This will extract metadata and cover images for books in current directory.
-Once extraction has started, you can abort at any moment by taping on the screen.
+Once extraction has started, you can abort at any moment by tapping on the screen.
 
 Cover images will be saved with the adequate size for the current display mode.
 If you later change display mode, they may need to be extracted again.
