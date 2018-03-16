@@ -332,12 +332,19 @@ function DictQuickLookup:update()
                         local cleaned_lookupword = util.replaceInvalidChars(self.lookupword)
                         local filename = cleaned_lookupword .. "."..string.upper(lang)..".epub"
                         -- Find a directory to save file into
-                        local dir = G_reader_settings:readSetting("wikipedia_save_dir")
+                        local dir
+                        if G_reader_settings:isTrue("wikipedia_save_in_book_dir") and not self:isDocless() then
+                            local last_file = G_reader_settings:readSetting("lastfile")
+                            if last_file then
+                                dir = last_file:match("(.*)/")
+                            end
+                        end
+                        if not dir then dir = G_reader_settings:readSetting("wikipedia_save_dir") end
                         if not dir then dir = G_reader_settings:readSetting("home_dir") end
                         if not dir then dir = require("apps/filemanager/filemanagerutil").getDefaultDir() end
-                        if not dir then
+                        if not dir or not util.pathExists(dir) then
                             UIManager:show(InfoMessage:new{
-                                text = _("No directory to save the page to could be found."),
+                                text = _("No directory to save article to could be found."),
                             })
                             return
                         end
