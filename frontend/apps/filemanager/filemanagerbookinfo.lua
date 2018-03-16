@@ -103,7 +103,7 @@ function BookInfo:show(file, book_props)
             local loaded = true
             local pages
             if document.loadDocument then -- CreDocument
-                if not document:loadDocument() then
+                if not document:loadDocument(false) then -- load only metadata
                     -- failed loading, calling other methods would segfault
                     loaded = false
                 end
@@ -173,6 +173,9 @@ function BookInfo:show(file, book_props)
         local widget
         local document = DocumentRegistry:openDocument(file)
         if document then
+            if document.loadDocument then -- CreDocument
+                document:loadDocument(false) -- load only metadata
+            end
             local cover_bb = document:getCoverPageImage()
             if cover_bb then
                 widget = ImageViewer:new{
