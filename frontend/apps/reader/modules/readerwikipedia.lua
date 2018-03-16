@@ -252,13 +252,11 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                         if home_dir and lfs.attributes(home_dir, "mode") == "directory" then
                             local wikipedia_dir = home_dir.."/Wikipedia"
                             local text = _([[
-
 Wikipedia articles can be saved as an EPUB for more comfortable reading.
 
 You can select an existing directory, or use a default directory named "Wikipedia" in your reader's home directory.
 
-Where do you want them saved?
-]])
+Where do you want them saved?]])
                             UIManager:show(ConfirmBox:new{
                                 text = text,
                                 ok_text = _("Use ~/Wikipedia/"),
