@@ -1,5 +1,6 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
 local Event = require("ui/event")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local logger = require("logger")
 local UIManager = require("ui/uimanager")
 --[[
 Wrapper Widget that manages focus for a whole dialog
@@ -65,6 +66,7 @@ function FocusManager:onFocusMove(args)
         else
             self.selected.y = self.selected.y + dy
             self.selected.x = self.selected.x + dx
+            logger.dbg("Cursor position : ".. self.selected.y .." : "..self.selected.x)
         end
 
         if self.layout[self.selected.y][self.selected.x] ~= current_item
