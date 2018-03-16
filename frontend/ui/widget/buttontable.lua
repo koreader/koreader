@@ -115,7 +115,10 @@ function ButtonTable:addHorizontalSep(vspan_before, add_line, vspan_after, black
 end
 
 function ButtonTable:onSelectByKeyPress()
-    self:getFocusItem().callback()
+    local item = self:getFocusItem()
+    if item.enabled then
+        item.callback()
+    end
 end
 
 return ButtonTable
