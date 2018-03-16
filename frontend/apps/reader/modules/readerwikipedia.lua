@@ -253,7 +253,7 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                             local wikipedia_dir = home_dir.."/Wikipedia"
                             local text = _([[
 
-Wikipedia articles can be saved as EPUB for more confortable reading.
+Wikipedia articles can be saved as an EPUB for more comfortable reading.
 
 You can select an existing directory, or use a default directory named "Wikipedia" in your reader's home directory.
 
@@ -279,7 +279,7 @@ Where do you want them saved?
                             return
                         end
                     end
-                    -- If setting exists, or no home_dir found, let use choose directory
+                    -- If setting exists, or no home_dir found, let user choose directory
                     choose_directory()
                 end,
             },
