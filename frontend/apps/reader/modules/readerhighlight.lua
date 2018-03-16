@@ -350,8 +350,7 @@ KOReader has a build-in OCR engine for recognizing words in scanned PDF and DjVu
 
 You can download language data files for version 3.04 from https://github.com/tesseract-ocr/tesseract/wiki/Data-Files
 
-Copy the language data files for Tesseract 3.04 (e.g., eng.traineddata for English and spa.traineddata for Spanish) into koreader/data/tessdata
-]])
+Copy the language data files for Tesseract 3.04 (e.g., eng.traineddata for English and spa.traineddata for Spanish) into koreader/data/tessdata]])
 
 function ReaderHighlight:lookup(selected_word, selected_link)
     -- if we extracted text directly
