@@ -1092,7 +1092,7 @@ function Menu:onSelect()
 end
 
 function Menu:onRight()
-    local item = self.item_table[(self.page-1)*self.perpage+self.selected.y] 
+    local item = self.item_table[(self.page-1)*self.perpage+self.selected.y]
     if item then
         self:onMenuHold(item)
     end
