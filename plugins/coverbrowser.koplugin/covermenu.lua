@@ -234,7 +234,7 @@ function CoverMenu:updateItems(select_number)
                 UIManager:close(self.file_dialog)
 
                 -- Replace Book information callback to use directly our bookinfo
-                orig_buttons[4][2].callback = function()
+                orig_buttons[4][3].callback = function()
                     FileManagerBookInfo:show(file, bookinfo)
                     UIManager:close(self.file_dialog)
                 end
