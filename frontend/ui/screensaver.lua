@@ -141,7 +141,7 @@ function Screensaver:show(event, fallback_message)
         UIManager:close(self.left_msg)
         self.left_msg = nil
     end
-    local covers_fullscreen
+    local covers_fullscreen = true -- hint for UIManager:_repaint()
     local overlay_message
     local prefix = event and event.."_" or "" -- "", "poweroff_" or "reboot_"
     local screensaver_type = G_reader_settings:readSetting(prefix.."screensaver_type")
@@ -188,7 +188,6 @@ function Screensaver:show(event, fallback_message)
                     if not self:whiteBackground() then
                         background = Blitbuffer.COLOR_BLACK
                     end
-                    covers_fullscreen = true -- hint for UIManager:_repaint()
                 else
                     screensaver_type = "random_image"
                 end
@@ -214,7 +213,6 @@ function Screensaver:show(event, fallback_message)
                     view = instance.view,
                     readonly = true,
                 }
-                covers_fullscreen = true -- hint for UIManager:_repaint()
             else
                 screensaver_type = "message"
             end
@@ -245,13 +243,11 @@ function Screensaver:show(event, fallback_message)
             if not self:whiteBackground() then
                 background = Blitbuffer.COLOR_BLACK
             end
-            covers_fullscreen = true -- hint for UIManager:_repaint()
         end
     end
     if screensaver_type == "readingprogress" then
         if Screensaver.getReaderProgress ~= nil then
             widget = Screensaver.getReaderProgress()
-            covers_fullscreen = true -- hint for UIManager:_repaint()
         else
             screensaver_type = "message"
         end
@@ -260,8 +256,7 @@ function Screensaver:show(event, fallback_message)
         local screensaver_message = G_reader_settings:readSetting(prefix.."screensaver_message")
         if not self:whiteBackground() then
             background = nil -- no background filling, let book text visible
-        else
-            covers_fullscreen = true -- hint for UIManager:_repaint()
+            covers_fullscreen = false
         end
         if screensaver_message == nil then
             screensaver_message = fallback_message or default_screensaver_message
