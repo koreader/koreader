@@ -180,7 +180,7 @@ function ToggleSwitch:onTapSelect(arg, gev)
     else
         self:circlePosition()
     end
-        
+
     --[[
     if self.values then
         self.values = self.values or {}

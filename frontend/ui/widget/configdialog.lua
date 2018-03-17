@@ -7,6 +7,7 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
 local FixedTextWidget = require("ui/widget/fixedtextwidget")
+local FocusManager = require("ui/widget/focusmanager")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
@@ -61,9 +62,17 @@ function OptionTextItem:init()
         }
     else
         self.active_key_events = {
-            Select = { {"Press"}, doc = "chose selected item" },
+            --Select = { {"Press"}, doc = "chose selected item" },
         }
     end
+end
+
+function OptionTextItem:onFocus()
+    self[1].color = Blitbuffer.COLOR_BLACK
+end
+
+function OptionTextItem:onUnfocus()
+    self[1].color = Blitbuffer.COLOR_WHITE
 end
 
 function OptionTextItem:onTapSelect()
@@ -455,6 +464,8 @@ function ConfigOption:init()
                 table.insert(option_items_group, switch)
             end
             table.insert(option_items_container, option_items_group)
+            --add line of item to the second last place in the focusmanager so the menubar stay at the bottom
+            table.insert(self.config.layout, #self.config.layout,self:_itemGroupToLayoutLine(option_items_group))
             table.insert(horizontal_group, option_items_container)
             table.insert(vertical_group, horizontal_group)
         end -- if
@@ -462,6 +473,23 @@ function ConfigOption:init()
     table.insert(vertical_group, VerticalSpan:new{ width = default_option_padding })
     self[1] = vertical_group
     self.dimen = vertical_group:getSize()
+end
+
+function ConfigOption:_itemGroupToLayoutLine(option_items_group)
+    local layout_line  = {}
+    for key, valeur in pairs(option_items_group) do
+        --pad the beginning of the line in the layout to align it with the current selected tab
+        if type(key) == "number" then
+            layout_line[key + self.config.panel_index-1] = valeur
+        end
+    end
+    for key, valeur in pairs(layout_line) do
+        --remove item_spacing (all widget have the name property)
+        if not valeur.name then
+            table.remove(layout_line,key)
+        end
+    end
+    return layout_line
 end
 
 local ConfigPanel = FrameContainer:new{ background = Blitbuffer.COLOR_WHITE, bordersize = 0, }
@@ -504,7 +532,7 @@ function MenuBar:init()
         }
         menu_items[c] = menu_icon
     end
-
+    table.insert(self.config_dialog.layout,menu_items) --for the focusmanager
     local available_width = Screen:getWidth() - icons_width
     -- local padding = math.floor(available_width / #menu_items / 2) -- all for padding
     -- local padding = math.floor(available_width / #menu_items / 2 / 2) -- half padding, half spacing ?
@@ -612,7 +640,7 @@ Widget that displays config menubar and config panel
 
 --]]
 
-local ConfigDialog = InputContainer:new{
+local ConfigDialog = FocusManager:new{
     --is_borderless = false,
     panel_index = 1,
 }
@@ -650,10 +678,8 @@ function ConfigDialog:init()
     if Device:hasKeys() then
         -- set up keyboard events
         self.key_events.Close = { {"Back"}, doc = "close config menu" }
-        -- we won't catch presses to "Right"
-        self.key_events.FocusRight = nil
+        self.key_events.Select = { {"Press"}, doc = "select current menu item" }
     end
-    self.key_events.Select = { {"Press"}, doc = "select current menu item" }
 end
 
 function ConfigDialog:updateConfigPanel(index)
@@ -661,6 +687,7 @@ function ConfigDialog:updateConfigPanel(index)
 end
 
 function ConfigDialog:update()
+    self.layout = {}
     self.config_menubar = MenuBar:new{
         config_dialog = self,
         panel_index = self.panel_index,
@@ -676,6 +703,9 @@ function ConfigDialog:update()
             self.config_menubar,
         },
     }
+    --reset the focusmanager cursor
+    self.selected.y=#self.layout
+    self.selected.x=self.panel_index
 
     self[1] = BottomContainer:new{
         dimen = Screen:getSize(),
@@ -789,6 +819,11 @@ end
 function ConfigDialog:onClose()
     self:closeDialog()
     return true
+end
+
+function ConfigDialog:onSelect()
+    self:getFocusItem():handleEvent(Event:new("TapSelect"))
+   return true
 end
 
 return ConfigDialog
