@@ -467,6 +467,7 @@ function ReaderUI:doShowReader(file, provider)
     G_reader_settings:saveSetting("lastfile", file)
     local reader = ReaderUI:new{
         dimen = Screen:getSize(),
+        covers_fullscreen = true, -- hint for UIManager:_repaint()
         document = document,
     }
     UIManager:show(reader)

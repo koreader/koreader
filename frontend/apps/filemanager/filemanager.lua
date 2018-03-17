@@ -775,6 +775,7 @@ function FileManager:showFiles(path, focused_file)
     restoreScreenMode()
     local file_manager = FileManager:new{
         dimen = Screen:getSize(),
+        covers_fullscreen = true, -- hint for UIManager:_repaint()
         root_path = path,
         focused_file = focused_file,
         onExit = function()

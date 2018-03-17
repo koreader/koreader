@@ -128,6 +128,7 @@ function FileManagerHistory:onShowHist()
         ui = self.ui,
         width = Screen:getWidth(),
         height = Screen:getHeight(),
+        covers_fullscreen = true, -- hint for UIManager:_repaint()
         is_borderless = true,
         is_popout = false,
         onMenuHold = self.onMenuHold,
