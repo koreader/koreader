@@ -235,6 +235,7 @@ function ReaderBookmark:onShowBookmark()
 
     self.bookmark_menu = CenterContainer:new{
         dimen = Screen:getSize(),
+        covers_fullscreen = true, -- hint for UIManager:_repaint()
         bm_menu,
     }
 

@@ -141,6 +141,7 @@ function Screensaver:show(event, fallback_message)
         UIManager:close(self.left_msg)
         self.left_msg = nil
     end
+    local covers_fullscreen = true -- hint for UIManager:_repaint()
     local overlay_message
     local prefix = event and event.."_" or "" -- "", "poweroff_" or "reboot_"
     local screensaver_type = G_reader_settings:readSetting(prefix.."screensaver_type")
@@ -255,6 +256,7 @@ function Screensaver:show(event, fallback_message)
         local screensaver_message = G_reader_settings:readSetting(prefix.."screensaver_message")
         if not self:whiteBackground() then
             background = nil -- no background filling, let book text visible
+            covers_fullscreen = false
         end
         if screensaver_message == nil then
             screensaver_message = fallback_message or default_screensaver_message
@@ -275,6 +277,7 @@ function Screensaver:show(event, fallback_message)
         self.left_msg = ScreenSaverWidget:new{
             widget = widget,
             background = background,
+            covers_fullscreen = covers_fullscreen,
         }
         self.left_msg.modal = true
         -- refresh whole screen for other types

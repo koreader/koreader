@@ -621,11 +621,26 @@ function UIManager:_repaint()
     -- will trigger a refresh if set.
     local dirty = false
 
-    for _, widget in ipairs(self._window_stack) do
+    -- We don't need to call paintTo() on widgets that are under
+    -- a widget that covers the full screen
+    local start_idx = 1
+    for i = #self._window_stack, 1, -1 do
+        if self._window_stack[i].widget.covers_fullscreen then
+            start_idx = i
+            if i > 1 then
+                logger.dbg("not painting", i-1, "covered widget(s)")
+            end
+            break
+        end
+    end
+
+    for i = start_idx, #self._window_stack do
+        local widget = self._window_stack[i]
         -- paint if current widget or any widget underneath is dirty
         if dirty or self._dirty[widget.widget] then
             -- pass hint to widget that we got when setting widget dirty
             -- the widget can use this to decide which parts should be refreshed
+            logger.dbg("painting widget:", widget.widget.name or widget.widget.id or tostring(widget))
             widget.widget:paintTo(Screen.bb, widget.x, widget.y, self._dirty[widget.widget])
 
             -- and remove from list after painting

@@ -100,6 +100,9 @@ function ImageViewer:init()
             Swipe = { GestureRange:new{ ges = "swipe", range = range } },
         }
     end
+    if self.fullscreen then
+        self.covers_fullscreen = true -- hint for UIManager:_repaint()
+    end
     self:update()
 end
 
