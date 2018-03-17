@@ -191,7 +191,7 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                                 },
                                 {
                                     {
-                                    text = _("Change (select directory by long-pressing"),
+                                    text = _("Change (select directory by long-pressing)"),
                                     callback = function()
                                         UIManager:close(dialog)
                                         -- Use currently read book's directory as starting point,
