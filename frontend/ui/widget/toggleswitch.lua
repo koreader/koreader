@@ -154,6 +154,12 @@ function ToggleSwitch:togglePosition(position)
     self:update()
 end
 
+function ToggleSwitch:circlePosition()
+    self.position = (self.position+1)%self.n_pos
+    self.position = self.position == 0 and self.n_pos or self.position
+    self:update()
+end
+
 function ToggleSwitch:calculatePosition(gev)
     local x = (gev.pos.x - self.dimen.x) / self.dimen.w * self.n_pos
     local y = (gev.pos.y - self.dimen.y) / self.dimen.h * self.row_count
@@ -168,8 +174,13 @@ function ToggleSwitch:onTapSelect(arg, gev)
             return
         end
     end
-    local position = self:calculatePosition(gev)
-    self:togglePosition(position)
+    if gev then
+        local position = self:calculatePosition(gev)
+        self:togglePosition(position)
+    else
+        self:circlePosition()
+    end
+        
     --[[
     if self.values then
         self.values = self.values or {}
@@ -195,6 +206,16 @@ function ToggleSwitch:onHoldSelect(arg, gev)
     local position = self:calculatePosition(gev)
     self.config:onMakeDefault(self.name, self.name_text,
                     self.values or self.args, self.toggle, position)
+    return true
+end
+
+function ToggleSwitch:onFocus()
+    self.toggle_frame.background = Blitbuffer.COLOR_BLACK
+    return true
+end
+
+function ToggleSwitch:onUnfocus()
+    self.toggle_frame.background = Blitbuffer.COLOR_WHITE
     return true
 end
 
