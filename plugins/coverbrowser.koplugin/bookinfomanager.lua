@@ -658,35 +658,31 @@ function BookInfoManager:extractBooksInDirectory(path, cover_specs)
     local Screen = require("device").screen
 
     local go_on = Trapper:confirm(_([[
-
 This will extract metadata and cover images for books in current directory.
 Once extraction has started, you can abort at any moment by tapping on the screen.
 
 Cover images will be saved with the adequate size for the current display mode.
 If you later change display mode, they may need to be extracted again.
 
-This extraction may take time and use some battery power: you may wish to keep your device plugged in.
-]]) , _("Cancel"), _("Continue"))
+This extraction may take time and use some battery power: you may wish to keep your device plugged in.]]
+    ), _("Cancel"), _("Continue"))
     if not go_on then
         return
     end
 
     local recursive = Trapper:confirm(_([[
-
-Do you want to extract book information for books in sub-directories too?
-]]) , _("Here only"), _("Here and under"))
+Do you want to extract book information for books in sub-directories too?]]
+    ), _("Here only"), _("Here and under"))
 
     local refresh_existing = Trapper:confirm(_([[
-
-Do you want to refresh metadata and covers that have already been extracted?
-]]) , _("Don't refresh"), _("Refresh"))
+Do you want to refresh metadata and covers that have already been extracted?]]
+    ), _("Don't refresh"), _("Refresh"))
 
     local prune = Trapper:confirm(_([[
-
 If you have removed many books, or have renamed some directories, it is good to remove them from the cache database.
 
-Do you want to prune cache of removed books?
-]]) , _("Don't prune"), _("Prune"))
+Do you want to prune cache of removed books?]]
+    ), _("Don't prune"), _("Prune"))
 
     Trapper:clear()
 
