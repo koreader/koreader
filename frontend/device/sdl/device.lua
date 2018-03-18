@@ -42,22 +42,22 @@ function Device:init()
         self.input = require("device/input"):new{
             device = self,
             event_map = require("device/sdl/event_map_sdl2"),
-            handleMiscEv = function(input, ev)
+            handleMiscEv = function(device_input, ev)
                 -- bit of a hack for passing SDL window resize events
                 local SDL_WINDOWEVENT_RESIZED = 5
                 local w = 0
                 local h = 1
 
                 if ev.code == w then
-                    input.new_w = ev.value
+                    device_input.new_w = ev.value
                 elseif ev.code == h then
-                    input.new_h = ev.value
+                    device_input.new_h = ev.value
                 elseif ev.code == SDL_WINDOWEVENT_RESIZED then
-                    input.device.screen.screen_size.w = input.new_w
-                    input.device.screen.screen_size.h = input.new_h
-                    input.device.screen.resize(input.device.screen, input.new_w, input.new_h)
+                    device_input.device.screen.screen_size.w = device_input.new_w
+                    device_input.device.screen.screen_size.h = device_input.new_h
+                    device_input.device.screen.resize(device_input.device.screen, device_input.new_w, device_input.new_h)
 
-                    local new_size = input.device.screen:getSize()
+                    local new_size = device_input.device.screen:getSize()
                     logger.dbg("Resizing screen to", new_size)
 
                     -- try to catch as many flies as we can
