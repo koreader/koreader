@@ -65,9 +65,6 @@ function Device:init()
                     local UIManager = require("ui/uimanager")
                     UIManager:handleInputEvent(Event:new("SetDimensions", new_size))
                     UIManager:handleInputEvent(Event:new("ScreenResize", new_size))
-                    -- trigger more code intended for dealing with sizing changes
-                    UIManager:handleInputEvent(Event:new("SetScreenMode",
-                                                         self.device.screen:getScreenMode(), self.device.screen:getRotationMode()))
                 end
             end,
             hasClipboardText = function()
