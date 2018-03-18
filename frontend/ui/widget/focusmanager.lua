@@ -1,7 +1,7 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
 local Event = require("ui/event")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local logger = require("logger")
 local UIManager = require("ui/uimanager")
-
 --[[
 Wrapper Widget that manages focus for a whole dialog
 
@@ -56,16 +56,17 @@ function FocusManager:onFocusMove(args)
     local current_item = self.layout[self.selected.y][self.selected.x]
     while true do
         if not self.layout[self.selected.y + dy] then
-            --vertical borders, try to wraparound
+            --horizontal border, try to wraparound
             if not self:wrapAround(dy) then
                 break
             end
         elseif not self.layout[self.selected.y + dy][self.selected.x + dx] then
-           --vertical border, no wraparound
+            --vertical border, no wraparound
             break
         else
             self.selected.y = self.selected.y + dy
             self.selected.x = self.selected.x + dx
+            logger.dbg("Cursor position : ".. self.selected.y .." : "..self.selected.x)
         end
 
         if self.layout[self.selected.y][self.selected.x] ~= current_item

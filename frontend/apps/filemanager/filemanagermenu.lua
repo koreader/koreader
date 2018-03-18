@@ -251,6 +251,20 @@ function FileManagerMenu:setUpdateItemTable()
             self:exitOrRestart(function() UIManager:restartKOReader() end)
         end,
     }
+    if not Device:isTouchDevice() then
+        --add a shortcut on non touch-device
+        --because this menu is not accessible otherwise
+        self.menu_items.plus_menu = {
+            icon = "resources/icons/appbar.plus.png",
+            remember = false,
+            callback = function()
+                self:onCloseFileManagerMenu()
+                self.ui:tapPlus()
+            end,
+        }
+    else
+        self.menu_items.plus_menu = {}
+    end
 
     local order = require("ui/elements/filemanager_menu_order")
 
