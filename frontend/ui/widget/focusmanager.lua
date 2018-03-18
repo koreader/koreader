@@ -61,7 +61,7 @@ function FocusManager:onFocusMove(args)
                 break
             end
         elseif not self.layout[self.selected.y + dy][self.selected.x] then
-            --inner horizontal border, trying to be clever and step down    
+            --inner horizontal border, trying to be clever and step down
             self:_verticalStep(dy)
         elseif not self.layout[self.selected.y + dy][self.selected.x + dx] then
             --vertical border, no wraparound
