@@ -1,5 +1,6 @@
 local Device = require("device")
 local DocumentRegistry = require("document/documentregistry")
+local Event = require("ui/event")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local ImageViewer = require("ui/widget/imageviewer")
 local Menu = require("ui/widget/menu")
@@ -93,7 +94,7 @@ function CoverMenu:updateItems(select_number)
             -- reset focus manager accordingly
             self.selected = { x = 1, y = select_number }
             -- set focus to requested menu item
-            self.item_group[select_number]:onFocus()
+            self:getFocusItem():handleEvent(Event:new("Focus"))
             -- This will not work with our MosaicMenu, as a MosaicMenuItem is
             -- not a direct child of item_group (which contains VerticalSpans
             -- and HorizontalGroup...)
