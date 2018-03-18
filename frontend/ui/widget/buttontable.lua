@@ -41,7 +41,7 @@ function ButtonTable:init()
     end
     local row_cnt = #self.buttons
     for i = 1, row_cnt do
-        self.buttons_layout[i] = {}
+        local buttons_layout_line = {}
         local horizontal_group = HorizontalGroup:new{}
         local row = self.buttons[i]
         local column_cnt = #row
@@ -69,7 +69,7 @@ function ButtonTable:init()
                     h = button_dim.h,
                 }
             }
-            self.buttons_layout[i][j] = button
+            buttons_layout_line[j] = button
             table.insert(horizontal_group, button)
             if j < column_cnt then
                 table.insert(horizontal_group, vertical_sep)
@@ -78,6 +78,10 @@ function ButtonTable:init()
         table.insert(self.container, horizontal_group)
         if i < row_cnt then
             self:addHorizontalSep(true, true, true)
+        end
+        if column_cnt > 0 then
+            --Only add line that are not separator to the focusmanager
+            table.insert(self.buttons_layout, buttons_layout_line)
         end
     end -- end for each button line
     self:addHorizontalSep(true, false, false)
@@ -111,7 +115,10 @@ function ButtonTable:addHorizontalSep(vspan_before, add_line, vspan_after, black
 end
 
 function ButtonTable:onSelectByKeyPress()
-    self:getFocusItem().callback()
+    local item = self:getFocusItem()
+    if item.enabled then
+        item.callback()
+    end
 end
 
 return ButtonTable

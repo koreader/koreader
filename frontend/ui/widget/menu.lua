@@ -793,6 +793,9 @@ function Menu:init()
         self.key_events.Select = {
             {"Press"}, doc = "select current menu item"
         }
+        self.key_events.Right = {
+            {"Right"}, doc = "hold  menu item"
+        }
     end
 
 
@@ -1084,6 +1087,14 @@ function Menu:onSelect()
     local item = self.item_table[(self.page-1)*self.perpage+self.selected.y]
     if item then
         self:onMenuSelect(item)
+    end
+    return true
+end
+
+function Menu:onRight()
+    local item = self.item_table[(self.page-1)*self.perpage+self.selected.y]
+    if item then
+        self:onMenuHold(item)
     end
     return true
 end
