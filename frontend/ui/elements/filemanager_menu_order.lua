@@ -3,6 +3,7 @@ local order = {
         "setting",
         "tools",
         "search",
+        "plus_menu",
         "main",
     },
     setting = {
@@ -88,6 +89,7 @@ local order = {
         "----------------------------",
         "about",
     },
+    plus_menu = {},
     exit_menu = {
         "restart_koreader",
         "----------------------------",
