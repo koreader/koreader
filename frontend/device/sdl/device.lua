@@ -1,3 +1,4 @@
+local Event = require("ui/event")
 local Generic = require("device/generic/device")
 local util = require("ffi/util")
 local logger = require("logger")
@@ -41,6 +42,33 @@ function Device:init()
         self.input = require("device/input"):new{
             device = self,
             event_map = require("device/sdl/event_map_sdl2"),
+            handleMiscEv = function(self, ev)
+                -- bit of a hack for passing SDL window resize events
+                local SDL_WINDOWEVENT_RESIZED = 5
+                local w = 0
+                local h = 1
+
+                if ev.code == w then
+                    self.new_w = ev.value
+                elseif ev.code == h then
+                    self.new_h = ev.value
+                elseif ev.code == SDL_WINDOWEVENT_RESIZED then
+                    self.device.screen.screen_size.w = self.new_w
+                    self.device.screen.screen_size.h = self.new_h
+                    self.device.screen.resize(self.device.screen, self.new_w, self.new_h)
+
+                    local new_size = self.device.screen:getSize()
+                    logger.dbg("Resizing screen to", new_size)
+
+                    -- try to catch as many flies as we can
+                    -- this means we can't just return one ScreenResize or SetDimensons event
+                    local UIManager = require("ui/uimanager")
+                    UIManager:handleInputEvent(Event:new("SetDimensions", new_size))
+                    UIManager:handleInputEvent(Event:new("ScreenResize", new_size))
+                    -- trigger more code intended for dealing with sizing changes
+                    UIManager:handleInputEvent(Event:new("SetScreenMode", self.device.screen.cur_rotation_mode))
+                end
+            end,
             hasClipboardText = function()
                 return input.hasClipboardText()
             end,
