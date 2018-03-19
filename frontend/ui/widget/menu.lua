@@ -964,6 +964,12 @@ function Menu:switchItemTable(new_title, new_item_table, itemnumber, itemmatch)
     self:updateItems()
 end
 
+function Menu:onScreenResize(dimen)
+    -- @TODO investigate: could this cause minor memory leaks?
+    self:init()
+    return false
+end
+
 function Menu:onSelectByShortCut(_, keyevent)
     for k,v in ipairs(self.item_shortcuts) do
         if k > self.perpage then
