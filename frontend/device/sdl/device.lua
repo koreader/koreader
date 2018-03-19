@@ -63,8 +63,12 @@ function Device:init()
                     -- try to catch as many flies as we can
                     -- this means we can't just return one ScreenResize or SetDimensons event
                     local UIManager = require("ui/uimanager")
-                    UIManager:handleInputEvent(Event:new("SetDimensions", new_size))
-                    UIManager:handleInputEvent(Event:new("ScreenResize", new_size))
+                    UIManager:broadcastEvent(Event:new("SetDimensions", new_size))
+                    UIManager:broadcastEvent(Event:new("ScreenResize", new_size))
+                    -- @TODO toggle this elsewhere based on ScreenResize?
+                    -- this triggers paged media like PDF and DjVu to redraw
+                    -- CreDocument doesn't need it
+                    UIManager:broadcastEvent(Event:new("RedrawCurrentPage"))
                 end
             end,
             hasClipboardText = function()
