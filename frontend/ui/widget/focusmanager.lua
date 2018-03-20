@@ -95,13 +95,10 @@ function FocusManager:_wrapAround(dy)
     end
     if y ~= self.selected.y then
         self.selected.y = y
-        if self.layout[self.selected.y][self.selected.x] then
-            --great, no need to search for an horizontal position
-        else
+        if not self.layout[self.selected.y][self.selected.x] then
             --call verticalStep on the current line to perform the search
             self:_verticalStep(0)
         end
-            
         return true
     else
         return false
