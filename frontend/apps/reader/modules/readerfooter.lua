@@ -268,8 +268,9 @@ end
 -- call this method whenever the screen size changes
 function ReaderFooter:resetLayout()
     local new_screen_width = Screen:getWidth()
-    if new_screen_width == self._saved_screen_width then return end
     local new_screen_height = Screen:getHeight()
+    if new_screen_width == self._saved_screen_width
+        and new_screen_height == self._saved_screen_height then return end
 
     if self.settings.disable_progress_bar then
         self.progress_bar.width = 0
@@ -284,6 +285,7 @@ function ReaderFooter:resetLayout()
     self.dimen = self.footer_positioner:getSize()
 
     self._saved_screen_width = new_screen_width
+    self._saved_screen_height = new_screen_height
 end
 
 function ReaderFooter:getHeight()
