@@ -90,11 +90,18 @@ function FocusManager:_wrapAround(dy)
     --go to the last valid item directly above or below the current item
     --return false if none could be found
     local y = self.selected.y
-    while self.layout[y - dy] and self.layout[y - dy][self.selected.x] do
+    while self.layout[y - dy] do
         y = y - dy
     end
     if y ~= self.selected.y then
         self.selected.y = y
+        if self.layout[self.selected.y][self.selected.x] then
+            --great, no need to search for an horizontal position
+        else
+            --call verticalStep on the current line to perform the search
+            self:_verticalStep(0)
+        end
+            
         return true
     else
         return false
