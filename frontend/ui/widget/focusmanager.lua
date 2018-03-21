@@ -57,17 +57,20 @@ function FocusManager:onFocusMove(args)
     while true do
         if not self.layout[self.selected.y + dy] then
             --horizontal border, try to wraparound
-            if not self:wrapAround(dy) then
+            if not self:_wrapAround(dy) then
                 break
             end
+        elseif not self.layout[self.selected.y + dy][self.selected.x] then
+            --inner horizontal border, trying to be clever and step down
+            self:_verticalStep(dy)
         elseif not self.layout[self.selected.y + dy][self.selected.x + dx] then
             --vertical border, no wraparound
             break
         else
             self.selected.y = self.selected.y + dy
             self.selected.x = self.selected.x + dx
-            logger.dbg("Cursor position : ".. self.selected.y .." : "..self.selected.x)
         end
+        logger.dbg("Cursor position : ".. self.selected.y .." : "..self.selected.x)
 
         if self.layout[self.selected.y][self.selected.x] ~= current_item
         or not self.layout[self.selected.y][self.selected.x].is_inactive then
@@ -83,19 +86,40 @@ function FocusManager:onFocusMove(args)
     return true
 end
 
-function FocusManager:wrapAround(dy)
+function FocusManager:_wrapAround(dy)
     --go to the last valid item directly above or below the current item
     --return false if none could be found
     local y = self.selected.y
-    while self.layout[y - dy] and self.layout[y - dy][self.selected.x] do
+    while self.layout[y - dy] do
         y = y - dy
     end
     if y ~= self.selected.y then
         self.selected.y = y
+        if not self.layout[self.selected.y][self.selected.x] then
+            --call verticalStep on the current line to perform the search
+            self:_verticalStep(0)
+        end
         return true
     else
         return false
     end
+end
+
+function FocusManager:_verticalStep(dy)
+    local x = self.selected.x
+    --looking for the item on the line below, the closest on the left side
+    while not self.layout[self.selected.y + dy][x] do
+        x = x - 1
+        if x == 0 then
+            --if he is not on the left, must be on the right
+            x = self.selected.x
+            while not self.layout[self.selected.y + dy][x] do
+                x = x + 1
+            end
+        end
+    end
+    self.selected.x = x
+    self.selected.y = self.selected.y + dy
 end
 
 function FocusManager:getFocusItem()
