@@ -101,7 +101,7 @@ ld: cannot find -lglib-2.0`
 
 Mac OS X users may need to install these tools using [Homebrew](https://brew.sh/):
 ```
-brew install nasm binutils libtool autoconf automake cmake makedepend sdl2 lua51 gettext wget md5sha1sum
+brew install nasm binutils libtool autoconf automake cmake makedepend sdl2 lua51 gettext pkg-config wget md5sha1sum
 echo 'export PATH="/usr/local/opt/gettext/bin:$PATH"' >> ~/.bash_profile
 ```
 
