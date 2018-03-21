@@ -60,10 +60,6 @@ function OptionTextItem:init()
                 doc = "Hold Option Item",
             },
         }
-    else
-        self.active_key_events = {
-            --Select = { {"Press"}, doc = "chose selected item" },
-        }
     end
 end
 
