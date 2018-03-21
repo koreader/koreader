@@ -64,11 +64,11 @@ function OptionTextItem:init()
 end
 
 function OptionTextItem:onFocus()
-    self[1].color = Blitbuffer.COLOR_BLACK
+    --self[1].color = Blitbuffer.COLOR_BLACK
 end
 
 function OptionTextItem:onUnfocus()
-    self[1].color = Blitbuffer.COLOR_WHITE
+    --self[1].color = Blitbuffer.COLOR_WHITE
 end
 
 function OptionTextItem:onTapSelect()
@@ -122,6 +122,14 @@ function OptionIconItem:init()
 
         }
     end
+end
+
+function OptionIconItem:onFocus()
+    self.icon.invert = true
+end
+
+function OptionIconItem:onUnfocus()
+    self.icon.invert = false
 end
 
 function OptionIconItem:onTapSelect()

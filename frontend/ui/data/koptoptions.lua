@@ -129,7 +129,11 @@ local KoptOptions = {
             {
                 name = "font_fine_tune",
                 name_text = S.FONTSIZE_FINE_TUNING,
-                toggle = {S.DECREASE, S.INCREASE},
+                item_icons = {
+                    "resources/icons/appbar.minus.png",
+                    "resources/icons/appbar.plus.png",
+                },
+
                 values = {-0.05, 0.05},
                 default_value = 0.05,
                 event = "FineTuningFontSize",

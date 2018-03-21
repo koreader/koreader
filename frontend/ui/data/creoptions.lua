@@ -101,7 +101,10 @@ local CreOptions = {
             {
                 name = "font_fine_tune",
                 name_text = S.FONTSIZE_FINE_TUNING,
-                toggle = {S.DECREASE, S.INCREASE},
+                item_icons = {
+                    "resources/icons/appbar.minus.png",
+                    "resources/icons/appbar.plus.png",
+                },
                 event = "ChangeSize",
                 args = {"decrease", "increase"},
                 alternate = false,
