@@ -99,9 +99,9 @@ block you from building for Kobo or Kindle. Remove them if you get an ld error,
 `/usr/lib/gcc-cross/arm-linux-gnueabihf/4.8/../../../../arm-linux-gnueabihf/bin/
 ld: cannot find -lglib-2.0`
 
-Mac OSX users may need to install these tools:
+Mac OS X users may need to install these tools using [Homebrew](https://brew.sh/):
 ```
-brew install nasm binutils libtool autoconf automake cmake makedepend sdl2 lua51 gettext
+brew install nasm binutils libtool autoconf automake cmake makedepend sdl2 lua51 gettext wget md5sum
 echo 'export PATH="/usr/local/opt/gettext/bin:$PATH"' >> ~/.bash_profile
 ```
 
