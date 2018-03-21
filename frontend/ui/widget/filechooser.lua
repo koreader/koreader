@@ -261,6 +261,10 @@ end
 
 function FileChooser:refreshPath()
     local itemmatch = nil
+
+    local _, folder_name = require("util").splitFilePathName(self.path)
+    Screen:setWindowTitle(folder_name)
+
     if self.focused_path then
         itemmatch = {path = self.focused_path}
         -- We use focused_path only once, but remember it
@@ -268,15 +272,18 @@ function FileChooser:refreshPath()
         self.prev_focused_path = self.focused_path
         self.focused_path = nil
     end
+
     self:switchItemTable(nil, self:genItemTableFromPath(self.path), self.path_items[self.path], itemmatch)
 end
 
 function FileChooser:changeToPath(path, focused_path)
     path = util.realpath(path)
     self.path = path
+
     if focused_path then
         self.focused_path = focused_path
     end
+
     self:refreshPath()
     self:onPathChanged(path)
 end
