@@ -155,9 +155,11 @@ function ToggleSwitch:togglePosition(position)
 end
 
 function ToggleSwitch:circlePosition()
-    self.position = (self.position+1)%self.n_pos
-    self.position = self.position == 0 and self.n_pos or self.position
-    self:update()
+    if self.position then
+        self.position = (self.position+1)%self.n_pos
+        self.position = self.position == 0 and self.n_pos or self.position
+        self:update()
+    end
 end
 
 function ToggleSwitch:calculatePosition(gev)

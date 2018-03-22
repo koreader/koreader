@@ -131,11 +131,8 @@ local KoptOptions = {
             {
                 name = "font_fine_tune",
                 name_text = S.FONTSIZE_FINE_TUNING,
-                item_icons = {
-                    "resources/icons/appbar.minus.png",
-                    "resources/icons/appbar.plus.png",
-                },
-
+                toggle = Device:isTouchDevice() and {S.DECREASE, S.INCREASE} or nil,
+                item_text = not Device:isTouchDevice() and {S.DECREASE, S.INCREASE} or nil, 
                 values = {-0.05, 0.05},
                 default_value = 0.05,
                 event = "FineTuningFontSize",
