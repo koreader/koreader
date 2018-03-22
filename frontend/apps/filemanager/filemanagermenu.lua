@@ -294,10 +294,13 @@ function FileManagerMenu:exitOrRestart(callback)
     end
 end
 
-function FileManagerMenu:onShowMenu()
-    local tab_index = G_reader_settings:readSetting("filemanagermenu_tab_index") or 1
+function FileManagerMenu:onShowMenu(tab_index)
     if self.tab_item_table == nil then
         self:setUpdateItemTable()
+    end
+
+    if not tab_index then
+        tab_index = G_reader_settings:readSetting("filemanagermenu_tab_index") or 1
     end
 
     local menu_container = CenterContainer:new{
@@ -332,7 +335,6 @@ function FileManagerMenu:onShowMenu()
     -- maintain a reference to menu_container
     self.menu_container = menu_container
     UIManager:show(menu_container)
-
     return true
 end
 
@@ -343,16 +345,35 @@ function FileManagerMenu:onCloseFileManagerMenu()
     return true
 end
 
+function FileManagerMenu:_getTabIndexFromLocation(ges)
+    if self.tab_item_table == nil then
+        self:setUpdateItemTable()
+    end
+    local last_tab_index = G_reader_settings:readSetting("filemanagermenu_tab_index") or 1
+    if not ges then
+        return last_tab_index
+    -- if the start position is far right
+    elseif ges.pos.x > 2 * Screen:getWidth() / 3 then
+        return #self.tab_item_table
+    -- if the start position is far left
+    elseif ges.pos.x < Screen:getWidth() / 3 then
+        return 1
+    -- if center return the last index
+    else
+        return last_tab_index
+    end
+end
+
 function FileManagerMenu:onTapShowMenu(ges)
     if self.activation_menu ~= "swipe" then
-        self:onShowMenu()
+        self:onShowMenu(self:_getTabIndexFromLocation(ges))
         return true
     end
 end
 
 function FileManagerMenu:onSwipeShowMenu(ges)
     if self.activation_menu ~= "tap" and ges.direction == "south" then
-        self:onShowMenu()
+        self:onShowMenu(self:_getTabIndexFromLocation(ges))
         return true
     end
 end
