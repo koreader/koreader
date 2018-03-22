@@ -1,6 +1,7 @@
+local Device = require("device")
 local S = require("ui/data/strings")
 local _ = require("gettext")
-local Screen = require("device").screen
+local Screen = Device.screen
 
 local function enable_if_equals(configurable, option, value)
     return configurable[option] == value
@@ -33,7 +34,7 @@ local KoptOptions = {
                 alternate = false,
                 values = {0, 1, 2},
                 default_value = DKOPTREADER_CONFIG_TRIM_PAGE,
-                enabled_func = function() return require("device"):isTouchDevice() end,
+                enabled_func = function() return Device:isTouchDevice() end,
                 event = "PageCrop",
                 args = {"manual", "auto", "semi-auto"},
             }

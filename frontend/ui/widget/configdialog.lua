@@ -481,16 +481,16 @@ end
 
 function ConfigOption:_itemGroupToLayoutLine(option_items_group)
     local layout_line  = {}
-    for key, valeur in pairs(option_items_group) do
+    for k, v in pairs(option_items_group) do
         --pad the beginning of the line in the layout to align it with the current selected tab
-        if type(key) == "number" then
-            layout_line[key + self.config.panel_index-1] = valeur
+        if type(k) == "number" then
+            layout_line[k + self.config.panel_index-1] = v
         end
     end
-    for key, valeur in pairs(layout_line) do
+    for k, v in pairs(layout_line) do
         --remove item_spacing (all widget have the name property)
-        if not valeur.name then
-            table.remove(layout_line,key)
+        if not v.name then
+            table.remove(layout_line,k)
         end
     end
     return layout_line
