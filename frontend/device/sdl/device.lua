@@ -43,12 +43,19 @@ function Device:init()
             device = self,
             event_map = require("device/sdl/event_map_sdl2"),
             handleMiscEv = function(device_input, ev)
-                -- bit of a hack for passing SDL window resize events
+                -- bit of a hack for passing SDL events
+                local SDL_DROPFILE = 4096
                 local SDL_WINDOWEVENT_RESIZED = 5
                 local w = 0
                 local h = 1
 
-                if ev.code == w then
+                if ev.code == SDL_DROPFILE then
+                    local dropped_file_path = input.getDroppedFilePath()
+                    if dropped_file_path and dropped_file_path ~= "" then
+                        local ReaderUI = require("apps/reader/readerui")
+                        ReaderUI:doShowReader(dropped_file_path)
+                    end
+                elseif ev.code == w then
                     device_input.new_w = ev.value
                 elseif ev.code == h then
                     device_input.new_h = ev.value
