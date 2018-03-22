@@ -14,7 +14,7 @@ function ReaderConfig:init()
     if not self.dimen then self.dimen = Geom:new{} end
     if Device:hasKeyboard() then
         self.key_events = {
-            ShowConfigMenu = { { "AA" }, doc = "show config dialog" },
+            ShowConfigMenu = { {{"Press","AA"}}, doc = "show config dialog" },
         }
     end
     if Device:isTouchDevice() then

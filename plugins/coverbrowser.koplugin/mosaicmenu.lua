@@ -334,11 +334,6 @@ function MosaicMenuItem:init()
             },
         }
     end
-    if Device:hasKeys() then
-        self.active_key_events = {
-            Select = { {"Press"}, doc = "chose selected item" },
-        }
-    end
 
     -- We now build the minimal widget container that won't change after udpate()
 
@@ -642,13 +637,11 @@ end
 -- As done in MenuItem
 function MosaicMenuItem:onFocus()
     self._underline_container.color = Blitbuffer.COLOR_BLACK
-    self.key_events = self.active_key_events
     return true
 end
 
 function MosaicMenuItem:onUnfocus()
     self._underline_container.color = Blitbuffer.COLOR_WHITE
-    self.key_events = {}
     return true
 end
 

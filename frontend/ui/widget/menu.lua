@@ -171,11 +171,6 @@ function MenuItem:init()
             },
         }
     end
-    if Device:hasKeys() then
-        self.active_key_events = {
-            Select = { {"Press"}, doc = "chose selected item" },
-        }
-    end
 
     local text_mandatory_padding = 0
     local text_ellipsis_mandatory_padding = 0
@@ -203,11 +198,6 @@ function MenuItem:init()
         local my_text = self.text and ""..self.text or ""
         local w = RenderText:sizeUtf8Text(0, self.dimen.w, self.face, my_text, true, self.bold).x
         if w + mandatory_w + state_button_width + text_mandatory_padding >= self.content_width then
-            if Device:hasKeyboard() then
-                self.active_key_events.ShowItemDetail = {
-                    {"Right"}, doc = "show item detail"
-                }
-            end
             local indicator = "\226\128\166 " -- an ellipsis
             local indicator_w = RenderText:sizeUtf8Text(0, self.dimen.w, self.face,
                 indicator, true, self.bold).x
@@ -382,13 +372,11 @@ function MenuItem:onFocus(initial_focus)
     else
         self._underline_container.color = Blitbuffer.COLOR_BLACK
     end
-    self.key_events = self.active_key_events
     return true
 end
 
 function MenuItem:onUnfocus()
     self._underline_container.color = self.line_color
-    self.key_events = {}
     return true
 end
 

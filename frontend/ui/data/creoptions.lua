@@ -1,5 +1,6 @@
+local Device = require("device")
 local S = require("ui/data/strings")
-local Screen = require("device").screen
+local Screen = Device.screen
 
 local _ = require("gettext")
 
@@ -101,7 +102,8 @@ local CreOptions = {
             {
                 name = "font_fine_tune",
                 name_text = S.FONTSIZE_FINE_TUNING,
-                toggle = {S.DECREASE, S.INCREASE},
+                toggle = Device:isTouchDevice() and {S.DECREASE, S.INCREASE} or nil,
+                item_text = not Device:isTouchDevice() and {S.DECREASE, S.INCREASE} or nil,
                 event = "ChangeSize",
                 args = {"decrease", "increase"},
                 alternate = false,

@@ -1,6 +1,7 @@
+local Device = require("device")
 local S = require("ui/data/strings")
 local _ = require("gettext")
-local Screen = require("device").screen
+local Screen = Device.screen
 
 local function enable_if_equals(configurable, option, value)
     return configurable[option] == value
@@ -33,6 +34,7 @@ local KoptOptions = {
                 alternate = false,
                 values = {0, 1, 2},
                 default_value = DKOPTREADER_CONFIG_TRIM_PAGE,
+                enabled_func = Device.isTouchDevice,
                 event = "PageCrop",
                 args = {"manual", "auto", "semi-auto"},
             }
@@ -129,7 +131,8 @@ local KoptOptions = {
             {
                 name = "font_fine_tune",
                 name_text = S.FONTSIZE_FINE_TUNING,
-                toggle = {S.DECREASE, S.INCREASE},
+                toggle = Device:isTouchDevice() and {S.DECREASE, S.INCREASE} or nil,
+                item_text = not Device:isTouchDevice() and {S.DECREASE, S.INCREASE} or nil,
                 values = {-0.05, 0.05},
                 default_value = 0.05,
                 event = "FineTuningFontSize",
