@@ -33,6 +33,7 @@ local KoptOptions = {
                 alternate = false,
                 values = {0, 1, 2},
                 default_value = DKOPTREADER_CONFIG_TRIM_PAGE,
+                enabled_func = function() return require("device"):isTouchDevice() end,
                 event = "PageCrop",
                 args = {"manual", "auto", "semi-auto"},
             }
