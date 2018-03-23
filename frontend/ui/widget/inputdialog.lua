@@ -67,6 +67,7 @@ local VerticalSpan = require("ui/widget/verticalspan")
 local Screen = require("device").screen
 
 local InputDialog = InputContainer:new{
+    is_always_active = true,
     title = "",
     input = "",
     input_hint = "",
