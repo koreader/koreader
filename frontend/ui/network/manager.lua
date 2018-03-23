@@ -94,7 +94,7 @@ function NetworkMgr:isConnected()
         return self:isWifiOn()
     else
         -- `-c1` try only once; `-w2` wait 2 seconds
-        return os.execute([[ping -c1 -w2 $(/sbin/route -n | awk '$4 == "UG" {print $2}')]])
+        return 0 == os.execute([[ping -c1 -w2 $(/sbin/route -n | awk '$4 == "UG" {print $2}')]])
     end
 end
 
