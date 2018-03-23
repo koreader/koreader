@@ -2,6 +2,8 @@ local Blitbuffer = require("ffi/blitbuffer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
+local Event = require("ui/event")
+local FocusManager = require("ui/widget/focusmanager")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
@@ -112,6 +114,14 @@ function VirtualKey:update_keyboard()
     end)
 end
 
+function VirtualKey:onFocus()
+    self[1].invert = true
+end
+
+function VirtualKey:onUnfocus()
+    self[1].invert = false
+end
+
 function VirtualKey:onTapSelect()
     if self.flash_keyboard then
         self[1].invert = true
@@ -149,8 +159,8 @@ function VirtualKey:invert(invert)
     self:update_keyboard()
 end
 
-local VirtualKeyboard = InputContainer:new{
-    is_always_active = true,
+local VirtualKeyboard = FocusManager:new{
+    is_always_active = false,
     disable_double_tap = true,
     inputbox = nil,
     KEYS = {}, -- table to store layouts
@@ -160,11 +170,12 @@ local VirtualKeyboard = InputContainer:new{
     umlautmode_keys = {},
     min_layout = 2,
     max_layout = 12,
-    layout = 2,
+    keyboard_layout = 2,
     shiftmode = false,
     symbolmode = false,
     utf8mode = false,
     umlautmode = false,
+    layout = {},
 
     width = Screen:scaleBySize(600),
     height = nil,
@@ -191,7 +202,21 @@ function VirtualKeyboard:init()
     self.utf8mode_keys = keyboard.utf8mode_keys
     self.umlautmode_keys = keyboard.umlautmode_keys
     self.height = Screen:scaleBySize(64 * #self.KEYS)
-    self:initLayout(self.layout)
+    self:initLayout(self.keyboard_layout)
+    if Device:hasKeys() then
+        self.key_events.PressKey = { {"Press"}, doc = "select key" }
+        self.key_events.Close = { {"Back"}, doc = "close keyboard" }
+    end
+end
+
+function VirtualKeyboard:onClose()
+    UIManager:close(self)
+    return true
+end
+
+function VirtualKeyboard:onPressKey()
+    self:getFocusItem():handleEvent(Event:new("TapSelect"))
+    return true
 end
 
 function VirtualKeyboard:_refresh()
@@ -223,19 +248,20 @@ function VirtualKeyboard:initLayout(layout)
         -- to be sure layout is selected properly
         layout = math.max(layout, self.min_layout)
         layout = math.min(layout, self.max_layout)
-        self.layout = layout
+        self.keyboard_layout = layout
         -- fill the layout modes
         self.shiftmode  = (layout == 1 or layout == 3 or layout == 5 or layout == 7 or layout == 9 or layout == 11)
         self.symbolmode = (layout == 3 or layout == 4 or layout == 7 or layout == 8 or layout == 11 or layout == 12)
         self.utf8mode   = (layout == 5 or layout == 6 or layout == 7 or layout == 8)
         self.umlautmode = (layout == 9 or layout == 10 or layout == 11 or layout == 12)
     else -- or, without input parameter, restore layout from current layout modes
-        self.layout = VKLayout(self.shiftmode, self.symbolmode, self.utf8mode, self.umlautmode)
+        self.keyboard_layout = VKLayout(self.shiftmode, self.symbolmode, self.utf8mode, self.umlautmode)
     end
     self:addKeys()
 end
 
 function VirtualKeyboard:addKeys()
+    self.layout = {}
     local base_key_width = math.floor((self.width - (#self.KEYS[1] + 1)*self.key_padding - 2*self.padding)/#self.KEYS[1])
     local base_key_height = math.floor((self.height - (#self.KEYS + 1)*self.key_padding - 2*self.padding)/#self.KEYS)
     local h_key_padding = HorizontalSpan:new{width = self.key_padding}
@@ -243,14 +269,15 @@ function VirtualKeyboard:addKeys()
     local vertical_group = VerticalGroup:new{}
     for i = 1, #self.KEYS do
         local horizontal_group = HorizontalGroup:new{}
+        local layout_horizontal = {}
         for j = 1, #self.KEYS[i] do
             local width_factor = self.KEYS[i][j].width or 1.0
             local key_width = math.floor((base_key_width + self.key_padding) * width_factor)
                             - self.key_padding
             local key_height = base_key_height
-            local label = self.KEYS[i][j].label or self.KEYS[i][j][self.layout]
+            local label = self.KEYS[i][j].label or self.KEYS[i][j][self.keyboard_layout]
             local key = VirtualKey:new{
-                key = self.KEYS[i][j][self.layout],
+                key = self.KEYS[i][j][self.keyboard_layout],
                 icon = self.KEYS[i][j].icon,
                 label = label,
                 keyboard = self,
@@ -258,11 +285,13 @@ function VirtualKeyboard:addKeys()
                 height = key_height,
             }
             table.insert(horizontal_group, key)
+            table.insert(layout_horizontal, key)
             if j ~= #self.KEYS[i] then
                 table.insert(horizontal_group, h_key_padding)
             end
         end
         table.insert(vertical_group, horizontal_group)
+        table.insert(self.layout, layout_horizontal)
         if i ~= #self.KEYS then
             table.insert(vertical_group, v_key_padding)
         end

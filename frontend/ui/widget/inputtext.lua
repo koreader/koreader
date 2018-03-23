@@ -219,8 +219,9 @@ function InputText:initKeyboard()
     if self.input_type == "number" then
         keyboard_layout = 4
     end
+    self.key_events = nil
     self.keyboard = Keyboard:new{
-        layout = keyboard_layout,
+        keyboard_layout = keyboard_layout,
         inputbox = self,
         width = Screen:getWidth(),
     }
