@@ -58,8 +58,8 @@ function ReaderWikipedia:lookupInput()
             }
         },
     }
-    self.input_dialog:onShowKeyboard()
     UIManager:show(self.input_dialog)
+    self.input_dialog:onShowKeyboard()
 end
 
 function ReaderWikipedia:addToMainMenu(menu_items)
@@ -165,8 +165,8 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                             }
                         },
                     }
-                    wikilang_input:onShowKeyboard()
                     UIManager:show(wikilang_input)
+                    wikilang_input:onShowKeyboard()
                 end,
             },
             { -- setting used by dictquicklookup

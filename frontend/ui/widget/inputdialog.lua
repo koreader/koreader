@@ -34,8 +34,8 @@ Example:
             }
         },
     }
-    sample_input:onShowKeyboard()
     UIManager:show(sample_input)
+    sample_input:onShowKeyboard()
 
 If it would take the user more than half a minute to recover from a mistake,
 a "Cancel" button <em>must</em> be added to the dialog. The cancellation button

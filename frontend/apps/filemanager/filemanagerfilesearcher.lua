@@ -138,8 +138,8 @@ function FileSearcher:showSearch()
             },
         },
     }
-    self.search_dialog:onShowKeyboard()
     UIManager:show(self.search_dialog)
+    self.search_dialog:onShowKeyboard()
 end
 
 function FileSearcher:showSearchResults()

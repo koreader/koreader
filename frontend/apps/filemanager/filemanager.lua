@@ -264,8 +264,8 @@ function FileManager:init()
                                 },
                             }},
                         }
-                        fileManager.rename_dialog:onShowKeyboard()
                         UIManager:show(fileManager.rename_dialog)
+                        fileManager.rename_dialog:onShowKeyboard()
                     end,
                 }
             },
@@ -404,8 +404,8 @@ function FileManager:tapPlus()
                             }
                         },
                     }
-                    self.input_dialog:onShowKeyboard()
                     UIManager:show(self.input_dialog)
+                    self.input_dialog:onShowKeyboard()
                 end,
             },
         },

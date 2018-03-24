@@ -482,8 +482,8 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
             }
         },
     }
-    self.input:onShowKeyboard()
     UIManager:show(self.input)
+    self.input:onShowKeyboard()
 end
 
 function ReaderBookmark:toggleBookmark(pn_or_xp)

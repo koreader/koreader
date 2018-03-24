@@ -153,8 +153,8 @@ function PerceptionExpander:showSettingsDialog()
         width = Screen:getWidth() * 0.8,
         height = Screen:getHeight() * 0.3,
     }
-    self.settings_dialog:onShowKeyboard()
     UIManager:show(self.settings_dialog)
+    self.settings_dialog:onShowKeyboard()
 end
 
 function PerceptionExpander:addToMainMenu(menu_items)

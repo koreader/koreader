@@ -130,9 +130,9 @@ function MultiInputDialog:onSwitchFocus(inputbox)
     -- focus new inputbox
     self._input_widget = inputbox
     self._input_widget:focus()
-    self._input_widget:onShowKeyboard()
 
     UIManager:show(self)
+    self._input_widget:onShowKeyboard()
 end
 
 return MultiInputDialog
