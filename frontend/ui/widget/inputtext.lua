@@ -91,6 +91,18 @@ if Device.isTouchDevice() then
 elseif Device.hasDPad() then
     Keyboard = require("ui/widget/virtualkeyboard")
     function InputText:initEventListener() end --do nothing but doesn't crash for now
+
+    function InputText:onFocus()
+        self.key_events.ShowKeyboard = { {"Press"}, doc = "show keyboard" }
+        self:focus()
+        return true
+    end
+
+    function InputText:onUnfocus()
+        self.key_events = {}
+        self:unfocus()
+        return true
+    end
 else
     Keyboard = require("ui/widget/physicalkeyboard")
     function InputText:initEventListener() end
@@ -241,6 +253,7 @@ end
 
 function InputText:onShowKeyboard()
     UIManager:show(self.keyboard)
+    return true
 end
 
 function InputText:onCloseKeyboard()
