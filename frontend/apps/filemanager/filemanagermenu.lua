@@ -262,8 +262,6 @@ function FileManagerMenu:setUpdateItemTable()
                 self.ui:tapPlus()
             end,
         }
-    else
-        self.menu_items.plus_menu = {}
     end
 
     local order = require("ui/elements/filemanager_menu_order")

@@ -135,6 +135,17 @@ function MenuSorter:sort(item_table, order)
         menu_table["KOMenu:menu_buttons"][i] = menu_table["KOMenu:menu_buttons"][i].sub_item_table
     end
 
+    --Compress the table in case we don't want to show some top-level items
+    local tmp = {}
+    for i,top_menu in pairs(menu_table["KOMenu:menu_buttons"]) do
+        if type(i) == "number"  then
+            table.insert(tmp,top_menu)
+        else
+            tmp[i] = top_menu
+        end
+    end
+    menu_table["KOMenu:menu_buttons"] = tmp
+
     -- handle disabled
     if order["KOMenu:disabled"] then
         for _,item in ipairs(order["KOMenu:disabled"]) do
