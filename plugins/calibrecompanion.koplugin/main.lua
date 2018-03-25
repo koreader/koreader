@@ -61,7 +61,7 @@ end
 
 function CalibreCompanion:find_calibre_server()
     local socket = require("socket")
-    local udp = socket.udp()
+    local udp = socket.udp4()
     udp:setoption("broadcast", true)
     udp:setsockname("*", 8134)
     udp:settimeout(3)
