@@ -39,69 +39,75 @@ local InputText = InputContainer:new{
 }
 
 -- only use PhysicalKeyboard if the device does not have touch screen
-if Device.isTouchDevice() then
+if Device.isTouchDevice() or Device.hasDPad() then
     Keyboard = require("ui/widget/virtualkeyboard")
-    function InputText:initEventListener()
-        self.ges_events = {
-            TapTextBox = {
-                GestureRange:new{
-                    ges = "tap",
-                    range = self.dimen
-                }
-            },
-            HoldTextBox = {
-                GestureRange:new{
-                    ges = "hold",
-                    range = self.dimen
-                }
-            },
-        }
-    end
+    if Device.isTouchDevice() then
+        function InputText:initEventListener()
+            self.ges_events = {
+                TapTextBox = {
+                    GestureRange:new{
+                        ges = "tap",
+                        range = self.dimen
+                    }
+                },
+                HoldTextBox = {
+                    GestureRange:new{
+                        ges = "hold",
+                        range = self.dimen
+                    }
+                },
+            }
+        end
 
-    function InputText:onTapTextBox(arg, ges)
-        if self.parent.onSwitchFocus then
-            self.parent:onSwitchFocus(self)
-        end
-        local x = ges.pos.x - self._frame_textwidget.dimen.x - self.bordersize - self.padding
-        local y = ges.pos.y - self._frame_textwidget.dimen.y - self.bordersize - self.padding
-        if x > 0 and y > 0 then
-            self.charpos = self.text_widget:moveCursor(x, y)
-            UIManager:setDirty(self.parent, function()
-                return "ui", self.dimen
-            end)
-        end
-    end
-
-    function InputText:onHoldTextBox(arg, ges)
-        if self.parent.onSwitchFocus then
-            self.parent:onSwitchFocus(self)
-        end
-        local x = ges.pos.x - self._frame_textwidget.dimen.x - self.bordersize - self.padding
-        local y = ges.pos.y - self._frame_textwidget.dimen.y - self.bordersize - self.padding
-        if x > 0 and y > 0 then
-            self.charpos = self.text_widget:moveCursor(x, y)
-            if Device:hasClipboard() and Device.input.hasClipboardText() then
-                self:addChars(Device.input.getClipboardText())
+        function InputText:onTapTextBox(arg, ges)
+            if self.parent.onSwitchFocus then
+                self.parent:onSwitchFocus(self)
             end
-            UIManager:setDirty(self.parent, function()
-                return "ui", self.dimen
-            end)
+            local x = ges.pos.x - self._frame_textwidget.dimen.x - self.bordersize - self.padding
+            local y = ges.pos.y - self._frame_textwidget.dimen.y - self.bordersize - self.padding
+            if x > 0 and y > 0 then
+                self.charpos = self.text_widget:moveCursor(x, y)
+                UIManager:setDirty(self.parent, function()
+                    return "ui", self.dimen
+                end)
+            end
+        end
+
+        function InputText:onHoldTextBox(arg, ges)
+            if self.parent.onSwitchFocus then
+                self.parent:onSwitchFocus(self)
+            end
+            local x = ges.pos.x - self._frame_textwidget.dimen.x - self.bordersize - self.padding
+            local y = ges.pos.y - self._frame_textwidget.dimen.y - self.bordersize - self.padding
+            if x > 0 and y > 0 then
+                self.charpos = self.text_widget:moveCursor(x, y)
+                if Device:hasClipboard() and Device.input.hasClipboardText() then
+                    self:addChars(Device.input.getClipboardText())
+                end
+                UIManager:setDirty(self.parent, function()
+                    return "ui", self.dimen
+                end)
+            end
         end
     end
-elseif Device.hasDPad() then
-    Keyboard = require("ui/widget/virtualkeyboard")
-    function InputText:initEventListener() end --do nothing but doesn't crash for now
+    if Device.hasKeys() then
+        if not InputText.initEventListener then
+            function InputText:initEventListener() end
+        end
 
-    function InputText:onFocus()
-        self.key_events.ShowKeyboard = { {"Press"}, doc = "show keyboard" }
-        self:focus()
-        return true
-    end
+        function InputText:onFocus()
+            --Event called by the focusmanager
+            self.key_events.ShowKeyboard = { {"Press"}, doc = "show keyboard" }
+            self:focus()
+            return true
+        end
 
-    function InputText:onUnfocus()
-        self.key_events = {}
-        self:unfocus()
-        return true
+        function InputText:onUnfocus()
+            --Event called by the focusmanager
+            self.key_events = {}
+            self:unfocus()
+            return true
+        end
     end
 else
     Keyboard = require("ui/widget/physicalkeyboard")
@@ -242,13 +248,13 @@ end
 function InputText:unfocus()
     self.focused = false
     self.text_widget:unfocus()
-    self[1].color = Blitbuffer.COLOR_GREY
+    self._frame_textwidget.color = Blitbuffer.COLOR_GREY
 end
 
 function InputText:focus()
     self.focused = true
     self.text_widget:focus()
-    self[1].color = Blitbuffer.COLOR_BLACK
+    self._frame_textwidget.color = Blitbuffer.COLOR_BLACK
 end
 
 function InputText:onShowKeyboard()
