@@ -115,6 +115,10 @@ function FocusManager:_verticalStep(dy)
             x = self.selected.x
             while not self.layout[self.selected.y + dy][x] do
                 x = x + 1
+                if x>100 then
+                    logger.dbg("[FocusManager] : Something went very wrong")
+                    break
+                end
             end
         end
     end
