@@ -50,6 +50,7 @@ longer than three words it should just read "OK".
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
+local Device = require("device")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
@@ -64,7 +65,7 @@ local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
-local Screen = require("device").screen
+local Screen = Device.screen
 
 local InputDialog = InputContainer:new{
     is_always_active = true,
@@ -196,8 +197,10 @@ function InputDialog:init()
             }
         }
     }
-    --little hack to piggyback on the layout of the button_table to handle the new InputText
-    table.insert(self.button_table.layout, 1, {self._input_widget})
+    if Device:hasKeys() then
+        --little hack to piggyback on the layout of the button_table to handle the new InputText
+        table.insert(self.button_table.layout, 1, {self._input_widget})
+    end
 
     self[1] = CenterContainer:new{
         dimen = Geom:new{

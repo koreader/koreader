@@ -1,3 +1,4 @@
+local Device = require("device")
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local logger = require("logger")
@@ -33,13 +34,15 @@ function FocusManager:init()
     if not self.selected then
         self.selected = { x = 1, y = 1 }
     end
-    self.key_events = {
-        -- these will all generate the same event, just with different arguments
-        FocusUp =    { {"Up"},    doc = "move focus up",    event = "FocusMove", args = {0, -1} },
-        FocusDown =  { {"Down"},  doc = "move focus down",  event = "FocusMove", args = {0,  1} },
-        FocusLeft =  { {"Left"},  doc = "move focus left",  event = "FocusMove", args = {-1, 0} },
-        FocusRight = { {"Right"}, doc = "move focus right", event = "FocusMove", args = {1,  0} },
-    }
+    if Device:hasKeys() then
+        self.key_events = {
+            -- these will all generate the same event, just with different arguments
+            FocusUp =    { {"Up"},    doc = "move focus up",    event = "FocusMove", args = {0, -1} },
+            FocusDown =  { {"Down"},  doc = "move focus down",  event = "FocusMove", args = {0,  1} },
+            FocusLeft =  { {"Left"},  doc = "move focus left",  event = "FocusMove", args = {-1, 0} },
+            FocusRight = { {"Right"}, doc = "move focus right", event = "FocusMove", args = {1,  0} },
+        }
+    end
 end
 
 function FocusManager:onFocusMove(args)
