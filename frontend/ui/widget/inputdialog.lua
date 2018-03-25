@@ -197,7 +197,7 @@ function InputDialog:init()
         }
     }
     --little hack to piggyback on the layout of the button_table to handle the new InputText
-    table.insert(self.button_table.layout, #self.button_table.layout, {self._input_widget})
+    table.insert(self.button_table.layout, 1, {self._input_widget})
 
     self[1] = CenterContainer:new{
         dimen = Geom:new{

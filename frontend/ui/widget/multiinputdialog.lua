@@ -78,6 +78,8 @@ function MultiInputDialog:init()
         })
     end
 
+    --remove the not needed hack in inputdialog
+    table.remove(self.button_table.layout, 1)
     -- Add same vertical space after than before InputText
     table.insert(VerticalGroupData,CenterContainer:new{
         dimen = Geom:new{
