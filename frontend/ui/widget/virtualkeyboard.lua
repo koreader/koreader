@@ -160,7 +160,7 @@ function VirtualKey:invert(invert)
 end
 
 local VirtualKeyboard = FocusManager:new{
-    is_always_active = false,
+    modal = true,
     disable_double_tap = true,
     inputbox = nil,
     KEYS = {}, -- table to store layouts
