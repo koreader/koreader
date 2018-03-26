@@ -136,6 +136,7 @@ function ReaderSearch:onShowSearchDialog(text)
         tap_close_callback = function()
             logger.dbg("highlight clear")
             self.ui.highlight:clear()
+            UIManager:setDirty(self.dialog, "ui")
         end,
     }
     do_search(self.searchFromCurrent, text, 0)()
