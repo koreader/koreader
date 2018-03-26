@@ -129,23 +129,17 @@ function MenuSorter:sort(item_table, order)
             end
         end
     end
-    -- @TODO avoid this extra mini-loop
     -- cleanup, top-level items shouldn't have sub_item_table
+    -- they should, however have one going in
+    local menu_buttons_offset = 0
     for i,top_menu in ipairs(menu_table["KOMenu:menu_buttons"]) do
-        menu_table["KOMenu:menu_buttons"][i] = menu_table["KOMenu:menu_buttons"][i].sub_item_table
-    end
-
-    --Compress the table in case we don't want to show some top-level items
-    local tmp = {}
-    for i,top_menu in pairs(menu_table["KOMenu:menu_buttons"]) do
-        if type(i) == "number"  then
-            table.insert(tmp,top_menu)
+        if menu_table["KOMenu:menu_buttons"][i].sub_item_table then
+            menu_table["KOMenu:menu_buttons"][i-menu_buttons_offset] = menu_table["KOMenu:menu_buttons"][i].sub_item_table
         else
-            tmp[i] = top_menu
+            menu_table["KOMenu:menu_buttons"][i] = nil
+            menu_buttons_offset = menu_buttons_offset + 1
         end
     end
-    menu_table["KOMenu:menu_buttons"] = tmp
-
     -- handle disabled
     if order["KOMenu:disabled"] then
         for _,item in ipairs(order["KOMenu:disabled"]) do
