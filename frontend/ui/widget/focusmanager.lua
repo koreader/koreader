@@ -65,7 +65,9 @@ function FocusManager:onFocusMove(args)
             end
         elseif not self.layout[self.selected.y + dy][self.selected.x] then
             --inner horizontal border, trying to be clever and step down
-            self:_verticalStep(dy)
+            if not self:_verticalStep(dy) then
+                break
+            end
         elseif not self.layout[self.selected.y + dy][self.selected.x + dx] then
             --vertical border, no wraparound
             break
@@ -100,7 +102,7 @@ function FocusManager:_wrapAround(dy)
         self.selected.y = y
         if not self.layout[self.selected.y][self.selected.x] then
             --call verticalStep on the current line to perform the search
-            self:_verticalStep(0)
+            return self:_verticalStep(0)
         end
         return true
     else
@@ -110,6 +112,10 @@ end
 
 function FocusManager:_verticalStep(dy)
     local x = self.selected.x
+    if type(self.layout[self.selected.y + dy]) ~= "table" or self.layout[self.selected.y + dy] == {} then
+        logger.err("[FocusManager] : Malformed layout")
+        return false
+    end
     --looking for the item on the line below, the closest on the left side
     while not self.layout[self.selected.y + dy][x] do
         x = x - 1
@@ -118,15 +124,12 @@ function FocusManager:_verticalStep(dy)
             x = self.selected.x
             while not self.layout[self.selected.y + dy][x] do
                 x = x + 1
-                if x>100 then
-                    logger.dbg("[FocusManager] : Something went very wrong")
-                    break
-                end
             end
         end
     end
     self.selected.x = x
     self.selected.y = self.selected.y + dy
+    return true
 end
 
 function FocusManager:getFocusItem()
