@@ -13,7 +13,7 @@ int compress2(uint8_t *dest, unsigned long *destLen,
 int uncompress(uint8_t *dest, unsigned long *destLen,
                const uint8_t *source, unsigned long sourceLen);
 ]]
-local zlib = ffi.load(ffi.os == "Windows" and "zlib1" or "libs/libz.so.1")
+local zlib = ffi.load(ffi.os == "Windows" and "zlib1" or "z")
 
 function xutil.zlib_compress(data)
     local n = zlib.compressBound(#data)
