@@ -93,7 +93,7 @@ function ScrollTextWidget:focus()
 end
 
 function ScrollTextWidget:moveCursor(x, y)
-    self.text_widget:moveCursor(x, y)
+    return self.text_widget:moveCursor(x, y)
 end
 
 function ScrollTextWidget:scrollText(direction)
