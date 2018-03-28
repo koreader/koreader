@@ -8,7 +8,6 @@ KOR_BASE?=base
 # we want VERSION to carry the version of koreader, not koreader-base
 VERSION:=$(shell git describe HEAD)
 VERSION:=$(VERSION)_$(shell git describe HEAD | xargs git show -s --format=format:"%cd" --date=short)
-REVISION=$(shell git rev-parse --short HEAD)
 
 # set PATH to find CC in managed toolchains
 ifeq ($(TARGET), android)
@@ -320,7 +319,7 @@ androidupdate: all
 		-T ota/package.index --no-recursion
 	# make android update apk
 	cd $(INSTALL_DIR)/koreader && 7z a -l -mx=1 \
-		../../$(ANDROID_LAUNCHER_DIR)/assets/module/koreader-g$(REVISION).7z * \
+		../../$(ANDROID_LAUNCHER_DIR)/assets/module/koreader-$(VERSION).7z * \
 		-x!resources/fonts -x!resources/icons/src -x!spec
 	$(MAKE) -C $(ANDROID_LAUNCHER_DIR) apk
 	cp $(ANDROID_LAUNCHER_DIR)/bin/NativeActivity-debug.apk \
