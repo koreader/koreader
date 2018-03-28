@@ -141,12 +141,11 @@ function UIManager:init()
             end
         end
         self.event_handlers["__default__"] = function(input_event)
-            if Device.screen_saver_mode then
-                -- Suspension in Kobo can be interrupted by screen updates. We
-                -- ignore user touch input here so screen udpate won't be
-                -- triggered in suspend mode
-                self:suspend()
-            else
+            -- Suspension in Kobo can be interrupted by screen updates. We ignore user touch input
+            -- in screen_saver_mode so screen updates won't be triggered in suspend mode.
+            -- We should not call self:suspend() in screen_saver_mode lest we stay on forever
+            -- trying to reschedule suspend. Other systems take care of unintended wake-up.
+            if not Device.screen_saver_mode then
                 self:sendEvent(input_event)
             end
         end
