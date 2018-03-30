@@ -740,9 +740,6 @@ function MosaicMenu:_updateItemsBuildUI()
                 shortcut_style = "grey_square"
             end
             item_shortcut = self.item_shortcuts[idx]
-            if item_shortcut == "Enter" then
-                item_shortcut = "Ent"
-            end
         end
 
         local item_tmp = MosaicMenuItem:new{

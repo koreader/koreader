@@ -464,7 +464,7 @@ local Menu = FocusManager:new{
     item_shortcuts = {
         "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P",
         "A", "S", "D", "F", "G", "H", "J", "K", "L", "Del",
-        "Z", "X", "C", "V", "B", "N", "M", ".", "Sym", "Enter",
+        "Z", "X", "C", "V", "B", "N", "M", ".", "Sym",
     },
     item_table_stack = nil,
     is_enable_shortcut = true,
@@ -844,9 +844,6 @@ function Menu:updateItems(select_number)
                     shortcut_style = "grey_square"
                 end
                 item_shortcut = self.item_shortcuts[c]
-                if item_shortcut == "Enter" then
-                    item_shortcut = "Ent"
-                end
             end
             local item_tmp = MenuItem:new{
                 show_parent = self.show_parent,

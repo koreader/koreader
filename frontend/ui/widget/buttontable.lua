@@ -88,7 +88,7 @@ function ButtonTable:init()
     if Device:hasKeys() then
         self.layout = self.buttons_layout
         self.layout[1][1]:onFocus()
-        self.key_events.SelectByKeyPress = { {{"Press", "Enter"}} }
+        self.key_events.SelectByKeyPress = { {{"Press"}} }
     else
         self.key_events = {}  -- deregister all key press event listeners
     end

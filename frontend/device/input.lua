@@ -94,7 +94,7 @@ local Input = {
             "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
             "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
             "Up", "Down", "Left", "Right", "Press",
-            "Back", "Enter", "Sym", "AA", "Menu", "Home", "Del",
+            "Back", "Sym", "AA", "Menu", "Home", "Del",
             "LPgBack", "RPgBack", "LPgFwd", "RPgFwd"
         },
     },
