@@ -139,8 +139,8 @@ function NumberPickerWidget:paintWidget()
                     },
                 },
             }
-            input:onShowKeyboard()
             UIManager:show(input)
+            input:onShowKeyboard()
         end
     end
 

@@ -205,8 +205,8 @@ function Search:ShowSearch()
             width = Screen:getWidth() * 0.8,
             height = Screen:getHeight() * 0.2,
         }
-        self.search_dialog:onShowKeyboard()
         UIManager:show(self.search_dialog)
+        self.search_dialog:onShowKeyboard()
     else
         if self.error then
             UIManager:show(InfoMessage:new{

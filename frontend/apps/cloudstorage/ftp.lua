@@ -140,8 +140,8 @@ function Ftp:config(item, callback)
         height = Screen:getHeight() * 0.2,
         input_type = "text",
     }
-    self.settings_dialog:onShowKeyboard()
     UIManager:show(self.settings_dialog)
+    self.settings_dialog:onShowKeyboard()
 end
 
 function Ftp:info(item)

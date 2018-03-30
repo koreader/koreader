@@ -300,8 +300,8 @@ function NetworkItem:onEditNetwork()
             },
         },
     }
-    password_input:onShowKeyboard()
     UIManager:show(password_input)
+    password_input:onShowKeyboard()
     return true
 end
 
@@ -331,8 +331,8 @@ function NetworkItem:onAddNetwork()
             },
         },
     }
-    password_input:onShowKeyboard()
     UIManager:show(password_input)
+    password_input:onShowKeyboard()
     return true
 end
 

@@ -216,8 +216,8 @@ function EvernoteExporter:login()
         height = Screen:getHeight() * 0.4,
     }
 
-    self.login_dialog:onShowKeyboard()
     UIManager:show(self.login_dialog)
+    self.login_dialog:onShowKeyboard()
 end
 
 function EvernoteExporter:closeDialog()

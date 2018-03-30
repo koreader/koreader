@@ -662,8 +662,8 @@ function ReaderStatistics:updateSettings()
         height = Screen:getHeight() * 0.2,
         input_type = "number",
     }
-    self.settings_dialog:onShowKeyboard()
     UIManager:show(self.settings_dialog)
+    self.settings_dialog:onShowKeyboard()
 end
 
 function ReaderStatistics:addToMainMenu(menu_items)

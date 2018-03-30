@@ -154,8 +154,8 @@ function SetDefaults:init()
                     input_type = setting_type,
                     width = Screen:getWidth() * 0.95,
                 }
-                self.set_dialog:onShowKeyboard()
                 UIManager:show(self.set_dialog)
+                self.set_dialog:onShowKeyboard()
             end
 
             table.insert(self.results, {
@@ -205,8 +205,8 @@ function SetDefaults:init()
                     width = Screen:getWidth() * 0.95,
                     height = Screen:getHeight() * 0.2,
                 }
-                self.set_dialog:onShowKeyboard()
                 UIManager:show(self.set_dialog)
+                self.set_dialog:onShowKeyboard()
             end
 
             table.insert(self.results, {
@@ -244,8 +244,8 @@ function SetDefaults:init()
                     input_type = setting_type,
                     width = Screen:getWidth() * 0.95,
                 }
-                self.set_dialog:onShowKeyboard()
                 UIManager:show(self.set_dialog)
+                self.set_dialog:onShowKeyboard()
             end
 
             table.insert(self.results, {

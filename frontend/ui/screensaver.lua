@@ -130,8 +130,8 @@ function Screensaver:setMessage()
             },
         },
     }
-    self.input_dialog:onShowKeyboard()
     UIManager:show(self.input_dialog)
+    self.input_dialog:onShowKeyboard()
 end
 
 function Screensaver:show(event, fallback_message)

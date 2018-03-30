@@ -1,3 +1,4 @@
+local Device = require("device")
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local logger = require("logger")
@@ -33,13 +34,15 @@ function FocusManager:init()
     if not self.selected then
         self.selected = { x = 1, y = 1 }
     end
-    self.key_events = {
-        -- these will all generate the same event, just with different arguments
-        FocusUp =    { {"Up"},    doc = "move focus up",    event = "FocusMove", args = {0, -1} },
-        FocusDown =  { {"Down"},  doc = "move focus down",  event = "FocusMove", args = {0,  1} },
-        FocusLeft =  { {"Left"},  doc = "move focus left",  event = "FocusMove", args = {-1, 0} },
-        FocusRight = { {"Right"}, doc = "move focus right", event = "FocusMove", args = {1,  0} },
-    }
+    if Device:hasKeys() then
+        self.key_events = {
+            -- these will all generate the same event, just with different arguments
+            FocusUp =    { {"Up"},    doc = "move focus up",    event = "FocusMove", args = {0, -1} },
+            FocusDown =  { {"Down"},  doc = "move focus down",  event = "FocusMove", args = {0,  1} },
+            FocusLeft =  { {"Left"},  doc = "move focus left",  event = "FocusMove", args = {-1, 0} },
+            FocusRight = { {"Right"}, doc = "move focus right", event = "FocusMove", args = {1,  0} },
+        }
+    end
 end
 
 function FocusManager:onFocusMove(args)
@@ -62,7 +65,9 @@ function FocusManager:onFocusMove(args)
             end
         elseif not self.layout[self.selected.y + dy][self.selected.x] then
             --inner horizontal border, trying to be clever and step down
-            self:_verticalStep(dy)
+            if not self:_verticalStep(dy) then
+                break
+            end
         elseif not self.layout[self.selected.y + dy][self.selected.x + dx] then
             --vertical border, no wraparound
             break
@@ -97,7 +102,7 @@ function FocusManager:_wrapAround(dy)
         self.selected.y = y
         if not self.layout[self.selected.y][self.selected.x] then
             --call verticalStep on the current line to perform the search
-            self:_verticalStep(0)
+            return self:_verticalStep(0)
         end
         return true
     else
@@ -107,6 +112,10 @@ end
 
 function FocusManager:_verticalStep(dy)
     local x = self.selected.x
+    if type(self.layout[self.selected.y + dy]) ~= "table" or self.layout[self.selected.y + dy] == {} then
+        logger.err("[FocusManager] : Malformed layout")
+        return false
+    end
     --looking for the item on the line below, the closest on the left side
     while not self.layout[self.selected.y + dy][x] do
         x = x - 1
@@ -120,6 +129,7 @@ function FocusManager:_verticalStep(dy)
     end
     self.selected.x = x
     self.selected.y = self.selected.y + dy
+    return true
 end
 
 function FocusManager:getFocusItem()

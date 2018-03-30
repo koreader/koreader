@@ -39,8 +39,8 @@ function Terminal:start()
             end,
         }}},
     }
-    self.input:onShowKeyboard()
     UIManager:show(self.input)
+    self.input:onShowKeyboard()
 end
 
 function Terminal:execute()

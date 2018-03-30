@@ -143,8 +143,8 @@ How to generate a key and a secret key:
         height = Screen:getHeight() * 0.2,
         input_type = "text",
     }
-    self.settings_dialog:onShowKeyboard()
     UIManager:show(self.settings_dialog)
+    self.settings_dialog:onShowKeyboard()
 end
 
 function Goodreads:saveSettings(fields)
@@ -227,8 +227,8 @@ function Goodreads:search(search_type)
             }
         },
     }
-    search_input:onShowKeyboard()
     UIManager:show(search_input)
+    search_input:onShowKeyboard()
 end
 
 return Goodreads

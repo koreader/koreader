@@ -476,8 +476,8 @@ function UIManager:sendEvent(event)
             end
             if widget.widget.is_always_active then
                 -- active widgets will handle this event
-                -- Note: is_always_active widgets currently are vitualkeyboard and
-                -- readerconfig
+                -- Note: is_always_active widgets currently are widgets that want to show a keyboard
+                -- and readerconfig
                 checked_widgets[widget] = true
                 if widget.widget:handleEvent(event) then return end
             end

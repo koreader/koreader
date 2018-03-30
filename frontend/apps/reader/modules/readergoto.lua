@@ -84,8 +84,8 @@ function ReaderGoto:onShowGotoDialog()
         },
         input_type = "number",
     }
-    self.goto_dialog:onShowKeyboard()
     UIManager:show(self.goto_dialog)
+    self.goto_dialog:onShowKeyboard()
 end
 
 function ReaderGoto:onShowSkimtoDialog()

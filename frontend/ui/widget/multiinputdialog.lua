@@ -48,6 +48,10 @@ function MultiInputDialog:init()
             scroll = false,
             parent = self,
         }
+        if Device:hasKeys() then
+            --little hack to piggyback on the layout of the button_table to handle the new InputText
+            table.insert(self.button_table.layout, #self.button_table.layout, {input_field[k]})
+        end
         if field.description then
             input_description[k] = FrameContainer:new{
                 padding = self.description_padding,
@@ -76,6 +80,10 @@ function MultiInputDialog:init()
         })
     end
 
+    if Device:hasKeys() then
+        --remove the not needed hack in inputdialog
+        table.remove(self.button_table.layout, 1)
+    end
     -- Add same vertical space after than before InputText
     table.insert(VerticalGroupData,CenterContainer:new{
         dimen = Geom:new{
@@ -131,8 +139,6 @@ function MultiInputDialog:onSwitchFocus(inputbox)
     self._input_widget = inputbox
     self._input_widget:focus()
     self._input_widget:onShowKeyboard()
-
-    UIManager:show(self)
 end
 
 return MultiInputDialog

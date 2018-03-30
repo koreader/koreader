@@ -18,8 +18,8 @@ Example:
         show_icon = false,
         timeout = 5,  -- This widget will vanish in 5 seconds.
     }
-    sample_input:onShowKeyboard()
     UIManager:show(sample_input)
+    sample_input:onShowKeyboard()
 ]]
 
 local Blitbuffer = require("ffi/blitbuffer")

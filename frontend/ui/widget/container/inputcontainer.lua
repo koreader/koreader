@@ -236,8 +236,8 @@ function InputContainer:onInput(input)
             },
         },
     }
-    self.input_dialog:onShowKeyboard()
     UIManager:show(self.input_dialog)
+    self.input_dialog:onShowKeyboard()
 end
 
 function InputContainer:closeInputDialog()

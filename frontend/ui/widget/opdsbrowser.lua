@@ -146,8 +146,8 @@ function OPDSBrowser:addNewCatalog()
         width = Screen:getWidth() * 0.95,
         height = Screen:getHeight() * 0.2,
     }
-    self.add_server_dialog:onShowKeyboard()
     UIManager:show(self.add_server_dialog)
+    self.add_server_dialog:onShowKeyboard()
 end
 
 function OPDSBrowser:editCalibreServer()
@@ -187,8 +187,8 @@ function OPDSBrowser:editCalibreServer()
         width = Screen:getWidth() * 0.95,
         height = Screen:getHeight() * 0.2,
     }
-    self.add_server_dialog:onShowKeyboard()
     UIManager:show(self.add_server_dialog)
+    self.add_server_dialog:onShowKeyboard()
 end
 
 function OPDSBrowser:genItemTableFromRoot()
@@ -322,8 +322,8 @@ function OPDSBrowser:fetchWithLogin(host, callback)
         height = Screen:getHeight() * 0.4,
     }
 
-    self.login_dialog:onShowKeyboard()
     UIManager:show(self.login_dialog)
+    self.login_dialog:onShowKeyboard()
 end
 
 function OPDSBrowser:closeDialog()
@@ -679,8 +679,8 @@ function OPDSBrowser:editOPDSServer(item)
         width = Screen:getWidth() * 0.95,
         height = Screen:getHeight() * 0.2,
     }
-    self.edit_server_dialog:onShowKeyboard()
     UIManager:show(self.edit_server_dialog)
+    self.edit_server_dialog:onShowKeyboard()
 end
 
 function OPDSBrowser:deleteOPDSServer(item)
