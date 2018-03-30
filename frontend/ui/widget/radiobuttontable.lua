@@ -118,7 +118,7 @@ function RadioButtonTable:init()
     if Device:hasDPad() or Device:hasKeyboard() then
         self.layout = self.radio_buttons_layout
         self.layout[1][1]:onFocus()
-        self.key_events.SelectByKeyPress = { {{"Press", "Enter"}} }
+        self.key_events.SelectByKeyPress = { {{"Press"}} }
     else
         self.key_events = {}  -- deregister all key press event listeners
     end

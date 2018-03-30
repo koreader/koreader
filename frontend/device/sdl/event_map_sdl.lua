@@ -4,8 +4,8 @@ return {
     [38] = "A", [39] = "S", [40] = "D", [41] = "F", [42] = "G", [43] = "H", [44] = "J", [45] = "K", [46] = "L",
     [52] = "Z", [53] = "X", [54] = "C", [55] = "V", [56] = "B", [57] = "N", [58] = "M",
 
-    [22] = "Back", -- Backspace
-    [36] = "Enter", -- Enter
+    [22] = "Backspace", -- Backspace
+    [36] = "Press", -- Enter
     [50] = "Shift", -- left shift
     [60] = ".",
     [61] = "/",
@@ -24,7 +24,7 @@ return {
     [112] = "RPgBack", -- normal PageUp
     [113] = "Left", -- arrow left
     [114] = "Right", -- arrow right
-    [115] = "Press", -- End (above arrows)
+    [115] = "End", -- End (above arrows)
     [116] = "Down", -- arrow down
     [117] = "RPgFwd", -- normal PageDown
     [119] = "Del", -- Delete
