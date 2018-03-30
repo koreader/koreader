@@ -22,7 +22,7 @@ ffi.load = function(lib)
     local loaded, re = pcall(ffi_load, lib)
     if loaded then return re end
 
-    local lib_path = package.searchpath(lib, "./lib?.so;./libs/lib?.so")
+    local lib_path = package.searchpath(lib, "./lib?.so;./libs/lib?.so;./libs/lib?.so.1")
     if not lib_path then
         error('Not able to load dynamic library: ' .. lib)
     else
