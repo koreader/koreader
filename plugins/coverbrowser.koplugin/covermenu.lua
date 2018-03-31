@@ -1,6 +1,5 @@
 local Device = require("device")
 local DocumentRegistry = require("document/documentregistry")
-local Event = require("ui/event")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local ImageViewer = require("ui/widget/imageviewer")
 local Menu = require("ui/widget/menu")
@@ -89,15 +88,9 @@ function CoverMenu:updateItems(select_number)
 
     -- As done in Menu:updateItems()
     if self.item_group[1] then
-        if not Device:isTouchDevice() then
-            -- only draw underline for nontouch device
+        if Device:hasKeys() then
             -- reset focus manager accordingly
             self.selected = { x = 1, y = select_number }
-            -- set focus to requested menu item
-            self:getFocusItem():handleEvent(Event:new("Focus"))
-            -- This will not work with our MosaicMenu, as a MosaicMenuItem is
-            -- not a direct child of item_group (which contains VerticalSpans
-            -- and HorizontalGroup...)
         end
         -- update page information
         self.page_info_text:setText(util.template(_("page %1 of %2"), self.page, self.page_num))
