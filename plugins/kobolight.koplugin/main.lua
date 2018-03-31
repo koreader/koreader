@@ -199,9 +199,17 @@ function KoboLight:onSwipe(_, ges)
     return true
 end
 
-function KoboLight:onSwipeWarmth(_, ges)
+function KoboLight:onSwipeWarmth(ignored, ges)
     local powerd = Device:getPowerDevice()
     if powerd.fl_warmth == nil then return false end
+
+    if powerd.auto_warmth then
+        UIManager:show(Notification:new{
+            text = _("Warmth is handled automatically."),
+            timeout = 1.0,
+        })
+        return true
+    end
 
     local step = math.ceil(#self.steps * ges.distance / self.gestureScale)
     local delta_int = self.steps[step] or self.steps[#self.steps]
