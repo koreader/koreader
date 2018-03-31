@@ -17,6 +17,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local PluginLoader = require("pluginloader")
 local ReaderActivityIndicator = require("apps/reader/modules/readeractivityindicator")
+local ReaderBack = require("apps/reader/modules/readerback")
 local ReaderBookmark = require("apps/reader/modules/readerbookmark")
 local ReaderConfig = require("apps/reader/modules/readerconfig")
 local ReaderCoptListener = require("apps/reader/modules/readercoptlistener")
@@ -97,11 +98,6 @@ function ReaderUI:init()
 
     if Device:hasKeys() then
         self.key_events.Home = { {"Home"}, doc = "open file browser" }
-        if Device:isSDL() then
-            --if in the desktop emulator
-            --add the old Back key to exit koreader
-            self.key_events.Close = { {"Back"}, doc = "Exit koreader" }
-        end
     end
 
     -- a view container (so it must be child #1!)
@@ -299,6 +295,11 @@ function ReaderUI:init()
         })
         self.disable_double_tap = G_reader_settings:readSetting("disable_double_tap") ~= false
     end
+    -- back location stack
+    self:registerModule("back", ReaderBack:new{
+        ui = self,
+        view = self.view,
+    })
     -- fulltext search
     self:registerModule("search", ReaderSearch:new{
         dialog = self.dialog,
