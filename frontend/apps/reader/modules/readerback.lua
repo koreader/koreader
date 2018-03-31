@@ -7,7 +7,7 @@ local util = require("util")
 local ReaderBack = EventListener:new{
     location_stack = {},
     -- a limit not intended to be a practical limit but just a failsafe
-    max_stack_height = 5000,
+    max_stack = 5000,
 }
 
 function ReaderBack:init()
@@ -40,7 +40,7 @@ function ReaderBack:addCurrentLocationToStack()
 
     table.insert(location_stack, new_location)
 
-    if #location_stack > self.max_stack_height then
+    if #location_stack > self.max_stack then
         table.remove(location_stack, 1)
     end
 end
