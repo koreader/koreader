@@ -27,6 +27,7 @@ function KoboPowerD:_syncKoboLightOnStart()
     local new_intensity = nil
     local is_frontlight_on = nil
     local new_warmth = nil
+    local auto_warmth = nil
     local kobo_light_on_start = tonumber(KOBO_LIGHT_ON_START)
     if kobo_light_on_start then
         if kobo_light_on_start > 0 then
@@ -45,6 +46,7 @@ function KoboPowerD:_syncKoboLightOnStart()
                     -- being maximum warmth, so normalize this to [0,100]
                     new_warmth = (100 - math.floor((new_color - 1500) / 49))
                 end
+                auto_warmth = NickelConf.autoColorEnabled.get()
             end
             if is_frontlight_on == nil then
                 -- this device does not support frontlight toggle,
@@ -68,6 +70,7 @@ function KoboPowerD:_syncKoboLightOnStart()
             is_frontlight_on = G_reader_settings:readSetting("is_frontlight_on")
             if self.fl_warmth ~= nil then
                 new_warmth = G_reader_settings:readSetting("frontlight_warmth")
+                auto_warmth = G_reader_settings:readSetting("frontlight_auto_warmth")
             end
         end
     end
@@ -79,7 +82,17 @@ function KoboPowerD:_syncKoboLightOnStart()
         -- will only be used to give initial state to BasePowerD:_decideFrontlightState()
         self.initial_is_fl_on = is_frontlight_on
     end
-    if new_warmth ~= nil then
+    -- This is always read from G_reader_settings, since we do not
+    -- support reading 'BedTime' from NickelConf.
+    local max_warmth_hour =
+        G_reader_settings:readSetting("frontlight_max_warmth_hour")
+    if max_warmth_hour then
+        self.max_warmth_hour = max_warmth_hour
+    end
+    if auto_warmth then
+        self.auto_warmth = true
+        self:calculateAutoWarmth()
+    elseif new_warmth ~= nil then
         self.fl_warmth = new_warmth
     end
 
@@ -129,11 +142,15 @@ function KoboPowerD:saveSettings()
         local cur_intensity = self.fl_intensity
         local cur_is_fl_on = self.is_fl_on
         local cur_warmth = self.fl_warmth
+        local cur_auto_warmth = self.auto_warmth
+        local cur_max_warmth_hour = self.max_warmth_hour
         -- Save intensity to koreader settings
         G_reader_settings:saveSetting("frontlight_intensity", cur_intensity)
         G_reader_settings:saveSetting("is_frontlight_on", cur_is_fl_on)
         if cur_warmth ~= nil then
             G_reader_settings:saveSetting("frontlight_warmth", cur_warmth)
+            G_reader_settings:saveSetting("frontlight_auto_warmth", cur_auto_warmth)
+            G_reader_settings:saveSetting("frontlight_max_warmth_hour", cur_max_warmth_hour)
         end
         -- And to "Kobo eReader.conf" if needed
         if KOBO_SYNC_BRIGHTNESS_WITH_NICKEL then
@@ -153,6 +170,9 @@ function KoboPowerD:saveSettings()
                 local warmth_rescaled = (100 - cur_warmth) * 49 + 1500
                 if NickelConf.colorSetting.get() ~= warmth_rescaled then
                     NickelConf.colorSetting.set(warmth_rescaled)
+                end
+                if NickelConf.autoColorEnabled.get() ~= cur_auto_warmth then
+                    NickelConf.autoColorEnabled.set(cur_auto_warmth)
                 end
             end
         end
@@ -255,6 +275,9 @@ function KoboPowerD:afterResume()
     if self.fl_warmth == nil then
         self.fl:setBrightness(self.hw_intensity)
     else
+        if self.auto_warmth then
+            self:calculateAutoWarmth()
+        end
         self.fl:setNaturalBrightness(self.hw_intensity, self.fl_warmth)
     end
 end
