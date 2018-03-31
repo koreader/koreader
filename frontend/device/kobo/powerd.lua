@@ -1,5 +1,6 @@
 local BasePowerD = require("device/generic/powerd")
 local NickelConf = require("device/kobo/nickel_conf")
+local PluginShare = require("pluginshare")
 local SysfsLight = require ("device/kobo/sysfs_light")
 
 local batt_state_folder =
@@ -17,6 +18,8 @@ local KoboPowerD = BasePowerD:new{
     batt_capacity_file = batt_state_folder .. "capacity",
     is_charging_file = batt_state_folder .. "status",
     fl_warmth = nil,
+    auto_warmth = false,
+    max_warmth_hour = 23,
 }
 
 -- TODO: Remove KOBO_LIGHT_ON_START
@@ -92,6 +95,7 @@ function KoboPowerD:init()
     -- not be called)
     self.hw_intensity = 20
     self.initial_is_fl_on = true
+    self.autowarmth_job_running = false
 
     if self.device.hasFrontlight() then
         -- If this device has natural light (currently only KA1)
@@ -190,8 +194,43 @@ end
 
 function KoboPowerD:setWarmth(warmth)
     if self.fl == nil then return end
-    self.fl_warmth = warmth
-    self.fl:setWarmth(warmth)
+    if not warmth and self.auto_warmth then
+        self:calculateAutoWarmth()
+    end
+    self.fl_warmth = warmth or self.fl_warmth
+    self.fl:setWarmth(self.fl_warmth)
+end
+
+-- Sets fl_warmth according to current hour and max_warmth_hour
+-- and starts background job if necessary.
+function KoboPowerD:calculateAutoWarmth()
+    local current_time = os.date("%H") + os.date("%M")/60
+    local max_hour = self.max_warmth_hour
+    local diff_time = max_hour - current_time
+    if diff_time < 0 then
+        diff_time = diff_time + 24
+    end
+    if diff_time < 12 then
+        -- We are before bedtime. Use a slower progression over 5h.
+        self.fl_warmth = math.max(20 * (5 - diff_time), 0)
+    else
+        -- After bedtime, it only takes 2h to reach zero warmth.
+        self.fl_warmth = math.max(100 - 50 * (24 - diff_time), 0)
+    end
+    self.fl_warmth = math.floor(self.fl_warmth + 0.5)
+    -- Enable background job for setting Warmth, if not already done.
+    if not self.autowarmth_job_running then
+        table.insert(PluginShare.backgroundJobs, {
+                         when = 180,
+                         repeated = true,
+                         executable = function()
+                             if self.auto_warmth then
+                                 self:setWarmth()
+                             end
+                         end,
+        })
+        self.autowarmth_job_running = true
+    end
 end
 
 function KoboPowerD:getCapacityHW()
