@@ -1,6 +1,7 @@
 local Blitbuffer = require("ffi/blitbuffer")
 local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
+local CheckButton = require("ui/widget/checkbutton")
 local CloseButton = require("ui/widget/closebutton")
 local Device = require("device")
 local FrameContainer = require("ui/widget/container/framecontainer")
@@ -34,6 +35,7 @@ local FrontLightWidget = InputContainer:new{
 
 function FrontLightWidget:init()
     self.medium_font_face = Font:getFace("ffont")
+    self.larger_font_face = Font:getFace("cfont")
     self.light_bar = {}
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()
@@ -56,6 +58,7 @@ function FrontLightWidget:init()
     local button_margin = Size.margin.tiny
     local button_padding = Size.padding.button
     local button_bordersize = Size.border.button
+    self.auto_nl = false
     self.button_width = math.floor(self.screen_width * 0.9 / self.steps) -
             2 * (button_margin + button_padding + button_bordersize)
 
@@ -276,12 +279,23 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
     local button_group_down = HorizontalGroup:new{ align = "center" }
     local button_group_up = HorizontalGroup:new{ align = "center" }
     local warmth_group = HorizontalGroup:new{ align = "center" }
+    local auto_nl_group = HorizontalGroup:new{ align = "center" }
     local padding_span = VerticalSpan:new{ width = self.span }
     local enable_button_plus = true
     local enable_button_minus = true
+    local button_color = Blitbuffer.COLOR_WHITE
 
     if self[1] then
         self.powerd:setWarmth(num_warmth)
+    end
+
+    if self.powerd.auto_warmth then
+        enable_button_plus = false
+        enable_button_minus = false
+        button_color = Blitbuffer.COLOR_GREY
+    else
+        if num_warmth == self.fl_max then enable_button_plus = false end
+        if num_warmth == self.fl_min then enable_button_minus = false end
     end
 
     if self.natural_light and num_warmth then
@@ -289,6 +303,8 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
             table.insert(warmth_group, self.fl_prog_button:new{
                              text = "",
                              preselect = true,
+                             enabled = not self.powerd.auto_warmth,
+                             background = button_color,
                              callback = function()
                                  self:setProgress(self.fl_cur, step, i * step)
                              end
@@ -298,15 +314,13 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
         for i = math.floor(num_warmth / step) + 1, self.steps - 1 do
             table.insert(warmth_group, self.fl_prog_button:new{
                              text="",
+                             enabled = not self.powerd.auto_warmth,
                              callback = function()
                                  self:setProgress(self.fl_cur, step, i * step)
                              end
             })
         end
     end
-
-    if num_warmth == self.fl_max then enable_button_plus = false end
-    if num_warmth == self.fl_min then enable_button_minus = false end
 
     local text_warmth = TextBoxWidget:new{
         text = "\n" .. _("Warmth"),
@@ -343,7 +357,7 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
         text = _("Min"),
         margin = Size.margin.small,
         radius = 0,
-        enabled = true,
+        enabled = not self.powerd.auto_warmth,
         width = self.screen_width * 0.20,
         show_parent = self,
         callback = function() self:setProgress(self.fl_cur, step, self.fl_min) end,
@@ -352,7 +366,7 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
         text = _("Max"),
         margin = Size.margin.small,
         radius = 0,
-        enabled = true,
+        enabled = not self.powerd.auto_warmth,
         width = self.screen_width * 0.20,
         show_parent = self,
         callback = function() self:setProgress(self.fl_cur, step, self.fl_max) end,
@@ -372,9 +386,86 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
         empty_space,
         button_max,
     }
+    local checkbutton_auto_nl = CheckButton:new({
+            text = _("Automatic warmth"),
+            checked = self.powerd.auto_warmth,
+            callback = function()
+                if self.powerd.auto_warmth then
+                    self.powerd.auto_warmth = false
+                else
+                    self.powerd.auto_warmth = true
+                    self.powerd:calculateAutoWarmth()
+                end
+                self:setProgress(self.fl_cur, step)
+            end
+        })
+
+    local text_auto_nl = TextBoxWidget:new{
+        text = _("Maximum at:  "),
+        face = self.larger_font_face,
+        alignment = "right",
+        fgcolor = self.powerd.auto_warmth and Blitbuffer.COLOR_BLACK or
+            Blitbuffer.COLOR_GREY,
+        width = self.screen_width * 0.3
+    }
+    local text_hour = TextBoxWidget:new{
+        text = " " .. math.floor(self.powerd.max_warmth_hour) .. ":" ..
+            self.powerd.max_warmth_hour % 1 * 6 .. "0",
+        face = self.larger_font_face,
+        fgcolor =self.powerd.auto_warmth and Blitbuffer.COLOR_BLACK or
+            Blitbuffer.COLOR_GREY,
+        width = self.screen_width * 0.1
+    }
+    local button_minus_one_hour = Button:new{
+        text = "−",
+        margin = Size.margin.small,
+        radius = 0,
+        enabled = self.powerd.auto_warmth,
+        width = self.screen_width * 0.1,
+        show_parent = self,
+        callback = function()
+            self.powerd.max_warmth_hour =
+                (self.powerd.max_warmth_hour - 1) % 24
+            self.powerd:calculateAutoWarmth()
+            self:setProgress(self.fl_cur, step)
+        end,
+        hold_callback = function()
+            self.powerd.max_warmth_hour =
+                (self.powerd.max_warmth_hour - 0.5) % 24
+            self.powerd:calculateAutoWarmth()
+            self:setProgress(self.fl_cur, step)
+        end,
+    }
+    local button_plus_one_hour = Button:new{
+        text = "+",
+        margin = Size.margin.small,
+        radius = 0,
+        enabled = self.powerd.auto_warmth,
+        width = self.screen_width * 0.1,
+        show_parent = self,
+        callback = function()
+            self.powerd.max_warmth_hour =
+                (self.powerd.max_warmth_hour + 1) % 24
+            self.powerd:calculateAutoWarmth()
+            self:setProgress(self.fl_cur, step)
+        end,
+        hold_callback = function()
+            self.powerd.max_warmth_hour =
+                (self.powerd.max_warmth_hour + 0.5) % 24
+            self.powerd:calculateAutoWarmth()
+            self:setProgress(self.fl_cur, step)
+        end,
+    }
+
     table.insert(vertical_group,text_warmth)
     table.insert(button_group_up, button_table_up)
     table.insert(button_group_down, button_table_down)
+    table.insert(auto_nl_group, checkbutton_auto_nl)
+    table.insert(auto_nl_group, text_auto_nl)
+    table.insert(auto_nl_group, button_minus_one_hour)
+    table.insert(auto_nl_group, text_hour)
+    table.insert(auto_nl_group, button_plus_one_hour)
+
     table.insert(vertical_group,padding_span)
     table.insert(vertical_group,button_group_up)
     table.insert(vertical_group,padding_span)
@@ -382,6 +473,7 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
     table.insert(vertical_group,padding_span)
     table.insert(vertical_group,button_group_down)
     table.insert(vertical_group,padding_span)
+    table.insert(vertical_group,auto_nl_group)
 end
 
 function FrontLightWidget:update()
