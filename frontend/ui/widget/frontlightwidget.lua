@@ -401,7 +401,8 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
         })
 
     local text_auto_nl = TextBoxWidget:new{
-        text = _("Maximum at:  "),
+        -- @TODO implement padding_right (etc.) on TextBoxWidget and remove the two-space hack
+        text = _("Maximum at:") .. "  ",
         face = self.larger_font_face,
         alignment = "right",
         fgcolor = self.powerd.auto_warmth and Blitbuffer.COLOR_BLACK or
