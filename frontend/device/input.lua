@@ -147,7 +147,9 @@ function Input:init()
     self.event_map[10021] = "NotCharging"
 
     -- user custom event map
-    local ok, custom_event_map = pcall(dofile, "custom.event.map.lua")
+    local custom_event_map_location = string.format(
+        "%s/%s", DataStorage:getSettingsDir(), "event_map.lua")
+    local ok, custom_event_map = pcall(dofile, custom_event_map_location)
     if ok then
         for key, value in pairs(custom_event_map) do
             self.event_map[key] = value
