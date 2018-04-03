@@ -49,6 +49,7 @@ function Device:init()
 
                 -- SDL events can remain cdata but are almost completely transparent
                 local SDL_MOUSEWHEEL = 1027
+                local SDL_MULTIGESTURE = 2050
                 local SDL_DROPFILE = 4096
                 local SDL_WINDOWEVENT_RESIZED = 5
 
@@ -99,6 +100,9 @@ function Device:init()
                         UIManager:broadcastEvent(fake_pan_ev)
                         UIManager:broadcastEvent(fake_release_ev)
                     end
+                elseif ev.code == SDL_MULTIGESTURE then
+                    -- no-op for now
+                    do end -- luacheck: ignore 541
                 elseif ev.code == SDL_DROPFILE then
                     local dropped_file_path = ev.value
                     if dropped_file_path and dropped_file_path ~= "" then
@@ -132,6 +136,7 @@ function Device:init()
             setClipboardText = function(text)
                 return input.setClipboardText(text)
             end,
+            file_chooser = input.file_chooser,
         }
     else
         self.screen = require("ffi/framebuffer_SDL1_2"):new{device = self, debug = logger.dbg}

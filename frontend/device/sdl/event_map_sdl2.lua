@@ -32,4 +32,7 @@ return {
     [81] = "Down", -- arrow down
     [78] = "RPgFwd", -- normal PageDown
     [76] = "Del", -- Delete
+    [101] = "ContextMenu", -- Context menu key
+    [224] = "Ctrl", -- Left Ctrl
+    [228] = "Ctrl", -- Right Ctrl
 }

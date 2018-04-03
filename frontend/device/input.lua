@@ -114,6 +114,7 @@ local Input = {
     -- keyboard state:
     modifiers = {
         Alt = false,
+        Ctrl = false,
         Shift = false,
     },
 
@@ -301,9 +302,22 @@ function Input:handleKeyBoardEv(ev)
         end
     end
 
+    local FileChooser = self.file_chooser
+    if FileChooser and self:isEvKeyPress(ev)
+    and self.modifiers["Ctrl"] and keycode == "O" then
+        logger.dbg("Opening FileChooser:", FileChooser.type)
+        local file_path = FileChooser:open()
+
+        if file_path then
+            local ReaderUI = require("apps/reader/readerui")
+            ReaderUI:doShowReader(file_path)
+        end
+        return
+    end
+
     -- quit on Alt + F4
     -- this is also emitted by the close event in SDL
-    if self.modifiers["Alt"] and keycode == "F4" then
+    if self:isEvKeyPress(ev) and self.modifiers["Alt"] and keycode == "F4" then
         local Device = require("frontend/device")
         local UIManager = require("ui/uimanager")
 
