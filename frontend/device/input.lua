@@ -2,10 +2,11 @@
 An interface to get input events.
 ]]
 
+local DataStorage = require("datastorage")
 local DEBUG = require("dbg")
 local Event = require("ui/event")
-local Key = require("device/key")
 local GestureDetector = require("device/gesturedetector")
+local Key = require("device/key")
 local TimeVal = require("ui/timeval")
 local framebuffer = require("ffi/framebuffer")
 local input = require("ffi/input")
@@ -150,7 +151,9 @@ function Input:init()
     self.event_map[10021] = "NotCharging"
 
     -- user custom event map
-    local ok, custom_event_map = pcall(dofile, "custom.event.map.lua")
+    local custom_event_map_location = string.format(
+        "%s/%s", DataStorage:getSettingsDir(), "event_map.lua")
+    local ok, custom_event_map = pcall(dofile, custom_event_map_location)
     if ok then
         for key, value in pairs(custom_event_map) do
             self.event_map[key] = value
