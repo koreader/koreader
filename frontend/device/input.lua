@@ -19,6 +19,8 @@ local EV_SYN = 0
 local EV_KEY = 1
 local EV_ABS = 3
 local EV_MSC = 4
+-- for frontend SDL event handling
+local EV_SDL = 53 -- ASCII code for S
 
 -- key press event values (KEY.value)
 local EVENT_VALUE_KEY_PRESS = 1
@@ -348,6 +350,10 @@ function Input:handleMiscEv(ev)
     -- should be handled by a misc event protocol plugin
 end
 
+function Input:handleSdlEv(ev)
+    -- overwritten by device implementation
+end
+
 --[[--
 Parse each touch ev from kernel and build up tev.
 tev will be sent to GestureDetector:feedEvent
@@ -652,9 +658,9 @@ function Input:waitEvent(timeout_us)
         if DEBUG.is_on and ev then
             DEBUG:logEv(ev)
             logger.dbg(string.format(
-                "%s event => type: %d, code: %d(%s), value: %d, time: %d.%d",
+                "%s event => type: %d, code: %d(%s), value: %s, time: %d.%d",
                 ev.type == EV_KEY and "key" or "input",
-                ev.type, ev.code, self.event_map[ev.code], ev.value,
+                ev.type, ev.code, self.event_map[ev.code], tostring(ev.value),
                 ev.time.sec, ev.time.usec))
         end
         self:eventAdjustHook(ev)
@@ -666,6 +672,8 @@ function Input:waitEvent(timeout_us)
             return self:handleTouchEv(ev)
         elseif ev.type == EV_MSC then
             return self:handleMiscEv(ev)
+        elseif ev.type == EV_SDL then
+            return self:handleSdlEv(ev)
         else
             -- some other kind of event that we do not know yet
             return Event:new("GenericInput", ev)
