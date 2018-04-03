@@ -42,34 +42,79 @@ function Device:init()
         self.input = require("device/input"):new{
             device = self,
             event_map = require("device/sdl/event_map_sdl2"),
-            handleMiscEv = function(device_input, ev)
-                -- bit of a hack for passing SDL events
+            handleSdlEv = function(device_input, ev)
+                local Geom = require("ui/geometry")
+                local TimeVal = require("ui/timeval")
+                local UIManager = require("ui/uimanager")
+
+                -- SDL events can remain cdata but are almost completely transparent
+                local SDL_MOUSEWHEEL = 1027
                 local SDL_DROPFILE = 4096
                 local SDL_WINDOWEVENT_RESIZED = 5
-                local w = 0
-                local h = 1
 
-                if ev.code == SDL_DROPFILE then
-                    local dropped_file_path = input.getDroppedFilePath()
+                if ev.code == SDL_MOUSEWHEEL then
+                    local scrolled_x = ev.value.x
+                    local scrolled_y = ev.value.y
+
+                    local up = 1
+                    local down = -1
+
+                    local pos = Geom:new{
+                        x = 0,
+                        y = 0,
+                        w = 0, h = 0,
+                    }
+
+                    local timev = TimeVal:new(ev.time)
+
+                    local fake_ges = {
+                        ges = "pan",
+                        distance = 200,
+                        relative = {
+                            x = 50*scrolled_x,
+                            y = 100*scrolled_y,
+                        },
+                        pos = pos,
+                        time = timev,
+                    }
+                    local fake_ges_release = {
+                        ges = "pan_release",
+                        distance = 200,
+                        relative = {
+                            x = 50*scrolled_x,
+                            y = 100*scrolled_y,
+                        },
+                        pos = pos,
+                        time = timev,
+                    }
+                    local fake_pan_ev = Event:new("Pan", nil, fake_ges)
+                    local fake_release_ev = Event:new("Gesture", fake_ges_release)
+
+                    if scrolled_y == down then
+                        fake_ges.direction = "north"
+                        UIManager:broadcastEvent(fake_pan_ev)
+                        UIManager:broadcastEvent(fake_release_ev)
+                    elseif scrolled_y == up then
+                        fake_ges.direction = "south"
+                        UIManager:broadcastEvent(fake_pan_ev)
+                        UIManager:broadcastEvent(fake_release_ev)
+                    end
+                elseif ev.code == SDL_DROPFILE then
+                    local dropped_file_path = ev.value
                     if dropped_file_path and dropped_file_path ~= "" then
                         local ReaderUI = require("apps/reader/readerui")
                         ReaderUI:doShowReader(dropped_file_path)
                     end
-                elseif ev.code == w then
-                    device_input.new_w = ev.value
-                elseif ev.code == h then
-                    device_input.new_h = ev.value
                 elseif ev.code == SDL_WINDOWEVENT_RESIZED then
-                    device_input.device.screen.screen_size.w = device_input.new_w
-                    device_input.device.screen.screen_size.h = device_input.new_h
-                    device_input.device.screen.resize(device_input.device.screen, device_input.new_w, device_input.new_h)
+                    device_input.device.screen.screen_size.w = ev.value.data1
+                    device_input.device.screen.screen_size.h = ev.value.data2
+                    device_input.device.screen.resize(device_input.device.screen, ev.value.data1, ev.value.data2)
 
                     local new_size = device_input.device.screen:getSize()
                     logger.dbg("Resizing screen to", new_size)
 
                     -- try to catch as many flies as we can
                     -- this means we can't just return one ScreenResize or SetDimensons event
-                    local UIManager = require("ui/uimanager")
                     UIManager:broadcastEvent(Event:new("SetDimensions", new_size))
                     UIManager:broadcastEvent(Event:new("ScreenResize", new_size))
                     -- @TODO toggle this elsewhere based on ScreenResize?
