@@ -107,7 +107,7 @@ function PocketBook:init()
     end)
 
     os.remove(self.emu_events_dev)
-	os.execute("mkfifo " .. self.emu_events_dev)
+    os.execute("mkfifo " .. self.emu_events_dev)
     self.input.open(self.emu_events_dev, 1)
     Generic.init(self)
 end
@@ -193,6 +193,16 @@ local PocketBook623 = PocketBook:new{
     emu_events_dev = "/var/dev/shm/emu_events",
 }
 
+-- PocketBook InkPad 3
+local PocketBook740 = PocketBook:new{
+    isTouchDevice = yes,
+    hasKeys = yes,
+    hasFrontlight = yes,
+    isAlwaysPortrait = yes,
+    display_dpi = 300,
+    emu_events_dev = "/var/dev/shm/emu_events",
+}
+
 logger.info('SoftwareVersion: ', PocketBook:getSoftwareVersion())
 
 local codename = PocketBook:getDeviceModel()
@@ -207,6 +217,8 @@ elseif codename == "PocketBook 624" then
     return PocketBook624
 elseif codename == "PocketBook 623" then
     return PocketBook623
+elseif codename == "PB740" then
+    return PocketBook740
 else
     error("unrecognized PocketBook model " .. codename)
 end
