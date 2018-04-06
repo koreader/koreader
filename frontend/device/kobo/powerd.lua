@@ -233,9 +233,12 @@ function KoboPowerD:calculateAutoWarmth()
     if diff_time < 12 then
         -- We are before bedtime. Use a slower progression over 5h.
         self.fl_warmth = math.max(20 * (5 - diff_time), 0)
+    elseif diff_time > 22 then
+        -- Keep warmth at maximum for two hours after bedtime.
+        self.fl_warmth = 100
     else
-        -- After bedtime, it only takes 2h to reach zero warmth.
-        self.fl_warmth = math.max(100 - 50 * (24 - diff_time), 0)
+        -- Between 2-4h after bedtime, return to zero.
+        self.fl_warmth = math.max(100 - 50 * (22 - diff_time), 0)
     end
     self.fl_warmth = math.floor(self.fl_warmth + 0.5)
     -- Enable background job for setting Warmth, if not already done.
