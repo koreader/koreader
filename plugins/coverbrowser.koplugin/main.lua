@@ -58,6 +58,18 @@ function CoverBrowser:init()
         return
     end
 
+    -- Set up default display modes on first launch
+    if not G_reader_settings:isTrue("coverbrowser_initial_default_setup_done") then
+        -- Only if no display mode has been set yet
+        if not BookInfoManager:getSetting("filemanager_display_mode")
+            and not BookInfoManager:getSetting("history_display_mode") then
+            logger.info("CoverBrowser: setting default display modes")
+            BookInfoManager:saveSetting("filemanager_display_mode", "list_image_meta")
+            BookInfoManager:saveSetting("history_display_mode", "mosaic_image")
+        end
+        G_reader_settings:saveSetting("coverbrowser_initial_default_setup_done", true)
+    end
+
     self:setupFileManagerDisplayMode(BookInfoManager:getSetting("filemanager_display_mode"))
     self:setupHistoryDisplayMode(BookInfoManager:getSetting("history_display_mode"))
     init_done = true
