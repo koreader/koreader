@@ -1,4 +1,3 @@
-local Device = require("device")
 local DocumentRegistry = require("document/documentregistry")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local ImageViewer = require("ui/widget/imageviewer")
@@ -6,7 +5,6 @@ local Menu = require("ui/widget/menu")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
-local util = require("ffi/util")
 local _ = require("gettext")
 
 local BookInfoManager = require("bookinfomanager")
