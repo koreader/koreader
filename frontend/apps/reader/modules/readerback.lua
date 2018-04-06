@@ -1,6 +1,7 @@
 local Device = require("device")
 local Event = require("ui/event")
 local EventListener = require("ui/widget/eventlistener")
+local Trapper =  require("ui/trapper")
 local logger = require("logger")
 local util = require("util")
 
@@ -81,8 +82,12 @@ function ReaderBack:onBack()
         elseif back_to_exit == "no" then
             return true
         elseif back_to_exit == "prompt" then
-            --TODO
-            print("prompt user")
+            Trapper:wrap(function()
+                if Trapper:confirm("Exit Koreader?") then
+                    logger.dbg("[ReaderBack] no location history, closing")
+                    self.ui:handleEvent(Event:new("Close"))
+                end
+            end)
             return true
         end
 

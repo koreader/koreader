@@ -27,6 +27,7 @@ local RenderText = require("ui/rendertext")
 local Screenshoter = require("ui/widget/screenshoter")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
+local Trapper =  require("ui/trapper")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local UIManager = require("ui/uimanager")
@@ -377,8 +378,11 @@ function FileChooser:onBack()
     elseif back_to_exit == "no" then
         return true
     elseif back_to_exit == "prompt" then
-        --TODO
-        print("prompt user")
+        Trapper:wrap(function()
+            if Trapper:confirm("Exit Koreader?") then
+                self:onClose()
+            end
+        end)
         return true
     end
 end
