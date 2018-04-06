@@ -363,14 +363,24 @@ function FileManager:init()
 
     if Device:hasKeys() then
         self.key_events.Home = { {"Home"}, doc = "go home" }
-        if not Device:isSDL() then
-            --if not in the desktop emulator
-            --remove the old Back key to exit koreader
-            self.file_chooser.key_events.Close = nil
-        end
+        --Override the menu.lua way of handling the back key
+        self.file_chooser.key_events.Back = { {"Back"}, doc = "go back" }
     end
 
     self:handleEvent(Event:new("SetDimensions", self.dimen))
+end
+
+function FileChooser:onBack()
+    local back_to_exit = G_reader_settings:readSetting("back_to_exit") or "prompt"
+    if back_to_exit == "yes" then
+        return self:onClose()
+    elseif back_to_exit == "no" then
+        return true
+    elseif back_to_exit == "prompt" then
+        --TODO
+        print("prompt user")
+        return true
+    end
 end
 
 function FileManager:tapPlus()

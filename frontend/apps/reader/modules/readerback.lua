@@ -73,8 +73,20 @@ function ReaderBack:onBack()
             return true
         end
     else
-        logger.dbg("[ReaderBack] no location history, closing")
-        self.ui:handleEvent(Event:new("Close"))
+        local back_to_exit = G_reader_settings:readSetting("back_to_exit") or "prompt"
+        if back_to_exit == "yes" then
+            logger.dbg("[ReaderBack] no location history, closing")
+            self.ui:handleEvent(Event:new("Close"))
+            return true
+        elseif back_to_exit == "no" then
+            return true
+        elseif back_to_exit == "prompt" then
+            --TODO
+            print("prompt user")
+            return true
+        end
+
+
     end
 end
 
