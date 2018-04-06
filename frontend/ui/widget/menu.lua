@@ -810,6 +810,30 @@ function Menu:onCloseWidget()
     UIManager:setDirty(nil, "partial")
 end
 
+function Menu:updatePageInfo(select_number)
+    if self.item_group[1] then
+        if Device:hasKeys() then
+            -- reset focus manager accordingly
+            self.selected = { x = 1, y = select_number }
+        end
+        -- update page information
+        self.page_info_text:setText(util.template(_("page %1 of %2"), self.page, self.page_num))
+        self.page_info_left_chev:showHide(self.page_num > 1)
+        self.page_info_right_chev:showHide(self.page_num > 1)
+        self.page_info_first_chev:showHide(self.page_num > 2)
+        self.page_info_last_chev:showHide(self.page_num > 2)
+        self.page_return_arrow:showHide(self.onReturn ~= nil)
+
+        self.page_info_left_chev:enableDisable(self.page > 1)
+        self.page_info_right_chev:enableDisable(self.page < self.page_num)
+        self.page_info_first_chev:enableDisable(self.page > 1)
+        self.page_info_last_chev:enableDisable(self.page < self.page_num)
+        self.page_return_arrow:enableDisable(#self.paths > 0)
+    else
+        self.page_info_text:setText(_("No choices available"))
+    end
+end
+
 function Menu:updateItems(select_number)
     local old_dimen = self.dimen and self.dimen:copy()
     -- self.layout must be updated for focusmanager
@@ -871,27 +895,8 @@ function Menu:updateItems(select_number)
             table.insert(self.layout, {item_tmp})
         end -- if i <= self.items
     end -- for c=1, self.perpage
-    if self.item_group[1] then
-        if Device:hasKeys() then
-            -- reset focus manager accordingly
-            self.selected = { x = 1, y = select_number }
-        end
-        -- update page information
-        self.page_info_text:setText(util.template(_("page %1 of %2"), self.page, self.page_num))
-        self.page_info_left_chev:showHide(self.page_num > 1)
-        self.page_info_right_chev:showHide(self.page_num > 1)
-        self.page_info_first_chev:showHide(self.page_num > 2)
-        self.page_info_last_chev:showHide(self.page_num > 2)
-        self.page_return_arrow:showHide(self.onReturn ~= nil)
 
-        self.page_info_left_chev:enableDisable(self.page > 1)
-        self.page_info_right_chev:enableDisable(self.page < self.page_num)
-        self.page_info_first_chev:enableDisable(self.page > 1)
-        self.page_info_last_chev:enableDisable(self.page < self.page_num)
-        self.page_return_arrow:enableDisable(#self.paths > 0)
-    else
-        self.page_info_text:setText(_("No choices available"))
-    end
+    self:updatePageInfo(select_number)
 
     UIManager:setDirty("all", function()
         local refresh_dimen =
@@ -1119,6 +1124,9 @@ function Menu:onSwipe(arg, ges_ev)
         self:onNextPage()
     elseif ges_ev.direction == "east" then
         self:onPrevPage()
+    else
+        -- trigger full refresh
+        UIManager:setDirty(nil, "full")
     end
 end
 
