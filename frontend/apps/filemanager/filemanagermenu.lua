@@ -24,6 +24,9 @@ function FileManagerMenu:init()
             -- top menu
         },
         -- items in top menu
+        filemanager_settings = {
+            icon = "resources/icons/appbar.cabinet.files.png",
+        },
         setting = {
             icon = "resources/icons/appbar.settings.png",
         },

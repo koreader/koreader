@@ -1,12 +1,13 @@
 local order = {
     ["KOMenu:menu_buttons"] = {
+        "filemanager_settings",
         "setting",
         "tools",
         "search",
         "plus_menu",
         "main",
     },
-    setting = {
+    filemanager_settings = {
         "filemanager_display_mode",
         "show_hidden_files",
         "items_per_page",
@@ -15,8 +16,8 @@ local order = {
         "reverse_sorting",
         "----------------------------",
         "start_with",
-        "screensaver",
-        "----------------------------",
+    },
+    setting = {
         -- common settings
         -- those that don't exist will simply be skipped during menu gen
         "frontlight", -- if Device:hasFrontlight()
@@ -24,6 +25,7 @@ local order = {
         "----------------------------",
         "network",
         "screen",
+        "screensaver",
         "document",
         "----------------------------",
         "language",
