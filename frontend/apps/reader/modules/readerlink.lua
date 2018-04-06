@@ -12,6 +12,7 @@ local LinkBox = require("ui/widget/linkbox")
 local Notification = require("ui/widget/notification")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
@@ -323,14 +324,63 @@ function ReaderLink:onGotoLink(link, neglect_current_location)
         -- Ask for user confirmation before launching lookup (on a
         -- wikipedia page saved as epub, full of wikipedia links, it's
         -- too easy to click on links when wanting to change page...)
-        UIManager:show(ConfirmBox:new{
-            text = T(_("Would you like to read this Wikipedia %1 article?\n\n%2\n"), wiki_lang:upper(), wiki_page:gsub("_", " ")),
-            ok_callback = function()
-                UIManager:nextTick(function()
-                    self.ui:handleEvent(Event:new("LookupWikipedia", wiki_page, false, true, wiki_lang))
-                end)
+        -- But first check if this wikipedia article has been saved as EPUB
+        local epub_filename = util.replaceInvalidChars(wiki_page:gsub("_", " ")) .. "."..string.upper(wiki_lang)..".epub"
+        local epub_fullpath
+        -- either in current book directory
+        local last_file = G_reader_settings:readSetting("lastfile")
+        if last_file then
+            local current_book_dir = last_file:match("(.*)/")
+            local epub_path = current_book_dir .. "/" .. epub_filename
+            if util.pathExists(epub_path) then
+                epub_fullpath = epub_path
             end
-        })
+        end
+        -- or in wikipedia save directory
+        if not epub_fullpath then
+            local dir = G_reader_settings:readSetting("wikipedia_save_dir")
+            if not dir then dir = G_reader_settings:readSetting("home_dir") end
+            if not dir then dir = require("apps/filemanager/filemanagerutil").getDefaultDir() end
+            if dir then
+                local epub_path = dir .. "/" .. epub_filename
+                if util.pathExists(epub_path) then
+                    epub_fullpath = epub_path
+                end
+            end
+        end
+        if epub_fullpath then
+            local MultiConfirmBox = require("ui/widget/multiconfirmbox")
+            UIManager:show(MultiConfirmBox:new{
+                text = T(_("Would you like to read this Wikipedia %1 article?\n\n%2\n\nThis article has previously been saved as EPUB. You may wish to read the saved EPUB instead."), wiki_lang:upper(), wiki_page:gsub("_", " "), epub_fullpath),
+                choice1_text = _("Read online"),
+                choice1_callback = function()
+                    UIManager:nextTick(function()
+                        self.ui:handleEvent(Event:new("LookupWikipedia", wiki_page, false, true, wiki_lang))
+                    end)
+                end,
+                choice2_text = _("Read EPUB"),
+                choice2_callback = function()
+                    -- close current ReaderUI, and create a new one
+                    UIManager:scheduleIn(0.1, function()
+                        local ReaderUI = require("apps/reader/readerui")
+                        local reader = ReaderUI:_getRunningInstance()
+                        if reader then
+                            reader:onClose()
+                        end
+                        ReaderUI:showReader(epub_fullpath)
+                    end)
+                end,
+            })
+        else
+            UIManager:show(ConfirmBox:new{
+                text = T(_("Would you like to read this Wikipedia %1 article?\n\n%2\n"), wiki_lang:upper(), wiki_page:gsub("_", " ")),
+                ok_callback = function()
+                    UIManager:nextTick(function()
+                        self.ui:handleEvent(Event:new("LookupWikipedia", wiki_page, false, true, wiki_lang))
+                    end)
+                end
+            })
+        end
     else
         local InfoMessage = require("ui/widget/infomessage")
         UIManager:show(InfoMessage:new{
