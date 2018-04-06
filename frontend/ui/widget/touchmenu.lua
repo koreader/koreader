@@ -337,7 +337,7 @@ function TouchMenuBar:switchToTab(index)
     -- a little safety check
     -- don't auto-activate a non-existent index
     if index > #self.icon_widgets then
-        index = 1
+        index = #self.icon_widgets
     end
     self.icon_widgets[index].callback()
 end
