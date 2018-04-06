@@ -27,7 +27,6 @@ local RenderText = require("ui/rendertext")
 local Screenshoter = require("ui/widget/screenshoter")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
-local Trapper =  require("ui/trapper")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local UIManager = require("ui/uimanager")
@@ -378,11 +377,12 @@ function FileChooser:onBack()
     elseif back_to_exit == "disable" then
         return true
     elseif back_to_exit == "prompt" then
-        Trapper:wrap(function()
-            if Trapper:confirm(_("Exit Koreader?")) then
-                self:onClose()
-            end
-        end)
+            UIManager:show(ConfirmBox:new{
+                text ="Exit Koreader?",
+                ok_callback = function()
+                    self:onClose()
+                end
+            })
         return true
     end
 end

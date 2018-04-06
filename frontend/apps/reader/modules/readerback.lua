@@ -1,7 +1,8 @@
+local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
 local EventListener = require("ui/widget/eventlistener")
-local Trapper =  require("ui/trapper")
+local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local util = require("util")
 
@@ -82,12 +83,13 @@ function ReaderBack:onBack()
         elseif back_to_exit == "disable" then
             return true
         elseif back_to_exit == "prompt" then
-            Trapper:wrap(function()
-                if Trapper:confirm(_("Exit Koreader?")) then
+            UIManager:show(ConfirmBox:new{
+                text ="Exit Koreader?",
+                ok_callback = function()
                     logger.dbg("[ReaderBack] no location history, closing")
                     self.ui:handleEvent(Event:new("Close"))
                 end
-            end)
+            })
             return true
         end
 
