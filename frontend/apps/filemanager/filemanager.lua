@@ -373,13 +373,13 @@ end
 
 function FileChooser:onBack()
     local back_to_exit = G_reader_settings:readSetting("back_to_exit") or "prompt"
-    if back_to_exit == "yes" then
+    if back_to_exit == "always" then
         return self:onClose()
-    elseif back_to_exit == "no" then
+    elseif back_to_exit == "disable" then
         return true
     elseif back_to_exit == "prompt" then
         Trapper:wrap(function()
-            if Trapper:confirm("Exit Koreader?") then
+            if Trapper:confirm(_("Exit Koreader?")) then
                 self:onClose()
             end
         end)

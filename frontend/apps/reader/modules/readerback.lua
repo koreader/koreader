@@ -75,15 +75,15 @@ function ReaderBack:onBack()
         end
     else
         local back_to_exit = G_reader_settings:readSetting("back_to_exit") or "prompt"
-        if back_to_exit == "yes" then
+        if back_to_exit == "always" then
             logger.dbg("[ReaderBack] no location history, closing")
             self.ui:handleEvent(Event:new("Close"))
             return true
-        elseif back_to_exit == "no" then
+        elseif back_to_exit == "disable" then
             return true
         elseif back_to_exit == "prompt" then
             Trapper:wrap(function()
-                if Trapper:confirm("Exit Koreader?") then
+                if Trapper:confirm(_("Exit Koreader?")) then
                     logger.dbg("[ReaderBack] no location history, closing")
                     self.ui:handleEvent(Event:new("Close"))
                 end
