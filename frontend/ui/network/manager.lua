@@ -2,6 +2,7 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
+local InputDialog = require("ui/widget/inputdialog")
 local LuaSettings = require("luasettings")
 local UIManager = require("ui/uimanager")
 local ffiutil = require("ffi/util")
@@ -243,6 +244,78 @@ function NetworkMgr:getBeforeWifiActionMenuTable()
        }
    }
 end
+function NetworkMgr:getSSHMenuTable()
+    local SSH_port = G_reader_settings:readSetting("SSH_port") or "2222"
+    local start = function(menu)
+        os.execute("mkdir SSH")
+        os.execute("./dropbearkey -t rsa -f SSH/dropbear_rsa_host_key")
+        if os.execute("./dropbear -E -r SSH/dropbear_rsa_host_key -p "..SSH_port) == 0 then
+            local info = InfoMessage:new{
+                    text = "Port: "..SSH_port,
+                    timeout = 5,
+                    }
+            UIManager:show(info)
+        else
+            local info = InfoMessage:new{
+                    text = _("Error"),
+                    timeout = 5,
+                    }
+            UIManager:show(info)
+        end
+    end
+    local stop = function()
+        os.execute("killall dropbear")
+    end
+    return {
+        text = _(_("SSH server")),
+        sub_item_table = {
+            {
+                text = _("Start SSH server"),
+                callback = start,
+            },
+            {
+                text = _("Stop SSH server"),
+                callback = stop,
+            },
+            {
+                text = _("Change SSH port"),
+                callback = function()
+                     self.dialog = InputDialog:new{
+                        title = _("Choose SSH port"),
+                        input_type = "number",
+                        input_hint = SSH_port,
+                        buttons = {
+                            {
+                                {
+                                    text = _("Cancel"),
+                                    enabled = true,
+                                    callback = function()
+                                        UIManager:close(self.dialog)
+                                    end,
+                                },
+                                {
+                                    is_enter_default = true,
+                                    text = _("Save"),
+                                    callback = function()
+                                        local value
+                                        value  = tonumber(self.dialog:getInputText())
+                                        if value then
+                                            SSH_port = value
+                                            G_reader_settings:saveSetting("SSH_port",SSH_port)
+                                            UIManager:close(self.dialog)
+                                        end
+                                    end
+                                },
+                            },
+                        },
+                    }
+                    UIManager:show(self.dialog)
+                    self.dialog:onShowKeyboard()
+                end
+            },
+       }
+       }
+end
 
 function NetworkMgr:getMenuTable()
     return {
@@ -251,6 +324,7 @@ function NetworkMgr:getMenuTable()
         self:getRestoreMenuTable(),
         self:getInfoMenuTable(),
         self:getBeforeWifiActionMenuTable(),
+        self:getSSHMenuTable(),
     }
 end
 
