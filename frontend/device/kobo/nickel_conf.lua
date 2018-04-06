@@ -85,7 +85,6 @@ function NickelConf.colorSetting.get()
     if new_colorsetting then
         return tonumber(new_colorsetting)
     end
-    return nil
 end
 
 function NickelConf.autoColorEnabled.get()
