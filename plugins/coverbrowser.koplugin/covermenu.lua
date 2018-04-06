@@ -1,4 +1,3 @@
-local Device = require("device")
 local DocumentRegistry = require("document/documentregistry")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local ImageViewer = require("ui/widget/imageviewer")
@@ -6,7 +5,6 @@ local Menu = require("ui/widget/menu")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
-local util = require("ffi/util")
 local _ = require("gettext")
 
 local BookInfoManager = require("bookinfomanager")
@@ -87,27 +85,8 @@ function CoverMenu:updateItems(select_number)
     current_cover_specs = self.cover_specs
 
     -- As done in Menu:updateItems()
-    if self.item_group[1] then
-        if Device:hasKeys() then
-            -- reset focus manager accordingly
-            self.selected = { x = 1, y = select_number }
-        end
-        -- update page information
-        self.page_info_text:setText(util.template(_("page %1 of %2"), self.page, self.page_num))
-        self.page_info_left_chev:showHide(self.page_num > 1)
-        self.page_info_right_chev:showHide(self.page_num > 1)
-        self.page_info_first_chev:showHide(self.page_num > 2)
-        self.page_info_last_chev:showHide(self.page_num > 2)
-        self.page_return_arrow:showHide(self.onReturn ~= nil)
+    self:updatePageInfo(select_number)
 
-        self.page_info_left_chev:enableDisable(self.page > 1)
-        self.page_info_right_chev:enableDisable(self.page < self.page_num)
-        self.page_info_first_chev:enableDisable(self.page > 1)
-        self.page_info_last_chev:enableDisable(self.page < self.page_num)
-        self.page_return_arrow:enableDisable(#self.paths > 0)
-    else
-        self.page_info_text:setText(_("No choices available"))
-    end
     UIManager:setDirty("all", function()
         local refresh_dimen =
             old_dimen and old_dimen:combine(self.dimen)
