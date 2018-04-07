@@ -7,6 +7,7 @@ local LuaSettings = require("luasettings")
 local UIManager = require("ui/uimanager")
 local ffiutil = require("ffi/util")
 local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
 local T = ffiutil.template
 
@@ -249,7 +250,7 @@ function NetworkMgr:getSSHMenuTable()
     local SSH_port = G_reader_settings:readSetting("SSH_port") or "2222"
     local allow_blank_password = false
     local start = function(menu)
-        local cmd = "./dropbear -E"
+        local cmd = "./dropbear -E -P SSH/dropbear.pid"
         cmd = cmd.." -r SSH/dropbear_rsa_host_key" 
         cmd = cmd.." -p "..SSH_port
         if allow_blank_password then
@@ -274,20 +275,27 @@ function NetworkMgr:getSSHMenuTable()
     end
 
     local stop = function()
-        os.execute("killall dropbear")
+        os.execute("cat SSH/dropbear.pid | xargs kill")
+        os.execute("rm  SSH/dropbear.pid")
     end
 
+    local start_stop = function()
+        print(util.pathExists("SSH/dropbear.pid"))
+        if util.pathExists("SSH/dropbear.pid") then
+
+            return  {
+                text = _("Stop SSH server"),
+                callback = stop,
+            }
+        else return {
+                text = _("Start SSH server"),
+                callback = start,
+            }       end
+    end
     return {
         text = _(_("SSH server")),
         sub_item_table = {
-            {
-                text = _("Start SSH server"),
-                callback = start,
-            },
-            {
-                text = _("Stop SSH server"),
-                callback = stop,
-            },
+            start_stop(),
             {
                 text = _("Change SSH port"),
                 callback = function()
