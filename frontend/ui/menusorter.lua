@@ -131,11 +131,11 @@ function MenuSorter:sort(item_table, order)
     end
     -- cleanup, top-level items shouldn't have sub_item_table
     -- they should, however have one going in
+    -- Also, compress the menu table.
     local menu_buttons_offset = 0
     for i,top_menu in ipairs(menu_table["KOMenu:menu_buttons"]) do
-        local menu_button  = menu_table["KOMenu:menu_buttons"][i].sub_item_table
+        local menu_button = menu_table["KOMenu:menu_buttons"][i].sub_item_table
         menu_table["KOMenu:menu_buttons"][i] = nil
-
         if menu_button then
             menu_table["KOMenu:menu_buttons"][i-menu_buttons_offset] = menu_button
         else
