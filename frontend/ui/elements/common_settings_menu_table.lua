@@ -125,6 +125,48 @@ if Device:isAndroid() then
     table.insert(common_settings.screen.sub_item_table, require("ui/elements/screen_fullscreen_menu_table"))
 end
 
+if Device:hasKeys() then
+    common_settings.key_navigation = {
+        text = _("Key Navigation"),
+        sub_item_table = {
+            {
+                text = _("Back key to exit KOReader"),
+                sub_item_table = {
+                    {
+                        text = _("Prompt"),
+                        checked_func = function()
+                            local setting = G_reader_settings:readSetting("back_to_exit")
+                            return setting == "prompt" or setting == nil
+                        end,
+                        callback = function()
+                            G_reader_settings:saveSetting("back_to_exit", "prompt")
+                        end,
+                    },
+                    {
+                        text = _("Always"),
+                        checked_func = function()
+                            return G_reader_settings:readSetting("back_to_exit")
+                                       == "always"
+                        end,
+                        callback = function()
+                            G_reader_settings:saveSetting("back_to_exit", "always")
+                        end,
+                    },
+                    {
+                        text = _("Disable"),
+                        checked_func = function()
+                            return G_reader_settings:readSetting("back_to_exit")
+                                       == "disable"
+                        end,
+                        callback = function()
+                            G_reader_settings:saveSetting("back_to_exit", "disable")
+                        end,
+                    },
+                },
+            },
+        }
+    }
+end
 common_settings.document = {
     text = _("Document"),
     sub_item_table = {

@@ -43,6 +43,7 @@ local order = {
         "screen",
         "screensaver",
         "document",
+        "key_navigation",
         "----------------------------",
         "language",
         "time",

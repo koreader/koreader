@@ -25,6 +25,7 @@ local order = {
         "network",
         "screen",
         "document",
+        "key_navigation",
         "----------------------------",
         "language",
         "time",
