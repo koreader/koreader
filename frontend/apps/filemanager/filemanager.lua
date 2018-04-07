@@ -378,8 +378,8 @@ function FileChooser:onBack()
         return true
     elseif back_to_exit == "prompt" then
             UIManager:show(ConfirmBox:new{
-                text = "Exit KOReader?",
-                ok_text = "Exit",
+                text = _("Exit KOReader?"),
+                ok_text = _("Exit"),
                 ok_callback = function()
                     self:onClose()
                 end
