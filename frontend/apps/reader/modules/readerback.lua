@@ -94,8 +94,6 @@ function ReaderBack:onBack()
             })
             return true
         end
-
-
     end
 end
 
