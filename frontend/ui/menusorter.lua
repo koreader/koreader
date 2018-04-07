@@ -136,7 +136,7 @@ function MenuSorter:sort(item_table, order)
         if menu_table["KOMenu:menu_buttons"][i].sub_item_table then
             local tmp  = menu_table["KOMenu:menu_buttons"][i].sub_item_table
             menu_table["KOMenu:menu_buttons"][i] = nil
-            menu_table["KOMenu:menu_buttons"][i-menu_buttons_offset] = tmp 
+            menu_table["KOMenu:menu_buttons"][i-menu_buttons_offset] = tmp
         else
             menu_table["KOMenu:menu_buttons"][i] = nil
             menu_buttons_offset = menu_buttons_offset + 1
