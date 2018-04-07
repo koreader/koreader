@@ -133,14 +133,16 @@ function MenuSorter:sort(item_table, order)
     -- they should, however have one going in
     local menu_buttons_offset = 0
     for i,top_menu in ipairs(menu_table["KOMenu:menu_buttons"]) do
-        if menu_table["KOMenu:menu_buttons"][i].sub_item_table then
-            local tmp  = menu_table["KOMenu:menu_buttons"][i].sub_item_table
-            menu_table["KOMenu:menu_buttons"][i] = nil
-            menu_table["KOMenu:menu_buttons"][i-menu_buttons_offset] = tmp
+        local menu_button  = menu_table["KOMenu:menu_buttons"][i].sub_item_table
+        menu_table["KOMenu:menu_buttons"][i] = nil
+
+        if menu_button then
+            menu_table["KOMenu:menu_buttons"][i-menu_buttons_offset] = menu_button
         else
-            menu_table["KOMenu:menu_buttons"][i] = nil
             menu_buttons_offset = menu_buttons_offset + 1
         end
+
+        menu_button = nil
     end
     -- handle disabled
     if order["KOMenu:disabled"] then
