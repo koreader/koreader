@@ -141,8 +141,6 @@ function MenuSorter:sort(item_table, order)
         else
             menu_buttons_offset = menu_buttons_offset + 1
         end
-
-        menu_button = nil
     end
     -- handle disabled
     if order["KOMenu:disabled"] then
