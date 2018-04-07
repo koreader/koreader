@@ -134,7 +134,9 @@ function MenuSorter:sort(item_table, order)
     local menu_buttons_offset = 0
     for i,top_menu in ipairs(menu_table["KOMenu:menu_buttons"]) do
         if menu_table["KOMenu:menu_buttons"][i].sub_item_table then
-            menu_table["KOMenu:menu_buttons"][i-menu_buttons_offset] = menu_table["KOMenu:menu_buttons"][i].sub_item_table
+            local tmp  = menu_table["KOMenu:menu_buttons"][i].sub_item_table
+            menu_table["KOMenu:menu_buttons"][i] = nil
+            menu_table["KOMenu:menu_buttons"][i-menu_buttons_offset] = tmp 
         else
             menu_table["KOMenu:menu_buttons"][i] = nil
             menu_buttons_offset = menu_buttons_offset + 1
