@@ -84,7 +84,8 @@ function ReaderBack:onBack()
             return true
         elseif back_to_exit == "prompt" then
             UIManager:show(ConfirmBox:new{
-                text ="Exit Koreader?",
+                text = "Exit KOReader?",
+                ok_text = "Exit",
                 ok_callback = function()
                     logger.dbg("[ReaderBack] no location history, closing")
                     self.ui:handleEvent(Event:new("Close"))
