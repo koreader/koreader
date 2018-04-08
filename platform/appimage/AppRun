@@ -1,0 +1,30 @@
+#!/bin/sh
+export LC_ALL="en_US.UTF-8"
+
+# working directory of koreader
+KOREADER_DIR="${0%/*}"
+
+# we're always starting from our working directory
+cd "${KOREADER_DIR}" || exit
+
+# export load library path for some old firmware
+export LD_LIBRARY_PATH=${KOREADER_DIR}/libs:$LD_LIBRARY_PATH
+
+# export external font directory
+export EXT_FONT_DIR="${HOME}/.fonts"
+
+RETURN_VALUE=85
+
+if [ $# -eq 0 ]; then
+    # no arguments
+    start_path=~/Documents
+else
+    start_path="$*"
+fi
+
+while [ $RETURN_VALUE -eq 85 ]; do
+    ./reader.lua -d "$start_path"
+    RETURN_VALUE=$?
+done
+
+exit $RETURN_VALUE

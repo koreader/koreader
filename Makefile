@@ -35,16 +35,19 @@ KINDLE_DIR=$(PLATFORM_DIR)/kindle
 KOBO_DIR=$(PLATFORM_DIR)/kobo
 POCKETBOOK_DIR=$(PLATFORM_DIR)/pocketbook
 UBUNTUTOUCH_DIR=$(PLATFORM_DIR)/ubuntu-touch
+APPIMAGE_DIR=$(PLATFORM_DIR)/appimage
 ANDROID_DIR=$(PLATFORM_DIR)/android
 ANDROID_LAUNCHER_DIR:=$(ANDROID_DIR)/luajit-launcher
 UBUNTUTOUCH_SDL_DIR:=$(UBUNTUTOUCH_DIR)/ubuntu-touch-sdl
 WIN32_DIR=$(PLATFORM_DIR)/win32
 
+# appimage setup
+APPIMAGETOOL=appimagetool-x86_64.AppImage
+APPIMAGETOOL_URL=https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+
 # files to link from main directory
 INSTALL_FILES=reader.lua setupkoenv.lua frontend resources defaults.lua datastorage.lua \
 		l10n tools README.md COPYING
-
-
 
 all: $(if $(ANDROID),,$(KOR_BASE)/$(OUTPUT_DIR)/luajit)
 	$(MAKE) -C $(KOR_BASE)
@@ -292,6 +295,32 @@ utupdate: all
 		click build koreader && \
 		mv *.click ../../koreader-$(DIST)-$(MACHINE)-$(VERSION).click
 
+appimageupdate: all
+	# remove old package if any
+	rm -f koreader-appimage-$(MACHINE)-$(VERSION).appimage
+
+	ln -sf ../../$(APPIMAGE_DIR)/AppRun $(INSTALL_DIR)/koreader
+	ln -sf ../../$(APPIMAGE_DIR)/koreader.appdata.xml $(INSTALL_DIR)/koreader
+	ln -sf ../../$(APPIMAGE_DIR)/koreader.desktop $(INSTALL_DIR)/koreader
+	ln -sf ../../$(UBUNTUTOUCH_DIR)/koreader.png $(INSTALL_DIR)/koreader
+	# TODO at best this is DebUbuntu specific
+	ln -sf /usr/lib/x86_64-linux-gnu/libSDL2.so $(INSTALL_DIR)/koreader/libs
+ifeq ("$(wildcard $(APPIMAGETOOL))","")
+	# download appimagetool
+	wget "$(APPIMAGETOOL_URL)"
+	chmod a+x "$(APPIMAGETOOL)"
+endif
+	cd $(INSTALL_DIR) && pwd && \
+		rm -rf tmp && mkdir -p tmp && \
+		cp -Lr koreader tmp && \
+		rm -rf tmp/koreader/ota && \
+		rm -rf tmp/koreader/resources/icons/src && \
+		rm -rf tmp/koreader/spec
+
+	# generate AppImage
+	cd $(INSTALL_DIR)/tmp && \
+		ARCH=x86_64 ../../$(APPIMAGETOOL) koreader && \
+		mv *.AppImage ../../koreader-$(DIST)-$(MACHINE)-$(VERSION).AppImage
 
 androidupdate: all
 	mkdir -p $(ANDROID_LAUNCHER_DIR)/assets/module
@@ -336,6 +365,8 @@ else ifeq ($(TARGET), pocketbook)
 	make pbupdate
 else ifeq ($(TARGET), ubuntu-touch)
 	make utupdate
+else ifeq ($(TARGET), appimage)
+	make appimageupdate
 else ifeq ($(TARGET), android)
 	make androidupdate
 endif
