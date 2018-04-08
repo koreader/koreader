@@ -127,7 +127,7 @@ end
 
 if Device:hasKeys() then
     common_settings.key_navigation = {
-        text = _("Key Navigation"),
+        text = _("Navigation"),
         sub_item_table = {
             {
                 text = _("Back key to exit KOReader"),
