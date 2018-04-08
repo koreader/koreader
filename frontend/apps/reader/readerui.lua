@@ -634,7 +634,6 @@ function ReaderUI:dealWithLoadDocumentFailure()
 end
 
 function ReaderUI:onHome()
-    --When Home key is pressed
     self:onClose()
     self:showFileManager()
     return true

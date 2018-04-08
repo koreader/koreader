@@ -1,8 +1,6 @@
-local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
 local EventListener = require("ui/widget/eventlistener")
-local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
@@ -76,24 +74,8 @@ function ReaderBack:onBack()
             return true
         end
     else
-        local back_to_exit = G_reader_settings:readSetting("back_to_exit") or "prompt"
-        if back_to_exit == "always" then
-            logger.dbg("[ReaderBack] no location history, closing")
-            self.ui:handleEvent(Event:new("Close"))
-            return true
-        elseif back_to_exit == "disable" then
-            return true
-        elseif back_to_exit == "prompt" then
-            UIManager:show(ConfirmBox:new{
-                text = _("Exit KOReader?"),
-                ok_text = _("Exit"),
-                ok_callback = function()
-                    logger.dbg("[ReaderBack] no location history, closing")
-                    self.ui:handleEvent(Event:new("Close"))
-                end
-            })
-            return true
-        end
+        logger.dbg("[ReaderBack] no location history, closing")
+        self.ui:handleEvent(Event:new("Home"))
     end
 end
 
