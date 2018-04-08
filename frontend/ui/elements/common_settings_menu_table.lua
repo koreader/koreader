@@ -126,7 +126,7 @@ if Device:isAndroid() then
 end
 
 if Device:hasKeys() then
-    common_settings.key_navigation = {
+    common_settings.navigation = {
         text = _("Navigation"),
         sub_item_table = {
             {
