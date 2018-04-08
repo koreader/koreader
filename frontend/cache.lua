@@ -162,10 +162,16 @@ function Cache:serialize()
     local cache_size = 0
     for _, key in ipairs(self.cache_order) do
         local cache_item = self.cache[key]
+
         -- only dump cache item that requests serialization explicitly
         if cache_item.persistent and cache_item.dump then
+            local cache_full_path = cache_path..md5.sum(key)
+            local cache_file_exists = lfs.attributes(cache_full_path)
+
+            if cache_file_exists then break end
+
             logger.dbg("dump cache item", key)
-            cache_size = cache_item:dump(cache_path..md5.sum(key)) or 0
+            cache_size = cache_item:dump(cache_full_path) or 0
             if cache_size > 0 then break end
         end
     end
