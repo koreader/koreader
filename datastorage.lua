@@ -15,8 +15,10 @@ function DataStorage:getDataDir()
     elseif os.getenv("UBUNTU_APPLICATION_ISOLATION") then
         local app_id = os.getenv("APP_ID")
         local package_name = app_id:match("^(.-)_")
-        -- confinded ubuntu app has write access to this dir
+        -- confined ubuntu app has write access to this dir
         data_dir = string.format("%s/%s", os.getenv("XDG_DATA_HOME"), package_name)
+    elseif os.getenv("APPIMAGE") then
+        data_dir = string.format("%s/%s/%s", os.getenv("HOME"), ".config", "koreader")
     else
         data_dir = "."
     end

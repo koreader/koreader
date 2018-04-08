@@ -99,7 +99,7 @@ function QuickStart:getQuickStart()
             FileConverter:writeStringToFile(quickstart_html, quickstart_filename)
         end
     end
-    -- remember filemaname for file manager
+    -- remember filename for file manager
     self.quickstart_filename = quickstart_filename
     G_reader_settings:saveSetting("quickstart_shown_version", version)
     return quickstart_filename

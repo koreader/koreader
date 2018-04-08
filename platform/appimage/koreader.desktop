@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=KOReader
+Comment=KOReader is a document viewer
+Exec=reader.lua %u
+Icon=koreader
+Terminal=false
+Type=Application

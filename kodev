@@ -117,6 +117,7 @@ SUPPORTED_TARGETS="
     android
     pocketbook
     ubuntu-touch
+    appimage
     emu             (*default) If no TARGET is given, assume emulator
     win32
 "
@@ -215,6 +216,10 @@ ${SUPPORTED_TARGETS}"
             make TARGET=ubuntu-touch
             assert_ret_zero $?
             ;;
+        appimage)
+            make TARGET=appimage
+            assert_ret_zero $?
+            ;;
         win32)
             make TARGET=win32
             assert_ret_zero $?
@@ -267,6 +272,9 @@ ${SUPPORTED_TARGETS}"
             ;;
         ubuntu-touch)
             make TARGET=ubuntu-touch clean
+            ;;
+        appimage)
+            make TARGET=appimage clean
             ;;
         win32)
             make TARGET=win32 clean
@@ -372,8 +380,12 @@ ${SUPPORTED_RELEASE_TARGETS}"
             make TARGET=pocketbook update
             ;;
         ubuntu-touch)
-            kodev-build pocketbook
+            kodev-build ubuntu-touch
             make TARGET=ubuntu-touch update
+            ;;
+        appimage)
+            kodev-build appimage
+            make TARGET=appimage update
             ;;
         *)
             echo "Unsupported target for release: $1."
