@@ -1,3 +1,4 @@
+local Device =  require("device")
 local InfoMessage = require("ui/widget/infomessage")  -- luacheck:ignore
 local InputDialog = require("ui/widget/inputdialog")
 local UIManager = require("ui/uimanager")
@@ -19,53 +20,58 @@ function SSH:addToMainMenu(menu_items)
     local SSH_port = G_reader_settings:readSetting("SSH_port") or "2222"
     local allow_blank_password = false
     local start = function(menu)
-        local cmd = "./dropbear -E -P SSH/dropbear.pid"
-        cmd = cmd.." -r SSH/dropbear_rsa_host_key"
-        cmd = cmd.." -p "..SSH_port
-        if allow_blank_password then
-            cmd =cmd.." -B"
+        local cmd = string.format("%s %s %s %s %s %s",
+            "./dropbear",
+            "-E", "-r SSH/dropbear_rsa_host_key",
+            "-p", SSH_port,
+            "-P /tmp/dropbear.pid")
+         if allow_blank_password then
+            cmd = string.format("%s %s", cmd, "-B")
         end
         os.execute("mkdir SSH")
         os.execute("./dropbearkey -t rsa -f SSH/dropbear_rsa_host_key")
-        logger.dbg("[Network] Launching SSH server : "..cmd)
+        logger.dbg("[Network] Launching SSH server : ", cmd)
         if os.execute(cmd) == 0 then
             local info = InfoMessage:new{
-                    text = "Port: "..SSH_port,
                     timeout = 5,
-                    }
+                    text = string.format("%s %s \n %s",
+                        "SSH port: ", SSH_port,
+                        Device.retrieveNetworkInfo and Device:retrieveNetworkInfo() or _("Could not retrieve network info.")),
+            }
             UIManager:show(info)
         else
             local info = InfoMessage:new{
-                    text = _("Error"),
                     timeout = 5,
-                    }
+                    text = _("Error"),
+            }
             UIManager:show(info)
         end
     end
 
-    local stop = function()
-        os.execute("cat SSH/dropbear.pid | xargs kill")
-        os.execute("rm  SSH/dropbear.pid")
+    local isRunning = function()
+        return util.pathExists("/tmp/dropbear.pid")
     end
 
-    local start_stop = function()
-        print(util.pathExists("SSH/dropbear.pid"))
-        if util.pathExists("SSH/dropbear.pid") then
-            return  {
-                text = _("Stop SSH server"),
-                callback = stop,
-            }
-        else return {
-                text = _("Start SSH server"),
-                callback = start,
-            }       end
+    local stop = function()
+        os.execute("cat /tmp/dropbear.pid | xargs kill")
     end
+
     menu_items.SSH = {
         text = _(_("SSH server")),
         sub_item_table = {
-            start_stop(),
+            {
+                text = _("Start SSH server"),
+                callback = start,
+                enabled_func = function() return not isRunning() end,
+            },
+            {
+                text = _("Stop SSH server"),
+                callback = stop,
+                enabled_func = isRunning,
+            },
             {
                 text = _("Change SSH port"),
+                enabled_func = function() return not isRunning() end,
                 callback = function()
                     self.dialog = InputDialog:new{
                         title = _("Choose SSH port"),
@@ -75,7 +81,6 @@ function SSH:addToMainMenu(menu_items)
                             {
                                 {
                                     text = _("Cancel"),
-                                    enabled = true,
                                     callback = function()
                                         UIManager:close(self.dialog)
                                     end,
@@ -103,6 +108,7 @@ function SSH:addToMainMenu(menu_items)
             {
                 text = _("Allow blank password"),
                 checked_func = function() return allow_blank_password end,
+                enabled_func = function() return not isRunning() end,
                 callback = function() allow_blank_password = not allow_blank_password end,
             },
        }
