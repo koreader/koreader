@@ -634,7 +634,9 @@ function ReaderUI:dealWithLoadDocumentFailure()
 end
 
 function ReaderUI:onHome()
-    return self:showFileManager()
+    self:onClose()
+    self:showFileManager()
+    return true
 end
 
 return ReaderUI

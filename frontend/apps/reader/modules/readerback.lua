@@ -3,6 +3,7 @@ local Event = require("ui/event")
 local EventListener = require("ui/widget/eventlistener")
 local logger = require("logger")
 local util = require("util")
+local _ = require("gettext")
 
 local ReaderBack = EventListener:new{
     location_stack = {},
@@ -74,7 +75,7 @@ function ReaderBack:onBack()
         end
     else
         logger.dbg("[ReaderBack] no location history, closing")
-        self.ui:handleEvent(Event:new("Close"))
+        self.ui:handleEvent(Event:new("Home"))
     end
 end
 
