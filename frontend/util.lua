@@ -529,15 +529,16 @@ function util.unicodeCodepointToUtf8(c)
     end
 end
 
+-- we need to use an array of arrays to keep them ordered as written
 local HTML_ENTITIES_TO_UTF8 = {
-    ["&lt;"] = "<",
-    ["&gt;"] = ">",
-    ["&quot;"] = '"',
-    ["&apos;"] = "'",
-    ["&nbsp;"] = "\xC2\xA0",
-    ["&#(%d+);"] = function(x) return util.unicodeCodepointToUtf8(tonumber(x)) end,
-    ["&#x(%x+);"] = function(x) return util.unicodeCodepointToUtf8(tonumber(x,16)) end,
-    ["&amp;"] = "&", -- must be last
+    {"&lt;", "<"},
+    {"&gt;", ">"},
+    {"&quot;", '"'},
+    {"&apos;", "'"},
+    {"&nbsp;", "\xC2\xA0"},
+    {"&#(%d+);", function(x) return util.unicodeCodepointToUtf8(tonumber(x)) end},
+    {"&#x(%x+);", function(x) return util.unicodeCodepointToUtf8(tonumber(x,16)) end},
+    {"&amp;", "&"}, -- must be last
 }
 --- Replace HTML entities with their UTF8 equivalent in text
 --
@@ -546,8 +547,8 @@ local HTML_ENTITIES_TO_UTF8 = {
 --- @int string text with HTML entities
 --- @treturn string UTF8 text
 function util.htmlEntitiesToUtf8(text)
-    for k,v in pairs(HTML_ENTITIES_TO_UTF8) do
-        text = text:gsub(k, v)
+    for _, t in ipairs(HTML_ENTITIES_TO_UTF8) do
+        text = text:gsub(t[1], t[2])
     end
     return text
 end

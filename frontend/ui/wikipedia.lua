@@ -668,6 +668,12 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images)
     local html = phtml.text["*"] -- html content
     local page_cleaned = page:gsub("_", " ") -- page title
     local page_htmltitle = phtml.displaytitle -- page title with possible <sup> tags
+    -- We need to encode plain '&' in those so we can put them in XML/HTML
+    -- We wouldn't need to escape as many as util.htmlEntitiesToUtf8() does, but
+    -- we need to to not mess existing ones ('&nbsp;' may happen) with our '&'
+    -- encodes. (We don't escape < or > as these JSON strings may contain HTML tags)
+    page_cleaned = util.htmlEntitiesToUtf8(page_cleaned):gsub("&", "&#38;")
+    page_htmltitle = util.htmlEntitiesToUtf8(page_htmltitle):gsub("&", "&#38;")
     local sections = phtml.sections -- Wikipedia provided TOC
     local bookid = string.format("wikipedia_%s_%s_%s", lang, phtml.pageid, phtml.revid)
     -- Not sure if this bookid may ever be used by indexing software/calibre, but if it is,
@@ -678,7 +684,7 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images)
     local images = {}
     local seen_images = {}
     local imagenum = 1
-    local cover_imgid = "" -- best candidate for cover among our images
+    local cover_imgid = nil -- best candidate for cover among our images
     local processImg = function(img_tag)
         local src = img_tag:match([[src="([^"]*)"]])
         if src == nil or src == "" then
@@ -753,7 +759,7 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images)
             table.insert(images, cur_image)
             seen_images[src] = cur_image
             -- Use first image of reasonable size (not an icon) and portrait-like as cover-image
-            if cover_imgid == "" and width and width > 50 and height and height > 50 and height > width then
+            if not cover_imgid and width and width > 50 and height and height > 50 and height > width then
                 cover_imgid = imgid
             end
             imagenum = imagenum + 1
@@ -847,6 +853,10 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images)
     end
     local content_opf_parts = {}
     -- head
+    local meta_cover = "<!-- no cover image -->"
+    if include_images and cover_imgid then
+        meta_cover = string.format([[<meta name="cover" content="%s"/>]], cover_imgid)
+    end
     table.insert(content_opf_parts, string.format([[
 <?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf"
@@ -858,13 +868,13 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images)
     <dc:identifier id="bookid">%s</dc:identifier>
     <dc:language>%s</dc:language>
     <dc:publisher>%s</dc:publisher>
-    <meta name="cover" content="%s"/>
+    %s
   </metadata>
   <manifest>
     <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
     <item id="content" href="content.html" media-type="application/xhtml+xml"/>
     <item id="css" href="stylesheet.css" media-type="text/css"/>
-]], page_cleaned, lang:upper(), bookid, lang, koreader_version, cover_imgid))
+]], page_cleaned, lang:upper(), bookid, lang, koreader_version, meta_cover))
     -- images files
     if include_images then
         for inum, img in ipairs(images) do
@@ -970,9 +980,17 @@ time, abbr, sup {
     -- Wikipedia sections items seem to be already sorted by index, so no need to sort
     for isec, s in ipairs(sections) do
         num = num + 1
-        local s_anchor = s.anchor
+        -- Some chars in headings are converted to html entities in the
+        -- wikipedia-generated HTML. We need to do the same in TOC links
+        -- for the links to be valid.
+        local s_anchor = s.anchor:gsub("&", "&amp;"):gsub('"', "&quot;"):gsub(">", "&gt;"):gsub("<", "&lt;")
         local s_title = string.format("%s %s", s.number, s.line)
-        s_title = (s_title:gsub("(%b<>)", "")) -- titles may include <i> and other html tags
+        -- Titles may include <i> and other html tags: let's remove them as
+        -- our TOC can only display text
+        s_title = (s_title:gsub("(%b<>)", ""))
+        -- We need to do as for page_htmltitle above. But headings can contain
+        -- html entities for < and > that we need to put back as html entities
+        s_title = util.htmlEntitiesToUtf8(s_title):gsub("&", "&#38;"):gsub(">", "&gt;"):gsub("<", "&lt;")
         local s_level = s.toclevel
         if s_level > depth then
             depth = s_level -- max depth required in toc.ncx
@@ -1073,31 +1091,21 @@ time, abbr, sup {
 
     -- Fix internal wikipedia links with full server url (including lang) so
     -- ReaderLink can notice them and deal with them with a LookupWikipedia event.
-    --   html = html:gsub([[href="/wiki/]], [[href="]]..wiki_base_url..[[/wiki/]])
-    --
-    -- Also, crengine deals strangely with percent encoded utf8 :
-    -- if the link in the html is : <a href="http://fr.wikipedia.org/wiki/Fran%C3%A7oix">
-    -- we get from credocument:getLinkFromPosition() : http://fr.wikipedia.org/wiki/Fran____oix
-    -- These are bytes "\xc3\x83\xc2\xa7", that is U+C3 and U+A7 encoded as UTF8,
-    -- when we should have get "\xc3\xa7" ...
-    -- We can avoid that by putting in the url plain unencoded UTF8
-    local hex_to_char = function(x) return string.char(tonumber(x, 16)) end
+    -- We need to remove any "?somekey=somevalue" from url (a real "?" part of the
+    -- wiki_page word would be encoded as %3F, but ReaderLink would get it decoded and
+    -- would not be able to distinguish them).
     -- Do that first (need to be done first) for full links to other language wikipedias
-    local fixEncodedOtherLangWikiPageTitle = function(wiki_lang, wiki_page)
-        -- First, remove any "?otherkey=othervalue" from url (a real "?" part of the wiki_page word
-        -- would be encoded as %3f), that could cause problem when used.
+    local cleanOtherLangWikiPageTitle = function(wiki_lang, wiki_page)
         wiki_page = wiki_page:gsub("%?.*", "")
-        wiki_page = wiki_page:gsub("%%(%x%x)", hex_to_char)
         return string.format([[href="https://%s.wikipedia.org/wiki/%s"]], wiki_lang, wiki_page)
     end
-    html = html:gsub([[href="https?://([^%.]+).wikipedia.org/wiki/([^"]*)"]], fixEncodedOtherLangWikiPageTitle)
+    html = html:gsub([[href="https?://([^%.]+).wikipedia.org/wiki/([^"]*)"]], cleanOtherLangWikiPageTitle)
     -- Now, do it for same wikipedia short urls
-    local fixEncodedWikiPageTitle = function(wiki_page)
+    local cleanWikiPageTitle = function(wiki_page)
         wiki_page = wiki_page:gsub("%?.*", "")
-        wiki_page = wiki_page:gsub("%%(%x%x)", hex_to_char)
         return string.format([[href="%s/wiki/%s"]], wiki_base_url, wiki_page)
     end
-    html = html:gsub([[href="/wiki/([^"]*)"]], fixEncodedWikiPageTitle)
+    html = html:gsub([[href="/wiki/([^"]*)"]], cleanWikiPageTitle)
 
     -- Remove href from links to non existant wiki page so they are not clickable :
     -- <a href="/w/index.php?title=PageTitle&amp;action=edit&amp;redlink=1" class="new" title="PageTitle">PageTitle____on</a>
