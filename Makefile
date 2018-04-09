@@ -45,6 +45,9 @@ WIN32_DIR=$(PLATFORM_DIR)/win32
 APPIMAGETOOL=appimagetool-x86_64.AppImage
 APPIMAGETOOL_URL=https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
 
+# set to 1 if in Docker
+DOCKER:=$(shell grep -q docker /proc/1/cgroup && echo 1)
+
 # files to link from main directory
 INSTALL_FILES=reader.lua setupkoenv.lua frontend resources defaults.lua datastorage.lua \
 		l10n tools README.md COPYING
@@ -310,6 +313,11 @@ ifeq ("$(wildcard $(APPIMAGETOOL))","")
 	wget "$(APPIMAGETOOL_URL)"
 	chmod a+x "$(APPIMAGETOOL)"
 endif
+ifeq ($(DOCKER), 1)
+	# remove previously extracted appimagetool, if any
+	rm -rf squashfs-root
+	./$(APPIMAGETOOL) --appimage-extract
+endif
 	cd $(INSTALL_DIR) && pwd && \
 		rm -rf tmp && mkdir -p tmp && \
 		cp -Lr koreader tmp && \
@@ -319,7 +327,7 @@ endif
 
 	# generate AppImage
 	cd $(INSTALL_DIR)/tmp && \
-		ARCH=x86_64 ../../$(APPIMAGETOOL) koreader && \
+		ARCH=x86_64 ../../$(if $(DOCKER),squashfs-root/AppRun,$(APPIMAGETOOL)) koreader && \
 		mv *.AppImage ../../koreader-$(DIST)-$(MACHINE)-$(VERSION).AppImage
 
 androidupdate: all
