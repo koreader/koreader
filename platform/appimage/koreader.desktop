@@ -5,4 +5,4 @@ Exec=reader.lua %u
 Icon=koreader
 Terminal=false
 Type=Application
-Categories=Utility;
+Categories=Graphics;
