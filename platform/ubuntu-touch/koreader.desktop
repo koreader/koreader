@@ -8,3 +8,4 @@ Type=Application
 MimeType=application/pdf;application/epub+zip
 X-Ubuntu-Touch=true
 X-Ubuntu-Supported-Orientations=portrait
+Categories=Graphics;
