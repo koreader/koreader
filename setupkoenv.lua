@@ -26,6 +26,7 @@ ffi.load = function(lib)
     local lib_path = package.searchpath(lib, "./lib?.so;./libs/lib?.so;./libs/lib?.so.1")
 
     if not lib_path then
+        io.write("ffi.load ERROR: ", re, "\n")
         error('Not able to load dynamic library: ' .. lib)
     else
         io.write("ffi.load (assisted searchpath): ", lib_path, "\n")
