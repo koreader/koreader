@@ -6,7 +6,7 @@ local socket = require('socket')
 local socket_url = require("socket.url")
 
 local InternalDownloadBackend = {}
-local max_redirects = 10; --prevent infinite redirects
+local max_redirects = 5; --prevent infinite redirects
 
 function InternalDownloadBackend:getResponseAsString(url, redirectCount)
     if not redirectCount then
