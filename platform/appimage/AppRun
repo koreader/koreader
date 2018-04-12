@@ -17,7 +17,11 @@ RETURN_VALUE=85
 
 if [ $# -eq 0 ]; then
     # no arguments
-    start_path=~/Documents
+    if [ -n "${XDG_DOCUMENTS_DIR+x}" ]; then
+        start_path=$XDG_DOCUMENTS_DIR
+    else
+        start_path=$(pwd)
+    fi
 else
     start_path="$*"
 fi
