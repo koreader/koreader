@@ -246,6 +246,7 @@ function NewsDownloader:deserializeXMLString(xml_str)
     -- uses LuaXML https://github.com/manoelcampos/LuaXML
     -- The MIT License (MIT)
     -- Copyright (c) 2016 Manoel Campos da Silva Filho
+    -- see: koreader/plugins/newsdownloader.koplugin/lib/LICENSE_LuaXML
     local treehdl = require("lib/handler")
     local libxml = require("lib/xml")
 
@@ -300,6 +301,9 @@ end
 
 
 local function parseDate(dateTime)
+    -- uses lua-feedparser https://github.com/slact/lua-feedparser
+    -- feedparser is available under the (new) BSD license.
+    -- see: koreader/plugins/newsdownloader.koplugin/lib/LICENCE_lua-feedparser
     local date = dateparser.parse(dateTime)
     return os.date("%y-%m-%d_%H-%M_", date)
 end
