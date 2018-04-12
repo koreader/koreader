@@ -10,6 +10,7 @@ local MultiInputDialog = require("ui/widget/multiinputdialog")
 local UIManager = require("ui/uimanager")
 local dump = require("dump")
 local isAndroid, android = pcall(require, "android")
+local is_appimage = os.getenv("APPIMAGE")
 local util = require("ffi/util")
 local _ = require("gettext")
 local Screen = require("device").screen
@@ -18,6 +19,8 @@ local function getDefaultsPath()
     local defaults_path = DataStorage:getDataDir() .. "/defaults.lua"
     if isAndroid then
         defaults_path = android.dir .. "/defaults.lua"
+    elseif is_appimage then
+        defaults_path = "defaults.lua"
     end
     return defaults_path
 end
