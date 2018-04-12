@@ -299,7 +299,6 @@ function NewsDownloader:processRSS(feeds, limit, download_full_article)
     end
 end
 
-
 local function parseDate(dateTime)
     -- uses lua-feedparser https://github.com/slact/lua-feedparser
     -- feedparser is available under the (new) BSD license.
@@ -312,10 +311,10 @@ local function getTitleWithDate(feed)
     local title = util.replaceInvalidChars(getFeedTitle(feed.title))
     if feed.updated then
        title = parseDate(feed.updated) .. title
-    elseif  feed.pubDate then
+    elseif feed.pubDate then
        title = parseDate(feed.pubDate) .. title
-    elseif  feed.published then
-        title = parseDate(feed.published).. title
+    elseif feed.published then
+        title = parseDate(feed.published) .. title
     end
     return title
 end
