@@ -8,6 +8,7 @@ local LuaSettings = require("frontend/luasettings")
 local UIManager = require("ui/uimanager")
 local NetworkMgr = require("ui/network/manager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local dateparser = require("lib.dateparser")
 local ffi = require("ffi")
 local logger = require("logger")
 local util = require("util")
@@ -297,10 +298,28 @@ function NewsDownloader:processRSS(feeds, limit, download_full_article)
     end
 end
 
+
+local function parseDate(dateTime)
+    local date = dateparser.parse(dateTime)
+    return os.date("%y-%m-%d_%H-%M_", date)
+end
+
+local function getTitleWithDate(feed)
+    local title = util.replaceInvalidChars(getFeedTitle(feed.title))
+    if feed.updated then
+       title = parseDate(feed.updated) .. title
+    elseif  feed.pubDate then
+       title = parseDate(feed.pubDate) .. title
+    elseif  feed.published then
+        title = parseDate(feed.published).. title
+    end
+    return title
+end
+
 function NewsDownloader:downloadFeed(feed, feed_output_dir)
     local link = getFeedLink(feed.link)
     local news_dl_path = ("%s%s%s"):format(feed_output_dir,
-                                               util.replaceInvalidChars(getFeedTitle(feed.title)),
+                                               getTitleWithDate(feed),
                                                file_extension)
     logger.dbg("NewsDownloader: News file will be stored to :", news_dl_path)
 
@@ -309,7 +328,7 @@ end
 
 function NewsDownloader:createFromDescription(feed, context, feed_output_dir)
     local news_file_path = ("%s%s%s"):format(feed_output_dir,
-                                           util.replaceInvalidChars(getFeedTitle(feed.title)),
+                                           getTitleWithDate(feed),
                                            file_extension)
     logger.dbg("NewsDownloader: News file will be created :", news_file_path)
     local file = io.open(news_file_path, "w")
