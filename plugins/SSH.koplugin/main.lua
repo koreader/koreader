@@ -7,6 +7,14 @@ local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 
+--This plugin use a patched dropbear that add two things :
+--  the -n option to allow login without password
+--  read the keyfile from SSH/authorized_keys
+
+--Only tested on Kindle, should also work on SDL(linux)
+--Kobo and other devices need to be tested first.
+if not Device:isSDL() and not Device:isKindle() then return { disabled = true, } end
+
 local SSH = WidgetContainer:new{
     name = 'SSH',
     is_doc_only = false,
@@ -14,21 +22,37 @@ local SSH = WidgetContainer:new{
 
 function SSH:init()
     self.SSH_port = G_reader_settings:readSetting("SSH_port") or "2222"
-    self.allow_blank_password = false
+    self.allow_no_password = false
     self.ui.menu:registerToMainMenu(self)
 end
 
 function SSH:start()
     local cmd = string.format("%s %s %s %s %s %s",
-        "./dropbear",
+        "./dropbearmulti dropbear",
         "-E", "-r SSH/dropbear_rsa_host_key",
         "-p", self.SSH_port,
         "-P /tmp/dropbear.pid")
-     if self.allow_blank_password then
-        cmd = string.format("%s %s", cmd, "-B")
+     if self.allow_no_password then
+        cmd = string.format("%s %s", cmd, "-n")
     end
-    os.execute("mkdir SSH")
-    os.execute("./dropbearkey -t rsa -f SSH/dropbear_rsa_host_key")
+    os.execute(string.format("%s %s %s",
+        "iptables -A INPUT -p tcp --dport", self.SSH_port,
+        "-m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT"))
+    os.execute(string.format("%s %s %s",
+        "iptables -A OUTPUT -p tcp --sport", self.SSH_port,
+        "-m conntrack --ctstate ESTABLISHED -j ACCEPT"))
+    --An SSH/telnet server of course needs to be able to manipulate pseudoterminals...
+    --Why that's not already done as part of Kobo's boot process beats me.
+    os.execute([[if [ ! -d "/dev/pts" ] ; then
+	    mkdir -p /dev/pts
+        mount -t devpts devpts /dev/pts
+        fi]])
+    if not util.pathExists("SSH/") then
+        os.execute("mkdir SSH")
+    end
+    if not util.pathExists("SSH/dropbear_rsa_host_key") then
+        os.execute("./dropbearmulti dropbearkey -t rsa -f SSH/dropbear_rsa_host_key")
+    end
     logger.dbg("[Network] Launching SSH server : ", cmd)
     if os.execute(cmd) == 0 then
         local info = InfoMessage:new{
@@ -108,10 +132,20 @@ function SSH:addToMainMenu(menu_items)
                 callback = function() return self:show_port_dialog() end,
             },
             {
-                text = _("Allow blank password"),
-                checked_func = function() return self.allow_blank_password end,
+                text = _("Login without password (DANGEROUS)"),
+                checked_func = function() return self.allow_no_password end,
                 enabled_func = function() return not self:isRunning() end,
-                callback = function() self.allow_blank_password = not self.allow_blank_password end,
+                callback = function() self.allow_no_password = not self.allow_no_password end,
+            },
+            {
+                text = _("SSH public key"),
+                callback = function()
+                    local info = InfoMessage:new{
+                        timeout = 5,
+                        text = _("Put your public SSH keys in SSH/authorized_keys"),
+                    }
+                    UIManager:show(info)
+                end,
             },
        }
     }
