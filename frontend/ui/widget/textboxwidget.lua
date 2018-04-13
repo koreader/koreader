@@ -675,6 +675,7 @@ function TextBoxWidget:moveCursorUp()
     if charpos then
         self:moveCursorToCharpos(charpos)
     end
+    return charpos
 end
 
 function TextBoxWidget:moveCursorDown()
@@ -685,6 +686,7 @@ function TextBoxWidget:moveCursorDown()
     if charpos then
         self:moveCursorToCharpos(charpos)
     end
+    return charpos
 end
 
 function TextBoxWidget:paintTo(bb, x, y)

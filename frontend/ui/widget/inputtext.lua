@@ -301,13 +301,13 @@ end
 
 function InputText:upLine()
     if self.text_widget.moveCursorUp then
-        self.text_widget:moveCursorUp()
+        self.charpos = self.text_widget:moveCursorUp()
     end
 end
 
 function InputText:downLine()
     if self.text_widget.moveCursorDown then
-        self.text_widget:moveCursorDown()
+        self.charpos = self.text_widget:moveCursorDown()
     end
 end
 
