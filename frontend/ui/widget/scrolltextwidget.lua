@@ -96,6 +96,14 @@ function ScrollTextWidget:moveCursor(x, y)
     return self.text_widget:moveCursor(x, y)
 end
 
+function ScrollTextWidget:moveCursorUp()
+    return self.text_widget:moveCursorUp();
+end
+
+function ScrollTextWidget:moveCursorDown()
+    return self.text_widget:moveCursorDown();
+end
+
 function ScrollTextWidget:scrollText(direction)
     if direction == 0 then return end
     local low, high
