@@ -289,7 +289,7 @@ function ReaderFooter:resetLayout()
 end
 
 function ReaderFooter:getHeight()
-    return self.footer_text:getSize().h
+    return self.footer_content:getSize().h
 end
 
 function ReaderFooter:disableFooter()
