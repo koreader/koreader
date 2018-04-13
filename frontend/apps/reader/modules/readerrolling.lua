@@ -473,7 +473,7 @@ function ReaderRolling:onGotoViewRel(diff)
         local page_visible_height = self.ui.dimen.h - footer_height
         local pan_diff = diff * page_visible_height
         if self.show_overlap_enable then
-            overlap_h = Screen:scaleBySize(self.ui.font.font_size * 1.1 * self.ui.font.line_space_percent/100.0) * self.overlap_lines
+            local overlap_h = Screen:scaleBySize(self.ui.font.font_size * 1.1 * self.ui.font.line_space_percent/100.0) * self.overlap_lines
             if pan_diff > overlap_h then
                 pan_diff = pan_diff - overlap_h
             elseif pan_diff < -overlap_h then
