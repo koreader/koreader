@@ -27,7 +27,7 @@ else
 fi
 
 while [ $RETURN_VALUE -eq 85 ]; do
-    ./reader.lua -d "$start_path"
+    ./reader.lua "$start_path"
     RETURN_VALUE=$?
 done
 
