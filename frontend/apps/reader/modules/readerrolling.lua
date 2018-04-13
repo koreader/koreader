@@ -41,7 +41,8 @@ local ReaderRolling = InputContainer:new{
     xpointer = nil,
     panning_steps = ReaderPanning.panning_steps,
     show_overlap_enable = nil,
-    overlap = 20,
+    -- nb of lines from previous page to show on next page (scroll mode only)
+    overlap_lines = G_reader_settings:readSetting("copt_overlap_lines") or 1,
     cre_top_bar_enabled = false,
 }
 
@@ -468,16 +469,21 @@ end
 function ReaderRolling:onGotoViewRel(diff)
     logger.dbg("goto relative screen:", diff, ", in mode: ", self.view.view_mode)
     if self.view.view_mode == "scroll" then
-        local pan_diff = diff * self.ui.dimen.h
+        local footer_height = (self.view.footer_visible and 1 or 0) * self.view.footer:getHeight()
+        local page_visible_height = self.ui.dimen.h - footer_height
+        local pan_diff = diff * page_visible_height
         if self.show_overlap_enable then
-            if pan_diff > self.overlap then
-                pan_diff = pan_diff - self.overlap
-            elseif pan_diff < -self.overlap then
-                pan_diff = pan_diff + self.overlap
+            local overlap_h = Screen:scaleBySize(self.ui.font.font_size * 1.1 * self.ui.font.line_space_percent/100.0) * self.overlap_lines
+            if pan_diff > overlap_h then
+                pan_diff = pan_diff - overlap_h
+            elseif pan_diff < -overlap_h then
+                pan_diff = pan_diff + overlap_h
             end
         end
         local old_pos = self.current_pos
-        self:_gotoPos(self.current_pos + pan_diff)
+        -- Only draw dim area when we moved a whole page (not when smaller scroll with Pan)
+        local do_dim_area = math.abs(diff) == 1
+        self:_gotoPos(self.current_pos + pan_diff, do_dim_area)
         if diff > 0 and old_pos == self.current_pos then
             self.ui:handleEvent(Event:new("EndOfBook"))
         end
@@ -588,21 +594,25 @@ end
 --[[
     PosUpdate event is used to signal other widgets that pos has been changed.
 --]]
-function ReaderRolling:_gotoPos(new_pos)
+function ReaderRolling:_gotoPos(new_pos, do_dim_area)
     if new_pos == self.current_pos then return end
     if new_pos < 0 then new_pos = 0 end
     if new_pos > self.doc_height then new_pos = self.doc_height end
     -- adjust dim_area according to new_pos
-    if self.view.view_mode ~= "page" and self.show_overlap_enable then
+    if self.view.view_mode ~= "page" and self.show_overlap_enable and do_dim_area then
+        local footer_height = (self.view.footer_visible and 1 or 0) * self.view.footer:getHeight()
+        local page_visible_height = self.ui.dimen.h - footer_height
         local panned_step = new_pos - self.current_pos
         self.view.dim_area.x = 0
-        self.view.dim_area.h = self.ui.dimen.h - math.abs(panned_step)
+        self.view.dim_area.h = page_visible_height - math.abs(panned_step)
         self.view.dim_area.w = self.ui.dimen.w
         if panned_step < 0 then
-            self.view.dim_area.y = self.ui.dimen.h - self.view.dim_area.h
+            self.view.dim_area.y = page_visible_height - self.view.dim_area.h
         elseif panned_step > 0 then
             self.view.dim_area.y = 0
         end
+    else
+        self.view:resetDimArea()
     end
     self.ui.document:gotoPos(new_pos)
     -- The current page we get in scroll mode may be a bit innacurate,
