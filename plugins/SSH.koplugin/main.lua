@@ -13,7 +13,7 @@ local _ = require("gettext")
 
 --Only tested on Kindle, should also work on SDL(linux)
 --Kobo and other devices need to be tested first.
-if not Device:isSDL() and not Device:isKindle() then return { disabled = true, } end
+if not Device:isSDL() and not Device:isKindle() and not Device:isKobo() then return { disabled = true, } end
 
 local SSH = WidgetContainer:new{
     name = 'SSH',
