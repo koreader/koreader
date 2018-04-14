@@ -195,9 +195,6 @@ koboupdate: all
 	# remove old package if any
 	rm -f koreader-kobo-$(MACHINE)-$(VERSION).zip
 	# Kobo launching scripts
-	mkdir -p $(INSTALL_DIR)/kobo/mnt/onboard/.kobo
-	ln -sf ../../../../../$(KOBO_DIR)/fmon $(INSTALL_DIR)/kobo/mnt/onboard/.kobo/
-	cd $(INSTALL_DIR)/kobo && tar -czhf ../KoboRoot.tgz mnt
 	cp resources/koreader.png $(INSTALL_DIR)/koreader.png
 	cp $(KOBO_DIR)/fmon/README.txt $(INSTALL_DIR)/README_kobo.txt
 	cp $(KOBO_DIR)/*.sh $(INSTALL_DIR)/koreader
@@ -214,7 +211,7 @@ koboupdate: all
 	echo "koreader/ota/package.index" >> $(INSTALL_DIR)/koreader/ota/package.index
 	# update index file in zip package
 	cd $(INSTALL_DIR) && zip -u ../koreader-kobo-$(MACHINE)-$(VERSION).zip \
-		koreader/ota/package.index KoboRoot.tgz koreader.png README_kobo.txt
+		koreader/ota/package.index koreader.png README_kobo.txt
 	# make gzip koboupdate for zsync OTA update
 	cd $(INSTALL_DIR) && \
 		tar czafh ../koreader-kobo-$(MACHINE)-$(VERSION).targz \
