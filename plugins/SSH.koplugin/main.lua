@@ -11,9 +11,7 @@ local _ = require("gettext")
 --  the -n option to allow login without password
 --  read the keyfile from SSH/authorized_keys
 
---Only tested on Kindle, should also work on SDL(linux)
---Kobo and other devices need to be tested first.
-if not Device:isSDL() and not Device:isKindle() and not Device:isKobo() then return { disabled = true, } end
+if not util.pathExists("dropbearmulti") then return { disabled = true, } end
 
 local SSH = WidgetContainer:new{
     name = 'SSH',
