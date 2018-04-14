@@ -5,11 +5,14 @@
 lsmod | grep -q sdio_wifi_pwr || insmod "/drivers/${PLATFORM}/wifi/sdio_wifi_pwr.ko"
 # WIFI_MODULE_PATH = /drivers/$PLATFORM/wifi/$WIFI_MODULE.ko
 lsmod | grep -q "${WIFI_MODULE}" || insmod "${WIFI_MODULE_PATH}"
-sleep 1
+
+while [ ! -e /sys/class/net/eth0 ]; do
+    usleep 200000
+done
 
 ifconfig eth0 up
-wlarm_le -i eth0 up
+[ "$WIFI_MODULE" != "8189fs" ] && wlarm_le -i eth0 up
 
 pidof wpa_supplicant >/dev/null \
     || env -u LD_LIBRARY_PATH \
-        wpa_supplicant -D wext -s -ieth0 -O /var/run/wpa_supplicant -c/etc/wpa_supplicant/wpa_supplicant.conf -B
+        wpa_supplicant -D wext -s -i eth0 -O /var/run/wpa_supplicant -c /etc/wpa_supplicant/wpa_supplicant.conf -B
