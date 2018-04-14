@@ -30,7 +30,7 @@ export STARDICT_DATA_DIR="data/dict"
 export EXT_FONT_DIR="/mnt/onboard/fonts"
 
 # fast and dirty way of check if we are called from nickel
-# through fmon, or from another launcher (KSM or advboot)
+# through fmon/KFMon, or from another launcher (KSM or advboot)
 # Do not delete this line because KSM detects newer versions of KOReader by the presence of the phrase 'from_nickel'.
 export FROM_NICKEL="false"
 if pkill -0 nickel; then
@@ -55,26 +55,18 @@ if [ "${FROM_NICKEL}" = "true" ]; then
         done
     else
         # Siphon a few things from nickel's env...
-        eval "$(xargs -n 1 -0 <"/proc/$(pidof nickel)/environ" | grep -e DBUS_SESSION_BUS_ADDRESS -e WIFI_MODULE -e PLATFORM -e WIFI_MODULE_PATH -e INTERFACE -e PRODUCT 2>/dev/null)"
-        export DBUS_SESSION_BUS_ADDRESS WIFI_MODULE PLATFORM WIFI_MODULE_PATH INTERFACE PRODUCT
+        eval "$(xargs -n 1 -0 <"/proc/$(pidof nickel)/environ" | grep -e DBUS_SESSION_BUS_ADDRESS -e NICKEL_HOME -e WIFI_MODULE -e LANG -e WIFI_MODULE_PATH -e INTERFACE 2>/dev/null)"
+        export DBUS_SESSION_BUS_ADDRESS NICKEL_HOME WIFI_MODULE LANG WIFI_MODULE_PATH INTERFACE
     fi
 
     # flush disks, might help avoid trashing nickel's DB...
     sync
-    # Double the fun!
-    sleep 1
-    sync
     # stop kobo software because it's running
+    # NOTE: We don't need to kill KFMon, it's smart enough not to allow running concurrent instances of ourselves
     killall nickel hindenburg sickel fickel fmon 2>/dev/null
-
-    # NOTE: Not particularly critical, we should be safe leaving it up, but since we reboot on exit anyway...
-    #	Keep KFMon up for now to make sure it's not doing anything overly stupid we might have overlooked ;).
-    #if [ "${FROM_KFMON}" == "true" ] ; then
-    #	killall kfmon 2>/dev/null
-    #fi
 fi
 
-# fallback for old fmon (and advboot) users (-> if no args were passed to the sript, start the FM)
+# fallback for old fmon, KFMon and advboot users (-> if no args were passed to the script, start the FM)
 if [ "$#" -eq 0 ]; then
     args="/mnt/onboard"
 else
@@ -113,7 +105,7 @@ if awk '$4~/(^|,)ro($|,)/' /proc/mounts | grep ' /mnt/sd '; then
     mount -o remount,rw /mnt/sd
 fi
 
-# we keep maximum 500K worth of crash log
+# we keep at most 500KB worth of crash log
 if [ -e crash.log ]; then
     tail -c 500000 crash.log >crash.log.new
     mv -f crash.log.new crash.log
@@ -130,12 +122,11 @@ if [ "${FROM_NICKEL}" = "true" ]; then
         # start kobo software because it was running before koreader
         ./nickel.sh &
     else
-        if grep -q 'reboot_on_exit=false' /mnt/onboard/.adds/kfmon/config/koreader.ini 2>/dev/null; then
-            # The user wants to try to restart Nickel instead of rebooting!
+        if grep -q "reboot_on_exit=false" "/mnt/onboard/.adds/kfmon/config/koreader.ini" 2>/dev/null; then
+            # KFMon asked us to restart nickel on exit (default since KFMon 0.9.5)
             ./nickel.sh &
         else
-            # By default, if we were called from KFMon, just reboot, because there might be a chance Nickel will get its panties in a serious twist on restore for one reason or another...
-            # And at best, we'd still restart with slightly broken suspend behavior anyway...
+            # KFMon asked us to restart the device on exit
             /sbin/reboot
         fi
     fi
