@@ -9,10 +9,13 @@ local DataStorage = require("datastorage")
 local _ = require("gettext")
 
 -- read settings and check for language override
+-- but don't re-read if already done, to avoid causing problems for unit tests
 -- has to be done before requiring other files because
 -- they might call gettext on load
-G_reader_settings = require("luasettings"):open(
-    DataStorage:getDataDir().."/settings.reader.lua")
+if G_reader_settings == nil then
+    G_reader_settings = require("luasettings"):open(
+        DataStorage:getDataDir().."/settings.reader.lua")
+end
 local lang_locale = G_reader_settings:readSetting("language")
 if lang_locale then
     _.changeLang(lang_locale)
