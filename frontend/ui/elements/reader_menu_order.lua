@@ -50,6 +50,13 @@ local order = {
         "djvu_render_mode",
         "status_bar",
     },
+    network = {
+        "network_wifi",
+        "network_proxy",
+        "network_restore",
+        "network_info",
+        "network_before_wifi_action",
+    },
     tools = {
         "read_timer",
         "calibre_wireless_connection",

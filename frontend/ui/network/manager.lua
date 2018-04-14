@@ -244,14 +244,12 @@ function NetworkMgr:getBeforeWifiActionMenuTable()
    }
 end
 
-function NetworkMgr:getMenuTable()
-    return {
-        self:getWifiMenuTable(),
-        self:getProxyMenuTable(),
-        self:getRestoreMenuTable(),
-        self:getInfoMenuTable(),
-        self:getBeforeWifiActionMenuTable(),
-    }
+function NetworkMgr:getMenuTable(common_settings)
+    common_settings.network_wifi = self:getWifiMenuTable()
+    common_settings.network_proxy = self:getProxyMenuTable()
+    common_settings.network_restore = self:getRestoreMenuTable()
+    common_settings.network_info = self:getInfoMenuTable()
+    common_settings.network_before_wifi_action = self:getBeforeWifiActionMenuTable()
 end
 
 function NetworkMgr:showNetworkMenu(complete_callback)
