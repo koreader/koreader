@@ -27,7 +27,7 @@ end
 function SSH:start()
     local cmd = string.format("%s %s %s %s %s %s",
         "./dropbearmulti dropbear",
-        "-E", "-r SSH/dropbear_rsa_host_key",
+        "-E", "-r settings/SSH/dropbear_rsa_host_key",
         "-p", self.SSH_port,
         "-P /tmp/dropbear.pid")
      if self.allow_no_password then
@@ -45,11 +45,11 @@ function SSH:start()
 	    mkdir -p /dev/pts
         mount -t devpts devpts /dev/pts
         fi]])
-    if not util.pathExists("SSH/") then
-        os.execute("mkdir SSH")
+    if not util.pathExists("settings/SSH/") then
+        os.execute("mkdir settings/SSH")
     end
-    if not util.pathExists("SSH/dropbear_rsa_host_key") then
-        os.execute("./dropbearmulti dropbearkey -t rsa -f SSH/dropbear_rsa_host_key")
+    if not util.pathExists("settings/SSH/dropbear_rsa_host_key") then
+        os.execute("./dropbearmulti dropbearkey -t rsa -f settings/SSH/dropbear_rsa_host_key")
     end
     logger.dbg("[Network] Launching SSH server : ", cmd)
     if os.execute(cmd) == 0 then
@@ -140,7 +140,7 @@ function SSH:addToMainMenu(menu_items)
                 callback = function()
                     local info = InfoMessage:new{
                         timeout = 5,
-                        text = _("Put your public SSH keys in SSH/authorized_keys"),
+                        text = _("Put your public SSH keys in settings/SSH/authorized_keys"),
                     }
                     UIManager:show(info)
                 end,
