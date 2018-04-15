@@ -364,6 +364,10 @@ ifeq ($(TARGET), kindle)
 	make kindleupdate
 else ifeq ($(TARGET), kindle-legacy)
 	make kindleupdate
+else ifeq ($(TARGET), kindle5)
+	make kindleupdate
+else ifeq ($(TARGET), kindlepw2)
+	make kindleupdate
 else ifeq ($(TARGET), kobo)
 	make koboupdate
 else ifeq ($(TARGET), pocketbook)
