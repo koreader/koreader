@@ -302,7 +302,7 @@ appimageupdate: all
 	ln -sf ../../$(APPIMAGE_DIR)/AppRun $(INSTALL_DIR)/koreader
 	ln -sf ../../$(APPIMAGE_DIR)/koreader.appdata.xml $(INSTALL_DIR)/koreader
 	ln -sf ../../$(APPIMAGE_DIR)/koreader.desktop $(INSTALL_DIR)/koreader
-	ln -sf ../../$(UBUNTUTOUCH_DIR)/koreader.png $(INSTALL_DIR)/koreader
+	ln -sf ../../resources/koreader.png $(INSTALL_DIR)/koreader
 	# TODO at best this is DebUbuntu specific
 	ln -sf /usr/lib/x86_64-linux-gnu/libSDL2.so $(INSTALL_DIR)/koreader/libs
 ifeq ("$(wildcard $(APPIMAGETOOL))","")

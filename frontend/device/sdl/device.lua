@@ -38,6 +38,9 @@ function Device:init()
         self.hasClipboard = yes
         self.screen = require("ffi/framebuffer_SDL2_0"):new{device = self, debug = logger.dbg}
 
+        local ok, re = pcall(self.screen.setWindowIcon, self.screen, "resources/koreader.png")
+        if not ok then logger.warn(re) end
+
         local input = require("ffi/input")
         self.input = require("device/input"):new{
             device = self,
