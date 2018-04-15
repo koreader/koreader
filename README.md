@@ -1,10 +1,15 @@
+[![KOReader](https://raw.githubusercontent.com/koreader/koreader.github.io/master/koreader-logo.png)](https://koreader.rocks)
+
+[Download](https://github.com/koreader/koreader/releases) •
+[Wiki](https://github.com/koreader/koreader/wiki) •
+[Developer docs](http://koreader.rocks/doc/) •
+[Forum](http://www.mobileread.com/forums/forumdisplay.php?f=276) •
+[Gitter **Chat**][gitter-link]
+
 [![Build Status][circleci-badge]][circleci-link]
 [![Coverage Status][coverage-badge]][coverage-link]
 [![AGPL Licence][licence-badge]](COPYING)
-KOReader
-========
 
-[![Join the chat][gitter-badge]][gitter-link]
 
 KOReader is a document viewer application, originally created for Kindle
 e-ink readers. It currently runs on Kindle, Kobo, PocketBook, Ubuntu Touch
