@@ -56,6 +56,8 @@ local order = {
         "network_restore",
         "network_info",
         "network_before_wifi_action",
+        "----------------------------",
+        "SSH",
     },
     tools = {
         "read_timer",
