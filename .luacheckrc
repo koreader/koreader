@@ -108,8 +108,6 @@ exclude_files = {
 files["spec/unit/*"].std = "+busted"
 files["spec/unit/*"].globals = {
     "package",
-    "assertAlmostEquals",
-    "assertNotAlmostEquals",
     "requireBackgroundRunner",
     "stopBackgroundRunner",
 }
