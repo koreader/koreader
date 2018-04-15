@@ -110,9 +110,9 @@ function kodev-fetch-thirdparty() {
 
 SUPPORTED_TARGETS="
     kindle          For kindle with touch support
-    kindle5         For kindle models >= kindle5 < paper white 2
+    kindle5         For kindle models >= kindle4 < paper white 2
     kindlepw2       For kindle models >= paper white 2
-    kindle-legacy   For kindle2/3/4/DXG
+    kindle-legacy   For kindle2/3/DXG
     kobo
     android
     pocketbook
