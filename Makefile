@@ -195,7 +195,7 @@ koboupdate: all
 	# remove old package if any
 	rm -f koreader-kobo-$(MACHINE)-$(VERSION).zip
 	# Kobo launching scripts
-	cp resources/koreader.png $(INSTALL_DIR)/koreader.png
+	cp $(KOBO_DIR)/koreader.png $(INSTALL_DIR)/koreader.png
 	cp $(KOBO_DIR)/fmon/README.txt $(INSTALL_DIR)/README_kobo.txt
 	cp $(KOBO_DIR)/*.sh $(INSTALL_DIR)/koreader
 	# create new package
