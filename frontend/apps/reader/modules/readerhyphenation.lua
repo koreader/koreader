@@ -26,7 +26,6 @@ function ReaderHyphenation:init()
                 or G_reader_settings:readSetting("hyph_right_hyphen_min") then
                 limits_text = T("%1 - %2", G_reader_settings:readSetting("hyph_left_hyphen_min"),
                     G_reader_settings:readSetting("hyph_right_hyphen_min"))
-            else
             end
             return T(_("Left/right minimal sizes: %1"), limits_text)
         end,
