@@ -146,8 +146,8 @@ function HyphenationLimitsWidget:update()
 
     local hyph_into_text = _([[
 Set minimum length before hyphenation occurs.
-These will apply to all books with any hyphenation dictionary.
-'Use languages defaults' resets them.]])
+These settings will apply to all books with any hyphenation dictionary.
+'Use language defaults' resets them.]])
     local hyph_info = FrameContainer:new{
         padding = Size.padding.default,
         margin = Size.margin.small,
