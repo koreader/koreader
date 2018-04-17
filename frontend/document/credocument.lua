@@ -411,6 +411,17 @@ function CreDocument:setHyphDictionary(new_hyph_dictionary)
     end
 end
 
+function CreDocument:setHyphLeftHyphenMin(value)
+    -- default crengine value is 2: reset it if no value provided
+    logger.dbg("CreDocument: set hyphenation left hyphen min", value or 2)
+    self._document:setIntProperty("crengine.hyphenation.left.hyphen.min", value or 2)
+end
+
+function CreDocument:setHyphRightHyphenMin(value)
+    logger.dbg("CreDocument: set hyphenation right hyphen min", value or 2)
+    self._document:setIntProperty("crengine.hyphenation.right.hyphen.min", value or 2)
+end
+
 function CreDocument:clearSelection()
     logger.dbg("clear selection")
     self._document:clearSelection()
