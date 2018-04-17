@@ -144,7 +144,10 @@ function HyphenationLimitsWidget:update()
         CloseButton:new{ window = self, padding_top = Size.margin.title, },
     }
 
-    local hyph_into_text = _("Set the minimum length of word accepted on both side of the hyphenation.")
+    local hyph_into_text = _([[
+Set minimum length before hyphenation occurs.
+These will apply to all books with any hyphenation dictionary.
+'Use languages defaults' resets them.]])
     local hyph_info = FrameContainer:new{
         padding = Size.padding.default,
         margin = Size.margin.small,
@@ -207,7 +210,7 @@ function HyphenationLimitsWidget:update()
             VerticalSpan:new{ width = Size.span.vertical_large },
             CenterContainer:new{
                 dimen = Geom:new{
-                    w = hyph_group:getSize().w,
+                    w = self.width,
                     h = hyph_group:getSize().h,
                 },
                 hyph_group
