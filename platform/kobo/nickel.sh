@@ -19,8 +19,9 @@ if lsmod | grep -q sdio_wifi_pwr; then
     [ "${WIFI_MODULE}" != "8189fs" ] && wlarm_le -i "${INTERFACE}" down
     ifconfig "${INTERFACE}" down
     # NOTE: Kobo's busybox build is weird. rmmod appears to be modprobe in disguise, defaulting to the -r flag. If re-specifying -r starts to fail one day, switch to rmmod without args, or modprobe -r.
-    rmmod -r "${WIFI_MODULE}"
     # c.f., #2394?
+    usleep 200000
+    rmmod -r "${WIFI_MODULE}"
     usleep 200000
     rmmod -r sdio_wifi_pwr
 fi

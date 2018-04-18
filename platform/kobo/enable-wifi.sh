@@ -5,10 +5,8 @@
 lsmod | grep -q sdio_wifi_pwr || insmod "/drivers/${PLATFORM}/wifi/sdio_wifi_pwr.ko"
 # WIFI_MODULE_PATH = /drivers/$PLATFORM/wifi/$WIFI_MODULE.ko
 lsmod | grep -q "${WIFI_MODULE}" || insmod "${WIFI_MODULE_PATH}"
-
-while [ ! -e /sys/class/net/eth0 ]; do
-    usleep 200000
-done
+# Race-y as hell, don't try to optimize this!
+sleep 1
 
 ifconfig eth0 up
 [ "$WIFI_MODULE" != "8189fs" ] && wlarm_le -i eth0 up
