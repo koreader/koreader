@@ -304,7 +304,8 @@ appimageupdate: all
 	ln -sf ../../$(APPIMAGE_DIR)/koreader.desktop $(INSTALL_DIR)/koreader
 	ln -sf ../../resources/koreader.png $(INSTALL_DIR)/koreader
 	# TODO at best this is DebUbuntu specific
-	ln -sf /usr/lib/x86_64-linux-gnu/libSDL2.so $(INSTALL_DIR)/koreader/libs
+	ln -sf /usr/lib/x86_64-linux-gnu/libSDL2.so $(INSTALL_DIR)/koreader/libs || \
+		ln -sf /usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0 $(INSTALL_DIR)/koreader/libs/libSDL2.so
 ifeq ("$(wildcard $(APPIMAGETOOL))","")
 	# download appimagetool
 	wget "$(APPIMAGETOOL_URL)"
