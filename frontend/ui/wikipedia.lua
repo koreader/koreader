@@ -940,7 +940,6 @@ a.newwikinonexistent {
 }
 /* show a box around image thumbnails */
 div.thumb {
-    width: 80%;
     border: dotted 1px black;
     margin-top: 0.5em;
     margin-bottom: 0.5em;
