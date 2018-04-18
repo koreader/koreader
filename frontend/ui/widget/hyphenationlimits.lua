@@ -29,11 +29,11 @@ local HyphenationLimitsWidget = InputContainer:new{
     width = nil,
     height = nil,
     -- Min (2) and max (10) values are enforced by crengine
-    left_min = 2,
+    left_min = 1,
     left_max = 10,
     left_value = 2,
     left_default = nil,
-    right_min = 2,
+    right_min = 1,
     right_max = 10,
     right_value = 2,
     right_default = nil,
