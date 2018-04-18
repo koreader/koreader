@@ -186,8 +186,8 @@ kindleupdate: all
 	# note that the targz file extension is intended to keep ISP from caching
 	# the file, see koreader#1644.
 	cd $(INSTALL_DIR) && \
-		tar czafh ../koreader-$(DIST)-$(MACHINE)-$(VERSION).targz \
-		-T koreader/ota/package.index --no-recursion
+		tar --no-recursion -czahf ../koreader-$(DIST)-$(MACHINE)-$(VERSION).targz \
+		-T koreader/ota/package.index
 
 koboupdate: all
 	# ensure that the binaries were built for ARM
@@ -214,8 +214,8 @@ koboupdate: all
 		koreader/ota/package.index koreader.png README_kobo.txt
 	# make gzip koboupdate for zsync OTA update
 	cd $(INSTALL_DIR) && \
-		tar czafh ../koreader-kobo-$(MACHINE)-$(VERSION).targz \
-		-T koreader/ota/package.index --no-recursion
+		tar --no-recursion -czahf ../koreader-kobo-$(MACHINE)-$(VERSION).targz \
+		-T koreader/ota/package.index
 
 pbupdate: all
 	# ensure that the binaries were built for ARM
@@ -251,8 +251,8 @@ pbupdate: all
 		applications/koreader/ota/package.index system
 	# make gzip pbupdate for zsync OTA update
 	cd $(INSTALL_DIR)/applications && \
-		tar czafh ../../koreader-pocketbook-$(MACHINE)-$(VERSION).targz \
-		-T koreader/ota/package.index --no-recursion
+		tar --no-recursion -czahf ../../koreader-pocketbook-$(MACHINE)-$(VERSION).targz \
+		-T koreader/ota/package.index
 
 utupdate: all
 	# ensure that the binaries were built for ARM
@@ -285,8 +285,8 @@ utupdate: all
 		koreader/ota/package.index
 	# make gzip update for zsync OTA update
 	cd $(INSTALL_DIR) && \
-		tar czafh ../koreader-$(DIST)-$(MACHINE)-$(VERSION).targz \
-		-T koreader/ota/package.index --no-recursion
+		tar --no-recursion -czahf ../koreader-$(DIST)-$(MACHINE)-$(VERSION).targz \
+		-T koreader/ota/package.index
 
 	# generate ubuntu touch click package
 	rm -rf $(INSTALL_DIR)/tmp && mkdir -p $(INSTALL_DIR)/tmp
@@ -349,8 +349,8 @@ androidupdate: all
 	$(ISED) '/git-rev/d' $(INSTALL_DIR)/koreader/ota/package.index
 	# make gzip android update for zsync OTA update
 	-cd $(INSTALL_DIR)/koreader && \
-		tar czafh ../../koreader-android-$(MACHINE)-$(VERSION).targz \
-		-T ota/package.index --no-recursion
+		tar --no-recursion -czahf ../../koreader-android-$(MACHINE)-$(VERSION).targz \
+		-T ota/package.index
 	# make android update apk
 	cd $(INSTALL_DIR)/koreader && 7z a -l -mx=1 \
 		../../$(ANDROID_LAUNCHER_DIR)/assets/module/koreader-$(VERSION).7z * \
