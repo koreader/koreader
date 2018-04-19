@@ -517,7 +517,7 @@ function Kobo:resume()
     util.usleep(100000)
     -- cf. #1862, I can reliably break IR touch input on resume...
     -- cf. also #1943 for the rationale behind applying this workaorund in every case...
-    f = io.open("/sys/devices/virtual/input/input1/neocmd", "r")
+    f = io.open("/sys/devices/virtual/input/input1/neocmd", "w")
     if f ~= nil then
         f:write("a\n")
         io.close(f)
