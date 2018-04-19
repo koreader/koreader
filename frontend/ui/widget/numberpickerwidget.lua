@@ -25,6 +25,8 @@ local NumberPickerWidget = InputContainer:new{
     value_step = 1,
     value_hold_step = 4,
     value_table = nil,
+    wrap = true,
+    update_callback = function() end,
     -- in case we need calculate number of days in a given month and year
     date_month = nil,
     date_year = nil,
@@ -60,14 +62,14 @@ function NumberPickerWidget:paintWidget()
             if self.date_month and self.date_year then
                 self.value_max = self:getDaysInMonth(self.date_month:getValue(), self.date_year:getValue())
             end
-            self.value = self:changeValue(self.value, self.value_step, self.value_max, self.value_min)
+            self.value = self:changeValue(self.value, self.value_step, self.value_max, self.value_min, self.wrap)
             self:update()
         end,
         hold_callback = function()
             if self.date_month and self.date_year then
                 self.value_max = self:getDaysInMonth(self.date_month:getValue(), self.date_year:getValue())
             end
-            self.value = self:changeValue(self.value, self.value_hold_step, self.value_max, self.value_min)
+            self.value = self:changeValue(self.value, self.value_hold_step, self.value_max, self.value_min, self.wrap)
             self:update()
         end
     }
@@ -83,14 +85,14 @@ function NumberPickerWidget:paintWidget()
             if self.date_month and self.date_year then
                 self.value_max = self:getDaysInMonth(self.date_month:getValue(), self.date_year:getValue())
             end
-            self.value = self:changeValue(self.value, self.value_step * -1, self.value_max, self.value_min)
+            self.value = self:changeValue(self.value, self.value_step * -1, self.value_max, self.value_min, self.wrap)
             self:update()
         end,
         hold_callback = function()
             if self.date_month and self.date_year then
                 self.value_max = self:getDaysInMonth(self.date_month:getValue(), self.date_year:getValue())
             end
-            self.value = self:changeValue(self.value, self.value_hold_step * -1, self.value_max, self.value_min)
+            self.value = self:changeValue(self.value, self.value_hold_step * -1, self.value_max, self.value_min, self.wrap)
             self:update()
         end
     }
@@ -182,24 +184,25 @@ function NumberPickerWidget:update()
     UIManager:setDirty(self.show_parent, function()
         return "ui", self.dimen
     end)
+    self.update_callback()
 end
 
-function NumberPickerWidget:changeValue(value, step, max, min)
+function NumberPickerWidget:changeValue(value, step, max, min, wrap)
     if self.value_index then
         self.value_index = self.value_index + step
         if self.value_index > #self.value_table then
-            self.value_index = 1
+            self.value_index = wrap and 1 or #self.value_table
         elseif
         self.value_index < 1 then
-            self.value_index = #self.value_table
+            self.value_index = wrap and #self.value_table or 1
         end
         value = self.value_table[self.value_index]
     else
         value = value + step
         if value > max then
-            value = min
+            value = wrap and min or max
         elseif value < min then
-            value = max
+            value = wrap and max or min
         end
     end
     return value

@@ -1,3 +1,4 @@
+local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local JSON = require("json")
@@ -15,13 +16,53 @@ local ReaderHyphenation = InputContainer:new{
 function ReaderHyphenation:init()
     self.lang_table = {}
     self.hyph_table = {}
+    self.hyph_algs_settings = {}
     self.hyph_alg = cre.getSelectedHyphDict()
+
+    table.insert(self.hyph_table, {
+        text_func = function()
+            local limits_text = _("language defaults")
+            if G_reader_settings:readSetting("hyph_left_hyphen_min")
+                or G_reader_settings:readSetting("hyph_right_hyphen_min") then
+                limits_text = T("%1 - %2", G_reader_settings:readSetting("hyph_left_hyphen_min"),
+                    G_reader_settings:readSetting("hyph_right_hyphen_min"))
+            end
+            return T(_("Left/right minimal sizes: %1"), limits_text)
+        end,
+        callback = function()
+            local HyphenationLimitsWidget = require("ui/widget/hyphenationlimits")
+            local hyph_settings = self.hyph_algs_settings[self.hyph_alg] or {}
+            local alg_left_hyphen_min = hyph_settings.left_hyphen_min
+            local alg_right_hyphen_min = hyph_settings.right_hyphen_min
+            local hyph_limits_widget = HyphenationLimitsWidget:new{
+                left_value = G_reader_settings:readSetting("hyph_left_hyphen_min") or alg_left_hyphen_min or 2,
+                right_value = G_reader_settings:readSetting("hyph_right_hyphen_min") or alg_right_hyphen_min or 2,
+                left_default = alg_left_hyphen_min or 2,
+                right_default = alg_right_hyphen_min or 2,
+                callback = function(left_hyphen_min, right_hyphen_min)
+                    G_reader_settings:saveSetting("hyph_left_hyphen_min", left_hyphen_min)
+                    G_reader_settings:saveSetting("hyph_right_hyphen_min", right_hyphen_min)
+                    self.ui.document:setHyphLeftHyphenMin(G_reader_settings:readSetting("hyph_left_hyphen_min") or alg_left_hyphen_min)
+                    self.ui.document:setHyphRightHyphenMin(G_reader_settings:readSetting("hyph_right_hyphen_min") or alg_right_hyphen_min)
+                    self.ui.toc:onUpdateToc()
+                    -- signal readerrolling to update pos in new height, and redraw page
+                    self.ui:handleEvent(Event:new("UpdatePos"))
+                end
+            }
+            UIManager:show(hyph_limits_widget)
+        end,
+        enabled_func = function()
+            return self.hyph_alg ~= "@none"
+        end,
+        separator = true,
+    })
 
     local lang_data_file = assert(io.open("./data/hyph/languages.json"), "r")
     local ok, lang_data = pcall(JSON.decode, lang_data_file:read("*all"))
 
     if ok and lang_data then
         for k,v in ipairs(lang_data) do
+            self.hyph_algs_settings[v.filename] = v -- just store full table
             table.insert(self.hyph_table, {
                 text = v.name,
                 callback = function()
@@ -31,7 +72,12 @@ function ReaderHyphenation:init()
                         text = T(_("Changed hyphenation to %1."), v.name),
                     })
                     self.ui.document:setHyphDictionary(v.filename)
+                    -- Apply hyphenation sides limits
+                    self.ui.document:setHyphLeftHyphenMin(G_reader_settings:readSetting("hyph_left_hyphen_min") or v.left_hyphen_min)
+                    self.ui.document:setHyphRightHyphenMin(G_reader_settings:readSetting("hyph_right_hyphen_min") or v.right_hyphen_min)
                     self.ui.toc:onUpdateToc()
+                    -- signal readerrolling to update pos in new height, and redraw page
+                    self.ui:handleEvent(Event:new("UpdatePos"))
                 end,
                 hold_callback = function()
                     UIManager:show(MultiConfirmBox:new{
@@ -109,6 +155,7 @@ function ReaderHyphenation:getDictForLanguage(lang_tag)
     end
     return dict
 end
+
 function ReaderHyphenation:onPreRenderDocument(config)
     -- This is called after the document has been loaded
     -- so we can use the document language.
@@ -129,6 +176,10 @@ function ReaderHyphenation:onPreRenderDocument(config)
     end
     -- If we haven't set any, hardcoded English_US_hyphen_(Alan).pdb (in cre.cpp) will be used
     self.hyph_alg = cre.getSelectedHyphDict()
+    -- Apply hyphenation sides limits
+    local hyph_settings = self.hyph_algs_settings[self.hyph_alg] or {}
+    self.ui.document:setHyphLeftHyphenMin(G_reader_settings:readSetting("hyph_left_hyphen_min") or hyph_settings.left_hyphen_min)
+    self.ui.document:setHyphRightHyphenMin(G_reader_settings:readSetting("hyph_right_hyphen_min") or hyph_settings.right_hyphen_min)
 end
 
 function ReaderHyphenation:addToMainMenu(menu_items)
