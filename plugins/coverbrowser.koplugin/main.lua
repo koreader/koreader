@@ -73,6 +73,7 @@ function CoverBrowser:init()
     self:setupFileManagerDisplayMode(BookInfoManager:getSetting("filemanager_display_mode"))
     self:setupHistoryDisplayMode(BookInfoManager:getSetting("history_display_mode"))
     init_done = true
+    BookInfoManager:closeDbConnection() -- will be re-opened if needed
 end
 
 function CoverBrowser:addToMainMenu(menu_items)
