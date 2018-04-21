@@ -73,19 +73,6 @@ function RenderImage:renderImageDataWithMupdf(data, size, width, height)
         return
     end
     return image
-    -- Our latest MuPDF does not seem to free() on error anymore.
-    -- So we can let that job to our caller who knows better.
-    -- XXX to remove:
-    -- if type(data) == 'userdata' then
-    --     if not ok and string.find(image, "could not load image data: unknown image file format") then
-    --         -- in that case, mupdf seems to have already freed data (see mupdf/source/fitz/image.c:494),
-    --         -- as doing outselves ffi.C.free(data) would result in a crash with :
-    --         -- *** Error in `./luajit': double free or corruption (!prev): 0x0000000000e48a40 ***
-    --         logger.warn("Mupdf says 'unknown image file format', assuming mupdf has already freed image data")
-    --     else
-    --         ffi.C.free(data) -- need that explicite clean
-    --     end
-    -- end
 end
 
 --- Renders image data as a BlitBuffer with GifLib
