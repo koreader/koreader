@@ -192,8 +192,9 @@ function TextBoxWidget:_splitCharWidthList()
             end
         end
 
+        -- end_offset will be the idx of char at end of line
         offset = idx -- idx of char at start of line
-        end_offset = nil -- idx of char at end of line
+
         -- We append chars until the accumulated width exceeds `targeted_width`,
         -- or a newline occurs, or no more chars to consume.
         cur_line_width = 0
@@ -264,7 +265,7 @@ function TextBoxWidget:_splitCharWidthList()
                         -- nb of spaces to which we'll add 1 more pixel
                         local space_add1_nb = fill_width - space_add_w * nbspaces
                         for cidx = offset, end_offset do
-                            local pad = 0
+                            local pad
                             if self.charlist[cidx] == " " then
                                 pad = space_add_w
                                 if space_add1_nb > 0 then
