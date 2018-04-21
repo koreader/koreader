@@ -1,4 +1,5 @@
 local JSON = require("json")
+local RenderImage = require("ui/renderimage")
 local Screen = require("device").screen
 local ffiutil = require("ffi/util")
 local logger = require("logger")
@@ -449,26 +450,28 @@ local function image_load_bb_func(image, highres)
     end
     logger.dbg(" fetched", #data)
 
-    -- Use mupdf to render image to blitbuffer
-    local mupdf = require("ffi/mupdf")
-    local ok, bb_or_error
+    local bb
     if not highres then
         -- For low-res, we should ensure the image we got from wikipedia is
         -- the right size, so it does not overflow our reserved area
         -- (TextBoxWidget may have adjusted image.width and height)
-        ok, bb_or_error = pcall(mupdf.renderImage, data, #data, image.width, image.height)
+        -- We don't get animated GIF multiple frames to keep TextBoxWidget
+        -- simple: they will be available when viewed in highres
+        bb = RenderImage:renderImageData(data, #data, false, image.width, image.height)
     else
+        -- We provide want_frames=true for highres images, so ImageViewer
+        -- can display animated GIF
         -- No need for width and height for high-res
-        ok, bb_or_error = pcall(mupdf.renderImage, data, #data)
+        bb = RenderImage:renderImageData(data, #data, true)
     end
-    if not ok then
-        logger.warn("failed building image from", source, ":", bb_or_error)
+    if not bb then
+        logger.warn("failed building image from", source)
         return
     end
     if not highres then
-        image.bb = bb_or_error
+        image.bb = bb
     else
-        image.hi_bb = bb_or_error
+        image.hi_bb = bb
     end
 end
 

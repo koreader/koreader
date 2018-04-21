@@ -4,6 +4,7 @@ local DataStorage = require("datastorage")
 local Document = require("document/document")
 local Font = require("ui/font")
 local Geom = require("ui/geometry")
+local RenderImage = require("ui/renderimage")
 local Screen = require("device").screen
 local ffi = require("ffi")
 local lfs = require("libs/libkoreader-lfs")
@@ -183,40 +184,25 @@ function CreDocument:getPageCount()
 end
 
 function CreDocument:getCoverPageImage()
-    -- don't need to render document in order to get cover image
+    -- no need to render document in order to get cover image
     if not self:loadDocument() then
         return nil -- not recognized by crengine
     end
     local data, size = self._document:getCoverPageImageData()
     if data and size then
-        local Mupdf = require("ffi/mupdf")
-        local ok, image = pcall(Mupdf.renderImage, data, size)
-        ffi.C.free(data)
-        if ok then
-            return image
-        end
+        local image = RenderImage:renderImageData(data, size)
+        ffi.C.free(data) -- free the userdata we got from crengine
+        return image
     end
 end
 
-function CreDocument:getImageFromPosition(pos)
+function CreDocument:getImageFromPosition(pos, want_frames)
     local data, size = self._document:getImageDataFromPosition(pos.x, pos.y)
     if data and size then
         logger.dbg("CreDocument: got image data from position", data, size)
-        local Mupdf = require("ffi/mupdf")
-        -- wrapped with pcall so we always free(data)
-        local ok, image = pcall(Mupdf.renderImage, data, size)
-        logger.dbg("Mupdf.renderImage", ok, image)
-        if not ok and string.find(image, "could not load image data: unknown image file format") then
-            -- in that case, mupdf seems to have already freed data (see mupdf/source/fitz/image.c:494),
-            -- as doing outselves ffi.C.free(data) would result in a crash with :
-            -- *** Error in `./luajit': double free or corruption (!prev): 0x0000000000e48a40 ***
-            logger.warn("Mupdf says 'unknown image file format', assuming mupdf has already freed image data")
-        else
-            ffi.C.free(data) -- need that explicite clean
-        end
-        if ok then
-            return image
-        end
+        local image = RenderImage:renderImageData(data, size, want_frames)
+        ffi.C.free(data) -- free the userdata we got from crengine
+        return image
     end
 end
 
