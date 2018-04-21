@@ -225,7 +225,7 @@ function TextBoxWidget:_splitCharWidthList()
                 prev_c = adjusted_idx-1 >= 1 and self.charlist[adjusted_idx-1] or false
             end
             if adjusted_idx == offset or adjusted_idx == idx then
-                -- either a very long english word occuppying more than one line,
+                -- either a very long english word occupying more than one line,
                 -- or the excessive char is itself splittable:
                 -- we let that excessive char for next line
                 if adjusted_idx == offset then -- let the fact a long word was splitted be known
