@@ -15,6 +15,7 @@ local ImageWidget = require("ui/widget/imagewidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
+local ProgressWidget = require("ui/widget/progresswidget")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
@@ -34,6 +35,17 @@ local ImageViewer = InputContainer:new{
     -- whether provided BlitBuffer should be free(), normally true
     -- unless our caller wants to reuse it's provided image
     image_disposable = true,
+
+    -- 'image' can alternatively be a table (list) of multiple BlitBuffers
+    -- (or functions returning BlitBuffers).
+    -- The table will have its .free() called onClose according to
+    -- the image_disposable provided here.
+    -- Each BlitBuffer in the table (or returned by functions) will be free()
+    -- if the table has itself an attribute image_disposable=true.
+
+    -- With images list, when switching image, whether to keep previous
+    -- image pan & zoom
+    images_keep_pan_and_zoom = true,
 
     fullscreen = false, -- false will add some padding around widget (so footer can be visible)
     with_title_bar = true,
@@ -67,6 +79,8 @@ local ImageViewer = InputContainer:new{
 
     -- Reference to current ImageWidget instance, for cleaning
     _image_wg = nil,
+    _images_list = nil,
+    _images_list_disposable = nil,
 }
 
 function ImageViewer:init()
@@ -102,6 +116,21 @@ function ImageViewer:init()
     end
     if self.fullscreen then
         self.covers_fullscreen = true -- hint for UIManager:_repaint()
+    end
+
+    -- if self.image is a list of images, swap it with first image to be displayed
+    if type(self.image) == "table" then
+        self._images_list = self.image
+        self.image = self._images_list[1]
+        if type(self.image) == "function" then
+            self.image = self.image()
+        end
+        self._images_list_cur = 1
+        self._images_list_nb = #self._images_list
+        self._images_orig_scale_factor = self.scale_factor
+        -- also swap disposable status
+        self._images_list_disposable = self.image_disposable
+        self.image_disposable = self._images_list.image_disposable
     end
     self:update()
 end
@@ -272,6 +301,33 @@ function ImageViewer:update()
         img_container_h = img_container_h - title_bar:getSize().h - title_sep:getSize().h
     end
 
+    local progress_container
+    if self._images_list then
+        -- progress bar
+        local percent = 1
+        if self._images_list_nb > 1 then
+            percent = (self._images_list_cur - 1) / (self._images_list_nb - 1)
+        end
+        local progress_bar = ProgressWidget:new{
+            width = self.width - 2*self.button_padding,
+            height = Screen:scaleBySize(5),
+            percentage = percent,
+            margin_h = 0,
+            margin_v = 0,
+            radius = 0,
+            ticks = nil,
+            last = nil,
+        }
+        progress_container = CenterContainer:new{
+            dimen = Geom:new{
+                w = self.width,
+                h = progress_bar:getSize().h + Size.padding.small,
+            },
+            progress_bar
+        }
+        img_container_h = img_container_h - progress_container:getSize().h
+    end
+
     local max_image_h = img_container_h - self.image_padding*2
     local max_image_w = self.width - self.image_padding*2
 
@@ -309,22 +365,17 @@ function ImageViewer:update()
         self._image_wg,
     }
 
-    local frame_elements
+    local frame_elements = VerticalGroup:new{ align = "left" }
     if self.with_title_bar then
-        frame_elements = VerticalGroup:new{
-            align = "left",
-            title_bar,
-            title_sep,
-            image_container,
-            button_container,
-        }
-    else
-        frame_elements = VerticalGroup:new{
-            align = "left",
-            image_container,
-            button_container,
-        }
+        table.insert(frame_elements, title_bar)
+        table.insert(frame_elements, title_sep)
     end
+    table.insert(frame_elements, image_container)
+    if progress_container then
+        table.insert(frame_elements, progress_container)
+    end
+    table.insert(frame_elements, button_container)
+
     self.main_frame = FrameContainer:new{
         radius = not self.fullscreen and 8 or nil,
         padding = 0,
@@ -355,6 +406,25 @@ function ImageViewer:onShow()
     return true
 end
 
+function ImageViewer:switchToImageNum(image_num)
+    if self.image and self.image_disposable and self.image.free then
+        logger.dbg("ImageViewer:free(self.image)")
+        self.image:free()
+        self.image = nil
+    end
+    self.image = self._images_list[image_num]
+    if type(self.image) == "function" then
+        self.image = self.image()
+    end
+    self._images_list_cur = image_num
+    if not self.images_keep_pan_and_zoom then
+        self._center_x_ratio = 0.5
+        self._center_y_ratio = 0.5
+        self.scale_factor = self._images_orig_scale_factor
+    end
+    self:update()
+end
+
 function ImageViewer:onTap(_, ges)
     if ges.pos:notIntersectWith(self.main_frame.dimen) then
         self:onClose()
@@ -363,6 +433,13 @@ function ImageViewer:onTap(_, ges)
     if self.caption_tap_area and ges.pos:intersectWith(self.caption_tap_area.dimen) then
         self.caption_visible = not self.caption_visible
         self:update()
+    end
+    if self._images_list then
+        if ges.pos.x < Screen:getWidth()/2 and self._images_list_cur > 1 then
+            self:switchToImageNum(self._images_list_cur - 1)
+        elseif ges.pos.x > Screen:getWidth()/2 and self._images_list_cur < self._images_list_nb then
+            self:switchToImageNum(self._images_list_cur + 1)
+        end
     end
     return true
 end
@@ -519,6 +596,10 @@ function ImageViewer:onCloseWidget()
         logger.dbg("ImageViewer:free(self.image)")
         self.image:free()
         self.image = nil
+    end
+    -- also clean _images_list if it provides a method for that
+    if self._images_list and self._images_list_disposable and self._images_list.free then
+        self._images_list.free()
     end
     UIManager:setDirty(nil, function()
         return "partial", self.main_frame.dimen
