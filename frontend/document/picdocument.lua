@@ -41,15 +41,9 @@ function PicDocument:getProps()
 end
 
 function PicDocument:getCoverPageImage()
-    local f = io.open(self.file, "rb")
-    if f then
-        local data = f:read("*all")
-        f:close()
-        local Mupdf = require("ffi/mupdf")
-        local ok, image = pcall(Mupdf.renderImage, data, data:len())
-        if ok then
-            return image
-        end
+    local first_page = self._document:openPage(1)
+    if first_page.image_bb then
+        return first_page.image_bb
     end
     return nil
 end
