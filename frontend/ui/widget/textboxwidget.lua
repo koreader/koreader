@@ -33,9 +33,10 @@ local Screen = require("device").screen
 
 local TextBoxWidget = InputContainer:new{
     text = nil,
-    charlist = nil,
     charpos = nil,
-    char_width_list = nil, -- list of widths of the chars in `charlist`.
+    charlist = nil,   -- idx => char
+    char_width = nil, -- char => width
+    idx_pad = nil,     -- idx => pad for char at idx, if non zero
     vertical_string_list = nil,
     editable = false, -- Editable flag for whether drawing the cursor or not.
     justified = false, -- Should text be justified (spaces widened to fill width)
@@ -128,18 +129,15 @@ function TextBoxWidget:_evalCharWidthList()
         self.charlist = util.splitToChars(self.text)
         self.charpos = #self.charlist + 1
     end
-    self.char_width_list = {}
-    -- use a cache to avoid many calls to RenderText:sizeUtf8Text()
-    local char_width_cache = {}
-    for _, v in ipairs(self.charlist) do
-        local w = char_width_cache[v]
-        if w == nil then
-            w = RenderText:sizeUtf8Text(0, Screen:getWidth(), self.face, v, true, self.bold).x
-            char_width_cache[v] = w
+    -- get width of each distinct char
+    local char_width = {}
+    for _, c in ipairs(self.charlist) do
+        if not char_width[c] then
+            char_width[c] = RenderText:sizeUtf8Text(0, Screen:getWidth(), self.face, c, true, self.bold).x
         end
-        table.insert(self.char_width_list, {char = v, width = w, pad = 0})
-        -- pad will be updated if we do text justification
     end
+    self.char_width = char_width
+    self.idx_pad = {}
 end
 
 -- Split the text into logical lines to fit into the text box.
@@ -147,9 +145,9 @@ function TextBoxWidget:_splitCharWidthList()
     self.vertical_string_list = {}
 
     local idx = 1
-    local size = #self.char_width_list
+    local size = #self.charlist
     local ln = 1
-    local offset, cur_line_width, cur_line_text
+    local offset, end_offset, cur_line_width
 
     local lines_per_page
     if self.height then
@@ -194,98 +192,98 @@ function TextBoxWidget:_splitCharWidthList()
             end
         end
 
-        offset = idx
-        -- Appending chars until the accumulated width exceeds `targeted_width`,
+        offset = idx -- idx of char at start of line
+        end_offset = nil -- idx of char at end of line
+        -- We append chars until the accumulated width exceeds `targeted_width`,
         -- or a newline occurs, or no more chars to consume.
         cur_line_width = 0
         local hard_newline = false
-        local char_pads = nil
         while idx <= size do
-            if self.char_width_list[idx].char == "\n" then
+            if self.charlist[idx] == "\n" then
                 hard_newline = true
                 break
             end
-            cur_line_width = cur_line_width + self.char_width_list[idx].width
+            cur_line_width = cur_line_width + self.char_width[self.charlist[idx]]
             if cur_line_width > targeted_width then break else idx = idx + 1 end
         end
         if cur_line_width <= targeted_width then -- a hard newline or end of string
-            cur_line_text = table.concat(self.charlist, "", offset, idx - 1)
+            end_offset = idx - 1
         else
             -- Backtrack the string until the length fit into one line.
             -- We'll give next and prev chars to isSplittable() for a wiser decision
-            local c = self.char_width_list[idx].char
-            local next_c = idx+1 <= size and self.char_width_list[idx+1].char or false
-            local prev_c = idx-1 >= 1 and self.char_width_list[idx-1].char or false
+            local c = self.charlist[idx]
+            local next_c = idx+1 <= size and self.charlist[idx+1] or false
+            local prev_c = idx-1 >= 1 and self.charlist[idx-1] or false
             local adjusted_idx = idx
             local adjusted_width = cur_line_width
             while adjusted_idx > offset and not util.isSplittable(c, next_c, prev_c) do
-                adjusted_width = adjusted_width - self.char_width_list[adjusted_idx].width
+                adjusted_width = adjusted_width - self.char_width[self.charlist[adjusted_idx]]
                 adjusted_idx = adjusted_idx - 1
                 next_c = c
                 c = prev_c
-                prev_c = adjusted_idx-1 >= 1 and self.char_width_list[adjusted_idx-1].char or false
+                prev_c = adjusted_idx-1 >= 1 and self.charlist[adjusted_idx-1] or false
             end
             if adjusted_idx == offset or adjusted_idx == idx then
-                -- either a very long english word ocuppying more than one line,
+                -- either a very long english word occuppying more than one line,
                 -- or the excessive char is itself splittable:
                 -- we let that excessive char for next line
                 if adjusted_idx == offset then -- let the fact a long word was splitted be known
                     self.has_split_inside_word = true
                 end
-                cur_line_text = table.concat(self.charlist, "", offset, idx - 1)
-                cur_line_width = cur_line_width - self.char_width_list[idx].width
+                end_offset = idx - 1
+                cur_line_width = cur_line_width - self.char_width[self.charlist[idx]]
             elseif c == " " then
                 -- we backtracked and we're below max width, but the last char
                 -- is a space, we can ignore it
-                cur_line_text = table.concat(self.charlist, "", offset, adjusted_idx - 1)
-                cur_line_width = adjusted_width - self.char_width_list[adjusted_idx].width
+                end_offset = adjusted_idx - 1
+                cur_line_width = adjusted_width - self.char_width[self.charlist[adjusted_idx]]
                 idx = adjusted_idx + 1
             else
                 -- we backtracked and we're below max width, we can leave the
                 -- splittable char on this line
-                cur_line_text = table.concat(self.charlist, "", offset, adjusted_idx)
+                end_offset = adjusted_idx
                 cur_line_width = adjusted_width
                 idx = adjusted_idx + 1
             end
             if self.justified then
                 -- this line was splitted and can be justified
-                -- we build a list of char_pads, pixels to add to some chars to make the
-                -- whole line justified
+                -- we record in idx_pad the nb of pixels to add to each char
+                -- to make the whole line justified. This also helps hold
+                -- position accuracy.
                 local fill_width = targeted_width - cur_line_width
                 if fill_width > 0 then
-                    local _, nbspaces = string.gsub(cur_line_text, " ", "")
+                    local nbspaces = 0
+                    for sidx = offset, end_offset do
+                        if self.charlist[sidx] == " " then
+                            nbspaces = nbspaces + 1
+                        end
+                    end
                     if nbspaces > 0 then
                         -- width added to all spaces
                         local space_add_w = math.floor(fill_width / nbspaces)
                         -- nb of spaces to which we'll add 1 more pixel
                         local space_add1_nb = fill_width - space_add_w * nbspaces
-                        char_pads = {}
-                        for cidx = offset, idx-1 do
+                        for cidx = offset, end_offset do
                             local pad = 0
-                            if self.char_width_list[cidx].char == " " then
+                            if self.charlist[cidx] == " " then
                                 pad = space_add_w
                                 if space_add1_nb > 0 then
                                     pad = pad + 1
                                     space_add1_nb = space_add1_nb - 1
                                 end
-                                -- Update pad info, help for hold position accuracy
-                                self.char_width_list[cidx].pad = pad
+                                if pad > 0 then self.idx_pad[cidx] = pad end
                             end
-                            table.insert(char_pads, pad)
                         end
                     else
                         -- very long word, or CJK text with no space
                         -- pad first chars with 1 pixel
-                        char_pads = {}
-                        for cidx = offset, idx-1 do
-                            local pad = 0
+                        for cidx = offset, end_offset do
                             if fill_width > 0 then
-                                pad = 1
+                                self.idx_pad[cidx] = 1
                                 fill_width = fill_width - 1
-                                -- Update pad info, help for hold position accuracy
-                                self.char_width_list[cidx].pad = pad
+                            else
+                                break
                             end
-                            table.insert(char_pads, pad)
                         end
                     end
                 end
@@ -293,25 +291,42 @@ function TextBoxWidget:_splitCharWidthList()
         end -- endif cur_line_width > targeted_width
         if cur_line_width < 0 then break end
         self.vertical_string_list[ln] = {
-            text = cur_line_text,
             offset = offset,
+            end_offset = end_offset,
             width = cur_line_width,
-            char_pads = char_pads,
         }
         if hard_newline then
             idx = idx + 1
-            -- FIXME: reuse newline entry
-            self.vertical_string_list[ln+1] = {text = "", offset = idx, width = 0}
+            -- end_offset = nil means no text
+            self.vertical_string_list[ln+1] = {offset = idx, end_offset = nil, width = 0}
         else
             -- If next char is a space, discard it so it does not become
             -- an ugly leading space on the next line
-            if idx <= size and self.char_width_list[idx].char == " " then
+            if idx <= size and self.charlist[idx] == " " then
                 idx = idx + 1
             end
         end
         ln = ln + 1
         -- Make sure `idx` point to the next char to be processed in the next loop.
     end
+end
+
+function TextBoxWidget:_getLineText(vertical_string)
+    if not vertical_string.end_offset then return "" end
+    return table.concat(self.charlist, "", vertical_string.offset, vertical_string.end_offset)
+end
+
+function TextBoxWidget:_getLinePads(vertical_string)
+    if not vertical_string.end_offset then return end
+    local pads = {}
+    for idx = vertical_string.offset, vertical_string.end_offset do
+        table.insert(pads, self.idx_pad[idx] or 0)
+    end
+    return pads
+end
+
+function TextBoxWidget:geCharWidth(idx)
+    return self.char_width[self.charlist[idx]]
 end
 
 function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
@@ -349,7 +364,7 @@ function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
         end
             --@todo don't use kerning for monospaced fonts.    (houqp)
             -- refert to cb25029dddc42693cc7aaefbe47e9bd3b7e1a750 in master tree
-        RenderText:renderUtf8Text(self._bb, pen_x, y, self.face, line.text, true, self.bold, self.fgcolor, nil, line.char_pads)
+        RenderText:renderUtf8Text(self._bb, pen_x, y, self.face, self:_getLineText(line), true, self.bold, self.fgcolor, nil, self:_getLinePads(line))
         y = y + self.line_height_px
     end
 
@@ -520,7 +535,7 @@ function TextBoxWidget:_findCharPos()
     local x = 0
     local offset = self.vertical_string_list[ln].offset
     while offset < self.charpos do
-        x = x + self.char_width_list[offset].width + self.char_width_list[offset].pad
+        x = x + self.char_width[self.charlist[offset]] + (self.idx_pad[offset] or 0)
         offset = offset + 1
     end
     return x + 1, (ln - 1) * self.line_height_px -- offset `x` by 1 to avoid overlap
@@ -548,13 +563,13 @@ function TextBoxWidget:moveCursor(x, y)
         x = self.width
     end
     local offset = self.vertical_string_list[ln].offset
-    local idx = ln == #self.vertical_string_list and #self.char_width_list or self.vertical_string_list[ln + 1].offset - 1
+    local idx = ln == #self.vertical_string_list and #self.charlist or self.vertical_string_list[ln + 1].offset - 1
     while offset <= idx do
-        w = w + self.char_width_list[offset].width + self.char_width_list[offset].pad
+        w = w + self.char_width[self.charlist[offset]] + (self.idx_pad[offset] or 0)
         if w > x then break else offset = offset + 1 end
     end
     if w > x then
-        local w_prev = w - self.char_width_list[offset].width - self.char_width_list[offset].pad
+        local w_prev = w - self.char_width[self.charlist[offset]] - (self.idx_pad[offset] or 0)
         if x - w_prev < w - x then -- the previous one is more closer
             w = w_prev
         else
@@ -722,7 +737,7 @@ function TextBoxWidget:onHoldWord(callback, ges)
         local char_start = line.offset
         local char_end  -- char_end is non-inclusive
         if line_num >= #self.vertical_string_list then
-            char_end = #self.char_width_list + 1
+            char_end = #self.charlist + 1
         else
             char_end = self.vertical_string_list[line_num+1].offset
         end
@@ -730,14 +745,13 @@ function TextBoxWidget:onHoldWord(callback, ges)
         local idx = char_start
         -- find which character the touch is holding
         while idx < char_end do
-            local c = self.char_width_list[idx]
             -- FIXME: this might break if kerning is enabled
-            char_probe_x = char_probe_x + c.width + c.pad
+            char_probe_x = char_probe_x + self.char_width[self.charlist[idx]] + (self.idx_pad[idx] or 0)
             if char_probe_x > x then
                 -- ignore spaces
-                if c.char == " " then break end
+                if self.charlist[idx] == " " then break end
                 -- now find which word the character is in
-                local words = util.splitToWords(line.text)
+                local words = util.splitToWords(self:_getLineText(line))
                 local probe_idx = char_start
                 for _, w in ipairs(words) do
                     -- +1 for word separtor
@@ -900,7 +914,7 @@ function TextBoxWidget:_findWordEdge(x, y, side)
     local char_start = line.offset
     local char_end  -- char_end is non-inclusive
     if line_num >= #self.vertical_string_list then
-        char_end = #self.char_width_list + 1
+        char_end = #self.charlist + 1
     else
         char_end = self.vertical_string_list[line_num+1].offset
     end
@@ -909,12 +923,11 @@ function TextBoxWidget:_findWordEdge(x, y, side)
     local edge_idx = nil
     -- find which character the touch is holding
     while idx < char_end do
-        local c = self.char_width_list[idx]
-        char_probe_x = char_probe_x + c.width + c.pad
+        char_probe_x = char_probe_x + self.char_width[self.charlist[idx]] + (self.idx_pad[idx] or 0)
         if char_probe_x > x then
             -- character found, find which word the character is in, and
             -- get its start/end idx
-            local words = util.splitToWords(line.text)
+            local words = util.splitToWords(self:_getLineText(line))
             -- words may contain separators (space, punctuation) : we don't
             -- discriminate here, it's the caller job to clean what was
             -- selected

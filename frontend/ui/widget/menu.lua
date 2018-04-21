@@ -273,14 +273,14 @@ function MenuItem:init()
                 if item_name.vertical_string_list[lines + 1] then
                     offset = item_name.vertical_string_list[lines + 1].offset - 2
                 else -- shouldn't happen, but just in case
-                    offset = #item_name.char_width_list
+                    offset = #item_name.charlist
                 end
                 local ellipsis_size = RenderText:sizeUtf8Text(0, self.content_width,
                     Font:getFace(self.font, self.font_size), "…", true, self.bold).x
                 local removed_char_width= 0
                 while removed_char_width < ellipsis_size  do
                     -- the width of each char has already been calculated by TextBoxWidget
-                    removed_char_width = removed_char_width + item_name.char_width_list[offset].width
+                    removed_char_width = removed_char_width + item_name:geCharWidth(offset)
                     offset = offset - 1
                 end
                 self.text = table.concat(item_name.charlist, '', 1, offset) .. "…"
