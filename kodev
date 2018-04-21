@@ -109,9 +109,9 @@ function kodev-fetch-thirdparty() {
 }
 
 SUPPORTED_TARGETS="
-    kindle          For kindle models >= kindle4 < paper white 2
-    kindlepw2       For kindle models >= paper white 2
-    kindle-legacy   For kindle2/3/DXG
+    kindle          Compatible with all kindle models >= kindle4
+    kindlepw2       With compiler optimizations for kindle models >= paper white 2
+    kindle-legacy   Needed only for kindle2/3/DXG
     kobo
     android
     pocketbook
