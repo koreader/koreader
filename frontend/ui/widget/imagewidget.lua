@@ -20,13 +20,13 @@ Show image from memory example:
 
 ]]
 
-local Widget = require("ui/widget/widget")
+local Cache = require("cache")
+local CacheItem = require("cacheitem")
+local Geom = require("ui/geometry")
+local RenderImage = require("ui/renderimage")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
-local CacheItem = require("cacheitem")
-local Mupdf = require("ffi/mupdf")
-local Geom = require("ui/geometry")
-local Cache = require("cache")
+local Widget = require("ui/widget/widget")
 local logger = require("logger")
 
 -- DPI_SCALE can't change without a restart, so let's compute it now
@@ -57,7 +57,7 @@ end
 local ImageWidget = Widget:new{
     -- Can be provided with a path to a file
     file = nil,
-    -- or an already made BlitBuffer (ie: made by Mupdf.renderImage())
+    -- or an already made BlitBuffer (ie: made by RenderImage)
     image = nil,
 
     -- Whether BlitBuffer rendered from file should be cached
@@ -132,7 +132,7 @@ function ImageWidget:_loadfile()
         -- In our use cases for files (icons), we either provide width and height,
         -- or just scale_for_dpi, and scale_factor should stay nil.
         -- Other combinations will result in double scaling, and unexpected results.
-        -- We should anyway only give self.width and self.height to Mupdf.renderImageFile(),
+        -- We should anyway only give self.width and self.height to renderImageFile(),
         -- and use them in cache hash, when self.scale_factor is nil, when we are sure
         -- we don't need to keep aspect ratio.
         local width, height
@@ -155,17 +155,10 @@ function ImageWidget:_loadfile()
             self._bb = cache.bb
             self._bb_disposable = false -- don't touch or free a cached _bb
         else
-            self._bb = Mupdf.renderImageFile(self.file, width, height)
+            self._bb = RenderImage:renderImageFile(self.file, false, width, height)
             if scale_for_dpi_here then
-                local new_bb
                 local bb_w, bb_h = self._bb:getWidth(), self._bb:getHeight()
-                if self.use_legacy_image_scaling then
-                    new_bb = self._bb:scale(bb_w * DPI_SCALE, bb_h * DPI_SCALE)
-                else
-                    new_bb = Mupdf.scaleBlitBuffer(self._bb, math.floor(bb_w * DPI_SCALE), math.floor(bb_h * DPI_SCALE))
-                end
-                self._bb:free()
-                self._bb = new_bb
+                self._bb = RenderImage:scaleBlitBuffer(self._bb, math.floor(bb_w * DPI_SCALE), math.floor(bb_h * DPI_SCALE))
             end
             if not self.file_do_cache then
                 self._bb_disposable = true -- we made it, we can modify and free it
@@ -248,40 +241,20 @@ function ImageWidget:_render()
     end
 
     -- replace blitbuffer with a resized one if needed
-    local new_bb = nil
     if self.scale_factor == nil then
         -- no scaling, but strech to width and height, only if provided and needed
         if self.width and self.height and (self.width ~= bb_w or self.height ~= bb_h) then
             logger.dbg("ImageWidget: stretching")
-            if self.use_legacy_image_scaling then
-                -- Uses "simple nearest neighbour scaling"
-                new_bb = self._bb:scale(self.width, self.height)
-            else
-                -- Better quality scaling with MuPDF
-                new_bb = Mupdf.scaleBlitBuffer(self._bb, self.width, self.height)
-            end
+            self._bb = RenderImage:scaleBlitBuffer(self._bb, self.width, self.height, self._bb_disposable)
+            self._bb_disposable = true -- new bb will have to be freed
         end
     elseif self.scale_factor ~= 1 then
         -- scale by scale_factor (not needed if scale_factor == 1)
         logger.dbg("ImageWidget: scaling by", self.scale_factor)
-        if self.use_legacy_image_scaling then
-            new_bb = self._bb:scale(bb_w * self.scale_factor, bb_h * self.scale_factor)
-        else
-            -- Better to ensure we give integer width and height to MuPDF, to
-            -- avoid a black 1-pixel line at right and bottom of image
-            new_bb = Mupdf.scaleBlitBuffer(self._bb, math.floor(bb_w * self.scale_factor), math.floor(bb_h * self.scale_factor))
-        end
+        self._bb = RenderImage:scaleBlitBuffer(self._bb, bb_w * self.scale_factor, bb_h * self.scale_factor, self._bb_disposable)
+        self._bb_disposable = true -- new bb will have to be freed
     end
-    if new_bb then
-        -- We made a new blitbuffer, we need to explicitely free
-        -- the old one to not leak memory
-        if self._bb_disposable then
-            self._bb:free()
-        end
-        self._bb = new_bb
-        self._bb_disposable = true -- new object will have to be freed
-        bb_w, bb_h = self._bb:getWidth(), self._bb:getHeight()
-    end
+    bb_w, bb_h = self._bb:getWidth(), self._bb:getHeight()
 
     -- deal with positionning
     if self.width and self.height then
