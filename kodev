@@ -109,8 +109,7 @@ function kodev-fetch-thirdparty() {
 }
 
 SUPPORTED_TARGETS="
-    kindle          For kindle with touch support
-    kindle5         For kindle models >= kindle4 < paper white 2
+    kindle          For kindle models >= kindle4 < paper white 2
     kindlepw2       For kindle models >= paper white 2
     kindle-legacy   For kindle2/3/DXG
     kobo
@@ -167,10 +166,6 @@ ${SUPPORTED_TARGETS}"
     case $1 in
         kindle)
             make TARGET=kindle
-            assert_ret_zero $?
-            ;;
-        kindle5)
-            make TARGET=kindle5
             assert_ret_zero $?
             ;;
         kindlepw2)
@@ -250,9 +245,6 @@ ${SUPPORTED_TARGETS}"
             ;;
         kindle)
             make TARGET=kindle clean
-            ;;
-        kindle5)
-            make TARGET=kindle5 clean
             ;;
         kindlepw2)
             make TARGET=kindlepw2 clean
@@ -347,10 +339,6 @@ ${SUPPORTED_RELEASE_TARGETS}"
         kindle)
             kodev-build kindle
             make TARGET=kindle update
-            ;;
-        kindle5)
-            kodev-build kindle5
-            make TARGET=kindle5 update
             ;;
         kindlepw2)
             kodev-build kindlepw2
