@@ -33,12 +33,14 @@ function SSH:start()
      if self.allow_no_password then
         cmd = string.format("%s %s", cmd, "-n")
     end
-    os.execute(string.format("%s %s %s",
-        "iptables -A INPUT -p tcp --dport", self.SSH_port,
-        "-m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT"))
-    os.execute(string.format("%s %s %s",
-        "iptables -A OUTPUT -p tcp --sport", self.SSH_port,
-        "-m conntrack --ctstate ESTABLISHED -j ACCEPT"))
+    if os.execute("command -v iptables") then
+        os.execute(string.format("%s %s %s",
+            "iptables -A INPUT -p tcp --dport", self.SSH_port,
+            "-m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT"))
+        os.execute(string.format("%s %s %s",
+            "iptables -A OUTPUT -p tcp --sport", self.SSH_port,
+            "-m conntrack --ctstate ESTABLISHED -j ACCEPT"))
+    end
     --An SSH/telnet server of course needs to be able to manipulate pseudoterminals...
     --Why that's not already done as part of Kobo's boot process beats me.
     os.execute([[if [ ! -d "/dev/pts" ] ; then
