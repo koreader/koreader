@@ -9,7 +9,7 @@ local _ = require("gettext")
 
 --This plugin use a patched dropbear that add two things :
 --  the -n option to allow login without password
---  read the keyfile from SSH/authorized_keys
+--  read the keyfile from settings/SSH/authorized_keys
 
 if not util.pathExists("dropbearmulti") then return { disabled = true, } end
 
