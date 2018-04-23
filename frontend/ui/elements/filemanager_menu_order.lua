@@ -30,6 +30,16 @@ local order = {
         "time",
         -- end common settings
     },
+    network = {
+        "network_wifi",
+        "network_proxy",
+        "network_restore",
+        "network_info",
+        "network_before_wifi_action",
+        "----------------------------",
+        "SSH",
+    },
+
     tools = {
         "calibre_wireless_connection",
         "evernote",
