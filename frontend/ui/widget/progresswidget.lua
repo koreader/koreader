@@ -68,10 +68,12 @@ function ProgressWidget:paintTo(bb, x, y)
                    my_size.w, my_size.h,
                    self.bordersize, self.bordercolor, self.radius)
     -- paint percentage infill
-    bb:paintRect(x+self.margin_h, math.ceil(y+self.margin_v+self.bordersize),
+    if self.percentage >= 0 and self.percentage <= 1 then
+        bb:paintRect(x+self.margin_h, math.ceil(y+self.margin_v+self.bordersize),
                  math.ceil((my_size.w-2*self.margin_h)*self.percentage),
                  my_size.h-2*(self.margin_v+self.bordersize), self.rectcolor)
-    if self.ticks and self.last then
+    end
+    if self.ticks and self.last and self.last > 0 then
         local bar_width = (my_size.w-2*self.margin_h)
         local y_pos = y + self.margin_v + self.bordersize
         local bar_height = my_size.h-2*(self.margin_v+self.bordersize)
