@@ -1,18 +1,19 @@
+local DataStorage = require("datastorage")
 local Device =  require("device")
 local InfoMessage = require("ui/widget/infomessage")  -- luacheck:ignore
 local InputDialog = require("ui/widget/inputdialog")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 
 -- This plugin use a patched dropbear that add two things :
 -- the -n option to allow login without password
--- read the keyfile from settings/SSH/authorized_keys
+-- read the keyfile from the relative path: settings/SSH/authorized_keys
 
-if not util.pathExists("dropbearmulti") then
+local path = DataStorage:getFullDataDir()
+if not util.pathExists(path.."/dropbearmulti") then
     return { disabled = true, }
 end
 
@@ -28,9 +29,9 @@ function SSH:init()
 end
 
 function SSH:start()
-    local cmd = string.format("%s %s %s %s %s %s",
-        "./dropbearmulti dropbear",
-        "-E", "-r settings/SSH/dropbear_rsa_host_key",
+    local cmd = string.format("%s%s %s %s %s%s %s %s %s",
+        path, "/dropbearmulti dropbear",
+        "-E", "-r ", path, "/settings/SSH/dropbear_rsa_host_key",
         "-p", self.SSH_port,
         "-P /tmp/dropbear_koreader.pid")
      if self.allow_no_password then
@@ -50,11 +51,11 @@ function SSH:start()
         mkdir -p /dev/pts
         mount -t devpts devpts /dev/pts
         fi]])
-    if not util.pathExists("settings/SSH/") then
-        os.execute("mkdir settings/SSH")
+    if not util.pathExists(path.."/settings/SSH/") then
+        os.execute("mkdir"..path.."/settings/SSH")
     end
-    if not util.pathExists("settings/SSH/dropbear_rsa_host_key") then
-        os.execute("./dropbearmulti dropbearkey -t rsa -f settings/SSH/dropbear_rsa_host_key")
+    if not util.pathExists(path.."/settings/SSH/dropbear_rsa_host_key") then
+        os.execute(path.."/dropbearmulti dropbearkey -t rsa -f "..path.."/settings/SSH/dropbear_rsa_host_key")
     end
     logger.dbg("[Network] Launching SSH server : ", cmd)
     if os.execute(cmd) == 0 then
@@ -145,7 +146,7 @@ function SSH:addToMainMenu(menu_items)
                 callback = function()
                     local info = InfoMessage:new{
                         timeout = 60,
-                        text = _("Put your public SSH keys in "..lfs.currentdir().."/settings/SSH/authorized_keys"),
+                        text = _("Put your public SSH keys in "..path.."/settings/SSH/authorized_keys"),
                     }
                     UIManager:show(info)
                 end,
