@@ -13,7 +13,7 @@ local _ = require("gettext")
 -- read the keyfile from the relative path: settings/SSH/authorized_keys
 
 local path = DataStorage:getFullDataDir()
-if not util.pathExists(path.."/dropbearmulti") then
+if not util.pathExists("dropbearmulti") then
     return { disabled = true, }
 end
 
@@ -29,8 +29,8 @@ function SSH:init()
 end
 
 function SSH:start()
-    local cmd = string.format("%s%s %s %s %s%s %s %s %s",
-        path, "/dropbearmulti dropbear",
+    local cmd = string.format("%s %s %s %s%s %s %s %s",
+        "./dropbearmulti dropbear",
         "-E", "-r ", path, "/settings/SSH/dropbear_rsa_host_key",
         "-p", self.SSH_port,
         "-P /tmp/dropbear_koreader.pid")
@@ -55,7 +55,7 @@ function SSH:start()
         os.execute("mkdir "..path.."/settings/SSH")
     end
     if not util.pathExists(path.."/settings/SSH/dropbear_rsa_host_key") then
-        os.execute(path.."/dropbearmulti dropbearkey -t rsa -f "..path.."/settings/SSH/dropbear_rsa_host_key")
+        os.execute("./dropbearmulti dropbearkey -t rsa -f "..path.."/settings/SSH/dropbear_rsa_host_key")
     end
     logger.dbg("[Network] Launching SSH server : ", cmd)
     if os.execute(cmd) == 0 then
