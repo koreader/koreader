@@ -21,7 +21,7 @@ if [ "${unscaled_size_check}" ] || [ "${unscaled_size_check_geom}" ]; then
     exit 1
 fi
 
-tab_detected=$(grep -P "\t" --include \*.lua --recursive {reader,setupkoenv,datastorage}.lua frontend plugins spec||true)
+tab_detected=$(grep -P "\t" --include \*.lua --recursive {reader,setupkoenv,datastorage}.lua frontend plugins spec || true)
 if [ "${tab_detected}" ]; then
     echo -e "\n${ANSI_RED}Error TAB character detected"
     echo "${tab_detected}"
