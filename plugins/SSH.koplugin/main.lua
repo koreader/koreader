@@ -52,7 +52,7 @@ function SSH:start()
         mount -t devpts devpts /dev/pts
         fi]])
     if not util.pathExists(path.."/settings/SSH/") then
-        os.execute("mkdir"..path.."/settings/SSH")
+        os.execute("mkdir "..path.."/settings/SSH")
     end
     if not util.pathExists(path.."/settings/SSH/dropbear_rsa_host_key") then
         os.execute(path.."/dropbearmulti dropbearkey -t rsa -f "..path.."/settings/SSH/dropbear_rsa_host_key")
