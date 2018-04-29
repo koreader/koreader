@@ -80,8 +80,8 @@ end
 -- HTML quality) in a file named as the .ifo with a .lua
 -- extension, containing for example:
 --    return function(html)
---	html = html:gsub("<hr>", "<hr/>")
---	return html
+--        html = html:gsub("<hr>", "<hr/>")
+--        return html
 --    end
 local function getDictionaryFixHtmlFunc(path)
     if lfs.attributes(path, "mode") == "file" then

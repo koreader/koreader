@@ -34,8 +34,8 @@ local KEY_HOME   = 0x1a
 local KEY_BACK   = 0x1b
 local KEY_PREV2  = 0x1c
 local KEY_NEXT2  = 0x1d
-local KEY_COVEROPEN	= 0x02
-local KEY_COVERCLOSE	= 0x03
+local KEY_COVEROPEN = 0x02
+local KEY_COVERCLOSE = 0x03
 -- luacheck: pop
 
 ffi.cdef[[
