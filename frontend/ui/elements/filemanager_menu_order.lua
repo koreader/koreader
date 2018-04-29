@@ -37,7 +37,7 @@ local order = {
         "network_info",
         "network_before_wifi_action",
         "----------------------------",
-        "SSH",
+        "ssh",
     },
     tools = {
         "calibre_wireless_connection",

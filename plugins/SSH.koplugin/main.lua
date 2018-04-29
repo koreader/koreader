@@ -3,15 +3,18 @@ local InfoMessage = require("ui/widget/infomessage")  -- luacheck:ignore
 local InputDialog = require("ui/widget/inputdialog")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 
---This plugin use a patched dropbear that add two things :
---  the -n option to allow login without password
---  read the keyfile from settings/SSH/authorized_keys
+-- This plugin use a patched dropbear that add two things :
+-- the -n option to allow login without password
+-- read the keyfile from settings/SSH/authorized_keys
 
-if not util.pathExists("dropbearmulti") then return { disabled = true, } end
+if not util.pathExists("dropbearmulti") then
+    return { disabled = true, }
+end
 
 local SSH = WidgetContainer:new{
     name = 'SSH',
@@ -29,7 +32,7 @@ function SSH:start()
         "./dropbearmulti dropbear",
         "-E", "-r settings/SSH/dropbear_rsa_host_key",
         "-p", self.SSH_port,
-        "-P /tmp/dropbear.pid")
+        "-P /tmp/dropbear_koreader.pid")
      if self.allow_no_password then
         cmd = string.format("%s %s", cmd, "-n")
     end
@@ -41,10 +44,10 @@ function SSH:start()
             "iptables -A OUTPUT -p tcp --sport", self.SSH_port,
             "-m conntrack --ctstate ESTABLISHED -j ACCEPT"))
     end
-    --An SSH/telnet server of course needs to be able to manipulate pseudoterminals...
-    --Why that's not already done as part of Kobo's boot process beats me.
+    -- An SSH/telnet server of course needs to be able to manipulate pseudoterminals...
+    -- Some Kobo don't have this, so we check it on every platfrom, it can't hurt.
     os.execute([[if [ ! -d "/dev/pts" ] ; then
-	    mkdir -p /dev/pts
+        mkdir -p /dev/pts
         mount -t devpts devpts /dev/pts
         fi]])
     if not util.pathExists("settings/SSH/") then
@@ -58,7 +61,7 @@ function SSH:start()
         local info = InfoMessage:new{
                 timeout = 5,
                 text = string.format("%s %s \n %s",
-                    "SSH port: ", self.SSH_port,
+                    _("SSH port: "), self.SSH_port,
                     Device.retrieveNetworkInfo and Device:retrieveNetworkInfo() or _("Could not retrieve network info.")),
         }
         UIManager:show(info)
@@ -72,11 +75,11 @@ function SSH:start()
 end
 
 function SSH:isRunning()
-    return util.pathExists("/tmp/dropbear.pid")
+    return util.pathExists("/tmp/dropbear_koreader.pid")
 end
 
 function SSH:stop()
-    os.execute("cat /tmp/dropbear.pid | xargs kill")
+    os.execute("cat /tmp/dropbear_koreader.pid | xargs kill")
 end
 
 function SSH:show_port_dialog()
@@ -113,7 +116,7 @@ function SSH:show_port_dialog()
 end
 
 function SSH:addToMainMenu(menu_items)
-    menu_items.SSH = {
+    menu_items.ssh = {
         text = _("SSH server"),
         sub_item_table = {
             {
@@ -141,8 +144,8 @@ function SSH:addToMainMenu(menu_items)
                 text = _("SSH public key"),
                 callback = function()
                     local info = InfoMessage:new{
-                        timeout = 5,
-                        text = _("Put your public SSH keys in settings/SSH/authorized_keys"),
+                        timeout = 60,
+                        text = _("Put your public SSH keys in "..lfs.currentdir().."/settings/SSH/authorized_keys"),
                     }
                     UIManager:show(info)
                 end,
