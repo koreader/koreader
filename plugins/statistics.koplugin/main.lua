@@ -877,7 +877,7 @@ function ReaderStatistics:getTodayBookStats()
                      FROM   page_stat
                      WHERE  start_time >= '%s'
                      GROUP  BY id_book, page
-	            )
+                )
     ]]
     local today_pages, today_period = conn:rowexec(string.format(sql_stmt, start_today_time))
     if today_pages == nil then

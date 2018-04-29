@@ -175,10 +175,10 @@ local xmlParser = function(handler)
     -- Public methods
 
     obj.parse = function(self, str, parseAttributes)
-	    if parseAttributes == nil then
-	       parseAttributes = true
-	    end
-	    self._handler.parseAttributes = parseAttributes
+        if parseAttributes == nil then
+           parseAttributes = true
+        end
+        self._handler.parseAttributes = parseAttributes
 
         local match,endmatch,pos = 0,0,1
         local text,endt1,endt2,tagstr,tagname,attrs,starttext,endtext
