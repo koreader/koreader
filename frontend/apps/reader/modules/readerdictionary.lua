@@ -439,6 +439,8 @@ local function tidyMarkup(results)
                     def = def:gsub(format_escape, "%1")
                 end
             end
+            -- convert any htmlentities (&gt;, &quot;...)
+            def = util.htmlEntitiesToUtf8(def)
             -- ignore all markup tags
             def = def:gsub("%b<>", "")
             -- strip all leading empty lines/spaces
