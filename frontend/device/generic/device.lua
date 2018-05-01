@@ -199,7 +199,7 @@ function Device:retrieveNetworkInfo()
     if std_out then
         local result = std_out:read("*all")
         std_out:close()
-        std_out = io.popen('iwconfig eth0 | grep ESSID | cut -d\\" -f2')
+        std_out = io.popen('2>/dev/null iwconfig | grep ESSID | cut -d\\" -f2')
         if std_out then
             local ssid = std_out:read("*all")
             result = result .. "SSID: " .. ssid:gsub("(.-)%s*$", "%1") .. "\n"

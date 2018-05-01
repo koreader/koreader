@@ -8,9 +8,9 @@ lsmod | grep -q "${WIFI_MODULE}" || insmod "${WIFI_MODULE_PATH}"
 # Race-y as hell, don't try to optimize this!
 sleep 1
 
-ifconfig eth0 up
-[ "$WIFI_MODULE" != "8189fs" ] && wlarm_le -i eth0 up
+ifconfig "${INTERFACE}" up
+[ "$WIFI_MODULE" != "8189fs" ] && wlarm_le -i "${INTERFACE}" up
 
 pidof wpa_supplicant >/dev/null \
     || env -u LD_LIBRARY_PATH \
-        wpa_supplicant -D wext -s -i eth0 -O /var/run/wpa_supplicant -c /etc/wpa_supplicant/wpa_supplicant.conf -B
+        wpa_supplicant -D wext -s -i "${INTERFACE}" -O /var/run/wpa_supplicant -c /etc/wpa_supplicant/wpa_supplicant.conf -B
