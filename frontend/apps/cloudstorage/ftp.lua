@@ -13,14 +13,14 @@ local T = require("ffi/util").template
 local Ftp = {}
 
 function Ftp:run(address, user, pass, path)
-    local url = FtpApi:generateUrl(address, user, pass) .. path
+    local url = FtpApi:generateUrl(address, util.urlEncode(user), util.urlEncode(pass)) .. path
     return FtpApi:listFolder(url, path)
 end
 
 function Ftp:downloadFile(item, address, user, pass, path, close)
-    local url = FtpApi:generateUrl(address, user, pass) .. item.url
+    local url = FtpApi:generateUrl(address, util.urlEncode(user), util.urlEncode(pass)) .. item.url
     logger.dbg("downloadFile url", url)
-    local response = FtpApi:downloadFile(url)
+    local response = FtpApi:ftpGet(url, "retr")
     if response ~= nil then
         path = util.fixUtf8(path, "_")
         local file = io.open(path, "w")
