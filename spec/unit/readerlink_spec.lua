@@ -16,8 +16,14 @@ describe("ReaderLink module", function()
         local readerui = ReaderUI:new{
             document = DocumentRegistry:openDocument(sample_epub),
         }
+        local logger = require("logger")
+        readerui.rolling:onGotoPage(4)
+        logger.warn(readerui.document:getPageLinks())
+        readerui.rolling:onGotoPage(5)
+        logger.warn(readerui.document:getPageLinks())
         readerui.rolling:onGotoPage(6)
-        readerui.link:onTap(nil, {pos = {x = 336, y = 156}})
+        logger.warn(readerui.document:getPageLinks())
+        readerui.link:onTap(nil, {pos = {x = 336, y = 166}})
         assert.is.same(36, readerui.rolling.current_page)
     end)
 
