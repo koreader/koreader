@@ -108,6 +108,28 @@ function ReaderRolling:init()
 end
 
 function ReaderRolling:onReadSettings(config)
+    -- 20180503: some fix in crengine has changed the way the DOM is built
+    -- for HTML documents and may make XPATHs obtained from previous version
+    -- invalid.
+    -- We may request the previous (buggy) behaviour though, which we do
+    -- if we use a DocSetting previously made that may contain bookmarks
+    -- and highlights with old XPATHs.
+    -- (EPUB will use the same correct DOM code no matter what DOM version
+    -- we request here.)
+    if not config:readSetting("cre_dom_version") then
+        -- Not previously set, guess which DOM version to use
+        if config:readSetting("last_xpointer") then
+            -- We have a last_xpointer: this book was previously opened
+            -- with possibly a very old version: request the oldest
+            config:saveSetting("cre_dom_version", self.ui.document:getOldestDomVersion())
+        else
+            -- No previous xpointer: book never opened (or sidecar file
+            -- purged): we can use the latest DOM version
+            config:saveSetting("cre_dom_version", self.ui.document:getLatestDomVersion())
+        end
+    end
+    self.ui.document:requestDomVersion(config:readSetting("cre_dom_version"))
+
     local last_xp = config:readSetting("last_xpointer")
     local last_per = config:readSetting("last_percent")
     if last_xp then
