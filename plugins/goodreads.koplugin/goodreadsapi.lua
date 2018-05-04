@@ -88,28 +88,6 @@ function GoodreadsApi:getTotalResults()
     return self.total_result
 end
 
-local function cleanHTMLTags(str_html)
-    local cleaner = {
-        { "&amp;", "&" },
-        { "&#151;", "-" },
-        { "&#146;", "'" },
-        { "&#160;", " " },
-        { "<!%[CDATA%[(.*)%]%]>", "%1" },
-        { "<br%s/>", "\n" },
-        { "%-%-", "%-" },
-        { "</p>", "\n" },
-        { "(%b<>)", "" },
-        { "\n\n*", "\n" },
-        { "\n*$", "" },
-        { "^\n*", "" },
-    }
-    for i=1, #cleaner do
-        local cleans = cleaner[i]
-        str_html = string.gsub(str_html, cleans[1], cleans[2])
-    end
-    return str_html
-end
-
 local function showIdTable(data)
     if data == nil then
         UIManager:show(InfoMessage:new{text =_("Network problem.\nCheck connection.")})
@@ -132,7 +110,8 @@ local function showIdTable(data)
     local id = data1:match("<id>([^<]+)</id>"):gsub("<![[]CDATA[[]", ""):gsub("]]>$", "")
     local author = data1:match("<name>([^<]+)</name>")
     local description = data1:match("<description>(.*)</description>")
-    description = cleanHTMLTags(description)
+    description = string.gsub(description, "<!%[CDATA%[(.*)%]%]>", "%1")
+    description = string.gsub(description, "%-%-", "%—")
     --change format from medium to large
     local image = data1:match("<image_url>([^<]+)</image_url>"):gsub("([0-9]+)m/", "%1l/")
     local day = data1:match("<original_publication_day[^>]+>([^<]+)</original_publication_day>")
