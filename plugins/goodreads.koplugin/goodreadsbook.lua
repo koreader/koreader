@@ -17,7 +17,7 @@ local TextWidget = require("ui/widget/textwidget")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local Screen = require("device").screen
-local ScrollTextWidget = require("ui/widget/scrolltextwidget")
+local ScrollHtmlWidget = require("ui/widget/scrollhtmlwidget")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
 local https = require('ssl.https')
@@ -227,18 +227,29 @@ function GoodreadsBook:genBookInfoGroup()
 end
 
 function GoodreadsBook:bookReview()
+    local css = [[
+        @page {
+            margin: 0;
+            font-family: 'Noto Sans';
+        }
+
+        body {
+            margin: 0;
+            line-height: 1.3;
+            text-align: justify;
+        }
+        ]]
+
     local book_meta_info_group = VerticalGroup:new{
         align = "center",
         padding = 0,
         bordersize = 0,
-        ScrollTextWidget:new{
-            text = self.dates.description,
-            face = self.medium_font_face,
-            padding = 0,
+        ScrollHtmlWidget:new{
+            html_body = self.dates.description,
+            css = css,
             width = self.screen_width * 0.9,
             height = self.screen_height * 0.48,
             dialog = self,
-            justified = true,
         }
     }
     return CenterContainer:new{
