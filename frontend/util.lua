@@ -646,4 +646,35 @@ function util.clearTable(t)
     for i = 0, c do t[i] = nil end
 end
 
+--- Encode URL also known as percent-encoding see https://en.wikipedia.org/wiki/Percent-encoding
+--- @string text the string to encode
+--- @treturn encode string
+--- Taken from https://gist.github.com/liukun/f9ce7d6d14fa45fe9b924a3eed5c3d99
+function util.urlEncode(url)
+    local char_to_hex = function(c)
+        return string.format("%%%02X", string.byte(c))
+    end
+    if url == nil then
+        return
+    end
+    url = url:gsub("\n", "\r\n")
+    url = url:gsub("([^%w%-%.%_%~%!%*%'%(%)])", char_to_hex)
+    return url
+end
+
+--- Decode URL (reverse process to util.urlEncode())
+--- @string text the string to decode
+--- @treturn decode string
+--- Taken from https://gist.github.com/liukun/f9ce7d6d14fa45fe9b924a3eed5c3d99
+function util.urlDecode(url)
+    local hex_to_char = function(x)
+        return string.char(tonumber(x, 16))
+    end
+    if url == nil then
+        return
+    end
+    url = url:gsub("%%(%x%x)", hex_to_char)
+    return url
+end
+
 return util

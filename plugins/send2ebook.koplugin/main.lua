@@ -130,7 +130,7 @@ function Send2Ebook:process()
     local count = 1
     local ftp_config = send2ebook_settings:readSetting("ftp_config") or {address="Please setup ftp in settings", username="", password="", folder=""}
 
-    local connection_url = FtpApi:generateUrl(ftp_config.address, ftp_config.username, ftp_config.password)
+    local connection_url = FtpApi:generateUrl(ftp_config.address, util.urlEncode(ftp_config.username), util.urlEncode(ftp_config.password))
 
     local ftp_files_table = FtpApi:listFolder(connection_url .. ftp_config.folder, ftp_config.folder) --args looks strange but otherwise resonse with invalid paths
 
