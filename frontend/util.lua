@@ -658,8 +658,7 @@ function util.urlEncode(url)
         return
     end
     url = url:gsub("\n", "\r\n")
-    url = url:gsub("([^%w%-%.%_%~ ])", char_to_hex)
-    url = url:gsub(" ", "+")
+    url = url:gsub("([^%w%-%.%_%~%!%*%'%(%)])", char_to_hex)
     return url
 end
 
@@ -674,7 +673,6 @@ function util.urlDecode(url)
     if url == nil then
         return
     end
-    url = url:gsub("+", " ")
     url = url:gsub("%%(%x%x)", hex_to_char)
     return url
 end
