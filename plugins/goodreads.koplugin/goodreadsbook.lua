@@ -11,18 +11,18 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
-local Pic = require("ffi/pic")
+local RenderImage = require("ui/renderimage")
+local ScrollHtmlWidget = require("ui/widget/scrollhtmlwidget")
 local Size = require("ui/size")
+local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
+local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
-local Screen = require("device").screen
-local ScrollHtmlWidget = require("ui/widget/scrollhtmlwidget")
-local TextBoxWidget = require("ui/widget/textboxwidget")
-local UIManager = require("ui/uimanager")
 local https = require('ssl.https')
-local T = require("ffi/util").template
 local _ = require("gettext")
+local Screen = require("device").screen
+local T = require("ffi/util").template
 
 local GoodreadsBook = InputContainer:new{
     padding = Size.padding.fullscreen,
@@ -194,15 +194,12 @@ function GoodreadsBook:genBookInfoGroup()
     }
     -- thumbnail
     local body = https.request(self.dates.image)
-    local image = false
-    if body then image = Pic.openJPGDocumentFromMem(body) end
-    if image then
+    local bb_image
+    if body then bb_image = RenderImage:renderImageData(body, #body, false, img_width, img_height) end
+    if bb_image then
         table.insert(book_info_group, ImageWidget:new{
-            image = image.image_bb:copy(),
-            width = img_width,
-            height = img_height,
+            image = bb_image,
         })
-        image:close()
     else
         table.insert(book_info_group, ImageWidget:new{
             file = "resources/goodreadsnophoto.png",
