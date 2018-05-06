@@ -92,7 +92,7 @@ describe("ReaderBookmark module", function()
             assert.are.same(10, #readerui.bookmark.bookmarks)
         end)
         it("should keep descending page numbers after removing bookmarks", function()
-            local pages = {1, 30, 10, 40, 20}
+            local pages = {1, 30, 11, 40, 20}
             readerui.bookmark.bookmarks = {}
             for _, page in ipairs(pages) do
                 readerui.rolling:onGotoPage(page)
