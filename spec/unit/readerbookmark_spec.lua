@@ -55,7 +55,7 @@ describe("ReaderBookmark module", function()
         before_each(function()
             UIManager:quit()
             UIManager:show(readerui)
-            readerui.rolling:onGotoPage(10)
+            readerui.rolling:onGotoPage(11)
         end)
         it("should does bookmark comparison properly", function()
             assert.truthy(readerui.bookmark:isBookmarkSame(

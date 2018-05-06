@@ -65,19 +65,19 @@ describe("Readersearch module", function()
             end
         end)
         it("should find the last occurrence", function()
-            require("logger").warn("ZZZZZ nb pages", doc:getPageCount())
+            local logger = require("logger")
+            logger.info("nb of pages", doc:getPageCount())
             for i = 100, 180, 10 do
                 rolling:onGotoPage(i)
                 local words = search:searchFromEnd("Verona")
                 assert.truthy(words)
                 local pageno = doc:getPageFromXPointer(words[1].start)
-                require("logger").warn("ZZZZZ last match on page", pageno)
+                logger.info("last match on page", pageno)
                 assert.truthy(pageno > 200)
             end
-            for i = 230, 235, 1 do
+            for i = 280, 285, 1 do
                 rolling:onGotoPage(i)
                 local words = search:searchFromEnd("Verona")
-                require("logger").warn("ZZZZZ words:", words)
                 assert(words == nil)
             end
         end)
