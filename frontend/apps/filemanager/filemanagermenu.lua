@@ -230,6 +230,8 @@ function FileManagerMenu:setUpdateItemTable()
             local ReaderUI = require("apps/reader/readerui")
             ReaderUI:showReader(last_file)
             self:onCloseFileManagerMenu()
+            local FileManager = require("apps/filemanager/filemanager")
+            FileManager.instance:onClose()
         end
     }
     -- insert common info
