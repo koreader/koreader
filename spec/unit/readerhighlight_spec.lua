@@ -98,9 +98,9 @@ describe("Readerhighlight module", function()
         end)
         it("should response on tap gesture", function()
             tap_highlight_text(readerui,
-                               Geom:new{ x = 110, y = 120  },
+                               Geom:new{ x = 151, y = 120  },
                                Geom:new{ x = 290, y = 301 },
-                               Geom:new{ x = 120, y = 268 })
+                               Geom:new{ x = 200, y = 268 })
             Screen:shot("screenshots/reader_tap_highlight_text_epub.png")
         end)
     end)
