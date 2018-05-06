@@ -122,7 +122,8 @@ function CreDocument:init()
     end
 
     -- get DOM engine latest version
-    self._cre_dom_version = self._document:getIntProperty("crengine.dom.version")
+    -- self._cre_dom_version = self._document:getIntProperty("crengine.dom.version")
+    self._cre_dom_version = 20180503
 
     -- adjust font sizes according to screen dpi
     self._document:adjustFontSizes(Screen:getDPI())
