@@ -71,7 +71,7 @@ describe("device module", function()
                 if key == "PRODUCT" then
                     return "trilogy"
                 else
-                    return saved_getenv(key)
+                    return osgetenv(key)
                 end
             end)
 
@@ -118,7 +118,7 @@ describe("device module", function()
                 if key == "PRODUCT" then
                     return "trilogy"
                 else
-                    return saved_getenv(key)
+                    return osgetenv(key)
                 end
             end)
             local kobo_dev = require("device/kobo/device")
