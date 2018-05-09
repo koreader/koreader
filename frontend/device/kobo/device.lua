@@ -119,8 +119,39 @@ local KoboSnow = Kobo:new{
     },
 }
 
+-- Kobo Aura H2O2, Rev2:
+-- FIXME: This needs fixing, at the very least on the touch protocol front, c.f., #3925
+local KoboSnowRev2 = Kobo:new{
+    model = "Kobo_snow",
+    hasFrontlight = yes,
+    touch_snow_protocol = true,
+    touch_mirrored_x = false,
+    touch_probe_ev_epoch_time = true,
+    display_dpi = 265,
+    -- the bezel covers the top 11 pixels:
+    viewport = Geom:new{x=0, y=11, w=1080, h=1429},
+    hasNaturalLight = yes,
+    frontlight_settings = {
+        frontlight_white = "/sys/class/backlight/lm3630a_ledb",
+        frontlight_red = "/sys/class/backlight/lm3630a_led",
+        frontlight_green = "/sys/class/backlight/lm3630a_leda",
+    },
+}
+
 -- Kobo Aura second edition:
 local KoboStar = Kobo:new{
+    model = "Kobo_star",
+    hasFrontlight = yes,
+    touch_probe_ev_epoch_time = true,
+    touch_phoenix_protocol = true,
+    display_dpi = 212,
+    -- the bezel covers 1-2 pixels on each side:
+    viewport = Geom:new{x=1, y=0, w=756, h=1024},
+}
+
+-- Kobo Aura second edition, Rev 2:
+-- FIXME: Confirm that this is accurate? If it is, and matches the Rev1, ditch the special casing.
+local KoboStarRev2 = Kobo:new{
     model = "Kobo_star",
     hasFrontlight = yes,
     touch_probe_ev_epoch_time = true,
@@ -350,7 +381,7 @@ function Kobo:getFirmwareVersion()
 end
 
 function Kobo:getProductId()
-    -- Try to get it from the env first
+    -- Try to get it from the env first (KSM only)
     local product_id = os.getenv("PRODUCT_ID")
     -- If that fails, devise it ourselves
     if not product_id then
@@ -567,6 +598,7 @@ end
 -------------- device probe ------------
 
 local codename = Kobo:getCodeName()
+local product_id = Kobo.getProductId()
 
 if codename == "dahlia" then
     return KoboDahlia
@@ -584,10 +616,14 @@ elseif codename == "alyssum" then
     return KoboAlyssum
 elseif codename == "pika" then
     return KoboPika
+elseif codename == "star" and product_id == "379" then
+    return KoboStarRev2
 elseif codename == "star" then
     return KoboStar
 elseif codename == "daylight" then
     return KoboDaylight
+elseif codename == "snow" and product_id == "378" then
+    return KoboSnowRev2
 elseif codename == "snow" then
     return KoboSnow
 else
