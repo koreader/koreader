@@ -126,9 +126,8 @@ local KoboSnow = Kobo:new{
 local KoboSnowRev2 = Kobo:new{
     model = "Kobo_snow",
     hasFrontlight = yes,
-    touch_snow_protocol = true,
-    touch_mirrored_x = false,
     touch_probe_ev_epoch_time = true,
+    touch_phoenix_protocol = true,
     display_dpi = 265,
     -- the bezel covers the top 11 pixels:
     viewport = Geom:new{x=0, y=11, w=1080, h=1429},
