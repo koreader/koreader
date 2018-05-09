@@ -337,8 +337,16 @@ end
 
 function Kobo:getFirmwareVersion()
     local version_file = io.open("/mnt/onboard/.kobo/version", "r")
-    self.firmware_rev = string.sub(version_file:read(),24,28)
+    local version_str = version_file:read()
     version_file:close()
+
+    local i = 0
+    for field in util.gsplit(version_str, ",", false, false) do
+        i = i + 1
+        if (i == 3) then
+             self.firmware_rev = field
+        end
+    end
 end
 
 local unexpected_wakeup_count = 0
