@@ -349,18 +349,19 @@ function Kobo:getFirmwareVersion()
     end
 end
 
-function Kobo:getDeviceCode()
-    local version_file = io.open("/mnt/onboard/.kobo/version", "r")
-    local version_str = version_file:read()
-    version_file:close()
+function Kobo:getProductId()
+    -- Try to get it from the env first
+    local product_id = os.getenv("PRODUCT_ID")
+    -- If that fails, devise it ourselves
+    if not product_id then
+        local version_file = io.open("/mnt/onboard/.kobo/version", "r")
+        local version_str = version_file:read()
+        version_file:close()
 
-    local i = 0
-    for field in util.gsplit(version_str, ",", false, false) do
-        i = i + 1
-        if (i == 3) then
-             self.firmware_rev = field
-        end
+        product_id = string.sub(version_str, -3, -1)
     end
+
+    return product_id
 end
 
 local unexpected_wakeup_count = 0
