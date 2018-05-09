@@ -375,6 +375,9 @@ end
 
 function Kobo:getFirmwareVersion()
     local version_file = io.open("/mnt/onboard/.kobo/version", "r")
+    if not version_file then
+        self.firmware_rev = "none"
+    end
     local version_str = version_file:read()
     version_file:close()
 
@@ -393,6 +396,9 @@ local function getProductId()
     -- If that fails, devise it ourselves
     if not product_id then
         local version_file = io.open("/mnt/onboard/.kobo/version", "r")
+        if not version_file then
+            return "000"
+        end
         local version_str = version_file:read()
         version_file:close()
 
