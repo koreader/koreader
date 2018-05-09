@@ -10,8 +10,10 @@ local function no() return false end
 
 local function koboEnableWifi(toggle)
     if toggle == 1 then
+        logger.info("Kobo WiFi: enabling WiFi")
         os.execute("./enable-wifi.sh")
     else
+        logger.info("Kobo WiFi: disabling WiFi")
         os.execute("./disable-wifi.sh")
     end
 end
@@ -284,6 +286,12 @@ function Kobo:initNetworkManager(NetworkMgr)
 
     function NetworkMgr:restoreWifiAsync()
         os.execute("./restore-wifi-async.sh")
+    end
+
+    -- NOTE: Cheap-ass way of checking if WiFi seems to be enabled...
+    --       Since the crux of the issues lies in race-y module unloading, this is perfectly fine for our usage.
+    function NetworkMgr:isWifiOn()
+        return 0 == os.execute("lsmod | grep -q sdio_wifi_pwr")
     end
 end
 
