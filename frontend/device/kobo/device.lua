@@ -237,7 +237,7 @@ function Kobo:initNetworkManager(NetworkMgr)
     end
 
     local net_if = os.getenv("INTERFACE")
-    if net_if == nil then
+    if not net_if then
         net_if = "eth0"
     end
     NetworkMgr:setWirelessBackend(
@@ -336,6 +336,20 @@ function Kobo:getCodeName()
 end
 
 function Kobo:getFirmwareVersion()
+    local version_file = io.open("/mnt/onboard/.kobo/version", "r")
+    local version_str = version_file:read()
+    version_file:close()
+
+    local i = 0
+    for field in util.gsplit(version_str, ",", false, false) do
+        i = i + 1
+        if (i == 3) then
+             self.firmware_rev = field
+        end
+    end
+end
+
+function Kobo:getDeviceCode()
     local version_file = io.open("/mnt/onboard/.kobo/version", "r")
     local version_str = version_file:read()
     version_file:close()
