@@ -236,8 +236,12 @@ function Kobo:initNetworkManager(NetworkMgr)
         self:showNetworkMenu(complete_callback)
     end
 
+    local net_if = os.getenv("INTERFACE")
+    if net_if == nil then
+        net_if = "eth0"
+    end
     NetworkMgr:setWirelessBackend(
-        "wpa_supplicant", {ctrl_interface = "/var/run/wpa_supplicant/" .. os.getenv("INTERFACE")})
+        "wpa_supplicant", {ctrl_interface = "/var/run/wpa_supplicant/" .. net_if})
 
     function NetworkMgr:obtainIP()
         os.execute("./obtain-ip.sh")

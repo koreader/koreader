@@ -90,6 +90,13 @@ if [ ! -n "${PLATFORM}" ]; then
     fi
     export PLATFORM
 fi
+
+# Make sure we have a sane-ish INTERFACE env var set...
+if [ ! -n "${INTERFACE}" ]; then
+    # That's what we used to hardcode anyway
+    INTERFACE="eth0"
+    export INTERFACE
+fi
 # end of value check of PLATFORM
 
 # Remount the SD card RW if it's inserted and currently RO
