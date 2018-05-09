@@ -388,7 +388,7 @@ function Kobo:getFirmwareVersion()
     end
 end
 
-function Kobo:getProductId()
+local function getProductId()
     -- Try to get it from the env first (KSM only)
     local product_id = os.getenv("PRODUCT_ID")
     -- If that fails, devise it ourselves
@@ -606,7 +606,7 @@ end
 -------------- device probe ------------
 
 local codename = Kobo:getCodeName()
-local product_id = Kobo.getProductId()
+local product_id = getProductId()
 
 if codename == "dahlia" then
     return KoboDahlia
