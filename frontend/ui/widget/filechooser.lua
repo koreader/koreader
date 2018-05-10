@@ -1,5 +1,6 @@
 local Device = require("device")
 local DocSettings = require("docsettings")
+local DocumentRegistry = require("document/documentregistry")
 local Font = require("ui/font")
 local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
@@ -343,6 +344,23 @@ end
 
 function FileChooser:onPathChanged(path)
     return true
+end
+
+function FileChooser:getNextFile(curr_file)
+    local next_file
+    for index, data in pairs(self.item_table) do
+        if data.path == curr_file then
+            if index+1 <= #self.item_table then
+                next_file = self.item_table[index+1].path
+                if lfs.attributes(next_file, "mode") == "file" and DocumentRegistry:hasProvider(next_file) then
+                    break
+                else
+                    next_file = nil
+                end
+            end
+        end
+    end
+    return next_file
 end
 
 return FileChooser
