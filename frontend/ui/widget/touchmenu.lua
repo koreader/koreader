@@ -726,8 +726,12 @@ function TouchMenu:onMenuHold(item)
         end
         if callback then
             UIManager:scheduleIn(0.1, function()
-                self:closeMenu()
-                callback()
+                if item.hold_may_update_menu then
+                    callback(function() self:updateItems() end)
+                else
+                    self:closeMenu()
+                    callback()
+                end
             end)
         end
     end
