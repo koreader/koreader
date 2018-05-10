@@ -353,7 +353,7 @@ function ReaderFont:buildFontsTestDocument()
     if not dir then dir = require("apps/filemanager/filemanagerutil").getDefaultDir() end
     if not dir then dir = "." end
     local fonts_test_path = dir .. "/fonts-test-all.html"
-    local f = io.open(fonts_test_path, "w")
+    f = io.open(fonts_test_path, "w")
     -- Using <section><title>...</title></section> allows for a TOC to be built
     f:write(string.format([[
 <?xml version="1.0" encoding="UTF-8"?>
