@@ -10,8 +10,10 @@ local function no() return false end
 
 local function koboEnableWifi(toggle)
     if toggle == 1 then
+        logger.info("Kobo WiFi: enabling WiFi")
         os.execute("./enable-wifi.sh")
     else
+        logger.info("Kobo WiFi: disabling WiFi")
         os.execute("./disable-wifi.sh")
     end
 end
@@ -119,8 +121,38 @@ local KoboSnow = Kobo:new{
     },
 }
 
+-- Kobo Aura H2O2, Rev2:
+-- FIXME: This needs fixing, at the very least on the touch protocol front, c.f., #3925
+local KoboSnowRev2 = Kobo:new{
+    model = "Kobo_snow",
+    hasFrontlight = yes,
+    touch_probe_ev_epoch_time = true,
+    touch_phoenix_protocol = true,
+    display_dpi = 265,
+    -- the bezel covers the top 11 pixels:
+    viewport = Geom:new{x=0, y=11, w=1080, h=1429},
+    hasNaturalLight = yes,
+    frontlight_settings = {
+        frontlight_white = "/sys/class/backlight/lm3630a_ledb",
+        frontlight_red = "/sys/class/backlight/lm3630a_led",
+        frontlight_green = "/sys/class/backlight/lm3630a_leda",
+    },
+}
+
 -- Kobo Aura second edition:
 local KoboStar = Kobo:new{
+    model = "Kobo_star",
+    hasFrontlight = yes,
+    touch_probe_ev_epoch_time = true,
+    touch_phoenix_protocol = true,
+    display_dpi = 212,
+    -- the bezel covers 1-2 pixels on each side:
+    viewport = Geom:new{x=1, y=0, w=756, h=1024},
+}
+
+-- Kobo Aura second edition, Rev 2:
+-- FIXME: Confirm that this is accurate? If it is, and matches the Rev1, ditch the special casing.
+local KoboStarRev2 = Kobo:new{
     model = "Kobo_star",
     hasFrontlight = yes,
     touch_probe_ev_epoch_time = true,
@@ -236,8 +268,12 @@ function Kobo:initNetworkManager(NetworkMgr)
         self:showNetworkMenu(complete_callback)
     end
 
+    local net_if = os.getenv("INTERFACE")
+    if not net_if then
+        net_if = "eth0"
+    end
     NetworkMgr:setWirelessBackend(
-        "wpa_supplicant", {ctrl_interface = "/var/run/wpa_supplicant/" .. os.getenv("INTERFACE")})
+        "wpa_supplicant", {ctrl_interface = "/var/run/wpa_supplicant/" .. net_if})
 
     function NetworkMgr:obtainIP()
         os.execute("./obtain-ip.sh")
@@ -249,6 +285,12 @@ function Kobo:initNetworkManager(NetworkMgr)
 
     function NetworkMgr:restoreWifiAsync()
         os.execute("./restore-wifi-async.sh")
+    end
+
+    -- NOTE: Cheap-ass way of checking if WiFi seems to be enabled...
+    --       Since the crux of the issues lies in race-y module unloading, this is perfectly fine for our usage.
+    function NetworkMgr:isWifiOn()
+        return 0 == os.execute("lsmod | grep -q sdio_wifi_pwr")
     end
 end
 
@@ -333,8 +375,37 @@ end
 
 function Kobo:getFirmwareVersion()
     local version_file = io.open("/mnt/onboard/.kobo/version", "r")
-    self.firmware_rev = string.sub(version_file:read(),24,28)
+    if not version_file then
+        self.firmware_rev = "none"
+    end
+    local version_str = version_file:read()
     version_file:close()
+
+    local i = 0
+    for field in util.gsplit(version_str, ",", false, false) do
+        i = i + 1
+        if (i == 3) then
+             self.firmware_rev = field
+        end
+    end
+end
+
+local function getProductId()
+    -- Try to get it from the env first (KSM only)
+    local product_id = os.getenv("PRODUCT_ID")
+    -- If that fails, devise it ourselves
+    if not product_id then
+        local version_file = io.open("/mnt/onboard/.kobo/version", "r")
+        if not version_file then
+            return "000"
+        end
+        local version_str = version_file:read()
+        version_file:close()
+
+        product_id = string.sub(version_str, -3, -1)
+    end
+
+    return product_id
 end
 
 local unexpected_wakeup_count = 0
@@ -540,6 +611,7 @@ end
 -------------- device probe ------------
 
 local codename = Kobo:getCodeName()
+local product_id = getProductId()
 
 if codename == "dahlia" then
     return KoboDahlia
@@ -557,10 +629,14 @@ elseif codename == "alyssum" then
     return KoboAlyssum
 elseif codename == "pika" then
     return KoboPika
+elseif codename == "star" and product_id == "379" then
+    return KoboStarRev2
 elseif codename == "star" then
     return KoboStar
 elseif codename == "daylight" then
     return KoboDaylight
+elseif codename == "snow" and product_id == "378" then
+    return KoboSnowRev2
 elseif codename == "snow" then
     return KoboSnow
 else

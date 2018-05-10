@@ -47,22 +47,14 @@ if [ "${FROM_NICKEL}" = "true" ]; then
         fi
     fi
 
-    if [ "${FROM_KFMON}" = "true" ]; then
-        # Siphon nickel's full environment, since KFMon inherits such a minimal one, and that apparently confuses the hell out of Nickel for some reason if we decide to restart it without a reboot...
-        for env in $(xargs -n 1 -0 <"/proc/$(pidof nickel)/environ"); do
-            # shellcheck disable=SC2163
-            export "${env}"
-        done
-    else
-        # Siphon a few things from nickel's env...
-        eval "$(xargs -n 1 -0 <"/proc/$(pidof nickel)/environ" | grep -e DBUS_SESSION_BUS_ADDRESS -e NICKEL_HOME -e WIFI_MODULE -e LANG -e WIFI_MODULE_PATH -e INTERFACE 2>/dev/null)"
-        export DBUS_SESSION_BUS_ADDRESS NICKEL_HOME WIFI_MODULE LANG WIFI_MODULE_PATH INTERFACE
-    fi
+    # Siphon a few things from nickel's env (namely, stuff exported by rcS *after* on-animator.sh has been launched)...
+    eval "$(xargs -n 1 -0 <"/proc/$(pidof nickel)/environ" | grep -e DBUS_SESSION_BUS_ADDRESS -e NICKEL_HOME -e WIFI_MODULE -e LANG -e WIFI_MODULE_PATH -e INTERFACE 2>/dev/null)"
+    export DBUS_SESSION_BUS_ADDRESS NICKEL_HOME WIFI_MODULE LANG WIFI_MODULE_PATH INTERFACE
 
     # flush disks, might help avoid trashing nickel's DB...
     sync
     # stop kobo software because it's running
-    # NOTE: We don't need to kill KFMon, it's smart enough not to allow running concurrent instances of ourselves
+    # NOTE: We don't need to kill KFMon, it's smart enough not to allow running anything else while we're up
     killall nickel hindenburg sickel fickel fmon 2>/dev/null
 fi
 
@@ -97,6 +89,13 @@ if [ ! -n "${PLATFORM}" ]; then
         PLATFORM="ntx508"
     fi
     export PLATFORM
+fi
+
+# Make sure we have a sane-ish INTERFACE env var set...
+if [ ! -n "${INTERFACE}" ]; then
+    # That's what we used to hardcode anyway
+    INTERFACE="eth0"
+    export INTERFACE
 fi
 # end of value check of PLATFORM
 

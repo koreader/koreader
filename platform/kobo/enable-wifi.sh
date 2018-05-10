@@ -3,6 +3,8 @@
 # Load wifi modules and enable wifi.
 
 lsmod | grep -q sdio_wifi_pwr || insmod "/drivers/${PLATFORM}/wifi/sdio_wifi_pwr.ko"
+# Moar sleep!
+usleep 250000
 # WIFI_MODULE_PATH = /drivers/$PLATFORM/wifi/$WIFI_MODULE.ko
 lsmod | grep -q "${WIFI_MODULE}" || insmod "${WIFI_MODULE_PATH}"
 # Race-y as hell, don't try to optimize this!

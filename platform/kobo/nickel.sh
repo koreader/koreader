@@ -10,6 +10,7 @@ PATH="/sbin:/bin:/usr/sbin:/usr/bin:/usr/lib:"
 
 # We don't need to duplicate any of the env setup from rcS, since we will only ever run this to *restart* nickel, and not bootstrap it.
 # Meaning we've already got most of the necessary env from nickel itself via both our launcher (fmon/KFMon) and our own startup script.
+# NOTE: LD_LIBRARY_PATH is the only late export from rcS we don't siphon in koreader.sh, for obvious reasons ;).
 export LD_LIBRARY_PATH="/usr/local/Kobo"
 
 # Make sure we kill the WiFi first, because nickel apparently doesn't like it if it's up... (cf. #1520)
@@ -18,12 +19,12 @@ if lsmod | grep -q sdio_wifi_pwr; then
     killall udhcpc default.script wpa_supplicant 2>/dev/null
     [ "${WIFI_MODULE}" != "8189fs" ] && wlarm_le -i "${INTERFACE}" down
     ifconfig "${INTERFACE}" down
-    # NOTE: Kobo's busybox build is weird. rmmod appears to be modprobe in disguise, defaulting to the -r flag. If re-specifying -r starts to fail one day, switch to rmmod without args, or modprobe -r.
+    # NOTE: Kobo's busybox build is weird. rmmod appears to be modprobe in disguise, defaulting to the -r flag. Use modprobe -r just to be safe...
     # c.f., #2394?
-    usleep 200000
-    rmmod -r "${WIFI_MODULE}"
-    usleep 200000
-    rmmod -r sdio_wifi_pwr
+    usleep 250000
+    modprobe -r "${WIFI_MODULE}"
+    usleep 250000
+    modprobe -r sdio_wifi_pwr
 fi
 
 # Flush buffers to disk, who knows.
