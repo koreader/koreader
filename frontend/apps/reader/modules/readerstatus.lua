@@ -143,8 +143,10 @@ function ReaderStatus:showStatus(on_exit_func)
         document = self.document,
         settings = self.settings,
         view = self.view,
-        on_exit_func = on_exit_func,
     }
+    if on_exit_func then
+        on_exit_func()
+    end
     UIManager:show(status_page)
 end
 

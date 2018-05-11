@@ -544,9 +544,6 @@ function BookStatusWidget:onClose()
     self:saveSummary()
     UIManager:setDirty("all")
     UIManager:close(self)
-    if self.on_exit_func then
-        self.on_exit_func()
-    end
     return true
 end
 
