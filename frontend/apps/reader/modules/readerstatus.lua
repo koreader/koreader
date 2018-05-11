@@ -105,8 +105,8 @@ function ReaderStatus:onEndOfBook()
     elseif settings == "file_browser" then
         self:openFileBrowser()
     elseif settings == "book_status_file_browser" then
-        local on_exit_func = function() self:openFileBrowser() end
-        self:showStatus(on_exit_func)
+        local before_show_callback = function() self:openFileBrowser() end
+        self:showStatus(before_show_callback)
     end
 end
 
@@ -136,7 +136,7 @@ function ReaderStatus:openNextFile(next_file)
     end
 end
 
-function ReaderStatus:showStatus(on_exit_func)
+function ReaderStatus:showStatus(before_show_callback)
     local status_page = BookStatusWidget:new {
         thumbnail = self.document:getCoverPageImage(),
         props = self.document:getProps(),
@@ -144,8 +144,8 @@ function ReaderStatus:showStatus(on_exit_func)
         settings = self.settings,
         view = self.view,
     }
-    if on_exit_func then
-        on_exit_func()
+    if before_show_callback then
+        before_show_callback()
     end
     UIManager:show(status_page)
 end
