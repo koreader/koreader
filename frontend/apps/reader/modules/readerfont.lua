@@ -81,10 +81,10 @@ function ReaderFont:init()
     if self:hasFontsTestSample() then
         self.face_table[#self.face_table].separator = true
         table.insert(self.face_table, {
-            text = _("Generate fonts test html document"),
+            text = _("Generate fonts test HTML document"),
             callback = function()
                 UIManager:show(ConfirmBox:new{
-                    text = _("Would you like to generate a html document showing some sample text rendered with each available font?");
+                    text = _("Would you like to generate an HTML document showing some sample text rendered with each available font?");
                     ok_callback = function()
                         self:buildFontsTestDocument()
                     end
