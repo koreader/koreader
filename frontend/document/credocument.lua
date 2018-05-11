@@ -23,9 +23,9 @@ local CreDocument = Document:new{
     _cre_dom_version = nil,
 
     line_space_percent = 100,
-    default_font = G_reader_settings:readSetting("cre_font") or "Noto Serif",
-    header_font = G_reader_settings:readSetting("header_font") or "Noto Sans",
-    fallback_font = G_reader_settings:readSetting("fallback_font") or "Noto Sans CJK SC",
+    default_font = "Noto Serif",
+    header_font = "Noto Sans",
+    fallback_font = "Noto Sans CJK SC",
     default_css = "./data/cr3.css",
     options = CreOptions,
     provider = "crengine",
@@ -128,7 +128,8 @@ function CreDocument:init()
     self._document:adjustFontSizes(Screen:getDPI())
 
     -- set fallback font face
-    self._document:setStringProperty("crengine.font.fallback.face", self.fallback_font)
+    self._document:setStringProperty("crengine.font.fallback.face",
+        G_reader_settings:readSetting("fallback_font") or self.fallback_font)
 
     -- We would have liked to call self._document:loadDocument(self.file)
     -- here, to detect early if file is a supported document, but we
@@ -403,6 +404,22 @@ function CreDocument:setFontFace(new_font_face)
         --          for font-family: monospace
         -- +256001: prefer our font to any existing font-family font
         self._document:setAsPreferredFontWithBias(new_font_face, 1)
+    end
+end
+
+function CreDocument:setFallbackFontFace(new_fallback_font_face)
+    if new_fallback_font_face then
+        logger.dbg("CreDocument: set fallback font face", new_fallback_font_face)
+        self._document:setStringProperty("crengine.font.fallback.face", new_fallback_font_face)
+        -- crengine may not accept our fallback font, we need to check
+        local set_fallback_font_face = self._document:getStringProperty("crengine.font.fallback.face")
+        logger.dbg("CreDocument: crengine fallback font face", set_fallback_font_face)
+        if set_fallback_font_face ~= new_fallback_font_face then
+            logger.info("CreDocument:", new_fallback_font_face, "is not usable as a fallback font")
+            return false
+        end
+        self.fallback_font = new_fallback_font_face
+        return true
     end
 end
 

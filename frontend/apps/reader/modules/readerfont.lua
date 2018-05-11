@@ -1,4 +1,5 @@
 local CenterContainer = require("ui/widget/container/centercontainer")
+local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
 local Input = Device.input
@@ -51,18 +52,45 @@ function ReaderFont:init()
     local face_list = cre.getFontFaces()
     for k,v in ipairs(face_list) do
         table.insert(self.face_table, {
-            text = v,
+            text_func = function()
+                -- defaults are hardcoded in credocument.lua
+                local default_font = G_reader_settings:readSetting("cre_font") or self.ui.document.default_font
+                local fallback_font = G_reader_settings:readSetting("fallback_font") or self.ui.document.fallback_font
+                local text = v
+                if v == default_font then
+                    text = text .. "   ★"
+                end
+                if v == fallback_font then
+                    text = text .. "   �"
+                end
+                return text
+            end,
             callback = function()
                 self:setFont(v)
             end,
-            hold_callback = function()
-                self:makeDefault(v)
+            hold_may_update_menu = true,
+            hold_callback = function(refresh_menu_func)
+                self:makeDefault(v, refresh_menu_func)
             end,
             checked_func = function()
                 return v == self.font_face
             end
         })
         face_list[k] = {text = v}
+    end
+    if self:hasFontsTestSample() then
+        self.face_table[#self.face_table].separator = true
+        table.insert(self.face_table, {
+            text = _("Generate fonts test HTML document"),
+            callback = function()
+                UIManager:show(ConfirmBox:new{
+                    text = _("Would you like to generate an HTML document showing some sample text rendered with each available font?");
+                    ok_callback = function()
+                        self:buildFontsTestDocument()
+                    end
+                })
+            end
+        })
     end
     self.ui.menu:registerToMainMenu(self)
 end
@@ -100,10 +128,12 @@ end
 
 function ReaderFont:onReadSettings(config)
     self.font_face = config:readSetting("font_face")
+            or G_reader_settings:readSetting("cre_font")
             or self.ui.document.default_font
     self.ui.document:setFontFace(self.font_face)
 
     self.header_font_face = config:readSetting("header_font_face")
+            or G_reader_settings:readSetting("header_font")
             or self.ui.document.header_font
     self.ui.document:setHeaderFont(self.header_font_face)
 
@@ -256,17 +286,22 @@ function ReaderFont:setFont(face)
     end
 end
 
-function ReaderFont:makeDefault(face)
+function ReaderFont:makeDefault(face, refresh_menu_func)
     if face then
         UIManager:show(MultiConfirmBox:new{
-            text = T( _("Set %1 as fallback font? Characters not found in the active font are shown in the fallback font instead."), face),
+            text = T( _("Would you like %1 to be used as the default font (★), or the fallback font (�)?\n\nCharacters not found in the active font are shown in the fallback font instead."), face),
             choice1_text = _("Default"),
             choice1_callback = function()
                 G_reader_settings:saveSetting("cre_font", face)
+                if refresh_menu_func then refresh_menu_func() end
             end,
             choice2_text = _("Fallback"),
             choice2_callback = function()
-                G_reader_settings:saveSetting("fallback_font", face)
+                if self.ui.document:setFallbackFontFace(face) then
+                    G_reader_settings:saveSetting("fallback_font", face)
+                    self.ui:handleEvent(Event:new("UpdatePos"))
+                end
+                if refresh_menu_func then refresh_menu_func() end
             end,
         })
     end
@@ -300,6 +335,65 @@ function ReaderFont:onAdjustPinch(ges)
     self:onChangeSize("decrease", delta_int)
     UIManager:close(info)
     return true
+end
+
+function ReaderFont:hasFontsTestSample()
+    local font_test_sample = require("datastorage"):getSettingsDir() .. "/fonts-test-sample.html"
+    local lfs = require("libs/libkoreader-lfs")
+    return lfs.attributes(font_test_sample, "mode") == "file"
+end
+
+function ReaderFont:buildFontsTestDocument()
+    local font_test_sample = require("datastorage"):getSettingsDir() .. "/fonts-test-sample.html"
+    local f = io.open(font_test_sample, "r")
+    if not f then return nil end
+    local html_sample = f:read("*all")
+    f:close()
+    local dir = G_reader_settings:readSetting("home_dir")
+    if not dir then dir = require("apps/filemanager/filemanagerutil").getDefaultDir() end
+    if not dir then dir = "." end
+    local fonts_test_path = dir .. "/fonts-test-all.html"
+    f = io.open(fonts_test_path, "w")
+    -- Using <section><title>...</title></section> allows for a TOC to be built
+    f:write(string.format([[
+<?xml version="1.0" encoding="UTF-8"?>
+<html>
+<head>
+<title>%s</title>
+</head>
+<body>
+<section id="list"><title>%s</title></section>
+]], _("Available fonts test document"), _("AVAILABLE FONTS")))
+    local face_list = cre.getFontFaces()
+    f:write("<div style='margin: 2em'>\n")
+    for _, font_name in ipairs(face_list) do
+        local font_id = font_name:gsub(" ", "_"):gsub("'", "_")
+        f:write(string.format("  <div><a href='#%s'>%s</a></div>\n", font_id, font_name))
+    end
+    f:write("</div>\n\n")
+    for _, font_name in ipairs(face_list) do
+        local font_id = font_name:gsub(" ", "_"):gsub("'", "_")
+        f:write(string.format("<section id='%s'><title>%s</title></section>\n", font_id, font_name))
+        f:write(string.format("<div style='font-family: %s'>\n", font_name))
+        f:write(html_sample)
+        f:write("\n</div>\n\n")
+    end
+    f:write("</body></html>\n")
+    f:close()
+    UIManager:show(ConfirmBox:new{
+        text = T(_("Document created as:\n%1\n\nWould you like to read it now?"), fonts_test_path),
+        ok_callback = function()
+            -- close current ReaderUI in 1 sec, and create a new one
+            UIManager:scheduleIn(1.0, function()
+                local ReaderUI = require("apps/reader/readerui")
+                local reader = ReaderUI:_getRunningInstance()
+                if reader then
+                    reader:onClose()
+                end
+                ReaderUI:showReader(fonts_test_path)
+            end)
+        end,
+    })
 end
 
 return ReaderFont
