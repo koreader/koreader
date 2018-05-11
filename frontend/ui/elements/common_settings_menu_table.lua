@@ -221,8 +221,7 @@ common_settings.document = {
                 {
                     text = _("Do nothing"),
                     checked_func = function()
-                        return G_reader_settings:readSetting("end_document_action")
-                            == "nothing"
+                        return G_reader_settings:readSetting("end_document_action") == "nothing"
                     end,
                     callback = function()
                         G_reader_settings:saveSetting("end_document_action", "nothing")
@@ -231,8 +230,7 @@ common_settings.document = {
                 {
                     text = _("Book status"),
                     checked_func = function()
-                        return G_reader_settings:readSetting("end_document_action")
-                            == "book_status"
+                        return G_reader_settings:readSetting("end_document_action") == "book_status"
                     end,
                     callback = function()
                         G_reader_settings:saveSetting("end_document_action", "book_status")
@@ -245,28 +243,25 @@ common_settings.document = {
                             ~= "access"
                     end,
                     checked_func = function()
-                        return G_reader_settings:readSetting("end_document_action")
-                            == "next_file"
+                        return G_reader_settings:readSetting("end_document_action") == "next_file"
                     end,
                     callback = function()
                         G_reader_settings:saveSetting("end_document_action", "next_file")
                     end,
                 },
                 {
-                    text = _("Return to File Browser"),
+                    text = _("Return to file browser"),
                     checked_func = function()
-                        return G_reader_settings:readSetting("end_document_action")
-                            == "file_browser"
+                        return G_reader_settings:readSetting("end_document_action") == "file_browser"
                     end,
                     callback = function()
                         G_reader_settings:saveSetting("end_document_action", "file_browser")
                     end,
                 },
                 {
-                    text = _("Book status and return to File Browser"),
+                    text = _("Book status and return to file browser"),
                     checked_func = function()
-                        return G_reader_settings:readSetting("end_document_action")
-                            == "book_status_file_browser"
+                        return G_reader_settings:readSetting("end_document_action") == "book_status_file_browser"
                     end,
                     callback = function()
                         G_reader_settings:saveSetting("end_document_action", "book_status_file_browser")

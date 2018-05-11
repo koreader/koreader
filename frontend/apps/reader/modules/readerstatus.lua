@@ -91,7 +91,7 @@ function ReaderStatus:onEndOfBook()
     elseif settings == "next_file" then
         if G_reader_settings:readSetting("collate") ~= "access" then
             local info = InfoMessage:new{
-                text = _("Searching next file..."),
+                text = _("Searching next file…"),
             }
             UIManager:show(info)
             UIManager:forceRePaint()
@@ -99,7 +99,7 @@ function ReaderStatus:onEndOfBook()
             UIManager:close(info)
         else
             UIManager:show(InfoMessage:new{
-                text = _("Cannot open the next file. Unsupported sorting (sort by last read date)"),
+                text = _("Could not open next file. Sort by last read date does not support this feature."),
             })
         end
     elseif settings == "file_browser" then
@@ -112,7 +112,7 @@ end
 
 function ReaderStatus:openFileBrowser()
     local FileManager = require("apps/filemanager/filemanager")
-    if FileManager.instance == nil then
+    if not FileManager.instance then
         self.ui:showFileManager()
     end
     self.ui:onClose()
@@ -121,7 +121,7 @@ end
 
 function ReaderStatus:openNextFile(next_file)
     local FileManager = require("apps/filemanager/filemanager")
-    if FileManager.instance == nil then
+    if not FileManager.instance then
         self.ui:showFileManager()
     end
     next_file = FileManager.instance.file_chooser:getNextFile(next_file)
@@ -131,7 +131,7 @@ function ReaderStatus:openNextFile(next_file)
         ReaderUI:showReader(next_file)
     else
         UIManager:show(InfoMessage:new{
-            text = _("Cannot open the next file. The last one in current folder was opened"),
+            text = _("This is the last file in the current folder. No next file to open."),
         })
     end
 end
@@ -143,7 +143,7 @@ function ReaderStatus:showStatus(on_exit_func)
         document = self.document,
         settings = self.settings,
         view = self.view,
-        on_exit = on_exit_func,
+        on_exit_func = on_exit_func,
     }
     UIManager:show(status_page)
 end
