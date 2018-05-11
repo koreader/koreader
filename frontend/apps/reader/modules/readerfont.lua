@@ -61,7 +61,7 @@ function ReaderFont:init()
                     text = text .. "   ★"
                 end
                 if v == fallback_font then
-                    text = text .. "   ♻"
+                    text = text .. "   �"
                 end
                 return text
             end,
