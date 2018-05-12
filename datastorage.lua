@@ -54,8 +54,8 @@ local function initDataDir()
     local sub_data_dirs = {
         "cache", "clipboard",
         "data", "data/dict", "data/tessdata",
-        "history",
-        "ota", "screenshots", "settings",
+        "history", "ota",
+        "screenshots", "settings", "styletweaks",
     }
     for _, dir in ipairs(sub_data_dirs) do
         local sub_data_dir = string.format("%s/%s", DataStorage:getDataDir(), dir)

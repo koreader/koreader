@@ -38,6 +38,7 @@ local ReaderPaging = require("apps/reader/modules/readerpaging")
 local ReaderRolling = require("apps/reader/modules/readerrolling")
 local ReaderSearch = require("apps/reader/modules/readersearch")
 local ReaderStatus = require("apps/reader/modules/readerstatus")
+local ReaderStyleTweak = require("apps/reader/modules/readerstyletweak")
 local ReaderToc = require("apps/reader/modules/readertoc")
 local ReaderTypeset = require("apps/reader/modules/readertypeset")
 local ReaderView = require("apps/reader/modules/readerview")
@@ -268,6 +269,12 @@ function ReaderUI:init()
 
             self.document:render()
         end)
+        -- styletweak controller (must be before typeset controller)
+        self:registerModule("styletweak", ReaderStyleTweak:new{
+            dialog = self.dialog,
+            view = self.view,
+            ui = self
+        })
         -- typeset controller
         self:registerModule("typeset", ReaderTypeset:new{
             dialog = self.dialog,
