@@ -64,7 +64,7 @@ function TweakInfoWidget:init()
         },
     }
     if self.tweak.description then
-        table.insert(content, 
+        table.insert(content,
             TextBoxWidget:new{
                 text = self.tweak.description,
                 face = Font:getFace("smallinfofont"),
@@ -102,7 +102,7 @@ function TweakInfoWidget:init()
         table.insert(content, VerticalSpan:new{
             width = Size.padding.large,
         })
-        table.insert(content, 
+        table.insert(content,
             TextBoxWidget:new{
                 text = _("You have set this tweak to be used on all books."),
                 face = Font:getFace("smallinfofont"),

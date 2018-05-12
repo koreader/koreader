@@ -29,7 +29,6 @@ local CssTweaks = {
         {
             id = "titles_page-break-before_avoid ";
             title = _("Avoid blank page on chapter start"),
-            css = [[* { line-height: inherit !important; }]],
             css = [[h1, h2, h3, .title, .title1, .title2, .title3 { page-break-before: avoid !important; }]],
         },
     },
