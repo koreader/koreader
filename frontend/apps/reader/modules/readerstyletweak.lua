@@ -308,9 +308,6 @@ function ReaderStyleTweak:onReadSettings(config)
     self.doc_tweaks = config:readSetting("style_tweaks") or {}
     self.global_tweaks = G_reader_settings:readSetting("style_tweaks") or {}
     self:updateCssText()
-    -- XXX à virer
-    config:delSetting("css_tweaks")
-    G_reader_settings:delSetting("css_tweaks")
 end
 
 function ReaderStyleTweak:onSaveSettings()
