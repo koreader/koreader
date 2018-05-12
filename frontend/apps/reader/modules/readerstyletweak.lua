@@ -105,7 +105,7 @@ function TweakInfoWidget:init()
         })
         table.insert(content,
             TextBoxWidget:new{
-                text = _("You have set this tweak to be used on all books."),
+                text = _("This tweak is applied on all books."),
                 face = Font:getFace("smallinfofont"),
                 width = self.width,
             }
@@ -342,7 +342,7 @@ function ReaderStyleTweak:init()
                 text = _([[
 Style tweaks allow changing small parts of book styles (including the publisher/embedded styles) to make visual adjustments or disable unwanted publisher layout choices.
 
-Tweaks may be useful with some books, while displaying undesirable effects in others.
+Some tweaks may be useful with some books, while resulting in undesirable effects with others.
 
 You can enable individual tweaks on this book with a tap, or view more details about a tweak and enable it on all books with hold.]])
             })
