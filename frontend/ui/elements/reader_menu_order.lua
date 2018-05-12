@@ -23,6 +23,7 @@ local order = {
         "page_overlap",
         "switch_zoom_mode",
         "set_render_style",
+        "style_tweaks",
         "----------------------------",
         "highlight_options",
         "----------------------------",

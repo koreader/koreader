@@ -509,9 +509,11 @@ function CreDocument:setFontHinting(mode)
     self._document:setIntProperty("font.hinting.mode", mode)
 end
 
-function CreDocument:setStyleSheet(new_css)
-    logger.dbg("CreDocument: set style sheet", new_css)
-    self._document:setStyleSheet(new_css)
+function CreDocument:setStyleSheet(new_css_file, appended_css_content )
+    logger.dbg("CreDocument: set style sheet:",
+        new_css_file and new_css_file or "no file",
+        appended_css_content and "and appended content ("..#appended_css_content.." bytes)" or "(no appended content)")
+    self._document:setStyleSheet(new_css_file, appended_css_content)
 end
 
 function CreDocument:setEmbeddedStyleSheet(toggle)
