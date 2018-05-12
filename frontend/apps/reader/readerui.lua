@@ -440,10 +440,6 @@ end
 
 local _running_instance = nil
 function ReaderUI:doShowReader(file, provider)
-    local FileManager = require("apps/filemanager/filemanager")
-    if FileManager.instance then
-        FileManager.instance:onClose()
-    end
     logger.info("opening file", file)
     -- keep only one instance running
     if _running_instance then
@@ -488,6 +484,10 @@ function ReaderUI:doShowReader(file, provider)
 
     UIManager:show(reader)
     _running_instance = reader
+    local FileManager = require("apps/filemanager/filemanager")
+    if FileManager.instance then
+        FileManager.instance:onClose()
+    end
 end
 
 function ReaderUI:_getRunningInstance()
