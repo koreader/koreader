@@ -34,6 +34,7 @@ local TweakInfoWidget = InputContainer:new{
 }
 
 function TweakInfoWidget:init()
+    local tweak = self.tweak
     if Device:isTouchDevice() then
         self.ges_events.TapClose = {
             GestureRange:new{
@@ -54,7 +55,7 @@ function TweakInfoWidget:init()
 
     local content = VerticalGroup:new{
         TextBoxWidget:new{
-            text = self.tweak.title,
+            text = tweak.title,
             bold = true,
             face = Font:getFace("infofont"),
             width = self.width,
@@ -63,10 +64,10 @@ function TweakInfoWidget:init()
             width = Size.padding.large,
         },
     }
-    if self.tweak.description then
+    if tweak.description then
         table.insert(content,
             TextBoxWidget:new{
-                text = self.tweak.description,
+                text = tweak.description,
                 face = Font:getFace("smallinfofont"),
                 width = self.width,
             }
@@ -79,10 +80,10 @@ function TweakInfoWidget:init()
     -- This css TextBoxWidget may make the widget overflow screen with
     -- large css text. For now, we don't bother with the complicated
     -- setup of a scrollable ScrollTextWidget.
-    local css = self.tweak.css
-    if not css and self.tweak.css_path then
+    local css = tweak.css
+    if not css and tweak.css_path then
         css = ""
-        local f = io.open(self.tweak.css_path, "r")
+        local f = io.open(tweak.css_path, "r")
         if f then
             css = f:read("*all")
             f:close()
@@ -143,34 +144,35 @@ function TweakInfoWidget:init()
         show_parent = self,
     }
 
-    self[1] = CenterContainer:new{
-        dimen = Screen:getSize(),
-        MovableContainer:new{
-            FrameContainer:new{
-                background = Blitbuffer.COLOR_WHITE,
-                radius = Size.radius.window,
-                margin = Size.margin.default,
-                padding = Size.padding.default,
-                padding_bottom = 0, -- no padding below buttontable
-                VerticalGroup:new{
-                    align = "left",
-                    content,
-                    button_table,
-                }
+    self.movable = MovableContainer:new{
+        FrameContainer:new{
+            background = Blitbuffer.COLOR_WHITE,
+            radius = Size.radius.window,
+            margin = Size.margin.default,
+            padding = Size.padding.default,
+            padding_bottom = 0, -- no padding below buttontable
+            VerticalGroup:new{
+                align = "left",
+                content,
+                button_table,
             }
         }
+    }
+    self[1] = CenterContainer:new{
+        dimen = Screen:getSize(),
+        self.movable
     }
 end
 
 function TweakInfoWidget:onShow()
     UIManager:setDirty(self, function()
-        return "ui", self[1][1].dimen
+        return "ui", self.movable.dimen
     end)
 end
 
 function TweakInfoWidget:onCloseWidget()
     UIManager:setDirty(nil, function()
-        return "ui", self[1][1].dimen
+        return "ui", self.movable.dimen
     end)
 end
 
@@ -180,7 +182,7 @@ function TweakInfoWidget:onClose()
 end
 
 function TweakInfoWidget:onTapClose(arg, ges)
-    if ges.pos:notIntersectWith(self[1][1].dimen) then
+    if ges.pos:notIntersectWith(self.movable.dimen) then
         self:onClose()
         return true
     end
@@ -338,11 +340,11 @@ function ReaderStyleTweak:init()
         hold_callback = function()
             UIManager:show(InfoMessage:new{
                 text = _([[
-Style tweaks allow changing small parts of a book styles (including the publisher/embedded styles) to make visual adjustments or disable unwanted publisher layout choices.
+Style tweaks allow changing small parts of book styles (including the publisher/embedded styles) to make visual adjustments or disable unwanted publisher layout choices.
 
-Some of them may be useful with some books, and have undesirable effects on others.
+Tweaks may be useful with some books, while displaying undesirable effects in others.
 
-You can enable individual tweaks on this book with tap, or see more details about a tweak and enable it on all books with hold.]])
+You can enable individual tweaks on this book with a tap, or view more details about a tweak and enable it on all books with hold.]])
             })
         end,
         separator = true,
@@ -483,7 +485,7 @@ You can enable individual tweaks on this book with tap, or see more details abou
         end
         if #item_table == 0 then
             table.insert(item_table, {
-                if_empty_menu_title = if_empty_menu_title or _("No css tweak found in this directory"),
+                if_empty_menu_title = if_empty_menu_title or _("No CSS tweak found in this directory"),
             })
         end
     end

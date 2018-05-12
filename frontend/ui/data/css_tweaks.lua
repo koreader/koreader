@@ -18,13 +18,13 @@ local CssTweaks = {
             id = "margin_body_0";
             title = _("Ignore publisher page margins"),
             description = _("Force page margins to be 0, and may allow KOReader's margin settings to work on books where they would not."),
-            css = [[body { margin: 0 0 0 0 !important; }]],
+            css = [[body { margin: 0 !important; }]],
         },
         {
             id = "margin_all_0";
             title = _("Ignore all publisher margins"),
             priority = 2,
-            css = [[* { margin: 0 0 0 0 !important; }]],
+            css = [[* { margin: 0 !important; }]],
         },
         {
             id = "titles_page-break-before_avoid ";
@@ -37,7 +37,7 @@ local CssTweaks = {
         {
             id = "sub_sup_smaller";
             title = _("Smaller sub- and superscript"),
-            description = _("Prevent sub- and superscript from affecting line-height"),
+            description = _("Prevent sub- and superscript from affecting line-height."),
             -- https://friendsofepub.github.io/eBookTricks/
             -- https://github.com/koreader/koreader/issues/3923#issuecomment-386510294
             css = [[
@@ -92,7 +92,7 @@ sub { font-size: 50%; vertical-align: middle; }
         },
     },
     {
-        title = _("Misc"),
+        title = _("Miscellaneous"),
         {
             id = "table_row_odd_even";
             title = _("Alternate background color of table rows"),
@@ -102,7 +102,7 @@ tr:nth-child(even) { background-color: #CCC !important; }
             ]],
         },
         {
-            id = "table_force border";
+            id = "table_force_border";
             title = _("Show borders on all tables"),
             css = [[
 table, tcaption, tr, th, td { border: black solid 1px; border-collapse: collapse; }
@@ -138,7 +138,7 @@ cite { display: inline; font-style: italic; }
         {
             id = "list_items_fix";
             title = _("Fix some list items issues"),
-            description = _("Work around some crengine list items rendering issues "),
+            description = _("Work around some crengine list items rendering issues."),
             css = [[
 li > p:first-child   { display: inline !important; }
 li > div:first-child { display: inline !important; }
@@ -147,18 +147,10 @@ li > div:first-child { display: inline !important; }
         {
             id = "border_all_none";
             title = _("Remove all borders"),
-            description = _("Work around a crengine bug that makes a border drawn when {border: black solid 0px}"),
+            description = _("Work around a crengine bug that makes a border drawn when {border: black solid 0px}."),
             -- css = [[* { border-style: none !important; }]],
             -- Better to keep the layout implied by width, just draw them in white
             css = [[* { border-color: white !important; }]],
-        },
-        {
-            id = "workaround_all_bugs";
-            title = _("Work around all bugs"),
-            description = _("Seriously ? :-)"),
-            css = [[
-body { display: none !important; }
-            ]],
         },
     },
 }
