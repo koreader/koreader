@@ -90,7 +90,7 @@ function TweakInfoWidget:init()
     end
     css = css:gsub("^%s+", ""):gsub("%s+$", "")
     table.insert(content, FrameContainer:new{
-        bordersize = 1,
+        bordersize = Size.border.thin,
         padding = Size.padding.large,
         TextBoxWidget:new{
             text = css,
