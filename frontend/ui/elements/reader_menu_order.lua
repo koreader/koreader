@@ -20,8 +20,6 @@ local order = {
         "follow_links",
     },
     typeset = {
-        "highlight_options",
-        "----------------------------",
         "set_render_style",
         "style_tweaks",
         "----------------------------",
@@ -30,8 +28,11 @@ local order = {
         "floating_punctuation",
         "----------------------------",
         "switch_zoom_mode",
+        "----------------------------",
         "page_overlap",
         "speed_reading_module_perception_expander",
+        "----------------------------",
+        "highlight_options",
     },
     setting = {
         "read_from_right_to_left",
