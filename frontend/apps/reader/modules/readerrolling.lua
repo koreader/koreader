@@ -517,7 +517,9 @@ function ReaderRolling:onGotoViewRel(diff)
             self.ui:handleEvent(Event:new("EndOfBook"))
         end
     end
-    self.xpointer = self.ui.document:getXPointer()
+    if self.ui.document ~= nil then
+        self.xpointer = self.ui.document:getXPointer()
+    end
     return true
 end
 

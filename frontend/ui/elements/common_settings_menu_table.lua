@@ -206,13 +206,69 @@ common_settings.document = {
             },
         },
         {
-            text = _("Show book status at end of document "),
-            checked_func = function()
-                return G_reader_settings:nilOrTrue("auto_book_status")
-            end,
-            callback = function()
-                G_reader_settings:flipNilOrTrue("auto_book_status")
-            end,
+            text = _("End of document action"),
+            sub_item_table = {
+                {
+                    text = _("Ask with pop-up dialog"),
+                    checked_func = function()
+                        local setting = G_reader_settings:readSetting("end_document_action")
+                        return setting == "pop-up" or setting == nil
+                    end,
+                    callback = function()
+                        G_reader_settings:saveSetting("end_document_action", "pop-up")
+                    end,
+                },
+                {
+                    text = _("Do nothing"),
+                    checked_func = function()
+                        return G_reader_settings:readSetting("end_document_action") == "nothing"
+                    end,
+                    callback = function()
+                        G_reader_settings:saveSetting("end_document_action", "nothing")
+                    end,
+                },
+                {
+                    text = _("Book status"),
+                    checked_func = function()
+                        return G_reader_settings:readSetting("end_document_action") == "book_status"
+                    end,
+                    callback = function()
+                        G_reader_settings:saveSetting("end_document_action", "book_status")
+                    end,
+                },
+                {
+                    text = _("Open next file"),
+                    enabled_func = function()
+                        return G_reader_settings:readSetting("collate")
+                            ~= "access"
+                    end,
+                    checked_func = function()
+                        return G_reader_settings:readSetting("end_document_action") == "next_file"
+                    end,
+                    callback = function()
+                        G_reader_settings:saveSetting("end_document_action", "next_file")
+                    end,
+                },
+                {
+                    text = _("Return to file browser"),
+                    checked_func = function()
+                        return G_reader_settings:readSetting("end_document_action") == "file_browser"
+                    end,
+                    callback = function()
+                        G_reader_settings:saveSetting("end_document_action", "file_browser")
+                    end,
+                },
+                {
+                    text = _("Book status and return to file browser"),
+                    checked_func = function()
+                        return G_reader_settings:readSetting("end_document_action") == "book_status_file_browser"
+                    end,
+                    callback = function()
+                        G_reader_settings:saveSetting("end_document_action", "book_status_file_browser")
+                    end,
+                },
+
+            }
         },
     },
 }
