@@ -64,7 +64,16 @@ function ReaderHyphenation:init()
         for k,v in ipairs(lang_data) do
             self.hyph_algs_settings[v.filename] = v -- just store full table
             table.insert(self.hyph_table, {
-                text = v.name,
+                text_func = function()
+                    local text = v.name
+                    if v.filename == G_reader_settings:readSetting("hyph_alg_default") then
+                        text = text .. "   ★"
+                    end
+                    if v.filename == G_reader_settings:readSetting("hyph_alg_fallback") then
+                        text = text .. "   �"
+                    end
+                    return text
+                end,
                 callback = function()
                     self.hyph_alg = v.filename
                     self.ui.doc_settings:saveSetting("hyph_alg", self.hyph_alg)
@@ -79,23 +88,26 @@ function ReaderHyphenation:init()
                     -- signal readerrolling to update pos in new height, and redraw page
                     self.ui:handleEvent(Event:new("UpdatePos"))
                 end,
-                hold_callback = function()
+                hold_may_update_menu = true,
+                hold_callback = function(refresh_menu_func)
                     UIManager:show(MultiConfirmBox:new{
                         -- No real need for a way to remove default one, we can just
                         -- toggle between setting a default OR a fallback (if a default
                         -- one is set, no fallback will ever be used - if a fallback one
                         -- is set, no default is wanted; so when we set one below, we
                         -- remove the other).
-                        text = T( _("Set default or fallback hyphenation pattern to %1?\nDefault will always take precedence while fallback will only be used if the language of the book can't be automatically determined."), v.name),
+                        text = T( _("Would you like %1 to be used as the default (★) or fallback (�) hyphenation language?\n\nDefault will always take precedence while fallback will only be used if the language of the book can't be automatically determined."), v.name),
                         choice1_text = _("Default"),
                         choice1_callback = function()
                             G_reader_settings:saveSetting("hyph_alg_default", v.filename)
                             G_reader_settings:delSetting("hyph_alg_fallback")
+                            if refresh_menu_func then refresh_menu_func() end
                         end,
                         choice2_text = _("Fallback"),
                         choice2_callback = function()
                             G_reader_settings:saveSetting("hyph_alg_fallback", v.filename)
                             G_reader_settings:delSetting("hyph_alg_default")
+                            if refresh_menu_func then refresh_menu_func() end
                         end,
                     })
                 end,
