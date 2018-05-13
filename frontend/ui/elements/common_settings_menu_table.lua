@@ -100,8 +100,8 @@ common_settings.night_mode = {
 }
 common_settings.network = {
     text = _("Network"),
-    sub_item_table = NetworkMgr:getMenuTable()
 }
+NetworkMgr:getMenuTable(common_settings)
 
 common_settings.screen = {
     text = _("Screen"),
