@@ -71,7 +71,7 @@ function ReaderStatus:onEndOfBook()
                     end,
                 },
                 {
-                    text = _("File Browser"),
+                    text = _("File browser"),
                     callback = function()
                         self:openFileBrowser()
                         UIManager:close(choose_action)
