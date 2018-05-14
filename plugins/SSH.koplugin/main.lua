@@ -7,7 +7,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
-local T = require("ffi/util")
+local T = require("ffi/util").template
 
 -- This plugin use a patched dropbear that add two things :
 -- the -n option to allow login without password
@@ -147,7 +147,7 @@ function SSH:addToMainMenu(menu_items)
                 callback = function()
                     local info = InfoMessage:new{
                         timeout = 60,
-                        text = T_("Put your public SSH keys in %1"), path.."/settings/SSH/authorized_keys"),
+                        text = T(_("Put your public SSH keys in %1"), path.."/settings/SSH/authorized_keys"),
                     }
                     UIManager:show(info)
                 end,
