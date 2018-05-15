@@ -60,7 +60,7 @@ end
 local function showValues(configurable, title ,setting_default, setting_curr, suffix, arg_string, true_values)
     local default = G_reader_settings:readSetting(setting_default)
     local current = configurable[setting_curr]
-    local value_defalut, value_current
+    local value_default, value_current
     if setting_curr == "screen_mode" then
         current = Screen:getScreenMode()
     end
@@ -73,14 +73,14 @@ local function showValues(configurable, title ,setting_default, setting_curr, su
         end
     elseif arg_string then
         value_current = current
-        value_defalut = default
+        value_default = default
         default = arg_string[default]
         current = arg_string[current]
     end
     if true_values and arg_string then
         UIManager:show(InfoMessage:new{
             text = T(_("%1:\nCurrent value: %2 (%5%4)\nDefault value: %3 (%6%4)"), title, current, default, suffix,
-            value_current, value_defalut)
+            value_current, value_default)
         })
     else
         UIManager:show(InfoMessage:new{
@@ -112,8 +112,15 @@ local function showValuesMargins(configurable, title ,setting_default, setting_c
 
     if not default then
         UIManager:show(InfoMessage:new{
-            text = T(_("%1:\nCurrent value: %2\n  left: %3\n  top: %4\n  right: %5\n  bottom: %6\nDefault value:\n  not set"),
-                title, current_string, current[1], current[2], current[3], current[4])
+            text = T(_([[
+%1:
+Current value: %2
+  left: %3
+  top: %4
+  right: %5
+  bottom: %6
+Default value:  not set
+]]),        title, current_string, current[1], current[2], current[3], current[4])
         })
     else
         local default_string
@@ -125,9 +132,19 @@ local function showValuesMargins(configurable, title ,setting_default, setting_c
             default_string = S.LARGE
         end
         UIManager:show(InfoMessage:new{
-            text = T(_("%1:\nCurrent value: %2\n  left: %3\n  top: %4\n  right: %5\n  bottom: %6\n" ..
-                "Defalut value: %7\n  left: %8\n  top: %9\n  right: %10\n  bottom: %11"),
-                title, current_string, current[1], current[2], current[3], current[4], default_string, default[1],
+            text = T(_([[
+%1:
+Current value: %2
+  left: %3
+  top: %4
+  right: %5
+  bottom: %6
+Default value: %7
+  left: %8
+  top: %9
+  right: %10
+  bottom: %11
+]]),            title, current_string, current[1], current[2], current[3], current[4], default_string, default[1],
                 default[2], default[3], default[4])
         })
     end
