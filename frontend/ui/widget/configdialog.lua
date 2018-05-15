@@ -235,7 +235,7 @@ function ConfigOption:init()
                     text_font_bold = false,
                     hold_callback = function()
                         if self.options[c].name_text_hold_callback then
-                            self.options[c].name_text_hold_callback(self.config.configurable)
+                            self.options[c].name_text_hold_callback(self.config.configurable, self.options[c])
                         end
                     end,
                 }
