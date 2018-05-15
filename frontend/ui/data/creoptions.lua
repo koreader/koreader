@@ -1,6 +1,9 @@
 local Device = require("device")
+local InfoMessage = require("ui/widget/infomessage")
 local S = require("ui/data/strings")
+local UIManager = require("ui/uimanager")
 local Screen = Device.screen
+local T = require("ffi/util").template
 
 local _ = require("gettext")
 
@@ -15,8 +18,119 @@ local Aa = setmetatable({"Aa"}, {
     end
 })
 
+local arg_view_mode = {
+    [0] = S.VIEW_PAGE,
+    [1] = S.VIEW_SCROLL,
+}
+local arg_line_spacing = {
+    [DCREREADER_CONFIG_LINE_SPACE_PERCENT_SMALL] = S.SMALL,
+    [DCREREADER_CONFIG_LINE_SPACE_PERCENT_MEDIUM] = S.MEDIUM,
+    [DCREREADER_CONFIG_LINE_SPACE_PERCENT_LARGE] = S.LARGE,
+}
+
+local arg_font_weight = {
+    [0] = S.REGULAR,
+    [1] = S.BOLD,
+}
+
+local arg_font_hinting = {
+    [0] = S.OFF,
+    [1] = S.NATIVE,
+    [2] = S.AUTO,
+}
+local arg_status_line = {
+    [0] = S.FULL,
+    [1] = S.MINI,
+}
+
+local arg_embedded_css = {
+    [0] = S.OFF,
+    [1] = S.ON,
+}
+
+local arg_embedded_fonts = {
+    [0] = S.OFF,
+    [1] = S.ON,
+}
+
 local function enable_if_equals(configurable, option, value)
     return configurable[option] == value
+end
+
+local function showValues(configurable, title ,setting_default, setting_curr, suffix, arg_string, true_values)
+    local default = G_reader_settings:readSetting(setting_default)
+    local current = configurable[setting_curr]
+    local value_defalut, value_current
+    if setting_curr == "screen_mode" then
+        current = Screen:getScreenMode()
+    end
+    if not default then
+        default = "not set"
+        suffix = ""
+        if arg_string then
+            value_current = current
+            current = arg_string[current]
+        end
+    elseif arg_string then
+        value_current = current
+        value_defalut = default
+        default = arg_string[default]
+        current = arg_string[current]
+    end
+    if true_values and arg_string then
+        UIManager:show(InfoMessage:new{
+            text = T(_("%1:\nCurrent value: %2 (%5%4)\nDefault value: %3 (%6%4)"), title, current, default, suffix,
+            value_current, value_defalut)
+        })
+    else
+        UIManager:show(InfoMessage:new{
+            text = T(_("%1:\nCurrent value: %2%4\nDefault value: %3%4"), title, current, default, suffix)
+        })
+
+    end
+end
+
+local function tableComp(a,b)
+    if #a ~= #b then return false end
+    for i=1,#a do
+        if a[i] ~= b[i] then return false end
+    end
+    return true
+end
+
+local function showValuesMargins(configurable, title ,setting_default, setting_curr)
+    local default = G_reader_settings:readSetting(setting_default)
+    local current = configurable[setting_curr]
+    local current_string
+    if tableComp(current, DCREREADER_CONFIG_MARGIN_SIZES_SMALL) then
+        current_string = S.SMALL
+    elseif tableComp(current, DCREREADER_CONFIG_MARGIN_SIZES_MEDIUM) then
+        current_string = S.MEDIUM
+    elseif tableComp(current, DCREREADER_CONFIG_MARGIN_SIZES_LARGE) then
+        current_string = S.LARGE
+    end
+
+    if not default then
+        UIManager:show(InfoMessage:new{
+            text = T(_("%1:\nCurrent value: %2\n  left: %3\n  top: %4\n  right: %5\n  bottom: %6\nDefault value:\n  not set"),
+                title, current_string, current[1], current[2], current[3], current[4])
+        })
+    else
+        local default_string
+        if tableComp(default, DCREREADER_CONFIG_MARGIN_SIZES_SMALL) then
+            default_string = S.SMALL
+        elseif tableComp(default, DCREREADER_CONFIG_MARGIN_SIZES_MEDIUM) then
+            default_string = S.MEDIUM
+        elseif tableComp(default, DCREREADER_CONFIG_MARGIN_SIZES_LARGE) then
+            default_string = S.LARGE
+        end
+        UIManager:show(InfoMessage:new{
+            text = T(_("%1:\nCurrent value: %2\n  left: %3\n  top: %4\n  right: %5\n  bottom: %6\n" ..
+                "Defalut value: %7\n  left: %8\n  top: %9\n  right: %10\n  bottom: %11"),
+                title, current_string, current[1], current[2], current[3], current[4], default_string, default[1],
+                default[2], default[3], default[4])
+        })
+    end
 end
 
 local CreOptions = {
@@ -33,6 +147,9 @@ local CreOptions = {
                 default_arg = "portrait",
                 current_func = function() return Screen:getScreenMode() end,
                 event = "ChangeScreenMode",
+                name_text_hold_callback = function(configurable)
+                    showValues(configurable, S.SCREEN_MODE, "copt_screen_mode", "screen_mode", "")
+                end,
             }
         }
     },
@@ -48,6 +165,9 @@ local CreOptions = {
                 args = {"scroll", "page"},
                 default_arg = "page",
                 event = "SetViewMode",
+                name_text_hold_callback = function(configurable)
+                    showValues(configurable, S.VIEW_MODE, "copt_view_mode", "view_mode", "", arg_view_mode)
+                end,
             },
             {
                 name = "line_spacing",
@@ -65,6 +185,9 @@ local CreOptions = {
                     DCREREADER_CONFIG_LINE_SPACE_PERCENT_MEDIUM,
                     DCREREADER_CONFIG_LINE_SPACE_PERCENT_LARGE,
                 },
+                name_text_hold_callback = function(configurable)
+                    showValues(configurable, S.LINE_SPACING, "copt_line_spacing", "line_spacing", "%", arg_line_spacing, true)
+                end,
             },
             {
                 name = "page_margins",
@@ -82,6 +205,9 @@ local CreOptions = {
                     DCREREADER_CONFIG_MARGIN_SIZES_MEDIUM,
                     DCREREADER_CONFIG_MARGIN_SIZES_LARGE,
                 },
+                name_text_hold_callback = function(configurable)
+                    showValuesMargins(configurable, S.PAGE_MARGIN, "copt_page_margins", "page_margins", "")
+                end,
             },
         }
     },
@@ -107,6 +233,9 @@ local CreOptions = {
                 event = "ChangeSize",
                 args = {"decrease", "increase"},
                 alternate = false,
+                name_text_hold_callback = function(configurable)
+                    showValues(configurable, _("Font size"), "copt_font_size", "font_size", "")
+                end,
             }
         }
     },
@@ -121,6 +250,9 @@ local CreOptions = {
                 default_value = 0,
                 args = {0, 1},
                 event = "ToggleFontBolder",
+                name_text_hold_callback = function(configurable)
+                    showValues(configurable, S.FONT_WEIGHT, "copt_font_weight", "font_weight", "", arg_font_weight)
+                end,
             },
             {
                 name = "font_gamma",
@@ -133,6 +265,9 @@ local CreOptions = {
                 args = {10, 15, 25, 30, 36, 43, 49, 56},
                 -- gamma values for these indexes are:
                 labels = {0.8, 1.0, 1.45, 1.90, 2.50, 4.0, 8.0, 15.0},
+                name_text_hold_callback = function(configurable)
+                    showValues(configurable, S.CONTRAST, "copt_font_gamma", "font_gamma", "")
+                end,
             },
             {
                 name = "font_hinting",
@@ -142,6 +277,9 @@ local CreOptions = {
                 default_value = 2,
                 args = {0, 1, 2},
                 event = "SetFontHinting",
+                name_text_hold_callback = function(configurable)
+                    showValues(configurable, S.FONT_HINT, "copt_font_hinting", "font_hinting", "", arg_font_hinting)
+                end,
             }
         }
     },
@@ -157,6 +295,9 @@ local CreOptions = {
                 args = {0, 1},
                 default_arg = DCREREADER_PROGRESS_BAR,
                 event = "SetStatusLine",
+                name_text_hold_callback = function(configurable)
+                    showValues(configurable, S.PROGRESS_BAR, "copt_status_line", "status_line", "", arg_status_line)
+                end,
             },
             {
                 name = "embedded_css",
@@ -167,6 +308,9 @@ local CreOptions = {
                 args = {true, false},
                 default_arg = nil,
                 event = "ToggleEmbeddedStyleSheet",
+                name_text_hold_callback = function(configurable)
+                    showValues(configurable, S.EMBEDDED_STYLE, "copt_embedded_css", "embedded_css", "", arg_embedded_css)
+                end,
             },
             {
                 name = "embedded_fonts",
@@ -179,6 +323,9 @@ local CreOptions = {
                 event = "ToggleEmbeddedFonts",
                 enabled_func = function(configurable)
                     return enable_if_equals(configurable, "embedded_css", 1)
+                end,
+                name_text_hold_callback = function(configurable)
+                    showValues(configurable, S.EMBEDDED_FONTS, "copt_embedded_fonts", "embedded_fonts", "", arg_embedded_fonts)
                 end,
             },
         },

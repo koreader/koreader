@@ -233,7 +233,11 @@ function ConfigOption:init()
                     text_font_face = name_font_face,
                     text_font_size = name_font_size,
                     text_font_bold = false,
-                    hold_callback = self.options[c].name_text_hold_callback,
+                    hold_callback = function()
+                        if self.options[c].name_text_hold_callback then
+                            self.options[c].name_text_hold_callback(self.config.configurable)
+                        end
+                    end,
                 }
                 table.insert(option_name_container, option_name)
                 table.insert(horizontal_group, option_name_container)
