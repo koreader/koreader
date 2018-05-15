@@ -10,3 +10,6 @@
 [submodule "test"]
 	path = test
 	url = https://github.com/koreader/test-data.git
+[submodule "resources/fonts"]
+	path = resources/fonts
+	url = https://github.com/koreader/koreader-fonts.git
