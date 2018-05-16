@@ -94,6 +94,7 @@ end
 
 function Kindle:intoScreenSaver()
     local Screensaver = require("ui/screensaver")
+    -- NOTE: Meaning this is not a SO device ;).
     if self:supportsScreensaver() then
         if self.screen_saver_mode == false then
             -- On FW >= 5.7.2, we sigstop awesome, but we need it to show stuff...
@@ -101,7 +102,6 @@ function Kindle:intoScreenSaver()
             if os.getenv("AWESOME_STOPPED") == "yes" then
                 os.execute("killall -cont awesome")
                 -- And delay showing ours to leave a head-start to awesome...
-                -- FIXME: Might break waking up SO devices?
                 local UIManager = require("ui/uimanager")
                 UIManager:scheduleIn(1, function() Screensaver:show() end)
             else
