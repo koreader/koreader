@@ -94,8 +94,8 @@ end
 
 function Kindle:intoScreenSaver()
     local Screensaver = require("ui/screensaver")
-    -- NOTE: Meaning this is not a SO device ;).
     if self:supportsScreensaver() then
+        -- NOTE: Meaning this is not a SO device ;)
         if self.screen_saver_mode == false then
             Screensaver:show()
         end
