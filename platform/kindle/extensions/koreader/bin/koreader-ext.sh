@@ -42,7 +42,7 @@ update_koreader() {
 
     found_koreader_package="false"
     # Try to find a koreader package... Behavior undefined if there are multiple packages...
-    for file in /mnt/us/koreader-kindle-*.tar.gz; do
+    for file in /mnt/us/koreader-kindle-*.targz; do
         if [ -f "${file}" ]; then
             found_koreader_package="${file}"
             koreader_pkg_type="tgz"
