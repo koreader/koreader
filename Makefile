@@ -92,7 +92,6 @@ endif
 ifeq ($(or $(EMULATE_READER),$(WIN32)),)
 	@echo "[*] Clean up, remove unused files for releases"
 	rm -rf $(INSTALL_DIR)/koreader/data/{cr3.ini,cr3skin-format.txt,desktop,devices,manual}
-	rm -rf $(INSTALL_DIR)/koreader/fonts/droid/DroidSansFallbackFull.ttf
 endif
 
 $(KOR_BASE)/$(OUTPUT_DIR)/luajit:
