@@ -18,21 +18,21 @@ fi
 kmodel="$(cut -c3-4 /proc/usid)"
 case "${kmodel}" in
     "13" | "54" | "2A" | "4F" | "52" | "53")
-        # Voyage...
+        # Voyage
         SCREEN_X_RES=1088 # NOTE: Yes, 1088, not 1072 or 1080...
         SCREEN_Y_RES=1448
         EIPS_X_RES=16
         EIPS_Y_RES=24 # Manually mesured, should be accurate.
         ;;
     "24" | "1B" | "1D" | "1F" | "1C" | "20" | "D4" | "5A" | "D5" | "D6" | "D7" | "D8" | "F2" | "17" | "60" | "F4" | "F9" | "62" | "61" | "5F")
-        # PaperWhite...
+        # PaperWhite & PaperWhite 2
         SCREEN_X_RES=768 # NOTE: Yes, 768, not 758...
         SCREEN_Y_RES=1024
         EIPS_X_RES=16
         EIPS_Y_RES=24 # Manually mesured, should be accurate.
         ;;
     "C6" | "DD")
-        # KT2...
+        # KT2
         SCREEN_X_RES=608
         SCREEN_Y_RES=800
         EIPS_X_RES=16
@@ -56,26 +56,28 @@ case "${kmodel}" in
             kmodel="$(cut -c4-6 /proc/usid)"
             case "${kmodel}" in
                 "0G1" | "0G2" | "0G4" | "0G5" | "0G6" | "0G7" | "0KB" | "0KC" | "0KD" | "0KE" | "0KF" | "0KG" | "0LK" | "0LL")
-                    # PW3... NOTE: Hopefully matches the KV...
+                    # PW3
                     SCREEN_X_RES=1088
                     SCREEN_Y_RES=1448
                     EIPS_X_RES=16
                     EIPS_Y_RES=24
                     ;;
-                "0GC" | "0GD" | "0GP" | "0GQ" | "0GR" | "0GS")
-                    # Oasis... NOTE: Hopefully matches the KV...
+                "0GC" | "0GD" | "0GR" | "0GS" | "0GT" | "0GU")
+                    # Oasis
                     SCREEN_X_RES=1088
                     SCREEN_Y_RES=1448
                     EIPS_X_RES=16
                     EIPS_Y_RES=24
                     ;;
-                "0P8" | "0S1" | "0SA")
+                "0LM" | "0LN" | "0LP" | "0LQ" | "0P1" | "0P2" | "0P6" | "0P7" | "0P8" | "0S1" | "0S2" | "0S3" | "0S4" | "0S7" | "0SA")
                     # Oasis 2
-                    SCREEN_X_RES=1264
+                    SCREEN_X_RES=1280 # NOTE: Yep, line_length/xres_virtual, not xres (1264)
                     SCREEN_Y_RES=1680
+                    EIPS_X_RES=16 # TBD 19?
+                    EIPS_Y_RES=24 # TBD 28? 25?!
                     ;;
-                "0DT" | "0K9" | "0KA")
-                    # KT3... NOTE: Hopefully matches the KT2...
+                "0DU" | "0K9" | "0KA")
+                    # KT3
                     SCREEN_X_RES=608
                     SCREEN_Y_RES=800
                     EIPS_X_RES=16
