@@ -598,6 +598,9 @@ function UIManager:_refresh(mode, region)
     region = region or Geom:new{w=Screen:getWidth(), h=Screen:getHeight()}
 
     --[[
+    -- FIXME: Disabled to try to identify everything that passes a stupid and/or broken region to setDirty...
+    --        Not convinced we actually need to be this clever, the eInkd rive ritself does update collision.
+    --        At the very least, we should probably never merge updates w/ different waveform modes...
     for i = 1, #self._refresh_stack do
         -- check for collision with updates that are already enqueued
         if region:intersectWith(self._refresh_stack[i].region) then
