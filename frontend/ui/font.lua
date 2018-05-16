@@ -73,9 +73,10 @@ local Font = {
         xx_smallinfofont = 18,
     },
     fallbacks = {
-        [1] = "noto/NotoSansCJK-Regular.ttf",
-        [2] = "noto/NotoSans-Regular.ttf",
+        [1] = "noto/NotoSans-Regular.ttf",
+        [2] = "noto/NotoSansCJKsc-Regular.otf",
         [3] = "freefont/FreeSans.ttf",
+        [4] = "freefont/FreeSerif.ttf",
     },
 
     fontdir = "./fonts",
