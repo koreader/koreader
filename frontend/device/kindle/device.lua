@@ -83,8 +83,9 @@ function Kindle:setDateTime(year, month, day, hour, min, sec)
 end
 
 function Kindle:usbPlugIn()
-    if self.charging_mode == false and self.screen_saver_mode == false then
-        -- On FW >= 5.7.2, we sigstop awesome, but we need it to show stuff...
+    if self.charging_mode == false then
+        -- On FW >= 5.7.2, we sigstop awesome, but we need it to show stuff,
+        -- regardless of whether we're already showing our screensaver or not (think USBMS)...
         if os.getenv("AWESOME_STOPPED") == "yes" then
             os.execute("killall -cont awesome")
         end
@@ -95,20 +96,26 @@ end
 function Kindle:intoScreenSaver()
     local Screensaver = require("ui/screensaver")
     if self:supportsScreensaver() then
-        Screensaver:show()
-    end
-    self.powerd:beforeSuspend()
-    if self.charging_mode == false and self.screen_saver_mode == false then
-        self.screen_saver_mode = true
-        -- On FW >= 5.7.2, we sigstop awesome, but we need it to show stuff...
-        if os.getenv("AWESOME_STOPPED") == "yes" then
-            os.execute("killall -cont awesome")
+        if self.screen_saver_mode == false then
+            -- On FW >= 5.7.2, we sigstop awesome, but we need it to show stuff...
+            -- Wake it up *before* we show our own screensaver, in the hope that we'll win the race...
+            if os.getenv("AWESOME_STOPPED") == "yes" then
+                os.execute("killall -cont awesome")
+                -- And delay showing ours to leave a head-start to awesome...
+                local UIManager = require("ui/uimanager")
+                UIManager:scheduleIn(1, function() Screensaver:show() end)
+            else
+                -- No delay when not necessary :)
+                Screensaver:show()
+            end
         end
     end
+    self.powerd:beforeSuspend()
+    self.screen_saver_mode = true
 end
 
 function Kindle:outofScreenSaver()
-    if self.screen_saver_mode == true and self.charging_mode == false then
+    if self.screen_saver_mode == true then
         -- On FW >= 5.7.2, put awesome to sleep again...
         if os.getenv("AWESOME_STOPPED") == "yes" then
             os.execute("killall -stop awesome")
@@ -118,6 +125,8 @@ function Kindle:outofScreenSaver()
             Screensaver:close()
         end
         local UIManager = require("ui/uimanager")
+        -- NOTE: On FW >= 5.7.2, awesome *may* sometimes win the race, but hey, too bad.
+        --       Delaying that refresh would do more harm than good.
         UIManager:nextTick(function() UIManager:setDirty("all", "full") end)
     end
     self.screen_saver_mode = false
@@ -125,8 +134,9 @@ function Kindle:outofScreenSaver()
 end
 
 function Kindle:usbPlugOut()
-    if self.charging_mode == true and self.screen_saver_mode == false then
-        -- On FW >= 5.7.2, put awesome to sleep again...
+    if self.charging_mode == true then
+        -- On FW >= 5.7.2, put awesome to sleep again,
+        -- and ask for a full refresh to get back to KOReader...
         if os.getenv("AWESOME_STOPPED") == "yes" then
             os.execute("killall -stop awesome")
         end
