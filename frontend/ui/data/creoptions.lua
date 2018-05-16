@@ -26,7 +26,7 @@ local function showValues(configurable, option)
     local default = G_reader_settings:readSetting("copt_"..option.name)
     local current = configurable[option.name]
     local value_default, value_current
-    if not option.suffix then option.suffix = "" end
+    local suffix = option.name_text_suffix or ""
     if option.name == "screen_mode" then
         current = Screen:getScreenMode()
     end
@@ -48,20 +48,20 @@ local function showValues(configurable, option)
         default = arg_table[default]
         current = arg_table[current]
     end
-    if option.true_values and option.toggle and option.values and value_default then
+    if option.name_text_true_values and option.toggle and option.values and value_default then
         UIManager:show(InfoMessage:new{
             text = T(_("%1:\nCurrent value: %2 (%5%4)\nDefault value: %3 (%6%4)"), option.name_text,
-                current, default, option.suffix, value_current, value_default)
+                current, default, suffix, value_current, value_default)
         })
-    elseif option.true_values and option.toggle and option.values and not value_default then
+    elseif option.name_text_true_values and option.toggle and option.values and not value_default then
         UIManager:show(InfoMessage:new{
             text = T(_("%1:\nCurrent value: %2 (%5%4)\nDefault value: %3"), option.name_text,
-                current, default, option.suffix, value_current)
+                current, default, suffix, value_current)
         })
     else
         UIManager:show(InfoMessage:new{
             text = T(_("%1:\nCurrent value: %2%4\nDefault value: %3%4"), option.name_text, current,
-                default, option.suffix)
+                default, suffix)
         })
     end
 end
@@ -171,9 +171,10 @@ local CreOptions = {
                     DCREREADER_CONFIG_LINE_SPACE_PERCENT_MEDIUM,
                     DCREREADER_CONFIG_LINE_SPACE_PERCENT_LARGE,
                 },
-                suffix = "%",
-                true_values = true,
                 name_text_hold_callback = showValues,
+                -- used by showValues
+                name_text_suffix = "%",
+                name_text_true_values = true,
             },
             {
                 name = "page_margins",
