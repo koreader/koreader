@@ -83,13 +83,12 @@ function Kindle:setDateTime(year, month, day, hour, min, sec)
 end
 
 function Kindle:usbPlugIn()
-    if self.charging_mode == false then
-        -- On FW >= 5.7.2, we sigstop awesome, but we need it to show stuff,
-        -- regardless of whether we're already showing our screensaver or not (think USBMS)...
-        if os.getenv("AWESOME_STOPPED") == "yes" then
-            os.execute("killall -cont awesome")
-        end
-    end
+    -- NOTE: We do NOT support running in USBMS mode (we cannot, we live there).
+    --       And, AFAICT, we have no sane way of disabling USBMS mode without breaking either us or the framework,
+    --       c.f., https://github.com/koreader/koreader/issues/3220
+    --       That means shit will blow up in fun and interesting ways if someone actually tries that.
+    --       On the upside, we don't have to bother waking up the WM to show us the USBMS screen :D.
+    -- NOTE: If the device is put in USBNet mode before that, everything's peachy, though :).
     self.charging_mode = true
 end
 
@@ -102,6 +101,7 @@ function Kindle:intoScreenSaver()
             if os.getenv("AWESOME_STOPPED") == "yes" then
                 os.execute("killall -cont awesome")
                 -- And delay showing ours to leave a head-start to awesome...
+                -- FIXME: Might break waking up SO devices?
                 local UIManager = require("ui/uimanager")
                 UIManager:scheduleIn(1, function() Screensaver:show() end)
             else
@@ -129,20 +129,12 @@ function Kindle:outofScreenSaver()
         --       Delaying that refresh would do more harm than good.
         UIManager:nextTick(function() UIManager:setDirty("all", "full") end)
     end
-    self.screen_saver_mode = false
     self.powerd:afterResume()
+    self.screen_saver_mode = false
 end
 
 function Kindle:usbPlugOut()
-    if self.charging_mode == true then
-        -- On FW >= 5.7.2, put awesome to sleep again,
-        -- and ask for a full refresh to get back to KOReader...
-        if os.getenv("AWESOME_STOPPED") == "yes" then
-            os.execute("killall -stop awesome")
-        end
-        local UIManager = require("ui/uimanager")
-        UIManager:nextTick(function() UIManager:setDirty("all", "full") end)
-    end
+    -- NOTE: See usbPlugIn(), we don't have anything fancy to do here either.
 
     --@TODO signal filemanager for file changes  13.06 2012 (houqp)
     self.charging_mode = false
