@@ -67,12 +67,10 @@ update_koreader() {
         fi
 
         # Get the version of the package...
-        if [ "${koreader_pkg_type}" = "tgz" ]; then
-            koreader_pkg_ver="${found_koreader_package%.*.*}"
-        else
-            koreader_pkg_ver="${found_koreader_package%.*}"
-        fi
+        koreader_pkg_ver="${found_koreader_package%.*}"
         koreader_pkg_ver="${koreader_pkg_ver#*-v}"
+        # Strip the date purely because of screen space constraints
+        koreader_pkg_ver="${koreader_pkg_ver%_*}"
         # Install it!
         logmsg "Updating to KOReader ${koreader_pkg_ver} . . ."
         if [ "${koreader_pkg_type}" = "tgz" ]; then
