@@ -597,6 +597,7 @@ function UIManager:_refresh(mode, region)
     -- if no region is specified, define default region
     region = region or Geom:new{w=Screen:getWidth(), h=Screen:getHeight()}
 
+    --[[
     for i = 1, #self._refresh_stack do
         -- check for collision with updates that are already enqueued
         if region:intersectWith(self._refresh_stack[i].region) then
@@ -610,6 +611,8 @@ function UIManager:_refresh(mode, region)
             return self:_refresh(mode, combined)
         end
     end
+    --]]
+
     -- if we hit no (more) collides, enqueue the update
     table.insert(self._refresh_stack, {mode = mode, region = region})
 end
