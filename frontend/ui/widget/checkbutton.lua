@@ -97,14 +97,14 @@ function CheckButton:onTapCheckButton()
             UIManager:scheduleIn(0.0, function()
                 self.invert = true
                 UIManager:setDirty(self.show_parent, function()
-                    return "ui", self.dimen
+                    return "fast", self.dimen
                 end)
             end)
             UIManager:scheduleIn(0.1, function()
                 self.callback()
                 self.invert = false
                 UIManager:setDirty(self.show_parent, function()
-                    return "ui", self.dimen
+                    return "fast", self.dimen
                 end)
             end)
         end
@@ -130,14 +130,14 @@ end
 function CheckButton:check()
     self:initCheckButton(true)
     UIManager:setDirty(self.parent, function()
-        return "partial", self.dimen
+        return "fast", self.dimen
     end)
 end
 
 function CheckButton:unCheck()
     self:initCheckButton(false)
     UIManager:setDirty(self.parent, function()
-        return "partial", self.dimen
+        return "fast", self.dimen
     end)
 end
 

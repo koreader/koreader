@@ -116,14 +116,14 @@ function RadioButton:onTapCheckButton()
             UIManager:scheduleIn(0.0, function()
                 self.invert = true
                 UIManager:setDirty(self.show_parent, function()
-                    return "ui", self.dimen
+                    return "fast", self.dimen
                 end)
             end)
             UIManager:scheduleIn(0.1, function()
                 self.callback()
                 self.invert = false
                 UIManager:setDirty(self.show_parent, function()
-                    return "ui", self.dimen
+                    return "fast", self.dimen
                 end)
             end)
         end
@@ -151,7 +151,7 @@ function RadioButton:check(callback)
     self.checked = true
     self:update()
     UIManager:setDirty(self.parent, function()
-        return "ui", self.dimen
+        return "fast", self.dimen
     end)
 end
 
@@ -160,7 +160,7 @@ function RadioButton:unCheck()
     self.checked = false
     self:update()
     UIManager:setDirty(self.parent, function()
-        return "ui", self.dimen
+        return "fast", self.dimen
     end)
 end
 

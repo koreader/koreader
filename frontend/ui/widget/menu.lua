@@ -404,7 +404,7 @@ function MenuItem:onTapSelect(arg, ges)
     else
         self[1].invert = true
         local refreshfunc = function()
-            return "ui", self[1].dimen
+            return "fast", self[1].dimen
         end
         UIManager:setDirty(self.show_parent, refreshfunc)
         UIManager:scheduleIn(0.1, function()
@@ -427,7 +427,7 @@ function MenuItem:onHoldSelect(arg, ges)
     else
         self[1].invert = true
         local refreshfunc = function()
-            return "ui", self[1].dimen
+            return "fast", self[1].dimen
         end
         UIManager:setDirty(self.show_parent, refreshfunc)
         UIManager:scheduleIn(0.1, function()

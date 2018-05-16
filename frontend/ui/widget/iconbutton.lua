@@ -98,7 +98,7 @@ function IconButton:onTapIconButton()
         UIManager:scheduleIn(0.0, function()
             self.image.invert = true
             UIManager:setDirty(self.show_parent, function()
-                return "ui", self[1].dimen
+                return "fast", self[1].dimen
             end)
         end)
         -- make sure button reacts before doing callback
@@ -106,7 +106,7 @@ function IconButton:onTapIconButton()
             self.callback()
             self.image.invert = false
             UIManager:setDirty(self.show_parent, function()
-                return "ui", self[1].dimen
+                return "fast", self[1].dimen
             end)
         end)
     end

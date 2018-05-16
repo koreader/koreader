@@ -194,14 +194,14 @@ function Button:onTapSelectButton()
             UIManager:scheduleIn(0.0, function()
                 self[1].invert = true
                 UIManager:setDirty(self.show_parent, function()
-                    return "ui", self[1].dimen
+                    return "fast", self[1].dimen
                 end)
             end)
             UIManager:scheduleIn(0.1, function()
                 self.callback()
                 self[1].invert = false
                 UIManager:setDirty(self.show_parent, function()
-                    return "ui", self[1].dimen
+                    return "fast", self[1].dimen
                 end)
             end)
         end

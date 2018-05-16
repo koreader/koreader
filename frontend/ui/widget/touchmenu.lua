@@ -137,14 +137,14 @@ function TouchMenuItem:onTapSelect(arg, ges)
     else
         self.item_frame.invert = true
         UIManager:setDirty(self.show_parent, function()
-            return "ui", self.dimen
+            return "fast", self.dimen
         end)
         -- yield to main UI loop to invert item
         UIManager:scheduleIn(0.1, function()
             self.menu:onMenuSelect(self.item)
             self.item_frame.invert = false
             UIManager:setDirty(self.show_parent, function()
-                return "ui", self.dimen
+                return "fast", self.dimen
             end)
         end)
     end
@@ -164,7 +164,7 @@ function TouchMenuItem:onHoldSelect(arg, ges)
         UIManager:scheduleIn(0.0, function()
             self.item_frame.invert = true
             UIManager:setDirty(self.show_parent, function()
-                return "ui", self.dimen
+                return "fast", self.dimen
             end)
         end)
         UIManager:scheduleIn(0.1, function()
@@ -173,7 +173,7 @@ function TouchMenuItem:onHoldSelect(arg, ges)
         UIManager:scheduleIn(0.5, function()
             self.item_frame.invert = false
             UIManager:setDirty(self.show_parent, function()
-                return "ui", self.dimen
+                return "fast", self.dimen
             end)
         end)
     end

@@ -81,7 +81,7 @@ function OptionTextItem:onTapSelect()
                     self.event, self.args,
                     self.events, self.current_item)
     UIManager:setDirty(self.config, function()
-        return "ui", self[1].dimen
+        return "fast", self[1].dimen
     end)
     return true
 end
@@ -144,7 +144,7 @@ function OptionIconItem:onTapSelect()
                     self.event, self.args,
                     self.events, self.current_item)
     UIManager:setDirty(self.config, function()
-        return "ui", self[1].dimen
+        return "fast", self[1].dimen
     end)
     return true
 end
