@@ -97,16 +97,13 @@ function Kindle:intoScreenSaver()
     -- NOTE: Meaning this is not a SO device ;).
     if self:supportsScreensaver() then
         if self.screen_saver_mode == false then
-            -- On FW >= 5.7.2, we sigstop awesome, but we need it to show stuff...
-            -- Wake it up *before* we show our own screensaver, in the hope that we'll win the race...
+            Screensaver:show()
+        end
+    else
+        -- Let the native system handle screensavers on SO devices...
+        if self.screen_saver_mode == false then
             if os.getenv("AWESOME_STOPPED") == "yes" then
                 os.execute("killall -cont awesome")
-                -- And delay showing ours to leave a head-start to awesome...
-                local UIManager = require("ui/uimanager")
-                UIManager:scheduleIn(1, function() Screensaver:show() end)
-            else
-                -- No delay when not necessary :)
-                Screensaver:show()
             end
         end
     end
@@ -116,17 +113,16 @@ end
 
 function Kindle:outofScreenSaver()
     if self.screen_saver_mode == true then
-        -- On FW >= 5.7.2, put awesome to sleep again...
-        if os.getenv("AWESOME_STOPPED") == "yes" then
-            os.execute("killall -stop awesome")
-        end
         local Screensaver = require("ui/screensaver")
         if self:supportsScreensaver() then
             Screensaver:close()
+        else
+            -- Stop awesome again if need be...
+            if os.getenv("AWESOME_STOPPED") == "yes" then
+                os.execute("killall -stop awesome")
+            end
         end
         local UIManager = require("ui/uimanager")
-        -- NOTE: On FW >= 5.7.2, awesome *may* sometimes win the race, but hey, too bad.
-        --       Delaying that refresh would do more harm than good.
         UIManager:nextTick(function() UIManager:setDirty("all", "full") end)
     end
     self.powerd:afterResume()
