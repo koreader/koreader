@@ -42,7 +42,7 @@ update_koreader() {
 
     found_koreader_package="false"
     # Try to find a koreader package... Behavior undefined if there are multiple packages...
-    for file in /mnt/us/koreader-kindle-*.tar.gz; do
+    for file in /mnt/us/koreader-kindle-*.targz; do
         if [ -f "${file}" ]; then
             found_koreader_package="${file}"
             koreader_pkg_type="tgz"
@@ -67,12 +67,10 @@ update_koreader() {
         fi
 
         # Get the version of the package...
-        if [ "${koreader_pkg_type}" = "tgz" ]; then
-            koreader_pkg_ver="${found_koreader_package%.*.*}"
-        else
-            koreader_pkg_ver="${found_koreader_package%.*}"
-        fi
+        koreader_pkg_ver="${found_koreader_package%.*}"
         koreader_pkg_ver="${koreader_pkg_ver#*-v}"
+        # Strip the date purely because of screen space constraints
+        koreader_pkg_ver="${koreader_pkg_ver%_*}"
         # Install it!
         logmsg "Updating to KOReader ${koreader_pkg_ver} . . ."
         if [ "${koreader_pkg_type}" = "tgz" ]; then
