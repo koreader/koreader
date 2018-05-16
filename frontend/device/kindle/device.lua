@@ -88,7 +88,7 @@ function Kindle:usbPlugIn()
     --       c.f., https://github.com/koreader/koreader/issues/3220
     --       That means shit will blow up in fun and interesting ways if someone actually tries that.
     --       On the upside, we don't have to bother waking up the WM to show us the USBMS screen :D.
-    -- NOTE: If the device is put in USBNet mode before that, everything's peachy, though :).
+    -- NOTE: If the device is put in USBNet mode before we even start, everything's peachy, though :).
     self.charging_mode = true
 end
 
