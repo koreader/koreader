@@ -83,10 +83,12 @@ function Kindle:setDateTime(year, month, day, hour, min, sec)
 end
 
 function Kindle:usbPlugIn()
-    -- NOTE: We do NOT support running in USBMS mode (we cannot, we live there).
-    --       And, AFAICT, we have no sane way of disabling USBMS mode without breaking either us or the framework,
-    --       c.f., https://github.com/koreader/koreader/issues/3220
-    --       That means shit will blow up in fun and interesting ways if someone actually tries that.
+    -- NOTE: We cannot support running in USBMS mode (we cannot, we live on the partition being exported!).
+    --       But since that's the default state of the Kindle system, we have to try to make nice...
+    --       To that end, we're currently SIGSTOPping volumd to inhibit the system's USBMS mode handling.
+    --       It's not perfect (f.g., if the system is setup for USBMS and not USBNet,
+    --       the frontlight will be turned off when plugged in), but it at least prevents users from completely
+    --       shooting themselves in the foot (c.f., https://github.com/koreader/koreader/issues/3220)!
     --       On the upside, we don't have to bother waking up the WM to show us the USBMS screen :D.
     -- NOTE: If the device is put in USBNet mode before we even start, everything's peachy, though :).
     self.charging_mode = true

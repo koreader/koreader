@@ -42,6 +42,7 @@ fi
 
 # Keep track of what we do with pillow...
 export AWESOME_STOPPED="no"
+export VOLUMD_STOPPED="no"
 PILLOW_HARD_DISABLED="no"
 PILLOW_SOFT_DISABLED="no"
 PASSCODE_DISABLED="no"
@@ -243,6 +244,13 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "sysv" ]; then
     killall -stop cvm
 fi
 
+# SIGSTOP volumd, to inhibit USBMS (sysv & upstart)
+if [ -e "/etc/init.d/volumd" ] || [ -e "/etc/upstart/volumd.conf" ]; then
+    logmsg "Stopping volumd . . ."
+    killall -stop volumd
+    VOLUMD_STOPPED="yes"
+fi
+
 # finally call reader
 logmsg "Starting KOReader . . ."
 # That's not necessary when using KPVBooklet ;).
@@ -290,6 +298,12 @@ fi
 if grep ${KOREADER_DIR}/fonts/linkfonts /proc/mounts >/dev/null 2>&1; then
     logmsg "Unmounting linkfonts . . ."
     umount ${KOREADER_DIR}/fonts/linkfonts
+fi
+
+# Resume volumd, if need be
+if [ "${VOLUMD_STOPPED}" = "yes" ]; then
+    logmsg "Resuming volumd . . ."
+    killall -cont volumd
 fi
 
 # Resume cvm (only if we stopped it)
