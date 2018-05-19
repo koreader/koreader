@@ -418,7 +418,7 @@ function ReaderLink:onSwipe(arg, ges)
                 -- so the user knows why
                 UIManager:show(Notification:new{
                     text = _("Location history is empty"),
-                    timeout = 1.0,
+                    timeout = 2,
                 })
                 return true
             end
