@@ -33,6 +33,15 @@ function ReadTimer:remainingMinutes()
     end
 end
 
+function ReadTimer:remainingTime()
+    if self:scheduled() then
+        local remain_time = os.difftime(self.time, os.time()) / 60
+        local remain_hours = math.floor(remain_time / 60)
+        local remain_minutes = math.floor(remain_time - 60 * remain_hours)
+        return remain_hours, remain_minutes
+    end
+end
+
 function ReadTimer:unschedule()
     if self:scheduled() then
         UIManager:unschedule(self.alarm_callback)
@@ -117,9 +126,18 @@ function ReadTimer:addToMainMenu(menu_items)
             {
                 text = _("Minutes from now"),
                 callback = function()
+                    local remain_time = {}
+                    local remain_hours, remain_minutes = self:remainingTime()
+                    if not remain_hours and not remain_minutes then
+                        remain_time = G_reader_settings:readSetting("reader_timer_remain_time")
+                        if remain_time then
+                            remain_hours = remain_time[1]
+                            remain_minutes = remain_time[2]
+                        end
+                    end
                     local time_widget = TimeWidget:new{
-                        hour = 0,
-                        min = 0,
+                        hour = remain_hours or 0,
+                        min = remain_minutes or 0,
                         hour_max = 17,
                         ok_text = _("Set timer"),
                         title_text =  _("Set reader timer from now (hours:minutes)"),
@@ -147,6 +165,8 @@ function ReadTimer:addToMainMenu(menu_items)
                                     text = T(_("Timer is set to %1 %2"), hr_str, min_str),
                                     timeout = 5,
                                 })
+                                remain_time = {hr, min}
+                                G_reader_settings:saveSetting("reader_timer_remain_time", remain_time)
                             end
                         end
                     }
