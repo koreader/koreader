@@ -8,6 +8,7 @@ local Device = require("device")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
+local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
@@ -26,13 +27,27 @@ local Notification = InputContainer:new{
 function Notification:init()
     if Device:hasKeys() then
         self.key_events = {
-            AnyKeyPressed = { { Input.group.Any }, seqtext = "any key", doc = "close dialog" }
+            AnyKeyPressed = { { Input.group.Any },
+                seqtext = "any key", doc = "close dialog" }
         }
     end
+    if Device:isTouchDevice() then
+        self.ges_events.TapClose = {
+            GestureRange:new{
+                ges = "tap",
+                range = Geom:new{
+                    x = 0, y = 0,
+                    w = Screen:getWidth(),
+                    h = Screen:getHeight(),
+                }
+            }
+        }
+    end
+
     -- we construct the actual content here because self.text is only available now
     local text_widget = TextWidget:new{
         text = self.text,
-        face = self.face
+        face = self.face,
     }
     local widget_size = text_widget:getSize()
     self[1] = CenterContainer:new{
@@ -77,7 +92,16 @@ end
 function Notification:onAnyKeyPressed()
     -- triggered by our defined key events
     UIManager:close(self)
-    return true
+    if self.readonly ~= true then
+        return true
+    end
+end
+
+function Notification:onTapClose()
+    UIManager:close(self)
+    if self.readonly ~= true then
+        return true
+    end
 end
 
 return Notification

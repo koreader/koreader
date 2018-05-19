@@ -75,7 +75,7 @@ function ReaderFrontLight:onShowIntensity()
     end
     UIManager:show(Notification:new{
         text = new_text,
-        timeout = 1.0,
+        timeout = 2,
     })
     return true
 end
