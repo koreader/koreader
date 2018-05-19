@@ -38,7 +38,7 @@ local function showValues(configurable, option)
     end
     if not default then
         default = "not set"
-        if option.toggle then
+        if option.toggle and option.values then
             value_current = current
             current = arg_table[current]
         end
@@ -47,6 +47,20 @@ local function showValues(configurable, option)
         value_default = default
         default = arg_table[default]
         current = arg_table[current]
+    end
+    if option.labels and option.values then
+        for i=1,#option.labels do
+            if default == option.values[i] then
+                default = option.labels[i]
+                break
+            end
+        end
+        for i=1,#option.labels do
+            if current == option.values[i] then
+                current = option.labels[i]
+                break
+            end
+        end
     end
     if option.name_text_true_values and option.toggle and option.values and value_default then
         UIManager:show(InfoMessage:new{
