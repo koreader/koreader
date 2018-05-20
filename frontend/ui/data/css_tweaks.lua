@@ -13,46 +13,6 @@ local _ = require("gettext")
 
 local CssTweaks = {
     {
-        title = _("Enhancements"),
-        {
-            id = "html_tags_fix";
-            title = _("Correct handling of some HTML elements"),
-            description = _("Make some HTML elements (eg: <cite>) behave as they should (inline/block).\nThis may break past bookmarks and highlights."),
-            css = [[
-cite { display: inline; font-style: italic; }
-            ]],
-        },
-        {
-            id = "list_item_block";
-            title = _("Better rendering of list items"),
-            description = _("Correctly render list items as block elements.\nThis may break past bookmarks and highlights."),
-            css = [[
-li {display: -cr-list-item-block; }
-            ]],
-            separator = true,
-        },
-        {
-            title = _("Workarounds"),
-            {
-                id = "list_items_fix";
-                title = _("Fix some list items issues"),
-                description = _("Work around some crengine list items rendering issues."),
-                css = [[
-li > p:first-child   { display: inline !important; }
-li > div:first-child { display: inline !important; }
-                ]],
-            },
-            {
-                id = "border_all_none";
-                title = _("Remove all borders"),
-                description = _("Work around a crengine bug that makes a border drawn when {border: black solid 0px}."),
-                -- css = [[* { border-style: none !important; }]],
-                -- Better to keep the layout implied by width, just draw them in white
-                css = [[* { border-color: white !important; }]],
-            },
-        },
-    },
-    {
         title = _("Page"),
         {
             id = "margin_body_0";
@@ -102,11 +62,12 @@ li > div:first-child { display: inline !important; }
             id = "sub_sup_smaller";
             title = _("Smaller sub- and superscript"),
             description = _("Prevent sub- and superscript from affecting line-height."),
+            priority = 5, -- so we can override "font_size_all_inherit"
             -- https://friendsofepub.github.io/eBookTricks/
             -- https://github.com/koreader/koreader/issues/3923#issuecomment-386510294
             css = [[
-sup { font-size: 50%; vertical-align: super; }
-sub { font-size: 50%; vertical-align: middle; }
+sup { font-size: 50% !important; vertical-align: super !important; }
+sub { font-size: 50% !important; vertical-align: middle !important; }
             ]],
             separator = true,
         },
@@ -163,6 +124,43 @@ img {
    width: 100% !important;
 }
             ]],
+        },
+    },
+    {
+        title = _("Workarounds"),
+        {
+            id = "html_tags_fix";
+            title = _("Correct handling of some HTML elements"),
+            description = _("Make some HTML elements (eg: <cite>) behave as they should (inline/block).\nThis may break past bookmarks and highlights."),
+            css = [[
+cite { display: inline; font-style: italic; }
+            ]],
+        },
+        {
+            id = "list_item_block";
+            title = _("Better rendering of list items"),
+            description = _("Correctly render list items as block elements.\nThis may break past bookmarks and highlights."),
+            css = [[
+li {display: -cr-list-item-block; }
+            ]],
+        },
+        {
+            id = "list_items_fix";
+            title = _("Fix some list items issues"),
+            description = _("Work around some crengine list items rendering issues."),
+            css = [[
+li > p:first-child   { display: inline !important; }
+li > div:first-child { display: inline !important; }
+            ]],
+            separator = true,
+        },
+        {
+            id = "border_all_none";
+            title = _("Remove all borders"),
+            description = _("Work around a crengine bug that makes a border drawn when {border: black solid 0px}."),
+            -- css = [[* { border-style: none !important; }]],
+            -- Better to keep the layout implied by width, just draw them in white
+            css = [[* { border-color: white !important; }]],
         },
     },
 }
