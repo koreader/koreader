@@ -491,6 +491,10 @@ function ReaderUI:doShowReader(file, provider)
 
     UIManager:show(reader)
     _running_instance = reader
+    local FileManager = require("apps/filemanager/filemanager")
+    if FileManager.instance then
+        FileManager.instance:onClose()
+    end
 end
 
 function ReaderUI:_getRunningInstance()
