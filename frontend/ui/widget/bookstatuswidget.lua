@@ -27,7 +27,7 @@ local VerticalSpan = require("ui/widget/verticalspan")
 local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
-local template = require("ffi/util").template
+local T = require("ffi/util").template
 
 local stats_book = {}
 
@@ -306,7 +306,7 @@ function BookStatusWidget:genBookInfoGroup()
     )
     -- complete text
     local text_complete = TextWidget:new{
-        text = template(_("%1% Completed"),
+        text = T(_("%1% Completed"),
                         string.format("%1.f", read_percentage * 100)),
         face = self.small_font_face,
     }
