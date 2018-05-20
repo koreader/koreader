@@ -188,6 +188,7 @@ function ReaderRolling:onCloseDocument()
             self.ui.document:invalidateCacheFile()
         end
     end
+    logger.dbg("cre cache used:", self.ui.document:getCacheFilePath() or "none")
 end
 
 function ReaderRolling:onCheckDomStyleCoherence()
