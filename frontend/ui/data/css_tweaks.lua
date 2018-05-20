@@ -35,38 +35,6 @@ local CssTweaks = {
     {
         title = _("Text"),
         {
-            id = "sub_sup_smaller";
-            title = _("Smaller sub- and superscript"),
-            description = _("Prevent sub- and superscript from affecting line-height."),
-            -- https://friendsofepub.github.io/eBookTricks/
-            -- https://github.com/koreader/koreader/issues/3923#issuecomment-386510294
-            css = [[
-sup { font-size: 50%; vertical-align: super; }
-sub { font-size: 50%; vertical-align: middle; }
-            ]],
-            separator = true,
-        },
-        {
-            id = "lineheight_all_inherit";
-            title = _("Ignore publisher line heights"),
-            description = _("Disable line-height specified in embedded styles, and may allow KOReader's line spacing settings to work on books where they would not."),
-            css = [[* { line-height: inherit !important; }]],
-        },
-        {
-            id = "font_family_all_inherit";
-            title = _("Ignore publisher font families"),
-            description = _("Disable font-family specified in embedded styles."),
-            -- we have to use this trick, font-family handling by crengine is a bit complex
-            css = [[* { font-family: "NoSuchFont" !important; }]],
-        },
-        {
-            id = "font_size_all_inherit";
-            title = _("Ignore publisher font sizes"),
-            description = _("Disable font-size specified in embedded styles."),
-            css = [[* { font-size: inherit !important; }]],
-            separator = true,
-        },
-        {
             title = _("Links color and weight"),
             {
                 id = "a_black";
@@ -89,6 +57,39 @@ sub { font-size: 50%; vertical-align: middle; }
                 title = _("Links never bold"),
                 css = [[a { font-weight: normal !important; }]],
             },
+        },
+        {
+            id = "sub_sup_smaller";
+            title = _("Smaller sub- and superscript"),
+            description = _("Prevent sub- and superscript from affecting line-height."),
+            priority = 5, -- so we can override "font_size_all_inherit"
+            -- https://friendsofepub.github.io/eBookTricks/
+            -- https://github.com/koreader/koreader/issues/3923#issuecomment-386510294
+            css = [[
+sup { font-size: 50% !important; vertical-align: super !important; }
+sub { font-size: 50% !important; vertical-align: middle !important; }
+            ]],
+            separator = true,
+        },
+        {
+            id = "lineheight_all_inherit";
+            title = _("Ignore publisher line heights"),
+            description = _("Disable line-height specified in embedded styles, and may allow KOReader's line spacing settings to work on books where they would not."),
+            css = [[* { line-height: inherit !important; }]],
+        },
+        {
+            id = "font_family_all_inherit";
+            title = _("Ignore publisher font families"),
+            description = _("Disable font-family specified in embedded styles."),
+            -- we have to use this trick, font-family handling by crengine is a bit complex
+            css = [[* { font-family: "NoSuchFont" !important; }]],
+        },
+        {
+            id = "font_size_all_inherit";
+            title = _("Ignore publisher font sizes"),
+            description = _("Disable font-size specified in embedded styles."),
+            css = [[* { font-size: inherit !important; }]],
+            separator = true,
         },
     },
     {
@@ -129,10 +130,18 @@ img {
         title = _("Workarounds"),
         {
             id = "html_tags_fix";
-            title = _("Fix some HTML elements"),
+            title = _("Correct handling of some HTML elements"),
             description = _("Make some HTML elements (eg: <cite>) behave as they should (inline/block).\nThis may break past bookmarks and highlights."),
             css = [[
 cite { display: inline; font-style: italic; }
+            ]],
+        },
+        {
+            id = "list_item_block";
+            title = _("Better rendering of list items"),
+            description = _("Correctly render list items as block elements.\nThis may break past bookmarks and highlights."),
+            css = [[
+li {display: -cr-list-item-block; }
             ]],
         },
         {
@@ -143,6 +152,7 @@ cite { display: inline; font-style: italic; }
 li > p:first-child   { display: inline !important; }
 li > div:first-child { display: inline !important; }
             ]],
+            separator = true,
         },
         {
             id = "border_all_none";

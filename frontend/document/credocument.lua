@@ -589,6 +589,22 @@ function CreDocument:enableInternalHistory(toggle)
     self._document:setIntProperty("crengine.highlight.bookmarks", toggle and 2 or 0)
 end
 
+function CreDocument:isBuiltDomStale()
+    return self._document:isBuiltDomStale()
+end
+
+function CreDocument:hasCacheFile()
+    return self._document:hasCacheFile()
+end
+
+function CreDocument:invalidateCacheFile()
+    self._document:invalidateCacheFile()
+end
+
+function CreDocument:getCacheFilePath()
+    return self._document:getCacheFilePath()
+end
+
 function CreDocument:register(registry)
     registry:addProvider("azw", "application/vnd.amazon.mobi8-ebook", self, 90)
     registry:addProvider("chm", "application/vnd.ms-htmlhelp", self, 90)

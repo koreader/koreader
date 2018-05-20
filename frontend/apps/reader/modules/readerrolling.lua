@@ -1,4 +1,5 @@
 local Blitbuffer = require("ffi/blitbuffer")
+local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Event = require("ui/event")
@@ -179,6 +180,30 @@ end
 -- we cannot do it in onSaveSettings() because getLastPercent() uses self.ui.document
 function ReaderRolling:onCloseDocument()
     self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
+    -- also checks if DOM is coherent with styles; if not, invalidate the
+    -- cache, so a new DOM is built on next opening
+    if self.ui.document:isBuiltDomStale() then
+        if self.ui.document:hasCacheFile() then
+            logger.dbg("cre DOM may not be in sync with styles, invalidating cache file for a full reload at next opening")
+            self.ui.document:invalidateCacheFile()
+        end
+    end
+    logger.dbg("cre cache used:", self.ui.document:getCacheFilePath() or "none")
+end
+
+function ReaderRolling:onCheckDomStyleCoherence()
+    if self.ui.document:isBuiltDomStale() then
+        UIManager:show(ConfirmBox:new{
+            text = _("Styles have changed in such a way that fully reloading the document may be needed for a correct rendering.\nDo you want to reload the document?"),
+            ok_callback = function()
+                -- Allow for ConfirmBox to be closed before showing
+                -- "Opening file" InfoMessage
+                UIManager:scheduleIn(0.5, function ()
+                    self.ui:reloadDocument()
+                end)
+            end,
+        })
+    end
 end
 
 function ReaderRolling:onSaveSettings()
@@ -566,6 +591,12 @@ function ReaderRolling:updatePos()
         self.view.footer:updateFooter()
     end
     UIManager:setDirty(self.view.dialog, "partial")
+    -- Allow for the new rendering to be shown before possibly showing
+    -- the "Styles have changes..." ConfirmBox so the user can decide
+    -- if it is really needed
+    UIManager:scheduleIn(0.1, function ()
+        self:onCheckDomStyleCoherence()
+    end)
 end
 
 --[[
