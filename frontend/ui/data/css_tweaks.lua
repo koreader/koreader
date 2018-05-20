@@ -13,6 +13,46 @@ local _ = require("gettext")
 
 local CssTweaks = {
     {
+        title = _("Enhancements"),
+        {
+            id = "html_tags_fix";
+            title = _("Correct handling of some HTML elements"),
+            description = _("Make some HTML elements (eg: <cite>) behave as they should (inline/block).\nThis may break past bookmarks and highlights."),
+            css = [[
+cite { display: inline; font-style: italic; }
+            ]],
+        },
+        {
+            id = "list_item_block";
+            title = _("Better rendering of list items"),
+            description = _("Correctly render list items as block elements.\nThis may break past bookmarks and highlights."),
+            css = [[
+li {display: -cr-list-item-block; }
+            ]],
+            separator = true,
+        },
+        {
+            title = _("Workarounds"),
+            {
+                id = "list_items_fix";
+                title = _("Fix some list items issues"),
+                description = _("Work around some crengine list items rendering issues."),
+                css = [[
+li > p:first-child   { display: inline !important; }
+li > div:first-child { display: inline !important; }
+                ]],
+            },
+            {
+                id = "border_all_none";
+                title = _("Remove all borders"),
+                description = _("Work around a crengine bug that makes a border drawn when {border: black solid 0px}."),
+                -- css = [[* { border-style: none !important; }]],
+                -- Better to keep the layout implied by width, just draw them in white
+                css = [[* { border-color: white !important; }]],
+            },
+        },
+    },
+    {
         title = _("Page"),
         {
             id = "margin_body_0";
@@ -34,6 +74,30 @@ local CssTweaks = {
     },
     {
         title = _("Text"),
+        {
+            title = _("Links color and weight"),
+            {
+                id = "a_black";
+                title = _("Links always black"),
+                css = [[a { color: black !important; }]],
+            },
+            {
+                id = "a_blue";
+                title = _("Links always blue"),
+                css = [[a { color: blue !important; }]],
+                separator = true,
+            },
+            {
+                id = "a_bold";
+                title = _("Links always bold"),
+                css = [[a { font-weight: bold !important; }]],
+            },
+            {
+                id = "a_not_bold";
+                title = _("Links never bold"),
+                css = [[a { font-weight: normal !important; }]],
+            },
+        },
         {
             id = "sub_sup_smaller";
             title = _("Smaller sub- and superscript"),
@@ -65,30 +129,6 @@ sub { font-size: 50%; vertical-align: middle; }
             description = _("Disable font-size specified in embedded styles."),
             css = [[* { font-size: inherit !important; }]],
             separator = true,
-        },
-        {
-            title = _("Links color and weight"),
-            {
-                id = "a_black";
-                title = _("Links always black"),
-                css = [[a { color: black !important; }]],
-            },
-            {
-                id = "a_blue";
-                title = _("Links always blue"),
-                css = [[a { color: blue !important; }]],
-                separator = true,
-            },
-            {
-                id = "a_bold";
-                title = _("Links always bold"),
-                css = [[a { font-weight: bold !important; }]],
-            },
-            {
-                id = "a_not_bold";
-                title = _("Links never bold"),
-                css = [[a { font-weight: normal !important; }]],
-            },
         },
     },
     {
@@ -123,34 +163,6 @@ img {
    width: 100% !important;
 }
             ]],
-        },
-    },
-    {
-        title = _("Workarounds"),
-        {
-            id = "html_tags_fix";
-            title = _("Fix some HTML elements"),
-            description = _("Make some HTML elements (eg: <cite>) behave as they should (inline/block).\nThis may break past bookmarks and highlights."),
-            css = [[
-cite { display: inline; font-style: italic; }
-            ]],
-        },
-        {
-            id = "list_items_fix";
-            title = _("Fix some list items issues"),
-            description = _("Work around some crengine list items rendering issues."),
-            css = [[
-li > p:first-child   { display: inline !important; }
-li > div:first-child { display: inline !important; }
-            ]],
-        },
-        {
-            id = "border_all_none";
-            title = _("Remove all borders"),
-            description = _("Work around a crengine bug that makes a border drawn when {border: black solid 0px}."),
-            -- css = [[* { border-style: none !important; }]],
-            -- Better to keep the layout implied by width, just draw them in white
-            css = [[* { border-color: white !important; }]],
         },
     },
 }

@@ -274,9 +274,11 @@ function ReaderMenu:onShowReaderMenu(tab_index)
 end
 
 function ReaderMenu:onCloseReaderMenu()
-    self.last_tab_index = self.menu_container[1].last_index
-    self:onSaveSettings()
-    UIManager:close(self.menu_container)
+    if self.menu_container then
+        self.last_tab_index = self.menu_container[1].last_index
+        self:onSaveSettings()
+        UIManager:close(self.menu_container)
+    end
     return true
 end
 
