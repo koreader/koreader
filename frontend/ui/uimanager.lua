@@ -375,9 +375,20 @@ function UIManager:setDirty(widget, refreshtype, refreshregion)
     if type(refreshtype) == "function" then
         -- callback, will be issued after painting
         table.insert(self._refresh_func_stack, refreshtype)
+        local _, region = refreshtype()
+        if region then
+            logger.dbg("setDirty from widget", widget.name or widget.id or tostring(widget), "via func w/ region x", region.x, "y", region.y, "w", region.w, "h", region.h)
+        else
+            logger.dbg("setDirty from widget", widget.name or widget.id or tostring(widget), "via func w/ NO region")
+        end
     else
         -- otherwise, enqueue refresh
         self:_refresh(refreshtype, refreshregion)
+        if refreshregion then
+            logger.dbg("setDirty from widget", widget.name or widget.id or tostring(widget), "w/ region x", refreshregion.x, "y", refreshregion.y, "w", refreshregion.w, "h", refreshregion.h)
+        else
+            logger.dbg("setDirty from widget", widget.name or widget.id or tostring(widget), "w/ NO region")
+        end
     end
 end
 dbg:guard(UIManager, 'setDirty',
