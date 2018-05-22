@@ -593,12 +593,12 @@ function TouchMenu:updateItems()
     self.selected = { x = self.cur_tab, y = 1 } --reset the position of the focusmanager
 
     -- NOTE: We can't distinguish between a menu first popping up and just being updated,
-    --       so keep doing an "ui" refresh here, it'll count towards a flash promotion anyway.
+    --       so do a "partial" refresh here, it'll count towards a flash promotion that way.
     UIManager:setDirty("all", function()
         local refresh_dimen =
             old_dimen and old_dimen:combine(self.dimen)
             or self.dimen
-        return "ui", refresh_dimen
+        return "partial", refresh_dimen
     end)
 end
 

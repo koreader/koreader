@@ -599,9 +599,10 @@ function UIManager:_refresh(mode, region)
     -- different widget before a real screen repaint, we should make sure
     -- refresh_count is incremented by only once at most for each repaint
     -- NOTE: Ideally, we'd only check partial w/ no region set (that neatly narrows it down to just the reader).
-    --       In practice, we also want to promote refreshes in the FileManager,
-    --       part of which is implemented as UI w/ a region...
-    if mode ~= "full" and mode ~= "flashpartial" and mode ~= "flashui" and mode ~= "fast" and not self.refresh_counted then
+    --       In practice, we also want to promote refreshes in a few other places, except purely text-poor UI elements.
+    --       (Putting "ui" in that list is problematic with a number of UI elements, most notably, ReaderHighlight,
+    --       because it is implemented as "ui" over the full viewport, since we can't devise a proper bounding box).
+    if mode == "partial" and not self.refresh_counted then
         self.refresh_count = (self.refresh_count + 1) % self.FULL_REFRESH_COUNT
         if self.refresh_count == self.FULL_REFRESH_COUNT - 1 then
             logger.dbg("promote refresh to full refresh")
