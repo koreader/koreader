@@ -185,7 +185,7 @@ Modal widget should be always on top.
 For refreshtype & refreshregion see description of setDirty().
 ]]
 ---- @param widget a widget object
----- @param refreshtype "full", "partial", "ui", "fast"
+---- @param refreshtype "full", "fullui", "partial", "ui", "fast"
 ---- @param refreshregion a Geom object
 ---- @int x
 ---- @int y
@@ -226,7 +226,7 @@ Unregisters a widget.
 For refreshtype & refreshregion see description of setDirty().
 ]]
 ---- @param widget a widget object
----- @param refreshtype "full", "partial", "ui", "fast"
+---- @param refreshtype "full", "fullui", "partial", "ui", "fast"
 ---- @param refreshregion a Geom object
 ---- @see setDirty
 function UIManager:close(widget, refreshtype, refreshregion)
@@ -358,7 +358,7 @@ UIManager:setDirty(self.widget, function() return "ui", self.someelement.dimen e
 
 --]]
 ---- @param widget a widget object
----- @param refreshtype "full", "partial", "ui", "fast"
+---- @param refreshtype "full", "fullui", "partial", "ui", "fast"
 ---- @param refreshregion a Geom object
 function UIManager:setDirty(widget, refreshtype, refreshregion)
     if widget then
@@ -551,12 +551,13 @@ function UIManager:_checkTasks()
 end
 
 -- precedence of refresh modes:
-local refresh_modes = { fast = 1, ui = 2, partial = 3, full = 4 }
+local refresh_modes = { fast = 1, ui = 2, partial = 3, fullui = 4, full = 5 }
 -- refresh methods in framebuffer implementation
 local refresh_methods = {
     fast = "refreshFast",
     ui = "refreshUI",
     partial = "refreshPartial",
+    fullui = "refreshFullUI",
     full = "refreshFull",
 }
 
@@ -580,7 +581,7 @@ Widgets call this in their paintTo() method in order to notify
 UIManager that a certain part of the screen is to be refreshed.
 
 @param mode
-    refresh mode ("full", "partial", "ui", "fast")
+    refresh mode ("full", "fullui", "partial", "ui", "fast")
 @param region
     Rect() that specifies the region to be updated
     optional, update will affect whole screen if not specified.
@@ -603,7 +604,7 @@ function UIManager:_refresh(mode, region)
     --       we'd add a check for to confirm that region covers over ~80% of the screen area.
     --       That said, as discussed in a comment in framebuffer_mxcb,
     --       full refreshes in a menu is something that's actually desirable, especially when popping it up/down!
-    if mode ~= "full" and mode ~= "fast" and not self.refresh_counted then
+    if mode ~= "full" and mode ~= "fullui" and mode ~= "fast" and not self.refresh_counted then
         self.refresh_count = (self.refresh_count + 1) % self.FULL_REFRESH_COUNT
         if self.refresh_count == self.FULL_REFRESH_COUNT - 1 then
             logger.dbg("promote refresh to full refresh")
