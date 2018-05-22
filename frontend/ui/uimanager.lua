@@ -185,7 +185,7 @@ Modal widget should be always on top.
 For refreshtype & refreshregion see description of setDirty().
 ]]
 ---- @param widget a widget object
----- @param refreshtype "full", "fullui", "partial", "ui", "fast"
+---- @param refreshtype "full", "flashpartial", "flashui", "partial", "ui", "fast"
 ---- @param refreshregion a Geom object
 ---- @int x
 ---- @int y
@@ -209,10 +209,6 @@ function UIManager:show(widget, refreshtype, refreshregion, x, y)
         end
     end
     -- and schedule it to be painted
-    -- NOTE: We want a flash when popping up an UI element!
-    if refreshtype == "ui" then
-        refreshtype = "fullui"
-    end
     self:setDirty(widget, refreshtype, refreshregion)
     -- tell the widget that it is shown now
     widget:handleEvent(Event:new("Show"))
@@ -230,7 +226,7 @@ Unregisters a widget.
 For refreshtype & refreshregion see description of setDirty().
 ]]
 ---- @param widget a widget object
----- @param refreshtype "full", "fullui", "partial", "ui", "fast"
+---- @param refreshtype "full", "flashpartial", "flashui", "partial", "ui", "fast"
 ---- @param refreshregion a Geom object
 ---- @see setDirty
 function UIManager:close(widget, refreshtype, refreshregion)
@@ -259,10 +255,6 @@ function UIManager:close(widget, refreshtype, refreshregion)
         -- schedule remaining widgets to be painted
         for i = 1, #self._window_stack do
             self:setDirty(self._window_stack[i].widget)
-        end
-        -- NOTE: We want a flash when closing a UI element!
-        if refreshtype == "ui" then
-            refreshtype = "fullui"
         end
         self:_refresh(refreshtype, refreshregion)
     end
@@ -366,7 +358,7 @@ UIManager:setDirty(self.widget, function() return "ui", self.someelement.dimen e
 
 --]]
 ---- @param widget a widget object
----- @param refreshtype "full", "fullui", "partial", "ui", "fast"
+---- @param refreshtype "full", "flashpartial", "flashui", "partial", "ui", "fast"
 ---- @param refreshregion a Geom object
 function UIManager:setDirty(widget, refreshtype, refreshregion)
     if widget then
@@ -559,13 +551,14 @@ function UIManager:_checkTasks()
 end
 
 -- precedence of refresh modes:
-local refresh_modes = { fast = 1, ui = 2, partial = 3, fullui = 4, full = 5 }
+local refresh_modes = { fast = 1, ui = 2, partial = 3, flashui = 4, flashpartial = 5, full = 6 }
 -- refresh methods in framebuffer implementation
 local refresh_methods = {
     fast = "refreshFast",
     ui = "refreshUI",
     partial = "refreshPartial",
-    fullui = "refreshFullUI",
+    flashui = "refreshFlashUI",
+    flashpartial = "refreshFlashPartial",
     full = "refreshFull",
 }
 
@@ -589,7 +582,7 @@ Widgets call this in their paintTo() method in order to notify
 UIManager that a certain part of the screen is to be refreshed.
 
 @param mode
-    refresh mode ("full", "fullui", "partial", "ui", "fast")
+    refresh mode ("full", "flashpartial", "flashui", "partial", "ui", "fast")
 @param region
     Rect() that specifies the region to be updated
     optional, update will affect whole screen if not specified.
@@ -610,9 +603,7 @@ function UIManager:_refresh(mode, region)
     --       part of which is implemented as UI w/ a region...
     --       If we wanted to go the extra mile and avoid full updates in menus,
     --       we'd add a check for to confirm that region covers over ~80% of the screen area.
-    --       That said, as discussed in a comment in framebuffer_mxcb,
-    --       full refreshes in a menu is something that's actually desirable, especially when popping it up/down!
-    if mode ~= "full" and mode ~= "fullui" and mode ~= "fast" and not self.refresh_counted then
+    if mode ~= "full" and mode ~= "flashpartial" and mode ~= "flashui" and mode ~= "fast" and not self.refresh_counted then
         self.refresh_count = (self.refresh_count + 1) % self.FULL_REFRESH_COUNT
         if self.refresh_count == self.FULL_REFRESH_COUNT - 1 then
             logger.dbg("promote refresh to full refresh")
