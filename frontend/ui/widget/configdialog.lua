@@ -724,7 +724,7 @@ end
 
 function ConfigDialog:onCloseWidget()
     UIManager:setDirty("all", function()
-        return "partial", self.dialog_frame.dimen
+        return "flashpartial", self.dialog_frame.dimen
     end)
 end
 
@@ -732,6 +732,8 @@ function ConfigDialog:onShowConfigPanel(index)
     self.panel_index = index
     local old_dimen = self.dialog_frame.dimen and self.dialog_frame.dimen:copy()
     self:update()
+    -- NOTE: Keep that one as UI to avoid delay when both this and the topmenu are shown.
+    --       Plus, this is also called for each tab anyway, so that wouldn't have been great.
     UIManager:setDirty("all", function()
         local refresh_dimen =
             old_dimen and old_dimen:combine(self.dialog_frame.dimen)
