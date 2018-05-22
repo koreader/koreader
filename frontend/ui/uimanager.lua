@@ -601,8 +601,6 @@ function UIManager:_refresh(mode, region)
     -- NOTE: Ideally, we'd only check partial w/ no region set (that neatly narrows it down to just the reader).
     --       In practice, we also want to promote refreshes in the FileManager,
     --       part of which is implemented as UI w/ a region...
-    --       If we wanted to go the extra mile and avoid full updates in menus,
-    --       we'd add a check for to confirm that region covers over ~80% of the screen area.
     if mode ~= "full" and mode ~= "flashpartial" and mode ~= "flashui" and mode ~= "fast" and not self.refresh_counted then
         self.refresh_count = (self.refresh_count + 1) % self.FULL_REFRESH_COUNT
         if self.refresh_count == self.FULL_REFRESH_COUNT - 1 then
