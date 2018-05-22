@@ -610,8 +610,9 @@ function UIManager:_refresh(mode, region)
 
     --[[
     -- FIXME: Disabled to try to identify everything that passes a stupid and/or broken region to setDirty...
-    --        Not convinced we actually need to be this clever, the eInk driver itself does update collision.
-    --        At the very least, we should probably never merge updates w/ different waveform modes...
+    --        While, ideally, we shouldn't merge updates w/ different waveform modes, this allows us to merge
+    --        the end of a selection HL (i.e., the un-inverse) with the following repaint, potentially avoiding
+    --        heavy ghosting or scrambling on the localized region of the HL because of the 2bit update mode...
     for i = 1, #self._refresh_stack do
         -- check for collision with updates that are already enqueued
         if region:intersectWith(self._refresh_stack[i].region) then
