@@ -613,11 +613,11 @@ function UIManager:_refresh(mode, region)
     -- if no region is specified, define default region
     region = region or Geom:new{w=Screen:getWidth(), h=Screen:getHeight()}
 
-    --[[
-    -- FIXME: Disabled to try to identify everything that passes a stupid and/or broken region to setDirty...
-    --        While, ideally, we shouldn't merge updates w/ different waveform modes, this allows us to merge
-    --        the end of a selection HL (i.e., the un-inverse) with the following repaint, potentially avoiding
-    --        heavy ghosting or scrambling on the localized region of the HL because of the 2bit update mode...
+    -- NOTE:  While, ideally, we shouldn't merge updates w/ different waveform modes,
+    --        this allows us to optimize away a number of quirks of our rendering stack
+    --        (f.g., multiple setDirty calls queued when showing/closing a widget because of update mechanisms),
+    --        as well as a few actually effective merges
+    --        (f.g., the disappearance of a selection HL with the following menu update).
     for i = 1, #self._refresh_stack do
         -- check for collision with updates that are already enqueued
         if region:intersectWith(self._refresh_stack[i].region) then
@@ -631,7 +631,6 @@ function UIManager:_refresh(mode, region)
             return self:_refresh(mode, combined)
         end
     end
-    --]]
 
     -- if we hit no (more) collides, enqueue the update
     table.insert(self._refresh_stack, {mode = mode, region = region})
