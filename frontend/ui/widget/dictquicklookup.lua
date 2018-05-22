@@ -577,14 +577,14 @@ function DictQuickLookup:onCloseWidget()
         end
     end
     UIManager:setDirty(nil, function()
-        return "partial", self.dict_frame.dimen
+        return "flashpartial", self.dict_frame.dimen
     end)
     return true
 end
 
 function DictQuickLookup:onShow()
     UIManager:setDirty(self, function()
-        return "ui", self.dict_frame.dimen
+        return "flashpartial", self.dict_frame.dimen
     end)
     return true
 end
@@ -774,8 +774,8 @@ function DictQuickLookup:onSwipe(arg, ges)
             self:changeToPrevDict()
         else
             if self.refresh_callback then self.refresh_callback() end
-            -- trigger full refresh
-            UIManager:setDirty(nil, "full")
+            -- trigger a flashing text refresh
+            UIManager:setDirty(nil, "flashpartial")
             -- a long diagonal swipe may also be used for taking a screenshot,
             -- so let it propagate
             return false
