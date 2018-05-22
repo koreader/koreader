@@ -105,7 +105,7 @@ function TouchMenuItem:init()
 
     self._underline_container = UnderlineContainer:new{
         vertical_align = "center",
-        dimen =self.dimen,
+        dimen = self.dimen,
         self.item_frame
     }
 
@@ -508,7 +508,7 @@ function TouchMenu:init()
 end
 
 function TouchMenu:onCloseWidget()
-    UIManager:setDirty(nil, "partial", self.dimen)
+    UIManager:setDirty(nil, "flashpartial", self.dimen)
 end
 
 function TouchMenu:_recalculatePageLayout()
@@ -592,6 +592,8 @@ function TouchMenu:updateItems()
     self.dimen.h = self.item_group:getSize().h + self.bordersize*2 + self.padding*2
     self.selected = { x = self.cur_tab, y = 1 } --reset the position of the focusmanager
 
+    -- NOTE: We can't distinguish between a menu first popping up and just being updated,
+    --       so keep doing an "ui" refresh here, it'll count towards a flash promotion anyway.
     UIManager:setDirty("all", function()
         local refresh_dimen =
             old_dimen and old_dimen:combine(self.dimen)
