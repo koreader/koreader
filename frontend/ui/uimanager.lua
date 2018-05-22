@@ -209,6 +209,10 @@ function UIManager:show(widget, refreshtype, refreshregion, x, y)
         end
     end
     -- and schedule it to be painted
+    -- NOTE: We want a flash when popping up an UI element!
+    if refreshtype == "ui" then
+        refreshtype = "fullui"
+    end
     self:setDirty(widget, refreshtype, refreshregion)
     -- tell the widget that it is shown now
     widget:handleEvent(Event:new("Show"))
@@ -255,6 +259,10 @@ function UIManager:close(widget, refreshtype, refreshregion)
         -- schedule remaining widgets to be painted
         for i = 1, #self._window_stack do
             self:setDirty(self._window_stack[i].widget)
+        end
+        -- NOTE: We want a flash when closing a UI element!
+        if refreshtype == "ui" then
+            refreshtype = "fullui"
         end
         self:_refresh(refreshtype, refreshregion)
     end
