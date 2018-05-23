@@ -219,20 +219,23 @@ function VirtualKeyboard:onPressKey()
     return true
 end
 
-function VirtualKeyboard:_refresh()
-    -- TODO: Ideally, ui onShow & partial onClose
+function VirtualKeyboard:_refresh(want_flash)
+    local refresh_type = "partial"
+    if want_flash then
+        refresh_type = "flashui"
+    end
     UIManager:setDirty(self, function()
-        return "ui", self[1][1].dimen
+        return refresh_type, self[1][1].dimen
     end)
 end
 
 function VirtualKeyboard:onShow()
-    self:_refresh()
+    self:_refresh(true)
     return true
 end
 
 function VirtualKeyboard:onCloseWidget()
-    self:_refresh()
+    self:_refresh(false)
     return true
 end
 
@@ -331,7 +334,7 @@ function VirtualKeyboard:setLayout(key)
         if self.utf8mode then self.umlautmode = false end
     end
     self:initLayout()
-    self:_refresh()
+    self:_refresh(true)
 end
 
 function VirtualKeyboard:addChar(key)
