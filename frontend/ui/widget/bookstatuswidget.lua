@@ -245,7 +245,7 @@ function BookStatusWidget:setStar(num)
 
     table.insert(self.stars_container, stars_group)
 
-    UIManager:setDirty(nil, "partial")
+    UIManager:setDirty(nil, "ui")
     return true
 end
 
@@ -531,7 +531,7 @@ function BookStatusWidget:onConfigChoose(values, name, event, args, events, posi
         if values then
             self:onChangeBookStatus(args, position)
         end
-        UIManager:setDirty("all")
+        UIManager:setDirty("all", "ui")
     end)
 end
 
@@ -542,7 +542,7 @@ end
 
 function BookStatusWidget:onClose()
     self:saveSummary()
-    UIManager:setDirty("all")
+    UIManager:setDirty("all", "partial")
     UIManager:close(self)
     return true
 end
