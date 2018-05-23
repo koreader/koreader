@@ -655,7 +655,7 @@ function UIManager:_refresh(mode, region)
     end
 
     -- if we hit no (more) collides, enqueue the update
-    dbg:v("_refresh: Enqueued", mode, "update on region", region)
+    logger.dbg("_refresh: Enqueued", mode, "update for region", region.x, region.y, region.w, region.h)
     table.insert(self._refresh_stack, {mode = mode, region = region})
 end
 
@@ -712,6 +712,7 @@ function UIManager:_repaint()
     -- execute refreshes:
     for _, refresh in ipairs(self._refresh_stack) do
         dbg:v("triggering refresh", refresh)
+        -- FIXME: bound to screen size?
         Screen[refresh_methods[refresh.mode]](Screen,
             refresh.region.x - 1, refresh.region.y - 1,
             refresh.region.w + 2, refresh.region.h + 2)
