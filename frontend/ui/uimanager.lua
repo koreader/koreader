@@ -254,7 +254,7 @@ function UIManager:close(widget, refreshtype, refreshregion)
     if dirty and not widget.invisible then
         -- schedule remaining widgets to be painted
         for i = 1, #self._window_stack do
-            self:setDirty(self._window_stack[i].widget, "ui")
+            self:setDirty(self._window_stack[i].widget)
         end
         self:_refresh(refreshtype, refreshregion)
     end
