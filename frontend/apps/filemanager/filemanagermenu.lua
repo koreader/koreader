@@ -11,6 +11,7 @@ local Screen = Device.screen
 local dbg = require("dbg")
 local logger = require("logger")
 local _ = require("gettext")
+local T = require("ffi/util").template
 
 local FileManagerMenu = InputContainer:extend{
     tab_item_table = nil,
@@ -78,6 +79,22 @@ function FileManagerMenu:initGesListener()
             handler = function(ges) return self:onSwipeShowMenu(ges) end,
         },
     })
+end
+
+function FileManagerMenu:openLastDoc()
+    local last_file = G_reader_settings:readSetting("lastfile")
+    if not last_file or lfs.attributes(last_file, "mode") ~= "file" then
+        local InfoMessage = require("ui/widget/infomessage")
+        UIManager:show(InfoMessage:new{
+            text = _("Cannot open last document"),
+        })
+        return
+    end
+    local ReaderUI = require("apps/reader/readerui")
+    ReaderUI:showReader(last_file)
+    self:onCloseFileManagerMenu()
+    local FileManager = require("apps/filemanager/filemanager")
+    FileManager.instance:onClose()
 end
 
 function FileManagerMenu:setUpdateItemTable()
@@ -219,19 +236,17 @@ function FileManagerMenu:setUpdateItemTable()
             return G_reader_settings:readSetting("lastfile") ~= nil
         end,
         callback = function()
+            self:openLastDoc()
+        end,
+        hold_callback = function()
             local last_file = G_reader_settings:readSetting("lastfile")
-            if not last_file or lfs.attributes(last_file, "mode") ~= "file" then
-                local InfoMessage = require("ui/widget/infomessage")
-                UIManager:show(InfoMessage:new{
-                    text = _("Cannot open last document"),
-                })
-                return
-            end
-            local ReaderUI = require("apps/reader/readerui")
-            ReaderUI:showReader(last_file)
-            self:onCloseFileManagerMenu()
-            local FileManager = require("apps/filemanager/filemanager")
-            FileManager.instance:onClose()
+            UIManager:show(ConfirmBox:new{
+                text = T(_("Would you like to open the last document: %1?"), last_file),
+                ok_text = _("OK"),
+                ok_callback = function()
+                    self:openLastDoc()
+                end,
+            })
         end
     }
     -- insert common info
