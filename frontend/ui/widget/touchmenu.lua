@@ -348,7 +348,7 @@ TouchMenu widget for hierarchical menus
 --]]
 local TouchMenu = FocusManager:new{
     tab_item_table = {},
-    -- for returnning in multi-level menus
+    -- for returning in multi-level menus
     item_table_stack = nil,
     item_table = nil,
     item_height = Size.item.height_large,
@@ -363,6 +363,7 @@ local TouchMenu = FocusManager:new{
     show_parent = nil,
     cur_tab = -1,
     close_callback = nil,
+    is_fresh = true,
 }
 
 function TouchMenu:init()
@@ -440,7 +441,7 @@ function TouchMenu:init()
         self.page_info_text,
         self.page_info_right_chev
     }
-    --group for device info
+    -- group for device info
     self.time_info = TextWidget:new{
         text = "",
         face = self.fface,
@@ -543,7 +544,7 @@ function TouchMenu:updateItems()
     self.item_group:clear()
     self.layout = {}
     table.insert(self.item_group, self.bar)
-    table.insert(self.layout, self.bar.icon_widgets) --for the focusmanager
+    table.insert(self.layout, self.bar.icon_widgets) -- for the focusmanager
 
     for c = 1, self.perpage do
         -- calculate index in item_table
@@ -561,7 +562,7 @@ function TouchMenu:updateItems()
             }
             table.insert(self.item_group, item_tmp)
             if item_tmp:isEnabled() then
-                table.insert(self.layout, {[self.cur_tab] = item_tmp}) --for the focusmanager
+                table.insert(self.layout, {[self.cur_tab] = item_tmp}) -- for the focusmanager
             end
             if item.separator and c ~= self.perpage then
                 -- insert split line
@@ -590,15 +591,20 @@ function TouchMenu:updateItems()
     -- recalculate dimen based on new layout
     self.dimen.w = self.width
     self.dimen.h = self.item_group:getSize().h + self.bordersize*2 + self.padding*2
-    self.selected = { x = self.cur_tab, y = 1 } --reset the position of the focusmanager
+    self.selected = { x = self.cur_tab, y = 1 } -- reset the position of the focusmanager
 
-    -- NOTE: We can't distinguish between a menu first popping up and just being updated,
-    --       so do a "partial" refresh here, it'll count towards a flash promotion that way.
+    -- NOTE: We use a slightly ugly hack to detect a brand new menu vs. a tab switch,
+    --       in order to flash on initial menu popup...
     UIManager:setDirty("all", function()
         local refresh_dimen =
             old_dimen and old_dimen:combine(self.dimen)
             or self.dimen
-        return "partial", refresh_dimen
+        local refresh_type = "ui"
+        if self.is_fresh then
+            refresh_type = "flashui"
+            self.is_fresh = false
+        end
+        return refresh_type, refresh_dimen
     end)
 end
 
