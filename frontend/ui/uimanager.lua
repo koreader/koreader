@@ -391,12 +391,8 @@ function UIManager:setDirty(widget, refreshtype, refreshregion)
         -- callback, will be issued after painting
         table.insert(self._refresh_func_stack, refreshtype)
         if dbg.is_on then
-            local rtype, region = refreshtype()
-            if region then
-                logger.dbg("setDirty", rtype and rtype or "nil", "from widget", widget and (widget.name or widget.id or tostring(widget)) or "nil", "via func w/ region", region.x, region.y, region.w, region.h)
-            else
-                logger.dbg("setDirty", rtype and rtype or "nil", "from widget", widget and (widget.name or widget.id or tostring(widget)) or "nil", "via func w/ NO region")
-            end
+            -- FIXME: We can't consume the return values of refreshtype by running it, because for a reason that is beyond me, that renders it useless later, meaning we then enqueue updates with bogus arguments...
+            logger.dbg("setDirty via a func")
         end
     else
         -- otherwise, enqueue refresh
@@ -588,6 +584,7 @@ Will return the mode that takes precedence.
 --]]
 local function update_mode(mode1, mode2)
     if refresh_modes[mode1] > refresh_modes[mode2] then
+        logger.dbg("update_mode: Update", mode2, "to", mode1)
         return mode1
     else
         return mode2
@@ -658,6 +655,7 @@ function UIManager:_refresh(mode, region)
     end
 
     -- if we hit no (more) collides, enqueue the update
+    dbg:v("_refresh: Enqueued", mode, "update on region", region)
     table.insert(self._refresh_stack, {mode = mode, region = region})
 end
 
