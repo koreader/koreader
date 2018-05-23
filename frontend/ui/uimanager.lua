@@ -349,6 +349,21 @@ the second parameter (refreshtype) can either specify a refreshtype
 (optionally in combination with a refreshregion - which is suggested)
 or a function that returns refreshtype AND refreshregion and is called
 after painting the widget.
+Here's a quick rundown of what each refreshtype should be used for:
+full: high-fidelity flashing update (f.g., large images).
+      Highest quality, but highest latency.
+      Don't abuse if you only want a flash (in this case, prefer flashpartial or flashui).
+partial: medium fidelity update (f.g., text on a white background).
+         Can be promoted to flashing after FULL_REFRESH_COUNT updates.
+         Don't abuse to avoid spurious flashes.
+ui: medium fidelity update (f.g., mixed content).
+    Should apply to most UI elements.
+fast: low fidelity update (f.g., monochrome content).
+      Should apply to most highlighting effects achieved through inversion.
+flashui: like ui, but flashing.
+         Can be used when showing a UI element for the first time, to avoid ghosting.
+flashpartial: like partial, but flashing.
+              Can be used when closing an UI element, to avoid ghosting.
 
 @usage
 
