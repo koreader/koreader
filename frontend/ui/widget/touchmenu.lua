@@ -161,7 +161,7 @@ function TouchMenuItem:onHoldSelect(arg, ges)
     if G_reader_settings:isFalse("flash_ui") then
         self.menu:onMenuHold(self.item)
     else
-        UIManager:scheduleIn(0.0, function()
+        UIManager:nextTick(function()
             self.item_frame.invert = true
             UIManager:setDirty(self.show_parent, function()
                 return "fast", self.dimen

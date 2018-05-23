@@ -82,7 +82,7 @@ function FocusManager:onFocusMove(args)
             -- we found a different object to focus
             current_item:handleEvent(Event:new("Unfocus"))
             self.layout[self.selected.y][self.selected.x]:handleEvent(Event:new("Focus"))
-            -- trigger a fast repaint, this seem to not count toward a fullscreen eink resfresh
+            -- trigger a fast repaint, this does not count toward a flashing eink resfresh
             -- TODO: is this really needed?
             UIManager:setDirty(self.show_parent or self, "fast")
             break

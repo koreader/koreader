@@ -191,7 +191,8 @@ function Button:onTapSelectButton()
         if G_reader_settings:isFalse("flash_ui") then
             self.callback()
         else
-            UIManager:scheduleIn(0.0, function()
+            -- FIXME: For some mysterious reasons, we never see the effect of this highlight on the FM chevrons...
+            UIManager:nextTick(function()
                 self[1].invert = true
                 UIManager:setDirty(self.show_parent, function()
                     return "fast", self[1].dimen

@@ -94,7 +94,7 @@ function CheckButton:onTapCheckButton()
         if G_reader_settings:isFalse("flash_ui") then
             self.callback()
         else
-            UIManager:scheduleIn(0.0, function()
+            UIManager:nextTick(function()
                 self.invert = true
                 UIManager:setDirty(self.show_parent, function()
                     return "fast", self.dimen
