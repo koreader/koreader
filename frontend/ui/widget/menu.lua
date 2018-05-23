@@ -807,7 +807,9 @@ function Menu:onCloseWidget()
     -- For example, it's a dirty hack to use two menus(one this menu and one
     -- touch menu) in the filemanager in order to capture tap gesture to popup
     -- the filemanager menu.
-    UIManager:setDirty(nil, "flashpartial")
+    -- NOTE: For the same reason, don't make it flash,
+    --       because that'll trigger when we close the FM and open a book...
+    UIManager:setDirty(nil, "partial")
 end
 
 function Menu:updatePageInfo(select_number)
