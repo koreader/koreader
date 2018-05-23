@@ -364,6 +364,7 @@ flashui: like ui, but flashing.
          Can be used when showing a UI element for the first time, to avoid ghosting.
 flashpartial: like partial, but flashing.
               Can be used when closing an UI element, to avoid ghosting.
+              You can even drop the region in these cases, to ensure a fullscreen flash.
 
 @usage
 
