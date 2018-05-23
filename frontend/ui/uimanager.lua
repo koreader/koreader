@@ -620,8 +620,13 @@ function UIManager:_refresh(mode, region)
     if mode == "partial" and not self.refresh_counted then
         self.refresh_count = (self.refresh_count + 1) % self.FULL_REFRESH_COUNT
         if self.refresh_count == self.FULL_REFRESH_COUNT - 1 then
-            logger.dbg("promote refresh to full refresh")
-            mode = "full"
+            -- NOTE: Promote to full if no region (reader), to flashpartial otherwise (UI)
+            if region then
+                mode = "flashpartial"
+            else
+                mode = "full"
+            end
+            logger.dbg("promote refresh to", mode)
         end
         self.refresh_counted = true
     end
