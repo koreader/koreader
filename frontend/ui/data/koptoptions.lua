@@ -1,10 +1,71 @@
 local Device = require("device")
+local InfoMessage = require("ui/widget/infomessage")
 local S = require("ui/data/strings")
+local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 local Screen = Device.screen
+local T = require("ffi/util").template
 
 local function enable_if_equals(configurable, option, value)
     return configurable[option] == value
+end
+
+local function showValues(configurable, option)
+    local default = G_reader_settings:readSetting("kopt_"..option.name)
+    local current = configurable[option.name]
+    local value_default, value_current
+    local suffix = option.name_text_suffix or ""
+    if option.name == "screen_mode" then
+        current = Screen:getScreenMode()
+    end
+    local arg_table = {}
+    if option.toggle and option.values then
+        for i=1,#option.toggle do
+            arg_table[option.values[i]] = option.toggle[i]
+        end
+    end
+    if not default then
+        default = "not set"
+        if option.toggle and option.values then
+            value_current = current
+            current = arg_table[current]
+        end
+    elseif option.toggle and option.values then
+        value_current = current
+        value_default = default
+        default = arg_table[default]
+        current = arg_table[current]
+    end
+    if option.labels and option.values then
+        for i=1,#option.labels do
+            if default == option.values[i] then
+                default = option.labels[i]
+                break
+            end
+        end
+        for i=1,#option.labels do
+            if current == option.values[i] then
+                current = option.labels[i]
+                break
+            end
+        end
+    end
+    if option.name_text_true_values and option.toggle and option.values and value_default then
+        UIManager:show(InfoMessage:new{
+            text = T(_("%1:\nCurrent value: %2 (%5%4)\nDefault value: %3 (%6%4)"), option.name_text,
+                current, default, suffix, value_current, value_default)
+        })
+    elseif option.name_text_true_values and option.toggle and option.values and not value_default then
+        UIManager:show(InfoMessage:new{
+            text = T(_("%1:\nCurrent value: %2 (%5%4)\nDefault value: %3"), option.name_text,
+                current, default, suffix, value_current)
+        })
+    else
+        UIManager:show(InfoMessage:new{
+            text = T(_("%1:\nCurrent value: %2%4\nDefault value: %3%4"), option.name_text, current,
+                default, suffix)
+        })
+    end
 end
 
 local KoptOptions = {
@@ -21,6 +82,7 @@ local KoptOptions = {
                 default_arg = "portrait",
                 current_func = function() return Screen:getScreenMode() end,
                 event = "SetScreenMode",
+                name_text_hold_callback = showValues,
             }
         }
     },
@@ -37,6 +99,7 @@ local KoptOptions = {
                 enabled_func = Device.isTouchDevice,
                 event = "PageCrop",
                 args = {"manual", "auto", "semi-auto"},
+                name_text_hold_callback = showValues
             }
         }
     },
@@ -51,6 +114,7 @@ local KoptOptions = {
                 default_value = DSCROLL_MODE,
                 event = "SetScrollMode",
                 args = {true, false},
+                name_text_hold_callback = showValues
             },
             {
                 name = "full_screen",
@@ -61,6 +125,7 @@ local KoptOptions = {
                 event = "SetFullScreen",
                 args = {true, false},
                 show = false,
+                name_text_hold_callback = showValues
             },
             {
                 name = "page_margin",
@@ -69,6 +134,7 @@ local KoptOptions = {
                 values = {0.05, 0.10, 0.25},
                 default_value = DKOPTREADER_CONFIG_PAGE_MARGIN,
                 event = "MarginUpdate",
+                name_text_hold_callback = showValues
             },
             {
                 name = "line_spacing",
@@ -77,6 +143,7 @@ local KoptOptions = {
                 values = {1.0, 1.2, 1.4},
                 default_value = DKOPTREADER_CONFIG_LINE_SPACING,
                 advanced = true,
+                name_text_hold_callback = showValues
             },
             {
                 name = "max_columns",
@@ -91,6 +158,7 @@ local KoptOptions = {
                 enabled_func = function(configurable)
                     return enable_if_equals(configurable, "text_wrap", 1)
                 end,
+                name_text_hold_callback = showValues
             },
             {
                 name = "justification",
@@ -108,6 +176,8 @@ local KoptOptions = {
                 enabled_func = function(configurable)
                     return enable_if_equals(configurable, "text_wrap", 1)
                 end,
+                labels = {S.AUTO, S.LEFT, S.CENTER, S.RIGHT, S.JUSTIFY},
+                name_text_hold_callback = showValues
             },
         }
     },
@@ -141,6 +211,13 @@ local KoptOptions = {
                 enabled_func = function(configurable)
                     return enable_if_equals(configurable, "text_wrap", 1)
                 end,
+                name_text_hold_callback = function(configurable)
+                    local opt = {
+                        name = "font_size",
+                        name_text = _("Font Size"),
+                    }
+                    showValues(configurable, opt)
+                end
             }
         }
     },
@@ -156,6 +233,8 @@ local KoptOptions = {
                 default_value = DKOPTREADER_CONFIG_CONTRAST,
                 event = "GammaUpdate",
                 args = {0.8, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0, 9.0},
+                labels = {0.8, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0, 9.0},
+                name_text_hold_callback = showValues
             }
         }
     },
@@ -178,7 +257,8 @@ local KoptOptions = {
                     {
                         event = "InitScrollPageStates",
                     },
-                }
+                },
+                name_text_hold_callback = showValues
             },
             {
                 name = "page_opt",
@@ -186,6 +266,7 @@ local KoptOptions = {
                 toggle = {S.ON, S.OFF},
                 values = {1, 0},
                 default_value = 0,
+                name_text_hold_callback = showValues
             },
             {
                 name="doc_language",
@@ -195,6 +276,7 @@ local KoptOptions = {
                 default_value = DKOPTREADER_CONFIG_DOC_DEFAULT_LANG_CODE,
                 event = "DocLangUpdate",
                 args = DKOPTREADER_CONFIG_DOC_LANGS_CODE,
+                name_text_hold_callback = showValues
             },
             {
                 name = "word_spacing",
@@ -205,6 +287,7 @@ local KoptOptions = {
                 enabled_func = function(configurable)
                     return enable_if_equals(configurable, "text_wrap", 1)
                 end,
+                name_text_hold_callback = showValues
             },
             {
                 name = "writing_direction",
@@ -215,6 +298,7 @@ local KoptOptions = {
                 enabled_func = function(configurable)
                     return enable_if_equals(configurable, "text_wrap", 1)
                 end,
+                name_text_hold_callback = showValues
             },
             {
                 name = "quality",
@@ -226,6 +310,7 @@ local KoptOptions = {
                 enabled_func = function(configurable)
                     return enable_if_equals(configurable, "text_wrap", 1)
                 end,
+                name_text_hold_callback = showValues
             },
             {
                 name = "forced_ocr",
@@ -234,6 +319,7 @@ local KoptOptions = {
                 values = {1, 0},
                 default_value = 0,
                 advanced = true,
+                name_text_hold_callback = showValues
             },
             {
                 name = "defect_size",
@@ -246,6 +332,7 @@ local KoptOptions = {
                 enabled_func = function(configurable)
                     return enable_if_equals(configurable, "text_wrap", 1)
                 end,
+                name_text_hold_callback = showValues
             },
             {
                 name = "auto_straighten",
@@ -257,6 +344,7 @@ local KoptOptions = {
                 enabled_func = function(configurable)
                     return enable_if_equals(configurable, "text_wrap", 1)
                 end,
+                name_text_hold_callback = showValues
             },
             {
                 name = "detect_indent",
@@ -268,6 +356,7 @@ local KoptOptions = {
                 enabled_func = function(configurable)
                     return enable_if_equals(configurable, "text_wrap", 1)
                 end,
+                name_text_hold_callback = showValues
             },
         }
     },

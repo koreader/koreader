@@ -64,5 +64,9 @@ S.TBRTL = _("TBRTL")
 S.TBLTR = _("TBLTR")
 S.FULL = _("full")
 S.MINI = _("mini")
+S.LEFT = _("left")
+S.CENTER = _("center")
+S.RIGHT = _("right")
+S.JUSTIFY = _("justify")
 
 return S
