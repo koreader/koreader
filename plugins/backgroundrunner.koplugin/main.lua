@@ -221,7 +221,7 @@ function BackgroundRunner:_schedule()
     if self.running == false then
         logger.dbg("BackgroundRunnerWidget: start running @ ", os.time())
         self.running = true
-        UIManager:scheduleIn(2, function() self:_execute() end)
+        UIManager:scheduleIn(10, function() self:_execute() end)
     else
         logger.dbg("BackgroundRunnerWidget: a schedule is pending @ ",
                    os.time())
