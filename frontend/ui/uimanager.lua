@@ -390,19 +390,23 @@ function UIManager:setDirty(widget, refreshtype, refreshregion)
     if type(refreshtype) == "function" then
         -- callback, will be issued after painting
         table.insert(self._refresh_func_stack, refreshtype)
-        local _, region = refreshtype()
-        if region then
-            logger.dbg("setDirty from widget", widget and (widget.name or widget.id or tostring(widget)) or "nil", "via func w/ region x", region.x, "y", region.y, "w", region.w, "h", region.h)
-        else
-            logger.dbg("setDirty from widget", widget and (widget.name or widget.id or tostring(widget)) or "nil", "via func w/ NO region")
+        if dbg.is_on then
+            local rtype, region = refreshtype()
+            if region then
+                logger.dbg("setDirty", rtype and rtype or "nil", "from widget", widget and (widget.name or widget.id or tostring(widget)) or "nil", "via func w/ region", region.x, region.y, region.w, region.h)
+            else
+                logger.dbg("setDirty", rtype and rtype or "nil", "from widget", widget and (widget.name or widget.id or tostring(widget)) or "nil", "via func w/ NO region")
+            end
         end
     else
         -- otherwise, enqueue refresh
         self:_refresh(refreshtype, refreshregion)
-        if refreshregion then
-            logger.dbg("setDirty from widget", widget and (widget.name or widget.id or tostring(widget)) or "nil", "w/ region x", refreshregion.x, "y", refreshregion.y, "w", refreshregion.w, "h", refreshregion.h)
-        else
-            logger.dbg("setDirty from widget", widget and (widget.name or widget.id or tostring(widget)) or "nil", "w/ NO region")
+        if dbg.is_on then
+            if refreshregion then
+                logger.dbg("setDirty", refreshtype and refreshtype or "nil", "from widget", widget and (widget.name or widget.id or tostring(widget)) or "nil", "w/ region", refreshregion.x, refreshregion.y, refreshregion.w, refreshregion.h)
+            else
+                logger.dbg("setDirty", refreshtype and refreshtype or "nil", "from widget", widget and (widget.name or widget.id or tostring(widget)) or "nil", "w/ NO region")
+            end
         end
     end
 end
@@ -909,3 +913,5 @@ end
 
 UIManager:init()
 return UIManager
+
+// kate: indent-mode cstyle; indent-width 4; replace-tabs on;
