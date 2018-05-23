@@ -393,7 +393,8 @@ function UIManager:setDirty(widget, refreshtype, refreshregion)
         table.insert(self._refresh_func_stack, refreshtype)
         if dbg.is_on then
             -- FIXME: We can't consume the return values of refreshtype by running it, because for a reason that is beyond me, that renders it useless later, meaning we then enqueue updates with bogus arguments...
-            logger.dbg("setDirty via a func")
+            --        Track them in the _refresh() log...
+            logger.dbg("setDirty via a func from widget", widget and (widget.name or widget.id or tostring(widget)))
         end
     else
         -- otherwise, enqueue refresh
