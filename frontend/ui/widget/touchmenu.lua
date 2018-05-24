@@ -140,7 +140,7 @@ function TouchMenuItem:onTapSelect(arg, ges)
             return "fast", self.dimen
         end)
         -- yield to main UI loop to invert item
-        UIManager:scheduleIn(0.1, function()
+        UIManager:tickAfterNext(function()
             self.menu:onMenuSelect(self.item)
             self.item_frame.invert = false
             UIManager:setDirty(self.show_parent, function()
@@ -161,16 +161,14 @@ function TouchMenuItem:onHoldSelect(arg, ges)
     if G_reader_settings:isFalse("flash_ui") then
         self.menu:onMenuHold(self.item)
     else
-        UIManager:nextTick(function()
-            self.item_frame.invert = true
-            UIManager:setDirty(self.show_parent, function()
-                return "fast", self.dimen
-            end)
+        self.item_frame.invert = true
+        UIManager:setDirty(self.show_parent, function()
+            return "fast", self.dimen
         end)
-        UIManager:scheduleIn(0.1, function()
+        UIManager:nextTick(function()
             self.menu:onMenuHold(self.item)
         end)
-        UIManager:scheduleIn(0.5, function()
+        UIManager:tickAfterNext(function()
             self.item_frame.invert = false
             UIManager:setDirty(self.show_parent, function()
                 return "fast", self.dimen
@@ -699,7 +697,7 @@ function TouchMenu:onMenuSelect(item)
             if callback then
                 -- put stuff in scheduler so we can see
                 -- the effect of inverted menu item
-                UIManager:scheduleIn(0.1, function()
+                UIManager:tickAfterNext(function()
                     callback(self)
                     if refresh then
                         self:updateItems()
@@ -735,7 +733,7 @@ function TouchMenu:onMenuHold(item)
             callback = item.hold_callback_func()
         end
         if callback then
-            UIManager:scheduleIn(0.1, function()
+            UIManager:tickAfterNext(function()
                 if item.hold_may_update_menu then
                     callback(function() self:updateItems() end)
                 else

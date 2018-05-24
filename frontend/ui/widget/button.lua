@@ -193,13 +193,11 @@ function Button:onTapSelectButton()
         else
             -- NOTE: Flag all widgets as dirty to force a repaint, so we actually get to see the highlight.
             --       (For some reason (wrong widget passed to setDirty?), we never saw the effects on the FM chevrons without this hack).
-            UIManager:nextTick(function()
-                self[1].invert = true
-                UIManager:setDirty("all", function()
-                    return "fast", self[1].dimen
-                end)
+            self[1].invert = true
+            UIManager:setDirty("all", function()
+                return "fast", self[1].dimen
             end)
-            UIManager:scheduleIn(0.1, function()
+            UIManager:tickAfterNext(function()
                 self.callback()
                 self[1].invert = false
                 UIManager:setDirty("all", function()

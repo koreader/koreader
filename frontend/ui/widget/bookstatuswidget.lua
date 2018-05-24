@@ -527,7 +527,7 @@ function BookStatusWidget:generateSwitchGroup(width)
 end
 
 function BookStatusWidget:onConfigChoose(values, name, event, args, events, position)
-    UIManager:scheduleIn(0.05, function()
+    UIManager:tickAfterNext(function()
         if values then
             self:onChangeBookStatus(args, position)
         end

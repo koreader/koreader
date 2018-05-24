@@ -322,6 +322,17 @@ function UIManager:nextTick(action)
     return self:scheduleIn(0, action)
 end
 
+-- Run UI callbacks ASAP without skipping repaints?
+function UIManager:tickAfterNext(action)
+    return self:nextTick(function() self:nextTick(action) end)
+end
+--[[
+-- NOTE: This appears to work *nearly* just as well, but does sometimes go too fast (might depend on kernel HZ & NO_HZ settings?)
+function UIManager:tickAfterNext(action)
+    return self:scheduleIn(0.001, action)
+end
+--]]
+
 --[[-- Unschedules an execution task.
 
 In order to unschedule anonymous functions, store a reference.
