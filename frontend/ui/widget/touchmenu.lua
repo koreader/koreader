@@ -143,9 +143,14 @@ function TouchMenuItem:onTapSelect(arg, ges)
         UIManager:tickAfterNext(function()
             self.menu:onMenuSelect(self.item)
             self.item_frame.invert = false
+            --[[
+            -- NOTE: We can optimize that repaint away, every entry in our menu will make at least the menu repaint just after anyways ;).
+            --       Plus, leaving that unhighlight as "fast" can lead to weird side-effects, depending on devices.
+            --       If it turns out this need to go back in, consider switching it to "ui".
             UIManager:setDirty(self.show_parent, function()
                 return "fast", self.dimen
             end)
+            --]]
         end)
     end
     return true
@@ -165,13 +170,13 @@ function TouchMenuItem:onHoldSelect(arg, ges)
         UIManager:setDirty(self.show_parent, function()
             return "fast", self.dimen
         end)
-        UIManager:nextTick(function()
+        UIManager:tickAfterNext(function()
             self.menu:onMenuHold(self.item)
         end)
-        UIManager:tickAfterNext(function()
+        UIManager:scheduleIn(0.5, function()
             self.item_frame.invert = false
             UIManager:setDirty(self.show_parent, function()
-                return "fast", self.dimen
+                return "ui", self.dimen
             end)
         end)
     end
