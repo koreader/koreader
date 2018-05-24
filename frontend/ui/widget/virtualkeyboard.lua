@@ -108,6 +108,8 @@ function VirtualKey:init()
 end
 
 function VirtualKey:update_keyboard()
+    -- NOTE: We could arguably use "fast" when inverted & "ui" when not, but it doesn't change much,
+    --       and doesn't help with the graphics quirks of repeated "fast" updates on some devices.
     UIManager:setDirty(self.keyboard, function()
         logger.dbg("update key region", self[1].dimen)
         return "fast", self[1].dimen
@@ -129,7 +131,7 @@ function VirtualKey:onTapSelect()
         if self.callback then
             self.callback()
         end
-        UIManager:scheduleIn(0.1, function() self:invert(false) end)
+        UIManager:tickAfterNext(function() self:invert(false) end)
     else
         if self.callback then
             self.callback()
@@ -145,7 +147,7 @@ function VirtualKey:onHoldSelect()
         if self.hold_callback then
             self.hold_callback()
         end
-        UIManager:scheduleIn(0.1, function() self:invert(false) end)
+        UIManager:tickAfterNext(function() self:invert(false) end)
     else
         if self.hold_callback then
             self.hold_callback()

@@ -95,14 +95,12 @@ function IconButton:onTapIconButton()
     if G_reader_settings:isFalse("flash_ui") then
         self.callback()
     else
-        UIManager:nextTick(function()
-            self.image.invert = true
-            UIManager:setDirty(self.show_parent, function()
-                return "fast", self.dimen
-            end)
+        self.image.invert = true
+        UIManager:setDirty(self.show_parent, function()
+            return "fast", self.dimen
         end)
         -- Make sure button reacts before doing callback
-        UIManager:scheduleIn(0.1, function()
+        UIManager:tickAfterNext(function()
             self.callback()
             self.image.invert = false
             UIManager:setDirty(self.show_parent, function()

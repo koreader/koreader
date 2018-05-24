@@ -113,13 +113,11 @@ function RadioButton:onTapCheckButton()
         if G_reader_settings:isFalse("flash_ui") then
             self.callback()
         else
-            UIManager:nextTick(function()
-                self.invert = true
-                UIManager:setDirty(self.show_parent, function()
-                    return "fast", self.dimen
-                end)
+            self.invert = true
+            UIManager:setDirty(self.show_parent, function()
+                return "fast", self.dimen
             end)
-            UIManager:scheduleIn(0.1, function()
+            UIManager:tickAfterNext(function()
                 self.callback()
                 self.invert = false
                 UIManager:setDirty(self.show_parent, function()

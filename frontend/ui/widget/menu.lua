@@ -403,13 +403,14 @@ function MenuItem:onTapSelect(arg, ges)
         coroutine.resume(co)
     else
         self[1].invert = true
-        local refreshfunc = function()
+        UIManager:setDirty(self.show_parent, function()
             return "fast", self[1].dimen
-        end
-        UIManager:setDirty(self.show_parent, refreshfunc)
-        UIManager:scheduleIn(0.1, function()
+        end)
+        UIManager:tickAfterNext(function()
             self[1].invert = false
-            UIManager:setDirty(self.show_parent, refreshfunc)
+            UIManager:setDirty(self.show_parent, function()
+                return "ui", self[1].dimen
+            end)
             logger.dbg("creating coroutine for menu select")
             local co = coroutine.create(function()
                 self.menu:onMenuSelect(self.table, pos)
@@ -426,13 +427,14 @@ function MenuItem:onHoldSelect(arg, ges)
         self.menu:onMenuHold(self.table, pos)
     else
         self[1].invert = true
-        local refreshfunc = function()
+        UIManager:setDirty(self.show_parent, function()
             return "fast", self[1].dimen
-        end
-        UIManager:setDirty(self.show_parent, refreshfunc)
-        UIManager:scheduleIn(0.1, function()
+        end)
+        UIManager:tickAfterNext(function()
             self[1].invert = false
-            UIManager:setDirty(self.show_parent, refreshfunc)
+            UIManager:setDirty(self.show_parent, function()
+                return "ui", self[1].dimen
+            end)
             self.menu:onMenuHold(self.table, pos)
         end)
     end

@@ -176,12 +176,12 @@ function DoubleKeyValueItem:onTap()
             UIManager:setDirty(self.show_parent, function()
                 return "fast", self[1].dimen
             end)
-            UIManager:scheduleIn(0.1, function()
+            UIManager:tickAfterNext(function()
                 self.callback()
                 UIManager:close(info)
                 self[1].invert = false
                 UIManager:setDirty(self.show_parent, function()
-                    return "fast", self[1].dimen
+                    return "ui", self[1].dimen
                 end)
             end)
         end
