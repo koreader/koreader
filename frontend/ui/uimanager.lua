@@ -371,9 +371,9 @@ ui: medium fidelity refresh (f.g., mixed content).
     Should apply to most UI elements.
 fast: low fidelity refresh (f.g., monochrome content).
       Should apply to most highlighting effects achieved through inversion.
-      Note that if your highlighted element contaisn text,
-      you might want to keep the unhighlight refresh as ui for crisper text.
-      (Or optimize that refresh away entirely if you can get away with it).
+      Note that if your highlighted element contains text,
+      you might want to keep the unhighlight refresh as "ui" instead, for crisper text.
+      (Or optimize that refresh away entirely, if you can get away with it).
 flashui: like ui, but flashing.
          Can be used when showing a UI element for the first time, to avoid ghosting.
 flashpartial: like partial, but flashing (and not counting towards flashing promotions).
