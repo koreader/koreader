@@ -231,7 +231,7 @@ For refreshtype & refreshregion see description of setDirty().
 ---- @see setDirty
 function UIManager:close(widget, refreshtype, refreshregion)
     if not widget then
-        logger.dbg("widget not exist to be closed")
+        logger.dbg("widget to be closed does not exist")
         return
     end
     logger.dbg("close widget", widget.id or widget.name)
@@ -242,7 +242,7 @@ function UIManager:close(widget, refreshtype, refreshregion)
     widget:handleEvent(Event:new("CloseWidget"))
     -- make it disabled by default and check any widget that enables it
     Input.disable_double_tap = true
-    -- then remove all reference to that widget on stack and update
+    -- then remove all references to that widget on stack and refresh
     for i = #self._window_stack, 1, -1 do
         if self._window_stack[i].widget == widget then
             table.remove(self._window_stack, i)
@@ -350,21 +350,32 @@ the second parameter (refreshtype) can either specify a refreshtype
 or a function that returns refreshtype AND refreshregion and is called
 after painting the widget.
 Here's a quick rundown of what each refreshtype should be used for:
-full: high-fidelity flashing update (f.g., large images).
+full: high-fidelity flashing refresh (f.g., large images).
       Highest quality, but highest latency.
       Don't abuse if you only want a flash (in this case, prefer flashpartial or flashui).
-partial: medium fidelity update (f.g., text on a white background).
-         Can be promoted to flashing after FULL_REFRESH_COUNT updates.
+partial: medium fidelity refresh (f.g., text on a white background).
+         Can be promoted to flashing after FULL_REFRESH_COUNT refreshes.
          Don't abuse to avoid spurious flashes.
-ui: medium fidelity update (f.g., mixed content).
+ui: medium fidelity refresh (f.g., mixed content).
     Should apply to most UI elements.
-fast: low fidelity update (f.g., monochrome content).
+fast: low fidelity refresh (f.g., monochrome content).
       Should apply to most highlighting effects achieved through inversion.
 flashui: like ui, but flashing.
          Can be used when showing a UI element for the first time, to avoid ghosting.
-flashpartial: like partial, but flashing.
+flashpartial: like partial, but flashing (and not counting towards flashing promotions).
               Can be used when closing an UI element, to avoid ghosting.
               You can even drop the region in these cases, to ensure a fullscreen flash.
+
+NOTE: You'll notice a trend on UI elements that are usually shown *over* some kind of text
+      of using "ui" onShow & onUpdate, but "partial" onClose.
+      This is by design: "partial" is what the reader uses, as it's tailor-made for pure text
+      over a white background, so this ensures we resume the usual flow of the reader.
+      The same dynamic is true for their flashing counterparts, in the rare instances we enforce flashes.
+      Any kind of "partial" refresh *will* count towards a flashing promotion after FULL_REFRESH_COUNT refreshes,
+      so making sure your stuff only applies to the proper region is key to avoiding spurious large black flashes.
+      That said, depending on your use case, using "ui" onClose can be a perfectly valid decision, and will ensure
+      never seeing a flash because of that widget.
+
 
 @usage
 
@@ -392,8 +403,8 @@ function UIManager:setDirty(widget, refreshtype, refreshregion)
         -- callback, will be issued after painting
         table.insert(self._refresh_func_stack, refreshtype)
         if dbg.is_on then
-            -- FIXME: We can't consume the return values of refreshtype by running it, because for a reason that is beyond me, that renders it useless later, meaning we then enqueue updates with bogus arguments...
-            --        Track them in the _refresh() log...
+            -- FIXME: We can't consume the return values of refreshtype by running it, because for a reason that is beyond me (scoping? gc?), that renders it useless later, meaning we then enqueue refreshes with bogus arguments...
+            --        Thankfully, we can track them in _refresh()'s logging very soon after that...
             logger.dbg("setDirty via a func from widget", widget and (widget.name or widget.id or tostring(widget)))
         end
     else
@@ -586,7 +597,7 @@ Will return the mode that takes precedence.
 --]]
 local function update_mode(mode1, mode2)
     if refresh_modes[mode1] > refresh_modes[mode2] then
-        logger.dbg("update_mode: Update", mode2, "to", mode1)
+        logger.dbg("update_mode: Update refresh mode", mode2, "to", mode1)
         return mode1
     else
         return mode2
@@ -611,19 +622,20 @@ function UIManager:_refresh(mode, region)
     if not region and mode == "full" then
         self.refresh_count = 0 -- reset counter on explicit full refresh
     end
-    -- special case: full screen partial update
-    -- will get promoted every self.FULL_REFRESH_COUNT updates
+    -- special case: "partial" refreshes
+    -- will get promoted every self.FULL_REFRESH_COUNT refreshes
     -- since _refresh can be called mutiple times via setDirty called in
-    -- different widget before a real screen repaint, we should make sure
+    -- different widgets before a real screen repaint, we should make sure
     -- refresh_count is incremented by only once at most for each repaint
-    -- NOTE: Ideally, we'd only check partial w/ no region set (that neatly narrows it down to just the reader).
+    -- NOTE: Ideally, we'd only check for "partial"" w/ no region set (that neatly narrows it down to just the reader).
     --       In practice, we also want to promote refreshes in a few other places, except purely text-poor UI elements.
     --       (Putting "ui" in that list is problematic with a number of UI elements, most notably, ReaderHighlight,
     --       because it is implemented as "ui" over the full viewport, since we can't devise a proper bounding box).
+    --       So we settle for only "partial", but treating full-screen ones slightly differently.
     if mode == "partial" and not self.refresh_counted then
         self.refresh_count = (self.refresh_count + 1) % self.FULL_REFRESH_COUNT
         if self.refresh_count == self.FULL_REFRESH_COUNT - 1 then
-            -- NOTE: Promote to full if no region (reader), to flashpartial otherwise (UI)
+            -- NOTE: Promote to "full" if no region (reader), to "flashpartial" otherwise (UI)
             if region then
                 mode = "flashpartial"
             else
@@ -637,26 +649,26 @@ function UIManager:_refresh(mode, region)
     -- if no region is specified, define default region
     region = region or Geom:new{w=Screen:getWidth(), h=Screen:getHeight()}
 
-    -- NOTE:  While, ideally, we shouldn't merge updates w/ different waveform modes,
-    --        this allows us to optimize away a number of quirks of our rendering stack
-    --        (f.g., multiple setDirty calls queued when showing/closing a widget because of update mechanisms),
-    --        as well as a few actually effective merges
-    --        (f.g., the disappearance of a selection HL with the following menu update).
+    -- NOTE: While, ideally, we shouldn't merge refreshes w/ different waveform modes,
+    --       this allows us to optimize away a number of quirks of our rendering stack
+    --       (f.g., multiple setDirty calls queued when showing/closing a widget because of update mechanisms),
+    --       as well as a few actually effective merges
+    --       (f.g., the disappearance of a selection HL with the following menu update).
     for i = 1, #self._refresh_stack do
-        -- check for collision with updates that are already enqueued
+        -- check for collision with refreshes that are already enqueued
         if region:intersectWith(self._refresh_stack[i].region) then
             -- combine both refreshes' regions
             local combined = region:combine(self._refresh_stack[i].region)
             -- update the mode, if needed
             mode = update_mode(mode, self._refresh_stack[i].mode)
-            -- remove colliding update
+            -- remove colliding refresh
             table.remove(self._refresh_stack, i)
             -- and try again with combined data
             return self:_refresh(mode, combined)
         end
     end
 
-    -- if we hit no (more) collides, enqueue the update
+    -- if we've stopped hitting collisions, enqueue the refresh
     logger.dbg("_refresh: Enqueued", mode, "update for region", region.x, region.y, region.w, region.h)
     table.insert(self._refresh_stack, {mode = mode, region = region})
 end
