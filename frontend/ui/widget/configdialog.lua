@@ -723,9 +723,8 @@ function ConfigDialog:update()
 end
 
 function ConfigDialog:onCloseWidget()
-    -- NOTE: We pass a nil region to ensure a full-screen flash to avoid ghosting
     UIManager:setDirty("all", function()
-        return "flashpartial", nil
+        return "partial", self.dialog_frame.dimen
     end)
 end
 
