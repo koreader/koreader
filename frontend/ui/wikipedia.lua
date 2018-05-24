@@ -963,10 +963,6 @@ ul, ol {
 li.gallerybox {
     display: inline;
 }
-/* helps crengine to not display them as block elements */
-time, abbr, sup {
-    display: inline;
-}
 ]])
 
     -- ----------------------------------------------------------------
