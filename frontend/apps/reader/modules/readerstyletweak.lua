@@ -380,6 +380,7 @@ You can enable individual tweaks on this book with a tap, or view more details a
                 end,
                 enabled_func = is_enabled,
                 sub_item_table = sub_item_table,
+                separator = item.separator,
             })
         elseif item.id then -- tweak menu item
             -- Set a default priority of 0 if item doesn't have one

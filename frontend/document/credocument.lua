@@ -20,7 +20,6 @@ local CreDocument = Document:new{
 
     _document = false,
     _loaded = false,
-    _cre_dom_version = nil,
 
     line_space_percent = 100,
     default_font = "Noto Serif",
@@ -121,9 +120,6 @@ function CreDocument:init()
         error(self._document)  -- will contain error message
     end
 
-    -- get DOM engine latest version
-    self._cre_dom_version = self._document:getIntProperty("crengine.dom.version")
-
     -- adjust font sizes according to screen dpi
     self._document:adjustFontSizes(Screen:getDPI())
 
@@ -143,7 +139,7 @@ function CreDocument:init()
 end
 
 function CreDocument:getLatestDomVersion()
-    return self._cre_dom_version
+    return cre.getLatestDomVersion()
 end
 
 function CreDocument:getOldestDomVersion()
@@ -151,7 +147,8 @@ function CreDocument:getOldestDomVersion()
 end
 
 function CreDocument:requestDomVersion(version)
-    self._document:setIntProperty("crengine.dom.version", version)
+    logger.dbg("CreDocument: requesting DOM version:", version)
+    cre.requestDomVersion(version)
 end
 
 function CreDocument:loadDocument(full_document)

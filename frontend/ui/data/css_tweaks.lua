@@ -129,32 +129,6 @@ img {
     {
         title = _("Workarounds"),
         {
-            id = "html_tags_fix";
-            title = _("Correct handling of some HTML elements"),
-            description = _("Make some HTML elements (eg: <cite>) behave as they should (inline/block).\nThis may break past bookmarks and highlights."),
-            css = [[
-cite { display: inline; font-style: italic; }
-            ]],
-        },
-        {
-            id = "list_item_block";
-            title = _("Better rendering of list items"),
-            description = _("Correctly render list items as block elements.\nThis may break past bookmarks and highlights."),
-            css = [[
-li {display: -cr-list-item-block; }
-            ]],
-        },
-        {
-            id = "list_items_fix";
-            title = _("Fix some list items issues"),
-            description = _("Work around some crengine list items rendering issues."),
-            css = [[
-li > p:first-child   { display: inline !important; }
-li > div:first-child { display: inline !important; }
-            ]],
-            separator = true,
-        },
-        {
             id = "border_all_none";
             title = _("Remove all borders"),
             description = _("Work around a crengine bug that makes a border drawn when {border: black solid 0px}."),
