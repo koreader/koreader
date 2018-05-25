@@ -59,6 +59,36 @@ local CssTweaks = {
             },
         },
         {
+            title = _("Text alignment"),
+            {
+                id = "text_align_most_left",
+                title = _("Left align most text"),
+                description = _("Enforce left alignment of text in common text elements."),
+                css = [[body, p, li { text-align: left !important; }]],
+                priority = 2, -- so it overrides the justify below
+            },
+            {
+                id = "text_align_all_left",
+                title = _("Left align all elements"),
+                description = _("Enforce left alignment of text in all elements."),
+                css = [[* { text-align: left !important; }]],
+                priority = 2, -- so it overrides the justify below
+                separator = true,
+            },
+            {
+                id = "text_align_most_justify",
+                title = _("Justify most text"),
+                description = _("Text justification is the default, but it may be overridden by publisher styles. This will re-enable it for most common text elements."),
+                css = [[body, p, li { text-align: justify !important; }]],
+            },
+            {
+                id = "text_align_all_justify",
+                title = _("Justify all elements"),
+                description = _("Text justification is the default, but it may be overridden by publisher styles. This will re-enable it for all elements, which may lose centering in some of them."),
+                css = [[* { text-align: justify !important; }]],
+            },
+        },
+        {
             id = "sub_sup_smaller";
             title = _("Smaller sub- and superscript"),
             description = _("Prevent sub- and superscript from affecting line-height."),
