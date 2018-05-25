@@ -576,8 +576,9 @@ function DictQuickLookup:onCloseWidget()
             end
         end
     end
+    -- NOTE: Drop region to make it a full-screen flash
     UIManager:setDirty(nil, function()
-        return "flashpartial", self.dict_frame.dimen
+        return "flashpartial", nil
     end)
     return true
 end
@@ -775,7 +776,7 @@ function DictQuickLookup:onSwipe(arg, ges)
         else
             if self.refresh_callback then self.refresh_callback() end
             -- trigger a flashing text refresh
-            UIManager:setDirty(nil, "flashpartial")
+            UIManager:setDirty(nil, "flashpartial", self.dict_frame.dimen)
             -- a long diagonal swipe may also be used for taking a screenshot,
             -- so let it propagate
             return false
