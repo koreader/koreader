@@ -322,7 +322,7 @@ function UIManager:nextTick(action)
     return self:scheduleIn(0, action)
 end
 
--- Run UI callbacks ASAP without skipping repaints?
+-- Useful to run UI callbacks ASAP without skipping repaints
 function UIManager:tickAfterNext(action)
     return self:nextTick(function() self:nextTick(action) end)
 end
