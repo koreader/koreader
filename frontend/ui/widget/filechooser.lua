@@ -7,6 +7,7 @@ local UIManager = require("ui/uimanager")
 local ffi = require("ffi")
 local lfs = require("libs/libkoreader-lfs")
 local util = require("ffi/util")
+local C = ffi.C
 local _ = require("gettext")
 local Screen = Device.screen
 local getFileNameSuffix = require("util").getFileNameSuffix
@@ -18,7 +19,7 @@ int strcoll (const char *str1, const char *str2);
 
 -- string sort function respecting LC_COLLATE
 local function strcoll(str1, str2)
-    return ffi.C.strcoll(str1, str2) < 0
+    return C.strcoll(str1, str2) < 0
 end
 
 local function kobostrcoll(str1, str2)

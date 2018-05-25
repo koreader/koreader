@@ -6,6 +6,7 @@ local KoptOptions = require("ui/data/koptoptions")
 local logger = require("logger")
 local util = require("util")
 local pdf = nil
+local C = ffi.C
 
 local PdfDocument = Document:new{
     _document = false,
@@ -152,13 +153,13 @@ function PdfDocument:saveHighlight(pageno, item)
         quadpoints[8*i-1] = item.pboxes[i].y
     end
     local page = self._document:openPage(pageno)
-    local annot_type = ffi.C.PDF_ANNOT_HIGHLIGHT
+    local annot_type = C.PDF_ANNOT_HIGHLIGHT
     if item.drawer == "lighten" then
-        annot_type = ffi.C.PDF_ANNOT_HIGHLIGHT
+        annot_type = C.PDF_ANNOT_HIGHLIGHT
     elseif item.drawer == "underscore" then
-        annot_type = ffi.C.PDF_ANNOT_UNDERLINE
+        annot_type = C.PDF_ANNOT_UNDERLINE
     elseif item.drawer == "strikeout" then
-        annot_type = ffi.C.PDF_ANNOT_STRIKEOUT
+        annot_type = C.PDF_ANNOT_STRIKEOUT
     end
     page:addMarkupAnnotation(quadpoints, n, annot_type)
     page:close()

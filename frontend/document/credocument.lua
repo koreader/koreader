@@ -7,6 +7,7 @@ local Geom = require("ui/geometry")
 local RenderImage = require("ui/renderimage")
 local Screen = require("device").screen
 local ffi = require("ffi")
+local C = ffi.C
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
@@ -205,7 +206,7 @@ function CreDocument:getCoverPageImage()
     local data, size = self._document:getCoverPageImageData()
     if data and size then
         local image = RenderImage:renderImageData(data, size)
-        ffi.C.free(data) -- free the userdata we got from crengine
+        C.free(data) -- free the userdata we got from crengine
         return image
     end
 end
@@ -215,7 +216,7 @@ function CreDocument:getImageFromPosition(pos, want_frames)
     if data and size then
         logger.dbg("CreDocument: got image data from position", data, size)
         local image = RenderImage:renderImageData(data, size, want_frames)
-        ffi.C.free(data) -- free the userdata we got from crengine
+        C.free(data) -- free the userdata we got from crengine
         return image
     end
 end
