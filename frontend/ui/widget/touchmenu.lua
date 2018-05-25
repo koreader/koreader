@@ -15,6 +15,7 @@ local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local IconButton = require("ui/widget/iconbutton")
+local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
@@ -719,7 +720,7 @@ function TouchMenu:onMenuHold(item)
         else
             self:onInput(item.hold_input_func())
         end
-    else
+    elseif item.hold_callback or type(item.hold_callback_func) == "function" then
         local callback = item.hold_callback
         if item.hold_callback_func then
             callback = item.hold_callback_func()
@@ -733,6 +734,14 @@ function TouchMenu:onMenuHold(item)
                     callback()
                 end
             end)
+        end
+    elseif item.help_text or type(item.help_text_func) == "function" then
+        local help_text = item.help_text
+        if item.help_text_func then
+            help_text = item.help_text_func()
+        end
+        if help_text then
+            UIManager:show(InfoMessage:new{ text = help_text, })
         end
     end
     return true
