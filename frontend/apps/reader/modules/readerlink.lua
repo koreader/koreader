@@ -105,7 +105,7 @@ function ReaderLink:addToMainMenu(menu_items)
                     G_reader_settings:saveSetting("swipe_to_go_back",
                         not isSwipeToGoBackEnabled())
                 end,
-                help_text = _([[Swipe to the right to go back to the previous location after you have followed a link. When the location stack is empty, swiping to the right takes you normally to previous page.]]),
+                help_text = _([[Swipe to the right to go back to the previous location after you have followed a link. When the location stack is empty, swiping to the right takes you to the previous page.]]),
             },
             {
                 text = _("Swipe to follow first link on page"),
@@ -117,7 +117,7 @@ function ReaderLink:addToMainMenu(menu_items)
                         G_reader_settings:delSetting("swipe_to_follow_nearest_link") -- can't have both
                     end
                 end,
-                help_text = _([[Swipe to the left to go the first link in the current page.]]),
+                help_text = _([[Swipe to the left to follow the first link in the current page.]]),
             },
             {
                 text = _("Swipe to follow nearest link"),
@@ -129,7 +129,7 @@ function ReaderLink:addToMainMenu(menu_items)
                         G_reader_settings:delSetting("swipe_to_follow_first_link") -- can't have both
                     end
                 end,
-                help_text = _([[Swipe to the left to go the link nearest to where you started the swipe. This is useful when a small font is used and taping on small links is tedious.]]),
+                help_text = _([[Swipe to the left to follow the link nearest to where you started the swipe. This is useful when a small font is used and tapping on small links is tedious.]]),
                 separator = true,
             },
             {
@@ -140,8 +140,8 @@ function ReaderLink:addToMainMenu(menu_items)
                         not isSwipeToJumpToLatestBookmarkEnabled())
                 end,
                 help_text = _([[Swipe to the left to go the most recently bookmarked page.
-This can be useful to quickly swipe back and forth between your reading and some reference page (for example a map, a characters list...)
-If any of the other Swipe to follow link option is enabled, this will work only when the current page contains no link.]]),
+This can be useful to quickly swipe back and forth between what you are reading and some reference page (for example notes, a map or a characters list).
+If any of the other Swipe to follow link options is enabled, this will work only when the current page contains no link.]]),
             },
         }
     }
