@@ -5,8 +5,10 @@ local DrawContext = require("ffi/drawcontext")
 local KoptOptions = require("ui/data/koptoptions")
 local logger = require("logger")
 local util = require("util")
-local pdf = nil
+local ffi = require("ffi")
 local C = ffi.C
+local pdf = nil
+
 
 local PdfDocument = Document:new{
     _document = false,
