@@ -78,13 +78,13 @@ local CssTweaks = {
             {
                 id = "text_align_most_justify",
                 title = _("Justify most text"),
-                description = _("Text justification is the default, but may be overriden by publisher styles. This will re-enable it for most common text elements."),
+                description = _("Text justification is the default, but it may be overridden by publisher styles. This will re-enable it for most common text elements."),
                 css = [[body, p, li { text-align: justify !important; }]],
             },
             {
                 id = "text_align_all_justify",
                 title = _("Justify all elements"),
-                description = _("Text justification is the default, but may be overriden by publisher styles. This will re-enable it for all elements, which may lose centering in some of them."),
+                description = _("Text justification is the default, but it may be overridden by publisher styles. This will re-enable it for all elements, which may lose centering in some of them."),
                 css = [[* { text-align: justify !important; }]],
             },
         },
