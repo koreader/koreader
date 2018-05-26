@@ -1,3 +1,7 @@
+--[[--
+This module contains miscellaneous helper functions for the creoptions and koptoptions.
+]]
+
 local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
@@ -5,15 +9,13 @@ local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
 
-local OptionsUtil = {}
+local optionutil = {}
 
-function OptionsUtil:enableIfEquals(configurable, option, value)
+function optionutil.enableIfEquals(configurable, option, value)
     return configurable[option] == value
 end
 
-function OptionsUtil:showValues(configurable, option, prefix)
-    local logger = require("logger")
-    logger.info(prefix, option.name)
+function optionutil.showValues(configurable, option, prefix)
     local default = G_reader_settings:readSetting(prefix.."_"..option.name)
     local current = configurable[option.name]
     local value_default, value_current
@@ -79,7 +81,7 @@ local function tableComp(a,b)
     return true
 end
 
-function OptionsUtil:showValuesMargins(configurable, option)
+function optionutil.showValuesMargins(configurable, option)
     local default = G_reader_settings:readSetting("copt_"..option.name)
     local current = configurable[option.name]
     local current_string
@@ -128,4 +130,4 @@ Default value: %7
     end
 end
 
-return OptionsUtil
+return optionutil
