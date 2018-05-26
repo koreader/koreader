@@ -379,6 +379,8 @@ flashui: like ui, but flashing.
 flashpartial: like partial, but flashing (and not counting towards flashing promotions).
               Can be used when closing an UI element, to avoid ghosting.
               You can even drop the region in these cases, to ensure a fullscreen flash.
+              NOTE: On REAGL devices, "flashpartial" will NOT actually flash (by design).
+                    As such, even onClose, you might prefer "flashui" in some instances...
 
 NOTE: You'll notice a trend on UI elements that are usually shown *over* some kind of text
       of using "ui" onShow & onUpdate, but "partial" onClose.
