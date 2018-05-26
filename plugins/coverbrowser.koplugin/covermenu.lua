@@ -91,7 +91,7 @@ function CoverMenu:updateItems(select_number)
         local refresh_dimen =
             old_dimen and old_dimen:combine(self.dimen)
             or self.dimen
-        return "ui", refresh_dimen
+        return "partial", refresh_dimen
     end)
 
     -- As additionally done in FileChooser:updateItems()
@@ -139,9 +139,9 @@ function CoverMenu:updateItems(select_number)
                         if item.refresh_dimen then
                             -- MosaicMenuItem may exceed its own dimen in its paintTo
                             -- with its "description" hint
-                            return "ui", item.refresh_dimen
+                            return "partial", item.refresh_dimen
                         else
-                            return "ui", item[1].dimen
+                            return "partial", item[1].dimen
                         end
                     end
                     UIManager:setDirty(self.show_parent, refreshfunc)
