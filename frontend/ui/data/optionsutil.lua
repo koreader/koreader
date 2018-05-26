@@ -9,13 +9,13 @@ local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
 
-local optionutil = {}
+local optionsutil = {}
 
-function optionutil.enableIfEquals(configurable, option, value)
+function optionsutil.enableIfEquals(configurable, option, value)
     return configurable[option] == value
 end
 
-function optionutil.showValues(configurable, option, prefix)
+function optionsutil.showValues(configurable, option, prefix)
     local default = G_reader_settings:readSetting(prefix.."_"..option.name)
     local current = configurable[option.name]
     local value_default, value_current
@@ -81,7 +81,7 @@ local function tableComp(a,b)
     return true
 end
 
-function optionutil.showValuesMargins(configurable, option)
+function optionsutil.showValuesMargins(configurable, option)
     local default = G_reader_settings:readSetting("copt_"..option.name)
     local current = configurable[option.name]
     local current_string
@@ -130,4 +130,4 @@ Default value: %7
     end
 end
 
-return optionutil
+return optionsutil
