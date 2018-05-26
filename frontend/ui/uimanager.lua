@@ -651,9 +651,9 @@ function UIManager:_refresh(mode, region)
     if mode == "partial" and not self.refresh_counted then
         self.refresh_count = (self.refresh_count + 1) % self.FULL_REFRESH_COUNT
         if self.refresh_count == self.FULL_REFRESH_COUNT - 1 then
-            -- NOTE: Promote to "full" if no region (reader), to "flashpartial" otherwise (UI)
+            -- NOTE: Promote to "full" if no region (reader), to "flashui" otherwise (UI)
             if region then
-                mode = "flashpartial"
+                mode = "flashui"
             else
                 mode = "full"
             end

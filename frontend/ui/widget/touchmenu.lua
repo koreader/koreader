@@ -513,7 +513,7 @@ end
 
 function TouchMenu:onCloseWidget()
     -- NOTE: We pass a nil region to ensure a full-screen flash to avoid ghosting
-    UIManager:setDirty(nil, "flashpartial", nil)
+    UIManager:setDirty(nil, "flashui", nil)
 end
 
 function TouchMenu:_recalculatePageLayout()
