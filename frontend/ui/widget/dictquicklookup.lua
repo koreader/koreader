@@ -775,8 +775,8 @@ function DictQuickLookup:onSwipe(arg, ges)
             self:changeToPrevDict()
         else
             if self.refresh_callback then self.refresh_callback() end
-            -- trigger a flashing text refresh
-            UIManager:setDirty(nil, "flashui", self.dict_frame.dimen)
+            -- trigger a full-screen HQ flashing refresh
+            UIManager:setDirty(nil, "full")
             -- a long diagonal swipe may also be used for taking a screenshot,
             -- so let it propagate
             return false
