@@ -1,5 +1,6 @@
 local Cache = require("cache")
 local CacheItem = require("cacheitem")
+local Device = require("device")
 local Document = require("document/document")
 local DrawContext = require("ffi/drawcontext")
 local KoptOptions = require("ui/data/koptoptions")
@@ -28,6 +29,12 @@ function PdfDocument:init()
     -- and :postRenderPage() when mupdf is called without kopt involved.
     pdf.color = false
     self:updateColorRendering()
+    if pdf.bgr == nil then
+        pdf.bgr = false
+        if Device:isKobo() then
+            pdf.bgr = true
+        end
+    end
     self.koptinterface = require("document/koptinterface")
     self.configurable:loadDefaults(self.options)
     local ok

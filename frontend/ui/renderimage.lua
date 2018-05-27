@@ -68,11 +68,13 @@ end
 function RenderImage:renderImageDataWithMupdf(data, size, width, height)
     if not Mupdf then Mupdf = require("ffi/mupdf") end
     -- NOTE: Kobo's fb is BGR, not RGB. Handle the conversion in MuPDF if needed.
-    local bgr = false
-    if Device:isKobo() then
-        bgr = true
+    if Mupdf.bgr == nil then
+        Mupdf.bgr = false
+        if Device:isKobo() then
+            Mupdf.bgr = true
+        end
     end
-    local ok, image = pcall(Mupdf.renderImage, data, size, width, height, bgr)
+    local ok, image = pcall(Mupdf.renderImage, data, size, width, height)
     logger.dbg("Mupdf.renderImage", ok, image)
     if not ok then
         logger.info("failed rendering image (mupdf):", image)
