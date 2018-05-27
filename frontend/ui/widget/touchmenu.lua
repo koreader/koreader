@@ -598,16 +598,16 @@ function TouchMenu:updateItems()
     self.selected = { x = self.cur_tab, y = 1 } -- reset the position of the focusmanager
 
     -- NOTE: We use a slightly ugly hack to detect a brand new menu vs. a tab switch,
-    --       in order to flash on initial menu popup...
+    --       in order to optionally flash on initial menu popup...
     UIManager:setDirty("all", function()
         local refresh_dimen =
             old_dimen and old_dimen:combine(self.dimen)
             or self.dimen
         local refresh_type = "ui"
-        if self.is_fresh then
+        if self.is_fresh and not G_reader_settings:isFalse("flash_ui") then
             refresh_type = "flashui"
-            -- Drop the region, too, to make it full-screen. May help when starting from a "small" menu.
-            refresh_dimen = nil
+            -- Drop the region, too, to make it full-screen? May help when starting from a "small" menu.
+            --refresh_dimen = nil
             self.is_fresh = false
         end
         return refresh_type, refresh_dimen
