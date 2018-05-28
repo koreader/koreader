@@ -650,6 +650,20 @@ function UIManager:_refresh(mode, region)
     if not region and mode == "full" then
         self.refresh_count = 0 -- reset counter on explicit full refresh
     end
+    -- Handle downgrading flashing modes to non-flashing modes, according to user settings.
+    -- NOTE: Do it before "full" promotion and collision checks/update_mode.
+    if G_reader_settings:isTrue("avoid_flashing_ui") then
+        if mode == "flashui" then
+            mode = "ui"
+            logger.dbg("_refresh: downgraded flashui refresh to", mode)
+        elseif mode == "flashpartial" then
+            mode = "partial"
+            logger.dbg("_refresh: downgraded flashpartial refresh to", mode)
+        elseif mode == "partial" and region then
+            mode = "ui"
+            logger.dbg("_refresh: downgraded regional partial refresh to", mode)
+        end
+    end
     -- special case: "partial" refreshes
     -- will get promoted every self.FULL_REFRESH_COUNT refreshes
     -- since _refresh can be called mutiple times via setDirty called in
@@ -669,7 +683,7 @@ function UIManager:_refresh(mode, region)
             else
                 mode = "full"
             end
-            logger.dbg("promote refresh to", mode)
+            logger.dbg("_refresh: promote refresh to", mode)
         end
         self.refresh_counted = true
     end
