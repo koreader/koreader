@@ -66,9 +66,6 @@ function ButtonDialog:onShow()
 end
 
 function ButtonDialog:onCloseWidget()
-    -- NOTE: plugins/coverbrowser.koplugin/covermenu.lua builds a menu out of us, and as such inherits a full open/close cycle.
-    --       Which means this "partial" wins the upgrade game during UIManager's update coalescence...
-    --       Switching to "ui" works, but generally looks worse, so, don't.
     UIManager:setDirty(nil, function()
         return "partial", self[1][1].dimen
     end)
