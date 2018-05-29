@@ -70,6 +70,16 @@ end
 
 function ReaderToc:onPageUpdate(pageno)
     self.pageno = pageno
+    if G_reader_settings:readSetting("full_refresh_count") == -1 then
+        if self:isChapterEnd(pageno, 0) then
+            self.chapter_refresh = true
+        elseif self:isChapterBegin(pageno, 0) and self.chapter_refresh then
+            UIManager:setDirty("all", "full")
+            self.chapter_refresh = false
+        else
+            self.chapter_refresh = false
+        end
+    end
 end
 
 function ReaderToc:onPosUpdate(pos, pageno)
