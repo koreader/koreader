@@ -71,7 +71,6 @@ return {
             text = _("Every chapter"),
             checked_func = function() return UIManager:getRefreshRate() == -1 end,
             callback = function() UIManager:setRefreshRate(-1) end,
-
         },
     }
 }
