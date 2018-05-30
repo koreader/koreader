@@ -37,7 +37,7 @@ function HtmlBoxWidget:init()
     end
     if Mupdf.bgr == nil then
         Mupdf.bgr = false
-        if Device:isKobo() then
+        if Device:hasBGRFrameBuffer() then
             Mupdf.bgr = true
         end
     end

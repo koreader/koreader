@@ -31,7 +31,7 @@ function PdfDocument:init()
     self:updateColorRendering()
     if pdf.bgr == nil then
         pdf.bgr = false
-        if Device:isKobo() then
+        if Device:hasBGRFrameBuffer() then
             pdf.bgr = true
         end
     end

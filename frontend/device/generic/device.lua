@@ -26,6 +26,7 @@ local Device = {
     needsTouchScreenProbe = no,
     hasClipboard = no,
     hasColorScreen = no,
+    hasBGRFrameBuffer = no,
 
     -- use these only as a last resort. We should abstract the functionality
     -- and have device dependent implementations in the corresponting
@@ -64,6 +65,8 @@ function Device:init()
         if G_reader_settings:has("color_rendering") then return G_reader_settings:isTrue("color_rendering") end
         return self.screen.isColorScreen()
     end
+
+    self.screen.isBGRFrameBuffer = self.hasBGRFrameBuffer
 
     local is_eink = G_reader_settings:readSetting("eink")
     self.screen.eink = (is_eink == nil) or is_eink

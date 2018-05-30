@@ -70,7 +70,7 @@ function RenderImage:renderImageDataWithMupdf(data, size, width, height)
     -- NOTE: Kobo's fb is BGR, not RGB. Handle the conversion in MuPDF if needed.
     if Mupdf.bgr == nil then
         Mupdf.bgr = false
-        if Device:isKobo() then
+        if Device:hasBGRFrameBuffer() then
             Mupdf.bgr = true
         end
     end
