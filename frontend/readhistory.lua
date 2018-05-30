@@ -181,9 +181,15 @@ end
 function ReadHistory:addItem(file)
     assert(self ~= nil)
     if file ~= nil and lfs.attributes(file, "mode") == "file" then
-        table.insert(self.hist, 1, buildEntry(os.time(), file))
+        local now = os.time()
+        table.insert(self.hist, 1, buildEntry(now, file))
         -- TODO(zijiehe): We do not need to sort if we can use binary insert and
         -- binary search.
+        -- util.execute("/bin/touch", "-a", file)
+        -- This emulates `touch -a` in LuaFileSystem's API, since it may be absent (Android)
+        -- or provided by busybox, which doesn't support the `-a` flag.
+        local mtime = lfs.attributes(file, "modification")
+        lfs.touch(file, now, mtime)
         self:_sort()
         self:_reduce()
         self:_flush()
