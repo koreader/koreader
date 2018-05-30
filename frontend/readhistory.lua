@@ -186,8 +186,8 @@ function ReadHistory:addItem(file)
         -- TODO(zijiehe): We do not need to sort if we can use binary insert and
         -- binary search.
         -- util.execute("/bin/touch", "-a", file)
-        -- this emulates "touch -a" in LuaFileSystem's limited API, since the
-        -- device /bin/touch is a busybox that doesn't provide -a option
+        -- This emulates `touch -a` in LuaFileSystem's API, since it may be absent (Android)
+        -- or provided by busybox, which doesn't support the `-a` flag.
         local mtime = lfs.attributes(file, "modification")
         lfs.touch(file, now, mtime)
         self:_sort()
