@@ -920,10 +920,7 @@ h1.koreaderwikifrontpage, h5.koreaderwikifrontpage {
 p.koreaderwikifrontpage {
     font-style: italic;
     font-size: 90%;
-    margin-left: 2em;
-    margin-right: 2em;
-    margin-top: 1em;
-    margin-bottom: 1em;
+    margin: 1em 2em 1em 2em;
 }
 hr.koreaderwikifrontpage {
     margin-left: 20%;
@@ -941,28 +938,52 @@ a {
 a.newwikinonexistent {
     text-decoration: none;
 }
-/* show a box around image thumbnails */
-div.thumb {
-    border: dotted 1px black;
-    margin-top: 0.5em;
-    margin-bottom: 0.5em;
-    margin-left: 2.5em;
-    margin-right: 2.5em;
-    padding-top: ]].. (include_images and "0.5em" or "0.15em") .. [[;
-    padding-bottom: 0.2em;
-    padding-left: 0.5em;
-    padding-right: 0.5em;
-    text-align: center;
-    font-size: 90%;
-}
 /* don't waste left margin for notes and list of pages */
 ul, ol {
     margin-left: 0em;
 }
-/* avoid a line with a standalone bullet */
-li.gallerybox {
-    display: inline;
+/* show a box around image thumbnails */
+div.thumb {
+    border: dotted 1px black;
+    margin:  0.5em 2.5em 0.5em 2.5em;
+    padding: 0.5em 0.5em 0.2em 0.5em;
+    padding-top: ]].. (include_images and "0.5em" or "0.15em") .. [[;
+    text-align: center;
+    font-size: 90%;
 }
+/* show a box around image in gallery list (li.gallery
+ * is set up a bit differently than div.thumb - we try
+ * to make them look the same */
+li.gallerybox {
+    list-style-type: none;
+    border: dotted 1px black;
+    margin:  0.5em 2.5em 0.5em 2.5em;
+    padding: 0.5em 0.5em 0.2em 0.5em;
+    padding-top: ]].. (include_images and "0.5em" or "0.15em") .. [[;
+    text-align: center;
+    font-size: 90%;
+}
+li.gallerybox div.thumb {
+    border: solid 1px white;
+    margin: 0;
+    padding: 0;
+}
+/* override this one often set in style="" with various values */
+li.gallerybox div.thumb div {
+    margin: 0 !important;
+}
+li.gallerybox div.gallerytext p {
+    text-align: center;
+    font-size: 90%;
+}
+.citation {
+    font-style: italic;
+}
+/* hide some view/edit/discuss short links displayed as "v m d" */
+.nv-view, .nv-edit, .nv-talk {
+    display: none;
+}
+/* hiding .noprint may discard some interesting links */
 ]])
 
     -- ----------------------------------------------------------------
