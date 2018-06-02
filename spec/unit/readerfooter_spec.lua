@@ -146,7 +146,7 @@ describe("Readerfooter module", function()
         local timeinfo = footer.textGeneratorMap.time()
         local page_count = readerui.document:getPageCount()
         -- stats has not been initialized here, so we get na TB and TC
-        assert.are.same('1 / '..page_count..' | '..timeinfo..' | => 0 | B:0% | R:0% | TB: na | TC: na',
+        assert.are.same('1 / '..page_count..' | '..timeinfo..' | => 0 | B:0% | R:1% | TB: na | TC: na',
                         footer.footer_text.text)
     end)
 
@@ -295,11 +295,8 @@ describe("Readerfooter module", function()
         assert.are.same(365, footer.text_width)
 
         footer:onPageUpdate(100)
-        local logger = require("logger")
-        logger.info("footer.progress_bar.width:", footer.progress_bar.width)
-        logger.info("footer.text_width:", footer.text_width)
-        assert.are.same(191, footer.progress_bar.width)
-        assert.are.same(389, footer.text_width)
+        assert.are.same(183, footer.progress_bar.width)
+        assert.are.same(397, footer.text_width)
     end)
 
     it("should support chapter markers", function()
