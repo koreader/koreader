@@ -156,17 +156,10 @@ img {
             ]],
         },
     },
-    {
-        title = _("Workarounds"),
-        {
-            id = "border_all_none";
-            title = _("Remove all borders"),
-            description = _("Work around a crengine bug that makes a border drawn when {border: black solid 0px}."),
-            -- css = [[* { border-style: none !important; }]],
-            -- Better to keep the layout implied by width, just draw them in white
-            css = [[* { border-color: white !important; }]],
-        },
-    },
+    -- No current need for workarounds
+    -- {
+    --     title = _("Workarounds"),
+    -- },
 }
 
 return CssTweaks
