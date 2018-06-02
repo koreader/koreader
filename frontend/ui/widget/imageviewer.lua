@@ -602,7 +602,7 @@ function ImageViewer:onCloseWidget()
         self._images_list.free()
     end
     UIManager:setDirty(nil, function()
-        return "partial", self.main_frame.dimen
+        return "flashui", self.main_frame.dimen
     end)
     return true
 end

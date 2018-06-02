@@ -552,9 +552,9 @@ function DictQuickLookup:update()
         self.movable,
     }
     UIManager:setDirty("all", function()
-        local update_region = self.dict_frame.dimen:combine(orig_dimen)
+        local update_region = self.dict_frame and self.dict_frame.dimen and self.dict_frame.dimen:combine(orig_dimen) or orig_dimen
         logger.dbg("update dict region", update_region)
-        return "ui", update_region
+        return "partial", update_region
     end)
 end
 
@@ -576,15 +576,16 @@ function DictQuickLookup:onCloseWidget()
             end
         end
     end
+    -- NOTE: Drop region to make it a full-screen flash
     UIManager:setDirty(nil, function()
-        return "partial", self.dict_frame.dimen
+        return "flashui", nil
     end)
     return true
 end
 
 function DictQuickLookup:onShow()
     UIManager:setDirty(self, function()
-        return "ui", self.dict_frame.dimen
+        return "flashui", self.dict_frame.dimen
     end)
     return true
 end
@@ -774,7 +775,7 @@ function DictQuickLookup:onSwipe(arg, ges)
             self:changeToPrevDict()
         else
             if self.refresh_callback then self.refresh_callback() end
-            -- trigger full refresh
+            -- trigger a full-screen HQ flashing refresh
             UIManager:setDirty(nil, "full")
             -- a long diagonal swipe may also be used for taking a screenshot,
             -- so let it propagate

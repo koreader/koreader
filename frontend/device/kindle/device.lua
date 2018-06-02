@@ -248,6 +248,10 @@ local KindleOasis2 = Kindle:new{
     hasFrontlight = yes,
     display_dpi = 300,
     touch_dev = "/dev/input/by-path/platform-30a30000.i2c-event",
+
+    -- NOTE: Incomplete, but at least they're confirmed.
+    --batt_capacity_file = "/sys/class/power_supply/max77796-battery/capacity",
+    --is_charging_file = "/sys/class/power_supply/max77796-charger/charging",
 }
 
 local KindleBasic2 = Kindle:new{

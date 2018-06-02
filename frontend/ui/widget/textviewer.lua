@@ -246,8 +246,8 @@ function TextViewer:onSwipe(arg, ges)
             self.scroll_text_w:scrollText(-1)
             return true
         else
-            -- trigger full refresh
-            UIManager:setDirty(nil, "full")
+            -- trigger a flashing text refresh
+            UIManager:setDirty(nil, "flashui", self.frame.dimen)
             -- a long diagonal swipe may also be used for taking a screenshot,
             -- so let it propagate
             return false

@@ -23,6 +23,7 @@ local Kobo = Generic:new{
     model = "Kobo",
     isKobo = yes,
     isTouchDevice = yes, -- all of them are
+    hasBGRFrameBuffer = yes, -- has always been the case, even on 16bpp FWs
 
     -- most Kobos have X/Y switched for the touch screen
     touch_switch_xy = true,

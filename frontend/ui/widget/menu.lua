@@ -403,13 +403,14 @@ function MenuItem:onTapSelect(arg, ges)
         coroutine.resume(co)
     else
         self[1].invert = true
-        local refreshfunc = function()
-            return "ui", self[1].dimen
-        end
-        UIManager:setDirty(self.show_parent, refreshfunc)
-        UIManager:scheduleIn(0.1, function()
+        UIManager:setDirty(self.show_parent, function()
+            return "fast", self[1].dimen
+        end)
+        UIManager:tickAfterNext(function()
             self[1].invert = false
-            UIManager:setDirty(self.show_parent, refreshfunc)
+            UIManager:setDirty(self.show_parent, function()
+                return "ui", self[1].dimen
+            end)
             logger.dbg("creating coroutine for menu select")
             local co = coroutine.create(function()
                 self.menu:onMenuSelect(self.table, pos)
@@ -426,13 +427,14 @@ function MenuItem:onHoldSelect(arg, ges)
         self.menu:onMenuHold(self.table, pos)
     else
         self[1].invert = true
-        local refreshfunc = function()
-            return "ui", self[1].dimen
-        end
-        UIManager:setDirty(self.show_parent, refreshfunc)
-        UIManager:scheduleIn(0.1, function()
+        UIManager:setDirty(self.show_parent, function()
+            return "fast", self[1].dimen
+        end)
+        UIManager:tickAfterNext(function()
             self[1].invert = false
-            UIManager:setDirty(self.show_parent, refreshfunc)
+            UIManager:setDirty(self.show_parent, function()
+                return "ui", self[1].dimen
+            end)
             self.menu:onMenuHold(self.table, pos)
         end)
     end
@@ -807,6 +809,8 @@ function Menu:onCloseWidget()
     -- For example, it's a dirty hack to use two menus(one this menu and one
     -- touch menu) in the filemanager in order to capture tap gesture to popup
     -- the filemanager menu.
+    -- NOTE: For the same reason, don't make it flash,
+    --       because that'll trigger when we close the FM and open a book...
     UIManager:setDirty(nil, "partial")
 end
 

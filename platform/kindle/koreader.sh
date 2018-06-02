@@ -126,8 +126,8 @@ export TESSDATA_PREFIX="data"
 # export dict directory
 export STARDICT_DATA_DIR="data/dict"
 
-# export external font directory
-export EXT_FONT_DIR="/mnt/us/fonts"
+# export external font directories (In order: stock, legacy custom, stock extra, font hack)
+export EXT_FONT_DIR="/usr/java/lib/fonts;/mnt/us/fonts;/var/local/font/mnt;/mnt/us/linkfonts/fonts"
 
 # Only setup IPTables on evices where it makes sense to (FW 5.x & K4)
 if [ "${INIT_TYPE}" = "upstart" ] || [ "$(uname -r)" = "2.6.31-rt11-lab126" ]; then
@@ -137,39 +137,6 @@ if [ "${INIT_TYPE}" = "upstart" ] || [ "$(uname -r)" = "2.6.31-rt11-lab126" ]; t
     iptables -A INPUT -i wlan0 -p tcp --dport 49152:49162 -j ACCEPT
     # accept input ports for calibre companion
     iptables -A INPUT -i wlan0 -p udp --dport 8134 -j ACCEPT
-fi
-
-# bind-mount system fonts
-if ! grep ${KOREADER_DIR}/fonts/host /proc/mounts >/dev/null 2>&1; then
-    logmsg "Mounting system fonts . . ."
-    mount -o bind /usr/java/lib/fonts ${KOREADER_DIR}/fonts/host
-fi
-
-# bind-mount altfonts
-if [ -d /mnt/us/fonts ]; then
-    mkdir -p ${KOREADER_DIR}/fonts/altfonts
-    if ! grep ${KOREADER_DIR}/fonts/altfonts /proc/mounts >/dev/null 2>&1; then
-        logmsg "Mounting altfonts . . ."
-        mount -o bind /mnt/us/fonts ${KOREADER_DIR}/fonts/altfonts
-    fi
-fi
-
-# bind-mount csp fonts
-if [ -d /var/local/font/mnt ]; then
-    mkdir -p ${KOREADER_DIR}/fonts/cspfonts
-    if ! grep ${KOREADER_DIR}/fonts/cspfonts /proc/mounts >/dev/null 2>&1; then
-        logmsg "Mounting cspfonts . . ."
-        mount -o bind /var/local/font/mnt ${KOREADER_DIR}/fonts/cspfonts
-    fi
-fi
-
-# bind-mount linkfonts
-if [ -d /mnt/us/linkfonts/fonts ]; then
-    mkdir -p ${KOREADER_DIR}/fonts/linkfonts
-    if ! grep ${KOREADER_DIR}/fonts/linkfonts /proc/mounts >/dev/null 2>&1; then
-        logmsg "Mounting linkfonts . . ."
-        mount -o bind /mnt/us/linkfonts/fonts ${KOREADER_DIR}/fonts/linkfonts
-    fi
 fi
 
 # check if we need to disable the system passcode, because it messes with us in fun and interesting (and, more to the point, intractable) ways...
@@ -274,30 +241,6 @@ done
 if pidof reader.lua >/dev/null 2>&1; then
     logmsg "Sending a SIGTERM to stray KOreader processes . . ."
     killall -TERM reader.lua
-fi
-
-# unmount system fonts
-if grep ${KOREADER_DIR}/fonts/host /proc/mounts >/dev/null 2>&1; then
-    logmsg "Unmounting system fonts . . ."
-    umount ${KOREADER_DIR}/fonts/host
-fi
-
-# unmount altfonts
-if grep ${KOREADER_DIR}/fonts/altfonts /proc/mounts >/dev/null 2>&1; then
-    logmsg "Unmounting altfonts . . ."
-    umount ${KOREADER_DIR}/fonts/altfonts
-fi
-
-# unmount cspfonts
-if grep ${KOREADER_DIR}/fonts/cspfonts /proc/mounts >/dev/null 2>&1; then
-    logmsg "Unmounting cspfonts . . ."
-    umount ${KOREADER_DIR}/fonts/cspfonts
-fi
-
-# unmount linkfonts
-if grep ${KOREADER_DIR}/fonts/linkfonts /proc/mounts >/dev/null 2>&1; then
-    logmsg "Unmounting linkfonts . . ."
-    umount ${KOREADER_DIR}/fonts/linkfonts
 fi
 
 # Resume volumd, if need be
