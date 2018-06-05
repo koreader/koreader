@@ -101,15 +101,18 @@ function CreDocument:init()
         -- and return extention of the 1st file
         file_type = self:zipContentExt(self.file) or "unknown"
     end
-    -- these two format use the same css file
-    if file_type == "html" then
-        file_type = "htm"
+
+    -- June 2018: epub.css has been cleaned to be more conforming to HTML specs
+    -- and to not include class name based styles (with conditional compatiblity
+    -- styles for previously opened documents). It should be usable on all
+    -- HTML based documents, except FB2 which has some incompatible specs.
+    -- The other css files (htm.css, rtf.css...) have not been updated in the
+    -- same way, and are kept as-is for when a previously opened document
+    -- requests one of them.
+    self.default_css = "./data/epub.css"
+    if file_type == "fb2" then
+        self.default_css = "./data/fb2.css"
     end
-    -- if native css-file doesn't exist, one needs to use default cr3.css
-    if not io.open("./data/"..file_type..".css") then
-        file_type = "cr3"
-    end
-    self.default_css = "./data/"..file_type..".css"
 
     -- @TODO check the default view_mode to a global user configurable
     -- variable  22.12 2012 (houqp)
@@ -123,6 +126,11 @@ function CreDocument:init()
 
     -- adjust font sizes according to screen dpi
     self._document:adjustFontSizes(Screen:getDPI())
+
+    if G_reader_settings:readSetting("full_status_bar_font_size") then
+        self._document:setIntProperty("crengine.page.header.font.size",
+            G_reader_settings:readSetting("full_status_bar_font_size"))
+    end
 
     -- set fallback font face
     self._document:setStringProperty("crengine.font.fallback.face",
