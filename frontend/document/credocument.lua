@@ -127,9 +127,9 @@ function CreDocument:init()
     -- adjust font sizes according to screen dpi
     self._document:adjustFontSizes(Screen:getDPI())
 
-    if G_reader_settings:readSetting("full_status_bar_font_size") then
+    if G_reader_settings:readSetting("cre_header_status_font_size") then
         self._document:setIntProperty("crengine.page.header.font.size",
-            G_reader_settings:readSetting("full_status_bar_font_size"))
+            G_reader_settings:readSetting("cre_header_status_font_size"))
     end
 
     -- set fallback font face

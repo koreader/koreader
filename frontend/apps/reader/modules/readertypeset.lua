@@ -146,7 +146,7 @@ function ReaderTypeset:genStyleSheetMenu()
         css_files["fb2.css"] = nil
     end
     -- Add the obsoleted ones to the Obsolete sub menu
-    local obsoleted_css = {} -- for check_func of the Obsoleted sub menu itself
+    local obsoleted_css = {} -- for check_func of the Obsolete sub menu itself
     for __, css in ipairs(OBSOLETED_CSS) do
         obsoleted_css[css_files[css]] = css
         if css_files[css] then
@@ -167,9 +167,9 @@ function ReaderTypeset:genStyleSheetMenu()
     style_table[#style_table].separator = true
     table.insert(style_table, {
         text_func = function()
-            local text = _("Obsoleted")
+            local text = _("Obsolete")
             if obsoleted_css[self.css] then
-                text = T(_("Obsoleted (%1)"), obsoleted_css[self.css])
+                text = T(_("Obsolete (%1)"), obsoleted_css[self.css])
             end
             if obsoleted_css[G_reader_settings:readSetting("copt_css")] then
                 text = text .. "   ★"
