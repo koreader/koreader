@@ -179,6 +179,7 @@ local KoboPika = Kobo:new{
 }
 
 -- Kobo Clara HD:
+-- FIXME: NaturalLight doesn't exactly work right.
 local KoboNova = Kobo:new{
     model = "Kobo_nova",
     hasFrontlight = yes,
