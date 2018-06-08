@@ -179,6 +179,17 @@ local KoboPika = Kobo:new{
     touch_alyssum_protocol = true,
 }
 
+-- Kobo Clara HD:
+local KoboNova = Kobo:new{
+    model = "Kobo_nova",
+    hasFrontlight = yes,
+    touch_snow_protocol = true,
+    touch_mirrored_x = false,
+    touch_probe_ev_epoch_time = true,
+    display_dpi = 300,
+    hasNaturalLight = yes,
+}
+
 function Kobo:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kobo/powerd"):new{device = self}
@@ -640,6 +651,8 @@ elseif codename == "snow" and product_id == "378" then
     return KoboSnowRev2
 elseif codename == "snow" then
     return KoboSnow
+elseif codename == "nova" then
+    return KoboNova
 else
     error("unrecognized Kobo model "..codename)
 end
