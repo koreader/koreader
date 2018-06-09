@@ -183,7 +183,6 @@ local KoboNova = Kobo:new{
     model = "Kobo_nova",
     hasFrontlight = yes,
     touch_snow_protocol = true,
-    touch_mirrored_x = false,
     touch_probe_ev_epoch_time = true,
     display_dpi = 300,
     hasNaturalLight = yes,
