@@ -123,12 +123,10 @@ local KoboSnow = Kobo:new{
 }
 
 -- Kobo Aura H2O2, Rev2:
--- FIXME: This needs fixing, at the very least on the touch protocol front, c.f., #3925
 local KoboSnowRev2 = Kobo:new{
     model = "Kobo_snow",
     hasFrontlight = yes,
-    touch_probe_ev_epoch_time = true,
-    touch_phoenix_protocol = true,
+    touch_snow_protocol = true,
     display_dpi = 265,
     -- the bezel covers the top 11 pixels:
     viewport = Geom:new{x=0, y=11, w=1080, h=1429},
@@ -177,6 +175,18 @@ local KoboPika = Kobo:new{
     model = "Kobo_pika",
     touch_phoenix_protocol = true,
     touch_alyssum_protocol = true,
+}
+
+-- Kobo Clara HD:
+-- FIXME: NaturalLight doesn't exactly work right.
+-- FIXME: Suspend seems broken :( (KOReader crash).
+-- FIXME: Also, rebooting (?!!) is FUBAR, too (KOReader crash, too).
+local KoboNova = Kobo:new{
+    model = "Kobo_nova",
+    hasFrontlight = yes,
+    touch_snow_protocol = true,
+    display_dpi = 300,
+    hasNaturalLight = yes,
 }
 
 function Kobo:init()
@@ -640,6 +650,8 @@ elseif codename == "snow" and product_id == "378" then
     return KoboSnowRev2
 elseif codename == "snow" then
     return KoboSnow
+elseif codename == "nova" then
+    return KoboNova
 else
     error("unrecognized Kobo model "..codename)
 end
