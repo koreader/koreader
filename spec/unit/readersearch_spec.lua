@@ -65,8 +65,8 @@ describe("Readersearch module", function()
             end
         end)
         it("should find the last occurrence", function()
-            -- local logger = require("logger")
-            -- logger.info("nb of pages", doc:getPageCount())
+            local logger = require("logger")
+            logger.info("nb of pages", doc:getPageCount())
             -- 20180602: currently 200 pages (was 202 before)
             for i = 100, 180, 10 do
                 rolling:onGotoPage(i)
