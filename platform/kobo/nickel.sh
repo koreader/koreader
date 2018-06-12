@@ -17,7 +17,7 @@ export LD_LIBRARY_PATH="/usr/local/Kobo"
 # NOTE: That check is possibly wrong on PLATFORM == freescale (because I don't know if the sdio_wifi_pwr module exists there), but we don't terribly care about that.
 if lsmod | grep -q sdio_wifi_pwr; then
     killall udhcpc default.script wpa_supplicant 2>/dev/null
-    [ "${WIFI_MODULE}" != "8189fs" ] && wlarm_le -i "${INTERFACE}" down
+    [ "${WIFI_MODULE}" != "8189fs" ] && [ "${WIFI_MODULE}" != "8189es" ] && wlarm_le -i "${INTERFACE}" down
     ifconfig "${INTERFACE}" down
     # NOTE: Kobo's busybox build is weird. rmmod appears to be modprobe in disguise, defaulting to the -r flag. Use modprobe -r just to be safe...
     # c.f., #2394?
