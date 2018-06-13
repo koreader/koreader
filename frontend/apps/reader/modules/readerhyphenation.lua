@@ -186,7 +186,7 @@ function ReaderHyphenation:onPreRenderDocument(config)
     if hyph_alg then
         self.ui.document:setHyphDictionary(hyph_alg)
     end
-    -- If we haven't set any, hardcoded English_US_hyphen_(Alan).pdb (in cre.cpp) will be used
+    -- If we haven't set any, hardcoded English_US.pattern (in cre.cpp) will be used
     self.hyph_alg = cre.getSelectedHyphDict()
     -- Apply hyphenation sides limits
     local hyph_settings = self.hyph_algs_settings[self.hyph_alg] or {}

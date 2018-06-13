@@ -902,10 +902,12 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images)
     epub:add("OEBPS/stylesheet.css", [[
 /* make section headers looks left aligned and avoid some page breaks */
 h1, h2 {
+    page-break-before: always;
+    page-break-after: avoid;
     text-align: left;
 }
-h3, h4, h5, h6, h7 {
-    page-break-before: avoid;
+h3, h4, h5, h6 {
+    page-break-before: auto;
     page-break-after: avoid;
     text-align: left;
 }
@@ -950,6 +952,11 @@ div.thumb {
     padding-top: ]].. (include_images and "0.5em" or "0.15em") .. [[;
     text-align: center;
     font-size: 90%;
+    page-break-inside: avoid;
+}
+/* these are contained in div.thumb, avoid page break in between them */
+div.thumbcaption, div.magnify {
+    page-break-before: avoid;
 }
 /* show a box around image in gallery list (li.gallery
  * is set up a bit differently than div.thumb - we try
@@ -967,10 +974,16 @@ li.gallerybox div.thumb {
     border: solid 1px white;
     margin: 0;
     padding: 0;
+    page-break-after: avoid;
 }
 /* override this one often set in style="" with various values */
 li.gallerybox div.thumb div {
     margin: 0 !important;
+}
+/* avoid page break between gallery image and text */
+div.gallerytext {
+    page-break-before: avoid;
+    page-break-inside: avoid;
 }
 li.gallerybox div.gallerytext p {
     text-align: center;
