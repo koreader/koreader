@@ -402,15 +402,19 @@ function Kobo:getFirmwareVersion()
 end
 
 local function getProductId()
-    local product_id = "000"
-    local version_file = io.open("/mnt/onboard/.kobo/version", "r")
-    if not version_file then
-        return product_id
-    end
-    local version_str = version_file:read()
-    version_file:close()
+    -- Try to get it from the env first (KSM only)
+    local product_id = os.getenv("MODEL_NUMBER")
+    -- If that fails, devise it ourselves
+    if not product_id then
+        local version_file = io.open("/mnt/onboard/.kobo/version", "r")
+        if not version_file then
+            return "000"
+        end
+        local version_str = version_file:read()
+        version_file:close()
 
-    product_id = string.sub(version_str, -3, -1)
+        product_id = string.sub(version_str, -3, -1)
+    end
 
     return product_id
 end
