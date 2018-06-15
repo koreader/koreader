@@ -20,12 +20,14 @@ if lsmod | grep -q sdio_wifi_pwr; then
     killall udhcpc default.script wpa_supplicant 2>/dev/null
     [ "${WIFI_MODULE}" != "8189fs" ] && [ "${WIFI_MODULE}" != "8189es" ] && wlarm_le -i "${INTERFACE}" down
     ifconfig "${INTERFACE}" down
-    # NOTE: Kobo's busybox build is weird. rmmod appears to be modprobe in disguise, defaulting to the -r flag. Use modprobe -r just to be safe...
+    # NOTE: Kobo's busybox build is weird. rmmod appears to be modprobe in disguise, defaulting to the -r flag...
+    #       But since there's currently no modules.dep file being shipped, nor do they include the depmod applet,
+    #       go with what the FW is doing, which is rmmod.
     # c.f., #2394?
     usleep 250000
-    modprobe -r "${WIFI_MODULE}"
+    rmmod "${WIFI_MODULE}"
     usleep 250000
-    modprobe -r sdio_wifi_pwr
+    rmmod sdio_wifi_pwr
 fi
 
 # Flush buffers to disk, who knows.
