@@ -71,7 +71,7 @@ if [ ! -n "${PRODUCT}" ]; then
     export PRODUCT
 fi
 
-# PLATFORM is used in koreader for the path to the WiFi drivers
+# PLATFORM is used in koreader for the path to the WiFi drivers (as well as when restarting nickel)
 if [ ! -n "${PLATFORM}" ]; then
     PLATFORM="freescale"
     if dd if="/dev/mmcblk0" bs=512 skip=1024 count=1 | grep -q "HW CONFIG"; then
@@ -79,13 +79,7 @@ if [ ! -n "${PLATFORM}" ]; then
         PLATFORM="${CPU}-ntx"
     fi
 
-    if [ "${PLATFORM}" = "freescale" ]; then
-        if [ ! -s "/lib/firmware/imx/epdc_E60_V220.fw" ]; then
-            mkdir -p "/lib/firmware/imx"
-            dd if="/dev/mmcblk0" bs=512K skip=10 count=1 | zcat >"/lib/firmware/imx/epdc_E60_V220.fw"
-            sync
-        fi
-    elif [ ! -e "/etc/u-boot/${PLATFORM}/u-boot.mmc" ]; then
+    if [ "${PLATFORM}" != "freescale" ] && [ ! -e "/etc/u-boot/${PLATFORM}/u-boot.mmc" ]; then
         PLATFORM="ntx508"
     fi
     export PLATFORM
