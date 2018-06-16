@@ -403,7 +403,7 @@ end
 
 local function getProductId()
     -- Try to get it from the env first (KSM only)
-    local product_id = os.getenv("PRODUCT_ID")
+    local product_id = os.getenv("MODEL_NUMBER")
     -- If that fails, devise it ourselves
     if not product_id then
         local version_file = io.open("/mnt/onboard/.kobo/version", "r")

@@ -20,4 +20,4 @@ When you update KOReader manually, it should be sufficient to simply extract the
 
 NOTE: Using the legacy version of fmon (http://www.mobileread.com/forums/showthread.php?t=218283) is *STRONGLY* discouraged.
 NOTE²: If you like the concept, and want to check out something a bit more flexible/complex, check out KFMon (https://github.com/NiLuJe/kfmon).
-
+       In which case, look at the relevant WiKi page (https://github.com/koreader/koreader/wiki/Installation-on-Kobo-devices) for more details ;).
