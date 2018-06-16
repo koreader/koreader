@@ -3,8 +3,8 @@ PATH="/sbin:/bin:/usr/sbin:/usr/bin:/usr/lib:"
 
 # Ensures fmon will restart. Note that we don't have to worry about reaping this, nickel kills on-animator.sh on start.
 (
-    if [ "${PLATFORM}" == "freescale" ] || [ "${PLATFORM}" == "mx50-ntx" ] || [ "${PLATFORM}" == "mx6sl-ntx" ]; then
-        usleep 400000;
+    if [ "${PLATFORM}" = "freescale" ] || [ "${PLATFORM}" = "mx50-ntx" ] || [ "${PLATFORM}" = "mx6sl-ntx" ]; then
+        usleep 400000
     fi
     /etc/init.d/on-animator.sh
 ) &
