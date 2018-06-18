@@ -123,6 +123,7 @@ local KoboSnow = Kobo:new{
 }
 
 -- Kobo Aura H2O2, Rev2:
+-- FIXME: Shares FL/NaturalLight issues with the Clara (#4015)
 local KoboSnowRev2 = Kobo:new{
     model = "Kobo_snow",
     hasFrontlight = yes,
@@ -179,8 +180,7 @@ local KoboPika = Kobo:new{
 
 -- Kobo Clara HD:
 -- FIXME: NaturalLight doesn't exactly work right.
--- FIXME: Suspend seems broken :( (KOReader crash).
--- FIXME: Also, rebooting (?!!) is FUBAR, too (KOReader crash, too).
+-- FIXME: Also, rebooting (?!!) might be FUBAR, too (KOReader crash, too).
 local KoboNova = Kobo:new{
     model = "Kobo_nova",
     hasFrontlight = yes,
