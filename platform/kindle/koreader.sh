@@ -126,7 +126,7 @@ export TESSDATA_PREFIX="data"
 # export dict directory
 export STARDICT_DATA_DIR="data/dict"
 
-# export external font directories (In order: stock, legacy custom, stock extra, font hack)
+# export external font directories (In order: stock, stock custom (both legacy & 5.9.6+), stock extra, font hack)
 export EXT_FONT_DIR="/usr/java/lib/fonts;/mnt/us/fonts;/var/local/font/mnt;/mnt/us/linkfonts/fonts"
 
 # Only setup IPTables on evices where it makes sense to (FW 5.x & K4)

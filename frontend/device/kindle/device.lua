@@ -246,12 +246,9 @@ local KindleOasis2 = Kindle:new{
     model = "KindleOasis2",
     isTouchDevice = yes,
     hasFrontlight = yes,
+    --hasKeys = yes,
     display_dpi = 300,
     touch_dev = "/dev/input/by-path/platform-30a30000.i2c-event",
-
-    -- NOTE: Incomplete, but at least they're confirmed.
-    --batt_capacity_file = "/sys/class/power_supply/max77796-battery/capacity",
-    --is_charging_file = "/sys/class/power_supply/max77796-charger/charging",
 }
 
 local KindleBasic2 = Kindle:new{
@@ -532,6 +529,36 @@ function KindleOasis:init()
     self.input.open("fake_events")
 end
 
+-- FIXME: Should be enough for the bare minimum to work, TBC.
+-- FIXME: Pageturn keys. And whatever else might be missing.
+function KindleOasis2:init()
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
+    self.powerd = require("device/kindle/powerd"):new{
+        device = self,
+        fl_intensity_file = "/sys/class/backlight/max77696-bl/brightness",
+        batt_capacity_file = "/sys/class/power_supply/max77796-battery/capacity",
+        is_charging_file = "/sys/class/power_supply/max77796-charger/charging",
+    }
+
+    --[[
+    self.input = require("device/input"):new{
+        device = self,
+
+        event_map = {
+            [104] = "RPgFwd",
+            [109] = "RPgBack",
+        }
+    }
+    --]]
+
+    Kindle.init(self)
+
+    self.input.open(self.touch_dev)
+    --self.input.open("/dev/input/by-path/platform-gpiokey.0-event")
+
+    self.input.open("fake_events")
+end
+
 function KindleBasic2:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
@@ -565,6 +592,7 @@ KindleBasic.exit = KindleTouch.exit
 KindleVoyage.exit = KindleTouch.exit
 KindlePaperWhite3.exit = KindleTouch.exit
 KindleOasis.exit = KindleTouch.exit
+KindleOasis2.exit = KindleTouch.exit
 KindleBasic2.exit = KindleTouch.exit
 
 function Kindle3:exit()
