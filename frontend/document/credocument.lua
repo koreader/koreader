@@ -81,7 +81,7 @@ function CreDocument:engineInit()
             if not _v:find("/urw/") then
                 local ok, err = pcall(cre.registerFont, _v)
                 if not ok then
-                    logger.err("failed to register crengine font", err)
+                    logger.err("failed to register crengine font (", _v, "):", err)
                 end
             end
         end
