@@ -132,6 +132,13 @@ function CreDocument:init()
             G_reader_settings:readSetting("cre_header_status_font_size"))
     end
 
+    -- min space condensing percent (how much we can decrease a space width to
+    -- make text fit on a line) default is 50%
+    if G_reader_settings:readSetting("cre_min_space_condensing_percent") then
+        self._document:setIntProperty("crengine.style.space.condensing.percent",
+            G_reader_settings:readSetting("cre_min_space_condensing_percent"))
+    end
+
     -- set fallback font face
     self._document:setStringProperty("crengine.font.fallback.face",
         G_reader_settings:readSetting("fallback_font") or self.fallback_font)
