@@ -535,7 +535,7 @@ function KindleOasis2:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
-        fl_intensity_file = "/sys/class/backlight/max77696-bl/brightness",
+        fl_intensity_file = "/sys/class/backlight/max77796-bl/brightness",
         batt_capacity_file = "/sys/class/power_supply/max77796-battery/capacity",
         is_charging_file = "/sys/class/power_supply/max77796-charger/charging",
     }
