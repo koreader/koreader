@@ -179,7 +179,7 @@ local KoboPika = Kobo:new{
 }
 
 -- Kobo Clara HD:
--- FIXME: NaturalLight doesn't exactly work right.
+-- FIXME: Check that NaturalLight behaves properly (c.f., #4015)
 -- FIXME: Also, rebooting (?!!) might be FUBAR, too (KOReader crash, too).
 local KoboNova = Kobo:new{
     model = "Kobo_nova",
@@ -187,6 +187,11 @@ local KoboNova = Kobo:new{
     touch_snow_protocol = true,
     display_dpi = 300,
     hasNaturalLight = yes,
+    frontlight_settings = {
+        frontlight_white = "/sys/class/backlight/lm3630a_ledb",
+        frontlight_red = "/sys/class/backlight/lm3630a_leda",
+        frontlight_green = "/sys/class/backlight/lm3630a_led1b",
+    },
 }
 
 function Kobo:init()
