@@ -250,6 +250,12 @@ function ReaderFont:onSetFontHinting(mode)
     return true
 end
 
+function ReaderFont:onSetSpaceCondensing(space)
+    self.ui.document:setSpaceCondensing(space)
+    self.ui:handleEvent(Event:new("UpdatePos"))
+    return true
+end
+
 function ReaderFont:onSetFontGamma(gamma)
     self.gamma_index = gamma
     self.ui.document:setGammaIndex(self.gamma_index)

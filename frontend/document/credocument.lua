@@ -522,6 +522,13 @@ function CreDocument:setFontHinting(mode)
     self._document:setIntProperty("font.hinting.mode", mode)
 end
 
+-- min space condensing percent (how much we can decrease a space width to
+-- make text fit on a line) 25...100%
+function CreDocument:setSpaceCondensing(value)
+    logger.dbg("CreDocument: set space condensing", value)
+    self._document:setIntProperty("crengine.style.space.condensing.percent", value)
+end
+
 function CreDocument:setStyleSheet(new_css_file, appended_css_content )
     logger.dbg("CreDocument: set style sheet:",
         new_css_file and new_css_file or "no file",

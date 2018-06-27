@@ -155,6 +155,16 @@ local CreOptions = {
                 args = {0, 1, 2},
                 event = "SetFontHinting",
                 name_text_hold_callback = optionsutil.showValues,
+            },
+            {
+                name = "space_condensing",
+                name_text = S.SPACE_CONDENSING,
+                toggle = {"25%", "50%", "75%", "100%"},
+                values = {25, 50, 75, 100},
+                default_value = 50,
+                args = {25, 50, 75, 100},
+                event = "SetSpaceCondensing",
+                name_text_hold_callback = optionsutil.showValues,
             }
         }
     },
