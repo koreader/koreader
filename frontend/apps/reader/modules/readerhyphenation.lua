@@ -54,6 +54,29 @@ function ReaderHyphenation:init()
         enabled_func = function()
             return self.hyph_alg ~= "@none"
         end,
+    })
+    table.insert(self.hyph_table, {
+        text = _("Trust soft hyphens"),
+        callback = function()
+            G_reader_settings:flipNilOrFalse("hyph_trust_soft_hyphens")
+            self.ui.document:setTrustSoftHyphens(G_reader_settings:isTrue("hyph_trust_soft_hyphens"))
+            self.ui.toc:onUpdateToc()
+            self.ui:handleEvent(Event:new("UpdatePos"))
+        end,
+        checked_func = function()
+            -- for @none and @softhyphens, set the checkbox to reflect how
+            -- these trust soft hyphens, no matter what our setting is
+            if self.hyph_alg == "@none" then
+                return false
+            elseif self.hyph_alg == "@softhyphens" then
+                return true
+            else
+                return G_reader_settings:isTrue("hyph_trust_soft_hyphens")
+            end
+        end,
+        enabled_func = function()
+            return self.hyph_alg ~= "@none" and self.hyph_alg ~= "@softhyphens"
+        end,
         separator = true,
     })
 
@@ -113,7 +136,8 @@ function ReaderHyphenation:init()
                 end,
                 checked_func = function()
                     return v.filename == self.hyph_alg
-                end
+                end,
+                separator = v.separator,
             })
 
             self.lang_table[v.language] = v.filename
@@ -192,6 +216,7 @@ function ReaderHyphenation:onPreRenderDocument(config)
     local hyph_settings = self.hyph_algs_settings[self.hyph_alg] or {}
     self.ui.document:setHyphLeftHyphenMin(G_reader_settings:readSetting("hyph_left_hyphen_min") or hyph_settings.left_hyphen_min)
     self.ui.document:setHyphRightHyphenMin(G_reader_settings:readSetting("hyph_right_hyphen_min") or hyph_settings.right_hyphen_min)
+    self.ui.document:setTrustSoftHyphens(G_reader_settings:isTrue("hyph_trust_soft_hyphens"))
 end
 
 function ReaderHyphenation:addToMainMenu(menu_items)

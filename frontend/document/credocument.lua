@@ -454,6 +454,11 @@ function CreDocument:setHyphRightHyphenMin(value)
     self._document:setIntProperty("crengine.hyphenation.right.hyphen.min", value or 2)
 end
 
+function CreDocument:setTrustSoftHyphens(toggle)
+    logger.dbg("CreDocument: set hyphenation trust soft hyphens", toggle and 1 or 0)
+    self._document:setIntProperty("crengine.hyphenation.trust.soft.hyphens", toggle and 1 or 0)
+end
+
 function CreDocument:clearSelection()
     logger.dbg("clear selection")
     self._document:clearSelection()
