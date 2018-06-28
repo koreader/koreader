@@ -33,7 +33,7 @@ function Send2Ebook:downloadFileAndRemove(connection_url, remote_path, local_dow
         local file = io.open(local_download_path, "w")
         file:write(response)
         file:close()
-        --FtpApi:delete(url)
+        FtpApi:delete(url)
         return 1
     else
         logger.err("Send2Ebook: Error. Invalid connection data? ")
