@@ -151,7 +151,7 @@ function ReaderFont:onReadSettings(config)
     self.ui.document:setFontHinting(self.font_hinting)
 
     self.space_condensing = config:readSetting("space_condensing")
-        or G_reader_settings:readSetting("copt_space_condensing") or 50
+        or G_reader_settings:readSetting("copt_space_condensing") or 75
     self.ui.document:setSpaceCondensing(self.space_condensing)
 
     self.line_space_percent = config:readSetting("line_space_percent")
