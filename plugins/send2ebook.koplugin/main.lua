@@ -26,14 +26,14 @@ local send2ebook_settings
 
 function Send2Ebook:downloadFileAndRemove(connection_url, remote_path, local_download_path)
     local url = connection_url .. remote_path
-    local response = FtpApi:downloadFile(url)
+    local response = FtpApi:ftpGet(url)
 
     if response ~= nil then
         local_download_path = util.fixUtf8(local_download_path, "_")
         local file = io.open(local_download_path, "w")
         file:write(response)
         file:close()
-        FtpApi:delete(url)
+        --FtpApi:delete(url)
         return 1
     else
         logger.err("Send2Ebook: Error. Invalid connection data? ")
@@ -142,6 +142,7 @@ function Send2Ebook:process()
       if total_entries > 1 then total_entries = total_entries -2 end --remove result "../" (upper folder) and "./" (current folder)
       for idx, ftp_file in ipairs(ftp_files_table) do
           logger.dbg("Send2Ebook: processing ftp_file:", ftp_file)
+          --TODO recursive download folders
           if ftp_file["type"] == "file" then
 
               info = InfoMessage:new{ text = T(_("Processing %1/%2"), count, total_entries) }
