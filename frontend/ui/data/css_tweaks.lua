@@ -121,6 +121,17 @@ sub { font-size: 50% !important; vertical-align: middle !important; }
             css = [[* { font-size: inherit !important; }]],
             separator = true,
         },
+        {
+            id = "auto_hyphenate";
+            title = _("Ignore publisher hyphenate"),
+            description = _("Disable hyphenate options set by the publisher "),
+            css = [[
+body * { adobe-hyphenate: auto !important; }
+body * { hyphenate: auto !important; }
+body * { -webkit-hyphens: auto !important; }
+            ]],
+            sepearator = true,
+        },
     },
     {
         title = _("Miscellaneous"),
