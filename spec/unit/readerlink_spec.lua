@@ -17,8 +17,8 @@ describe("ReaderLink module", function()
             document = DocumentRegistry:openDocument(sample_epub),
         }
         readerui.rolling:onGotoPage(4)
-        readerui.link:onTap(nil, {pos = {x = 336, y = 668}})
-        assert.is.same(36, readerui.rolling.current_page)
+        readerui.link:onTap(nil, {pos = {x = 247, y = 605}})
+        assert.is.same(37, readerui.rolling.current_page)
     end)
 
     it("should jump to links in pdf page mode", function()
