@@ -19,7 +19,7 @@ local ButtonTable = FocusManager:new{
         },
     },
     sep_width = Size.line.medium,
-    padding = Size.padding.button,
+    padding = Size.padding.default,
 
     zero_sep = false,
     button_font_face = "cfont",

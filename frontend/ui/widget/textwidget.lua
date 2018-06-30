@@ -86,6 +86,9 @@ function TextWidget:paintTo(bb, x, y)
     --end
     --bb:blitFrom(self._bb, x, y, 0, 0, self._length, self._bb:getHeight())
     --@TODO Don't use kerning for monospaced fonts.    (houqp)
+    if self.max_width and RenderText:sizeUtf8Text(0, Screen:getWidth(), self.face, self.text, true, self.bold).x > self.max_width then
+        self.text = RenderText:truncateTextByWidth(self.text, self.face, self.max_width, true)
+    end
     RenderText:renderUtf8Text(bb, x, y+self._baseline_h, self.face, self.text, true, self.bold,
                 self.fgcolor, self.max_width and self.max_width or self.width)
 end
