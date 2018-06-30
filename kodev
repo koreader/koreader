@@ -424,7 +424,7 @@ TARGET:
                 export DISABLE_TOUCH=1
                 ;;
             --no-build)
-                no_build=true
+                no_build=1
                 ;;
             --no-debug)
                 export KODEBUG=
@@ -453,7 +453,7 @@ TARGET:
                 fi
                 ;;
             --graph)
-                graph_memory=true
+                graph_memory=1
                 ;;
             --valgrind)
                 if [ ! -z "${VALUE}" ]; then
@@ -521,7 +521,7 @@ TARGET:
     case $1 in
         android)
             command -v adb >/dev/null && {
-                if [ ! ${no_build} ]; then
+                if [ -z "${no_build}" ]; then
                     echo "[*] Building KOReader for Android…"
                     kodev-release --ignore-translation android
                     assert_ret_zero $?
@@ -541,9 +541,13 @@ TARGET:
             } || echo "Failed to find adb in PATH to interact with Android device."
             ;;
         *)
-            if [ ! ${no_build} ]; then
+            if [ -z "${no_build}" ]; then
                 echo "[*] Building KOReader…"
-                kodev-build
+                if [ -z "${KODEBUG}" ]; then
+                    kodev-build --no-debug
+                else
+                    kodev-build
+                fi
             else
                 setup_env
             fi
@@ -553,7 +557,7 @@ TARGET:
                 exit 1
             fi
 
-            if [ ${graph_memory} ]; then
+            if [ -n "${graph_memory}" ]; then
                 gnuplot_wrapper "--parent $$" "reader.lua"
             fi
 
@@ -591,7 +595,7 @@ TARGET:
                 done
             } && popd || exit
 
-            if [ ${graph_memory} ]; then
+            if [ -n "${graph_memory}" ]; then
                 capture_ctrl_c
             fi
             ;;
@@ -613,7 +617,7 @@ OPTIONS:
         VALUE=$(echo "$1" | awk -F= '{print $2}')
         case $PARAM in
             --graph)
-                graph_memory=true
+                graph_memory=1
                 ;;
             --tags)
                 opts="--tags=${VALUE}"
