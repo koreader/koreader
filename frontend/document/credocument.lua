@@ -132,13 +132,6 @@ function CreDocument:init()
             G_reader_settings:readSetting("cre_header_status_font_size"))
     end
 
-    -- min space condensing percent (how much we can decrease a space width to
-    -- make text fit on a line) default is 50%
-    if G_reader_settings:readSetting("cre_min_space_condensing_percent") then
-        self._document:setIntProperty("crengine.style.space.condensing.percent",
-            G_reader_settings:readSetting("cre_min_space_condensing_percent"))
-    end
-
     -- set fallback font face
     self._document:setStringProperty("crengine.font.fallback.face",
         G_reader_settings:readSetting("fallback_font") or self.fallback_font)
@@ -525,6 +518,13 @@ end
 function CreDocument:setFontHinting(mode)
     logger.dbg("CreDocument: set font hinting mode", mode)
     self._document:setIntProperty("font.hinting.mode", mode)
+end
+
+-- min space condensing percent (how much we can decrease a space width to
+-- make text fit on a line) 25...100%
+function CreDocument:setSpaceCondensing(value)
+    logger.dbg("CreDocument: set space condensing", value)
+    self._document:setIntProperty("crengine.style.space.condensing.percent", value)
 end
 
 function CreDocument:setStyleSheet(new_css_file, appended_css_content )
