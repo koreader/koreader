@@ -578,7 +578,6 @@ function KindleOasis2:init()
 
     Kindle.init(self)
 
-    -- NOTE: Hopefully the KOA2 needs the exact same tweaks as the KOA...
     self.input:registerEventAdjustHook(self.input.adjustKindleOasisOrientation)
 
     self.input.open(self.touch_dev)
