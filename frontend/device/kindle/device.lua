@@ -529,8 +529,6 @@ function KindleOasis:init()
     self.input.open("fake_events")
 end
 
--- FIXME: Should be enough for the bare minimum to work, TBC.
--- FIXME: Pageturn keys. And whatever else might be missing.
 function KindleOasis2:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
@@ -540,7 +538,6 @@ function KindleOasis2:init()
         is_charging_file = "/sys/class/power_supply/max77796-charger/charging",
     }
 
-    --[[
     self.input = require("device/input"):new{
         device = self,
 
@@ -549,12 +546,11 @@ function KindleOasis2:init()
             [109] = "RPgBack",
         }
     }
-    --]]
 
     Kindle.init(self)
 
     self.input.open(self.touch_dev)
-    --self.input.open("/dev/input/by-path/platform-gpiokey.0-event")
+    self.input.open("/dev/input/by-path/platform-gpio-keys-event")
 
     self.input.open("fake_events")
 end
