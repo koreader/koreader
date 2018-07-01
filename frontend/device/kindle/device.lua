@@ -538,7 +538,7 @@ function KindleOasis2:init()
         is_charging_file = "/sys/class/power_supply/max77796-charger/charging",
     }
 
-    -- FIXME: Probably won't work.
+    -- FIXME: Probably won't work (much like on the KV & KOA).
     --        Possibly because we SIGSTOP awesome, possibly because whatever ends up in the windows focus stack
     --        makes the grip supression feature unhappy.
     --        c.f., the old whisper-touch stuff for the KV (https://github.com/koreader/kpvbooklet/commit/584cb757cd1eb60c421a862202273b8355bc5670),
