@@ -180,7 +180,6 @@ local KoboPika = Kobo:new{
 
 -- Kobo Clara HD:
 -- FIXME: Check that NaturalLight behaves properly (c.f., #4015)
--- FIXME: Also, rebooting (?!!) might be FUBAR, too (KOReader crash, too).
 local KoboNova = Kobo:new{
     model = "Kobo_nova",
     hasFrontlight = yes,
