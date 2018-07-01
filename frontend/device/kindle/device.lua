@@ -246,7 +246,7 @@ local KindleOasis2 = Kindle:new{
     model = "KindleOasis2",
     isTouchDevice = yes,
     hasFrontlight = yes,
-    --hasKeys = yes,
+    hasKeys = yes,
     display_dpi = 300,
     touch_dev = "/dev/input/by-path/platform-30a30000.i2c-event",
 }
@@ -578,7 +578,6 @@ function KindleOasis2:init()
 
     Kindle.init(self)
 
-    -- NOTE: Hopefully the KOA2 needs the exact same tweaks as the KOA...
     self.input:registerEventAdjustHook(self.input.adjustKindleOasisOrientation)
 
     self.input.open(self.touch_dev)
