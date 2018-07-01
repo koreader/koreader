@@ -517,7 +517,7 @@ function KindleOasis:init()
     self.input.open("/dev/input/by-path/platform-gpiokey.0-event")
 
     -- get rotate dev by EV=d
-    local std_out = io.popen("cat /proc/bus/input/devices | grep -e 'Handlers\\|EV=' | grep -B1 'EV=d'| grep -o 'event[0-9]'", "r")
+    local std_out = io.popen("grep -e 'Handlers\\|EV=' /proc/bus/input/devices | grep -B1 'EV=d' | grep -o 'event[0-9]'", "r")
     if std_out then
         local rotation_dev = std_out:read()
         std_out:close()
@@ -547,10 +547,51 @@ function KindleOasis2:init()
         }
     }
 
+    local haslipc, lipc = pcall(require, "liblipclua")
+    if haslipc and lipc then
+        local lipc_handle = lipc.init("com.github.koreader.screen")
+        if lipc_handle then
+            local orientation_code = lipc_handle:get_string_property(
+                "com.lab126.winmgr", "accelerometer")
+            local rotation_mode = 0
+            if orientation_code then
+                if orientation_code == "U" then
+                    rotation_mode = self.screen.ORIENTATION_PORTRAIT
+                elseif orientation_code == "R" then
+                    rotation_mode = self.screen.ORIENTATION_LANDSCAPE
+                elseif orientation_code == "D" then
+                    rotation_mode = self.screen.ORIENTATION_PORTRAIT_ROTATED
+                elseif orientation_code == "L" then
+                    rotation_mode = self.screen.ORIENTATION_LANDSCAPE_ROTATED
+                end
+            end
+
+            if rotation_mode > 0 then
+                self.screen.native_rotation_mode = rotation_mode
+                self.screen.cur_rotation_mode = rotation_mode
+            end
+
+            lipc_handle:close()
+        end
+    end
+
     Kindle.init(self)
+
+    -- NOTE: Hopefully the KOA2 needs the exact same tweaks as the KOA...
+    self.input:registerEventAdjustHook(self.input.adjustKindleOasisOrientation)
 
     self.input.open(self.touch_dev)
     self.input.open("/dev/input/by-path/platform-gpio-keys-event")
+
+    -- Get accelerometer device by looking for EV=d
+    local std_out = io.popen("grep -e 'Handlers\\|EV=' /proc/bus/input/devices | grep -B1 'EV=d' | grep -o 'event[0-9]\\{1,2\\}'", "r")
+    if std_out then
+        local rotation_dev = std_out:read()
+        std_out:close()
+        if rotation_dev then
+            self.input.open("/dev/input/"..rotation_dev)
+        end
+    end
 
     self.input.open("fake_events")
 end
