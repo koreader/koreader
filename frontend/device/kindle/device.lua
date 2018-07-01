@@ -246,7 +246,7 @@ local KindleOasis2 = Kindle:new{
     model = "KindleOasis2",
     isTouchDevice = yes,
     hasFrontlight = yes,
-    --hasKeys = yes,
+    hasKeys = yes,
     display_dpi = 300,
     touch_dev = "/dev/input/by-path/platform-30a30000.i2c-event",
 }
