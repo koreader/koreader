@@ -541,6 +541,7 @@ function KindleOasis2:init()
     self.input = require("device/input"):new{
         device = self,
 
+        -- Top, Bottom (yes, it's the reverse than on non-Oasis devices)
         event_map = {
             [104] = "RPgFwd",
             [109] = "RPgBack",
