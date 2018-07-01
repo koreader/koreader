@@ -3,8 +3,8 @@ export LC_ALL="en_US.UTF-8"
 
 PROC_KEYPAD="/proc/keypad"
 PROC_FIVEWAY="/proc/fiveway"
-[ -e "${PROC_KEYPAD}" ] && echo unlock > "${PROC_KEYPAD}"
-[ -e "${PROC_FIVEWAY}" ] && echo unlock > "${PROC_FIVEWAY}"
+[ -e "${PROC_KEYPAD}" ] && echo unlock >"${PROC_KEYPAD}"
+[ -e "${PROC_FIVEWAY}" ] && echo unlock >"${PROC_FIVEWAY}"
 
 # KOReader's working directory
 KOREADER_DIR="/mnt/us/koreader"
