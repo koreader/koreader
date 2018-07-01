@@ -3,8 +3,8 @@ export LC_ALL="en_US.UTF-8"
 
 PROC_KEYPAD="/proc/keypad"
 PROC_FIVEWAY="/proc/fiveway"
-[ -e $PROC_KEYPAD ] && echo unlock >$PROC_KEYPAD
-[ -e $PROC_FIVEWAY ] && echo unlock >$PROC_FIVEWAY
+[ -e "${PROC_KEYPAD}" ] && echo unlock >$PROC_KEYPAD
+[ -e "${PROC_FIVEWAY}" ] && echo unlock >$PROC_FIVEWAY
 
 # KOReader's working directory
 KOREADER_DIR="/mnt/us/koreader"
@@ -118,7 +118,7 @@ if [ -f "${NEWUPDATE}" ]; then
 fi
 
 # load our own shared libraries if possible
-export LD_LIBRARY_PATH=${KOREADER_DIR}/libs:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH="${KOREADER_DIR}/libs:${LD_LIBRARY_PATH}"
 
 # export trained OCR data directory
 export TESSDATA_PREFIX="data"
@@ -129,7 +129,7 @@ export STARDICT_DATA_DIR="data/dict"
 # export external font directories (In order: stock, stock custom (both legacy & 5.9.6+), stock extra, font hack)
 export EXT_FONT_DIR="/usr/java/lib/fonts;/mnt/us/fonts;/var/local/font/mnt;/mnt/us/linkfonts/fonts"
 
-# Only setup IPTables on evices where it makes sense to (FW 5.x & K4)
+# Only setup IPTables on devices where it makes sense to do so (FW 5.x & K4)
 if [ "${INIT_TYPE}" = "upstart" ] || [ "$(uname -r)" = "2.6.31-rt11-lab126" ]; then
     logmsg "Setting up IPTables rules . . ."
     # accept input ports for zsync plugin
@@ -164,10 +164,10 @@ if [ "${STOP_FRAMEWORK}" = "yes" ]; then
     fi
 fi
 
-# check if kpvbooklet was launched for more than once, if not we will disable pillow
+# check if kpvbooklet was launched more than once, if not we will disable pillow
 # there's no pillow if we stopped the framework, and it's only there on systems with upstart anyway
 if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
-    count=$(lipc-get-prop -eiq com.github.koreader.kpvbooklet.timer count)
+    count="$(lipc-get-prop -eiq com.github.koreader.kpvbooklet.timer count)"
     if [ "$count" = "" ] || [ "$count" = "0" ]; then
         # NOTE: Dump the fb so we can restore something useful on exit...
         cat /dev/fb0 >/var/tmp/koreader-fb.dump
@@ -225,14 +225,14 @@ if [ "${FROM_KUAL}" = "yes" ]; then
     eips_print_bottom_centered "Starting KOReader . . ." 1
 fi
 
-# we keep maximum 500K worth of crash log
+# we keep at most 500KB worth of crash log
 if [ -e crash.log ]; then
     tail -c 500000 crash.log >crash.log.new
     mv -f crash.log.new crash.log
 fi
 
 RETURN_VALUE=85
-while [ $RETURN_VALUE -eq 85 ]; do
+while [ "${RETURN_VALUE}" -eq 85 ]; do
     ./reader.lua "$@" >>crash.log 2>&1
     RETURN_VALUE=$?
 done
@@ -308,4 +308,4 @@ if [ "${PASSCODE_DISABLED}" = "yes" ]; then
     touch "/var/local/system/userpasswdenabled"
 fi
 
-exit $RETURN_VALUE
+exit ${RETURN_VALUE}
