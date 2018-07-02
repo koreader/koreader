@@ -23,13 +23,13 @@ end
 
 --- Returns normalized version of KOReader git-rev input string.
 -- @string rev full KOReader git-rev such `v2015.11-982-g704d4238`
--- @treturn int version in the form of a number such as `201511982`
+-- @treturn int version in the form of a number such as `2015110982`
 -- @treturn string short git commit version hash such as `704d4238`
 function Version:getNormalizedVersion(rev)
     if not rev then return end
     local year, month, revision = rev:match("v(%d%d%d%d)%.(%d%d)-?(%d*)")
-    local commit = rev:match("-%d*-g(.*)")
-    return ((year or 0) * 100 + (month or 0)) * 1000 + (revision or 0), commit
+    local commit = rev:match("-%d*-g([0-9a-f]*)[0-9_%-]*")
+    return ((year or 0) * 100 + (month or 0)) * 10000 + (revision or 0), commit
 end
 
 --- Returns current version of KOReader.
