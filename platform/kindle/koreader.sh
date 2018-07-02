@@ -107,7 +107,7 @@ if [ -f "${NEWUPDATE}" ]; then
     # Cleanup behind us...
     if [ $fail -eq 0 ]; then
         mv "${NEWUPDATE}" "${INSTALLED}"
-        logmsg "Update sucessful :)"
+        logmsg "Update successful :)"
         eips_print_bottom_centered "Update successful :)" 1
     else
         # Huh ho...

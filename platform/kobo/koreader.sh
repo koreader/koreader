@@ -15,7 +15,7 @@ if [ -f "${NEWUPDATE}" ]; then
     # Cleanup behind us...
     if [ $? -eq 0 ]; then
         mv "${NEWUPDATE}" "${INSTALLED}"
-        ./fbink -q -y -5 -pm "Update sucessful :)"
+        ./fbink -q -y -5 -pm "Update successful :)"
     else
         # Huh ho...
         ./fbink -q -y -5 -pm "Update failed :("
