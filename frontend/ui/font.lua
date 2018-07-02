@@ -157,11 +157,13 @@ function Font:_readList(target, dir)
         if lfs.attributes(dir.."/"..f, "mode") == "directory" and f ~= "." and f ~= ".." then
             self:_readList(target, dir.."/"..f)
         else
-            local file_type = string.lower(string.match(f, ".+%.([^.]+)") or "")
-            if file_type == "ttf" or file_type == "ttc"
-                or file_type == "cff" or file_type == "otf" then
-                if not isInFontsBlacklist(f) then
-                    table.insert(target, dir.."/"..f)
+            if string.sub(f, 1, 1) ~= "." then
+                local file_type = string.lower(string.match(f, ".+%.([^.]+)") or "")
+                if file_type == "ttf" or file_type == "ttc"
+                    or file_type == "cff" or file_type == "otf" then
+                    if not isInFontsBlacklist(f) then
+                        table.insert(target, dir.."/"..f)
+                    end
                 end
             end
         end
