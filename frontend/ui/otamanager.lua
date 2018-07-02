@@ -195,7 +195,7 @@ function OTAManager:zsync()
         -- Make it clear that it's now zsync churning CPU time, instead of tar churning IO ;).
         if Device:isKindle() then
             os.execute("./zsync_status.sh")
-        elseif if Device:isKobo() then
+        elseif Device:isKobo() then
             os.execute("./fbink -q -y -7 -pm 'Computing zsync delta . . .'")
         end
         return os.execute(
