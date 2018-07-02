@@ -192,6 +192,12 @@ end
 
 function OTAManager:zsync()
     if self:_buildLocalPackage() == 0 then
+        -- Make it clear that it's now zsync churning CPU time, instead of tar churning IO ;).
+        if Device:isKindle() then
+            os.execute("./zsync_status.sh")
+        elseif if Device:isKobo() then
+            os.execute("./fbink -q -y -7 -pm 'Computing zsync delta . . .'")
+        end
         return os.execute(
             ("./zsync -i %s -o %s -u %s %s%s"):format(
                 self.installed_package,

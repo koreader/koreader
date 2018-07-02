@@ -166,6 +166,7 @@ kindleupdate: all
 	ln -sf ../../$(KINDLE_DIR)/koreader.sh $(INSTALL_DIR)/koreader
 	ln -sf ../../$(KINDLE_DIR)/libkohelper.sh $(INSTALL_DIR)/koreader
 	ln -sf ../../$(KINDLE_DIR)/kotar_cpoint $(INSTALL_DIR)/koreader
+	ln -sf ../../$(KINDLE_DIR)/zsync_status.sh $(INSTALL_DIR)/koreader
 	# create new package
 	cd $(INSTALL_DIR) && pwd && \
 		zip -9 -r \
