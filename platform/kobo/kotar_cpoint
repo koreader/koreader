@@ -9,12 +9,12 @@ PROGRESS_AMOUNT="$((CHECKPOINT_NUM / CHECKPOINT_GRANULARITY))"
 
 # Which text do we want to use?
 case "${2}" in
-	"create" )
-		PROGRESS_BASE_STRING="Preparing local OTA package"
-	;;
-	* )
-		PROGRESS_BASE_STRING="Updating KOReader"
-	;;
+    "create" )
+        PROGRESS_BASE_STRING="Preparing local OTA package"
+    ;;
+    * )
+        PROGRESS_BASE_STRING="Updating KOReader"
+    ;;
 esac
 
 # And start drawing the progress bar...
@@ -25,4 +25,5 @@ for _ in $(seq 1 ${PROGRESS_AMOUNT}); do
 done
 
 # Print our progress :)
+# shellcheck disable=SC2039
 ./fbink -q -y -7 -pm "$(echo -e "${PROGRESS_BASE_STRING}\n${PROGRESS_STRING}")"
