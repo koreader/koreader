@@ -130,17 +130,56 @@ function Font:getFace(font, size)
 end
 
 --[[
-    These fonts from Kindle system cannot be loaded by Freetype.
+    These non-LGC Kindle system fonts fail CRe's moronic header check.
 --]]
 local kindle_fonts_blacklist = {
+    ["DiwanMuna-Bold.ttf"] = true,
+    ["DiwanMuna-Regular.ttf"] = true,
     ["HYGothicBold.ttf"] = true,
     ["HYGothicMedium.ttf"] = true,
     ["HYMyeongJoBold.ttf"] = true,
     ["HYMyeongJoMedium.ttf"] = true,
+    ["KindleBlackboxBoldItalic.ttf"] = true,
+    ["KindleBlackboxBold.ttf"] = true,
+    ["KindleBlackboxItalic.ttf"] = true,
+    ["KindleBlackboxRegular.ttf"] = true,
+    ["Kindle_MonospacedSymbol.ttf"] = true,
+    ["Kindle_Symbol.ttf"] = true,
+    ["MTChineseSurrogates.ttf"] = true,
     ["MYingHeiTBold.ttf"] = true,
     ["MYingHeiTMedium.ttf"] = true,
+    ["NotoNaskhArabicUI-Bold.ttf"] = true,
+    ["NotoNaskhArabicUI-Regular.ttf"] = true,
+    ["NotoNaskh-Bold.ttf"] = true,
+    ["NotoNaskh-Regular.ttf"] = true,
+    ["NotoSansBengali-Regular.ttf"] = true,
+    ["NotoSansDevanagari-Regular.ttf"] = true,
+    ["NotoSansGujarati-Regular.ttf"] = true,
+    ["NotoSansKannada-Regular.ttf"] = true,
+    ["NotoSansMalayalam-Regular.ttf"] = true,
+    ["NotoSansTamil-Regular.ttf"] = true,
+    ["NotoSansTelugu-Regular.ttf"] = true,
+    ["SakkalKitab-Bold.ttf"] = true,
+    ["SakkalKitab-Regular.ttf"] = true,
     ["SongTBold.ttf"] = true,
     ["SongTMedium.ttf"] = true,
+    ["STHeitiBold.ttf"] = true,
+    ["STHeitiMedium.ttf"] = true,
+    ["STSongBold.ttf"] = true,
+    ["STSongMedium.ttf"] = true,
+    ["TBGothicBold_213.ttf"] = true,
+    ["TBGothicMed_213.ttf"] = true,
+    ["TBMinchoBold_213.ttf"] = true,
+    ["TBMinchoMedium_213.ttf"] = true,
+    ["STKaiMedium.ttf"] = true,
+    ["Caecilia_LT_67_Cond_Medium.ttf"] = true,
+    ["Caecilia_LT_68_Cond_Medium_Italic.ttf"] = true,
+    ["Caecilia_LT_77_Cond_Bold.ttf"] = true,
+    ["Caecilia_LT_78_Cond_Bold_Italic.ttf"] = true,
+    ["Helvetica_LT_65_Medium.ttf"] = true,
+    ["Helvetica_LT_66_Medium_Italic.ttf"] = true,
+    ["Helvetica_LT_75_Bold.ttf"] = true,
+    ["Helvetica_LT_76_Bold_Italic.ttf"] = true,
 }
 
 local function isInFontsBlacklist(f)
@@ -157,11 +196,13 @@ function Font:_readList(target, dir)
         if lfs.attributes(dir.."/"..f, "mode") == "directory" and f ~= "." and f ~= ".." then
             self:_readList(target, dir.."/"..f)
         else
-            local file_type = string.lower(string.match(f, ".+%.([^.]+)") or "")
-            if file_type == "ttf" or file_type == "ttc"
-                or file_type == "cff" or file_type == "otf" then
-                if not isInFontsBlacklist(f) then
-                    table.insert(target, dir.."/"..f)
+            if string.sub(f, 1, 1) ~= "." then
+                local file_type = string.lower(string.match(f, ".+%.([^.]+)") or "")
+                if file_type == "ttf" or file_type == "ttc"
+                    or file_type == "cff" or file_type == "otf" then
+                    if not isInFontsBlacklist(f) then
+                        table.insert(target, dir.."/"..f)
+                    end
                 end
             end
         end

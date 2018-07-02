@@ -246,7 +246,7 @@ local KindleOasis2 = Kindle:new{
     model = "KindleOasis2",
     isTouchDevice = yes,
     hasFrontlight = yes,
-    --hasKeys = yes,
+    hasKeys = yes,
     display_dpi = 300,
     touch_dev = "/dev/input/by-path/platform-30a30000.i2c-event",
 }
@@ -517,7 +517,7 @@ function KindleOasis:init()
     self.input.open("/dev/input/by-path/platform-gpiokey.0-event")
 
     -- get rotate dev by EV=d
-    local std_out = io.popen("cat /proc/bus/input/devices | grep -e 'Handlers\\|EV=' | grep -B1 'EV=d'| grep -o 'event[0-9]'", "r")
+    local std_out = io.popen("grep -e 'Handlers\\|EV=' /proc/bus/input/devices | grep -B1 'EV=d' | grep -o 'event[0-9]'", "r")
     if std_out then
         local rotation_dev = std_out:read()
         std_out:close()
@@ -529,32 +529,69 @@ function KindleOasis:init()
     self.input.open("fake_events")
 end
 
--- FIXME: Should be enough for the bare minimum to work, TBC.
--- FIXME: Pageturn keys. And whatever else might be missing.
 function KindleOasis2:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
-        fl_intensity_file = "/sys/class/backlight/max77696-bl/brightness",
+        fl_intensity_file = "/sys/class/backlight/max77796-bl/brightness",
         batt_capacity_file = "/sys/class/power_supply/max77796-battery/capacity",
         is_charging_file = "/sys/class/power_supply/max77796-charger/charging",
     }
 
-    --[[
     self.input = require("device/input"):new{
         device = self,
 
+        -- Top, Bottom (yes, it's the reverse than on non-Oasis devices)
         event_map = {
             [104] = "RPgFwd",
             [109] = "RPgBack",
         }
     }
-    --]]
+
+    local haslipc, lipc = pcall(require, "liblipclua")
+    if haslipc and lipc then
+        local lipc_handle = lipc.init("com.github.koreader.screen")
+        if lipc_handle then
+            local orientation_code = lipc_handle:get_string_property(
+                "com.lab126.winmgr", "accelerometer")
+            local rotation_mode = 0
+            if orientation_code then
+                if orientation_code == "U" then
+                    rotation_mode = self.screen.ORIENTATION_PORTRAIT
+                elseif orientation_code == "R" then
+                    rotation_mode = self.screen.ORIENTATION_LANDSCAPE
+                elseif orientation_code == "D" then
+                    rotation_mode = self.screen.ORIENTATION_PORTRAIT_ROTATED
+                elseif orientation_code == "L" then
+                    rotation_mode = self.screen.ORIENTATION_LANDSCAPE_ROTATED
+                end
+            end
+
+            if rotation_mode > 0 then
+                self.screen.native_rotation_mode = rotation_mode
+                self.screen.cur_rotation_mode = rotation_mode
+            end
+
+            lipc_handle:close()
+        end
+    end
 
     Kindle.init(self)
 
+    self.input:registerEventAdjustHook(self.input.adjustKindleOasisOrientation)
+
     self.input.open(self.touch_dev)
-    --self.input.open("/dev/input/by-path/platform-gpiokey.0-event")
+    self.input.open("/dev/input/by-path/platform-gpio-keys-event")
+
+    -- Get accelerometer device by looking for EV=d
+    local std_out = io.popen("grep -e 'Handlers\\|EV=' /proc/bus/input/devices | grep -B1 'EV=d' | grep -o 'event[0-9]\\{1,2\\}'", "r")
+    if std_out then
+        local rotation_dev = std_out:read()
+        std_out:close()
+        if rotation_dev then
+            self.input.open("/dev/input/"..rotation_dev)
+        end
+    end
 
     self.input.open("fake_events")
 end

@@ -47,12 +47,13 @@ function ToggleSwitch:init()
     -- Item count per row
     self.n_pos = math.ceil(#self.toggle / self.row_count)
     self.position = nil
+    local border_size = Size.border.thin
 
     self.toggle_frame = FrameContainer:new{
         background = Blitbuffer.COLOR_WHITE,
         color = Blitbuffer.COLOR_GREY,
         radius = Size.radius.window,
-        bordersize = Size.border.thin,
+        bordersize = border_size,
         padding = Size.padding.small,
         dim = not self.enabled,
     }
@@ -63,7 +64,7 @@ function ToggleSwitch:init()
     end
 
     local center_dimen = Geom:new{
-        w = self.width / self.n_pos,
+        w = (self.width - border_size*(2*self.n_pos-2)) / self.n_pos,
         h = self.height / self.row_count,
     }
     local button_width = math.floor(self.width / self.n_pos)
@@ -88,7 +89,7 @@ function ToggleSwitch:init()
             color = Blitbuffer.COLOR_GREY,
             margin = 0,
             radius = Size.radius.window,
-            bordersize = Size.border.thin,
+            bordersize = border_size,
             padding = 0,
             content,
         }
