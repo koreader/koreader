@@ -48,6 +48,16 @@ local CreOptions = {
                 name_text_hold_callback = optionsutil.showValues,
             },
             {
+                name = "render_dpi",
+                name_text = S.ZOOM_DPI,
+                toggle = {S.OFF, "48", "96¹’¹", "167", "212", "300"},
+                values = {0, 48, 96, 167, 212, 300},
+                default_value = 96,
+                args = {0, 48, 96, 167, 212, 300},
+                event = "SetRenderDPI",
+                name_text_hold_callback = optionsutil.showValues,
+            },
+            {
                 name = "line_spacing",
                 name_text = S.LINE_SPACING,
                 toggle = {S.SMALL, S.MEDIUM, S.LARGE},

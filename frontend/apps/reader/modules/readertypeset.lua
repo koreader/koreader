@@ -49,6 +49,14 @@ function ReaderTypeset:onReadSettings(config)
     end
     self.ui.document:setEmbeddedStyleSheet(self.embedded_css and 1 or 0)
 
+    -- set render DPI
+    self.render_dpi = config:readSetting("render_dpi") or
+        G_reader_settings:readSetting("copt_render_dpi") or 96
+    self:setRenderDPI(self.render_dpi)
+
+    -- uncomment if we want font size to follow DPI changes
+    -- self.ui.document:setRenderScaleFontWithDPI(1)
+
     -- set page margins
     self:onSetPageMargins(
         config:readSetting("copt_page_margins") or
@@ -74,6 +82,7 @@ function ReaderTypeset:onSaveSettings()
     self.ui.doc_settings:saveSetting("embedded_css", self.embedded_css)
     self.ui.doc_settings:saveSetting("floating_punctuation", self.floating_punctuation)
     self.ui.doc_settings:saveSetting("embedded_fonts", self.embedded_fonts)
+    self.ui.doc_settings:saveSetting("render_dpi", self.render_dpi)
 end
 
 function ReaderTypeset:onToggleEmbeddedStyleSheet(toggle)
@@ -101,6 +110,11 @@ local OBSOLETED_CSS = {
     "rtf.css",
     "txt.css",
 }
+
+function ReaderTypeset:onSetRenderDPI(dpi)
+    self:setRenderDPI(dpi)
+    return true
+end
 
 function ReaderTypeset:genStyleSheetMenu()
     local getStyleMenuItem = function(text, css_file, separator)
@@ -248,6 +262,12 @@ end
 
 function ReaderTypeset:toggleTxtPreFormatted(toggle)
     self.ui.document:setTxtPreFormatted(toggle)
+    self.ui:handleEvent(Event:new("UpdatePos"))
+end
+
+function ReaderTypeset:setRenderDPI(dpi)
+    self.render_dpi = dpi
+    self.ui.document:setRenderDPI(dpi)
     self.ui:handleEvent(Event:new("UpdatePos"))
 end
 
