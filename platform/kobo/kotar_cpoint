@@ -25,5 +25,4 @@ for _ in $(seq 1 ${PROGRESS_AMOUNT}); do
 done
 
 # Print our progress :)
-./fbink -q -y -7 -pm "${PROGRESS_BASE_STRING}"
-./fbink -q -y -6 -pm "${PROGRESS_STRING}"
+./fbink -q -y -7 -pm "$(echo -e "${PROGRESS_BASE_STRING}\n${PROGRESS_STRING}")"
