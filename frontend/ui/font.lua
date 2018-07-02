@@ -130,17 +130,48 @@ function Font:getFace(font, size)
 end
 
 --[[
-    These fonts from Kindle system cannot be loaded by Freetype.
+    These non-LGC Kindle system fonts fail CRe's moronic header check.
 --]]
 local kindle_fonts_blacklist = {
+    ["DiwanMuna-Bold.ttf"] = true,
+    ["DiwanMuna-Regular.ttf"] = true,
     ["HYGothicBold.ttf"] = true,
     ["HYGothicMedium.ttf"] = true,
     ["HYMyeongJoBold.ttf"] = true,
     ["HYMyeongJoMedium.ttf"] = true,
+    ["KindleBlackboxBoldItalic.ttf"] = true,
+    ["KindleBlackboxBold.ttf"] = true,
+    ["KindleBlackboxItalic.ttf"] = true,
+    ["KindleBlackboxRegular.ttf"] = true,
+    ["Kindle_MonospacedSymbol.ttf"] = true,
+    ["Kindle_Symbol.ttf"] = true,
+    ["MTChineseSurrogates.ttf"] = true,
     ["MYingHeiTBold.ttf"] = true,
     ["MYingHeiTMedium.ttf"] = true,
+    ["NotoNaskhArabicUI-Bold.ttf"] = true,
+    ["NotoNaskhArabicUI-Regular.ttf"] = true,
+    ["NotoNaskh-Bold.ttf"] = true,
+    ["NotoNaskh-Regular.ttf"] = true,
+    ["NotoSansBengali-Regular.ttf"] = true,
+    ["NotoSansDevanagari-Regular.ttf"] = true,
+    ["NotoSansGujarati-Regular.ttf"] = true,
+    ["NotoSansKannada-Regular.ttf"] = true,
+    ["NotoSansMalayalam-Regular.ttf"] = true,
+    ["NotoSansTamil-Regular.ttf"] = true,
+    ["NotoSansTelugu-Regular.ttf"] = true,
+    ["SakkalKitab-Bold.ttf"] = true,
+    ["SakkalKitab-Regular.ttf"] = true,
     ["SongTBold.ttf"] = true,
     ["SongTMedium.ttf"] = true,
+    ["STHeitiBold.ttf"] = true,
+    ["STHeitiMedium.ttf"] = true,
+    ["STSongBold.ttf"] = true,
+    ["STSongMedium.ttf"] = true,
+    ["TBGothicBold_213.ttf"] = true,
+    ["TBGothicMed_213.ttf"] = true,
+    ["TBMinchoBold_213.ttf"] = true,
+    ["TBMinchoMedium_213.ttf"] = true,
+    ["STKaiMedium.ttf"] = true,
 }
 
 local function isInFontsBlacklist(f)
