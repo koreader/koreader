@@ -28,7 +28,7 @@ end
 function Version:getNormalizedVersion(rev)
     if not rev then return end
     local year, month, revision = rev:match("v(%d%d%d%d)%.(%d%d)-?(%d*)")
-    local commit = rev:match("-%d*-g([0-9a-f]*)[0-9_%-]*")
+    local commit = rev:match("-%d*-g(%x*)[%d_%-]*")
     return ((year or 0) * 100 + (month or 0)) * 10000 + (revision or 0), commit
 end
 
