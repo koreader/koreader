@@ -176,6 +176,10 @@ local kindle_fonts_blacklist = {
     ["Caecilia_LT_68_Cond_Medium_Italic.ttf"] = true,
     ["Caecilia_LT_77_Cond_Bold.ttf"] = true,
     ["Caecilia_LT_78_Cond_Bold_Italic.ttf"] = true,
+    ["Helvetica_LT_65_Medium.ttf"] = true,
+    ["Helvetica_LT_66_Medium_Italic.ttf"] = true,
+    ["Helvetica_LT_75_Bold.ttf"] = true,
+    ["Helvetica_LT_76_Bold_Italic.ttf"] = true,
 }
 
 local function isInFontsBlacklist(f)
