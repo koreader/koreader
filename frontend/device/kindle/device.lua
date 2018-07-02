@@ -548,11 +548,11 @@ function KindleOasis2:init()
         }
     }
 
-    -- NOTE: Turns out the framebuffer may not actually be rotated when in _ROTATED orientations...
-    --       Also, it'd take some effort to actually start KOReader while in a LANDSCAPE orientation,
+    -- FIXME: When starting KOReader with the device upside down ("D"), touch input is registered wrong
+    --        (i.e., probably upside down).
+    --        If it's started upright ("U"), everything's okay, and turning it upside down after that works just fine.
+    -- NOTE: It'd take some effort to actually start KOReader while in a LANDSCAPE orientation,
     --       since they're only exposed inside the stock reader, and not the Home/KUAL Booklets.
-    --       TL;DR: Compared to the Oasis 1,
-    --              We simply never set native_rotation_mode to a _ROTATED variant and hope for the best...
     local haslipc, lipc = pcall(require, "liblipclua")
     if haslipc and lipc then
         local lipc_handle = lipc.init("com.github.koreader.screen")
@@ -560,25 +560,20 @@ function KindleOasis2:init()
             local orientation_code = lipc_handle:get_string_property(
                 "com.lab126.winmgr", "accelerometer")
             local rotation_mode = 0
-            local native_mode = 0
             if orientation_code then
                 if orientation_code == "U" then
                     rotation_mode = self.screen.ORIENTATION_PORTRAIT
-                    native_mode = rotation_mode
                 elseif orientation_code == "R" then
                     rotation_mode = self.screen.ORIENTATION_LANDSCAPE
-                    native_mode = rotation_mode
                 elseif orientation_code == "D" then
                     rotation_mode = self.screen.ORIENTATION_PORTRAIT_ROTATED
-                    native_mode = self.screen.ORIENTATION_PORTRAIT
                 elseif orientation_code == "L" then
                     rotation_mode = self.screen.ORIENTATION_LANDSCAPE_ROTATED
-                    native_mode = self.screen.ORIENTATION_LANDSCAPE
                 end
             end
 
             if rotation_mode > 0 then
-                self.screen.native_rotation_mode = native_mode
+                self.screen.native_rotation_mode = rotation_mode
                 self.screen.cur_rotation_mode = rotation_mode
             end
 
