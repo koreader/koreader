@@ -174,12 +174,19 @@ function OTAManager:_buildLocalPackage()
     end
     if Device:isAndroid() then
         return os.execute(string.format(
-            "./tar cvf %s -T %s --no-recursion",
+            "./tar cf %s -T %s --no-recursion",
             self.installed_package, self.package_indexfile))
     else
-        return os.execute(string.format(
-            "./tar cvf %s -C .. -T %s --no-recursion",
-            self.installed_package, self.package_indexfile))
+        -- With visual feedback if supported...
+        if lfs.attributes("./kotar_cpoint", "mode") == "file" then
+            return os.execute(string.format(
+                "./tar cf %s -C .. -T %s --no-recursion --checkpoint=200 --checkpoint-action=exec='./kotar_cpoint $TAR_CHECKPOINT create'",
+                self.installed_package, self.package_indexfile))
+        else
+            return os.execute(string.format(
+                "./tar cf %s -C .. -T %s --no-recursion",
+                self.installed_package, self.package_indexfile))
+        end
     end
 end
 

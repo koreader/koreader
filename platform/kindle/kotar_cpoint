@@ -15,17 +15,30 @@ else
     exit 1
 fi
 
-## First arg is the chekpoint number, and we get one every 200 checkpoints.
+## First arg is the checkpoint number, and we get one every 200 checkpoints.
 CHECKPOINT_NUM="${1}"
 CHECKPOINT_GRANULARITY="200"
 
-# Use that to build a poor man's progress bar, with dots.
+# Use that to build a progress bar
 PROGRESS_AMOUNT="$((CHECKPOINT_NUM / CHECKPOINT_GRANULARITY))"
-PROGRESS_STRING="Updating koreader "
+
+# Which text do we want to use?
+case "${2}" in
+	"create" )
+		PROGRESS_BASE_STRING="Preparing local OTA package"
+	;;
+	* )
+		PROGRESS_BASE_STRING="Updating KOReader"
+	;;
+esac
+
+# And start drawing the progress bar...
+PROGRESS_STRING=""
 for _ in $(seq 1 ${PROGRESS_AMOUNT}); do
-    # Append a dot until we hit the needed amount
+    # Fill the progress bar...
     PROGRESS_STRING="${PROGRESS_STRING}."
 done
 
 # Print our progress :)
+eips_print_bottom_centered "${PROGRESS_BASE_STRING}" 2
 eips_print_bottom_centered "${PROGRESS_STRING}" 1
