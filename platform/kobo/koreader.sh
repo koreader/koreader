@@ -15,10 +15,10 @@ if [ -f "${NEWUPDATE}" ]; then
     # Cleanup behind us...
     if [ $? -eq 0 ]; then
         mv "${NEWUPDATE}" "${INSTALLED}"
-        fbink -q -y -5 -pm "Update sucessful :)"
+        ./fbink -q -y -5 -pm "Update sucessful :)"
     else
         # Huh ho...
-        fbink -q -y -5 -pm "Update failed :("
+        ./fbink -q -y -5 -pm "Update failed :("
     fi
     rm -f "${NEWUPDATE}" # always purge newupdate in all cases to prevent update loop
 fi
