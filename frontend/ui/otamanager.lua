@@ -16,9 +16,14 @@ local OTAManager = {
     ota_servers = {
         "http://ota.koreader.rocks:80/",
         "http://vislab.bjmu.edu.cn:80/apps/koreader/ota/",
+        --[[
+        -- NOTE: Because we can't have nice things,
+        --       these OpenStack storage containers don't actually properly support HTTP/1.1 Range requests,
+        --       despite advertising so (which confuses zsync, causing it to loop infinitely instead of abort...)
         "http://koreader-fr.ak-team.com:80/",
         "http://koreader-pl.ak-team.com:80/",
         "http://koreader-na.ak-team.com:80/",
+        --]]
         "http://koreader.ak-team.com:80/",
     },
     ota_channels = {
