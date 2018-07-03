@@ -409,7 +409,13 @@ function CreDocument:setFontFace(new_font_face)
         --  +25601: uses existing real font-family, but use our font even
         --          for font-family: monospace
         -- +256001: prefer our font to any existing font-family font
-        self._document:setAsPreferredFontWithBias(new_font_face, 1)
+        if self.configurable.embedded_fonts == 0 then
+            --use our font when embedded fonts is off
+            self._document:setAsPreferredFontWithBias(new_font_face, 256001)
+        else
+            -- use existing real font-family when embedded fonts is on (publisher font)
+            self._document:setAsPreferredFontWithBias(new_font_face, 1)
+        end
     end
 end
 
