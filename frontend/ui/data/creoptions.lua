@@ -62,7 +62,8 @@ local CreOptions = {
 - off: ignore absolute units (old engine behaviour).
 - 96¹’¹: at 96 dpi, 1 css pixel = 1 screen pixel and images are rendered at their original dimensions.
 - other values scale css absolute units and images by a factor (300 dpi = x3, 48 dpi = x0.5)
-Using your device's actual DPI will ensure 1cm in CSS actually translates to 1cm on screen..]]),
+Using your device's actual DPI will ensure 1cm in CSS actually translates to 1cm on screen.
+Note that your selected font size is not affected by changes of this setting.]]),
             },
             {
                 name = "line_spacing",
