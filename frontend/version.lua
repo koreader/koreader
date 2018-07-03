@@ -23,7 +23,7 @@ end
 
 --- Returns normalized version of KOReader git-rev input string.
 -- @string rev full KOReader git-rev such as `v2015.11-982-g704d4238`
--- @treturn int version in the form of a number such as `2015110982`
+-- @treturn int version in the form of a 10 digit number such as `2015110982`
 -- @treturn string short git commit version hash such as `704d4238`
 function Version:getNormalizedVersion(rev)
     if not rev then return end
@@ -34,7 +34,7 @@ function Version:getNormalizedVersion(rev)
 end
 
 --- Returns current version of KOReader.
--- @treturn int version in the form of a number such as `2015110982`
+-- @treturn int version in the form of a 10 digit number such as `2015110982`
 -- @treturn string short git commit version hash such as `704d4238`
 -- @see normalized_version
 function Version:getNormalizedCurrentVersion()
