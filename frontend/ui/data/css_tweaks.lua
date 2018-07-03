@@ -93,7 +93,7 @@ local CssTweaks = {
             title = _("Ignore publisher hyphenate"),
             description = _("Disable hyphenate options set by the publisher "),
             css = [[
-* { hyphenate: inherit !important; }
+* { hyphenate: auto !important; }
 h1, h2, h3, h4, h5, h6 { hyphenate: none !important; }
             ]],
         },
