@@ -170,9 +170,17 @@ local CreOptions = {
                 name = "space_condensing",
                 name_text = S.WORD_GAP,
                 toggle = {S.SMALL, S.MEDIUM, S.LARGE},
-                values = {50, 75, 100},
-                default_value = 75,
-                args = {50, 75, 100},
+                values = {
+                    DCREREADER_CONFIG_WORD_GAP_SMALL,
+                    DCREREADER_CONFIG_WORD_GAP_MEDIUM,
+                    DCREREADER_CONFIG_WORD_GAP_LARGE,
+                },
+                default_value = DCREREADER_CONFIG_WORD_GAP_MEDIUM,
+                args = {
+                    DCREREADER_CONFIG_WORD_GAP_SMALL,
+                    DCREREADER_CONFIG_WORD_GAP_MEDIUM,
+                    DCREREADER_CONFIG_WORD_GAP_LARGE,
+                    },
                 event = "SetSpaceCondensing",
                 name_text_hold_callback = optionsutil.showValues,
                 -- used by showValues
