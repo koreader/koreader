@@ -15,5 +15,5 @@ else
     exit 1
 fi
 
-eips_print_bottom_centered "Computing zsync delta . . ." 2
+eips_print_bottom_centered "Computing zsync delta . . ." 3
 

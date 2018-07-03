@@ -40,5 +40,5 @@ for _ in $(seq 1 ${PROGRESS_AMOUNT}); do
 done
 
 # Print our progress :)
-eips_print_bottom_centered "${PROGRESS_BASE_STRING}" 2
-eips_print_bottom_centered "${PROGRESS_STRING}" 1
+eips_print_bottom_centered "${PROGRESS_BASE_STRING}" 3
+eips_print_bottom_centered "${PROGRESS_STRING}" 2
