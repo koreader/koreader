@@ -13,8 +13,9 @@ INSTALLED="${KOREADER_DIR}/ota/koreader.installed.tar"
 if [ -f "${NEWUPDATE}" ]; then
     # shellcheck disable=SC2016
     ./tar xf "${NEWUPDATE}" --strip-components=1 --no-same-permissions --no-same-owner --checkpoint=200 --checkpoint-action=exec='./kotar_cpoint $TAR_CHECKPOINT'
+    fail=$?
     # Cleanup behind us...
-    if [ $? -eq 0 ]; then
+    if [ "${fail}" -eq 0 ]; then
         mv "${NEWUPDATE}" "${INSTALLED}"
         ./fbink -q -y -5 -pm "Update successful :)"
     else
