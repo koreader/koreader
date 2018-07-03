@@ -46,6 +46,8 @@ local CreOptions = {
                 default_arg = "page",
                 event = "SetViewMode",
                 name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[- 'scroll' mode allows you to scroll the text like you would in a web browser (the 'Page Overlap' setting is only available in this mode).
+- 'page' mode splits the text into pages, at the most acceptable places (page numbers and the number of page may change when you change fonts, margins, styles...).]]),
             },
             {
                 name = "render_dpi",
@@ -56,6 +58,11 @@ local CreOptions = {
                 args = {0, 48, 96, 167, 212, 300},
                 event = "SetRenderDPI",
                 name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Sets the DPI used to scale CSS absolute units and images:
+- off: ignore absolute units (old engine behaviour).
+- 96¹’¹: at 96 dpi, 1 css pixel = 1 screen pixel; images are rendered as their original dimensions.
+- other values scale css absolute units and images by a factor (300 dpi = x3, 48 dpi = x0.5)
+Using your device's screen real DPI will make a css size of 1cm measures as 1cm.]]),
             },
             {
                 name = "line_spacing",
@@ -165,6 +172,11 @@ local CreOptions = {
                 args = {0, 1, 2},
                 event = "SetFontHinting",
                 name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Font hinting is the process by which fonts are adjusted for maximum readability on pixel based screens.
+
+- off: no hinting.
+- native: use the font internal hinting instructions.
+- auto: use FreeType hinting algorithm, ignoring font instructions.]]),
             },
             {
                 name = "space_condensing",
@@ -186,6 +198,7 @@ local CreOptions = {
                 -- used by showValues
                 name_text_suffix = "%",
                 name_text_true_values = true,
+                help_text = _([[Tells the rendering engine how much each 'space' character in the text can be reduced from its regular width to make words fit on a line (100% means no reduction).]]),
             }
         }
     },
@@ -202,6 +215,8 @@ local CreOptions = {
                 default_arg = DCREREADER_PROGRESS_BAR,
                 event = "SetStatusLine",
                 name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[- 'full' displays a status bar at the top of the screen (this status bar can't be customized).
+- 'mini' displays a status bar at the bottom of the screen, which can be toggled by tapping. The items displayed can be customized via the main menu.]]),
             },
             {
                 name = "embedded_css",
@@ -213,6 +228,8 @@ local CreOptions = {
                 default_arg = nil,
                 event = "ToggleEmbeddedStyleSheet",
                 name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Enable or disable the publisher stylesheets embedded in the book.
+(Note that less radical changes can be achieved via Style Tweaks in the main menu.)]]),
             },
             {
                 name = "embedded_fonts",
@@ -227,6 +244,8 @@ local CreOptions = {
                     return optionsutil.enableIfEquals(configurable, "embedded_css", 1)
                 end,
                 name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Enable or disable the use of the fonts embedded in the book.
+(Disabling the fonts specified in the publisher stylesheets can also be achieved via Style Tweaks in the main menu.)]]),
             },
         },
     },

@@ -203,6 +203,8 @@ local KoptOptions = {
                 values = {1, 0},
                 default_value = 0,
                 name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Remove watermarks from the rendered document.
+This can also be used to remove some gray background or convert a grayscale or color document to black & white and get more contrast for easier reading.]]),
             },
             {
                 name="doc_language",
@@ -213,6 +215,7 @@ local KoptOptions = {
                 event = "DocLangUpdate",
                 args = DKOPTREADER_CONFIG_DOC_LANGS_CODE,
                 name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[(Used by the OCR engine.)]]),
             },
             {
                 name = "word_spacing",
