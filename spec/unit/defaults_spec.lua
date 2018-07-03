@@ -17,7 +17,7 @@ describe("defaults module", function()
         os.remove(persistent_filename)
 
         -- not in persistent but checked in defaults
-        Defaults.changed[14] = true
+        Defaults.changed[11] = true
         Defaults.changed[19] = true
         Defaults.changed[28] = true
         Defaults.changed[63] = true
@@ -27,8 +27,8 @@ describe("defaults module", function()
         assert.is_same(Defaults.defaults_name[28], 'DHINTCOUNT')
         assert.is_same(Defaults.defaults_name[77], 'SEARCH_TITLE')
         assert.is_same(Defaults.defaults_name[63], 'DTAP_ZONE_MENU')
-        assert.is_same(Defaults.defaults_name[19], 'DCREREADER_VIEW_MODE')
-        assert.is_same(Defaults.defaults_name[14],
+        assert.is_same(Defaults.defaults_name[13], 'DCREREADER_VIEW_MODE')
+        assert.is_same(Defaults.defaults_name[11],
                        'DCREREADER_CONFIG_MARGIN_SIZES_LARGE')
         local fd = io.open(persistent_filename, "r")
         assert.Equals(
