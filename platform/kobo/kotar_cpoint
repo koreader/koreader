@@ -25,5 +25,5 @@ for _ in $(seq 1 ${PROGRESS_AMOUNT}); do
 done
 
 # Print our progress :)
-# shellcheck disable=SC2039 disable=SC1117
-./fbink -q -y -7 -pm "$(echo -e "${PROGRESS_BASE_STRING}\n${PROGRESS_STRING}")"
+# shellcheck disable=SC2039
+./fbink -q -y -7 -pm "${PROGRESS_BASE_STRING}" "${PROGRESS_STRING}"
