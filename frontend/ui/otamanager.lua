@@ -19,7 +19,7 @@ local OTAManager = {
         --[[
         -- NOTE: Because we can't have nice things,
         --       these OpenStack storage containers don't actually properly support HTTP/1.1 Range requests,
-        --       despite advertising so (which confuses zsync, causing it to loop infinitely instead of abort...)
+        --       despite advertising so (which confuses zsync, causing it to loop indefinitely instead of aborting...)
         "http://koreader-fr.ak-team.com:80/",
         "http://koreader-pl.ak-team.com:80/",
         "http://koreader-na.ak-team.com:80/",
