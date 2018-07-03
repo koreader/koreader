@@ -5,7 +5,7 @@ This module helps with retrieving version information.
 local Version = {}
 
 --- Returns current KOReader git-rev.
--- @treturn string full KOReader git-rev such `v2015.11-982-g704d4238`
+-- @treturn string full KOReader git-rev such as `v2015.11-982-g704d4238`
 function Version:getCurrentRevision()
     if not self.rev then
         local rev_file = io.open("git-rev", "r")
@@ -22,7 +22,7 @@ function Version:getCurrentRevision()
 end
 
 --- Returns normalized version of KOReader git-rev input string.
--- @string rev full KOReader git-rev such `v2015.11-982-g704d4238`
+-- @string rev full KOReader git-rev such as `v2015.11-982-g704d4238`
 -- @treturn int version in the form of a number such as `2015110982`
 -- @treturn string short git commit version hash such as `704d4238`
 function Version:getNormalizedVersion(rev)
@@ -33,7 +33,7 @@ function Version:getNormalizedVersion(rev)
 end
 
 --- Returns current version of KOReader.
--- @treturn int version in the form of a number such as `201511982`
+-- @treturn int version in the form of a number such as `2015110982`
 -- @treturn string short git commit version hash such as `704d4238`
 -- @see normalized_version
 function Version:getNormalizedCurrentVersion()
