@@ -90,8 +90,8 @@ local CssTweaks = {
         },
         {
             id = "hyphenate_all_auto";
-            title = _("Ignore publisher hyphenate"),
-            description = _("Disable hyphenate options set by the publisher "),
+            title = _("Allow hyphenation on all text"),
+            description = _("Allow hyphenation to happen on all text (except headings), in case the publisher has disabled it."),
             css = [[
 * { hyphenate: auto !important; }
 h1, h2, h3, h4, h5, h6 { hyphenate: none !important; }
@@ -106,7 +106,7 @@ h1, h2, h3, h4, h5, h6 { hyphenate: none !important; }
             -- https://github.com/koreader/koreader/issues/3923#issuecomment-386510294
             css = [[
 sup { font-size: 50% !important; vertical-align: super !important; }
-sub { font-size: 50% !important; vertical-align: middle !important; }
+sub { font-size: 50% !important; vertical-align: sub !important; }
             ]],
             separator = true,
         },
