@@ -89,6 +89,15 @@ local CssTweaks = {
             },
         },
         {
+            id = "hyphenate_all_auto";
+            title = _("Ignore publisher hyphenate"),
+            description = _("Disable hyphenate options set by the publisher "),
+            css = [[
+* { hyphenate: inherit !important; }
+h1, h2, h3, h4, h5, h6 { hyphenate: none !important; }
+            ]],
+        },
+        {
             id = "sub_sup_smaller";
             title = _("Smaller sub- and superscript"),
             description = _("Prevent sub- and superscript from affecting line-height."),
@@ -120,17 +129,6 @@ sub { font-size: 50% !important; vertical-align: middle !important; }
             description = _("Disable font-size specified in embedded styles."),
             css = [[* { font-size: inherit !important; }]],
             separator = true,
-        },
-        {
-            id = "auto_hyphenate";
-            title = _("Ignore publisher hyphenate"),
-            description = _("Disable hyphenate options set by the publisher "),
-            css = [[
-body * { adobe-hyphenate: auto !important; }
-body * { hyphenate: auto !important; }
-body * { -webkit-hyphens: auto !important; }
-            ]],
-            sepearator = true,
         },
     },
     {
