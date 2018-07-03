@@ -17,12 +17,12 @@ if [ -f "${NEWUPDATE}" ]; then
     # Cleanup behind us...
     if [ "${fail}" -eq 0 ]; then
         mv "${NEWUPDATE}" "${INSTALLED}"
-        ./fbink -q -y -5 -pm "Update successful :)"
-        ./fbink -q -y -4 -pm "KOReader will start momentarily . . ."
+        ./fbink -q -y -6 -pm "Update successful :)"
+        ./fbink -q -y -5 -pm "KOReader will start momentarily . . ."
     else
         # Huh ho...
-        ./fbink -q -y -5 -pmh "Update failed :("
-        ./fbink -q -y -4 -pm "KOReader may fail to function properly!"
+        ./fbink -q -y -6 -pmh "Update failed :("
+        ./fbink -q -y -5 -pm "KOReader may fail to function properly!"
     fi
     rm -f "${NEWUPDATE}" # always purge newupdate in all cases to prevent update loop
 fi
