@@ -26,4 +26,4 @@ done
 
 # Print our progress :)
 # shellcheck disable=SC2039
-./fbink -q -y -7 -pm "${PROGRESS_BASE_STRING}" "${PROGRESS_STRING}"
+./fbink -q -y -7 -pmh "${PROGRESS_BASE_STRING}" "${PROGRESS_STRING}"

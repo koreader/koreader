@@ -201,7 +201,7 @@ function OTAManager:zsync()
         if Device:isKindle() then
             os.execute("./zsync_status.sh")
         elseif Device:isKobo() then
-            os.execute("./fbink -q -y -7 -pm 'Computing zsync delta . . .'")
+            os.execute("./fbink -q -y -7 -pmh 'Computing zsync delta . . .'")
         end
         return os.execute(
             ("./zsync -i %s -o %s -u %s %s%s"):format(
