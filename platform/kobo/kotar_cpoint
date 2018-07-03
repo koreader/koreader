@@ -1,20 +1,5 @@
 #!/bin/sh
 
-# KOReader's working directory
-KOREADER_DIR="/mnt/us/koreader"
-
-# We do NOT want to sleep during eips calls!
-export EIPS_NO_SLEEP="true"
-
-# Load our helper functions...
-if [ -f "${KOREADER_DIR}/libkohelper.sh" ]; then
-    # shellcheck source=/dev/null
-    . "${KOREADER_DIR}/libkohelper.sh"
-else
-    echo "Can't source helper functions, aborting!"
-    exit 1
-fi
-
 ## First arg is the checkpoint number, and we get one every 200 checkpoints.
 CHECKPOINT_NUM="${1}"
 CHECKPOINT_GRANULARITY="200"
@@ -40,5 +25,4 @@ for _ in $(seq 1 ${PROGRESS_AMOUNT}); do
 done
 
 # Print our progress :)
-eips_print_bottom_centered "${PROGRESS_BASE_STRING}" 3
-eips_print_bottom_centered "${PROGRESS_STRING}" 2
+./fbink -q -y -7 -pmh "${PROGRESS_BASE_STRING}" "${PROGRESS_STRING}"

@@ -94,25 +94,27 @@ if [ -f "${NEWUPDATE}" ]; then
     GNUTAR_BIN="${KOREADER_DIR}/tar"
     if [ -x "${GNUTAR_BIN}" ]; then
         # Let our checkpoint script handle the detailed visual feedback...
-        eips_print_bottom_centered "Updating koreader" 1
+        eips_print_bottom_centered "Updating KOReader" 3
         # shellcheck disable=SC2016
         ${GNUTAR_BIN} -C "/mnt/us" --no-same-owner --no-same-permissions --checkpoint=200 --checkpoint-action=exec='./kotar_cpoint $TAR_CHECKPOINT' -xf "${NEWUPDATE}"
         fail=$?
     else
         # Fall back to busybox tar
-        eips_print_bottom_centered "Updating koreader . . ." 1
+        eips_print_bottom_centered "Updating KOReader . . ." 3
         tar -C "/mnt/us" -xf "${NEWUPDATE}"
         fail=$?
     fi
     # Cleanup behind us...
-    if [ $fail -eq 0 ]; then
+    if [ "${fail}" -eq 0 ]; then
         mv "${NEWUPDATE}" "${INSTALLED}"
-        logmsg "Update sucessful :)"
-        eips_print_bottom_centered "Update successful :)" 1
+        logmsg "Update successful :)"
+        eips_print_bottom_centered "Update successful :)" 2
+        eips_print_bottom_centered "KOReader will start momentarily . . ." 1
     else
         # Huh ho...
         logmsg "Update failed :("
-        eips_print_bottom_centered "Update failed :(" 1
+        eips_print_bottom_centered "Update failed :(" 2
+        eips_print_bottom_centered "KOReader may fail to function properly" 1
     fi
     rm -f "${NEWUPDATE}" # always purge newupdate in all cases to prevent update loop
 fi

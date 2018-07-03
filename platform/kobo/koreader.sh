@@ -11,9 +11,19 @@ cd "${KOREADER_DIR}" || exit
 NEWUPDATE="${KOREADER_DIR}/ota/koreader.updated.tar"
 INSTALLED="${KOREADER_DIR}/ota/koreader.installed.tar"
 if [ -f "${NEWUPDATE}" ]; then
-    # TODO: any graphic indication for the updating progress?
-    ./tar xf "${NEWUPDATE}" --strip-components=1 --no-same-permissions --no-same-owner \
-        && mv "${NEWUPDATE}" "${INSTALLED}"
+    # shellcheck disable=SC2016
+    ./tar xf "${NEWUPDATE}" --strip-components=1 --no-same-permissions --no-same-owner --checkpoint=200 --checkpoint-action=exec='./kotar_cpoint $TAR_CHECKPOINT'
+    fail=$?
+    # Cleanup behind us...
+    if [ "${fail}" -eq 0 ]; then
+        mv "${NEWUPDATE}" "${INSTALLED}"
+        ./fbink -q -y -6 -pm "Update successful :)"
+        ./fbink -q -y -5 -pm "KOReader will start momentarily . . ."
+    else
+        # Huh ho...
+        ./fbink -q -y -6 -pmh "Update failed :("
+        ./fbink -q -y -5 -pm "KOReader may fail to function properly!"
+    fi
     rm -f "${NEWUPDATE}" # always purge newupdate in all cases to prevent update loop
 fi
 

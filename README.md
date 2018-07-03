@@ -318,7 +318,7 @@ KOReader's build system. To install ccache:
 [nb-script]:https://gitlab.com/koreader/nightly-builds/blob/master/build_release.sh
 [circleci-badge]:https://circleci.com/gh/koreader/koreader.svg?style=shield
 [circleci-link]:https://circleci.com/gh/koreader/koreader
-[circleci-conf]:https://github.com/koreader/koreader-base/blob/master/.circleci/config.yml
+[circleci-conf]:https://github.com/koreader/koreader/blob/master/.circleci/config.yml
 [linux-vm]:http://www.howtogeek.com/howto/11287/how-to-run-ubuntu-in-windows-7-with-vmware-player/
 [l10n-readme]:https://github.com/koreader/koreader/blob/master/l10n/README.md
 [koreader-transifex]:https://www.transifex.com/projects/p/koreader/

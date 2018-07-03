@@ -16,9 +16,16 @@ local OTAManager = {
     ota_servers = {
         "http://ota.koreader.rocks:80/",
         "http://vislab.bjmu.edu.cn:80/apps/koreader/ota/",
+        --[[
+        -- NOTE: Because we can't have nice things,
+        --       the HTTP frontend of these OpenStack storage containers doesn't actually properly support
+        --       HTTP/1.1 Range requests when multiple byte ranges are requested: they return bogus data when doing so,
+        --       which confuses zsync, causing it to retry indefinitely instead of aborting...
+        --       c.f., https://github.com/koreader/koreader-base/pull/699
         "http://koreader-fr.ak-team.com:80/",
         "http://koreader-pl.ak-team.com:80/",
         "http://koreader-na.ak-team.com:80/",
+        --]]
         "http://koreader.ak-team.com:80/",
     },
     ota_channels = {
@@ -174,17 +181,30 @@ function OTAManager:_buildLocalPackage()
     end
     if Device:isAndroid() then
         return os.execute(string.format(
-            "./tar cvf %s -T %s --no-recursion",
+            "./tar cf %s -T %s --no-recursion",
             self.installed_package, self.package_indexfile))
     else
-        return os.execute(string.format(
-            "./tar cvf %s -C .. -T %s --no-recursion",
-            self.installed_package, self.package_indexfile))
+        -- With visual feedback if supported...
+        if lfs.attributes("./kotar_cpoint", "mode") == "file" then
+            return os.execute(string.format(
+                "./tar cf %s -C .. -T %s --no-recursion --checkpoint=200 --checkpoint-action=exec='./kotar_cpoint $TAR_CHECKPOINT create'",
+                self.installed_package, self.package_indexfile))
+        else
+            return os.execute(string.format(
+                "./tar cf %s -C .. -T %s --no-recursion",
+                self.installed_package, self.package_indexfile))
+        end
     end
 end
 
 function OTAManager:zsync()
     if self:_buildLocalPackage() == 0 then
+        -- Make it clear that it's now zsync churning CPU time, instead of tar churning IO ;).
+        if Device:isKindle() then
+            os.execute("./zsync_status.sh")
+        elseif Device:isKobo() then
+            os.execute("./fbink -q -y -7 -pmh 'Computing zsync delta . . .'")
+        end
         return os.execute(
             ("./zsync -i %s -o %s -u %s %s%s"):format(
                 self.installed_package,
