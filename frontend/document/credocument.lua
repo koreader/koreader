@@ -452,6 +452,21 @@ function CreDocument:setTrustSoftHyphens(toggle)
     self._document:setIntProperty("crengine.hyphenation.trust.soft.hyphens", toggle and 1 or 0)
 end
 
+function CreDocument:setRenderDPI(value)
+    -- set DPI used for scaling css units (with 96, 1 css px = 1 screen px)
+    -- it can be different from KOReader screen DPI
+    -- it has no relation to the default fontsize (which is already
+    -- scaleBySize()'d when provided to crengine)
+    logger.dbg("CreDocument: set render dpi", value or 96)
+    self._document:setIntProperty("crengine.render.dpi", value or 96)
+end
+
+function CreDocument:setRenderScaleFontWithDPI(toggle)
+    -- wheter to scale font with DPI, or keep the current size
+    logger.dbg("CreDocument: set render scale font with dpi", toggle)
+    self._document:setIntProperty("crengine.render.scale.font.with.dpi", toggle)
+end
+
 function CreDocument:clearSelection()
     logger.dbg("clear selection")
     self._document:clearSelection()
