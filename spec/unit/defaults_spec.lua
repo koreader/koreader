@@ -28,7 +28,7 @@ describe("defaults module", function()
         assert.is_same(Defaults.defaults_name[77], 'SEARCH_TITLE')
         assert.is_same(Defaults.defaults_name[63], 'DTAP_ZONE_MENU')
         assert.is_same(Defaults.defaults_name[19], 'DCREREADER_VIEW_MODE')
-        assert.is_same(Defaults.defaults_name[17],
+        assert.is_same(Defaults.defaults_name[14],
                        'DCREREADER_CONFIG_MARGIN_SIZES_LARGE')
         local fd = io.open(persistent_filename, "r")
         assert.Equals(
