@@ -47,7 +47,7 @@ local CreOptions = {
                 event = "SetViewMode",
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[- 'scroll' mode allows you to scroll the text like you would in a web browser (the 'Page Overlap' setting is only available in this mode).
-- 'page' mode splits the text into pages, at the most acceptable places (page numbers and the number of page may change when you change fonts, margins, styles...).]]),
+- 'page' mode splits the text into pages, at the most acceptable places (page numbers and the number of pages may change when you change fonts, margins, styles...).]]),
             },
             {
                 name = "render_dpi",
@@ -60,9 +60,9 @@ local CreOptions = {
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Sets the DPI used to scale CSS absolute units and images:
 - off: ignore absolute units (old engine behaviour).
-- 96¹’¹: at 96 dpi, 1 css pixel = 1 screen pixel; images are rendered as their original dimensions.
+- 96¹’¹: at 96 dpi, 1 css pixel = 1 screen pixel and images are rendered at their original dimensions.
 - other values scale css absolute units and images by a factor (300 dpi = x3, 48 dpi = x0.5)
-Using your device's screen real DPI will make a css size of 1cm measures as 1cm.]]),
+Using your device's actual DPI will ensure 1cm in CSS actually translates to 1cm on screen..]]),
             },
             {
                 name = "line_spacing",
@@ -172,11 +172,11 @@ Using your device's screen real DPI will make a css size of 1cm measures as 1cm.
                 args = {0, 1, 2},
                 event = "SetFontHinting",
                 name_text_hold_callback = optionsutil.showValues,
-                help_text = _([[Font hinting is the process by which fonts are adjusted for maximum readability on pixel based screens.
+                help_text = _([[Font hinting is the process by which fonts are adjusted for maximum readability on the screen's pixel grid.
 
 - off: no hinting.
 - native: use the font internal hinting instructions.
-- auto: use FreeType hinting algorithm, ignoring font instructions.]]),
+- auto: use FreeType's hinting algorithm, ignoring font instructions.]]),
             },
             {
                 name = "space_condensing",
