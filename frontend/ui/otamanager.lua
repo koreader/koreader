@@ -18,8 +18,10 @@ local OTAManager = {
         "http://vislab.bjmu.edu.cn:80/apps/koreader/ota/",
         --[[
         -- NOTE: Because we can't have nice things,
-        --       these OpenStack storage containers don't actually properly support HTTP/1.1 Range requests,
-        --       despite advertising so (which confuses zsync, causing it to loop indefinitely instead of aborting...)
+        --       the HTTP frontend of these OpenStack storage containers doesn't actually properly support
+        --       HTTP/1.1 Range requests when multiple byte ranges are requested: they return bogus data when doing so,
+        --       which confuses zsync, causing it to retry indefinitely instead of aborting...
+        --       c.f., https://github.com/koreader/koreader-base/pull/699
         "http://koreader-fr.ak-team.com:80/",
         "http://koreader-pl.ak-team.com:80/",
         "http://koreader-na.ak-team.com:80/",
