@@ -19,6 +19,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
+local RenderText = require("ui/rendertext")
 local RightContainer = require("ui/widget/container/rightcontainer")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
@@ -81,6 +82,14 @@ function TouchMenuItem:init()
     local empty_widget = CheckMark:new{
         checkable = false,
     }
+
+    -- text_max_width should be the TouchMenuItem width minus the below
+    -- FrameContainer default paddings minus the checked widget width
+    local text_max_width = self.dimen.w - 2*Size.padding.default - checked_widget:getSize().w
+    local text = getMenuText(self.item)
+    if RenderText:sizeUtf8Text(0, Screen:getWidth(), self.face, text, true).x > text_max_width then
+        text = RenderText:truncateTextByWidth(text, self.face, text_max_width, true)
+    end
     self.item_frame = FrameContainer:new{
         width = self.dimen.w,
         bordersize = 0,
@@ -96,7 +105,7 @@ function TouchMenuItem:init()
                 or empty_widget
             },
             TextWidget:new{
-                text = getMenuText(self.item),
+                text = text,
                 fgcolor = item_enabled ~= false and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_GREY,
                 face = self.face,
             },
