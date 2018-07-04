@@ -204,7 +204,7 @@ local KoptOptions = {
                 default_value = 0,
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Remove watermarks from the rendered document.
-This can also be used to remove some gray background or convert a grayscale or color document to black & white and get more contrast for easier reading.]]),
+This can also be used to remove some gray background or to convert a grayscale or color document to black & white and get more contrast for easier reading.]]),
             },
             {
                 name="doc_language",

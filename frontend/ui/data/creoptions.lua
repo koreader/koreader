@@ -47,7 +47,7 @@ local CreOptions = {
                 event = "SetViewMode",
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[- 'scroll' mode allows you to scroll the text like you would in a web browser (the 'Page Overlap' setting is only available in this mode).
-- 'page' mode splits the text into pages, at the most acceptable places (page numbers and the number of pages may change when you change fonts, margins, styles...).]]),
+- 'page' mode splits the text into pages, at the most acceptable places (page numbers and the number of pages may change when you change fonts, margins, styles, etc.).]]),
             },
             {
                 name = "render_dpi",
@@ -58,12 +58,12 @@ local CreOptions = {
                 args = {0, 48, 96, 167, 212, 300},
                 event = "SetRenderDPI",
                 name_text_hold_callback = optionsutil.showValues,
-                help_text = _([[Sets the DPI used to scale CSS absolute units and images:
-- off: ignore absolute units (old engine behaviour).
-- 96¹’¹: at 96 dpi, 1 css pixel = 1 screen pixel and images are rendered at their original dimensions.
-- other values scale css absolute units and images by a factor (300 dpi = x3, 48 dpi = x0.5)
-Using your device's actual DPI will ensure 1cm in CSS actually translates to 1cm on screen.
-Note that your selected font size is not affected by changes of this setting.]]),
+                help_text = _([[Sets the DPI used to scale absolute CSS units and images:
+- off: ignore absolute units (old engine behavior).
+- 96¹’¹: at 96 DPI, 1 CSS pixel = 1 screen pixel and images are rendered at their original dimensions.
+- other values scale CSS absolute units and images by a factor (300 DPI = x3, 48 DPI = x0.5)
+Using your device's actual DPI will ensure 1 cm in CSS actually translates to 1 cm on screen.
+Note that your selected font size is not affected by this setting.]]),
             },
             {
                 name = "line_spacing",
@@ -229,7 +229,7 @@ Note that your selected font size is not affected by changes of this setting.]])
                 default_arg = nil,
                 event = "ToggleEmbeddedStyleSheet",
                 name_text_hold_callback = optionsutil.showValues,
-                help_text = _([[Enable or disable the publisher stylesheets embedded in the book.
+                help_text = _([[Enable or disable publisher stylesheets embedded in the book.
 (Note that less radical changes can be achieved via Style Tweaks in the main menu.)]]),
             },
             {
