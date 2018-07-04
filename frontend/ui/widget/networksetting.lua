@@ -462,7 +462,9 @@ function NetworkSetting:init()
         local connected_item = self:getConnectedItem()
         if connected_item ~= nil then
             obtainIP()
-            UIManager:close(self, 'ui', self.dimen)
+            if G_reader_settings:nilOrTrue("auto_dismiss_wifi_scan") then
+                UIManager:close(self, 'ui', self.dimen)
+            end
             UIManager:show(InfoMessage:new{
                 text = T(_("Connected to network %1"), connected_item.info.ssid)
             })
