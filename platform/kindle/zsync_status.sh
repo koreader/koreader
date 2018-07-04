@@ -15,5 +15,13 @@ else
     exit 1
 fi
 
-eips_print_bottom_centered "Computing zsync delta . . ." 3
-
+# What are we printing?
+case "${1}" in
+    "clear")
+        eips_print_bottom_centered " " 3
+        eips_print_bottom_centered " " 2
+        ;;
+    *)
+        eips_print_bottom_centered "Computing zsync delta . . ." 3
+        ;;
+esac
