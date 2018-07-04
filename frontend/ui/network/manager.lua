@@ -246,7 +246,7 @@ end
 
 function NetworkMgr:getDismissScanMenuTable()
     return {
-        text = _("Dismiss SSID scan popup on successfull autoconnect"),
+        text = _("Dismiss Wi-Fi scan popup after connection"),
         checked_func = function() return G_reader_settings:nilOrTrue("auto_dismiss_wifi_scan") end,
         --enabled_func = function() return Device:isKobo() end,
         callback = function(menu) G_reader_settings:flipNilOrTrue("auto_dismiss_wifi_scan") end,
