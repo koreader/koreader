@@ -231,15 +231,15 @@ function FileManagerMenu:setUpdateItemTable()
 
     -- main menu tab
     self.menu_items.open_last_document = {
-        text = (function()
+        text_func = function()
             local last_file = G_reader_settings:readSetting("lastfile")
             if last_file then
                 last_file = last_file:gsub(".+/", "") --remove path, leave filename
             else
-                last_file = "<no last entry>"
+                last_file = ""
             end
             return T(_("Open last document: %1"), last_file)
-        end)(),
+        end,
         enabled_func = function()
             return G_reader_settings:readSetting("lastfile") ~= nil
         end,
