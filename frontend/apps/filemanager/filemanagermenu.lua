@@ -10,6 +10,7 @@ local UIManager = require("ui/uimanager")
 local Screen = Device.screen
 local dbg = require("dbg")
 local logger = require("logger")
+local util  = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
@@ -233,12 +234,8 @@ function FileManagerMenu:setUpdateItemTable()
     self.menu_items.open_last_document = {
         text_func = function()
             local last_file = G_reader_settings:readSetting("lastfile")
-            if last_file then
-                last_file = last_file:gsub(".+/", "") --remove path, leave filename
-            else
-                last_file = ""
-            end
-            return T(_("Open last document: %1"), last_file)
+            local path, file_name = util.splitFilePathName(last_file);
+            return T(_("Open last document: %1"), file_name)
         end,
         enabled_func = function()
             return G_reader_settings:readSetting("lastfile") ~= nil
