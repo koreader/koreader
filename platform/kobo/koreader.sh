@@ -11,7 +11,6 @@ cd "${KOREADER_DIR}" || exit
 ko_update_check() {
     NEWUPDATE="${KOREADER_DIR}/ota/koreader.updated.tar"
     INSTALLED="${KOREADER_DIR}/ota/koreader.installed.tar"
-    fail=-1
     if [ -f "${NEWUPDATE}" ]; then
         # shellcheck disable=SC2016
         ./tar xf "${NEWUPDATE}" --strip-components=1 --no-same-permissions --no-same-owner --checkpoint=200 --checkpoint-action=exec='./kotar_cpoint $TAR_CHECKPOINT'

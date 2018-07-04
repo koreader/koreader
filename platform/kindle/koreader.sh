@@ -93,7 +93,6 @@ ko_update_check() {
         logmsg "Updating koreader . . ."
         # Look for our own GNU tar build to do a fancy progress tracking...
         GNUTAR_BIN="${KOREADER_DIR}/tar"
-        fail=-1
         if [ -x "${GNUTAR_BIN}" ]; then
             # Let our checkpoint script handle the detailed visual feedback...
             eips_print_bottom_centered "Updating KOReader" 3
