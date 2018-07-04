@@ -89,6 +89,15 @@ local CssTweaks = {
             },
         },
         {
+            id = "hyphenate_all_auto";
+            title = _("Allow hyphenation on all text"),
+            description = _("Allow hyphenation to happen on all text (except headings), in case the publisher has disabled it."),
+            css = [[
+* { hyphenate: auto !important; }
+h1, h2, h3, h4, h5, h6 { hyphenate: none !important; }
+            ]],
+        },
+        {
             id = "sub_sup_smaller";
             title = _("Smaller sub- and superscript"),
             description = _("Prevent sub- and superscript from affecting line-height."),
@@ -97,7 +106,7 @@ local CssTweaks = {
             -- https://github.com/koreader/koreader/issues/3923#issuecomment-386510294
             css = [[
 sup { font-size: 50% !important; vertical-align: super !important; }
-sub { font-size: 50% !important; vertical-align: middle !important; }
+sub { font-size: 50% !important; vertical-align: sub !important; }
             ]],
             separator = true,
         },
