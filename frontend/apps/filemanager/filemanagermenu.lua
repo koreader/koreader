@@ -234,7 +234,7 @@ function FileManagerMenu:setUpdateItemTable()
     self.menu_items.open_last_document = {
         text_func = function()
             local last_file = G_reader_settings:readSetting("lastfile")
-            local path, file_name = util.splitFilePathName(last_file);
+            local path, file_name = util.splitFilePathName(last_file); -- luacheck: no unused
             return T(_("Open last document: %1"), file_name)
         end,
         enabled_func = function()
