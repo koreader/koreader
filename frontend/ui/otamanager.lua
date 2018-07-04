@@ -155,6 +155,12 @@ function OTAManager:fetchAndProcessUpdate()
                         UIManager:show(InfoMessage:new{
                             text = _("KOReader will be updated on next restart."),
                         })
+                        -- Make it clear that zsync is done
+                        if Device:isKindle() then
+                            os.execute("./zsync_status.sh clear")
+                        elseif Device:isKobo() then
+                            os.execute("./fbink -q -y -7 -pm ' ' ' '")
+                        end
                     else
                         UIManager:show(ConfirmBox:new{
                             text = _("Error updating KOReader. Would you like to delete temporary files?"),
