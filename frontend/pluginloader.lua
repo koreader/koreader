@@ -50,13 +50,18 @@ function PluginLoader:loadPlugins()
     local package_path = package.path
     local package_cpath = package.cpath
 
+    local plugins_disabled = G_reader_settings:readSetting("plugins_disabled")
+    if type(plugins_disabled) ~= "table" then
+        plugins_disabled = nil
+    end
     for _,lookup_path in ipairs(lookup_path_list) do
         logger.info('Loading plugins from directory:', lookup_path)
         for entry in lfs.dir(lookup_path) do
             local plugin_root = lookup_path.."/"..entry
             local mode = lfs.attributes(plugin_root, "mode")
             -- valid koreader plugin directory
-            if mode == "directory" and entry:find(".+%.koplugin$") then
+            if mode == "directory" and entry:find(".+%.koplugin$")
+                    and not (plugins_disabled and plugins_disabled[entry:sub(1, -10)]) then
                 local mainfile = plugin_root.."/main.lua"
                 package.path = string.format("%s/?.lua;%s", plugin_root, package_path)
                 package.cpath = string.format("%s/lib/?.so;%s", plugin_root, package_cpath)
