@@ -1,4 +1,5 @@
 local CenterContainer = require("ui/widget/container/centercontainer")
+local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -6,8 +7,10 @@ local Screensaver = require("ui/screensaver")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local dbg = require("dbg")
+local util  = require("util")
 local Screen = Device.screen
 local _ = require("gettext")
+local T = require("ffi/util").template
 
 local ReaderMenu = InputContainer:new{
     tab_item_table = nil,
@@ -175,6 +178,39 @@ function ReaderMenu:setUpdateItemTable()
         callback = function()
             self:exitOrRestart(function() UIManager:restartKOReader() end)
         end,
+    }
+
+    local previous_file
+    local readhistory = require("readhistory")
+    for i=2, #readhistory.hist do -- skip first one which is current book
+        if lfs.attributes(readhistory.hist[i].file, "mode") == "file" then
+            previous_file = readhistory.hist[i].file
+            break
+        end
+    end
+    self.menu_items.open_previous_document = {
+        text_func = function()
+            if not G_reader_settings:isTrue("open_last_menu_show_filename") or not previous_file then
+                return _("Open previous document")
+            end
+            local path, file_name = util.splitFilePathName(previous_file); -- luacheck: no unused
+            return T(_("Open: %1"), file_name)
+        end,
+        enabled_func = function()
+            return previous_file ~= nil
+        end,
+        callback = function()
+            self.ui:switchDocument(previous_file)
+        end,
+        hold_callback = function()
+            UIManager:show(ConfirmBox:new{
+                text = T(_("Would you like to open the previous document: %1?"), previous_file),
+                ok_text = _("OK"),
+                ok_callback = function()
+                    self.ui:switchDocument(previous_file)
+                end,
+            })
+        end
     }
 
     local order = require("ui/elements/reader_menu_order")
