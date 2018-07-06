@@ -173,6 +173,8 @@ function SetDefaults:init()
                     table.insert(fields, {
                         text = tostring(k) .. " = " .. tostring(v),
                         hint = "",
+                        padding = Screen:scaleBySize(2),
+                        margin = Screen:scaleBySize(2),
                     })
                 end
                 self.set_dialog = MultiInputDialog:new{

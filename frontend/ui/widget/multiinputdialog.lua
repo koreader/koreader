@@ -47,6 +47,8 @@ function MultiInputDialog:init()
             focused = k == 1 and true or false,
             scroll = false,
             parent = self,
+            padding = field.padding or nil,
+            margin = field.margin or nil,
         }
         if Device:hasKeys() then
             --little hack to piggyback on the layout of the button_table to handle the new InputText
@@ -134,6 +136,9 @@ function MultiInputDialog:onSwitchFocus(inputbox)
     -- unfocus current inputbox
     self._input_widget:unfocus()
     self._input_widget:onCloseKeyboard()
+    UIManager:setDirty(nil, function()
+        return "ui", self.dialog_frame.dimen
+    end)
 
     -- focus new inputbox
     self._input_widget = inputbox
