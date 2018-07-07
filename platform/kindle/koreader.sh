@@ -47,19 +47,28 @@ PILLOW_HARD_DISABLED="no"
 PILLOW_SOFT_DISABLED="no"
 PASSCODE_DISABLED="no"
 
+REEXEC_FLAGS=""
 # Keep track of if we were started through KUAL
-FROM_KUAL="no"
+if [ "${1}" = "--kual" ]; then
+    shift 1
+    FROM_KUAL="yes"
+    REEXEC_FLAGS="${REEXEC_FLAGS} --kual"
+else
+    FROM_KUAL="no"
+fi
 
 # By default, don't stop the framework.
-if [ "$1" = "--framework_stop" ]; then
+if [ "${1}" = "--framework_stop" ]; then
     shift 1
     STOP_FRAMEWORK="yes"
     NO_SLEEP="no"
-elif [ "$1" = "--asap" ]; then
+    REEXEC_FLAGS="${REEXEC_FLAGS} --framework_stop"
+elif [ "${1}" = "--asap" ]; then
     # Start as soon as possible, without sleeping to workaround UI quirks
     shift 1
     NO_SLEEP="yes"
     STOP_FRAMEWORK="no"
+    REEXEC_FLAGS="${REEXEC_FLAGS} --asap"
     # Don't sleep during eips calls either...
     export EIPS_NO_SLEEP="true"
 else
@@ -67,19 +76,19 @@ else
     NO_SLEEP="no"
 fi
 
-# Detect if we were started by KUAL by checking our nice value...
-if [ "$(nice)" = "5" ]; then
-    FROM_KUAL="yes"
-    if [ "${NO_SLEEP}" = "no" ]; then
-        # Yield a bit to let stuff stop properly...
-        logmsg "Hush now . . ."
-        # NOTE: This may or may not be terribly useful...
-        usleep 250000
-    fi
+# If we were started by KUAL (either Kindlet or Booklet), we have a few more things to do...
+if [ "${FROM_KUAL}" = "yes" ]; then
+    # Yield a bit to let stuff stop properly...
+    logmsg "Hush now . . ."
+    # NOTE: This may or may not be terribly useful...
+    usleep 250000
 
-    # Kindlet threads spawn with a nice value of 5, go back to a neutral value
-    logmsg "Be nice!"
-    renice -n -5 $$
+    # If we were started by the KUAL Kindlet, and not the Booklet, we have a nice value to correct...
+    if [ "$(nice)" = "5" ]; then
+        # Kindlet threads spawn with a nice value of 5, go back to a neutral value
+        logmsg "Be nice!"
+        renice -n -5 $$
+    fi
 fi
 
 # we're always starting from our working directory
@@ -120,8 +129,15 @@ ko_update_check() {
         rm -f "${NEWUPDATE}" # always purge newupdate in all cases to prevent update loop
     fi
 }
-# NOTE: Keep doing an initial update check, in addition to one during the restart loop...
+# NOTE: Keep doing an initial update check, in addition to one during the restart loop, so we can pickup potential updates of this very script...
 ko_update_check
+# If an update happened, and was successful, reexec
+if [ -n "${fail}" ] && [ "${fail}" -eq 0 ]; then
+    # By now, we know we're in the right directory, and our script name is pretty much set in stone, so we can forgo using $0
+    # NOTE: REEXEC_FLAGS *needs* to be unquoted: we *want* word splitting here ;).
+    # shellcheck disable=SC2086
+    exec ./koreader.sh ${REEXEC_FLAGS} "${@}"
+fi
 
 # load our own shared libraries if possible
 export LD_LIBRARY_PATH="${KOREADER_DIR}/libs:${LD_LIBRARY_PATH}"

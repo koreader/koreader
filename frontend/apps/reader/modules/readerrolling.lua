@@ -487,7 +487,7 @@ function ReaderRolling:onGotoXPointer(xp, marker_xp)
         self.mark_func = function()
             self.mark_func = nil
             Screen.bb:paintRect(0, screen_y, marker_w, marker_h, Blitbuffer.COLOR_BLACK)
-            Screen["refreshUI"](Screen, 0, screen_y, marker_w, marker_h)
+            Screen["refreshFast"](Screen, 0, screen_y, marker_w, marker_h)
             if type(marker_setting) == "number" then -- hide it
                 self.unmark_func = function()
                     self.unmark_func = nil
@@ -497,7 +497,7 @@ function ReaderRolling:onGotoXPointer(xp, marker_xp)
                     -- documents): we drew our black marker in the margin, we
                     -- can just draw a white one to make it disappear
                     Screen.bb:paintRect(0, screen_y, marker_w, marker_h, Blitbuffer.COLOR_WHITE)
-                    Screen["refreshUI"](Screen, 0, screen_y, marker_w, marker_h)
+                    Screen["refreshFast"](Screen, 0, screen_y, marker_w, marker_h)
                 end
                 UIManager:scheduleIn(marker_setting, self.unmark_func)
             end
