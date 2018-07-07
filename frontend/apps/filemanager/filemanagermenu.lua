@@ -238,7 +238,7 @@ function FileManagerMenu:setUpdateItemTable()
             end
             local last_file = G_reader_settings:readSetting("lastfile")
             local path, file_name = util.splitFilePathName(last_file); -- luacheck: no unused
-            return T(_("Open: %1"), file_name)
+            return T(_("Last: %1"), file_name)
         end,
         enabled_func = function()
             return G_reader_settings:readSetting("lastfile") ~= nil
