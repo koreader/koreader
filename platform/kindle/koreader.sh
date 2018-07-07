@@ -135,6 +135,7 @@ ko_update_check
 if [ -n "${fail}" ] && [ "${fail}" -eq 0 ]; then
     # By now, we know we're in the right directory, and our script name is pretty much set in stone, so we can forgo using $0
     # NOTE: REEXEC_FLAGS *needs* to be unquoted: we *want* word splitting here ;).
+    # shellcheck disable=SC2086
     exec ./koreader.sh ${REEXEC_FLAGS} "${@}"
 fi
 
