@@ -99,6 +99,8 @@ local order = {
     filemanager = {},
     main = {
         "history",
+        "open_previous_document",
+        "----------------------------",
         "book_status",
         "book_info",
         "----------------------------",

@@ -663,4 +663,11 @@ function ReaderUI:reloadDocument(after_close_callback)
     self:showReader(file, provider)
 end
 
+function ReaderUI:switchDocument(new_file)
+    self:handleEvent(Event:new("CloseReaderMenu"))
+    self:handleEvent(Event:new("CloseConfigMenu"))
+    self:onClose()
+    self:showReader(new_file)
+end
+
 return ReaderUI
