@@ -384,7 +384,7 @@ function NetworkSetting:init()
     local items = {}
     table.sort(self.network_list,
                function(l, r) return l.signal_quality > r.signal_quality end)
-    for idx,network in ipairs(self.network_list) do
+    for idx, network in ipairs(self.network_list) do
         local bg
         if idx % 2 == 0 then
             bg = gray_bg
@@ -462,6 +462,9 @@ function NetworkSetting:init()
         local connected_item = self:getConnectedItem()
         if connected_item ~= nil then
             obtainIP()
+            if G_reader_settings:nilOrTrue("auto_dismiss_wifi_scan") then
+                UIManager:close(self, 'ui', self.dimen)
+            end
             UIManager:show(InfoMessage:new{
                 text = T(_("Connected to network %1"), connected_item.info.ssid)
             })

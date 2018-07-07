@@ -67,7 +67,7 @@ ifneq ($(or $(EMULATE_READER),$(WIN32)),)
 	cd $(INSTALL_DIR)/koreader/spec/front/unit && test -e data || \
 		ln -sf ../../test ./data
 else
-	$(RCP) -fL $(KOR_BASE)/$(OUTPUT_DIR)/* $(INSTALL_DIR)/koreader/
+	$(RCP) -fL $(KOR_BASE)/$(OUTPUT_DIR)/. $(INSTALL_DIR)/koreader/.
 endif
 	for f in $(INSTALL_FILES); do \
 		ln -sf ../../$$f $(INSTALL_DIR)/koreader/; \
@@ -82,12 +82,12 @@ ifdef WIN32
 endif
 	@echo "[*] Install plugins"
 	@# TODO: link istead of cp?
-	$(RCP) plugins/* $(INSTALL_DIR)/koreader/plugins/
+	$(RCP) plugins/. $(INSTALL_DIR)/koreader/plugins/.
 	@# purge deleted plugins
 	for d in $$(ls $(INSTALL_DIR)/koreader/plugins); do \
 		test -d plugins/$$d || rm -rf $(INSTALL_DIR)/koreader/plugins/$$d ; done
 	@echo "[*] Installresources"
-	$(RCP) -pL resources/fonts/* $(INSTALL_DIR)/koreader/fonts/
+	$(RCP) -pL resources/fonts/. $(INSTALL_DIR)/koreader/fonts/.
 	install -d $(INSTALL_DIR)/koreader/{screenshots,data/{dict,tessdata},fonts/host,ota}
 ifeq ($(or $(EMULATE_READER),$(WIN32)),)
 	@echo "[*] Clean up, remove unused files for releases"
