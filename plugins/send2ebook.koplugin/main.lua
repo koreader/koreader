@@ -26,8 +26,7 @@ local send2ebook_settings
 
 function Send2Ebook:downloadFileAndRemove(connection_url, remote_path, local_download_path)
     local url = connection_url .. remote_path
-    local response = FtpApi:downloadFile(url)
-
+    local response = FtpApi:ftpGet(url, "retr")
     if response ~= nil then
         local_download_path = util.fixUtf8(local_download_path, "_")
         local file = io.open(local_download_path, "w")
