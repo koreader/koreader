@@ -132,9 +132,8 @@ function ReaderStatus:openNextFile(next_file)
     end
     next_file = FileManager.instance.file_chooser:getNextFile(next_file)
     FileManager.instance:onClose()
-    local ReaderUI = require("apps/reader/readerui")
     if next_file then
-        ReaderUI:showReader(next_file)
+        self.ui:switchDocument(next_file)
     else
         UIManager:show(InfoMessage:new{
             text = _("This is the last file in the current folder. No next file to open."),
