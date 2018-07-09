@@ -9,6 +9,7 @@ local LuaSettings = require("frontend/luasettings")
 local UIManager = require("ui/uimanager")
 local NetworkMgr = require("ui/network/manager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local ftp = require("socket.ftp")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
@@ -26,7 +27,8 @@ local send2ebook_settings
 
 function Send2Ebook:downloadFileAndRemove(connection_url, remote_path, local_download_path)
     local url = connection_url .. remote_path
-    local response = FtpApi:ftpGet(url, "retr")
+    local response = ftp.get(url ..";type=i")
+
     if response ~= nil then
         local_download_path = util.fixUtf8(local_download_path, "_")
         local file = io.open(local_download_path, "w")
