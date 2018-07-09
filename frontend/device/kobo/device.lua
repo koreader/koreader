@@ -23,6 +23,7 @@ local Kobo = Generic:new{
     model = "Kobo",
     isKobo = yes,
     isTouchDevice = yes, -- all of them are
+    hasBGRFrameBuffer = yes, -- has always been the case, even on 16bpp FWs
 
     -- most Kobos have X/Y switched for the touch screen
     touch_switch_xy = true,
@@ -122,12 +123,11 @@ local KoboSnow = Kobo:new{
 }
 
 -- Kobo Aura H2O2, Rev2:
--- FIXME: This needs fixing, at the very least on the touch protocol front, c.f., #3925
+-- FIXME: Shares FL/NaturalLight issues with the Clara (#4015)
 local KoboSnowRev2 = Kobo:new{
     model = "Kobo_snow",
     hasFrontlight = yes,
-    touch_probe_ev_epoch_time = true,
-    touch_phoenix_protocol = true,
+    touch_snow_protocol = true,
     display_dpi = 265,
     -- the bezel covers the top 11 pixels:
     viewport = Geom:new{x=0, y=11, w=1080, h=1429},
@@ -176,6 +176,21 @@ local KoboPika = Kobo:new{
     model = "Kobo_pika",
     touch_phoenix_protocol = true,
     touch_alyssum_protocol = true,
+}
+
+-- Kobo Clara HD:
+-- FIXME: Check that NaturalLight behaves properly (c.f., #4015)
+local KoboNova = Kobo:new{
+    model = "Kobo_nova",
+    hasFrontlight = yes,
+    touch_snow_protocol = true,
+    display_dpi = 300,
+    hasNaturalLight = yes,
+    frontlight_settings = {
+        frontlight_white = "/sys/class/backlight/lm3630a_ledb",
+        frontlight_red = "/sys/class/backlight/lm3630a_leda",
+        frontlight_green = "/sys/class/backlight/lm3630a_led1b",
+    },
 }
 
 function Kobo:init()
@@ -392,7 +407,7 @@ end
 
 local function getProductId()
     -- Try to get it from the env first (KSM only)
-    local product_id = os.getenv("PRODUCT_ID")
+    local product_id = os.getenv("MODEL_NUMBER")
     -- If that fails, devise it ourselves
     if not product_id then
         local version_file = io.open("/mnt/onboard/.kobo/version", "r")
@@ -639,6 +654,8 @@ elseif codename == "snow" and product_id == "378" then
     return KoboSnowRev2
 elseif codename == "snow" then
     return KoboSnow
+elseif codename == "nova" then
+    return KoboNova
 else
     error("unrecognized Kobo model "..codename)
 end

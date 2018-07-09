@@ -191,17 +191,17 @@ function Button:onTapSelectButton()
         if G_reader_settings:isFalse("flash_ui") then
             self.callback()
         else
-            UIManager:scheduleIn(0.0, function()
-                self[1].invert = true
-                UIManager:setDirty(self.show_parent, function()
-                    return "ui", self[1].dimen
-                end)
+            -- NOTE: Flag all widgets as dirty to force a repaint, so we actually get to see the highlight.
+            --       (For some reason (wrong widget passed to setDirty?), we never saw the effects on the FM chevrons without this hack).
+            self[1].invert = true
+            UIManager:setDirty("all", function()
+                return "fast", self[1].dimen
             end)
-            UIManager:scheduleIn(0.1, function()
+            UIManager:tickAfterNext(function()
                 self.callback()
                 self[1].invert = false
-                UIManager:setDirty(self.show_parent, function()
-                    return "ui", self[1].dimen
+                UIManager:setDirty("all", function()
+                    return "fast", self[1].dimen
                 end)
             end)
         end

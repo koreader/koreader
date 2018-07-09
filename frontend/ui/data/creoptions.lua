@@ -46,6 +46,24 @@ local CreOptions = {
                 default_arg = "page",
                 event = "SetViewMode",
                 name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[- 'scroll' mode allows you to scroll the text like you would in a web browser (the 'Page Overlap' setting is only available in this mode).
+- 'page' mode splits the text into pages, at the most acceptable places (page numbers and the number of pages may change when you change fonts, margins, styles, etc.).]]),
+            },
+            {
+                name = "render_dpi",
+                name_text = S.ZOOM_DPI,
+                toggle = {S.OFF, "48", "96¹’¹", "167", "212", "300"},
+                values = {0, 48, 96, 167, 212, 300},
+                default_value = 96,
+                args = {0, 48, 96, 167, 212, 300},
+                event = "SetRenderDPI",
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Sets the DPI used to scale absolute CSS units and images:
+- off: ignore absolute units (old engine behavior).
+- 96¹’¹: at 96 DPI, 1 CSS pixel = 1 screen pixel and images are rendered at their original dimensions.
+- other values scale CSS absolute units and images by a factor (300 DPI = x3, 48 DPI = x0.5)
+Using your device's actual DPI will ensure 1 cm in CSS actually translates to 1 cm on screen.
+Note that your selected font size is not affected by this setting.]]),
             },
             {
                 name = "line_spacing",
@@ -155,6 +173,33 @@ local CreOptions = {
                 args = {0, 1, 2},
                 event = "SetFontHinting",
                 name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Font hinting is the process by which fonts are adjusted for maximum readability on the screen's pixel grid.
+
+- off: no hinting.
+- native: use the font internal hinting instructions.
+- auto: use FreeType's hinting algorithm, ignoring font instructions.]]),
+            },
+            {
+                name = "space_condensing",
+                name_text = S.WORD_GAP,
+                toggle = {S.SMALL, S.MEDIUM, S.LARGE},
+                values = {
+                    DCREREADER_CONFIG_WORD_GAP_SMALL,
+                    DCREREADER_CONFIG_WORD_GAP_MEDIUM,
+                    DCREREADER_CONFIG_WORD_GAP_LARGE,
+                },
+                default_value = DCREREADER_CONFIG_WORD_GAP_MEDIUM,
+                args = {
+                    DCREREADER_CONFIG_WORD_GAP_SMALL,
+                    DCREREADER_CONFIG_WORD_GAP_MEDIUM,
+                    DCREREADER_CONFIG_WORD_GAP_LARGE,
+                    },
+                event = "SetSpaceCondensing",
+                name_text_hold_callback = optionsutil.showValues,
+                -- used by showValues
+                name_text_suffix = "%",
+                name_text_true_values = true,
+                help_text = _([[Tells the rendering engine how much each 'space' character in the text can be reduced from its regular width to make words fit on a line (100% means no reduction).]]),
             }
         }
     },
@@ -171,6 +216,8 @@ local CreOptions = {
                 default_arg = DCREREADER_PROGRESS_BAR,
                 event = "SetStatusLine",
                 name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[- 'full' displays a status bar at the top of the screen (this status bar can't be customized).
+- 'mini' displays a status bar at the bottom of the screen, which can be toggled by tapping. The items displayed can be customized via the main menu.]]),
             },
             {
                 name = "embedded_css",
@@ -182,6 +229,8 @@ local CreOptions = {
                 default_arg = nil,
                 event = "ToggleEmbeddedStyleSheet",
                 name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Enable or disable publisher stylesheets embedded in the book.
+(Note that less radical changes can be achieved via Style Tweaks in the main menu.)]]),
             },
             {
                 name = "embedded_fonts",
@@ -196,6 +245,8 @@ local CreOptions = {
                     return optionsutil.enableIfEquals(configurable, "embedded_css", 1)
                 end,
                 name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Enable or disable the use of the fonts embedded in the book.
+(Disabling the fonts specified in the publisher stylesheets can also be achieved via Style Tweaks in the main menu.)]]),
             },
         },
     },

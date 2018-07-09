@@ -6,6 +6,7 @@ local DEBUG = require("dbg")
 local _ = require("gettext")
 
 local ffi = require("ffi")
+local C = ffi.C
 ffi.cdef[[
 int remove(const char *);
 int rmdir(const char *);
@@ -131,13 +132,13 @@ local function clearDirectory(dir, rmdir)
         local path = dir.."/"..f
         local mode = lfs.attributes(path, "mode")
         if mode == "file" then
-            ffi.C.remove(path)
+            C.remove(path)
         elseif mode == "directory" and f ~= "." and f ~= ".." then
             clearDirectory(path, true)
         end
     end
     if rmdir then
-        ffi.C.rmdir(dir)
+        C.rmdir(dir)
     end
 end
 

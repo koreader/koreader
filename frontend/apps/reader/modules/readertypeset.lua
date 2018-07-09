@@ -19,13 +19,9 @@ end
 
 function ReaderTypeset:onReadSettings(config)
     self.css = config:readSetting("css") or G_reader_settings:readSetting("copt_css")
+                or self.ui.document.default_css
     local tweaks_css = self.ui.styletweak:getCssText()
-    if self.css then
-        self.ui.document:setStyleSheet(self.css, tweaks_css)
-    else
-        self.ui.document:setStyleSheet(self.ui.document.default_css, tweaks_css)
-        self.css = self.ui.document.default_css
-    end
+    self.ui.document:setStyleSheet(self.css, tweaks_css)
 
     self.embedded_fonts = config:readSetting("embedded_fonts")
     if self.embedded_fonts == nil then
@@ -53,6 +49,14 @@ function ReaderTypeset:onReadSettings(config)
     end
     self.ui.document:setEmbeddedStyleSheet(self.embedded_css and 1 or 0)
 
+    -- set render DPI
+    self.render_dpi = config:readSetting("render_dpi") or
+        G_reader_settings:readSetting("copt_render_dpi") or 96
+    self:setRenderDPI(self.render_dpi)
+
+    -- uncomment if we want font size to follow DPI changes
+    -- self.ui.document:setRenderScaleFontWithDPI(1)
+
     -- set page margins
     self:onSetPageMargins(
         config:readSetting("copt_page_margins") or
@@ -78,6 +82,7 @@ function ReaderTypeset:onSaveSettings()
     self.ui.doc_settings:saveSetting("embedded_css", self.embedded_css)
     self.ui.doc_settings:saveSetting("floating_punctuation", self.floating_punctuation)
     self.ui.doc_settings:saveSetting("embedded_fonts", self.embedded_fonts)
+    self.ui.doc_settings:saveSetting("render_dpi", self.render_dpi)
 end
 
 function ReaderTypeset:onToggleEmbeddedStyleSheet(toggle)
@@ -90,41 +95,106 @@ function ReaderTypeset:onToggleEmbeddedFonts(toggle)
     return true
 end
 
+-- June 2018: epub.css has been cleaned to be more conforming to HTML specs
+-- and to not include class name based styles (with conditional compatiblity
+-- styles for previously opened documents). It should be usable on all
+-- HTML based documents, except FB2 which has some incompatible specs.
+-- These other css files have not been updated in the same way, and are
+-- kept as-is for when a previously opened document requests one of them.
+local OBSOLETED_CSS = {
+    "chm.css",
+    "cr3.css",
+    "doc.css",
+    "dict.css",
+    "htm.css",
+    "rtf.css",
+    "txt.css",
+}
+
+function ReaderTypeset:onSetRenderDPI(dpi)
+    self:setRenderDPI(dpi)
+    return true
+end
+
 function ReaderTypeset:genStyleSheetMenu()
-    local style_table = {}
-    local file_list = {
-        {
-            text = _("Clear all external styles"),
-            css = ""
-        },
-        {
-            text = _("Auto"),
-            css = self.ui.document.default_css
-        },
-    }
-    for f in lfs.dir("./data") do
-        if lfs.attributes("./data/"..f, "mode") == "file" and string.match(f, "%.css$") then
-            table.insert(file_list, {
-                text = f,
-                css = "./data/"..f
-            })
-        end
-    end
-    table.sort(file_list, function(v1,v2) return v1.text < v2.text end) -- sort by name
-    for i,file in ipairs(file_list) do
-        table.insert(style_table, {
-            text = file["text"],
+    local getStyleMenuItem = function(text, css_file, separator)
+        return {
+            text_func = function()
+                return text .. (css_file == G_reader_settings:readSetting("copt_css") and "   ★" or "")
+            end,
             callback = function()
-                self:setStyleSheet(file["css"])
+                self:setStyleSheet(css_file or self.ui.document.default_css)
             end,
             hold_callback = function()
-                self:makeDefaultStyleSheet(file["css"], file["text"])
+                self:makeDefaultStyleSheet(css_file, text)
             end,
             checked_func = function()
-                return file.css == self.css
-            end
-        })
+                if not css_file then -- "Auto"
+                    return self.css == self.ui.document.default_css
+                end
+                return css_file == self.css
+            end,
+            separator = separator,
+        }
     end
+
+    local style_table = {}
+    local obsoleted_table = {}
+
+    table.insert(style_table, getStyleMenuItem(_("Clear all external styles"), ""))
+    table.insert(style_table, getStyleMenuItem(_("Auto"), nil, true))
+
+    local css_files = {}
+    for f in lfs.dir("./data") do
+        if lfs.attributes("./data/"..f, "mode") == "file" and string.match(f, "%.css$") then
+            css_files[f] = "./data/"..f
+        end
+    end
+    -- Add the 2 main styles
+    if css_files["epub.css"] then
+        table.insert(style_table, getStyleMenuItem(_("HTML / EPUB (epub.css)"), css_files["epub.css"]))
+        css_files["epub.css"] = nil
+    end
+    if css_files["fb2.css"] then
+        table.insert(style_table, getStyleMenuItem(_("FictionBook (fb2.css)"), css_files["fb2.css"], true))
+        css_files["fb2.css"] = nil
+    end
+    -- Add the obsoleted ones to the Obsolete sub menu
+    local obsoleted_css = {} -- for check_func of the Obsolete sub menu itself
+    for __, css in ipairs(OBSOLETED_CSS) do
+        obsoleted_css[css_files[css]] = css
+        if css_files[css] then
+            table.insert(obsoleted_table, getStyleMenuItem(css, css_files[css]))
+            css_files[css] = nil
+        end
+    end
+    -- Sort and add the remaining (user added) files if any
+    local user_files = {}
+    for css, css_file in pairs(css_files) do
+        table.insert(user_files, css)
+    end
+    table.sort(user_files)
+    for __, css in ipairs(user_files) do
+        table.insert(style_table, getStyleMenuItem(css, css_files[css]))
+    end
+
+    style_table[#style_table].separator = true
+    table.insert(style_table, {
+        text_func = function()
+            local text = _("Obsolete")
+            if obsoleted_css[self.css] then
+                text = T(_("Obsolete (%1)"), obsoleted_css[self.css])
+            end
+            if obsoleted_css[G_reader_settings:readSetting("copt_css")] then
+                text = text .. "   ★"
+            end
+            return text
+        end,
+        sub_item_table = obsoleted_table,
+        checked_func = function()
+            return obsoleted_css[self.css] ~= nil
+        end
+    })
     return style_table
 end
 
@@ -195,6 +265,12 @@ function ReaderTypeset:toggleTxtPreFormatted(toggle)
     self.ui:handleEvent(Event:new("UpdatePos"))
 end
 
+function ReaderTypeset:setRenderDPI(dpi)
+    self.render_dpi = dpi
+    self.ui.document:setRenderDPI(dpi)
+    self.ui:handleEvent(Event:new("UpdatePos"))
+end
+
 function ReaderTypeset:addToMainMenu(menu_items)
     -- insert table to main reader menu
     menu_items.set_render_style = {
@@ -226,15 +302,12 @@ function ReaderTypeset:makeDefaultFloatingPunctuation()
 end
 
 function ReaderTypeset:makeDefaultStyleSheet(css, text)
-    text = text or css
-    if css then
-        UIManager:show(ConfirmBox:new{
-            text = T( _("Set default style to %1?"), text),
-            ok_callback = function()
-                G_reader_settings:saveSetting("copt_css", css)
-            end,
-        })
-    end
+    UIManager:show(ConfirmBox:new{
+        text = T( _("Set default style to %1?"), text),
+        ok_callback = function()
+            G_reader_settings:saveSetting("copt_css", css)
+        end,
+    })
 end
 
 function ReaderTypeset:onSetPageMargins(margins)

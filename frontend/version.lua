@@ -5,7 +5,7 @@ This module helps with retrieving version information.
 local Version = {}
 
 --- Returns current KOReader git-rev.
--- @treturn string full KOReader git-rev such `v2015.11-982-g704d4238`
+-- @treturn string full KOReader git-rev such as `v2015.11-982-g704d4238`
 function Version:getCurrentRevision()
     if not self.rev then
         local rev_file = io.open("git-rev", "r")
@@ -22,18 +22,19 @@ function Version:getCurrentRevision()
 end
 
 --- Returns normalized version of KOReader git-rev input string.
--- @string rev full KOReader git-rev such `v2015.11-982-g704d4238`
--- @treturn int version in the form of a number such as `201511982`
+-- @string rev full KOReader git-rev such as `v2015.11-982-g704d4238`
+-- @treturn int version in the form of a 10 digit number such as `2015110982`
 -- @treturn string short git commit version hash such as `704d4238`
 function Version:getNormalizedVersion(rev)
     if not rev then return end
     local year, month, revision = rev:match("v(%d%d%d%d)%.(%d%d)-?(%d*)")
-    local commit = rev:match("-%d*-g(.*)")
-    return ((year or 0) * 100 + (month or 0)) * 1000 + (revision or 0), commit
+    local commit = rev:match("-%d*-g(%x*)[%d_%-]*")
+    -- NOTE: * 10000 to handle at most 9999 commits since last tag ;).
+    return ((year or 0) * 100 + (month or 0)) * 10000 + (revision or 0), commit
 end
 
 --- Returns current version of KOReader.
--- @treturn int version in the form of a number such as `201511982`
+-- @treturn int version in the form of a 10 digit number such as `2015110982`
 -- @treturn string short git commit version hash such as `704d4238`
 -- @see normalized_version
 function Version:getNormalizedCurrentVersion()

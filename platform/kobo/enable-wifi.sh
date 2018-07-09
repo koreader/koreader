@@ -11,7 +11,7 @@ lsmod | grep -q "${WIFI_MODULE}" || insmod "${WIFI_MODULE_PATH}"
 sleep 1
 
 ifconfig "${INTERFACE}" up
-[ "$WIFI_MODULE" != "8189fs" ] && wlarm_le -i "${INTERFACE}" up
+[ "$WIFI_MODULE" != "8189fs" ] && [ "${WIFI_MODULE}" != "8192es" ] && wlarm_le -i "${INTERFACE}" up
 
 pidof wpa_supplicant >/dev/null \
     || env -u LD_LIBRARY_PATH \

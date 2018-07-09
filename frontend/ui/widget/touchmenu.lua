@@ -19,6 +19,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
+local RenderText = require("ui/rendertext")
 local RightContainer = require("ui/widget/container/rightcontainer")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
@@ -81,6 +82,14 @@ function TouchMenuItem:init()
     local empty_widget = CheckMark:new{
         checkable = false,
     }
+
+    -- text_max_width should be the TouchMenuItem width minus the below
+    -- FrameContainer default paddings minus the checked widget width
+    local text_max_width = self.dimen.w - 2*Size.padding.default - checked_widget:getSize().w
+    local text = getMenuText(self.item)
+    if RenderText:sizeUtf8Text(0, Screen:getWidth(), self.face, text, true).x > text_max_width then
+        text = RenderText:truncateTextByWidth(text, self.face, text_max_width, true)
+    end
     self.item_frame = FrameContainer:new{
         width = self.dimen.w,
         bordersize = 0,
@@ -96,7 +105,7 @@ function TouchMenuItem:init()
                 or empty_widget
             },
             TextWidget:new{
-                text = getMenuText(self.item),
+                text = text,
                 fgcolor = item_enabled ~= false and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_GREY,
                 face = self.face,
             },
@@ -105,7 +114,7 @@ function TouchMenuItem:init()
 
     self._underline_container = UnderlineContainer:new{
         vertical_align = "center",
-        dimen =self.dimen,
+        dimen = self.dimen,
         self.item_frame
     }
 
@@ -137,15 +146,20 @@ function TouchMenuItem:onTapSelect(arg, ges)
     else
         self.item_frame.invert = true
         UIManager:setDirty(self.show_parent, function()
-            return "ui", self.dimen
+            return "fast", self.dimen
         end)
         -- yield to main UI loop to invert item
-        UIManager:scheduleIn(0.1, function()
+        UIManager:tickAfterNext(function()
             self.menu:onMenuSelect(self.item)
             self.item_frame.invert = false
+            --[[
+            -- NOTE: We can optimize that repaint away, every entry in our menu will make at least the menu repaint just after anyways ;).
+            --       Plus, leaving that unhighlight as "fast" can lead to weird side-effects, depending on devices.
+            --       If it turns out this need to go back in, consider switching it to "ui".
             UIManager:setDirty(self.show_parent, function()
-                return "ui", self.dimen
+                return "fast", self.dimen
             end)
+            --]]
         end)
     end
     return true
@@ -161,13 +175,11 @@ function TouchMenuItem:onHoldSelect(arg, ges)
     if G_reader_settings:isFalse("flash_ui") then
         self.menu:onMenuHold(self.item)
     else
-        UIManager:scheduleIn(0.0, function()
-            self.item_frame.invert = true
-            UIManager:setDirty(self.show_parent, function()
-                return "ui", self.dimen
-            end)
+        self.item_frame.invert = true
+        UIManager:setDirty(self.show_parent, function()
+            return "fast", self.dimen
         end)
-        UIManager:scheduleIn(0.1, function()
+        UIManager:tickAfterNext(function()
             self.menu:onMenuHold(self.item)
         end)
         UIManager:scheduleIn(0.5, function()
@@ -348,7 +360,7 @@ TouchMenu widget for hierarchical menus
 --]]
 local TouchMenu = FocusManager:new{
     tab_item_table = {},
-    -- for returnning in multi-level menus
+    -- for returning in multi-level menus
     item_table_stack = nil,
     item_table = nil,
     item_height = Size.item.height_large,
@@ -363,6 +375,7 @@ local TouchMenu = FocusManager:new{
     show_parent = nil,
     cur_tab = -1,
     close_callback = nil,
+    is_fresh = true,
 }
 
 function TouchMenu:init()
@@ -440,7 +453,7 @@ function TouchMenu:init()
         self.page_info_text,
         self.page_info_right_chev
     }
-    --group for device info
+    -- group for device info
     self.time_info = TextWidget:new{
         text = "",
         face = self.fface,
@@ -508,7 +521,8 @@ function TouchMenu:init()
 end
 
 function TouchMenu:onCloseWidget()
-    UIManager:setDirty(nil, "partial", self.dimen)
+    -- NOTE: We pass a nil region to ensure a full-screen flash to avoid ghosting
+    UIManager:setDirty(nil, "flashui", nil)
 end
 
 function TouchMenu:_recalculatePageLayout()
@@ -543,7 +557,7 @@ function TouchMenu:updateItems()
     self.item_group:clear()
     self.layout = {}
     table.insert(self.item_group, self.bar)
-    table.insert(self.layout, self.bar.icon_widgets) --for the focusmanager
+    table.insert(self.layout, self.bar.icon_widgets) -- for the focusmanager
 
     for c = 1, self.perpage do
         -- calculate index in item_table
@@ -561,7 +575,7 @@ function TouchMenu:updateItems()
             }
             table.insert(self.item_group, item_tmp)
             if item_tmp:isEnabled() then
-                table.insert(self.layout, {[self.cur_tab] = item_tmp}) --for the focusmanager
+                table.insert(self.layout, {[self.cur_tab] = item_tmp}) -- for the focusmanager
             end
             if item.separator and c ~= self.perpage then
                 -- insert split line
@@ -590,13 +604,22 @@ function TouchMenu:updateItems()
     -- recalculate dimen based on new layout
     self.dimen.w = self.width
     self.dimen.h = self.item_group:getSize().h + self.bordersize*2 + self.padding*2
-    self.selected = { x = self.cur_tab, y = 1 } --reset the position of the focusmanager
+    self.selected = { x = self.cur_tab, y = 1 } -- reset the position of the focusmanager
 
+    -- NOTE: We use a slightly ugly hack to detect a brand new menu vs. a tab switch,
+    --       in order to optionally flash on initial menu popup...
     UIManager:setDirty("all", function()
         local refresh_dimen =
             old_dimen and old_dimen:combine(self.dimen)
             or self.dimen
-        return "ui", refresh_dimen
+        local refresh_type = "ui"
+        if self.is_fresh then
+            refresh_type = "flashui"
+            -- Drop the region, too, to make it full-screen? May help when starting from a "small" menu.
+            --refresh_dimen = nil
+            self.is_fresh = false
+        end
+        return refresh_type, refresh_dimen
     end)
 end
 
@@ -690,7 +713,7 @@ function TouchMenu:onMenuSelect(item)
             if callback then
                 -- put stuff in scheduler so we can see
                 -- the effect of inverted menu item
-                UIManager:scheduleIn(0.1, function()
+                UIManager:tickAfterNext(function()
                     callback(self)
                     if refresh then
                         self:updateItems()
@@ -726,7 +749,7 @@ function TouchMenu:onMenuHold(item)
             callback = item.hold_callback_func()
         end
         if callback then
-            UIManager:scheduleIn(0.1, function()
+            UIManager:tickAfterNext(function()
                 if item.hold_may_update_menu then
                     callback(function() self:updateItems() end)
                 else

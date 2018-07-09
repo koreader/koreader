@@ -59,6 +59,7 @@ local order = {
         "network_restore",
         "network_info",
         "network_before_wifi_action",
+        "network_dismiss_scan",
         "----------------------------",
         "ssh",
     },
@@ -99,6 +100,8 @@ local order = {
     filemanager = {},
     main = {
         "history",
+        "open_previous_document",
+        "----------------------------",
         "book_status",
         "book_info",
         "----------------------------",

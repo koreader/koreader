@@ -97,9 +97,18 @@ local CssTweaks = {
             -- https://github.com/koreader/koreader/issues/3923#issuecomment-386510294
             css = [[
 sup { font-size: 50% !important; vertical-align: super !important; }
-sub { font-size: 50% !important; vertical-align: middle !important; }
+sub { font-size: 50% !important; vertical-align: sub !important; }
             ]],
             separator = true,
+        },
+        {
+            id = "hyphenate_all_auto";
+            title = _("Allow hyphenation on all text"),
+            description = _("Allow hyphenation to happen on all text (except headings), in case the publisher has disabled it."),
+            css = [[
+* { hyphenate: auto !important; }
+h1, h2, h3, h4, h5, h6 { hyphenate: none !important; }
+            ]],
         },
         {
             id = "lineheight_all_inherit";
@@ -156,17 +165,10 @@ img {
             ]],
         },
     },
-    {
-        title = _("Workarounds"),
-        {
-            id = "border_all_none";
-            title = _("Remove all borders"),
-            description = _("Work around a crengine bug that makes a border drawn when {border: black solid 0px}."),
-            -- css = [[* { border-style: none !important; }]],
-            -- Better to keep the layout implied by width, just draw them in white
-            css = [[* { border-color: white !important; }]],
-        },
-    },
+    -- No current need for workarounds
+    -- {
+    --     title = _("Workarounds"),
+    -- },
 }
 
 return CssTweaks

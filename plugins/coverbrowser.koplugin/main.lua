@@ -148,6 +148,11 @@ function CoverBrowser:addToMainMenu(menu_items)
             checked_func = function() return G_reader_settings:readSetting("autoremove_deleted_items_from_history") end,
             callback = function() G_reader_settings:flipNilOrFalse("autoremove_deleted_items_from_history") end,
         },
+        {
+            text = _("Show filename in Open last/previous menu items"),
+            checked_func = function() return G_reader_settings:readSetting("open_last_menu_show_filename") end,
+            callback = function() G_reader_settings:flipNilOrFalse("open_last_menu_show_filename") end,
+        },
     }
 
     if not self.full_featured then

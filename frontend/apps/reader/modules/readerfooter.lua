@@ -488,7 +488,10 @@ function ReaderFooter:genAllFooterText()
 end
 
 -- this method should never get called when footer is disabled
-function ReaderFooter:setTocMarkers()
+function ReaderFooter:setTocMarkers(reset)
+    if reset then
+        self.progress_bar.ticks = nil
+    end
     if self.settings.toc_markers then
         if self.progress_bar.ticks ~= nil then return end
         local ticks_candidates = {}

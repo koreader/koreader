@@ -7,6 +7,7 @@ local Geom = require("ui/geometry")
 local RenderImage = require("ui/renderimage")
 local Screen = require("device").screen
 local ffi = require("ffi")
+local C = ffi.C
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
@@ -80,7 +81,7 @@ function CreDocument:engineInit()
             if not _v:find("/urw/") then
                 local ok, err = pcall(cre.registerFont, _v)
                 if not ok then
-                    logger.err("failed to register crengine font", err)
+                    logger.err("failed to register crengine font:", err)
                 end
             end
         end
@@ -100,15 +101,18 @@ function CreDocument:init()
         -- and return extention of the 1st file
         file_type = self:zipContentExt(self.file) or "unknown"
     end
-    -- these two format use the same css file
-    if file_type == "html" then
-        file_type = "htm"
+
+    -- June 2018: epub.css has been cleaned to be more conforming to HTML specs
+    -- and to not include class name based styles (with conditional compatiblity
+    -- styles for previously opened documents). It should be usable on all
+    -- HTML based documents, except FB2 which has some incompatible specs.
+    -- The other css files (htm.css, rtf.css...) have not been updated in the
+    -- same way, and are kept as-is for when a previously opened document
+    -- requests one of them.
+    self.default_css = "./data/epub.css"
+    if file_type == "fb2" then
+        self.default_css = "./data/fb2.css"
     end
-    -- if native css-file doesn't exist, one needs to use default cr3.css
-    if not io.open("./data/"..file_type..".css") then
-        file_type = "cr3"
-    end
-    self.default_css = "./data/"..file_type..".css"
 
     -- @TODO check the default view_mode to a global user configurable
     -- variable  22.12 2012 (houqp)
@@ -122,6 +126,11 @@ function CreDocument:init()
 
     -- adjust font sizes according to screen dpi
     self._document:adjustFontSizes(Screen:getDPI())
+
+    if G_reader_settings:readSetting("cre_header_status_font_size") then
+        self._document:setIntProperty("crengine.page.header.font.size",
+            G_reader_settings:readSetting("cre_header_status_font_size"))
+    end
 
     -- set fallback font face
     self._document:setStringProperty("crengine.font.fallback.face",
@@ -205,7 +214,7 @@ function CreDocument:getCoverPageImage()
     local data, size = self._document:getCoverPageImageData()
     if data and size then
         local image = RenderImage:renderImageData(data, size)
-        ffi.C.free(data) -- free the userdata we got from crengine
+        C.free(data) -- free the userdata we got from crengine
         return image
     end
 end
@@ -215,7 +224,7 @@ function CreDocument:getImageFromPosition(pos, want_frames)
     if data and size then
         logger.dbg("CreDocument: got image data from position", data, size)
         local image = RenderImage:renderImageData(data, size, want_frames)
-        ffi.C.free(data) -- free the userdata we got from crengine
+        C.free(data) -- free the userdata we got from crengine
         return image
     end
 end
@@ -438,6 +447,26 @@ function CreDocument:setHyphRightHyphenMin(value)
     self._document:setIntProperty("crengine.hyphenation.right.hyphen.min", value or 2)
 end
 
+function CreDocument:setTrustSoftHyphens(toggle)
+    logger.dbg("CreDocument: set hyphenation trust soft hyphens", toggle and 1 or 0)
+    self._document:setIntProperty("crengine.hyphenation.trust.soft.hyphens", toggle and 1 or 0)
+end
+
+function CreDocument:setRenderDPI(value)
+    -- set DPI used for scaling css units (with 96, 1 css px = 1 screen px)
+    -- it can be different from KOReader screen DPI
+    -- it has no relation to the default fontsize (which is already
+    -- scaleBySize()'d when provided to crengine)
+    logger.dbg("CreDocument: set render dpi", value or 96)
+    self._document:setIntProperty("crengine.render.dpi", value or 96)
+end
+
+function CreDocument:setRenderScaleFontWithDPI(toggle)
+    -- wheter to scale font with DPI, or keep the current size
+    logger.dbg("CreDocument: set render scale font with dpi", toggle)
+    self._document:setIntProperty("crengine.render.scale.font.with.dpi", toggle)
+end
+
 function CreDocument:clearSelection()
     logger.dbg("clear selection")
     self._document:clearSelection()
@@ -504,6 +533,13 @@ end
 function CreDocument:setFontHinting(mode)
     logger.dbg("CreDocument: set font hinting mode", mode)
     self._document:setIntProperty("font.hinting.mode", mode)
+end
+
+-- min space condensing percent (how much we can decrease a space width to
+-- make text fit on a line) 25...100%
+function CreDocument:setSpaceCondensing(value)
+    logger.dbg("CreDocument: set space condensing", value)
+    self._document:setIntProperty("crengine.style.space.condensing.percent", value)
 end
 
 function CreDocument:setStyleSheet(new_css_file, appended_css_content )
@@ -600,6 +636,18 @@ end
 
 function CreDocument:getCacheFilePath()
     return self._document:getCacheFilePath()
+end
+
+function CreDocument:canHaveAlternativeToc()
+    return true
+end
+
+function CreDocument:isTocAlternativeToc()
+    return self._document:isTocAlternativeToc()
+end
+
+function CreDocument:buildAlternativeToc()
+    self._document:buildAlternativeToc()
 end
 
 function CreDocument:register(registry)

@@ -81,7 +81,7 @@ function OptionTextItem:onTapSelect()
                     self.event, self.args,
                     self.events, self.current_item)
     UIManager:setDirty(self.config, function()
-        return "ui", self[1].dimen
+        return "fast", self[1].dimen
     end)
     return true
 end
@@ -144,7 +144,7 @@ function OptionIconItem:onTapSelect()
                     self.event, self.args,
                     self.events, self.current_item)
     UIManager:setDirty(self.config, function()
-        return "ui", self[1].dimen
+        return "fast", self[1].dimen
     end)
     return true
 end
@@ -455,7 +455,7 @@ function ConfigOption:init()
                     num_buttons = #self.options[c].values,
                     position = self.options[c].default_pos,
                     callback = function(arg)
-                        UIManager:scheduleIn(0.05, function()
+                        UIManager:tickAfterNext(function()
                             self.config:onConfigChoice(self.options[c].name, self.options[c].values[arg])
                             self.config:onConfigEvent(self.options[c].event, self.options[c].args[arg])
                             UIManager:setDirty("all")
@@ -723,6 +723,7 @@ function ConfigDialog:update()
 end
 
 function ConfigDialog:onCloseWidget()
+    -- NOTE: As much as we would like to flash here, don't, because of adverse interactions with touchmenu that might lead to a double flash...
     UIManager:setDirty("all", function()
         return "partial", self.dialog_frame.dimen
     end)
@@ -732,6 +733,8 @@ function ConfigDialog:onShowConfigPanel(index)
     self.panel_index = index
     local old_dimen = self.dialog_frame.dimen and self.dialog_frame.dimen:copy()
     self:update()
+    -- NOTE: Keep that one as UI to avoid delay when both this and the topmenu are shown.
+    --       Plus, this is also called for each tab anyway, so that wouldn't have been great.
     UIManager:setDirty("all", function()
         local refresh_dimen =
             old_dimen and old_dimen:combine(self.dialog_frame.dimen)
@@ -761,7 +764,7 @@ function ConfigDialog:onConfigEvents(option_events, arg_index)
 end
 
 function ConfigDialog:onConfigChoose(values, name, event, args, events, position)
-    UIManager:scheduleIn(0.05, function()
+    UIManager:tickAfterNext(function()
         if values then
             self:onConfigChoice(name, values[position])
         end

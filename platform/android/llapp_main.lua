@@ -3,6 +3,7 @@ A.dl.library_path = A.dl.library_path .. ":" .. A.dir .. "/libs"
 A.log_name = 'KOReader'
 
 local ffi = require("ffi")
+local C = ffi.C
 ffi.cdef[[
     char *getenv(const char *name);
     int putenv(const char *envvar);
@@ -56,7 +57,7 @@ A.execute("chmod", "755", "./tar")
 A.execute("chmod", "755", "./zsync")
 
 -- set TESSDATA_PREFIX env var
-ffi.C.putenv("TESSDATA_PREFIX=/sdcard/koreader/data")
+C.putenv("TESSDATA_PREFIX=/sdcard/koreader/data")
 
 -- create fake command-line arguments
 arg = {"-d", file or "/sdcard"}

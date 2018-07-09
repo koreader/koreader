@@ -35,6 +35,12 @@ function HtmlBoxWidget:init()
             },
         }
     end
+    if Mupdf.bgr == nil then
+        Mupdf.bgr = false
+        if Device:hasBGRFrameBuffer() then
+            Mupdf.bgr = true
+        end
+    end
 end
 
 function HtmlBoxWidget:setContent(body, css, default_font_size)

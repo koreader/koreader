@@ -1,6 +1,7 @@
 local Generic = require("device/generic/device")
 local _, android = pcall(require, "android")
 local ffi = require("ffi")
+local C = ffi.C
 local logger = require("logger")
 
 local function yes() return true end
@@ -26,11 +27,11 @@ function Device:init()
         event_map = require("device/android/event_map"),
         handleMiscEv = function(this, ev)
             logger.dbg("Android application event", ev.code)
-            if ev.code == ffi.C.APP_CMD_SAVE_STATE then
+            if ev.code == C.APP_CMD_SAVE_STATE then
                 return "SaveState"
-            elseif ev.code == ffi.C.APP_CMD_GAINED_FOCUS then
+            elseif ev.code == C.APP_CMD_GAINED_FOCUS then
                 this.device.screen:refreshFull()
-            elseif ev.code == ffi.C.APP_CMD_WINDOW_REDRAW_NEEDED then
+            elseif ev.code == C.APP_CMD_WINDOW_REDRAW_NEEDED then
                 this.device.screen:refreshFull()
             end
         end,
@@ -47,13 +48,13 @@ function Device:init()
 
     -- check if we have a keyboard
     if android.lib.AConfiguration_getKeyboard(android.app.config)
-       == ffi.C.ACONFIGURATION_KEYBOARD_QWERTY
+       == C.ACONFIGURATION_KEYBOARD_QWERTY
     then
         self.hasKeyboard = yes
     end
     -- check if we have a touchscreen
     if android.lib.AConfiguration_getTouchscreen(android.app.config)
-       ~= ffi.C.ACONFIGURATION_TOUCHSCREEN_NOTOUCH
+       ~= C.ACONFIGURATION_TOUCHSCREEN_NOTOUCH
     then
         self.isTouchDevice = yes
     end

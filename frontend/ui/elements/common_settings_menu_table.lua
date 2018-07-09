@@ -113,6 +113,7 @@ common_settings.screen = {
         require("ui/elements/screen_disable_double_tap_table"),
         require("ui/elements/flash_ui"),
         require("ui/elements/flash_keyboard"),
+        require("ui/elements/avoid_flashing_ui"),
     },
 }
 if Screen.isColorScreen() then

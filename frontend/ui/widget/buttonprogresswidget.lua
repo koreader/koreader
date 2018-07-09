@@ -78,7 +78,6 @@ function ButtonProgressWidget:update()
     UIManager:setDirty(self.show_parrent, function()
         return "ui", self.dimen
     end)
-UIManager:setDirty("all")
 end
 
 function ButtonProgressWidget:setPosition(position)

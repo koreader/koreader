@@ -67,5 +67,10 @@ return {
             callback = function() UIManager:setRefreshRate(custom_3()) end,
             hold_input = custom_input("refresh_rate_3")
         },
+        {
+            text = _("Every chapter"),
+            checked_func = function() return UIManager:getRefreshRate() == -1 end,
+            callback = function() UIManager:setRefreshRate(-1) end,
+        },
     }
 }

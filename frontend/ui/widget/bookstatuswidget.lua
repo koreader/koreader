@@ -245,7 +245,7 @@ function BookStatusWidget:setStar(num)
 
     table.insert(self.stars_container, stars_group)
 
-    UIManager:setDirty(nil, "partial")
+    UIManager:setDirty(nil, "ui")
     return true
 end
 
@@ -527,11 +527,11 @@ function BookStatusWidget:generateSwitchGroup(width)
 end
 
 function BookStatusWidget:onConfigChoose(values, name, event, args, events, position)
-    UIManager:scheduleIn(0.05, function()
+    UIManager:tickAfterNext(function()
         if values then
             self:onChangeBookStatus(args, position)
         end
-        UIManager:setDirty("all")
+        UIManager:setDirty("all", "ui")
     end)
 end
 
@@ -542,7 +542,8 @@ end
 
 function BookStatusWidget:onClose()
     self:saveSummary()
-    UIManager:setDirty("all")
+    -- NOTE: Flash on close to avoid ghosting, since we show an image.
+    UIManager:setDirty("all", "flashpartial")
     UIManager:close(self)
     return true
 end

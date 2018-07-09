@@ -40,6 +40,12 @@ function ReaderStatus:onEndOfBook()
     local settings = G_reader_settings:readSetting("end_document_action")
     local choose_action
     local collate = true
+    local QuickStart = require("ui/quickstart")
+    local last_file = G_reader_settings:readSetting("lastfile")
+    if last_file and last_file == QuickStart.quickstart_filename then
+        self:openFileBrowser()
+        return
+    end
     if G_reader_settings:readSetting("collate") == "access" then
         collate = false
     end

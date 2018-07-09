@@ -8,7 +8,7 @@
 			"name": "Start the filemanager",
 			"priority": 1,
 			"action": "/mnt/us/koreader/koreader.sh",
-			"params": "/mnt/us/documents",
+			"params": "--kual /mnt/us/documents",
 			"status": false,
 			"internal": "status Start KOReader on the File Manager"
 		},
@@ -16,6 +16,7 @@
 			"name": "Open the last document",
 			"priority": 2,
 			"action": "/mnt/us/koreader/koreader.sh",
+			"params": "--kual",
 			"status": false,
 			"internal": "status Start KOReader on the last document"
 		},
@@ -23,7 +24,7 @@
 			"name": "Start the filemanager (no framework)",
 			"priority": 3,
 			"action": "/mnt/us/koreader/koreader.sh",
-			"params": "--framework_stop /mnt/us/documents",
+			"params": "--kual --framework_stop /mnt/us/documents",
 			"status": false,
 			"internal": "status Kill the framework and start KOReader's FM"
 		},
@@ -31,7 +32,7 @@
 			"name": "Open the last document (no framework)",
 			"priority": 4,
 			"action": "/mnt/us/koreader/koreader.sh",
-			"params": "--framework_stop",
+			"params": "--kual --framework_stop",
 			"status": false,
 			"internal": "status Kill the framework and start KOReader"
 		},
@@ -39,7 +40,7 @@
 			"name": "Start the filemanager (ASAP)",
 			"priority": 5,
 			"action": "/mnt/us/koreader/koreader.sh",
-			"params": "--asap /mnt/us/documents",
+			"params": "--kual --asap /mnt/us/documents",
 			"status": false,
 			"internal": "status Start KOreader on the File Manager ASAP"
 		},
@@ -47,7 +48,7 @@
 			"name": "Open the last document (ASAP)",
 			"priority": 6,
 			"action": "/mnt/us/koreader/koreader.sh",
-			"params": "--asap",
+			"params": "--kual --asap",
 			"status": false,
 			"internal": "status Start KOreader on the last document ASAP"
 		},

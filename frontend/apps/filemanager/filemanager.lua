@@ -161,7 +161,7 @@ function FileManager:init()
     function file_chooser:onPathChanged(path)  -- luacheck: ignore
         FileManager.instance.path_text:setText(truncatePath(filemanagerutil.abbreviate(path)))
         UIManager:setDirty(FileManager.instance, function()
-            return "ui", FileManager.instance.path_text.dimen
+            return "partial", FileManager.instance.path_text.dimen
         end)
         return true
     end
@@ -659,7 +659,13 @@ function FileManager:deleteFile(file)
     end
     if ok and not err then
         if is_doc then
-            DocSettings:open(file):purge()
+            local doc_settings = DocSettings:open(file)
+            -- remove cache if any
+            local cache_file_path = doc_settings:readSetting("cache_file_path")
+            if cache_file_path then
+                os.remove(cache_file_path)
+            end
+            doc_settings:purge()
         end
         UIManager:show(InfoMessage:new{
             text = util.template(_("Deleted %1"), file),

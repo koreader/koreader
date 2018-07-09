@@ -254,6 +254,14 @@ function Document:getToc()
     return self._document:getToc()
 end
 
+function Document:canHaveAlternativeToc()
+    return false
+end
+
+function Document:isTocAlternativeToc()
+    return false
+end
+
 function Document:getPageLinks(pageno)
     return nil
 end

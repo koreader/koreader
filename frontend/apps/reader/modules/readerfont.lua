@@ -150,6 +150,10 @@ function ReaderFont:onReadSettings(config)
             or G_reader_settings:readSetting("copt_font_hinting") or 2 -- default in cre.cpp
     self.ui.document:setFontHinting(self.font_hinting)
 
+    self.space_condensing = config:readSetting("space_condensing")
+        or G_reader_settings:readSetting("copt_space_condensing") or 75
+    self.ui.document:setSpaceCondensing(self.space_condensing)
+
     self.line_space_percent = config:readSetting("line_space_percent")
             or G_reader_settings:readSetting("copt_line_spacing")
             or DCREREADER_CONFIG_LINE_SPACE_PERCENT_MEDIUM
@@ -250,6 +254,13 @@ function ReaderFont:onSetFontHinting(mode)
     return true
 end
 
+function ReaderFont:onSetSpaceCondensing(space)
+    self.space_condensing = space
+    self.ui.document:setSpaceCondensing(space)
+    self.ui:handleEvent(Event:new("UpdatePos"))
+    return true
+end
+
 function ReaderFont:onSetFontGamma(gamma)
     self.gamma_index = gamma
     self.ui.document:setGammaIndex(self.gamma_index)
@@ -268,6 +279,7 @@ function ReaderFont:onSaveSettings()
     self.ui.doc_settings:saveSetting("font_size", self.font_size)
     self.ui.doc_settings:saveSetting("font_embolden", self.font_embolden)
     self.ui.doc_settings:saveSetting("font_hinting", self.font_hinting)
+    self.ui.doc_settings:saveSetting("space_condensing", self.space_condensing)
     self.ui.doc_settings:saveSetting("line_space_percent", self.line_space_percent)
     self.ui.doc_settings:saveSetting("gamma_index", self.gamma_index)
 end

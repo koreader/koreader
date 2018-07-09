@@ -91,7 +91,7 @@ function CoverMenu:updateItems(select_number)
         local refresh_dimen =
             old_dimen and old_dimen:combine(self.dimen)
             or self.dimen
-        return "ui", refresh_dimen
+        return "partial", refresh_dimen
     end)
 
     -- As additionally done in FileChooser:updateItems()
@@ -205,6 +205,8 @@ function CoverMenu:updateItems(select_number)
                 -- Close original ButtonDialogTitle (it has not yet been painted
                 -- on screen, so we won't see it)
                 UIManager:close(self.file_dialog)
+                -- And clear the rendering stack to avoid inheriting its dirty/refresh queue
+                UIManager:clearRenderStack()
 
                 -- Replace Book information callback to use directly our bookinfo
                 orig_buttons[4][3].callback = function()
@@ -320,6 +322,7 @@ function CoverMenu:onHistoryMenuHold(item)
     -- Close original ButtonDialog (it has not yet been painted
     -- on screen, so we won't see it)
     UIManager:close(self.histfile_dialog)
+    UIManager:clearRenderStack()
 
     -- Replace Book information callback to use directly our bookinfo
     orig_buttons[2][2].callback = function()
@@ -471,6 +474,7 @@ function CoverMenu:tapPlus()
     -- Close original ButtonDialogTitle (it has not yet been painted
     -- on screen, so we won't see it)
     UIManager:close(self.file_dialog)
+    UIManager:clearRenderStack()
 
     -- Add a new button to original buttons set
     table.insert(orig_buttons, {}) -- separator

@@ -14,7 +14,7 @@
 KOReader is a document viewer application, originally created for Kindle
 e-ink readers. It currently runs on Kindle, Kobo, PocketBook, Ubuntu Touch
 and Android devices. Developers can also run a KOReader emulator
-for development purposes on desktop PCs with Linux, Windows and 
+for development purposes on desktop PCs with Linux, Windows and
 Mac OSX.
 
 Main features for users
@@ -103,6 +103,12 @@ The packages `pkg-config-arm-linux-gnueabihf` and `pkg-config-arm-linux-gnueabi`
 block you from building for Kobo or Kindle. Remove them if you get an ld error,
 `/usr/lib/gcc-cross/arm-linux-gnueabihf/4.8/../../../../arm-linux-gnueabihf/bin/
 ld: cannot find -lglib-2.0`
+
+**NOTE:** In the specific case of Kindle & Kobo targets, while we make some effort to support these Linaro/Ubuntu TCs,
+they do *not* exactly target the proper devices. While your build will go fine, this may lead to runtime failure.
+As time goes by, and/or the more bleeding-edge your distro is, the greater the risk for mismatch gets.
+Thankfully, we have a distribution-agnostic solution for you: [koxtoolchain](https://github.com/koreader/koxtoolchain)!
+This will allow you to build the *exact* same TCs used to build the nightlies, thanks to the magic of [crosstool-ng](https://github.com/crosstool-ng/crosstool-ng).
 
 On Mac OS X you may need to install the following tools using [Homebrew](https://brew.sh/):
 ```
@@ -312,7 +318,7 @@ KOReader's build system. To install ccache:
 [nb-script]:https://gitlab.com/koreader/nightly-builds/blob/master/build_release.sh
 [circleci-badge]:https://circleci.com/gh/koreader/koreader.svg?style=shield
 [circleci-link]:https://circleci.com/gh/koreader/koreader
-[circleci-conf]:https://github.com/koreader/koreader-base/blob/master/.circleci/config.yml
+[circleci-conf]:https://github.com/koreader/koreader/blob/master/.circleci/config.yml
 [linux-vm]:http://www.howtogeek.com/howto/11287/how-to-run-ubuntu-in-windows-7-with-vmware-player/
 [l10n-readme]:https://github.com/koreader/koreader/blob/master/l10n/README.md
 [koreader-transifex]:https://www.transifex.com/projects/p/koreader/

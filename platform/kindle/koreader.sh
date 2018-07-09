@@ -3,8 +3,8 @@ export LC_ALL="en_US.UTF-8"
 
 PROC_KEYPAD="/proc/keypad"
 PROC_FIVEWAY="/proc/fiveway"
-[ -e $PROC_KEYPAD ] && echo unlock >$PROC_KEYPAD
-[ -e $PROC_FIVEWAY ] && echo unlock >$PROC_FIVEWAY
+[ -e "${PROC_KEYPAD}" ] && echo unlock >"${PROC_KEYPAD}"
+[ -e "${PROC_FIVEWAY}" ] && echo unlock >"${PROC_FIVEWAY}"
 
 # KOReader's working directory
 KOREADER_DIR="/mnt/us/koreader"
@@ -47,19 +47,28 @@ PILLOW_HARD_DISABLED="no"
 PILLOW_SOFT_DISABLED="no"
 PASSCODE_DISABLED="no"
 
+REEXEC_FLAGS=""
 # Keep track of if we were started through KUAL
-FROM_KUAL="no"
+if [ "${1}" = "--kual" ]; then
+    shift 1
+    FROM_KUAL="yes"
+    REEXEC_FLAGS="${REEXEC_FLAGS} --kual"
+else
+    FROM_KUAL="no"
+fi
 
 # By default, don't stop the framework.
-if [ "$1" = "--framework_stop" ]; then
+if [ "${1}" = "--framework_stop" ]; then
     shift 1
     STOP_FRAMEWORK="yes"
     NO_SLEEP="no"
-elif [ "$1" = "--asap" ]; then
+    REEXEC_FLAGS="${REEXEC_FLAGS} --framework_stop"
+elif [ "${1}" = "--asap" ]; then
     # Start as soon as possible, without sleeping to workaround UI quirks
     shift 1
     NO_SLEEP="yes"
     STOP_FRAMEWORK="no"
+    REEXEC_FLAGS="${REEXEC_FLAGS} --asap"
     # Don't sleep during eips calls either...
     export EIPS_NO_SLEEP="true"
 else
@@ -67,58 +76,71 @@ else
     NO_SLEEP="no"
 fi
 
-# Detect if we were started by KUAL by checking our nice value...
-if [ "$(nice)" = "5" ]; then
-    FROM_KUAL="yes"
-    if [ "${NO_SLEEP}" = "no" ]; then
-        # Yield a bit to let stuff stop properly...
-        logmsg "Hush now . . ."
-        # NOTE: This may or may not be terribly useful...
-        usleep 250000
-    fi
+# If we were started by KUAL (either Kindlet or Booklet), we have a few more things to do...
+if [ "${FROM_KUAL}" = "yes" ]; then
+    # Yield a bit to let stuff stop properly...
+    logmsg "Hush now . . ."
+    # NOTE: This may or may not be terribly useful...
+    usleep 250000
 
-    # Kindlet threads spawn with a nice value of 5, go back to a neutral value
-    logmsg "Be nice!"
-    renice -n -5 $$
+    # If we were started by the KUAL Kindlet, and not the Booklet, we have a nice value to correct...
+    if [ "$(nice)" = "5" ]; then
+        # Kindlet threads spawn with a nice value of 5, go back to a neutral value
+        logmsg "Be nice!"
+        renice -n -5 $$
+    fi
 fi
 
 # we're always starting from our working directory
 cd "${KOREADER_DIR}" || exit
 
 # Handle pending OTA update
-NEWUPDATE="${KOREADER_DIR}/ota/koreader.updated.tar"
-INSTALLED="${KOREADER_DIR}/ota/koreader.installed.tar"
-if [ -f "${NEWUPDATE}" ]; then
-    logmsg "Updating koreader . . ."
-    # Look for our own GNU tar build to do a fancy progress tracking...
-    GNUTAR_BIN="${KOREADER_DIR}/tar"
-    if [ -x "${GNUTAR_BIN}" ]; then
-        # Let our checkpoint script handle the detailed visual feedback...
-        eips_print_bottom_centered "Updating koreader" 1
-        # shellcheck disable=SC2016
-        ${GNUTAR_BIN} -C "/mnt/us" --no-same-owner --no-same-permissions --checkpoint=200 --checkpoint-action=exec='./kotar_cpoint $TAR_CHECKPOINT' -xf "${NEWUPDATE}"
-        fail=$?
-    else
-        # Fall back to busybox tar
-        eips_print_bottom_centered "Updating koreader . . ." 1
-        tar -C "/mnt/us" -xf "${NEWUPDATE}"
-        fail=$?
+ko_update_check() {
+    NEWUPDATE="${KOREADER_DIR}/ota/koreader.updated.tar"
+    INSTALLED="${KOREADER_DIR}/ota/koreader.installed.tar"
+    if [ -f "${NEWUPDATE}" ]; then
+        logmsg "Updating koreader . . ."
+        # Look for our own GNU tar build to do a fancy progress tracking...
+        GNUTAR_BIN="${KOREADER_DIR}/tar"
+        if [ -x "${GNUTAR_BIN}" ]; then
+            # Let our checkpoint script handle the detailed visual feedback...
+            eips_print_bottom_centered "Updating KOReader" 3
+            # shellcheck disable=SC2016
+            ${GNUTAR_BIN} -C "/mnt/us" --no-same-owner --no-same-permissions --checkpoint=200 --checkpoint-action=exec='./kotar_cpoint $TAR_CHECKPOINT' -xf "${NEWUPDATE}"
+            fail=$?
+        else
+            # Fall back to busybox tar
+            eips_print_bottom_centered "Updating KOReader . . ." 3
+            tar -C "/mnt/us" -xf "${NEWUPDATE}"
+            fail=$?
+        fi
+        # Cleanup behind us...
+        if [ "${fail}" -eq 0 ]; then
+            mv "${NEWUPDATE}" "${INSTALLED}"
+            logmsg "Update successful :)"
+            eips_print_bottom_centered "Update successful :)" 2
+            eips_print_bottom_centered "KOReader will start momentarily . . ." 1
+        else
+            # Huh ho...
+            logmsg "Update failed :("
+            eips_print_bottom_centered "Update failed :(" 2
+            eips_print_bottom_centered "KOReader may fail to function properly" 1
+        fi
+        rm -f "${NEWUPDATE}" # always purge newupdate in all cases to prevent update loop
     fi
-    # Cleanup behind us...
-    if [ $fail -eq 0 ]; then
-        mv "${NEWUPDATE}" "${INSTALLED}"
-        logmsg "Update sucessful :)"
-        eips_print_bottom_centered "Update successful :)" 1
-    else
-        # Huh ho...
-        logmsg "Update failed :("
-        eips_print_bottom_centered "Update failed :(" 1
-    fi
-    rm -f "${NEWUPDATE}" # always purge newupdate in all cases to prevent update loop
+}
+# NOTE: Keep doing an initial update check, in addition to one during the restart loop, so we can pickup potential updates of this very script...
+ko_update_check
+# If an update happened, and was successful, reexec
+if [ -n "${fail}" ] && [ "${fail}" -eq 0 ]; then
+    # By now, we know we're in the right directory, and our script name is pretty much set in stone, so we can forgo using $0
+    # NOTE: REEXEC_FLAGS *needs* to be unquoted: we *want* word splitting here ;).
+    # shellcheck disable=SC2086
+    exec ./koreader.sh ${REEXEC_FLAGS} "${@}"
 fi
 
 # load our own shared libraries if possible
-export LD_LIBRARY_PATH=${KOREADER_DIR}/libs:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH="${KOREADER_DIR}/libs:${LD_LIBRARY_PATH}"
 
 # export trained OCR data directory
 export TESSDATA_PREFIX="data"
@@ -126,10 +148,10 @@ export TESSDATA_PREFIX="data"
 # export dict directory
 export STARDICT_DATA_DIR="data/dict"
 
-# export external font directory
-export EXT_FONT_DIR="/mnt/us/fonts"
+# export external font directories (In order: stock, stock custom (both legacy & 5.9.6+), stock extra, font hack)
+export EXT_FONT_DIR="/usr/java/lib/fonts;/mnt/us/fonts;/var/local/font/mnt;/mnt/us/linkfonts/fonts"
 
-# Only setup IPTables on evices where it makes sense to (FW 5.x & K4)
+# Only setup IPTables on devices where it makes sense to do so (FW 5.x & K4)
 if [ "${INIT_TYPE}" = "upstart" ] || [ "$(uname -r)" = "2.6.31-rt11-lab126" ]; then
     logmsg "Setting up IPTables rules . . ."
     # accept input ports for zsync plugin
@@ -137,39 +159,6 @@ if [ "${INIT_TYPE}" = "upstart" ] || [ "$(uname -r)" = "2.6.31-rt11-lab126" ]; t
     iptables -A INPUT -i wlan0 -p tcp --dport 49152:49162 -j ACCEPT
     # accept input ports for calibre companion
     iptables -A INPUT -i wlan0 -p udp --dport 8134 -j ACCEPT
-fi
-
-# bind-mount system fonts
-if ! grep ${KOREADER_DIR}/fonts/host /proc/mounts >/dev/null 2>&1; then
-    logmsg "Mounting system fonts . . ."
-    mount -o bind /usr/java/lib/fonts ${KOREADER_DIR}/fonts/host
-fi
-
-# bind-mount altfonts
-if [ -d /mnt/us/fonts ]; then
-    mkdir -p ${KOREADER_DIR}/fonts/altfonts
-    if ! grep ${KOREADER_DIR}/fonts/altfonts /proc/mounts >/dev/null 2>&1; then
-        logmsg "Mounting altfonts . . ."
-        mount -o bind /mnt/us/fonts ${KOREADER_DIR}/fonts/altfonts
-    fi
-fi
-
-# bind-mount csp fonts
-if [ -d /var/local/font/mnt ]; then
-    mkdir -p ${KOREADER_DIR}/fonts/cspfonts
-    if ! grep ${KOREADER_DIR}/fonts/cspfonts /proc/mounts >/dev/null 2>&1; then
-        logmsg "Mounting cspfonts . . ."
-        mount -o bind /var/local/font/mnt ${KOREADER_DIR}/fonts/cspfonts
-    fi
-fi
-
-# bind-mount linkfonts
-if [ -d /mnt/us/linkfonts/fonts ]; then
-    mkdir -p ${KOREADER_DIR}/fonts/linkfonts
-    if ! grep ${KOREADER_DIR}/fonts/linkfonts /proc/mounts >/dev/null 2>&1; then
-        logmsg "Mounting linkfonts . . ."
-        mount -o bind /mnt/us/linkfonts/fonts ${KOREADER_DIR}/fonts/linkfonts
-    fi
 fi
 
 # check if we need to disable the system passcode, because it messes with us in fun and interesting (and, more to the point, intractable) ways...
@@ -197,10 +186,10 @@ if [ "${STOP_FRAMEWORK}" = "yes" ]; then
     fi
 fi
 
-# check if kpvbooklet was launched for more than once, if not we will disable pillow
+# check if kpvbooklet was launched more than once, if not we will disable pillow
 # there's no pillow if we stopped the framework, and it's only there on systems with upstart anyway
 if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
-    count=$(lipc-get-prop -eiq com.github.koreader.kpvbooklet.timer count)
+    count="$(lipc-get-prop -eiq com.github.koreader.kpvbooklet.timer count)"
     if [ "$count" = "" ] || [ "$count" = "0" ]; then
         # NOTE: Dump the fb so we can restore something useful on exit...
         cat /dev/fb0 >/var/tmp/koreader-fb.dump
@@ -258,14 +247,17 @@ if [ "${FROM_KUAL}" = "yes" ]; then
     eips_print_bottom_centered "Starting KOReader . . ." 1
 fi
 
-# we keep maximum 500K worth of crash log
+# we keep at most 500KB worth of crash log
 if [ -e crash.log ]; then
     tail -c 500000 crash.log >crash.log.new
     mv -f crash.log.new crash.log
 fi
 
 RETURN_VALUE=85
-while [ $RETURN_VALUE -eq 85 ]; do
+while [ "${RETURN_VALUE}" -eq 85 ]; do
+    # Do an update check now, so we can actually update KOReader via the "Restart KOReader" menu entry ;).
+    ko_update_check
+
     ./reader.lua "$@" >>crash.log 2>&1
     RETURN_VALUE=$?
 done
@@ -274,30 +266,6 @@ done
 if pidof reader.lua >/dev/null 2>&1; then
     logmsg "Sending a SIGTERM to stray KOreader processes . . ."
     killall -TERM reader.lua
-fi
-
-# unmount system fonts
-if grep ${KOREADER_DIR}/fonts/host /proc/mounts >/dev/null 2>&1; then
-    logmsg "Unmounting system fonts . . ."
-    umount ${KOREADER_DIR}/fonts/host
-fi
-
-# unmount altfonts
-if grep ${KOREADER_DIR}/fonts/altfonts /proc/mounts >/dev/null 2>&1; then
-    logmsg "Unmounting altfonts . . ."
-    umount ${KOREADER_DIR}/fonts/altfonts
-fi
-
-# unmount cspfonts
-if grep ${KOREADER_DIR}/fonts/cspfonts /proc/mounts >/dev/null 2>&1; then
-    logmsg "Unmounting cspfonts . . ."
-    umount ${KOREADER_DIR}/fonts/cspfonts
-fi
-
-# unmount linkfonts
-if grep ${KOREADER_DIR}/fonts/linkfonts /proc/mounts >/dev/null 2>&1; then
-    logmsg "Unmounting linkfonts . . ."
-    umount ${KOREADER_DIR}/fonts/linkfonts
 fi
 
 # Resume volumd, if need be
@@ -365,4 +333,4 @@ if [ "${PASSCODE_DISABLED}" = "yes" ]; then
     touch "/var/local/system/userpasswdenabled"
 fi
 
-exit $RETURN_VALUE
+exit ${RETURN_VALUE}

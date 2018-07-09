@@ -235,9 +235,9 @@ function KeyValueItem:onTap()
         else
             self[1].invert = true
             UIManager:setDirty(self.show_parent, function()
-                return "ui", self[1].dimen
+                return "fast", self[1].dimen
             end)
-            UIManager:scheduleIn(0.1, function()
+            UIManager:tickAfterNext(function()
                 self.callback()
                 self[1].invert = false
                 UIManager:setDirty(self.show_parent, function()

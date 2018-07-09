@@ -180,15 +180,17 @@ end
 -- we cannot do it in onSaveSettings() because getLastPercent() uses self.ui.document
 function ReaderRolling:onCloseDocument()
     self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
-    -- also checks if DOM is coherent with styles; if not, invalidate the
-    -- cache, so a new DOM is built on next opening
-    if self.ui.document:isBuiltDomStale() then
-        if self.ui.document:hasCacheFile() then
+    local cache_file_path = self.ui.document:getCacheFilePath() -- nil if no cache file
+    self.ui.doc_settings:saveSetting("cache_file_path", cache_file_path)
+    if self.ui.document:hasCacheFile() then
+        -- also checks if DOM is coherent with styles; if not, invalidate the
+        -- cache, so a new DOM is built on next opening
+        if self.ui.document:isBuiltDomStale() then
             logger.dbg("cre DOM may not be in sync with styles, invalidating cache file for a full reload at next opening")
             self.ui.document:invalidateCacheFile()
         end
     end
-    logger.dbg("cre cache used:", self.ui.document:getCacheFilePath() or "none")
+    logger.dbg("cre cache used:", cache_file_path or "none")
 end
 
 function ReaderRolling:onCheckDomStyleCoherence()
@@ -485,7 +487,7 @@ function ReaderRolling:onGotoXPointer(xp, marker_xp)
         self.mark_func = function()
             self.mark_func = nil
             Screen.bb:paintRect(0, screen_y, marker_w, marker_h, Blitbuffer.COLOR_BLACK)
-            Screen["refreshUI"](Screen, 0, screen_y, marker_w, marker_h)
+            Screen["refreshFast"](Screen, 0, screen_y, marker_w, marker_h)
             if type(marker_setting) == "number" then -- hide it
                 self.unmark_func = function()
                     self.unmark_func = nil
@@ -495,7 +497,7 @@ function ReaderRolling:onGotoXPointer(xp, marker_xp)
                     -- documents): we drew our black marker in the margin, we
                     -- can just draw a white one to make it disappear
                     Screen.bb:paintRect(0, screen_y, marker_w, marker_h, Blitbuffer.COLOR_WHITE)
-                    Screen["refreshUI"](Screen, 0, screen_y, marker_w, marker_h)
+                    Screen["refreshFast"](Screen, 0, screen_y, marker_w, marker_h)
                 end
                 UIManager:scheduleIn(marker_setting, self.unmark_func)
             end

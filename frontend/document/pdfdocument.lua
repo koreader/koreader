@@ -1,11 +1,15 @@
 local Cache = require("cache")
 local CacheItem = require("cacheitem")
+local Device = require("device")
 local Document = require("document/document")
 local DrawContext = require("ffi/drawcontext")
 local KoptOptions = require("ui/data/koptoptions")
 local logger = require("logger")
 local util = require("util")
+local ffi = require("ffi")
+local C = ffi.C
 local pdf = nil
+
 
 local PdfDocument = Document:new{
     _document = false,
@@ -25,6 +29,12 @@ function PdfDocument:init()
     -- and :postRenderPage() when mupdf is called without kopt involved.
     pdf.color = false
     self:updateColorRendering()
+    if pdf.bgr == nil then
+        pdf.bgr = false
+        if Device:hasBGRFrameBuffer() then
+            pdf.bgr = true
+        end
+    end
     self.koptinterface = require("document/koptinterface")
     self.configurable:loadDefaults(self.options)
     local ok
@@ -134,7 +144,6 @@ end
 
 function PdfDocument:saveHighlight(pageno, item)
     self.is_edited = true
-    local ffi = require("ffi")
     -- will also need mupdf_h.lua to be evaluated once
     -- but this is guaranteed at this point
     local n = #item.pboxes
@@ -152,13 +161,13 @@ function PdfDocument:saveHighlight(pageno, item)
         quadpoints[8*i-1] = item.pboxes[i].y
     end
     local page = self._document:openPage(pageno)
-    local annot_type = ffi.C.PDF_ANNOT_HIGHLIGHT
+    local annot_type = C.PDF_ANNOT_HIGHLIGHT
     if item.drawer == "lighten" then
-        annot_type = ffi.C.PDF_ANNOT_HIGHLIGHT
+        annot_type = C.PDF_ANNOT_HIGHLIGHT
     elseif item.drawer == "underscore" then
-        annot_type = ffi.C.PDF_ANNOT_UNDERLINE
+        annot_type = C.PDF_ANNOT_UNDERLINE
     elseif item.drawer == "strikeout" then
-        annot_type = ffi.C.PDF_ANNOT_STRIKEOUT
+        annot_type = C.PDF_ANNOT_STRIKEOUT
     end
     page:addMarkupAnnotation(quadpoints, n, annot_type)
     page:close()

@@ -1,5 +1,6 @@
 local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
+local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
 local Font = require("ui/font")
@@ -19,6 +20,7 @@ local ReaderToc = InputContainer:new{
     collapse_depth = 2,
     expanded_nodes = {},
     toc_menu_title = _("Table of contents"),
+    alt_toc_menu_title = _("Table of contents *"),
 }
 
 function ReaderToc:init()
@@ -70,6 +72,16 @@ end
 
 function ReaderToc:onPageUpdate(pageno)
     self.pageno = pageno
+    if G_reader_settings:readSetting("full_refresh_count") == -1 then
+        if self:isChapterEnd(pageno, 0) then
+            self.chapter_refresh = true
+        elseif self:isChapterBegin(pageno, 0) and self.chapter_refresh then
+            UIManager:setDirty("all", "full")
+            self.chapter_refresh = false
+        else
+            self.chapter_refresh = false
+        end
+    end
 end
 
 function ReaderToc:onPosUpdate(pos, pageno)
@@ -78,6 +90,16 @@ end
 
 function ReaderToc:fillToc()
     if self.toc and #self.toc > 0 then return end
+    if self.ui.document:canHaveAlternativeToc() then
+        if self.ui.doc_settings:readSetting("alternative_toc") then
+            -- (if the document has a cache, the previously built alternative
+            -- TOC was saved and has been reloaded, and this will be avoided)
+            if not self.ui.document:isTocAlternativeToc() then
+                self:resetToc()
+                self.ui.document:buildAlternativeToc()
+            end
+        end
+    end
     self.toc = self.ui.document:getToc()
 end
 
@@ -446,11 +468,43 @@ end
 function ReaderToc:addToMainMenu(menu_items)
     -- insert table to main reader menu
     menu_items.table_of_contents = {
-        text = self.toc_menu_title,
+        text_func = function()
+            return self.ui.document:isTocAlternativeToc() and self.alt_toc_menu_title or self.toc_menu_title
+        end,
         callback = function()
             self:onShowToc()
         end,
     }
+    if self.ui.document:canHaveAlternativeToc() then
+        menu_items.table_of_contents.hold_callback = function()
+            if self.ui.document:isTocAlternativeToc() then
+                UIManager:show(ConfirmBox:new{
+                    text = _("The table of content for this book is currently an alternative one built from the document headings.\nDo you want to get back the original table of content? (The book will be reloaded.)"),
+                    ok_callback = function()
+                        self.ui.doc_settings:delSetting("alternative_toc")
+                        self.ui.document:invalidateCacheFile()
+                        -- Allow for ConfirmBox to be closed before showing
+                        -- "Opening file" InfoMessage
+                        UIManager:scheduleIn(0.5, function ()
+                            self.ui:reloadDocument()
+                        end)
+                    end,
+                })
+            else
+                UIManager:show(ConfirmBox:new{
+                    text = _("Do you want to use an alternative table of content built from the document headings?"),
+                    ok_callback = function()
+                        self:resetToc()
+                        self.ui.document:buildAlternativeToc()
+                        self.ui.doc_settings:saveSetting("alternative_toc", true)
+                        self:onShowToc()
+                        self.view.footer:setTocMarkers(true)
+                        self.view.footer:updateFooter()
+                    end,
+                })
+            end
+        end
+    end
 end
 
 return ReaderToc

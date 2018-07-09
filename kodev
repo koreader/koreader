@@ -5,11 +5,11 @@ VERSION=$(git describe HEAD)
 VERSION=${VERSION}_$(git describe HEAD | xargs git show -s --format=format:"%cd" --date=short)
 
 # Default Android build to arm.
-ANDROID_ARCH=${ANDROID_ARCH:-arm}
-if [ -z "${ANDROID_FULL_ARCH+x}" ]; then
-    if [ "$ANDROID_ARCH" = arm ]; then
+ANDROID_ARCH="${ANDROID_ARCH:-arm}"
+if [ -z "${ANDROID_FULL_ARCH}" ]; then
+    if [ "${ANDROID_ARCH}" = "arm" ]; then
         ANDROID_FULL_ARCH_APK="${ANDROID_FULL_ARCH_APK:-arm-linux-androideabi}"
-    elif [ "$ANDROID_ARCH" = x86 ]; then
+    elif [ "${ANDROID_ARCH}" = "x86" ]; then
         ANDROID_FULL_ARCH_APK="${ANDROID_FULL_ARCH_APK:-i686-linux-android}"
     else
         ANDROID_FULL_ARCH_APK="${ANDROID_ARCH}"
@@ -20,9 +20,9 @@ NDKABI=${NDKABI:-14}
 export NDKABI
 
 function assert_ret_zero() {
-    if [ "$1" -ne 0 ]; then
-        if [ ! -z "$2" ]; then
-            echo "$2"
+    if [ "${1}" -ne 0 ]; then
+        if [ ! -z "${2}" ]; then
+            echo "${2}"
         fi
         exit 1
     fi
@@ -94,7 +94,7 @@ EOL
 
 function setup_env() {
     SETUP_ENV_GREP_COMMAND="grep -v debug"
-    if [ -n "${KODEBUG+x}" ]; then
+    if [ -n "${KODEBUG}" ]; then
         SETUP_ENV_GREP_COMMAND="grep debug"
         # for android adb install
         KODEBUG_SUFFIX=-debug
@@ -134,10 +134,10 @@ OPTIONS:
 TARGET:
 ${SUPPORTED_TARGETS}"
 
-    while [[ $1 == '-'* ]]; do
-        PARAM=$(echo "$1" | awk -F= '{print $1}')
-        VALUE=$(echo "$1" | awk -F= '{print $2}')
-        case $PARAM in
+    while [[ "${1}" == '-'* ]]; do
+        PARAM=$(echo "${1}" | awk -F= '{print $1}')
+        VALUE=$(echo "${1}" | awk -F= '{print $2}')
+        case "${PARAM}" in
             -v | --verbose)
                 export VERBOSE=1
                 ;;
@@ -163,7 +163,7 @@ ${SUPPORTED_TARGETS}"
     done
 
     check_submodules
-    case $1 in
+    case "${1}" in
         kindle)
             make TARGET=kindle
             assert_ret_zero $?
@@ -181,8 +181,8 @@ ${SUPPORTED_TARGETS}"
             assert_ret_zero $?
             ;;
         android)
-            if [ -z "${NDK+x}" ]; then
-                if [ -n "${ANDROID_NDK+x}" ]; then
+            if [ -z "${NDK}" ]; then
+                if [ -n "${ANDROID_NDK}" ]; then
                     # some distributions use `ANDROID_NDK` instead, fall back to it
                     export NDK="${ANDROID_NDK}"
                 else
@@ -220,7 +220,7 @@ ${SUPPORTED_TARGETS}"
             assert_ret_zero $?
             ;;
         *)
-            if [ -z "${KODEBUG_NO_DEFAULT+x}" ]; then # no explicit --debug / --no-debug
+            if [ -z "${KODEBUG_NO_DEFAULT}" ]; then # no explicit --debug / --no-debug
                 # builds a debug build by default, like kodev-run
                 export KODEBUG=1
             fi
@@ -238,7 +238,7 @@ usage: clean <TARGET>
 TARGET:
 ${SUPPORTED_TARGETS}"
 
-    case $1 in
+    case "${1}" in
         -h | --help)
             echo "${CLEAN_HELP_MSG}"
             exit 0
@@ -297,10 +297,10 @@ ${SUPPORTED_RELEASE_TARGETS}"
 
     ignore_translation=0
 
-    while [[ $1 == '-'* ]]; do
-        PARAM=$(echo "$1" | awk -F= '{print $1}')
-        VALUE=$(echo "$1" | awk -F= '{print $2}')
-        case $PARAM in
+    while [[ "${1}" == '-'* ]]; do
+        PARAM=$(echo "${1}" | awk -F= '{print $1}')
+        VALUE=$(echo "${1}" | awk -F= '{print $2}')
+        case "${PARAM}" in
             --debug)
                 export KODEBUG=1
                 ;;
@@ -335,7 +335,7 @@ ${SUPPORTED_RELEASE_TARGETS}"
         fi
     fi
 
-    case $1 in
+    case "${1}" in
         kindle)
             kodev-build kindle
             make TARGET=kindle update
@@ -416,15 +416,15 @@ TARGET:
     screen_width=540
     screen_height=720
     export KODEBUG=1
-    while [[ $1 == '-'* ]]; do
-        PARAM=$(echo "$1" | awk -F= '{print $1}')
-        VALUE=$(echo "$1" | awk -F= '{print $2}')
-        case $PARAM in
+    while [[ "${1}" == '-'* ]]; do
+        PARAM=$(echo "${1}" | awk -F= '{print $1}')
+        VALUE=$(echo "${1}" | awk -F= '{print $2}')
+        case "${PARAM}" in
             --disable-touch)
                 export DISABLE_TOUCH=1
                 ;;
             --no-build)
-                no_build=true
+                no_build=1
                 ;;
             --no-debug)
                 export KODEBUG=
@@ -453,7 +453,7 @@ TARGET:
                 fi
                 ;;
             --graph)
-                graph_memory=true
+                graph_memory=1
                 ;;
             --valgrind)
                 if [ ! -z "${VALUE}" ]; then
@@ -485,7 +485,7 @@ TARGET:
                 ;;
             -s | --simulate)
                 device_model=${VALUE}
-                case ${device_model} in
+                case "${device_model}" in
                     kindle3)
                         screen_width=600
                         screen_height=800
@@ -518,10 +518,10 @@ TARGET:
         shift
     done
 
-    case $1 in
+    case "${1}" in
         android)
             command -v adb >/dev/null && {
-                if [ ! ${no_build} ]; then
+                if [ -z "${no_build}" ]; then
                     echo "[*] Building KOReader for Android…"
                     kodev-release --ignore-translation android
                     assert_ret_zero $?
@@ -541,9 +541,13 @@ TARGET:
             } || echo "Failed to find adb in PATH to interact with Android device."
             ;;
         *)
-            if [ ! ${no_build} ]; then
+            if [ -z "${no_build}" ]; then
                 echo "[*] Building KOReader…"
-                kodev-build
+                if [ -z "${KODEBUG}" ]; then
+                    kodev-build --no-debug
+                else
+                    kodev-build
+                fi
             else
                 setup_env
             fi
@@ -553,7 +557,7 @@ TARGET:
                 exit 1
             fi
 
-            if [ ${graph_memory} ]; then
+            if [ -n "${graph_memory}" ]; then
                 gnuplot_wrapper "--parent $$" "reader.lua"
             fi
 
@@ -579,19 +583,19 @@ TARGET:
                     args=${CURDIR}/test
                 else
                     args="$*"
-                    [[ $args != /* ]] && args="${CURDIR}/${args}"
+                    [[ "${args}" != /* ]] && args="${CURDIR}/${args}"
                 fi
                 KOREADER_COMMAND="$KOREADER_COMMAND ${args}"
 
                 RETURN_VALUE=85
-                while [ $RETURN_VALUE -eq 85 ]; do
+                while [ "${RETURN_VALUE}" -eq 85 ]; do
                     EMULATE_READER_W=${screen_width} EMULATE_READER_H=${screen_height} EMULATE_READER_DPI=${screen_dpi} \
                         ${KOREADER_COMMAND}
                     RETURN_VALUE=$?
                 done
             } && popd || exit
 
-            if [ ${graph_memory} ]; then
+            if [ -n "${graph_memory}" ]; then
                 capture_ctrl_c
             fi
             ;;
@@ -608,12 +612,12 @@ OPTIONS:
 
     --tags=TAGS     only run tests with given tags
     "
-    while [[ $1 == '-'* ]]; do
-        PARAM=$(echo "$1" | awk -F= '{print $1}')
-        VALUE=$(echo "$1" | awk -F= '{print $2}')
-        case $PARAM in
+    while [[ "${1}" == '-'* ]]; do
+        PARAM=$(echo "${1}" | awk -F= '{print $1}')
+        VALUE=$(echo "${1}" | awk -F= '{print $2}')
+        case "${PARAM}" in
             --graph)
-                graph_memory=true
+                graph_memory=1
                 ;;
             --tags)
                 opts="--tags=${VALUE}"
@@ -635,7 +639,7 @@ OPTIONS:
         echo "${TEST_HELP_MSG}"
         exit 1
     }
-    [[ $1 != "front" && $1 != "base" ]] && {
+    [[ "${1}" != "front" && "${1}" != "base" ]] && {
         echo "Invalid test suite: $1!"
         echo "${TEST_HELP_MSG}"
         exit 1
@@ -649,7 +653,7 @@ OPTIONS:
         test_path="./spec/$1/unit"
         rm -rf "${test_path}"/data/*.sdr
 
-        if [ ! -z "$2" ]; then
+        if [ ! -z "${2}" ]; then
             test_path="${test_path}/$2"
         fi
 
@@ -673,10 +677,10 @@ OPTIONS:
     "
     show_full=0
     show_previous=0
-    while [[ $1 == '-'* ]]; do
-        PARAM=$(echo "$1" | awk -F= '{print $1}')
-        VALUE=$(echo "$1" | awk -F= '{print $2}')
-        case $PARAM in
+    while [[ "${1}" == '-'* ]]; do
+        PARAM=$(echo "${1}" | awk -F= '{print $1}')
+        VALUE=$(echo "${1}" | awk -F= '{print $2}')
+        case "${PARAM}" in
             --full)
                 show_full=1
                 ;;
@@ -702,7 +706,7 @@ OPTIONS:
     pushd "${EMU_DIR}" && {
         target=front
         test_path="./spec/${target}/unit"
-        if [ ${show_previous} -eq 0 ]; then
+        if [ "${show_previous}" -eq 0 ]; then
             echo "Running tests in" ${test_path}
             busted --lua="./luajit" \
                 --sort-files \
@@ -714,7 +718,7 @@ OPTIONS:
                     echo "Failed to run tests!" && exit 1
                 }
         fi
-        if [ ${show_full} -eq 1 ]; then
+        if [ "${show_full}" -eq 1 ]; then
             cat luacov.report.out
         else
             LUACOV_REPORT_SUMMARY=$(grep -nm1 -e '^Summary$' luacov.report.out | cut -d: -f1)
@@ -738,7 +742,7 @@ TARGET:
         exit 1
     }
 
-    case $1 in
+    case "${1}" in
         -h | --help)
             echo "${LOG_HELP_MSG}"
             exit 0
@@ -775,7 +779,7 @@ Supported commands:
     exit 1
 }
 
-case $1 in
+case "${1}" in
     activate)
         echo "adding ${CURDIR} to \$PATH..."
         export PATH="${PATH}:${CURDIR}"

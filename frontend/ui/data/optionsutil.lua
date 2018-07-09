@@ -55,22 +55,22 @@ function optionsutil.showValues(configurable, option, prefix)
             end
         end
     end
-    if option.name_text_true_values and option.toggle and option.values and value_default then
-        UIManager:show(InfoMessage:new{
-            text = T(_("%1:\nCurrent value: %2 (%5%4)\nDefault value: %3 (%6%4)"), option.name_text,
-                current, default, suffix, value_current, value_default)
-        })
-    elseif option.name_text_true_values and option.toggle and option.values and not value_default then
-        UIManager:show(InfoMessage:new{
-            text = T(_("%1:\nCurrent value: %2 (%5%4)\nDefault value: %3"), option.name_text,
-                current, default, suffix, value_current)
-        })
-    else
-        UIManager:show(InfoMessage:new{
-            text = T(_("%1:\nCurrent value: %2%4\nDefault value: %3%4"), option.name_text, current,
-                default, suffix)
-        })
+    local help_text = ""
+    if option.help_text then
+        help_text = T("\n%1\n", option.help_text)
     end
+    local text
+    if option.name_text_true_values and option.toggle and option.values and value_default then
+        text = T(_("%1:\n%2\nCurrent value: %3 (%6%5)\nDefault value: %4 (%7%5)"), option.name_text, help_text,
+            current, default, suffix, value_current, value_default)
+    elseif option.name_text_true_values and option.toggle and option.values and not value_default then
+        text = T(_("%1\n%2\nCurrent value: %3 (%6%5)\nDefault value: %4"), option.name_text, help_text,
+            current, default, suffix, value_current)
+    else
+        text = T(_("%1\n%2\nCurrent value: %3%5\nDefault value: %4%5"), option.name_text, help_text,
+            current, default, suffix)
+    end
+    UIManager:show(InfoMessage:new{ text=text })
 end
 
 local function tableComp(a,b)

@@ -24,19 +24,24 @@ local function getRandomImage(dir)
     local pics = {}
     local i = 0
     math.randomseed(os.time())
-    for entry in lfs.dir(dir) do
-        if lfs.attributes(dir .. entry, "mode") == "file" then
-            local extension =
-                string.lower(string.match(entry, ".+%.([^.]+)") or "")
-            if extension == "jpg"
-            or extension == "jpeg"
-            or extension == "png" then
-                i = i + 1
-                pics[i] = entry
+    local ok, iter, dir_obj = pcall(lfs.dir, dir)
+    if ok then
+        for entry in iter, dir_obj do
+            if lfs.attributes(dir .. entry, "mode") == "file" then
+                local extension =
+                    string.lower(string.match(entry, ".+%.([^.]+)") or "")
+                if extension == "jpg"
+                or extension == "jpeg"
+                or extension == "png" then
+                    i = i + 1
+                    pics[i] = entry
+                end
             end
         end
-    end
-    if i == 0 then
+        if i == 0 then
+            return nil
+        end
+    else
         return nil
     end
     return dir .. pics[math.random(i)]

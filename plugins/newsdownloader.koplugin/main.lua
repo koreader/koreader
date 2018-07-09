@@ -10,6 +10,7 @@ local NetworkMgr = require("ui/network/manager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local dateparser = require("lib.dateparser")
 local ffi = require("ffi")
+local C = ffi.C
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
@@ -355,7 +356,7 @@ function NewsDownloader:removeNewsButKeepFeedConfig()
             local entry_path = news_download_dir_path .. "/" .. entry
             local entry_mode = lfs.attributes(entry_path, "mode")
             if entry_mode == "file" then
-                ffi.C.remove(entry_path)
+                C.remove(entry_path)
             elseif entry_mode == "directory" then
                 FFIUtil.purgeDir(entry_path)
             end

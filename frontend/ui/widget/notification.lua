@@ -73,7 +73,7 @@ end
 
 function Notification:onCloseWidget()
     UIManager:setDirty(nil, function()
-        return "partial", self[1][1].dimen
+        return "ui", self[1][1].dimen
     end)
     return true
 end
@@ -92,14 +92,18 @@ end
 function Notification:onAnyKeyPressed()
     -- triggered by our defined key events
     UIManager:close(self)
-    if self.readonly ~= true then
+    if not self.timeout then
         return true
     end
 end
 
 function Notification:onTapClose()
     UIManager:close(self)
-    if self.readonly ~= true then
+    -- If timeout (usually 1s or 2s), let it propagate so an underlying
+    -- widget can process the tap whether it's done at 1.9s or 2.1s
+    -- If no timout, don't propagate as this tap is most probably meant
+    -- at dismissing the notification
+    if not self.timeout then
         return true
     end
 end

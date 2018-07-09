@@ -182,12 +182,26 @@ describe("Readerrolling module", function()
         end)
     end)
 
+    describe("test changing word gap - space condensing", function()
+        it("should show pages for different word gap", function()
+            readerui.document:setSpaceCondensing(100)
+            readerui:handleEvent(Event:new("ChangeScreenMode", "portrait"))
+            assert.are.same(208, readerui.document:getPageCount())
+            readerui.document:setSpaceCondensing(75)
+            readerui:handleEvent(Event:new("ChangeScreenMode", "portrait"))
+            assert.are.same(205, readerui.document:getPageCount())
+            readerui.document:setSpaceCondensing(50)
+            readerui:handleEvent(Event:new("ChangeScreenMode", "portrait"))
+            assert.are.same(199, readerui.document:getPageCount())
+        end)
+    end)
+
     describe("test initialization", function()
         it("should emit PageUpdate event after book is rendered", function()
             local ReaderView = require("apps/reader/modules/readerview")
             local saved_handler = ReaderView.onPageUpdate
             ReaderView.onPageUpdate = function(_self)
-                assert.are.same(7, _self.ui.document:getPageCount())
+                assert.are.same(6, _self.ui.document:getPageCount())
             end
             local test_book = "spec/front/unit/data/sample.txt"
             require("docsettings"):open(test_book):purge()

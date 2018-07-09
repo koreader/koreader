@@ -244,12 +244,22 @@ function NetworkMgr:getBeforeWifiActionMenuTable()
    }
 end
 
+function NetworkMgr:getDismissScanMenuTable()
+    return {
+        text = _("Dismiss Wi-Fi scan popup after connection"),
+        checked_func = function() return G_reader_settings:nilOrTrue("auto_dismiss_wifi_scan") end,
+        --enabled_func = function() return Device:isKobo() end,
+        callback = function(menu) G_reader_settings:flipNilOrTrue("auto_dismiss_wifi_scan") end,
+    }
+end
+
 function NetworkMgr:getMenuTable(common_settings)
     common_settings.network_wifi = self:getWifiMenuTable()
     common_settings.network_proxy = self:getProxyMenuTable()
     common_settings.network_restore = self:getRestoreMenuTable()
     common_settings.network_info = self:getInfoMenuTable()
     common_settings.network_before_wifi_action = self:getBeforeWifiActionMenuTable()
+    common_settings.network_dismiss_scan = self:getDismissScanMenuTable()
 end
 
 function NetworkMgr:showNetworkMenu(complete_callback)
