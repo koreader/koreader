@@ -125,12 +125,6 @@ function FileChooser:genItemTableFromPath(path)
         end
     elseif self.collate == "access" then
         sorting = function(a, b)
-            if DocSettings:hasSidecarFile(a.fullpath) and not DocSettings:hasSidecarFile(b.fullpath) then
-                return true
-            end
-            if not DocSettings:hasSidecarFile(a.fullpath) and DocSettings:hasSidecarFile(b.fullpath) then
-                return false
-            end
             return a.attr.access > b.attr.access
         end
     elseif self.collate == "modification" then
