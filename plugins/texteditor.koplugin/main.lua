@@ -65,7 +65,6 @@ function TextEditor:start()
         }, 
         {
             text = _("Pg_up"),
-            is_enter_default = true,
             callback = function()
                 UIManager:show(InfoMessage:new{
                     text = _("Not implemented. Please help if you know how.")
@@ -75,7 +74,6 @@ function TextEditor:start()
         },
         {
             text = _("Pg_dwn"),
-            is_enter_default = true,
             callback = function()
                 UIManager:show(InfoMessage:new{
                     text = _("Not implemented. Please help if you know how.")
@@ -119,7 +117,7 @@ function TextEditor:readFile(file_path)
         file:close()
     else
         UIManager:show(InfoMessage:new{
-            text = _("Failed to read file: " .. file_path)
+            text = _("Failed to read file: \n" .. file_path)
         })
     end
     UIManager:forceRePaint()
@@ -130,7 +128,7 @@ function TextEditor:saveFile(file_path)
     local file = io.open(file_path, "w")
     if file then
         UIManager:show(ConfirmBox:new{
-            text = _("Are you sure that you want to save changes to file: " .. file_path),
+            text = _("Are you sure that you want to save changes to file: \n" .. file_path),
             ok_text = _("Save"),
             ok_callback = function()
                 file:write(self.input:getInputText())
@@ -142,13 +140,10 @@ function TextEditor:saveFile(file_path)
         })
     else
         UIManager:show(InfoMessage:new{
-            text = _("Failed to save file: " .. file_path)
+            text = _("Failed to save file: \n" .. file_path)
         })
     end
     UIManager:forceRePaint()
-    UIManager:close(self.input)
-    self.context = ""
-    self.file_path = ""
 end
 
 function TextEditor:addToMainMenu(menu_items)
