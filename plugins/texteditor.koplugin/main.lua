@@ -15,7 +15,13 @@ local TextEditor = WidgetContainer:new{
     name = "text_editor",
 }
 
-function TextEditor:init(file_path)
+function TextEditor:init()
+    self.ui.menu:registerToMainMenu(self)
+end
+
+function TextEditor:start(file_path)
+    local FileManager = require("apps/filemanager/filemanager")
+    FileManager:onClose()
     if not file_path then
         self.context = ""
         self.file_path = ""
@@ -23,13 +29,6 @@ function TextEditor:init(file_path)
         self.file_path = file_path
         self:readFile(file_path)
     end
-
-    self.ui.menu:registerToMainMenu(self)
-end
-
-function TextEditor:start()
-    local FileManager = require("apps/filemanager/filemanager")
-    FileManager:onClose()
     self.input = InputDialog:new{
         title =  _("Basic text editor"),
         input = self.context,
