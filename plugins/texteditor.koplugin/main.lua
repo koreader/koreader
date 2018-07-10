@@ -11,13 +11,18 @@ local Screen = require("device").screen
 
 local TextEditor = WidgetContainer:new{
     name = "TextEditor",
-    file_path = util.realpath("basic-editor-test.txt"),
-    context = "",
 }
 
-function TextEditor:init()
+function TextEditor:init(file_path)
+    if not file_path then
+        self.context = ""
+        self.file_path = ""
+    else
+        self.file_path = file_path
+        self:readFile(file_path)
+    end
+
     self.ui.menu:registerToMainMenu(self)
-    
 end
 
 function TextEditor:start()
