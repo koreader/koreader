@@ -62,7 +62,7 @@ function TextEditor:start()
                 })
 
             end,
-        }, 
+        },
         {
             text = _("Pg_up"),
             callback = function()
@@ -104,7 +104,7 @@ function TextEditor:chooseFile()
             self.input:onShowKeyboard()
         end
     }
-    UIManager:show(path_chooser)     
+    UIManager:show(path_chooser)
 end
 
 function TextEditor:readFile(file_path)
