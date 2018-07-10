@@ -1,3 +1,4 @@
+local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
@@ -9,8 +10,9 @@ local util = require("ffi/util")
 local _ = require("gettext")
 local Screen = require("device").screen
 
+
 local TextEditor = WidgetContainer:new{
-    name = "TextEditor",
+    name = "text_editor",
 }
 
 function TextEditor:init(file_path)
@@ -47,11 +49,18 @@ function TextEditor:start()
                 self:saveFile(self.file_path)
             end,
         },{
-            text = _("Cancel"),
+            text = _("Quit"),
             callback = function()
-                self.context = ""
-                self.file_path = ""
-                UIManager:close(self.input)
+                UIManager:show(ConfirmBox:new{
+                    text = _("Are you sure that you want to quit editor? All unsaved changes will be lost."),
+                    ok_text = _("Quit"),
+                    ok_callback = function()
+                        self.context = ""
+                        self.file_path = ""
+                        UIManager:close(self.input)
+                    end
+                })
+
             end,
         }, 
         {
@@ -85,7 +94,7 @@ end
 function TextEditor:chooseFile()
     self.input:onClose()
     local path_chooser = PathChooser:new{
-        title = _("Choose file. Hold to confirm"),
+        title = _("Choose file. Long press to confirm"),
         height = Screen:getHeight(),
         path = util.realpath(DataStorage:getDataDir()),
         show_hidden = G_reader_settings:readSetting("show_hidden"),
@@ -120,10 +129,16 @@ function TextEditor:saveFile(file_path)
     logger.dbg("TextEditor: saving file: " .. file_path)
     local file = io.open(file_path, "w")
     if file then
-        file:write(self.input:getInputText())
-        file:close()
-        UIManager:show(InfoMessage:new{
-            text = _("Saved file: " .. file_path)
+        UIManager:show(ConfirmBox:new{
+            text = _("Are you sure that you want to save changes to file: " .. file_path),
+            ok_text = _("Save"),
+            ok_callback = function()
+                file:write(self.input:getInputText())
+                file:close()
+                UIManager:show(InfoMessage:new{
+                    text = _("Saved file: " .. file_path)
+                })
+            end
         })
     else
         UIManager:show(InfoMessage:new{
@@ -137,7 +152,7 @@ function TextEditor:saveFile(file_path)
 end
 
 function TextEditor:addToMainMenu(menu_items)
-    menu_items.TextEditor = {
+    menu_items.text_editor = {
         text = _("Basic text editor"),
         callback = function()
             self:start()

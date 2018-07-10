@@ -65,6 +65,7 @@ local order = {
         "synchronize_time",
         "keep_alive",
         "terminal",
+        "text_editor",
         "storage_stat",
     },
     search = {
