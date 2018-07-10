@@ -60,8 +60,14 @@ function VirtualKey:init()
 
     local label_widget
     if self.icon then
+        -- Scale icon to fit other characters height
+        -- (use *1.5 as our icons have a bit of white padding)
+        local icon_height = math.ceil(self.face.size * 1.5)
         label_widget = ImageWidget:new{
             file = self.icon,
+            scale_factor = 0, -- keep icon aspect ratio
+            height = icon_height,
+            width = icon_height * 100, -- to fit height when ensuring a/r
         }
     else
         label_widget = TextWidget:new{
