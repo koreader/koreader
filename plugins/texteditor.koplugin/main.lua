@@ -35,6 +35,9 @@ function TextEditor:start(file_path)
         text_height = Screen:getHeight() * 0.5,
         width = self.width or Screen:getWidth(),
         input_type = "string",
+        enter_callback = function ()
+            return '\n'
+        end,
         buttons = {{
         {
             text = _("Open"),
@@ -65,19 +68,19 @@ function TextEditor:start(file_path)
         {
             text = _("Pg_up"),
             callback = function()
-                UIManager:show(InfoMessage:new{
-                    text = _("Not implemented. Please help if you know how.")
-                })
-                UIManager:forceRePaint()
+                self.input._input_widget.text_widget:scrollUp()
+                UIManager:setDirty(self.input, function()
+                    return "ui", self.input.dimen
+                end)
             end,
         },
         {
             text = _("Pg_dwn"),
             callback = function()
-                UIManager:show(InfoMessage:new{
-                    text = _("Not implemented. Please help if you know how.")
-                })
-                UIManager:forceRePaint()
+                self.input._input_widget.text_widget:scrollDown()
+                UIManager:setDirty(self.input, function()
+                    return "ui", self.input.dimen
+                end)
             end,
         }
 
