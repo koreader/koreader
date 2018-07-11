@@ -35,9 +35,7 @@ function TextEditor:start(file_path)
         text_height = Screen:getHeight() * 0.5,
         width = self.width or Screen:getWidth(),
         input_type = "string",
-        enter_callback = function ()
-            return '\n'
-        end,
+        enter_callback = nil,
         buttons = {{
         {
             text = _("Open"),
@@ -87,6 +85,7 @@ function TextEditor:start(file_path)
 
     }},
     }
+    self.input._input_widget.enter_callback = nil
     UIManager:show(self.input)
     self.input:onShowKeyboard()
 end
