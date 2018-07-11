@@ -35,7 +35,6 @@ function TextEditor:start(file_path)
         text_height = Screen:getHeight() * 0.5,
         width = self.width or Screen:getWidth(),
         input_type = "string",
-        enter_callback = nil,
         buttons = {{
         {
             text = _("Open"),
@@ -85,6 +84,7 @@ function TextEditor:start(file_path)
 
     }},
     }
+    --to be able to insert new line, we need to disable callback (InputDialog always sets it)
     self.input._input_widget.enter_callback = nil
     UIManager:show(self.input)
     self.input:onShowKeyboard()
