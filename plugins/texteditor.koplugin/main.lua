@@ -50,12 +50,13 @@ function TextEditor:start(file_path)
             callback = function()
                 self:saveFile(self.file_path)
             end,
-        },{
-            text = _("Quit"),
+        },
+        {
+            text = _("Close"),
             callback = function()
                 UIManager:show(ConfirmBox:new{
-                    text = _("Are you sure that you want to quit editor? All unsaved changes will be lost."),
-                    ok_text = _("Quit"),
+                    text = _("Are you sure that you want to close the editor? All unsaved changes will be lost."),
+                    ok_text = _("Close"),
                     ok_callback = function()
                         self.context = ""
                         self.file_path = ""
@@ -66,7 +67,7 @@ function TextEditor:start(file_path)
             end,
         },
         {
-            text = _("Pg_up"),
+            text = _("Pg up"),
             callback = function()
                 self.input._input_widget.text_widget:scrollUp()
                 UIManager:setDirty(self.input, function()
@@ -75,7 +76,7 @@ function TextEditor:start(file_path)
             end,
         },
         {
-            text = _("Pg_dwn"),
+            text = _("Pg dn"),
             callback = function()
                 self.input._input_widget.text_widget:scrollDown()
                 UIManager:setDirty(self.input, function()
@@ -94,7 +95,7 @@ end
 function TextEditor:chooseFile()
     self.input:onClose()
     local path_chooser = PathChooser:new{
-        title = _("Choose file. Long press to confirm"),
+        title = _("Open file. Long press to confirm"),
         height = Screen:getHeight(),
         path = util.realpath(DataStorage:getDataDir()),
         show_hidden = G_reader_settings:readSetting("show_hidden"),
@@ -111,7 +112,7 @@ end
 
 function TextEditor:readFile(file_path)
     logger.dbg("TextEditor: reading file: " .. file_path)
-    local file = assert(io.open(file_path, "rb"))
+    local file = io.open(file_path, "rb")
     if file then
         self.file_path = file_path
         self.context = file:read("*all")
