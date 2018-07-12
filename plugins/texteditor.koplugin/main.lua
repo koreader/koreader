@@ -25,10 +25,16 @@ function TextEditor:start(file_path)
     if not file_path then
         self.context = ""
         self.file_path = ""
+        self:createUI()
     else
         self.file_path = file_path
+        self:createUI()
         self:readFile(file_path)
     end
+    
+end
+
+function TextEditor:createUI()
     self.input = InputDialog:new{
         title =  _("Basic text editor"),
         input = self.context,
@@ -89,7 +95,6 @@ function TextEditor:start(file_path)
     UIManager:show(self.input)
     self.input:onShowKeyboard()
 end
-
 
 function TextEditor:chooseFile()
     self.input:onClose()
