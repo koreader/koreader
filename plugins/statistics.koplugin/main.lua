@@ -693,6 +693,7 @@ function ReaderStatistics:addToMainMenu(menu_items)
             },
             {
                 text = _("Reading progress"),
+                enabled_func = function() return Screen:getWidth() < Screen:getHeight() end,
                 callback = function()
                     self:insertDB(self.id_curr_book)
                     local current_period, current_pages = self:getCurrentBookStats()
