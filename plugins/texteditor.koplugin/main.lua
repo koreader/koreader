@@ -31,7 +31,6 @@ function TextEditor:start(file_path)
         self:createUI()
         self:readFile(file_path)
     end
-    
 end
 
 function TextEditor:createUI()
