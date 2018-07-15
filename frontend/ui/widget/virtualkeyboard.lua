@@ -27,7 +27,9 @@ local VirtualKey = InputContainer:new{
 
     keyboard = nil,
     callback = nil,
-    skipkey = nil,
+    -- This is to inhibit the key's own refresh (useful to avoid conflicts on Layout changing keys)
+    skiptap = nil,
+    skiphold = nil,
 
     width = nil,
     height = math.max(Screen:getWidth(), Screen:getHeight())*0.33,
@@ -38,19 +40,20 @@ local VirtualKey = InputContainer:new{
 function VirtualKey:init()
     if self.keyboard.symbolmode_keys[self.label] ~= nil then
         self.callback = function () self.keyboard:setLayout("Sym") end
-        self.skipkey = true
+        self.skiptap = true
     elseif self.keyboard.shiftmode_keys[self.label] ~= nil then
         self.callback = function () self.keyboard:setLayout("Shift") end
-        self.skipkey = true
+        self.skiptap = true
     elseif self.keyboard.utf8mode_keys[self.label] ~= nil then
         self.callback = function () self.keyboard:setLayout("IM") end
-        self.skipkey = true
+        self.skiptap = true
     elseif self.keyboard.umlautmode_keys[self.label] ~= nil then
         self.callback = function () self.keyboard:setLayout("Äéß") end
-        self.skipkey = true
+        self.skiptap = true
     elseif self.label == "Backspace" then
         self.callback = function () self.keyboard:delChar() end
         self.hold_callback = function () self.keyboard:clear() end
+        --self.skiphold = true
     elseif self.label =="←" then
         self.callback = function() self.keyboard:leftChar() end
     elseif self.label == "→" then
@@ -146,7 +149,7 @@ function VirtualKey:onUnfocus()
 end
 
 function VirtualKey:onTapSelect()
-    if self.flash_keyboard and not self.skipkey then
+    if self.flash_keyboard and not self.skiptap then
         self[1].invert = true
         self:update_keyboard(false, true)
         if self.callback then
@@ -162,7 +165,7 @@ function VirtualKey:onTapSelect()
 end
 
 function VirtualKey:onHoldSelect()
-    if self.flash_keyboard then
+    if self.flash_keyboard and not self.skiphold then
         self[1].invert = true
         self:update_keyboard(false, true)
         if self.hold_callback then
