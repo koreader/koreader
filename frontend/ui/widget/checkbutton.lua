@@ -34,6 +34,7 @@ local CheckButton = InputContainer:new{
     overlap_align = "right",
     text = nil,
     toggle_text = nil,
+    max_width = nil,
     window = nil,
 
     padding = Screen:scaleBySize(5),
@@ -55,6 +56,7 @@ function CheckButton:initCheckButton(checked)
     self._textwidget = TextWidget:new{
         text = self.text,
         face = self.face,
+        max_width = self.max_width,
     }
     self._horizontalgroup = HorizontalGroup:new{
         self._checkmark,

@@ -1,6 +1,7 @@
 local Blitbuffer = require("ffi/blitbuffer")
 local Device = require("device")
 local FocusManager = require("ui/widget/focusmanager")
+local Font = require("ui/font")
 local Geom = require("ui/geometry")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local LineWidget = require("ui/widget/linewidget")
@@ -23,9 +24,7 @@ local RadioButtonTable = FocusManager:new{
     padding = Size.padding.button,
 
     zero_sep = false,
-    button_font_face = "cfont",
-    button_font_size = 20,
-
+    face = Font:getFace("cfont", 22),
     _first_button = nil,
     checked_button = nil,
 }
@@ -66,8 +65,7 @@ function RadioButtonTable:init()
                 bordersize = 0,
                 margin = 0,
                 padding = 0,
-                text_font_face = self.button_font_face,
-                text_font_size = self.button_font_size,
+                face = self.face,
 
                 show_parent = self.show_parent or self,
                 parent = self.parent or self,

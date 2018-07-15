@@ -5,6 +5,7 @@ This widget displays an open with dialog.
 local Blitbuffer = require("ffi/blitbuffer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local CheckButton = require("ui/widget/checkbutton")
+local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local InputDialog = require("ui/widget/inputdialog")
@@ -12,6 +13,7 @@ local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local RadioButtonTable = require("ui/widget/radiobuttontable")
 local Size = require("ui/size")
+local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local _ = require("gettext")
@@ -22,6 +24,7 @@ local OpenWithDialog = InputDialog:extend{}
 function OpenWithDialog:init()
     -- init title and buttons in base class
     InputDialog.init(self)
+    self.face = Font:getFace("cfont", 22)
 
     self.radio_button_table = RadioButtonTable:new{
         radio_buttons = self.radio_buttons,
@@ -29,6 +32,7 @@ function OpenWithDialog:init()
         focused = true,
         scroll = false,
         parent = self,
+        face = self.face,
     }
 
     self._check_file_button = self._check_file_button or CheckButton:new{
@@ -42,7 +46,9 @@ function OpenWithDialog:init()
         end,
 
         width = self.width * 0.9,
+        max_width = self.width * 0.9 - 2*Size.border.window,
         height = self.height,
+        face = self.face,
 
         parent = self,
     }
@@ -66,7 +72,9 @@ function OpenWithDialog:init()
         end,
 
         width = self.width * 0.9,
+        max_width = self.width * 0.9 - 2*Size.border.window,
         height = self.height,
+        face = self.face,
 
         parent = self,
     }
@@ -81,6 +89,7 @@ function OpenWithDialog:init()
 
     self.dialog_frame = FrameContainer:new{
         radius = Size.radius.window,
+        bordersize = Size.border.window,
         padding = 0,
         margin = 0,
         background = Blitbuffer.COLOR_WHITE,
@@ -151,6 +160,9 @@ function OpenWithDialog:init()
 end
 
 function OpenWithDialog:onCloseWidget()
+    UIManager:setDirty(nil, function()
+        return "partial", self[1][1].dimen
+    end)
     return true
 end
 
