@@ -315,7 +315,7 @@ function InputText:clear()
     self.charpos = nil
     self:initTextBox("")
     UIManager:setDirty(self.parent, function()
-        return "ui", self.parent.dimen
+        return "ui", self[1][1].dimen
     end)
 end
 
