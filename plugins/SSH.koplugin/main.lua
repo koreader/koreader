@@ -141,8 +141,8 @@ function SSH:addToMainMenu(menu_items)
             },
             {
                 text = _("Stop SSH server"),
-                callback = self.stop,
-                enabled_func = self.isRunning,
+                callback = function() return self:stop() end,
+                enabled_func = function() return self:isRunning() end,
             },
             {
                 text = _("Change SSH port"),
