@@ -39,14 +39,17 @@ function RadioButton:init()
     self._checked_widget = TextWidget:new{
         text = "◉ " .. self.text,
         face = self.face,
+        max_width = self.max_width,
     }
     self._unchecked_widget = TextWidget:new{
         text = "◯ " .. self.text,
         face = self.face,
+        max_width = self.max_width,
     }
     self._empty_widget = TextWidget:new{
         text = "" .. self.text,
         face = self.face,
+        max_width = self.max_width,
     }
     self._widget_size = self._unchecked_widget:getSize()
     if self.width == nil then

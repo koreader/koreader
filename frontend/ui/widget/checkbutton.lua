@@ -55,6 +55,7 @@ function CheckButton:initCheckButton(checked)
     self._textwidget = TextWidget:new{
         text = self.text,
         face = self.face,
+        max_width = self.max_width,
     }
     self._horizontalgroup = HorizontalGroup:new{
         self._checkmark,
