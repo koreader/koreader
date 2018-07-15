@@ -16,22 +16,6 @@ local function kindleEnableWifi(toggle)
     end
 end
 
-
-local Kindle = Generic:new{
-    model = "Kindle",
-    isKindle = yes,
-}
-
-function Kindle:initNetworkManager(NetworkMgr)
-    NetworkMgr.turnOnWifi = function()
-        kindleEnableWifi(1)
-    end
-
-    NetworkMgr.turnOffWifi = function()
-        kindleEnableWifi(0)
-    end
-end
-
 --[[
 Test if a kindle device has Special Offers
 --]]
@@ -49,6 +33,10 @@ local function isSpecialOffers()
     end
     local is_so
     local loaded_blanket_modules = lipc_handle:get_string_property("com.lab126.blanket", "load")
+    if not loaded_blanket_modules then
+        logger.warn("could not get lipc property")
+        return true
+    end
     if string.find(loaded_blanket_modules, "ad_screensaver") then
         is_so = true
     else
@@ -58,8 +46,25 @@ local function isSpecialOffers()
     return is_so
 end
 
+local Kindle = Generic:new{
+    model = "Kindle",
+    isKindle = yes,
+    -- NOTE: We can cheat by adding a platform-specific entry here, because the only code that will check for this is here.
+    isSpecialOffers = isSpecialOffers(),
+}
+
+function Kindle:initNetworkManager(NetworkMgr)
+    NetworkMgr.turnOnWifi = function()
+        kindleEnableWifi(1)
+    end
+
+    NetworkMgr.turnOffWifi = function()
+        kindleEnableWifi(0)
+    end
+end
+
 function Kindle:supportsScreensaver()
-    if isSpecialOffers() then
+    if self.isSpecialOffers then
         return false
     else
         return true
@@ -105,6 +110,7 @@ function Kindle:intoScreenSaver()
         -- Let the native system handle screensavers on SO devices...
         if self.screen_saver_mode == false then
             if os.getenv("AWESOME_STOPPED") == "yes" then
+                os.execute("killall -cont Xorg")
                 os.execute("killall -cont awesome")
             end
         end
@@ -122,6 +128,7 @@ function Kindle:outofScreenSaver()
             -- Stop awesome again if need be...
             if os.getenv("AWESOME_STOPPED") == "yes" then
                 os.execute("killall -stop awesome")
+                os.execute("killall -stop Xorg")
             end
         end
         local UIManager = require("ui/uimanager")
@@ -619,7 +626,12 @@ end
 
 function KindleTouch:exit()
     Generic.exit(self)
-    if isSpecialOffers() then
+    if self.isSpecialOffers then
+        -- Wakey wakey...
+        if os.getenv("AWESOME_STOPPED") == "yes" then
+            os.execute("killall -cont Xorg")
+            os.execute("killall -cont awesome")
+        end
         -- fake a touch event
         if self.touch_dev then
             local width, height = self.screen:getScreenWidth(), self.screen:getScreenHeight()
