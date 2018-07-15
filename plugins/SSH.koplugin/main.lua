@@ -30,7 +30,7 @@ function SSH:init()
 end
 
 function SSH:start()
-    local cmd = string.format("%s %s %s %s%s %s %s %s",
+    local cmd = string.format("%s %s %s %s%s %s",
         "./dropbearmulti dropbear",
         "-E",
         "-R",
