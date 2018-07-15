@@ -113,18 +113,21 @@ function VirtualKey:init()
     self.flash_keyboard = G_reader_settings:readSetting("flash_keyboard") ~= false
 end
 
-function VirtualKey:update_keyboard(want_flash)
-    -- NOTE: We could arguably use "fast" when inverted & "ui" when not, but it doesn't change much,
-    --       and doesn't help with the graphics quirks of repeated "fast" updates on some devices.
-    -- On the other hand, we want to flash the *full* keyboard when we finish a long hold...
+function VirtualKey:update_keyboard(want_flash, want_fast)
+    -- NOTE: We mainly use "fast" when inverted & "ui" when not, with a cherry on top:
+    --       we flash the *full* keyboard instead when we release a hold.
     if want_flash then
         UIManager:setDirty(self.keyboard, function()
             return "flashui", self.keyboard[1][1].dimen
         end)
     else
+        local refresh_type = "ui"
+        if want_fast then
+            refresh_type = "fast"
+        end
         UIManager:setDirty(self.keyboard, function()
             logger.dbg("update key region", self[1].dimen)
-            return "fast", self[1].dimen
+            return refresh_type, self[1].dimen
         end)
     end
 end
@@ -140,7 +143,7 @@ end
 function VirtualKey:onTapSelect()
     if self.flash_keyboard then
         self[1].invert = true
-        self:update_keyboard()
+        self:update_keyboard(false, true)
         if self.callback then
             self.callback()
         end
@@ -156,7 +159,7 @@ end
 function VirtualKey:onHoldSelect()
     if self.flash_keyboard then
         self[1].invert = true
-        self:update_keyboard()
+        self:update_keyboard(false, true)
         if self.hold_callback then
             self.hold_callback()
         end
@@ -171,7 +174,7 @@ end
 
 function VirtualKey:invert(invert, hold)
     self[1].invert = invert
-    self:update_keyboard(hold)
+    self:update_keyboard(hold, false)
 end
 
 local VirtualKeyboard = FocusManager:new{
