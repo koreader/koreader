@@ -27,6 +27,7 @@ local VirtualKey = InputContainer:new{
 
     keyboard = nil,
     callback = nil,
+    skipkey = nil,
 
     width = nil,
     height = math.max(Screen:getWidth(), Screen:getHeight())*0.33,
@@ -37,12 +38,16 @@ local VirtualKey = InputContainer:new{
 function VirtualKey:init()
     if self.keyboard.symbolmode_keys[self.label] ~= nil then
         self.callback = function () self.keyboard:setLayout("Sym") end
+        self.skipkey = true
     elseif self.keyboard.shiftmode_keys[self.label] ~= nil then
         self.callback = function () self.keyboard:setLayout("Shift") end
+        self.skipkey = true
     elseif self.keyboard.utf8mode_keys[self.label] ~= nil then
         self.callback = function () self.keyboard:setLayout("IM") end
+        self.skipkey = true
     elseif self.keyboard.umlautmode_keys[self.label] ~= nil then
         self.callback = function () self.keyboard:setLayout("Äéß") end
+        self.skipkey = true
     elseif self.label == "Backspace" then
         self.callback = function () self.keyboard:delChar() end
         self.hold_callback = function () self.keyboard:clear() end
@@ -141,7 +146,7 @@ function VirtualKey:onUnfocus()
 end
 
 function VirtualKey:onTapSelect()
-    if self.flash_keyboard then
+    if self.flash_keyboard and not self.skipkey then
         self[1].invert = true
         self:update_keyboard(false, true)
         if self.callback then
