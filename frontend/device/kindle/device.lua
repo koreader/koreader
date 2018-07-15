@@ -110,7 +110,6 @@ function Kindle:intoScreenSaver()
         -- Let the native system handle screensavers on SO devices...
         if self.screen_saver_mode == false then
             if os.getenv("AWESOME_STOPPED") == "yes" then
-                os.execute("killall -cont Xorg")
                 os.execute("killall -cont awesome")
             end
         end
@@ -128,7 +127,6 @@ function Kindle:outofScreenSaver()
             -- Stop awesome again if need be...
             if os.getenv("AWESOME_STOPPED") == "yes" then
                 os.execute("killall -stop awesome")
-                os.execute("killall -stop Xorg")
             end
         end
         local UIManager = require("ui/uimanager")
@@ -629,7 +627,6 @@ function KindleTouch:exit()
     if self.isSpecialOffers then
         -- Wakey wakey...
         if os.getenv("AWESOME_STOPPED") == "yes" then
-            os.execute("killall -cont Xorg")
             os.execute("killall -cont awesome")
         end
         -- fake a touch event

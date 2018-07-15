@@ -205,10 +205,6 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
             if [ "$(printf "%.3s" $(grep '^Kindle 5' /etc/prettyversion.txt 2>&1 | sed -n -r 's/^(Kindle)([[:blank:]]*)([[:digit:].]*)(.*?)$/\3/p' | tr -d '.'))" -ge "572" ]; then
                 logmsg "Stopping awesome . . ."
                 killall -stop awesome
-                # NOTE: For some mysterious reason, the battery icon & clock are sometimes triggering updates despite awesome being stopped.
-                #       Putting Xorg to sleep, too, seems to help...
-                logmsg "Stopping Xorg . . ."
-                killall -stop Xorg
                 AWESOME_STOPPED="yes"
             fi
         else
@@ -301,8 +297,6 @@ fi
 if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
     # Depending on the FW version, we may have handled things in a few different manners...
     if [ "${AWESOME_STOPPED}" = "yes" ]; then
-        logmsg "Resuming Xorg . . ."
-        killall -cont Xorg
         logmsg "Resuming awesome . . ."
         killall -cont awesome
     fi
