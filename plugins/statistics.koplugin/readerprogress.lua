@@ -44,6 +44,13 @@ function ReaderProgress:init()
     self.large_font_face = Font:getFace("largeffont")
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()
+    if Screen:getWidth() < Screen:getHeight() then
+        self.header_span = 25
+        self.stats_span = 20
+    else
+        self.header_span = 0
+        self.stats_span = 10
+    end
     UIManager:setDirty(self, function()
         return "ui", self.dimen
     end)
@@ -114,7 +121,7 @@ function ReaderProgress:genSingleHeader(title)
     }
 
     return VerticalGroup:new{
-        VerticalSpan:new{ width = Screen:scaleBySize(25), height = self.screen_height / 25 },
+        VerticalSpan:new{ width = Screen:scaleBySize(self.header_span), height = self.screen_height / 25 },
         HorizontalGroup:new{
             align = "center",
             padding_span,
@@ -206,7 +213,7 @@ function ReaderProgress:genWeekStats(stats_day)
     local span_group = HorizontalGroup:new{
         align = "center",
         LeftContainer:new{
-            dimen = Geom:new{ h = Screen:scaleBySize(20) },
+            dimen = Geom:new{ h = Screen:scaleBySize(self.stats_span) },
             padding_span
         },
     }
