@@ -10,15 +10,57 @@ local Screen = require("device").screen
 local ReaderDogear = InputContainer:new{}
 
 function ReaderDogear:init()
-    local widget = ImageWidget:new{
-        file = "resources/icons/dogear.png",
-        alpha = true,
-    }
-    self[1] = RightContainer:new{
-        dimen = Geom:new{w = Screen:getWidth(), h = widget:getSize().h},
-        widget,
-    }
+    -- This image could be scaled for DPI (with scale_for_dpi=true, scale_factor=0.7),
+    -- but it's as good to scale it to a fraction (1/32) of the screen size.
+    -- For CreDocument, we should additionally take care of not exceeding margins
+    -- to not overwrite the book text.
+    -- For other documents, there is no easy way to know if valuable content
+    -- may be hidden by the icon (kopt's page_margin is quite obscure).
+    self.dogear_max_size = math.ceil( math.min(Screen:getWidth(), Screen:getHeight()) / 32)
+    self.dogear_size = nil
+    self:setupDogear()
     self:resetLayout()
+end
+
+function ReaderDogear:setupDogear(new_dogear_size)
+    if not new_dogear_size then
+        new_dogear_size = self.dogear_max_size
+    end
+    if new_dogear_size ~= self.dogear_size then
+        self.dogear_size = new_dogear_size
+        if self[1] then
+            self[1]:free()
+        end
+        self[1] = RightContainer:new{
+            dimen = Geom:new{w = Screen:getWidth(), h = self.dogear_size},
+            ImageWidget:new{
+                file = "resources/icons/dogear.png",
+                alpha = true,
+                width = self.dogear_size,
+                height = self.dogear_size,
+            }
+        }
+    end
+end
+
+function ReaderDogear:onReadSettings(config)
+    if not self.ui.document.info.has_pages then
+        -- Adjust to CreDocument margins (as done in ReaderTypeset)
+        self:onSetPageMargins(
+            config:readSetting("copt_page_margins") or
+            G_reader_settings:readSetting("copt_page_margins") or
+            DCREREADER_CONFIG_MARGIN_SIZES_MEDIUM)
+    end
+end
+
+function ReaderDogear:onSetPageMargins(margins)
+    local margin_top, margin_right = margins[2], margins[3]
+    -- As the icon is squared, we can take the max() instead of the min() of
+    -- top & right margins and be sure no text is hidden by the icon
+    -- (the provided margins are not scaled, so do as ReaderTypeset)
+    local margin = Screen:scaleBySize(math.max(margin_top, margin_right))
+    local new_dogear_size = math.min(self.dogear_max_size, margin)
+    self:setupDogear(new_dogear_size)
 end
 
 function ReaderDogear:resetLayout()

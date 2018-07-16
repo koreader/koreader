@@ -255,6 +255,26 @@ end
 -- Bookinfo management
 function BookInfoManager:getBookInfo(filepath, get_cover)
     local directory, filename = splitFilePathName(filepath)
+
+    -- CoverBrowser may be used by PathChooser, which will not filter out
+    -- files with unknown book extension. If not a supported extension,
+    -- returns a bookinfo like-object enough for a correct display and
+    -- to not trigger extraction, so we don't clutter DB with such files.
+    if not DocumentRegistry:hasProvider(filepath) then
+        return {
+            directory = directory,
+            filename = filename,
+            in_progress = 0,
+            cover_fetched = "Y",
+            has_meta = nil,
+            has_cover = nil,
+            ignore_meta = "Y",
+            ignore_cover = "Y",
+            -- for ListMenu to show the filename *with* suffix:
+            _no_provider = true
+        }
+    end
+
     self:openDbConnection()
     local row = self.get_stmt:bind(directory, filename):step()
     self.get_stmt:clearbind():reset() -- get ready for next query

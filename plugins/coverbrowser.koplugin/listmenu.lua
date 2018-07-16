@@ -37,10 +37,10 @@ local BookInfoManager = require("bookinfomanager")
 
 -- We will show a rotated dogear at bottom right corner of cover widget for
 -- opened files (the dogear will make it look like a "used book")
-local corner_mark = ImageWidget:new{
-    file = "resources/icons/dogear.png",
-    rotation_angle = 270
-}
+-- The ImageWidget Will be created when we know the available height (and
+-- recreated if height changes)
+local corner_mark_size = -1
+local corner_mark
 
 -- ItemShortCutIcon (for keyboard navigation) is private to menu.lua and can't be accessed,
 -- so we need to redefine it
@@ -314,6 +314,12 @@ function ListMenuItem:update()
             if self.mandatory then
                 fileinfo_str = self.mandatory .. "  " .. fileinfo_str
             end
+            if bookinfo._no_provider then
+                -- for unspported files: don't show extension on the right,
+                -- keep it in filename
+                filename_without_suffix = filename
+                fileinfo_str = self.mandatory
+            end
             -- Current page / pages are available or more accurate in .sdr/metadata.lua
             -- We use a cache (cleaned at end of this browsing session) to store
             -- page, percent read and book status from sidecar files, to avoid
@@ -400,6 +406,22 @@ function ListMenuItem:update()
                 }
             }
 
+            -- Create or replace corner_mark if needed
+            local wright_bottom_pad_available = math.ceil( (dimen.h - wright[1]:getSize().h) *2/3 )
+            -- We should normally use 1/2 because of CenterContainer, but there's
+            -- some space inside the text widget that we can use for a larger marker
+            if wright_bottom_pad_available ~= corner_mark_size then
+                corner_mark_size = wright_bottom_pad_available
+                if corner_mark then
+                    corner_mark:free()
+                end
+                corner_mark = ImageWidget:new{
+                    file = "resources/icons/dogear.png",
+                    rotation_angle = 270,
+                    width = corner_mark_size,
+                    height = corner_mark_size,
+                }
+            end
 
             -- Build the middle main widget, in the space available
             local wmain_left_padding = Screen:scaleBySize(10)
@@ -623,7 +645,7 @@ function ListMenuItem:paintTo(bb, x, y)
     end
 
     -- to which we paint over a dogear if needed
-    if self.do_hint_opened and self.been_opened then
+    if corner_mark and self.do_hint_opened and self.been_opened then
         -- align it on bottom right corner of widget
         local ix = self.width - corner_mark:getSize().w
         local iy = self.height - corner_mark:getSize().h
