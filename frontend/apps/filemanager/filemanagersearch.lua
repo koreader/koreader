@@ -83,7 +83,7 @@ function Search:getCalibre()
         end
     else
         if string.sub(SEARCH_LIBRARY_PATH, string.len(SEARCH_LIBRARY_PATH)) ~= "/" then
-            SEARCH_LIBRARY_PATH = SEARCH_LIBRARY_PATH .. "/"  -- luacheck: ignore
+            _G['SEARCH_LIBRARY_PATH'] = SEARCH_LIBRARY_PATH .. "/"
         end
         if io.open(SEARCH_LIBRARY_PATH .. calibre, "r") == nil then
             if io.open(SEARCH_LIBRARY_PATH .. "." .. calibre, "r") == nil then
@@ -107,7 +107,7 @@ function Search:getCalibre()
     local dummy
 
     if string.sub(SEARCH_LIBRARY_PATH2, string.len(SEARCH_LIBRARY_PATH2)) ~= "/" then
-        SEARCH_LIBRARY_PATH2 = SEARCH_LIBRARY_PATH2 .. "/"  -- luacheck: ignore
+        _G['SEARCH_LIBRARY_PATH2'] = SEARCH_LIBRARY_PATH2 .. "/"
     end
     if io.open(SEARCH_LIBRARY_PATH2 .. calibre, "r") == nil then
         if io.open(SEARCH_LIBRARY_PATH2 .. "." .. calibre, "r") ~= nil then
