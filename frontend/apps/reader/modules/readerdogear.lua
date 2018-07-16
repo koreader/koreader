@@ -54,6 +54,11 @@ function ReaderDogear:onReadSettings(config)
 end
 
 function ReaderDogear:onSetPageMargins(margins)
+    if self.ui.document.info.has_pages then
+        -- we may get called by readerfooter (when hiding the footer)
+        -- on pdf documents and get margins=nil
+        return
+    end
     local margin_top, margin_right = margins[2], margins[3]
     -- As the icon is squared, we can take the max() instead of the min() of
     -- top & right margins and be sure no text is hidden by the icon
