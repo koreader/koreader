@@ -243,7 +243,7 @@ function Search:find(option)
     local firstrun
 
     -- removes leading and closing characters and converts hex-unicodes
-    local ReplaceHexChars = function(s,n,j)
+    local ReplaceHexChars = function(s, n, j)
         local l=string.len(s)
 
         if string.sub(s, l, l) == "\"" then
@@ -252,7 +252,7 @@ function Search:find(option)
             s=string.sub(s, n, string.len(s)-j)
         end
 
-        s=string.gsub(s,"\\u([a-f0-9][a-f0-9][a-f0-9][a-f0-9])",function(w) return util.unichar(tonumber(w, 16)) end)
+        s=string.gsub(s, "\\u([a-f0-9][a-f0-9][a-f0-9][a-f0-9])", function(w) return util.unichar(tonumber(w, 16)) end)
 
         return s
     end
@@ -269,11 +269,11 @@ function Search:find(option)
         while line ~= "    ], " and line ~= "    ]" do
             line = f:read()
             if line ~= "    ], " and line ~= "    ]" then
-                self.data[i][s] = self.data[i][s] .. "," .. ReplaceHexChars(line,8,3)
+                self.data[i][s] = self.data[i][s] .. "," .. ReplaceHexChars(line, 8, 3)
                 if s == self.authors then
-                    self.data[i][self.authors2] = self.data[i][self.authors2] .. " & " .. ReplaceHexChars(line,8,3)
+                    self.data[i][self.authors2] = self.data[i][self.authors2] .. " & " .. ReplaceHexChars(line, 8, 3)
                 elseif s == self.tags then
-                    local tags_line = ReplaceHexChars(line,8,3)
+                    local tags_line = ReplaceHexChars(line, 8, 3)
                     self.data[i][self.tags2] = self.data[i][self.tags2] .. " & " .. tags_line
                     self.data[i][self.tags3] = self.data[i][self.tags3] .. "\t" .. tags_line
                     self.browse_tags[tags_line] = (self.browse_tags[tags_line] or 0) + 1
@@ -348,7 +348,7 @@ function Search:find(option)
                     end
                     if DocumentRegistry:hasProvider(self.data[i][self.path]) then
                         if upsearch ~= "" then
-                            if string.find(search_content,upsearch,nil,true) then
+                            if string.find(search_content, upsearch, nil, true) then
                                 i = i + 1
                             end
                         else
@@ -400,7 +400,7 @@ function Search:find(option)
                     end
 
                     if upsearch ~= "" then
-                        if string.find(search_content,upsearch,nil,true) then
+                        if string.find(search_content, upsearch, nil, true) then
                             i = i + 1
                         end
                     else
@@ -410,7 +410,7 @@ function Search:find(option)
                             end
                         elseif option == "tags" then
                             local found = false
-                            for j in string.gmatch(self.data[i][self.tags3],"\t[^\t]+") do
+                            for j in string.gmatch(self.data[i][self.tags3], "\t[^\t]+") do
                                 if j~="\t" and self.browse_tags[string.sub(j, 2)] then
                                     found = true
                                 end
@@ -428,18 +428,18 @@ function Search:find(option)
                 elseif line == "    \"tags\": [" then -- TAGS
                     ReadMultipleLines(self.tags)
                 elseif string.sub(line, 1, 11) == "    \"title\"" then -- TITLE
-                    self.data[i][self.title] = ReplaceHexChars(line,15,3)
+                    self.data[i][self.title] = ReplaceHexChars(line, 15, 3)
                 elseif string.sub(line, 1, 11) == "    \"lpath\"" then -- LPATH
-                    self.data[i][self.path] = ReplaceHexChars(line,15,3)
+                    self.data[i][self.path] = ReplaceHexChars(line, 15, 3)
                     if firstrun then
                         self.data[i][self.path] = SEARCH_LIBRARY_PATH .. self.data[i][self.path]
                     else
                         self.data[i][self.path] = SEARCH_LIBRARY_PATH2 .. self.data[i][self.path]
                     end
                 elseif string.sub(line, 1, 12) == "    \"series\"" and line ~= "    \"series\": null, " then -- SERIES
-                    self.data[i][self.series] = ReplaceHexChars(line,16,3)
+                    self.data[i][self.series] = ReplaceHexChars(line, 16, 3)
                 elseif string.sub(line, 1, 18) == "    \"series_index\"" and line ~= "    \"series_index\": null, " then -- SERIES_INDEX
-                    self.data[i][self.series_index] = ReplaceHexChars(line,21,2)
+                    self.data[i][self.series_index] = ReplaceHexChars(line, 21, 2)
                 end
                 line = f:read()
 
@@ -491,7 +491,7 @@ function Search:onMenuHold(item)
         if f == nil then
             item.info = item.info .. "\n" .. _("File not found!")
         else
-            item.info = item.info .. "\n" .. _("Size:") .. " " .. string.format("%4.1fM",lfs.attributes(item.path, "size")/1024/1024)
+            item.info = item.info .. "\n" .. _("Size:") .. " " .. string.format("%4.1fM", lfs.attributes(item.path, "size")/1024/1024)
             f:close()
         end
         item.notchecked = false
@@ -599,7 +599,7 @@ function Search:browse(option, run, chosen)
             for v,n in util.orderedPairs(self.browse_series) do
                 dummy = v
                 if not SEARCH_CASESENSITIVE then dummy = string.upper(dummy) end
-                if string.find(dummy,upsearch,nil,true) then
+                if string.find(dummy, upsearch, nil, true) then
                     table.insert(self.results, {
                         text = v .. " (" .. tostring(self.browse_series[v]) .. ")",
                         callback = function()
@@ -612,7 +612,7 @@ function Search:browse(option, run, chosen)
             for v,n in util.orderedPairs(self.browse_tags) do
                 dummy = v
                 if not SEARCH_CASESENSITIVE then dummy = string.upper(dummy) end
-                if string.find(dummy,upsearch,nil,true) then
+                if string.find(dummy, upsearch, nil, true) then
                     table.insert(self.results, {
                         text = v .. " (" .. tostring(self.browse_tags[v]) .. ")",
                         callback = function()
@@ -642,7 +642,7 @@ function Search:browse(option, run, chosen)
                     if self.data[i][self.series_index] == "0.0" then
                         text = self.data[i][self.title] .. " (" .. self.data[i][self.authors] .. ")"
                     else
-                        text = string.format("%6.1f",self.data[i][self.series_index]:gsub(".0$","")) .. ": " .. self.data[i][self.title] .. " (" .. self.data[i][self.authors] .. ")"
+                        text = string.format("%6.1f", self.data[i][self.series_index]:gsub(".0$","")) .. ": " .. self.data[i][self.title] .. " (" .. self.data[i][self.authors] .. ")"
                     end
                 else
                     text = self.data[i][self.authors] .. ": " .. self.data[i][self.title]
