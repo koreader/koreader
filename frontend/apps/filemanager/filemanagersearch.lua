@@ -59,8 +59,8 @@ local function findcalibre(root)
                             -- so that we actually can convert a book's relative path to its absolute path.
                             -- NOTE: No-one should actually rely on that, as the value is *NEVER* saved to the defaults.
                             --       (SetDefaults can only do that with values modified from within its own advanced menu).
-                            logger.info("Found a SEARCH_LIBRARY_PATH @", root .. "/")
-                            SEARCH_LIBRARY_PATH = root .. "/"
+                            _G['SEARCH_LIBRARY_PATH'] = root .. "/"
+                            logger.info("Found a SEARCH_LIBRARY_PATH @", SEARCH_LIBRARY_PATH)
                         end
                     elseif mode == "directory" then
                         t = findcalibre(fullPath)
