@@ -102,6 +102,7 @@ function LoginDialog:onSwitchFocus(inputbox)
     -- unfocus current inputbox
     self._input_widget:unfocus()
     self._input_widget:onCloseKeyboard()
+    UIManager:close(self)
 
     -- focus new inputbox
     self._input_widget = inputbox

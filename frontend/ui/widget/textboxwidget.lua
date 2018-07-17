@@ -33,23 +33,31 @@ local Screen = require("device").screen
 
 local TextBoxWidget = InputContainer:new{
     text = nil,
-    charpos = nil,
-    charlist = nil,   -- idx => char
-    char_width = nil, -- char => width
-    idx_pad = nil,     -- idx => pad for char at idx, if non zero
-    vertical_string_list = nil,
     editable = false, -- Editable flag for whether drawing the cursor or not.
     justified = false, -- Should text be justified (spaces widened to fill width)
     alignment = "left", -- or "center", "right"
-    cursor_line = nil, -- LineWidget to draw the vertical cursor.
+    dialog = nil, -- parent dialog that will be set dirty
     face = nil,
     bold = nil,
     line_height = 0.3, -- in em
     fgcolor = Blitbuffer.COLOR_BLACK,
     width = Screen:scaleBySize(400), -- in pixels
     height = nil, -- nil value indicates unscrollable text widget
-    virtual_line_num = 1, -- used by scroll bar
+    top_line_num = nil, -- original virtual_line_num to scroll to
+    charpos = nil, -- idx of char to draw the cursor on its left (can exceed #charlist by 1)
+
+    -- for internal use
+    charlist = nil,   -- idx => char
+    char_width = nil, -- char => width
+    idx_pad = nil,     -- idx => pad for char at idx, if non zero
+    vertical_string_list = nil,
+    virtual_line_num = 1, -- index of the top displayed line
+    line_height_px = nil, -- height of a line in px
+    lines_per_page = nil, -- number of visible lines
+    text_height = nil,    -- adjusted height to visible text (lines_per_page*line_height_px)
+    cursor_line = nil, -- LineWidget to draw the vertical cursor.
     _bb = nil,
+
     -- We can provide a list of images: each image will be displayed on each
     -- scrolled page, in its top right corner (if more images than pages, remaining
     -- images will not be displayed at all - if more pages than images, remaining
@@ -77,28 +85,46 @@ local TextBoxWidget = InputContainer:new{
 }
 
 function TextBoxWidget:init()
-    self.line_height_px = (1 + self.line_height) * self.face.size
+    self.line_height_px = Math.round( (1 + self.line_height) * self.face.size )
     self.cursor_line = LineWidget:new{
         dimen = Geom:new{
             w = Size.line.medium,
             h = self.line_height_px,
         }
     }
+    if self.height then
+        -- luajit may segfault if we were provided with a negative height
+        -- also ensure we display at least one line
+        if self.height < self.line_height_px then
+            self.height = self.line_height_px
+        end
+        -- if no self.height, these will be set just after self:_splitCharWidthList()
+        self.lines_per_page = math.floor(self.height / self.line_height_px)
+        self.text_height = self.lines_per_page * self.line_height_px
+    end
     self:_evalCharWidthList()
     self:_splitCharWidthList()
-    if self.height == nil then
-        self:_renderText(1, #self.vertical_string_list)
-    else
-        -- luajit may segfault if we were provided with a negative height
-        if self.height < 0 then
-            self.height = 0
-        end
-        self:_renderText(1, self:getVisLineCount())
+    if self.charpos and self.charpos > #self.charlist+1 then
+        self.charpos = #self.charlist+1
     end
+
+    if self.height == nil then
+        self.lines_per_page = #self.vertical_string_list
+        self.text_height = self.lines_per_page * self.line_height_px
+        self.virtual_line_num = 1
+    else
+        -- Show the previous displayed area in case of re-init (focus/unfocus)
+        -- InputText may have re-created us, while providing the previous charlist,
+        -- charpos and top_line_num.
+        -- We need to show the line containing charpos, while trying to
+        -- keep the previous top_line_num
+        if self.editable and self.charpos then
+            self:scrollViewToCharPos()
+        end
+    end
+    self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
     if self.editable then
-        local x, y
-        x, y = self:_findCharPos()
-        self.cursor_line:paintTo(self._bb, x, y)
+        self:moveCursorToCharPos(self.charpos or 1)
     end
     self.dimen = Geom:new(self:getSize())
     if Device:isTouchDevice() then
@@ -115,19 +141,21 @@ end
 
 function TextBoxWidget:unfocus()
     self.editable = false
+    self:free()
     self:init()
 end
 
 function TextBoxWidget:focus()
     self.editable = true
+    self:free()
     self:init()
 end
 
 -- Split `self.text` into `self.charlist` and evaluate the width of each char in it.
 function TextBoxWidget:_evalCharWidthList()
+    -- if self.charlist is provided, use it directly
     if self.charlist == nil then
         self.charlist = util.splitToChars(self.text)
-        self.charpos = #self.charlist + 1
     end
     -- get width of each distinct char
     local char_width = {}
@@ -149,10 +177,6 @@ function TextBoxWidget:_splitCharWidthList()
     local ln = 1
     local offset, end_offset, cur_line_width
 
-    local lines_per_page
-    if self.height then
-        lines_per_page = self:getVisLineCount()
-    end
     local image_num = 0
     local targeted_width = self.width
     local image_lines_remaining = 0
@@ -164,8 +188,8 @@ function TextBoxWidget:_splitCharWidthList()
             if self.line_num_to_image == nil then
                 self.line_num_to_image = {}
             end
-            if (lines_per_page and ln % lines_per_page == 1) -- first line of a scrolled page
-            or (lines_per_page == nil and ln == 1) then  -- first line if not scrollabled
+            if (self.lines_per_page and ln % self.lines_per_page == 1) -- first line of a scrolled page
+            or (self.lines_per_page == nil and ln == 1) then  -- first line if not scrollabled
                 image_num = image_num + 1
                 if image_num <= #self.images then
                     local image = self.images[image_num]
@@ -326,10 +350,6 @@ function TextBoxWidget:_getLinePads(vertical_string)
     return pads
 end
 
-function TextBoxWidget:geCharWidth(idx)
-    return self.char_width[self.charlist[idx]]
-end
-
 function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
     local font_height = self.face.size
     if start_row_idx < 1 then start_row_idx = 1 end
@@ -478,7 +498,7 @@ function TextBoxWidget:_renderImage(start_row_idx)
                     if scheduled_for_linenum == self.virtual_line_num then
                         -- we are still on the same page
                         self:update(true)
-                        UIManager:setDirty("all", function()
+                        UIManager:setDirty(self.dialog or "all", function()
                             -- return "ui", self.dimen
                             -- We can refresh only the image area, even if we have just
                             -- re-rendered the whole textbox as the text has been
@@ -496,7 +516,7 @@ function TextBoxWidget:_renderImage(start_row_idx)
                 -- Image loaded (or not if failure): call us again
                 -- with scheduled_update = true so we can draw what we got
                 self:update(true)
-                UIManager:setDirty("all", function()
+                UIManager:setDirty(self.dialog or "all", function()
                     -- return "ui", self.dimen
                     -- We can refresh only the image area, even if we have just
                     -- re-rendered the whole textbox as the text has been
@@ -517,162 +537,35 @@ function TextBoxWidget:_renderImage(start_row_idx)
     end
 end
 
--- Return the position of the cursor corresponding to `self.charpos`,
--- Be aware of virtual line number of the scorllTextWidget.
-function TextBoxWidget:_findCharPos()
-    if self.text == nil or string.len(self.text) == 0 then
-        return 0, 0
-    end
-    -- Find the line number.
-    local ln = self.height == nil and 1 or self.virtual_line_num
-    while ln + 1 <= #self.vertical_string_list do
-        if self.vertical_string_list[ln + 1].offset > self.charpos then
-            break
-        else
-            ln = ln + 1
-        end
-    end
-    -- Find the offset at the current line.
-    local x = 0
-    local offset = self.vertical_string_list[ln].offset
-    while offset < self.charpos do
-        x = x + self.char_width[self.charlist[offset]] + (self.idx_pad[offset] or 0)
-        offset = offset + 1
-    end
-    return x + 1, (ln - 1) * self.line_height_px -- offset `x` by 1 to avoid overlap
-end
-
-function TextBoxWidget:moveCursorToCharpos(charpos)
-    self.charpos = charpos
-    local x, y = self:_findCharPos()
-    self.cursor_line:paintTo(self._bb, x, y)
-end
-
--- Click event: Move the cursor to a new location with (x, y), in pixels.
--- Be aware of virtual line number of the scorllTextWidget.
-function TextBoxWidget:moveCursor(x, y)
-    if x < 0 or y < 0 then return end
-    if #self.vertical_string_list == 0 then
-        -- if there's no text at all, nothing to do
-        return 1
-    end
-    local w = 0
-    local ln = self.height == nil and 1 or self.virtual_line_num
-    ln = ln + math.ceil(y / self.line_height_px) - 1
-    if ln > #self.vertical_string_list then
-        ln = #self.vertical_string_list
-        x = self.width
-    end
-    local offset = self.vertical_string_list[ln].offset
-    local idx = ln == #self.vertical_string_list and #self.charlist or self.vertical_string_list[ln + 1].offset - 1
-    while offset <= idx do
-        w = w + self.char_width[self.charlist[offset]] + (self.idx_pad[offset] or 0)
-        if w > x then break else offset = offset + 1 end
-    end
-    if w > x then
-        local w_prev = w - self.char_width[self.charlist[offset]] - (self.idx_pad[offset] or 0)
-        if x - w_prev < w - x then -- the previous one is more closer
-            w = w_prev
-        else
-            offset = offset + 1
-        end
-    end
-    self:free()
-    self:_renderText(1, #self.vertical_string_list)
-    self.cursor_line:paintTo(self._bb, w + 1,
-                             (ln - self.virtual_line_num) * self.line_height_px)
-    return offset
+function TextBoxWidget:getCharWidth(idx)
+    return self.char_width[self.charlist[idx]]
 end
 
 function TextBoxWidget:getVisLineCount()
-    return math.floor(self.height / self.line_height_px)
+    return self.lines_per_page
 end
 
 function TextBoxWidget:getAllLineCount()
     return #self.vertical_string_list
 end
 
-function TextBoxWidget:update(scheduled_update)
-    self:free()
-    -- We set this flag so :_renderText() can know we were called from a
-    -- scheduled update and so not schedule another one
-    self.scheduled_update = scheduled_update
-    self:_renderText(self.virtual_line_num, self.virtual_line_num + self:getVisLineCount() - 1)
-    self.scheduled_update = nil
+function TextBoxWidget:getTextHeight()
+    return self.text_height
 end
 
-function TextBoxWidget:onTapImage(arg, ges)
-    if self.line_num_to_image and self.line_num_to_image[self.virtual_line_num] then
-        local image = self.line_num_to_image[self.virtual_line_num]
-        local tap_x = ges.pos.x - self.dimen.x
-        local tap_y = ges.pos.y - self.dimen.y
-        -- Check that this tap is on this image
-        if tap_x > self.width - image.width and tap_x < self.width and
-           tap_y > 0 and tap_y < image.height then
-            logger.dbg("tap on image")
-            if image.bb then
-                -- Toggle between image and alt_text
-                self.image_show_alt_text = not self.image_show_alt_text
-                self:update()
-                UIManager:setDirty("all", function()
-                    -- return "ui", self.dimen
-                    -- We can refresh only the image area, even if we have just
-                    -- re-rendered the whole textbox as the text has been
-                    -- rendered just the same as it was
-                    return "ui", Geom:new{
-                        x = self.dimen.x + self.width - image.width,
-                        y = self.dimen.y,
-                        w = image.width,
-                        h = image.height,
-                    }
-                end)
-                return true
-            end
-        end
-    end
+function TextBoxWidget:getLineHeight()
+    return self.line_height_px
 end
 
--- TODO: modify `charpos` so that it can render the cursor
-function TextBoxWidget:scrollDown()
-    self.image_show_alt_text = nil -- reset image bb/alt state
-    local visible_line_count = self:getVisLineCount()
-    if self.virtual_line_num + visible_line_count <= #self.vertical_string_list then
-        self:free()
-        self.virtual_line_num = self.virtual_line_num + visible_line_count
-        self:_renderText(self.virtual_line_num, self.virtual_line_num + visible_line_count - 1)
-    end
-    return (self.virtual_line_num - 1) / #self.vertical_string_list, (self.virtual_line_num - 1 + visible_line_count) / #self.vertical_string_list
+function TextBoxWidget:getVisibleHeightRatios()
+    local low = (self.virtual_line_num - 1) / #self.vertical_string_list
+    local high = (self.virtual_line_num - 1 + self.lines_per_page) / #self.vertical_string_list
+    return low, high
 end
 
--- TODO: modify `charpos` so that it can render the cursor
-function TextBoxWidget:scrollUp()
-    self.image_show_alt_text = nil
-    local visible_line_count = self:getVisLineCount()
-    if self.virtual_line_num > 1 then
-        self:free()
-        if self.virtual_line_num <= visible_line_count then
-            self.virtual_line_num = 1
-        else
-            self.virtual_line_num = self.virtual_line_num - visible_line_count
-        end
-        self:_renderText(self.virtual_line_num, self.virtual_line_num + visible_line_count - 1)
-    end
-    return (self.virtual_line_num - 1) / #self.vertical_string_list, (self.virtual_line_num - 1 + visible_line_count) / #self.vertical_string_list
-end
-
-function TextBoxWidget:scrollToRatio(ratio)
-    self.image_show_alt_text = nil
-    ratio = math.max(0, math.min(1, ratio)) -- ensure ratio is between 0 and 1 (100%)
-    local visible_line_count = self:getVisLineCount()
-    local page_count = 1 + math.floor((#self.vertical_string_list - 1) / visible_line_count)
-    local page_num = 1 + Math.round((page_count - 1) * ratio)
-    local line_num = 1 + (page_num - 1) * visible_line_count
-    if line_num ~= self.virtual_line_num then
-        self:free()
-        self.virtual_line_num = line_num
-        self:_renderText(self.virtual_line_num, self.virtual_line_num + visible_line_count - 1)
-    end
-    return (self.virtual_line_num - 1) / #self.vertical_string_list, (self.virtual_line_num - 1 + visible_line_count) / #self.vertical_string_list
+function TextBoxWidget:getCharPos()
+    -- returns virtual_line_num too
+    return self.charpos, self.virtual_line_num
 end
 
 function TextBoxWidget:getSize()
@@ -681,28 +574,6 @@ function TextBoxWidget:getSize()
     else
         return Geom:new{ w = self.width, h = self._bb:getHeight()}
     end
-end
-
-function TextBoxWidget:moveCursorUp()
-    if self.vertical_string_list and #self.vertical_string_list < 2 then return end
-    local x, y
-    x, y = self:_findCharPos()
-    local charpos = self:moveCursor(x, y - self.line_height_px +1)
-    if charpos then
-        self:moveCursorToCharpos(charpos)
-    end
-    return charpos
-end
-
-function TextBoxWidget:moveCursorDown()
-    if self.vertical_string_list and #self.vertical_string_list < 2 then return end
-    local x, y
-    x, y = self:_findCharPos()
-    local charpos = self:moveCursor(x, y + self.line_height_px +1)
-    if charpos then
-        self:moveCursorToCharpos(charpos)
-    end
-    return charpos
 end
 
 function TextBoxWidget:paintTo(bb, x, y)
@@ -724,7 +595,467 @@ function TextBoxWidget:free()
         self._bb:free()
         self._bb = nil
     end
+    if self.cursor_restore_bb then
+        self.cursor_restore_bb:free()
+        self.cursor_restore_bb = nil
+    end
 end
+
+function TextBoxWidget:update(scheduled_update)
+    self:free()
+    -- We set this flag so :_renderText() can know we were called from a
+    -- scheduled update and so not schedule another one
+    self.scheduled_update = scheduled_update
+    self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
+    self.scheduled_update = nil
+end
+
+function TextBoxWidget:onTapImage(arg, ges)
+    if self.line_num_to_image and self.line_num_to_image[self.virtual_line_num] then
+        local image = self.line_num_to_image[self.virtual_line_num]
+        local tap_x = ges.pos.x - self.dimen.x
+        local tap_y = ges.pos.y - self.dimen.y
+        -- Check that this tap is on this image
+        if tap_x > self.width - image.width and tap_x < self.width and
+           tap_y > 0 and tap_y < image.height then
+            logger.dbg("tap on image")
+            if image.bb then
+                -- Toggle between image and alt_text
+                self.image_show_alt_text = not self.image_show_alt_text
+                self:update()
+                UIManager:setDirty(self.dialog or "all", function()
+                    -- return "ui", self.dimen
+                    -- We can refresh only the image area, even if we have just
+                    -- re-rendered the whole textbox as the text has been
+                    -- rendered just the same as it was
+                    return "ui", Geom:new{
+                        x = self.dimen.x + self.width - image.width,
+                        y = self.dimen.y,
+                        w = image.width,
+                        h = image.height,
+                    }
+                end)
+                return true
+            end
+        end
+    end
+end
+
+function TextBoxWidget:scrollDown()
+    self.image_show_alt_text = nil -- reset image bb/alt state
+    if self.virtual_line_num + self.lines_per_page <= #self.vertical_string_list then
+        self:free()
+        self.virtual_line_num = self.virtual_line_num + self.lines_per_page
+        -- If last line shown, set it to be the last line of view
+        -- (only if editable, as this would be confusing when reading
+        -- a dictionary result or a wikipedia page)
+        if self.editable then
+            if self.virtual_line_num > #self.vertical_string_list - self.lines_per_page + 1 then
+                self.virtual_line_num = #self.vertical_string_list - self.lines_per_page + 1
+                if self.virtual_line_num < 1 then
+                    self.virtual_line_num = 1
+                end
+            end
+        end
+        self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
+    end
+    if self.editable then
+        -- move cursor to first line of visible area
+        local ln = self.height == nil and 1 or self.virtual_line_num
+        self:moveCursorToCharPos(self.vertical_string_list[ln] and self.vertical_string_list[ln].offset or 1)
+    end
+end
+
+function TextBoxWidget:scrollUp()
+    self.image_show_alt_text = nil
+    if self.virtual_line_num > 1 then
+        self:free()
+        if self.virtual_line_num <= self.lines_per_page then
+            self.virtual_line_num = 1
+        else
+            self.virtual_line_num = self.virtual_line_num - self.lines_per_page
+        end
+        self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
+    end
+    if self.editable then
+        -- move cursor to first line of visible area
+        local ln = self.height == nil and 1 or self.virtual_line_num
+        self:moveCursorToCharPos(self.vertical_string_list[ln] and self.vertical_string_list[ln].offset or 1)
+    end
+end
+
+function TextBoxWidget:scrollToTop()
+    self.image_show_alt_text = nil
+    if self.virtual_line_num > 1 then
+        self:free()
+        self.virtual_line_num = 1
+        self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
+    end
+    if self.editable then
+        -- move cursor to first char
+        self:moveCursorToCharPos(1)
+    end
+end
+
+function TextBoxWidget:scrollToBottom()
+    self.image_show_alt_text = nil
+    -- Show last line of text on last line of view
+    local ln = #self.vertical_string_list - self.lines_per_page + 1
+    if ln < 1 then
+        ln = 1
+    end
+    if self.virtual_line_num ~= ln then
+        self:free()
+        self.virtual_line_num = ln
+        self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
+    end
+    if self.editable then
+        -- move cursor to last char
+        self:moveCursorToCharPos(#self.charlist + 1)
+    end
+end
+
+
+function TextBoxWidget:scrollToRatio(ratio)
+    self.image_show_alt_text = nil
+    ratio = math.max(0, math.min(1, ratio)) -- ensure ratio is between 0 and 1 (100%)
+    local page_count = 1 + math.floor((#self.vertical_string_list - 1) / self.lines_per_page)
+    local page_num = 1 + Math.round((page_count - 1) * ratio)
+    local line_num = 1 + (page_num - 1) * self.lines_per_page
+    if line_num ~= self.virtual_line_num then
+        self:free()
+        self.virtual_line_num = line_num
+        self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
+    end
+    if self.editable then
+        -- move cursor to first line of visible area
+        local ln = self.height == nil and 1 or self.virtual_line_num
+        self:moveCursorToCharPos(self.vertical_string_list[ln].offset)
+    end
+end
+
+
+--- Cursor management
+
+-- Return the coordinates (relative to current view, so negative y is possible)
+-- of the left of char at charpos (use self.charpos if none provided)
+function TextBoxWidget:_getXYForCharPos(charpos)
+    if not charpos then
+        charpos = self.charpos
+    end
+    if self.text == nil or string.len(self.text) == 0 then
+        return 0, 0
+    end
+    -- Find the line number: scan up/down from current virtual_line_num
+    local ln = self.height == nil and 1 or self.virtual_line_num
+    if charpos > self.vertical_string_list[ln].offset then -- after first line
+        while ln < #self.vertical_string_list do
+            if self.vertical_string_list[ln + 1].offset > charpos then
+                break
+            else
+                ln = ln + 1
+            end
+        end
+    elseif charpos < self.vertical_string_list[ln].offset then -- before first line
+        while ln > 1 do
+            ln = ln - 1
+            if self.vertical_string_list[ln].offset <= charpos then
+                break
+            end
+        end
+    end
+    local y = (ln - self.virtual_line_num) * self.line_height_px
+    -- Find the x offset in the current line.
+    local x = 0
+    local offset = self.vertical_string_list[ln].offset
+    local nbchars = #self.charlist
+    while offset < charpos do
+        if offset <= nbchars then -- charpos may exceed #self.charlist
+            x = x + self.char_width[self.charlist[offset]] + (self.idx_pad[offset] or 0)
+        end
+        offset = offset + 1
+    end
+    -- Cursor can be drawn at x, it will be on the left of the char pointed by charpos
+    -- (x=0 for first char of line - for end of line, it will be before the \n, the \n
+    -- itself being not displayed)
+    return x, y
+end
+
+-- Return the charpos at provided coordinates (relative to current view,
+-- so negative y is allowed)
+function TextBoxWidget:getCharPosAtXY(x, y)
+    if #self.vertical_string_list == 0 then
+        -- if there's no text at all, nothing to do
+        return 1
+    end
+    local ln = self.height == nil and 1 or self.virtual_line_num
+    ln = ln + math.floor(y / self.line_height_px)
+    if ln < 1 then
+        return 1 -- return start of first line
+    elseif ln > #self.vertical_string_list then
+        return #self.charlist + 1 -- return end of last line
+    end
+    if x > self.vertical_string_list[ln].width then -- no need to loop thru chars
+        local pos = self.vertical_string_list[ln].end_offset
+        if not pos then -- empty line
+            pos = self.vertical_string_list[ln].offset
+        end
+        return pos + 1 -- after last char
+    end
+    local idx = self.vertical_string_list[ln].offset
+    local end_offset = self.vertical_string_list[ln].end_offset
+    if not end_offset then -- empty line
+        return idx
+    end
+    local w = 0
+    local w_prev = 0
+    while idx <= end_offset do
+        w_prev = w
+        w = w + self.char_width[self.charlist[idx]] + (self.idx_pad[idx] or 0)
+        if w > x then -- we're on this char at idx
+            if x - w_prev < w - x then -- nearest to char start
+                return idx
+            else -- nearest to char end: draw cursor before next char
+                return idx + 1
+            end
+            break
+        end
+        idx = idx + 1
+    end
+    return end_offset + 1 -- should not happen
+end
+
+-- Update charpos to the one provided; if out of current view, update
+-- virtual_line_num to move it to view, and draw the cursor
+function TextBoxWidget:moveCursorToCharPos(charpos)
+    if not self.editable then
+        -- we shouldn't have been called if not editable
+        logger.warn("TextBoxWidget:moveCursorToCharPos called, but not editable")
+        return
+    end
+    self.charpos = charpos
+    self.prev_virtual_line_num = self.virtual_line_num
+    local x, y = self:_getXYForCharPos() -- we can get y outside current view
+    -- adjust self.virtual_line_num for overflowed y to have y in current view
+    if y < 0 then
+        local scroll_lines = math.ceil( -y / self.line_height_px )
+        self.virtual_line_num = self.virtual_line_num - scroll_lines
+        if self.virtual_line_num < 1 then
+            self.virtual_line_num = 1
+        end
+        y = y + scroll_lines * self.line_height_px
+    end
+    if y >= self.text_height then
+        local scroll_lines = math.floor( (y-self.text_height) / self.line_height_px ) + 1
+        self.virtual_line_num = self.virtual_line_num + scroll_lines
+        -- needs to deal with possible overflow ?
+        y = y - scroll_lines * self.line_height_px
+    end
+    if not self._bb then
+        return -- no bb yet to render the cursor too
+    end
+    if self.virtual_line_num ~= self.prev_virtual_line_num then
+        -- We scrolled the view: full render and refresh needed
+        self:free()
+        self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
+        -- Store the original image of where we will draw the cursor, for a
+        -- quick restore and two small refreshes when moving only the cursor
+        self.cursor_restore_x = x
+        self.cursor_restore_y = y
+        self.cursor_restore_bb = Blitbuffer.new(self.cursor_line.dimen.w, self.cursor_line.dimen.h, self._bb:getType())
+        self.cursor_restore_bb:blitFrom(self._bb, 0, 0, x, y, self.cursor_line.dimen.w, self.cursor_line.dimen.h)
+        -- Paint the cursor, and refresh the whole widget
+        self.cursor_line:paintTo(self._bb, x, y)
+        UIManager:setDirty(self.dialog or "all", function()
+            return "ui", self.dimen
+        end)
+    elseif self._bb then
+
+        -- XXX For testing and deciding what's best:
+        local COMBINE_CURSOR_REGIONS = true
+        local USE_REFRESH_FUNCS = true
+        -- (got occasional crash with USE_REFRESH_FUNCS = true, possibly
+        -- fixed by GestureRange additional test for range==nil)
+
+        if USE_REFRESH_FUNCS then
+            -- We didn't scroll the view, only the cursor was moved
+            local restore_x, restore_y
+            if self.cursor_restore_bb then
+                -- Restore the previous cursor position content, and do
+                -- a small ui refresh of the old cursor area
+                self._bb:blitFrom(self.cursor_restore_bb, self.cursor_restore_x, self.cursor_restore_y,
+                    0, 0, self.cursor_line.dimen.w, self.cursor_line.dimen.h)
+                -- remember current values for use in the setDirty funcs, as
+                -- we will have overriden them when these are called
+                restore_x = self.cursor_restore_x
+                restore_y = self.cursor_restore_y
+                if not COMBINE_CURSOR_REGIONS then
+                    UIManager:setDirty(self.dialog or "all", function()
+                        return "ui", Geom:new{
+                            x = self.dimen.x + restore_x,
+                            y = self.dimen.y + restore_y,
+                            w = self.cursor_line.dimen.w,
+                            h = self.cursor_line.dimen.h,
+                        }
+                    end)
+                end
+                self.cursor_restore_bb:free()
+                self.cursor_restore_bb = nil
+            end
+            -- Store the original image of where we will draw the new cursor
+            self.cursor_restore_x = x
+            self.cursor_restore_y = y
+            self.cursor_restore_bb = Blitbuffer.new(self.cursor_line.dimen.w, self.cursor_line.dimen.h, self._bb:getType())
+            self.cursor_restore_bb:blitFrom(self._bb, 0, 0, x, y, self.cursor_line.dimen.w, self.cursor_line.dimen.h)
+            -- Paint the cursor, and do a small ui refresh of the new cursor area
+            self.cursor_line:paintTo(self._bb, x, y)
+            UIManager:setDirty(self.dialog or "all", function()
+                local cursor_region = Geom:new{
+                    x = self.dimen.x + x,
+                    y = self.dimen.y + y,
+                    w = self.cursor_line.dimen.w,
+                    h = self.cursor_line.dimen.h,
+                }
+                if COMBINE_CURSOR_REGIONS and restore_x and restore_y then
+                    local restore_region = Geom:new{
+                        x = self.dimen.x + restore_x,
+                        y = self.dimen.y + restore_y,
+                        w = self.cursor_line.dimen.w,
+                        h = self.cursor_line.dimen.h,
+                    }
+                    cursor_region = cursor_region:combine(restore_region)
+                end
+                return "ui", cursor_region
+            end)
+
+        else -- USE_REFRESH_FUNCS = false
+            -- We didn't scroll the view, only the cursor was moved
+            local restore_region
+            if self.cursor_restore_bb then
+                -- Restore the previous cursor position content, and do
+                -- a small ui refresh of the old cursor area
+                self._bb:blitFrom(self.cursor_restore_bb, self.cursor_restore_x, self.cursor_restore_y,
+                    0, 0, self.cursor_line.dimen.w, self.cursor_line.dimen.h)
+                if self.dimen then
+                    restore_region = Geom:new{
+                        x = self.dimen.x + self.cursor_restore_x,
+                        y = self.dimen.y + self.cursor_restore_y,
+                        w = self.cursor_line.dimen.w,
+                        h = self.cursor_line.dimen.h,
+                    }
+                    if not COMBINE_CURSOR_REGIONS then
+                        UIManager:setDirty(self.dialog or "all", "ui", restore_region)
+                    end
+                end
+                self.cursor_restore_bb:free()
+                self.cursor_restore_bb = nil
+            end
+            -- Store the original image of where we will draw the new cursor
+            self.cursor_restore_x = x
+            self.cursor_restore_y = y
+            self.cursor_restore_bb = Blitbuffer.new(self.cursor_line.dimen.w, self.cursor_line.dimen.h, self._bb:getType())
+            self.cursor_restore_bb:blitFrom(self._bb, 0, 0, x, y, self.cursor_line.dimen.w, self.cursor_line.dimen.h)
+            -- Paint the cursor, and do a small ui refresh of the new cursor area
+            self.cursor_line:paintTo(self._bb, x, y)
+            if self.dimen then
+                local cursor_region = Geom:new{
+                    x = self.dimen.x + x,
+                    y = self.dimen.y + y,
+                    w = self.cursor_line.dimen.w,
+                    h = self.cursor_line.dimen.h,
+                }
+                if COMBINE_CURSOR_REGIONS and restore_region then
+                    cursor_region = cursor_region:combine(restore_region)
+                end
+                UIManager:setDirty(self.dialog or "all", "ui", cursor_region)
+            end
+        end
+    end
+end
+
+function TextBoxWidget:moveCursorToXY(x, y, restrict_to_view)
+    if restrict_to_view then
+        -- Wrap y to current view (when getting coordinates from gesture)
+        -- (no real need to check for x, getCharPosAtXY() is ok with any x)
+        if y < 0 then
+            y = 0
+        end
+        if y >= self.text_height then
+            y = self.text_height - 1
+        end
+    end
+    local charpos = self:getCharPosAtXY(x, y)
+    self:moveCursorToCharPos(charpos)
+end
+
+-- Update self.virtual_line_num to the page containing charpos
+function TextBoxWidget:scrollViewToCharPos()
+    if self.top_line_num then
+        -- if previous top_line_num provided, go to that line
+        self.virtual_line_num = self.top_line_num
+        if self.virtual_line_num < 1 then
+            self.virtual_line_num = 1
+        end
+        if self.virtual_line_num > #self.vertical_string_list then
+            self.virtual_line_num = #self.vertical_string_list
+        end
+        -- Ensure we don't show too much blank at end (when deleting last lines)
+        -- local max_empty_lines =  math.floor(self.lines_per_page / 2)
+        -- Best to not allow any, for initially non-scrolled widgets
+        local max_empty_lines =  0
+        local max_virtual_line_num = #self.vertical_string_list - self.lines_per_page + 1 + max_empty_lines
+        if self.virtual_line_num > max_virtual_line_num then
+            self.virtual_line_num = max_virtual_line_num
+            if self.virtual_line_num < 1 then
+                self.virtual_line_num = 1
+            end
+        end
+        -- and adjust if cursor is out of view
+        self:moveCursorToCharPos(self.charpos)
+        return
+    end
+    -- Otherwise, find the "hard" page containing charpos
+    local ln = 1
+    while true do
+        lend = ln + self.lines_per_page - 1
+        if lend >= #self.vertical_string_list then
+            lend = #self.vertical_string_list
+            break -- last page
+        end
+        if self.vertical_string_list[lend+1].offset >= self.charpos then
+            break
+        end
+        ln = ln + self.lines_per_page
+    end
+    self.virtual_line_num = ln
+end
+
+function TextBoxWidget:moveCursorLeft()
+    if self.charpos > 1 then
+        self:moveCursorToCharPos(self.charpos-1)
+    end
+end
+
+function TextBoxWidget:moveCursorRight()
+    if self.charpos < #self.charlist + 1 then -- we can move after last char
+        self:moveCursorToCharPos(self.charpos+1)
+    end
+end
+
+function TextBoxWidget:moveCursorUp()
+    if self.vertical_string_list and #self.vertical_string_list < 2 then return end
+    local x, y = self:_getXYForCharPos()
+    self:moveCursorToXY(x, y - self.line_height_px)
+end
+
+function TextBoxWidget:moveCursorDown()
+    if self.vertical_string_list and #self.vertical_string_list < 2 then return end
+    local x, y = self:_getXYForCharPos()
+    self:moveCursorToXY(x, y + self.line_height_px)
+end
+
+
+--- Text selection with Hold
 
 -- Allow selection of a single word at hold position
 function TextBoxWidget:onHoldWord(callback, ges)
@@ -770,7 +1101,6 @@ function TextBoxWidget:onHoldWord(callback, ges)
 
     return
 end
-
 
 -- Allow selection of one or more words (with no visual feedback)
 -- Gestures should be declared in widget using us (e.g dictquicklookup.lua)

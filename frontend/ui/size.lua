@@ -34,6 +34,7 @@ local Size = {
         thin = Screen:scaleBySize(0.5),
         button = Screen:scaleBySize(1.5),
         window = Screen:scaleBySize(1.5),
+        inputtext = Screen:scaleBySize(2),
     },
     margin = {
         default = Screen:scaleBySize(5),
