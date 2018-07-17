@@ -69,7 +69,7 @@ local TextBoxWidget = InputContainer:new{
     -- optional:
     --    hi_width  same as previous for a high-resolution version of the
     --    hi_height image, to be displayed by ImageViewer when Hold on
-    --    hi_bb     the low-resolution image
+    --    hi_bb     blitbuffer of high-resolution image
     --    title     ImageViewer title
     --    caption   ImageViewer caption
     --
@@ -586,7 +586,7 @@ function TextBoxWidget:free()
     -- :free() is called when our parent widget is closing, and
     -- here whenever :_renderText() is being called, to display
     -- a new page: cancel any scheduled image update, as it
-    -- is no more related to current page
+    -- is no longer related to current page
     if self.image_update_action then
         logger.dbg("TextBoxWidget:free: cancelling self.image_update_action")
         UIManager:unschedule(self.image_update_action)

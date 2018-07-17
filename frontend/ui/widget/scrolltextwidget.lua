@@ -115,7 +115,7 @@ function ScrollTextWidget:updateScrollBar()
         self.prev_high = high
         self.v_scroll_bar:set(low, high)
         UIManager:setDirty(self.dialog, function()
-            return "ui", self.dimen
+            return "partial", self.dimen
         end)
     end
 end
