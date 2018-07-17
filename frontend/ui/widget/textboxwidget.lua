@@ -808,7 +808,7 @@ function TextBoxWidget:getCharPosAtXY(x, y)
         return idx
     end
     local w = 0
-    local w_prev = 0
+    local w_prev
     while idx <= end_offset do
         w_prev = w
         w = w + self.char_width[self.charlist[idx]] + (self.idx_pad[idx] or 0)
@@ -1017,9 +1017,8 @@ function TextBoxWidget:scrollViewToCharPos()
     -- Otherwise, find the "hard" page containing charpos
     local ln = 1
     while true do
-        lend = ln + self.lines_per_page - 1
+        local lend = ln + self.lines_per_page - 1
         if lend >= #self.vertical_string_list then
-            lend = #self.vertical_string_list
             break -- last page
         end
         if self.vertical_string_list[lend+1].offset >= self.charpos then
