@@ -825,6 +825,14 @@ function TextBoxWidget:getCharPosAtXY(x, y)
     return end_offset + 1 -- should not happen
 end
 
+-- Tunables for the next function: not sure yet which combination is
+-- best to get the less cursor trail - and initially got some crashes
+-- when using refresh funcs. It finally feels fine with both set to true,
+-- but one can turn them to false with a setting to check how some other
+-- combinations do.
+local CURSOR_COMBINE_REGIONS = G_reader_settings:nilOrTrue("ui_cursor_combine_regions")
+local CURSOR_USE_REFRESH_FUNCS = G_reader_settings:nilOrTrue("ui_cursor_use_refresh_funcs")
+
 -- Update charpos to the one provided; if out of current view, update
 -- virtual_line_num to move it to view, and draw the cursor
 function TextBoxWidget:moveCursorToCharPos(charpos)
@@ -870,14 +878,7 @@ function TextBoxWidget:moveCursorToCharPos(charpos)
             return "ui", self.dimen
         end)
     elseif self._bb then
-
-        -- XXX For testing and deciding what's best:
-        local COMBINE_CURSOR_REGIONS = true
-        local USE_REFRESH_FUNCS = true
-        -- (got occasional crash with USE_REFRESH_FUNCS = true, possibly
-        -- fixed by GestureRange additional test for range==nil)
-
-        if USE_REFRESH_FUNCS then
+        if CURSOR_USE_REFRESH_FUNCS then
             -- We didn't scroll the view, only the cursor was moved
             local restore_x, restore_y
             if self.cursor_restore_bb then
@@ -889,7 +890,7 @@ function TextBoxWidget:moveCursorToCharPos(charpos)
                 -- we will have overriden them when these are called
                 restore_x = self.cursor_restore_x
                 restore_y = self.cursor_restore_y
-                if not COMBINE_CURSOR_REGIONS then
+                if not CURSOR_COMBINE_REGIONS then
                     UIManager:setDirty(self.dialog or "all", function()
                         return "ui", Geom:new{
                             x = self.dimen.x + restore_x,
@@ -916,7 +917,7 @@ function TextBoxWidget:moveCursorToCharPos(charpos)
                     w = self.cursor_line.dimen.w,
                     h = self.cursor_line.dimen.h,
                 }
-                if COMBINE_CURSOR_REGIONS and restore_x and restore_y then
+                if CURSOR_COMBINE_REGIONS and restore_x and restore_y then
                     local restore_region = Geom:new{
                         x = self.dimen.x + restore_x,
                         y = self.dimen.y + restore_y,
@@ -927,8 +928,7 @@ function TextBoxWidget:moveCursorToCharPos(charpos)
                 end
                 return "ui", cursor_region
             end)
-
-        else -- USE_REFRESH_FUNCS = false
+        else -- CURSOR_USE_REFRESH_FUNCS = false
             -- We didn't scroll the view, only the cursor was moved
             local restore_region
             if self.cursor_restore_bb then
@@ -943,7 +943,7 @@ function TextBoxWidget:moveCursorToCharPos(charpos)
                         w = self.cursor_line.dimen.w,
                         h = self.cursor_line.dimen.h,
                     }
-                    if not COMBINE_CURSOR_REGIONS then
+                    if not CURSOR_COMBINE_REGIONS then
                         UIManager:setDirty(self.dialog or "all", "ui", restore_region)
                     end
                 end
@@ -964,7 +964,7 @@ function TextBoxWidget:moveCursorToCharPos(charpos)
                     w = self.cursor_line.dimen.w,
                     h = self.cursor_line.dimen.h,
                 }
-                if COMBINE_CURSOR_REGIONS and restore_region then
+                if CURSOR_COMBINE_REGIONS and restore_region then
                     cursor_region = cursor_region:combine(restore_region)
                 end
                 UIManager:setDirty(self.dialog or "all", "ui", cursor_region)
