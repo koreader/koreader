@@ -189,7 +189,11 @@ local KoboNova = Kobo:new{
     frontlight_settings = {
         frontlight_white = "/sys/class/backlight/lm3630a_ledb",
         frontlight_red = "/sys/class/backlight/lm3630a_leda",
-        frontlight_green = "/sys/class/backlight/lm3630a_led1b",
+        -- NOTE: There doesn't appear to be a dedicated "green" LED, instead,
+        --       there's a knob that mixes the white & red ones together (/sys/class/backlight/lm3630a_led).
+        --       c.f., https://www.mobileread.com/forums/showpost.php?p=3728236&postcount=2947
+        --       Because I'm not familiar with sysfs_light.lua, just throw green into the void, and hope for the best...
+        frontlight_green = "/dev/null",
     },
 }
 
