@@ -35,7 +35,7 @@ function GestureRange:match(gs)
         else
             range = self.range
         end
-        if not range:contains(gs.pos) then
+        if not range or not range:contains(gs.pos) then
             return false
         end
     end

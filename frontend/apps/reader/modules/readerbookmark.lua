@@ -450,6 +450,9 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
         title = _("Rename bookmark"),
         input = item.text,
         input_type = "text",
+        allow_newline = true,
+        cursor_at_end = false,
+        add_scroll_buttons = true,
         buttons = {
             {
                 {

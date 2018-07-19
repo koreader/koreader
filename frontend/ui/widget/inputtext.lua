@@ -6,6 +6,7 @@ local Font = require("ui/font")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local ScrollTextWidget = require("ui/widget/scrolltextwidget")
+local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -18,24 +19,30 @@ local Keyboard
 local InputText = InputContainer:new{
     text = "",
     hint = "demo hint",
-    charlist = nil, -- table to store input string
-    charpos = nil, -- position to insert a new char, or the position of the cursor
-    input_type = nil,
-    text_type = nil,
-    text_widget = nil, -- Text Widget for cursor movement
+    input_type = nil, -- "number" or anything else
+    text_type = nil, -- "password" or anything else
     show_password_toggle = true,
+    cursor_at_end = true, -- starts with cursor at end of text, ready for appending
+    scroll = false, -- whether to allow scrolling (will be set to true if no height provided)
+    focused = true,
+    parent = nil, -- parent dialog that will be set dirty
 
     width = nil,
-    height = nil,
+    height = nil, -- when nil, will be set to original text height (possibly
+                  -- less if screen would be overflowed) and made scrollable to
+                  -- not overflow if some text is appended and add new lines
+
     face = Font:getFace("smallinfofont"),
+    padding = Size.padding.default,
+    margin = Size.margin.default,
+    bordersize = Size.border.inputtext,
 
-    padding = Screen:scaleBySize(5),
-    margin = Screen:scaleBySize(5),
-    bordersize = Screen:scaleBySize(2),
-
-    parent = nil, -- parent dialog that will be set dirty
-    scroll = false,
-    focused = true,
+    -- for internal use
+    text_widget = nil, -- Text Widget for cursor movement, possibly a ScrollTextWidget
+    charlist = nil, -- table of individual chars from input string
+    charpos = nil, -- position of the cursor, where a new char would be inserted
+    top_line_num = nil, -- virtual_line_num of the text_widget (index of the displayed top line)
+    is_password_type = false, -- set to true if original text_type == "password"
 }
 
 -- only use PhysicalKeyboard if the device does not have touch screen
@@ -56,39 +63,85 @@ if Device.isTouchDevice() or Device.hasDPad() then
                         range = self.dimen
                     }
                 },
+                SwipeTextBox = {
+                    GestureRange:new{
+                        ges = "swipe",
+                        range = self.dimen
+                    }
+                },
+                -- These are just to stop propagation of the event to
+                -- parents in case there's a MovableContainer among them
+                -- Commented for now, as this needs work
+                -- HoldPanTextBox = {
+                --     GestureRange:new{ ges = "hold_pan", range = self.dimen }
+                -- },
+                -- HoldReleaseTextBox = {
+                --     GestureRange:new{ ges = "hold_release", range = self.dimen }
+                -- },
+                -- PanTextBox = {
+                --     GestureRange:new{ ges = "pan", range = self.dimen }
+                -- },
+                -- PanReleaseTextBox = {
+                --     GestureRange:new{ ges = "pan_release", range = self.dimen }
+                -- },
+                -- TouchTextBox = {
+                --     GestureRange:new{ ges = "touch", range = self.dimen }
+                -- },
             }
         end
+
+        -- For MovableContainer to work fully, some of these should
+        -- do more check before disabling the event or not
+        -- Commented for now, as this needs work
+        -- local function _disableEvent() return true end
+        -- InputText.onHoldPanTextBox = _disableEvent
+        -- InputText.onHoldReleaseTextBox = _disableEvent
+        -- InputText.onPanTextBox = _disableEvent
+        -- InputText.onPanReleaseTextBox = _disableEvent
+        -- InputText.onTouchTextBox = _disableEvent
 
         function InputText:onTapTextBox(arg, ges)
             if self.parent.onSwitchFocus then
                 self.parent:onSwitchFocus(self)
             end
-            local x = ges.pos.x - self._frame_textwidget.dimen.x - self.bordersize - self.padding
-            local y = ges.pos.y - self._frame_textwidget.dimen.y - self.bordersize - self.padding
-            if x > 0 and y > 0 then
-                self.charpos = self.text_widget:moveCursor(x, y)
-                UIManager:setDirty(self.parent, function()
-                    return "ui", self.dimen
-                end)
-            end
+            local textwidget_offset = self.margin + self.bordersize + self.padding
+            local x = ges.pos.x - self._frame_textwidget.dimen.x - textwidget_offset
+            local y = ges.pos.y - self._frame_textwidget.dimen.y - textwidget_offset
+            self.text_widget:moveCursorToXY(x, y, true) -- restrict_to_view=true
+            self.charpos, self.top_line_num = self.text_widget:getCharPos()
+            return true
         end
 
         function InputText:onHoldTextBox(arg, ges)
             if self.parent.onSwitchFocus then
                 self.parent:onSwitchFocus(self)
             end
-            local x = ges.pos.x - self._frame_textwidget.dimen.x - self.bordersize - self.padding
-            local y = ges.pos.y - self._frame_textwidget.dimen.y - self.bordersize - self.padding
-            if x > 0 and y > 0 then
-                self.charpos = self.text_widget:moveCursor(x, y)
-                if Device:hasClipboard() and Device.input.hasClipboardText() then
-                    self:addChars(Device.input.getClipboardText())
-                end
-                UIManager:setDirty(self.parent, function()
-                    return "ui", self.dimen
-                end)
+            local textwidget_offset = self.margin + self.bordersize + self.padding
+            local x = ges.pos.x - self._frame_textwidget.dimen.x - textwidget_offset
+            local y = ges.pos.y - self._frame_textwidget.dimen.y - textwidget_offset
+            self.text_widget:moveCursorToXY(x, y, true) -- restrict_to_view=true
+            self.charpos, self.top_line_num = self.text_widget:getCharPos()
+            if Device:hasClipboard() and Device.input.hasClipboardText() then
+                self:addChars(Device.input.getClipboardText())
             end
+            return true
         end
+
+        function InputText:onSwipeTextBox(arg, ges)
+            -- Allow refreshing the widget (actually, the screen) with the classic
+            -- Diagonal Swipe, as we're only using the quick "ui" mode while editing
+            if ges.direction == "northeast" or ges.direction == "northwest"
+            or ges.direction == "southeast" or ges.direction == "southwest" then
+                if self.refresh_callback then self.refresh_callback() end
+                -- Trigger a full-screen HQ flashing refresh so
+                -- the keyboard can also be fully redrawn
+                UIManager:setDirty(nil, "full")
+            end
+            -- Let it propagate in any case (a long diagonal swipe may also be
+            -- used for taking a screenshot)
+            return false
+        end
+
     end
     if Device.hasKeys() then
         if not InputText.initEventListener then
@@ -115,6 +168,10 @@ else
 end
 
 function InputText:init()
+    if self.text_type == "password" then
+        -- text_type changes from "password" to "text" when we toggle password
+        self.is_password_type = true
+    end
     self:initTextBox(self.text)
     if self.readonly ~= true then
         self:initKeyboard()
@@ -122,11 +179,11 @@ function InputText:init()
     end
 end
 
-function InputText:initTextBox(text, char_added, is_password_type)
+-- This will be called when we add or del chars, as we need to recreate
+-- the text widget to have the new text splittted into possibly different
+-- lines than before
+function InputText:initTextBox(text, char_added)
     self.text = text
-    if self.text_type == "password" then
-        is_password_type = true
-    end
     local fgcolor
     local show_charlist
     local show_text = text
@@ -147,11 +204,16 @@ function InputText:initTextBox(text, char_added, is_password_type)
             end
         end
         self.charlist = util.splitToChars(text)
+        -- keep previous cursor position if charpos not nil
         if self.charpos == nil then
-            self.charpos = #self.charlist + 1
+            if self.cursor_at_end then
+                self.charpos = #self.charlist + 1
+            else
+                self.charpos = 1
+            end
         end
     end
-    if is_password_type and self.show_password_toggle then
+    if self.is_password_type and self.show_password_toggle then
         self._check_button = self._check_button or CheckButton:new{
             text = _("Show password"),
             callback = function()
@@ -162,11 +224,8 @@ function InputText:initTextBox(text, char_added, is_password_type)
                     self.text_type = "text"
                     self._check_button:check()
                 end
-                self:setText(self:getText(), is_password_type)
+                self:setText(self:getText())
             end,
-
-            width = self.width,
-            height = self.height,
 
             padding = self.padding,
             margin = self.margin,
@@ -182,11 +241,28 @@ function InputText:initTextBox(text, char_added, is_password_type)
         self._password_toggle = nil
     end
     show_charlist = util.splitToChars(show_text)
+
+    if not self.height then
+        -- If no height provided, measure the text widget height
+        -- we would start with, and use a ScrollTextWidget with that
+        -- height, so widget does not overflow container if we extend
+        -- the text and increase the number of lines
+        local text_widget = TextBoxWidget:new{
+            text = show_text,
+            charlist = show_charlist,
+            face = self.face,
+            width = self.width,
+        }
+        self.height = text_widget:getTextHeight()
+        self.scroll = true
+        text_widget:free()
+    end
     if self.scroll then
         self.text_widget = ScrollTextWidget:new{
             text = show_text,
             charlist = show_charlist,
             charpos = self.charpos,
+            top_line_num = self.top_line_num,
             editable = self.focused,
             face = self.face,
             fgcolor = fgcolor,
@@ -199,13 +275,18 @@ function InputText:initTextBox(text, char_added, is_password_type)
             text = show_text,
             charlist = show_charlist,
             charpos = self.charpos,
+            top_line_num = self.top_line_num,
             editable = self.focused,
             face = self.face,
             fgcolor = fgcolor,
             width = self.width,
             height = self.height,
+            dialog = self.parent,
         }
     end
+    -- Get back possibly modified charpos and virtual_line_num
+    self.charpos, self.top_line_num = self.text_widget:getCharPos()
+
     self._frame_textwidget = FrameContainer:new{
         bordersize = self.bordersize,
         padding = self.padding,
@@ -266,17 +347,25 @@ function InputText:onCloseKeyboard()
     UIManager:close(self.keyboard)
 end
 
+function InputText:getTextHeight()
+    return self.text_widget:getTextHeight()
+end
+
+function InputText:getLineHeight()
+    return self.text_widget:getLineHeight()
+end
+
 function InputText:getKeyboardDimen()
     return self.keyboard.dimen
 end
 
-function InputText:addChars(char)
-    if self.enter_callback and char == '\n' then
+function InputText:addChars(chars)
+    if self.enter_callback and chars == "\n" then
         UIManager:scheduleIn(0.3, function() self.enter_callback() end)
         return
     end
-    table.insert(self.charlist, self.charpos, char)
-    self.charpos = self.charpos + #util.splitToChars(char)
+    table.insert(self.charlist, self.charpos, chars)
+    self.charpos = self.charpos + #util.splitToChars(chars)
     self:initTextBox(table.concat(self.charlist), true)
 end
 
@@ -287,48 +376,63 @@ function InputText:delChar()
     self:initTextBox(table.concat(self.charlist))
 end
 
+-- For the following cursor/scroll methods, the text_widget deals
+-- itself with setDirty'ing the appropriate regions
 function InputText:leftChar()
     if self.charpos == 1 then return end
-    self.charpos = self.charpos -1
-    self:initTextBox(table.concat(self.charlist))
+    self.text_widget:moveCursorLeft()
+    self.charpos, self.top_line_num = self.text_widget:getCharPos()
 end
 
 function InputText:rightChar()
-    if self.charpos > #table.concat(self.charlist) then return end
-    self.charpos = self.charpos +1
-    self:initTextBox(table.concat(self.charlist))
+    if self.charpos > #self.charlist then return end
+    self.text_widget:moveCursorRight()
+    self.charpos, self.top_line_num = self.text_widget:getCharPos()
 end
 
 function InputText:upLine()
-    if self.text_widget.moveCursorUp then
-        self.charpos = self.text_widget:moveCursorUp()
-    end
+    self.text_widget:moveCursorUp()
+    self.charpos, self.top_line_num = self.text_widget:getCharPos()
 end
 
 function InputText:downLine()
-    if self.text_widget.moveCursorDown then
-        self.charpos = self.text_widget:moveCursorDown()
-    end
+    self.text_widget:moveCursorDown()
+    self.charpos, self.top_line_num = self.text_widget:getCharPos()
+end
+
+function InputText:scrollDown()
+    self.text_widget:scrollDown()
+    self.charpos, self.top_line_num = self.text_widget:getCharPos()
+end
+
+function InputText:scrollUp()
+    self.text_widget:scrollUp()
+    self.charpos, self.top_line_num = self.text_widget:getCharPos()
+end
+
+function InputText:scrollToTop()
+    self.text_widget:scrollToTop()
+    self.charpos, self.top_line_num = self.text_widget:getCharPos()
+end
+
+function InputText:scrollToBottom()
+    self.text_widget:scrollToBottom()
+    self.charpos, self.top_line_num = self.text_widget:getCharPos()
 end
 
 function InputText:clear()
     self.charpos = nil
+    self.top_line_num = 1
     self:initTextBox("")
-    UIManager:setDirty(self.parent, function()
-        return "ui", self[1][1].dimen
-    end)
 end
 
 function InputText:getText()
     return self.text
 end
 
-function InputText:setText(text, is_password_type)
-    self.charpos = nil
-    self:initTextBox(text, nil, is_password_type)
-    UIManager:setDirty(self.parent, function()
-        return "partial", self[1].dimen
-    end)
+function InputText:setText(text)
+    -- Keep previous charpos and top_line_num
+    self:initTextBox(text)
 end
 
 return InputText
