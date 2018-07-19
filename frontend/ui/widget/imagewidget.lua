@@ -142,9 +142,9 @@ function ImageWidget:_loadfile()
         end
         local hash = "image|"..self.file.."|"..(width or "").."|"..(height or "")
         -- Do the scaling for DPI here, so it can be cached and not re-done
-        -- each time in _render()
+        -- each time in _render() (but not if scale_factor, to avoid double scaling)
         local scale_for_dpi_here = false
-        if self.scale_for_dpi and DPI_SCALE ~= 1 then
+        if self.scale_for_dpi and DPI_SCALE ~= 1 and not self.scale_factor then
             scale_for_dpi_here = true -- we'll do it before caching
             hash = hash .. "|d"
             self.already_scaled_for_dpi = true -- so we don't do it again in _render()

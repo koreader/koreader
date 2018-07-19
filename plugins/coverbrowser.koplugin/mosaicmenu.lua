@@ -36,10 +36,10 @@ local BookInfoManager = require("bookinfomanager")
 
 -- We will show a rotated dogear at bottom right corner of cover widget for
 -- opened files (the dogear will make it look like a "used book")
-local corner_mark = ImageWidget:new{
-    file = "resources/icons/dogear.png",
-    rotation_angle = 270
-}
+-- The ImageWidget Will be created when we know the available height (and
+-- recreated if height changes)
+local corner_mark_size = -1
+local corner_mark
 
 -- ItemShortCutIcon (for keyboard navigation) is private to menu.lua and can't be accessed,
 -- so we need to redefine it
@@ -605,7 +605,7 @@ function MosaicMenuItem:paintTo(bb, x, y)
     end
 
     -- to which we paint over a dogear if needed
-    if self.do_hint_opened and self.been_opened then
+    if corner_mark and self.do_hint_opened and self.been_opened then
         -- align it on bottom right corner of sub-widget
         local target =  self[1][1][1]
         local ix = self.width - math.ceil((self.width - target.dimen.w)/2) - corner_mark:getSize().w
@@ -713,6 +713,22 @@ function MosaicMenu:_recalculateDimen()
         w = self.item_width,
         h = self.item_height
     }
+
+    -- Create or replace corner_mark if needed
+    -- 1/12 (larger) or 1/16 (smaller) of cover looks allright
+    local mark_size = math.floor(math.min(self.item_width, self.item_height) / 16)
+    if mark_size ~= corner_mark_size then
+        corner_mark_size = mark_size
+        if corner_mark then
+            corner_mark:free()
+        end
+        corner_mark = ImageWidget:new{
+            file = "resources/icons/dogear.png",
+            rotation_angle = 270,
+            width = corner_mark_size,
+            height = corner_mark_size,
+        }
+    end
 end
 
 function MosaicMenu:_updateItemsBuildUI()
