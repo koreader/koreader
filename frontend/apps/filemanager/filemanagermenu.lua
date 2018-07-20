@@ -226,7 +226,7 @@ function FileManagerMenu:setUpdateItemTable()
     self.menu_items.find_file = {
         text = _("Find a file"),
         callback = function()
-            FileSearcher:init(self.ui.file_chooser.path)
+            FileSearcher:showSearch(self.ui.file_chooser.path)
         end
     }
 
