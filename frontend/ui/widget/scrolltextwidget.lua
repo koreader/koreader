@@ -108,14 +108,18 @@ function ScrollTextWidget:getCharPos()
     return self.text_widget:getCharPos()
 end
 
-function ScrollTextWidget:updateScrollBar()
+function ScrollTextWidget:updateScrollBar(is_partial)
     local low, high = self.text_widget:getVisibleHeightRatios()
     if low ~= self.prev_low or high ~= self.prev_high then
         self.prev_low = low
         self.prev_high = high
         self.v_scroll_bar:set(low, high)
+        local refreshfunc = "ui"
+        if is_partial then
+            refreshfunc = "partial"
+        end
         UIManager:setDirty(self.dialog, function()
-            return "partial", self.dimen
+            return refreshfunc, self.dimen
         end)
     end
 end
@@ -152,22 +156,22 @@ end
 
 function ScrollTextWidget:scrollDown()
     self.text_widget:scrollDown();
-    self:updateScrollBar()
+    self:updateScrollBar(true)
 end
 
 function ScrollTextWidget:scrollUp()
     self.text_widget:scrollUp();
-    self:updateScrollBar()
+    self:updateScrollBar(true)
 end
 
 function ScrollTextWidget:scrollToTop()
     self.text_widget:scrollToTop();
-    self:updateScrollBar()
+    self:updateScrollBar(true)
 end
 
 function ScrollTextWidget:scrollToBottom()
     self.text_widget:scrollToBottom();
-    self:updateScrollBar()
+    self:updateScrollBar(true)
 end
 
 function ScrollTextWidget:scrollText(direction)
@@ -177,12 +181,12 @@ function ScrollTextWidget:scrollText(direction)
     else
         self.text_widget:scrollUp()
     end
-    self:updateScrollBar()
+    self:updateScrollBar(true)
 end
 
 function ScrollTextWidget:scrollToRatio(ratio)
     self.text_widget:scrollToRatio(ratio)
-    self:updateScrollBar()
+    self:updateScrollBar(true)
 end
 
 function ScrollTextWidget:onScrollText(arg, ges)
