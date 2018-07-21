@@ -311,7 +311,7 @@ function Search:find(option)
             local g = io.open(koreaderfile, "r")
             line = g:read()
             if line ~= "#metadata.Koreader Version 1.1" and line ~= "#metadata.koreader Version 1.1" then
-                self.use_own_metadata_file =  false
+                self.use_own_metadata_file = false
                 g:close()
             else
                 line = g:read()
@@ -348,6 +348,8 @@ function Search:find(option)
                             self.browse_tags[string.sub(j, 2)] = (self.browse_tags[string.sub(j, 2)] or 0) + 1
                         end
                     end
+                    -- NOTE: This skips kePubs downloaded by nickel, because they don't have a file extension,
+                    --       they're stored as .kobo/kepub/<UUID>
                     if DocumentRegistry:hasProvider(self.data[i][self.path]) then
                         if upsearch ~= "" then
                             if string.find(search_content, upsearch, nil, true) then
