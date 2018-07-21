@@ -51,7 +51,7 @@ local function findcalibre(root)
             else
                 if entity ~= "." and entity ~= ".." then
                     local fullPath=root .. "/" .. entity
-                    local mode = lfs.attributes(fullPath,"mode")
+                    local mode = lfs.attributes(fullPath, "mode")
                     if mode == "file" then
                         if entity == calibre or entity == "." .. calibre then
                             t = root .. "/" .. entity
@@ -127,13 +127,15 @@ function Search:getCalibre()
     if self.metafile_1 then
         pcall(lfs.mkdir("temp"))
         if io.open(koreaderfile, "r") then
-            if lfs.attributes(koreaderfile).modification > lfs.attributes(self.metafile_1).modification then
+            if lfs.attributes(koreaderfile, "modification") > lfs.attributes(self.metafile_1, "modification") then
                 if self.metafile_2 then
-                    if lfs.attributes(koreaderfile).modification > lfs.attributes(self.metafile_2).modification then
+                    if lfs.attributes(koreaderfile, "modification") > lfs.attributes(self.metafile_2, "modification") then
                         self.use_own_metadata_file = true
+                        logger.info("Using our own simplified metadata file as it's newer (", lfs.attributes(koreaderfile, "modification"), ") than", self.metafile_2, "(", lfs.attributes(self.metafile_2, "modification"), ")")
                     end
                 else
                     self.use_own_metadata_file = true
+                    logger.info("Using our own simplified metadata file as it's newer (", lfs.attributes(koreaderfile, "modification"), ") than", self.metafile_1, "(", lfs.attributes(self.metafile_1, "modification"), ")")
                 end
             end
         end
@@ -375,6 +377,7 @@ function Search:find(option)
             end
         end
         if not self.use_own_metadata_file then
+            logger.info("Writing our own simplified metadata file . . .")
             local g = io.open(koreaderfile, "w")
             g:write("#metadata.koreader Version 1.1\n")
 
@@ -454,14 +457,14 @@ function Search:find(option)
                 end
             end
             g.close()
-            if lfs.attributes(koreaderfile).modification < lfs.attributes(self.metafile_1).modification then
+            if lfs.attributes(koreaderfile, "modification") < lfs.attributes(self.metafile_1, "modification") then
                 lfs.touch(koreaderfile,
-                          lfs.attributes(self.metafile_1).modification + 1,
-                          lfs.attributes(self.metafile_1).modification + 1)
+                          lfs.attributes(self.metafile_1, "modification") + 1,
+                          lfs.attributes(self.metafile_1, "modification") + 1)
             end
             if self.metafile_2 then
-                if lfs.attributes(koreaderfile).modification < lfs.attributes(self.metafile_2).modification then
-                    lfs.touch(koreaderfile, lfs.attributes(self.metafile_2).modification + 1, lfs.attributes(self.metafile_2).modification + 1)
+                if lfs.attributes(koreaderfile, "modification") < lfs.attributes(self.metafile_2, "modification") then
+                    lfs.touch(koreaderfile, lfs.attributes(self.metafile_2, "modification") + 1, lfs.attributes(self.metafile_2, "modification") + 1)
                 end
             end
         end
