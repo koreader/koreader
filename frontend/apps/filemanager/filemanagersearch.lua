@@ -60,7 +60,7 @@ local function findcalibre(root)
                             -- NOTE: No-one should actually rely on that, as the value is *NEVER* saved to the defaults.
                             --       (SetDefaults can only do that with values modified from within its own advanced menu).
                             _G['SEARCH_LIBRARY_PATH'] = root .. "/"
-                            logger.info("Found a SEARCH_LIBRARY_PATH @", SEARCH_LIBRARY_PATH)
+                            logger.info("FMSearch: Found a SEARCH_LIBRARY_PATH @", SEARCH_LIBRARY_PATH)
                         end
                     elseif mode == "directory" then
                         t = findcalibre(fullPath)
@@ -131,11 +131,11 @@ function Search:getCalibre()
                 if self.metafile_2 then
                     if lfs.attributes(koreaderfile, "modification") > lfs.attributes(self.metafile_2, "modification") then
                         self.use_own_metadata_file = true
-                        logger.info("Using our own simplified metadata file as it's newer (", lfs.attributes(koreaderfile, "modification"), ") than", self.metafile_2, "(", lfs.attributes(self.metafile_2, "modification"), ")")
+                        logger.info("FMSearch: Using our own simplified metadata file as it's newer than", self.metafile_2)
                     end
                 else
                     self.use_own_metadata_file = true
-                    logger.info("Using our own simplified metadata file as it's newer (", lfs.attributes(koreaderfile, "modification"), ") than", self.metafile_1, "(", lfs.attributes(self.metafile_1, "modification"), ")")
+                    logger.info("FMSearch: Using our own simplified metadata file as it's newer than", self.metafile_1)
                 end
             end
         end
@@ -379,7 +379,7 @@ function Search:find(option)
             end
         end
         if not self.use_own_metadata_file then
-            logger.info("Writing our own simplified metadata file . . .")
+            logger.info("FMSearch: Writing our own simplified metadata file . . .")
             local g = io.open(koreaderfile, "w")
             g:write("#metadata.koreader Version 1.1\n")
 
