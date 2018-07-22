@@ -1,6 +1,7 @@
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local BookStatusWidget = require("ui/widget/bookstatuswidget")
+local DataStorage = require("datastorage")
 local Device = require("device")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
@@ -78,11 +79,76 @@ function Screensaver:chooseFolder()
     })
     local screensaver_dir = G_reader_settings:readSetting("screensaver_dir")
     if screensaver_dir == nil then
-        local DataStorage = require("datastorage")
         screensaver_dir = DataStorage:getDataDir() .. "/screenshots/"
     end
     self.choose_dialog = ButtonDialogTitle:new{
         title = T(_("Current screensaver image directory:\n %1"), screensaver_dir),
+        buttons = buttons
+    }
+    UIManager:show(self.choose_dialog)
+end
+
+function Screensaver:chooseFile()
+    local buttons = {}
+    table.insert(buttons, {
+        {
+            text = _("Choose screensaver image"),
+            callback = function()
+                UIManager:close(self.choose_dialog)
+                local FileChooser = require("ui/widget/filechooser")
+                    local image_chooser = FileChooser:new{
+                    title = _("Choose screensaver image"),
+                    no_title = false,
+                    is_popout = false,
+                    path = self.root_path,
+                    focused_path = self.focused_file,
+                    collate = G_reader_settings:readSetting("collate") or "strcoll",
+                    reverse_collate = G_reader_settings:isTrue("reverse_collate"),
+                    show_parent = self.show_parent,
+                    width = Screen:getWidth(),
+                    height = Screen:getHeight(),
+                    is_popout = false,
+                    is_borderless = true,
+                    has_close_button = true,
+                    perpage = G_reader_settings:readSetting("items_per_page"),
+                    file_filter = function(filename)
+                        local util = require("util")
+                        local suffix = util.getFileNameSuffix(filename)
+                        if suffix == "jpeg" or suffix == "jpg" or suffix == "png" then
+                            return true
+                        end
+                    end,
+                }
+                function image_chooser:onFileSelect(file)  -- luacheck: ignore
+                    local ConfirmBox = require("ui/widget/confirmbox")
+                    UIManager:show(ConfirmBox:new{
+                        text = T(_("Set screensaver image to:\n%1"), require("ffi/util").basename(file)),
+                        ok_callback = function()
+                            G_reader_settings:saveSetting("screensaver_image", file)
+                            UIManager:close(image_chooser)
+                        end
+                    })
+                    return true
+                end
+
+                UIManager:show(image_chooser)
+            end,
+        }
+    })
+    table.insert(buttons, {
+        {
+            text = _("Close"),
+            callback = function()
+                UIManager:close(self.choose_dialog)
+            end,
+        }
+    })
+    local screensaver_image = G_reader_settings:readSetting("screensaver_image")
+    if screensaver_image == nil then
+        screensaver_image = DataStorage:getDataDir() .. "/resources/koreader.png"
+    end
+    self.choose_dialog = ButtonDialogTitle:new{
+        title = T(_("Current screensaver image:\n %1"), screensaver_image),
         buttons = buttons
     }
     UIManager:show(self.choose_dialog)
@@ -230,7 +296,6 @@ function Screensaver:show(event, fallback_message)
     if screensaver_type == "random_image" then
         local screensaver_dir = G_reader_settings:readSetting(prefix.."screensaver_dir")
         if screensaver_dir == nil then
-            local DataStorage = require("datastorage")
             screensaver_dir = DataStorage:getDataDir() .. "/screenshots/"
         end
         local image_file = getRandomImage(screensaver_dir)
@@ -239,6 +304,27 @@ function Screensaver:show(event, fallback_message)
         else
             widget = ImageWidget:new{
                 file = image_file,
+                file_do_cache = false,
+                alpha = true,
+                height = Screen:getHeight(),
+                width = Screen:getWidth(),
+                scale_factor = not self:stretchImages() and 0 or nil,
+            }
+            if not self:whiteBackground() then
+                background = Blitbuffer.COLOR_BLACK
+            end
+        end
+    end
+    if screensaver_type == "image_file" then
+        local screensaver_image = G_reader_settings:readSetting(prefix.."screensaver_image")
+        if screensaver_image == nil then
+            screensaver_image = DataStorage:getDataDir() .. "/resources/koreader.png"
+        end
+        if  lfs.attributes(screensaver_image, "mode") ~= "file" then
+            screensaver_type = "message"
+        else
+            widget = ImageWidget:new{
+                file = screensaver_image,
                 file_do_cache = false,
                 alpha = true,
                 height = Screen:getHeight(),
