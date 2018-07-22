@@ -316,6 +316,9 @@ function Screensaver:show(event, fallback_message)
     end
     if screensaver_type == "image_file" then
         local screensaver_image = G_reader_settings:readSetting(prefix.."screensaver_image")
+        if screensaver_image == nil and prefix ~= "" then
+            screensaver_image = G_reader_settings:readSetting("screensaver_image")
+        end
         if screensaver_image == nil then
             screensaver_image = DataStorage:getDataDir() .. "/resources/koreader.png"
         end
