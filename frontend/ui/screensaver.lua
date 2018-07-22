@@ -294,6 +294,9 @@ function Screensaver:show(event, fallback_message)
     end
     if screensaver_type == "random_image" then
         local screensaver_dir = G_reader_settings:readSetting(prefix.."screensaver_dir")
+        if screensaver_dir == nil and prefix ~= "" then
+            screensaver_dir = G_reader_settings:readSetting("screensaver_dir")
+        end
         if screensaver_dir == nil then
             screensaver_dir = DataStorage:getDataDir() .. "/screenshots/"
         end
@@ -350,6 +353,9 @@ function Screensaver:show(event, fallback_message)
         if not self:whiteBackground() then
             background = nil -- no background filling, let book text visible
             covers_fullscreen = false
+        end
+        if screensaver_message == nil and prefix ~= "" then
+            screensaver_message = G_reader_settings:readSetting("screensaver_message")
         end
         if screensaver_message == nil then
             screensaver_message = fallback_message or default_screensaver_message
