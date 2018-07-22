@@ -99,7 +99,6 @@ function Screensaver:chooseFile()
                     local image_chooser = FileChooser:new{
                     title = _("Choose screensaver image"),
                     no_title = false,
-                    is_popout = false,
                     path = self.root_path,
                     focused_path = self.focused_file,
                     collate = G_reader_settings:readSetting("collate") or "strcoll",
