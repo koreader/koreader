@@ -56,6 +56,19 @@ return {
         end
     },
     {
+        text = _("Use image as screensaver"),
+        checked_func = function()
+            if screensaverType() == "image_file" then
+                return true
+            else
+                return false
+            end
+        end,
+        callback = function()
+            G_reader_settings:saveSetting("screensaver_type", "image_file")
+        end
+    },
+    {
         text = _("Use reading progress as screensaver"),
         enabled_func = function() return Screensaver.getReaderProgress ~= nil and lastFile() ~= nil end,
         checked_func = function()
@@ -102,6 +115,12 @@ return {
                 text = _("Screensaver folder"),
                 callback = function()
                     Screensaver:chooseFolder()
+                end,
+            },
+            {
+                text = _("Screensaver image"),
+                callback = function()
+                    Screensaver:chooseFile()
                 end,
             },
             {
