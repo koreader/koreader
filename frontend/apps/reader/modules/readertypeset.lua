@@ -63,12 +63,12 @@ function ReaderTypeset:onReadSettings(config)
         G_reader_settings:readSetting("copt_page_margins") or
         DCREREADER_CONFIG_MARGIN_SIZES_MEDIUM)
 
-    -- default to enable floating punctuation
+    -- default to disable floating punctuation
     -- the floating punctuation should not be boolean value for the following
     -- expression otherwise a false value will never be returned but numerical
     -- values will survive this expression
     self.floating_punctuation = config:readSetting("floating_punctuation") or
-        G_reader_settings:readSetting("floating_punctuation") or 1
+        G_reader_settings:readSetting("floating_punctuation") or 0
     self:toggleFloatingPunctuation(self.floating_punctuation)
 
     -- default to disable TXT formatting as it does more harm than good
