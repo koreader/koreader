@@ -192,7 +192,7 @@ describe("Readerrolling module", function()
             assert.are.same(189, readerui.document:getPageCount())
             readerui.document:setSpaceCondensing(50)
             readerui:handleEvent(Event:new("ChangeScreenMode", "portrait"))
-            assert.are.same(182, readerui.document:getPageCount())
+            assert.are.same(189, readerui.document:getPageCount())
         end)
     end)
 
