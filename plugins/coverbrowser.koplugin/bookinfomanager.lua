@@ -503,6 +503,9 @@ end
 function BookInfoManager:removeNonExistantEntries()
     self:openDbConnection()
     local res = self.db_conn:exec("SELECT bcid, directory || filename FROM bookinfo")
+    if not res then
+        return _("Cache is empty. Nothing to prune.")
+    end
     local bcids = res[1]
     local filepaths = res[2]
     local bcids_to_remove = {}
