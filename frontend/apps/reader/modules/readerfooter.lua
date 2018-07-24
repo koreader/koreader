@@ -688,7 +688,7 @@ end
 
 function ReaderFooter:onHoldFooter()
     if self.mode == MODE.off then return end
-    self.ui:handleEvent(Event:new("ShowGotoDialog"))
+    self.ui:handleEvent(Event:new("ShowSkimtoDialog"))
     return true
 end
 
