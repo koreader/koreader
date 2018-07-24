@@ -1,9 +1,9 @@
 local CenterContainer = require("ui/widget/container/centercontainer")
 local DocumentRegistry = require("document/documentregistry")
 local Font = require("ui/font")
-local InputDialog = require("ui/widget/inputdialog")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
 local lfs = require("libs/libkoreader-lfs")
@@ -82,11 +82,6 @@ function FileSearcher:setSearchResults()
     self.items = #self.results
 end
 
-function FileSearcher:init(search_path)
-    self.path = search_path or lfs.currentdir()
-    self:showSearch()
-end
-
 function FileSearcher:close()
     if self.search_value then
         UIManager:close(self.search_dialog)
@@ -107,11 +102,16 @@ function FileSearcher:close()
     end
 end
 
-function FileSearcher:showSearch()
+function FileSearcher:showSearch(search_path)
     local dummy = self.search_value
+    local enabled_search_home_dir = true
+    if not G_reader_settings:readSetting("home_dir") then
+        enabled_search_home_dir = false
+    end
     self.search_dialog = InputDialog:new{
         title = _("Search for books by filename"),
         input = self.search_value,
+        width = Screen:getWidth() * 0.9,
         buttons = {
             {
                 {
@@ -123,9 +123,24 @@ function FileSearcher:showSearch()
                     end,
                 },
                 {
-                    text = _("Find books"),
+                    text = _("Current folder"),
                     enabled = true,
                     callback = function()
+                        self.path = search_path or lfs.currentdir()
+                        self.search_value = self.search_dialog:getInputText()
+                        if self.search_value == dummy then -- probably DELETE this if/else block
+                            self.use_previous_search_results = true
+                        else
+                            self.use_previous_search_results = false
+                        end
+                        self:close()
+                    end,
+                },
+                {
+                    text = _("Home folder"),
+                    enabled = enabled_search_home_dir,
+                    callback = function()
+                        self.path = G_reader_settings:readSetting("home_dir")
                         self.search_value = self.search_dialog:getInputText()
                         if self.search_value == dummy then -- probably DELETE this if/else block
                             self.use_previous_search_results = true
