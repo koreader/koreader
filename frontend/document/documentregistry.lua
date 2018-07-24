@@ -3,10 +3,12 @@ This is a registry for document providers
 ]]--
 
 local ConfirmBox = require("ui/widget/confirmbox")
+local DocSettings = require("docsettings")
 local OpenWithDialog = require("ui/widget/openwithdialog")
 local UIManager = require("ui/uimanager")
 local gettext = require("gettext")
 local logger = require("logger")
+local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
 local T = require("ffi/util").template
 
@@ -24,6 +26,33 @@ function DocumentRegistry:addProvider(extension, mimetype, provider, weight)
         weight = weight or 100,
     })
     self.filetype_provider[extension] = true
+end
+
+function DocumentRegistry:getRandomFile(dir, opened, extension)
+    if string.sub(dir, string.len(dir)) ~= "/" then
+        dir = dir .. "/"
+    end
+    local files = {}
+    local i = 0
+    math.randomseed(os.time())
+    local ok, iter, dir_obj = pcall(lfs.dir, dir)
+    if ok then
+        for entry in iter, dir_obj do
+            if lfs.attributes(dir .. entry, "mode") == "file" and self:hasProvider(dir .. entry)
+                and (opened == nil or DocSettings:hasSidecarFile(dir .. entry) == opened)
+                and (extension == nil or extension[util.getFileNameSuffix(entry)]) then
+                i = i + 1
+                files[i] = entry
+            end
+        end
+        if i == 0 then
+            return nil
+        end
+    else
+        return nil
+    end
+    logger.info(files)
+    return dir .. files[math.random(i)]
 end
 
 --- Returns true if file has provider.
@@ -46,7 +75,6 @@ function DocumentRegistry:getProvider(file)
 
     if providers then
         -- provider for document
-        local DocSettings = require("docsettings")
         if DocSettings:hasSidecarFile(file) then
             local doc_settings_provider = DocSettings:open(file):readSetting("provider")
             if doc_settings_provider then

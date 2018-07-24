@@ -452,6 +452,15 @@ function FileManager:tapPlus()
                     UIManager:close(self.file_dialog)
                 end
             }
+        },
+        {
+            {
+                text = _("Open random document"),
+                callback = function()
+                    self:openRandomFile(self.file_chooser.path)
+                    UIManager:close(self.file_dialog)
+                end
+            }
         }
     }
 
@@ -531,6 +540,32 @@ function FileManager:setHome(path)
         end,
     })
     return true
+end
+
+function FileManager:openRandomFile(dir)
+    local util = require("util")
+    local MultiConfirmBox = require("ui/widget/multiconfirmbox")
+    local random_file = DocumentRegistry:getRandomFile(dir, false)
+    if random_file then
+        UIManager:show(MultiConfirmBox:new {
+            text = T(_("Do you want to open %1?"), require("ffi/util").basename(random_file)),
+            choice1_text = _("Open"),
+            choice1_callback = function()
+                FileManager.instance:onClose()
+                ReaderUI:showReader(random_file)
+
+            end,
+            choice2_text = _("Another"),
+            choice2_callback = function()
+                self:openRandomFile(dir)
+            end,
+        })
+        UIManager:close(self.file_dialog)
+    else
+        UIManager:show(InfoMessage:new {
+            text = _("File not found"),
+        })
+    end
 end
 
 function FileManager:copyFile(file)
