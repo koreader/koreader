@@ -3,7 +3,6 @@ This is a registry for document providers
 ]]--
 
 local ConfirmBox = require("ui/widget/confirmbox")
-local DocSettings = require("docsettings")
 local OpenWithDialog = require("ui/widget/openwithdialog")
 local UIManager = require("ui/uimanager")
 local gettext = require("gettext")
@@ -29,6 +28,7 @@ function DocumentRegistry:addProvider(extension, mimetype, provider, weight)
 end
 
 function DocumentRegistry:getRandomFile(dir, opened, extension)
+    local DocSettings = require("docsettings")
     if string.sub(dir, string.len(dir)) ~= "/" then
         dir = dir .. "/"
     end
@@ -75,6 +75,7 @@ function DocumentRegistry:getProvider(file)
 
     if providers then
         -- provider for document
+        local DocSettings = require("docsettings")
         if DocSettings:hasSidecarFile(file) then
             local doc_settings_provider = DocSettings:open(file):readSetting("provider")
             if doc_settings_provider then

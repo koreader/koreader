@@ -19,6 +19,7 @@ local IconButton = require("ui/widget/iconbutton")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
+local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local PluginLoader = require("pluginloader")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local ReaderUI = require("apps/reader/readerui")
@@ -543,8 +544,6 @@ function FileManager:setHome(path)
 end
 
 function FileManager:openRandomFile(dir)
-    local util = require("util")
-    local MultiConfirmBox = require("ui/widget/multiconfirmbox")
     local random_file = DocumentRegistry:getRandomFile(dir, false)
     if random_file then
         UIManager:show(MultiConfirmBox:new {
