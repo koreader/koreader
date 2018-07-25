@@ -14,7 +14,7 @@ local T = require("ffi/util").template
 -- reads the authorized_keys file from the relative path: settings/SSH/authorized_keys
 
 local path = DataStorage:getFullDataDir()
-if not util.pathExists("dropbearmulti") then
+if not util.pathExists("dropbear") then
     return { disabled = true, }
 end
 
@@ -31,7 +31,7 @@ end
 
 function SSH:start()
     local cmd = string.format("%s %s %s %s%s %s",
-        "./dropbearmulti dropbear",
+        "./dropbear",
         "-E",
         "-R",
         "-p", self.SSH_port,
