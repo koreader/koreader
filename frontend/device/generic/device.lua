@@ -117,8 +117,10 @@ function Device:onPowerEvent(ev)
                 end
                 self:resume()
                 require("ui/screensaver"):close()
-                -- restore to previous rotation mode
-                self.screen:setRotationMode(self.orig_rotation_mode)
+                -- restore to previous rotation mode, if need be.
+                if self.orig_rotation_mode then
+                    self.screen:setRotationMode(self.orig_rotation_mode)
+                end
                 if self:needsScreenRefreshAfterResume() then
                     UIManager:scheduleIn(1, function() self.screen:refreshFull() end)
                 end
@@ -137,9 +139,15 @@ function Device:onPowerEvent(ev)
         self.powerd:beforeSuspend()
         local UIManager = require("ui/uimanager")
         logger.dbg("Suspending...")
-        -- always suspend in portrait mode
-        self.orig_rotation_mode = self.screen:getRotationMode()
-        self.screen:setRotationMode(0)
+        -- Mostly always suspend in portrait mode...
+        -- ... except when we just show an InfoMessage, it plays badly with landscape mode (c.f., #4098)
+        if G_reader_settings:readSetting("screensaver_type") ~= "message" then
+            self.orig_rotation_mode = self.screen:getRotationMode()
+            self.screen:setRotationMode(0)
+        else
+            -- nil it, in case user switched ScreenSaver modes during our lifetime.
+            self.orig_rotation_mode = nil
+        end
         require("ui/screensaver"):show()
         self.screen:refreshFull()
         self.screen_saver_mode = true
