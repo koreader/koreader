@@ -547,7 +547,7 @@ function FileManager:openRandomFile(dir)
     local random_file = DocumentRegistry:getRandomFile(dir, false)
     if random_file then
         UIManager:show(MultiConfirmBox:new {
-            text = T(_("Do you want to open %1?"), require("ffi/util").basename(random_file)),
+            text = T(_("Do you want to open %1?"), util.basename(random_file)),
             choice1_text = _("Open"),
             choice1_callback = function()
                 FileManager.instance:onClose()
