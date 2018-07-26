@@ -34,7 +34,6 @@ function DocumentRegistry:getRandomFile(dir, opened, extension)
     end
     local files = {}
     local i = 0
-    math.randomseed(os.time())
     local ok, iter, dir_obj = pcall(lfs.dir, dir)
     if ok then
         for entry in iter, dir_obj do
@@ -51,7 +50,7 @@ function DocumentRegistry:getRandomFile(dir, opened, extension)
     else
         return nil
     end
-    logger.info(files)
+    math.randomseed(os.time())
     return dir .. files[math.random(i)]
 end
 
