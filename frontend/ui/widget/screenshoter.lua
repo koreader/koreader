@@ -1,12 +1,12 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
-local InfoMessage = require("ui/widget/infomessage")
-local GestureRange = require("ui/gesturerange")
+local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
+local GestureRange = require("ui/gesturerange")
+local InfoMessage = require("ui/widget/infomessage")
+local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
 local T = require("ffi/util").template
 local _ = require("gettext")
-
 
 local Screenshoter = InputContainer:new{
     prefix = 'Screenshot',
@@ -39,10 +39,23 @@ end
 
 function Screenshoter:onScreenshot(filename)
     local screenshot_name = filename or os.date(self.screenshot_fn_fmt)
-    UIManager:show(InfoMessage:new{
-        text = T( _("Saving screenshot to %1."), screenshot_name),
-        timeout = 3,
-    })
+    local widget
+    if G_reader_settings:isTrue("screenshooter_as_screensaver") then
+        widget = ConfirmBox:new{
+            text = T( _("Saving screenshot to %1.\nWould you like to set it as screensaver?"), screenshot_name),
+            ok_text = _("Yes"),
+            ok_callback = function()
+                G_reader_settings:saveSetting("screensaver_type", "image_file")
+                G_reader_settings:saveSetting("screensaver_image", screenshot_name)
+            end,
+        }
+    else
+        widget = InfoMessage:new{
+            text = T( _("Saving screenshot to %1."), screenshot_name),
+            timeout = 3,
+        }
+    end
+    UIManager:show(widget)
     Screen:shot(screenshot_name)
     -- trigger full refresh
     UIManager:setDirty(nil, "full")
