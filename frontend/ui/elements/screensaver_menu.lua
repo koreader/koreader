@@ -12,7 +12,6 @@ local function lastFile()
 end
 local function whiteBackground() return G_reader_settings:isTrue("screensaver_white_background") end
 local function stretchImages() return G_reader_settings:isTrue("screensaver_stretch_images") end
-local function screenshoterScreensaver() return G_reader_settings:isTrue("screenshooter_as_screensaver") end
 
 return {
     {
