@@ -9,7 +9,7 @@ cd "${KOREADER_DIR}" || exit
 
 # Switch to a sensible CPUFreq governor, even if the HW appears not to give an actual fuck about this...
 ORIG_CPUFREQ_GOV="$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)"
-echo "conservative" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+echo "ondemand" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
 
 # update to new version from OTA directory
 ko_update_check() {
