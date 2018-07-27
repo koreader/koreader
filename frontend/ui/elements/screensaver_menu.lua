@@ -143,13 +143,6 @@ return {
                 callback = function()
                     G_reader_settings:saveSetting("screensaver_stretch_images", not stretchImages())
                 end,
-            },
-            {
-                text = _("Screenshot as screensaver"),
-                checked_func = screenshoterScreensaver,
-                callback = function()
-                    G_reader_settings:saveSetting("screenshooter_as_screensaver", not screenshoterScreensaver())
-                end,
                 separator = true,
             },
             {
