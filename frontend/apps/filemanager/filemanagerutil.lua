@@ -21,6 +21,7 @@ function filemanagerutil.getDefaultDir()
 end
 
 function filemanagerutil.abbreviate(path)
+    if not path then return "" end
     local home_dir_name = G_reader_settings:readSetting("home_dir_display_name")
     if home_dir_name ~= nil then
         local home_dir = G_reader_settings:readSetting("home_dir") or filemanagerutil.getDefaultDir()

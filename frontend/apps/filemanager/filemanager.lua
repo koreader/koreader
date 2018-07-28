@@ -47,6 +47,7 @@ local function restoreScreenMode()
 end
 
 local function truncatePath(text)
+    if not text then return "" end
     local screen_width = Screen:getWidth()
     local face = Font:getFace("xx_smallinfofont")
     -- we want to truncate text on the left, so work with the reverse of text (which is fine as we don't use kerning)
