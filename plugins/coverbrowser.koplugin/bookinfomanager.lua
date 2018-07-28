@@ -138,6 +138,8 @@ end
 
 function BookInfoManager:createDB()
     local db_conn = SQ3.open(self.db_location)
+    -- Make it WAL
+    db_conn:exec("PRAGMA journal_mode=WAL;")
     -- Less error cases to check if we do it that way
     -- Create it (noop if already there)
     db_conn:exec(BOOKINFO_DB_SCHEMA)

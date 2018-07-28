@@ -266,6 +266,8 @@ function ReaderStatistics:partialMd5(file)
 end
 
 function ReaderStatistics:createDB(conn)
+    -- Make it WAL
+    conn:exec("PRAGMA journal_mode=WAL;")
     local sql_stmt = [[
         CREATE TABLE IF NOT EXISTS book
             (
