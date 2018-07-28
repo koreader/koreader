@@ -9,7 +9,8 @@ cd "${KOREADER_DIR}" || exit
 
 # Switch to a sensible CPUFreq governor, even if the HW appears not to give an actual fuck about this...
 ORIG_CPUFREQ_GOV="$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)"
-echo "ondemand" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+# NOTE: Ideally, we'd want ondemand, but it's not supported on every kernel (if any?)...
+echo "performance" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
 
 # update to new version from OTA directory
 ko_update_check() {
