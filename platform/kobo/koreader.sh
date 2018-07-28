@@ -7,6 +7,10 @@ KOREADER_DIR="${0%/*}"
 # we're always starting from our working directory
 cd "${KOREADER_DIR}" || exit
 
+# Switch to a sensible CPUFreq governor, even if the HW appears not to give an actual fuck about this...
+ORIG_CPUFREQ_GOV="$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)"
+echo "ondemand" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+
 # update to new version from OTA directory
 ko_update_check() {
     NEWUPDATE="${KOREADER_DIR}/ota/koreader.updated.tar"
@@ -131,6 +135,9 @@ while [ $RETURN_VALUE -eq 85 ]; do
     ./reader.lua "${args}" >>crash.log 2>&1
     RETURN_VALUE=$?
 done
+
+# Restore original CPUFreq governor...
+echo "${ORIG_CPUFREQ_GOV}" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
 
 if [ "${FROM_NICKEL}" = "true" ]; then
     if [ "${FROM_KFMON}" != "true" ]; then
