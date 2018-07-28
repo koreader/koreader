@@ -7,10 +7,15 @@ KOREADER_DIR="${0%/*}"
 # we're always starting from our working directory
 cd "${KOREADER_DIR}" || exit
 
-# Switch to a sensible CPUFreq governor, even if the HW appears not to give an actual fuck about this...
-ORIG_CPUFREQ_GOV="$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)"
-# NOTE: Ideally, we'd want ondemand, but it's not supported on every kernel (if any?)...
-echo "performance" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+# Attempt to switch to a sensible CPUFreq governor, if possible, because "userspace" behaves in mysterious ways... (c.f., #4114)
+# NOTE: Unfortunately, the ondemand governor is not available on Mark5 kernels...
+if grep -q ondemand /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors; then
+    # So this is basically wishful thinking, hoping that's it's available at least in Mark7 kernels...
+    ORIG_CPUFREQ_GOV="$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)"
+    echo "ondemand" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+fi
+# NOTE: That doesn't actually help us poor userspace plebs, but, short of switching to performance,
+#       I don't really have a golden bullet here... (conservative's rubberbanding is terrible, so that's a hard pass).
 
 # update to new version from OTA directory
 ko_update_check() {
@@ -137,8 +142,10 @@ while [ $RETURN_VALUE -eq 85 ]; do
     RETURN_VALUE=$?
 done
 
-# Restore original CPUFreq governor...
-echo "${ORIG_CPUFREQ_GOV}" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+# Restore original CPUFreq governor if need be...
+if [ -n "${ORIG_CPUFREQ_GOV}" ]; then
+    echo "${ORIG_CPUFREQ_GOV}" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+fi
 
 if [ "${FROM_NICKEL}" = "true" ]; then
     if [ "${FROM_KFMON}" != "true" ]; then
