@@ -29,7 +29,7 @@ function TextEditor:start(file_path)
     else
         self.file_path = file_path
         self:createUI()
-        self:readFile(file_path)
+        self:selectFileForOpen(file_path)
     end
 end
 
@@ -88,23 +88,41 @@ function TextEditor:chooseFile()
         show_hidden = G_reader_settings:readSetting("show_hidden"),
         file_filter = function() return true end,
         onConfirm = function(file_path)
-            logger.dbg("TextEditor: selected file_file_path " .. file_path )
+            logger.dbg("TextEditor: selected file_path " .. file_path )
             self.file_path = file_path
-            self:readFile(self.file_path)
+            self:selectFileForOpen(self.file_path)
             self.input:onShowKeyboard()
         end
     }
     UIManager:show(path_chooser)
 end
 
-function TextEditor:readFile(file_path)
+function TextEditor:selectFileForOpen(file_path)
     logger.dbg("TextEditor: reading file: " .. file_path)
     local file = io.open(file_path, "rb")
-    if file then
-        self.file_path = file_path
-        self.context = file:read("*all")
-        self.input:setInputText(self.context)
-        file:close()
+    if file then 
+        if file:seek("end") > 32000 then
+            UIManager:show(ConfirmBox:new{
+                text = _("This seems a binary or very big file. Are you sure you want to open it?"),
+                ok_text = _("Yes"),
+                ok_callback = function()
+                    self.file_path = file_path
+                    self.context = file:read("*all")
+                    self.input:setInputText(self.context)
+                    file:close()
+                end,
+                cancel_callback = function() 
+                    UIManager:hide(self)
+                end
+            })
+        else
+            self.file_path = file_path
+            logger.dbg("TextEditor: reading file: " .. file_path)
+            self.context = file:read("*all")
+            logger.dbg("TextEditor: self.context: " .. self.context)
+            self.input:setInputText(self.context)
+            file:close()
+        end
     else
         UIManager:show(InfoMessage:new{
             text = _("Failed to read file: \n" .. file_path)
