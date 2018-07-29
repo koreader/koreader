@@ -6,7 +6,6 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
 local Screen = require("device").screen
-local SetDefaults = require("apps/filemanager/filemanagersetdefaults")
 local UIManager = require("ui/uimanager")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
@@ -52,10 +51,16 @@ local function findcalibre(root)
             else
                 if entity ~= "." and entity ~= ".." then
                     local fullPath=root .. "/" .. entity
-                    local mode = lfs.attributes(fullPath,"mode")
+                    local mode = lfs.attributes(fullPath, "mode")
                     if mode == "file" then
                         if entity == calibre or entity == "." .. calibre then
                             t = root .. "/" .. entity
+                            -- If we got so far, SEARCH_LIBRARY_PATH is either empty or bogus, so, re-set it,
+                            -- so that we actually can convert a book's relative path to its absolute path.
+                            -- NOTE: No-one should actually rely on that, as the value is *NEVER* saved to the defaults.
+                            --       (SetDefaults can only do that with values modified from within its own advanced menu).
+                            _G['SEARCH_LIBRARY_PATH'] = root .. "/"
+                            logger.info("FMSearch: Found a SEARCH_LIBRARY_PATH @", SEARCH_LIBRARY_PATH)
                         end
                     elseif mode == "directory" then
                         t = findcalibre(fullPath)
@@ -75,15 +80,13 @@ function Search:getCalibre()
         self.metafile_1 = findcalibre("/mnt")
         if not self.metafile_1 then
           self.error = _("SEARCH_LIBRARY_PATH should be defined in DEFAULTS.LUA.")
-        else
-          SetDefaults.settings_changed = true
         end
     else
-        if string.sub(SEARCH_LIBRARY_PATH,string.len(SEARCH_LIBRARY_PATH)) ~= "/" then
-            SEARCH_LIBRARY_PATH = SEARCH_LIBRARY_PATH .. "/"  -- luacheck: ignore
+        if string.sub(SEARCH_LIBRARY_PATH, string.len(SEARCH_LIBRARY_PATH)) ~= "/" then
+            _G['SEARCH_LIBRARY_PATH'] = SEARCH_LIBRARY_PATH .. "/"
         end
-        if io.open(SEARCH_LIBRARY_PATH .. calibre,"r") == nil then
-            if io.open(SEARCH_LIBRARY_PATH .. "." .. calibre,"r") == nil then
+        if io.open(SEARCH_LIBRARY_PATH .. calibre, "r") == nil then
+            if io.open(SEARCH_LIBRARY_PATH .. "." .. calibre, "r") == nil then
                 self.error = SEARCH_LIBRARY_PATH .. calibre .. " " .. _("not found.")
                 logger.err(self.error)
             else
@@ -98,19 +101,16 @@ function Search:getCalibre()
             UIManager:show(InfoMessage:new{text = _("You must specify at least one field to search at! (SEARCH_XXX = true in defaults.lua)")})
         elseif self.metafile_1 == nil then
             self.metafile_1 = findcalibre("/mnt")
-            if self.metafile_1 then
-                SetDefaults.settings_changed = true
-            end
         end
     end
     -- check 2nd file
     local dummy
 
-    if string.sub(SEARCH_LIBRARY_PATH2,string.len(SEARCH_LIBRARY_PATH2)) ~= "/" then
-        SEARCH_LIBRARY_PATH2 = SEARCH_LIBRARY_PATH2 .. "/"  -- luacheck: ignore
+    if string.sub(SEARCH_LIBRARY_PATH2, string.len(SEARCH_LIBRARY_PATH2)) ~= "/" then
+        _G['SEARCH_LIBRARY_PATH2'] = SEARCH_LIBRARY_PATH2 .. "/"
     end
-    if io.open(SEARCH_LIBRARY_PATH2 .. calibre,"r") == nil then
-        if io.open(SEARCH_LIBRARY_PATH2 .. "." .. calibre,"r") ~= nil then
+    if io.open(SEARCH_LIBRARY_PATH2 .. calibre, "r") == nil then
+        if io.open(SEARCH_LIBRARY_PATH2 .. "." .. calibre, "r") ~= nil then
             dummy = SEARCH_LIBRARY_PATH2 .. "." .. calibre
         end
     else
@@ -122,18 +122,20 @@ function Search:getCalibre()
         self.metafile_2 = nil
     end
 
--- check if they are newer than our own file
+    -- check if they are newer than our own file
     self.use_own_metadata_file = false
     if self.metafile_1 then
         pcall(lfs.mkdir("temp"))
         if io.open(koreaderfile, "r") then
-            if lfs.attributes(koreaderfile).modification > lfs.attributes(self.metafile_1).modification then
+            if lfs.attributes(koreaderfile, "modification") > lfs.attributes(self.metafile_1, "modification") then
                 if self.metafile_2 then
-                    if lfs.attributes(koreaderfile).modification > lfs.attributes(self.metafile_2).modification then
+                    if lfs.attributes(koreaderfile, "modification") > lfs.attributes(self.metafile_2, "modification") then
                         self.use_own_metadata_file = true
+                        logger.info("FMSearch: Using our own simplified metadata file as it's newer than", self.metafile_2)
                     end
                 else
                     self.use_own_metadata_file = true
+                    logger.info("FMSearch: Using our own simplified metadata file as it's newer than", self.metafile_1)
                 end
             end
         end
@@ -153,7 +155,7 @@ function Search:ShowSearch()
                         enabled = true,
                         callback = function()
                             self.search_value = self.search_dialog:getInputText()
-                            if not SetDefaults.settings_changed and self.search_value == dummy and self.lastsearch == "series" then
+                            if self.search_value == dummy and self.lastsearch == "series" then
                                  self.use_previous_search_results = true
                             else
                                  self.use_previous_search_results = false
@@ -167,7 +169,7 @@ function Search:ShowSearch()
                         enabled = true,
                         callback = function()
                             self.search_value = self.search_dialog:getInputText()
-                            if not SetDefaults.settings_changed and self.search_value == dummy and self.lastsearch == "tags" then
+                            if self.search_value == dummy and self.lastsearch == "tags" then
                                  self.use_previous_search_results = true
                             else
                                  self.use_previous_search_results = false
@@ -191,7 +193,7 @@ function Search:ShowSearch()
                         enabled = true,
                         callback = function()
                             self.search_value = self.search_dialog:getInputText()
-                            if not SetDefaults.settings_changed and self.search_value == dummy and self.lastsearch == "find" then
+                            if self.search_value == dummy and self.lastsearch == "find" then
                                  self.use_previous_search_results = true
                             else
                                  self.use_previous_search_results = false
@@ -243,16 +245,16 @@ function Search:find(option)
     local firstrun
 
     -- removes leading and closing characters and converts hex-unicodes
-    local ReplaceHexChars = function(s,n,j)
+    local ReplaceHexChars = function(s, n, j)
         local l=string.len(s)
 
-        if string.sub(s,l,l) == "\"" then
-            s=string.sub(s,n,string.len(s)-1)
+        if string.sub(s, l, l) == "\"" then
+            s=string.sub(s, n, string.len(s)-1)
         else
-            s=string.sub(s,n,string.len(s)-j)
+            s=string.sub(s, n, string.len(s)-j)
         end
 
-        s=string.gsub(s,"\\u([a-f0-9][a-f0-9][a-f0-9][a-f0-9])",function(w) return util.unichar(tonumber(w, 16)) end)
+        s=string.gsub(s, "\\u([a-f0-9][a-f0-9][a-f0-9][a-f0-9])", function(w) return util.unichar(tonumber(w, 16)) end)
 
         return s
     end
@@ -269,22 +271,22 @@ function Search:find(option)
         while line ~= "    ], " and line ~= "    ]" do
             line = f:read()
             if line ~= "    ], " and line ~= "    ]" then
-                self.data[i][s] = self.data[i][s] .. "," .. ReplaceHexChars(line,8,3)
+                self.data[i][s] = self.data[i][s] .. "," .. ReplaceHexChars(line, 8, 3)
                 if s == self.authors then
-                    self.data[i][self.authors2] = self.data[i][self.authors2] .. " & " .. ReplaceHexChars(line,8,3)
+                    self.data[i][self.authors2] = self.data[i][self.authors2] .. " & " .. ReplaceHexChars(line, 8, 3)
                 elseif s == self.tags then
-                    local tags_line = ReplaceHexChars(line,8,3)
+                    local tags_line = ReplaceHexChars(line, 8, 3)
                     self.data[i][self.tags2] = self.data[i][self.tags2] .. " & " .. tags_line
                     self.data[i][self.tags3] = self.data[i][self.tags3] .. "\t" .. tags_line
                     self.browse_tags[tags_line] = (self.browse_tags[tags_line] or 0) + 1
                 end
             end
         end
-        self.data[i][s] = string.sub(self.data[i][s],2)
+        self.data[i][s] = string.sub(self.data[i][s], 2)
         if s == self.authors then
-            self.data[i][self.authors2] = string.sub(self.data[i][self.authors2],4)
+            self.data[i][self.authors2] = string.sub(self.data[i][self.authors2], 4)
         elseif s == self.tags then
-            self.data[i][self.tags2] = string.sub(self.data[i][self.tags2],4)
+            self.data[i][self.tags2] = string.sub(self.data[i][self.tags2], 4)
             self.data[i][self.tags3] = self.data[i][self.tags3] .. "\t"
         end
     end
@@ -309,7 +311,7 @@ function Search:find(option)
             local g = io.open(koreaderfile, "r")
             line = g:read()
             if line ~= "#metadata.Koreader Version 1.1" and line ~= "#metadata.koreader Version 1.1" then
-                self.use_own_metadata_file =  false
+                self.use_own_metadata_file = false
                 g:close()
             else
                 line = g:read()
@@ -343,12 +345,14 @@ function Search:find(option)
 
                     for j in string.gmatch(self.data[i][self.tags3],"\t[^\t]+") do
                         if j~="\t" then
-                            self.browse_tags[string.sub(j,2)] = (self.browse_tags[string.sub(j,2)] or 0) + 1
+                            self.browse_tags[string.sub(j, 2)] = (self.browse_tags[string.sub(j, 2)] or 0) + 1
                         end
                     end
+                    -- NOTE: This skips kePubs downloaded by nickel, because they don't have a file extension,
+                    --       they're stored as .kobo/kepub/<UUID>
                     if DocumentRegistry:hasProvider(self.data[i][self.path]) then
                         if upsearch ~= "" then
-                            if string.find(search_content,upsearch,nil,true) then
+                            if string.find(search_content, upsearch, nil, true) then
                                 i = i + 1
                             end
                         else
@@ -359,7 +363,7 @@ function Search:find(option)
                             elseif option == "tags" then
                                 local found = false
                                 for j in string.gmatch(self.data[i][self.tags3],"\t[^\t]+") do
-                                    if j~="\t" and self.browse_tags[string.sub(j,2)] then
+                                    if j~="\t" and self.browse_tags[string.sub(j, 2)] then
                                         found = true
                                     end
                                 end
@@ -375,10 +379,11 @@ function Search:find(option)
             end
         end
         if not self.use_own_metadata_file then
+            logger.info("FMSearch: Writing our own simplified metadata file . . .")
             local g = io.open(koreaderfile, "w")
             g:write("#metadata.koreader Version 1.1\n")
 
-            f = io.open(self.metafile_1)
+            f = io.open(self.metafile_1, "r")
             line = f:read()
             while line do
                 if line == "  }, " or line == "  }" then
@@ -400,7 +405,7 @@ function Search:find(option)
                     end
 
                     if upsearch ~= "" then
-                        if string.find(search_content,upsearch,nil,true) then
+                        if string.find(search_content, upsearch, nil, true) then
                             i = i + 1
                         end
                     else
@@ -410,8 +415,8 @@ function Search:find(option)
                             end
                         elseif option == "tags" then
                             local found = false
-                            for j in string.gmatch(self.data[i][self.tags3],"\t[^\t]+") do
-                                if j~="\t" and self.browse_tags[string.sub(j,2)] then
+                            for j in string.gmatch(self.data[i][self.tags3], "\t[^\t]+") do
+                                if j~="\t" and self.browse_tags[string.sub(j, 2)] then
                                     found = true
                                 end
                             end
@@ -427,19 +432,19 @@ function Search:find(option)
                     ReadMultipleLines(self.authors)
                 elseif line == "    \"tags\": [" then -- TAGS
                     ReadMultipleLines(self.tags)
-                elseif string.sub(line,1,11) == "    \"title\"" then -- TITLE
-                    self.data[i][self.title] = ReplaceHexChars(line,15,3)
-                elseif string.sub(line,1,11) == "    \"lpath\"" then -- LPATH
-                    self.data[i][self.path] = ReplaceHexChars(line,15,3)
+                elseif string.sub(line, 1, 11) == "    \"title\"" then -- TITLE
+                    self.data[i][self.title] = ReplaceHexChars(line, 15, 3)
+                elseif string.sub(line, 1, 11) == "    \"lpath\"" then -- LPATH
+                    self.data[i][self.path] = ReplaceHexChars(line, 15, 3)
                     if firstrun then
                         self.data[i][self.path] = SEARCH_LIBRARY_PATH .. self.data[i][self.path]
                     else
                         self.data[i][self.path] = SEARCH_LIBRARY_PATH2 .. self.data[i][self.path]
                     end
-                elseif string.sub(line,1,12) == "    \"series\"" and line ~= "    \"series\": null, " then -- SERIES
-                    self.data[i][self.series] = ReplaceHexChars(line,16,3)
-                elseif string.sub(line,1,18) == "    \"series_index\"" and line ~= "    \"series_index\": null, " then -- SERIES_INDEX
-                    self.data[i][self.series_index] = ReplaceHexChars(line,21,2)
+                elseif string.sub(line, 1, 12) == "    \"series\"" and line ~= "    \"series\": null, " then -- SERIES
+                    self.data[i][self.series] = ReplaceHexChars(line, 16, 3)
+                elseif string.sub(line, 1, 18) == "    \"series_index\"" and line ~= "    \"series_index\": null, " then -- SERIES_INDEX
+                    self.data[i][self.series_index] = ReplaceHexChars(line, 21, 2)
                 end
                 line = f:read()
 
@@ -448,20 +453,20 @@ function Search:find(option)
                     firstrun = false
 
                     if self.metafile_2 then
-                        f = io.open(self.metafile_2)
+                        f = io.open(self.metafile_2, "r")
                         line = f:read()
                     end
                 end
             end
             g.close()
-            if lfs.attributes(koreaderfile).modification < lfs.attributes(self.metafile_1).modification then
+            if lfs.attributes(koreaderfile, "modification") < lfs.attributes(self.metafile_1, "modification") then
                 lfs.touch(koreaderfile,
-                          lfs.attributes(self.metafile_1).modification + 1,
-                          lfs.attributes(self.metafile_1).modification + 1)
+                          lfs.attributes(self.metafile_1, "modification") + 1,
+                          lfs.attributes(self.metafile_1, "modification") + 1)
             end
             if self.metafile_2 then
-                if lfs.attributes(koreaderfile).modification < lfs.attributes(self.metafile_2).modification then
-                    lfs.touch(koreaderfile, lfs.attributes(self.metafile_2).modification + 1, lfs.attributes(self.metafile_2).modification + 1)
+                if lfs.attributes(koreaderfile, "modification") < lfs.attributes(self.metafile_2, "modification") then
+                    lfs.touch(koreaderfile, lfs.attributes(self.metafile_2, "modification") + 1, lfs.attributes(self.metafile_2, "modification") + 1)
                 end
             end
         end
@@ -487,11 +492,11 @@ function Search:onMenuHold(item)
 
     if item.notchecked then
         item.info = item.info .. item.path
-        local f = io.open(item.path)
+        local f = io.open(item.path, "r")
         if f == nil then
             item.info = item.info .. "\n" .. _("File not found!")
         else
-            item.info = item.info .. "\n" .. _("Size:") .. " " .. string.format("%4.1fM",lfs.attributes(item.path, "size")/1024/1024)
+            item.info = item.info .. "\n" .. _("Size:") .. " " .. string.format("%4.1fM", lfs.attributes(item.path, "size")/1024/1024)
             f:close()
         end
         item.notchecked = false
@@ -599,7 +604,7 @@ function Search:browse(option, run, chosen)
             for v,n in util.orderedPairs(self.browse_series) do
                 dummy = v
                 if not SEARCH_CASESENSITIVE then dummy = string.upper(dummy) end
-                if string.find(dummy,upsearch,nil,true) then
+                if string.find(dummy, upsearch, nil, true) then
                     table.insert(self.results, {
                         text = v .. " (" .. tostring(self.browse_series[v]) .. ")",
                         callback = function()
@@ -612,7 +617,7 @@ function Search:browse(option, run, chosen)
             for v,n in util.orderedPairs(self.browse_tags) do
                 dummy = v
                 if not SEARCH_CASESENSITIVE then dummy = string.upper(dummy) end
-                if string.find(dummy,upsearch,nil,true) then
+                if string.find(dummy, upsearch, nil, true) then
                     table.insert(self.results, {
                         text = v .. " (" .. tostring(self.browse_tags[v]) .. ")",
                         callback = function()
@@ -642,7 +647,7 @@ function Search:browse(option, run, chosen)
                     if self.data[i][self.series_index] == "0.0" then
                         text = self.data[i][self.title] .. " (" .. self.data[i][self.authors] .. ")"
                     else
-                        text = string.format("%6.1f",self.data[i][self.series_index]:gsub(".0$","")) .. ": " .. self.data[i][self.title] .. " (" .. self.data[i][self.authors] .. ")"
+                        text = string.format("%6.1f", self.data[i][self.series_index]:gsub(".0$","")) .. ": " .. self.data[i][self.title] .. " (" .. self.data[i][self.authors] .. ")"
                     end
                 else
                     text = self.data[i][self.authors] .. ": " .. self.data[i][self.title]

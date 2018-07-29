@@ -123,7 +123,7 @@ local KoboSnow = Kobo:new{
 }
 
 -- Kobo Aura H2O2, Rev2:
--- FIXME: Shares FL/NaturalLight issues with the Clara (#4015)
+-- FIXME: Check if the Clara fix actually helps here... (#4015)
 local KoboSnowRev2 = Kobo:new{
     model = "Kobo_snow",
     hasFrontlight = yes,
@@ -134,8 +134,8 @@ local KoboSnowRev2 = Kobo:new{
     hasNaturalLight = yes,
     frontlight_settings = {
         frontlight_white = "/sys/class/backlight/lm3630a_ledb",
-        frontlight_red = "/sys/class/backlight/lm3630a_led",
-        frontlight_green = "/sys/class/backlight/lm3630a_leda",
+        frontlight_red = "/sys/class/backlight/lm3630a_leda",
+        frontlight_green = "/dev/null",
     },
 }
 
@@ -179,7 +179,6 @@ local KoboPika = Kobo:new{
 }
 
 -- Kobo Clara HD:
--- FIXME: Check that NaturalLight behaves properly (c.f., #4015)
 local KoboNova = Kobo:new{
     model = "Kobo_nova",
     hasFrontlight = yes,
@@ -189,7 +188,11 @@ local KoboNova = Kobo:new{
     frontlight_settings = {
         frontlight_white = "/sys/class/backlight/lm3630a_ledb",
         frontlight_red = "/sys/class/backlight/lm3630a_leda",
-        frontlight_green = "/sys/class/backlight/lm3630a_led1b",
+        -- NOTE: There doesn't appear to be a dedicated "green" LED, instead,
+        --       there's a knob that mixes the white & red ones together (/sys/class/backlight/lm3630a_led).
+        --       c.f., https://www.mobileread.com/forums/showpost.php?p=3728236&postcount=2947
+        --       Because I'm not familiar with sysfs_light.lua, just throw green into the void, and hope for the best...
+        frontlight_green = "/dev/null",
     },
 }
 

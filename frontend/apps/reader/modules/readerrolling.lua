@@ -497,7 +497,7 @@ function ReaderRolling:onGotoXPointer(xp, marker_xp)
                     -- documents): we drew our black marker in the margin, we
                     -- can just draw a white one to make it disappear
                     Screen.bb:paintRect(0, screen_y, marker_w, marker_h, Blitbuffer.COLOR_WHITE)
-                    Screen["refreshFast"](Screen, 0, screen_y, marker_w, marker_h)
+                    Screen["refreshUI"](Screen, 0, screen_y, marker_w, marker_h)
                 end
                 UIManager:scheduleIn(marker_setting, self.unmark_func)
             end

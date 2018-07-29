@@ -395,14 +395,8 @@ function ReaderFont:buildFontsTestDocument()
     UIManager:show(ConfirmBox:new{
         text = T(_("Document created as:\n%1\n\nWould you like to read it now?"), fonts_test_path),
         ok_callback = function()
-            -- close current ReaderUI in 1 sec, and create a new one
             UIManager:scheduleIn(1.0, function()
-                local ReaderUI = require("apps/reader/readerui")
-                local reader = ReaderUI:_getRunningInstance()
-                if reader then
-                    reader:onClose()
-                end
-                ReaderUI:showReader(fonts_test_path)
+                self.ui:switchDocument(fonts_test_path)
             end)
         end,
     })

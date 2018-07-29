@@ -7,6 +7,7 @@ local OpenWithDialog = require("ui/widget/openwithdialog")
 local UIManager = require("ui/uimanager")
 local gettext = require("gettext")
 local logger = require("logger")
+local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
 local T = require("ffi/util").template
 
@@ -24,6 +25,33 @@ function DocumentRegistry:addProvider(extension, mimetype, provider, weight)
         weight = weight or 100,
     })
     self.filetype_provider[extension] = true
+end
+
+function DocumentRegistry:getRandomFile(dir, opened, extension)
+    local DocSettings = require("docsettings")
+    if string.sub(dir, string.len(dir)) ~= "/" then
+        dir = dir .. "/"
+    end
+    local files = {}
+    local i = 0
+    local ok, iter, dir_obj = pcall(lfs.dir, dir)
+    if ok then
+        for entry in iter, dir_obj do
+            if lfs.attributes(dir .. entry, "mode") == "file" and self:hasProvider(dir .. entry)
+                and (opened == nil or DocSettings:hasSidecarFile(dir .. entry) == opened)
+                and (extension == nil or extension[util.getFileNameSuffix(entry)]) then
+                i = i + 1
+                files[i] = entry
+            end
+        end
+        if i == 0 then
+            return nil
+        end
+    else
+        return nil
+    end
+    math.randomseed(os.time())
+    return dir .. files[math.random(i)]
 end
 
 --- Returns true if file has provider.

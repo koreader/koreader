@@ -655,6 +655,7 @@ function ReaderUI:reloadDocument(after_close_callback)
     local provider = getmetatable(self.document).__index
     self:handleEvent(Event:new("CloseReaderMenu"))
     self:handleEvent(Event:new("CloseConfigMenu"))
+    self.highlight:onClose() -- close highlight dialog if any
     self:onClose()
     if after_close_callback then
         -- allow caller to do stuff between close an re-open
@@ -666,6 +667,7 @@ end
 function ReaderUI:switchDocument(new_file)
     self:handleEvent(Event:new("CloseReaderMenu"))
     self:handleEvent(Event:new("CloseConfigMenu"))
+    self.highlight:onClose() -- close highlight dialog if any
     self:onClose()
     self:showReader(new_file)
 end

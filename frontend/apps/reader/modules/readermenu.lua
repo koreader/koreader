@@ -152,7 +152,7 @@ function ReaderMenu:setUpdateItemTable()
             text = _("Screensaver"),
             sub_item_table = require("ui/elements/screensaver_menu"),
         }
-        table.remove(self.menu_items.screensaver.sub_item_table, 8)
+        table.remove(self.menu_items.screensaver.sub_item_table, 9)
         table.insert(self.menu_items.screensaver.sub_item_table, ss_book_settings)
     end
     -- main menu tab
@@ -320,10 +320,10 @@ end
 
 function ReaderMenu:onCloseDocument()
     if Device:supportsScreensaver() then
-        -- Remove the 8th item we added (which cleans up references to document
+        -- Remove the 9th item we added (which cleans up references to document
         -- and doc_settings embedded in functions)
         local screensaver_sub_item_table = require("ui/elements/screensaver_menu")
-        table.remove(screensaver_sub_item_table, 8)
+        table.remove(screensaver_sub_item_table, 9)
     end
 end
 

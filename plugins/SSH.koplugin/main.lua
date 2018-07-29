@@ -9,12 +9,12 @@ local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
--- This plugin use a patched dropbear that add two things :
--- the -n option to allow login without password
--- read the keyfile from the relative path: settings/SSH/authorized_keys
+-- This plugin uses a patched dropbear that adds two things:
+-- the -n option to bypass password checks
+-- reads the authorized_keys file from the relative path: settings/SSH/authorized_keys
 
 local path = DataStorage:getFullDataDir()
-if not util.pathExists("dropbearmulti") then
+if not util.pathExists("dropbear") then
     return { disabled = true, }
 end
 
@@ -30,15 +30,18 @@ function SSH:init()
 end
 
 function SSH:start()
-    local cmd = string.format("%s %s %s %s%s %s %s %s",
-        "./dropbearmulti dropbear",
-        "-E", "-r ", path, "/settings/SSH/dropbear_rsa_host_key",
+    local cmd = string.format("%s %s %s %s%s %s",
+        "./dropbear",
+        "-E",
+        "-R",
         "-p", self.SSH_port,
         "-P /tmp/dropbear_koreader.pid")
      if self.allow_no_password then
         cmd = string.format("%s %s", cmd, "-n")
     end
-    if os.execute("command -v iptables") then
+
+    -- Make a hole in the Kindle's firewall
+    if Device:isKindle() then
         os.execute(string.format("%s %s %s",
             "iptables -A INPUT -p tcp --dport", self.SSH_port,
             "-m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT"))
@@ -47,16 +50,16 @@ function SSH:start()
             "-m conntrack --ctstate ESTABLISHED -j ACCEPT"))
     end
     -- An SSH/telnet server of course needs to be able to manipulate pseudoterminals...
-    -- Some Kobo don't have this, so we check it on every platfrom, it can't hurt.
-    os.execute([[if [ ! -d "/dev/pts" ] ; then
-        mkdir -p /dev/pts
-        mount -t devpts devpts /dev/pts
-        fi]])
+    -- Kobo's init scripts fail to set this up...
+    if Device:isKobo() then
+        os.execute([[if [ ! -d "/dev/pts" ] ; then
+            mkdir -p /dev/pts
+            mount -t devpts devpts /dev/pts
+            fi]])
+    end
+
     if not util.pathExists(path.."/settings/SSH/") then
         os.execute("mkdir "..path.."/settings/SSH")
-    end
-    if not util.pathExists(path.."/settings/SSH/dropbear_rsa_host_key") then
-        os.execute("./dropbearmulti dropbearkey -t rsa -f "..path.."/settings/SSH/dropbear_rsa_host_key")
     end
     logger.dbg("[Network] Launching SSH server : ", cmd)
     if os.execute(cmd) == 0 then
@@ -82,6 +85,16 @@ end
 
 function SSH:stop()
     os.execute("cat /tmp/dropbear_koreader.pid | xargs kill")
+
+    -- Plug the hole in the Kindle's firewall
+    if Device:isKindle() then
+        os.execute(string.format("%s %s %s",
+            "iptables -D INPUT -p tcp --dport", self.SSH_port,
+            "-m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT"))
+        os.execute(string.format("%s %s %s",
+            "iptables -D OUTPUT -p tcp --sport", self.SSH_port,
+            "-m conntrack --ctstate ESTABLISHED -j ACCEPT"))
+    end
 end
 
 function SSH:show_port_dialog()
@@ -128,8 +141,8 @@ function SSH:addToMainMenu(menu_items)
             },
             {
                 text = _("Stop SSH server"),
-                callback = self.stop,
-                enabled_func = self.isRunning,
+                callback = function() return self:stop() end,
+                enabled_func = function() return self:isRunning() end,
             },
             {
                 text = _("Change SSH port"),

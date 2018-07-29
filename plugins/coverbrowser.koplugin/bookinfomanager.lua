@@ -138,6 +138,8 @@ end
 
 function BookInfoManager:createDB()
     local db_conn = SQ3.open(self.db_location)
+    -- Make it WAL
+    db_conn:exec("PRAGMA journal_mode=WAL;")
     -- Less error cases to check if we do it that way
     -- Create it (noop if already there)
     db_conn:exec(BOOKINFO_DB_SCHEMA)
@@ -255,6 +257,26 @@ end
 -- Bookinfo management
 function BookInfoManager:getBookInfo(filepath, get_cover)
     local directory, filename = splitFilePathName(filepath)
+
+    -- CoverBrowser may be used by PathChooser, which will not filter out
+    -- files with unknown book extension. If not a supported extension,
+    -- returns a bookinfo like-object enough for a correct display and
+    -- to not trigger extraction, so we don't clutter DB with such files.
+    if not DocumentRegistry:hasProvider(filepath) then
+        return {
+            directory = directory,
+            filename = filename,
+            in_progress = 0,
+            cover_fetched = "Y",
+            has_meta = nil,
+            has_cover = nil,
+            ignore_meta = "Y",
+            ignore_cover = "Y",
+            -- for ListMenu to show the filename *with* suffix:
+            _no_provider = true
+        }
+    end
+
     self:openDbConnection()
     local row = self.get_stmt:bind(directory, filename):step()
     self.get_stmt:clearbind():reset() -- get ready for next query
@@ -483,6 +505,9 @@ end
 function BookInfoManager:removeNonExistantEntries()
     self:openDbConnection()
     local res = self.db_conn:exec("SELECT bcid, directory || filename FROM bookinfo")
+    if not res then
+        return _("Cache is empty. Nothing to prune.")
+    end
     local bcids = res[1]
     local filepaths = res[2]
     local bcids_to_remove = {}

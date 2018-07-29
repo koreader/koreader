@@ -27,6 +27,9 @@ local VirtualKey = InputContainer:new{
 
     keyboard = nil,
     callback = nil,
+    -- This is to inhibit the key's own refresh (useful to avoid conflicts on Layout changing keys)
+    skiptap = nil,
+    skiphold = nil,
 
     width = nil,
     height = math.max(Screen:getWidth(), Screen:getHeight())*0.33,
@@ -37,15 +40,20 @@ local VirtualKey = InputContainer:new{
 function VirtualKey:init()
     if self.keyboard.symbolmode_keys[self.label] ~= nil then
         self.callback = function () self.keyboard:setLayout("Sym") end
+        self.skiptap = true
     elseif self.keyboard.shiftmode_keys[self.label] ~= nil then
         self.callback = function () self.keyboard:setLayout("Shift") end
+        self.skiptap = true
     elseif self.keyboard.utf8mode_keys[self.label] ~= nil then
         self.callback = function () self.keyboard:setLayout("IM") end
+        self.skiptap = true
     elseif self.keyboard.umlautmode_keys[self.label] ~= nil then
         self.callback = function () self.keyboard:setLayout("Äéß") end
+        self.skiptap = true
     elseif self.label == "Backspace" then
         self.callback = function () self.keyboard:delChar() end
         self.hold_callback = function () self.keyboard:clear() end
+        --self.skiphold = true
     elseif self.label =="←" then
         self.callback = function() self.keyboard:leftChar() end
     elseif self.label == "→" then
@@ -60,8 +68,14 @@ function VirtualKey:init()
 
     local label_widget
     if self.icon then
+        -- Scale icon to fit other characters height
+        -- (use *1.5 as our icons have a bit of white padding)
+        local icon_height = math.ceil(self.face.size * 1.5)
         label_widget = ImageWidget:new{
             file = self.icon,
+            scale_factor = 0, -- keep icon aspect ratio
+            height = icon_height,
+            width = icon_height * 100, -- to fit height when ensuring a/r
         }
     else
         label_widget = TextWidget:new{
@@ -107,13 +121,23 @@ function VirtualKey:init()
     self.flash_keyboard = G_reader_settings:readSetting("flash_keyboard") ~= false
 end
 
-function VirtualKey:update_keyboard()
-    -- NOTE: We could arguably use "fast" when inverted & "ui" when not, but it doesn't change much,
-    --       and doesn't help with the graphics quirks of repeated "fast" updates on some devices.
-    UIManager:setDirty(self.keyboard, function()
-        logger.dbg("update key region", self[1].dimen)
-        return "fast", self[1].dimen
-    end)
+function VirtualKey:update_keyboard(want_flash, want_fast)
+    -- NOTE: We mainly use "fast" when inverted & "ui" when not, with a cherry on top:
+    --       we flash the *full* keyboard instead when we release a hold.
+    if want_flash then
+        UIManager:setDirty(self.keyboard, function()
+            return "flashui", self.keyboard[1][1].dimen
+        end)
+    else
+        local refresh_type = "ui"
+        if want_fast then
+            refresh_type = "fast"
+        end
+        UIManager:setDirty(self.keyboard, function()
+            logger.dbg("update key region", self[1].dimen)
+            return refresh_type, self[1].dimen
+        end)
+    end
 end
 
 function VirtualKey:onFocus()
@@ -125,9 +149,9 @@ function VirtualKey:onUnfocus()
 end
 
 function VirtualKey:onTapSelect()
-    if self.flash_keyboard then
+    if self.flash_keyboard and not self.skiptap then
         self[1].invert = true
-        self:update_keyboard()
+        self:update_keyboard(false, true)
         if self.callback then
             self.callback()
         end
@@ -141,13 +165,13 @@ function VirtualKey:onTapSelect()
 end
 
 function VirtualKey:onHoldSelect()
-    if self.flash_keyboard then
+    if self.flash_keyboard and not self.skiphold then
         self[1].invert = true
-        self:update_keyboard()
+        self:update_keyboard(false, true)
         if self.hold_callback then
             self.hold_callback()
         end
-        UIManager:tickAfterNext(function() self:invert(false) end)
+        UIManager:tickAfterNext(function() self:invert(false, true) end)
     else
         if self.hold_callback then
             self.hold_callback()
@@ -156,9 +180,9 @@ function VirtualKey:onHoldSelect()
     return true
 end
 
-function VirtualKey:invert(invert)
+function VirtualKey:invert(invert, hold)
     self[1].invert = invert
-    self:update_keyboard()
+    self:update_keyboard(hold, false)
 end
 
 local VirtualKeyboard = FocusManager:new{

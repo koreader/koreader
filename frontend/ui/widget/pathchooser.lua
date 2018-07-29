@@ -8,6 +8,7 @@ local PathChooser = FileChooser:extend{
     title = _("Choose Path"),
     no_title = false,
     is_popout = false,
+    covers_fullscreen = true, -- set it to false if you set is_popout = true
     is_borderless = true,
     show_filesize = false,
     file_filter = function() return false end, -- filter out regular files

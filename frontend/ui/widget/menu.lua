@@ -280,7 +280,7 @@ function MenuItem:init()
                 local removed_char_width= 0
                 while removed_char_width < ellipsis_size  do
                     -- the width of each char has already been calculated by TextBoxWidget
-                    removed_char_width = removed_char_width + item_name:geCharWidth(offset)
+                    removed_char_width = removed_char_width + item_name:getCharWidth(offset)
                     offset = offset - 1
                 end
                 self.text = table.concat(item_name.charlist, '', 1, offset) .. "…"

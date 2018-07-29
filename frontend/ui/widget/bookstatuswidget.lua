@@ -555,6 +555,7 @@ function BookStatusWidget:onSwitchFocus(inputbox)
         input_hint = "",
         input_type = "text",
         scroll = true,
+        allow_newline = true,
         text_height = Screen:scaleBySize(150),
         buttons = {
             {

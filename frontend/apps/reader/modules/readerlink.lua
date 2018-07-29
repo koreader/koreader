@@ -7,15 +7,17 @@ local Device = require("device")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
+local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LinkBox = require("ui/widget/linkbox")
 local Notification = require("ui/widget/notification")
 local UIManager = require("ui/uimanager")
+local ffiutil = require("ffi/util")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
-local T = require("ffi/util").template
+local T = ffiutil.template
 
 local ReaderLink = InputContainer:new{
     location_stack = {}
@@ -28,6 +30,9 @@ function ReaderLink:init()
     self.ui:registerPostInitCallback(function()
         self.ui.menu:registerToMainMenu(self)
     end)
+    -- For relative local file links
+    local directory, filename = util.splitFilePathName(self.ui.document.file) -- luacheck: no unused
+    self.document_dir = directory
 end
 
 function ReaderLink:onReadSettings(config)
@@ -330,6 +335,7 @@ function ReaderLink:onGotoLink(link, neglect_current_location)
         end
     end
     logger.dbg("External link:", link)
+
     -- Check if it is a wikipedia link
     local wiki_lang, wiki_page = link.xpointer:match([[https?://([^%.]+).wikipedia.org/wiki/([^/]+)]])
     if wiki_lang and wiki_page then
@@ -373,14 +379,8 @@ function ReaderLink:onGotoLink(link, neglect_current_location)
                 end,
                 choice2_text = _("Read EPUB"),
                 choice2_callback = function()
-                    -- close current ReaderUI, and create a new one
                     UIManager:scheduleIn(0.1, function()
-                        local ReaderUI = require("apps/reader/readerui")
-                        local reader = ReaderUI:_getRunningInstance()
-                        if reader then
-                            reader:onClose()
-                        end
-                        ReaderUI:showReader(epub_fullpath)
+                        self.ui:switchDocument(epub_fullpath)
                     end)
                 end,
             })
@@ -394,13 +394,50 @@ function ReaderLink:onGotoLink(link, neglect_current_location)
                 end
             })
         end
-    else
-        local InfoMessage = require("ui/widget/infomessage")
-        UIManager:show(InfoMessage:new{
-            text = T(_("Invalid or external link:\n%1"), link.xpointer),
-            -- no timeout to allow user to type that link in his web browser
-        })
+        return true
     end
+
+    -- Check if it is a link to a local file
+    local linked_filename = link.xpointer:gsub("^file:", "") -- remove local file protocol if any
+    local anchor
+    if linked_filename:find("?") then -- remove any query string (including any following anchor)
+        linked_filename, anchor = linked_filename:match("^(.-)(%?.*)$")
+    elseif linked_filename:find("#") then -- remove any anchor
+        linked_filename, anchor = linked_filename:match("^(.-)(#.*)$")
+    end
+    linked_filename  = ffiutil.joinPath(self.document_dir, linked_filename) -- get full path
+    linked_filename = ffiutil.realpath(linked_filename) -- clean full path from ./ or ../
+    if linked_filename and lfs.attributes(linked_filename, "mode") == "file" then
+        local DocumentRegistry = require("document/documentregistry")
+        local provider = DocumentRegistry:getProvider(linked_filename)
+        if provider then
+            -- Display filename with anchor or query string, so the user gets
+            -- this information and can manually go to the appropriate place
+            local display_filename = linked_filename
+            if anchor then
+                display_filename = display_filename .. anchor
+            end
+            UIManager:show(ConfirmBox:new{
+                text = T(_("Would you like to read this local document?\n\n%1\n"), display_filename),
+                ok_callback = function()
+                    UIManager:scheduleIn(0.1, function()
+                        self.ui:switchDocument(linked_filename)
+                    end)
+                end
+            })
+        else
+            UIManager:show(InfoMessage:new{
+                text = T(_("Link to unsupported local file:\n%1"), link.xpointer),
+            })
+        end
+        return true
+    end
+
+    -- Not supported
+    UIManager:show(InfoMessage:new{
+        text = T(_("Invalid or external link:\n%1"), link.xpointer),
+        -- no timeout to allow user to type that link in his web browser
+    })
     -- don't propagate, user will notice and tap elsewhere if he wants to change page
     return true
 end

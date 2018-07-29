@@ -183,7 +183,7 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                             buttons = {
                                 {
                                     {
-                                        text = "Keep this directory",
+                                        text = _("Keep this directory"),
                                         callback = function()
                                             UIManager:close(dialog)
                                         end,
