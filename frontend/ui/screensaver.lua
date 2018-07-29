@@ -100,6 +100,7 @@ function Screensaver:chooseFile()
                     title = _("Choose screensaver image"),
                     no_title = false,
                     path = self.root_path,
+                    show_hidden = G_reader_settings:readSetting("show_hidden"),
                     focused_path = self.focused_file,
                     collate = G_reader_settings:readSetting("collate") or "strcoll",
                     reverse_collate = G_reader_settings:isTrue("reverse_collate"),
