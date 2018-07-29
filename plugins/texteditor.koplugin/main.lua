@@ -129,9 +129,46 @@ function TextEditor:saveFile(file_path)
             end
         })
     else
-        UIManager:show(InfoMessage:new{
-            text = _("Failed to save file: \n" .. file_path)
-        })
+        self.input:onClose()
+        local path_chooser = PathChooser:new{
+            title = _("Select directory. Long press to confirm"),
+            height = Screen:getHeight(),
+            path = util.realpath(DataStorage:getDataDir()),
+            show_hidden = G_reader_settings:readSetting("show_hidden"),
+            onConfirm = function(dir_path)
+                logger.dbg("TextEditor: selected dir_path " .. dir_path )
+                local file_input = InputDialog:new{
+                    title =  _("File name"),
+                    input_type = "string",
+                    input = dir_path .. "/",
+                    fullscreen = false,
+                    allow_newline = false,
+                    cursor_at_end = true,
+                    add_scroll_buttons = false,
+                    add_nav_bar = false,
+                    buttons = {
+                        {
+                            {
+                                text = _("Cancel"),
+                                callback = function()
+                                    UIManager:close(file_input)
+                                end,
+                            },
+                            {
+                                text = _("Save"),
+                                callback = function()
+                                    logger.dbg(self)
+                                    logger.dbg('Got user input as raw text:'.. self:getInputText())
+                                end,
+                            },
+                        }
+                    },
+                }
+                file_input:onShowKeyboard()
+                UIManager:show(file_input)
+            end
+        }
+        UIManager:show(path_chooser)
     end
     UIManager:forceRePaint()
 end
