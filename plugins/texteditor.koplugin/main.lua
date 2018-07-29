@@ -71,7 +71,6 @@ function TextEditor:createUI()
 
             end,
         },
-   
 
     }},
     }
@@ -100,7 +99,7 @@ end
 function TextEditor:selectFileForOpen(file_path)
     logger.dbg("TextEditor: reading file: " .. file_path)
     local file = io.open(file_path, "rb")
-    if file then 
+    if file then
         if file:seek("end") > 32000 then
             UIManager:show(ConfirmBox:new{
                 text = _("This seems a binary or very big file. Are you sure you want to open it?"),
@@ -111,7 +110,7 @@ function TextEditor:selectFileForOpen(file_path)
                     self.input:setInputText(self.context)
                     file:close()
                 end,
-                cancel_callback = function() 
+                cancel_callback = function()
                     UIManager:hide(self)
                 end
             })
