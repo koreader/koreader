@@ -100,13 +100,12 @@ function TextEditor:selectFileForOpen(file_path)
     logger.dbg("TextEditor: reading file: " .. file_path)
     local file = io.open(file_path, "rb")
     if file then
-        local start_file = file:seek()
-        if file:seek("end") > 32000 then
+        local file_size = lfs.attributes(file_path, "size")
+        if file_size > 32000 then
             UIManager:show(ConfirmBox:new{
                 text = _("This seems a binary or very big file. Are you sure you want to open it?"),
                 ok_text = _("Yes"),
                 ok_callback = function()
-                    file:seek("set", start_file)  
                     self.file_path = file_path
                     self.context = file:read("*all")
                     self.input:setInputText(self.context)
@@ -114,7 +113,6 @@ function TextEditor:selectFileForOpen(file_path)
                 end,
             })
         else
-            file:seek("set", start_file)  
             self.file_path = file_path
             self.context = file:read("*all")
             self.input:setInputText(self.context)
