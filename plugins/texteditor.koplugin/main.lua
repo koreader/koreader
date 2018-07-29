@@ -36,10 +36,13 @@ end
 function TextEditor:createUI()
     self.input = InputDialog:new{
         title =  _("Basic text editor"),
-        input = self.context,
-        text_height = Screen:getHeight() * 0.5,
-        width = self.width or Screen:getWidth(),
         input_type = "string",
+        input = self.context,
+        fullscreen = true,
+        allow_newline = true,
+        cursor_at_end = false,
+        add_scroll_buttons = true,
+        add_nav_bar = true,
         buttons = {{
         {
             text = _("Open"),
@@ -68,29 +71,10 @@ function TextEditor:createUI()
 
             end,
         },
-        {
-            text = _("Pg up"),
-            callback = function()
-                self.input._input_widget.text_widget:scrollUp()
-                UIManager:setDirty(self.input, function()
-                    return "ui", self.input.dimen
-                end)
-            end,
-        },
-        {
-            text = _("Pg dn"),
-            callback = function()
-                self.input._input_widget.text_widget:scrollDown()
-                UIManager:setDirty(self.input, function()
-                    return "ui", self.input.dimen
-                end)
-            end,
-        }
+   
 
     }},
     }
-    --to be able to insert new line, we need to disable callback (InputDialog always sets it)
-    self.input._input_widget.enter_callback = nil
     UIManager:show(self.input)
     self.input:onShowKeyboard()
 end
