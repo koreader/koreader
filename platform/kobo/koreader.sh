@@ -7,9 +7,21 @@ KOREADER_DIR="${0%/*}"
 # we're always starting from our working directory
 cd "${KOREADER_DIR}" || exit
 
-# Switch to a sensible CPUFreq governor, even if the HW appears not to give an actual fuck about this...
-ORIG_CPUFREQ_GOV="$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)"
-echo "ondemand" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+# Attempt to switch to a sensible CPUFreq governor when that's not already the case...
+current_cpufreq_gov="$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)"
+# NOTE: We're being fairly conservative here, because what's used and what's available varies depending on HW...
+if [ "${current_cpufreq_gov}" != "ondemand" ] && [ "${current_cpufreq_gov}" != "interactive" ]; then
+    # NOTE: Go with ondemand, because it's likely to be the lowest common denominator.
+    #       Plus, interactive is hard to tune right, and only really interesting when it's a recent version,
+    #       which I somehow doubt is the case anywhere here...
+    if grep -q ondemand /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors; then
+        ORIG_CPUFREQ_GOV="${current_cpufreq_gov}"
+        echo "ondemand" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+    fi
+fi
+# NOTE: That doesn't actually help us poor userspace plebs, but, short of switching to performance,
+#       I don't really have a golden bullet here... (conservative's rubberbanding is terrible, so that's a hard pass).
+#       All I can say is that userspace is a terrible idea and behaves *very* strangely (c.f., #4114).
 
 # update to new version from OTA directory
 ko_update_check() {
@@ -136,8 +148,10 @@ while [ $RETURN_VALUE -eq 85 ]; do
     RETURN_VALUE=$?
 done
 
-# Restore original CPUFreq governor...
-echo "${ORIG_CPUFREQ_GOV}" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+# Restore original CPUFreq governor if need be...
+if [ -n "${ORIG_CPUFREQ_GOV}" ]; then
+    echo "${ORIG_CPUFREQ_GOV}" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+fi
 
 if [ "${FROM_NICKEL}" = "true" ]; then
     if [ "${FROM_KFMON}" != "true" ]; then
