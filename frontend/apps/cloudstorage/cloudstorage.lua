@@ -16,7 +16,7 @@ local CloudStorage = Menu:extend{
     cloud_servers = {
         {
             text = _("Add new cloud storage"),
-            title = _("Choose type of cloud"),
+            title = _("Choose cloud type"),
             url = "add",
             editable = false,
         },
