@@ -15,8 +15,8 @@ local Screen = require("device").screen
 local CloudStorage = Menu:extend{
     cloud_servers = {
         {
-            text = "Add new cloud storage",
-            title = "Choose type of cloud",
+            text = _("Add new cloud storage"),
+            title = _("Choose cloud type"),
             url = "add",
             editable = false,
         },
@@ -30,7 +30,7 @@ local CloudStorage = Menu:extend{
 function CloudStorage:init()
     self.cs_settings = self:readSettings()
     self.menu_select = nil
-    self.title = "Cloud Storage"
+    self.title = _("Cloud storage")
     self.show_parent = self
     self.item_table = self:genItemTableFromRoot()
     self.width = Screen:getWidth()
