@@ -1,9 +1,11 @@
+local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local DownloadBackend = require("internaldownloadbackend")
 --local DownloadBackend = require("luahttpdownloadbackend")
 local ReadHistory = require("readhistory")
 local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
+local InputDialog = require("ui/widget/inputdialog")
 local LuaSettings = require("frontend/luasettings")
 local UIManager = require("ui/uimanager")
 local NetworkMgr = require("ui/network/manager")
@@ -106,12 +108,7 @@ function NewsDownloader:addToMainMenu(menu_items)
                 sub_item_table = {
                     {
                         text = _("Change feeds configuration"),
-                        callback = function()
-                            UIManager:show(InfoMessage:new{
-                                text = T(_("To change feed (Atom/RSS) sources please manually edit the configuration file:\n%1\n\nIt is very simple and contains comments as well as sample configuration."),
-                                         feed_config_path)
-                            })
-                        end,
+                        callback = function() self:changeFeedConfig() end,
                     },
                 },
             },
@@ -386,6 +383,54 @@ function NewsDownloader:setCustomDownloadDirectory()
            self:lazyInitialization()
        end,
     }:chooseDir()
+end
+
+function NewsDownloader:changeFeedConfig() 
+    local feed_config_file = io.open(feed_config_path, "rb")
+    local config = feed_config_file:read("*all")
+    feed_config_file:close()
+    config_editor = InputDialog:new{ --todo change to local var, requires fix in save and cancel. No idea how.
+        title = _("Feed config editor"),
+        input = config,
+        input_type = "string",
+        fullscreen = true,
+        condensed = true,
+        allow_newline = true,
+        cursor_at_end = false,
+        add_scroll_buttons = true,
+        add_nav_bar = true,
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    callback = function()
+                        UIManager:close(config_editor)
+                    end,
+                },
+                {
+                    text = _("Save"),
+                    callback = function()
+                        local feed_config_file = io.open(feed_config_path, "w")
+                        UIManager:show(ConfirmBox:new{
+                            text = _("Are you sure that you want to save configuration?"),
+                            ok_text = _("Save"),
+                            ok_callback = function()
+                                feed_config_file:write(config_editor:getInputText())
+                                feed_config_file:close()
+                                UIManager:close(config_editor)
+                                UIManager:show(InfoMessage:new{
+                                    text = _("Configuration saved")
+                                })
+                            end
+                        })
+                    end,
+                },
+            }
+        },
+    }
+    UIManager:show(config_editor)
+    config_editor:onShowKeyboard()
+
 end
 
 function NewsDownloader:onCloseDocument()
