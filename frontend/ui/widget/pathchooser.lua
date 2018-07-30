@@ -7,6 +7,7 @@ local _ = require("gettext")
 local PathChooser = FileChooser:extend{
     title = _("Choose Path"),
     no_title = false,
+    show_path = true,
     is_popout = false,
     covers_fullscreen = true, -- set it to false if you set is_popout = true
     is_borderless = true,

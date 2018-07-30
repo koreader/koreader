@@ -87,6 +87,9 @@ function CoverMenu:updateItems(select_number)
     -- As done in Menu:updateItems()
     self:updatePageInfo(select_number)
 
+    if self.show_path then
+        self.path_text.text = self:truncatePath(self.path)
+    end
     UIManager:setDirty("all", function()
         local refresh_dimen =
             old_dimen and old_dimen:combine(self.dimen)
