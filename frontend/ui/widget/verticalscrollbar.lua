@@ -13,6 +13,7 @@ local VerticalScrollBar = Widget:new{
     bordercolor = Blitbuffer.COLOR_BLACK,
     radius = 0,
     rectcolor = Blitbuffer.COLOR_BLACK,
+    min_thumb_size = Size.line.thick,
 }
 
 function VerticalScrollBar:getSize()
@@ -33,7 +34,8 @@ function VerticalScrollBar:paintTo(bb, x, y)
                    self.bordersize, self.bordercolor, self.radius)
     bb:paintRect(x + self.bordersize, y + self.bordersize + self.low * self.height,
                  self.width - 2 * self.bordersize,
-                 (self.height - 2 * self.bordersize) * (self.high - self.low), self.rectcolor)
+                 math.max((self.height - 2 * self.bordersize) * (self.high - self.low), self.min_thumb_size),
+                 self.rectcolor)
 end
 
 return VerticalScrollBar

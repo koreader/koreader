@@ -238,8 +238,19 @@ function RenderText:renderUtf8Text(dest_bb, x, baseline, face, text, kerning, bo
         end -- if pen_x < text_width
         if char_pads then
             char_idx = char_idx + 1
-            pen_x = pen_x + char_pads[char_idx] -- or 0
-            -- will fail if we didnt count the same number of chars, we'll see
+            pen_x = pen_x + (char_pads[char_idx] or 0)
+            -- We used to use:
+            --   pen_x = pen_x + char_pads[char_idx]
+            --   above will fail if we didnt count the same number of chars, we'll see
+            -- We saw, and it's pretty robust: it never failed before we tried to
+            -- render some binary content, which messes the utf8 sequencing: the
+            -- split to UTF8 is only reversible if text is valid UTF8 (or nearly UTF8).
+            -- TextBoxWidget did this sequencing, counted the number of chars
+            -- and made out 'char_pads', and gave us back the concatenated utf8
+            -- chars as 'text', that we sequenced again above: we may not get the
+            -- same number of chars as we did previously to make char_pads.
+            -- We'd rather not crash (and have binary stuff displayed, even if
+            -- badly). The mess in char_pads is negligeable when that happens.
         end
     end
 
