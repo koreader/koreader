@@ -286,13 +286,17 @@ function InputText:initTextBox(text, char_added)
         -- we would start with, and use a ScrollTextWidget with that
         -- height, so widget does not overflow container if we extend
         -- the text and increase the number of lines.
-        -- Account for the scrollbar that will be used
-        local scroll_bar_width = ScrollTextWidget.scroll_bar_width + ScrollTextWidget.text_scroll_span
+        local text_width = self.width
+        if text_width then
+            -- Account for the scrollbar that will be used
+            local scroll_bar_width = ScrollTextWidget.scroll_bar_width + ScrollTextWidget.text_scroll_span
+            text_width = text_width - scroll_bar_width
+        end
         local text_widget = TextBoxWidget:new{
             text = show_text,
             charlist = show_charlist,
             face = self.face,
-            width = self.width - scroll_bar_width,
+            width = text_width,
         }
         self.height = text_widget:getTextHeight()
         self.scroll = true
