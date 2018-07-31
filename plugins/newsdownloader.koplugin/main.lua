@@ -410,19 +410,27 @@ function NewsDownloader:changeFeedConfig()
                 {
                     text = _("Save"),
                     callback = function()
-                        feed_config_file = io.open(feed_config_path, "w")
-                        UIManager:show(ConfirmBox:new{
-                            text = _("Are you sure that you want to save configuration?"),
-                            ok_text = _("Save"),
-                            ok_callback = function()
-                                feed_config_file:write(config_editor:getInputText())
-                                feed_config_file:close()
-                                UIManager:close(config_editor)
-                                UIManager:show(InfoMessage:new{
-                                    text = _("Configuration saved")
-                                })
-                            end
-                        })
+                        local new_config = config_editor:getInputText()
+                        local syntax_totes_okay, error = pcall(loadstring(new_config))
+                        if syntax_totes_okay then
+                            UIManager:show(ConfirmBox:new{
+                                text = _("Are you sure that you want to save configuration?"),
+                                ok_text = _("Save"),
+                                ok_callback = function()
+                                    feed_config_file = io.open(feed_config_path, "w")
+                                    feed_config_file:write(new_config)
+                                    feed_config_file:close()
+                                    UIManager:close(config_editor)
+                                    UIManager:show(InfoMessage:new{
+                                        text = _("Configuration saved")
+                                    })
+                                end,
+                            })     
+                        else
+                            UIManager:show(InfoMessage:new{
+                                text = _("Cannot save. Error in configuration:\n".. error)
+                            })
+                        end
                     end,
                 },
             }
@@ -430,7 +438,6 @@ function NewsDownloader:changeFeedConfig()
     }
     UIManager:show(config_editor)
     config_editor:onShowKeyboard()
-
 end
 
 function NewsDownloader:onCloseDocument()
