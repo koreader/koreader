@@ -22,7 +22,7 @@ local NewsDownloader = WidgetContainer:new{}
 
 local initialized = false
 local wifi_enabled_before_action = true
-local feed_config_file = "feed_config.lua"
+local feed_config_file_name = "feed_config.lua"
 local news_downloader_config_file = "news_downloader_settings.lua"
 local config_key_custom_dl_dir = "custom_dl_dir";
 local file_extension = ".html"
@@ -139,11 +139,11 @@ function NewsDownloader:lazyInitialization()
             logger.dbg("NewsDownloader: Creating initial directory")
             lfs.mkdir(news_download_dir_path)
         end
-        feed_config_path = news_download_dir_path .. feed_config_file
+        feed_config_path = news_download_dir_path .. feed_config_file_name
 
         if not lfs.attributes(feed_config_path, "mode") then
             logger.dbg("NewsDownloader: Creating initial feed config.")
-            FFIUtil.copyFile(FFIUtil.joinPath(self.path, feed_config_file),
+            FFIUtil.copyFile(FFIUtil.joinPath(self.path, feed_config_file_name),
                          feed_config_path)
         end
         initialized = true
@@ -349,7 +349,7 @@ end
 function NewsDownloader:removeNewsButKeepFeedConfig()
     logger.dbg("NewsDownloader: Removing news from :", news_download_dir_path)
     for entry in lfs.dir(news_download_dir_path) do
-        if entry ~= "." and entry ~= ".." and entry ~= feed_config_file then
+        if entry ~= "." and entry ~= ".." and entry ~= feed_config_file_name then
             local entry_path = news_download_dir_path .. "/" .. entry
             local entry_mode = lfs.attributes(entry_path, "mode")
             if entry_mode == "file" then
@@ -376,8 +376,8 @@ function NewsDownloader:setCustomDownloadDirectory()
            news_downloader_settings:saveSetting(config_key_custom_dl_dir, ("%s/"):format(path))
            news_downloader_settings:flush()
 
-           logger.dbg("NewsDownloader: Coping to new download folder previous feed_config_file from: ", feed_config_path)
-           FFIUtil.copyFile(feed_config_path, ("%s/%s"):format(path, feed_config_file))
+           logger.dbg("NewsDownloader: Coping to new download folder previous feed_config_file_name from: ", feed_config_path)
+           FFIUtil.copyFile(feed_config_path, ("%s/%s"):format(path, feed_config_file_name))
 
            initialized = false
            self:lazyInitialization()
@@ -385,11 +385,12 @@ function NewsDownloader:setCustomDownloadDirectory()
     }:chooseDir()
 end
 
-function NewsDownloader:changeFeedConfig() 
+function NewsDownloader:changeFeedConfig()
     local feed_config_file = io.open(feed_config_path, "rb")
     local config = feed_config_file:read("*all")
     feed_config_file:close()
-    config_editor = InputDialog:new{ --todo change to local var, requires fix in save and cancel. No idea how.
+    local config_editor
+    config_editor = InputDialog:new{
         title = _("Feed config editor"),
         input = config,
         input_type = "string",
@@ -397,7 +398,6 @@ function NewsDownloader:changeFeedConfig()
         condensed = true,
         allow_newline = true,
         cursor_at_end = false,
-        add_scroll_buttons = true,
         add_nav_bar = true,
         buttons = {
             {
@@ -410,7 +410,7 @@ function NewsDownloader:changeFeedConfig()
                 {
                     text = _("Save"),
                     callback = function()
-                        local feed_config_file = io.open(feed_config_path, "w")
+                        feed_config_file = io.open(feed_config_path, "w")
                         UIManager:show(ConfirmBox:new{
                             text = _("Are you sure that you want to save configuration?"),
                             ok_text = _("Save"),
