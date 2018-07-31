@@ -47,7 +47,6 @@ local order = {
         "calibre_wireless_connection",
         "evernote",
         "statistics",
-        "storage_stat",
         "cloud_storage",
         "read_timer",
         "news_downloader",
@@ -65,7 +64,6 @@ local order = {
         "synchronize_time",
         "keep_alive",
         "terminal",
-        "storage_stat",
     },
     search = {
         "dictionary_lookup",
