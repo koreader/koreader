@@ -28,6 +28,7 @@ local InputText = InputContainer:new{
     scroll = false, -- whether to allow scrolling (will be set to true if no height provided)
     focused = true,
     parent = nil, -- parent dialog that will be set dirty
+    edit_callback = nil, -- called with true when text modified, false on init or text re-set
 
     width = nil,
     height = nil, -- when nil, will be set to original text height (possibly
@@ -356,6 +357,9 @@ function InputText:initTextBox(text, char_added)
     UIManager:setDirty(self.parent, function()
         return "ui", self.dimen
     end)
+    if self.edit_callback then
+        self.edit_callback(self.is_text_edited)
+    end
 end
 
 function InputText:initKeyboard()
@@ -429,6 +433,27 @@ function InputText:delChar()
     self.charpos = self.charpos - 1
     self.is_text_edited = true
     table.remove(self.charlist, self.charpos)
+    self:initTextBox(table.concat(self.charlist))
+end
+
+function InputText:delToStartOfLine()
+    if not self:isTextEditable(true) then
+        return
+    end
+    if self.charpos == 1 then return end
+    -- self.charlist[self.charpos] is the char after the cursor
+    if self.charlist[self.charpos-1] == "\n" then
+        -- If at start of line, just remove the \n and join the previous line
+        self.charpos = self.charpos - 1
+        table.remove(self.charlist, self.charpos)
+    else
+        -- If not, remove chars until first found \n (but keeping it)
+        while self.charpos > 1 and self.charlist[self.charpos-1] ~= "\n" do
+            self.charpos = self.charpos - 1
+            table.remove(self.charlist, self.charpos)
+        end
+    end
+    self.is_text_edited = true
     self:initTextBox(table.concat(self.charlist))
 end
 
