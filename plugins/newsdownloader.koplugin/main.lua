@@ -425,7 +425,7 @@ function NewsDownloader:changeFeedConfig()
                                         text = _("Configuration saved")
                                     })
                                 end,
-                            })     
+                            })
                         else
                             UIManager:show(InfoMessage:new{
                                 text = _("Cannot save. Error in configuration:\n".. error)
