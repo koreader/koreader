@@ -13,6 +13,8 @@ local VerticalScrollBar = Widget:new{
     bordercolor = Blitbuffer.COLOR_BLACK,
     radius = 0,
     rectcolor = Blitbuffer.COLOR_BLACK,
+    -- minimal height of the thumb/knob/grip (usually showing the current
+    -- view size and position relative to the whole scrollable height):
     min_thumb_size = Size.line.thick,
 }
 
