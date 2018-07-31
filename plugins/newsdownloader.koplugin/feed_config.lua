@@ -4,7 +4,7 @@ return {--do NOT change this line
  -- use syntax: {"http://your-url.com", limit=max_number_of_items_to_be_created, download_full_article=true/false}
 
  -- you can also edit this file in external text editor. Config file is located under:
- -- <your_download_directory>/feed_config.lua 
+ -- <your_download_directory>/feed_config.lua
  -- default: <koreader_dir>/news/feed_config.lua
 
 
