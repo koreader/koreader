@@ -411,8 +411,8 @@ function NewsDownloader:changeFeedConfig()
                     text = _("Save"),
                     callback = function()
                         local new_config = config_editor:getInputText()
-                        local syntax_totes_okay, error = pcall(loadstring(new_config))
-                        if syntax_totes_okay then
+                        local syntax_ok, error = pcall(loadstring(new_config))
+                        if syntax_ok then
                             UIManager:show(ConfirmBox:new{
                                 text = _("Are you sure that you want to save configuration?"),
                                 ok_text = _("Save"),
