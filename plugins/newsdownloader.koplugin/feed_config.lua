@@ -1,7 +1,9 @@
 return {--do NOT change this line
 
  --HELP:
- -- use syntax: {"http://your-url.com", limit=max_number_of_items_to_be_created, download_full_article=true/false}
+ -- use syntax: {"http://your-url.com", limit=max_number_of_items_to_be_created, download_full_article=true/false},
+
+ -- remember to put coma at the end of each line!
 
  -- you can also edit this file in external text editor. Config file is located under:
  -- <your_download_directory>/feed_config.lua
