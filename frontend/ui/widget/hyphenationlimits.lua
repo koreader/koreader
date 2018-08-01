@@ -144,8 +144,8 @@ function HyphenationLimitsWidget:update()
         CloseButton:new{ window = self, padding_top = Size.margin.title, },
     }
 
-    local hyph_into_text = _([[
-Set minimum length before hyphenation occurs.
+    local hyph_into_text = _(
+[[Set minimum length before hyphenation occurs.
 These settings will apply to all books with any hyphenation dictionary.
 'Use language defaults' resets them.]])
     local hyph_info = FrameContainer:new{
