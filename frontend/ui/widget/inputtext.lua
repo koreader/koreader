@@ -3,8 +3,10 @@ local CheckButton = require("ui/widget/checkbutton")
 local Device = require("device")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Font = require("ui/font")
+local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local Notification = require("ui/widget/notification")
 local ScrollTextWidget = require("ui/widget/scrolltextwidget")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
@@ -43,6 +45,8 @@ local InputText = InputContainer:new{
     charpos = nil, -- position of the cursor, where a new char would be inserted
     top_line_num = nil, -- virtual_line_num of the text_widget (index of the displayed top line)
     is_password_type = false, -- set to true if original text_type == "password"
+    is_text_editable = true, -- whether text is utf8 reversible and editing won't mess content
+    is_text_edited = false, -- whether text has been updated
 }
 
 -- only use PhysicalKeyboard if the device does not have touch screen
@@ -167,12 +171,47 @@ else
     function InputText:initEventListener() end
 end
 
+function InputText:checkTextEditability()
+    -- The split of the 'text' string to a table of utf8 chars may not be
+    -- reversible to the same string, if 'text'  comes from a binary file
+    -- (it looks like it does not necessarily need to be proper UTF8 to
+    -- be reversible, some text with latin1 chars is reversible).
+    -- As checking that may be costly, we do that only in init(), setText(),
+    -- and clear().
+    -- When not reversible, we prevent adding and deleting chars to not
+    -- corrupt the original self.text.
+    self.is_text_editable = true
+    if self.text then
+        -- We check that the text obtained from the UTF8 split done
+        -- in :initTextBox(), when concatenated back to a string, matches
+        -- the original text. (If this turns out too expensive, we could
+        -- just compare their lengths)
+        self.is_text_editable = table.concat(self.charlist, "") == self.text
+    end
+end
+
+function InputText:isTextEditable(show_warning)
+    if show_warning and not self.is_text_editable then
+        UIManager:show(Notification:new{
+            text = _("Text may be binary content, and is not editable"),
+            timeout = 2
+        })
+    end
+    return self.is_text_editable
+end
+
+function InputText:isTextEdited()
+    return self.is_text_edited
+end
+
 function InputText:init()
     if self.text_type == "password" then
         -- text_type changes from "password" to "text" when we toggle password
         self.is_password_type = true
     end
     self:initTextBox(self.text)
+    self:checkTextEditability()
+    self.is_text_edited = false
     if self.readonly ~= true then
         self:initKeyboard()
         self:initEventListener()
@@ -224,7 +263,7 @@ function InputText:initTextBox(text, char_added)
                     self.text_type = "text"
                     self._check_button:check()
                 end
-                self:setText(self:getText())
+                self:setText(self:getText(), true)
             end,
 
             padding = self.padding,
@@ -246,12 +285,18 @@ function InputText:initTextBox(text, char_added)
         -- If no height provided, measure the text widget height
         -- we would start with, and use a ScrollTextWidget with that
         -- height, so widget does not overflow container if we extend
-        -- the text and increase the number of lines
+        -- the text and increase the number of lines.
+        local text_width = self.width
+        if text_width then
+            -- Account for the scrollbar that will be used
+            local scroll_bar_width = ScrollTextWidget.scroll_bar_width + ScrollTextWidget.text_scroll_span
+            text_width = text_width - scroll_bar_width
+        end
         local text_widget = TextBoxWidget:new{
             text = show_text,
             charlist = show_charlist,
             face = self.face,
-            width = self.width,
+            width = text_width,
         }
         self.height = text_widget:getTextHeight()
         self.scroll = true
@@ -356,6 +401,9 @@ function InputText:getLineHeight()
 end
 
 function InputText:getKeyboardDimen()
+    if self.readonly then
+        return Geom:new{w = 0, h = 0}
+    end
     return self.keyboard.dimen
 end
 
@@ -364,15 +412,44 @@ function InputText:addChars(chars)
         UIManager:scheduleIn(0.3, function() self.enter_callback() end)
         return
     end
+    if not self:isTextEditable(true) then
+        return
+    end
+    self.is_text_edited = true
     table.insert(self.charlist, self.charpos, chars)
     self.charpos = self.charpos + #util.splitToChars(chars)
     self:initTextBox(table.concat(self.charlist), true)
 end
 
 function InputText:delChar()
+    if not self:isTextEditable(true) then
+        return
+    end
     if self.charpos == 1 then return end
     self.charpos = self.charpos - 1
+    self.is_text_edited = true
     table.remove(self.charlist, self.charpos)
+    self:initTextBox(table.concat(self.charlist))
+end
+
+function InputText:delToStartOfLine()
+    if not self:isTextEditable(true) then
+        return
+    end
+    if self.charpos == 1 then return end
+    -- self.charlist[self.charpos] is the char after the cursor
+    if self.charlist[self.charpos-1] == "\n" then
+        -- If at start of line, just remove the \n and join the previous line
+        self.charpos = self.charpos - 1
+        table.remove(self.charlist, self.charpos)
+    else
+        -- If not, remove chars until first found \n (but keeping it)
+        while self.charpos > 1 and self.charlist[self.charpos-1] ~= "\n" do
+            self.charpos = self.charpos - 1
+            table.remove(self.charlist, self.charpos)
+        end
+    end
+    self.is_text_edited = true
     self:initTextBox(table.concat(self.charlist))
 end
 
@@ -423,16 +500,23 @@ end
 function InputText:clear()
     self.charpos = nil
     self.top_line_num = 1
+    self.is_text_edited = true
     self:initTextBox("")
+    self:checkTextEditability()
 end
 
 function InputText:getText()
     return self.text
 end
 
-function InputText:setText(text)
+function InputText:setText(text, keep_edited_state)
     -- Keep previous charpos and top_line_num
     self:initTextBox(text)
+    if not keep_edited_state then
+        -- assume new text is set by caller, and we start fresh
+        self.is_text_edited = false
+        self:checkTextEditability()
+    end
 end
 
 return InputText

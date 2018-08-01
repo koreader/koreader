@@ -385,6 +385,14 @@ function InputDialog:setInputText(text)
     self._input_widget:setText(text)
 end
 
+function InputDialog:isTextEditable()
+    return self._input_widget:isTextEditable()
+end
+
+function InputDialog:isTextEdited()
+    return self._input_widget:isTextEdited()
+end
+
 function InputDialog:onShow()
     UIManager:setDirty(self, function()
         return "ui", self.dialog_frame.dimen
