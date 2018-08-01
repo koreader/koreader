@@ -341,8 +341,8 @@ function ReaderStyleTweak:init()
         hold_may_update_menu = true, -- just to keep menu opened
         hold_callback = function()
             UIManager:show(InfoMessage:new{
-                text = _([[
-Style tweaks allow changing small parts of book styles (including the publisher/embedded styles) to make visual adjustments or disable unwanted publisher layout choices.
+                text = _(
+[[Style tweaks allow changing small parts of book styles (including the publisher/embedded styles) to make visual adjustments or disable unwanted publisher layout choices.
 
 Some tweaks may be useful with some books, while resulting in undesirable effects with others.
 

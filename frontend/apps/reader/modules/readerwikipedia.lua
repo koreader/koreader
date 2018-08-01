@@ -251,8 +251,8 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                         home_dir = home_dir:gsub("^(.-)/*$", "%1") -- remove trailing slash
                         if home_dir and lfs.attributes(home_dir, "mode") == "directory" then
                             local wikipedia_dir = home_dir.."/Wikipedia"
-                            local text = _([[
-Wikipedia articles can be saved as an EPUB for more comfortable reading.
+                            local text = _(
+[[Wikipedia articles can be saved as an EPUB for more comfortable reading.
 
 You can select an existing directory, or use a default directory named "Wikipedia" in your reader's home directory.
 

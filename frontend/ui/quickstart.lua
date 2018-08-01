@@ -17,8 +17,8 @@ local language = G_reader_settings:readSetting("language") or "en"
 local version = Version:getNormalizedCurrentVersion()
 local rev = Version:getCurrentRevision()
 
-local quickstart_guide = T(_([[
-# KOReader Quickstart Guide
+local quickstart_guide = T(_(
+[[# KOReader Quickstart Guide
 
 Welcome to KOReader.
 
