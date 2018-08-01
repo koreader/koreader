@@ -30,6 +30,7 @@ local FileChooser = Menu:extend{
     cface = Font:getFace("smallinfofont"),
     no_title = true,
     path = lfs.currentdir(),
+    show_path = true,
     parent = nil,
     show_hidden = nil,
     exclude_dirs = {"%.sdr$"},
