@@ -28,7 +28,6 @@ local InputText = InputContainer:new{
     scroll = false, -- whether to allow scrolling (will be set to true if no height provided)
     focused = true,
     parent = nil, -- parent dialog that will be set dirty
-    edit_callback = nil, -- called with true when text modified, false on init or text re-set
 
     width = nil,
     height = nil, -- when nil, will be set to original text height (possibly
@@ -357,9 +356,6 @@ function InputText:initTextBox(text, char_added)
     UIManager:setDirty(self.parent, function()
         return "ui", self.dimen
     end)
-    if self.edit_callback then
-        self.edit_callback(self.is_text_edited)
-    end
 end
 
 function InputText:initKeyboard()
