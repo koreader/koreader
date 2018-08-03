@@ -25,7 +25,7 @@ local PathChooser = FileChooser:extend{
 }
 
 function PathChooser:init()
-    if not title then -- default titles depending on options
+    if not self.title then -- default titles depending on options
         if self.select_directory and not self.select_file then
             self.title = _("Select directory (long press to confirm)")
         elseif not self.select_directory and self.select_file then
@@ -50,7 +50,7 @@ function PathChooser:onMenuSelect(item)
         -- Don't navigate to same directory
         return true
     end
-    local path = util.realpath(path)
+    path = util.realpath(path)
     if lfs.attributes(path, "mode") ~= "directory" then
         -- Do nothing if Tap on other than directories
         return true
@@ -69,7 +69,7 @@ function PathChooser:onMenuHold(item)
     if path:sub(-2, -1) == "/." then -- with show_current_dir_for_hold
         path = path:sub(1, -3)
     end
-    local path = util.realpath(path)
+    path = util.realpath(path)
     local path_type = lfs.attributes(path, "mode")
     if path_type == "file" and not self.select_file then
         return true

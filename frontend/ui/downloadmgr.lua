@@ -48,8 +48,8 @@ function DownloadMgr:chooseDir()
         show_files = false,
         height = Screen:getHeight(),
         path = path,
-        onConfirm = function(path)
-            self.onConfirm(path)
+        onConfirm = function(dir_path)
+            self.onConfirm(dir_path)
         end
     }
     UIManager:show(path_chooser)
