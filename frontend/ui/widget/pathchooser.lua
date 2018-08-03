@@ -83,17 +83,17 @@ function PathChooser:onMenuHold(item)
     local title
     if attr.mode == "file" then
         if self.detailed_file_info then
-            local filesize = util.getFriendlySize(attr.size)
+            local filesize = util.getFormattedSize(attr.size)
             local lastmod = os.date("%Y-%m-%d %H:%M", attr.modification)
-            title = T(_("Select this file?\n%1\n(size: %2 - last modified: %3)"),
+            title = T(_("Select this file?\n\n%1\n\nFile size: %2 bytes\nLast modified: %3"),
                         path, filesize, lastmod)
         else
-            title = T(_("Select this file?\n%1"), path)
+            title = T(_("Select this file?\n\n%1"), path)
         end
     elseif attr.mode == "directory" then
-        title = T(_("Select this directory?\n%1"), path)
+        title = T(_("Select this directory?\n\n%1"), path)
     else -- just in case we get something else
-        title = T(_("Select this path?\n%1"), path)
+        title = T(_("Select this path?\n\n%1"), path)
     end
     local onConfirm = self.onConfirm
     self.button_dialog = ButtonDialogTitle:new{
