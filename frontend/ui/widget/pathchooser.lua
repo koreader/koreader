@@ -85,7 +85,7 @@ function PathChooser:onMenuHold(item)
         if self.detailed_file_info then
             local filesize = util.getFriendlySize(attr.size)
             local lastmod = os.date("%Y-%m-%d %H:%M", attr.modification)
-            title = T(_("Select this file?\n%1\n\n(size: %2 - last modified: %3)"),
+            title = T(_("Select this file?\n%1\n(size: %2 - last modified: %3)"),
                         path, filesize, lastmod)
         else
             title = T(_("Select this file?\n%1"), path)

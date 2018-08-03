@@ -219,7 +219,7 @@ function FileChooser:genItemTableFromPath(path)
         if dir.name == ".." then
             text = "⬆ ../"
         elseif dir.name == "." then -- possible with show_current_dir_for_hold
-            text = _("Long press to select current directory")
+            text = _("Long-press to select current directory")
         else
             text = dir.name.."/"
         end
