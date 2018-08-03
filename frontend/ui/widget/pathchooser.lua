@@ -2,13 +2,15 @@ local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local FileChooser = require("ui/widget/filechooser")
 local Font = require("ui/font")
 local UIManager = require("ui/uimanager")
+local ffiutil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
-local util = require("ffi/util")
+local util = require("util")
 local _ = require("gettext")
-local T = util.template
+local T = ffiutil.template
 
 local PathChooser = FileChooser:extend{
-    title = nil, -- a generic title will be set in init() if none given
+    title = true, -- or a string
+        -- if let to true, a generic title will be set in init()
     no_title = false,
     show_path = true,
     is_popout = false,
@@ -22,16 +24,17 @@ local PathChooser = FileChooser:extend{
     show_files = true, -- show files, even if select_files=false
     -- (directories are always shown, to allow navigation)
     show_hidden = G_reader_settings:readSetting("show_hidden"),
+    detailed_file_info = false, -- show size and last mod time in Select message
 }
 
 function PathChooser:init()
-    if not self.title then -- default titles depending on options
+    if self.title == true then -- default title depending on options
         if self.select_directory and not self.select_file then
-            self.title = _("Select directory (long press to confirm)")
+            self.title = _("Long-press to select directory")
         elseif not self.select_directory and self.select_file then
-            self.title = _("Select file (long press to confirm)")
+            self.title = _("Long-press to select file")
         else
-            self.title = _("Select path (long press to confirm)")
+            self.title = _("Long-press to select")
         end
     end
     if not self.show_files then
@@ -50,7 +53,7 @@ function PathChooser:onMenuSelect(item)
         -- Don't navigate to same directory
         return true
     end
-    path = util.realpath(path)
+    path = ffiutil.realpath(path)
     if lfs.attributes(path, "mode") ~= "directory" then
         -- Do nothing if Tap on other than directories
         return true
@@ -69,18 +72,25 @@ function PathChooser:onMenuHold(item)
     if path:sub(-2, -1) == "/." then -- with show_current_dir_for_hold
         path = path:sub(1, -3)
     end
-    path = util.realpath(path)
-    local path_type = lfs.attributes(path, "mode")
-    if path_type == "file" and not self.select_file then
+    path = ffiutil.realpath(path)
+    local attr = lfs.attributes(path)
+    if attr.mode == "file" and not self.select_file then
         return true
     end
-    if path_type == "directory" and not self.select_directory then
+    if attr.mode == "directory" and not self.select_directory then
         return true
     end
     local title
-    if path_type == "file" then
-        title = T(_("Select this file?\n%1"), path)
-    elseif path_type == "directory" then
+    if attr.mode == "file" then
+        if self.detailed_file_info then
+            local filesize = util.getFriendlySize(attr.size)
+            local lastmod = os.date("%Y-%m-%d %H:%M", attr.modification)
+            title = T(_("Select this file?\n%1\n\n(size: %2 - last modified: %3)"),
+                        path, filesize, lastmod)
+        else
+            title = T(_("Select this file?\n%1"), path)
+        end
+    elseif attr.mode == "directory" then
         title = T(_("Select this directory?\n%1"), path)
     else -- just in case we get something else
         title = T(_("Select this path?\n%1"), path)

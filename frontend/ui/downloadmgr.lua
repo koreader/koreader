@@ -24,7 +24,7 @@ local util = require("ffi/util")
 local _ = require("gettext")
 
 local DownloadMgr = {
-    title = _("Long press to choose download directory"),
+    -- title = _("Long press to choose download directory"),
     onConfirm = function() end,
 }
 
@@ -42,7 +42,7 @@ function DownloadMgr:chooseDir()
     local download_dir = G_reader_settings:readSetting("download_dir")
     local path = download_dir and util.realpath(download_dir .. "/..") or lastdir
     local path_chooser = PathChooser:new{
-        title = self.title,
+        title = self.title or true, -- use default title if none provided
         select_directory = true,
         select_file = false,
         show_files = false,

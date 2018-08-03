@@ -191,7 +191,7 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                                 },
                                 {
                                     {
-                                    text = _("Change (select directory by long-pressing)"),
+                                    text = _("Select another directory"),
                                     callback = function()
                                         UIManager:close(dialog)
                                         -- Use currently read book's directory as starting point,
@@ -218,7 +218,6 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                                         end
                                         local PathChooser = require("ui/widget/pathchooser")
                                         local path_chooser = PathChooser:new{
-                                            -- title = _("Wikipedia 'Save as EPUB' directory"),
                                             select_directory = true,
                                             select_file = false,
                                             path = dir,
