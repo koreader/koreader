@@ -198,6 +198,7 @@ function FileChooser:genItemTableFromPath(path)
 
     table.sort(dirs, sorting)
     if path ~= "/" then table.insert(dirs, 1, {name = ".."}) end
+    if self.show_current_dir_for_hold then table.insert(dirs, 1, {name = "."}) end
     table.sort(files, sorting)
 
     local item_table = {}
@@ -214,8 +215,16 @@ function FileChooser:genItemTableFromPath(path)
         else
             istr = util.template(_("%1 items"), num_items)
         end
+        local text
+        if dir.name == ".." then
+            text = "⬆ ../"
+        elseif dir.name == "." then -- possible with show_current_dir_for_hold
+            text = _("Long press to select current directory")
+        else
+            text = dir.name.."/"
+        end
         table.insert(item_table, {
-            text = dir.name == ".." and  "⬆ ../" or dir.name.."/",
+            text = text,
             mandatory = istr,
             path = subdir_path,
             is_go_up = dir.name == ".."

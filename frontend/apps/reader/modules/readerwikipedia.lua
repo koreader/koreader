@@ -218,15 +218,11 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                                         end
                                         local PathChooser = require("ui/widget/pathchooser")
                                         local path_chooser = PathChooser:new{
-                                            title = _("Wikipedia 'Save as EPUB' directory"),
+                                            -- title = _("Wikipedia 'Save as EPUB' directory"),
+                                            select_directory = true,
+                                            select_file = false,
                                             path = dir,
-                                            show_hidden = G_reader_settings:readSetting("show_hidden"),
                                             onConfirm = function(path)
-                                                -- hack to remove additional parent
-                                                if path:sub(-3, -1) == "/.." then
-                                                    path = path:sub(1, -4)
-                                                end
-                                                path = require("ffi/util").realpath(path)
                                                 G_reader_settings:saveSetting("wikipedia_save_dir", path)
                                                 UIManager:show(InfoMessage:new{
                                                     text = T(_("Wikipedia 'Save as EPUB' directory set to:\n%1"), path),
