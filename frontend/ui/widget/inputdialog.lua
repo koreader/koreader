@@ -185,6 +185,7 @@ function InputDialog:init()
         self.movable = false
         self.border_size = 0
         self.width = Screen:getWidth() - 2*self.border_size
+        self.covers_fullscreen = true -- hint for UIManager:_repaint()
     else
         self.width = self.width or Screen:getWidth() * 0.8
     end
