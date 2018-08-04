@@ -54,7 +54,19 @@ function PathChooser:onMenuSelect(item)
         return true
     end
     path = ffiutil.realpath(path)
-    if lfs.attributes(path, "mode") ~= "directory" then
+    if not path then
+        -- If starting in a no-more existing directory, allow
+        -- not getting stuck in it
+        self:changeToPath("/")
+        return true
+    end
+    local attr = lfs.attributes(path)
+    if not attr then
+        -- Same as above
+        self:changeToPath("/")
+        return true
+    end
+    if attr.mode ~= "directory" then
         -- Do nothing if Tap on other than directories
         return true
     end
@@ -73,7 +85,13 @@ function PathChooser:onMenuHold(item)
         path = path:sub(1, -3)
     end
     path = ffiutil.realpath(path)
+    if not path then
+        return true
+    end
     local attr = lfs.attributes(path)
+    if not attr then
+        return true
+    end
     if attr.mode == "file" and not self.select_file then
         return true
     end
