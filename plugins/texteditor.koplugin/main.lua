@@ -4,7 +4,6 @@ local Font = require("ui/font")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local LuaSettings = require("luasettings")
-local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local Notification = require("ui/widget/notification")
 local PathChooser = require("ui/widget/pathchooser")
 local Trapper = require("ui/trapper")
@@ -292,7 +291,7 @@ function TextEditor:checkEditFile(file_path, from_history, possibly_new_file)
         -- No need to warn if readonly, the user will know it when we open
         -- without keyboard and the Save button says "Read only".
         local readonly = true
-        local file, err = io.open(file_path, 'r+b')
+        local file = io.open(file_path, 'r+b')
         if file then
             file:close()
             readonly = false
@@ -379,7 +378,6 @@ function TextEditor:editFile(file_path, readonly)
         cursor_at_end = false,
         readonly = readonly,
         add_nav_bar = true,
-        add_scroll_buttons = true,
         buttons = is_lua and {{
             -- First button on first row, that will be filled with Reset|Save|Close
             {
