@@ -1,7 +1,9 @@
 local DataStorage = require("datastorage")
+local DocumentRegistry = require("document/documentregistry")
 local DownloadBackend = require("internaldownloadbackend")
 --local DownloadBackend = require("luahttpdownloadbackend")
 local ReadHistory = require("readhistory")
+local ReaderUI = require("apps/reader/readerui")
 local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
@@ -11,6 +13,7 @@ local NetworkMgr = require("ui/network/manager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local dateparser = require("lib.dateparser")
 local logger = require("logger")
+local mupdf = require("ffi/mupdf")
 local util = require("util")
 local _ = require("gettext")
 local T = FFIUtil.template
@@ -112,10 +115,11 @@ function NewsDownloader:addToMainMenu(menu_items)
             {
                 text = _("Help"),
                 callback = function()
-                    UIManager:show(InfoMessage:new{
-                        text = T(_("News downloader retrieves RSS and Atom news entries and stores them to:\n%1\n\nEach entry is a separate html file, that can be browsed by KOReader file manager.\nItems download limit can be configured in Settings."),
-                                 news_download_dir_path)
-                    })
+                    local manaul = "plugins/newsdownloader.koplugin/manual/news-downloader-manual.epub"
+                    -- ReaderUI:new{
+                        DocumentRegistry:openDocument(manaul)
+                        -- document = DocumentRegistry:openDocument(manaul),
+                    -- }
                 end,
             },
         },
