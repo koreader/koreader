@@ -211,6 +211,12 @@ function InputText:init()
         -- text_type changes from "password" to "text" when we toggle password
         self.is_password_type = true
     end
+    -- Beware other cases where implicit conversion to text may be done
+    -- at some point, but checkTextEditability() would say "not editable".
+    if self.input_type == "number" and type(self.text) == "number" then
+        -- checkTextEditability() fails if self.text stays not a string
+        self.text = tostring(self.text)
+    end
     self:initTextBox(self.text)
     self:checkTextEditability()
     if self.readonly ~= true then

@@ -29,7 +29,7 @@ function MultiInputDialog:init()
     InputDialog.init(self)
     local VerticalGroupData = VerticalGroup:new{
         align = "left",
-        self.title,
+        self.title_widget,
         self.title_bar,
     }
 
