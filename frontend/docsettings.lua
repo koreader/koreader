@@ -16,7 +16,7 @@ local HISTORY_DIR = DataStorage:getHistoryDir()
 
 local function buildCandidate(file_path)
     -- Ignore empty files.
-    if lfs.attributes(file_path, "mode") == "file" then
+    if file_path and lfs.attributes(file_path, "mode") == "file" then
         return { file_path, lfs.attributes(file_path, "modification") }
     else
         return nil
@@ -64,6 +64,7 @@ end
 
 function DocSettings:getPathFromHistory(hist_name)
     if hist_name == nil or hist_name == '' then return '' end
+    if hist_name:sub(-4) ~= ".lua" then return '' end -- ignore .lua.old backups
     -- 1. select everything included in brackets
     local s = string.match(hist_name,"%b[]")
     if s == nil or s == '' then return '' end
@@ -74,6 +75,7 @@ end
 
 function DocSettings:getNameFromHistory(hist_name)
     if hist_name == nil or hist_name == '' then return '' end
+    if hist_name:sub(-4) ~= ".lua" then return '' end -- ignore .lua.old backups
     local s = string.match(hist_name, "%b[]")
     if s == nil or s == '' then return '' end
     -- at first, search for path length
@@ -112,7 +114,7 @@ function DocSettings:open(docfile)
     -- New sidecar file
     table.insert(candidates, buildCandidate(new.sidecar_file))
     -- Backup file of new sidecar file
-    table.insert(candidates, buildCandidate(new.sidecar_file .. ".old"))
+    table.insert(candidates, buildCandidate(new.sidecar_file and (new.sidecar_file .. ".old")))
     -- Legacy sidecar file
     table.insert(candidates, buildCandidate(new.legacy_sidecar_file))
     -- Legacy history folder
