@@ -391,7 +391,7 @@ function NewsDownloader:changeFeedConfig()
     feed_config_file:close()
     local config_editor
     config_editor = InputDialog:new{
-        title = _("Feed config editor"),
+        title = T(_("Config: %1"),feed_config_path),
         input = config,
         input_type = "string",
         fullscreen = true,
