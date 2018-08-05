@@ -103,7 +103,7 @@ function NewsDownloader:addToMainMenu(menu_items)
                     {
                         text = _("Change feeds configuration"),
                         callback = function() self:changeFeedConfig() end,
-                    },            
+                    },
                     {
                         text = _("Set custom download directory"),
                         callback = function() self:setCustomDownloadDirectory() end,
