@@ -750,6 +750,7 @@ function FileManager:getSortingMenuTable()
         type = {_("type"), _("Sort by type")},
         percent_unopened_first = {_("percent - unopened first"), _("Sort by percent - unopened first")},
         percent_unopened_last = {_("percent - unopened last"), _("Sort by percent - unopened last")},
+        strcoll_mixed = {_("title mixed"), _("Sort by title - mixed files and folders")},
     }
     local set_collate_table = function(collate)
         return {
@@ -759,6 +760,14 @@ function FileManager:getSortingMenuTable()
             end,
             callback = function() fm:setCollate(collate) end,
         }
+    end
+    local get_collate_percent = function()
+        local collate_type = G_reader_settings:readSetting("collate")
+        if collate_type == "percent_unopened_first" or collate_type == "percent_unopened_last" then
+            return collates[collate_type][2]
+        else
+            return _("Sort by percent")
+        end
     end
     return {
         text_func = function()
@@ -774,8 +783,18 @@ function FileManager:getSortingMenuTable()
             set_collate_table("modification"),
             set_collate_table("size"),
             set_collate_table("type"),
-            set_collate_table("percent_unopened_first"),
-            set_collate_table("percent_unopened_last"),
+            {
+                text_func =  get_collate_percent,
+                checked_func = function()
+                    return fm.file_chooser.collate == "percent_unopened_first"
+                        or fm.file_chooser.collate == "percent_unopened_last"
+                end,
+                sub_item_table = {
+                    set_collate_table("percent_unopened_first"),
+                    set_collate_table("percent_unopened_last"),
+                }
+            },
+            set_collate_table("strcoll_mixed"),
         }
     }
 end
