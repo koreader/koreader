@@ -515,7 +515,7 @@ function Menu:_recalculateDimen()
             + 2 * Size.padding.button
     end
     if self.menu_title and not self.no_title then
-        top_height = self.menu_title:getSize().h + 2 * Size.padding.small
+        top_height = self.menu_title_group:getSize().h + 2 * Size.padding.small
     end
     height_dim = self.dimen.h - bottom_height - top_height
     self.item_dimen.h = math.floor(height_dim / self.perpage)
@@ -543,10 +543,42 @@ function Menu:init()
         text = self.title,
         face = self.tface,
     }
+    local menu_title_container = CenterContainer:new{
+        dimen = Geom:new{
+            w = self.dimen.w,
+            h = self.menu_title:getSize().h,
+        },
+        self.menu_title,
+    }
+    local path_text_container
+
+    if self.show_path then
+        self.path_text = TextWidget:new{
+            face = Font:getFace("xx_smallinfofont"),
+            text = self:truncatePath(self.path),
+        }
+        path_text_container = CenterContainer:new{
+            dimen = Geom:new{
+                w = self.dimen.w,
+                h = self.path_text:getSize().h,
+            },
+            self.path_text,
+        }
+        self.menu_title_group = VerticalGroup:new{
+            align = "center",
+            menu_title_container,
+            path_text_container,
+        }
+    else
+        self.menu_title_group = VerticalGroup:new{
+            align = "center",
+            menu_title_container
+        }
+    end
     -- group for title bar
     self.title_bar = OverlapGroup:new{
-        dimen = {w = self.dimen.w, h = self.menu_title:getSize().h},
-        self.menu_title,
+        dimen = {w = self.dimen.w, h = self.menu_title_group:getSize().h},
+        self.menu_title_group,
     }
     -- group for items
     self.item_group = VerticalGroup:new{}
@@ -801,6 +833,19 @@ function Menu:init()
     end
 end
 
+function Menu:truncatePath(text)
+    local screen_width = Screen:getWidth()
+    local face = Font:getFace("xx_smallinfofont")
+    -- we want to truncate text on the left, so work with the reverse of text (which is fine as we don't use kerning)
+    local reversed_text = require("util").utf8Reverse(text)
+    local txt_width = RenderText:sizeUtf8Text(0, screen_width, face, reversed_text, false, false).x
+    if  screen_width - 2 * Size.padding.small < txt_width then
+        reversed_text = RenderText:truncateTextByWidth(reversed_text, face, screen_width - 2 * Size.padding.small, false, false)
+        text = require("util").utf8Reverse(reversed_text)
+    end
+    return text
+end
+
 function Menu:onCloseWidget()
     -- FIXME:
     -- we cannot refresh regionally using the dimen field
@@ -901,6 +946,9 @@ function Menu:updateItems(select_number)
     end -- for c=1, self.perpage
 
     self:updatePageInfo(select_number)
+    if self.show_path then
+        self.path_text.text = self:truncatePath(self.path)
+    end
 
     UIManager:setDirty("all", function()
         local refresh_dimen =

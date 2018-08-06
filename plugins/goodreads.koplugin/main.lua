@@ -76,8 +76,8 @@ function Goodreads:updateSettings()
     local text_top
     local hint_bottom
     local text_bottom
-    local text_info = _([[
-How to generate a key and a secret key:
+    local text_info = _(
+[[How to generate a key and a secret key:
 
 1. Go to https://www.goodreads.com/user/sign_up and create an account
 2. Register for a development key on the following page: https://www.goodreads.com/user/sign_in?rd=true

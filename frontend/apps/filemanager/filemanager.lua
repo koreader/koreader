@@ -24,7 +24,6 @@ local PluginLoader = require("pluginloader")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local ReaderUI = require("apps/reader/readerui")
 local ReaderWikipedia = require("apps/reader/modules/readerwikipedia")
-local RenderText = require("ui/rendertext")
 local Screenshoter = require("ui/widget/screenshoter")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
@@ -47,17 +46,7 @@ local function restoreScreenMode()
 end
 
 local function truncatePath(text)
-    if not text then return "" end
-    local screen_width = Screen:getWidth()
-    local face = Font:getFace("xx_smallinfofont")
-    -- we want to truncate text on the left, so work with the reverse of text (which is fine as we don't use kerning)
-    local reversed_text = require("util").utf8Reverse(text)
-    local txt_width = RenderText:sizeUtf8Text(0, screen_width, face, reversed_text, false, false).x
-    if  screen_width - 2 * Size.padding.small < txt_width then
-        reversed_text = RenderText:truncateTextByWidth(reversed_text, face, screen_width - 2 * Size.padding.small, false, false)
-        text = require("util").utf8Reverse(reversed_text)
-    end
-    return text
+    return FileChooser:truncatePath(text)
 end
 
 local FileManager = InputContainer:extend{

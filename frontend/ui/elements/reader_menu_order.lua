@@ -72,6 +72,7 @@ local order = {
         "zsync",
         "news_downloader",
         "send2ebook",
+        "text_editor",
         "----------------------------",
         "more_plugins",
     },
@@ -82,7 +83,6 @@ local order = {
         "synchronize_time",
         "keep_alive",
         "terminal",
-        "storage_stat",
     },
     search = {
         "dictionary_lookup",

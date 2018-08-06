@@ -463,7 +463,7 @@ function util.getMenuText(item)
     else
         text = item.text
     end
-    if item.sub_item_table ~= nil then
+    if item.sub_item_table ~= nil or item.sub_item_table_func then
         text = text .. " \226\150\184"
     end
     return text
@@ -471,7 +471,7 @@ end
 
 --- Replaces invalid UTF-8 characters with a replacement string.
 --
--- Based on <a href="http://notebook.kulchenko.com/programming/fixing-malformed-utf8-in-lua">http://notebook.kulchenko.com/programming/fixing-malformed-utf8-in-lua</a>
+-- Based on http://notebook.kulchenko.com/programming/fixing-malformed-utf8-in-lua
 ---- @string str the string to be checked for invalid characters
 ---- @string replacement the string to replace invalid characters with
 ---- @treturn string valid UTF-8
@@ -675,6 +675,20 @@ function util.urlDecode(url)
     end
     url = url:gsub("%%(%x%x)", hex_to_char)
     return url
+end
+
+--- Check lua syntax of string
+--- @string text lua code text
+--- @treturn string with parsing error, nil if syntax ok
+function util.checkLuaSyntax(lua_text)
+    local lua_code_ok, err = loadstring(lua_text)
+    if lua_code_ok then
+        return nil
+    end
+    -- Replace: [string "blah blah..."]:3: '=' expected near '123'
+    -- with: Line 3: '=' expected near '123'
+    err = err:gsub("%[string \".-%\"]:", "Line ")
+    return err
 end
 
 return util

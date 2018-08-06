@@ -52,7 +52,7 @@ function VirtualKey:init()
         self.skiptap = true
     elseif self.label == "Backspace" then
         self.callback = function () self.keyboard:delChar() end
-        self.hold_callback = function () self.keyboard:clear() end
+        self.hold_callback = function () self.keyboard:delToStartOfLine() end
         --self.skiphold = true
     elseif self.label =="←" then
         self.callback = function() self.keyboard:leftChar() end
@@ -371,6 +371,11 @@ end
 function VirtualKeyboard:delChar()
     logger.dbg("delete char")
     self.inputbox:delChar()
+end
+
+function VirtualKeyboard:delToStartOfLine()
+    logger.dbg("delete to start of line")
+    self.inputbox:delToStartOfLine()
 end
 
 function VirtualKeyboard:leftChar()
