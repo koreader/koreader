@@ -51,6 +51,7 @@ local order = {
         "read_timer",
         "news_downloader",
         "send2ebook",
+        "text_editor",
         "----------------------------",
         "more_plugins",
         "----------------------------",

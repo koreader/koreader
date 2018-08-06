@@ -29,6 +29,7 @@ local ButtonTable = FocusManager:new{
 function ButtonTable:init()
     self.selected = { x = 1, y = 1 }
     self.buttons_layout = {}
+    self.button_by_id = {}
     self.container = VerticalGroup:new{ width = self.width }
     table.insert(self, self.container)
     if self.zero_sep then
@@ -61,6 +62,9 @@ function ButtonTable:init()
                 text_font_size = self.button_font_size,
                 show_parent = self.show_parent,
             }
+            if btn_entry.id then
+                self.button_by_id[btn_entry.id] = button
+            end
             local button_dim = button:getSize()
             local vertical_sep = LineWidget:new{
                 background = Blitbuffer.COLOR_GREY,
@@ -119,6 +123,10 @@ function ButtonTable:onSelectByKeyPress()
     if item.enabled then
         item.callback()
     end
+end
+
+function ButtonTable:getButtonById(id)
+    return self.button_by_id[id] -- nil if not found
 end
 
 return ButtonTable
