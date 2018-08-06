@@ -1,4 +1,3 @@
-local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local DownloadBackend = require("internaldownloadbackend")
 --local DownloadBackend = require("luahttpdownloadbackend")
