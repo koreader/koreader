@@ -24,7 +24,7 @@ local util = require("ffi/util")
 local _ = require("gettext")
 
 local DownloadMgr = {
-    title = _("Long press to choose download directory"),
+    -- title = _("Long press to choose download directory"),
     onConfirm = function() end,
 }
 
@@ -40,17 +40,16 @@ end
 function DownloadMgr:chooseDir()
     local lastdir = G_reader_settings:readSetting("lastdir")
     local download_dir = G_reader_settings:readSetting("download_dir")
+    local path = download_dir and util.realpath(download_dir .. "/..") or lastdir
     local path_chooser = PathChooser:new{
-        title = self.title,
+        title = self.title or true, -- use default title if none provided
+        select_directory = true,
+        select_file = false,
+        show_files = false,
         height = Screen:getHeight(),
-        path = download_dir and (download_dir .. "/..") or lastdir,
-        show_hidden = G_reader_settings:readSetting("show_hidden"),
-        onConfirm = function(path)
-            -- hack to remove additional parent
-            if path:sub(-3, -1) == "/.." then
-                path = path:sub(1, -4)
-            end
-            self.onConfirm(util.realpath(path))
+        path = path,
+        onConfirm = function(dir_path)
+            self.onConfirm(dir_path)
         end
     }
     UIManager:show(path_chooser)

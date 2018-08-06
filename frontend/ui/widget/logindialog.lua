@@ -52,7 +52,7 @@ function LoginDialog:init()
         background = Blitbuffer.COLOR_WHITE,
         VerticalGroup:new{
             align = "left",
-            self.title,
+            self.title_widget,
             self.title_bar,
             -- username input
             CenterContainer:new{

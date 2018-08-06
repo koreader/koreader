@@ -121,6 +121,9 @@ function ScrollTextWidget:updateScrollBar(is_partial)
         UIManager:setDirty(self.dialog, function()
             return refreshfunc, self.dimen
         end)
+        if self.scroll_callback then
+            self.scroll_callback(low, high)
+        end
     end
 end
 

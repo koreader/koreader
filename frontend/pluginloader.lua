@@ -52,8 +52,10 @@ function PluginLoader:loadPlugins()
 
     local plugins_disabled = G_reader_settings:readSetting("plugins_disabled")
     if type(plugins_disabled) ~= "table" then
-        plugins_disabled = nil
+        plugins_disabled = {}
     end
+    --permanent remove storage stats plugin (#2926)
+    plugins_disabled["storagestat"] = true
     for _,lookup_path in ipairs(lookup_path_list) do
         logger.info('Loading plugins from directory:', lookup_path)
         for entry in lfs.dir(lookup_path) do

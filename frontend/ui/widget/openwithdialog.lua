@@ -95,7 +95,7 @@ function OpenWithDialog:init()
         background = Blitbuffer.COLOR_WHITE,
         VerticalGroup:new{
             align = "left",
-            self.title,
+            self.title_widget,
             self.title_bar,
             VerticalSpan:new{
                 width = Size.span.vertical_large*2,
