@@ -397,42 +397,23 @@ function NewsDownloader:changeFeedConfig()
         allow_newline = true,
         cursor_at_end = false,
         add_nav_bar = true,
-        buttons = {
-            {
-                {
-                    text = _("Cancel"),
-                    callback = function()
-                        UIManager:close(config_editor)
-                    end,
-                },
-                {
-                    text = _("Save"),
-                    callback = function()
-                        local new_config = config_editor:getInputText()
-                        local syntax_ok, error = pcall(loadstring(new_config))
-                        if syntax_ok then
-                            UIManager:show(ConfirmBox:new{
-                                text = _("Are you sure that you want to save configuration?"),
-                                ok_text = _("Save"),
-                                ok_callback = function()
-                                    feed_config_file = io.open(feed_config_path, "w")
-                                    feed_config_file:write(new_config)
-                                    feed_config_file:close()
-                                    UIManager:close(config_editor)
-                                    UIManager:show(InfoMessage:new{
-                                        text = _("Configuration saved")
-                                    })
-                                end,
-                            })
-                        else
-                            UIManager:show(InfoMessage:new{
-                                text = _("Cannot save. Error in configuration:\n".. error)
-                            })
-                        end
-                    end,
-                },
-            }
-        },
+        reset_callback = function()
+            return config
+        end,
+        save_callback = function(content)
+            if content and #content > 0 then
+                local parse_error = util.checkLuaSyntax(content)
+                if not parse_error then
+                    feed_config_file = io.open(feed_config_path, "w")
+                    feed_config_file:write(content)
+                    feed_config_file:close()
+                    return true, _("Configuration saved")
+                else
+                    return false, T(_("Configuration invalid: %1"), parse_error)
+                end
+            end
+            return false, _("Configuration empty")
+        end,
     }
     UIManager:show(config_editor)
     config_editor:onShowKeyboard()
