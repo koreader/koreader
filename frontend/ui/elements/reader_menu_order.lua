@@ -82,7 +82,6 @@ local order = {
         "synchronize_time",
         "keep_alive",
         "terminal",
-        "storage_stat",
     },
     search = {
         "dictionary_lookup",
