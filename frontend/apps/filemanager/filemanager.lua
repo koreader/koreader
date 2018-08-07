@@ -742,7 +742,7 @@ end
 function FileManager:getSortingMenuTable()
     local fm = self
     local collates = {
-        strcoll = {_("title"), _("Sort by title")},
+        strcoll = {_("filename"), _("Sort by filename")},
         access = {_("date read"), _("Sort by last read date")},
         change = {_("date added"), _("Sort by date added")},
         modification = {_("date modified"), _("Sort by date modified")},
