@@ -386,11 +386,11 @@ function TextEditor:editFile(file_path, readonly)
                     local parse_error = util.checkLuaSyntax(input:getInputText())
                     if parse_error then
                         UIManager:show(InfoMessage:new{
-                            text = T(_("lua syntax check failed:\n\n%1"), parse_error)
+                            text = T(_("Lua syntax check failed:\n\n%1"), parse_error)
                         })
                     else
                         UIManager:show(Notification:new{
-                            text = T(_("lua syntax OK")),
+                            text = T(_("Lua syntax OK")),
                             timeout = 2,
                         })
                     end
@@ -434,13 +434,13 @@ function TextEditor:editFile(file_path, readonly)
                 if not parse_error then
                     local ok, err = self:saveFileContent(file_path, content)
                     if ok then
-                        return true, _("lua syntax OK, file saved")
+                        return true, _("Lua syntax OK, file saved")
                     else
                         return false, T(_("Failed saving file: %1"), err)
                     end
                 end
                 local save_anyway = Trapper:confirm(T(_(
-[[lua syntax check failed:
+[[Lua syntax check failed:
 
 %1
 
