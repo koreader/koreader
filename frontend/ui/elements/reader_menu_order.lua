@@ -48,7 +48,7 @@ local order = {
         "navigation",
         "----------------------------",
         "language",
-        "time",
+        "device",
         "----------------------------",
         "djvu_render_mode",
         "status_bar",

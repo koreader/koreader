@@ -30,7 +30,7 @@ local order = {
         "navigation",
         "----------------------------",
         "language",
-        "time",
+        "device",
         -- end common settings
     },
     network = {

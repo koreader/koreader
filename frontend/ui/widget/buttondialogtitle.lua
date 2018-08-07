@@ -17,6 +17,7 @@ local _ = require("gettext")
 local Screen = Device.screen
 
 local ButtonDialogTitle = InputContainer:new{
+    modal = nil,
     title = nil,
     title_align = nil,
     title_face = Font:getFace("x_smalltfont"),
@@ -38,8 +39,8 @@ function ButtonDialogTitle:init()
                 ges = "tap",
                 range = Geom:new{
                     x = 0, y = 0,
-                    w = Screen:getWidth(),
-                    h = Screen:getHeight(),
+                    w = self.modal and 0 or Screen:getWidth(),
+                    h = self.modal and 0 or Screen:getHeight(),
                 }
             }
         }
