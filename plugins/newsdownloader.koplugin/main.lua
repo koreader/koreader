@@ -113,7 +113,7 @@ function NewsDownloader:addToMainMenu(menu_items)
             {
                 text = _("Help"),
                 callback = function()
-                    local manaul = "plugins/newsdownloader.koplugin/manual/news-downloader-manual.epub"
+                    local manaul = "plugins/newsdownloader.koplugin/manual/news-downloader-manual.html"
                     ReaderUI:showReader(manaul)
                 end,
             },

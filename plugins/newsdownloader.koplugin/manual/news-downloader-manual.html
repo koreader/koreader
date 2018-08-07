@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+
+    <title>The HTML5 Herald</title>
+    <meta name="description" content="News (RSS/Atom) downloader manual">
+    <meta name="author" content="KOReader">
+
+</head>
+
+<body>
+    <p>
+        <h1>News (RSS/Atom) downloader Manual</h1>
+    </p>
+
+
+    <section>
+        <h2>Table of contents</h2>
+        <h5>About News Downloader</h5>
+            <h6>RSS/Atom</h6>
+        <h5>Menu</h5>
+        <h5>Download news</h5>
+        <h5>Go to news folder</h5>
+        <h5>Settings</h5>
+            <h6>Change feeds configuration</h6>
+            <h6>Set custom download directory</h6>
+    </section>
+
+    <section>
+        <h2>About News Downloader</h2>
+        <p>News (RSS/Atom) downloader lets you download and read you favorites websites articles directly from your e-book reader.
+            It’s simple easily to use.
+        </p>
+
+        <h3>RSS/Atom</h3>
+        <p>Most websites provides their articles (in addition to http protocol) using RSS /Atom. If you see this logo in your
+            favorite website:
+            <img src="img/rss.jpg" alt="RSS icon"> you can be sure it uses RSS or Atom.
+        </p>
+        <p>[For more information about RSS/Atom please refer to
+            <a href="https://en.wikipedia.org/wiki/RSS">RSS wiki</a> pages.]</p>
+        <p>All you need to do then is copy RSS/Atom url address and use it in News downloader configuration.</p>
+
+    </section>
+
+    <section>
+        <h2>Menu</h2>
+        <img src="img/menu.jpg" alt="News downloader main menu image">
+
+    </section>
+
+    <section>
+        <h2>Download news</h2>
+        <p>Press “Download news” to start downloading. Feed configuration can be changed in “Settings” menu.</p>
+        <img src="img/download.jpg" alt="Downloading news image">
+        <p>If successful, once finished, it creates in News downloader directory subfolder for every feed provider.</p>
+    </section>
+
+    <section>
+        <h2>Go to news folder</h2>
+        <p>This feature allows you to quickly go to news downloader working directory and view it content. (This directory can
+            be changed in „Settings”. )
+        </p>
+        <img src="img/example-folders.jpg" alt="example News downloader folder">
+        <p>It the example above (initial sample configuration) created 2 directories for 2 feed providers. This example contains
+            2 articles that can be read by clicking on it. Name of the file usually (if contained in RSS/Atom) starts date
+            in format: <pre>yy-mm-dd_hh-mm</pre> How many articles are downloaded per each feed provider can be changed in configuration.
+        </p>
+        <img src="img/example-downloaded-articles.jpg" alt="example downloaded articles">
+        <p>Hint: for news downloader recommended „Display mode” is „Classic”:</p>
+        <img src="img/hint-display-mode.jpg" alt="Hing display mode">
+    </section>
+
+    <section>
+        <h2>Settings</h2>
+        <img src="img/settings.jpg" alt="settings menu">
+
+        <section>
+            <h3>Change feeds configuration</h3>
+            <p>News (RSS/Atom) downloader comes with initial, sample feeds configuration, that can be change under Settings
+                menu.
+            </p>
+            <img src="img/settings-feed-config.jpg" alt="Setting change feed configuration">
+            <p>Note: you can also edit this file in you favorite external text editor. But doing it here allows you to check
+                you configuration before saving.</p>
+            <p>Please do NOT change lines marked with:
+                <pre> --do NOT change this line</pre>
+            </p>
+            <p>Entry syntax:</p> 
+            <pre>{"http://your-url.com", limit=max_number_of_items_to_be_created, download_full_article=true/false},</pre>
+            <p>Details:
+                <ul>
+                    <li>'limit' to "0" means no limit.</li>
+                    <li>'download_full_article=true' - means download full article (may not always work correctly)</li>
+                    <li>'download_full_article=false' - means use only feed description to create feeds (usually only beginning
+                        of the article)</li>
+                    <li>‘download_full_article’ default value is 'true' (if no 'download_full_article' entry)</li>
+                    <li>comment out line ("--" at line start) to stop downloading source</li>
+                </ul>
+            </p>
+            <p>
+                <strong>Note: Remember to put coma at the end of each entry!</strong>
+            </p>
+        </section>
+
+        <section>
+            <h3>Set custom download directory</h3>
+            <p>Allows you to select folder where you want to store you downloaded news. To select folder press down and hold
+                for 1 second. Then confirm:</p>
+            <img src="img/settings-folder.jpg" alt="setting custom folder">
+            <p>Once selected “Go to news folder” is updated. </p>
+        </section>
+    </section>
+
+
+</body>
+
+</html>
