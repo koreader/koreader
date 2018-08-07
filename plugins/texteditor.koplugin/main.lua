@@ -196,10 +196,10 @@ function TextEditor:newFile()
         text = _([[To start editing a new file, you will have to:
 
 - First select a directory
-- Then type the new file filename
+- Then enter a name for the new file
 - And start editing it
 
-Do you want to proceeed?]]),
+Do you want to proceed?]]),
         ok_text = _("Yes"),
         cancel_text = _("No"),
         ok_callback = function()
@@ -211,7 +211,7 @@ Do you want to proceeed?]]),
                 onConfirm = function(dir_path)
                     local file_input
                     file_input = InputDialog:new{
-                        title =  _("Enter new file filename"),
+                        title =  _("Enter filename"),
                         input = dir_path == "/" and "/" or dir_path .. "/",
                         buttons = {{
                             {
@@ -381,7 +381,7 @@ function TextEditor:editFile(file_path, readonly)
         buttons = is_lua and {{
             -- First button on first row, that will be filled with Reset|Save|Close
             {
-                text = _("Check lua"),
+                text = _("Check Lua"),
                 callback = function()
                     local parse_error = util.checkLuaSyntax(input:getInputText())
                     if parse_error then
