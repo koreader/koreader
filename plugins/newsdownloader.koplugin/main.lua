@@ -403,13 +403,18 @@ function NewsDownloader:changeFeedConfig()
             if content and #content > 0 then
                 local parse_error = util.checkLuaSyntax(content)
                 if not parse_error then
-                    feed_config_file = io.open(feed_config_path, "w")
-                    feed_config_file:write(content)
-                    feed_config_file:close()
-                    return true, _("Configuration saved")
+                    local syntax_okay, syntax_error = pcall(loadstring(content))
+                    if syntax_okay then
+                        feed_config_file = io.open(feed_config_path, "w")
+                        feed_config_file:write(content)
+                        feed_config_file:close()
+                        return true, _("Configuration saved")
+                    else
+                        return false, T(_("Configuration invalid: %1"), syntax_error)
+                    end
                 else
-                    return false, T(_("Configuration invalid: %1"), parse_error)
-                end
+                        return false, T(_("Configuration invalid: %1"), parse_error)
+                    end
             end
             return false, _("Configuration empty")
         end,
