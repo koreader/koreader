@@ -196,10 +196,10 @@ function TextEditor:newFile()
         text = _([[To start editing a new file, you will have to:
 
 - First select a directory
-- Then type the new file filename
+- Then enter a name for the new file
 - And start editing it
 
-Do you want to proceeed?]]),
+Do you want to proceed?]]),
         ok_text = _("Yes"),
         cancel_text = _("No"),
         ok_callback = function()
@@ -211,7 +211,7 @@ Do you want to proceeed?]]),
                 onConfirm = function(dir_path)
                     local file_input
                     file_input = InputDialog:new{
-                        title =  _("Enter new file filename"),
+                        title =  _("Enter filename"),
                         input = dir_path == "/" and "/" or dir_path .. "/",
                         buttons = {{
                             {
@@ -381,16 +381,16 @@ function TextEditor:editFile(file_path, readonly)
         buttons = is_lua and {{
             -- First button on first row, that will be filled with Reset|Save|Close
             {
-                text = _("Check lua"),
+                text = _("Check Lua"),
                 callback = function()
                     local parse_error = util.checkLuaSyntax(input:getInputText())
                     if parse_error then
                         UIManager:show(InfoMessage:new{
-                            text = T(_("lua syntax check failed:\n\n%1"), parse_error)
+                            text = T(_("Lua syntax check failed:\n\n%1"), parse_error)
                         })
                     else
                         UIManager:show(Notification:new{
-                            text = T(_("lua syntax OK")),
+                            text = T(_("Lua syntax OK")),
                             timeout = 2,
                         })
                     end
@@ -434,13 +434,13 @@ function TextEditor:editFile(file_path, readonly)
                 if not parse_error then
                     local ok, err = self:saveFileContent(file_path, content)
                     if ok then
-                        return true, _("lua syntax OK, file saved")
+                        return true, _("Lua syntax OK, file saved")
                     else
                         return false, T(_("Failed saving file: %1"), err)
                     end
                 end
                 local save_anyway = Trapper:confirm(T(_(
-[[lua syntax check failed:
+[[Lua syntax check failed:
 
 %1
 
