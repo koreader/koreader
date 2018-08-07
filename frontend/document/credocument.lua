@@ -163,8 +163,12 @@ end
 function CreDocument:loadDocument(full_document)
     if not self._loaded then
         local only_metadata = full_document == false
+        logger.dbg("CreDocument: loading document...")
         if self._document:loadDocument(self.file, only_metadata) then
             self._loaded = true
+            logger.dbg("CreDocument: loading done.")
+        else
+            logger.dbg("CreDocument: loading failed.")
         end
     end
     return self._loaded
@@ -178,10 +182,12 @@ function CreDocument:render()
         < DCREREADER_TWO_PAGE_THRESHOLD then
         self:setVisiblePageCount(1)
     end
+    logger.dbg("CreDocument: rendering document...")
     self._document:renderDocument()
     if not self.info.has_pages then
         self.info.doc_height = self._document:getFullHeight()
     end
+    logger.dbg("CreDocument: rendering done.")
 end
 
 function CreDocument:close()
