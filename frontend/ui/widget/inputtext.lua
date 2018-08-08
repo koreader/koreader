@@ -30,6 +30,7 @@ local InputText = InputContainer:new{
     parent = nil, -- parent dialog that will be set dirty
     edit_callback = nil, -- called with true when text modified, false on init or text re-set
     scroll_callback = nil, -- called with (low, high) when view is scrolled (cf ScrollTextWidget)
+    scroll_by_pan = false, -- allow scrolling by lines with Pan (needs scroll=true)
 
     width = nil,
     height = nil, -- when nil, will be set to original text height (possibly
@@ -322,6 +323,7 @@ function InputText:initTextBox(text, char_added)
             height = self.height,
             dialog = self.parent,
             scroll_callback = self.scroll_callback,
+            scroll_by_pan = self.scroll_by_pan,
         }
     else
         self.text_widget = TextBoxWidget:new{
