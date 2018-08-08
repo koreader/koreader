@@ -701,7 +701,7 @@ function TextBoxWidget:scrollLines(nb_lines)
     self:free()
     self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
     if self.editable then
-        local x, y = self:_getXYForCharPos()
+        local x, y = self:_getXYForCharPos() -- luacheck: no unused
         if y < 0 or y >= self.text_height then
             -- move cursor to first line of visible area
             local ln = self.height == nil and 1 or self.virtual_line_num
