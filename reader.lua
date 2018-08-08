@@ -158,6 +158,13 @@ if Device.hasColorScreen() and not G_reader_settings:has("color_rendering") then
     })
 end
 
+local powerd = Device:getPowerDevice()
+-- for devices that support battery usage
+if powerd:getCapacity() > 0 or powerd:isCharging() then
+    local Battery = require("frontend/device/battery")
+    Battery:scheduleBatteryLevel()
+end
+
 local exit_code
 
 if ARGV[argidx] and ARGV[argidx] ~= "" then
