@@ -22,6 +22,7 @@ function Battery:scheduleBatteryLevel()
                 title = T(_("The battery is getting low.\n%1% remaining."), battery_capacity),
                 title_align = "center",
                 title_face = Font:getFace("infofont"),
+                dismissable = false,
                 buttons = {
                     {
                         {
