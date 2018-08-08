@@ -5,129 +5,11 @@ local Language = require("ui/language")
 local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
 local TimeWidget = require("ui/widget/timewidget")
-local powerd = Device:getPowerDevice()
 local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
 
 local common_settings = {}
-
-local function time_date()
-    if Device:setDateTime() then
-        return {
-            text = _("Time and date"),
-            sub_item_table = {
-                {
-                    text = _("Set time"),
-                    callback = function()
-                        local now_t = os.date("*t")
-                        local curr_hour = now_t.hour
-                        local curr_min = now_t.min
-                        local time_widget = TimeWidget:new {
-                            hour = curr_hour,
-                            min = curr_min,
-                            ok_text = _("Set time"),
-                            title_text = _("Set time"),
-                            callback = function(time)
-                                if Device:setDateTime(nil, nil, nil, time.hour, time.min) then
-                                    now_t = os.date("*t")
-                                    UIManager:show(InfoMessage:new {
-                                        text = T(_("Current time: %1:%2"), string.format("%02d", now_t.hour),
-                                            string.format("%02d", now_t.min))
-                                    })
-                                else
-                                    UIManager:show(InfoMessage:new {
-                                        text = _("Time couldn't be set"),
-                                    })
-                                end
-                            end
-                        }
-                        UIManager:show(time_widget)
-                    end,
-                },
-                {
-                    text = _("Set date"),
-                    callback = function()
-                        local now_t = os.date("*t")
-                        local curr_year = now_t.year
-                        local curr_month = now_t.month
-                        local curr_day = now_t.day
-                        local date_widget = DateWidget:new {
-                            year = curr_year,
-                            month = curr_month,
-                            day = curr_day,
-                            ok_text = _("Set date"),
-                            title_text = _("Set date"),
-                            callback = function(time)
-                                now_t = os.date("*t")
-                                if Device:setDateTime(time.year, time.month, time.day, now_t.hour, now_t.min, now_t.sec) then
-                                    now_t = os.date("*t")
-                                    UIManager:show(InfoMessage:new {
-                                        text = T(_("Current date: %1-%2-%3"), now_t.year, string.format("%02d", now_t.month),
-                                            string.format("%02d", now_t.day))
-                                    })
-                                else
-                                    UIManager:show(InfoMessage:new {
-                                        text = _("Date couldn't be set"),
-                                    })
-                                end
-                            end
-                        }
-                        UIManager:show(date_widget)
-                    end,
-                }
-            }
-        }
-    end
-end
-
-local function battery()
-    if powerd:getCapacity() > 0 or powerd:isCharging() then
-        return {
-            text = _("Low battery alarm"),
-            sub_item_table = {
-                {
-                    text = _("Enable"),
-                    checked_func = function()
-                        return G_reader_settings:nilOrTrue("battery_alarm")
-                    end,
-                    callback = function()
-                        G_reader_settings:flipNilOrTrue("battery_alarm")
-                        local Battery = require("frontend/device/battery")
-                        if G_reader_settings:nilOrTrue("battery_alarm") then
-                            Battery:scheduleBatteryLevel()
-                        else
-                            Battery:unScheduleBatteryLevel()
-                        end
-                    end,
-                },
-                {
-                    text = _("Low battery threshold"),
-                    enabled_func = function() return G_reader_settings:nilOrTrue("battery_alarm") end,
-                    callback = function()
-                        local SpinWidget = require("ui/widget/spinwidget")
-                        local curr_items = G_reader_settings:readSetting("low_battery_threshold") or 20
-                        local battery_spin = SpinWidget:new{
-                            width = Screen:getWidth() * 0.6,
-                            value = curr_items,
-                            value_min = 5,
-                            value_max = 90,
-                            value_hold_step = 10,
-                            ok_text = _("Set threshold"),
-                            title_text =  _("Low battery threshold"),
-                            callback = function(battery_spin)
-                                G_reader_settings:saveSetting("low_battery_threshold", battery_spin.value)
-                                local Battery = require("frontend/device/battery")
-                                Battery.battery_warning = false
-                            end
-                        }
-                        UIManager:show(battery_spin)
-                    end,
-                },
-            },
-        }
-    end
-end
 
 if Device:hasFrontlight() then
     local ReaderFrontLight = require("apps/reader/modules/readerfrontlight")
@@ -326,12 +208,71 @@ common_settings.document = {
 }
 common_settings.language = Language:getLangMenuTable()
 
-common_settings.device = {
-    text = _("Device"),
-    sub_item_table = {
-        time_date(),
-        battery(),
+if Device:setDateTime() then
+    common_settings.time = {
+        text = _("Time and date"),
+        sub_item_table = {
+            {
+                text = _("Set time"),
+                callback = function()
+                    local now_t = os.date("*t")
+                    local curr_hour = now_t.hour
+                    local curr_min = now_t.min
+                    local time_widget = TimeWidget:new {
+                        hour = curr_hour,
+                        min = curr_min,
+                        ok_text = _("Set time"),
+                        title_text = _("Set time"),
+                        callback = function(time)
+                            if Device:setDateTime(nil, nil, nil, time.hour, time.min) then
+                                now_t = os.date("*t")
+                                UIManager:show(InfoMessage:new {
+                                    text = T(_("Current time: %1:%2"), string.format("%02d", now_t.hour),
+                                        string.format("%02d", now_t.min))
+                                })
+                            else
+                                UIManager:show(InfoMessage:new {
+                                    text = _("Time couldn't be set"),
+                                })
+                            end
+                        end
+                    }
+                    UIManager:show(time_widget)
+                end,
+            },
+            {
+                text = _("Set date"),
+                callback = function()
+                    local now_t = os.date("*t")
+                    local curr_year = now_t.year
+                    local curr_month = now_t.month
+                    local curr_day = now_t.day
+                    local date_widget = DateWidget:new {
+                        year = curr_year,
+                        month = curr_month,
+                        day = curr_day,
+                        ok_text = _("Set date"),
+                        title_text = _("Set date"),
+                        callback = function(time)
+                            now_t = os.date("*t")
+                            if Device:setDateTime(time.year, time.month, time.day, now_t.hour, now_t.min, now_t.sec) then
+                                now_t = os.date("*t")
+                                UIManager:show(InfoMessage:new {
+                                    text = T(_("Current date: %1-%2-%3"), now_t.year, string.format("%02d", now_t.month),
+                                        string.format("%02d", now_t.day))
+                                })
+                            else
+                                UIManager:show(InfoMessage:new {
+                                    text = _("Date couldn't be set"),
+                                })
+                            end
+                        end
+                    }
+                    UIManager:show(date_widget)
+                end,
+            }
+        }
     }
-}
+end
 
 return common_settings

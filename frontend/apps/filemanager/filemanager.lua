@@ -1,3 +1,4 @@
+local Battery = require("device/battery")
 local Blitbuffer = require("ffi/blitbuffer")
 local Button = require("ui/widget/button")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
@@ -337,6 +338,7 @@ function FileManager:init()
     })
     table.insert(self, ReaderDictionary:new{ ui = self })
     table.insert(self, ReaderWikipedia:new{ ui = self })
+    table.insert(self, Battery:new{ ui = self })
 
     -- koreader plugins
     for _,plugin_module in ipairs(PluginLoader:loadPlugins()) do

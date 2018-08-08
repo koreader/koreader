@@ -33,6 +33,10 @@ local order = {
         "device",
         -- end common settings
     },
+    device = {
+        "time",
+        "battery",
+    },
     network = {
         "network_wifi",
         "network_proxy",

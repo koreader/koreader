@@ -53,6 +53,10 @@ local order = {
         "djvu_render_mode",
         "status_bar",
     },
+    device = {
+        "time",
+        "battery",
+    },
     network = {
         "network_wifi",
         "network_proxy",

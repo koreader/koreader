@@ -27,6 +27,10 @@ common_info.help = {
 common_info.more_plugins = {
     text = _("More plugins"),
 }
+
+common_info.device = {
+    text = _("Device"),
+}
 common_info.quickstart_guide = {
     text = _("Quickstart guide"),
     callback = function()

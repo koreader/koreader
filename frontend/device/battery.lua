@@ -1,53 +1,109 @@
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local Device = require("device")
 local Font = require("ui/font")
-local Widget = require("ui/widget/widget")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local Screen = Device.screen
 local UIManager = require("ui/uimanager")
+local powerd = Device:getPowerDevice()
 local _ = require("gettext")
 local T = require("ffi/util").template
 
-local Battery = {}
+local Battery = InputContainer:new{
+}
+
+function Battery:init()
+    self:scheduleBatteryLevel()
+    self.ui.menu:registerToMainMenu(self)
+end
+
+function Battery:addToMainMenu(menu_items)
+    if powerd:getCapacity() > 0 or powerd:isCharging() then
+        menu_items.battery = {
+            text = _("Low battery alarm"),
+            sub_item_table = {
+                {
+                    text = _("Enable"),
+                    checked_func = function()
+                        return G_reader_settings:nilOrTrue("battery_alarm")
+                    end,
+                    callback = function()
+                        G_reader_settings:flipNilOrTrue("battery_alarm")
+                        if G_reader_settings:nilOrTrue("battery_alarm") then
+                            self:scheduleBatteryLevel()
+                        else
+                            self:unScheduleBatteryLevel()
+                        end
+                    end,
+                },
+                {
+                    text = _("Low battery threshold"),
+                    enabled_func = function() return G_reader_settings:nilOrTrue("battery_alarm") end,
+                    callback = function()
+                        local SpinWidget = require("ui/widget/spinwidget")
+                        local curr_items = G_reader_settings:readSetting("low_battery_threshold") or 20
+                        local battery_spin = SpinWidget:new{
+                            width = Screen:getWidth() * 0.6,
+                            value = curr_items,
+                            value_min = 5,
+                            value_max = 90,
+                            value_hold_step = 10,
+                            ok_text = _("Set threshold"),
+                            title_text =  _("Low battery threshold"),
+                            callback = function(battery_spin)
+                                G_reader_settings:saveSetting("low_battery_threshold", battery_spin.value)
+                                powerd:setDissmisBatteryStatus(false)
+                            end
+                        }
+                        UIManager:show(battery_spin)
+                    end,
+                },
+            },
+        }
+    end
+end
 
 function Battery:scheduleBatteryLevel()
-    if G_reader_settings:isFalse("battery_alarm") then return end
-    self.schedule_func = function()
-        UIManager:scheduleIn(300, self.schedule_func)
-        local threshold = G_reader_settings:readSetting("low_battery_threshold") or 20
-        local powerd = Device:getPowerDevice()
-        local battery_capacity = powerd:getCapacity()
-        if self.battery_warning ~= true and battery_capacity <= threshold then
-            local choose_action
-            choose_action = ButtonDialogTitle:new{
-                modal = true,
-                title = T(_("The battery is getting low.\n%1% remaining."), battery_capacity),
-                title_align = "center",
-                title_face = Font:getFace("infofont"),
-                dismissable = false,
-                buttons = {
-                    {
+    if G_reader_settings:nilOrTrue("battery_alarm") and (powerd:getCapacity() > 0 or powerd:isCharging()) then
+        self.schedule_func = function()
+            UIManager:scheduleIn(300, self.schedule_func)
+            local threshold = G_reader_settings:readSetting("low_battery_threshold") or 20
+            local battery_capacity = powerd:getCapacity()
+            if powerd:getDissmisBatteryStatus() ~= true and battery_capacity <= threshold then
+                local choose_action
+                choose_action = ButtonDialogTitle:new {
+                    modal = true,
+                    title = T(_("The battery is getting low.\n%1% remaining."), battery_capacity),
+                    title_align = "center",
+                    title_face = Font:getFace("infofont"),
+                    dismissable = false,
+                    buttons = {
                         {
-                            text = _("Dismiss"),
-                            callback = function()
-                                UIManager:close(choose_action)
-                                self.battery_warning = true
-                                UIManager:scheduleIn(300, self.schedule_func)
-                            end,
+                            {
+                                text = _("Dismiss"),
+                                callback = function()
+                                    UIManager:close(choose_action)
+                                    powerd:setDissmisBatteryStatus(true)
+                                    UIManager:scheduleIn(300, self.schedule_func)
+                                end,
+                            },
                         },
-                    },
+                    }
                 }
-            }
-            UIManager:show(choose_action)
-            self:unScheduleBatteryLevel()
-        elseif self.battery_warning and battery_capacity > threshold then
-            self.battery_warning = false
+                UIManager:show(choose_action)
+                self:unScheduleBatteryLevel()
+            elseif powerd:getDissmisBatteryStatus() and battery_capacity > threshold then
+                powerd:setDissmisBatteryStatus(false)
+            end
         end
+        self.schedule_func()
     end
-    self.schedule_func()
 end
 
 function Battery:unScheduleBatteryLevel()
-    UIManager:unschedule(self.schedule_func)
-    self.battery_warning = false
+    if self.schedule_func then
+        UIManager:unschedule(self.schedule_func)
+        powerd:setDissmisBatteryStatus(false)
+    end
 end
 
 function Battery:onResume()
@@ -60,24 +116,4 @@ function Battery:onSuspend()
     end
 end
 
-local LowBatteryWidget = Widget:new{
-    name = "lowbatterywidget",
-}
-
-function LowBatteryWidget:onResume()
-    Battery:onResume()
-end
-
-function LowBatteryWidget:onSuspend()
-    Battery:onSuspend()
-end
-
-function LowBatteryWidget:scheduleBatteryLevel()
-    Battery:scheduleBatteryLevel()
-end
-
-function LowBatteryWidget:unScheduleBatteryLevel()
-    Battery:unScheduleBatteryLevel()
-end
-
-return LowBatteryWidget
+return Battery
