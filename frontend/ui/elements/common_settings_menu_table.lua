@@ -112,7 +112,7 @@ local function battery()
                             value = curr_items,
                             value_min = 5,
                             value_max = 90,
-                            value_hole_step = 10,
+                            value_hold_step = 10,
                             ok_text = _("Set threshold"),
                             title_text =  _("Low battery threshold"),
                             callback = function(battery_spin)
