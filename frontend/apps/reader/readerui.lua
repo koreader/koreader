@@ -4,7 +4,6 @@ ReaderUI is an abstraction for a reader interface.
 It works using data gathered from a document interface.
 ]]--
 
-local Battery = require("device/battery")
 local Cache = require("cache")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
