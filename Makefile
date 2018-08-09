@@ -176,7 +176,7 @@ kindleupdate: all
 			"koreader/resources/icons/src/*" "koreader/spec/*" \
 			$(ZIP_EXCLUDE)
 	# generate kindleupdate package index file
-	zipinfo -1 koreader-$(DIST)-$(MACHINE)-$(VERSION).zip > \
+	zipinfo -1 koreader-$(DIST)-$(MACHINE)-$(VERSION).zip | grep -v '/$' > \
 		$(INSTALL_DIR)/koreader/ota/package.index
 	echo "koreader/ota/package.index" >> $(INSTALL_DIR)/koreader/ota/package.index
 	# update index file in zip package
