@@ -21,6 +21,73 @@ if Device:hasFrontlight() then
     }
 end
 
+if Device:setDateTime() then
+    common_settings.time = {
+        text = _("Time and date"),
+        sub_item_table = {
+            {
+                text = _("Set time"),
+                callback = function()
+                    local now_t = os.date("*t")
+                    local curr_hour = now_t.hour
+                    local curr_min = now_t.min
+                    local time_widget = TimeWidget:new {
+                        hour = curr_hour,
+                        min = curr_min,
+                        ok_text = _("Set time"),
+                        title_text = _("Set time"),
+                        callback = function(time)
+                            if Device:setDateTime(nil, nil, nil, time.hour, time.min) then
+                                now_t = os.date("*t")
+                                UIManager:show(InfoMessage:new {
+                                    text = T(_("Current time: %1:%2"), string.format("%02d", now_t.hour),
+                                        string.format("%02d", now_t.min))
+                                })
+                            else
+                                UIManager:show(InfoMessage:new {
+                                    text = _("Time couldn't be set"),
+                                })
+                            end
+                        end
+                    }
+                    UIManager:show(time_widget)
+                end,
+            },
+            {
+                text = _("Set date"),
+                callback = function()
+                    local now_t = os.date("*t")
+                    local curr_year = now_t.year
+                    local curr_month = now_t.month
+                    local curr_day = now_t.day
+                    local date_widget = DateWidget:new {
+                        year = curr_year,
+                        month = curr_month,
+                        day = curr_day,
+                        ok_text = _("Set date"),
+                        title_text = _("Set date"),
+                        callback = function(time)
+                            now_t = os.date("*t")
+                            if Device:setDateTime(time.year, time.month, time.day, now_t.hour, now_t.min, now_t.sec) then
+                                now_t = os.date("*t")
+                                UIManager:show(InfoMessage:new {
+                                    text = T(_("Current date: %1-%2-%3"), now_t.year, string.format("%02d", now_t.month),
+                                        string.format("%02d", now_t.day))
+                                })
+                            else
+                                UIManager:show(InfoMessage:new {
+                                    text = _("Date couldn't be set"),
+                                })
+                            end
+                        end
+                    }
+                    UIManager:show(date_widget)
+                end,
+            }
+        }
+    }
+end
+
 common_settings.night_mode = {
     text = _("Night mode"),
     checked_func = function() return G_reader_settings:readSetting("night_mode") end,
@@ -207,72 +274,5 @@ common_settings.document = {
     },
 }
 common_settings.language = Language:getLangMenuTable()
-
-if Device:setDateTime() then
-    common_settings.time = {
-        text = _("Time and date"),
-        sub_item_table = {
-            {
-                text = _("Set time"),
-                callback = function()
-                    local now_t = os.date("*t")
-                    local curr_hour = now_t.hour
-                    local curr_min = now_t.min
-                    local time_widget = TimeWidget:new {
-                        hour = curr_hour,
-                        min = curr_min,
-                        ok_text = _("Set time"),
-                        title_text = _("Set time"),
-                        callback = function(time)
-                            if Device:setDateTime(nil, nil, nil, time.hour, time.min) then
-                                now_t = os.date("*t")
-                                UIManager:show(InfoMessage:new {
-                                    text = T(_("Current time: %1:%2"), string.format("%02d", now_t.hour),
-                                        string.format("%02d", now_t.min))
-                                })
-                            else
-                                UIManager:show(InfoMessage:new {
-                                    text = _("Time couldn't be set"),
-                                })
-                            end
-                        end
-                    }
-                    UIManager:show(time_widget)
-                end,
-            },
-            {
-                text = _("Set date"),
-                callback = function()
-                    local now_t = os.date("*t")
-                    local curr_year = now_t.year
-                    local curr_month = now_t.month
-                    local curr_day = now_t.day
-                    local date_widget = DateWidget:new {
-                        year = curr_year,
-                        month = curr_month,
-                        day = curr_day,
-                        ok_text = _("Set date"),
-                        title_text = _("Set date"),
-                        callback = function(time)
-                            now_t = os.date("*t")
-                            if Device:setDateTime(time.year, time.month, time.day, now_t.hour, now_t.min, now_t.sec) then
-                                now_t = os.date("*t")
-                                UIManager:show(InfoMessage:new {
-                                    text = T(_("Current date: %1-%2-%3"), now_t.year, string.format("%02d", now_t.month),
-                                        string.format("%02d", now_t.day))
-                                })
-                            else
-                                UIManager:show(InfoMessage:new {
-                                    text = _("Date couldn't be set"),
-                                })
-                            end
-                        end
-                    }
-                    UIManager:show(date_widget)
-                end,
-            }
-        }
-    }
-end
 
 return common_settings
