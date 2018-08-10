@@ -743,6 +743,7 @@ function FileManager:getSortingMenuTable()
     local fm = self
     local collates = {
         strcoll = {_("filename"), _("Sort by filename")},
+        strcoll_mixed = {_("name mixed"), _("Sort by name - mixed files and folders")},
         access = {_("date read"), _("Sort by last read date")},
         change = {_("date added"), _("Sort by date added")},
         modification = {_("date modified"), _("Sort by date modified")},
@@ -760,6 +761,14 @@ function FileManager:getSortingMenuTable()
             callback = function() fm:setCollate(collate) end,
         }
     end
+    local get_collate_percent = function()
+        local collate_type = G_reader_settings:readSetting("collate")
+        if collate_type == "percent_unopened_first" or collate_type == "percent_unopened_last" then
+            return collates[collate_type][2]
+        else
+            return _("Sort by percent")
+        end
+    end
     return {
         text_func = function()
             return util.template(
@@ -769,13 +778,23 @@ function FileManager:getSortingMenuTable()
         end,
         sub_item_table = {
             set_collate_table("strcoll"),
+            set_collate_table("strcoll_mixed"),
             set_collate_table("access"),
             set_collate_table("change"),
             set_collate_table("modification"),
             set_collate_table("size"),
             set_collate_table("type"),
-            set_collate_table("percent_unopened_first"),
-            set_collate_table("percent_unopened_last"),
+            {
+                text_func =  get_collate_percent,
+                checked_func = function()
+                    return fm.file_chooser.collate == "percent_unopened_first"
+                        or fm.file_chooser.collate == "percent_unopened_last"
+                end,
+                sub_item_table = {
+                    set_collate_table("percent_unopened_first"),
+                    set_collate_table("percent_unopened_last"),
+                }
+            },
         }
     }
 end

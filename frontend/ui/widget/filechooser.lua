@@ -116,6 +116,7 @@ end
 function FileChooser:genItemTableFromPath(path)
     local dirs = {}
     local files = {}
+    local up_folder_arrow = "⬆ ../"
 
     self.list(path, dirs, files)
 
@@ -190,10 +191,12 @@ function FileChooser:genItemTableFromPath(path)
         sorting = function(a, b) return sorting_unreversed(b, a) end
     end
 
-    table.sort(dirs, sorting)
+    if self.collate ~= "strcoll_mixed" then
+        table.sort(dirs, sorting)
+        table.sort(files, sorting)
+    end
     if path ~= "/" then table.insert(dirs, 1, {name = ".."}) end
     if self.show_current_dir_for_hold then table.insert(dirs, 1, {name = "."}) end
-    table.sort(files, sorting)
 
     local item_table = {}
     for i, dir in ipairs(dirs) do
@@ -211,7 +214,7 @@ function FileChooser:genItemTableFromPath(path)
         end
         local text
         if dir.name == ".." then
-            text = "⬆ ../"
+            text = up_folder_arrow
         elseif dir.name == "." then -- possible with show_current_dir_for_hold
             text = _("Long-press to select current directory")
         else
@@ -246,6 +249,18 @@ function FileChooser:genItemTableFromPath(path)
             end
         end
         table.insert(item_table, file_item)
+    end
+
+    if self.collate == "strcoll_mixed" then
+        sorting = function(a, b)
+            if b.text == up_folder_arrow then return false end
+            return self.strcoll(a.text, b.text)
+        end
+        if self.reverse_collate then
+            local sorting_unreversed = sorting
+            sorting = function(a, b) return sorting_unreversed(b, a) end
+        end
+        table.sort(item_table, sorting)
     end
     -- lfs.dir iterated node string may be encoded with some weird codepage on
     -- Windows we need to encode them to utf-8
