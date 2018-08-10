@@ -778,6 +778,7 @@ function FileManager:getSortingMenuTable()
         end,
         sub_item_table = {
             set_collate_table("strcoll"),
+            set_collate_table("strcoll_mixed"),
             set_collate_table("access"),
             set_collate_table("change"),
             set_collate_table("modification"),
@@ -794,7 +795,6 @@ function FileManager:getSortingMenuTable()
                     set_collate_table("percent_unopened_last"),
                 }
             },
-            set_collate_table("strcoll_mixed"),
         }
     }
 end
