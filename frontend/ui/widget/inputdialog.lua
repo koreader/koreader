@@ -128,6 +128,8 @@ local InputDialog = InputContainer:new{
         -- note that the text widget can be scrolled with Swipe North/South even when no button
     keyboard_hidden = false, -- start with keyboard hidden in full fullscreen mode
                              -- needs add_nav_bar to have a Show keyboard button to get it back
+    scroll_by_pan = false, -- allow scrolling by lines with Pan (= Swipe, but wait a bit at end
+                           -- of gesture before releasing) (may conflict with movable)
 
     -- If save_callback provided, a Save and a Close buttons will be added to the first row
     -- if reset_callback provided, a Reset button will be added (before Save) to the first row
@@ -359,6 +361,7 @@ function InputDialog:init()
         edit_callback = self._buttons_edit_callback, -- nil if no Save/Close buttons
         scroll_callback = self._buttons_scroll_callback, -- nil if no Nav or Scroll buttons
         scroll = true,
+        scroll_by_pan = self.scroll_by_pan,
         cursor_at_end = self.cursor_at_end,
         readonly = self.readonly,
         parent = self,

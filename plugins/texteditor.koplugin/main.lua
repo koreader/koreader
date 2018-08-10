@@ -378,6 +378,7 @@ function TextEditor:editFile(file_path, readonly)
         cursor_at_end = false,
         readonly = readonly,
         add_nav_bar = true,
+        scroll_by_pan = true,
         buttons = is_lua and {{
             -- First button on first row, that will be filled with Reset|Save|Close
             {

@@ -9,6 +9,7 @@ local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local Math = require("optmath")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local VerticalScrollBar = require("ui/widget/verticalscrollbar")
 local UIManager = require("ui/uimanager")
@@ -22,6 +23,8 @@ local ScrollTextWidget = InputContainer:new{
     top_line_num = nil,
     editable = false,
     justified = false,
+    scroll_callback = nil, -- called with (low, high) when view is scrolled
+    scroll_by_pan = false, -- allow scrolling by lines with Pan
     face = nil,
     fgcolor = Blitbuffer.COLOR_BLACK,
     width = Screen:scaleBySize(400),
@@ -79,6 +82,20 @@ function ScrollTextWidget:init()
                 },
             },
         }
+        if self.scroll_by_pan then
+            self.ges_events.PanText = {
+                GestureRange:new{
+                    ges = "pan",
+                    range = function() return self.dimen end,
+                },
+            }
+            self.ges_events.PanReleaseText = {
+                GestureRange:new{
+                    ges = "pan_release",
+                    range = function() return self.dimen end,
+                },
+            }
+        end
     end
     if Device:hasKeyboard() or Device:hasKeys() then
         self.key_events = {
@@ -233,6 +250,28 @@ end
 function ScrollTextWidget:onScrollUp()
     self:scrollText(-1)
     return true
+end
+
+function ScrollTextWidget:onPanText(arg, ges)
+    self._pan_direction = ges.direction
+    self._pan_relative_x = ges.relative.x
+    self._pan_relative_y = ges.relative.y
+    return true
+end
+
+function ScrollTextWidget:onPanReleaseText(arg, ges)
+    if self._pan_direction and self._pan_relative_y then -- went thru onPanText
+        if self._pan_direction == "north" or self._pan_direction == "south" then
+            local nb_lines = Math.round(self._pan_relative_y / self:getLineHeight())
+            self.text_widget:scrollLines(-nb_lines)
+            self:updateScrollBar(true)
+        end
+        self._pan_direction = nil
+        self._pan_relative_x = nil
+        self._pan_relative_y = nil
+        return true
+    end
+    return false
 end
 
 return ScrollTextWidget
