@@ -12,44 +12,44 @@ local ReaderDeviceStatus = InputContainer:new{
 }
 
 function ReaderDeviceStatus:init()
-    self.battery_watchable = powerd:getCapacity() > 0 or powerd:isCharging()
-    self.check_low_battery = function()
-        local threshold = G_reader_settings:readSetting("low_battery_threshold") or 20
-        local battery_capacity = powerd:getCapacity()
-        if powerd:getDissmisBatteryStatus() ~= true and battery_capacity <= threshold then
-            local low_battery_info
-            low_battery_info = ButtonDialogTitle:new {
-                modal = true,
-                title = T(_("The battery is getting low.\n%1% remaining."), battery_capacity),
-                title_align = "center",
-                title_face = Font:getFace("infofont"),
-                dismissable = false,
-                buttons = {
-                    {
+    if powerd:getCapacity() > 0 or powerd:isCharging() then
+        self.check_low_battery = function()
+            local threshold = G_reader_settings:readSetting("low_battery_threshold") or 20
+            local battery_capacity = powerd:getCapacity()
+            if powerd:getDissmisBatteryStatus() ~= true and battery_capacity <= threshold then
+                local low_battery_info
+                low_battery_info = ButtonDialogTitle:new {
+                    modal = true,
+                    title = T(_("The battery is getting low.\n%1% remaining."), battery_capacity),
+                    title_align = "center",
+                    title_face = Font:getFace("infofont"),
+                    dismissable = false,
+                    buttons = {
                         {
-                            text = _("Dismiss"),
-                            callback = function()
-                                UIManager:close(low_battery_info)
-                                powerd:setDissmisBatteryStatus(true)
-                                UIManager:scheduleIn(300, self.check_low_battery)
-                            end,
+                            {
+                                text = _("Dismiss"),
+                                callback = function()
+                                    UIManager:close(low_battery_info)
+                                    powerd:setDissmisBatteryStatus(true)
+                                    UIManager:scheduleIn(300, self.check_low_battery)
+                                end,
+                            },
                         },
-                    },
+                    }
                 }
-            }
-            UIManager:show(low_battery_info)
-            return
-        elseif powerd:getDissmisBatteryStatus() and battery_capacity > threshold then
-            powerd:setDissmisBatteryStatus(false)
+                UIManager:show(low_battery_info)
+                return
+            elseif powerd:getDissmisBatteryStatus() and battery_capacity > threshold then
+                powerd:setDissmisBatteryStatus(false)
+            end
+            UIManager:scheduleIn(300, self.check_low_battery)
         end
-        UIManager:scheduleIn(300, self.check_low_battery)
-    end
-
-    if self.battery_watchable then
-        self:startBatteryChecker()
         self.ui.menu:registerToMainMenu(self)
+        self:startBatteryChecker()
+    else
+        self.check_low_battery = nil
     end
-end
+ end
 
 function ReaderDeviceStatus:addToMainMenu(menu_items)
     menu_items.battery = {
@@ -97,7 +97,7 @@ function ReaderDeviceStatus:addToMainMenu(menu_items)
 end
 
 function ReaderDeviceStatus:startBatteryChecker()
-    if G_reader_settings:nilOrTrue("battery_alarm") and self.battery_watchable and self.check_low_battery then
+    if G_reader_settings:nilOrTrue("battery_alarm") and self.check_low_battery then
         self.check_low_battery()
     end
 end
