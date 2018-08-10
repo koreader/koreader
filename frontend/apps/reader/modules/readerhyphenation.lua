@@ -4,6 +4,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local JSON = require("json")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local UIManager = require("ui/uimanager")
+local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
@@ -192,25 +193,82 @@ function ReaderHyphenation:getDictForLanguage(lang_tag)
     return dict
 end
 
-function ReaderHyphenation:onPreRenderDocument(config)
-    -- This is called after the document has been loaded
-    -- so we can use the document language.
+-- Setting the hyph algo before loading the document may save crengine
+-- from re-doing some expensive work at render time (the hyph algo
+-- is accounted in the nodeStyleHash, and would cause a mismatch if it is
+-- different at render time from how it was at load time - "English US" by
+-- default - causing a full re-init of the nodes styles.)
+-- We will only re-set it on pre-render (only then, after loading, we
+-- know the document language) if it's really needed: when no algo saved
+-- in book settings, no default algo, and book has some language defined.
+function ReaderHyphenation:onReadSettings(config)
+    -- Decide and set the adequate hyph algorithm according to settings
+    local hyph_alg
+    self.allow_doc_lang_hyph_alg_override = false
 
     -- Use the one manually set for this document
-    local hyph_alg = config:readSetting("hyph_alg")
-    if not hyph_alg then -- If none, use the one manually set as default (with Hold)
-        hyph_alg = G_reader_settings:readSetting("hyph_alg_default")
+    hyph_alg = config:readSetting("hyph_alg")
+    if hyph_alg then
+        logger.dbg("Hyphenation: using", hyph_alg, "from doc settings")
+        self:setHyphAlgo(hyph_alg)
+        return
     end
-    if not hyph_alg then -- If none, use the one associated with document's language
-        hyph_alg = self:getDictForLanguage(self.ui.document:getProps().language)
+
+    -- Use the one manually set as default (with Hold)
+    hyph_alg = G_reader_settings:readSetting("hyph_alg_default")
+    if hyph_alg then
+        logger.dbg("Hyphenation: using default ", hyph_alg)
+        self:setHyphAlgo(hyph_alg)
+        return
     end
-    if not hyph_alg then -- If none, use the one manually set as fallback (with Hold)
-        hyph_alg = G_reader_settings:readSetting("hyph_alg_fallback")
+
+    -- Document language will be allowed to override the one we set from now on
+    self.allow_doc_lang_hyph_alg_override = true
+
+    -- Use the one manually set as fallback (with Hold)
+    hyph_alg = G_reader_settings:readSetting("hyph_alg_fallback")
+    if hyph_alg then
+        logger.dbg("Hyphenation: using fallback ", hyph_alg, ", might be overriden by doc language")
+        self:setHyphAlgo(hyph_alg)
+        return
     end
+
+    -- None decided, get back the current one set in crengine
+    logger.dbg("Hyphenation: no algo set")
+    self:setHyphAlgo()
+    logger.dbg("Hyphenation: keeping current crengine algo:", self.hyph_alg)
+end
+
+function ReaderHyphenation:onPreRenderDocument(config)
+    -- This is called after the document has been loaded
+    -- so we can access the document language.
+    local doc_language = self.ui.document:getProps().language
+    if not self.allow_doc_lang_hyph_alg_override then
+        logger.dbg("Hyphenation: not overriding", self.hyph_alg, "with doc language:",
+            (doc_language and doc_language or "none"))
+    elseif not doc_language then
+        logger.dbg("Hyphenation: no doc language, keeping", self.hyph_alg)
+    else
+        local hyph_alg = self:getDictForLanguage(doc_language)
+        if not hyph_alg then
+            logger.dbg("Hyphenation: no algo found for doc language:", doc_language, ", keeping", self.hyph_alg)
+        else
+            if hyph_alg == self.hyph_alg then
+                logger.dbg("Hyphenation: current", self.hyph_alg, "is right for doc language:", doc_language)
+            else
+                logger.dbg("Hyphenation: updating for doc language", doc_language, ":", self.hyph_alg, "=>", hyph_alg)
+                self:setHyphAlgo(hyph_alg)
+            end
+        end
+    end
+end
+
+function ReaderHyphenation:setHyphAlgo(hyph_alg)
     if hyph_alg then
         self.ui.document:setHyphDictionary(hyph_alg)
     end
-    -- If we haven't set any, hardcoded English_US.pattern (in cre.cpp) will be used
+    -- If we haven't set any (nil, or invalid), hardcoded
+    -- English_US.pattern (in cre.cpp) will be used
     self.hyph_alg = cre.getSelectedHyphDict()
     -- Apply hyphenation sides limits
     local hyph_settings = self.hyph_algs_settings[self.hyph_alg] or {}

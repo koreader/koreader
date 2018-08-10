@@ -4,13 +4,12 @@ local DownloadBackend = require("internaldownloadbackend")
 local ReadHistory = require("readhistory")
 local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
+local InputDialog = require("ui/widget/inputdialog")
 local LuaSettings = require("frontend/luasettings")
 local UIManager = require("ui/uimanager")
 local NetworkMgr = require("ui/network/manager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local dateparser = require("lib.dateparser")
-local ffi = require("ffi")
-local C = ffi.C
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
@@ -20,7 +19,7 @@ local NewsDownloader = WidgetContainer:new{}
 
 local initialized = false
 local wifi_enabled_before_action = true
-local feed_config_file = "feed_config.lua"
+local feed_config_file_name = "feed_config.lua"
 local news_downloader_config_file = "news_downloader_settings.lua"
 local config_key_custom_dl_dir = "custom_dl_dir";
 local file_extension = ".html"
@@ -98,20 +97,15 @@ function NewsDownloader:addToMainMenu(menu_items)
                 callback = function() self:removeNewsButKeepFeedConfig() end,
             },
             {
-                text = _("Set custom download directory"),
-                callback = function() self:setCustomDownloadDirectory() end,
-            },
-            {
                 text = _("Settings"),
                 sub_item_table = {
                     {
                         text = _("Change feeds configuration"),
-                        callback = function()
-                            UIManager:show(InfoMessage:new{
-                                text = T(_("To change feed (Atom/RSS) sources please manually edit the configuration file:\n%1\n\nIt is very simple and contains comments as well as sample configuration."),
-                                         feed_config_path)
-                            })
-                        end,
+                        callback = function() self:changeFeedConfig() end,
+                    },
+                    {
+                        text = _("Set custom download directory"),
+                        callback = function() self:setCustomDownloadDirectory() end,
                     },
                 },
             },
@@ -142,11 +136,11 @@ function NewsDownloader:lazyInitialization()
             logger.dbg("NewsDownloader: Creating initial directory")
             lfs.mkdir(news_download_dir_path)
         end
-        feed_config_path = news_download_dir_path .. feed_config_file
+        feed_config_path = news_download_dir_path .. feed_config_file_name
 
         if not lfs.attributes(feed_config_path, "mode") then
             logger.dbg("NewsDownloader: Creating initial feed config.")
-            FFIUtil.copyFile(FFIUtil.joinPath(self.path, feed_config_file),
+            FFIUtil.copyFile(FFIUtil.joinPath(self.path, feed_config_file_name),
                          feed_config_path)
         end
         initialized = true
@@ -352,11 +346,11 @@ end
 function NewsDownloader:removeNewsButKeepFeedConfig()
     logger.dbg("NewsDownloader: Removing news from :", news_download_dir_path)
     for entry in lfs.dir(news_download_dir_path) do
-        if entry ~= "." and entry ~= ".." and entry ~= feed_config_file then
+        if entry ~= "." and entry ~= ".." and entry ~= feed_config_file_name then
             local entry_path = news_download_dir_path .. "/" .. entry
             local entry_mode = lfs.attributes(entry_path, "mode")
             if entry_mode == "file" then
-                C.remove(entry_path)
+                os.remove(entry_path)
             elseif entry_mode == "directory" then
                 FFIUtil.purgeDir(entry_path)
             end
@@ -379,13 +373,54 @@ function NewsDownloader:setCustomDownloadDirectory()
            news_downloader_settings:saveSetting(config_key_custom_dl_dir, ("%s/"):format(path))
            news_downloader_settings:flush()
 
-           logger.dbg("NewsDownloader: Coping to new download folder previous feed_config_file from: ", feed_config_path)
-           FFIUtil.copyFile(feed_config_path, ("%s/%s"):format(path, feed_config_file))
+           logger.dbg("NewsDownloader: Coping to new download folder previous feed_config_file_name from: ", feed_config_path)
+           FFIUtil.copyFile(feed_config_path, ("%s/%s"):format(path, feed_config_file_name))
 
            initialized = false
            self:lazyInitialization()
        end,
     }:chooseDir()
+end
+
+function NewsDownloader:changeFeedConfig()
+    local feed_config_file = io.open(feed_config_path, "rb")
+    local config = feed_config_file:read("*all")
+    feed_config_file:close()
+    local config_editor
+    config_editor = InputDialog:new{
+        title = T(_("Config: %1"),feed_config_path),
+        input = config,
+        input_type = "string",
+        fullscreen = true,
+        condensed = true,
+        allow_newline = true,
+        cursor_at_end = false,
+        add_nav_bar = true,
+        reset_callback = function()
+            return config
+        end,
+        save_callback = function(content)
+            if content and #content > 0 then
+                local parse_error = util.checkLuaSyntax(content)
+                if not parse_error then
+                    local syntax_okay, syntax_error = pcall(loadstring(content))
+                    if syntax_okay then
+                        feed_config_file = io.open(feed_config_path, "w")
+                        feed_config_file:write(content)
+                        feed_config_file:close()
+                        return true, _("Configuration saved")
+                    else
+                        return false, T(_("Configuration invalid: %1"), syntax_error)
+                    end
+                else
+                        return false, T(_("Configuration invalid: %1"), parse_error)
+                    end
+            end
+            return false, _("Configuration empty")
+        end,
+    }
+    UIManager:show(config_editor)
+    config_editor:onShowKeyboard()
 end
 
 function NewsDownloader:onCloseDocument()

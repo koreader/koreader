@@ -1,27 +1,31 @@
-return {
-    -- list your feeds here:
+return {--do NOT change this line
 
-    { "http://feeds.reuters.com/Reuters/worldNews?format=xml", limit = 2, download_full_article=true},
+ --HELP:
+ -- use syntax: {"http://your-url.com", limit=max_number_of_items_to_be_created, download_full_article=true/false},
 
-    { "https://www.pcworld.com/index.rss", limit = 7 , download_full_article=false},
+ -- remember to put coma at the end of each line!
 
-    -- comment out line ("--" at line start) to stop downloading source
-    --{ "http://www.football.co.uk/international/rss.xml", limit = 0 , download_full_article=false},
-
-
-
+ -- you can also edit this file in external text editor. Config file is located under:
+ -- <your_download_directory>/feed_config.lua
+ -- default: <koreader_dir>/news/feed_config.lua
 
 
+ -- DETAILS:
+ -- set 'limit' to "0" means no limit.
+
+ -- 'download_full_article=true' - means download full article (may not always work correctly)
+ -- 'download_full_article=false' - means use only feed description to create feeds (usually only beginning of the article)
+ -- default value is 'true' (if no 'download_full_article' entry)
+
+ -- comment out line ("--" at line start) to stop downloading source
 
 
-    --HELP:
-    -- use syntax: {"your_url", limit= max_number_of_items_to_be_created, download_full_article=true/false}
+ -- LIST YOUR FEEDS HERE:
 
-    -- set 'limit' to change number of 'news' to be created
-    -- 'limit' equal "0" means no limit.
+ { "http://feeds.reuters.com/Reuters/worldNews?format=xml", limit = 2, download_full_article=true},
 
-    -- 'download_full_article=false' - means download full article using feed link (may not always work correctly)
-    -- 'download_full_article=true' - means use only feed description to create feeds (usually only part of the article)
+ { "https://www.pcworld.com/index.rss", limit = 7 , download_full_article=false},
 
+-- { "http://www.football.co.uk/international/rss.xml", limit = 2},
 
-}
+}--do NOT change this line
