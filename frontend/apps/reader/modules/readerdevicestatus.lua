@@ -13,7 +13,7 @@ local ReaderDeviceStatus = InputContainer:new{
 
 function ReaderDeviceStatus:init()
     if powerd:getCapacity() > 0 or powerd:isCharging() then
-        self.check_low_battery = function()
+        self.checkLowBattery = function()
             local threshold = G_reader_settings:readSetting("low_battery_threshold") or 20
             local battery_capacity = powerd:getCapacity()
             if powerd:getDissmisBatteryStatus() ~= true and battery_capacity <= threshold then
@@ -31,7 +31,7 @@ function ReaderDeviceStatus:init()
                                 callback = function()
                                     UIManager:close(low_battery_info)
                                     powerd:setDissmisBatteryStatus(true)
-                                    UIManager:scheduleIn(300, self.check_low_battery)
+                                    UIManager:scheduleIn(300, self.checkLowBattery)
                                 end,
                             },
                         },
@@ -42,12 +42,12 @@ function ReaderDeviceStatus:init()
             elseif powerd:getDissmisBatteryStatus() and battery_capacity > threshold then
                 powerd:setDissmisBatteryStatus(false)
             end
-            UIManager:scheduleIn(300, self.check_low_battery)
+            UIManager:scheduleIn(300, self.checkLowBattery)
         end
         self.ui.menu:registerToMainMenu(self)
         self:startBatteryChecker()
     else
-        self.check_low_battery = nil
+        self.checkLowBattery = nil
     end
  end
 
@@ -97,14 +97,14 @@ function ReaderDeviceStatus:addToMainMenu(menu_items)
 end
 
 function ReaderDeviceStatus:startBatteryChecker()
-    if G_reader_settings:nilOrTrue("battery_alarm") and self.check_low_battery then
-        self.check_low_battery()
+    if G_reader_settings:nilOrTrue("battery_alarm") and self.checkLowBattery then
+        self.checkLowBattery()
     end
 end
 
 function ReaderDeviceStatus:stopBatteryChecker()
-    if self.check_low_battery then
-        UIManager:unschedule(self.check_low_battery)
+    if self.checkLowBattery then
+        UIManager:unschedule(self.checkLowBattery)
     end
 end
 
