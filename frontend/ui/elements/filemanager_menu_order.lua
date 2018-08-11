@@ -30,8 +30,12 @@ local order = {
         "navigation",
         "----------------------------",
         "language",
-        "time",
+        "device",
         -- end common settings
+    },
+    device = {
+        "time",
+        "battery",
     },
     network = {
         "network_wifi",

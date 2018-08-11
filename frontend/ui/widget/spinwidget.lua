@@ -27,6 +27,8 @@ local SpinWidget = InputContainer:new{
     value = 1,
     value_max = 20,
     value_min = 0,
+    value_step = 1,
+    value_hold_step = 4,
     ok_text = _("OK"),
     cancel_text = _("Cancel"),
 }
@@ -64,8 +66,8 @@ function SpinWidget:update()
         value = self.value,
         value_min = self.value_min,
         value_max = self.value_max,
-        value_step = 1,
-        value_hold_step = 4,
+        value_step = self.value_step,
+        value_hold_step = self.value_hold_step,
     }
     local value_group = HorizontalGroup:new{
         align = "center",

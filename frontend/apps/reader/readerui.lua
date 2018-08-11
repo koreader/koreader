@@ -22,6 +22,7 @@ local ReaderBookmark = require("apps/reader/modules/readerbookmark")
 local ReaderConfig = require("apps/reader/modules/readerconfig")
 local ReaderCoptListener = require("apps/reader/modules/readercoptlistener")
 local ReaderCropping = require("apps/reader/modules/readercropping")
+local ReaderDeviceStatus = require("apps/reader/modules/readerdevicestatus")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local ReaderFont = require("apps/reader/modules/readerfont")
 local ReaderFrontLight = require("apps/reader/modules/readerfrontlight")
@@ -185,6 +186,10 @@ function ReaderUI:init()
             ui = self
         })
     end
+    -- device status controller
+    self:registerModule("battery", ReaderDeviceStatus:new{
+        ui = self,
+    })
     -- configurable controller
     if self.document.info.configurable then
         -- config panel controller

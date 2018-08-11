@@ -24,25 +24,29 @@ local ButtonDialogTitle = InputContainer:new{
     title_margin = Size.margin.title,
     buttons = nil,
     tap_close_callback = nil,
+    dismissable = true, -- set to false if any button callback is required
 }
 
 function ButtonDialogTitle:init()
-    if Device:hasKeys() then
-        self.key_events = {
-            Close = { {"Back"}, doc = "close button dialog" }
-        }
-    end
-    if Device:isTouchDevice() then
-        self.ges_events.TapClose = {
-            GestureRange:new{
-                ges = "tap",
-                range = Geom:new{
-                    x = 0, y = 0,
-                    w = Screen:getWidth(),
-                    h = Screen:getHeight(),
+    if self.dismissable then
+        if Device:hasKeys() then
+            self.key_events = {
+                Close = { { "Back" }, doc = "close button dialog" }
+            }
+        end
+        if Device:isTouchDevice() then
+            self.ges_events.TapClose = {
+                GestureRange:new {
+                    ges = "tap",
+                    range = Geom:new {
+                        x = 0,
+                        y = 0,
+                        w = Screen:getWidth(),
+                        h = Screen:getHeight(),
+                    }
                 }
             }
-        }
+        end
     end
     self[1] = CenterContainer:new{
         dimen = Screen:getSize(),

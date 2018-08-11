@@ -35,7 +35,7 @@ if Device:setDateTime() then
                         hour = curr_hour,
                         min = curr_min,
                         ok_text = _("Set time"),
-                        title_text =  _("Set time"),
+                        title_text = _("Set time"),
                         callback = function(time)
                             if Device:setDateTime(nil, nil, nil, time.hour, time.min) then
                                 now_t = os.date("*t")
@@ -65,7 +65,7 @@ if Device:setDateTime() then
                         month = curr_month,
                         day = curr_day,
                         ok_text = _("Set date"),
-                        title_text =  _("Set date"),
+                        title_text = _("Set date"),
                         callback = function(time)
                             now_t = os.date("*t")
                             if Device:setDateTime(time.year, time.month, time.day, now_t.hour, now_t.min, now_t.sec) then
