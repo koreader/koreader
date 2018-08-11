@@ -743,14 +743,14 @@ function FileManager:getSortingMenuTable()
     local fm = self
     local collates = {
         strcoll = {_("filename"), _("Sort by filename")},
-        strcoll_mixed = {_("name mixed"), _("Sort by name - mixed files and folders")},
+        strcoll_mixed = {_("name mixed"), _("Sort by name – mixed files and folders")},
         access = {_("date read"), _("Sort by last read date")},
         change = {_("date added"), _("Sort by date added")},
         modification = {_("date modified"), _("Sort by date modified")},
         size = {_("size"), _("Sort by size")},
         type = {_("type"), _("Sort by type")},
-        percent_unopened_first = {_("percent - unopened first"), _("Sort by percent - unopened first")},
-        percent_unopened_last = {_("percent - unopened last"), _("Sort by percent - unopened last")},
+        percent_unopened_first = {_("percent – unopened first"), _("Sort by percent – unopened first")},
+        percent_unopened_last = {_("percent – unopened last"), _("Sort by percent – unopened last")},
     }
     local set_collate_table = function(collate)
         return {
