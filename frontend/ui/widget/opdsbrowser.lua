@@ -11,7 +11,6 @@ local NetworkMgr = require("ui/network/manager")
 local OPDSParser = require("ui/opdsparser")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
-local gettext = require("gettext")
 local http = require('socket.http')
 local https = require('ssl.https')
 local lfs = require("libs/libkoreader-lfs")
@@ -21,6 +20,7 @@ local mime = require('mime')
 local socket = require('socket')
 local url = require('socket.url')
 local util = require("util")
+local _ = require("gettext")
 local T = require("ffi/util").template
 
 local CatalogCacheItem = CacheItem:new{
@@ -37,7 +37,7 @@ local CatalogCache = Cache:new{
 
 local OPDSBrowser = Menu:extend{
     opds_servers = {},
-    calibre_name = gettext("Local calibre catalog"),
+    calibre_name = _("Local calibre catalog"),
 
     catalog_type = "application/atom%+xml",
     search_type = "application/opensearchdescription%+xml",
@@ -113,28 +113,28 @@ end
 
 function OPDSBrowser:addNewCatalog()
     self.add_server_dialog = MultiInputDialog:new{
-        title = gettext("Add OPDS catalog"),
+        title = _("Add OPDS catalog"),
         fields = {
             {
                 text = "",
-                hint = gettext("Catalog name"),
+                hint = _("Catalog name"),
             },
             {
                 text = "",
-                hint = gettext("Catalog URL"),
+                hint = _("Catalog URL"),
             },
         },
         buttons = {
             {
                 {
-                    text = gettext("Cancel"),
+                    text = _("Cancel"),
                     callback = function()
                         self.add_server_dialog:onClose()
                         UIManager:close(self.add_server_dialog)
                     end
                 },
                 {
-                    text = gettext("Add"),
+                    text = _("Add"),
                     callback = function()
                         self.add_server_dialog:onClose()
                         UIManager:close(self.add_server_dialog)
@@ -153,29 +153,29 @@ end
 function OPDSBrowser:editCalibreServer()
     local calibre = G_reader_settings:readSetting("calibre_opds") or {}
     self.add_server_dialog = MultiInputDialog:new{
-        title = gettext("Edit local calibre host and port"),
+        title = _("Edit local calibre host and port"),
         fields = {
             {
                 -- TODO: get IP address of current device
                 text = calibre.host or "192.168.1.1",
-                hint = gettext("calibre host"),
+                hint = _("calibre host"),
             },
             {
                 text = calibre.port and tostring(calibre.port) or "8080",
-                hint = gettext("calibre port"),
+                hint = _("calibre port"),
             },
         },
         buttons = {
             {
                 {
-                    text = gettext("Cancel"),
+                    text = _("Cancel"),
                     callback = function()
                         self.add_server_dialog:onClose()
                         UIManager:close(self.add_server_dialog)
                     end
                 },
                 {
-                    text = gettext("Apply"),
+                    text = _("Apply"),
                     callback = function()
                         self.add_server_dialog:onClose()
                         UIManager:close(self.add_server_dialog)
@@ -222,7 +222,7 @@ function OPDSBrowser:genItemTableFromRoot()
         })
     end
     table.insert(item_table, {
-        text = gettext("Add new OPDS catalog"),
+        text = _("Add new OPDS catalog"),
         callback = function()
             self:addNewCatalog()
         end,
@@ -290,19 +290,19 @@ end
 
 function OPDSBrowser:fetchWithLogin(host, callback)
     self.login_dialog = LoginDialog:new{
-        title = gettext("Login to OPDS server"),
+        title = _("Login to OPDS server"),
         username = "",
         buttons = {
             {
                 {
-                    text = gettext("Cancel"),
+                    text = _("Cancel"),
                     enabled = true,
                     callback = function()
                         self:closeDialog()
                     end,
                 },
                 {
-                    text = gettext("Login"),
+                    text = _("Login"),
                     enabled = true,
                     callback = function()
                         local username, password = self:getCredential()
@@ -361,10 +361,7 @@ function OPDSBrowser:getCatalog(feed_url)
     elseif not ok and catalog then
         logger.warn("cannot get catalog info from", feed_url, catalog)
         UIManager:show(InfoMessage:new{
-            text = T(
-                gettext("Cannot get catalog info from %1"),
-                (feed_url or "")
-            ),
+            text = T(_("Cannot get catalog info from %1"), (feed_url or "")),
         })
         return
     end
@@ -523,22 +520,22 @@ function OPDSBrowser:downloadFile(item, format, remote_url)
                 end
             else
                 UIManager:show(InfoMessage:new {
-                    text = gettext("Could not save file to:\n") .. local_path,
+                    text = _("Could not save file to:\n") .. local_path,
                     timeout = 3,
                 })
             end
         end)
 
         UIManager:show(InfoMessage:new{
-            text = gettext("Downloading may take several minutes…"),
+            text = _("Downloading may take several minutes…"),
             timeout = 1,
         })
     end
 
     if lfs.attributes(local_path, "mode") == "file" then
         UIManager:show(ConfirmBox:new {
-            text = T(gettext("The file %1 already exists. Do you want to overwrite it?"), local_path),
-            ok_text = gettext("Overwrite"),
+            text = T(_("The file %1 already exists. Do you want to overwrite it?"), local_path),
+            ok_text = _("Overwrite"),
             ok_callback = function()
                 download()
             end,
@@ -550,7 +547,7 @@ end
 
 function OPDSBrowser:createNewDownloadDialog(path, buttons)
     self.download_dialog = ButtonDialogTitle:new{
-        title = T(gettext("Download directory:\n%1\n\nDownload file type:"), path),
+        title = T(_("Download directory:\n%1\n\nDownload file type:"), path),
         buttons = buttons
     }
 end
@@ -587,10 +584,10 @@ function OPDSBrowser:showDownloads(item)
     -- set download directory button
     table.insert(buttons, {
         {
-            text = gettext("Choose download directory by long-pressing"),
+            text = _("Select another directory"),
             callback = function()
                 require("ui/downloadmgr"):new{
-                    title = gettext("Choose download directory"),
+                    title = _("Long-press to select directory"),
                     onConfirm = function(path)
                         logger.dbg("set download directory to", path)
                         G_reader_settings:saveSetting("download_dir", path)
@@ -646,28 +643,28 @@ end
 function OPDSBrowser:editOPDSServer(item)
     logger.dbg("edit", item)
     self.edit_server_dialog = MultiInputDialog:new{
-        title = gettext("Edit OPDS catalog"),
+        title = _("Edit OPDS catalog"),
         fields = {
             {
                 text = item.text or "",
-                hint = gettext("Catalog Name"),
+                hint = _("Catalog Name"),
             },
             {
                 text = item.url or "",
-                hint = gettext("Catalog URL"),
+                hint = _("Catalog URL"),
             },
         },
         buttons = {
             {
                 {
-                    text = gettext("Cancel"),
+                    text = _("Cancel"),
                     callback = function()
                         self.edit_server_dialog:onClose()
                         UIManager:close(self.edit_server_dialog)
                     end
                 },
                 {
-                    text = gettext("Apply"),
+                    text = _("Apply"),
                     callback = function()
                         self.edit_server_dialog:onClose()
                         UIManager:close(self.edit_server_dialog)
@@ -701,7 +698,7 @@ function OPDSBrowser:onMenuHold(item)
             buttons = {
                 {
                     {
-                        text = gettext("Edit"),
+                        text = _("Edit"),
                         enabled = item.editable,
                         callback = function()
                             UIManager:close(self.opds_server_dialog)
@@ -713,7 +710,7 @@ function OPDSBrowser:onMenuHold(item)
                         end
                     },
                     {
-                        text = gettext("Delete"),
+                        text = _("Delete"),
                         enabled = item.deletable,
                         callback = function()
                             UIManager:close(self.opds_server_dialog)
