@@ -23,7 +23,7 @@ local Kobo = Generic:new{
     model = "Kobo",
     isKobo = yes,
     isTouchDevice = yes, -- all of them are
-    hasBGRFrameBuffer = yes, -- has always been the case, even on 16bpp FWs
+    hasBGRFrameBuffer = yes, -- True when >16bpp
 
     -- most Kobos have X/Y switched for the touch screen
     touch_switch_xy = true,
@@ -198,6 +198,18 @@ local KoboNova = Kobo:new{
 
 function Kobo:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
+    -- NOTE: Something about the extra work needed to handle RGB565 conversions is making the JIT optimizer crazy when doing
+    --       alpha-blending, causing it to very quickly blacklist the entire blitbuffer code, which basically murders performance.
+    --       The least terrible workaround we could come up with is tweaking the optimizer's thresholds a bit,
+    --       to convince it not to give up too early.
+    --       As this may have a detrimental effect on performance, we try to deviate from defaults as little as possible,
+    --       completely avoiding it if possible...
+    --       c.f., #4137 for the gory details.
+    if self.screen.fb_bpp == 16 then
+        logger.info("Enabling Kobo @ 16bpp tweaks")
+        jit.opt.start("loopunroll=45")
+        self.hasBGRFrameBuffer = no
+    end
     self.powerd = require("device/kobo/powerd"):new{device = self}
     self.input = require("device/input"):new{
         device = self,
