@@ -186,7 +186,7 @@ kindleupdate: all
 	# note that the targz file extension is intended to keep ISP from caching
 	# the file, see koreader#1644.
 	cd $(INSTALL_DIR) && \
-		tar -czah --no-recursion -f ../koreader-$(DIST)-$(MACHINE)-$(VERSION).targz \
+		tar -I"gzip --rsyncable" -cah --no-recursion -f ../koreader-$(DIST)-$(MACHINE)-$(VERSION).targz \
 		-T koreader/ota/package.index
 
 koboupdate: all
@@ -215,7 +215,7 @@ koboupdate: all
 		koreader/ota/package.index koreader.png README_kobo.txt
 	# make gzip koboupdate for zsync OTA update
 	cd $(INSTALL_DIR) && \
-		tar -czah --no-recursion -f ../koreader-kobo-$(MACHINE)-$(VERSION).targz \
+		tar -I"gzip --rsyncable" -cah --no-recursion -f ../koreader-kobo-$(MACHINE)-$(VERSION).targz \
 		-T koreader/ota/package.index
 
 pbupdate: all
@@ -252,7 +252,7 @@ pbupdate: all
 		applications/koreader/ota/package.index system
 	# make gzip pbupdate for zsync OTA update
 	cd $(INSTALL_DIR)/applications && \
-		tar -czah --no-recursion -f ../../koreader-pocketbook-$(MACHINE)-$(VERSION).targz \
+		tar -I"gzip --rsyncable" -cah --no-recursion -f ../../koreader-pocketbook-$(MACHINE)-$(VERSION).targz \
 		-T koreader/ota/package.index
 
 utupdate: all
