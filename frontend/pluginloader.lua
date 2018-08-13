@@ -25,9 +25,10 @@ end
 local PluginLoader = {}
 
 function PluginLoader:loadPlugins()
-    if self.plugins then return self.plugins end
+    if self.enabled_plugins then return self.enabled_plugins, self.disabled_plugins end
 
-    self.plugins = {}
+    self.enabled_plugins = {}
+    self.disabled_plugins = {}
     local lookup_path_list = { DEFAULT_PLUGIN_PATH }
     local extra_paths = G_reader_settings:readSetting("extra_plugin_paths")
     if extra_paths then
@@ -62,8 +63,7 @@ function PluginLoader:loadPlugins()
             local plugin_root = lookup_path.."/"..entry
             local mode = lfs.attributes(plugin_root, "mode")
             -- valid koreader plugin directory
-            if mode == "directory" and entry:find(".+%.koplugin$")
-                    and not (plugins_disabled and plugins_disabled[entry:sub(1, -10)]) then
+            if mode == "directory" and entry:find(".+%.koplugin$") then
                 local mainfile = plugin_root.."/main.lua"
                 package.path = string.format("%s/?.lua;%s", plugin_root, package_path)
                 package.cpath = string.format("%s/lib/?.so;%s", plugin_root, package_cpath)
@@ -73,8 +73,13 @@ function PluginLoader:loadPlugins()
                 elseif type(plugin_module.disabled) ~= "boolean" or not plugin_module.disabled then
                     plugin_module.path = plugin_root
                     plugin_module.name = plugin_module.name or plugin_root:match("/(.-)%.koplugin")
-                    sandboxPluginEventHandlers(plugin_module)
-                    table.insert(self.plugins, plugin_module)
+                    if (plugins_disabled and plugins_disabled[entry:sub(1, -10)]) then
+                        sandboxPluginEventHandlers(plugin_module)
+                        table.insert(self.disabled_plugins, plugin_module)
+                    else
+                        sandboxPluginEventHandlers(plugin_module)
+                        table.insert(self.enabled_plugins, plugin_module)
+                    end
                 else
                     logger.info("Plugin ", mainfile, " has been disabled.")
                 end
@@ -85,14 +90,54 @@ function PluginLoader:loadPlugins()
     end
 
     -- set package path for all loaded plugins
-    for _,plugin in ipairs(self.plugins) do
+    for _,plugin in ipairs(self.enabled_plugins) do
         package.path = string.format("%s;%s/?.lua", package.path, plugin.path)
         package.cpath = string.format("%s;%s/lib/?.so", package.cpath, plugin.path)
     end
 
-    table.sort(self.plugins, function(v1,v2) return v1.path < v2.path end)
+    table.sort(self.enabled_plugins, function(v1,v2) return v1.path < v2.path end)
 
-    return self.plugins
+    return self.enabled_plugins, self.disabled_plugins
+end
+
+function PluginLoader:genPluginManagerSubItem()
+    local all_plugins = {}
+    local enabled_plugins, disabled_plugins = self:loadPlugins()
+
+
+    for _, plugin in ipairs(enabled_plugins) do
+        local element = {}
+        element.name = plugin.fullname or plugin.name
+        element.enable = true
+        table.insert(all_plugins, element)
+    end
+
+    for _, plugin in ipairs(disabled_plugins) do
+        local element = {}
+        element.name = plugin.fullname or plugin.name
+        element.enable = false
+        if element.name ~= "storagestat" then
+            table.insert(all_plugins, element)
+        end
+    end
+    table.sort(all_plugins, function(v1, v2) return v1.name < v2.name end)
+
+    local plugin_table = {}
+    for _, plugin in ipairs(all_plugins) do
+        table.insert(plugin_table, {
+            text = plugin.name,
+            checked_func = function()
+                return plugin.enable
+            end,
+            callback = function()
+                local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
+                plugins_disabled[plugin.name] = plugin.enable
+                plugin.enable = not plugin.enable
+                G_reader_settings:saveSetting("plugins_disabled", plugins_disabled)
+            end
+        })
+    end
+    return plugin_table
 end
 
 function PluginLoader:createPluginInstance(plugin, attr)

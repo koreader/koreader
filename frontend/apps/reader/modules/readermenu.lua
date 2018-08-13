@@ -155,6 +155,12 @@ function ReaderMenu:setUpdateItemTable()
         table.remove(self.menu_items.screensaver.sub_item_table, 9)
         table.insert(self.menu_items.screensaver.sub_item_table, ss_book_settings)
     end
+
+    local PluginLoader = require("pluginloader")
+    self.menu_items.plugin_management = {
+        text = _("Plugin management"),
+        sub_item_table = PluginLoader:genPluginManagerSubItem()
+    }
     -- main menu tab
     -- insert common info
     for id, common_setting in pairs(require("ui/elements/common_info_menu_table")) do
