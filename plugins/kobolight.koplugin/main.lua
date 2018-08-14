@@ -22,7 +22,7 @@ local swipe_touch_zone_ratio_warmth = { x = 7/8, y = 1/8, w = 1/8, h = 7/8, }
 
 local KoboLight = WidgetContainer:new{
     name = 'kobolight',
-    fullname = _("Kobo light"),
+    fullname = _("Frontlight gesture controller"),
     gestureScale = nil,  -- initialized in self:resetLayout()
 }
 
