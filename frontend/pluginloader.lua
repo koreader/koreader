@@ -144,12 +144,12 @@ function PluginLoader:genPluginManagerSubItem()
                 local UIManager = require("ui/uimanager")
                 local _ = require("gettext")
                 local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
-                if plugin.enable then
-                    plugins_disabled[plugin.name] = plugin.enable
-                else
-                    plugins_disabled[plugin.name] = nil
-                end
                 plugin.enable = not plugin.enable
+                if plugin.enable then
+                    plugins_disabled[plugin.name] = nil
+                else
+                    plugins_disabled[plugin.name] = true
+                end
                 G_reader_settings:saveSetting("plugins_disabled", plugins_disabled)
                 if self.show_info then
                     UIManager:show(InfoMessage:new{
