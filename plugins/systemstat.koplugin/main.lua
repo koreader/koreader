@@ -240,6 +240,7 @@ SystemStat:init()
 
 local SystemStatWidget = WidgetContainer:new{
     name = "systemstat",
+    fullname = _("System statistics"),
 }
 
 function SystemStatWidget:init()

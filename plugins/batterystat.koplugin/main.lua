@@ -282,6 +282,7 @@ BatteryStat:init()
 
 local BatteryStatWidget = WidgetContainer:new{
     name = "batterystat",
+    fullname = _("Battery statistics"),
 }
 
 function BatteryStatWidget:init()

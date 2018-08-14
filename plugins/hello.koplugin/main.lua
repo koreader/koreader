@@ -9,7 +9,8 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 
 local Hello = WidgetContainer:new{
-    name = 'Hello',
+    name = 'hello',
+    fullname = _("Hello"),
     is_doc_only = false,
 }
 

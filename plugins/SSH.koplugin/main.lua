@@ -20,6 +20,7 @@ end
 
 local SSH = WidgetContainer:new{
     name = 'SSH',
+    fullname = _("SSH"),
     is_doc_only = false,
 }
 

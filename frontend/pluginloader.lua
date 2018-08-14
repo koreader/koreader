@@ -1,9 +1,10 @@
+local InfoMessage = require("ui/widget/infomessage")
+local UIManager = require("ui/uimanager")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local _ = require("gettext")
 
 local DEFAULT_PLUGIN_PATH = "plugins"
-
-
 
 local function sandboxPluginEventHandlers(plugin)
     for key, value in pairs(plugin) do
@@ -22,7 +23,9 @@ local function sandboxPluginEventHandlers(plugin)
 end
 
 
-local PluginLoader = {}
+local PluginLoader = {
+    show_info = true,
+}
 
 function PluginLoader:loadPlugins()
     if self.enabled_plugins then return self.enabled_plugins, self.disabled_plugins end
@@ -101,31 +104,35 @@ function PluginLoader:loadPlugins()
 end
 
 function PluginLoader:genPluginManagerSubItem()
-    local all_plugins = {}
-    local enabled_plugins, disabled_plugins = self:loadPlugins()
-
+    local enabled_plugins, disabled_plugins = {}, {}
+    if self.all_plugins == nil then
+        self.all_plugins = {}
+        enabled_plugins, disabled_plugins = self:loadPlugins()
+    end
 
     for _, plugin in ipairs(enabled_plugins) do
         local element = {}
-        element.name = plugin.fullname or plugin.name
+        element.fullname = plugin.fullname or plugin.name
+        element.name = plugin.name
         element.enable = true
-        table.insert(all_plugins, element)
+        table.insert(self.all_plugins, element)
     end
 
     for _, plugin in ipairs(disabled_plugins) do
         local element = {}
-        element.name = plugin.fullname or plugin.name
+        element.fullname = plugin.fullname or plugin.name
+        element.name = plugin.name
         element.enable = false
         if element.name ~= "storagestat" then
-            table.insert(all_plugins, element)
+            table.insert(self.all_plugins, element)
         end
     end
-    table.sort(all_plugins, function(v1, v2) return v1.name < v2.name end)
+    table.sort(self.all_plugins, function(v1, v2) return v1.fullname < v2.fullname end)
 
     local plugin_table = {}
-    for _, plugin in ipairs(all_plugins) do
+    for __, plugin in ipairs(self.all_plugins) do
         table.insert(plugin_table, {
-            text = plugin.name,
+            text = plugin.fullname,
             checked_func = function()
                 return plugin.enable
             end,
@@ -134,6 +141,12 @@ function PluginLoader:genPluginManagerSubItem()
                 plugins_disabled[plugin.name] = plugin.enable
                 plugin.enable = not plugin.enable
                 G_reader_settings:saveSetting("plugins_disabled", plugins_disabled)
+                if self.show_info then
+                    UIManager:show(InfoMessage:new{
+                        text = _("This will take effect on next restart."),
+                    })
+                    self.show_info = false
+                end
             end
         })
     end

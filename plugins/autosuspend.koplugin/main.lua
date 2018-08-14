@@ -111,7 +111,8 @@ end
 AutoSuspend:init()
 
 local AutoSuspendWidget = WidgetContainer:new{
-    name = "AutoSuspend",
+    name = "autosuspend",
+    fullname = _("Auto suspend"),
 }
 
 function AutoSuspendWidget:onInputEvent()

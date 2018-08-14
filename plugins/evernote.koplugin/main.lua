@@ -18,6 +18,7 @@ local realpath = require("ffi/util").realpath
 
 local EvernoteExporter = InputContainer:new{
     name = "evernote",
+    fullname = _("Evernote"),
     login_title = _("Login to Evernote"),
     notebook_name = _("KOReader Notes"),
     evernote_domain = nil,

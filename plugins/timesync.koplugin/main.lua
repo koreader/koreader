@@ -19,6 +19,7 @@ local NetworkMgr = require("ui/network/manager")
 
 local TimeSync = WidgetContainer:new{
     name = "timesync",
+    fullname = _("Time sync"),
 }
 
 local function currentTime()

@@ -61,6 +61,7 @@ end
 
 local KeepAlive = WidgetContainer:new{
     name = "keepalive",
+    fullname = _("Keep alive"),
 }
 
 function KeepAlive:init()

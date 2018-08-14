@@ -11,6 +11,7 @@ local Screen = require("device").screen
 
 local Terminal = WidgetContainer:new{
     name = "terminal",
+    fullname = _("Terminal"),
     dump_file = util.realpath(DataStorage:getDataDir()) .. "/terminal_output.txt",
     command = "",
 }
