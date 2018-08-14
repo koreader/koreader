@@ -1,10 +1,10 @@
-local InfoMessage = require("ui/widget/infomessage")
-local UIManager = require("ui/uimanager")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local _ = require("gettext")
 
 local DEFAULT_PLUGIN_PATH = "plugins"
+local OBSOLETE_PLUGINS = {
+    storagestat = true
+}
 
 local function sandboxPluginEventHandlers(plugin)
     for key, value in pairs(plugin) do
@@ -58,8 +58,10 @@ function PluginLoader:loadPlugins()
     if type(plugins_disabled) ~= "table" then
         plugins_disabled = {}
     end
-    --permanent remove storage stats plugin (#2926)
-    plugins_disabled["storagestat"] = true
+    --disable obsolete plugins
+    for element in pairs(OBSOLETE_PLUGINS) do
+        plugins_disabled[element] = true
+    end
     for _,lookup_path in ipairs(lookup_path_list) do
         logger.info('Loading plugins from directory:', lookup_path)
         for entry in lfs.dir(lookup_path) do
@@ -77,7 +79,6 @@ function PluginLoader:loadPlugins()
                     plugin_module.path = plugin_root
                     plugin_module.name = plugin_module.name or plugin_root:match("/(.-)%.koplugin")
                     if (plugins_disabled and plugins_disabled[entry:sub(1, -10)]) then
-                        sandboxPluginEventHandlers(plugin_module)
                         table.insert(self.disabled_plugins, plugin_module)
                     else
                         sandboxPluginEventHandlers(plugin_module)
@@ -114,6 +115,7 @@ function PluginLoader:genPluginManagerSubItem()
         local element = {}
         element.fullname = plugin.fullname or plugin.name
         element.name = plugin.name
+        element.description = plugin.description
         element.enable = true
         table.insert(self.all_plugins, element)
     end
@@ -122,8 +124,9 @@ function PluginLoader:genPluginManagerSubItem()
         local element = {}
         element.fullname = plugin.fullname or plugin.name
         element.name = plugin.name
+        element.description = plugin.description
         element.enable = false
-        if element.name ~= "storagestat" then
+        if not OBSOLETE_PLUGINS[element.name] then
             table.insert(self.all_plugins, element)
         end
     end
@@ -137,8 +140,15 @@ function PluginLoader:genPluginManagerSubItem()
                 return plugin.enable
             end,
             callback = function()
+                local InfoMessage = require("ui/widget/infomessage")
+                local UIManager = require("ui/uimanager")
+                local _ = require("gettext")
                 local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
-                plugins_disabled[plugin.name] = plugin.enable
+                if plugin.enable then
+                    plugins_disabled[plugin.name] = plugin.enable
+                else
+                    plugins_disabled[plugin.name] = nil
+                end
                 plugin.enable = not plugin.enable
                 G_reader_settings:saveSetting("plugins_disabled", plugins_disabled)
                 if self.show_info then
@@ -147,7 +157,8 @@ function PluginLoader:genPluginManagerSubItem()
                     })
                     self.show_info = false
                 end
-            end
+            end,
+            help_text = plugin.description,
         })
     end
     return plugin_table
