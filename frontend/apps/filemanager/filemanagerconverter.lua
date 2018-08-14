@@ -70,7 +70,7 @@ function FileConverter:isSupported(file)
 end
 
 function FileConverter:showConvertButtons(file, ui)
-    local __, filename_pure = util.splitFilePathName(file)
+    local __, filename_pure = util.splitFilePathName(file)  -- luacheck: no unused
     local filename_suffix = util.getFileNameSuffix(file)
     local filetype_name = self.formats_from[filename_suffix].name
     self.convert_dialog = ButtonDialogTitle:new{

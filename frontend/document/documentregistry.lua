@@ -148,14 +148,14 @@ function DocumentRegistry:setProvider(file, provider, all)
 end
 
 function DocumentRegistry:showSetProviderButtons(file, filemanager_instance,  ui, reader_ui)
-    local __, filename_pure = util.splitFilePathName(file)
+    local __, filename_pure = util.splitFilePathName(file)  -- luacheck: no unused
     local filename_suffix = util.getFileNameSuffix(file)
 
     local buttons = {}
     local radio_buttons = {}
     local providers = self:getProviders(file)
 
-    for __, provider in ipairs(providers) do
+    for ___, provider in ipairs(providers) do
         -- we have no need for extension, mimetype, weights, etc. here
         provider = provider.provider
         table.insert(radio_buttons, {
