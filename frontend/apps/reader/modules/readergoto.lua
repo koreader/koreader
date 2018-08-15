@@ -109,6 +109,7 @@ function ReaderGoto:gotoPage()
     local relative_sign = page_number:sub(1, 1)
     local number = tonumber(page_number)
     if number then
+        self.ui.link:addCurrentLocationToStack()
         if relative_sign == "+" or relative_sign == "-" then
             self.ui:handleEvent(Event:new("GotoRelativePage", number))
         else
