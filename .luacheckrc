@@ -120,6 +120,6 @@ files["spec/unit/*"].globals = {
 -- 211 - Unused local variable
 -- 631 - Line is too long
 ignore = {
-          "211/__*",
-          "631",
+    "211/__*",
+    "631",
 }
