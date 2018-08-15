@@ -119,6 +119,7 @@ files["spec/unit/*"].globals = {
 -- https://luacheck.readthedocs.io/en/stable/warnings.html
 -- 211 - Unused local variable
 -- 631 - Line is too long
-ignore = {"631",
+ignore = {
           "211/__*",
+          "631",
 }
