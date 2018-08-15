@@ -16,6 +16,7 @@ require("ffi/zeromq_h")
 local ZSync = InputContainer:new{
     name = "zsync",
     fullname = _("Zsync"),
+    description = _([[Devices in the same Wifi network can transfer documents between each other directly.]]),
     is_doc_only = true,
 }
 

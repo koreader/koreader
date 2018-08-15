@@ -113,6 +113,7 @@ AutoSuspend:init()
 local AutoSuspendWidget = WidgetContainer:new{
     name = "autosuspend",
     fullname = _("Auto suspend"),
+    description = _([[Suspends the device when no interaction for some time.]]),
 }
 
 function AutoSuspendWidget:onInputEvent()
