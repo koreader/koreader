@@ -137,6 +137,7 @@ function SkimToWidget:init()
         callback = function()
             self.curr_page = self.curr_page - 1
             self:update()
+            self:addOriginToLocationStack()
             self.ui:handleEvent(Event:new("GotoPage", self.curr_page))
         end,
     }
@@ -151,6 +152,7 @@ function SkimToWidget:init()
         callback = function()
             self.curr_page = self.curr_page - 10
             self:update()
+            self:addOriginToLocationStack()
             self.ui:handleEvent(Event:new("GotoPage", self.curr_page))
         end,
     }
@@ -165,6 +167,7 @@ function SkimToWidget:init()
         callback = function()
             self.curr_page = self.curr_page + 1
             self:update()
+            self:addOriginToLocationStack()
             self.ui:handleEvent(Event:new("GotoPage", self.curr_page))
         end,
     }
@@ -179,6 +182,7 @@ function SkimToWidget:init()
         callback = function()
             self.curr_page = self.curr_page + 10
             self:update()
+            self:addOriginToLocationStack()
             self.ui:handleEvent(Event:new("GotoPage", self.curr_page))
         end,
     }
@@ -208,6 +212,7 @@ function SkimToWidget:init()
             local page = self:getNextChapter(self.curr_page)
             if page and page >=1 and page <= self.page_count then
                 self.curr_page = page
+                self:addOriginToLocationStack()
                 self.ui:handleEvent(Event:new("GotoPage", self.curr_page))
                 self:update()
             end
@@ -226,6 +231,7 @@ function SkimToWidget:init()
             local page = self:getPrevChapter(self.curr_page)
             if page and page >=1 and page <= self.page_count then
                 self.curr_page = page
+                self:addOriginToLocationStack()
                 self.ui:handleEvent(Event:new("GotoPage", self.curr_page))
                 self:update()
             end
@@ -248,6 +254,7 @@ function SkimToWidget:init()
                 page = self.ui.bookmark:getNextBookmarkedPageFromPage(self.curr_page)
             end
             if page then
+                self:addOriginToLocationStack()
                 self.ui.bookmark:gotoBookmark(page)
                 if self.document.info.has_pages then
                     self.curr_page = self.ui.paging.current_page
@@ -275,6 +282,7 @@ function SkimToWidget:init()
                 page = self.ui.bookmark:getPreviousBookmarkedPageFromPage(self.curr_page)
             end
             if page then
+                self:addOriginToLocationStack()
                 self.ui.bookmark:gotoBookmark(page)
                 if self.document.info.has_pages then
                     self.curr_page = self.ui.paging.current_page
@@ -362,6 +370,15 @@ function SkimToWidget:update()
     self.current_page_text:setText(self.curr_page, self.current_page_text.width)
 end
 
+function SkimToWidget:addOriginToLocationStack(add_current)
+    -- Only add the page from which we launched the SkimToWidget
+    -- to the location stack, unless add_current = true
+    if not self.orig_page_added_to_stack or add_current then
+        self.ui.link:addCurrentLocationToStack()
+        self.orig_page_added_to_stack = true
+    end
+end
+
 function SkimToWidget:getNextChapter(cur_pageno)
     local next_chapter = nil
     for i = 1, #self.ticks_candidates do
@@ -409,6 +426,7 @@ function SkimToWidget:onTapProgress(arg, ges_ev)
         local pos = ges_ev.pos.x - self.progress_bar.dimen.x
         local perc = pos / width
         local page = Math.round(perc * self.page_count)
+        self:addOriginToLocationStack()
         self.ui:handleEvent(Event:new("GotoPage", page ))
         self.curr_page = page
         self:update()
