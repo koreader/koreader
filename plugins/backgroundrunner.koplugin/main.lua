@@ -240,7 +240,7 @@ BackgroundRunner:_schedule()
 local BackgroundRunnerWidget = WidgetContainer:new{
     name = "backgroundrunner",
     fullname = _("Background runner"),
-    description = _([[Service to other widgets: allows tasks to be run regularly in the background.]]),
+    description = _([[Service to other plugins: allows tasks to be run regularly in the background.]]),
     runner = BackgroundRunner,
 }
 
