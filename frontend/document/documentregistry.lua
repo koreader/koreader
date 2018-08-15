@@ -148,7 +148,7 @@ function DocumentRegistry:setProvider(file, provider, all)
 end
 
 function DocumentRegistry:showSetProviderButtons(file, filemanager_instance,  ui, reader_ui)
-    local __, filename_pure = util.splitFilePathName(file)  -- luacheck: no unused
+    local __, filename_pure = util.splitFilePathName(file)
     local filename_suffix = util.getFileNameSuffix(file)
 
     local buttons = {}

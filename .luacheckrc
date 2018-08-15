@@ -116,4 +116,9 @@ files["spec/unit/*"].globals = {
 }
 
 -- TODO: clean up and enforce max line width (631)
-ignore = {"631"}
+-- https://luacheck.readthedocs.io/en/stable/warnings.html
+-- 211 - Unused local variable
+-- 631 - Line is too long
+ignore = {"631",
+          "211/__*",
+}
