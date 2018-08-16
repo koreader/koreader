@@ -9,6 +9,7 @@ local DocumentRegistry = require("document/documentregistry")
 local Event = require("ui/event")
 local FileChooser = require("ui/widget/filechooser")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
+local FileManagerBookmark = require("apps/filemanager/filemanagerbookmark")
 local FileManagerConverter = require("apps/filemanager/filemanagerconverter")
 local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
 local FileManagerMenu = require("apps/filemanager/filemanagermenu")
@@ -451,6 +452,26 @@ function FileManager:tapPlus()
                 text = _("Open random document"),
                 callback = function()
                     self:openRandomFile(self.file_chooser.path)
+                    UIManager:close(self.file_dialog)
+                end
+            }
+        },
+        {
+            {
+                text = _("Fauvrites folders"),
+                callback = function()
+                    --self:openRandomFile(self.file_chooser.path)
+                    local fm_bookmark =  FileManagerBookmark:new{
+                        title = _("Favorites folder"),
+                        show_parent = self,
+                        curr_path = self.file_chooser.path,
+                        goFolder = function(folder)
+                            if folder ~= nil and lfs.attributes(folder, "mode") == "directory" then
+                                self.file_chooser:changeToPath(folder)
+                            end
+                        end,
+                    }
+                    UIManager:show(fm_bookmark)
                     UIManager:close(self.file_dialog)
                 end
             }
