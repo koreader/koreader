@@ -180,6 +180,21 @@ Note that your selected font size is not affected by this setting.]]),
 - auto: use FreeType's hinting algorithm, ignoring font instructions.]]),
             },
             {
+                name = "font_kerning",
+                name_text = S.FONT_KERNING,
+                toggle = {S.OFF, S.FREETYPE, S.HARFBUZZ},
+                values = {0, 1, 2},
+                default_value = 1,
+                args = {0, 1, 2},
+                event = "SetFontKerning",
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Font kerning is the process of adjusting the spacing between individual letter forms, to achieve a visually pleasing result.
+
+- off: no kerning.
+- freetype: use FreeType's kerning implementation (no ligature).
+- harfbuzz: use Harfbuzz's kerning implementationg (slower but may support ligatures with some fonts).]]),
+            },
+            {
                 name = "space_condensing",
                 name_text = S.WORD_GAP,
                 toggle = {S.SMALL, S.MEDIUM, S.LARGE},

@@ -541,6 +541,11 @@ function CreDocument:setFontHinting(mode)
     self._document:setIntProperty("font.hinting.mode", mode)
 end
 
+function CreDocument:setFontKerning(mode)
+    logger.dbg("CreDocument: set font kerning mode", mode)
+    self._document:setIntProperty("font.kerning.mode", mode)
+end
+
 -- min space condensing percent (how much we can decrease a space width to
 -- make text fit on a line) 25...100%
 function CreDocument:setSpaceCondensing(value)

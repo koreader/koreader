@@ -147,8 +147,12 @@ function ReaderFont:onReadSettings(config)
     self.ui.document:toggleFontBolder(self.font_embolden)
 
     self.font_hinting = config:readSetting("font_hinting")
-            or G_reader_settings:readSetting("copt_font_hinting") or 2 -- default in cre.cpp
+            or G_reader_settings:readSetting("copt_font_hinting") or 2 -- auto (default in cre.cpp)
     self.ui.document:setFontHinting(self.font_hinting)
+
+    self.font_kerning = config:readSetting("font_kerning")
+            or G_reader_settings:readSetting("copt_font_kerning") or 1 -- freetype (default in cre.cpp)
+    self.ui.document:setFontKerning(self.font_kerning)
 
     self.space_condensing = config:readSetting("space_condensing")
         or G_reader_settings:readSetting("copt_space_condensing") or 75
@@ -254,6 +258,13 @@ function ReaderFont:onSetFontHinting(mode)
     return true
 end
 
+function ReaderFont:onSetFontKerning(mode)
+    self.font_kerning = mode
+    self.ui.document:setFontKerning(mode)
+    self.ui:handleEvent(Event:new("UpdatePos"))
+    return true
+end
+
 function ReaderFont:onSetSpaceCondensing(space)
     self.space_condensing = space
     self.ui.document:setSpaceCondensing(space)
@@ -279,6 +290,7 @@ function ReaderFont:onSaveSettings()
     self.ui.doc_settings:saveSetting("font_size", self.font_size)
     self.ui.doc_settings:saveSetting("font_embolden", self.font_embolden)
     self.ui.doc_settings:saveSetting("font_hinting", self.font_hinting)
+    self.ui.doc_settings:saveSetting("font_kerning", self.font_kerning)
     self.ui.doc_settings:saveSetting("space_condensing", self.space_condensing)
     self.ui.doc_settings:saveSetting("line_space_percent", self.line_space_percent)
     self.ui.doc_settings:saveSetting("gamma_index", self.gamma_index)
