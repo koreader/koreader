@@ -58,6 +58,7 @@ local order = {
         "text_editor",
         "----------------------------",
         "more_plugins",
+        "plugin_management",
         "----------------------------",
         "advanced_settings",
         "developer_options",

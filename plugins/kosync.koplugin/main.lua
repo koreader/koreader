@@ -20,6 +20,8 @@ end
 
 local KOSync = InputContainer:new{
     name = "kosync",
+    fullname = _("Progress sync"),
+    description = _([[Synchronizes your reading progess to a server across your KOReader devices.]]),
     is_doc_only = true,
     title = _("Register/login to KOReader server"),
 

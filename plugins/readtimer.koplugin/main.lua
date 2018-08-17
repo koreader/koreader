@@ -7,6 +7,8 @@ local _ = require("gettext")
 
 local ReadTimer = WidgetContainer:new{
     name = "readtimer",
+    fullname = _("Read timer"),
+    description = _([[Shows an alarm after a specified amount of time.]]),
     time = 0,  -- The expected time of alarm if enabled, or 0.
 }
 

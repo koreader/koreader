@@ -79,6 +79,7 @@ local order = {
         "text_editor",
         "----------------------------",
         "more_plugins",
+        "plugin_management",
     },
     more_plugins = {
         "auto_frontlight",

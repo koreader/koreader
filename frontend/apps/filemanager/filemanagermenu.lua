@@ -4,6 +4,7 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local FileSearcher = require("apps/filemanager/filemanagerfilesearcher")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local PluginLoader = require("pluginloader")
 local Search = require("apps/filemanager/filemanagersearch")
 local SetDefaults = require("apps/filemanager/filemanagersetdefaults")
 local UIManager = require("ui/uimanager")
@@ -160,6 +161,11 @@ function FileManagerMenu:setUpdateItemTable()
             SetDefaults:ConfirmSave()
         end,
     }
+    self.menu_items.plugin_management = {
+        text = _("Plugin management"),
+        sub_item_table = PluginLoader:genPluginManagerSubItem()
+    }
+
     self.menu_items.opds_catalog = {
         text = _("OPDS catalog"),
         callback = function()

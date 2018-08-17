@@ -28,6 +28,9 @@ local DEFAULT_MIN_READ_SEC = 5
 local DEFAULT_MAX_READ_SEC = 120
 
 local ReaderStatistics = Widget:extend{
+    name = "statistics",
+    fullname = _("Reader statistics"),
+    description = _([[Keeps and displays your reading statistics.]]),
     page_min_read_sec = DEFAULT_MIN_READ_SEC,
     page_max_read_sec = DEFAULT_MAX_READ_SEC,
     start_current_period = 0,

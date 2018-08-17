@@ -3,6 +3,7 @@ local PluginShare = require("pluginshare")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
+local _ = require("gettext")
 
 -- BackgroundRunner is an experimental feature to execute non-critical jobs in
 -- background. A job is defined as a table in PluginShare.backgroundJobs table.
@@ -238,6 +239,8 @@ BackgroundRunner:_schedule()
 
 local BackgroundRunnerWidget = WidgetContainer:new{
     name = "backgroundrunner",
+    fullname = _("Background runner"),
+    description = _([[Service to other plugins: allows tasks to run regularly in the background.]]),
     runner = BackgroundRunner,
 }
 

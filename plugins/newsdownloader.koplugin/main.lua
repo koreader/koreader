@@ -15,7 +15,11 @@ local util = require("util")
 local _ = require("gettext")
 local T = FFIUtil.template
 
-local NewsDownloader = WidgetContainer:new{}
+local NewsDownloader = WidgetContainer:new{
+    name = "newsdownloader",
+    fullname = _("News downloader"),
+    description = _([[Retrieves RSS and Atom news entries and saves them as HTML files.]]),
+}
 
 local initialized = false
 local wifi_enabled_before_action = true

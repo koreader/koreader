@@ -41,7 +41,11 @@ local init_done = false
 local filemanager_display_mode = false -- not initialized yet
 local history_display_mode = false -- not initialized yet
 
-local CoverBrowser = InputContainer:new{}
+local CoverBrowser = InputContainer:new{
+    name = "coverbrowser",
+    fullname = _("Cover browser"),
+    description = _([[Alternative display modes for file browser and history.]]),
+}
 
 function CoverBrowser:init()
     self.full_featured = true
