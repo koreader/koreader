@@ -25,14 +25,14 @@ end
 
 function FileManagerBookmark:genItemTableFromRoot()
     local item_table = {}
-    local favorites_folder = G_reader_settings:readSetting("fm_bookmark") or {}
+    local favorite_folder = G_reader_settings:readSetting("fm_bookmark") or {}
     table.insert(item_table, {
-        text = _("Add new fauvrite folder"),
+        text = _("Add new favorite folder"),
         callback = function()
             self:addNewFolder()
         end,
     })
-    for _, item in ipairs(favorites_folder) do
+    for _, item in ipairs(favorite_folder) do
         table.insert(item_table, {
             text = string.format("%s (%s)", item.text, item.folder),
             folder = item.folder,
@@ -92,31 +92,31 @@ function FileManagerBookmark:addFolderFromInput(friendly_name, folder)
     for __, item in ipairs(G_reader_settings:readSetting("fm_bookmark") or {}) do
         if item.text == friendly_name and item.folder == folder then
             UIManager:show(InfoMessage:new{
-                text = _("This folder already exist in favorites."),
+                text = _("This folder already exist in favorite."),
             })
             return
         end
     end
-    local favorites_folder = G_reader_settings:readSetting("fm_bookmark") or {}
-    table.insert(favorites_folder, {
+    local favorite_folder = G_reader_settings:readSetting("fm_bookmark") or {}
+    table.insert(favorite_folder, {
         text = friendly_name,
         folder = folder,
     })
-    G_reader_settings:saveSetting("fm_bookmark", favorites_folder)
+    G_reader_settings:saveSetting("fm_bookmark", favorite_folder)
     self:init()
 end
 
 function FileManagerBookmark:onMenuHold(item)
     if item.deletable or item.editable then
-        local favorites_folder_dialog
-        favorites_folder_dialog = ButtonDialog:new{
+        local favorite_folder_dialog
+        favorite_folder_dialog = ButtonDialog:new{
             buttons = {
                 {
                     {
                         text = _("Edit"),
                         enabled = item.editable,
                         callback = function()
-                            UIManager:close(favorites_folder_dialog)
+                            UIManager:close(favorite_folder_dialog)
                             self:editFavoritesFolder(item)
                         end
                     },
@@ -124,19 +124,19 @@ function FileManagerBookmark:onMenuHold(item)
                         text = _("Delete"),
                         enabled = item.deletable,
                         callback = function()
-                            UIManager:close(favorites_folder_dialog)
-                            self:deleteFavoritesFolder(item)
+                            UIManager:close(favorite_folder_dialog)
+                            self:deleteFavoriteFolder(item)
                         end
                     },
                 },
             }
         }
-        UIManager:show(favorites_folder_dialog)
+        UIManager:show(favorite_folder_dialog)
         return true
     end
 end
 
-function FileManagerBookmark:editFavoritesFolder(item)
+function FileManagerBookmark:editFavoriteFolder(item)
     local edit_folder_input
     edit_folder_input = InputDialog:new {
         title = _("Edit friendly name"),
@@ -155,7 +155,7 @@ function FileManagerBookmark:editFavoritesFolder(item)
                     text = _("Apply"),
                     is_enter_default = true,
                     callback = function()
-                        self:renameFavoritesFolder(item, edit_folder_input:getInputText())
+                        self:renameFavoriteFolder(item, edit_folder_input:getInputText())
                         UIManager:close(edit_folder_input)
                     end,
                 },
@@ -166,26 +166,26 @@ function FileManagerBookmark:editFavoritesFolder(item)
     edit_folder_input:onShowKeyboard()
 end
 
-function FileManagerBookmark:renameFavoritesFolder(item, new_name)
-    local favorites_folder = {}
+function FileManagerBookmark:renameFavoriteFolder(item, new_name)
+    local favorite_folder = {}
     for _, element in ipairs(G_reader_settings:readSetting("fm_bookmark") or {}) do
         if element.text == item.friendly_name and element.folder == item.folder then
             element.text = new_name
         end
-        table.insert(favorites_folder, element)
+        table.insert(favorite_folder, element)
     end
-    G_reader_settings:saveSetting("fm_bookmark", favorites_folder)
+    G_reader_settings:saveSetting("fm_bookmark", favorite_folder)
     self:init()
 end
 
-function FileManagerBookmark:deleteFavoritesFolder(item)
-    local favorites_folder = {}
+function FileManagerBookmark:deleteFavoriteFolder(item)
+    local favorite_folder = {}
     for _, element in ipairs(G_reader_settings:readSetting("fm_bookmark") or {}) do
         if element.text ~= item.friendly_name or element.folder ~= item.folder then
-            table.insert(favorites_folder, element)
+            table.insert(favorite_folder, element)
         end
     end
-    G_reader_settings:saveSetting("fm_bookmark", favorites_folder)
+    G_reader_settings:saveSetting("fm_bookmark", favorite_folder)
     self:init()
 end
 

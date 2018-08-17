@@ -458,11 +458,11 @@ function FileManager:tapPlus()
         },
         {
             {
-                text = _("Fauvrites folders"),
+                text = _("Favorite folders"),
                 callback = function()
                     --self:openRandomFile(self.file_chooser.path)
                     local fm_bookmark =  FileManagerBookmark:new{
-                        title = _("Favorites folder"),
+                        title = _("Favorite folders"),
                         show_parent = self,
                         curr_path = self.file_chooser.path,
                         goFolder = function(folder)
