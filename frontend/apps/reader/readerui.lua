@@ -26,6 +26,7 @@ local ReaderDeviceStatus = require("apps/reader/modules/readerdevicestatus")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local ReaderFont = require("apps/reader/modules/readerfont")
 local ReaderFrontLight = require("apps/reader/modules/readerfrontlight")
+local ReaderGesture = require("apps/reader/modules/readergesture")
 local ReaderGoto = require("apps/reader/modules/readergoto")
 local ReaderHinting = require("apps/reader/modules/readerhinting")
 local ReaderHighlight = require("apps/reader/modules/readerhighlight")
@@ -350,6 +351,13 @@ function ReaderUI:init()
             logger.info("RD loaded plugin", plugin_module.name,
                         "at", plugin_module.path)
         end
+    end
+    if Device:isTouchDevice() then
+        -- gesture manager
+        self:registerModule("gesture", ReaderGesture:new {
+            document = self.document,
+            ui = self,
+        })
     end
 
     -- we only read settings after all the widgets are initialized

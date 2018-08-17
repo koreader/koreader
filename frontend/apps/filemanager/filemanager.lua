@@ -23,6 +23,7 @@ local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local PluginLoader = require("pluginloader")
 local ReaderDeviceStatus = require("apps/reader/modules/readerdevicestatus")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
+local ReaderGesture = require("apps/reader/modules/readergesture")
 local ReaderUI = require("apps/reader/readerui")
 local ReaderWikipedia = require("apps/reader/modules/readerwikipedia")
 local Screenshoter = require("ui/widget/screenshoter")
@@ -124,6 +125,13 @@ function FileManager:init()
         }
     }
 
+    self.menu = FileManagerMenu:new{
+        ui = self
+    }
+    if Device:isTouchDevice() then
+        table.insert(self, ReaderGesture:new{ ui = self })
+    end
+
     local g_show_hidden = G_reader_settings:readSetting("show_hidden")
     local show_hidden = g_show_hidden == nil and DSHOWHIDDENFILES or g_show_hidden
     local file_chooser = FileChooser:new{
@@ -145,7 +153,10 @@ function FileManager:init()
                 return true
             end
         end,
+        custom_touch_zone = self.touch_zone_dg["nodes"],
         close_callback = function() return self:onClose() end,
+        -- allow left bottom tap gesture, otherwise it is eaten by hidden return button
+        return_arrow_propagation = true,
     }
     self.file_chooser = file_chooser
     self.focused_file = nil -- use it only once
@@ -328,9 +339,6 @@ function FileManager:init()
 
     self[1] = fm_ui
 
-    self.menu = FileManagerMenu:new{
-        ui = self
-    }
     self.active_widgets = { Screenshoter:new{ prefix = 'FileManager' } }
     table.insert(self, self.menu)
     table.insert(self, FileManagerHistory:new{

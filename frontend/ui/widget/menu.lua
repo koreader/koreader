@@ -698,6 +698,7 @@ function Menu:init()
         callback = function() self:onReturn() end,
         bordersize = 0,
         show_parent = self,
+        readonly = self.return_arrow_propagation,
     }
     self.page_return_arrow:hide()
     self.return_button = HorizontalGroup:new{
@@ -1176,7 +1177,8 @@ function Menu:onSwipe(arg, ges_ev)
         self:onNextPage()
     elseif ges_ev.direction == "east" then
         self:onPrevPage()
-    else
+    elseif not self.custom_touch_zone["short_diagonal_swipe"] then
+        -- don't do that when gesture manager sets short diagonal swipe otherwise
         -- trigger full refresh
         UIManager:setDirty(nil, "full")
     end

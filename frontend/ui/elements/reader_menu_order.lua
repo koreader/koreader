@@ -56,6 +56,7 @@ local order = {
     device = {
         "time",
         "battery",
+        "gesture",
     },
     network = {
         "network_wifi",
