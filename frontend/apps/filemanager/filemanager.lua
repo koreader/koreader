@@ -460,7 +460,6 @@ function FileManager:tapPlus()
             {
                 text = _("Favorite folders"),
                 callback = function()
-                    --self:openRandomFile(self.file_chooser.path)
                     local fm_bookmark =  FileManagerBookmark:new{
                         title = _("Favorite folders"),
                         show_parent = self,
