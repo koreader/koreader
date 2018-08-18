@@ -25,7 +25,7 @@ end
 
 function FileManagerBookmark:genItemTableFromRoot()
     local item_table = {}
-    local favorite_folder = G_reader_settings:readSetting("fm_bookmark") or {}
+    local favorite_folder = G_reader_settings:readSetting("favorite_folders") or {}
     table.insert(item_table, {
         text = _("Add new favorite folder"),
         callback = function()
@@ -61,7 +61,7 @@ function FileManagerBookmark:addNewFolder()
                 title = self.title,
                 input = friendly_name,
                 input_type = "text",
-                description = T(_("Please enter friendly name for your selected folder:\n%1"), path),
+                description = T(_("Title for selected folder:\n%1"), path),
                 buttons = {
                     {
                         {
@@ -89,20 +89,20 @@ function FileManagerBookmark:addNewFolder()
 end
 
 function FileManagerBookmark:addFolderFromInput(friendly_name, folder)
-    for __, item in ipairs(G_reader_settings:readSetting("fm_bookmark") or {}) do
+    for __, item in ipairs(G_reader_settings:readSetting("favorite_folders") or {}) do
         if item.text == friendly_name and item.folder == folder then
             UIManager:show(InfoMessage:new{
-                text = _("This folder already exist in favorite."),
+                text = _("This folder already exist in favorites."),
             })
             return
         end
     end
-    local favorite_folder = G_reader_settings:readSetting("fm_bookmark") or {}
+    local favorite_folder = G_reader_settings:readSetting("favorite_folders") or {}
     table.insert(favorite_folder, {
         text = friendly_name,
         folder = folder,
     })
-    G_reader_settings:saveSetting("fm_bookmark", favorite_folder)
+    G_reader_settings:saveSetting("favorite_folders", favorite_folder)
     self:init()
 end
 
@@ -142,7 +142,7 @@ function FileManagerBookmark:editFavoriteFolder(item)
         title = _("Edit friendly name"),
         input = item.friendly_name,
         input_type = "text",
-        description = T(_("Rename friendly name for your selected folder:\n%1"), item.folder),
+        description = T(_("Rename title for selected folder:\n%1"), item.folder),
         buttons = {
             {
                 {
@@ -168,24 +168,24 @@ end
 
 function FileManagerBookmark:renameFavoriteFolder(item, new_name)
     local favorite_folder = {}
-    for _, element in ipairs(G_reader_settings:readSetting("fm_bookmark") or {}) do
+    for _, element in ipairs(G_reader_settings:readSetting("favorite_folders") or {}) do
         if element.text == item.friendly_name and element.folder == item.folder then
             element.text = new_name
         end
         table.insert(favorite_folder, element)
     end
-    G_reader_settings:saveSetting("fm_bookmark", favorite_folder)
+    G_reader_settings:saveSetting("favorite_folders", favorite_folder)
     self:init()
 end
 
 function FileManagerBookmark:deleteFavoriteFolder(item)
     local favorite_folder = {}
-    for _, element in ipairs(G_reader_settings:readSetting("fm_bookmark") or {}) do
+    for _, element in ipairs(G_reader_settings:readSetting("favorite_folders") or {}) do
         if element.text ~= item.friendly_name or element.folder ~= item.folder then
             table.insert(favorite_folder, element)
         end
     end
-    G_reader_settings:saveSetting("fm_bookmark", favorite_folder)
+    G_reader_settings:saveSetting("favorite_folders", favorite_folder)
     self:init()
 end
 
