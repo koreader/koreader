@@ -85,8 +85,8 @@ function PluginLoader:loadPlugins()
                     if (plugins_disabled and plugins_disabled[entry:sub(1, -10)]) then
                         table.insert(self.disabled_plugins, plugin_module)
                     else
-                        local ok, plugin_metamodule = pcall(dofile, metafile)
-                        if ok and plugin_metamodule then
+                        local ok_meta, plugin_metamodule = pcall(dofile, metafile)
+                        if ok_meta and plugin_metamodule then
                             for k,v in pairs(plugin_metamodule) do plugin_module[k] = v end
                         end
                         sandboxPluginEventHandlers(plugin_module)
