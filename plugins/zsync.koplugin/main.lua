@@ -15,8 +15,6 @@ int rmdir(const char *);
 require("ffi/zeromq_h")
 local ZSync = InputContainer:new{
     name = "zsync",
-    fullname = _("Zsync"),
-    description = _([[Devices in the same Wi-Fi network can transfer documents between each other directly.]]),
     is_doc_only = true,
 }
 

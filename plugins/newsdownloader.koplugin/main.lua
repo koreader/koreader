@@ -17,8 +17,6 @@ local T = FFIUtil.template
 
 local NewsDownloader = WidgetContainer:new{
     name = "newsdownloader",
-    fullname = _("News downloader"),
-    description = _([[Retrieves RSS and Atom news entries and saves them as HTML files.]]),
 }
 
 local initialized = false
