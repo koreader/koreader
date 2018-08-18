@@ -10,8 +10,6 @@ local NetworkMgr = require("ui/network/manager")
 
 local Goodreads = InputContainer:new {
     name = "goodreads",
-    fullname = _("Goodreads"),
-    description = _([[Allows browsing and searching the Goodreads database of books.]]),
     goodreads_key = "",
     goodreads_secret = "",
 }
