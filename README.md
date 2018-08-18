@@ -327,3 +327,15 @@ KOReader's build system. To install ccache:
 [licence-badge]:http://img.shields.io/badge/licence-AGPL-brightgreen.svg
 [gitter-badge]:https://badges.gitter.im/Join%20Chat.svg
 [gitter-link]:https://gitter.im/koreader/koreader?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+
+Contributors
+============
+
+[![0](https://sourcerer.io/fame/Frenzie/koreader/koreader/images/0)](https://sourcerer.io/fame/Frenzie/koreader/koreader/links/0)
+[![1](https://sourcerer.io/fame/Frenzie/koreader/koreader/images/1)](https://sourcerer.io/fame/Frenzie/koreader/koreader/links/1)
+[![2](https://sourcerer.io/fame/Frenzie/koreader/koreader/images/2)](https://sourcerer.io/fame/Frenzie/koreader/koreader/links/2)
+[![3](https://sourcerer.io/fame/Frenzie/koreader/koreader/images/3)](https://sourcerer.io/fame/Frenzie/koreader/koreader/links/3)
+[![4](https://sourcerer.io/fame/Frenzie/koreader/koreader/images/4)](https://sourcerer.io/fame/Frenzie/koreader/koreader/links/4)
+[![5](https://sourcerer.io/fame/Frenzie/koreader/koreader/images/5)](https://sourcerer.io/fame/Frenzie/koreader/koreader/links/5)
+[![6](https://sourcerer.io/fame/Frenzie/koreader/koreader/images/6)](https://sourcerer.io/fame/Frenzie/koreader/koreader/links/6)
+[![7](https://sourcerer.io/fame/Frenzie/koreader/koreader/images/7)](https://sourcerer.io/fame/Frenzie/koreader/koreader/links/7)
