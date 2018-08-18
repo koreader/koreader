@@ -70,6 +70,10 @@ function PluginLoader:loadPlugins()
             -- valid koreader plugin directory
             if mode == "directory" and entry:find(".+%.koplugin$") then
                 local mainfile = plugin_root.."/main.lua"
+                local metafile = plugin_root.."/_meta.lua"
+                if plugins_disabled and plugins_disabled[entry:sub(1, -10)] then
+                    mainfile = metafile
+                end
                 package.path = string.format("%s/?.lua;%s", plugin_root, package_path)
                 package.cpath = string.format("%s/lib/?.so;%s", plugin_root, package_cpath)
                 local ok, plugin_module = pcall(dofile, mainfile)
@@ -81,6 +85,10 @@ function PluginLoader:loadPlugins()
                     if (plugins_disabled and plugins_disabled[entry:sub(1, -10)]) then
                         table.insert(self.disabled_plugins, plugin_module)
                     else
+                        local ok_meta, plugin_metamodule = pcall(dofile, metafile)
+                        if ok_meta and plugin_metamodule then
+                            for k,v in pairs(plugin_metamodule) do plugin_module[k] = v end
+                        end
                         sandboxPluginEventHandlers(plugin_module)
                         table.insert(self.enabled_plugins, plugin_module)
                     end

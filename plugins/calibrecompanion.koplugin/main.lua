@@ -23,8 +23,6 @@ require("ffi/zeromq_h")
 --]]
 local CalibreCompanion = InputContainer:new{
     name = "calibrecompanion",
-    fullname = _("Calibre companion"),
-    description = _([[Send documents from calibre library directly to device via Wi-Fi connection]]),
     -- calibre companion local port
     port = 8134,
     -- calibre broadcast ports used to find calibre server

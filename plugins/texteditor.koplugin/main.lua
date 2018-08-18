@@ -18,8 +18,6 @@ local T = ffiutil.template
 
 local TextEditor = WidgetContainer:new{
     name = "texteditor",
-    fullname = _("Text editor"),
-    description = _([[A basic text editor for making small changes to plain text files.]]),
     settings_file = DataStorage:getSettingsDir() .. "/text_editor.lua",
     settings = nil, -- loaded only when needed
     -- how many to display in menu (10x3 pages minus our 3 default menu items):

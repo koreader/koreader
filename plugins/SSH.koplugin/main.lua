@@ -20,8 +20,6 @@ end
 
 local SSH = WidgetContainer:new{
     name = 'SSH',
-    fullname = _("SSH"),
-    description = _([[Connect and transfer files to the device using SSH.]]),
     is_doc_only = false,
 }
 
