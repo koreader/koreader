@@ -106,8 +106,8 @@ sub { font-size: 50% !important; vertical-align: sub !important; }
             title = _("Allow hyphenation on all text"),
             description = _("Allow hyphenation to happen on all text (except headings), in case the publisher has disabled it."),
             css = [[
-* { hyphenate: auto !important; }
-h1, h2, h3, h4, h5, h6 { hyphenate: none !important; }
+* { hyphens: auto !important; }
+h1, h2, h3, h4, h5, h6 { hyphens: none !important; }
             ]],
         },
         {
