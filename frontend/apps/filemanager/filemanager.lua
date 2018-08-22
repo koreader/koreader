@@ -12,6 +12,7 @@ local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local FileManagerConverter = require("apps/filemanager/filemanagerconverter")
 local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
 local FileManagerMenu = require("apps/filemanager/filemanagermenu")
+local FileManagerShortcuts = require("apps/filemanager/filemanagershortcuts")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
@@ -451,6 +452,25 @@ function FileManager:tapPlus()
                 text = _("Open random document"),
                 callback = function()
                     self:openRandomFile(self.file_chooser.path)
+                    UIManager:close(self.file_dialog)
+                end
+            }
+        },
+        {
+            {
+                text = _("Folder shortcuts"),
+                callback = function()
+                    local fm_bookmark =  FileManagerShortcuts:new{
+                        title = _("Folder shortcuts"),
+                        show_parent = self,
+                        curr_path = self.file_chooser.path,
+                        goFolder = function(folder)
+                            if folder ~= nil and lfs.attributes(folder, "mode") == "directory" then
+                                self.file_chooser:changeToPath(folder)
+                            end
+                        end,
+                    }
+                    UIManager:show(fm_bookmark)
                     UIManager:close(self.file_dialog)
                 end
             }
