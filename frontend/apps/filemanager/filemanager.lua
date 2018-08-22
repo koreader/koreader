@@ -9,10 +9,10 @@ local DocumentRegistry = require("document/documentregistry")
 local Event = require("ui/event")
 local FileChooser = require("ui/widget/filechooser")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
-local FileManagerBookmark = require("apps/filemanager/filemanagerbookmark")
 local FileManagerConverter = require("apps/filemanager/filemanagerconverter")
 local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
 local FileManagerMenu = require("apps/filemanager/filemanagermenu")
+local FileManagerShortcuts = require("apps/filemanager/filemanagershortcuts")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
@@ -458,10 +458,10 @@ function FileManager:tapPlus()
         },
         {
             {
-                text = _("Favorite folders"),
+                text = _("Folder shortcuts"),
                 callback = function()
-                    local fm_bookmark =  FileManagerBookmark:new{
-                        title = _("Favorite folders"),
+                    local fm_bookmark =  FileManagerShortcuts:new{
+                        title = _("Folder shortcuts"),
                         show_parent = self,
                         curr_path = self.file_chooser.path,
                         goFolder = function(folder)
