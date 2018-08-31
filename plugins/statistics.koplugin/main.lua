@@ -676,16 +676,19 @@ function ReaderStatistics:addToMainMenu(menu_items)
             self:getStatisticEnabledMenuItem(),
             {
                 text = _("Settings"),
+                keep_menu_open = true,
                 callback = function() self:updateSettings() end,
             },
             {
                 text = _("Reset book statistics"),
+                keep_menu_open = true,
                 callback = function()
                     self:resetBook()
                 end
             },
             {
                 text = _("Current book"),
+                keep_menu_open = true,
                 callback = function()
                     UIManager:show(KeyValuePage:new{
                         title = _("Statistics"),
@@ -696,6 +699,7 @@ function ReaderStatistics:addToMainMenu(menu_items)
             },
             {
                 text = _("Reading progress"),
+                keep_menu_open = true,
                 callback = function()
                     self:insertDB(self.id_curr_book)
                     local current_period, current_pages = self:getCurrentBookStats()
@@ -717,6 +721,7 @@ function ReaderStatistics:addToMainMenu(menu_items)
             },
             {
                 text = _("Time range"),
+                keep_menu_open = true,
                 callback = function()
                     self:statMenu()
                 end

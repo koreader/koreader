@@ -62,6 +62,7 @@ function Send2Ebook:addToMainMenu(menu_items)
         sub_item_table = {
             {
                 text = _("Download and remove from server"),
+                keep_menu_open = true,
                 callback = function()
                   if not NetworkMgr:isOnline() then
                       wifi_enabled_before_action = false
@@ -84,18 +85,22 @@ function Send2Ebook:addToMainMenu(menu_items)
             },
             {
                 text = _("Remove read (opened) articles"),
+                keep_menu_open = true,
                 callback = self.removeReadActicles,
             },
             {
                 text = _("Set custom download directory"),
+                keep_menu_open = true,
                 callback =  self.setCustomDownloadDirectory,
             },
             {
                 text = _("Settings"),
+                keep_menu_open = true,
                 callback = self.editFtpConnection,
             },
             {
                 text = _("Help"),
+                keep_menu_open = true,
                 callback = function()
                     UIManager:show(InfoMessage:new{
                         text = T(_('Send2Ebook lets you send articles found on PC/Android phone to your Ebook reader (using ftp server).\n\nMore details: https://github.com/mwoz123/send2ebook\n\nDownloads to local folder: %1'), download_dir_path)

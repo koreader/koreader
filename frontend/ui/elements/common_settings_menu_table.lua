@@ -27,6 +27,7 @@ if Device:setDateTime() then
         sub_item_table = {
             {
                 text = _("Set time"),
+                keep_menu_open = true,
                 callback = function()
                     local now_t = os.date("*t")
                     local curr_hour = now_t.hour
@@ -55,6 +56,7 @@ if Device:setDateTime() then
             },
             {
                 text = _("Set date"),
+                keep_menu_open = true,
                 callback = function()
                     local now_t = os.date("*t")
                     local curr_year = now_t.year

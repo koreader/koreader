@@ -68,9 +68,8 @@ function ReaderFont:init()
             callback = function()
                 self:setFont(v)
             end,
-            hold_may_update_menu = true,
-            hold_callback = function(refresh_menu_func)
-                self:makeDefault(v, refresh_menu_func)
+            hold_callback = function(touchmenu_instance)
+                self:makeDefault(v, touchmenu_instance)
             end,
             checked_func = function()
                 return v == self.font_face
@@ -310,14 +309,14 @@ function ReaderFont:setFont(face)
     end
 end
 
-function ReaderFont:makeDefault(face, refresh_menu_func)
+function ReaderFont:makeDefault(face, touchmenu_instance)
     if face then
         UIManager:show(MultiConfirmBox:new{
             text = T( _("Would you like %1 to be used as the default font (★), or the fallback font (�)?\n\nCharacters not found in the active font are shown in the fallback font instead."), face),
             choice1_text = _("Default"),
             choice1_callback = function()
                 G_reader_settings:saveSetting("cre_font", face)
-                if refresh_menu_func then refresh_menu_func() end
+                if touchmenu_instance then touchmenu_instance:updateItems() end
             end,
             choice2_text = _("Fallback"),
             choice2_callback = function()
@@ -325,7 +324,7 @@ function ReaderFont:makeDefault(face, refresh_menu_func)
                     G_reader_settings:saveSetting("fallback_font", face)
                     self.ui:handleEvent(Event:new("UpdatePos"))
                 end
-                if refresh_menu_func then refresh_menu_func() end
+                if touchmenu_instance then touchmenu_instance:updateItems() end
             end,
         })
     end

@@ -118,6 +118,7 @@ function ReaderWikipedia:addToMainMenu(menu_items)
         sub_item_table = {
             {
                 text = _("Set Wikipedia languages"),
+                keep_menu_open = true,
                 callback = function()
                     local wikilang_input
                     local function save_wikilang()
@@ -171,6 +172,7 @@ function ReaderWikipedia:addToMainMenu(menu_items)
             },
             { -- setting used by dictquicklookup
                 text = _("Set Wikipedia 'Save as EPUB' directory"),
+                keep_menu_open = true,
                 callback = function()
                     local choose_directory = function()
                         -- Default directory as chosen by DictQuickLookup
@@ -298,6 +300,7 @@ Where do you want them saved?]])
             },
             {
                 text = _("Clean Wikipedia history"),
+                keep_menu_open = true,
                 callback = function()
                     UIManager:show(ConfirmBox:new{
                         text = _("Clean Wikipedia history?"),

@@ -334,6 +334,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                     },
                     {
                         text = _("Prune cache of removed books"),
+                        keep_menu_open = true,
                         callback = function()
                             local ConfirmBox = require("ui/widget/confirmbox")
                             UIManager:close(self.file_dialog)
@@ -356,6 +357,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                     },
                     {
                         text = _("Compact cache database"),
+                        keep_menu_open = true,
                         callback = function()
                             local ConfirmBox = require("ui/widget/confirmbox")
                             UIManager:close(self.file_dialog)
@@ -377,6 +379,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                     },
                     {
                         text = _("Delete cache database"),
+                        keep_menu_open = true,
                         callback = function()
                             local ConfirmBox = require("ui/widget/confirmbox")
                             UIManager:close(self.file_dialog)

@@ -56,6 +56,7 @@ end
 
 local menuItem = {
     text = _("Synchronize time"),
+    keep_menu_open = true,
     callback = function()
         if NetworkMgr:isOnline() then
             execute()

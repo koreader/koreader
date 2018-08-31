@@ -88,6 +88,7 @@ end
 function Terminal:addToMainMenu(menu_items)
     menu_items.terminal = {
         text = _("Terminal emulator"),
+        keep_menu_open = true,
         callback = function()
             self:start()
         end,

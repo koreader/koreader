@@ -15,6 +15,7 @@ end
 local version = require("version"):getCurrentRevision()
 common_info.version = {
     text = _("Version"),
+    keep_menu_open = true,
     callback = function()
         UIManager:show(InfoMessage:new{
             text = version,
@@ -41,6 +42,7 @@ common_info.quickstart_guide = {
 }
 common_info.about = {
     text = _("About"),
+    keep_menu_open = true,
     callback = function()
         UIManager:show(InfoMessage:new{
             text = T(_("KOReader %1\n\nA document viewer for E Ink devices.\n\nLicensed under Affero GPL v3. All dependencies are free software.\n\nhttp://koreader.rocks/"), version),
@@ -49,6 +51,7 @@ common_info.about = {
 }
 common_info.report_bug = {
     text = _("Report a bug"),
+    keep_menu_open = true,
     callback = function()
         local model = Device.model
         UIManager:show(InfoMessage:new{
@@ -69,6 +72,7 @@ end
 if Device:isKobo() then
     common_info.reboot = {
         text = _("Reboot the device"),
+        keep_menu_open = true,
         callback = function()
             UIManager:show(ConfirmBox:new{
                 text = _("Are you sure you want to reboot the device?"),
@@ -81,6 +85,7 @@ if Device:isKobo() then
     }
     common_info.poweroff = {
         text = _("Power off"),
+        keep_menu_open = true,
         callback = function()
             UIManager:show(ConfirmBox:new{
                 text = _("Are you sure you want to power off the device?"),

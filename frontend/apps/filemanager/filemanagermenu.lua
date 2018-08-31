@@ -115,6 +115,12 @@ function FileManagerMenu:setUpdateItemTable()
     }
     self.menu_items.items_per_page = {
         text = _("Items per page"),
+        help_text = _([[This sets the number of items per page in:
+- File browser and history in 'classic' display mode
+- File and directory choosers
+- Table of content
+- Bookmarks list]]),
+        keep_menu_open = true,
         callback = function()
             local SpinWidget = require("ui/widget/spinwidget")
             local curr_items = G_reader_settings:readSetting("items_per_page") or 14

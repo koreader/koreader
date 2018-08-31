@@ -228,6 +228,7 @@ function ReaderDictionary:addToMainMenu(menu_items)
             },
             {
                 text = _("Info on dictionary order"),
+                keep_menu_open = true,
                 callback = function()
                     UIManager:show(InfoMessage:new{
                         text = T(_(
@@ -262,6 +263,7 @@ function ReaderDictionary:addToMainMenu(menu_items)
             },
             {
                 text = _("Clean dictionary lookup history"),
+                keep_menu_open = true,
                 callback = function()
                     UIManager:show(ConfirmBox:new{
                         text = _("Clean dictionary lookup history?"),
