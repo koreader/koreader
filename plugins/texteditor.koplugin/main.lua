@@ -167,9 +167,9 @@ function TextEditor:getSubMenuItems()
                     ok_callback = function()
                         self:removeFromHistory(file_path)
                         -- Also remove from menu itself
-                        for i=1, #sub_item_table do
-                            if sub_item_table[i]._texteditor_id == file_path then
-                                table.remove(sub_item_table, i)
+                        for j=1, #sub_item_table do
+                            if sub_item_table[j]._texteditor_id == file_path then
+                                table.remove(sub_item_table, j)
                                 break
                             end
                         end
