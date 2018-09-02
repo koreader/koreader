@@ -100,15 +100,13 @@ ko_update_check() {
     INSTALLED="${KOREADER_DIR}/ota/koreader.installed.tar"
     if [ -f "${NEWUPDATE}" ]; then
         logmsg "Updating KOReader . . ."
-        # Look for our own GNU tar build to do fancy progress tracking...
-        GNUTAR_BIN="${KOREADER_DIR}/tar"
         # Let our checkpoint script handle the detailed visual feedback...
         eips_print_bottom_centered "Updating KOReader" 3
         # NOTE: See frontend/ui/otamanager.lua for a few more details on how we squeeze a percentage out of tar's checkpoint feature
         BLOCKS="$(( $(stat -c %b "${NEWUPDATE}") / 20 ))"
         export CPOINTS="$(( ${BLOCKS} / 100 ))"
         # shellcheck disable=SC2016
-        ${GNUTAR_BIN} -C "/mnt/us" --no-same-owner --no-same-permissions --checkpoint="${CPOINTS}" --checkpoint-action=exec='$KOREADER_DIR/fbink -q -y -6 -P $(($TAR_CHECKPOINT/$CPOINTS))' -xf "${NEWUPDATE}"
+        ${KOREADER_DIR}/tar -C "/mnt/us" --no-same-owner --no-same-permissions --checkpoint="${CPOINTS}" --checkpoint-action=exec='$KOREADER_DIR/fbink -q -y -6 -P $(($TAR_CHECKPOINT/$CPOINTS))' -xf "${NEWUPDATE}"
         fail=$?
         # Cleanup behind us...
         if [ "${fail}" -eq 0 ]; then
