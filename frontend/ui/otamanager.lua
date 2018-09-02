@@ -189,11 +189,29 @@ function OTAManager:_buildLocalPackage()
             self.installed_package, self.package_indexfile))
     else
         -- With visual feedback if supported...
-        if lfs.attributes("./kotar_cpoint", "mode") == "file" then
+        if lfs.attributes("./fbink", "mode") == "file" then
             os.execute("./fbink -q -y -7 -pmh 'Preparing local OTA package'")
+            -- We need a vague idea of how much space the tarball we're creating will take to compute a proper percentage...
+            -- Get the size from the latest zsync package, which'll be a closer match than anything else we might come up with.
+            local tarball_size = nil
+            local zsync = io.open(local_zsync_file, "r")
+            if zsync then
+                for line in zsync:lines() do
+                    tarball_size = line:match("^Length: (%d*)$")
+                    if tarball_size then break end
+                end
+                zsync:close()
+            end
+            -- Next, we need to compute the amount of tar blocks that'll take, knowing that tar's default blocksize is 20 * 512 bytes.
+            -- c.f., https://superuser.com/questions/168749 & http://www.noah.org/wiki/tar_notes
+            -- Defaults to a sane-ish value as-of now, in case shit happens...
+            local cpoints = 6405
+            if tarball_size then
+                cpoints = tarball_size / (512 * 20)
+            end
             return os.execute(string.format(
-                "./tar --no-recursion -cf %s -C .. -T %s --checkpoint=200 --checkpoint-action=exec='./kotar_cpoint $TAR_CHECKPOINT'",
-                self.installed_package, self.package_indexfile))
+                "./tar --no-recursion -cf %s -C .. -T %s --checkpoint=%d --checkpoint-action=exec='./fbink -q -y -6 -h -P $(($TAR_CHECKPOINT/%d))'",
+                self.installed_package, self.package_indexfile, cpoints, cpoints))
         else
             return os.execute(string.format(
                 "./tar --no-recursion -cf %s -C .. -T %s",

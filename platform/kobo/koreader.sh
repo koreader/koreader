@@ -29,7 +29,7 @@ ko_update_check() {
     INSTALLED="${KOREADER_DIR}/ota/koreader.installed.tar"
     if [ -f "${NEWUPDATE}" ]; then
         ./fbink -q -y -7 -pmh "Updating KOReader"
-        # NOTE: See kotar_cpoint for more gory details on how we squeeze a percentage out of tar's checkpoint feature...
+        # NOTE: See frontend/ui/otamanager.lua for a few more details on how we squeeze a percentage out of tar's checkpoint feature
         BLOCKS="$(( $(stat -c %b "${NEWUPDATE}") / 20 ))"
         export CPOINTS="$(( ${BLOCKS} / 100 ))"
         # shellcheck disable=SC2016

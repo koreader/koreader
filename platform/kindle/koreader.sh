@@ -104,7 +104,7 @@ ko_update_check() {
         GNUTAR_BIN="${KOREADER_DIR}/tar"
         # Let our checkpoint script handle the detailed visual feedback...
         eips_print_bottom_centered "Updating KOReader" 3
-        # NOTE: See kotar_cpoint for more gory details on how we squeeze a percentage out of tar's checkpoint feature...
+        # NOTE: See frontend/ui/otamanager.lua for a few more details on how we squeeze a percentage out of tar's checkpoint feature
         BLOCKS="$(( $(stat -c %b "${NEWUPDATE}") / 20 ))"
         export CPOINTS="$(( ${BLOCKS} / 100 ))"
         # shellcheck disable=SC2016

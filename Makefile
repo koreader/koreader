@@ -166,7 +166,6 @@ kindleupdate: all
 	ln -sf ../$(KINDLE_DIR)/launchpad $(INSTALL_DIR)/
 	ln -sf ../../$(KINDLE_DIR)/koreader.sh $(INSTALL_DIR)/koreader
 	ln -sf ../../$(KINDLE_DIR)/libkohelper.sh $(INSTALL_DIR)/koreader
-	ln -sf ../../$(COMMON_DIR)/kotar_cpoint $(INSTALL_DIR)/koreader
 	ln -sf ../../$(COMMON_DIR)/spinning_zsync $(INSTALL_DIR)/koreader
 	# create new package
 	cd $(INSTALL_DIR) && pwd && \
@@ -199,7 +198,6 @@ koboupdate: all
 	cp $(KOBO_DIR)/koreader.png $(INSTALL_DIR)/koreader.png
 	cp $(KOBO_DIR)/fmon/README.txt $(INSTALL_DIR)/README_kobo.txt
 	cp $(KOBO_DIR)/*.sh $(INSTALL_DIR)/koreader
-	cp $(COMMON_DIR)/kotar_cpoint $(INSTALL_DIR)/koreader
 	cp $(COMMON_DIR)/spinning_zsync $(INSTALL_DIR)/koreader
 	# create new package
 	cd $(INSTALL_DIR) && \
