@@ -160,6 +160,10 @@ function OTAManager:fetchAndProcessUpdate()
                             os.execute("./fbink -q -y -7 -pm ' ' ' '")
                         end
                     else
+                        -- Make it clear that zsync is done
+                        if lfs.attributes("./fbink", "mode") == "file" then
+                            os.execute("./fbink -q -y -7 -pm ' ' ' '")
+                        end
                         UIManager:show(ConfirmBox:new{
                             text = _("Error updating KOReader. Would you like to delete temporary files?"),
                             ok_callback = function()
@@ -193,6 +197,8 @@ function OTAManager:_buildLocalPackage()
             os.execute("./fbink -q -y -7 -pmh 'Preparing local OTA package'")
             -- We need a vague idea of how much space the tarball we're creating will take to compute a proper percentage...
             -- Get the size from the latest zsync package, which'll be a closer match than anything else we might come up with.
+            local zsync_file = self:getZsyncFilename()
+            local local_zsync_file = ota_dir .. zsync_file
             local tarball_size = nil
             local zsync = io.open(local_zsync_file, "r")
             if zsync then
