@@ -215,6 +215,7 @@ function OTAManager:_buildLocalPackage()
             if tarball_size then
                 blocks = tarball_size / (512 * 20)
             end
+            -- And since we want a percentage, devise the exact value we need for tar to spit out exactly 100 checkpoints ;).
             local cpoints = blocks / 100
             return os.execute(string.format(
                 "./tar --no-recursion -cf %s -C .. -T %s --checkpoint=%d --checkpoint-action=exec='./fbink -q -y -6 -P $(($TAR_CHECKPOINT/%d))'",
