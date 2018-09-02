@@ -156,9 +156,7 @@ function OTAManager:fetchAndProcessUpdate()
                             text = _("KOReader will be updated on next restart."),
                         })
                         -- Make it clear that zsync is done
-                        if Device:isKindle() then
-                            os.execute("./zsync_status.sh clear")
-                        elseif Device:isKobo() then
+                        if lfs.attributes("./fbink", "mode") == "file" then
                             os.execute("./fbink -q -y -7 -pm ' ' ' '")
                         end
                     else
@@ -206,20 +204,26 @@ end
 
 function OTAManager:zsync()
     if self:_buildLocalPackage() == 0 then
-        -- Make it clear that it's now zsync churning CPU time, instead of tar churning IO ;).
-        if Device:isKindle() then
-            os.execute("./zsync_status.sh")
-        elseif Device:isKobo() then
-            os.execute("./fbink -q -y -7 -pmh 'Computing zsync delta . . .'")
-        end
-        return os.execute(
+        -- With visual feedback if supported...
+        if lfs.attributes("./spinning_zsync", "mode") == "file" then
+            return os.execute(
+            ("./spinning_zsync '%s' '%s' '%s' '%s%s'"):format(
+                self.installed_package,
+                self.updated_package,
+                self:getOTAServer(),
+                ota_dir,
+                self:getZsyncFilename())
+            )
+        else
+            return os.execute(
             ("./zsync -i %s -o %s -u %s %s%s"):format(
                 self.installed_package,
                 self.updated_package,
                 self:getOTAServer(),
                 ota_dir,
                 self:getZsyncFilename())
-        )
+            )
+        end
     end
 end
 
