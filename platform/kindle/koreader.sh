@@ -103,7 +103,9 @@ ko_update_check() {
         # Let our checkpoint script handle the detailed visual feedback...
         eips_print_bottom_centered "Updating KOReader" 3
         # NOTE: See frontend/ui/otamanager.lua for a few more details on how we squeeze a percentage out of tar's checkpoint feature
-        BLOCKS="$(( $(stat -c %b "${NEWUPDATE}") / 20 ))"
+        # NOTE: %B should always be 512 in our case, so let stat do part of the maths for us instead of using %s ;).
+        FILESIZE="$(stat -c %b "${NEWUPDATE}")"
+        BLOCKS="$(( FILESIZE / 20 ))"
         export CPOINTS="$(( BLOCKS / 100 ))"
         # shellcheck disable=SC2016
         ${KOREADER_DIR}/tar -C "/mnt/us" --no-same-owner --no-same-permissions --checkpoint="${CPOINTS}" --checkpoint-action=exec='$KOREADER_DIR/fbink -q -y -6 -P $(($TAR_CHECKPOINT/$CPOINTS))' -xf "${NEWUPDATE}"

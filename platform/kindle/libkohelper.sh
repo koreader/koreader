@@ -42,5 +42,5 @@ eips_print_bottom_centered() {
 
     # NOTE: FBInk will handle the padding. FBInk's default font is square, not tall like eips,
     #       so we compensate by tweaking the baseline ;). This matches the baseline we use on Kobo, too.
-    ${FBINK_BIN} -qpm -y $(( -4 - kh_eips_y_shift_up )) "${kh_eips_string}"
+    ${FBINK_BIN} -qpm -y $((-4 - kh_eips_y_shift_up)) "${kh_eips_string}"
 }
