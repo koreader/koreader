@@ -31,7 +31,7 @@ ko_update_check() {
         ./fbink -q -y -7 -pmh "Updating KOReader"
         # NOTE: See frontend/ui/otamanager.lua for a few more details on how we squeeze a percentage out of tar's checkpoint feature
         BLOCKS="$(( $(stat -c %b "${NEWUPDATE}") / 20 ))"
-        export CPOINTS="$(( ${BLOCKS} / 100 ))"
+        export CPOINTS="$(( BLOCKS / 100 ))"
         # shellcheck disable=SC2016
         ./tar xf "${NEWUPDATE}" --strip-components=1 --no-same-permissions --no-same-owner --checkpoint="${CPOINTS}" --checkpoint-action=exec='./fbink -q -y -6 -P $(($TAR_CHECKPOINT/$CPOINTS))'
         fail=$?
