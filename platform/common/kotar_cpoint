@@ -1,11 +1,12 @@
 #!/bin/sh
 
-## First arg is the checkpoint counter, and we get one every 200 blocks (tar's default blocksize is 20 * 512).
-## While we can compute an accurate total number of blocks when unpacking a tarball,
-## it appears to be much harder to do it right when *creating* a tarball...
-## (especially in our case, because we're creating one from a list of files, not a single file/direcotry).
-## If it were actually accurate, the theory would be similar to what we do for unpack,
-## except from getting the size via du: BLOCKS="$(du -s -B10K --apparent-size "${ARCHIVED_PATH}" | cut -f 1)"
+# First arg is the checkpoint counter, and we get one every 200 blocks (tar's default blocksize is 20 * 512).
+# While we can compute an accurate total number of blocks when unpacking a tarball,
+# it appears to be much harder to do it right when *creating* a tarball...
+# (especially in our case, because we're creating one from a list of files, not a single file/direcotry).
+# If it were actually accurate, the theory would be similar to what we do for unpack,
+# except from getting the size via du: BLOCKS="$(du -s -B10K --apparent-size "${ARCHIVED_PATH}" | cut -f 1)"
+# c.f., https://superuser.com/questions/168749 & http://www.noah.org/wiki/tar_notes
 CHECKPOINT_NUM="${1}"
 CHECKPOINT_GRANULARITY="200"
 # Given the size of our tarballs, this usually amounts to around ~32 checkpoints in our case,
