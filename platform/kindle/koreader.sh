@@ -105,8 +105,8 @@ ko_update_check() {
         # NOTE: See frontend/ui/otamanager.lua for a few more details on how we squeeze a percentage out of tar's checkpoint feature
         # NOTE: %B should always be 512 in our case, so let stat do part of the maths for us instead of using %s ;).
         FILESIZE="$(stat -c %b "${NEWUPDATE}")"
-        BLOCKS="$(( FILESIZE / 20 ))"
-        export CPOINTS="$(( BLOCKS / 100 ))"
+        BLOCKS="$((FILESIZE / 20))"
+        export CPOINTS="$((BLOCKS / 100))"
         # shellcheck disable=SC2016
         ${KOREADER_DIR}/tar -C "/mnt/us" --no-same-owner --no-same-permissions --checkpoint="${CPOINTS}" --checkpoint-action=exec='$KOREADER_DIR/fbink -q -y -6 -P $(($TAR_CHECKPOINT/$CPOINTS))' -xf "${NEWUPDATE}"
         fail=$?
