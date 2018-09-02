@@ -211,10 +211,11 @@ function OTAManager:_buildLocalPackage()
             -- Next, we need to compute the amount of tar blocks that'll take, knowing that tar's default blocksize is 20 * 512 bytes.
             -- c.f., https://superuser.com/questions/168749 & http://www.noah.org/wiki/tar_notes
             -- Defaults to a sane-ish value as-of now, in case shit happens...
-            local cpoints = 6405
+            local blocks = 6405
             if tarball_size then
-                cpoints = tarball_size / (512 * 20)
+                blocks = tarball_size / (512 * 20)
             end
+            local cpoints = blocks / 100
             return os.execute(string.format(
                 "./tar --no-recursion -cf %s -C .. -T %s --checkpoint=%d --checkpoint-action=exec='./fbink -q -y -6 -h -P $(($TAR_CHECKPOINT/%d))'",
                 self.installed_package, self.package_indexfile, cpoints, cpoints))
