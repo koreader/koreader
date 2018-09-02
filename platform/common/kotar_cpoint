@@ -13,16 +13,6 @@ CHECKPOINT_GRANULARITY="200"
 # Use that to build a progress bar
 PROGRESS_AMOUNT="$((CHECKPOINT_NUM / CHECKPOINT_GRANULARITY))"
 
-# Which text do we want to use?
-case "${2}" in
-    "create")
-        PROGRESS_BASE_STRING="Preparing local OTA package"
-        ;;
-    *)
-        PROGRESS_BASE_STRING="Updating KOReader"
-        ;;
-esac
-
 # And start drawing the progress bar...
 PROGRESS_STRING=""
 for _ in $(seq 1 ${PROGRESS_AMOUNT}); do
@@ -31,4 +21,4 @@ for _ in $(seq 1 ${PROGRESS_AMOUNT}); do
 done
 
 # Print our progress :)
-./fbink -q -y -7 -pmh "${PROGRESS_BASE_STRING}" "${PROGRESS_STRING}"
+./fbink -q -y -6 -pmh "${PROGRESS_STRING}"

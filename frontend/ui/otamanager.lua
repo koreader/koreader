@@ -192,8 +192,9 @@ function OTAManager:_buildLocalPackage()
     else
         -- With visual feedback if supported...
         if lfs.attributes("./kotar_cpoint", "mode") == "file" then
+            os.execute("./fbink -q -y -7 -pmh 'Preparing local OTA package'")
             return os.execute(string.format(
-                "./tar --no-recursion -cf %s -C .. -T %s --checkpoint=200 --checkpoint-action=exec='./kotar_cpoint $TAR_CHECKPOINT create'",
+                "./tar --no-recursion -cf %s -C .. -T %s --checkpoint=200 --checkpoint-action=exec='./kotar_cpoint $TAR_CHECKPOINT'",
                 self.installed_package, self.package_indexfile))
         else
             return os.execute(string.format(
