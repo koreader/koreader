@@ -157,12 +157,12 @@ function OTAManager:fetchAndProcessUpdate()
                         })
                         -- Make it clear that zsync is done
                         if lfs.attributes("./fbink", "mode") == "file" then
-                            os.execute("./fbink -q -y -7 -pm ' ' ' '")
+                            os.execute("./fbink -q -y -7 -pm ' '  ' '")
                         end
                     else
                         -- Make it clear that zsync is done
                         if lfs.attributes("./fbink", "mode") == "file" then
-                            os.execute("./fbink -q -y -7 -pm ' ' ' '")
+                            os.execute("./fbink -q -y -7 -pm ' '  ' '")
                         end
                         UIManager:show(ConfirmBox:new{
                             text = _("Error updating KOReader. Would you like to delete temporary files?"),
