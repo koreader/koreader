@@ -217,7 +217,7 @@ function OTAManager:_buildLocalPackage()
             end
             local cpoints = blocks / 100
             return os.execute(string.format(
-                "./tar --no-recursion -cf %s -C .. -T %s --checkpoint=%d --checkpoint-action=exec='./fbink -q -y -6 -h -P $(($TAR_CHECKPOINT/%d))'",
+                "./tar --no-recursion -cf %s -C .. -T %s --checkpoint=%d --checkpoint-action=exec='./fbink -q -y -6 -P $(($TAR_CHECKPOINT/%d))'",
                 self.installed_package, self.package_indexfile, cpoints, cpoints))
         else
             return os.execute(string.format(

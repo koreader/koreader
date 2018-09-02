@@ -108,7 +108,7 @@ ko_update_check() {
         BLOCKS="$(( $(stat -c %b "${NEWUPDATE}") / 20 ))"
         export CPOINTS="$(( ${BLOCKS} / 100 ))"
         # shellcheck disable=SC2016
-        ${GNUTAR_BIN} -C "/mnt/us" --no-same-owner --no-same-permissions --checkpoint="${CPOINTS}" --checkpoint-action=exec='$KOREADER_DIR/fbink -q -y -6 -h -P $(($TAR_CHECKPOINT/$CPOINTS))' -xf "${NEWUPDATE}"
+        ${GNUTAR_BIN} -C "/mnt/us" --no-same-owner --no-same-permissions --checkpoint="${CPOINTS}" --checkpoint-action=exec='$KOREADER_DIR/fbink -q -y -6 -P $(($TAR_CHECKPOINT/$CPOINTS))' -xf "${NEWUPDATE}"
         fail=$?
         # Cleanup behind us...
         if [ "${fail}" -eq 0 ]; then

@@ -33,7 +33,7 @@ ko_update_check() {
         BLOCKS="$(( $(stat -c %b "${NEWUPDATE}") / 20 ))"
         export CPOINTS="$(( ${BLOCKS} / 100 ))"
         # shellcheck disable=SC2016
-        ./tar xf "${NEWUPDATE}" --strip-components=1 --no-same-permissions --no-same-owner --checkpoint="${CPOINTS}" --checkpoint-action=exec='./fbink -q -y -6 -h -P $(($TAR_CHECKPOINT/$CPOINTS))'
+        ./tar xf "${NEWUPDATE}" --strip-components=1 --no-same-permissions --no-same-owner --checkpoint="${CPOINTS}" --checkpoint-action=exec='./fbink -q -y -6 -P $(($TAR_CHECKPOINT/$CPOINTS))'
         fail=$?
         # Cleanup behind us...
         if [ "${fail}" -eq 0 ]; then
