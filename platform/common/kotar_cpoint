@@ -4,9 +4,12 @@
 ## While we can compute an accurate total number of blocks when unpacking a tarball,
 ## it appears to be much harder to do it right when *creating* a tarball...
 ## (especially in our case, because we're creating one from a list of files, not a single file/direcotry).
+## If it were actually accurate, the theory would be similar to what we do for unpack,
+## except from getting the size via du: BLOCKS="$(du -s -B10K --apparent-size "${ARCHIVED_PATH}" | cut -f 1)"
 CHECKPOINT_NUM="${1}"
 CHECKPOINT_GRANULARITY="200"
-# This usually amounts to around ~32 checkpoints in our case, which is probably why I initially settled on this value,
+# Given the size of our tarballs, this usually amounts to around ~32 checkpoints in our case,
+# which is probably why I initially settled on this value,
 # because that's close to the amount of columns in a single line in most of our target devices.
 # In short, yes, lucky magic number :D.
 
