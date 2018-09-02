@@ -2,6 +2,8 @@
 
 # Small zsync wrapper so we can get a pretty spinner while it works...
 ./fbink -q -y -7 -pmh 'Computing zsync delta !'
+# Clear any potential leftover from the local OTA tarball creation.
+./fbink -q -y -6 -pm ' '
 
 # Spin in the background while we work ;).
 (
