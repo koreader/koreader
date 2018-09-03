@@ -32,7 +32,7 @@
 ) &
 
 # Launch zsync, and remember its exit code...
-./zsync -i "${1}" -o "${2}" -u "${3}" "${4}"
+./zsync "$@"
 rc=$?
 
 # Kill the spinner subshell now that we're done

@@ -36,6 +36,7 @@ local OTAManager = {
     installed_package = ota_dir .. "koreader.installed.tar",
     package_indexfile = "ota/package.index",
     updated_package = ota_dir .. "koreader.updated.tar",
+    pretty_print = lfs.attributes("./fbink", "mode") == "file" and true or false,
 }
 
 local ota_channels = {
@@ -156,12 +157,12 @@ function OTAManager:fetchAndProcessUpdate()
                             text = _("KOReader will be updated on next restart."),
                         })
                         -- Make it clear that zsync is done
-                        if lfs.attributes("./fbink", "mode") == "file" then
+                        if self.pretty_print then
                             os.execute("./fbink -q -y -7 -pm ' '  ' '")
                         end
                     else
                         -- Make it clear that zsync is done
-                        if lfs.attributes("./fbink", "mode") == "file" then
+                        if self.pretty_print then
                             os.execute("./fbink -q -y -7 -pm ' '  ' '")
                         end
                         UIManager:show(ConfirmBox:new{
@@ -193,7 +194,7 @@ function OTAManager:_buildLocalPackage()
             self.installed_package, self.package_indexfile))
     else
         -- With visual feedback if supported...
-        if lfs.attributes("./fbink", "mode") == "file" then
+        if self.pretty_print then
             os.execute("./fbink -q -y -7 -pmh 'Preparing local OTA package'")
             -- We need a vague idea of how much space the tarball we're creating will take to compute a proper percentage...
             -- Get the size from the latest zsync package, which'll be a closer match than anything else we might come up with.
@@ -230,26 +231,20 @@ end
 
 function OTAManager:zsync()
     if self:_buildLocalPackage() == 0 then
+        local zsync_wrapper = "zsync"
         -- With visual feedback if supported...
-        if lfs.attributes("./spinning_zsync", "mode") == "file" then
-            return os.execute(
-            ("./spinning_zsync '%s' '%s' '%s' '%s%s'"):format(
-                self.installed_package,
-                self.updated_package,
-                self:getOTAServer(),
-                ota_dir,
-                self:getZsyncFilename())
-            )
-        else
-            return os.execute(
-            ("./zsync -i %s -o %s -u %s %s%s"):format(
-                self.installed_package,
-                self.updated_package,
-                self:getOTAServer(),
-                ota_dir,
-                self:getZsyncFilename())
-            )
+        if self.pretty_print then
+            zsync_wrapper = "spinning_zsync"
         end
+        return os.execute(
+        ("./%s -i '%s' -o '%s' -u '%s' '%s%s'"):format(
+            zsync_wrapper,
+            self.installed_package,
+            self.updated_package,
+            self:getOTAServer(),
+            ota_dir,
+            self:getZsyncFilename())
+        )
     end
 end
 
