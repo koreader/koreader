@@ -117,7 +117,7 @@ function FileManagerMenu:setUpdateItemTable()
         text = _("Items per page"),
         help_text = _([[This sets the number of items per page in:
 - File browser and history in 'classic' display mode
-- File and directory choosers
+- File and directory selection
 - Table of content
 - Bookmarks list]]),
         keep_menu_open = true,
