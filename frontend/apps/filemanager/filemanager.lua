@@ -637,7 +637,6 @@ function FileManager:pasteHere(file)
                     timeout = 2,
                 })
             end
-            util.execute(self.cp_bin, "-r", orig, dest)
         end
 
         local info_file
