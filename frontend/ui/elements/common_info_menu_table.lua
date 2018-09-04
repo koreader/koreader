@@ -69,7 +69,7 @@ if Device:isKindle() or Device:isKobo() then
         end,
     }
 end
-if Device:isKobo() then
+if Device:isKobo() or Device:isSonyPRSTUX() then
     common_info.reboot = {
         text = _("Reboot the device"),
         keep_menu_open = true,

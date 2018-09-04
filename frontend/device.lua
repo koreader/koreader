@@ -26,6 +26,11 @@ local function probeDevice()
         return require("device/pocketbook/device")
     end
 
+    local sony_prstux_test_stat = lfs.attributes("/etc/PRSTUX")
+    if sony_prstux_test_stat then
+        return require("device/sony_prstux/device")
+    end
+
     -- add new ports here:
     --
     -- if --[[ implement a proper test instead --]] false then

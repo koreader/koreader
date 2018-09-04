@@ -166,6 +166,30 @@ function UIManager:init()
             Device:usbPlugOut()
             self:_afterNotCharging()
         end
+    elseif Device:isSonyPRSTUX() then
+        self.event_handlers["PowerPress"] = function()
+            UIManager:scheduleIn(2, self.poweroff_action)
+        end
+        self.event_handlers["PowerRelease"] = function()
+            if not self._entered_poweroff_stage then
+                UIManager:unschedule(self.poweroff_action)
+                self:_beforeSuspend()
+                Device:intoScreenSaver()
+	        Device:suspend()
+            end
+        end
+        self.event_handlers["Suspend"] = self.event_handlers["PowerRelease"]
+        self.event_handlers["Resume"] = function()
+            Device:resume()
+            Device:outofScreenSaver()
+            self:_afterResume()
+        end
+        self.event_handlers["__default__"] = function(input_event)
+            -- Same as in Kobo: we want to ignore keys during suspension
+            if not Device.screen_saver_mode then
+                self:sendEvent(input_event)
+            end
+        end
     elseif Device:isSDL() then
         self.event_handlers["Suspend"] = function()
             self:_beforeSuspend()
@@ -939,7 +963,7 @@ end
 -- Executes all the operations of a suspending request. This function usually puts the device into
 -- suspension.
 function UIManager:suspend()
-    if Device:isKobo() or Device:isSDL() then
+    if Device:isKobo() or Device:isSDL() or Device:isSonyPRSTUX() then
         self.event_handlers["Suspend"]()
     elseif Device:isKindle() then
         self.event_handlers["IntoSS"]()
@@ -948,7 +972,7 @@ end
 
 -- Executes all the operations of a resume request. This function usually wakes up the device.
 function UIManager:resume()
-    if Device:isKobo() or Device:isSDL() then
+    if Device:isKobo() or Device:isSDL() or Device:isSonyPRSTUX() then
         self.event_handlers["Resume"]()
     elseif Device:isKindle() then
         self.event_handlers["OutOfSS"]()

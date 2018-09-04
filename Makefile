@@ -41,6 +41,7 @@ ANDROID_DIR=$(PLATFORM_DIR)/android
 ANDROID_LAUNCHER_DIR:=$(ANDROID_DIR)/luajit-launcher
 UBUNTUTOUCH_SDL_DIR:=$(UBUNTUTOUCH_DIR)/ubuntu-touch-sdl
 WIN32_DIR=$(PLATFORM_DIR)/win32
+SONY_PRSTUX_DIR=$(PLATFORM_DIR)/sony_prstux
 
 # appimage setup
 APPIMAGETOOL=appimagetool-x86_64.AppImage
@@ -360,6 +361,32 @@ androidupdate: all
 	cp $(ANDROID_LAUNCHER_DIR)/bin/NativeActivity-debug.apk \
 		koreader-android-$(MACHINE)-$(VERSION).apk
 
+sony_prstuxupdate: all
+	# ensure that the binaries were built for ARM
+	file $(INSTALL_DIR)/koreader/luajit | grep ARM || exit 1
+	# remove old package if any	
+	rm -f koreader-sony-prstux-$(MACHINE)-$(VERSION).zip
+	# Kobo launching scripts
+	cp $(SONY_PRSTUX_DIR)/*.sh $(INSTALL_DIR)/koreader
+	# create new package
+	cd $(INSTALL_DIR) && \
+	        zip -9 -r \
+	                ../koreader-sony-prstux-$(MACHINE)-$(VERSION).zip \
+	                koreader -x "koreader/resources/fonts/*" \
+	                "koreader/resources/icons/src/*" "koreader/spec/*" \
+	                $(ZIP_EXCLUDE)
+	# generate update package index file
+	zipinfo -1 koreader-sony-prstux-$(MACHINE)-$(VERSION).zip > \
+	        $(INSTALL_DIR)/koreader/ota/package.index
+	echo "koreader/ota/package.index" >> $(INSTALL_DIR)/koreader/ota/package.index
+	# update index file in zip package
+	cd $(INSTALL_DIR) && zip -u ../koreader-sony-prstux-$(MACHINE)-$(VERSION).zip \
+	        koreader/ota/package.index
+	# make gzip koboupdate for zsync OTA update
+	cd $(INSTALL_DIR) && \
+	        tar -I"gzip --rsyncable" -cah --no-recursion -f ../koreader-sony-prstux-$(MACHINE)-$(VERSION).targz \
+	        -T koreader/ota/package.index
+
 update:
 ifeq ($(TARGET), kindle)
 	make kindleupdate
@@ -371,6 +398,8 @@ else ifeq ($(TARGET), kobo)
 	make koboupdate
 else ifeq ($(TARGET), pocketbook)
 	make pbupdate
+else ifeq ($(TARGET), sony_prstux)
+	make sony_prstuxupdate
 else ifeq ($(TARGET), ubuntu-touch)
 	make utupdate
 else ifeq ($(TARGET), appimage)

@@ -121,10 +121,10 @@ end
 function NetworkMgr:getWifiMenuTable()
     return {
         text = _("Wi-Fi connection"),
-        enabled_func = function() return Device:isAndroid() or Device:isKindle() or Device:isKobo() end,
-        checked_func = function() return NetworkMgr:isOnline() end,
+        enabled_func = function() return Device:isAndroid() or Device:isKindle() or Device:isKobo() or Device:isSonyPRSTUX() end,
+        checked_func = function() return NetworkMgr:isWifiOn() end,
         callback = function(touchmenu_instance)
-            local wifi_status = NetworkMgr:isOnline()
+            local wifi_status = NetworkMgr:isWifiOn()
             local complete_callback = function()
                 -- notify touch menu to update item check state
                 touchmenu_instance:updateItems()
@@ -197,7 +197,7 @@ function NetworkMgr:getInfoMenuTable()
         text = _("Network info"),
         keep_menu_open = true,
         -- TODO: also show network info when device is authenticated to router but offline
-        enabled_func = function() return self:isOnline() end,
+        enabled_func = function() return self:isWifiOn() end,
         callback = function()
             if Device.retrieveNetworkInfo then
                 UIManager:show(InfoMessage:new{
