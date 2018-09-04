@@ -318,62 +318,41 @@ end
 
 function ReaderZooming:addToMainMenu(menu_items)
     if self.ui.document.info.has_pages then
+        local function getZoomModeMenuItem(text, mode, separator)
+            return {
+                text_func = function()
+                    local default_zoom_mode = G_reader_settings:readSetting("zoom_mode") or self.DEFAULT_ZOOM_MODE
+                    return text .. (mode == default_zoom_mode and "   ★" or "")
+                end,
+                checked_func = function()
+                    return self.zoom_mode == mode
+                end,
+                callback = self:genSetZoomModeCallBack(mode),
+                hold_callback = function(touchmenu_instance)
+                    self:makeDefault(mode, touchmenu_instance)
+                end,
+                separator = separator,
+            }
+        end
         menu_items.switch_zoom_mode = {
             text = _("Switch zoom mode"),
             enabled_func = function()
                 return self.ui.document.configurable.text_wrap ~= 1
             end,
             sub_item_table = {
-                {
-                    text = _("Zoom to fit content width"),
-                    checked_func = function() return self.zoom_mode == "contentwidth" end,
-                    callback = self:genSetZoomModeCallBack("contentwidth"),
-                    hold_callback = function() self:makeDefault("contentwidth") end,
-                },
-                {
-                    text = _("Zoom to fit content height"),
-                    checked_func = function() return self.zoom_mode == "contentheight" end,
-                    callback = self:genSetZoomModeCallBack("contentheight"),
-                    hold_callback = function() self:makeDefault("contentheight") end,
-                    separator = true,
-                },
-                {
-                    text = _("Zoom to fit page width"),
-                    checked_func = function() return self.zoom_mode == "pagewidth" end,
-                    callback = self:genSetZoomModeCallBack("pagewidth"),
-                    hold_callback = function() self:makeDefault("pagewidth") end,
-                },
-                {
-                    text = _("Zoom to fit page height"),
-                    checked_func = function() return self.zoom_mode == "pageheight" end,
-                    callback = self:genSetZoomModeCallBack("pageheight"),
-                    hold_callback = function() self:makeDefault("pageheight") end,
-                    separator = true,
-                },
-                {
-                    text = _("Zoom to fit column"),
-                    checked_func = function() return self.zoom_mode == "column" end,
-                    callback = self:genSetZoomModeCallBack("column"),
-                    hold_callback = function() self:makeDefault("column") end,
-                },
-                {
-                    text = _("Zoom to fit content"),
-                    checked_func = function() return self.zoom_mode == "content" end,
-                    callback = self:genSetZoomModeCallBack("content"),
-                    hold_callback = function() self:makeDefault("content") end,
-                },
-                {
-                    text = _("Zoom to fit page"),
-                    checked_func = function() return self.zoom_mode == "page" end,
-                    callback = self:genSetZoomModeCallBack("page"),
-                    hold_callback = function() self:makeDefault("page") end,
-                },
+                getZoomModeMenuItem(_("Zoom to fit content width"), "contentwidth"),
+                getZoomModeMenuItem(_("Zoom to fit content height"), "contentheight", true),
+                getZoomModeMenuItem(_("Zoom to fit page width"), "pagewidth"),
+                getZoomModeMenuItem(_("Zoom to fit page height"), "pageheight", true),
+                getZoomModeMenuItem(_("Zoom to fit column"), "column"),
+                getZoomModeMenuItem(_("Zoom to fit content"), "content"),
+                getZoomModeMenuItem(_("Zoom to fit page"), "page"),
             }
         }
     end
 end
 
-function ReaderZooming:makeDefault(zoom_mode)
+function ReaderZooming:makeDefault(zoom_mode, touchmenu_instance)
     UIManager:show(ConfirmBox:new{
         text = T(
             _("Set default zoom mode to %1?"),
@@ -381,6 +360,7 @@ function ReaderZooming:makeDefault(zoom_mode)
         ),
         ok_callback = function()
             G_reader_settings:saveSetting("zoom_mode", zoom_mode)
+            if touchmenu_instance then touchmenu_instance:updateItems() end
         end,
     })
 end

@@ -173,12 +173,14 @@ function PerceptionExpander:addToMainMenu(menu_items)
             },
             {
                 text = _("Settings"),
+                keep_menu_open = true,
                 callback = function()
                     self:showSettingsDialog()
                 end,
             },
             {
                 text = _("About"),
+                keep_menu_open = true,
                 callback = function()
                     UIManager:show(InfoMessage:new{
                         text = _("For more information see wiki page Perception Expander Plugin"),

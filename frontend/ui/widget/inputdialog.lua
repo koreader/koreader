@@ -143,6 +143,7 @@ local InputDialog = InputContainer:new{
                       -- This string is then shown:
                       -- - on success: as the notification text instead of the default one
                       -- - on failure: in an InfoMessage
+    close_callback = nil, -- Called when closing (if discarded or saved, after save_callback if saved)
 
     -- For use by TextEditor plugin:
     view_pos_callback = nil, -- Called with no arg to get initial top_line_num/charpos,
@@ -607,6 +608,7 @@ function InputDialog:_addSaveCloseButtons()
                     cancel_text = self.close_cancel_button_text or _("Cancel"),
                     choice1_text = self.close_discard_button_text or _("Discard"),
                     choice1_callback = function()
+                        if self.close_callback then self.close_callback() end
                         UIManager:close(self)
                         UIManager:show(Notification:new{
                             text = self.close_discarded_notif_text or _("Changes discarded"),
@@ -626,6 +628,7 @@ function InputDialog:_addSaveCloseButtons()
                                     })
                                 end
                             else -- nil or true
+                                if self.close_callback then self.close_callback() end
                                 UIManager:close(self)
                                 UIManager:show(Notification:new{
                                     text = msg or _("Saved"),
@@ -637,6 +640,7 @@ function InputDialog:_addSaveCloseButtons()
                 })
             else
                 -- Not modified, exit without any message
+                if self.close_callback then self.close_callback() end
                 UIManager:close(self)
             end
         end,

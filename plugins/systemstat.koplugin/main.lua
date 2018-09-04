@@ -249,6 +249,7 @@ end
 function SystemStatWidget:addToMainMenu(menu_items)
     menu_items.system_statistics = {
         text = _("System statistics"),
+        keep_menu_open = true,
         callback = function()
             SystemStat:showStatistics()
         end,

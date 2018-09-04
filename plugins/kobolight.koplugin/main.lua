@@ -230,6 +230,7 @@ end
 function KoboLight:addToMainMenu(menu_items)
     menu_items.frontlight_gesture_controller = {
         text = _("Frontlight gesture controller"),
+        keep_menu_open = true,
         callback = function()
             local image_name
             local nl_text = ""

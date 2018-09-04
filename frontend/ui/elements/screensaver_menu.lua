@@ -113,18 +113,21 @@ return {
         sub_item_table = {
             {
                 text = _("Screensaver folder"),
+                keep_menu_open = true,
                 callback = function()
                     Screensaver:chooseFolder()
                 end,
             },
             {
                 text = _("Screensaver image"),
+                keep_menu_open = true,
                 callback = function()
                     Screensaver:chooseFile()
                 end,
             },
             {
                 text = _("Screensaver message"),
+                keep_menu_open = true,
                 callback = function()
                     Screensaver:setMessage()
                 end,

@@ -78,12 +78,14 @@ end
 
 function TextEditor:getSubMenuItems()
     self:loadSettings()
+    self.whenDoneFunc = nil -- discard reference to previous TouchMenu instance
     local sub_item_table = {
         {
             text = _("Text editor settings"),
             sub_item_table = {
                 {
                     text = _("Set text font size"),
+                    keep_menu_open = true,
                     callback = function()
                         local SpinWidget = require("ui/widget/spinwidget")
                         local font_size = self.font_size
@@ -118,13 +120,17 @@ function TextEditor:getSubMenuItems()
         },
         {
             text = _("Select a file to open"),
-            callback = function()
+            keep_menu_open = true,
+            callback = function(touchmenu_instance)
+                self:setupWhenDoneFunc(touchmenu_instance)
                 self:chooseFile()
             end,
         },
         {
             text = _("Edit a new empty file"),
-            callback = function()
+            keep_menu_open = true,
+            callback = function(touchmenu_instance)
+                self:setupWhenDoneFunc(touchmenu_instance)
                 self:newFile()
             end,
             separator = true,
@@ -135,10 +141,13 @@ function TextEditor:getSubMenuItems()
         local directory, filename = util.splitFilePathName(file_path) -- luacheck: no unused
         table.insert(sub_item_table, {
             text = T("%1. %2", i, filename),
-            callback = function()
+            keep_menu_open = true,
+            callback = function(touchmenu_instance)
+                self:setupWhenDoneFunc(touchmenu_instance)
                 self:checkEditFile(file_path, true)
             end,
-            hold_callback = function()
+            _texteditor_id = file_path, -- for removal from menu itself
+            hold_callback = function(touchmenu_instance)
                 -- Show full path and some info, and propose to remove from history
                 local text
                 local attr = lfs.attributes(file_path)
@@ -157,12 +166,40 @@ function TextEditor:getSubMenuItems()
                     cancel_text = _("No"),
                     ok_callback = function()
                         self:removeFromHistory(file_path)
+                        -- Also remove from menu itself
+                        for j=1, #sub_item_table do
+                            if sub_item_table[j]._texteditor_id == file_path then
+                                table.remove(sub_item_table, j)
+                                break
+                            end
+                        end
+                        touchmenu_instance:updateItems()
                     end,
                 })
             end,
         })
     end
     return sub_item_table
+end
+
+function TextEditor:setupWhenDoneFunc(touchmenu_instance)
+    -- This will keep a reference to the TouchMenu instance, that may not
+    -- get released if file opening is aborted while in the file selection
+    -- widgets and dialogs (quite complicated to call a resetWhenDoneFunc()
+    -- in every abort case). But :getSubMenuItems() will release it when
+    -- the TextEditor menu is opened again.
+    self.whenDoneFunc = function()
+        touchmenu_instance.item_table = self:getSubMenuItems()
+        touchmenu_instance.page = 1
+        touchmenu_instance:updateItems()
+    end
+end
+
+function TextEditor:execWhenDoneFunc()
+    if self.whenDoneFunc then
+        self.whenDoneFunc()
+        self.whenDoneFunc = nil
+    end
 end
 
 function TextEditor:removeFromHistory(file_path)
@@ -415,6 +452,10 @@ function TextEditor:editFile(file_path, readonly)
         -- File restoring callback
         reset_callback = function(content) -- Will add a Reset button
             return self:readFileContent(file_path), _("Text reset to last saved content")
+        end,
+        -- Close callback
+        close_callback = function()
+            self:execWhenDoneFunc()
         end,
         -- File saving callback
         save_callback = function(content, closing) -- Will add Save/Close buttons

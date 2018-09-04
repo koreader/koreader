@@ -4,10 +4,11 @@ local InfoMessage = require("ui/widget/infomessage")  -- luacheck:ignore
 local InputDialog = require("ui/widget/inputdialog")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local ffiutil = require("ffi/util")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
-local T = require("ffi/util").template
+local T = ffiutil.template
 
 -- This plugin uses a patched dropbear that adds two things:
 -- the -n option to bypass password checks
@@ -136,16 +137,31 @@ function SSH:addToMainMenu(menu_items)
         sub_item_table = {
             {
                 text = _("Start SSH server"),
-                callback = function() return self:start() end,
+                keep_menu_open = true,
+                callback = function(touchmenu_instance)
+                    self:start()
+                    -- sleeping might not be needed, but it gives the feeling
+                    -- something has been done and feedback is accurate
+                    ffiutil.sleep(1)
+                    touchmenu_instance:updateItems()
+                end,
                 enabled_func = function() return not self:isRunning() end,
             },
             {
                 text = _("Stop SSH server"),
-                callback = function() return self:stop() end,
+                keep_menu_open = true,
+                callback = function(touchmenu_instance)
+                    self:stop()
+                    -- sleeping might not be needed, but it gives the feeling
+                    -- something has been done and feedback is accurate
+                    ffiutil.sleep(1)
+                    touchmenu_instance:updateItems()
+                end,
                 enabled_func = function() return self:isRunning() end,
             },
             {
                 text = _("Change SSH port"),
+                keep_menu_open = true,
                 enabled_func = function() return not self:isRunning() end,
                 callback = function() return self:show_port_dialog() end,
             },
@@ -157,6 +173,7 @@ function SSH:addToMainMenu(menu_items)
             },
             {
                 text = _("SSH public key"),
+                keep_menu_open = true,
                 callback = function()
                     local info = InfoMessage:new{
                         timeout = 60,

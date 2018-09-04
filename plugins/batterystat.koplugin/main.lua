@@ -293,6 +293,7 @@ end
 function BatteryStatWidget:addToMainMenu(menu_items)
     menu_items.battery_statistics = {
         text = _("Battery statistics"),
+        keep_menu_open = true,
         callback = function()
             BatteryStat:showStatistics()
         end,
