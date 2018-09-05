@@ -36,6 +36,7 @@ local OTAManager = {
     installed_package = ota_dir .. "koreader.installed.tar",
     package_indexfile = "ota/package.index",
     updated_package = ota_dir .. "koreader.updated.tar",
+    can_pretty_print = lfs.attributes("./fbink", "mode") == "file" and true or false,
 }
 
 local ota_channels = {
@@ -156,12 +157,14 @@ function OTAManager:fetchAndProcessUpdate()
                             text = _("KOReader will be updated on next restart."),
                         })
                         -- Make it clear that zsync is done
-                        if Device:isKindle() then
-                            os.execute("./zsync_status.sh clear")
-                        elseif Device:isKobo() then
-                            os.execute("./fbink -q -y -7 -pm ' ' ' '")
+                        if self.can_pretty_print then
+                            os.execute("./fbink -q -y -7 -pm ' '  ' '")
                         end
                     else
+                        -- Make it clear that zsync is done
+                        if self.can_pretty_print then
+                            os.execute("./fbink -q -y -7 -pm ' '  ' '")
+                        end
                         UIManager:show(ConfirmBox:new{
                             text = _("Error updating KOReader. Would you like to delete temporary files?"),
                             ok_callback = function()
@@ -191,10 +194,33 @@ function OTAManager:_buildLocalPackage()
             self.installed_package, self.package_indexfile))
     else
         -- With visual feedback if supported...
-        if lfs.attributes("./kotar_cpoint", "mode") == "file" then
+        if self.can_pretty_print then
+            os.execute("./fbink -q -y -7 -pmh 'Preparing local OTA package'")
+            -- We need a vague idea of how much space the tarball we're creating will take to compute a proper percentage...
+            -- Get the size from the latest zsync package, which'll be a closer match than anything else we might come up with.
+            local zsync_file = self:getZsyncFilename()
+            local local_zsync_file = ota_dir .. zsync_file
+            local tarball_size = nil
+            local zsync = io.open(local_zsync_file, "r")
+            if zsync then
+                for line in zsync:lines() do
+                    tarball_size = line:match("^Length: (%d*)$")
+                    if tarball_size then break end
+                end
+                zsync:close()
+            end
+            -- Next, we need to compute the amount of tar blocks that'll take, knowing that tar's default blocksize is 20 * 512 bytes.
+            -- c.f., https://superuser.com/questions/168749 & http://www.noah.org/wiki/tar_notes
+            -- Defaults to a sane-ish value as-of now, in case shit happens...
+            local blocks = 6405
+            if tarball_size then
+                blocks = tarball_size / (512 * 20)
+            end
+            -- And since we want a percentage, devise the exact value we need for tar to spit out exactly 100 checkpoints ;).
+            local cpoints = blocks / 100
             return os.execute(string.format(
-                "./tar --no-recursion -cf %s -C .. -T %s --checkpoint=200 --checkpoint-action=exec='./kotar_cpoint $TAR_CHECKPOINT create'",
-                self.installed_package, self.package_indexfile))
+                "./tar --no-recursion -cf %s -C .. -T %s --checkpoint=%d --checkpoint-action=exec='./fbink -q -y -6 -P $(($TAR_CHECKPOINT/%d))'",
+                self.installed_package, self.package_indexfile, cpoints, cpoints))
         else
             return os.execute(string.format(
                 "./tar --no-recursion -cf %s -C .. -T %s",
@@ -205,19 +231,19 @@ end
 
 function OTAManager:zsync()
     if self:_buildLocalPackage() == 0 then
-        -- Make it clear that it's now zsync churning CPU time, instead of tar churning IO ;).
-        if Device:isKindle() then
-            os.execute("./zsync_status.sh")
-        elseif Device:isKobo() then
-            os.execute("./fbink -q -y -7 -pmh 'Computing zsync delta . . .'")
+        local zsync_wrapper = "zsync"
+        -- With visual feedback if supported...
+        if self.can_pretty_print then
+            zsync_wrapper = "spinning_zsync"
         end
         return os.execute(
-            ("./zsync -i %s -o %s -u %s %s%s"):format(
-                self.installed_package,
-                self.updated_package,
-                self:getOTAServer(),
-                ota_dir,
-                self:getZsyncFilename())
+        ("./%s -i '%s' -o '%s' -u '%s' '%s%s'"):format(
+            zsync_wrapper,
+            self.installed_package,
+            self.updated_package,
+            self:getOTAServer(),
+            ota_dir,
+            self:getZsyncFilename())
         )
     end
 end
