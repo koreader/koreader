@@ -1,5 +1,4 @@
 local BasePowerD = require("device/generic/powerd")
-local ffi = require("ffi")
 
 local base_path = '/sys/devices/platform/imx-i2c.1/i2c-1/1-0049/twl6030_bci/power_supply/twl6030_battery/'
 
@@ -8,7 +7,7 @@ local SonyPRSTUX_PowerD = BasePowerD:new{
     fl_min = 0,
     fl_max = 100,
     capacity_file = base_path .. 'capacity',
-    status_file = base_path .. 'status'  
+    status_file = base_path .. 'status'
 }
 
 function SonyPRSTUX_PowerD:init()

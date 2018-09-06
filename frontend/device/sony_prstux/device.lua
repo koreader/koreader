@@ -41,11 +41,11 @@ local adjustTouchEvt = function(self, ev)
 
         logger.dbg('adjusted id: ', ev.value)
     elseif ev.type == EV_SYN and ev.code == SYN_REPORT then
-        next_touch_id = 0      
+        next_touch_id = 0
         logger.dbg('reset id: ', ev.code, ev.value)
         ev.code = SYN_MT_REPORT
     elseif ev.type == EV_SYN and ev.code == SYN_MT_REPORT then
-        ev.code = SYN_REPORT 
+        ev.code = SYN_REPORT
     end
 end
 
@@ -62,7 +62,7 @@ function SonyPRSTUX:init()
     self.input.open("/dev/input/event2") -- power button
     self.input:registerEventAdjustHook(adjustTouchEvt)
 
-    rotation_mode = self.screen.ORIENTATION_LANDSCAPE_ROTATED
+    local rotation_mode = self.screen.ORIENTATION_LANDSCAPE_ROTATED
     self.screen.native_rotation_mode = rotation_mode
     self.screen.cur_rotation_mode = rotation_mode
 
