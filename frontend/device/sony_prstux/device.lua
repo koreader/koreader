@@ -9,7 +9,6 @@ local function no() return false end
 local SonyPRSTUX = Generic:new{
     model = "Sony PRSTUX",
     isSonyPRSTUX = yes,
-    isInBackGround = false,
     hasKeys = yes,
 }
 
@@ -110,12 +109,10 @@ end
 
 function SonyPRSTUX:suspend()
     os.execute("./suspend.sh")
-    -- os.execute("echo powersave > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor; echo mem > /sys/power/state; cat /sys/power/wait_for_fb_sleep")
 end
 
 function SonyPRSTUX:resume()
     os.execute("./resume.sh")
-    -- os.execute("echo on > /sys/power/state; echo conservative > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor; cat /sys/power/wait_for_fb_wake")
 end
 
 function SonyPRSTUX:powerOff()
@@ -157,7 +154,6 @@ function SonyPRSTUX:initNetworkManager(NetworkMgr)
     end
 
     function NetworkMgr:isWifiOn()
-        logger.info("wifi on?")
         return 0 == os.execute("wmiconfig -i wlan0 --wlan query | grep -q enabled")
     end
 end
