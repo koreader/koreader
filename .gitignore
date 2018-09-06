@@ -51,4 +51,5 @@ koreader-emulator-x86_64-pc-linux-gnu*
 koreader-emulator-x86_64-apple-darwin*
 koreader-pocketbook-arm-obreey-linux-gnueabi*
 koreader-ubuntu-touch-arm-linux-gnueabihf*
-koreader-prst-arm-linux-gnueabihf*
+koreader-sony[-_]prstux-arm-linux-gnueabihf*
+

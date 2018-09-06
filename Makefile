@@ -366,7 +366,7 @@ sony_prstuxupdate: all
 	file $(INSTALL_DIR)/koreader/luajit | grep ARM || exit 1
 	# remove old package if any	
 	rm -f koreader-sony-prstux-$(MACHINE)-$(VERSION).zip
-	# Kobo launching scripts
+	# Sony PRSTUX launching scripts
 	cp $(SONY_PRSTUX_DIR)/*.sh $(INSTALL_DIR)/koreader
 	# create new package
 	cd $(INSTALL_DIR) && \
@@ -382,7 +382,7 @@ sony_prstuxupdate: all
 	# update index file in zip package
 	cd $(INSTALL_DIR) && zip -u ../koreader-sony-prstux-$(MACHINE)-$(VERSION).zip \
 	        koreader/ota/package.index
-	# make gzip koboupdate for zsync OTA update
+	# make gzip sonyprstux update for zsync OTA update
 	cd $(INSTALL_DIR) && \
 	        tar -I"gzip --rsyncable" -cah --no-recursion -f ../koreader-sony-prstux-$(MACHINE)-$(VERSION).targz \
 	        -T koreader/ota/package.index
