@@ -10,5 +10,5 @@ else
     if [ "$(pidof wpa_supplicant)" != "" ]; then
         kill "$(pidof wpa_supplicant)"
     fi
-    wmiconfig -i wlan0 --wlan disable 
+    wmiconfig -i wlan0 --wlan disable
 fi
