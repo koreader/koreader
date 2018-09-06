@@ -37,7 +37,7 @@ local adjustTouchEvt = function(self, ev)
             ev.value = -1
         end
 
-	next_touch_id = next_touch_id + 1
+        next_touch_id = next_touch_id + 1
 
         logger.dbg('adjusted id: ', ev.value)
     elseif ev.type == EV_SYN and ev.code == SYN_REPORT then
@@ -141,7 +141,7 @@ function SonyPRSTUX:initNetworkManager(NetworkMgr)
 
     function NetworkMgr:obtainIP()
         self:releaseIP()
-	os.execute("dhclient wlan0")
+        os.execute("dhclient wlan0")
     end
 
     function NetworkMgr:releaseIP()

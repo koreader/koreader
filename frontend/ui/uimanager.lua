@@ -175,7 +175,7 @@ function UIManager:init()
                 UIManager:unschedule(self.poweroff_action)
                 self:_beforeSuspend()
                 Device:intoScreenSaver()
-	        Device:suspend()
+                Device:suspend()
             end
         end
         self.event_handlers["Suspend"] = self.event_handlers["PowerRelease"]
