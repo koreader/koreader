@@ -1,6 +1,6 @@
 local Device = require("device")
 
-if not Device:isKobo() and not Device:isSDL() then return { disabled = true, } end
+if not Device:isKobo() and not Device:isSDL() and not Device:isSonyPRSTUX() then return { disabled = true, } end
 
 local DataStorage = require("datastorage")
 local LuaSettings = require("luasettings")
