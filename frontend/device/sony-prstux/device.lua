@@ -51,10 +51,10 @@ end
 
 function SonyPRSTUX:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
-    self.powerd = require("device/sony_prstux/powerd"):new{device = self}
+    self.powerd = require("device/sony-prstux/powerd"):new{device = self}
     self.input = require("device/input"):new{
         device = self,
-        event_map = require("device/sony_prstux/event_map"),
+        event_map = require("device/sony-prstux/event_map"),
     }
 
     self.input.open("/dev/input/event0") -- Keys

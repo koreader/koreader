@@ -41,7 +41,7 @@ ANDROID_DIR=$(PLATFORM_DIR)/android
 ANDROID_LAUNCHER_DIR:=$(ANDROID_DIR)/luajit-launcher
 UBUNTUTOUCH_SDL_DIR:=$(UBUNTUTOUCH_DIR)/ubuntu-touch-sdl
 WIN32_DIR=$(PLATFORM_DIR)/win32
-SONY_PRSTUX_DIR=$(PLATFORM_DIR)/sony_prstux
+SONY_PRSTUX_DIR=$(PLATFORM_DIR)/sony-prstux
 
 # appimage setup
 APPIMAGETOOL=appimagetool-x86_64.AppImage
@@ -361,7 +361,7 @@ androidupdate: all
 	cp $(ANDROID_LAUNCHER_DIR)/bin/NativeActivity-debug.apk \
 		koreader-android-$(MACHINE)-$(VERSION).apk
 
-sony_prstuxupdate: all
+sony-prstuxupdate: all
 	# ensure that the binaries were built for ARM
 	file $(INSTALL_DIR)/koreader/luajit | grep ARM || exit 1
 	# remove old package if any	
@@ -398,8 +398,8 @@ else ifeq ($(TARGET), kobo)
 	make koboupdate
 else ifeq ($(TARGET), pocketbook)
 	make pbupdate
-else ifeq ($(TARGET), sony_prstux)
-	make sony_prstuxupdate
+else ifeq ($(TARGET), sony-prstux)
+	make sony-prstuxupdate
 else ifeq ($(TARGET), ubuntu-touch)
 	make utupdate
 else ifeq ($(TARGET), appimage)

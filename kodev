@@ -113,7 +113,7 @@ SUPPORTED_TARGETS="
     kindlepw2       With compiler optimizations for Kindle models >= Paperwhite 2
     kindle-legacy   Needed only for Kindle2/3/DXG
     kobo
-    sony_prstux
+    sony-prstux
     android
     pocketbook
     ubuntu-touch
@@ -177,8 +177,8 @@ ${SUPPORTED_TARGETS}"
             make TARGET=kobo
             assert_ret_zero $?
             ;;
-        sony_prstux)
-            make TARGET=sony_prstux
+        sony-prstux)
+            make TARGET=sony-prstux
             assert_ret_zero $?
             ;;
         kindle-legacy)
@@ -257,8 +257,8 @@ ${SUPPORTED_TARGETS}"
         kobo)
             make TARGET=kobo clean
             ;;
-        sony_prstux)
-            make TARGET=sony_prstux clean
+        sony-prstux)
+            make TARGET=sony-prstux clean
             ;;
         kindle-legacy)
             make TARGET=kindle-legacy clean
@@ -356,9 +356,9 @@ ${SUPPORTED_RELEASE_TARGETS}"
             kodev-build kobo
             make TARGET=kobo update
             ;;
-        sony_prstux)
-            kodev-build sony_prstux
-            make TARGET=sony_prstux update
+        sony-prstux)
+            kodev-build sony-prstux
+            make TARGET=sony-prstux update
             ;;
         kindle-legacy)
             kodev-build kindle-legacy

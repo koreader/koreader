@@ -28,7 +28,7 @@ local function probeDevice()
 
     local sony_prstux_test_stat = lfs.attributes("/etc/PRSTUX")
     if sony_prstux_test_stat then
-        return require("device/sony_prstux/device")
+        return require("device/sony-prstux/device")
     end
 
     -- add new ports here:
