@@ -792,6 +792,9 @@ function UIManager:_repaint()
     -- execute refreshes:
     for _, refresh in ipairs(self._refresh_stack) do
         dbg:v("triggering refresh", refresh)
+        -- NOTE: We overshoot by 1px to account for potential off-by-ones.
+        --       This may not strictly be needed anymore, and is blatantly unneeded for full-screen updates,
+        --       but checkBounds & getPhysicalRect will sanitize that in mxc_update @ ffi/framebuffer_mxcfb ;).
         Screen[refresh_methods[refresh.mode]](Screen,
             refresh.region.x - 1, refresh.region.y - 1,
             refresh.region.w + 2, refresh.region.h + 2)
