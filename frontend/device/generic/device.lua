@@ -46,6 +46,9 @@ local Device = {
     isAlwaysPortrait = no,
     -- needs full screen refresh when resumed from screensaver?
     needsScreenRefreshAfterResume = yes,
+    -- framebuffer reports 8bit per pixel, but is actually 24bit per pixel
+    -- (refresh is still based on bytes)
+    has3BytesWideFrameBuffer = no,
 }
 
 function Device:new(o)
