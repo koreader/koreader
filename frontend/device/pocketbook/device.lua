@@ -203,6 +203,17 @@ local PocketBook740 = PocketBook:new{
     emu_events_dev = "/var/dev/shm/emu_events",
 }
 
+-- PocketBook Color Lux
+local PocketBookColorLux = PocketBook:new{
+    isTouchDevice = yes,
+    hasKeys = yes,
+    hasFrontlight = yes,
+    hasColorScreen = yes,
+    isAlwaysPortrait = no,
+    display_dpi = 100,
+    emu_events_dev = "/var/dev/shm/emu_events",
+}
+
 logger.info('SoftwareVersion: ', PocketBook:getSoftwareVersion())
 
 local codename = PocketBook:getDeviceModel()
@@ -219,6 +230,8 @@ elseif codename == "PocketBook 623" then
     return PocketBook623
 elseif codename == "PB740" then
     return PocketBook740
+elseif codename == "PocketBook Color Lux" then
+    return PocketBookColorLux
 else
     error("unrecognized PocketBook model " .. codename)
 end
