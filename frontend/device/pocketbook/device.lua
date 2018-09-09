@@ -106,6 +106,12 @@ function PocketBook:init()
         end
     end)
 
+    -- fix rotation for Color Lux device
+    if PocketBook:getDeviceModel() == "PocketBook Color Lux" then
+        self.screen.blitbuffer_rotation_mode = 0
+        self.screen.native_rotation_mode = 0
+    end
+
     os.remove(self.emu_events_dev)
     os.execute("mkfifo " .. self.emu_events_dev)
     self.input.open(self.emu_events_dev, 1)
