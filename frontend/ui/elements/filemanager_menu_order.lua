@@ -48,7 +48,7 @@ local order = {
         "ssh",
     },
     tools = {
-        "calibre_wireless_connection",
+        "calibre_companion",
         "evernote",
         "statistics",
         "cloud_storage",
