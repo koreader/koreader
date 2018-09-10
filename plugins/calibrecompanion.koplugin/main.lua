@@ -332,11 +332,7 @@ function CalibreCompanion:sendBook(arg)
     local filename = inbox_dir .. "/" .. arg.lpath
     DEBUG("write to file", filename)
     util.makePath((util.splitFilePathName(filename)))
-    local lfs = require("libs/libkoreader-lfs")
-    local dir, name = require("util").splitFilePathName(self.path)
-    lfs.mkdir(dir)
-    lfs.chdir(dir)
-    local outfile = io.open(name, "wb")
+    local outfile = io.open(filename, "wb")
     local to_write_bytes = arg.length
     local calibre_device = self
     local calibre_socket = self.calibre_socket
