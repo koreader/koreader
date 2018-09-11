@@ -69,7 +69,7 @@ local order = {
     },
     tools = {
         "read_timer",
-        "calibre_companion",
+        "calibre_wireless_connection",
         "evernote",
         "statistics",
         "progress_sync",
