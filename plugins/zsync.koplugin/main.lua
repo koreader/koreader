@@ -230,6 +230,7 @@ function ZSync:subscribe()
     local zsync = self
     require("ui/downloadmgr"):new{
         title = _("Choose inbox by long-pressing"),
+        show_hidden = G_reader_settings:readSetting("show_hidden"),
         onConfirm = function(inbox)
             G_reader_settings:saveSetting("inbox_dir", inbox)
             zsync:onChooseInbox(inbox)
