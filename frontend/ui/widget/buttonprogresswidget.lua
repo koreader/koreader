@@ -25,7 +25,7 @@ function ButtonProgressWidget:init()
         background = Blitbuffer.COLOR_WHITE,
         color = Blitbuffer.COLOR_GREY,
         radius = Size.radius.window,
-        bordersize = 0,
+        bordersize = Size.border.thin,
         padding = Size.padding.small,
         dim = not self.enabled,
         width = self.width,
@@ -68,6 +68,7 @@ function ButtonProgressWidget:update()
                 self.position = i
                 self:update()
             end,
+            no_focus = true,
             hold_callback = function()
                 self.hold_callback(i)
             end,
@@ -83,6 +84,33 @@ end
 function ButtonProgressWidget:setPosition(position)
     self.position = position
     self:update()
+end
+
+function ButtonProgressWidget:onFocus()
+    self.buttonprogress_frame.background = Blitbuffer.COLOR_BLACK
+    return true
+end
+
+function ButtonProgressWidget:onUnfocus()
+    self.buttonprogress_frame.background = Blitbuffer.COLOR_WHITE
+    return true
+end
+
+function ButtonProgressWidget:onTapSelect(arg, gev)
+    if gev == nil then
+        self:circlePosition()
+    end
+end
+
+function ButtonProgressWidget:circlePosition()
+    if self.position then
+        self.position = self.position+1
+        if self.position > self.num_buttons then
+            self.position = 1
+        end
+        self.callback(self.position)
+        self:update()
+    end
 end
 
 return ButtonProgressWidget
