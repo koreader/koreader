@@ -825,6 +825,7 @@ function FileManager:getStartWithMenuTable()
     local start_withs = {
         filemanager = {_("file browser"), _("Start with file browser")},
         history = {_("history"), _("Start with history")},
+        folder_shortcuts = {_("folder shortcuts"), _("Start with folder shortcuts")},
         last = {_("last file"), _("Start with last file")},
     }
     local set_sw_table = function(start_with)
@@ -849,6 +850,7 @@ function FileManager:getStartWithMenuTable()
         sub_item_table = {
             set_sw_table("filemanager"),
             set_sw_table("history"),
+            set_sw_table("folder_shortcuts"),
             set_sw_table("last"),
         }
     }
