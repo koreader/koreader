@@ -134,7 +134,6 @@ end
 function CalibreCompanion:setInboxDir(host, port)
     local calibre_device = self
     require("ui/downloadmgr"):new{
-        title = _("Choose inbox by long-pressing"),
         onConfirm = function(inbox)
             DEBUG("set inbox directory", inbox)
             G_reader_settings:saveSetting("inbox_dir", inbox)
