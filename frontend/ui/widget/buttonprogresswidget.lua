@@ -25,7 +25,7 @@ function ButtonProgressWidget:init()
         background = Blitbuffer.COLOR_WHITE,
         color = Blitbuffer.COLOR_GREY,
         radius = Size.radius.window,
-        bordersize = Size.border.thin,
+        bordersize = 0,
         padding = Size.padding.small,
         dim = not self.enabled,
         width = self.width,
