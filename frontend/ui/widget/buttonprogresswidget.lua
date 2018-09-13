@@ -28,8 +28,6 @@ function ButtonProgressWidget:init()
         bordersize = 0,
         padding = Size.padding.small,
         dim = not self.enabled,
-        width = self.width,
-        height = self.height,
     }
 
     self.buttonprogress_content = HorizontalGroup:new{}
