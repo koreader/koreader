@@ -206,10 +206,9 @@ function CloudStorage:cloudFile(item, path)
         },
         {
             {
-                text = _("Choose download directory by long-pressing"),
+                text = _("Choose download directory"),
                 callback = function()
                     require("ui/downloadmgr"):new{
-                        title = _("Choose download directory"),
                         show_hidden = G_reader_settings:readSetting("show_hidden"),
                         onConfirm = function(path_download)
                             self.cs_settings:saveSetting("download_dir", path_download)

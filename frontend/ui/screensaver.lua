@@ -52,11 +52,10 @@ function Screensaver:chooseFolder()
     local buttons = {}
     table.insert(buttons, {
         {
-            text = _("Choose screensaver directory by long-pressing"),
+            text = _("Choose screensaver directory"),
             callback = function()
                 UIManager:close(self.choose_dialog)
                 require("ui/downloadmgr"):new{
-                    title = _("Choose screensaver directory"),
                     onConfirm = function(path)
                         logger.dbg("set screensaver directory to", path)
                         G_reader_settings:saveSetting("screensaver_dir", path)
