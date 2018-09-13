@@ -587,7 +587,6 @@ function OPDSBrowser:showDownloads(item)
             text = _("Select another directory"),
             callback = function()
                 require("ui/downloadmgr"):new{
-                    title = _("Long-press to select directory"),
                     onConfirm = function(path)
                         logger.dbg("set download directory to", path)
                         G_reader_settings:saveSetting("download_dir", path)

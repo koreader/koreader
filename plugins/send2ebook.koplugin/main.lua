@@ -192,11 +192,7 @@ function Send2Ebook:removeReadActicles()
 end
 
 function Send2Ebook:setCustomDownloadDirectory()
-    UIManager:show(InfoMessage:new{
-       text = _("To select a folder press down and hold it for 1 second.")
-    })
     require("ui/downloadmgr"):new{
-       title = _("Choose download directory"),
        onConfirm = function(path)
            logger.dbg("Send2Ebook: set download directory to: ", path)
            send2ebook_settings:saveSetting(config_key_custom_dl_dir, ("%s/"):format(path))

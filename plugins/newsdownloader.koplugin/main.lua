@@ -369,11 +369,7 @@ function NewsDownloader:removeNewsButKeepFeedConfig()
 end
 
 function NewsDownloader:setCustomDownloadDirectory()
-    UIManager:show(InfoMessage:new{
-       text = _("To select a folder press down and hold it for 1 second.")
-    })
     require("ui/downloadmgr"):new{
-       title = _("Choose download directory"),
        onConfirm = function(path)
            logger.dbg("NewsDownloader: set download directory to: ", path)
            local news_downloader_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), news_downloader_config_file))
