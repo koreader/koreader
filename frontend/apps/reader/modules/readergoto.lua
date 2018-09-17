@@ -7,7 +7,7 @@ local _ = require("gettext")
 
 local ReaderGoto = InputContainer:new{
     goto_menu_title = _("Go to"),
-    skim_menu_title = _("Skim to"),
+    skim_menu_title = _("Skim document"),
 }
 
 function ReaderGoto:init()

@@ -61,7 +61,7 @@ function SkimToWidget:init()
             },
          }
     end
-    local dialog_title = _("Skim mode")
+    local dialog_title = _("Skim")
     if self.document.info.has_pages then
         self.curr_page = self.ui.paging.current_page
     else
