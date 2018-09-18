@@ -90,6 +90,7 @@ function Ftp:config(item, callback)
             {
                 text = text_password,
                 input_type = "string",
+                text_type = "password",
                 hint = hint_password,
             },
             {
