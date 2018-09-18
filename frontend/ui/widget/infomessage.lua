@@ -57,6 +57,7 @@ local InfoMessage = InputContainer:new{
     image_height = nil,  -- The image height if image is used. Keep it nil to use original height.
     -- Whether the icon should be shown. If it is false, self.image will be ignored.
     show_icon = true,
+    icon_file = nil, -- use this file instead of "resources/info-i.png"
     dismiss_callback = function() end,
 }
 
@@ -93,7 +94,7 @@ function InfoMessage:init()
             }
         else
             image_widget = ImageWidget:new{
-                file = self.file or "resources/info-i.png",
+                file = self.icon_file or "resources/info-i.png",
                 scale_for_dpi = true,
                 alpha = true,
             }
