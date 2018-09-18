@@ -61,12 +61,10 @@ function SkimToWidget:init()
             },
          }
     end
-    local dialog_title
+    local dialog_title = _("Skim")
     if self.document.info.has_pages then
-        dialog_title = _("Go to Page")
         self.curr_page = self.ui.paging.current_page
     else
-        dialog_title = _("Go to Location")
         self.curr_page = self.document:getCurrentPage()
     end
     self.page_count = self.document:getPageCount()
