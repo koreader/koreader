@@ -445,7 +445,6 @@ function DoubleKeyValuePage:onSwipe(arg, ges_ev)
         -- so let it propagate
         return false
     end
-    end
 end
 
 function DoubleKeyValuePage:onClose()
