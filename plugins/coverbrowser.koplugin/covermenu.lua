@@ -16,7 +16,6 @@ local BookInfoManager = require("bookinfomanager")
 -- Here are defined the common overriden methods of Menu:
 --    :updateItems(select_number)
 --    :onCloseWidget()
---    :onSwipe(arg, ges_ev)
 --
 -- MosaicMenu or ListMenu should implement specific UI methods:
 --    :_recalculateDimen()
@@ -450,19 +449,6 @@ function CoverMenu:onCloseWidget()
 
     -- Call original Menu:onCloseWidget (no subclass seems to override it)
     Menu.onCloseWidget(self)
-end
-
--- Overriden just to allow full refresh (useful with images)
-function CoverMenu:onSwipe(arg, ges_ev)
-    if ges_ev.direction == "west" then
-        self:onNextPage()
-    elseif ges_ev.direction == "east" then
-        self:onPrevPage()
-    elseif ges_ev.direction ~= "north" and ges_ev.direction ~= "south" then
-        -- but not if north/south, and we're triggering menu
-        -- trigger full refresh
-        UIManager:setDirty(nil, "full")
-    end
 end
 
 function CoverMenu:tapPlus()

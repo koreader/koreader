@@ -529,6 +529,9 @@ function KeyValuePage:onSwipe(arg, ges_ev)
     elseif ges_ev.direction == "east" then
         self:prevPage()
         return true
+    elseif ges_ev.direction == "north" or ges_ev.direction == "south" then
+        -- Allow easier closing with swipe up/down
+        self:onClose()
     else
         -- trigger full refresh
         UIManager:setDirty(nil, "full")

@@ -27,6 +27,7 @@ end
 function BookInfo:addToMainMenu(menu_items)
     menu_items.book_info = {
         text = self.bookinfo_menu_title,
+        keep_menu_open = true,
         callback = function()
             -- Get them directly from ReaderUI's doc_settings
             local doc_props = self.ui.doc_settings:readSetting("doc_props")

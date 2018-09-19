@@ -5,6 +5,7 @@ local Device = require("device")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
+local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -59,6 +60,14 @@ function ReaderProgress:init()
             --don't get locked in on non touch devices
             AnyKeyPressed = { { Device.input.group.Any },
             seqtext = "any key", doc = "close dialog" }
+        }
+    end
+    if Device:isTouchDevice() then
+        self.ges_events.Swipe = {
+            GestureRange:new{
+                ges = "swipe",
+                range = function() return self.dimen end,
+            }
         }
     end
     self[1] = FrameContainer:new{
@@ -486,6 +495,19 @@ end
 
 function ReaderProgress:onAnyKeyPressed()
     return self:onClose()
+end
+
+function ReaderProgress:onSwipe(arg, ges_ev)
+    if ges_ev.direction == "north" or ges_ev.direction == "south" then
+        -- Allow easier closing with swipe up/down
+        self:onClose()
+    elseif ges_ev.direction ~= "east" and ges_ev.direction ~= "west" then
+        -- trigger full refresh
+        UIManager:setDirty(nil, "full")
+        -- a long diagonal swipe may also be used for taking a screenshot,
+        -- so let it propagate
+        return false
+    end
 end
 
 function ReaderProgress:onClose()
