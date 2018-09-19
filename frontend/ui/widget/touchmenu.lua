@@ -152,14 +152,15 @@ function TouchMenuItem:onTapSelect(arg, ges)
         UIManager:tickAfterNext(function()
             self.menu:onMenuSelect(self.item)
             self.item_frame.invert = false
-            --[[
-            -- NOTE: We can optimize that repaint away, every entry in our menu will make at least the menu repaint just after anyways ;).
-            --       Plus, leaving that unhighlight as "fast" can lead to weird side-effects, depending on devices.
-            --       If it turns out this need to go back in, consider switching it to "ui".
-            UIManager:setDirty(self.show_parent, function()
-                return "fast", self.dimen
-            end)
-            --]]
+            -- NOTE: We can *usually* optimize that repaint away, as most entries in the menu will at least trigger a menu repaint ;).
+            --       But when stuff doesn't repaint the menu and keeps it open, we need to do it.
+            --       Since it's an *un*highlight containing text, we make it "ui" and not "fast", both so it won't mangle text,
+            --       and because "fast" can have some weird side-effects on some devices in this specific instance...
+            if self.item.hold_keep_menu_open or self.item.keep_menu_open then
+                UIManager:setDirty(self.show_parent, function()
+                    return "ui", self.dimen
+                end)
+            end
         end)
     end
     return true
