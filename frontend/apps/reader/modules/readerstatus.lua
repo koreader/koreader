@@ -30,7 +30,6 @@ end
 function ReaderStatus:addToMainMenu(menu_items)
     menu_items.book_status = {
         text = _("Book status"),
-        keep_menu_open = true,
         callback = function()
             self:showStatus()
         end,
