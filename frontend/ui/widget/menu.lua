@@ -1176,7 +1176,7 @@ function Menu:onSwipe(arg, ges_ev)
         self:onNextPage()
     elseif ges_ev.direction == "east" then
         self:onPrevPage()
-    elseif ges_ev.direction == "north" or ges_ev.direction == "south" then
+    elseif ges_ev.direction == "south" then
         if self.has_close_button and not self.no_title then
             -- If there is a close button displayed (so, this Menu can be
             -- closed), allow easier closing with swipe up/down
@@ -1184,7 +1184,9 @@ function Menu:onSwipe(arg, ges_ev)
         end
         -- If there is no close button, it's a top level Menu and swipe
         -- up/down may hide/show top menu
-    else
+    elseif ges_ev.direction == "north" then
+        do end -- no use for now
+    else -- diagonal swipe
         -- trigger full refresh
         UIManager:setDirty(nil, "full")
     end

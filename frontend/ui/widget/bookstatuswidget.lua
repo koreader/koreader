@@ -550,10 +550,12 @@ function BookStatusWidget:onAnyKeyPressed()
 end
 
 function BookStatusWidget:onSwipe(arg, ges_ev)
-    if ges_ev.direction == "north" or ges_ev.direction == "south" then
-        -- Allow easier closing with swipe up/down
+    if ges_ev.direction == "south" then
+        -- Allow easier closing with swipe down
         self:onClose()
-    elseif ges_ev.direction ~= "east" and ges_ev.direction ~= "west" then
+    elseif ges_ev.direction == "east" or ges_ev.direction == "west" or ges_ev.direction == "north" then
+        do end -- no use for now
+    else -- diagonal swipe
         -- trigger full refresh
         UIManager:setDirty(nil, "full")
         -- a long diagonal swipe may also be used for taking a screenshot,

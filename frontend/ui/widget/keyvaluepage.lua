@@ -529,10 +529,12 @@ function KeyValuePage:onSwipe(arg, ges_ev)
     elseif ges_ev.direction == "east" then
         self:prevPage()
         return true
-    elseif ges_ev.direction == "north" or ges_ev.direction == "south" then
-        -- Allow easier closing with swipe up/down
+    elseif ges_ev.direction == "south" then
+        -- Allow easier closing with swipe down
         self:onClose()
-    else
+    elseif ges_ev.direction == "north" then
+        do end -- no use for now
+    else -- diagonal swipe
         -- trigger full refresh
         UIManager:setDirty(nil, "full")
         -- a long diagonal swipe may also be used for taking a screenshot,
