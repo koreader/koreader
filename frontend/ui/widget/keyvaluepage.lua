@@ -533,7 +533,8 @@ function KeyValuePage:onSwipe(arg, ges_ev)
         -- Allow easier closing with swipe down
         self:onClose()
     elseif ges_ev.direction == "north" then
-        do end -- no use for now
+        -- no use for now
+        do end -- luacheck: ignore 541
     else -- diagonal swipe
         -- trigger full refresh
         UIManager:setDirty(nil, "full")
