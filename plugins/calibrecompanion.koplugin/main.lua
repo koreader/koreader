@@ -6,6 +6,7 @@ local DEBUG = require("dbg")
 local _ = require("gettext")
 local NetworkMgr = require("ui/network/manager")
 local util = require("frontend/util")
+local T = require("ffi/util").template
 
 require("ffi/zeromq_h")
 
@@ -80,6 +81,17 @@ function CalibreCompanion:find_calibre_server()
     end
 end
 
+function CalibreCompanion:checkCalibreServer(host, port)
+    local socket = require("socket")
+    local client, err = socket.connect(host, port)
+    DEBUG(client, err)
+    if client then
+        client:close()
+        return true
+    end
+    return false
+end
+
 function CalibreCompanion:addToMainMenu(menu_items)
     menu_items.calibre_wireless_connection = {
         text = _("calibre wireless connection"),
@@ -105,6 +117,87 @@ function CalibreCompanion:addToMainMenu(menu_items)
                 callback = function()
                     CalibreCompanion:setInboxDir()
                 end
+            },
+            {
+                text_func = function()
+                    local address = "automatic"
+                    if G_reader_settings:has("calibre_wireless_url") then
+                        address = {}
+                        address = G_reader_settings:readSetting("calibre_wireless_url")
+                        address = string.format("%s:%s", address["address"], address["port"])
+                    end
+                    return T(_("Server address (%1)"), address)
+                end,
+                sub_item_table = {
+                    {
+                        text = _("Automatic"),
+                        checked_func = function()
+                            return G_reader_settings:hasNot("calibre_wireless_url")
+                        end,
+                        callback = function()
+                            G_reader_settings:delSetting("calibre_wireless_url")
+                        end,
+                    },
+                    {
+                        text = _("Manual"),
+                        checked_func = function()
+                            return G_reader_settings:has("calibre_wireless_url")
+                        end,
+                        callback = function(touchmenu_instance)
+                            local MultiInputDialog = require("ui/widget/multiinputdialog")
+                            local url_dialog
+                            local calibre_url = G_reader_settings:readSetting("calibre_wireless_url")
+                            local calibre_url_address, calibre_url_port
+                            if calibre_url then
+                                calibre_url_address = calibre_url["address"]
+                                calibre_url_port = calibre_url["port"]
+                            end
+                            url_dialog = MultiInputDialog:new{
+                                title = _("Set custom calibre address"),
+                                fields = {
+                                    {
+                                        text = calibre_url_address,
+                                        input_type = "string",
+                                        hint = _("IP Address"),
+                                    },
+                                    {
+                                        text = calibre_url_port,
+                                        input_type = "number",
+                                        hint = _("Port"),
+                                    },
+                                },
+                                buttons =  {
+                                    {
+                                        {
+                                            text = _("Cancel"),
+                                            callback = function()
+                                                UIManager:close(url_dialog)
+                                            end,
+                                        },
+                                        {
+                                            text = _("OK"),
+                                            callback = function()
+                                                local fields = url_dialog:getFields()
+                                                if fields[1] ~= "" then
+                                                    local port = tonumber(fields[2])
+                                                    if not port or port < 1 or port > 65355 then
+                                                        --default port
+                                                        port = 9090
+                                                    end
+                                                    G_reader_settings:saveSetting("calibre_wireless_url", {address = fields[1], port = port })
+                                                end
+                                                UIManager:close(url_dialog)
+                                                if touchmenu_instance then touchmenu_instance:updateItems() end
+                                            end,
+                                        },
+                                    },
+                                },
+                            }
+                            UIManager:show(url_dialog)
+                            url_dialog:onShowKeyboard()
+                       end,
+                    },
+                }
             }
         }
     }
@@ -118,16 +211,22 @@ function CalibreCompanion:initCalibreMQ(host, port)
             port = port,
             receiveCallback = function(data)
                 self:onReceiveJSON(data)
+                if not self.connect_message then
+                    UIManager:show(InfoMessage:new{
+                        text = _("Connected to calibre server at ") .. host .. ":" .. port,
+                    })
+                    self.connect_message = true
+                    if self.failed_connect_callback then
+                        --don't disconnect if we connect in 10 seconds
+                        UIManager:unschedule(self.failed_connect_callback)
+                    end
+                end
             end,
         }
         self.calibre_socket:start()
         self.calibre_messagequeue = UIManager:insertZMQ(self.calibre_socket)
     end
     DEBUG("connected to calibre", host, port)
-    UIManager:show(InfoMessage:new{
-        text = _("Connected to calibre server at ") .. host .. ":" .. port,
-        timeout = 1,
-    })
 end
 
 -- will callback initCalibreMQ if inbox is confirmed to be set
@@ -145,7 +244,26 @@ function CalibreCompanion:setInboxDir(host, port)
 end
 
 function CalibreCompanion:connect()
-    local host, port = self:find_calibre_server()
+    self.connect_message = false
+    local host, port
+    if G_reader_settings:hasNot("calibre_wireless_url") then
+        host, port = self:find_calibre_server()
+    else
+        local calibre_url = G_reader_settings:readSetting("calibre_wireless_url")
+        host, port = calibre_url["address"], calibre_url["port"]
+        if not self:checkCalibreServer(host, port) then
+            host = nil
+        else
+            self.failed_connect_callback = function()
+                UIManager:show(InfoMessage:new{
+                    text = _("Cannot connect to calibre server."),
+                })
+                self:disconnect()
+            end
+            -- wait 10 seconds to connect to calibre
+            UIManager:scheduleIn(10, self.failed_connect_callback)
+        end
+    end
     if host and port then
         local inbox_dir = G_reader_settings:readSetting("inbox_dir")
         if inbox_dir then
@@ -166,6 +284,7 @@ end
 
 function CalibreCompanion:disconnect()
     DEBUG("disconnect from calibre")
+    self.connect_message = false
     self.calibre_socket:stop()
     UIManager:removeZMQ(self.calibre_messagequeue)
     self.calibre_socket = nil
