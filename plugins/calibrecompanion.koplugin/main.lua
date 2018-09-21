@@ -122,7 +122,6 @@ function CalibreCompanion:addToMainMenu(menu_items)
                 text_func = function()
                     local address = "automatic"
                     if G_reader_settings:has("calibre_wireless_url") then
-                        address = {}
                         address = G_reader_settings:readSetting("calibre_wireless_url")
                         address = string.format("%s:%s", address["address"], address["port"])
                     end
@@ -213,7 +212,7 @@ function CalibreCompanion:initCalibreMQ(host, port)
                 self:onReceiveJSON(data)
                 if not self.connect_message then
                     UIManager:show(InfoMessage:new{
-                        text = _("Connected to calibre server at ") .. host .. ":" .. port,
+                        text = T(_("Connected to calibre server at %1:%2"), host, port),
                     })
                     self.connect_message = true
                     if self.failed_connect_callback then
