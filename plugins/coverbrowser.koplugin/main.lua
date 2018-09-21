@@ -18,7 +18,6 @@ local FileChooser = require("ui/widget/filechooser")
 local _FileChooser__recalculateDimen_orig = FileChooser._recalculateDimen
 local _FileChooser_updateItems_orig = FileChooser.updateItems
 local _FileChooser_onCloseWidget_orig = FileChooser.onCloseWidget
-local _FileChooser_onSwipe_orig = FileChooser.onSwipe
 
 local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
 local _FileManagerHistory_updateItemTable_orig = FileManagerHistory.updateItemTable
@@ -454,7 +453,6 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
         -- Put back original methods
         FileChooser.updateItems = _FileChooser_updateItems_orig
         FileChooser.onCloseWidget = _FileChooser_onCloseWidget_orig
-        FileChooser.onSwipe = _FileChooser_onSwipe_orig
         FileChooser._recalculateDimen = _FileChooser__recalculateDimen_orig
         FileManager.tapPlus = _FileManager_tapPlus_orig
         -- Also clean-up what we added, even if it does not bother original code
@@ -471,7 +469,6 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
     local CoverMenu = require("covermenu")
     FileChooser.updateItems = CoverMenu.updateItems
     FileChooser.onCloseWidget = CoverMenu.onCloseWidget
-    FileChooser.onSwipe = CoverMenu.onSwipe
 
     if display_mode == "mosaic_image" or display_mode == "mosaic_text" then -- mosaic mode
         -- Replace some other original methods with those from our MosaicMenu
@@ -534,7 +531,6 @@ local function _FileManagerHistory_updateItemTable(self)
         local CoverMenu = require("covermenu")
         hist_menu.updateItems = CoverMenu.updateItems
         hist_menu.onCloseWidget = CoverMenu.onCloseWidget
-        hist_menu.onSwipe = CoverMenu.onSwipe
         -- Also replace original onMenuHold (it will use original method, so remember it)
         hist_menu.onMenuHold_orig = hist_menu.onMenuHold
         hist_menu.onMenuHold = CoverMenu.onHistoryMenuHold
