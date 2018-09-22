@@ -86,7 +86,7 @@ end
 
 function ReaderGesture:subMenuAction(ges, action)
     local ges_type
-    local zone = {}
+    local zone
     local overrides
     local direction, distance
     if ges == "tap_right_bottom_corner" then
@@ -119,7 +119,6 @@ function ReaderGesture:subMenuAction(ges, action)
         }
         direction = {'northeast', 'northwest', 'southeast', 'southwest'}
         distance = "short"
-        --todo: ovverrides short swipe (refresh)
         if self.is_docless then
             overrides = { 'filemanager_tap' }
         else
@@ -174,7 +173,6 @@ function ReaderGesture:gestureAction(action, return_value)
     elseif action == "toc" then
         self.ui:handleEvent(Event:new("ShowToc"))
     elseif action == "night_mode" then
-        local Screen = Device.screen
         local night_mode = G_reader_settings:readSetting("night_mode") or false
         Screen:toggleNightMode()
         UIManager:setDirty(nil, "full")
@@ -188,9 +186,7 @@ function ReaderGesture:gestureAction(action, return_value)
     elseif action =="page_update_down10" then
         self:pageUpdate(-10)
     elseif action =="folder_up" then
-        local lfs = require("libs/libkoreader-lfs")
-        local new_path = self.ui.file_chooser.path .. "/.."
-        self.ui.file_chooser:changeToPath(new_path)
+        self.ui.file_chooser:changeToPath(string.format("%s/..", self.ui.file_chooser.path))
     end
     if return_value then
         -- a long diagonal swipe may also be used for taking a screenshot,
