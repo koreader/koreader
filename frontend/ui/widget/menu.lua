@@ -1188,7 +1188,7 @@ function Menu:onSwipe(arg, ges_ev)
     elseif ges_ev.direction == "north" then
         -- no use for now
         do end -- luacheck: ignore 541
-    elseif not self.custom_touch_zone["short_diagonal_swipe"] then
+    elseif not (self.custom_touch_zone and self.custom_touch_zone["short_diagonal_swipe"]) then
         -- diagonal swipe
         -- don't do that when gesture manager sets short diagonal swipe otherwise
         -- trigger full refresh
