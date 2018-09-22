@@ -154,7 +154,7 @@ function FileManager:init()
                 return true
             end
         end,
-        custom_touch_zone = self.touch_zone_dg["nodes"],
+        custom_touch_zone = self.touch_zone_dg and self.touch_zone_dg["nodes"] or {},
         close_callback = function() return self:onClose() end,
         -- allow left bottom tap gesture, otherwise it is eaten by hidden return button
         return_arrow_propagation = true,
