@@ -38,8 +38,9 @@ end
 
 function Screenshoter:onScreenshot(filename)
     local screenshot_name = filename or os.date(self.screenshot_fn_fmt)
+    Screen:shot(screenshot_name)
     local widget = ConfirmBox:new{
-        text = T( _("Saving screenshot to %1.\nWould you like to set it as screensaver?"), screenshot_name),
+        text = T( _("Saved screenshot to %1.\nWould you like to set it as screensaver?"), screenshot_name),
         ok_text = _("Yes"),
         ok_callback = function()
             G_reader_settings:saveSetting("screensaver_type", "image_file")
@@ -48,7 +49,6 @@ function Screenshoter:onScreenshot(filename)
         cancel_text = _("No"),
     }
     UIManager:show(widget)
-    Screen:shot(screenshot_name)
     -- trigger full refresh
     UIManager:setDirty(nil, "full")
     return true

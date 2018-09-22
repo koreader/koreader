@@ -31,6 +31,7 @@ INSTALL_DIR=koreader-$(DIST)-$(MACHINE)
 
 # platform directories
 PLATFORM_DIR=platform
+COMMON_DIR=$(PLATFORM_DIR)/common
 KINDLE_DIR=$(PLATFORM_DIR)/kindle
 KOBO_DIR=$(PLATFORM_DIR)/kobo
 POCKETBOOK_DIR=$(PLATFORM_DIR)/pocketbook
@@ -40,10 +41,11 @@ ANDROID_DIR=$(PLATFORM_DIR)/android
 ANDROID_LAUNCHER_DIR:=$(ANDROID_DIR)/luajit-launcher
 UBUNTUTOUCH_SDL_DIR:=$(UBUNTUTOUCH_DIR)/ubuntu-touch-sdl
 WIN32_DIR=$(PLATFORM_DIR)/win32
+SONY_PRSTUX_DIR=$(PLATFORM_DIR)/sony-prstux
 
 # appimage setup
 APPIMAGETOOL=appimagetool-x86_64.AppImage
-APPIMAGETOOL_URL=https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+APPIMAGETOOL_URL=https://github.com/AppImage/AppImageKit/releases/download/10/appimagetool-x86_64.AppImage
 
 # set to 1 if in Docker
 DOCKER:=$(shell grep -q docker /proc/1/cgroup && echo 1)
@@ -165,8 +167,7 @@ kindleupdate: all
 	ln -sf ../$(KINDLE_DIR)/launchpad $(INSTALL_DIR)/
 	ln -sf ../../$(KINDLE_DIR)/koreader.sh $(INSTALL_DIR)/koreader
 	ln -sf ../../$(KINDLE_DIR)/libkohelper.sh $(INSTALL_DIR)/koreader
-	ln -sf ../../$(KINDLE_DIR)/kotar_cpoint $(INSTALL_DIR)/koreader
-	ln -sf ../../$(KINDLE_DIR)/zsync_status.sh $(INSTALL_DIR)/koreader
+	ln -sf ../../$(COMMON_DIR)/spinning_zsync $(INSTALL_DIR)/koreader
 	# create new package
 	cd $(INSTALL_DIR) && pwd && \
 		zip -9 -r \
@@ -198,7 +199,7 @@ koboupdate: all
 	cp $(KOBO_DIR)/koreader.png $(INSTALL_DIR)/koreader.png
 	cp $(KOBO_DIR)/fmon/README.txt $(INSTALL_DIR)/README_kobo.txt
 	cp $(KOBO_DIR)/*.sh $(INSTALL_DIR)/koreader
-	cp $(KOBO_DIR)/kotar_cpoint $(INSTALL_DIR)/koreader
+	cp $(COMMON_DIR)/spinning_zsync $(INSTALL_DIR)/koreader
 	# create new package
 	cd $(INSTALL_DIR) && \
 		zip -9 -r \
@@ -360,6 +361,32 @@ androidupdate: all
 	cp $(ANDROID_LAUNCHER_DIR)/bin/NativeActivity-debug.apk \
 		koreader-android-$(MACHINE)-$(VERSION).apk
 
+sony-prstuxupdate: all
+	# ensure that the binaries were built for ARM
+	file $(INSTALL_DIR)/koreader/luajit | grep ARM || exit 1
+	# remove old package if any	
+	rm -f koreader-sony-prstux-$(MACHINE)-$(VERSION).zip
+	# Sony PRSTUX launching scripts
+	cp $(SONY_PRSTUX_DIR)/*.sh $(INSTALL_DIR)/koreader
+	# create new package
+	cd $(INSTALL_DIR) && \
+	        zip -9 -r \
+	                ../koreader-sony-prstux-$(MACHINE)-$(VERSION).zip \
+	                koreader -x "koreader/resources/fonts/*" \
+	                "koreader/resources/icons/src/*" "koreader/spec/*" \
+	                $(ZIP_EXCLUDE)
+	# generate update package index file
+	zipinfo -1 koreader-sony-prstux-$(MACHINE)-$(VERSION).zip > \
+	        $(INSTALL_DIR)/koreader/ota/package.index
+	echo "koreader/ota/package.index" >> $(INSTALL_DIR)/koreader/ota/package.index
+	# update index file in zip package
+	cd $(INSTALL_DIR) && zip -u ../koreader-sony-prstux-$(MACHINE)-$(VERSION).zip \
+	        koreader/ota/package.index
+	# make gzip sonyprstux update for zsync OTA update
+	cd $(INSTALL_DIR) && \
+	        tar -I"gzip --rsyncable" -cah --no-recursion -f ../koreader-sony-prstux-$(MACHINE)-$(VERSION).targz \
+	        -T koreader/ota/package.index
+
 update:
 ifeq ($(TARGET), kindle)
 	make kindleupdate
@@ -371,6 +398,8 @@ else ifeq ($(TARGET), kobo)
 	make koboupdate
 else ifeq ($(TARGET), pocketbook)
 	make pbupdate
+else ifeq ($(TARGET), sony-prstux)
+	make sony-prstuxupdate
 else ifeq ($(TARGET), ubuntu-touch)
 	make utupdate
 else ifeq ($(TARGET), appimage)

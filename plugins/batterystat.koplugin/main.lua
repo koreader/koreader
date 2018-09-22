@@ -282,8 +282,6 @@ BatteryStat:init()
 
 local BatteryStatWidget = WidgetContainer:new{
     name = "batterystat",
-    fullname = _("Battery statistics"),
-    description = _([[Collects and displays battery statistics.]]),
 }
 
 function BatteryStatWidget:init()
@@ -295,6 +293,7 @@ end
 function BatteryStatWidget:addToMainMenu(menu_items)
     menu_items.battery_statistics = {
         text = _("Battery statistics"),
+        keep_menu_open = true,
         callback = function()
             BatteryStat:showStatistics()
         end,

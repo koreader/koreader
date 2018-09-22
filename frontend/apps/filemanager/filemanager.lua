@@ -12,6 +12,7 @@ local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local FileManagerConverter = require("apps/filemanager/filemanagerconverter")
 local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
 local FileManagerMenu = require("apps/filemanager/filemanagermenu")
+local FileManagerShortcuts = require("apps/filemanager/filemanagershortcuts")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
@@ -462,6 +463,25 @@ function FileManager:tapPlus()
                     UIManager:close(self.file_dialog)
                 end
             }
+        },
+        {
+            {
+                text = _("Folder shortcuts"),
+                callback = function()
+                    local fm_bookmark =  FileManagerShortcuts:new{
+                        title = _("Folder shortcuts"),
+                        show_parent = self,
+                        curr_path = self.file_chooser.path,
+                        goFolder = function(folder)
+                            if folder ~= nil and lfs.attributes(folder, "mode") == "directory" then
+                                self.file_chooser:changeToPath(folder)
+                            end
+                        end,
+                    }
+                    UIManager:show(fm_bookmark)
+                    UIManager:close(self.file_dialog)
+                end
+            }
         }
     }
 
@@ -625,7 +645,6 @@ function FileManager:pasteHere(file)
                     timeout = 2,
                 })
             end
-            util.execute(self.cp_bin, "-r", orig, dest)
         end
 
         local info_file
@@ -814,6 +833,7 @@ function FileManager:getStartWithMenuTable()
     local start_withs = {
         filemanager = {_("file browser"), _("Start with file browser")},
         history = {_("history"), _("Start with history")},
+        folder_shortcuts = {_("folder shortcuts"), _("Start with folder shortcuts")},
         last = {_("last file"), _("Start with last file")},
     }
     local set_sw_table = function(start_with)
@@ -838,6 +858,7 @@ function FileManager:getStartWithMenuTable()
         sub_item_table = {
             set_sw_table("filemanager"),
             set_sw_table("history"),
+            set_sw_table("folder_shortcuts"),
             set_sw_table("last"),
         }
     }

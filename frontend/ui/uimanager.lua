@@ -166,6 +166,30 @@ function UIManager:init()
             Device:usbPlugOut()
             self:_afterNotCharging()
         end
+    elseif Device:isSonyPRSTUX() then
+        self.event_handlers["PowerPress"] = function()
+            UIManager:scheduleIn(2, self.poweroff_action)
+        end
+        self.event_handlers["PowerRelease"] = function()
+            if not self._entered_poweroff_stage then
+                UIManager:unschedule(self.poweroff_action)
+                self:_beforeSuspend()
+                Device:intoScreenSaver()
+                Device:suspend()
+            end
+        end
+        self.event_handlers["Suspend"] = self.event_handlers["PowerRelease"]
+        self.event_handlers["Resume"] = function()
+            Device:resume()
+            Device:outofScreenSaver()
+            self:_afterResume()
+        end
+        self.event_handlers["__default__"] = function(input_event)
+            -- Same as in Kobo: we want to ignore keys during suspension
+            if not Device.screen_saver_mode then
+                self:sendEvent(input_event)
+            end
+        end
     elseif Device:isSDL() then
         self.event_handlers["Suspend"] = function()
             self:_beforeSuspend()
@@ -768,6 +792,9 @@ function UIManager:_repaint()
     -- execute refreshes:
     for _, refresh in ipairs(self._refresh_stack) do
         dbg:v("triggering refresh", refresh)
+        -- NOTE: We overshoot by 1px to account for potential off-by-ones.
+        --       This may not strictly be needed anymore, and is blatantly unneeded for full-screen updates,
+        --       but checkBounds & getPhysicalRect will sanitize that in mxc_update @ ffi/framebuffer_mxcfb ;).
         Screen[refresh_methods[refresh.mode]](Screen,
             refresh.region.x - 1, refresh.region.y - 1,
             refresh.region.w + 2, refresh.region.h + 2)
@@ -939,7 +966,7 @@ end
 -- Executes all the operations of a suspending request. This function usually puts the device into
 -- suspension.
 function UIManager:suspend()
-    if Device:isKobo() or Device:isSDL() then
+    if Device:isKobo() or Device:isSDL() or Device:isSonyPRSTUX() then
         self.event_handlers["Suspend"]()
     elseif Device:isKindle() then
         self.event_handlers["IntoSS"]()
@@ -948,7 +975,7 @@ end
 
 -- Executes all the operations of a resume request. This function usually wakes up the device.
 function UIManager:resume()
-    if Device:isKobo() or Device:isSDL() then
+    if Device:isKobo() or Device:isSDL() or Device:isSonyPRSTUX() then
         self.event_handlers["Resume"]()
     elseif Device:isKindle() then
         self.event_handlers["OutOfSS"]()

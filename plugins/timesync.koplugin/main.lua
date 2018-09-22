@@ -19,8 +19,6 @@ local NetworkMgr = require("ui/network/manager")
 
 local TimeSync = WidgetContainer:new{
     name = "timesync",
-    fullname = _("Time sync"),
-    description = _([[Synchronizes the device time with NTP servers.]]),
 }
 
 local function currentTime()
@@ -58,6 +56,7 @@ end
 
 local menuItem = {
     text = _("Synchronize time"),
+    keep_menu_open = true,
     callback = function()
         if NetworkMgr:isOnline() then
             execute()

@@ -16,8 +16,6 @@ local Blitbuffer = require("ffi/blitbuffer")
 local PerceptionExpander = Widget:extend{
     is_enabled = nil,
     name = "perceptionexpander",
-    fullname = _("Perception expander"),
-    description = _([[Improves your reading speed with the help of two vertical lines over the text.]]),
     page_counter = 0,
     shift_each_pages = 100,
     margin = 0.1,
@@ -175,12 +173,14 @@ function PerceptionExpander:addToMainMenu(menu_items)
             },
             {
                 text = _("Settings"),
+                keep_menu_open = true,
                 callback = function()
                     self:showSettingsDialog()
                 end,
             },
             {
                 text = _("About"),
+                keep_menu_open = true,
                 callback = function()
                     UIManager:show(InfoMessage:new{
                         text = _("For more information see wiki page Perception Expander Plugin"),

@@ -35,6 +35,7 @@ local Device = {
     isKindle = no,
     isKobo = no,
     isPocketBook = no,
+    isSonyPRSTUX = no,
     isAndroid = no,
     isSDL = no,
 

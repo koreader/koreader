@@ -15,8 +15,6 @@ int rmdir(const char *);
 require("ffi/zeromq_h")
 local ZSync = InputContainer:new{
     name = "zsync",
-    fullname = _("Zsync"),
-    description = _([[Devices in the same Wi-Fi network can transfer documents between each other directly.]]),
     is_doc_only = true,
 }
 
@@ -231,7 +229,7 @@ function ZSync:subscribe()
     self.received = {}
     local zsync = self
     require("ui/downloadmgr"):new{
-        title = _("Choose inbox by long-pressing"),
+        show_hidden = G_reader_settings:readSetting("show_hidden"),
         onConfirm = function(inbox)
             G_reader_settings:saveSetting("inbox_dir", inbox)
             zsync:onChooseInbox(inbox)

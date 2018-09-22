@@ -46,7 +46,11 @@ function TextWidget:updateSize()
     if not tsize then
         self._length = 0
     else
-        self._length = math.ceil(tsize.x)
+        -- As text length includes last glyph pen "advance" (for positionning
+        -- next char), it's best to use math.floor() instead of math.ceil()
+        -- to get rid of a fraction of it in case this text is to be
+        -- horizontally centered
+        self._length = math.floor(tsize.x)
     end
     -- Used to be:
     --   self._height = math.ceil(self.face.size * 1.5)

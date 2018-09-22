@@ -103,7 +103,9 @@ function ReaderHighlight:genHighlightDrawerMenu()
             callback = function()
                 self.view.highlight.disabled = not self.view.highlight.disabled
             end,
-            hold_callback = function() self:makeDefault(not self.view.highlight.disabled) end,
+            hold_callback = function(touchmenu_instance)
+                self:makeDefault(not self.view.highlight.disabled)
+            end,
         },
         get_highlight_style("lighten"),
         get_highlight_style("underscore"),
@@ -736,7 +738,6 @@ function ReaderHighlight:makeDefault(highlight_disabled)
             G_reader_settings:saveSetting("highlight_disabled", highlight_disabled)
         end,
     })
-    self.view.highlight.disabled = highlight_disabled
 end
 
 return ReaderHighlight

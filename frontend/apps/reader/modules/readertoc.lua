@@ -476,11 +476,12 @@ function ReaderToc:addToMainMenu(menu_items)
         end,
     }
     if self.ui.document:canHaveAlternativeToc() then
-        menu_items.table_of_contents.hold_callback = function()
+        menu_items.table_of_contents.hold_callback = function(touchmenu_instance)
             if self.ui.document:isTocAlternativeToc() then
                 UIManager:show(ConfirmBox:new{
                     text = _("The table of content for this book is currently an alternative one built from the document headings.\nDo you want to get back the original table of content? (The book will be reloaded.)"),
                     ok_callback = function()
+                        touchmenu_instance:closeMenu()
                         self.ui.doc_settings:delSetting("alternative_toc")
                         self.ui.document:invalidateCacheFile()
                         -- Allow for ConfirmBox to be closed before showing
@@ -494,6 +495,7 @@ function ReaderToc:addToMainMenu(menu_items)
                 UIManager:show(ConfirmBox:new{
                     text = _("Do you want to use an alternative table of content built from the document headings?"),
                     ok_callback = function()
+                        touchmenu_instance:closeMenu()
                         self:resetToc()
                         self.ui.document:buildAlternativeToc()
                         self.ui.doc_settings:saveSetting("alternative_toc", true)

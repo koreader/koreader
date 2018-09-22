@@ -240,8 +240,6 @@ SystemStat:init()
 
 local SystemStatWidget = WidgetContainer:new{
     name = "systemstat",
-    fullname = _("System statistics"),
-    description = _([[Shows system statistics.]]),
 }
 
 function SystemStatWidget:init()
@@ -251,6 +249,7 @@ end
 function SystemStatWidget:addToMainMenu(menu_items)
     menu_items.system_statistics = {
         text = _("System statistics"),
+        keep_menu_open = true,
         callback = function()
             SystemStat:showStatistics()
         end,

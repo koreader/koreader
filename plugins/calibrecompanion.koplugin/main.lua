@@ -23,8 +23,6 @@ require("ffi/zeromq_h")
 --]]
 local CalibreCompanion = InputContainer:new{
     name = "calibrecompanion",
-    fullname = _("Calibre companion"),
-    description = _([[Send documents from calibre library directly to device via Wi-Fi connection]]),
     -- calibre companion local port
     port = 8134,
     -- calibre broadcast ports used to find calibre server
@@ -88,9 +86,11 @@ function CalibreCompanion:addToMainMenu(menu_items)
         sub_item_table = {
             {
                 text_func = function()
-                    return not self.calibre_socket
-                        and _("Connect")
-                        or _("Disconnect")
+                    if self.calibre_socket then
+                        return _("Disconnect")
+                    else
+                        return _("Connect")
+                    end
                 end,
                 callback = function()
                     if not self.calibre_socket then
@@ -100,6 +100,12 @@ function CalibreCompanion:addToMainMenu(menu_items)
                     end
                 end
             },
+            {
+                text = _("Set inbox directory"),
+                callback = function()
+                    CalibreCompanion:setInboxDir()
+                end
+            }
         }
     }
 end
@@ -128,11 +134,12 @@ end
 function CalibreCompanion:setInboxDir(host, port)
     local calibre_device = self
     require("ui/downloadmgr"):new{
-        title = _("Choose inbox by long-pressing"),
         onConfirm = function(inbox)
             DEBUG("set inbox directory", inbox)
             G_reader_settings:saveSetting("inbox_dir", inbox)
-            calibre_device:initCalibreMQ(host, port)
+            if host and port then
+                calibre_device:initCalibreMQ(host, port)
+            end
         end,
     }:chooseDir()
 end

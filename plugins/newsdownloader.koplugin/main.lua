@@ -17,8 +17,6 @@ local T = FFIUtil.template
 
 local NewsDownloader = WidgetContainer:new{
     name = "newsdownloader",
-    fullname = _("News downloader"),
-    description = _([[Retrieves RSS and Atom news entries and saves them as HTML files.]]),
 }
 
 local initialized = false
@@ -76,6 +74,7 @@ function NewsDownloader:addToMainMenu(menu_items)
         sub_item_table = {
             {
                 text = _("Download news"),
+                keep_menu_open = true,
                 callback = function()
                     if not NetworkMgr:isOnline() then
                         wifi_enabled_before_action = false
@@ -98,6 +97,7 @@ function NewsDownloader:addToMainMenu(menu_items)
             },
             {
                 text = _("Remove news"),
+                keep_menu_open = true,
                 callback = function() self:removeNewsButKeepFeedConfig() end,
             },
             {
@@ -105,16 +105,19 @@ function NewsDownloader:addToMainMenu(menu_items)
                 sub_item_table = {
                     {
                         text = _("Change feeds configuration"),
+                        keep_menu_open = true,
                         callback = function() self:changeFeedConfig() end,
                     },
                     {
                         text = _("Set custom download directory"),
+                        keep_menu_open = true,
                         callback = function() self:setCustomDownloadDirectory() end,
                     },
                 },
             },
             {
                 text = _("Help"),
+                keep_menu_open = true,
                 callback = function()
                     UIManager:show(InfoMessage:new{
                         text = T(_("News downloader retrieves RSS and Atom news entries and stores them to:\n%1\n\nEach entry is a separate html file, that can be browsed by KOReader file manager.\nItems download limit can be configured in Settings."),
@@ -366,11 +369,7 @@ function NewsDownloader:removeNewsButKeepFeedConfig()
 end
 
 function NewsDownloader:setCustomDownloadDirectory()
-    UIManager:show(InfoMessage:new{
-       text = _("To select a folder press down and hold it for 1 second.")
-    })
     require("ui/downloadmgr"):new{
-       title = _("Choose download directory"),
        onConfirm = function(path)
            logger.dbg("NewsDownloader: set download directory to: ", path)
            local news_downloader_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), news_downloader_config_file))

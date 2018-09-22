@@ -11,8 +11,6 @@ local Screen = require("device").screen
 
 local Terminal = WidgetContainer:new{
     name = "terminal",
-    fullname = _("Terminal"),
-    description = _([[Executes simple commands and shows their output.]]),
     dump_file = util.realpath(DataStorage:getDataDir()) .. "/terminal_output.txt",
     command = "",
 }
@@ -90,6 +88,7 @@ end
 function Terminal:addToMainMenu(menu_items)
     menu_items.terminal = {
         text = _("Terminal emulator"),
+        keep_menu_open = true,
         callback = function()
             self:start()
         end,

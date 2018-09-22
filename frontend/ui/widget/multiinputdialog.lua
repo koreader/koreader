@@ -42,6 +42,7 @@ function MultiInputDialog:init()
             text = field.text or "",
             hint = field.hint or "",
             input_type = field.input_type or "string",
+            text_type =  field.text_type,
             face = self.input_face,
             width = self.width * 0.9,
             focused = k == 1 and true or false,

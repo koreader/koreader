@@ -83,7 +83,7 @@ function Button:init()
         }
     }
     if self.preselect then
-        self:onFocus()
+        self.frame.invert = true
     end
     self.dimen = self.frame:getSize()
     self[1] = self.frame
@@ -120,11 +120,13 @@ function Button:setIcon(icon)
 end
 
 function Button:onFocus()
+    if self.no_focus then return end
     self.frame.invert = true
     return true
 end
 
 function Button:onUnfocus()
+    if self.no_focus then return end
     self.frame.invert = false
     return true
 end

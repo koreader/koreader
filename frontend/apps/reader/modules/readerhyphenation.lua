@@ -112,8 +112,7 @@ function ReaderHyphenation:init()
                     -- signal readerrolling to update pos in new height, and redraw page
                     self.ui:handleEvent(Event:new("UpdatePos"))
                 end,
-                hold_may_update_menu = true,
-                hold_callback = function(refresh_menu_func)
+                hold_callback = function(touchmenu_instance)
                     UIManager:show(MultiConfirmBox:new{
                         -- No real need for a way to remove default one, we can just
                         -- toggle between setting a default OR a fallback (if a default
@@ -125,13 +124,13 @@ function ReaderHyphenation:init()
                         choice1_callback = function()
                             G_reader_settings:saveSetting("hyph_alg_default", v.filename)
                             G_reader_settings:delSetting("hyph_alg_fallback")
-                            if refresh_menu_func then refresh_menu_func() end
+                            if touchmenu_instance then touchmenu_instance:updateItems() end
                         end,
                         choice2_text = _("Fallback"),
                         choice2_callback = function()
                             G_reader_settings:saveSetting("hyph_alg_fallback", v.filename)
                             G_reader_settings:delSetting("hyph_alg_default")
-                            if refresh_menu_func then refresh_menu_func() end
+                            if touchmenu_instance then touchmenu_instance:updateItems() end
                         end,
                     })
                 end,

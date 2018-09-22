@@ -154,13 +154,15 @@ If any of the other Swipe to follow link options is enabled, this will work only
         text = _("Go back to previous location"),
         enabled_func = function() return #self.location_stack > 0 end,
         callback = function() self:onGoBackLink() end,
-        hold_callback = function() UIManager:show(ConfirmBox:new{
-            text = _("Clear location history?"),
-            ok_text = _("Clear"),
-            ok_callback = function()
-                self.location_stack = {}
-            end,
-        })
+        hold_callback = function(touchmenu_instance)
+            UIManager:show(ConfirmBox:new{
+                text = _("Clear location history?"),
+                ok_text = _("Clear"),
+                ok_callback = function()
+                    self.location_stack = {}
+                    touchmenu_instance:closeMenu()
+                end,
+            })
         end,
     }
 end

@@ -338,7 +338,6 @@ function ReaderStyleTweak:init()
             self.enabled = not self.enabled
             self:updateCssText(true) -- apply it immediately
         end,
-        hold_may_update_menu = true, -- just to keep menu opened
         hold_callback = function()
             UIManager:show(InfoMessage:new{
                 text = _(
@@ -398,8 +397,7 @@ You can enable individual tweaks on this book with a tap, or view more details a
                     end
                     return title
                 end,
-                hold_may_update_menu = true,
-                hold_callback = function(refresh_menu_func)
+                hold_callback = function(touchmenu_instance)
                     UIManager:show(TweakInfoWidget:new{
                         tweak = item,
                         is_global_default = self.global_tweaks[item.id],
@@ -409,7 +407,7 @@ You can enable individual tweaks on this book with a tap, or view more details a
                             else
                                 self.global_tweaks[item.id] = true
                             end
-                            refresh_menu_func()
+                            touchmenu_instance:updateItems()
                             self:updateCssText(true) -- apply it immediately
                         end
                     })

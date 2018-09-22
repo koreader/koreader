@@ -22,8 +22,6 @@ local swipe_touch_zone_ratio_warmth = { x = 7/8, y = 1/8, w = 1/8, h = 7/8, }
 
 local KoboLight = WidgetContainer:new{
     name = 'kobolight',
-    fullname = _("Frontlight gesture controller"),
-    description = _([[Controls the frontlight with gestures on the left border of screen.]]),
     gestureScale = nil,  -- initialized in self:resetLayout()
 }
 
@@ -232,6 +230,7 @@ end
 function KoboLight:addToMainMenu(menu_items)
     menu_items.frontlight_gesture_controller = {
         text = _("Frontlight gesture controller"),
+        keep_menu_open = true,
         callback = function()
             local image_name
             local nl_text = ""

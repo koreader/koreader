@@ -125,8 +125,8 @@ function ReaderTypeset:genStyleSheetMenu()
             callback = function()
                 self:setStyleSheet(css_file or self.ui.document.default_css)
             end,
-            hold_callback = function()
-                self:makeDefaultStyleSheet(css_file, text)
+            hold_callback = function(touchmenu_instance)
+                self:makeDefaultStyleSheet(css_file, text, touchmenu_instance)
             end,
             checked_func = function()
                 if not css_file then -- "Auto"
@@ -301,11 +301,12 @@ function ReaderTypeset:makeDefaultFloatingPunctuation()
     })
 end
 
-function ReaderTypeset:makeDefaultStyleSheet(css, text)
+function ReaderTypeset:makeDefaultStyleSheet(css, text, touchmenu_instance)
     UIManager:show(ConfirmBox:new{
         text = T( _("Set default style to %1?"), text),
         ok_callback = function()
             G_reader_settings:saveSetting("copt_css", css)
+            if touchmenu_instance then touchmenu_instance:updateItems() end
         end,
     })
 end

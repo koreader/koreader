@@ -47,13 +47,12 @@ function ToggleSwitch:init()
     -- Item count per row
     self.n_pos = math.ceil(#self.toggle / self.row_count)
     self.position = nil
-    local border_size = Size.border.thin
 
     self.toggle_frame = FrameContainer:new{
         background = Blitbuffer.COLOR_WHITE,
         color = Blitbuffer.COLOR_GREY,
         radius = Size.radius.window,
-        bordersize = border_size,
+        bordersize = Size.border.thin,
         padding = Size.padding.small,
         dim = not self.enabled,
     }
@@ -63,20 +62,25 @@ function ToggleSwitch:init()
         table.insert(self.toggle_content, HorizontalGroup:new{})
     end
 
+    local item_padding = Size.padding.default -- only used to check if text truncate needed
+    local item_border_size = Size.border.thin
+    local frame_inner_width = self.width - 2*self.toggle_frame.padding - 2* self.toggle_frame.bordersize
+    local item_width = math.ceil(frame_inner_width / self.n_pos - 2*item_border_size)
+    local item_height = self.height / self.row_count
+    -- Note: the height provided by ConfigDialog might be smaller than needed,
+    -- it gets too thin if we account for padding & border
     local center_dimen = Geom:new{
-        w = (self.width - border_size*(2*self.n_pos-2)) / self.n_pos,
-        h = self.height / self.row_count,
+        w = item_width,
+        h = item_height,
     }
-    local button_width = math.floor(self.width / self.n_pos)
     for i = 1, #self.toggle do
         local text = self.toggle[i]
         local face = Font:getFace(self.font_face, self.font_size)
-        local txt_width = RenderText:sizeUtf8Text(0, Screen:getWidth(), face, text, nil, self.bold).x
-        if  button_width - Size.padding.default < txt_width then
-            text = RenderText:truncateTextByWidth(text, face, button_width - Size.padding.default, nil, self.bold)
+        local txt_width = RenderText:sizeUtf8Text(0, Screen:getWidth(), face, text, true, true).x
+        if  txt_width > item_width - item_padding then
+            text = RenderText:truncateTextByWidth(text, face, item_width - item_padding, true, true)
         end
         local label = ToggleLabel:new{
-            align = "center",
             text = text,
             face = face,
         }
@@ -89,7 +93,7 @@ function ToggleSwitch:init()
             color = Blitbuffer.COLOR_GREY,
             margin = 0,
             radius = Size.radius.window,
-            bordersize = border_size,
+            bordersize = item_border_size,
             padding = 0,
             content,
         }

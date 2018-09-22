@@ -20,8 +20,6 @@ end
 
 local KOSync = InputContainer:new{
     name = "kosync",
-    fullname = _("Progress sync"),
-    description = _([[Synchronizes your reading progess to a server across your KOReader devices.]]),
     is_doc_only = true,
     title = _("Register/login to KOReader server"),
 
@@ -96,6 +94,7 @@ function KOSync:addToMainMenu(menu_items)
                     return self.kosync_userkey and (_("Logout"))
                         or _("Register") .. " / " .. _("Login")
                 end,
+                keep_menu_open = true,
                 callback_func = function()
                     return self.kosync_userkey and
                         function() self:logout() end or
@@ -207,6 +206,7 @@ function KOSync:addToMainMenu(menu_items)
             },
             {
                 text = _("Custom sync server"),
+                keep_menu_open = true,
                 tap_input_func = function()
                     return {
                         title = _("Custom progress sync server address"),

@@ -10,8 +10,6 @@ local NetworkMgr = require("ui/network/manager")
 
 local Goodreads = InputContainer:new {
     name = "goodreads",
-    fullname = _("Goodreads"),
-    description = _([[Allows browsing and searching the Goodreads database of books.]]),
     goodreads_key = "",
     goodreads_secret = "",
 }
@@ -31,12 +29,15 @@ function Goodreads:addToMainMenu(menu_items)
         sub_item_table = {
             {
                 text = _("Settings"),
+                keep_menu_open = true,
                 callback = function() self:updateSettings() end,
             },
             {
                 text = _("Search all books"),
-                callback = function()
+                keep_menu_open = true,
+                callback = function(touchmenu_instance)
                     if self.goodreads_key ~= ""  then
+                        touchmenu_instance:closeMenu()
                         self:search("all")
                     else
                         UIManager:show(InfoMessage:new{
@@ -47,8 +48,10 @@ function Goodreads:addToMainMenu(menu_items)
             },
             {
                 text = _("Search for book by title"),
-                callback = function()
+                keep_menu_open = true,
+                callback = function(touchmenu_instance)
                     if self.goodreads_key ~= ""  then
+                        touchmenu_instance:closeMenu()
                         self:search("title")
                     else
                         UIManager:show(InfoMessage:new{
@@ -59,10 +62,11 @@ function Goodreads:addToMainMenu(menu_items)
             },
             {
                 text = _("Search for book by author"),
-                callback = function()
+                keep_menu_open = true,
+                callback = function(touchmenu_instance)
                     if self.goodreads_key ~= ""  then
+                        touchmenu_instance:closeMenu()
                         self:search("author")
-
                     else
                         UIManager:show(InfoMessage:new{
                             text = _("Please set up your Goodreads key in the settings dialog"),

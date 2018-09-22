@@ -152,14 +152,15 @@ function TouchMenuItem:onTapSelect(arg, ges)
         UIManager:tickAfterNext(function()
             self.menu:onMenuSelect(self.item)
             self.item_frame.invert = false
-            --[[
-            -- NOTE: We can optimize that repaint away, every entry in our menu will make at least the menu repaint just after anyways ;).
-            --       Plus, leaving that unhighlight as "fast" can lead to weird side-effects, depending on devices.
-            --       If it turns out this need to go back in, consider switching it to "ui".
-            UIManager:setDirty(self.show_parent, function()
-                return "fast", self.dimen
-            end)
-            --]]
+            -- NOTE: We can *usually* optimize that repaint away, as most entries in the menu will at least trigger a menu repaint ;).
+            --       But when stuff doesn't repaint the menu and keeps it open, we need to do it.
+            --       Since it's an *un*highlight containing text, we make it "ui" and not "fast", both so it won't mangle text,
+            --       and because "fast" can have some weird side-effects on some devices in this specific instance...
+            if self.item.hold_keep_menu_open or self.item.keep_menu_open then
+                UIManager:setDirty(self.show_parent, function()
+                    return "ui", self.dimen
+                end)
+            end
         end)
     end
     return true
@@ -693,7 +694,9 @@ function TouchMenu:onMenuSelect(item)
         self.touch_menu_callback()
     end
     if item.tap_input or type(item.tap_input_func) == "function" then
-        self:closeMenu()
+        if not item.keep_menu_open then
+            self:closeMenu()
+        end
         if item.tap_input then
             self:onInput(item.tap_input)
         else
@@ -714,10 +717,14 @@ function TouchMenu:onMenuSelect(item)
                 -- put stuff in scheduler so we can see
                 -- the effect of inverted menu item
                 UIManager:tickAfterNext(function()
+                    -- Provide callback with us, so it can call our
+                    -- closemenu() or updateItems() when it sees fit
+                    -- (if not providing checked or checked_fund, caller
+                    -- must set keep_menu_open=true if that is wished)
                     callback(self)
                     if refresh then
                         self:updateItems()
-                    else
+                    elseif not item.keep_menu_open then
                         self:closeMenu()
                     end
                 end)
@@ -737,7 +744,9 @@ function TouchMenu:onMenuHold(item)
         self.touch_menu_callback()
     end
     if item.hold_input or type(item.hold_input_func) == "function" then
-        self:closeMenu()
+        if item.hold_keep_menu_open == false then
+            self:closeMenu()
+        end
         if item.hold_input then
             self:onInput(item.hold_input)
         else
@@ -750,12 +759,15 @@ function TouchMenu:onMenuHold(item)
         end
         if callback then
             UIManager:tickAfterNext(function()
-                if item.hold_may_update_menu then
-                    callback(function() self:updateItems() end)
-                else
+                -- With hold, the default is to keep menu open, as we're
+                -- most often showing a ConfirmBox that can be cancelled
+                -- (provide hold_keep_menu_open=false to override)
+                if item.hold_keep_menu_open == false then
                     self:closeMenu()
-                    callback()
                 end
+                -- Provide callback with us, so it can call our
+                -- closemenu() or updateItems() when it sees fit
+                callback(self)
             end)
         end
     elseif item.help_text or type(item.help_text_func) == "function" then

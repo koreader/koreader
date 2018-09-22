@@ -1,6 +1,6 @@
 local Device = require("device")
 
-if not Device:isKobo() and not Device:isSDL() then return { disabled = true, } end
+if not Device:isKobo() and not Device:isSDL() and not Device:isSonyPRSTUX() then return { disabled = true, } end
 
 local DataStorage = require("datastorage")
 local LuaSettings = require("luasettings")
@@ -112,8 +112,6 @@ AutoSuspend:init()
 
 local AutoSuspendWidget = WidgetContainer:new{
     name = "autosuspend",
-    fullname = _("Auto suspend"),
-    description = _([[Suspends the device after a period of inactivity.]]),
 }
 
 function AutoSuspendWidget:onInputEvent()

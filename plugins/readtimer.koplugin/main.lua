@@ -7,8 +7,6 @@ local _ = require("gettext")
 
 local ReadTimer = WidgetContainer:new{
     name = "readtimer",
-    fullname = _("Read timer"),
-    description = _([[Shows an alarm after a specified amount of time.]]),
     time = 0,  -- The expected time of alarm if enabled, or 0.
 }
 
@@ -71,7 +69,8 @@ function ReadTimer:addToMainMenu(menu_items)
         sub_item_table = {
             {
                 text = _("Time"),
-                callback = function()
+                keep_menu_open = true,
+                callback = function(touchmenu_instance)
                     local now_t = os.date("*t")
                     local curr_hour = now_t.hour
                     local curr_min = now_t.min
@@ -82,6 +81,7 @@ function ReadTimer:addToMainMenu(menu_items)
                         ok_text = _("Set timer"),
                         title_text =  _("Set reader timer"),
                         callback = function(time)
+                            touchmenu_instance:closeMenu()
                             self:unschedule()
                             local timer_sec_from_mignight = time.hour*3600 + time.min*60
                             local seconds
@@ -127,7 +127,8 @@ function ReadTimer:addToMainMenu(menu_items)
             },
             {
                 text = _("Minutes from now"),
-                callback = function()
+                keep_menu_open = true,
+                callback = function(touchmenu_instance)
                     local remain_time = {}
                     local remain_hours, remain_minutes = self:remainingTime()
                     if not remain_hours and not remain_minutes then
@@ -144,6 +145,7 @@ function ReadTimer:addToMainMenu(menu_items)
                         ok_text = _("Set timer"),
                         title_text =  _("Set reader timer from now (hours:minutes)"),
                         callback = function(time)
+                            touchmenu_instance:closeMenu()
                             self:unschedule()
                             local seconds = time.hour * 3600 + time.min * 60
                             if seconds > 0 then
@@ -177,11 +179,13 @@ function ReadTimer:addToMainMenu(menu_items)
             },
             {
                 text = _("Stop timer"),
+                keep_menu_open = true,
                 enabled_func = function()
                     return self:scheduled()
                 end,
-                callback = function()
+                callback = function(touchmenu_instance)
                     self:unschedule()
+                    touchmenu_instance:updateItems()
                 end,
             },
         },

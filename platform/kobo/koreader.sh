@@ -28,8 +28,14 @@ ko_update_check() {
     NEWUPDATE="${KOREADER_DIR}/ota/koreader.updated.tar"
     INSTALLED="${KOREADER_DIR}/ota/koreader.installed.tar"
     if [ -f "${NEWUPDATE}" ]; then
+        ./fbink -q -y -7 -pmh "Updating KOReader"
+        # NOTE: See frontend/ui/otamanager.lua for a few more details on how we squeeze a percentage out of tar's checkpoint feature
+        # NOTE: %B should always be 512 in our case, so let stat do part of the maths for us instead of using %s ;).
+        FILESIZE="$(stat -c %b "${NEWUPDATE}")"
+        BLOCKS="$((FILESIZE / 20))"
+        export CPOINTS="$((BLOCKS / 100))"
         # shellcheck disable=SC2016
-        ./tar xf "${NEWUPDATE}" --strip-components=1 --no-same-permissions --no-same-owner --checkpoint=200 --checkpoint-action=exec='./kotar_cpoint $TAR_CHECKPOINT'
+        ./tar xf "${NEWUPDATE}" --strip-components=1 --no-same-permissions --no-same-owner --checkpoint="${CPOINTS}" --checkpoint-action=exec='./fbink -q -y -6 -P $(($TAR_CHECKPOINT/$CPOINTS))'
         fail=$?
         # Cleanup behind us...
         if [ "${fail}" -eq 0 ]; then
@@ -42,6 +48,7 @@ ko_update_check() {
             ./fbink -q -y -5 -pm "KOReader may fail to function properly!"
         fi
         rm -f "${NEWUPDATE}" # always purge newupdate in all cases to prevent update loop
+        unset BLOCKS CPOINTS
     fi
 }
 # NOTE: Keep doing an initial update check, in addition to one during the restart loop, so we can pickup potential updates of this very script...

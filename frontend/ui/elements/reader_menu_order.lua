@@ -17,7 +17,6 @@ local order = {
         "skim_to",
         "----------------------------",
         "go_to_previous_location",
-        "follow_links",
     },
     typeset = {
         "set_render_style",
@@ -44,8 +43,10 @@ local order = {
         "network",
         "screen",
         "screensaver",
+        "----------------------------",
         "document",
         "navigation",
+        "follow_links",
         "----------------------------",
         "language",
         "device",

@@ -7,7 +7,7 @@ PROC_FIVEWAY="/proc/fiveway"
 [ -e "${PROC_FIVEWAY}" ] && echo unlock >"${PROC_FIVEWAY}"
 
 # KOReader's working directory
-KOREADER_DIR="/mnt/us/koreader"
+export KOREADER_DIR="/mnt/us/koreader"
 
 # Load our helper functions...
 if [ -f "${KOREADER_DIR}/libkohelper.sh" ]; then
@@ -99,21 +99,17 @@ ko_update_check() {
     NEWUPDATE="${KOREADER_DIR}/ota/koreader.updated.tar"
     INSTALLED="${KOREADER_DIR}/ota/koreader.installed.tar"
     if [ -f "${NEWUPDATE}" ]; then
-        logmsg "Updating koreader . . ."
-        # Look for our own GNU tar build to do a fancy progress tracking...
-        GNUTAR_BIN="${KOREADER_DIR}/tar"
-        if [ -x "${GNUTAR_BIN}" ]; then
-            # Let our checkpoint script handle the detailed visual feedback...
-            eips_print_bottom_centered "Updating KOReader" 3
-            # shellcheck disable=SC2016
-            ${GNUTAR_BIN} -C "/mnt/us" --no-same-owner --no-same-permissions --checkpoint=200 --checkpoint-action=exec='./kotar_cpoint $TAR_CHECKPOINT' -xf "${NEWUPDATE}"
-            fail=$?
-        else
-            # Fall back to busybox tar
-            eips_print_bottom_centered "Updating KOReader . . ." 3
-            tar -C "/mnt/us" -xf "${NEWUPDATE}"
-            fail=$?
-        fi
+        logmsg "Updating KOReader . . ."
+        # Let our checkpoint script handle the detailed visual feedback...
+        eips_print_bottom_centered "Updating KOReader" 3
+        # NOTE: See frontend/ui/otamanager.lua for a few more details on how we squeeze a percentage out of tar's checkpoint feature
+        # NOTE: %B should always be 512 in our case, so let stat do part of the maths for us instead of using %s ;).
+        FILESIZE="$(stat -c %b "${NEWUPDATE}")"
+        BLOCKS="$((FILESIZE / 20))"
+        export CPOINTS="$((BLOCKS / 100))"
+        # shellcheck disable=SC2016
+        ${KOREADER_DIR}/tar -C "/mnt/us" --no-same-owner --no-same-permissions --checkpoint="${CPOINTS}" --checkpoint-action=exec='$KOREADER_DIR/fbink -q -y -6 -P $(($TAR_CHECKPOINT/$CPOINTS))' -xf "${NEWUPDATE}"
+        fail=$?
         # Cleanup behind us...
         if [ "${fail}" -eq 0 ]; then
             mv "${NEWUPDATE}" "${INSTALLED}"
@@ -127,6 +123,7 @@ ko_update_check() {
             eips_print_bottom_centered "KOReader may fail to function properly" 1
         fi
         rm -f "${NEWUPDATE}" # always purge newupdate in all cases to prevent update loop
+        unset BLOCKS CPOINTS
     fi
 }
 # NOTE: Keep doing an initial update check, in addition to one during the restart loop, so we can pickup potential updates of this very script...

@@ -121,13 +121,13 @@ end
 function NetworkMgr:getWifiMenuTable()
     return {
         text = _("Wi-Fi connection"),
-        enabled_func = function() return Device:isAndroid() or Device:isKindle() or Device:isKobo() end,
-        checked_func = function() return NetworkMgr:isOnline() end,
-        callback = function(menu)
-            local wifi_status = NetworkMgr:isOnline()
+        enabled_func = function() return Device:isAndroid() or Device:isKindle() or Device:isKobo() or Device:isSonyPRSTUX() end,
+        checked_func = function() return NetworkMgr:isWifiOn() end,
+        callback = function(touchmenu_instance)
+            local wifi_status = NetworkMgr:isWifiOn()
             local complete_callback = function()
                 -- notify touch menu to update item check state
-                menu:updateItems()
+                touchmenu_instance:updateItems()
                 local Event = require("ui/event")
                 -- if wifi was on, this callback will only be executed when the network has been
                 -- disconnected.
@@ -188,16 +188,17 @@ function NetworkMgr:getRestoreMenuTable()
         text = _("Automatically restore Wi-Fi connection after resume"),
         checked_func = function() return G_reader_settings:nilOrTrue("auto_restore_wifi") end,
         enabled_func = function() return Device:isKobo() end,
-        callback = function(menu) G_reader_settings:flipNilOrTrue("auto_restore_wifi") end,
+        callback = function() G_reader_settings:flipNilOrTrue("auto_restore_wifi") end,
     }
 end
 
 function NetworkMgr:getInfoMenuTable()
     return {
         text = _("Network info"),
+        keep_menu_open = true,
         -- TODO: also show network info when device is authenticated to router but offline
-        enabled_func = function() return self:isOnline() end,
-        callback = function(menu)
+        enabled_func = function() return self:isWifiOn() end,
+        callback = function()
             if Device.retrieveNetworkInfo then
                 UIManager:show(InfoMessage:new{
                     text = Device:retrieveNetworkInfo(),
@@ -249,7 +250,7 @@ function NetworkMgr:getDismissScanMenuTable()
         text = _("Dismiss Wi-Fi scan popup after connection"),
         checked_func = function() return G_reader_settings:nilOrTrue("auto_dismiss_wifi_scan") end,
         --enabled_func = function() return Device:isKobo() end,
-        callback = function(menu) G_reader_settings:flipNilOrTrue("auto_dismiss_wifi_scan") end,
+        callback = function() G_reader_settings:flipNilOrTrue("auto_dismiss_wifi_scan") end,
     }
 end
 
