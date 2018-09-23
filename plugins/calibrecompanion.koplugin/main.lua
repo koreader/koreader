@@ -2,9 +2,9 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local JSON = require("json")
-local DEBUG = require("dbg")
 local _ = require("gettext")
 local NetworkMgr = require("ui/network/manager")
+local logger = require("logger")
 local util = require("frontend/util")
 local T = require("ffi/util").template
 
@@ -84,7 +84,7 @@ end
 function CalibreCompanion:checkCalibreServer(host, port)
     local socket = require("socket")
     local client, err = socket.connect(host, port)
-    DEBUG(client, err)
+    logger.info(client, err)
     if client then
         client:close()
         return true
@@ -225,7 +225,7 @@ function CalibreCompanion:initCalibreMQ(host, port)
         self.calibre_socket:start()
         self.calibre_messagequeue = UIManager:insertZMQ(self.calibre_socket)
     end
-    DEBUG("connected to calibre", host, port)
+    logger.info("connected to calibre", host, port)
 end
 
 -- will callback initCalibreMQ if inbox is confirmed to be set
@@ -233,7 +233,7 @@ function CalibreCompanion:setInboxDir(host, port)
     local calibre_device = self
     require("ui/downloadmgr"):new{
         onConfirm = function(inbox)
-            DEBUG("set inbox directory", inbox)
+            logger.info("set inbox directory", inbox)
             G_reader_settings:saveSetting("inbox_dir", inbox)
             if host and port then
                 calibre_device:initCalibreMQ(host, port)
@@ -273,7 +273,7 @@ function CalibreCompanion:connect()
     elseif not NetworkMgr:isConnected() then
         NetworkMgr:promptWifiOn()
     else
-        DEBUG("cannot connect to calibre server")
+        logger.info("cannot connect to calibre server")
         UIManager:show(InfoMessage:new{
             text = _("Cannot connect to calibre server."),
         })
@@ -282,7 +282,7 @@ function CalibreCompanion:connect()
 end
 
 function CalibreCompanion:disconnect()
-    DEBUG("disconnect from calibre")
+    logger.info("disconnect from calibre")
     self.connect_message = false
     self.calibre_socket:stop()
     UIManager:removeZMQ(self.calibre_messagequeue)
@@ -292,30 +292,30 @@ end
 
 function CalibreCompanion:onReceiveJSON(data)
     self.buffer = (self.buffer or "") .. (data or "")
-    --DEBUG("data buffer", self.buffer)
+    --logger.info("data buffer", self.buffer)
     -- messages from calibre stream socket are encoded in JSON strings like this
     -- 34[0, {"key0":value, "key1": value}]
     -- the JSON string has a leading length string field followed by the actual
     -- JSON data in which the first element is always the operator code which can
     -- be looked up in the opnames dictionary
     while self.buffer ~= nil do
-        --DEBUG("buffer", self.buffer)
+        --logger.info("buffer", self.buffer)
         local index = self.buffer:find('%[') or 1
         local size = tonumber(self.buffer:sub(1, index - 1))
         local json_data
         if size and #self.buffer >= index - 1 + size then
             json_data = self.buffer:sub(index, index - 1 + size)
-            --DEBUG("json_data", json_data)
+            --logger.info("json_data", json_data)
             -- reset buffer to nil if all buffer is copied out to json data
             self.buffer = self.buffer:sub(index + size)
-            --DEBUG("new buffer", self.buffer)
+            --logger.info("new buffer", self.buffer)
         -- data is not complete which means there are still missing data not received
         else
             return
         end
         local ok, json = pcall(JSON.decode, json_data)
         if ok and json then
-            DEBUG("received json table", json)
+            logger.dbg("received json table", json)
             local opcode = json[1]
             local arg = json[2]
             if self.opnames[opcode] == 'GET_INITIALIZATION_INFO' then
@@ -338,7 +338,7 @@ function CalibreCompanion:onReceiveJSON(data)
                 self:noop(arg)
             end
         else
-            DEBUG("failed to decode json data", json_data)
+            logger.dbg("failed to decode json data", json_data)
         end
     end
 end
@@ -352,7 +352,7 @@ function CalibreCompanion:sendJsonData(opname, data)
 end
 
 function CalibreCompanion:getInitInfo(arg)
-    DEBUG("GET_INITIALIZATION_INFO", arg)
+    logger.dbg("GET_INITIALIZATION_INFO", arg)
     self.calibre_info = arg
     local init_info = {
         canUseCachedMetadata = true,
@@ -387,7 +387,7 @@ function CalibreCompanion:getInitInfo(arg)
 end
 
 function CalibreCompanion:getDeviceInfo(arg)
-    DEBUG("GET_DEVICE_INFORMATION", arg)
+    logger.dbg("GET_DEVICE_INFORMATION", arg)
     local device_info = {
         device_info = {
            device_store_uuid = G_reader_settings:readSetting("device_store_uuid"),
@@ -400,14 +400,14 @@ function CalibreCompanion:getDeviceInfo(arg)
 end
 
 function CalibreCompanion:setCalibreInfo(arg)
-    DEBUG("SET_CALIBRE_DEVICE_INFO", arg)
+    logger.dbg("SET_CALIBRE_DEVICE_INFO", arg)
     self.calibre_info = arg
     G_reader_settings:saveSetting("device_store_uuid", arg.device_store_uuid)
     self:sendJsonData('OK', {})
 end
 
 function CalibreCompanion:getFreeSpace(arg)
-    DEBUG("FREE_SPACE", arg)
+    logger.dbg("FREE_SPACE", arg)
     -- TODO: portable free space calculation?
     -- assume we have 1GB of free space on device
     local free_space = {
@@ -417,13 +417,13 @@ function CalibreCompanion:getFreeSpace(arg)
 end
 
 function CalibreCompanion:setLibraryInfo(arg)
-    DEBUG("SET_LIBRARY_INFO", arg)
+    logger.dbg("SET_LIBRARY_INFO", arg)
     self.library_info = arg
     self:sendJsonData('OK', {})
 end
 
 function CalibreCompanion:getBookCount(arg)
-    DEBUG("GET_BOOK_COUNT", arg)
+    logger.dbg("GET_BOOK_COUNT", arg)
     local books = {
         willStream = true,
         willScan = true,
@@ -433,21 +433,21 @@ function CalibreCompanion:getBookCount(arg)
 end
 
 function CalibreCompanion:noop(arg)
-    DEBUG("NOOP", arg)
+    logger.dbg("NOOP", arg)
     if not arg.count then
         self:sendJsonData('OK', {})
     end
 end
 
 function CalibreCompanion:sendBooklists(arg)
-    DEBUG("SEND_BOOKLISTS", arg)
+    logger.dbg("SEND_BOOKLISTS", arg)
 end
 
 function CalibreCompanion:sendBook(arg)
-    DEBUG("SEND_BOOK", arg)
+    logger.dbg("SEND_BOOK", arg)
     local inbox_dir = G_reader_settings:readSetting("inbox_dir")
     local filename = inbox_dir .. "/" .. arg.lpath
-    DEBUG("write to file", filename)
+    logger.dbg("write to file", filename)
     util.makePath((util.splitFilePathName(filename)))
     local outfile = io.open(filename, "wb")
     local to_write_bytes = arg.length
@@ -455,15 +455,15 @@ function CalibreCompanion:sendBook(arg)
     local calibre_socket = self.calibre_socket
     -- switching to raw data receiving mode
     self.calibre_socket.receiveCallback = function(data)
-        --DEBUG("receive file data", #data)
-        --DEBUG("Memory usage KB:", collectgarbage("count"))
+        --logger.info("receive file data", #data)
+        --logger.info("Memory usage KB:", collectgarbage("count"))
         local to_write_data = data:sub(1, to_write_bytes)
         outfile:write(to_write_data)
         to_write_bytes = to_write_bytes - #to_write_data
         if to_write_bytes == 0 then
             -- close file as all file data is received and written to local storage
             outfile:close()
-            DEBUG("complete writing file", filename)
+            logger.info("complete writing file", filename)
             UIManager:show(InfoMessage:new{
                 text = _("Received file:") .. filename,
                 timeout = 1,
@@ -474,7 +474,7 @@ function CalibreCompanion:sendBook(arg)
             end
             -- if calibre sends multiple files there may be left JSON data
             calibre_device.buffer = data:sub(#to_write_data + 1) or ""
-            DEBUG("device buffer", calibre_device.buffer)
+            logger.info("device buffer", calibre_device.buffer)
             if calibre_device.buffer ~= "" then
                 UIManager:scheduleIn(0.1, function()
                     -- since data is already copied to buffer
