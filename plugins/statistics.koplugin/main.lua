@@ -964,7 +964,7 @@ function ReaderStatistics:getCurrentStat(id_book)
     total_read_pages = tonumber(total_read_pages)
     local avg_time_per_page = total_time_book / total_read_pages
     local time_to_read = (self.data.pages - self.view.state.page) * avg_time_per_page
-    local estimate_days_to_read = math.floor(time_to_read/(total_time_book/tonumber(total_days)))
+    local estimate_days_to_read = math.ceil(time_to_read/(total_time_book/tonumber(total_days)))
     local estimate_end_of_read_date = os.date("%Y-%m-%d", tonumber(os.time() + estimate_days_to_read * 86400))
     return {
         { _("Current period"), util.secondsToClock(current_period, false) },
