@@ -1188,11 +1188,14 @@ function Menu:onSwipe(arg, ges_ev)
     elseif ges_ev.direction == "north" then
         -- no use for now
         do end -- luacheck: ignore 541
-    elseif not G_reader_settings:readSetting("gesture_fm")["short_diagonal_swipe"] then
-        -- diagonal swipe
-        -- don't do that when gesture manager sets short diagonal swipe otherwise
-        -- trigger full refresh
-        UIManager:setDirty(nil, "full")
+    else -- diagonal swipe
+        if G_reader_settings:readSetting("gesture_fm") and G_reader_settings:readSetting("gesture_fm")["short_diagonal_swipe"] then
+            -- managed by gesture manager
+            do end -- luacheck: ignore 541
+        else
+            -- trigger full refresh
+            UIManager:setDirty(nil, "full")
+        end
     end
 end
 

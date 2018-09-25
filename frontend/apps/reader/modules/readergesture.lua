@@ -3,6 +3,7 @@ local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
+local T = require("ffi/util").template
 local _ = require("gettext")
 
 local default_gesture = {
@@ -63,20 +64,20 @@ function ReaderGesture:buildMenu(ges, default)
         --{_("Menu element), "action", enable_element},
         {_("Nothing"), "nothing", true },
         {_("Backward 10 pages"), "page_update_down10", not self.is_docless},
-        {_("Bookmarks"), "bookmarks", not self.is_docless},
-        {_("Folder up"), "folder_up", self.is_docless},
         {_("Forward 10 pages"), "page_update_up10", not self.is_docless},
+        {_("Folder up"), "folder_up", self.is_docless},
+        {_("Bookmarks"), "bookmarks", not self.is_docless},
+        {_("Table of content"), "toc", not self.is_docless},
+        {_("Reading progress"), "reading_progress", ReaderGesture.getReaderProgress ~= nil},
         {_("Full screen refresh"), "full_refresh", true},
         {_("Night mode"), "night_mode", true},
-        {_("Reading progress"), "reading_progress", ReaderGesture.getReaderProgress ~= nil},
-        {_("Table of context"), "toc", not self.is_docless},
         {_("Toggle frontlight"), "toggle_frontlight", Device.hasFrontlight()},
     }
     local return_menu = {}
     -- add default action to the top of the submenu
-    for _, entry in pairs(menu) do
+    for __, entry in pairs(menu) do
         if entry[2] == default then
-            local menu_entry_default = string.format("%s (default)", entry[1])
+            local menu_entry_default = T(_("%1 (default)"), entry[1])
             table.insert(return_menu, self:createSubMenu(menu_entry_default, entry[2], ges, true))
             break
         end
@@ -143,7 +144,7 @@ function ReaderGesture:setupGesture(ges, action)
             ratio_x = 0.0, ratio_y = 0,
             ratio_w = 1, ratio_h = 1,
         }
-        direction = {'northeast', 'northwest', 'southeast', 'southwest'}
+        direction = {northeast = true, northwest = true, southeast = true, southwest = true}
         distance = "short"
         if self.is_docless then
             overrides = { 'filemanager_tap' }
@@ -173,7 +174,7 @@ function ReaderGesture:registerGesture(ges, action, ges_type, zone, overrides, d
             screen_zone = zone,
             handler = function(gest)
                 if distance == "short" and gest.distance > Screen:scaleBySize(300) then return end
-                if direction and not directionContain(direction, gest.direction) then return end
+                if direction and not direction[gest.direction] then return end
                 return self:gestureAction(action)
             end,
             overrides = overrides,
@@ -181,7 +182,7 @@ function ReaderGesture:registerGesture(ges, action, ges_type, zone, overrides, d
     })
 end
 
-function ReaderGesture:gestureAction(action, return_value)
+function ReaderGesture:gestureAction(action)
     if action == "reading_progress" and ReaderGesture.getReaderProgress then
         UIManager:show(ReaderGesture.getReaderProgress())
     elseif action == "toc" then
@@ -205,14 +206,7 @@ function ReaderGesture:gestureAction(action, return_value)
         Device:getPowerDevice():toggleFrontlight()
         self:onShowFLOnOff()
     end
-    if return_value then
-        -- a long diagonal swipe may also be used for taking a screenshot,
-        -- so let it propagate
-        -- no implemented for now
-        return return_value
-    else
-        return true
-    end
+    return true
 end
 
 function ReaderGesture:pageUpdate(page)
