@@ -335,7 +335,6 @@ function FileManager:init()
     self.menu = FileManagerMenu:new{
         ui = self
     }
-
     self.active_widgets = { Screenshoter:new{ prefix = 'FileManager' } }
     table.insert(self, self.menu)
     table.insert(self, FileManagerHistory:new{
@@ -362,7 +361,6 @@ function FileManager:init()
     if Device:isTouchDevice() then
         table.insert(self, ReaderGesture:new{ ui = self })
     end
-
 
     if Device:hasKeys() then
         self.key_events.Home = { {"Home"}, doc = "go home" }
