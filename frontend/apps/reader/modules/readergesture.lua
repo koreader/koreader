@@ -157,15 +157,6 @@ function ReaderGesture:setupGesture(ges, action)
     self:registerGesture(ges, action, ges_type, zone, overrides, direction, distance)
 end
 
-local function directionContain(direction, element)
-    for _, k in pairs(direction) do
-        if k == element then
-            return true
-        end
-    end
-    return false
-end
-
 function ReaderGesture:registerGesture(ges, action, ges_type, zone, overrides, direction, distance)
     self.ui:registerTouchZones({
         {
