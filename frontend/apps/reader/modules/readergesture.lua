@@ -5,6 +5,12 @@ local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 
+local default_gesture = {
+    tap_right_bottom_corner = "nothing",
+    tap_left_bottom_corner = Device.hasFrontlight() and "toggle_frontlight" or "nothing",
+    short_diagonal_swipe = "full_refresh",
+}
+
 local ReaderGesture = InputContainer:new{
 }
 
@@ -20,10 +26,15 @@ end
 
 function ReaderGesture:initGesture()
     local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
-    -- todo: add default gesture
-    for gesture, action in pairs(gesture_manager) do
-        self:subMenuAction(gesture, action)
+    for gesture, action in pairs(default_gesture) do
+        if not gesture_manager[gesture] then
+            gesture_manager[gesture] = action
+        end
     end
+    for gesture, action in pairs(gesture_manager) do
+        self:setupGesture(gesture, action)
+    end
+    G_reader_settings:saveSetting(self.ges_mode, gesture_manager)
 end
 
 function ReaderGesture:addToMainMenu(menu_items)
@@ -32,44 +43,58 @@ function ReaderGesture:addToMainMenu(menu_items)
         sub_item_table = {
             {
                 text = _("Tap right bottom corner"),
-                sub_item_table = self:tapMenu("tap_right_bottom_corner")
+                sub_item_table = self:buildMenu("tap_right_bottom_corner", default_gesture["tap_right_bottom_corner"])
             },
             {
                 text = _("Tap left bottom corner"),
-                sub_item_table = self:tapMenu("tap_left_bottom_corner")
+                sub_item_table = self:buildMenu("tap_left_bottom_corner", default_gesture["tap_left_bottom_corner"])
             },
             {
                 text = _("Short diagonal swipe"),
-                sub_item_table = self:tapMenu("short_diagonal_swipe")
+                sub_item_table = self:buildMenu("short_diagonal_swipe", default_gesture["short_diagonal_swipe"])
             },
         },
     }
 end
 
-function ReaderGesture:tapMenu(ges)
-    if self.is_docless then
-        return {
-            self:createSubMenu(_("Disable"), nil, ges),
-            self:createSubMenu(_("Folder up"), "folder_up", ges),
-            self:createSubMenu(_("Full screen refresh"), "full_refresh", ges),
-            self:createSubMenu(_("Night mode"), "night_mode", ges),
-            self:createSubMenu(_("Reading progress"), "reading_progress", ges),
-        }
-    else
-        return {
-            self:createSubMenu(_("Disable"), nil, ges),
-            self:createSubMenu(_("Backward 10 pages"), "page_update_down10", ges),
-            self:createSubMenu(_("Bookmarks"), "bookmarks", ges),
-            self:createSubMenu(_("Forward 10 pages"), "page_update_up10", ges),
-            self:createSubMenu(_("Full screen refresh"), "full_refresh", ges),
-            self:createSubMenu(_("Night mode"), "night_mode", ges),
-            self:createSubMenu(_("Reading progress"), "reading_progress", ges),
-            self:createSubMenu(_("Table of context"), "toc", ges),
-        }
+function ReaderGesture:buildMenu(ges, default)
+    local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
+    local menu = {
+        --{_("Menu element), "action", enable_element},
+        {_("Nothing"), "nothing", true },
+        {_("Backward 10 pages"), "page_update_down10", not self.is_docless},
+        {_("Bookmarks"), "bookmarks", not self.is_docless},
+        {_("Folder up"), "folder_up", self.is_docless},
+        {_("Forward 10 pages"), "page_update_up10", not self.is_docless},
+        {_("Full screen refresh"), "full_refresh", true},
+        {_("Night mode"), "night_mode", true},
+        {_("Reading progress"), "reading_progress", ReaderGesture.getReaderProgress ~= nil},
+        {_("Table of context"), "toc", not self.is_docless},
+        {_("Toggle frontlight"), "toggle_frontlight", Device.hasFrontlight()},
+    }
+    local return_menu = {}
+    -- add default action to the top of the submenu
+    for _, entry in pairs(menu) do
+        if entry[2] == default then
+            local menu_entry_default = entry[1] .. " (default)"
+            table.insert(return_menu, self:createSubMenu(menu_entry_default, entry[2], ges, true))
+            break
+        end
     end
+    -- another elements
+    for _, entry in pairs(menu) do
+        if not entry[3] and gesture_manager[ges] == entry[2] then
+            gesture_manager[ges] = "nothing"
+            G_reader_settings:saveSetting(self.ges_mode, gesture_manager)
+        end
+        if entry[2] ~= default and entry[3] then
+            table.insert(return_menu, self:createSubMenu(entry[1], entry[2], ges, entry[2] == "nothing"))
+        end
+    end
+    return return_menu
 end
 
-function ReaderGesture:createSubMenu(text, action, ges)
+function ReaderGesture:createSubMenu(text, action, ges, separator)
     local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
     return {
         text = text,
@@ -79,12 +104,13 @@ function ReaderGesture:createSubMenu(text, action, ges)
         callback = function()
             gesture_manager[ges] = action
             G_reader_settings:saveSetting(self.ges_mode, gesture_manager)
-            self:subMenuAction(ges, action)
+            self:setupGesture(ges, action)
         end,
+        separator = separator or false,
     }
 end
 
-function ReaderGesture:subMenuAction(ges, action)
+function ReaderGesture:setupGesture(ges, action)
     local ges_type
     local zone
     local overrides
@@ -140,35 +166,23 @@ local function directionContain(direction, element)
 end
 
 function ReaderGesture:registerGesture(ges, action, ges_type, zone, overrides, direction, distance)
-    if action == nil then
-        self.ui:unRegisterTouchZones({
-            {
-                id = ges,
-                overrides = overrides,
-            }
-        })
-        return
-    end
-
-    if action then
-        self.ui:registerTouchZones({
-            {
-                id = ges,
-                ges = ges_type,
-                screen_zone = zone,
-                handler = function(gest)
-                    if distance == "short" and gest.distance > Screen:scaleBySize(300) then return end
-                    if direction and not directionContain(direction, gest.direction) then return end
-                    return self:gestureAction(action)
-                end,
-                overrides = overrides,
-            },
-        })
-    end
+    self.ui:registerTouchZones({
+        {
+            id = ges,
+            ges = ges_type,
+            screen_zone = zone,
+            handler = function(gest)
+                if distance == "short" and gest.distance > Screen:scaleBySize(300) then return end
+                if direction and not directionContain(direction, gest.direction) then return end
+                return self:gestureAction(action)
+            end,
+            overrides = overrides,
+        },
+    })
 end
 
 function ReaderGesture:gestureAction(action, return_value)
-    if action == "reading_progress" then
+    if action == "reading_progress" and ReaderGesture.getReaderProgress then
         UIManager:show(ReaderGesture.getReaderProgress())
     elseif action == "toc" then
         self.ui:handleEvent(Event:new("ShowToc"))
@@ -187,6 +201,9 @@ function ReaderGesture:gestureAction(action, return_value)
         self:pageUpdate(-10)
     elseif action =="folder_up" then
         self.ui.file_chooser:changeToPath(string.format("%s/..", self.ui.file_chooser.path))
+    elseif action =="toggle_frontlight" then
+        Device:getPowerDevice():toggleFrontlight()
+        self:onShowFLOnOff()
     end
     if return_value then
         -- a long diagonal swipe may also be used for taking a screenshot,
@@ -210,6 +227,22 @@ function ReaderGesture:pageUpdate(page)
         self.ui:handleEvent(Event:new("GotoPage", curr_page))
     end
 
+end
+
+function ReaderGesture:onShowFLOnOff()
+    local Notification = require("ui/widget/notification")
+    local powerd = Device:getPowerDevice()
+    local new_text
+    if powerd.is_fl_on then
+        new_text = _("Frontlight is on.")
+    else
+        new_text = _("Frontlight is off.")
+    end
+    UIManager:show(Notification:new{
+        text = new_text,
+        timeout = 1.0,
+    })
+    return true
 end
 
 return ReaderGesture

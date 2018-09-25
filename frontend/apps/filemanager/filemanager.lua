@@ -126,13 +126,6 @@ function FileManager:init()
         }
     }
 
-    self.menu = FileManagerMenu:new{
-        ui = self
-    }
-    if Device:isTouchDevice() then
-        table.insert(self, ReaderGesture:new{ ui = self })
-    end
-
     local g_show_hidden = G_reader_settings:readSetting("show_hidden")
     local show_hidden = g_show_hidden == nil and DSHOWHIDDENFILES or g_show_hidden
     local file_chooser = FileChooser:new{
@@ -154,7 +147,6 @@ function FileManager:init()
                 return true
             end
         end,
-        custom_touch_zone = self.touch_zone_dg and self.touch_zone_dg["nodes"] or {},
         close_callback = function() return self:onClose() end,
         -- allow left bottom tap gesture, otherwise it is eaten by hidden return button
         return_arrow_propagation = true,
@@ -340,6 +332,10 @@ function FileManager:init()
 
     self[1] = fm_ui
 
+    self.menu = FileManagerMenu:new{
+        ui = self
+    }
+
     self.active_widgets = { Screenshoter:new{ prefix = 'FileManager' } }
     table.insert(self, self.menu)
     table.insert(self, FileManagerHistory:new{
@@ -362,6 +358,11 @@ function FileManager:init()
             end
         end
     end
+
+    if Device:isTouchDevice() then
+        table.insert(self, ReaderGesture:new{ ui = self })
+    end
+
 
     if Device:hasKeys() then
         self.key_events.Home = { {"Home"}, doc = "go home" }
