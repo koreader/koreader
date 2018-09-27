@@ -83,10 +83,12 @@ end
 
 function CalibreCompanion:checkCalibreServer(host, port)
     local socket = require("socket")
-    local client, err = socket.connect(host, port)
-    logger.info(client, err)
+    local tcp = socket.tcp()
+    tcp:settimeout(5)
+    local client = tcp:connect(host, port)
+    -- In case of error, the method returns nil followed by a string describing the error. In case of success, the method returns 1.
     if client then
-        client:close()
+        tcp:close()
         return true
     end
     return false
