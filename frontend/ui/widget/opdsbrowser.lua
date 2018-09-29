@@ -4,7 +4,6 @@ local Cache = require("cache")
 local CacheItem = require("cacheitem")
 local ConfirmBox = require("ui/widget/confirmbox")
 local InfoMessage = require("ui/widget/infomessage")
-local LoginDialog = require("ui/widget/logindialog")
 local Menu = require("ui/widget/menu")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local NetworkMgr = require("ui/network/manager")
@@ -88,24 +87,30 @@ function OPDSBrowser:init()
 end
 
 function OPDSBrowser:addServerFromInput(fields)
-    logger.dbg("input catalog", fields)
     local servers = G_reader_settings:readSetting("opds_servers") or {}
     table.insert(servers, {
         title = fields[1],
         url = (fields[2]:match("^%a+://") and fields[2] or "http://" .. fields[2]),
+        username = fields[3],
+        password = fields[4],
     })
     G_reader_settings:saveSetting("opds_servers", servers)
     self:init()
 end
 
 function OPDSBrowser:editCalibreFromInput(fields)
-    logger.dbg("input calibre server", fields)
     local calibre = G_reader_settings:readSetting("calibre_opds") or {}
     if fields[1] then
         calibre.host = fields[1]
     end
     if tonumber(fields[2]) then
         calibre.port = fields[2]
+    end
+    if fields[3] then
+        calibre.username = fields[3]
+    end
+    if fields[4] then
+        calibre.password = fields[4]
     end
     G_reader_settings:saveSetting("calibre_opds", calibre)
     self:init()
@@ -122,6 +127,15 @@ function OPDSBrowser:addNewCatalog()
             {
                 text = "",
                 hint = _("Catalog URL"),
+            },
+            {
+                text = "",
+                hint = _("Username (optional)"),
+            },
+            {
+                text = "",
+                hint = _("Password (optional)"),
+                text_type = "password",
             },
         },
         buttons = {
@@ -164,6 +178,15 @@ function OPDSBrowser:editCalibreServer()
                 text = calibre.port and tostring(calibre.port) or "8080",
                 hint = _("calibre port"),
             },
+            {
+                text = calibre.username or "",
+                hint = _("Username (optional)"),
+            },
+            {
+                text = calibre.password or "",
+                hint = _("Password (optional)"),
+                text_type = "password",
+            },
         },
         buttons = {
             {
@@ -199,6 +222,8 @@ function OPDSBrowser:genItemTableFromRoot()
             text = server.title,
             content = server.subtitle,
             url = server.url,
+            username = server.username,
+            password = server.password,
             deletable = true,
             editable = true,
         })
@@ -217,6 +242,8 @@ function OPDSBrowser:genItemTableFromRoot()
             text = self.calibre_name,
             url = string.format("http://%s:%d/opds",
                 calibre_opds.host, calibre_opds.port),
+            username = calibre_opds.username,
+            password = calibre_opds.password,
             editable = true,
             deletable = false,
         })
@@ -230,120 +257,42 @@ function OPDSBrowser:genItemTableFromRoot()
     return item_table
 end
 
-function OPDSBrowser:getBasicAuthentication(host)
-    local authentications = G_reader_settings:readSetting("www-auth") or {}
-    return authentications[host]
-end
-
-function OPDSBrowser:setBasicAuthentication(host, username, password)
-    local authentications = G_reader_settings:readSetting("www-auth") or {}
-    authentications[host] = {
-        username = username,
-        password = password,
-    }
-    G_reader_settings:saveSetting("www-auth", authentications)
-end
-
-function OPDSBrowser:getAuthorizationHeader(host)
-    local auth = self:getBasicAuthentication(host)
-    if auth then
-        local authorization = auth.username .. ':' .. auth.password
-        return {
-            Authorization = "Basic " .. mime.b64(authorization),
-        }
-    end
-end
-
-function OPDSBrowser:fetchFeed(feed_url)
+function OPDSBrowser:fetchFeed(item_url, username, password)
     local request, sink = {}, {}
-    local parsed = url.parse(feed_url)
-    request['url'] = feed_url
+    local parsed = url.parse(item_url)
+    local auth = string.format("%s:%s", username, password)
+    request['url'] = item_url
     request['method'] = 'GET'
     request['sink'] = ltn12.sink.table(sink)
-    request['headers'] = self:getAuthorizationHeader(parsed.host)
-    logger.dbg("request", request)
+    request['headers'] = { Authorization = "Basic " .. mime.b64(auth), }
     http.TIMEOUT, https.TIMEOUT = 10, 10
     local httpRequest = parsed.scheme == 'http' and http.request or https.request
     local code, headers, status = socket.skip(1, httpRequest(request))
-
     -- raise error message when network is unavailable
     if headers == nil then
         error(code)
     end
-
-    if code == 401 and status and status:find("Unauthorized") then
-        self._coroutine = coroutine.running() or self._coroutine
-        self:fetchWithLogin(parsed.host, function()
-            return self:fetchFeed(feed_url)
-        end)
-        if coroutine.running() then
-            local result = coroutine.yield()
-            return result
-        end
-    else
+    if code == 200 then
         local xml = table.concat(sink)
         if xml ~= "" then
             return xml
         end
+    else
+        UIManager:show(InfoMessage:new{
+            text = T(_("Cannot get catalog. Server code response %1"), code),
+        })
     end
 end
 
-function OPDSBrowser:fetchWithLogin(host, callback)
-    self.login_dialog = LoginDialog:new{
-        title = _("Login to OPDS server"),
-        username = "",
-        buttons = {
-            {
-                {
-                    text = _("Cancel"),
-                    enabled = true,
-                    callback = function()
-                        self:closeDialog()
-                    end,
-                },
-                {
-                    text = _("Login"),
-                    enabled = true,
-                    callback = function()
-                        local username, password = self:getCredential()
-                        self:setBasicAuthentication(host, username, password)
-                        self:closeDialog()
-                        UIManager:scheduleIn(0.5, function()
-                            local res = callback()
-                            if res then
-                                coroutine.resume(self._coroutine, res)
-                            end
-                        end)
-                    end,
-                },
-            },
-        },
-        width = Screen:getWidth() * 0.8,
-        height = Screen:getHeight() * 0.4,
-    }
-
-    UIManager:show(self.login_dialog)
-    self.login_dialog:onShowKeyboard()
-end
-
-function OPDSBrowser:closeDialog()
-    self.login_dialog:onClose()
-    UIManager:close(self.login_dialog)
-end
-
-function OPDSBrowser:getCredential()
-    return self.login_dialog:getCredential()
-end
-
-function OPDSBrowser:parseFeed(feed_url)
+function OPDSBrowser:parseFeed(item_url, username, password)
     local feed
-    local hash = "opds|catalog|" .. feed_url
+    local hash = "opds|catalog|" .. item_url
     local cache = CatalogCache:check(hash)
     if cache then
         feed = cache.feed
     else
         logger.dbg("cache", hash)
-        feed = self:fetchFeed(feed_url)
+        feed = self:fetchFeed(item_url, username, password)
         if feed then
             CatalogCache:insert(hash, CatalogCacheItem:new{ feed = feed })
         end
@@ -353,31 +302,30 @@ function OPDSBrowser:parseFeed(feed_url)
     end
 end
 
-function OPDSBrowser:getCatalog(feed_url)
-    local ok, catalog = pcall(self.parseFeed, self, feed_url)
+function OPDSBrowser:getCatalog(item_url, username, password)
+    local ok, catalog = pcall(self.parseFeed, self, item_url, username, password)
     if not ok and catalog and not NetworkMgr:isOnline() then
         NetworkMgr:promptWifiOn()
         return
     elseif not ok and catalog then
-        logger.warn("cannot get catalog info from", feed_url, catalog)
+        logger.info("cannot get catalog info from", item_url, catalog)
         UIManager:show(InfoMessage:new{
-            text = T(_("Cannot get catalog info from %1"), (feed_url or "")),
+            text = T(_("Cannot get catalog info from %1"), (item_url or "")),
         })
         return
     end
 
     if ok and catalog then
-        logger.dbg("catalog", catalog)
         return catalog
     end
 end
 
-function OPDSBrowser:genItemTableFromURL(item_url)
-    local catalog = self:getCatalog(item_url)
-    return self:genItemTableFromCatalog(catalog, item_url)
+function OPDSBrowser:genItemTableFromURL(item_url, username, password)
+    local catalog = self:getCatalog(item_url, username, password)
+    return self:genItemTableFromCatalog(catalog, item_url, username, password)
 end
 
-function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
+function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, password)
     local item_table = {}
     if not catalog then
         return item_table
@@ -403,6 +351,12 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
         end
     end
     item_table.hrefs = hrefs
+    if username then
+        item_table.username = username
+    end
+    if password then
+        item_table.password = password
+    end
 
     if not feed.entry then
         return item_table
@@ -443,7 +397,7 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
             end
         end
         if title == "Unknown" then
-            logger.warn("Cannot handle title", entry.title)
+            logger.info("Cannot handle title", entry.title)
         end
         local author = "Unknown Author"
         if type(entry.author) == "table" and entry.author.name then
@@ -455,13 +409,19 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
         item.id = entry.id
         item.content = entry.content
         item.updated = entry.updated
+        if username then
+            item.username = username
+        end
+        if password then
+            item.password = password
+        end
         table.insert(item_table, item)
     end
     return item_table
 end
 
-function OPDSBrowser:updateCatalog(item_table_url)
-    local menu_table = self:genItemTableFromURL(item_table_url)
+function OPDSBrowser:updateCatalog(item_url, username, password)
+    local menu_table = self:genItemTableFromURL(item_url, username, password)
     if #menu_table > 0 then
         self:switchItemTable(nil, menu_table)
         if self.page_num <= 1 then
@@ -471,8 +431,8 @@ function OPDSBrowser:updateCatalog(item_table_url)
     end
 end
 
-function OPDSBrowser:appendCatalog(item_table_url)
-    local new_table = self:genItemTableFromURL(item_table_url)
+function OPDSBrowser:appendCatalog(item_url, username, password)
+    local new_table = self:genItemTableFromURL(item_url, username, password)
     if #new_table == 0 then return false end
 
     for _, item in ipairs(new_table) do
@@ -508,9 +468,10 @@ function OPDSBrowser:downloadFile(item, format, remote_url)
             local parsed = url.parse(remote_url)
             http.TIMEOUT, https.TIMEOUT = 20, 20
             local httpRequest = parsed.scheme == 'http' and http.request or https.request
-            local _, c, _ = httpRequest {
+            local auth = string.format("%s:%s", item.username, item.password)
+            local __, c, __ = httpRequest {
                 url = remote_url,
-                headers = self:getAuthorizationHeader(parsed.host),
+                headers = { Authorization = "Basic " .. mime.b64(auth), },
                 sink = ltn12.sink.file(io.open(local_path, "w")),
             }
             if c == 200 then
@@ -588,7 +549,7 @@ function OPDSBrowser:showDownloads(item)
             callback = function()
                 require("ui/downloadmgr"):new{
                     onConfirm = function(path)
-                        logger.dbg("set download directory to", path)
+                        logger.info("set download directory to", path)
                         G_reader_settings:saveSetting("download_dir", path)
                         UIManager:nextTick(function()
                             UIManager:close(self.download_dialog)
@@ -617,8 +578,10 @@ function OPDSBrowser:onMenuSelect(item)
     else
         table.insert(self.paths, {
             url = item.url,
+            username = item.username,
+            password = item.password,
         })
-        if not self:updateCatalog(item.url) then
+        if not self:updateCatalog(item.url, item.username, item.password) then
             table.remove(self.paths)
         end
     end
@@ -626,12 +589,13 @@ function OPDSBrowser:onMenuSelect(item)
 end
 
 function OPDSBrowser:editServerFromInput(item, fields)
-    logger.dbg("input catalog", fields)
     local servers = {}
     for _, server in ipairs(G_reader_settings:readSetting("opds_servers") or {}) do
         if server.title == item.text or server.url == item.url then
             server.title = fields[1]
             server.url = (fields[2]:match("^%a+://") and fields[2] or "http://" .. fields[2])
+            server.username = fields[3]
+            server.password = fields[4]
         end
         table.insert(servers, server)
     end
@@ -640,7 +604,6 @@ function OPDSBrowser:editServerFromInput(item, fields)
 end
 
 function OPDSBrowser:editOPDSServer(item)
-    logger.dbg("edit", item)
     self.edit_server_dialog = MultiInputDialog:new{
         title = _("Edit OPDS catalog"),
         fields = {
@@ -651,6 +614,15 @@ function OPDSBrowser:editOPDSServer(item)
             {
                 text = item.url or "",
                 hint = _("Catalog URL"),
+            },
+            {
+                text = item.username or "",
+                hint = _("Username (optional)"),
+            },
+            {
+                text = item.password or "",
+                hint = _("Password (optional)"),
+                text_type = "password",
             },
         },
         buttons = {
@@ -680,7 +652,6 @@ function OPDSBrowser:editOPDSServer(item)
 end
 
 function OPDSBrowser:deleteOPDSServer(item)
-    logger.dbg("delete", item)
     local servers = {}
     for _, server in ipairs(G_reader_settings:readSetting("opds_servers") or {}) do
         if server.title ~= item.text or server.url ~= item.url then
@@ -725,13 +696,12 @@ function OPDSBrowser:onMenuHold(item)
 end
 
 function OPDSBrowser:onReturn()
-    logger.dbg("return to last page catalog")
     if #self.paths > 0 then
         table.remove(self.paths)
         local path = self.paths[#self.paths]
         if path then
             -- return to last path
-            self:updateCatalog(path.url)
+            self:updateCatalog(path.url, path.username, path.password)
         else
             -- return to root path, we simply reinit opdsbrowser
             self:init()
@@ -741,14 +711,13 @@ function OPDSBrowser:onReturn()
 end
 
 function OPDSBrowser:onNext()
-    logger.dbg("fetch next page catalog")
     -- self.page_num comes from menu.lua
     local page_num = self.page_num
     -- fetch more entries until we fill out one page or reach the end
     while page_num == self.page_num do
         local hrefs = self.item_table.hrefs
         if hrefs and hrefs.next then
-            if not self:appendCatalog(hrefs.next) then
+            if not self:appendCatalog(hrefs.next, self.item_table.username, self.item_table.password) then
                 break  -- reach end of paging
             end
         else
