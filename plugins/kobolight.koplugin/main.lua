@@ -16,7 +16,6 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local T = require("ffi/util").template
 local _ = require("gettext")
 
-local tap_touch_zone_ratio = { x = 0, y = 15/16, w = 1/10, h = 1/16, }
 local swipe_touch_zone_ratio = { x = 0, y = 1/8, w = 1/10, h = 7/8, }
 local swipe_touch_zone_ratio_warmth = { x = 7/8, y = 1/8, w = 1/8, h = 7/8, }
 
@@ -60,16 +59,6 @@ function KoboLight:setupTouchZones()
         ratio_h = swipe_touch_zone_ratio_warmth.h,
     }
     self.ui:registerTouchZones({
-        {
-            id = "plugin_kobolight_tap",
-            ges = "tap",
-            screen_zone = {
-                ratio_x = tap_touch_zone_ratio.x, ratio_y = tap_touch_zone_ratio.y,
-                ratio_w = tap_touch_zone_ratio.w, ratio_h = tap_touch_zone_ratio.h,
-            },
-            handler = function() return self:onTap() end,
-            overrides = { 'readerfooter_tap' },
-        },
         {
             id = "plugin_kobolight_swipe",
             ges = "swipe",
@@ -162,12 +151,6 @@ function KoboLight:onShowOnOff()
         text = new_text,
         timeout = 1.0,
     })
-    return true
-end
-
-function KoboLight:onTap()
-    Device:getPowerDevice():toggleFrontlight()
-    self:onShowOnOff()
     return true
 end
 

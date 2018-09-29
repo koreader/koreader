@@ -698,6 +698,7 @@ function Menu:init()
         callback = function() self:onReturn() end,
         bordersize = 0,
         show_parent = self,
+        readonly = self.return_arrow_propagation,
     }
     self.page_return_arrow:hide()
     self.return_button = HorizontalGroup:new{
@@ -1188,8 +1189,13 @@ function Menu:onSwipe(arg, ges_ev)
         -- no use for now
         do end -- luacheck: ignore 541
     else -- diagonal swipe
-        -- trigger full refresh
-        UIManager:setDirty(nil, "full")
+        if G_reader_settings:readSetting("gesture_fm") and G_reader_settings:readSetting("gesture_fm")["short_diagonal_swipe"] then
+            -- managed by gesture manager
+            do end -- luacheck: ignore 541
+        else
+            -- trigger full refresh
+            UIManager:setDirty(nil, "full")
+        end
     end
 end
 

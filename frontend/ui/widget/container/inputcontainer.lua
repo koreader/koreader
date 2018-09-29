@@ -160,6 +160,42 @@ function InputContainer:registerTouchZones(zones)
     end
 end
 
+function InputContainer:unRegisterTouchZones(zones)
+    if self.touch_zone_dg then
+        for i, zone in ipairs(zones) do
+            if self._zones[zone.id] then
+                self.touch_zone_dg:removeNode(zone.id)
+                if zone.overrides then
+                    for _, override_zone_id in ipairs(zone.overrides) do
+                        --self.touch_zone_dg:removeNodeDep(override_zone_id, zone.id)
+                        self.touch_zone_dg:removeNodeDep(override_zone_id, zone.id)
+                    end
+                end
+                for _, id in ipairs(self._ordered_touch_zones) do
+                    if id.def.id == zone.id then
+                        table.remove(self._ordered_touch_zones, i)
+                        break
+                    end
+                end
+            end
+        end
+        self._ordered_touch_zones = {}
+        if self.touch_zone_dg then
+            for _, zone_id in ipairs(self.touch_zone_dg:serialize()) do
+                table.insert(self._ordered_touch_zones, self._zones[zone_id])
+            end
+        end
+    end
+end
+
+function InputContainer:checkRegisterTouchZone(id)
+    if self.touch_zone_dg then
+        return self.touch_zone_dg:checkNode(id)
+    else
+        return false
+    end
+end
+
 --[[--
 Updates touch zones based on new screen dimensions.
 

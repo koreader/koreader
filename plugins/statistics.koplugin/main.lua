@@ -124,6 +124,26 @@ function ReaderStatistics:init()
         end
         return readingprogress
     end
+    local ReaderGesture = require("apps/reader/modules/readergesture")
+    ReaderGesture.getReaderProgress = function()
+        local readingprogress
+        self:insertDB(self.id_curr_book)
+        local current_period, current_pages = self:getCurrentBookStats()
+        local today_period, today_pages = self:getTodayBookStats()
+        local dates_stats = self:getReadingProgressStats(7)
+        if dates_stats then
+            readingprogress = ReaderProgress:new{
+                dates = dates_stats,
+                current_period = current_period,
+                current_pages = current_pages,
+                today_period = today_period,
+                today_pages = today_pages,
+                --readonly = true,
+            }
+        end
+        return readingprogress
+    end
+
 end
 
 function ReaderStatistics:initData()

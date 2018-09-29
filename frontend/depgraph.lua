@@ -55,6 +55,14 @@ function DepGraph:removeNode(node_key)
     end
 end
 
+function DepGraph:checkNode(id)
+    if self.nodes[id] then
+        return true
+    else
+        return false
+    end
+end
+
 function DepGraph:addNodeDep(node_key, dep_node_key)
     local node = self.nodes[node_key]
     if not node then
@@ -63,6 +71,16 @@ function DepGraph:addNodeDep(node_key, dep_node_key)
     end
     if not node.deps then node.deps = {} end
     table.insert(node.deps, dep_node_key)
+end
+
+function DepGraph:removeNodeDep(node_key, dep_node_key)
+    local node = self.nodes[node_key]
+    if not node.deps then node.deps = {} end
+    for i, dep_key in ipairs(node.deps) do
+        if dep_key == dep_node_key then
+            self.nodes[node_key]["deps"][i] = nil
+        end
+    end
 end
 
 function DepGraph:serialize()
