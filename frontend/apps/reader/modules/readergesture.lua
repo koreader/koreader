@@ -63,7 +63,7 @@ function ReaderGesture:buildMenu(ges, default)
     local menu = {
         --{_("Menu element), "action", enable_element},
         {_("Nothing"), "nothing", true },
-        {_("Backward 10 pages"), "page_update_down10", not self.is_docless},
+        {_("Back 10 pages"), "page_update_down10", not self.is_docless},
         {_("Forward 10 pages"), "page_update_up10", not self.is_docless},
         {_("Folder up"), "folder_up", self.is_docless},
         {_("Bookmarks"), "bookmarks", not self.is_docless},
