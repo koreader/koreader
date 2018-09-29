@@ -87,6 +87,7 @@ function OPDSBrowser:init()
 end
 
 function OPDSBrowser:addServerFromInput(fields)
+    logger.info("input catalog", fields)
     local servers = G_reader_settings:readSetting("opds_servers") or {}
     table.insert(servers, {
         title = fields[1],
@@ -99,6 +100,7 @@ function OPDSBrowser:addServerFromInput(fields)
 end
 
 function OPDSBrowser:editCalibreFromInput(fields)
+    logger.dbg("input calibre server", fields)
     local calibre = G_reader_settings:readSetting("calibre_opds") or {}
     if fields[1] then
         calibre.host = fields[1]
@@ -265,6 +267,7 @@ function OPDSBrowser:fetchFeed(item_url, username, password)
     request['method'] = 'GET'
     request['sink'] = ltn12.sink.table(sink)
     request['headers'] = { Authorization = "Basic " .. mime.b64(auth), }
+    logger.logger("request", request)
     http.TIMEOUT, https.TIMEOUT = 10, 10
     local httpRequest = parsed.scheme == 'http' and http.request or https.request
     local code, headers = socket.skip(1, httpRequest(request))
@@ -589,6 +592,7 @@ function OPDSBrowser:onMenuSelect(item)
 end
 
 function OPDSBrowser:editServerFromInput(item, fields)
+    logger.info("input catalog", fields)
     local servers = {}
     for _, server in ipairs(G_reader_settings:readSetting("opds_servers") or {}) do
         if server.title == item.text or server.url == item.url then
@@ -604,6 +608,7 @@ function OPDSBrowser:editServerFromInput(item, fields)
 end
 
 function OPDSBrowser:editOPDSServer(item)
+    logger.info("edit", item)
     self.edit_server_dialog = MultiInputDialog:new{
         title = _("Edit OPDS catalog"),
         fields = {
@@ -652,6 +657,7 @@ function OPDSBrowser:editOPDSServer(item)
 end
 
 function OPDSBrowser:deleteOPDSServer(item)
+    logger.info("delete", item)
     local servers = {}
     for _, server in ipairs(G_reader_settings:readSetting("opds_servers") or {}) do
         if server.title ~= item.text or server.url ~= item.url then
