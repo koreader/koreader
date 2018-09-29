@@ -267,7 +267,7 @@ function OPDSBrowser:fetchFeed(item_url, username, password)
     request['headers'] = { Authorization = "Basic " .. mime.b64(auth), }
     http.TIMEOUT, https.TIMEOUT = 10, 10
     local httpRequest = parsed.scheme == 'http' and http.request or https.request
-    local code, headers, status = socket.skip(1, httpRequest(request))
+    local code, headers = socket.skip(1, httpRequest(request))
     -- raise error message when network is unavailable
     if headers == nil then
         error(code)
@@ -469,7 +469,7 @@ function OPDSBrowser:downloadFile(item, format, remote_url)
             http.TIMEOUT, https.TIMEOUT = 20, 20
             local httpRequest = parsed.scheme == 'http' and http.request or https.request
             local auth = string.format("%s:%s", item.username, item.password)
-            local __, c, __ = httpRequest {
+            local __, c = httpRequest {
                 url = remote_url,
                 headers = { Authorization = "Basic " .. mime.b64(auth), },
                 sink = ltn12.sink.file(io.open(local_path, "w")),
