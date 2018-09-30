@@ -77,10 +77,14 @@ function OPDSBrowser:init()
           },
           {
              title = "Internet Archive",
-             url = "http://bookserver.archive.org/catalog/",
+             url = "https://bookserver.archive.org",
           },
         }
         G_reader_settings:saveSetting("opds_servers", servers)
+    else
+        if servers[4].title == "Internet Archive" and servers[4].url == "http://bookserver.archive.org/catalog/"  then
+            servers[4].url = "https://bookserver.archive.org"
+        end
     end
     self.item_table = self:genItemTableFromRoot()
     Menu.init(self) -- call parent's init()
@@ -267,7 +271,7 @@ function OPDSBrowser:fetchFeed(item_url, username, password)
     request['method'] = 'GET'
     request['sink'] = ltn12.sink.table(sink)
     request['headers'] = { Authorization = "Basic " .. mime.b64(auth), }
-    logger.logger("request", request)
+    logger.info("request", request)
     http.TIMEOUT, https.TIMEOUT = 10, 10
     local httpRequest = parsed.scheme == 'http' and http.request or https.request
     local code, headers = socket.skip(1, httpRequest(request))
