@@ -81,10 +81,8 @@ function OPDSBrowser:init()
           },
         }
         G_reader_settings:saveSetting("opds_servers", servers)
-    else
-        if servers[4].title == "Internet Archive" and servers[4].url == "http://bookserver.archive.org/catalog/"  then
+    elseif servers[4].title == "Internet Archive" and servers[4].url == "http://bookserver.archive.org/catalog/"  then
             servers[4].url = "https://bookserver.archive.org"
-        end
     end
     self.item_table = self:genItemTableFromRoot()
     Menu.init(self) -- call parent's init()
