@@ -128,7 +128,7 @@ end
 function ImageWidget:_loadfile()
     local itype = string.lower(string.match(self.file, ".+%.([^.]+)") or "")
     if itype == "png" or itype == "jpg" or itype == "jpeg"
-            or itype == "tiff" then
+            or itype == "tiff" or itype == "tif" or itype == "gif" then
         -- In our use cases for files (icons), we either provide width and height,
         -- or just scale_for_dpi, and scale_factor should stay nil.
         -- Other combinations will result in double scaling, and unexpected results.
