@@ -217,7 +217,6 @@ local PocketBookColorLux = PocketBook:new{
     hasColorScreen = yes,
     has3BytesWideFrameBuffer = yes,
     isAlwaysPortrait = no,
-    display_dpi = 100,
     emu_events_dev = "/var/dev/shm/emu_events",
 }
 
