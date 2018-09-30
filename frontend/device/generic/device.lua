@@ -46,6 +46,11 @@ local Device = {
     isAlwaysPortrait = no,
     -- needs full screen refresh when resumed from screensaver?
     needsScreenRefreshAfterResume = yes,
+
+    -- set to yes on devices whose framebuffer reports 8bit per pixel,
+    -- but is actually a color eInk screen with 24bit per pixel.
+    -- The refresh is still based on bytes. (This solves issue #4193.)
+    has3BytesWideFrameBuffer = no,
 }
 
 function Device:new(o)
