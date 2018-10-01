@@ -61,7 +61,6 @@ end
 function ReaderGesture:buildMenu(ges, default)
     local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
     local menu = {
-        --{_("Menu element), "action", enable_element},
         {_("Nothing"), "nothing", true },
         {_("Back 10 pages"), "page_update_down10", not self.is_docless},
         {_("Forward 10 pages"), "page_update_up10", not self.is_docless},
@@ -184,6 +183,10 @@ function ReaderGesture:gestureAction(action)
         UIManager:setDirty(nil, "full")
         G_reader_settings:saveSetting("night_mode", not night_mode)
     elseif action == "full_refresh" then
+        if self.view then
+            -- update footer (time & battery)
+            self.view.footer:updateFooter()
+        end
         UIManager:setDirty(nil, "full")
     elseif action == "bookmarks" then
         self.ui:handleEvent(Event:new("ShowBookmark"))
