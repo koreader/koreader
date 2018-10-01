@@ -180,7 +180,7 @@ function ReaderGesture:gestureAction(action)
     elseif action == "night_mode" then
         local night_mode = G_reader_settings:readSetting("night_mode") or false
         Screen:toggleNightMode()
-        UIManager:setDirty(nil, "full")
+        UIManager:setDirty("all", "full")
         G_reader_settings:saveSetting("night_mode", not night_mode)
     elseif action == "full_refresh" then
         if self.view then
