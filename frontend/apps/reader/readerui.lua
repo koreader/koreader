@@ -356,6 +356,7 @@ function ReaderUI:init()
         -- gesture manager
         self:registerModule("gesture", ReaderGesture:new {
             document = self.document,
+            view = self.view,
             ui = self,
         })
     end
