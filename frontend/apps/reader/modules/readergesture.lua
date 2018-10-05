@@ -66,7 +66,7 @@ function ReaderGesture:buildMenu(ges, default)
         {_("Forward 10 pages"), "page_update_up10", not self.is_docless},
         {_("Folder up"), "folder_up", self.is_docless},
         {_("Bookmarks"), "bookmarks", not self.is_docless},
-        {_("Table of content"), "toc", not self.is_docless},
+        {_("Table of contents"), "toc", not self.is_docless},
         {_("Reading progress"), "reading_progress", ReaderGesture.getReaderProgress ~= nil},
         {_("Full screen refresh"), "full_refresh", true},
         {_("Night mode"), "night_mode", true},
@@ -187,7 +187,7 @@ function ReaderGesture:gestureAction(action)
             -- update footer (time & battery)
             self.view.footer:updateFooter()
         end
-        UIManager:setDirty(nil, "full")
+        UIManager:setDirty("all", "full")
     elseif action == "bookmarks" then
         self.ui:handleEvent(Event:new("ShowBookmark"))
     elseif action =="page_update_up10" then
