@@ -10,6 +10,7 @@ local SonyPRSTUX = Generic:new{
     model = "Sony PRSTUX",
     isSonyPRSTUX = yes,
     hasKeys = yes,
+    hasOTAUpdates = yes,
 }
 
 

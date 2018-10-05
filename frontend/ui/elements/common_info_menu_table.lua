@@ -7,8 +7,7 @@ local T = require("ffi/util").template
 
 local common_info = {}
 
-if Device:isKindle() or Device:isKobo() or Device:isPocketBook()
-    or Device:isAndroid() then
+if Device:hasOTAUpdates() then
     local OTAManager = require("ui/otamanager")
     common_info.ota_update = OTAManager:getOTAMenuTable()
 end

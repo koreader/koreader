@@ -54,6 +54,7 @@ local PocketBook = Generic:new{
     model = "PocketBook",
     isPocketBook = yes,
     isInBackGround = false,
+    hasOTAUpdates = yes,
 }
 
 function PocketBook:init()
