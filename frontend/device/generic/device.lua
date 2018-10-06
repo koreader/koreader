@@ -51,6 +51,9 @@ local Device = {
     -- but is actually a color eInk screen with 24bit per pixel.
     -- The refresh is still based on bytes. (This solves issue #4193.)
     has3BytesWideFrameBuffer = no,
+
+    -- set to yes on devices that support over-the-air incremental updates.
+    hasOTAUpdates = no,
 }
 
 function Device:new(o)

@@ -93,8 +93,7 @@ local order = {
         "----------------------------",
         "system_statistics",
         "----------------------------",
-        "ota_update", --[[ if Device:isKindle() or Device:isKobo() or
-                           Device:isPocketBook() or Device:isAndroid() ]]--
+        "ota_update", -- if Device:hasOTAUpdates()
         "version",
         "help",
         "----------------------------",
