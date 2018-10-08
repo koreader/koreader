@@ -274,10 +274,10 @@ function CreDocument:getTextFromPositions(pos0, pos1)
     end
 end
 
-function CreDocument:getScreenBoxesFromPositions(pos0, pos1)
+function CreDocument:getScreenBoxesFromPositions(pos0, pos1, get_segments)
     local line_boxes = {}
     if pos0 and pos1 then
-        local word_boxes = self._document:getWordBoxesFromPositions(pos0, pos1)
+        local word_boxes = self._document:getWordBoxesFromPositions(pos0, pos1, get_segments)
         for i = 1, #word_boxes do
             local line_box = word_boxes[i]
             table.insert(line_boxes, Geom:new{
@@ -303,6 +303,10 @@ function CreDocument:drawCurrentView(target, x, y, rect, pos)
         -- But it is all fine if we use TYPE_BBRGB16.
         self.buffer = Blitbuffer.new(rect.w, rect.h, self.render_color and Blitbuffer.TYPE_BBRGB16 or nil)
     end
+    -- TODO: self.buffer could be re-used when no page/layout/highlights
+    -- change has been made, to avoid having crengine redraw the exact
+    -- same buffer.
+    -- And it could only change when some other methods from here are called
     self._document:drawCurrentPage(self.buffer, self.render_color)
     target:blitFrom(self.buffer, x, y, 0, 0, rect.w, rect.h)
 end
