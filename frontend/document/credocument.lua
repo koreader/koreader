@@ -367,6 +367,30 @@ function CreDocument:getLinkFromPosition(pos)
     return self._document:getLinkFromPosition(pos.x, pos.y)
 end
 
+function CreDocument:getDocumentFileContent(filepath)
+    if filepath then
+        return self._document:getDocumentFileContent(filepath)
+    end
+end
+
+function CreDocument:getTextFromXPointer(xp)
+    if xp then
+        return self._document:getTextFromXPointer(xp)
+    end
+end
+
+function CreDocument:getHTMLFromXPointer(xp, flags, from_final_parent)
+    if xp then
+        return self._document:getHTMLFromXPointer(xp, flags, from_final_parent)
+    end
+end
+
+function CreDocument:getHTMLFromXPointers(xp0, xp1, flags, from_root_node)
+    if xp0 and xp1 then
+        return self._document:getHTMLFromXPointers(xp0, xp1, flags, from_root_node)
+    end
+end
+
 function CreDocument:gotoPos(pos)
     logger.dbg("CreDocument: goto position", pos)
     self._document:gotoPos(pos)

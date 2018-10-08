@@ -8,6 +8,7 @@ local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
+local T = require("ffi/util").template
 
 local ReaderHighlight = InputContainer:new{}
 
@@ -380,6 +381,78 @@ function ReaderHighlight:lookup(selected_word, selected_link)
     end
 end
 
+function ReaderHighlight:viewSelectionHTML(debug_view)
+    if self.ui.document.info.has_pages then
+        return
+    end
+    if self.selected_text and self.selected_text.pos0 and self.selected_text.pos1 then
+        -- For available flags, see the "#define WRITENODEEX_*" in crengine/src/lvtinydom.cpp
+        local html_flags = 0x3030 -- valid and classic displayed HTML, with only block nodes indented
+        if debug_view then
+            -- Each node on a line, with markers and numbers of skipped chars and siblings shown,
+            -- with possibly invalid HTML (text nodes not escaped)
+            html_flags = 0x3353
+        end
+        local html, css_files = self.ui.document:getHTMLFromXPointers(self.selected_text.pos0,
+                                    self.selected_text.pos1, html_flags, true)
+        if html then
+            -- Make some invisible chars visible
+            if debug_view then
+                html = html:gsub("\xC2\xA0", "␣")  -- no break space: open box
+                html = html:gsub("\xC2\xAD", "⋅") -- soft hyphen: dot operator (smaller than middle dot ·)
+            end
+            local TextViewer = require("ui/widget/textviewer")
+            local Font = require("ui/font")
+            local textviewer
+            local buttons_table = {}
+            if css_files then
+                for i=1, #css_files do
+                    local button = {
+                        text = T(_("View %1"), css_files[i]),
+                        callback = function()
+                            local css_text = self.ui.document:getDocumentFileContent(css_files[i])
+                            local cssviewer = TextViewer:new{
+                                title = css_files[i],
+                                text = css_text or _("Failed getting CSS content"),
+                                text_face = Font:getFace("smallinfont"),
+                                justified = false,
+                            }
+                            UIManager:show(cssviewer)
+                        end,
+                    }
+                    -- One button per row, too make room for the possibly long css filename
+                    table.insert(buttons_table, {button})
+                end
+            end
+            table.insert(buttons_table, {{
+                text = debug_view and _("Switch to standard view") or _("Switch to debug view"),
+                callback = function()
+                    UIManager:close(textviewer)
+                    self:viewSelectionHTML(not debug_view)
+                end,
+            }})
+            table.insert(buttons_table, {{
+                text = _("Close"),
+                callback = function()
+                    UIManager:close(textviewer)
+                end,
+            }})
+            textviewer = TextViewer:new{
+                title = _("Selection HTML"),
+                text = html,
+                text_face = Font:getFace("smallinfont"),
+                justified = false,
+                buttons_table = buttons_table,
+            }
+            UIManager:show(textviewer)
+        else
+            UIManager:show(InfoMessage:new{
+                text = _("Failed getting HTML for selection"),
+            })
+        end
+    end
+end
+
 function ReaderHighlight:translate(selected_text)
     if selected_text.text ~= "" then
         self.ui:handleEvent(Event:new("TranslateText", self, selected_text.text))
@@ -439,6 +512,14 @@ function ReaderHighlight:onHoldRelease()
                         end,
                     },
                     {
+                        text = _("View HTML"),
+                        enabled = not self.ui.document.info.has_pages,
+                        callback = function()
+                            self:viewSelectionHTML()
+                        end,
+                    },
+                    --[[
+                    {
                         text = _("Translate"),
                         enabled = false,
                         callback = function()
@@ -446,6 +527,7 @@ function ReaderHighlight:onHoldRelease()
                             self:onClose()
                         end,
                     },
+                    --]]
                 },
                 {
                     {

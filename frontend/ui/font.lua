@@ -39,6 +39,8 @@ local Font = {
         -- font for displaying input content
         -- we have to use mono here for better distance controlling
         infont = "droid/DroidSansMono.ttf",
+        -- small mono font for displaying code
+        smallinfont = "droid/DroidSansMono.ttf",
 
         -- font for info messages
         infofont = "noto/NotoSans-Regular.ttf",
@@ -66,6 +68,7 @@ local Font = {
         hpkfont = 20,
         hfont = 24,
         infont = 22,
+        smallinfont = 16,
         infofont = 24,
         smallinfofont = 22,
         smallinfofontbold = 22,
