@@ -192,6 +192,10 @@ function ReaderHighlight:onTapPageSavedHighlight(ges)
 end
 
 function ReaderHighlight:onTapXPointerSavedHighlight(ges)
+    -- Getting screen boxes is done for each tap on screen (changing pages,
+    -- showing menu...). We might want to cache these boxes per page (and
+    -- clear that cache when page layout change or highlights are added
+    -- or removed).
     local cur_page
     -- In scroll mode, we'll need to check for highlights in previous or next
     -- page too as some parts of them may be displayed

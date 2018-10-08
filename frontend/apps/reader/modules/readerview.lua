@@ -473,6 +473,10 @@ function ReaderView:drawPageSavedHighlight(bb, x, y)
 end
 
 function ReaderView:drawXPointerSavedHighlight(bb, x, y)
+    -- Getting screen boxes is done for each tap on screen (changing pages,
+    -- showing menu...). We might want to cache these boxes per page (and
+    -- clear that cache when page layout change or highlights are added
+    -- or removed).
     local cur_page
     -- In scroll mode, we'll need to check for highlights in previous or next
     -- page too as some parts of them may be displayed
@@ -499,7 +503,7 @@ function ReaderView:drawXPointerSavedHighlight(bb, x, y)
             -- (A highlight starting on cur_page-17 and ending on cur_page+13 is
             -- a highlight to consider)
             if start_page <= cur_page + neighbour_pages and end_page >= cur_page - neighbour_pages then
-                local boxes = self.ui.document:getScreenBoxesFromPositions(pos0, pos1)
+                local boxes = self.ui.document:getScreenBoxesFromPositions(pos0, pos1, true) -- get_segments=true
                 if boxes then
                     for _, box in pairs(boxes) do
                         local rect = self:pageToScreenTransform(page, box)
