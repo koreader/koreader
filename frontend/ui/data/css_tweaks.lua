@@ -25,11 +25,32 @@ local CssTweaks = {
             title = _("Ignore all publisher margins"),
             priority = 2,
             css = [[* { margin: 0 !important; }]],
+            separator = true,
         },
         {
             id = "titles_page-break-before_avoid ";
             title = _("Avoid blank page on chapter start"),
-            css = [[h1, h2, h3, .title, .title1, .title2, .title3 { page-break-before: avoid !important; }]],
+            priority = 2, -- so it can override the one put back by publisher_page-break-before_avoid
+            css = [[h1, h2, h3 { page-break-before: auto !important; }]],
+
+        },
+        {
+            id = "docfragment_page-break-before_avoid ";
+            title = _("Avoid blank page on chapter end"),
+            priority = 2, -- so it can override the one put back by publisher_page-break-before_avoid
+            css = [[DocFragment { page-break-before: auto !important; }]],
+        },
+        {
+            id = "publisher_page-breaks_avoid ";
+            title = _("Avoid publisher page breaks"),
+            description = _("Disable all publisher page breaks, keeping only KOReader's epub.css ones.\nWhen combined with the two previous tweaks, all page-breaks are disabled."),
+            css = [[
+* { page-break-before: auto !important; page-break-after: auto !important; }
+/* put back epub.css page-breaks */
+DocFragment { page-break-before: always !important; }
+h1, h2, h3 { page-break-before: always !important; page-break-after: avoid !important; }
+h4, h5, h6 { page-break-after: avoid !important; }
+            ]],
         },
     },
     {
