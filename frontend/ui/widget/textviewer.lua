@@ -37,6 +37,7 @@ local TextViewer = InputContainer:new{
     width = nil,
     height = nil,
     buttons_table = nil,
+    justified = true,
 
     title_face = Font:getFace("x_smalltfont"),
     text_face = Font:getFace("x_smallinfofont"),
@@ -156,7 +157,7 @@ function TextViewer:init()
         width = self.width - 2*self.text_padding - 2*self.text_margin,
         height = textw_height - 2*self.text_padding -2*self.text_margin,
         dialog = self,
-        justified = true,
+        justified = self.justified,
     }
     self.textw = FrameContainer:new{
         padding = self.text_padding,
