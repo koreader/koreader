@@ -22,7 +22,8 @@ local function custom_input(name)
 end
 
 return {
-    text = _("E-ink full refresh rate"),
+    text = _("Full refresh rate"),
+    separator = true,
     sub_item_table = {
         {
             text = _("Every page"),
