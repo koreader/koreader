@@ -55,6 +55,14 @@ function ReaderBookmark:addToMainMenu(menu_items)
             self:onShowBookmark()
         end,
     }
+    if not Device:isTouchDevice() then
+        menu_items.add_bookmarks = {
+            text = _("Toggle bookmarks"),
+            callback = function()
+                self:onToggleBookmark()
+            end,
+       }
+    end
     if self.ui.document.info.has_pages then
         menu_items.bookmark_browsing_mode = {
             text = self.bbm_menu_title,
