@@ -1038,7 +1038,6 @@ function ReaderLink:showAsFoonotePopup(link, neglect_current_location)
     local popup
     popup = FootnoteWidget:new{
         html = html,
-        css = css,
         doc_font_size = Screen:scaleBySize(self.ui.font.font_size),
         doc_margins = self.ui.document._document:getPageMargins(),
         close_callback = close_callback,

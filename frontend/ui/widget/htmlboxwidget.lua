@@ -106,8 +106,7 @@ end
 function HtmlBoxWidget:getSinglePageHeight()
     if self.page_count == 1 then
         local page = self.document:openPage(1)
-        local dc = DrawContext.new()
-        local x0, y0, x1, y1 = page:getUsedBBox()
+        local x0, y0, x1, y1 = page:getUsedBBox() -- luacheck: no unused
         page:close()
         return math.ceil(y1) -- no content after y1
     end
