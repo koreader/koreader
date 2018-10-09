@@ -47,6 +47,12 @@ function ReaderFlipping:resetLayout()
 end
 
 function ReaderFlipping:onTap()
+    if not self.ui.document.info.has_pages then
+        -- ReaderRolling has no support (yet) for onTogglePageFlipping,
+        -- so don't make that top left tap area unusable (and allow
+        -- taping on links there)
+        return false
+    end
     self.ui:handleEvent(Event:new("TogglePageFlipping"))
     return true
 end

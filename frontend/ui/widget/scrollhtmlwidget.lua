@@ -82,6 +82,10 @@ function ScrollHtmlWidget:init()
     end
 end
 
+function ScrollHtmlWidget:getSinglePageHeight()
+    return self.htmlbox_widget:getSinglePageHeight()
+end
+
 function ScrollHtmlWidget:scrollToRatio(ratio)
     ratio = math.max(0, math.min(1, ratio)) -- ensure ratio is between 0 and 1 (100%)
     local page_num = 1 + Math.round((self.htmlbox_widget.page_count - 1) * ratio)

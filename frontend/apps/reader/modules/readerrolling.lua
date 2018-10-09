@@ -703,12 +703,12 @@ end
 --[[
 currently we don't need to get page links on each page/pos update
 since we can check link on the fly when tapping on the screen
---]]
 function ReaderRolling:updatePageLink()
     logger.dbg("update page link")
     local links = self.ui.document:getPageLinks()
     self.view.links = links
 end
+--]]
 
 function ReaderRolling:onSetStatusLine(status_line)
     self.cre_top_bar_enabled = status_line == 0
