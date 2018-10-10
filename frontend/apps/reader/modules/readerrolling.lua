@@ -551,7 +551,7 @@ function ReaderRolling:onGotoViewRel(diff)
 end
 
 function ReaderRolling:onPanning(args, _)
-    --@TODO disable panning in page view_mode?  22.12 2012 (houqp)
+    if self.view.view_mode ~= "scroll" then return end
     local _, dy = unpack(args)
     self:_gotoPos(self.current_pos + dy * self.panning_steps.normal)
     self.xpointer = self.ui.document:getXPointer()
