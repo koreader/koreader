@@ -373,18 +373,25 @@ end
 
 function FileChooser:onBack()
     local back_to_exit = G_reader_settings:readSetting("back_to_exit") or "prompt"
-    if back_to_exit == "always" then
-        return self:onClose()
-    elseif back_to_exit == "disable" then
-        return true
-    elseif back_to_exit == "prompt" then
-            UIManager:show(ConfirmBox:new{
-                text = _("Exit KOReader?"),
-                ok_text = _("Exit"),
-                ok_callback = function()
-                    self:onClose()
-                end
-            })
+    local back_in_filemanager = G_reader_settings:readSetting("back_in_filemanager") or "default"
+    if back_in_filemanager == "default" then
+        if back_to_exit == "always" then
+            return self:onClose()
+        elseif back_to_exit == "disable" then
+            return true
+        elseif back_to_exit == "prompt" then
+                UIManager:show(ConfirmBox:new{
+                    text = _("Exit KOReader?"),
+                    ok_text = _("Exit"),
+                    ok_callback = function()
+                        self:onClose()
+                    end
+                })
+
+            return true
+        end
+    elseif back_in_filemanager == "parent_folder" then
+        self:changeToPath(string.format("%s/..", self.path))
         return true
     end
 end
