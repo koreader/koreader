@@ -103,6 +103,15 @@ function HtmlBoxWidget:getSize()
     return self.dimen
 end
 
+function HtmlBoxWidget:getSinglePageHeight()
+    if self.page_count == 1 then
+        local page = self.document:openPage(1)
+        local x0, y0, x1, y1 = page:getUsedBBox() -- luacheck: no unused
+        page:close()
+        return math.ceil(y1) -- no content after y1
+    end
+end
+
 function HtmlBoxWidget:paintTo(bb, x, y)
     self.dimen.x = x
     self.dimen.y = y

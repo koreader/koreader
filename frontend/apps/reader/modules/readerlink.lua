@@ -68,23 +68,43 @@ function ReaderLink:initGesListener()
 end
 
 local function isTapToFollowLinksOn()
-    return not G_reader_settings:isFalse("tap_to_follow_links")
+    return G_reader_settings:nilOrTrue("tap_to_follow_links")
+end
+
+local function isLargerTapAreaToFollowLinksEnabled()
+    return G_reader_settings:isTrue("larger_tap_area_to_follow_links")
+end
+
+local function isTapIgnoreExternalLinksEnabled()
+    return G_reader_settings:isTrue("tap_ignore_external_links")
+end
+
+local function isTapLinkFootnotePopupEnabled()
+    return G_reader_settings:isTrue("tap_link_footnote_popup")
+end
+
+local function isPreferFootnoteEnabled()
+    return G_reader_settings:isTrue("link_prefer_footnote")
 end
 
 local function isSwipeToGoBackEnabled()
-    return G_reader_settings:readSetting("swipe_to_go_back") == true
+    return G_reader_settings:isTrue("swipe_to_go_back")
 end
 
 local function isSwipeToFollowFirstLinkEnabled()
-    return G_reader_settings:readSetting("swipe_to_follow_first_link") == true
+    return G_reader_settings:isTrue("swipe_to_follow_first_link")
 end
 
 local function isSwipeToFollowNearestLinkEnabled()
-    return G_reader_settings:readSetting("swipe_to_follow_nearest_link") == true
+    return G_reader_settings:isTrue("swipe_to_follow_nearest_link")
+end
+
+local function isSwipeLinkFootnotePopupEnabled()
+    return G_reader_settings:isTrue("swipe_link_footnote_popup")
 end
 
 local function isSwipeToJumpToLatestBookmarkEnabled()
-    return G_reader_settings:readSetting("swipe_to_jump_to_latest_bookmark") == true
+    return G_reader_settings:isTrue("swipe_to_jump_to_latest_bookmark")
 end
 
 function ReaderLink:addToMainMenu(menu_items)
@@ -150,6 +170,73 @@ If any of the other Swipe to follow link options is enabled, this will work only
             },
         }
     }
+    -- Insert other items that are (for now) only supported with CreDocuments
+    -- (They could be supported nearly as-is, but given that there is a lot
+    -- less visual feedback on PDF document of what is a link, or that we just
+    -- followed a link, than on EPUB, it's safer to not use them on PDF documents
+    -- even if the user enabled these features for EPUB documents).
+    if not self.ui.document.info.has_pages then
+        local footnote_popup_help_text = _([[
+Show internal link target content in a footnote popup when it looks like it might be a footnote, instead of following the link.
+
+Note that depending on the book quality, footnote detection may not always work correctly.
+The footnote content may be empty, truncated, or include other footnotes.
+
+From the footnote popup, you can jump to the footnote location in the book by swiping to the left.]])
+        -- Tap section
+        menu_items.follow_links.sub_item_table[1].separator = nil
+        table.insert(menu_items.follow_links.sub_item_table, 2, {
+            text = _("Allow larger tap area around links"),
+            checked_func = isLargerTapAreaToFollowLinksEnabled,
+            callback = function()
+                G_reader_settings:saveSetting("larger_tap_area_to_follow_links",
+                    not isLargerTapAreaToFollowLinksEnabled())
+            end,
+            help_text = _([[Extends the tap area around internal links. Useful with a small font where tapping on small footnote links may be tedious.]]),
+        })
+        table.insert(menu_items.follow_links.sub_item_table, 3, {
+            text = _("Ignore external links"),
+            checked_func = isTapIgnoreExternalLinksEnabled,
+            callback = function()
+                G_reader_settings:saveSetting("tap_ignore_external_links",
+                    not isTapIgnoreExternalLinksEnabled())
+            end,
+            help_text = _([[Ignore taps on external links. Useful with Wikipedia EPUBs to make page turning easier.
+You can still follow them from the dictionary window or the selection menu after holding on them.]]),
+        })
+        table.insert(menu_items.follow_links.sub_item_table, 4, {
+            text = _("Show footnotes in popup"),
+            checked_func = isTapLinkFootnotePopupEnabled,
+            callback = function()
+                G_reader_settings:saveSetting("tap_link_footnote_popup",
+                    not isTapLinkFootnotePopupEnabled())
+            end,
+            help_text = footnote_popup_help_text,
+            separator = true,
+        })
+        table.insert(menu_items.follow_links.sub_item_table, 5, {
+            text = _("Show more links as footnotes"),
+            checked_func = isPreferFootnoteEnabled,
+            callback = function()
+                G_reader_settings:saveSetting("link_prefer_footnote",
+                    not isPreferFootnoteEnabled())
+            end,
+            help_text = _([[Loosen footnote detection rules to show more links as footnotes.]]),
+            separator = true,
+        })
+        -- Swipe section
+        menu_items.follow_links.sub_item_table[8].separator = nil
+        table.insert(menu_items.follow_links.sub_item_table, 9, {
+            text = _("Show footnotes in popup"),
+            checked_func = isSwipeLinkFootnotePopupEnabled,
+            callback = function()
+                G_reader_settings:saveSetting("swipe_link_footnote_popup",
+                    not isSwipeLinkFootnotePopupEnabled())
+            end,
+            help_text = footnote_popup_help_text,
+            separator = true,
+        })
+    end
     menu_items.go_to_previous_location = {
         text = _("Go back to previous location"),
         enabled_func = function() return #self.location_stack > 0 end,
@@ -220,25 +307,33 @@ function ReaderLink:getLinkFromGes(ges)
         -- element in the same paragraph). If followed then back, we could get
         -- to a different page. So, we check here how valid it is, and if not,
         -- we just discard it so that addCurrentLocationToStack() is used.
-        if a_xpointer and not self:isXpointerCoherent(a_xpointer) then
-            a_xpointer = nil
+        local from_xpointer = nil
+        if a_xpointer and self:isXpointerCoherent(a_xpointer) then
+            from_xpointer = a_xpointer
         end
 
         if link_xpointer ~= "" then
-            -- This link's target xpointer is more precise than a classic
+            -- This link's source xpointer is more precise than a classic
             -- xpointer to top of a page: we can show a marker at its
             -- y-position in target page
+            -- (keep a_xpointer even if incoherent, might be needed for
+            -- footnote detection (better than nothing if incoherent)
             return {
                 xpointer = link_xpointer,
                 marker_xpointer = link_xpointer,
-                from_xpointer = a_xpointer,
+                from_xpointer = from_xpointer,
+                a_xpointer = a_xpointer,
+                -- tap y-position should be a good approximation of link y
+                -- (needed to keep its highlight a bit more time if it was
+                -- hidden by the footnote popup)
+                link_y = ges.pos.y
             }
         end
     end
 end
 
 --- Highlights a linkbox if available and goes to it.
-function ReaderLink:showLinkBox(link)
+function ReaderLink:showLinkBox(link, allow_footnote_popup)
     if link and link.lbox then -- pdfdocument
         -- screen box that holds the link
         local sbox = self.view:pageToScreenTransform(link.pos.page,
@@ -247,12 +342,14 @@ function ReaderLink:showLinkBox(link)
             UIManager:show(LinkBox:new{
                 box = sbox,
                 timeout = FOLLOW_LINK_TIMEOUT,
-                callback = function() self:onGotoLink(link.link) end
+                callback = function()
+                    self:onGotoLink(link.link, false, allow_footnote_popup)
+                end
             })
             return true
         end
     elseif link and link.xpointer ~= "" then -- credocument
-        return self:onGotoLink(link)
+        return self:onGotoLink(link, false, allow_footnote_popup)
     end
 end
 
@@ -265,9 +362,43 @@ end
 
 function ReaderLink:onTap(_, ges)
     if not isTapToFollowLinksOn() then return end
-    local link = self:getLinkFromGes(ges)
-    if link then
-        return self:showLinkBox(link)
+    if self.ui.document.info.has_pages then
+        -- (footnote popup, larger tap area and ignore external links
+        -- are for now not supported with non-CreDocuments)
+        local link = self:getLinkFromGes(ges)
+        if link then
+            return self:showLinkBox(link)
+        end
+        return
+    end
+    local allow_footnote_popup = isTapLinkFootnotePopupEnabled()
+    -- If tap_ignore_external_links, skip precise tap detection to really
+    -- ignore a tap on an external link, and allow using onGoToPageLink()
+    -- to find the nearest internal link
+    if not isTapIgnoreExternalLinksEnabled() then
+        local link = self:getLinkFromGes(ges)
+        if link then
+            return self:showLinkBox(link, allow_footnote_popup)
+        end
+    end
+    if isLargerTapAreaToFollowLinksEnabled() or isTapIgnoreExternalLinksEnabled() then
+        local max_distance = 0 -- used when only isTapIgnoreExternalLinksEnabled()
+        if isLargerTapAreaToFollowLinksEnabled() then
+            -- If no link found exactly at the tap position,
+            -- try to find any link in page around that tap position.
+            -- onGoToPageLink() will grab only internal links, which
+            -- is nice as url links are usually longer - so this
+            -- give more chance to catch a small link to footnote stuck
+            -- to a longer Wikipedia article name link.
+            --
+            -- 30px on a reference 167 dpi screen makes 0.45cm, which
+            -- seems fine (on a 300dpi device, this will be scaled
+            -- to 54px (which makes 1/20th of screen witdh on a GloHD)
+            -- Trust Screen.dpi (which may not be the real device
+            -- screen DPI if the user has set another one).
+            max_distance = Screen:scaleByDPI(30)
+        end
+        return self:onGoToPageLink(ges, false, allow_footnote_popup, max_distance)
     end
 end
 
@@ -283,7 +414,9 @@ function ReaderLink:addCurrentLocationToStack()
 end
 
 --- Goes to link.
-function ReaderLink:onGotoLink(link, neglect_current_location)
+-- (This is called by other modules (highlight, search) to jump to a xpointer,
+-- they should not provide allow_footnote_popup=true)
+function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_popup)
     logger.dbg("onGotoLink:", link)
     if self.ui.document.info.has_pages then
         -- internal pdf links have a "page" attribute, while external ones have an "uri" attribute
@@ -305,6 +438,12 @@ function ReaderLink:onGotoLink(link, neglect_current_location)
         -- which accepts both of the above legitimate xpointer as input.
         if self.ui.document:isXPointerInDocument(link.xpointer) then
             logger.dbg("Internal link:", link)
+            if allow_footnote_popup then
+                if self:showAsFootnotePopup(link, neglect_current_location) then
+                    return true
+                end
+                -- if it fails for any reason, fallback to following link
+            end
             if not neglect_current_location then
                 if link.from_xpointer then
                     -- We have a more precise xpointer than the xpointer to top of
@@ -478,9 +617,11 @@ function ReaderLink:onSwipe(arg, ges)
     elseif ges.direction == "west" then
         local ret = false
         if isSwipeToFollowFirstLinkEnabled() then
+            -- no sense allowing footnote popup if first link
             ret = self:onGoToPageLink(ges, true)
         elseif isSwipeToFollowNearestLinkEnabled() then
-            ret = self:onGoToPageLink(ges)
+            local allow_footnote_popup = isSwipeLinkFootnotePopupEnabled()
+            ret = self:onGoToPageLink(ges, false, allow_footnote_popup)
         end
         -- If no link found, or no follow link option enabled,
         -- jump to latest bookmark (if enabled)
@@ -492,8 +633,11 @@ function ReaderLink:onSwipe(arg, ges)
 end
 
 --- Goes to link nearest to the gesture (or first link in page)
-function ReaderLink:onGoToPageLink(ges, use_page_first_link)
+function ReaderLink:onGoToPageLink(ges, use_page_first_link, allow_footnote_popup, max_distance)
     local selected_link = nil
+    local selected_distance2 = nil
+    -- We use squares of distances all along the calculations, no need
+    -- to math.sqrt() them when comparing
     if self.ui.document.info.has_pages then
         local pos = self.view:screenToPageTransform(ges.pos)
         if not pos then
@@ -539,8 +683,18 @@ function ReaderLink:onGoToPageLink(ges, use_page_first_link)
                 end
             end
         end
+        if shortest_dist then
+            selected_distance2 = shortest_dist
+        end
     else
-        local links = self.ui.document:getPageLinks()
+        -- Getting segments on a page with many internal links is
+        -- a bit expensive. With larger_tap_area_to_follow_links=true,
+        -- this is done for each tap on screen (changing pages, showing
+        -- menu...). We might want to cache these links per page (and
+        -- clear that cache when page layout change).
+        -- As we care only about internal links, we request them only
+        -- (and avoid that expensive segments work on external links)
+        local links = self.ui.document:getPageLinks(true) -- only get internal links
         if not links or #links == 0 then
             return
         end
@@ -563,6 +717,29 @@ function ReaderLink:onGoToPageLink(ges, use_page_first_link)
         --         ["start_y"] = 1201
         --         ["a_xpointer"] = "/body/DocFragment/body/div/p[12]/sup[3]/a[3].0",
         --     },
+        -- and when segments requested (example for a multi-lines link):
+        --     [3] = {
+        --         ["section"] = "#_doc_fragment_0_ Man_of_letters",
+        --         ["a_xpointer"] = "/body/DocFragment/body/div/div[4]/ul/li[3]/ul/li[2]/ul/li[1]/ul/li[3]/a.0",
+        --         ["start_x"] = 101,
+        --         ["start_y"] = 457,
+        --         ["end_x"] = 176,
+        --         ["end_y"] = 482,,
+        --         ["segments"] = {
+        --             [1] = {
+        --                  ["x0"] = 101,
+        --                  ["y0"] = 457,
+        --                  ["x1"] = 590,
+        --                  ["y1"] = 482,
+        --             },
+        --             [2] = {
+        --                  ["x0"] = 101,
+        --                  ["y0"] = 482,
+        --                  ["x1"] = 177,
+        --                  ["y1"] = 507,
+        --             }
+        --         },
+        --     },
         -- Note: with some documents and some links, crengine may give wrong
         -- coordinates, and our code below may miss or give the wrong first
         -- or nearest link...
@@ -579,42 +756,96 @@ function ReaderLink:onGoToPageLink(ges, use_page_first_link)
                         first_start_y = link["start_y"]
                     end
                 else
-                    local start_dist = math.pow(link.start_x - pos_x, 2) + math.pow(link.start_y - pos_y, 2)
-                    local end_dist = math.pow(link.end_x - pos_x, 2) + math.pow(link.end_y - pos_y, 2)
-                    local min_dist = math.min(start_dist, end_dist)
-                    if shortest_dist == nil or min_dist < shortest_dist then
-                        selected_link = link
-                        shortest_dist = min_dist
+                    if link["segments"] then
+                        -- With segments, each is a horizontal segment, with start_x < end_x,
+                        -- and we should compute the distance from gesture position to
+                        -- each segment.
+                        local segments_max_y = -1
+                        local link_is_shortest = false
+                        local segments = link["segments"]
+                        for i=1, #segments do
+                            local segment = segments[i]
+                            local segment_dist
+                            -- Distance here is kept squared (d^2 = diff_x^2 + diff_y^2),
+                            -- and we compute each part individually
+                            -- First, vertical distance (squared)
+                            if pos_y < segment.y0 then -- above the segment height
+                                segment_dist = math.pow(segment.y0 - pos_y, 2)
+                            elseif pos_y > segment.y1 then -- below the segment height
+                                segment_dist = math.pow(pos_y - segment.y1, 2)
+                            else -- gesture pos is on the segment height, no vertical distance
+                                segment_dist = 0
+                            end
+                            -- Next, horizontal distance (squared)
+                            if pos_x < segment.x0 then -- on the left of segment: calc dist to x0
+                                segment_dist = segment_dist + math.pow(segment.x0 - pos_x, 2)
+                            elseif pos_x > segment.x1 then -- on the right of segment : calc dist to x1
+                                segment_dist = segment_dist + math.pow(pos_x - segment.x1, 2)
+                            -- else -- gesture pos is in the segment width, no horizontal distance
+                            end
+                            if shortest_dist == nil or segment_dist < shortest_dist then
+                                selected_link = link
+                                shortest_dist = segment_dist
+                                link_is_shortest = true
+                            end
+                            if segment.y1 > segments_max_y then
+                                segments_max_y = segment.y1
+                            end
+                        end
+                        if link_is_shortest then
+                            -- update the selected_link we just set with its lower segment y
+                            selected_link.link_y = segments_max_y
+                        end
+                    else
+                        -- Before "segments" were available, we did this:
+                        -- We'd only get a horizontal segment if the link is on a single line.
+                        -- When it is multi-lines, we can't do much calculation...
+                        -- We used to just check distance from start_x and end_x, and
+                        -- we could miss a tap in the middle of a long link.
+                        -- (also start_y = end_y = the top of the rect for a link on a single line)
+                        local start_dist = math.pow(link.start_x - pos_x, 2) + math.pow(link.start_y - pos_y, 2)
+                        local end_dist = math.pow(link.end_x - pos_x, 2) + math.pow(link.end_y - pos_y, 2)
+                        local min_dist = math.min(start_dist, end_dist)
+                        if shortest_dist == nil or min_dist < shortest_dist then
+                            selected_link = link
+                            selected_link.link_y = link.end_y
+                            shortest_dist = min_dist
+                        end
                     end
                 end
             end
         end
-        -- cre.cpp getPageLinks() does highlight found links :
-        --   sel.add( new ldomXRange(*links[i]) ); // highlight
-        -- and we'll find them highlighted when back from link.
-        -- So let's clear them now.
-        self.ui.document:clearSelection()
-        -- (Comment out previous line to visually see which links on the
-        -- page are not coherent: those not highlighted)
+        if shortest_dist then
+            selected_distance2 = shortest_dist
+        end
 
         if selected_link then
-            logger.dbg("original selected_link", selected_link)
+            logger.dbg("nearest selected_link", selected_link)
+            -- Check a_xpointer is coherent, use it as from_xpointer only if it is
+            local from_xpointer = nil
+            if selected_link.a_xpointer and self:isXpointerCoherent(selected_link.a_xpointer) then
+                from_xpointer = selected_link.a_xpointer
+            end
             -- Make it a link as expected by onGotoLink
             selected_link = {
-                xpointer = selected_link["section"],
-                marker_xpointer = selected_link["section"],
-                from_xpointer = selected_link["a_xpointer"],
+                xpointer = selected_link.section,
+                marker_xpointer = selected_link.section,
+                from_xpointer = from_xpointer,
+                -- (keep a_xpointer even if incoherent, might be needed for
+                -- footnote detection (better than nothing if incoherent)
+                a_xpointer = selected_link.a_xpointer,
+                -- keep the link y position, so we can keep its highlight shown
+                -- a bit more time if it was hidden by the footnote popup
+                link_y = selected_link.link_y,
             }
-            logger.dbg("selected_link", selected_link)
-            -- Check from_xpointer is coherent, and unset it if not
-            if selected_link.from_xpointer and not self:isXpointerCoherent(selected_link.from_xpointer) then
-                selected_link.from_xpointer = nil
-            end
-
         end
     end
     if selected_link then
-        return self:onGotoLink(selected_link)
+        if max_distance and selected_distance2 and selected_distance2 > math.pow(max_distance, 2) then
+            logger.dbg("nearest link is further than max distance, ignoring it")
+        else
+            return self:onGotoLink(selected_link, false, allow_footnote_popup)
+        end
     end
 end
 
@@ -645,6 +876,190 @@ function ReaderLink:onGoToLatestBookmark(ges)
             return self:onGotoLink(link)
         end
     end
+end
+
+function ReaderLink:showAsFootnotePopup(link, neglect_current_location)
+    if self.ui.document.info.has_pages then
+        return false -- not supported
+    end
+
+    local source_xpointer = link.from_xpointer or link.a_xpointer
+    local target_xpointer = link.xpointer
+    if not source_xpointer or not target_xpointer then
+        return false
+    end
+    local trust_source_xpointer = link.from_xpointer ~= nil
+
+    -- For reference, Kobo information and conditions for showing a link as popup:
+    --   https://github.com/kobolabs/epub-spec#footnotesendnotes-are-fully-supported-across-kobo-platforms
+    -- Calibre has its own heuristics to decide if a link is to a footnote or not,
+    -- and what to gather around the footnote target as the footnote content to display:
+    -- Nearly same logic, implemented in python and in coffeescript:
+    --   https://github.com/kovidgoyal/calibre/blob/master/src/pyj/read_book/footnotes.pyj
+    --   https://github.com/kovidgoyal/calibre/blob/master/src/calibre/ebooks/oeb/display/extract.coffee
+
+    -- We do many tests, including most of those done by Kobo and Calibre, to
+    -- detect if a link is to a footnote.
+    -- The detection is done in cre.cpp, because it makes use of DOM navigation and
+    -- inspection that can't be done from Lua (unless we add many proxy functions)
+
+    -- Detection flags, to allow tweaking a bit cre.cpp code if needed
+    local flags = 0
+
+    -- If no detection decided, fallback to false (not a footnote, so, follow link)
+    if isPreferFootnoteEnabled() then
+        flags = flags + 0x0001 -- if set, fallback to true
+    end
+
+    if trust_source_xpointer then
+        -- trust source_xpointer: allow checking attribute and styles
+        -- if not trusted, checks marked (*) don't apply
+        flags = flags + 0x0002
+    end
+
+    -- Trust role= and epub:type= attribute values if defined, for source(*) and target
+    -- (If needed, we could add a check for a private CSS property "-cr-hint: footnote"
+    -- or "-cr-hint: noteref", so one can define it to specific classes with Styles
+    -- tweaks.)
+    flags = flags + 0x0004
+    -- flags = flags + 0x0008 -- Unused yet
+
+    -- TARGET STATUS AND SOURCE RELATION
+    -- Target must have an anchor #id (ie: must not be a simple link to a html file)
+    flags = flags + 0x0010
+    -- Target must come after source in the book
+    -- (Glossary definitions may point to others before, so avoid this check
+    -- if user wants more footnotes)
+    if not isPreferFootnoteEnabled() then
+        flags = flags + 0x0020
+    end
+    -- Target must not be a target of a TOC entry
+    flags = flags + 0x0040
+    -- flags = flags + 0x0080 -- Unused yet
+
+    -- SOURCE NODE CONTEXT
+    -- (*) Source link must not be empty content, and must not be the only content of
+    -- its parent block tag (this could mean it's a chapter title in an inline ToC)
+    flags = flags + 0x0100
+    -- (*) Source node vertical alignment:
+    -- check that all non-empty-nor-space-only children have their computed
+    -- vertical-align: any of: sub super top bottom (which will be the case
+    -- whether a parent or the childre themselves are in a <sub> or <sup>)
+    -- (Also checks if parent or children are <sub> or <sup>, which may
+    -- have been tweaked with CSS to not have one of these vertical-align.)
+    flags = flags + 0x0200
+    -- (*) Source node text (punctuation and parens stripped) is a number
+    -- (3 digits max, to avoid catching years ... but only years>1000)
+    flags = flags + 0x0400
+    -- (*) Source node text (punctuation and parens stripped) is 1 or 2 letters,
+    -- with 0 to 2 numbers (a, z, ab, 1a, B2)
+    flags = flags + 0x0800
+
+    -- TARGET NODE CONTEXT
+    -- Target must not contain, or be contained, in H1..H6
+    flags = flags + 0x1000
+    -- flags = flags + 0x2000 -- Unused yet
+    -- Try to extend footnote, to gather more text after target
+    flags = flags + 0x4000
+    -- Extended target readable text (not accounting HTML tags) must not be
+    -- larger than max_text_size
+    flags = flags + 0x8000
+    local max_text_size = 10000 -- nb of chars
+
+    logger.dbg("Checking if link is to a footnote:", flags, source_xpointer, target_xpointer)
+    local is_footnote, reason, extStopReason, extStartXP, extEndXP =
+            self.ui.document:isLinkToFootnote(source_xpointer, target_xpointer, flags, max_text_size)
+    if not is_footnote then
+        logger.info("not a footnote:", reason)
+        return false
+    end
+    logger.info("is a footnote:", reason)
+    if extStartXP then
+        logger.info("  extended until:", extStopReason)
+        logger.info(extStartXP)
+        logger.info(extEndXP)
+    else
+        logger.info("  not extended because:", extStopReason)
+    end
+    -- OK, done with the dirty footnote detection work, we can now
+    -- get back to the fancy UI stuff
+
+    -- We don't request CSS files, to have a more consistent footnote style.
+    -- (we still get and give to MuPDF styles set with style="" )
+    -- (We also don't because MuPDF is quite sensitive to bad css, and may
+    -- then just ignore the whole stylesheet, including our own declarations
+    -- we add at start)
+    --
+    -- flags = 0x0000 to get the simplest/purest HTML without CSS
+    local html
+    if extStartXP and extEndXP then
+        html = self.ui.document:getHTMLFromXPointers(extStartXP, extEndXP, 0x0000)
+    else
+        html = self.ui.document:getHTMLFromXPointer(target_xpointer, 0x0000, true)
+        -- from_final_parent = true to get a possibly more complete footnote
+    end
+    if not html then
+        logger.info("failed getting HTML for xpointer:", target_xpointer)
+        return false
+    end
+
+    -- if false then -- for debug, to display html
+    --     UIManager:show( require("ui/widget/textviewer"):new{text = html})
+    --     return true
+    -- end
+
+    -- As we stay on the current page, we can highlight the selected link
+    -- (which might not be seen when covered by FootnoteWidget)
+    local close_callback = nil
+    if link.from_xpointer then -- coherent xpointer
+        self.ui.document:highlightXPointer(link.from_xpointer)
+        UIManager:setDirty(self.dialog, "ui")
+        close_callback = function(footnote_height)
+            -- remove this highlight (actually all) on close
+            local clear_highlight = function()
+                self.ui.document:highlightXPointer()
+                UIManager:setDirty(self.dialog, "ui")
+            end
+            if footnote_height then
+                -- If the link was hidden by the footnote popup,
+                -- delay a bit its clearing, so the user can see
+                -- it and know where to start reading again
+                local footnote_top_y = Screen:getHeight() - footnote_height
+                if link.link_y > footnote_top_y then
+                    UIManager:scheduleIn(0.5, clear_highlight)
+                else
+                    clear_highlight()
+                end
+            else
+                clear_highlight()
+            end
+        end
+    end
+
+    -- We give FootnoteWidget the document margins and font size, so
+    -- it can base its own values on them (note that this can look
+    -- misaligned when floating punctuation is enabled, as margins then
+    -- don't have a fixed size)
+    local FootnoteWidget = require("ui/widget/footnotewidget")
+    local popup
+    popup = FootnoteWidget:new{
+        html = html,
+        doc_font_size = Screen:scaleBySize(self.ui.font.font_size),
+        doc_margins = self.ui.document._document:getPageMargins(),
+        close_callback = close_callback,
+        follow_callback = function() -- follow the link on swipe west
+            UIManager:close(popup)
+            self:onGotoLink(link, neglect_current_location)
+        end,
+        on_tap_close_callback = function(arg, ges)
+            -- on tap outside, see if we are tapping on another footnote,
+            -- and display it if we do (avoid the need for 2 taps)
+            self:onTap(arg, ges)
+        end,
+        dialog = self.dialog,
+    }
+    UIManager:show(popup)
+    return true
 end
 
 return ReaderLink

@@ -359,12 +359,21 @@ function CreDocument:getCurrentPos()
     return self._document:getCurrentPos()
 end
 
-function CreDocument:getPageLinks()
-    return self._document:getPageLinks()
+function CreDocument:getPageLinks(internal_links_only)
+    return self._document:getPageLinks(internal_links_only)
 end
 
 function CreDocument:getLinkFromPosition(pos)
     return self._document:getLinkFromPosition(pos.x, pos.y)
+end
+
+function CreDocument:isLinkToFootnote(source_xpointer, target_xpointer, flags, max_text_size)
+    return self._document:isLinkToFootnote(source_xpointer, target_xpointer, flags, max_text_size)
+end
+
+function CreDocument:highlightXPointer(xp)
+    -- with xp=nil, clears previous highlight(s)
+    return self._document:highlightXPointer(xp)
 end
 
 function CreDocument:getDocumentFileContent(filepath)

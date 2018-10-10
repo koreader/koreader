@@ -223,7 +223,7 @@ function ReaderHighlight:onTapXPointerSavedHighlight(ges)
                 -- (A highlight starting on cur_page-17 and ending on cur_page+13 is
                 -- a highlight to consider)
                 if start_page <= cur_page + neighbour_pages and end_page >= cur_page - neighbour_pages then
-                    local boxes = self.ui.document:getScreenBoxesFromPositions(pos0, pos1)
+                    local boxes = self.ui.document:getScreenBoxesFromPositions(pos0, pos1, true) -- get_segments=true
                     if boxes then
                         for index, box in pairs(boxes) do
                             if inside_box(pos, box) then
