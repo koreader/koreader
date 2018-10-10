@@ -167,6 +167,31 @@ if Device:hasKeys() then
                     },
                 },
             },
+            {
+                text = _("Back key in the filemanager"),
+                sub_item_table = {
+                    {
+                        text = _("Default"),
+                        checked_func = function()
+                            return G_reader_settings:readSetting("back_in_filemanager")
+                                       == "default"
+                        end,
+                        callback = function()
+                            G_reader_settings:saveSetting("back_in_filemanager", "default")
+                        end,
+                    },
+                    {
+                        text = _("Go to parent folder"),
+                        checked_func = function()
+                            return G_reader_settings:readSetting("back_in_filemanager")
+                                       == "parent_folder"
+                        end,
+                        callback = function()
+                            G_reader_settings:saveSetting("back_in_filemanager", "parent_folder")
+                        end,
+                    },
+                },
+            },
         }
     }
 end
