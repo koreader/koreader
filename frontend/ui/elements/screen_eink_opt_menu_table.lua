@@ -2,7 +2,7 @@ local _ = require("gettext")
 local Screen = require("device").screen
 
 return {
-    text = _("E-ink Settings"),
+    text = _("E-ink settings"),
     sub_item_table = {
         require("ui/elements/refresh_menu_table"),
         {
