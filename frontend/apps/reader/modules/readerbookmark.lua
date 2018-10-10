@@ -57,7 +57,7 @@ function ReaderBookmark:addToMainMenu(menu_items)
     }
     if not Device:isTouchDevice() then
         menu_items.toggle_bookmark = {
-            text_func = function() return self:isCurrentPageBookmarked() and _("Remove bookmark for current page") or_("Bookmark current page") end,
+            text_func = function() return self:isCurrentPageBookmarked() and _("Remove bookmark for current page") or _("Bookmark current page") end,
             callback = function()
                 self:onToggleBookmark()
             end,
