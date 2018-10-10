@@ -168,7 +168,7 @@ if Device:hasKeys() then
                 },
             },
             {
-                text = _("Back key in the filemanager"),
+                text = _("Back key in file browser"),
                 sub_item_table = {
                     {
                         text = _("Default"),
