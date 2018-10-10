@@ -56,8 +56,8 @@ function ReaderBookmark:addToMainMenu(menu_items)
         end,
     }
     if not Device:isTouchDevice() then
-        menu_items.add_bookmarks = {
-            text = _("Toggle bookmarks"),
+        menu_items.toggle_bookmark = {
+            text_func = function() return self:isCurrentPageBookmarked() and _("Remove bookmark for current page") or_("Bookmark current page") end,
             callback = function()
                 self:onToggleBookmark()
             end,
@@ -164,6 +164,16 @@ function ReaderBookmark:onSaveSettings()
     self.ui.doc_settings:saveSetting("bookmarks", self.bookmarks)
     self.ui.doc_settings:saveSetting("bookmarks_sorted", true)
     self.ui.doc_settings:saveSetting("highlights_imported", true)
+end
+
+function ReaderBookmark:isCurrentPageBookmarked()
+    local pn_or_xp
+    if self.ui.document.info.has_pages then
+        pn_or_xp = self.view.state.page
+    else
+        pn_or_xp = self.ui.document:getXPointer()
+    end
+    return self:getDogearBookmarkIndex(pn_or_xp) and true or false
 end
 
 function ReaderBookmark:onToggleBookmark()
