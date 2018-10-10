@@ -88,7 +88,7 @@ end
 
 function ReaderUI:init()
     -- cap screen refresh on pan to 2 refreshes per second
-    local pan_rate = Screen.eink and 2.0 or 30.0
+    local pan_rate = Screen.low_pan_rate and 2.0 or 30.0
 
     self.postInitCallback = {}
     self.postReaderCallback = {}
