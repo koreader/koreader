@@ -43,7 +43,7 @@ local T = require("ffi/util").template
 --   error: css syntax error: unterminated comment.
 -- So, HTML tags in comments are written upppercase (eg: <li> => LI)
 
--- Independant string for @page, so we can T() it individually,
+-- Independent string for @page, so we can T() it individually,
 -- without needing to escape % in DEFAULT_CSS
 local PAGE_CSS = [[
 @page {
@@ -104,7 +104,7 @@ local FootnoteWidget = InputContainer:new{
         bottom = Screen:scaleBySize(10),
     },
     width = Screen:getWidth(),
-    height = Screen:getHeight() * 1/3, -- will be decreased when content is smaller
+    height = math.floor(Screen:getHeight() * 1/3), -- will be decreased when content is smaller
     follow_callback = nil,
     on_tap_close_callback = nil,
     close_callback = nil,

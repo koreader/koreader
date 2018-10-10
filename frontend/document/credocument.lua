@@ -367,8 +367,8 @@ function CreDocument:getLinkFromPosition(pos)
     return self._document:getLinkFromPosition(pos.x, pos.y)
 end
 
-function CreDocument:isLinkToFootnote(source_xpointer, target_xpointer, flags)
-    return self._document:isLinkToFootnote(source_xpointer, target_xpointer, flags)
+function CreDocument:isLinkToFootnote(source_xpointer, target_xpointer, flags, max_text_size)
+    return self._document:isLinkToFootnote(source_xpointer, target_xpointer, flags, max_text_size)
 end
 
 function CreDocument:highlightXPointer(xp)

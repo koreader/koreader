@@ -68,43 +68,43 @@ function ReaderLink:initGesListener()
 end
 
 local function isTapToFollowLinksOn()
-    return not G_reader_settings:isFalse("tap_to_follow_links")
+    return G_reader_settings:nilOrTrue("tap_to_follow_links")
 end
 
 local function isLargerTapAreaToFollowLinksEnabled()
-    return G_reader_settings:readSetting("larger_tap_area_to_follow_links") == true
+    return G_reader_settings:isTrue("larger_tap_area_to_follow_links")
 end
 
 local function isTapIgnoreExternalLinksEnabled()
-    return G_reader_settings:readSetting("tap_ignore_external_links") == true
+    return G_reader_settings:isTrue("tap_ignore_external_links")
 end
 
-local function isTapLinkFoonotePopupEnabled()
-    return G_reader_settings:readSetting("tap_link_foonote_popup") == true
+local function isTapLinkFootnotePopupEnabled()
+    return G_reader_settings:isTrue("tap_link_footnote_popup")
 end
 
 local function isPreferFootnoteEnabled()
-    return G_reader_settings:readSetting("link_prefer_foonote") == true
+    return G_reader_settings:isTrue("link_prefer_footnote")
 end
 
 local function isSwipeToGoBackEnabled()
-    return G_reader_settings:readSetting("swipe_to_go_back") == true
+    return G_reader_settings:isTrue("swipe_to_go_back")
 end
 
 local function isSwipeToFollowFirstLinkEnabled()
-    return G_reader_settings:readSetting("swipe_to_follow_first_link") == true
+    return G_reader_settings:isTrue("swipe_to_follow_first_link")
 end
 
 local function isSwipeToFollowNearestLinkEnabled()
-    return G_reader_settings:readSetting("swipe_to_follow_nearest_link") == true
+    return G_reader_settings:isTrue("swipe_to_follow_nearest_link")
 end
 
-local function isSwipeLinkFoonotePopupEnabled()
-    return G_reader_settings:readSetting("swipe_link_foonote_popup") == true
+local function isSwipeLinkFootnotePopupEnabled()
+    return G_reader_settings:isTrue("swipe_link_footnote_popup")
 end
 
 local function isSwipeToJumpToLatestBookmarkEnabled()
-    return G_reader_settings:readSetting("swipe_to_jump_to_latest_bookmark") == true
+    return G_reader_settings:isTrue("swipe_to_jump_to_latest_bookmark")
 end
 
 function ReaderLink:addToMainMenu(menu_items)
@@ -192,7 +192,7 @@ From the footnote popup, you can jump to the footnote location in the book by sw
                 G_reader_settings:saveSetting("larger_tap_area_to_follow_links",
                     not isLargerTapAreaToFollowLinksEnabled())
             end,
-            help_text = _([[Extends the tap area around internal links. Useful with a small font where taping on small footnote links may be tedious.]]),
+            help_text = _([[Extends the tap area around internal links. Useful with a small font where tapping on small footnote links may be tedious.]]),
         })
         table.insert(menu_items.follow_links.sub_item_table, 3, {
             text = _("Ignore external links"),
@@ -201,15 +201,15 @@ From the footnote popup, you can jump to the footnote location in the book by sw
                 G_reader_settings:saveSetting("tap_ignore_external_links",
                     not isTapIgnoreExternalLinksEnabled())
             end,
-            help_text = _([[Ignore tap on external links. Useful with Wikipedia EPUBs full of them to make page turning easier.
+            help_text = _([[Ignore taps on external links. Useful with Wikipedia EPUBs to make page turning easier.
 You can still follow them from the dictionary window or the selection menu after holding on them.]]),
         })
         table.insert(menu_items.follow_links.sub_item_table, 4, {
             text = _("Show footnotes in popup"),
-            checked_func = isTapLinkFoonotePopupEnabled,
+            checked_func = isTapLinkFootnotePopupEnabled,
             callback = function()
-                G_reader_settings:saveSetting("tap_link_foonote_popup",
-                    not isTapLinkFoonotePopupEnabled())
+                G_reader_settings:saveSetting("tap_link_footnote_popup",
+                    not isTapLinkFootnotePopupEnabled())
             end,
             help_text = footnote_popup_help_text,
             separator = true,
@@ -218,7 +218,7 @@ You can still follow them from the dictionary window or the selection menu after
             text = _("Show more links as footnotes"),
             checked_func = isPreferFootnoteEnabled,
             callback = function()
-                G_reader_settings:saveSetting("link_prefer_foonote",
+                G_reader_settings:saveSetting("link_prefer_footnote",
                     not isPreferFootnoteEnabled())
             end,
             help_text = _([[Loosen footnote detection rules to show more links as footnotes.]]),
@@ -228,10 +228,10 @@ You can still follow them from the dictionary window or the selection menu after
         menu_items.follow_links.sub_item_table[8].separator = nil
         table.insert(menu_items.follow_links.sub_item_table, 9, {
             text = _("Show footnotes in popup"),
-            checked_func = isSwipeLinkFoonotePopupEnabled,
+            checked_func = isSwipeLinkFootnotePopupEnabled,
             callback = function()
-                G_reader_settings:saveSetting("swipe_link_foonote_popup",
-                    not isSwipeLinkFoonotePopupEnabled())
+                G_reader_settings:saveSetting("swipe_link_footnote_popup",
+                    not isSwipeLinkFootnotePopupEnabled())
             end,
             help_text = footnote_popup_help_text,
             separator = true,
@@ -371,7 +371,7 @@ function ReaderLink:onTap(_, ges)
         end
         return
     end
-    local allow_footnote_popup = isTapLinkFoonotePopupEnabled()
+    local allow_footnote_popup = isTapLinkFootnotePopupEnabled()
     -- If tap_ignore_external_links, skip precise tap detection to really
     -- ignore a tap on an external link, and allow using onGoToPageLink()
     -- to find the nearest internal link
@@ -388,11 +388,15 @@ function ReaderLink:onTap(_, ges)
             -- try to find any link in page around that tap position.
             -- onGoToPageLink() will grab only internal links, which
             -- is nice as url links are usually longer - so this
-            -- give more chance to catch a small link to foonote stuck
+            -- give more chance to catch a small link to footnote stuck
             -- to a longer Wikipedia article name link.
-            -- (1/16 of screen width looks fine - should this use another
-            -- metric like screen DPI ?)
-            max_distance = math.min(Screen:getHeight(), Screen:getWidth()) * 1/16
+            --
+            -- 30px on a reference 167 dpi screen makes 0.45cm, which
+            -- seems fine (on a 300dpi device, this will be scaled
+            -- to 54px (which makes 1/20th of screen witdh on a GloHD)
+            -- Trust Screen.dpi (which may not be the real device
+            -- screen DPI if the user has set another one).
+            max_distance = Screen:scaleByDPI(30)
         end
         return self:onGoToPageLink(ges, false, allow_footnote_popup, max_distance)
     end
@@ -435,7 +439,7 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
         if self.ui.document:isXPointerInDocument(link.xpointer) then
             logger.dbg("Internal link:", link)
             if allow_footnote_popup then
-                if self:showAsFoonotePopup(link, neglect_current_location) then
+                if self:showAsFootnotePopup(link, neglect_current_location) then
                     return true
                 end
                 -- if it fails for any reason, fallback to following link
@@ -616,7 +620,7 @@ function ReaderLink:onSwipe(arg, ges)
             -- no sense allowing footnote popup if first link
             ret = self:onGoToPageLink(ges, true)
         elseif isSwipeToFollowNearestLinkEnabled() then
-            local allow_footnote_popup = isSwipeLinkFoonotePopupEnabled()
+            local allow_footnote_popup = isSwipeLinkFootnotePopupEnabled()
             ret = self:onGoToPageLink(ges, false, allow_footnote_popup)
         end
         -- If no link found, or no follow link option enabled,
@@ -715,7 +719,7 @@ function ReaderLink:onGoToPageLink(ges, use_page_first_link, allow_footnote_popu
         --     },
         -- and when segments requested (example for a multi-lines link):
         --     [3] = {
-        --         ["section"] = "#_doc_fragment_0_ Développement_de_l�économie_marchande",
+        --         ["section"] = "#_doc_fragment_0_ Man_of_letters",
         --         ["a_xpointer"] = "/body/DocFragment/body/div/div[4]/ul/li[3]/ul/li[2]/ul/li[1]/ul/li[3]/a.0",
         --         ["start_x"] = 101,
         --         ["start_y"] = 457,
@@ -793,7 +797,7 @@ function ReaderLink:onGoToPageLink(ges, use_page_first_link, allow_footnote_popu
                             selected_link.link_y = segments_max_y
                         end
                     else
-                        -- Before "segments" were available, we did that:
+                        -- Before "segments" were available, we did this:
                         -- We'd only get a horizontal segment if the link is on a single line.
                         -- When it is multi-lines, we can't do much calculation...
                         -- We used to just check distance from start_x and end_x, and
@@ -874,7 +878,7 @@ function ReaderLink:onGoToLatestBookmark(ges)
     end
 end
 
-function ReaderLink:showAsFoonotePopup(link, neglect_current_location)
+function ReaderLink:showAsFootnotePopup(link, neglect_current_location)
     if self.ui.document.info.has_pages then
         return false -- not supported
     end
@@ -957,12 +961,14 @@ function ReaderLink:showAsFoonotePopup(link, neglect_current_location)
     -- flags = flags + 0x2000 -- Unused yet
     -- Try to extend footnote, to gather more text after target
     flags = flags + 0x4000
-    -- Target text must be < 10000 chars
+    -- Extended target readable text (not accounting HTML tags) must not be
+    -- larger than max_text_size
     flags = flags + 0x8000
+    local max_text_size = 10000 -- nb of chars
 
     logger.dbg("Checking if link is to a footnote:", flags, source_xpointer, target_xpointer)
     local is_footnote, reason, extStopReason, extStartXP, extEndXP =
-            self.ui.document:isLinkToFootnote(source_xpointer, target_xpointer, flags)
+            self.ui.document:isLinkToFootnote(source_xpointer, target_xpointer, flags, max_text_size)
     if not is_footnote then
         logger.info("not a footnote:", reason)
         return false
@@ -975,7 +981,7 @@ function ReaderLink:showAsFoonotePopup(link, neglect_current_location)
     else
         logger.info("  not extended because:", extStopReason)
     end
-    -- OK, done with the dirty foonote detection work, we can now
+    -- OK, done with the dirty footnote detection work, we can now
     -- get back to the fancy UI stuff
 
     -- We don't request CSS files, to have a more consistent footnote style.
