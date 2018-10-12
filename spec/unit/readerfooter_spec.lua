@@ -626,8 +626,8 @@ describe("Readerfooter module", function()
         assert.is.same(0, footer.mode)
         assert.falsy(readerui.view.footer_visible)
         readerui.view.footer:onSetStatusLine(1)
-        assert.is.same(0, footer.mode)
-        assert.falsy(readerui.view.footer_visible)
+        assert.is.same(1, footer.mode)
+        assert.truthy(readerui.view.footer_visible)
 
         footer.mode = 1
         readerui.view.footer:onSetStatusLine(1)

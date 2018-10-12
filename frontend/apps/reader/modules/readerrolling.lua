@@ -172,8 +172,6 @@ function ReaderRolling:onReadSettings(config)
         self.show_overlap_enable = DSHOWOVERLAP
     end
     self.inverse_reading_order = config:readSetting("inverse_reading_order") or false
-
-    self:onSetStatusLine(config:readSetting("copt_status_line") or DCREREADER_PROGRESS_BAR)
 end
 
 -- in scroll mode percent_finished must be save before close document
@@ -712,6 +710,9 @@ end
 --]]
 
 function ReaderRolling:onSetStatusLine(status_line)
+    -- in crengine: 0=header enabled, 1=disabled
+    -- in koreader: 0=top status bar, 1=bottom mini bar
+    self.ui.document:setStatusLineProp(status_line)
     self.cre_top_bar_enabled = status_line == 0
 end
 
