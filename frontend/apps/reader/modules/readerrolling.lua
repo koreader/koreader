@@ -476,9 +476,10 @@ function ReaderRolling:onGotoXPointer(xp, marker_xp)
         local doc_y = self.ui.document:getPosFromXPointer(marker_xp)
         local top_y = self.ui.document:getCurrentPos()
         local screen_y = doc_y - top_y
-        local doc_margins = self.ui.document._document:getPageMargins()
+        local doc_margins = self.ui.document:getPageMargins()
+        local header_height = self.ui.document:getHeaderHeight() -- top full status bar (0 when bottom mini bar used)
         if self.view.view_mode == "page" then
-            screen_y = screen_y + doc_margins["top"]
+            screen_y = screen_y + doc_margins["top"] + header_height
         end
         local marker_h = Screen:scaleBySize(self.ui.font.font_size * 1.1 * self.ui.font.line_space_percent/100.0)
         -- Make it 4/5 of left margin wide (and bigger when huge margin)
