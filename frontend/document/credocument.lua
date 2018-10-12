@@ -330,6 +330,14 @@ end
 function CreDocument:renderPage(pageno, rect, zoom, rotation)
 end
 
+function CreDocument:getPageMargins()
+    return self._document:getPageMargins()
+end
+
+function CreDocument:getHeaderHeight()
+    return self._document:getHeaderHeight()
+end
+
 function CreDocument:gotoXPointer(xpointer)
     logger.dbg("CreDocument: goto xpointer", xpointer)
     self._document:gotoXPointer(xpointer)
