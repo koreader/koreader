@@ -1016,6 +1016,7 @@ function ReaderLink:showAsFootnotePopup(link, neglect_current_location)
     -- (which might not be seen when covered by FootnoteWidget)
     local close_callback = nil
     if link.from_xpointer then -- coherent xpointer
+        self.ui.document:highlightXPointer() -- clear any previous one
         self.ui.document:highlightXPointer(link.from_xpointer)
         UIManager:setDirty(self.dialog, "ui")
         close_callback = function(footnote_height)
@@ -1055,10 +1056,14 @@ function ReaderLink:showAsFootnotePopup(link, neglect_current_location)
             UIManager:close(popup)
             self:onGotoLink(link, neglect_current_location)
         end,
-        on_tap_close_callback = function(arg, ges)
-            -- on tap outside, see if we are tapping on another footnote,
+        on_tap_close_callback = function(arg, ges, footnote_height)
+            -- On tap outside, see if we are tapping on another footnote,
             -- and display it if we do (avoid the need for 2 taps)
-            self:onTap(arg, ges)
+            if not self:onTap(arg, ges) then
+                -- If we did tap on another link, onTap has already cleared our
+                -- highlight. If not, call close_callback to unhighlight it.
+                close_callback(footnote_height)
+            end
         end,
         dialog = self.dialog,
     }

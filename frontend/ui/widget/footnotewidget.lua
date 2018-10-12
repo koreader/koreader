@@ -289,9 +289,6 @@ function FootnoteWidget:onShow()
 end
 
 function FootnoteWidget:onCloseWidget()
-    if self.close_callback then
-        self.close_callback(self.height)
-    end
     UIManager:setDirty(self.dialog, function()
         return "partial", self.container.dimen
     end)
@@ -310,7 +307,9 @@ function FootnoteWidget:onTapClose(arg, ges)
         -- it. This avoids having to tap 2 times to
         -- see another footnote.
         if self.on_tap_close_callback then
-            self.on_tap_close_callback(arg, ges)
+            self.on_tap_close_callback(arg, ges, self.height)
+        elseif self.close_callback then
+            self.close_callback(self.height)
         end
         return true
     end
@@ -320,6 +319,9 @@ end
 function FootnoteWidget:onSwipeFollow(arg, ges)
     if ges.direction == "west" then
         if self.follow_callback then
+            if self.close_callback then
+                self.close_callback(self.height)
+            end
             return self.follow_callback()
         end
     elseif ges.direction == "south" or ges.direction == "east" then
@@ -328,6 +330,9 @@ function FootnoteWidget:onSwipeFollow(arg, ges)
         -- work only when started outside the footnote.
         -- Also allow closing with swipe east (like we do to go back
         -- from link)
+        if self.close_callback then
+            self.close_callback(self.height)
+        end
         self:onClose()
         return true
     elseif ges.direction == "north" then
