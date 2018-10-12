@@ -70,6 +70,7 @@ local order = {
         "ssh",
     },
     tools = {
+	"wallabag",
         "read_timer",
         "calibre_wireless_connection",
         "evernote",
