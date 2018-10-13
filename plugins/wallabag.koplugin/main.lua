@@ -22,6 +22,10 @@ local DataStorage = require("datastorage")
 local JSON = require("json")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 
+-- constants
+local article_id_preffix = "[w-id_"
+local article_id_postfix = "] "
+
 local Wallabag = WidgetContainer:new{
     name = "wallabag",
 }
@@ -42,12 +46,13 @@ function Wallabag:init()
     self.is_archive_finished = false
     self.is_archive_read = false
     self.is_auto_delete = self.wb_settings.data.wallabag.is_auto_delete
+    self.is_sync_remote_delete = true
     --logger.dbg('[YM] readSettings url: ', self.server_url)
 end
 
 function Wallabag:addToMainMenu(menu_items)
     menu_items.wallabag = {
-        text = _("Wallabag sync"),
+        text = _("Wallabag"),
         sub_item_table = {
             {
                 text = _("Retrieve new articles from server"),
@@ -68,7 +73,7 @@ function Wallabag:addToMainMenu(menu_items)
                         NetworkMgr:promptWifiOn()
                         return
                     end
-                    local num_deleted, num_archived = self:processLocalFiles( "manual1" )
+                    local num_deleted, num_archived = self:processLocalFiles( "manual" )
                     UIManager:show(InfoMessage:new{
                         text = T(_('Articles processed.\nDeleted: %1\nArchived: %2'), num_deleted, num_archived)
                     })
@@ -104,7 +109,8 @@ function Wallabag:addToMainMenu(menu_items)
                 keep_menu_open = true,
                 callback = function()
                     UIManager:show(InfoMessage:new{
-                        text = T(_('Wallabag is an open source Read-it-later service. This plugin synchronises with a Wallabag server.\n\nMore details: https://wallabag.org\n\nDownloads to local folder: %1'), download_dir_path)
+                        text = T(_('Wallabag is an open source Read-it-later service. This plugin synchronises with a Wallabag server.\n\n' .. 
+                                   'More details: https://wallabag.org\n\nDownloads to local folder: %1'), self.directory)
                     })
                 end,
             },
@@ -173,8 +179,8 @@ function Wallabag:download(article)
     local skip_article = false
     local item_url = "/api/entries/" .. article.id .. "/export.epub"
     local parsed = url.parse(item_url)
-    title = util.replaceSlashChar(title)
-    local local_path = self.directory .. "/[w-id:" .. article.id .. "] " .. article.title:sub(1,30) .. ".epub"
+    local title = util.replaceInvalidChars(article.title)
+    local local_path = self.directory .. article_id_preffix .. article.id .. article_id_postfix .. title:sub(1,30) .. ".epub"
     logger.dbg("DOWNLOAD: id: ", article.id)
     logger.dbg("DOWNLOAD: title: ", article.title)
     logger.dbg("DOWNLOAD: filename: ", local_path)
@@ -273,6 +279,7 @@ function Wallabag:synchronise()
     UIManager:forceRePaint()
     UIManager:close(info)
 
+    local remote_article_ids = {}
     local downloaded_count = 0
     if self.access_token ~= "" then
         articles = self:getArticleList()
@@ -285,12 +292,16 @@ function Wallabag:synchronise()
         UIManager:close(info)
         for _, article in ipairs(articles._embedded.items) do
             logger.dbg("article: ", article.id)
+            remote_article_ids[ tostring( article.id ) ] = true
             if self:download(article) then
                 downloaded_count = downloaded_count + 1
             end
         end               
     end
 
+    -- synchronise remote deletions
+    deleted_count = deleted_count + self:processRemoteDeletes( remote_article_ids )
+    
     local msg
     if deleted_count ~= 0 or archived_count ~= 0 then
         msg = _("Processing finished.\n\nArticles downloaded: %1\nDeleted: %2\nArchived: %3")
@@ -300,6 +311,31 @@ function Wallabag:synchronise()
         info = InfoMessage:new{ text = T( msg, downloaded_count ) }
     end
     UIManager:show(info)
+end
+
+function Wallabag:processRemoteDeletes( remote_article_ids )
+    if not self.is_sync_remote_delete then
+        logger.dbg("Processing of remote file deletions disabled.")
+    end
+    logger.dbg("articles: ", remote_article_ids)
+
+    local info = InfoMessage:new{ text = _("Synchonising remote deletions…") }
+    UIManager:show(info)
+    UIManager:forceRePaint()
+    UIManager:close(info)
+    local deleted_count = 0
+    for entry in lfs.dir(self.directory) do
+        if entry ~= "." and entry ~= ".." then
+            local entry_path = self.directory .. "/" .. entry
+            local id = self:getArticleID( entry_path )
+            if not remote_article_ids[ id ] then
+                logger.dbg("Deleting local file (deleted on server): ", entry_path )
+                self:deleteLocalArticle( entry_path )
+                deleted_count = deleted_count + 1
+            end
+        end
+    end -- for entry
+    return deleted_count
 end
 
 function Wallabag:processLocalFiles( mode )
@@ -361,32 +397,21 @@ end
 
 function Wallabag:deleteArticle( path )
     logger.dbg("deleting article ", path )
-    offset = self.directory:len() + 2 -- skip / and advance to the next char
-    if path:sub( offset , offset + 5) ~= "[w-id:" then
-        logger.dbg("[YM] NO MATCH ", path:sub( offset , offset + 5) )
-        return false
+    local id = self:getArticleID( path )
+    if id then
+        self:callAPI( 'DELETE', "/api/entries/" .. id .. ".json", nil, "", "" )
+        self:deleteLocalArticle( path )
     end
-    id = path:sub( offset + 6, path:find( "]", offset + 6 ) - 1 )
-    logger.dbg("[YM] id ", id )
-
-    self:callAPI( 'DELETE', "/api/entries/" .. id .. ".json", nil, "", "" )
-    self:deleteLocalArticle( path )
 end
 
 function Wallabag:archiveArticle( path )
     logger.dbg("archiving article ", path )
-    -- extract the Wallabag ID from the file name
-    offset = self.directory:len() + 2 -- skip / and advance to the next char
-    if path:sub( offset , offset + 5) ~= "[w-id:" then
-        logger.dbg("[YM] NO MATCH ", path:sub( offset , offset + 5) )
-        return false
+    local id = self:getArticleID( path )
+    if id then
+        self:callAPI( 'PATCH', "/api/entries/" .. id .. ".json?archive=1", nil, "", "" )
+        -- TODO: enable local delete when archiving works
+        --self:deleteLocalArticle( path )
     end
-    id = path:sub( offset + 6, path:find( "]", offset + 6 ) - 1 )
-    logger.dbg("[YM] id ", id )
-    
-    self:callAPI( 'PATCH', "/api/entries/" .. id .. ".json?archive=1", nil, "", "" )
-    -- TODO: enable local delete when archiving works
-    --self:deleteLocalArticle( path )
 end
 
 function Wallabag:deleteLocalArticle( path )
@@ -397,6 +422,23 @@ function Wallabag:deleteLocalArticle( path )
         FFIUtil.purgeDir( sdr_dir )
         filemanagerutil.removeFileFromHistoryIfWanted( path )
    end
+end
+
+function Wallabag:getArticleID( path )
+    -- extract the Wallabag ID from the file name
+    local offset = self.directory:len() + 2 -- skip / and advance to the next char
+    local preffix_len = article_id_preffix:len()
+    if path:sub( offset , offset + preffix_len - 1 ) ~= article_id_preffix then
+        logger.warn("getArticleID: no match! ", path:sub( offset , offset + preffix_len - 1 ) )
+        return
+    end
+    local endpos = path:find( article_id_postfix, offset + preffix_len )
+    if endpos == nil then
+        logger.warn("getArticleID: no match! " )
+        return
+    end
+    local id = path:sub( offset + preffix_len, endpos - 1 )
+    return id
 end
 
 function Wallabag:refreshCurrentDirIfNeeded()
@@ -410,7 +452,7 @@ function Wallabag:editServerSettings()
     local text_info = "Enter the details of your Wallabag server and account.\n"..
         "\nClient ID and client secret are long strings so you might prefer to save the empty "..
         "settings and edit the config file directly:\n"..
-        ".adds/koreader/settings/wallabagsettings.lua"..
+        ".adds/koreader/settings/wallabag.lua"..
         "\n\nRestart KOReader after editing the config file."
         
     self.settings_dialog = MultiInputDialog:new {
