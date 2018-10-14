@@ -22,6 +22,7 @@ local LuaSettings = require("luasettings")
 local DataStorage = require("datastorage")
 local JSON = require("json")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
+local FileManager = require("apps/filemanager/filemanager")
 
 -- constants
 local article_id_preffix = "[w-id_"
@@ -53,6 +54,10 @@ function Wallabag:init()
     self.is_auto_delete = self.wb_settings.data.wallabag.is_auto_delete
     self.is_sync_remote_delete = self.wb_settings.data.wallabag.is_sync_remote_delete
     self.filter_tag = self.wb_settings.data.wallabag.filter_tag
+
+    -- workaround for dateparser only available if newsdownloader is active
+    self.is_dateparser_available = false
+    self.is_dateparser_checked = false
 end
 
 function Wallabag:addToMainMenu(menu_items)
@@ -67,7 +72,7 @@ function Wallabag:addToMainMenu(menu_items)
                         return
                     end
                     self:synchronise()
-                    --self:refreshCurrentDirIfNeeded()
+                    self:refreshCurrentDirIfNeeded()
                 end,
             },
             {
@@ -81,7 +86,7 @@ function Wallabag:addToMainMenu(menu_items)
                     UIManager:show(InfoMessage:new{
                         text = T(_('Articles processed.\nDeleted: %1'), num_deleted)
                     })
-                    --self:refreshCurrentDirIfNeeded()
+                    self:refreshCurrentDirIfNeeded()
                 end,
                 enabled_func = function()
                     return self.is_delete_finished or self.is_delete_read
@@ -90,9 +95,9 @@ function Wallabag:addToMainMenu(menu_items)
             {
                 text = _("Go to download folder"),
                 callback = function()
-                    local FileManager = require("apps/filemanager/filemanager")
                     if FileManager.instance then
-                        FileManager.instance:reinit( self.directory )
+--                        FileManager.instance:reinit( self.directory )
+                        FileManager:showFiles( self.directory )
                     else
                         FileManager:showFiles( self.directory )
                     end
@@ -206,6 +211,14 @@ function Wallabag:addToMainMenu(menu_items)
 end
 
 function Wallabag:getBearerToken()
+    -- workaround for dateparser, only once
+    -- the parser is in newsdownloader.koplugin, check if it is available
+    if not self.is_dateparser_checked then
+        res, self.dateparser = pcall(require, "lib.dateparser")
+        if res then self.is_dateparser_available = true end
+        self.is_dateparser_checked = true
+    end
+
     -- Check if the configuration is complete
     local function isempty(s)
         return s == nil or s == ''
@@ -274,11 +287,21 @@ function Wallabag:download(article)
     logger.dbg("DOWNLOAD: title: ", article.title)
     logger.dbg("DOWNLOAD: filename: ", local_path)
     
-    if lfs.attributes(local_path) then
-        -- file already exists, skip
-        -- TODO: only skip if the date of local file is newer than server
-        skip_article = true
-        logger.dbg("**** skipping file: ", local_path)
+    local attr = lfs.attributes(local_path)
+    if attr then
+        -- File already exists, skip it. Preferably only skip if the date of local file is newer than server's.
+        -- newsdownloader.koplugin has a date parser but it is available only if the plugin is activated.
+        -- TODO: find a better solution
+        if self.is_dateparser_available then
+            local server_date = self.dateparser.parse(article.updated_at)
+            if server_date < attr.modification then
+                skip_article = true
+                logger.dbg("**** skipping file (date checked): ", local_path)
+            end
+        else
+            skip_article = true
+            logger.dbg("**** skipping file: ", local_path)
+        end
     end
     
     if skip_article == false then
@@ -508,10 +531,9 @@ function Wallabag:getArticleID( path )
 end
 
 function Wallabag:refreshCurrentDirIfNeeded()
-    -- TODO:
-    -- If in the file manager in the same directory as the download directory
-    -- refresh to see the new files or get rid of the deleted ones.
-    -- Is it possible ??
+    if FileManager.instance then
+        FileManager.instance:onRefresh( )
+    end
 end
 
 function Wallabag:setFilterTag()
@@ -579,6 +601,7 @@ function Wallabag:editServerSettings()
             {
                 text = self.password,
                 input_type = "string",
+                text_type = "password",
                 hint = _("Password")
             },
         },
