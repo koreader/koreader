@@ -9,7 +9,6 @@ local InputDialog = require("ui/widget/inputdialog")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local logger = require("logger")
 local ltn12 = require('ltn12')
-local mime = require('mime')
 local http = require('socket.http')
 local https = require('ssl.https')
 local socket = require('socket')
@@ -18,7 +17,6 @@ local util = require("util")
 local _ = require("gettext")
 local T = FFIUtil.template
 local Screen = require("device").screen
-local LuaSettings = require("luasettings")
 local DataStorage = require("datastorage")
 local JSON = require("json")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
@@ -135,7 +133,7 @@ function Wallabag:addToMainMenu(menu_items)
                     {
                         -- TODO: update the menu after changing value
                         text_func = function()
-                            local path
+                            local filter
                             if not self.filter_tag or self.filter_tag == "" then
                                 filter = "All articles"
                             else
@@ -186,7 +184,7 @@ function Wallabag:addToMainMenu(menu_items)
                         callback = function()
                             UIManager:show(InfoMessage:new{
                                 text = _('Download directory: use a directory that is exclusively used by the Wallabag plugin. ' ..
-                                         'Existing files in this directory risk being deleted\n\n' .. 
+                                         'Existing files in this directory risk being deleted\n\n' ..
                                          'Articles marked as Finished or 100% can be deleted from the server.\n' ..
                                          'Those articles can also be deleted automatically when downloading new articles if the ' ..
                                          '\'Process detetions during download\' option is enabled.\n\n' ..
@@ -201,7 +199,7 @@ function Wallabag:addToMainMenu(menu_items)
                 keep_menu_open = true,
                 callback = function()
                     UIManager:show(InfoMessage:new{
-                        text = T(_('Wallabag is an open source Read-it-later service. This plugin synchronises with a Wallabag server.\n\n' .. 
+                        text = T(_('Wallabag is an open source Read-it-later service. This plugin synchronises with a Wallabag server.\n\n' ..
                                    'More details: https://wallabag.org\n\nDownloads to local folder: %1'), self.directory)
                     })
                 end,
@@ -214,6 +212,7 @@ function Wallabag:getBearerToken()
     -- workaround for dateparser, only once
     -- the parser is in newsdownloader.koplugin, check if it is available
     if not self.is_dateparser_checked then
+        local res
         res, self.dateparser = pcall(require, "lib.dateparser")
         if res then self.is_dateparser_available = true end
         self.is_dateparser_checked = true
@@ -251,9 +250,8 @@ function Wallabag:getBearerToken()
     end
 
     local login_url = "/oauth/v2/token"
-    local auth = string.format("%s:%s", self.username, self.password)
     local body = "{ \"grant_type\": \"password\", \"client_id\": \"" .. self.client_id .. "\", \"client_secret\": \"" .. self.client_secret .. "\", \"username\": \"" .. self.username .. "\", \"password\": \"" .. self.password .. "\"}"
-    local headers = { 
+    local headers = {
         ["Content-type"] = "application/json",
         ["Accept"] = "application/json, */*",
         ["Content-Length"] = tostring(#body),
@@ -280,13 +278,12 @@ end
 function Wallabag:download(article)
     local skip_article = false
     local item_url = "/api/entries/" .. article.id .. "/export.epub"
-    local parsed = url.parse(item_url)
     local title = util.replaceInvalidChars(article.title)
     local local_path = self.directory .. article_id_preffix .. article.id .. article_id_postfix .. title:sub(1,30) .. ".epub"
     logger.dbg("DOWNLOAD: id: ", article.id)
     logger.dbg("DOWNLOAD: title: ", article.title)
     logger.dbg("DOWNLOAD: filename: ", local_path)
-    
+
     local attr = lfs.attributes(local_path)
     if attr then
         -- File already exists, skip it. Preferably only skip if the date of local file is newer than server's.
@@ -303,7 +300,7 @@ function Wallabag:download(article)
             logger.dbg("**** skipping file: ", local_path)
         end
     end
-    
+
     if skip_article == false then
         return self:callAPI( 'GET', item_url, nil, "", local_path)
     end
@@ -336,14 +333,14 @@ function Wallabag:callAPI( method, apiurl, headers, body, filepath )
 
     http.TIMEOUT, https.TIMEOUT = 10, 10
     local httpRequest = parsed.scheme == 'http' and http.request or https.request
-    local code, headers = socket.skip(1, httpRequest(request))
+    local code, resp_headers = socket.skip(1, httpRequest(request))
     -- raise error message when network is unavailable
-    if headers == nil then
+    if resp_headers == nil then
         error(code)
     end
     if code == 200 then
         if filepath ~= "" then
-            logger.dbg("file downloaded to", local_path)
+            logger.dbg("file downloaded to", filepath)
             return true
         else
             local content = table.concat(sink)
@@ -359,9 +356,10 @@ function Wallabag:callAPI( method, apiurl, headers, body, filepath )
             else
                 UIManager:show(InfoMessage:new{
                     text = _("Server response is not valid."), })
-            end        
+            end
         end
     else
+        local msg
         if filepath ~= "" then
             msg = _("Could not download document.")
         else
@@ -378,14 +376,14 @@ function Wallabag:synchronise()
     UIManager:show(info)
     UIManager:forceRePaint()
     UIManager:close(info)
-    
+
     if self:getBearerToken() == false then
         return false
     end
 
     local deleted_count = self:processLocalFiles()
-    
-    local info = InfoMessage:new{ text = _("Getting article list…") }
+
+    info = InfoMessage:new{ text = _("Getting article list…") }
     UIManager:show(info)
     UIManager:forceRePaint()
     UIManager:close(info)
@@ -393,11 +391,11 @@ function Wallabag:synchronise()
     local remote_article_ids = {}
     local downloaded_count = 0
     if self.access_token ~= "" then
-        articles = self:getArticleList()
+        local articles = self:getArticleList()
         logger.dbg("number of articles: ", articles.total)
         --logger.dbg("articles: ", articles)
 
-        local info = InfoMessage:new{ text = _("Downloading articles…") }
+        info = InfoMessage:new{ text = _("Downloading articles…") }
         UIManager:show(info)
         UIManager:forceRePaint()
         UIManager:close(info)
@@ -407,12 +405,12 @@ function Wallabag:synchronise()
             if self:download(article) then
                 downloaded_count = downloaded_count + 1
             end
-        end               
+        end
     end
 
     -- synchronise remote deletions
     deleted_count = deleted_count + self:processRemoteDeletes( remote_article_ids )
-    
+
     local msg
     if deleted_count ~= 0 then
         msg = _("Processing finished.\n\nArticles downloaded: %1\nDeleted: %2")
@@ -472,10 +470,11 @@ function Wallabag:processLocalFiles( mode )
                 local entry_path = self.directory .. "/" .. entry
                 if DocSettings:hasSidecarFile(entry_path) then
                     local docinfo = DocSettings:open(entry_path)
+                    local status
                     if docinfo.data.summary and docinfo.data.summary.status then
                         status = docinfo.data.summary.status
                     end
-                    percent_finished = docinfo.data.percent_finished
+                    local percent_finished = docinfo.data.percent_finished
                     if status == "complete" or status == "abandoned" then
                         if self.is_delete_finished then
                             self:deleteArticle( entry_path )
@@ -486,7 +485,7 @@ function Wallabag:processLocalFiles( mode )
                             self:deleteArticle( entry_path )
                             num_deleted = num_deleted + 1
                         end
-                    end                    
+                    end
                 end -- has sidecar
             end -- not . and ..
         end -- for entry
@@ -571,7 +570,7 @@ function Wallabag:editServerSettings()
         "settings and edit the config file directly:\n"..
         ".adds/koreader/settings/wallabag.lua"..
         "\n\nRestart KOReader after editing the config file."
-        
+
     self.settings_dialog = MultiInputDialog:new {
         title = _("Wallabag settings"),
         fields = {
