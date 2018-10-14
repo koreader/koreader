@@ -2,14 +2,9 @@
 This is a registry for document providers
 ]]--
 
-local ConfirmBox = require("ui/widget/confirmbox")
-local OpenWithDialog = require("ui/widget/openwithdialog")
-local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
-local _ = require("gettext")
-local T = require("ffi/util").template
 
 local DocumentRegistry = {
     registry = {},
@@ -145,85 +140,6 @@ function DocumentRegistry:setProvider(file, provider, all)
         filetype_provider[filename_suffix] = provider.provider
         G_reader_settings:saveSetting("provider", filetype_provider)
     end
-end
-
-function DocumentRegistry:showSetProviderButtons(file, filemanager_instance,  ui, reader_ui)
-    local __, filename_pure = util.splitFilePathName(file)
-    local filename_suffix = util.getFileNameSuffix(file)
-
-    local buttons = {}
-    local radio_buttons = {}
-    local providers = self:getProviders(file)
-
-    for ___, provider in ipairs(providers) do
-        -- we have no need for extension, mimetype, weights, etc. here
-        provider = provider.provider
-        table.insert(radio_buttons, {
-            {
-                text = provider.provider_name,
-                checked = self:getProvider(file) == provider,
-                provider = provider,
-            },
-        })
-    end
-
-    table.insert(buttons, {
-        {
-            text = _("Cancel"),
-            callback = function()
-                UIManager:close(self.set_provider_dialog)
-            end,
-        },
-        {
-            text = _("Open"),
-            is_enter_default = true,
-            callback = function()
-                local provider = self.set_provider_dialog.radio_button_table.checked_button.provider
-
-                -- always for this file
-                if self.set_provider_dialog._check_file_button.checked then
-                    UIManager:show(ConfirmBox:new{
-                        text = T(_("Always open '%2' with %1?"),
-                                         provider.provider_name, filename_pure),
-                        ok_text = _("Always"),
-                        ok_callback = function()
-                            self:setProvider(file, provider, false)
-
-                            filemanager_instance:onClose()
-                            reader_ui:showReader(file, provider)
-                            UIManager:close(self.set_provider_dialog)
-                        end,
-                    })
-                -- always for all files of this file type
-                elseif self.set_provider_dialog._check_global_button.checked then
-                    UIManager:show(ConfirmBox:new{
-                        text = T(_("Always open %2 files with %1?"),
-                                         provider.provider_name, filename_suffix),
-                        ok_text = _("Always"),
-                        ok_callback = function()
-                            self:setProvider(file, provider, true)
-
-                            filemanager_instance:onClose()
-                            reader_ui:showReader(file, provider)
-                            UIManager:close(self.set_provider_dialog)
-                        end,
-                    })
-                else
-                    -- just once
-                    filemanager_instance:onClose()
-                    reader_ui:showReader(file, provider)
-                    UIManager:close(self.set_provider_dialog)
-                end
-            end,
-        },
-    })
-
-    self.set_provider_dialog = OpenWithDialog:new{
-        title = T(_("Open %1 with:"), filename_pure),
-        radio_buttons = radio_buttons,
-        buttons = buttons,
-    }
-    UIManager:show(self.set_provider_dialog)
 end
 
 function DocumentRegistry:openDocument(file, provider)

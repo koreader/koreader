@@ -1,17 +1,21 @@
 local Device = require("device")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
+local OpenWithDialog = require("ui/widget/openwithdialog")
+local ConfirmBox = require("ui/widget/confirmbox")
 local Font = require("ui/font")
 local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
 local ffi = require("ffi")
 local lfs = require("libs/libkoreader-lfs")
-local util = require("ffi/util")
+local ffiUtil = require("ffi/util")
+local T = ffiUtil.template
 local C = ffi.C
 local _ = require("gettext")
 local Screen = Device.screen
-local getFileNameSuffix = require("util").getFileNameSuffix
-local getFriendlySize = require("util").getFriendlySize
+local util = require("util")
+local getFileNameSuffix = util.getFileNameSuffix
+local getFriendlySize = util.getFriendlySize
 
 ffi.cdef[[
 int strcoll (const char *str1, const char *str2);
@@ -210,7 +214,7 @@ function FileChooser:genItemTableFromPath(path)
         if num_items == 1 then
             istr = _("1 item")
         else
-            istr = util.template(_("%1 items"), num_items)
+            istr = ffiUtil.template(_("%1 items"), num_items)
         end
         local text
         if dir.name == ".." then
@@ -267,7 +271,7 @@ function FileChooser:genItemTableFromPath(path)
     if ffi.os == "Windows" then
         for k, v in pairs(item_table) do
             if v.text then
-                v.text = util.multiByteToUTF8(v.text) or ""
+                v.text = ffiUtil.multiByteToUTF8(v.text) or ""
             end
         end
     end
@@ -283,7 +287,7 @@ end
 function FileChooser:refreshPath()
     local itemmatch = nil
 
-    local _, folder_name = require("util").splitFilePathName(self.path)
+    local _, folder_name = util.splitFilePathName(self.path)
     Screen:setWindowTitle(folder_name)
 
     if self.focused_path then
@@ -298,7 +302,7 @@ function FileChooser:refreshPath()
 end
 
 function FileChooser:changeToPath(path, focused_path)
-    path = util.realpath(path)
+    path = ffiUtil.realpath(path)
     self.path = path
 
     if focused_path then
@@ -381,6 +385,85 @@ function FileChooser:getNextFile(curr_file)
         end
     end
     return next_file
+end
+
+function FileChooser:showSetProviderButtons(file, filemanager_instance, reader_ui)
+    local __, filename_pure = util.splitFilePathName(file)
+    local filename_suffix = util.getFileNameSuffix(file)
+
+    local buttons = {}
+    local radio_buttons = {}
+    local providers = DocumentRegistry:getProviders(file)
+
+    for ___, provider in ipairs(providers) do
+        -- we have no need for extension, mimetype, weights, etc. here
+        provider = provider.provider
+        table.insert(radio_buttons, {
+            {
+                text = provider.provider_name,
+                checked = DocumentRegistry:getProvider(file) == provider,
+                provider = provider,
+            },
+        })
+    end
+
+    table.insert(buttons, {
+        {
+            text = _("Cancel"),
+            callback = function()
+                UIManager:close(self.set_provider_dialog)
+            end,
+        },
+        {
+            text = _("Open"),
+            is_enter_default = true,
+            callback = function()
+                local provider = self.set_provider_dialog.radio_button_table.checked_button.provider
+
+                -- always for this file
+                if self.set_provider_dialog._check_file_button.checked then
+                    UIManager:show(ConfirmBox:new{
+                        text = T(_("Always open '%2' with %1?"),
+                                   provider.provider_name, filename_pure),
+                        ok_text = _("Always"),
+                        ok_callback = function()
+                            DocumentRegistry:setProvider(file, provider, false)
+
+                            filemanager_instance:onClose()
+                            reader_ui:showReader(file, provider)
+                            UIManager:close(self.set_provider_dialog)
+                        end,
+                    })
+                -- always for all files of this file type
+                elseif self.set_provider_dialog._check_global_button.checked then
+                    UIManager:show(ConfirmBox:new{
+                        text = T(_("Always open %2 files with %1?"),
+                                 provider.provider_name, filename_suffix),
+                        ok_text = _("Always"),
+                        ok_callback = function()
+                            DocumentRegistry:setProvider(file, provider, true)
+
+                            filemanager_instance:onClose()
+                            reader_ui:showReader(file, provider)
+                            UIManager:close(self.set_provider_dialog)
+                        end,
+                    })
+                else
+                    -- just once
+                    filemanager_instance:onClose()
+                    reader_ui:showReader(file, provider)
+                    UIManager:close(self.set_provider_dialog)
+                end
+            end,
+        },
+    })
+
+    self.set_provider_dialog = OpenWithDialog:new{
+        title = T(_("Open %1 with:"), filename_pure),
+        radio_buttons = radio_buttons,
+        buttons = buttons,
+    }
+    UIManager:show(self.set_provider_dialog)
 end
 
 return FileChooser
