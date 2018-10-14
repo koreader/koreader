@@ -5,6 +5,7 @@ local LuaSettings = require("frontend/luasettings")
 local UIManager = require("ui/uimanager")
 local NetworkMgr = require("ui/network/manager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local InputDialog = require("ui/widget/inputdialog")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local logger = require("logger")
 local ltn12 = require('ltn12')
@@ -31,7 +32,16 @@ local Wallabag = WidgetContainer:new{
 }
 
 function Wallabag:init()
-    self.token_expiry = 0 -- default until first login
+    self.token_expiry = 0
+    -- default values so that user doesn't have to explicitely set them
+    self.is_delete_finished = true
+    self.is_delete_read = false
+    self.is_archive_finished = false
+    self.is_archive_read = false
+    self.is_auto_delete = false
+    self.is_sync_remote_delete = false
+    self.filter_tag = ""
+
     self.ui.menu:registerToMainMenu(self)
     self.wb_settings = self.readSettings()
     self.server_url = self.wb_settings.data.wallabag.server_url
@@ -40,14 +50,13 @@ function Wallabag:init()
     self.username = self.wb_settings.data.wallabag.username
     self.password = self.wb_settings.data.wallabag.password
     self.directory = self.wb_settings.data.wallabag.directory
-    self.tags = ""
-    self.is_delete_finished = true
-    self.is_delete_read = true
-    self.is_archive_finished = false
-    self.is_archive_read = false
+    self.is_delete_finished = self.wb_settings.data.wallabag.is_delete_finished
+    self.is_delete_read = self.wb_settings.data.wallabag.is_delete_read
+    self.is_archive_finished = self.wb_settings.data.wallabag.is_archive_finished
+    self.is_archive_read = self.wb_settings.data.wallabag.is_archive_read
     self.is_auto_delete = self.wb_settings.data.wallabag.is_auto_delete
-    self.is_sync_remote_delete = true
-    --logger.dbg('[YM] readSettings url: ', self.server_url)
+    self.is_sync_remote_delete = self.wb_settings.data.wallabag.is_sync_remote_delete
+    self.filter_tag = self.wb_settings.data.wallabag.filter_tag
 end
 
 function Wallabag:addToMainMenu(menu_items)
@@ -66,7 +75,6 @@ function Wallabag:addToMainMenu(menu_items)
                 end,
             },
             {
-                -- TODO: overrride the settings !
                 text = _("Delete/Archive finished articles remotely"),
                 callback = function()
                     if not NetworkMgr:isOnline() then
@@ -79,33 +87,116 @@ function Wallabag:addToMainMenu(menu_items)
                     })
                     --self:refreshCurrentDirIfNeeded()
                 end,
-            },
-            -- TODO: replace with a full settings screen
-            {   
-                text = _("Always delete finished articles"),
-                checked_func = function() return self.is_auto_delete end,
-                callback = function()
-                    self.is_auto_delete = not self.is_auto_delete
-                    self:saveSettings()
+                enabled_func = function()
+                    return self.is_delete_finished or self.is_delete_read
                 end,
             },
             {
-                text = _("Server Settings"),
-                keep_menu_open = true,
+                text = _("Go to download folder"),
                 callback = function()
-                    self:editServerSettings()
+                    local FileManager = require("apps/filemanager/filemanager")
+                    if FileManager.instance then
+                        FileManager.instance:reinit( self.directory )
+                    else
+                        FileManager:showFiles( self.directory )
+                    end
                 end,
             },
-            -- TODO: missing local settings screen
-            --{
-            --    text = _("Local Settings"),
-            --    keep_menu_open = true,
-            --    callback = function()
-            --        self:editLocalSettings()
-            --    end,
-            --},
             {
-                text = _("Help"),
+                text = "Settings",
+                callback_func = function()
+                    return nil
+                end,
+                sub_item_table = {
+                    {
+                        text = _("Configure Wallabag server"),
+                        keep_menu_open = true,
+                        callback = function()
+                            self:editServerSettings()
+                        end,
+                    },
+                    {
+                        -- TODO: update the menu after changing value
+                        text_func = function()
+                            local path
+                            if not self.directory or self.directory == "" then
+                                path = "Not set"
+                            else
+                                path = filemanagerutil.abbreviate(self.directory)
+                            end
+                            return _("Set download directory") .. " (" .. path .. ")"
+                        end,
+                        keep_menu_open = true,
+                        callback = function()
+                            self:setDownloadDirectory()
+                        end,
+                    },
+                    {
+                        -- TODO: update the menu after changing value
+                        text_func = function()
+                            local path
+                            if not self.filter_tag or self.filter_tag == "" then
+                                filter = "All articles"
+                            else
+                                filter = self.filter_tag
+                            end
+                            return _("Filter articles by tag") .. " (" .. filter .. ")"
+                        end,
+                        keep_menu_open = true,
+                        callback = function()
+                            self:setFilterTag()
+                        end,
+                    },
+                    {
+                        text = _("Remotely delete Finished articles"),
+                        checked_func = function() return self.is_delete_finished end,
+                        callback = function()
+                            self.is_delete_finished = not self.is_delete_finished
+                            self:saveSettings()
+                        end,
+                    },
+                    {
+                        text = _("Remotely delete 100% read articles"),
+                        checked_func = function() return self.is_delete_read end,
+                        callback = function()
+                            self.is_delete_read = not self.is_delete_read
+                            self:saveSettings()
+                        end,
+                    },
+                    {
+                        text = _("Process deletions when downloading"),
+                        checked_func = function() return self.is_auto_delete end,
+                        callback = function()
+                            self.is_auto_delete = not self.is_auto_delete
+                            self:saveSettings()
+                        end,
+                    },
+                    {
+                        text = _("Synchronise remotely deleted files"),
+                        checked_func = function() return self.is_sync_remote_delete end,
+                        callback = function()
+                            self.is_sync_remote_delete = not self.is_sync_remote_delete
+                            self:saveSettings()
+                        end,
+                    },
+                    {
+                        text = _("Help"),
+                        keep_menu_open = true,
+                        callback = function()
+                            UIManager:show(InfoMessage:new{
+                                text = _('Download directory: use a directory that is exclusively used by the Wallabag plugin. ' ..
+                                         'Existing files in this directory risk being deleted\n\n' .. 
+                                         'Articles marked as Finished or 100% can be deleted from the server.\n' ..
+                                         'Those articles can also be deleted automatically when downloading new articles if the ' ..
+                                         '\'Process detetions during download\' option is enabled.' ..
+                                         '\'Synchronise remotely delete files\' option will remove local files that do not exist anymore on the server.' )
+                            })
+                        end,
+                    }
+                }
+            },
+            {
+                text = _("Info"),
                 keep_menu_open = true,
                 callback = function()
                     UIManager:show(InfoMessage:new{
@@ -119,12 +210,6 @@ function Wallabag:addToMainMenu(menu_items)
 end
 
 function Wallabag:getBearerToken()
-    local now = os.time()
-    if self.token_expiry - now > 300 then
-        -- token still valid for a while, no need to renew
-        return true
-    end
-    
     -- Check if the configuration is complete
     local function isempty(s)
         return s == nil or s == ''
@@ -146,7 +231,16 @@ function Wallabag:getBearerToken()
         })
         return false
     end
- 
+    if string.sub( self.directory, -1 ) ~= '/' then
+        self.directory = self.directory .. '/'
+    end
+
+    local now = os.time()
+    if self.token_expiry - now > 300 then
+        -- token still valid for a while, no need to renew
+        return true
+    end
+
     local login_url = "/oauth/v2/token"
     local auth = string.format("%s:%s", self.username, self.password)
     local body = "{ \"grant_type\": \"password\", \"client_id\": \"" .. self.client_id .. "\", \"client_secret\": \"" .. self.client_secret .. "\", \"username\": \"" .. self.username .. "\", \"password\": \"" .. self.password .. "\"}"
@@ -170,8 +264,7 @@ function Wallabag:getBearerToken()
 end
 
 function Wallabag:getArticleList()
-    local articles_url = "/api/entries.json?archive=0&tags=" .. self.tags
-    logger.dbg("articles url: ", articles_url)
+    local articles_url = "/api/entries.json?archive=0&tags=" .. self.filter_tag
     return self:callAPI( 'GET', articles_url, nil, "", "" )
 end
 
@@ -219,9 +312,8 @@ function Wallabag:callAPI( method, apiurl, headers, body, filepath )
     if body ~= "" then
         request['source'] = ltn12.source.string(body)
     end
-    logger.dbg("URL ", self.server_url .. apiurl)
-    logger.dbg("method ", method)
-    logger.dbg("headers ", headers)
+    logger.dbg("URL     ", self.server_url .. apiurl)
+    logger.dbg("method  ", method)
 
     http.TIMEOUT, https.TIMEOUT = 10, 10
     local httpRequest = parsed.scheme == 'http' and http.request or https.request
@@ -357,20 +449,15 @@ function Wallabag:processLocalFiles( mode )
         UIManager:show(info)
         UIManager:forceRePaint()
         UIManager:close(info)
-        logger.dbg("[YM] deleteOnServer: Removing read articles from :", self.directory)
         for entry in lfs.dir(self.directory) do
             if entry ~= "." and entry ~= ".." then
                 local entry_path = self.directory .. "/" .. entry
-                logger.dbg("[YM] delete? ", entry_path)
                 if DocSettings:hasSidecarFile(entry_path) then
                     local docinfo = DocSettings:open(entry_path)
                     if docinfo.data.summary and docinfo.data.summary.status then
                         status = docinfo.data.summary.status
                     end
                     percent_finished = docinfo.data.percent_finished
-                    logger.dbg("[YM] status ", status )
-                    logger.dbg("[YM] percent ", percent_finished )
-
                     if status == "complete" or status == "abandoned" then
                         if self.is_delete_finished then
                             self:deleteArticle( entry_path )
@@ -409,7 +496,7 @@ function Wallabag:archiveArticle( path )
     local id = self:getArticleID( path )
     if id then
         self:callAPI( 'PATCH', "/api/entries/" .. id .. ".json?archive=1", nil, "", "" )
-        -- TODO: enable local delete when archiving works
+        -- TODO: enable local delete when archiving works (bug in server API?)
         --self:deleteLocalArticle( path )
     end
 end
@@ -443,9 +530,38 @@ end
 
 function Wallabag:refreshCurrentDirIfNeeded()
     -- TODO:
-    -- If in the file mananer in the same directory as the download directory
+    -- If in the file manager in the same directory as the download directory
     -- refresh to see the new files or get rid of the deleted ones.
     -- Is it possible ??
+end
+
+function Wallabag:setFilterTag()
+   self.tag_dialog = InputDialog:new {
+        title =  _("Set a single tag to filter articles on"),
+        input = self.filter_tag,
+        input_type = "string",
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    callback = function()
+                        UIManager:close(self.tag_dialog)
+                    end,
+                },
+                {
+                    text = _("OK"),
+                    is_enter_default = true,
+                    callback = function()
+                        self.filter_tag = self.tag_dialog:getInputText()
+                        self:saveSettings()
+                        UIManager:close(self.tag_dialog)
+                    end,
+                }
+            }
+        },
+    }
+    UIManager:show(self.tag_dialog)
+    self.tag_dialog:onShowKeyboard()
 end
 
 function Wallabag:editServerSettings()
@@ -486,12 +602,6 @@ function Wallabag:editServerSettings()
                 input_type = "string",
                 hint = _("Password")
             },
-            {
-                text = self.directory,
-                --description = T(_("Download directory")),
-                input_type = "string",
-                hint = _("Download directory")
-            },
         },
         buttons = {
             {
@@ -515,7 +625,7 @@ function Wallabag:editServerSettings()
                         local info_text = T(_"val1: %1", myfields[1])
                         logger.dbg( info_text )
 
-                        self:saveSettings(myfields, "server")
+                        self:saveSettings(myfields)
                         self.settings_dialog:onClose()
                         UIManager:close(self.settings_dialog)
                     end
@@ -530,32 +640,39 @@ function Wallabag:editServerSettings()
     self.settings_dialog:onShowKeyboard()
 end
 
-function Wallabag:editLocalSettings()
-    -- TODO
+function Wallabag:setDownloadDirectory()
+    require("ui/downloadmgr"):new{
+       onConfirm = function(path)
+           logger.dbg("Wallabag: set download directory to: ", path)
+           self.directory = path
+           self:saveSettings()
+       end,
+    }:chooseDir()
 end
 
-function Wallabag:saveSettings(fields, type)
+function Wallabag:saveSettings( fields )
     if fields then
-        if type == "server" then
-            self.server_url    = fields[1]
-            self.client_id     = fields[2]
-            self.client_secret = fields[3]
-            self.username      = fields[4]
-            self.password      = fields[5]
-            self.directory     = fields[6]
-        elseif type == "local" then
-            -- TODO
-        end
+        self.server_url    = fields[1]
+        self.client_id     = fields[2]
+        self.client_secret = fields[3]
+        self.username      = fields[4]
+        self.password      = fields[5]
     end
 
     local tempsettings = {
-        server_url     = self.server_url,
-        client_id      = self.client_id,
-        client_secret  = self.client_secret,
-        username       = self.username,
-        password       = self.password,
-        directory      = self.directory,
-        is_auto_delete = self.is_auto_delete,
+        server_url            = self.server_url,
+        client_id             = self.client_id,
+        client_secret         = self.client_secret,
+        username              = self.username,
+        password              = self.password,
+        directory             = self.directory,
+        filter_tag            = self.filter_tag,
+        is_delete_finished    = self.is_delete_finished,
+        is_delete_read        = self.is_delete_read,
+        is_archive_finished   = self.is_archive_finished,
+        is_archive_read       = self.is_archive_read,
+        is_auto_delete        = self.is_auto_delete,
+        is_sync_remote_delete = self.is_sync_remote_delete
     }
     self.wb_settings:saveSetting("wallabag", tempsettings)
     self.wb_settings:flush()
