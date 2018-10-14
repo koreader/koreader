@@ -59,6 +59,7 @@ function Wallabag:init()
 end
 
 function Wallabag:addToMainMenu(menu_items)
+    self.doneSettingChangeFunc = nil -- discard reference to previous TouchMenu instance
     menu_items.wallabag = {
         text = _("Wallabag"),
         sub_item_table = {
@@ -115,7 +116,6 @@ function Wallabag:addToMainMenu(menu_items)
                         end,
                     },
                     {
-                        -- TODO: update the menu after changing value
                         text_func = function()
                             local path
                             if not self.directory or self.directory == "" then
@@ -126,12 +126,12 @@ function Wallabag:addToMainMenu(menu_items)
                             return _("Set download directory") .. " (" .. path .. ")"
                         end,
                         keep_menu_open = true,
-                        callback = function()
+                        callback = function(touchmenu_instance)
+                            self:setupSettingChangeFunc(touchmenu_instance)
                             self:setDownloadDirectory()
                         end,
                     },
                     {
-                        -- TODO: update the menu after changing value
                         text_func = function()
                             local filter
                             if not self.filter_tag or self.filter_tag == "" then
@@ -142,7 +142,8 @@ function Wallabag:addToMainMenu(menu_items)
                             return _("Filter articles by tag") .. " (" .. filter .. ")"
                         end,
                         keep_menu_open = true,
-                        callback = function()
+                        callback = function(touchmenu_instance)
+                            self:setupSettingChangeFunc(touchmenu_instance)
                             self:setFilterTag()
                         end,
                     },
@@ -200,7 +201,7 @@ function Wallabag:addToMainMenu(menu_items)
                 callback = function()
                     UIManager:show(InfoMessage:new{
                         text = T(_('Wallabag is an open source Read-it-later service. This plugin synchronises with a Wallabag server.\n\n' ..
-                                   'More details: https://wallabag.org\n\nDownloads to local folder: %1'), self.directory)
+                                   'More details: https://wallabag.org\n\nDownloads to directory: %1'), filemanagerutil.abbreviate(self.directory))
                     })
                 end,
             },
@@ -546,6 +547,7 @@ function Wallabag:setFilterTag()
                     text = _("Cancel"),
                     callback = function()
                         UIManager:close(self.tag_dialog)
+                        self:cancelSettingChangeFunc()
                     end,
                 },
                 {
@@ -555,6 +557,7 @@ function Wallabag:setFilterTag()
                         self.filter_tag = self.tag_dialog:getInputText()
                         self:saveSettings()
                         UIManager:close(self.tag_dialog)
+                        self:execSettingChangeFunc()
                     end,
                 }
             }
@@ -562,6 +565,27 @@ function Wallabag:setFilterTag()
     }
     UIManager:show(self.tag_dialog)
     self.tag_dialog:onShowKeyboard()
+end
+
+function Wallabag:setupSettingChangeFunc(touchmenu_instance)
+    -- Keep a reference to the TouchMenu instance
+    self.doneSettingChangeFunc = function()
+        touchmenu_instance:updateItems()
+    end
+end
+
+function Wallabag:execSettingChangeFunc()
+    if self.doneSettingChangeFunc then
+        self.doneSettingChangeFunc()
+        self.doneSettingChangeFunc = nil
+    end
+end
+
+function Wallabag:cancelSettingChangeFunc()
+    if self.doneSettingChangeFunc then
+        self.doneSettingChangeFunc()
+        self.doneSettingChangeFunc = nil
+    end
 end
 
 function Wallabag:editServerSettings()
@@ -647,6 +671,7 @@ function Wallabag:setDownloadDirectory()
            logger.dbg("Wallabag: set download directory to: ", path)
            self.directory = path
            self:saveSettings()
+           self:execSettingChangeFunc()
        end,
     }:chooseDir()
 end
