@@ -274,7 +274,7 @@ function FileManager:init()
                         and #(DocumentRegistry:getProviders(file)) > 1,
                     callback = function()
                         UIManager:close(self.file_dialog)
-                        DocumentRegistry:showSetProviderButtons(file, FileManager.instance, self, ReaderUI)
+                        self:showSetProviderButtons(file, FileManager.instance, ReaderUI)
                     end,
                 },
                 {
