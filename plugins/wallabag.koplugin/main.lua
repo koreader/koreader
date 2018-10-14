@@ -59,7 +59,6 @@ function Wallabag:init()
 end
 
 function Wallabag:addToMainMenu(menu_items)
-    self.doneSettingChangeFunc = nil -- discard reference to previous TouchMenu instance
     menu_items.wallabag = {
         text = _("Wallabag"),
         sub_item_table = {
@@ -127,8 +126,7 @@ function Wallabag:addToMainMenu(menu_items)
                         end,
                         keep_menu_open = true,
                         callback = function(touchmenu_instance)
-                            self:setupSettingChangeFunc(touchmenu_instance)
-                            self:setDownloadDirectory()
+                            self:setDownloadDirectory(touchmenu_instance)
                         end,
                     },
                     {
@@ -143,8 +141,7 @@ function Wallabag:addToMainMenu(menu_items)
                         end,
                         keep_menu_open = true,
                         callback = function(touchmenu_instance)
-                            self:setupSettingChangeFunc(touchmenu_instance)
-                            self:setFilterTag()
+                            self:setFilterTag(touchmenu_instance)
                         end,
                     },
                     {
@@ -536,7 +533,7 @@ function Wallabag:refreshCurrentDirIfNeeded()
     end
 end
 
-function Wallabag:setFilterTag()
+function Wallabag:setFilterTag(touchmenu_instance)
    self.tag_dialog = InputDialog:new {
         title =  _("Set a single tag to filter articles on"),
         input = self.filter_tag,
@@ -547,7 +544,6 @@ function Wallabag:setFilterTag()
                     text = _("Cancel"),
                     callback = function()
                         UIManager:close(self.tag_dialog)
-                        self:cancelSettingChangeFunc()
                     end,
                 },
                 {
@@ -556,8 +552,8 @@ function Wallabag:setFilterTag()
                     callback = function()
                         self.filter_tag = self.tag_dialog:getInputText()
                         self:saveSettings()
+                        touchmenu_instance:updateItems()
                         UIManager:close(self.tag_dialog)
-                        self:execSettingChangeFunc()
                     end,
                 }
             }
@@ -565,27 +561,6 @@ function Wallabag:setFilterTag()
     }
     UIManager:show(self.tag_dialog)
     self.tag_dialog:onShowKeyboard()
-end
-
-function Wallabag:setupSettingChangeFunc(touchmenu_instance)
-    -- Keep a reference to the TouchMenu instance
-    self.doneSettingChangeFunc = function()
-        touchmenu_instance:updateItems()
-    end
-end
-
-function Wallabag:execSettingChangeFunc()
-    if self.doneSettingChangeFunc then
-        self.doneSettingChangeFunc()
-        self.doneSettingChangeFunc = nil
-    end
-end
-
-function Wallabag:cancelSettingChangeFunc()
-    if self.doneSettingChangeFunc then
-        self.doneSettingChangeFunc()
-        self.doneSettingChangeFunc = nil
-    end
 end
 
 function Wallabag:editServerSettings()
@@ -665,13 +640,13 @@ function Wallabag:editServerSettings()
     self.settings_dialog:onShowKeyboard()
 end
 
-function Wallabag:setDownloadDirectory()
+function Wallabag:setDownloadDirectory(touchmenu_instance)
     require("ui/downloadmgr"):new{
        onConfirm = function(path)
            logger.dbg("Wallabag: set download directory to: ", path)
            self.directory = path
            self:saveSettings()
-           self:execSettingChangeFunc()
+           touchmenu_instance:updateItems()
        end,
     }:chooseDir()
 end
