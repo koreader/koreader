@@ -243,6 +243,27 @@ usage: clean <TARGET>
 TARGET:
 ${SUPPORTED_TARGETS}"
 
+    while [[ "${1}" == '-'* ]]; do
+        PARAM=$(echo "${1}" | awk -F= '{print $1}')
+        VALUE=$(echo "${1}" | awk -F= '{print $2}')
+        case "${PARAM}" in
+            --no-debug)
+                export KODEBUG=
+                KODEBUG_NO_DEFAULT=1
+                ;;
+            --debug)
+                export KODEBUG=1
+                KODEBUG_NO_DEFAULT=1
+                ;;
+            *)
+                echo "ERROR: unknown option \"$PARAM\""
+                echo "${BUILD_HELP_MSG}"
+                exit 1
+                ;;
+        esac
+        shift 1
+    done
+
     case "${1}" in
         -h | --help)
             echo "${CLEAN_HELP_MSG}"
@@ -280,6 +301,11 @@ ${SUPPORTED_TARGETS}"
             make TARGET=win32 clean
             ;;
         *)
+            if [ -z "${KODEBUG_NO_DEFAULT}" ]; then # no explicit --debug / --no-debug
+                # builds a debug build by default, like kodev-run
+                export KODEBUG=1
+            fi
+
             make clean
             ;;
     esac
