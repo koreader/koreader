@@ -36,8 +36,6 @@ function Wallabag:init()
     -- default values so that user doesn't have to explicitely set them
     self.is_delete_finished = true
     self.is_delete_read = false
-    self.is_archive_finished = false
-    self.is_archive_read = false
     self.is_auto_delete = false
     self.is_sync_remote_delete = false
     self.filter_tag = ""
@@ -52,8 +50,6 @@ function Wallabag:init()
     self.directory = self.wb_settings.data.wallabag.directory
     self.is_delete_finished = self.wb_settings.data.wallabag.is_delete_finished
     self.is_delete_read = self.wb_settings.data.wallabag.is_delete_read
-    self.is_archive_finished = self.wb_settings.data.wallabag.is_archive_finished
-    self.is_archive_read = self.wb_settings.data.wallabag.is_archive_read
     self.is_auto_delete = self.wb_settings.data.wallabag.is_auto_delete
     self.is_sync_remote_delete = self.wb_settings.data.wallabag.is_sync_remote_delete
     self.filter_tag = self.wb_settings.data.wallabag.filter_tag
@@ -75,15 +71,15 @@ function Wallabag:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Delete/Archive finished articles remotely"),
+                text = _("Delete finished articles remotely"),
                 callback = function()
                     if not NetworkMgr:isOnline() then
                         NetworkMgr:promptWifiOn()
                         return
                     end
-                    local num_deleted, num_archived = self:processLocalFiles( "manual" )
+                    local num_deleted = self:processLocalFiles( "manual" )
                     UIManager:show(InfoMessage:new{
-                        text = T(_('Articles processed.\nDeleted: %1\nArchived: %2'), num_deleted, num_archived)
+                        text = T(_('Articles processed.\nDeleted: %1'), num_deleted)
                     })
                     --self:refreshCurrentDirIfNeeded()
                 end,
@@ -188,7 +184,7 @@ function Wallabag:addToMainMenu(menu_items)
                                          'Existing files in this directory risk being deleted\n\n' .. 
                                          'Articles marked as Finished or 100% can be deleted from the server.\n' ..
                                          'Those articles can also be deleted automatically when downloading new articles if the ' ..
-                                         '\'Process detetions during download\' option is enabled.' ..
+                                         '\'Process detetions during download\' option is enabled.\n\n' ..
                                          '\'Synchronise remotely delete files\' option will remove local files that do not exist anymore on the server.' )
                             })
                         end,
@@ -364,7 +360,7 @@ function Wallabag:synchronise()
         return false
     end
 
-    local deleted_count, archived_count = self:processLocalFiles()
+    local deleted_count = self:processLocalFiles()
     
     local info = InfoMessage:new{ text = _("Getting article list…") }
     UIManager:show(info)
@@ -395,9 +391,9 @@ function Wallabag:synchronise()
     deleted_count = deleted_count + self:processRemoteDeletes( remote_article_ids )
     
     local msg
-    if deleted_count ~= 0 or archived_count ~= 0 then
-        msg = _("Processing finished.\n\nArticles downloaded: %1\nDeleted: %2\nArchived: %3")
-        info = InfoMessage:new{ text = T( msg, downloaded_count, deleted_count, archived_count ) }
+    if deleted_count ~= 0 then
+        msg = _("Processing finished.\n\nArticles downloaded: %1\nDeleted: %2")
+        info = InfoMessage:new{ text = T( msg, downloaded_count, deleted_count ) }
     else
         msg = _("Processing finished.\n\nArticles downloaded: %1")
         info = InfoMessage:new{ text = T( msg, downloaded_count ) }
@@ -409,7 +405,7 @@ function Wallabag:processRemoteDeletes( remote_article_ids )
     if not self.is_sync_remote_delete then
         logger.dbg("Processing of remote file deletions disabled.")
     end
-    logger.dbg("articles: ", remote_article_ids)
+    logger.dbg("articles IDs from server: ", remote_article_ids)
 
     local info = InfoMessage:new{ text = _("Synchonising remote deletions…") }
     UIManager:show(info)
@@ -443,8 +439,7 @@ function Wallabag:processLocalFiles( mode )
     end
 
     local num_deleted = 0
-    local num_archived = 0
-    if self.is_delete_finished or self.is_delete_read or self.is_archive_finished or self.is_archive_read then
+    if self.is_delete_finished or self.is_delete_read then
         local info = InfoMessage:new{ text = _("Processing local files…") }
         UIManager:show(info)
         UIManager:forceRePaint()
@@ -462,24 +457,18 @@ function Wallabag:processLocalFiles( mode )
                         if self.is_delete_finished then
                             self:deleteArticle( entry_path )
                             num_deleted = num_deleted + 1
-                        elseif self.is_archive_finished then
-                            self:archiveArticle( entry_path )
-                            num_archived = num_archived + 1
                         end
                     elseif percent_finished == 1 then -- 100% read
                         if self.is_delete_read then
                             self:deleteArticle( entry_path )
                             num_deleted = num_deleted + 1
-                        elseif self.is_archive_read then
-                            self:archiveArticle( entry_path )
-                            num_archived = num_archived + 1
                         end
                     end                    
                 end -- has sidecar
             end -- not . and ..
         end -- for entry
     end -- flag checks
-    return num_deleted, num_archived
+    return num_deleted
 end
 
 function Wallabag:deleteArticle( path )
@@ -488,16 +477,6 @@ function Wallabag:deleteArticle( path )
     if id then
         self:callAPI( 'DELETE', "/api/entries/" .. id .. ".json", nil, "", "" )
         self:deleteLocalArticle( path )
-    end
-end
-
-function Wallabag:archiveArticle( path )
-    logger.dbg("archiving article ", path )
-    local id = self:getArticleID( path )
-    if id then
-        self:callAPI( 'PATCH', "/api/entries/" .. id .. ".json?archive=1", nil, "", "" )
-        -- TODO: enable local delete when archiving works (bug in server API?)
-        --self:deleteLocalArticle( path )
     end
 end
 
@@ -669,8 +648,6 @@ function Wallabag:saveSettings( fields )
         filter_tag            = self.filter_tag,
         is_delete_finished    = self.is_delete_finished,
         is_delete_read        = self.is_delete_read,
-        is_archive_finished   = self.is_archive_finished,
-        is_archive_read       = self.is_archive_read,
         is_auto_delete        = self.is_auto_delete,
         is_sync_remote_delete = self.is_sync_remote_delete
     }
