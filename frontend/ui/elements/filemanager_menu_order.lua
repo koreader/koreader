@@ -49,12 +49,12 @@ local order = {
         "ssh",
     },
     tools = {
-        "wallabag",
         "calibre_wireless_connection",
         "evernote",
         "statistics",
         "cloud_storage",
         "read_timer",
+        "wallabag",
         "news_downloader",
         "send2ebook",
         "text_editor",
