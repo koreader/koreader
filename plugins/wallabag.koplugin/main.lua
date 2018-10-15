@@ -1,26 +1,26 @@
+local DataStorage = require("datastorage")
 local DocSettings = require("frontend/docsettings")
 local FFIUtil = require("ffi/util")
+local FileManager = require("apps/filemanager/filemanager")
 local InfoMessage = require("ui/widget/infomessage")
-local LuaSettings = require("frontend/luasettings")
-local UIManager = require("ui/uimanager")
-local NetworkMgr = require("ui/network/manager")
-local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local InputDialog = require("ui/widget/inputdialog")
+local JSON = require("json")
+local LuaSettings = require("frontend/luasettings")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
-local logger = require("logger")
-local ltn12 = require('ltn12')
+local NetworkMgr = require("ui/network/manager")
+local UIManager = require("ui/uimanager")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local http = require('socket.http')
 local https = require('ssl.https')
+local logger = require("logger")
+local ltn12 = require('ltn12')
 local socket = require('socket')
 local url = require('socket.url')
 local util = require("util")
 local _ = require("gettext")
 local T = FFIUtil.template
 local Screen = require("device").screen
-local DataStorage = require("datastorage")
-local JSON = require("json")
-local filemanagerutil = require("apps/filemanager/filemanagerutil")
-local FileManager = require("apps/filemanager/filemanager")
 
 -- constants
 local article_id_preffix = "[w-id_"
@@ -56,6 +56,15 @@ function Wallabag:init()
     -- workaround for dateparser only available if newsdownloader is active
     self.is_dateparser_available = false
     self.is_dateparser_checked = false
+
+    -- workaround for dateparser, only once
+    -- the parser is in newsdownloader.koplugin, check if it is available
+    if not self.is_dateparser_checked then
+        local res
+        res, self.dateparser = pcall(require, "lib.dateparser")
+        if res then self.is_dateparser_available = true end
+        self.is_dateparser_checked = true
+    end
 end
 
 function Wallabag:addToMainMenu(menu_items)
@@ -94,8 +103,7 @@ function Wallabag:addToMainMenu(menu_items)
                 text = _("Go to download folder"),
                 callback = function()
                     if FileManager.instance then
---                        FileManager.instance:reinit( self.directory )
-                        FileManager:showFiles( self.directory )
+                        FileManager.instance:reinit( self.directory )
                     else
                         FileManager:showFiles( self.directory )
                     end
@@ -145,7 +153,7 @@ function Wallabag:addToMainMenu(menu_items)
                         end,
                     },
                     {
-                        text = _("Remotely delete Finished articles"),
+                        text = _("Remotely delete finished articles"),
                         checked_func = function() return self.is_delete_finished end,
                         callback = function()
                             self.is_delete_finished = not self.is_delete_finished
@@ -181,12 +189,13 @@ function Wallabag:addToMainMenu(menu_items)
                         keep_menu_open = true,
                         callback = function()
                             UIManager:show(InfoMessage:new{
-                                text = _('Download directory: use a directory that is exclusively used by the Wallabag plugin. ' ..
-                                         'Existing files in this directory risk being deleted\n\n' ..
-                                         'Articles marked as Finished or 100% can be deleted from the server.\n' ..
-                                         'Those articles can also be deleted automatically when downloading new articles if the ' ..
-                                         '\'Process detetions during download\' option is enabled.\n\n' ..
-                                         '\'Synchronise remotely delete files\' option will remove local files that do not exist anymore on the server.' )
+                                text = _('Download directory: use a directory that is exclusively used by ' ..
+                                         'the Wallabag plugin. Existing files in this directory risk being deleted\n\n' ..
+                                         'Articles marked as finished or 100% can be deleted from the server.\n' ..
+                                         'Those articles can also be deleted automatically when downloading new articles ' ..
+                                         'if the \'Process deletions during download\' option is enabled.\n\n' ..
+                                         'The \'Synchronise remotely delete files\' option will remove local files ' ..
+                                         'that do not exist anymore on the server.' )
                             })
                         end,
                     }
@@ -197,8 +206,10 @@ function Wallabag:addToMainMenu(menu_items)
                 keep_menu_open = true,
                 callback = function()
                     UIManager:show(InfoMessage:new{
-                        text = T(_('Wallabag is an open source Read-it-later service. This plugin synchronises with a Wallabag server.\n\n' ..
-                                   'More details: https://wallabag.org\n\nDownloads to directory: %1'), filemanagerutil.abbreviate(self.directory))
+                        text = T(_('Wallabag is an open source Read-it-later service. ' ..
+                                   'This plugin synchronises with a Wallabag server.\n\n' ..
+                                   'More details: https://wallabag.org\n\n' ..
+                                   'Downloads to directory: %1'), filemanagerutil.abbreviate(self.directory))
                     })
                 end,
             },
@@ -207,18 +218,10 @@ function Wallabag:addToMainMenu(menu_items)
 end
 
 function Wallabag:getBearerToken()
-    -- workaround for dateparser, only once
-    -- the parser is in newsdownloader.koplugin, check if it is available
-    if not self.is_dateparser_checked then
-        local res
-        res, self.dateparser = pcall(require, "lib.dateparser")
-        if res then self.is_dateparser_available = true end
-        self.is_dateparser_checked = true
-    end
 
     -- Check if the configuration is complete
     local function isempty(s)
-        return s == nil or s == ''
+        return s == nil or s == ""
     end
 
     if isempty(self.server_url) or isempty(self.username) or isempty(self.password)  or isempty(self.client_id) or isempty(self.client_secret) or isempty(self.directory) then
@@ -233,7 +236,7 @@ function Wallabag:getBearerToken()
     logger.dbg("mode:", dir_mode)
     if dir_mode ~= "directory" then
          UIManager:show(InfoMessage:new{
-            text = _('The download directory is not valid.\nPlease configure it in settings.')
+            text = _('The download directory is not valid.\nPlease configure it in the settings.')
         })
         return false
     end
@@ -565,8 +568,8 @@ end
 
 function Wallabag:editServerSettings()
     local text_info = "Enter the details of your Wallabag server and account.\n"..
-        "\nClient ID and client secret are long strings so you might prefer to save the empty "..
-        "settings and edit the config file directly:\n"..
+        "\nClient ID and client secret are long strings so you might prefer to "..
+        "save the empty settings and edit the config file directly:\n"..
         ".adds/koreader/settings/wallabag.lua"..
         "\n\nRestart KOReader after editing the config file."
 
