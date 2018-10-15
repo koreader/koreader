@@ -189,13 +189,11 @@ function Wallabag:addToMainMenu(menu_items)
                         keep_menu_open = true,
                         callback = function()
                             UIManager:show(InfoMessage:new{
-                                text = _('Download directory: use a directory that is exclusively used by ' ..
-                                         'the Wallabag plugin. Existing files in this directory risk being deleted\n\n' ..
-                                         'Articles marked as finished or 100% can be deleted from the server.\n' ..
-                                         'Those articles can also be deleted automatically when downloading new articles ' ..
-                                         'if the \'Process deletions during download\' option is enabled.\n\n' ..
-                                         'The \'Synchronise remotely delete files\' option will remove local files ' ..
-                                         'that do not exist anymore on the server.' )
+                                text = _([[Download directory: use a directory that is exclusively used by the Wallabag plugin. Existing files in this directory risk being deleted.
+
+Articles marked as finished or 100% read can be deleted from the server. Those articles can also be deleted automatically when downloading new articles if the 'Process deletions during download' option is enabled.
+
+The 'Synchronise remotely delete files' option will remove local files that do not exist anymore on the server.]])
                             })
                         end,
                     }
@@ -206,10 +204,11 @@ function Wallabag:addToMainMenu(menu_items)
                 keep_menu_open = true,
                 callback = function()
                     UIManager:show(InfoMessage:new{
-                        text = T(_('Wallabag is an open source Read-it-later service. ' ..
-                                   'This plugin synchronises with a Wallabag server.\n\n' ..
-                                   'More details: https://wallabag.org\n\n' ..
-                                   'Downloads to directory: %1'), filemanagerutil.abbreviate(self.directory))
+                        text = T(_([[Wallabag is an open source Read-it-later service. This plugin synchronises with a Wallabag server.
+
+More details: https://wallabag.org
+
+Downloads to directory: %1]]), filemanagerutil.abbreviate(self.directory))
                     })
                 end,
             },
@@ -567,11 +566,12 @@ function Wallabag:setFilterTag(touchmenu_instance)
 end
 
 function Wallabag:editServerSettings()
-    local text_info = "Enter the details of your Wallabag server and account.\n"..
-        "\nClient ID and client secret are long strings so you might prefer to "..
-        "save the empty settings and edit the config file directly:\n"..
-        ".adds/koreader/settings/wallabag.lua"..
-        "\n\nRestart KOReader after editing the config file."
+    local text_info = [[Enter the details of your Wallabag server and account.
+
+Client ID and client secret are long strings so you might prefer to save the empty settings and edit the config file directly:
+.adds/koreader/settings/wallabag.lua
+
+Restart KOReader after editing the config file.]]
 
     self.settings_dialog = MultiInputDialog:new {
         title = _("Wallabag settings"),
