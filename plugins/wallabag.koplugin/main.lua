@@ -11,12 +11,12 @@ local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
-local http = require('socket.http')
-local https = require('ssl.https')
+local http = require("socket.http")
+local https = require("ssl.https")
 local logger = require("logger")
-local ltn12 = require('ltn12')
-local socket = require('socket')
-local url = require('socket.url')
+local ltn12 = require("ltn12")
+local socket = require("socket")
+local url = require("socket.url")
 local util = require("util")
 local _ = require("gettext")
 local T = FFIUtil.template
@@ -91,7 +91,7 @@ function Wallabag:addToMainMenu(menu_items)
                     end
                     local num_deleted = self:processLocalFiles( "manual" )
                     UIManager:show(InfoMessage:new{
-                        text = T(_('Articles processed.\nDeleted: %1'), num_deleted)
+                        text = T(_("Articles processed.\nDeleted: %1"), num_deleted)
                     })
                     self:refreshCurrentDirIfNeeded()
                 end,
@@ -130,7 +130,7 @@ function Wallabag:addToMainMenu(menu_items)
                             else
                                 path = filemanagerutil.abbreviate(self.directory)
                             end
-                            return _("Set download directory") .. " (" .. path .. ")"
+                            return T(_("Set download directory (%1)"), path)
                         end,
                         keep_menu_open = true,
                         callback = function(touchmenu_instance)
@@ -145,7 +145,7 @@ function Wallabag:addToMainMenu(menu_items)
                             else
                                 filter = self.filter_tag
                             end
-                            return _("Filter articles by tag") .. " (" .. filter .. ")"
+                            return T(_("Filter articles by tag (%1)"), filter)
                         end,
                         keep_menu_open = true,
                         callback = function(touchmenu_instance)
@@ -204,7 +204,7 @@ The 'Synchronise remotely delete files' option will remove local files that do n
                 keep_menu_open = true,
                 callback = function()
                     UIManager:show(InfoMessage:new{
-                        text = T(_([[Wallabag is an open source Read-it-later service. This plugin synchronises with a Wallabag server.
+                        text = T(_([[Wallabag is an open source read-it-later service. This plugin synchronises with a Wallabag server.
 
 More details: https://wallabag.org
 
@@ -225,7 +225,7 @@ function Wallabag:getBearerToken()
 
     if isempty(self.server_url) or isempty(self.username) or isempty(self.password)  or isempty(self.client_id) or isempty(self.client_secret) or isempty(self.directory) then
         UIManager:show(InfoMessage:new{
-            text = _('Please configure the server and local settings.')
+            text = _("Please configure the server and local settings.")
         })
         return false
     end
@@ -235,12 +235,12 @@ function Wallabag:getBearerToken()
     logger.dbg("mode:", dir_mode)
     if dir_mode ~= "directory" then
          UIManager:show(InfoMessage:new{
-            text = _('The download directory is not valid.\nPlease configure it in the settings.')
+            text = _("The download directory is not valid.\nPlease configure it in the settings.")
         })
         return false
     end
-    if string.sub( self.directory, -1 ) ~= '/' then
-        self.directory = self.directory .. '/'
+    if string.sub( self.directory, -1 ) ~= "/" then
+        self.directory = self.directory .. "/"
     end
 
     local now = os.time()
@@ -250,18 +250,25 @@ function Wallabag:getBearerToken()
     end
 
     local login_url = "/oauth/v2/token"
-    local body = "{ \"grant_type\": \"password\", \"client_id\": \"" .. self.client_id .. "\", \"client_secret\": \"" .. self.client_secret .. "\", \"username\": \"" .. self.username .. "\", \"password\": \"" .. self.password .. "\"}"
+
+    local body = string.format( [[{
+"grant_type": "password",
+"client_id": "%s",
+"client_secret": "%s",
+"username": "%s",
+"password": "%s"
+}]], self.client_id, self.client_secret, self.username, self.password )
+
     local headers = {
         ["Content-type"] = "application/json",
         ["Accept"] = "application/json, */*",
         ["Content-Length"] = tostring(#body),
         }
-    local result = self:callAPI( 'POST', login_url, headers, body, "" )
+    local result = self:callAPI( "POST", login_url, headers, body, "" )
 
     if result then
         self.access_token = result.access_token
         self.token_expiry = now + result.expires_in
-        logger.dbg("token:", self.access_token)
         return true
     else
         UIManager:show(InfoMessage:new{
@@ -272,7 +279,7 @@ end
 
 function Wallabag:getArticleList()
     local articles_url = "/api/entries.json?archive=0&tags=" .. self.filter_tag
-    return self:callAPI( 'GET', articles_url, nil, "", "" )
+    return self:callAPI( "GET", articles_url, nil, "", "" )
 end
 
 function Wallabag:download(article)
@@ -302,7 +309,7 @@ function Wallabag:download(article)
     end
 
     if skip_article == false then
-        return self:callAPI( 'GET', item_url, nil, "", local_path)
+        return self:callAPI( "GET", item_url, nil, "", local_path)
     end
 end
 
@@ -314,25 +321,25 @@ end
 function Wallabag:callAPI( method, apiurl, headers, body, filepath )
     local request, sink = {}, {}
     local parsed = url.parse(apiurl)
-    request['url'] = self.server_url .. apiurl
-    request['method'] = method
+    request["url"] = self.server_url .. apiurl
+    request["method"] = method
     if filepath ~= "" then
-        request['sink'] = ltn12.sink.file(io.open(filepath, "w"))
+        request["sink"] = ltn12.sink.file(io.open(filepath, "w"))
     else
-        request['sink'] = ltn12.sink.table(sink)
+        request["sink"] = ltn12.sink.table(sink)
     end
     if headers == nil then
         headers = { ["Authorization"] = "Bearer " .. self.access_token, }
     end
-    request['headers'] = headers
+    request["headers"] = headers
     if body ~= "" then
-        request['source'] = ltn12.source.string(body)
+        request["source"] = ltn12.source.string(body)
     end
     logger.dbg("URL     ", self.server_url .. apiurl)
     logger.dbg("method  ", method)
 
     http.TIMEOUT, https.TIMEOUT = 10, 10
-    local httpRequest = parsed.scheme == 'http' and http.request or https.request
+    local httpRequest = parsed.scheme == "http" and http.request or https.request
     local code, resp_headers = socket.skip(1, httpRequest(request))
     -- raise error message when network is unavailable
     if resp_headers == nil then
@@ -347,7 +354,8 @@ function Wallabag:callAPI( method, apiurl, headers, body, filepath )
             if content ~= "" and string.sub(content, 1,1) == "{" then
                 local ok, result = pcall(JSON.decode, content)
                 if ok and result then
-                    logger.dbg("result ", result)
+                    -- Only enable this log when needed, the output can be large
+                    --logger.dbg("result ", result)
                     return result
                 else
                     UIManager:show(InfoMessage:new{
@@ -497,7 +505,7 @@ function Wallabag:deleteArticle( path )
     logger.dbg("deleting article ", path )
     local id = self:getArticleID( path )
     if id then
-        self:callAPI( 'DELETE', "/api/entries/" .. id .. ".json", nil, "", "" )
+        self:callAPI( "DELETE", "/api/entries/" .. id .. ".json", nil, "", "" )
         self:deleteLocalArticle( path )
     end
 end
@@ -566,12 +574,13 @@ function Wallabag:setFilterTag(touchmenu_instance)
 end
 
 function Wallabag:editServerSettings()
-    local text_info = [[Enter the details of your Wallabag server and account.
+    local text_info = T(_(
+[[Enter the details of your Wallabag server and account.
 
-Client ID and client secret are long strings so you might prefer to save the empty settings and edit the config file directly:
-.adds/koreader/settings/wallabag.lua
+Client ID and client secret are long strings so you might prefer to save the empty settings and edit the config file directly in your installation directory:
+%1/wallabag.lua
 
-Restart KOReader after editing the config file.]]
+Restart KOReader after editing the config file.]]), DataStorage:getSettingsDir())
 
     self.settings_dialog = MultiInputDialog:new {
         title = _("Wallabag settings"),
@@ -625,9 +634,6 @@ Restart KOReader after editing the config file.]]
                     text = _("Apply"),
                     callback = function()
                         local myfields = MultiInputDialog:getFields()
-                        local info_text = T(_"val1: %1", myfields[1])
-                        logger.dbg( info_text )
-
                         self:saveSettings(myfields)
                         self.settings_dialog:onClose()
                         UIManager:close(self.settings_dialog)
