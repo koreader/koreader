@@ -1,73 +1,65 @@
 local ConfirmBox = require("ui/widget/confirmbox")
-local FtpApi = require("apps/cloudstorage/ftpapi")
 local InfoMessage = require("ui/widget/infomessage")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
+local UIManager = require("ui/uimanager")
 local ReaderUI = require("apps/reader/readerui")
 local Screen = require("device").screen
-local UIManager = require("ui/uimanager")
-local logger = require("logger")
-local util = require("util")
-local _ = require("gettext")
+local WebDavApi = require("apps/cloudstorage/webdavapi")
 local T = require("ffi/util").template
+local _ = require("gettext")
 
-local Ftp = {}
+local WebDav = {}
 
-function Ftp:run(address, user, pass, path)
-    local url = FtpApi:generateUrl(address, util.urlEncode(user), util.urlEncode(pass)) .. path
-    return FtpApi:listFolder(url, path)
+function WebDav:run(address, user, pass, path)
+    return WebDavApi:listFolder(address, user, pass, path)
 end
 
-function Ftp:downloadFile(item, address, user, pass, path, close)
-    local url = FtpApi:generateUrl(address, util.urlEncode(user), util.urlEncode(pass)) .. item.url
-    logger.dbg("downloadFile url", url)
-    local response = FtpApi:ftpGet(url, "retr")
-    if response ~= nil then
-        path = util.fixUtf8(path, "_")
-        local file = io.open(path, "w")
-        file:write(response)
-        file:close()
+function WebDav:downloadFile(item, address, username, password, local_path, close)
+    local code_response = WebDavApi:downloadFile(address .. WebDavApi:urlEncode( item.url ), username, password, local_path)
+    if code_response == 200 then
         UIManager:show(ConfirmBox:new{
             text = T(_("File saved to:\n %1\nWould you like to read the downloaded book now?"),
-                path),
+                local_path),
             ok_callback = function()
                 close()
-                ReaderUI:showReader(path)
+                ReaderUI:showReader(local_path)
             end
         })
     else
         UIManager:show(InfoMessage:new{
-            text = T(_("Could not save file to:\n%1"), path),
+            text = T(_("Could not save file to:\n%1"), local_path),
             timeout = 3,
         })
     end
 end
 
-function Ftp:config(item, callback)
-    local text_info = "FTP address must be in the format ftp://example.domain.com\n"..
-        "Also supported is format with IP e.g: ftp://10.10.10.1\n"..
-        "Username and password are optional."
-    local hint_name = _("Your FTP name")
+function WebDav:config(item, callback)
+    local text_info = _([[Server address must be of the form http(s)://domain.name/path
+This can point to a sub-directory of the WebDav server.
+The start folder is appended to the server path.]])
+
+    local hint_name = _("Server name for display")
     local text_name = ""
-    local hint_address = _("FTP address eg ftp://example.com")
+    local hint_address = _("WebDav address eg https://example.com/dav")
     local text_address = ""
-    local hint_username = _("FTP username")
+    local hint_username = _("Username")
     local text_username = ""
-    local hint_password = _("FTP password")
+    local hint_password = _("Password")
     local text_password = ""
-    local hint_folder = _("FTP folder")
-    local text_folder = "/"
+    local hint_folder = _("Start folder")
+    local text_folder = ""
     local title
     local text_button_right = _("Add")
     if item then
-        title = _("Edit FTP account")
+        title = _("Edit WebDav account")
         text_button_right = _("Apply")
         text_name = item.text
         text_address = item.address
         text_username = item.username
         text_password = item.password
-        text_folder = item.folder
+        text_folder = item.url
     else
-        title = _("Add FTP account")
+        title = _("Add WebDav account")
     end
     self.settings_dialog = MultiInputDialog:new {
         title = title,
@@ -143,11 +135,12 @@ function Ftp:config(item, callback)
     }
     UIManager:show(self.settings_dialog)
     self.settings_dialog:onShowKeyboard()
+
 end
 
-function Ftp:info(item)
-    local info_text = T(_"Type: %1\nName: %2\nAddress: %3", "FTP", item.text, item.address)
+function WebDav:info(item)
+    local info_text = T(_"Type: %1\nName: %2\nAddress: %3", "WebDav", item.text, item.address)
     UIManager:show(InfoMessage:new{text = info_text})
 end
 
-return Ftp
+return WebDav
