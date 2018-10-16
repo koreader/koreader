@@ -75,6 +75,7 @@ local order = {
         "evernote",
         "statistics",
         "progress_sync",
+        "wallabag",
         "zsync",
         "news_downloader",
         "send2ebook",

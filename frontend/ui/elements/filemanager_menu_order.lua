@@ -54,6 +54,7 @@ local order = {
         "statistics",
         "cloud_storage",
         "read_timer",
+        "wallabag",
         "news_downloader",
         "send2ebook",
         "text_editor",
