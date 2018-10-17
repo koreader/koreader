@@ -6,7 +6,6 @@ local ReaderUI = require("apps/reader/readerui")
 local Screen = require("device").screen
 local WebDavApi = require("apps/cloudstorage/webdavapi")
 local T = require("ffi/util").template
-local _ = require("gettext")
 
 local WebDav = {}
 
