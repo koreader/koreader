@@ -17,7 +17,7 @@ function WebDav:downloadFile(item, address, username, password, local_path, clos
     local code_response = WebDavApi:downloadFile(address .. WebDavApi:urlEncode( item.url ), username, password, local_path)
     if code_response == 200 then
         UIManager:show(ConfirmBox:new{
-            text = T(_("File saved to:\n %1\nWould you like to read the downloaded book now?"),
+            text = T(_("File saved to:\n%1\nWould you like to read the downloaded book now?"),
                 local_path),
             ok_callback = function()
                 close()
