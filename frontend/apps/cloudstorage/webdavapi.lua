@@ -146,7 +146,7 @@ end
 function WebDavApi:downloadFile(file_url, user, pass, local_path)
     local parsed = url.parse(file_url)
     local auth = string.format("%s:%s", user, pass)
-    local headers = { ["Authorization"] = "Basic ".. mime.b64( auth ) }
+    local headers = { ["Authorization"] = "Basic " .. mime.b64( auth ) }
     http.TIMEOUT = 5
     https.TIMEOUT = 5
     local httpRequest = parsed.scheme == "http" and http.request or https.request
