@@ -79,7 +79,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
     local data = [[<?xml version="1.0"?><a:propfind xmlns:a="DAV:"><a:prop><a:resourcetype/></a:prop></a:propfind>]]
     local auth = string.format("%s:%s", user, pass)
     local headers = { ["Authorization"] = "Basic " .. mime.b64( auth ),
-        ["Content-Type"] = "application/xml" ,
+        ["Content-Type"] = "application/xml",
         ["Depth"] = "1" ,
         ["Content-Length"] = #data}
     request["url"] = webdav_url
