@@ -91,7 +91,7 @@ function CloudStorage:selectCloudType()
         },
         {
             {
-                text = _("WebDav"),
+                text = _("WebDAV"),
                 callback = function()
                     UIManager:close(self.cloud_dialog)
                     self:configCloud("webdav")
@@ -187,6 +187,7 @@ end
 
 function CloudStorage:cloudFile(item, path)
     local path_dir = path
+    local download_text = _("Downloading. This might take a moment.")
     local buttons = {
         {
             {
@@ -201,7 +202,7 @@ function CloudStorage:cloudFile(item, path)
                         end)
                         UIManager:close(self.download_dialog)
                         UIManager:show(InfoMessage:new{
-                            text = _("Downloading may take several minutes…"),
+                            text = download_text,
                             timeout = 1,
                         })
                     elseif self.type == "ftp" then
@@ -213,7 +214,7 @@ function CloudStorage:cloudFile(item, path)
                         end)
                         UIManager:close(self.download_dialog)
                         UIManager:show(InfoMessage:new{
-                            text = _("Downloading may take several minutes…"),
+                            text = download_text,
                             timeout = 1,
                         })
                     elseif self.type == "webdav" then
@@ -225,7 +226,7 @@ function CloudStorage:cloudFile(item, path)
                         end)
                         UIManager:close(self.download_dialog)
                         UIManager:show(InfoMessage:new{
-                            text = _("Downloading may take several minutes…"),
+                            text = download_text,
                             timeout = 1,
                         })
                     end
