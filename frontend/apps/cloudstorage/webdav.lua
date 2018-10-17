@@ -3,7 +3,6 @@ local InfoMessage = require("ui/widget/infomessage")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local UIManager = require("ui/uimanager")
 local ReaderUI = require("apps/reader/readerui")
-local Screen = require("device").screen
 local WebDavApi = require("apps/cloudstorage/webdavapi")
 local T = require("ffi/util").template
 
