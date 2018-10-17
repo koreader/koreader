@@ -8,6 +8,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("luasettings")
 local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
+local WebDav = require("apps/cloudstorage/webdav")
 local lfs = require("libs/libkoreader-lfs")
 local _ = require("gettext")
 local Screen = require("device").screen
@@ -88,6 +89,15 @@ function CloudStorage:selectCloudType()
                 end,
             },
         },
+        {
+            {
+                text = _("WebDAV"),
+                callback = function()
+                    UIManager:close(self.cloud_dialog)
+                    self:configCloud("webdav")
+                end,
+            },
+        },
     }
         self.cloud_dialog = ButtonDialogTitle:new{
             title = _("Choose cloud storage type"),
@@ -114,6 +124,12 @@ function CloudStorage:openCloudServer(url)
             return
         end
         tbl = Ftp:run(self.address, self.username, self.password, url)
+    elseif self.type == "webdav" then
+        if not NetworkMgr:isConnected() then
+            NetworkMgr:promptWifiOn()
+            return
+        end
+        tbl = WebDav:run(self.address, self.username, self.password, url)
     end
     if tbl and #tbl > 0 then
         self:switchItemTable(url, tbl)
@@ -171,6 +187,7 @@ end
 
 function CloudStorage:cloudFile(item, path)
     local path_dir = path
+    local download_text = _("Downloading. This might take a moment.")
     local buttons = {
         {
             {
@@ -185,7 +202,7 @@ function CloudStorage:cloudFile(item, path)
                         end)
                         UIManager:close(self.download_dialog)
                         UIManager:show(InfoMessage:new{
-                            text = _("Downloading may take several minutes…"),
+                            text = download_text,
                             timeout = 1,
                         })
                     elseif self.type == "ftp" then
@@ -197,7 +214,19 @@ function CloudStorage:cloudFile(item, path)
                         end)
                         UIManager:close(self.download_dialog)
                         UIManager:show(InfoMessage:new{
-                            text = _("Downloading may take several minutes…"),
+                            text = download_text,
+                            timeout = 1,
+                        })
+                    elseif self.type == "webdav" then
+                        local callback_close = function()
+                            self:onClose()
+                        end
+                        UIManager:scheduleIn(1, function()
+                            WebDav:downloadFile(item, self.address, self.username, self.password, path_dir, callback_close)
+                        end)
+                        UIManager:close(self.download_dialog)
+                        UIManager:show(InfoMessage:new{
+                            text = download_text,
                             timeout = 1,
                         })
                     end
@@ -286,6 +315,16 @@ function CloudStorage:configCloud(type)
                 type = "ftp",
                 url = "/"
             })
+        elseif type == "webdav" then
+            table.insert(cs_servers,{
+                name = fields[1],
+                address = fields[2],
+                username = fields[3],
+                password = fields[4],
+                url = fields[5],
+                type = "webdav",
+                --url = "/"
+            })
         end
         cs_settings:saveSetting("cs_servers", cs_servers)
         cs_settings:flush()
@@ -296,6 +335,9 @@ function CloudStorage:configCloud(type)
     end
     if type == "ftp" then
         Ftp:config(nil, callbackAdd)
+    end
+    if type == "webdav" then
+        WebDav:config(nil, callbackAdd)
     end
 end
 
@@ -324,6 +366,18 @@ function CloudStorage:editCloudServer(item)
                     break
                 end
             end
+        elseif item.type == "webdav" then
+            for i, server in ipairs(cs_servers) do
+                if server.name == updated_config.text and server.address == updated_config.address then
+                    server.name = fields[1]
+                    server.address = fields[2]
+                    server.username = fields[3]
+                    server.password = fields[4]
+                    server.url = fields[5]
+                    cs_servers[i] = server
+                    break
+                end
+            end
         end
         cs_settings:saveSetting("cs_servers", cs_servers)
         cs_settings:flush()
@@ -333,6 +387,8 @@ function CloudStorage:editCloudServer(item)
         DropBox:config(item, callbackEdit)
     elseif item.type == "ftp" then
         Ftp:config(item, callbackEdit)
+    elseif item.type == "webdav" then
+        WebDav:config(item, callbackEdit)
     end
 end
 
@@ -355,6 +411,8 @@ function CloudStorage:infoServer(item)
         DropBox:info(item.password)
     elseif item.type == "ftp" then
         Ftp:info(item)
+    elseif item.type == "webdav" then
+        WebDav:info(item)
     end
 end
 
