@@ -311,9 +311,8 @@ function CloudStorage:configCloud(type)
                 address = fields[2],
                 username = fields[3],
                 password = fields[4],
-                folder = fields[5],
+                url = fields[5],
                 type = "ftp",
-                url = "/"
             })
         elseif type == "webdav" then
             table.insert(cs_servers,{
@@ -323,7 +322,6 @@ function CloudStorage:configCloud(type)
                 password = fields[4],
                 url = fields[5],
                 type = "webdav",
-                --url = "/"
             })
         end
         cs_settings:saveSetting("cs_servers", cs_servers)
@@ -361,7 +359,7 @@ function CloudStorage:editCloudServer(item)
                     server.address = fields[2]
                     server.username = fields[3]
                     server.password = fields[4]
-                    server.folder = fields[5]
+                    server.url = fields[5]
                     cs_servers[i] = server
                     break
                 end
