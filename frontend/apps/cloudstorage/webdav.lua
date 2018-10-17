@@ -4,6 +4,8 @@ local MultiInputDialog = require("ui/widget/multiinputdialog")
 local UIManager = require("ui/uimanager")
 local ReaderUI = require("apps/reader/readerui")
 local WebDavApi = require("apps/cloudstorage/webdavapi")
+local _ = require("gettext")
+local Screen = require("device").screen
 local T = require("ffi/util").template
 
 local WebDav = {}
