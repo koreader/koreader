@@ -37,7 +37,7 @@ function WebDav:config(item, callback)
 This can point to a sub-directory of the WebDav server.
 The start folder is appended to the server path.]])
 
-    local hint_name = _("Server name for display")
+    local hint_name = _("Server display name")
     local text_name = ""
     local hint_address = _("WebDav address eg https://example.com/dav")
     local text_address = ""
