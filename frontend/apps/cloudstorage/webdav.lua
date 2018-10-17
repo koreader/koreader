@@ -35,12 +35,12 @@ end
 
 function WebDav:config(item, callback)
     local text_info = _([[Server address must be of the form http(s)://domain.name/path
-This can point to a sub-directory of the WebDav server.
+This can point to a sub-directory of the WebDAV server.
 The start folder is appended to the server path.]])
 
     local hint_name = _("Server display name")
     local text_name = ""
-    local hint_address = _("WebDav address eg https://example.com/dav")
+    local hint_address = _("WebDAV address eg https://example.com/dav")
     local text_address = ""
     local hint_username = _("Username")
     local text_username = ""
@@ -49,17 +49,17 @@ The start folder is appended to the server path.]])
     local hint_folder = _("Start folder")
     local text_folder = ""
     local title
-    local text_button_right = _("Add")
+    local text_button_ok = _("Add")
     if item then
-        title = _("Edit WebDav account")
-        text_button_right = _("Apply")
+        title = _("Edit WebDAV account")
+        text_button_ok = _("Apply")
         text_name = item.text
         text_address = item.address
         text_username = item.username
         text_password = item.password
         text_folder = item.url
     else
-        title = _("Add WebDav account")
+        title = _("Add WebDAV account")
     end
     self.settings_dialog = MultiInputDialog:new {
         title = title,
@@ -107,7 +107,7 @@ The start folder is appended to the server path.]])
                     end
                 },
                 {
-                    text = text_button_right,
+                    text = text_button_ok,
                     callback = function()
                         local fields = MultiInputDialog:getFields()
                         if fields[1] ~= "" and fields[2] ~= "" then
@@ -139,7 +139,7 @@ The start folder is appended to the server path.]])
 end
 
 function WebDav:info(item)
-    local info_text = T(_"Type: %1\nName: %2\nAddress: %3", "WebDav", item.text, item.address)
+    local info_text = T(_"Type: %1\nName: %2\nAddress: %3", "WebDAV", item.text, item.address)
     UIManager:show(InfoMessage:new{text = info_text})
 end
 
