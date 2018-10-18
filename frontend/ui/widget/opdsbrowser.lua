@@ -404,11 +404,12 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
         if title == "Unknown" then
             logger.info("Cannot handle title", entry.title)
         end
+        item.text = title
         local author = "Unknown Author"
         if type(entry.author) == "table" and entry.author.name then
             author = entry.author.name
+            item.text = title .. "\n" .. author
         end
-        item.text = title
         item.title = title
         item.author = author
         item.id = entry.id
