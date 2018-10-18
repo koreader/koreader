@@ -604,7 +604,7 @@ Restart KOReader after editing the config file.]]), DataStorage:getSettingsDir()
             },
             {
                 text = self.username,
-                --description = T(_("User name and password")),
+                --description = T(_("Username and password")),
                 input_type = "string",
                 hint = _("Username")
             },
