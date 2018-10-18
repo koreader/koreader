@@ -65,7 +65,7 @@ function Ftp:config(item, callback)
         text_address = item.address
         text_username = item.username
         text_password = item.password
-        text_folder = item.folder
+        text_folder = item.url
     else
         title = _("Add FTP account")
     end
