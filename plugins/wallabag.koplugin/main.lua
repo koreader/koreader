@@ -689,6 +689,9 @@ end
 
 function Wallabag:readSettings()
     local wb_settings = LuaSettings:open(DataStorage:getSettingsDir().."/wallabag.lua")
+    if not wb_settings.data.wallabag then
+        wb_settings.data.wallabag = {}
+    end
     return wb_settings
 end
 
