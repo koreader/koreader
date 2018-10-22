@@ -77,7 +77,7 @@ function OPDSBrowser:init()
           },
           {
              title = "Internet Archive",
-             url = "https://bookserver.archive.org",
+             url = "https://bookserver.archive.org/",
           },
         }
         G_reader_settings:saveSetting("opds_servers", servers)
