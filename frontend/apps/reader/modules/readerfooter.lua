@@ -692,18 +692,11 @@ function ReaderFooter:onHoldFooter()
     return true
 end
 
-function ReaderFooter:onSetStatusLine(status_line, on_read_settings)
-    -- Ignore this event when it is first sent by ReaderCoptListener
-    -- on book loading, so we stay with the saved footer settings
-    if on_read_settings then
-        return
-    end
-    -- 1 is min progress bar while 0 is full cre header progress bar
-    if status_line == 1 then
-        -- If footer was off (if previously with full status bar), make the
-        -- footer visible, as if we taped on it (and so we don't duplicate
-        -- this code - not if flipping_visible as in this case, a ges.pos
-        -- argument to onTapFooter(ges) is required)
+function ReaderFooter:setVisible(visible)
+    if visible then
+        -- If it was off, just do as if we tap'ed on it (so we don't
+        -- duplicate onTapFooter() code - not if flipping_visible as in
+        -- this case, a ges.pos argument to onTapFooter(ges) is required)
         if self.mode == MODE.off and not self.view.flipping_visible then
             self:onTapFooter()
         end
@@ -711,7 +704,6 @@ function ReaderFooter:onSetStatusLine(status_line, on_read_settings)
     else
         self:applyFooterMode(MODE.off)
     end
-    self.ui:handleEvent(Event:new("UpdatePos"))
 end
 
 function ReaderFooter:onResume()

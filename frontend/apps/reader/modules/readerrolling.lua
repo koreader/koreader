@@ -709,11 +709,18 @@ function ReaderRolling:updatePageLink()
 end
 --]]
 
-function ReaderRolling:onSetStatusLine(status_line)
+function ReaderRolling:onSetStatusLine(status_line, on_read_settings)
+    -- status_line values:
     -- in crengine: 0=header enabled, 1=disabled
     -- in koreader: 0=top status bar, 1=bottom mini bar
     self.ui.document:setStatusLineProp(status_line)
     self.cre_top_bar_enabled = status_line == 0
+    if not on_read_settings then
+        -- Ignore this event when it is first sent by ReaderCoptListener
+        -- on book loading, so we stay with the saved footer settings
+        self.view.footer:setVisible(status_line == 1)
+    end
+    self.ui:handleEvent(Event:new("UpdatePos"))
 end
 
 function ReaderRolling:updateBatteryState()
