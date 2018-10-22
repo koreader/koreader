@@ -411,11 +411,42 @@ function ReaderHighlight:viewSelectionHTML(debug_view)
                         text = T(_("View %1"), css_files[i]),
                         callback = function()
                             local css_text = self.ui.document:getDocumentFileContent(css_files[i])
-                            local cssviewer = TextViewer:new{
+                            local cssviewer
+                            cssviewer = TextViewer:new{
                                 title = css_files[i],
                                 text = css_text or _("Failed getting CSS content"),
                                 text_face = Font:getFace("smallinfont"),
                                 justified = false,
+                                buttons_table = {
+                                    {{
+                                        text = _("Prettify"),
+                                        enabled = css_text and true or false,
+                                        callback = function()
+                                            UIManager:close(cssviewer)
+                                            -- This is not perfect, but enough to make
+                                            -- some ugly CSS readable
+                                            css_text = css_text:gsub("%s*{%s*", " {\n    ")
+                                            css_text = css_text:gsub(";%s*}%s*", ";\n}\n")
+                                            css_text = css_text:gsub(";%s*([^}])", ";\n    %1")
+                                            css_text = css_text:gsub("%s*}%s*", "\n}\n")
+                                            css_text = css_text:gsub("%s*,%s*", " ,\n")
+                                            -- The last one is wrong inside {}, eg. with
+                                            -- "font-family: Georgia, serif"
+                                            UIManager:show(TextViewer:new{
+                                                title = css_files[i],
+                                                text = css_text,
+                                                text_face = Font:getFace("smallinfont"),
+                                                justified = false,
+                                            })
+                                        end,
+                                    }},
+                                    {{
+                                        text = _("Close"),
+                                        callback = function()
+                                            UIManager:close(cssviewer)
+                                        end,
+                                    }},
+                                }
                             }
                             UIManager:show(cssviewer)
                         end,
