@@ -462,25 +462,31 @@ function ReaderDictionary:cleanSelection(text)
     -- some cleanup is still needed for selection we get from other engines
     -- (example: pdf selection "qu’autrefois," will be cleaned to "autrefois")
     --
+    -- Trim any space at start or end
+    text = text:gsub("^%s+", "")
+    text = text:gsub("%s+$", "")
     -- Replace extended quote (included in the general puncturation range)
     -- with plain ascii quote (for french words like "aujourd’hui")
-    text = string.gsub(text, "\xE2\x80\x99", "'") -- U+2019 (right single quotation mark)
+    text = text:gsub("\xE2\x80\x99", "'") -- U+2019 (right single quotation mark)
     -- Strip punctuation characters around selection
     text = util.stripePunctuations(text)
     -- Strip some common english grammatical construct
-    text = string.gsub(text, "'s$", '') -- english possessive
+    text = text:gsub("'s$", '') -- english possessive
     -- Strip some common french grammatical constructs
-    text = string.gsub(text, "^[LSDMNTlsdmnt]'", '') -- french l' s' t'...
-    text = string.gsub(text, "^[Qq][Uu]'", '') -- french qu'
+    text = text:gsub("^[LSDMNTlsdmnt]'", '') -- french l' s' t'...
+    text = text:gsub("^[Qq][Uu]'", '') -- french qu'
     -- Replace no-break space with regular space
-    text = string.gsub(text, "\xC2\xA0", ' ') -- U+00A0 no-break space
+    text = text:gsub("\xC2\xA0", ' ') -- U+00A0 no-break space
     -- There may be a need to remove some (all?) diacritical marks
     -- https://en.wikipedia.org/wiki/Combining_character#Unicode_ranges
     -- see discussion at https://github.com/koreader/koreader/issues/1649
     -- Commented for now, will have to be checked by people who read
     -- languages and texts that use them.
-    -- text = string.gsub(text, "\204[\128-\191]", '') -- U+0300 to U+033F
-    -- text = string.gsub(text, "\205[\128-\175]", '') -- U+0340 to U+036F
+    -- text = text:gsub("\204[\128-\191]", '') -- U+0300 to U+033F
+    -- text = text:gsub("\205[\128-\175]", '') -- U+0340 to U+036F
+    -- Trim any space now at start or end after above changes
+    text = text:gsub("^%s+", "")
+    text = text:gsub("%s+$", "")
     return text
 end
 
@@ -494,7 +500,7 @@ end
 function ReaderDictionary:dismissLookupInfo()
     if self.lookup_progress_msg then
         UIManager:close(self.lookup_progress_msg)
-        UIManager:forceRePaint()
+        -- UIManager:forceRePaint()
     end
     self.lookup_progress_msg = nil
 end
