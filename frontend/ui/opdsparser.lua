@@ -80,7 +80,9 @@ function OPDSParser:parse(text)
     text = text:gsub("<br>", "<br />")
     text = text:gsub("<br/>", "<br />")
     -- some OPDS catalogs wrap text in a CDATA section, remove it as it causes parsing problems
-    text = text:gsub("<!%[CDATA%[(.-)%]%]>","%1")
+    text = text:gsub("<!%[CDATA%[(.-)%]%]>", function (s)
+        return s:gsub( "%p", {["&"] = "&amp;", ["<"] = "&lt;", [">"] = "&gt;" } )
+    end )
     local xlex = luxl.new(text, #text)
     return self:createFlatXTable(xlex)
 end

@@ -269,7 +269,7 @@ function OPDSBrowser:fetchFeed(item_url, username, password)
     request['url'] = item_url
     request['method'] = 'GET'
     request['sink'] = ltn12.sink.table(sink)
-    request['headers'] = { Authorization = "Basic " .. mime.b64(auth), ["Host"] = hostname, },
+    request['headers'] = { Authorization = "Basic " .. mime.b64(auth), ["Host"] = hostname, }
     logger.info("request", request)
     http.TIMEOUT, https.TIMEOUT = 10, 10
     local httpRequest = parsed.scheme == 'http' and http.request or https.request
