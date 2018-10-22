@@ -264,11 +264,12 @@ end
 function OPDSBrowser:fetchFeed(item_url, username, password)
     local request, sink = {}, {}
     local parsed = url.parse(item_url)
+    local hostname = parsed.host
     local auth = string.format("%s:%s", username, password)
     request['url'] = item_url
     request['method'] = 'GET'
     request['sink'] = ltn12.sink.table(sink)
-    request['headers'] = { Authorization = "Basic " .. mime.b64(auth), }
+    request['headers'] = { Authorization = "Basic " .. mime.b64(auth), ["Host"] = hostname, },
     logger.info("request", request)
     http.TIMEOUT, https.TIMEOUT = 10, 10
     local httpRequest = parsed.scheme == 'http' and http.request or https.request
@@ -472,12 +473,13 @@ function OPDSBrowser:downloadFile(item, format, remote_url)
         UIManager:scheduleIn(1, function()
             logger.dbg("downloading file", local_path, "from", remote_url)
             local parsed = url.parse(remote_url)
+            local hostname = parsed.host
             http.TIMEOUT, https.TIMEOUT = 20, 20
             local httpRequest = parsed.scheme == 'http' and http.request or https.request
             local auth = string.format("%s:%s", item.username, item.password)
             local __, c = httpRequest {
                 url = remote_url,
-                headers = { Authorization = "Basic " .. mime.b64(auth), },
+                headers = { Authorization = "Basic " .. mime.b64(auth), ["Host"] = hostname, },
                 sink = ltn12.sink.file(io.open(local_path, "w")),
             }
             if c == 200 then

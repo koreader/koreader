@@ -40,6 +40,7 @@ function OPDSParser:createFlatXTable(xlex, curr_element)
     local txt
     for event, offset, size in xlex:Lexemes() do
         txt = ffi.string(xlex.buf + offset, size)
+
         if event == luxl.EVENT_START then
             if txt ~= "xml" then
                 -- does current element already have something
@@ -79,6 +80,8 @@ function OPDSParser:parse(text)
     -- but will kick the ass of luxl
     text = text:gsub("<br>", "<br />")
     text = text:gsub("<br/>", "<br />")
+    -- some OPDS catalogs wrap text in a CDATA marker, remove it as it causes parsing problems
+    text = text:gsub("<!%[CDATA%[(.-)%]%]>","%1")
     local xlex = luxl.new(text, #text)
     return self:createFlatXTable(xlex)
 end
