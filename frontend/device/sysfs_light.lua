@@ -1,14 +1,14 @@
--- Interface to the SysFS interface of the Kobo Aura One Frontlight.
+-- Generic frontlight SysFS interface.
 -- This also supports the natural light, which consists of additional
 -- red and green light LEDs.
 
 local logger = require("logger")
 local dbg = require("dbg")
 
-local KoboSysfsLight = {
-    frontlight_white = "/sys/class/backlight/lm3630a_led1b",
-    frontlight_red = "/sys/class/backlight/lm3630a_led1a",
-    frontlight_green = "/sys/class/backlight/lm3630a_ledb",
+local SysfsLight = {
+    frontlight_white = nil,
+    frontlight_red = nil,
+    frontlight_green = nil,
     current_brightness = 0,
     current_warmth = 0,
     white_gain = 25,
@@ -20,7 +20,7 @@ local KoboSysfsLight = {
     exponent = 0.25,
 }
 
-function KoboSysfsLight:new(o)
+function SysfsLight:new(o)
     o = o or {}
     setmetatable(o, self)
     self.__index = self
@@ -28,27 +28,27 @@ function KoboSysfsLight:new(o)
     return o
 end
 
-function KoboSysfsLight:setBrightness(brightness)
+function SysfsLight:setBrightness(brightness)
     self:setNaturalBrightness(brightness, self.current_warmth)
 end
 
-dbg:guard(KoboSysfsLight, 'setBrightness',
+dbg:guard(SysfsLight, 'setBrightness',
           function(self, brightness)
               assert(brightness >= 0 and brightness <= 100,
                      "Wrong brightness value given!")
           end)
 
-function KoboSysfsLight:setWarmth(warmth)
+function SysfsLight:setWarmth(warmth)
     self:setNaturalBrightness(self.current_brightness, warmth)
 end
 
-dbg:guard(KoboSysfsLight, 'setWarmth',
+dbg:guard(SysfsLight, 'setWarmth',
           function(self, warmth)
               assert(warmth >= 0 and warmth <= 100,
                      "Wrong warmth value given!")
           end)
 
-function KoboSysfsLight:setNaturalBrightness(brightness, warmth)
+function SysfsLight:setNaturalBrightness(brightness, warmth)
     if not brightness then
         brightness = self.current_brightness
     end
@@ -84,7 +84,7 @@ function KoboSysfsLight:setNaturalBrightness(brightness, warmth)
     self.current_warmth = warmth
 end
 
-dbg:guard(KoboSysfsLight, 'setNaturalBrightness',
+dbg:guard(SysfsLight, 'setNaturalBrightness',
           function(self, brightness, warmth)
               assert(brightness >= 0 and brightness <= 100,
                      "Wrong brightness value given!")
@@ -92,7 +92,8 @@ dbg:guard(KoboSysfsLight, 'setNaturalBrightness',
                      "Wrong warmth value given!")
           end)
 
-function KoboSysfsLight:_set_light_value(sysfs_directory, value)
+function SysfsLight:_set_light_value(sysfs_directory, value)
+    if not sysfs_directory then return end
     -- bl_power is '31' when the light is turned on, '0' otherwise.
     if (value > 0) then
         self:_write_value(sysfs_directory .. "/bl_power", 31)
@@ -102,7 +103,7 @@ function KoboSysfsLight:_set_light_value(sysfs_directory, value)
     self:_write_value(sysfs_directory .. "/brightness", value)
 end
 
-function KoboSysfsLight:_write_value(file, value)
+function SysfsLight:_write_value(file, value)
     local f = io.open(file, "w")
     if not f then
         logger.err("Could not open file: ", file)
@@ -117,4 +118,4 @@ function KoboSysfsLight:_write_value(file, value)
     return true
 end
 
-return KoboSysfsLight
+return SysfsLight

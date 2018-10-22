@@ -36,7 +36,6 @@ local Kobo = Generic:new{
     internal_storage_mount_point = "/mnt/onboard/",
     -- currently only Aura One has coloured frontlight
     hasNaturalLight = no,
-    frontlight_settings = {},
 }
 
 -- TODO: hasKeys for some devices?
@@ -69,6 +68,11 @@ local KoboDaylight = Kobo:new{
     touch_phoenix_protocol = true,
     display_dpi = 300,
     hasNaturalLight = yes,
+    frontlight_settings = {
+        frontlight_white = "/sys/class/backlight/lm3630a_led1b",
+        frontlight_red = "/sys/class/backlight/lm3630a_led1a",
+        frontlight_green = "/sys/class/backlight/lm3630a_ledb",
+    },
 }
 
 -- Kobo Aura H2O:
@@ -136,7 +140,6 @@ local KoboSnowRev2 = Kobo:new{
     frontlight_settings = {
         frontlight_white = "/sys/class/backlight/lm3630a_ledb",
         frontlight_red = "/sys/class/backlight/lm3630a_leda",
-        frontlight_green = "/dev/null",
     },
 }
 
@@ -192,8 +195,6 @@ local KoboNova = Kobo:new{
         -- NOTE: There doesn't appear to be a dedicated "green" LED, instead,
         --       there's a knob that mixes the white & red ones together (/sys/class/backlight/lm3630a_led).
         --       c.f., https://www.mobileread.com/forums/showpost.php?p=3728236&postcount=2947
-        --       Because I'm not familiar with sysfs_light.lua, just throw green into the void, and hope for the best...
-        frontlight_green = "/dev/null",
     },
 }
 

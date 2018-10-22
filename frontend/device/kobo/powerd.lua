@@ -1,7 +1,7 @@
 local BasePowerD = require("device/generic/powerd")
 local NickelConf = require("device/kobo/nickel_conf")
 local PluginShare = require("pluginshare")
-local SysfsLight = require ("device/kobo/sysfs_light")
+local SysfsLight = require ("device/sysfs_light")
 
 local batt_state_folder =
         "/sys/devices/platform/pmic_battery.1/power_supply/mc13892_bat/"
