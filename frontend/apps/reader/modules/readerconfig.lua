@@ -4,6 +4,8 @@ local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
+local CreOptions = require("ui/data/creoptions")
+local KoptOptions = require("ui/data/koptoptions")
 local _ = require("gettext")
 
 local ReaderConfig = InputContainer:new{
@@ -11,6 +13,13 @@ local ReaderConfig = InputContainer:new{
 }
 
 function ReaderConfig:init()
+    if self.document.koptinterface ~= nil then
+        self.options = KoptOptions
+    else
+        self.options = CreOptions
+    end
+    self.configurable:loadDefaults(self.options)
+
     if not self.dimen then self.dimen = Geom:new{} end
     if Device:hasKeys() then
         self.key_events = {

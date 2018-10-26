@@ -3,7 +3,6 @@ local CacheItem = require("cacheitem")
 local Device = require("device")
 local Document = require("document/document")
 local DrawContext = require("ffi/drawcontext")
-local KoptOptions = require("ui/data/koptoptions")
 local logger = require("logger")
 local util = require("util")
 local ffi = require("ffi")
@@ -16,7 +15,6 @@ local PdfDocument = Document:new{
     _document = false,
     is_pdf = true,
     dc_null = DrawContext.new(),
-    options = KoptOptions,
     epub_font_size = G_reader_settings:readSetting("copt_font_size")
             or DCREREADER_CONFIG_DEFAULT_FONT_SIZE or 22,
     koptinterface = nil,
@@ -39,7 +37,7 @@ function PdfDocument:init()
         end
     end
     self.koptinterface = require("document/koptinterface")
-    self.configurable:loadDefaults(self.options)
+    self.koptinterface:setDefaultConfigurable(self.configurable)
     local ok
     ok, self._document = pcall(pdf.openDocument, self.file)
     if not ok then

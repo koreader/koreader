@@ -9,7 +9,8 @@ end
 
 function Configurable:reset()
     for key,value in pairs(self) do
-        if type(value) == "number" or type(value) == "string" then
+        local value_type = type(value)
+        if value_type == "number" or value_type == "string" then
             self[key] = nil
         end
     end
@@ -18,7 +19,8 @@ end
 function Configurable:hash(sep)
     local hash = ""
     for key,value in pairs(self) do
-        if type(value) == "number" or type(value) == "string" then
+        local value_type = type(value)
+        if value_type == "number" or value_type == "string" then
             hash = hash..sep..value
         end
     end
@@ -28,11 +30,12 @@ end
 function Configurable:loadDefaults(config_options)
     -- reset configurable before loading new options
     self:reset()
+    local prefix = config_options.prefix.."_"
     for i=1,#config_options do
         local options = config_options[i].options
         for j=1,#options do
             local key = options[j].name
-            local settings_key = config_options.prefix.."_"..key
+            local settings_key = prefix..key
             local default = G_reader_settings:readSetting(settings_key)
             self[key] = default or options[j].default_value
             if not self[key] then
@@ -44,21 +47,22 @@ end
 
 function Configurable:loadSettings(settings, prefix)
     for key,value in pairs(self) do
-        if type(value) == "number" or type(value) == "string"
-            or type(value) == "table" then
+        local value_type = type(value)
+        if value_type == "number" or value_type == "string"
+            or value_type == "table" then
             local saved_value = settings:readSetting(prefix..key)
-            self[key] = (saved_value == nil) and self[key] or saved_value
-            --Debug("Configurable:loadSettings", "key", key, "saved value",
-            --saved_value,"Configurable.key", self[key])
+            if saved_value ~= nil then
+                self[key] = saved_value
+            end
         end
     end
-    --Debug("loaded config:", dump(Configurable))
 end
 
 function Configurable:saveSettings(settings, prefix)
     for key,value in pairs(self) do
-        if type(value) == "number" or type(value) == "string"
-            or type(value) == "table" then
+        local value_type = type(value)
+        if value_type == "number" or value_type == "string"
+            or value_type == "table" then
             settings:saveSetting(prefix..key, value)
         end
     end

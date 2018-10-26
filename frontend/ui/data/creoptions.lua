@@ -1,8 +1,8 @@
 local Device = require("device")
+local Screen = Device.screen
 local S = require("ui/data/strings")
 local optionsutil = require("ui/data/optionsutil")
 local _ = require("gettext")
-local Screen = Device.screen
 
 -- add multiply operator to Aa dict
 local Aa = setmetatable({"Aa"}, {

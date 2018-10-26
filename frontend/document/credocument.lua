@@ -1,5 +1,4 @@
 local Blitbuffer = require("ffi/blitbuffer")
-local CreOptions = require("ui/data/creoptions")
 local DataStorage = require("datastorage")
 local Document = require("document/document")
 local Font = require("ui/font")
@@ -28,7 +27,6 @@ local CreDocument = Document:new{
     header_font = "Noto Sans",
     fallback_font = "Noto Sans CJK SC",
     default_css = "./data/cr3.css",
-    options = CreOptions,
     provider = "crengine",
     provider_name = "Cool Reader Engine",
 }
@@ -94,7 +92,6 @@ end
 function CreDocument:init()
     self:updateColorRendering()
     self:engineInit()
-    self.configurable:loadDefaults(self.options)
 
     local file_type = string.lower(string.match(self.file, ".+%.([^.]+)"))
     if file_type == "zip" then
