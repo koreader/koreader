@@ -8,7 +8,8 @@ local CacheItem = require("cacheitem")
 local BlitBuffer = require("ffi/blitbuffer")
 local logger = require("logger")
 
-if require("device"):isAndroid() then
+local runtimectl = require("runtimectl")
+if runtimectl.should_restrict_JIT then
     require("jit").off(true, true)
 end
 

@@ -5,7 +5,6 @@ local Configurable = require("configurable")
 local DrawContext = require("ffi/drawcontext")
 local Geom = require("ui/geometry")
 local Math = require("optmath")
-local Screen = require("device").screen
 local TileCacheItem = require("document/tilecacheitem")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
@@ -291,7 +290,7 @@ function Document:findText()
 end
 
 function Document:updateColorRendering()
-    if self.is_color_capable and Screen:isColorEnabled() then
+    if self.is_color_capable and Runtimectl.is_color_rendering_enabled then
         self.render_color = true
     else
         self.render_color = false

@@ -1,6 +1,6 @@
 local Document = require("document/document")
 local DrawContext = require("ffi/drawcontext")
-local Screen = require("device").screen
+local Runtimectl = require("runtimectl")
 local pic = nil
 
 local PicDocument = Document:new{
@@ -15,7 +15,7 @@ function PicDocument:init()
     self:updateColorRendering()
     if not pic then pic = require("ffi/pic") end
     -- pic.color needs to be true before opening document to allow toggling color
-    pic.color = Screen.isColorScreen()
+    pic.color = Runtimectl.is_color_rendering_enabled
     local ok
     ok, self._document = pcall(pic.openDocument, self.file)
     if not ok then

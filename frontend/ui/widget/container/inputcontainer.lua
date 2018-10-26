@@ -33,7 +33,8 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local Screen = require("device").screen
 
-if require("device"):isAndroid() then
+local runtimectl = require("runtimectl")
+if runtimectl.should_restrict_JIT then
     require("jit").off(true, true)
 end
 

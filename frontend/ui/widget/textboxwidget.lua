@@ -361,14 +361,18 @@ function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
     if self._bb then self._bb:free() end
     local bbtype = nil
     if self.line_num_to_image and self.line_num_to_image[start_row_idx] then
-        -- Whether Screen:isColorEnabled() or not, it's best to always use BBRGB32
-        -- and alphablitFrom() for the best display of various images:
-        --   With greyscale screen TYPE_BB8 (the default, and what we would
-        --   have chosen when not Screen:isColorEnabled()):
-        --     alphablitFrom: some images are all white (ex: flags on Milan, Ilkhanides on wiki.fr)
-        --     blitFrom: some images have a black background (ex: RDA, Allemagne on wiki.fr)
+        -- Whether Runtimectl.is_color_rendering_enabled or not, it's best to
+        -- always use BBRGB32 and alphablitFrom() for the best display of
+        -- various images:
+        --   With greyscale screen TYPE_BB8 (the default, and
+        --   what we would have chosen when not Runtimectl.is_color_rendering_enabled):
+        --     alphablitFrom: some images are all white (ex: flags on Milan,
+        --     Ilkhanides on wiki.fr)
+        --     blitFrom: some images have a black background (ex: RDA,
+        --     Allemagne on wiki.fr)
         --   With TYPE_BBRGB32:
-        --     blitFrom: some images have a black background (ex: RDA, Allemagne on wiki.fr)
+        --     blitFrom: some images have a black background (ex: RDA,
+        --     Allemagne on wiki.fr)
         --     alphablitFrom: all these images looks good, with a white background
         bbtype = Blitbuffer.TYPE_BBRGB32
     end

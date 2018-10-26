@@ -16,7 +16,8 @@ It handles event propagation and painting (with different alignments) for its ch
 local Geom = require("ui/geometry")
 local Widget = require("ui/widget/widget")
 
-if require("device"):isAndroid() then
+local runtimectl = require("runtimectl")
+if runtimectl.should_restrict_JIT then
     require("jit").off(true, true)
 end
 
