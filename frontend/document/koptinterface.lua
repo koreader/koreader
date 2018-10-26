@@ -54,6 +54,24 @@ function OCREngine:onFree()
     end
 end
 
+function KoptInterface:setDefaultConfigurable(configurable)
+    configurable.doc_language = DKOPTREADER_CONFIG_DOC_DEFAULT_LANG_CODE
+    configurable.trim_page = DKOPTREADER_CONFIG_TRIM_PAGE
+    configurable.text_wrap = DKOPTREADER_CONFIG_TEXT_WRAP
+    configurable.detect_indent = DKOPTREADER_CONFIG_DETECT_INDENT
+    configurable.max_columns = DKOPTREADER_CONFIG_MAX_COLUMNS
+    configurable.auto_straighten = DKOPTREADER_CONFIG_AUTO_STRAIGHTEN
+    configurable.justification = DKOPTREADER_CONFIG_JUSTIFICATION
+    configurable.writing_direction = 0
+    configurable.font_size = DKOPTREADER_CONFIG_FONT_SIZE
+    configurable.page_margin = DKOPTREADER_CONFIG_PAGE_MARGIN
+    configurable.quality = DKOPTREADER_CONFIG_RENDER_QUALITY
+    configurable.contrast = DKOPTREADER_CONFIG_CONTRAST
+    configurable.defect_size = DKOPTREADER_CONFIG_DEFECT_SIZE
+    configurable.line_spacing = DKOPTREADER_CONFIG_LINE_SPACING
+    configurable.word_spacing = DKOPTREADER_CONFIG_DEFAULT_WORD_SPACING
+end
+
 function KoptInterface:waitForContext(kc)
     -- if koptcontext is being processed in background thread
     -- the isPreCache will return 1.
@@ -421,7 +439,7 @@ returned boxes are in native page coordinates zoomed at 1.0
 --]]
 function KoptInterface:getTextBoxes(doc, pageno)
     local text = doc:getPageTextBoxes(pageno)
-    if text and #text > 1 and doc.configurable.forced_ocr == 0 then
+    if text and #text > 1 and doc.configurable.forced_ocr ~= 1 then
         return text
     -- if we have no text in original page then we will reuse native word boxes
     -- in reflow mode and find text boxes from scratch in non-reflow mode

@@ -196,10 +196,10 @@ function ReaderUI:init()
         -- config panel controller
         self:registerModule("config", ReaderConfig:new{
             configurable = self.document.configurable,
-            options = self.document.options,
             dialog = self.dialog,
             view = self.view,
-            ui = self
+            ui = self,
+            document = self.document,
         })
         if self.document.info.has_pages then
             -- kopt option controller
