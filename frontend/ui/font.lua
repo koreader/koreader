@@ -2,11 +2,10 @@
 Font module.
 ]]
 
-local Device = require("device")
 local Freetype = require("ffi/freetype")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local Screen = Device.screen
+local Runtimectl = require("runtimectl")
 
 local Font = {
     fontmap = {
@@ -86,7 +85,16 @@ local Font = {
 
     -- face table
     faces = {},
+
+    -- set by self.setScreen
+    screen = nil,
 }
+
+--- Sets the screen object that will be used by font module for font size scaling
+-- NOTE: this call is required for using KOReader UI framework
+function Font:setScreen(screen)
+    self.screen = screen
+end
 
 --- Gets font face object.
 -- @string font
@@ -99,7 +107,7 @@ function Font:getFace(font, size)
     if not size then size = self.sizemap[font] end
     -- original size before scaling by screen DPI
     local orig_size = size
-    size = Screen:scaleBySize(size)
+    size = self.screen:scaleBySize(size)
 
     local hash = font..size
     local face_obj = self.faces[hash]
@@ -188,9 +196,8 @@ local kindle_fonts_blacklist = {
 }
 
 local function isInFontsBlacklist(f)
-    if Device:isKindle() then
-        return kindle_fonts_blacklist[f]
-    end
+    -- write test for this
+    return Runtimectl.isKindle() and kindle_fonts_blacklist[f]
 end
 
 function Font:_readList(target, dir)
@@ -214,19 +221,11 @@ function Font:_readList(target, dir)
     end
 end
 
-function Font:_getExternalFontDir()
-    if Device:isAndroid() then
-        return ANDROID_FONT_DIR
-    else
-        return os.getenv("EXT_FONT_DIR")
-    end
-end
-
 function Font:getFontList()
     local fontlist = {}
     self:_readList(fontlist, self.fontdir)
     -- multiple paths should be joined with semicolon
-    for dir in string.gmatch(self:_getExternalFontDir() or "", "([^;]+)") do
+    for dir in string.gmatch(Runtimectl:getExternalFontDir() or "", "([^;]+)") do
         self:_readList(fontlist, dir)
     end
     table.sort(fontlist)
