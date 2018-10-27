@@ -19,7 +19,6 @@ local DataStorage = require("datastorage")
 pcall(dofile, DataStorage:getDataDir() .. "/defaults.persistent.lua")
 
 require("setupkoenv")
-Runtimectl = require("runtimectl")
 
 io.stdout:write(" [*] Version: ", require("version"):getCurrentRevision(), "\n\n")
 io.stdout:flush()
@@ -36,10 +35,12 @@ if lang_locale then
 end
 
 -- setup various runtime control
+local Runtimectl = require("runtimectl")
 local Device = require("device")
-if Device:isAndroid() then
-    Runtimectl:restrictJIT()
-end
+Runtimectl:setDevice(Device)
+
+local Font = require("ui/font")
+Font:setScreen(Device.screen)
 
 if G_reader_settings:has("color_rendering") then
     Runtimectl:setColorRenderingEnabled(G_reader_settings:isTrue("color_rendering"))
@@ -113,7 +114,6 @@ while argidx <= #ARGV do
 end
 
 local ConfirmBox = require("ui/widget/confirmbox")
-local Font = require("ui/font")
 local QuickStart = require("ui/quickstart")
 local UIManager = require("ui/uimanager")
 local lfs = require("libs/libkoreader-lfs")

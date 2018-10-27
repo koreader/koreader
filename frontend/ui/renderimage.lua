@@ -3,7 +3,6 @@ Image rendering module.
 ]]
 
 local ffi = require("ffi")
-local Device = require("device")
 local logger = require("logger")
 
 -- Will be loaded when needed
@@ -67,13 +66,6 @@ end
 -- @treturn BlitBuffer
 function RenderImage:renderImageDataWithMupdf(data, size, width, height)
     if not Mupdf then Mupdf = require("ffi/mupdf") end
-    -- NOTE: Kobo's fb is BGR, not RGB. Handle the conversion in MuPDF if needed.
-    if Mupdf.bgr == nil then
-        Mupdf.bgr = false
-        if Device:hasBGRFrameBuffer() then
-            Mupdf.bgr = true
-        end
-    end
     local ok, image = pcall(Mupdf.renderImage, data, size, width, height)
     logger.dbg("Mupdf.renderImage", ok, image)
     if not ok then

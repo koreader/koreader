@@ -1,14 +1,13 @@
 local Cache = require("cache")
 local CacheItem = require("cacheitem")
-local Device = require("device")
 local Document = require("document/document")
 local DrawContext = require("ffi/drawcontext")
 local logger = require("logger")
 local util = require("util")
 local ffi = require("ffi")
 local C = ffi.C
-local Screen = Device.screen
 local pdf = nil
+local Runtimectl = require("runtimectl")
 
 
 local PdfDocument = Document:new{
@@ -30,12 +29,6 @@ function PdfDocument:init()
     -- and :postRenderPage() when mupdf is called without kopt involved.
     pdf.color = false
     self:updateColorRendering()
-    if pdf.bgr == nil then
-        pdf.bgr = false
-        if Device:hasBGRFrameBuffer() then
-            pdf.bgr = true
-        end
-    end
     self.koptinterface = require("document/koptinterface")
     self.koptinterface:setDefaultConfigurable(self.configurable)
     local ok
@@ -44,8 +37,8 @@ function PdfDocument:init()
         error(self._document)  -- will contain error message
     end
     -- no-op on PDF
-    self._document:layoutDocument(Screen:getWidth(), Screen:getHeight(),
-                                  Screen:scaleBySize(self.epub_font_size))
+    self._document:layoutDocument(Runtimectl:getRenderWidth(), Runtimectl:getRenderHeight(),
+                                  Runtimectl:scaleByRenderSize(self.epub_font_size))
     self.is_open = true
     self.info.has_pages = true
     self.info.configurable = true

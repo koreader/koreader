@@ -1,7 +1,25 @@
+local Mupdf = require("ffi/mupdf")
+
 local Runtimectl = {
     should_restrict_JIT = false,
     is_color_rendering_enabled = false,
+    is_bgr = false,
 }
+
+function Runtimectl:setDevice(device)
+    self.isAndroid = device.isAndroid
+    self.isKindle = device.isKindle
+
+    if self.isAndroid() then
+        self:restrictJIT()
+    end
+
+    -- NOTE: Kobo's fb is BGR, not RGB. Handle the conversion in MuPDF if needed.
+    if device:hasBGRFrameBuffer() then
+        self.is_bgr = true
+        Mupdf.bgr = true
+    end
+end
 
 --[[
 Disable jit on some modules on android to make koreader on Android more stable.
@@ -20,6 +38,30 @@ end
 
 function Runtimectl:setColorRenderingEnabled(val)
     self.is_color_rendering_enabled = val
+end
+
+function Runtimectl:getExternalFontDir()
+    if self.isAndroid() then
+        return ANDROID_FONT_DIR
+    else
+        return os.getenv("EXT_FONT_DIR")
+    end
+end
+
+function Runtimectl:getRenderWidth()
+    return self.screen:getWidth()
+end
+
+function Runtimectl:getRenderHeight()
+    return self.screen:getHeight()
+end
+
+function Runtimectl:getRenderDPI()
+    return self.screen:getDPI()
+end
+
+function Runtimectl:scaleByRenderSize(px)
+    return self.screen:scaleBySize(px)
 end
 
 return Runtimectl
