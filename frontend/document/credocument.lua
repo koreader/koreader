@@ -4,7 +4,7 @@ local Document = require("document/document")
 local Font = require("ui/font")
 local Geom = require("ui/geometry")
 local RenderImage = require("ui/renderimage")
-local Screen = require("device").screen
+local Runtimectl = require("runtimectl")
 local ffi = require("ffi")
 local C = ffi.C
 local lfs = require("libs/libkoreader-lfs")
@@ -116,7 +116,7 @@ function CreDocument:init()
     self._view_mode = DCREREADER_VIEW_MODE == "scroll" and self.SCROLL_VIEW_MODE or self.PAGE_VIEW_MODE
 
     local ok
-    ok, self._document = pcall(cre.newDocView, Screen:getWidth(), Screen:getHeight(), self._view_mode)
+    ok, self._document = pcall(cre.newDocView, Runtimectl:getRenderWidth(), Runtimectl:getRenderHeight(), self._view_mode)
     if not ok then
         error(self._document)  -- will contain error message
     end
@@ -163,8 +163,8 @@ function CreDocument:setupDefaultView()
     self._document:setStringProperty("crengine.font.fallback.face",
         G_reader_settings:readSetting("fallback_font") or self.fallback_font)
 
-    -- adjust font sizes according to screen dpi
-    self._document:adjustFontSizes(Screen:getDPI())
+    -- adjust font sizes according to dpi set in runtime
+    self._document:adjustFontSizes(Runtimectl:getRenderDPI())
 
     -- set top status bar font size
     if G_reader_settings:readSetting("cre_header_status_font_size") then
@@ -191,7 +191,7 @@ function CreDocument:render()
     -- load document before rendering
     self:loadDocument()
     -- set visible page count in landscape
-    if math.max(Screen:getWidth(), Screen:getHeight()) / Screen:getDPI()
+    if math.max(Runtimectl:getRenderWidth(), Runtimectl:getRenderHeight()) / Runtimectl:getRenderDPI()
         < DCREREADER_TWO_PAGE_THRESHOLD then
         self:setVisiblePageCount(1)
     end

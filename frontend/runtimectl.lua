@@ -7,6 +7,7 @@ local Runtimectl = {
 }
 
 function Runtimectl:setDevice(device)
+    self.screen = device.screen
     self.isAndroid = device.isAndroid
     self.isKindle = device.isKindle
 
