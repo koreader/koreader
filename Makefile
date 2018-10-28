@@ -45,7 +45,7 @@ SONY_PRSTUX_DIR=$(PLATFORM_DIR)/sony-prstux
 
 # appimage setup
 APPIMAGETOOL=appimagetool-x86_64.AppImage
-APPIMAGETOOL_URL=https://github.com/AppImage/AppImageKit/releases/download/10/appimagetool-x86_64.AppImage
+APPIMAGETOOL_URL=https://github.com/AppImage/AppImageKit/releases/download/11/appimagetool-x86_64.AppImage
 
 # set to 1 if in Docker
 DOCKER:=$(shell grep -q docker /proc/1/cgroup && echo 1)
