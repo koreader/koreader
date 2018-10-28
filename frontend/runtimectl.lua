@@ -61,6 +61,10 @@ function Runtimectl:getRenderDPI()
     return self.screen:getDPI()
 end
 
+function Runtimectl:getRenderSize()
+    return self.screen:getSize()
+end
+
 function Runtimectl:scaleByRenderSize(px)
     return self.screen:scaleBySize(px)
 end

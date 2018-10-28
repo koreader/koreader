@@ -9,7 +9,7 @@ local TileCacheItem = require("document/tilecacheitem")
 local logger = require("logger")
 local serial = require("serialize")
 local util = require("ffi/util")
-local Screen = require("device").screen
+local Runtimectl = require("runtimectl")
 
 local KoptInterface = {
     ocrengine = "ocrengine",
@@ -18,7 +18,6 @@ local KoptInterface = {
     ocr_type = 3, -- default 0, for more accuracy use 3
     last_context_size = nil,
     default_context_size = 1024*1024,
-    screen_dpi = Screen:getDPI(),
 }
 
 local ContextCacheItem = CacheItem:new{}
@@ -89,7 +88,7 @@ function KoptInterface:createContext(doc, pageno, bbox)
     -- Now koptcontext keeps track of its dst bitmap reflowed by libk2pdfopt.
     -- So there is no need to check background context when creating new context.
     local kc = KOPTContext.new()
-    local screen_size = Screen:getSize()
+    local screen_size = Runtimectl:getRenderSize()
     local lang = doc.configurable.doc_language
     if lang == "chi_sim" or lang == "chi_tra" or
         lang == "jpn" or lang == "kor" then
@@ -101,7 +100,7 @@ function KoptInterface:createContext(doc, pageno, bbox)
     kc:setIndent(doc.configurable.detect_indent)
     kc:setColumns(doc.configurable.max_columns)
     kc:setDeviceDim(screen_size.w, screen_size.h)
-    kc:setDeviceDPI(self.screen_dpi)
+    kc:setDeviceDPI(Runtimectl:getRenderDPI())
     kc:setStraighten(doc.configurable.auto_straighten)
     kc:setJustification(doc.configurable.justification)
     kc:setWritingDirection(doc.configurable.writing_direction)
@@ -125,7 +124,7 @@ function KoptInterface:createContext(doc, pageno, bbox)
 end
 
 function KoptInterface:getContextHash(doc, pageno, bbox)
-    local screen_size = Screen:getSize()
+    local screen_size = Runtimectl:getRenderSize()
     local screen_size_hash = screen_size.w.."|"..screen_size.h
     local bbox_hash = bbox.x0.."|"..bbox.y0.."|"..bbox.x1.."|"..bbox.y1
     return doc.file.."|"..doc.mod_time.."|"..pageno.."|"
@@ -277,7 +276,7 @@ get first page image
 --]]
 function KoptInterface:getCoverPageImage(doc)
     local native_size = Document.getNativePageDimensions(doc, 1)
-    local screen_size = Screen:getSize()
+    local screen_size = Runtimectl:getRenderSize()
     local zoom = math.min(screen_size.w / native_size.w, screen_size.h / native_size.h)
     local tile = Document.renderPage(doc, 1, nil, zoom, 0, 1, 0)
     if tile then
@@ -572,9 +571,9 @@ function KoptInterface:getPageBlock(doc, pageno, x, y)
             y1 = page_size.h,
         }
         local kc = self:createContext(doc, pageno, full_page_bbox)
-        local screen_size = Screen:getSize()
+        local screen_size = Runtimectl:getRenderSize()
         -- leptonica needs a source image of at least 300dpi
-        kc:setZoom(screen_size.w / page_size.w * 300 / self.screen_dpi)
+        kc:setZoom(screen_size.w / page_size.w * 300 / Runtimectl:getRenderDPI())
         local page = doc._document:openPage(pageno)
         page:getPagePix(kc)
         kc:findPageBlocks()
@@ -938,14 +937,17 @@ function KoptInterface:getLinkFromPosition(doc, pageno, pos)
         if doc.configurable.text_wrap == 1 then
             pos = self:reflowToNativePosTransform(doc, pageno, pos, {x=0.5, y=0.5})
         end
+
+        local offset = Runtimectl:scaleByRenderSize(5)
+        local len = Runtimectl:scaleByRenderSize(10)
         for i = 1, #page_links do
             local link = page_links[i]
             -- enlarge tappable link box
             local lbox = Geom:new{
-                x = link.x0 - Screen:scaleBySize(5),
-                y = link.y0 - Screen:scaleBySize(5),
-                w = link.x1 - link.x0 + Screen:scaleBySize(10),
-                h = link.y1 - link.y0 + Screen:scaleBySize(10)
+                x = link.x0 - offset,
+                y = link.y0 - offset,
+                w = link.x1 - link.x0 + len,
+                h = link.y1 - link.y0 + len,
             }
             if _inside_box(pos, lbox) and link.page then
                 return link, lbox
