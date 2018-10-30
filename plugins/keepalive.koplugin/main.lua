@@ -27,7 +27,7 @@ local function showConfirmBox()
     })
 end
 
-if Device:isKobo() then
+if Device:isCervantes() or Device:isKobo() then
     local PluginShare = require("pluginshare")
     enable = function() PluginShare.pause_auto_suspend = true end
     disable = function() PluginShare.pause_auto_suspend = false end

@@ -32,11 +32,12 @@ local Device = {
     -- and have device dependent implementations in the corresponting
     -- device/<devicetype>/device.lua file
     -- (these are functions!)
+    isAndroid = no,
+    isCervantes = no,
     isKindle = no,
     isKobo = no,
     isPocketBook = no,
     isSonyPRSTUX = no,
-    isAndroid = no,
     isSDL = no,
 
     -- some devices have part of their screen covered by the bezel

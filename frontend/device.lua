@@ -31,6 +31,11 @@ local function probeDevice()
         return require("device/sony-prstux/device")
     end
 
+    local cervantes_test_stat = lfs.attributes("/usr/bin/ntxinfo")
+    if cervantes_test_stat then
+        return require("device/cervantes/device")
+    end
+
     -- add new ports here:
     --
     -- if --[[ implement a proper test instead --]] false then

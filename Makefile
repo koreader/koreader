@@ -32,16 +32,17 @@ INSTALL_DIR=koreader-$(DIST)-$(MACHINE)
 # platform directories
 PLATFORM_DIR=platform
 COMMON_DIR=$(PLATFORM_DIR)/common
+ANDROID_DIR=$(PLATFORM_DIR)/android
+ANDROID_LAUNCHER_DIR:=$(ANDROID_DIR)/luajit-launcher
+APPIMAGE_DIR=$(PLATFORM_DIR)/appimage
+CERVANTES_DIR=$(PLATFORM_DIR)/cervantes
 KINDLE_DIR=$(PLATFORM_DIR)/kindle
 KOBO_DIR=$(PLATFORM_DIR)/kobo
 POCKETBOOK_DIR=$(PLATFORM_DIR)/pocketbook
+SONY_PRSTUX_DIR=$(PLATFORM_DIR)/sony-prstux
 UBUNTUTOUCH_DIR=$(PLATFORM_DIR)/ubuntu-touch
-APPIMAGE_DIR=$(PLATFORM_DIR)/appimage
-ANDROID_DIR=$(PLATFORM_DIR)/android
-ANDROID_LAUNCHER_DIR:=$(ANDROID_DIR)/luajit-launcher
 UBUNTUTOUCH_SDL_DIR:=$(UBUNTUTOUCH_DIR)/ubuntu-touch-sdl
 WIN32_DIR=$(PLATFORM_DIR)/win32
-SONY_PRSTUX_DIR=$(PLATFORM_DIR)/sony-prstux
 
 # appimage setup
 APPIMAGETOOL=appimagetool-x86_64.AppImage
@@ -387,8 +388,40 @@ sony-prstuxupdate: all
 	        tar -I"gzip --rsyncable" -cah --no-recursion -f ../koreader-sony-prstux-$(MACHINE)-$(VERSION).targz \
 	        -T koreader/ota/package.index
 
+cervantesupdate: all
+	# ensure that the binaries were built for ARM
+	file $(INSTALL_DIR)/koreader/luajit | grep ARM || exit 1
+	# remove old package if any
+	rm -f koreader-cervantes-$(MACHINE)-$(VERSION).zip
+	# Cervantes launching scripts
+	cp $(CERVANTES_DIR)/*.sh $(INSTALL_DIR)/koreader
+	# create new package
+	cd $(INSTALL_DIR) && \
+		zip -9 -r \
+			../koreader-cervantes-$(MACHINE)-$(VERSION).zip \
+			koreader -x "koreader/resources/fonts/*" \
+			"koreader/resources/icons/src/*" "koreader/spec/*" \
+			$(ZIP_EXCLUDE)
+	# generate update package index file
+	zipinfo -1 koreader-cervantes-$(MACHINE)-$(VERSION).zip > \
+		$(INSTALL_DIR)/koreader/ota/package.index
+	echo "koreader/ota/package.index" >> $(INSTALL_DIR)/koreader/ota/package.index
+	# update index file in zip package
+	cd $(INSTALL_DIR) && zip -u ../koreader-cervantes-$(MACHINE)-$(VERSION).zip \
+	koreader/ota/package.index
+	# make gzip cervantes update for zsync OTA update
+	cd $(INSTALL_DIR) && \
+	tar -I"gzip --rsyncable" -cah --no-recursion -f ../koreader-cervantes-$(MACHINE)-$(VERSION).targz \
+	-T koreader/ota/package.index
+
 update:
-ifeq ($(TARGET), kindle)
+ifeq ($(TARGET), android)
+	make androidupdate
+else ifeq ($(TARGET), appimage)
+	make appimageupdate
+else ifeq ($(TARGET), cervantes)
+	make cervantesupdate
+else ifeq ($(TARGET), kindle)
 	make kindleupdate
 else ifeq ($(TARGET), kindle-legacy)
 	make kindleupdate
@@ -402,10 +435,6 @@ else ifeq ($(TARGET), sony-prstux)
 	make sony-prstuxupdate
 else ifeq ($(TARGET), ubuntu-touch)
 	make utupdate
-else ifeq ($(TARGET), appimage)
-	make appimageupdate
-else ifeq ($(TARGET), android)
-	make androidupdate
 endif
 
 androiddev: androidupdate

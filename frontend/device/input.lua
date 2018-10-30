@@ -147,6 +147,8 @@ function Input:init()
     -- set up fake event map
     self.event_map[10000] = "IntoSS" -- go into screen saver
     self.event_map[10001] = "OutOfSS" -- go out of screen saver
+    self.event_map[10010] = "UsbPlugIn"
+    self.event_map[10011] = "UsbPlugOut"
     self.event_map[10020] = "Charging"
     self.event_map[10021] = "NotCharging"
 
@@ -284,7 +286,9 @@ function Input:handleKeyBoardEv(ev)
         keycode = self.rotation_map[self.device.screen:getRotationMode()][keycode]
     end
 
+    -- fake events
     if keycode == "IntoSS" or keycode == "OutOfSS"
+    or keycode == "UsbPlugIn" or keycode == "UsbPlugOut"
     or keycode == "Charging" or keycode == "NotCharging" then
         return keycode
     end
@@ -519,6 +523,42 @@ function Input:handleTouchEvPhoenix(ev)
             for _, MTSlot in pairs(self.MTSlots) do
                 self:setMtSlot(MTSlot.slot, "timev", TimeVal:new(ev.time))
             end
+            -- feed ev in all slots to state machine
+            local touch_ges = self.gesture_detector:feedEvent(self.MTSlots)
+            self.MTSlots = {}
+            if touch_ges then
+                self:gestureAdjustHook(touch_ges)
+                return Event:new("Gesture",
+                    self.gesture_detector:adjustGesCoordinate(touch_ges)
+                )
+            end
+        end
+    end
+end
+function Input:handleTouchEvLegacy(ev)
+    -- Single Touch Protocol. Some devices emit both singletouch and multitouch events.
+    -- In those devices the 'handleTouchEv' function doesn't work as expected. Use this function instead.
+    if ev.type == EV_ABS then
+        if #self.MTSlots == 0 then
+            table.insert(self.MTSlots, self:getMtSlot(self.cur_slot))
+        end
+        if ev.code == ABS_X then
+            self:setCurrentMtSlot("x", ev.value)
+        elseif ev.code == ABS_Y then
+            self:setCurrentMtSlot("y", ev.value)
+        elseif ev.code == ABS_PRESSURE then
+            if ev.value ~= 0 then
+                self:setCurrentMtSlot("id", 1)
+            else
+                self:setCurrentMtSlot("id", -1)
+            end
+        end
+    elseif ev.type == EV_SYN then
+        if ev.code == SYN_REPORT then
+            for _, MTSlot in pairs(self.MTSlots) do
+                self:setMtSlot(MTSlot.slot, "timev", TimeVal:new(ev.time))
+            end
+
             -- feed ev in all slots to state machine
             local touch_ges = self.gesture_detector:feedEvent(self.MTSlots)
             self.MTSlots = {}

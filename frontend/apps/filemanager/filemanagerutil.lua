@@ -9,12 +9,14 @@ local util = require("ffi/util")
 local filemanagerutil = {}
 
 function filemanagerutil.getDefaultDir()
-    if Device:isKindle() then
+    if Device:isAndroid() then
+        return "/sdcard"
+    elseif Device:isCervantes() then
+        return "/mnt/public"
+    elseif Device:isKindle() then
         return "/mnt/us/documents"
     elseif Device:isKobo() then
         return "/mnt/onboard"
-    elseif Device:isAndroid() then
-        return "/sdcard"
     else
         return "."
     end

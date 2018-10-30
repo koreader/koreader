@@ -16,7 +16,7 @@ local SystemStat = {
 }
 
 function SystemStat:init()
-    if Device:isKobo() or Device:isPocketBook() then
+    if Device:isCervantes() or Device:isKobo() or Device:isPocketBook() then
         self.storage_filter = "mmcblk"
     elseif Device:isKindle() then
         self.storage_filter = "' /mnt/us$'"
