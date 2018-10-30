@@ -25,12 +25,12 @@ ko_update_check() {
         # Cleanup behind us...
         if [ "${fail}" -eq 0 ]; then
             mv "${NEWUPDATE}" "${INSTALLED}"
-        #    ./fbink -q -y -6 -pm "Update successful :)"
-        #    ./fbink -q -y -5 -pm "KOReader will start momentarily . . ."
-        #else
-        #    # Huh ho...
-        #    ./fbink -q -y -6 -pmh "Update failed :("
-        #    ./fbink -q -y -5 -pm "KOReader may fail to function properly!"
+            #    ./fbink -q -y -6 -pm "Update successful :)"
+            #    ./fbink -q -y -5 -pm "KOReader will start momentarily . . ."
+            #else
+            #    # Huh ho...
+            #    ./fbink -q -y -6 -pmh "Update failed :("
+            #    ./fbink -q -y -5 -pm "KOReader may fail to function properly!"
         fi
         rm -f "${NEWUPDATE}" # always purge newupdate in all cases to prevent update loop
         unset BLOCKS CPOINTS
@@ -85,5 +85,5 @@ while [ "${RETURN_VALUE}" -eq 85 ]; do
 done
 
 if [ "${STANDALONE}" != "true" ]; then
-    restart.sh > /dev/null 2>&1
+    restart.sh >/dev/null 2>&1
 fi

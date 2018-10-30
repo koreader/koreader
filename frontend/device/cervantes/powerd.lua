@@ -19,8 +19,10 @@ local CervantesPowerD = BasePowerD:new{
 function CervantesPowerD:_syncLightOnStart()
     -- We can't read value from the OS or hardware.
     -- Use last values stored in koreader settings.
-    new_intensity = G_reader_settings:readSetting("frontlight_intensity") or nil
-    is_frontlight_on = G_reader_settings:readSetting("is_frontlight_on") or nil
+    local new_intensity = G_reader_settings:readSetting("frontlight_intensity") or nil
+    local is_frontlight_on = G_reader_settings:readSetting("is_frontlight_on") or nil
+    local new_warmth, auto_warmth = nil
+
     if self.fl_warmth ~= nil then
         new_warmth = G_reader_settings:readSetting("frontlight_warmth") or nil
         auto_warmth = G_reader_settings:readSetting("frontlight_auto_warmth") or nil

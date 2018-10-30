@@ -244,7 +244,7 @@ function UIManager:init()
             if not Device.screen_saver_mode then
                 self:sendEvent(input_event)
             end
-        end 
+        end
     elseif Device:isSDL() then
         self.event_handlers["Suspend"] = function()
             self:_beforeSuspend()

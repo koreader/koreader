@@ -1,10 +1,8 @@
 local Generic = require("device/generic/device")
 local TimeVal = require("ui/timeval")
-local ffi = require("ffi")
 local logger = require("logger")
 
 local function yes() return true end
-local function no() return false end
 
 local function getProductId()
     local ntxinfo_pcb = io.popen("/usr/bin/ntxinfo /dev/mmcblk0 | grep pcb | cut -d ':' -f2", "r")

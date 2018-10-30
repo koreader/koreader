@@ -1,7 +1,7 @@
 local Device = require("device")
 
-if not Device:isKobo() and not Device:isSDL() and not Device:isSonyPRSTUX() and not Device:isCervantes() then
-    return { disabled = true, } 
+if not Device:isCervantes() and not Device:isKobo() and not Device:isSDL() and not Device:isSonyPRSTUX() then
+    return { disabled = true, }
 end
 
 local DataStorage = require("datastorage")

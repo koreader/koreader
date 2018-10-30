@@ -4,8 +4,8 @@ CTRL_INTERFACE="/var/run/wpa_supplicant"
 
 # create a new configuration if neccesary.
 if [ ! -f "$WPA_SUPPLICANT_CONF" ]; then
-    echo "ctrl_interface=DIR=${CTRL_INTERFACE}" > "$WPA_SUPPLICANT_CONF"
-    echo "update_config=1" >> "$WPA_SUPPLICANT_CONF"
+    echo "ctrl_interface=DIR=${CTRL_INTERFACE}" >"$WPA_SUPPLICANT_CONF"
+    echo "update_config=1" >>"$WPA_SUPPLICANT_CONF"
     sync
 fi
 

@@ -3,25 +3,25 @@
 # this file is intended to replace /etc/rc.local on BQ developers firmware
 
 # turn off the green flashing led.
-echo "ch 4" > /sys/devices/platform/pmic_light.1/lit
-echo "cur 0" > /sys/devices/platform/pmic_light.1/lit
-echo "dc 0" > /sys/devices/platform/pmic_light.1/lit
+echo "ch 4" >/sys/devices/platform/pmic_light.1/lit
+echo "cur 0" >/sys/devices/platform/pmic_light.1/lit
+echo "dc 0" >/sys/devices/platform/pmic_light.1/lit
 
 # ensure we have a proper time.
-if [ `date "+%Y"` -lt 2010 ]; then
+if [ "$(date '+%Y')" -lt 2010 ]; then
     echo "Fixing date before 2010"
     date +%Y%m%d -s "20100101"
     hwclock -w
 fi
 
 # assign public & private partition devices based on pcb.
-PCB_ID=`/usr/bin/ntxinfo /dev/mmcblk0 | grep pcb | cut -d ":" -f2`
-if [ $PCB_ID -eq 22 || $PCB_ID -eq 23  ]; then
-   PRIVATE="/dev/mmcblk0p5"
-   PUBLIC="/dev/mmcblk0p7"
+PCB_ID=$(/usr/bin/ntxinfo /dev/mmcblk0 | grep pcb | cut -d ":" -f2)
+if [ "$PCB_ID" -eq 22 ] || [ "$PCB_ID" -eq 23 ]; then
+    PRIVATE="/dev/mmcblk0p5"
+    PUBLIC="/dev/mmcblk0p7"
 else
-   PRIVATE="/dev/mmcblk0p7"
-   PUBLIC="/dev/mmcblk0p4"
+    PRIVATE="/dev/mmcblk0p7"
+    PUBLIC="/dev/mmcblk0p4"
 fi
 
 # mount internal partitions
