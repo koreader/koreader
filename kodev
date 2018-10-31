@@ -2,7 +2,10 @@
 
 CURDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VERSION=$(git describe HEAD)
-VERSION=${VERSION}_$(git describe HEAD | xargs git show -s --format=format:"%cd" --date=short)
+# Only append date if we're not on a whole version, like v2018.11
+if $VERSION | grep -; then
+    VERSION=${VERSION}_$(git describe HEAD | xargs git show -s --format=format:"%cd" --date=short)
+fi
 
 # Default Android build to arm.
 ANDROID_ARCH="${ANDROID_ARCH:-arm}"

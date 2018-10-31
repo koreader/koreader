@@ -5,9 +5,12 @@ KOR_BASE?=base
 # able to fail:
 -include $(KOR_BASE)/Makefile.defs
 
-# we want VERSION to carry the version of koreader, not koreader-base
+# We want VERSION to carry the version of the KOReader main repo, not that of koreader-base
 VERSION:=$(shell git describe HEAD)
-VERSION:=$(VERSION)_$(shell git describe HEAD | xargs git show -s --format=format:"%cd" --date=short)
+# Only append date if we're not on a whole version, like v2018.11
+ifneq (,$(findstring -,$(VERSION)))
+	VERSION:=$(VERSION)_$(shell git describe HEAD | xargs git show -s --format=format:"%cd" --date=short)
+endif
 
 # set PATH to find CC in managed toolchains
 ifeq ($(TARGET), android)
