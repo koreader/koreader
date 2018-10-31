@@ -190,6 +190,61 @@ function UIManager:init()
                 self:sendEvent(input_event)
             end
         end
+    elseif Device:isCervantes() then
+        self.event_handlers["Suspend"] = function()
+            self:_beforeSuspend()
+            Device:onPowerEvent("Suspend")
+        end
+        self.event_handlers["Resume"] = function()
+            Device:onPowerEvent("Resume")
+            self:_afterResume()
+        end
+        self.event_handlers["PowerPress"] = function()
+            UIManager:scheduleIn(2, self.poweroff_action)
+        end
+        self.event_handlers["PowerRelease"] = function()
+            if not self._entered_poweroff_stage then
+                UIManager:unschedule(self.poweroff_action)
+                self:suspend()
+            end
+        end
+        self.event_handlers["Charging"] = function()
+            logger.info("USB POWER IN")
+            --[[self:_beforeCharging()
+            if Device.screen_saver_mode then
+                self:suspend()
+            end]]--
+        end
+        self.event_handlers["NotCharging"] = function()
+            logger.info("USB POWER OUT")
+            --[[self:_afterNotCharging()
+            if Device.screen_saver_mode then
+                self:suspend()
+            end]]--
+        end
+        self.event_handlers["UsbPlugIn"] = function()
+            logger.info("USB HOST IN")
+            --[[self:_beforeCharging()
+            if Device.screen_saver_mode then
+                self:suspend()
+            end]]--
+        end
+        self.event_handlers["USbPlugOut"] = function()
+            logger.info("USB HOST OUT")
+            --[[self:_afterNotCharging()
+            if Device.screen_saver_mode then
+                self:suspend()
+            end]]--
+        end
+        self.event_handlers["__default__"] = function(input_event)
+            -- Suspension in Cervantes can be interrupted by screen updates. We ignore user touch input
+            -- in screen_saver_mode so screen updates won't be triggered in suspend mode.
+            -- We should not call self:suspend() in screen_saver_mode lest we stay on forever
+            -- trying to reschedule suspend. Other systems take care of unintended wake-up.
+            if not Device.screen_saver_mode then
+                self:sendEvent(input_event)
+            end
+        end
     elseif Device:isSDL() then
         self.event_handlers["Suspend"] = function()
             self:_beforeSuspend()
@@ -966,7 +1021,7 @@ end
 -- Executes all the operations of a suspending request. This function usually puts the device into
 -- suspension.
 function UIManager:suspend()
-    if Device:isKobo() or Device:isSDL() or Device:isSonyPRSTUX() then
+    if Device:isCervantes() or Device:isKobo() or Device:isSDL() or Device:isSonyPRSTUX() then
         self.event_handlers["Suspend"]()
     elseif Device:isKindle() then
         self.event_handlers["IntoSS"]()
@@ -975,7 +1030,7 @@ end
 
 -- Executes all the operations of a resume request. This function usually wakes up the device.
 function UIManager:resume()
-    if Device:isKobo() or Device:isSDL() or Device:isSonyPRSTUX() then
+    if Device:isCervantes() or Device:isKobo() or Device:isSDL() or Device:isSonyPRSTUX() then
         self.event_handlers["Resume"]()
     elseif Device:isKindle() then
         self.event_handlers["OutOfSS"]()

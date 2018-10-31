@@ -45,7 +45,11 @@ local ota_channels = {
 }
 
 function OTAManager:getOTAModel()
-    if Device:isKindle() then
+    if Device:isAndroid() then
+        return "android"
+    elseif Device:isCervantes() then
+        return "cervantes"
+    elseif Device:isKindle() then
         if Device:isTouchDevice() then
             return "kindle"
         else
@@ -55,8 +59,6 @@ function OTAManager:getOTAModel()
         return "kobo"
     elseif Device:isPocketBook() then
         return "pocketbook"
-    elseif Device:isAndroid() then
-        return "android"
     elseif Device:isSonyPRSTUX() then
         return "sony-prstux"
     else

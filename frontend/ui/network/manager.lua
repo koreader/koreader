@@ -121,7 +121,7 @@ end
 function NetworkMgr:getWifiMenuTable()
     return {
         text = _("Wi-Fi connection"),
-        enabled_func = function() return Device:isAndroid() or Device:isKindle() or Device:isKobo() or Device:isSonyPRSTUX() end,
+        enabled_func = function() return Device:isAndroid() or Device:isCervantes() or Device:isKindle() or Device:isKobo() or Device:isSonyPRSTUX() end,
         checked_func = function() return NetworkMgr:isWifiOn() end,
         callback = function(touchmenu_instance)
             local wifi_status = NetworkMgr:isWifiOn()
@@ -187,7 +187,7 @@ function NetworkMgr:getRestoreMenuTable()
     return {
         text = _("Automatically restore Wi-Fi connection after resume"),
         checked_func = function() return G_reader_settings:nilOrTrue("auto_restore_wifi") end,
-        enabled_func = function() return Device:isKobo() end,
+        enabled_func = function() return Device:isCervantes() or Device:isKobo() end,
         callback = function() G_reader_settings:flipNilOrTrue("auto_restore_wifi") end,
     }
 end

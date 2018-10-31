@@ -40,6 +40,8 @@ i18n
 
 koreader-android-arm-linux-androideabi*
 koreader-android-i686-linux-android*
+koreader-cervantes-arm-linux-gnueabi*
+koreader-cervantes-arm-cervantes-linux-gnueabi*
 koreader-kindle-legacy-arm-kindle-linux-gnueabi*
 koreader-kindle-arm-linux-gnueabi*
 koreader-kobo-arm-linux-gnueabihf*

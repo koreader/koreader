@@ -52,7 +52,7 @@ function FrontLightWidget:init()
         self.steps = self.steps + 1
     end
     self.steps = math.min(self.steps , steps_fl)
-    self.natural_light = Device:isKobo() and Device:hasNaturalLight()
+    self.natural_light = (Device:isCervantes() or Device:isKobo()) and Device:hasNaturalLight()
 
     -- button width to fit screen size
     local button_margin = Size.margin.tiny

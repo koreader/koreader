@@ -116,6 +116,7 @@ SUPPORTED_TARGETS="
     kindlepw2       With compiler optimizations for Kindle models >= Paperwhite 2
     kindle-legacy   Needed only for Kindle2/3/DXG
     kobo
+    cervantes
     sony-prstux
     android
     pocketbook
@@ -168,6 +169,10 @@ ${SUPPORTED_TARGETS}"
 
     check_submodules
     case "${1}" in
+        cervantes)
+            make TARGET=cervantes
+            assert_ret_zero $?
+            ;;
         kindle)
             make TARGET=kindle
             assert_ret_zero $?
@@ -271,6 +276,9 @@ ${SUPPORTED_TARGETS}"
         -h | --help)
             echo "${CLEAN_HELP_MSG}"
             exit 0
+            ;;
+        cervantes)
+            make TARGET=cervantes clean
             ;;
         kindle)
             make TARGET=kindle clean
@@ -388,6 +396,10 @@ ${SUPPORTED_RELEASE_TARGETS}"
         sony-prstux)
             kodev-build sony-prstux
             make TARGET=sony-prstux update
+            ;;
+        cervantes)
+            kodev-build cervantes
+            make TARGET=cervantes update
             ;;
         kindle-legacy)
             kodev-build kindle-legacy
