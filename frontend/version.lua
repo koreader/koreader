@@ -28,6 +28,11 @@ end
 function Version:getNormalizedVersion(rev)
     if not rev then return end
     local year, month, revision = rev:match("v(%d%d%d%d)%.(%d%d)-?(%d*)")
+
+    if type(year) ~= "number" then revision = 0 end
+    if type(month) ~= "number" then revision = 0 end
+    if type(revision) ~= "number" then revision = 0 end
+
     local commit = rev:match("-%d*-g(%x*)[%d_%-]*")
     -- NOTE: * 10000 to handle at most 9999 commits since last tag ;).
     return ((year or 0) * 100 + (month or 0)) * 10000 + (revision or 0), commit
