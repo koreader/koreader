@@ -3,7 +3,7 @@
 CURDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VERSION=$(git describe HEAD)
 # Only append date if we're not on a whole version, like v2018.11
-if $VERSION | grep -; then
+if echo "${VERSION}" | grep -; then
     VERSION=${VERSION}_$(git describe HEAD | xargs git show -s --format=format:"%cd" --date=short)
 fi
 
@@ -24,7 +24,7 @@ export NDKABI
 
 function assert_ret_zero() {
     if [ "${1}" -ne 0 ]; then
-        if [ ! -z "${2}" ]; then
+        if [ -n "${2}" ]; then
             echo "${2}"
         fi
         exit 1
@@ -483,7 +483,7 @@ TARGET:
                 export KODEBUG=
                 ;;
             --gdb)
-                if [ ! -z "${VALUE}" ]; then
+                if [ -n "${VALUE}" ]; then
                     gdb=${VALUE}
                 else
                     # Try to use friendly defaults for gdb
@@ -509,7 +509,7 @@ TARGET:
                 graph_memory=1
                 ;;
             --valgrind)
-                if [ ! -z "${VALUE}" ]; then
+                if [ -n "${VALUE}" ]; then
                     valgrind=${VALUE}
                 else
                     # Try to use sensible defaults for valgrind
@@ -526,7 +526,7 @@ TARGET:
                 ;;
             -h | --screen-height)
                 # simple numeric check due to overlap between -h for help and height
-                if [ ! -z "${VALUE##*[!0-9]*}" ]; then
+                if [ -n "${VALUE##*[!0-9]*}" ]; then
                     screen_height=${VALUE}
                 else
                     echo "${RUN_HELP_MSG}"
@@ -622,11 +622,11 @@ TARGET:
 
             KOREADER_COMMAND="${CATCHSEGV} ./reader.lua -d"
 
-            if [ ! -z "${gdb}" ]; then
+            if [ -n "${gdb}" ]; then
                 KOREADER_COMMAND="${gdb} ./luajit reader.lua -d"
             fi
 
-            if [ ! -z "${valgrind}" ]; then
+            if [ -n "${valgrind}" ]; then
                 KOREADER_COMMAND="${valgrind} ./luajit reader.lua -d"
             fi
 
@@ -706,7 +706,7 @@ OPTIONS:
         test_path="./spec/$1/unit"
         rm -rf "${test_path}"/data/*.sdr
 
-        if [ ! -z "${2}" ]; then
+        if [ -n "${2}" ]; then
             test_path="${test_path}/$2"
         fi
 
