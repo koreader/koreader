@@ -43,12 +43,12 @@ function ReaderGesture:addToMainMenu(menu_items)
         text = _("Gesture manager"),
         sub_item_table = {
             {
-                text = _("Tap right bottom corner"),
-                sub_item_table = self:buildMenu("tap_right_bottom_corner", default_gesture["tap_right_bottom_corner"])
+                text = _("Tap bottom left corner"),
+                sub_item_table = self:buildMenu("tap_left_bottom_corner", default_gesture["tap_left_bottom_corner"])
             },
             {
-                text = _("Tap left bottom corner"),
-                sub_item_table = self:buildMenu("tap_left_bottom_corner", default_gesture["tap_left_bottom_corner"])
+                text = _("Tap bottom right corner"),
+                sub_item_table = self:buildMenu("tap_right_bottom_corner", default_gesture["tap_right_bottom_corner"])
             },
             {
                 text = _("Short diagonal swipe"),
