@@ -72,6 +72,9 @@ Building Prerequisites
 These instructions for how to get and compile the source are intended for a Linux
 OS. Windows users are suggested to develop in a [Linux VM][linux-vm] or use Wubi.
 
+If you only want to work with Lua frontend stuff, you can grab the AppImage and
+run it with `--appimage-extract`.
+
 To get and compile the source you must have `patch`, `wget`, `unzip`, `git`,
 `cmake` and `luarocks` installed, as well as a version of `autoconf`
 greater than 2.64. You also need `nasm` and of course a compiler like `gcc`
