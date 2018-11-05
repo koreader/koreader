@@ -27,15 +27,16 @@ end
 -- @treturn string short git commit version hash such as `704d4238`
 function Version:getNormalizedVersion(rev)
     if not rev then return end
-    local year, month, revision = rev:match("v(%d%d%d%d)%.(%d%d)-?(%d*)")
+    local year, month, point, revision = rev:match("v(%d%d%d%d)%.(%d%d)%.?(%d?%d?)-?(%d*)")
 
     year = tonumber(year)
     month = tonumber(month)
+    point = tonumber(point)
     revision = tonumber(revision)
 
     local commit = rev:match("-%d*-g(%x*)[%d_%-]*")
     -- NOTE: * 10000 to handle at most 9999 commits since last tag ;).
-    return ((year or 0) * 100 + (month or 0)) * 10000 + (revision or 0), commit
+    return ((year or 0) * 100 + (month or 0)) * 1000000 + (point or 0) * 10000 + (revision or 0), commit
 end
 
 --- Returns current version of KOReader.
