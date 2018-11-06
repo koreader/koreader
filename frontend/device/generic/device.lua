@@ -21,6 +21,7 @@ local Device = {
     hasKeyboard = no,
     hasKeys = no,
     hasDPad = no,
+    hasUsbGadget = no,
     isTouchDevice = no,
     hasFrontlight = no,
     needsTouchScreenProbe = no,
@@ -205,6 +206,18 @@ function Device:setDateTime(year, month, day, hour, min, sec) end
 
 -- Device specific method if any setting needs being saved
 function Device:saveSettings() end
+
+-- Device specific method to start usb mass storage
+function Device:usbStorageIn() end
+
+-- Device specific method to stop usb mass storage
+function Device:usbStorageOut() end
+
+-- Device specific method to start usb network
+function Device:usbNetworkIn() end
+
+-- Device specific method to stop usb network
+function Device:usbNetworkOut() end
 
 --[[
 prepare for application shutdown

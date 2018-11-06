@@ -21,6 +21,14 @@ if Device:hasFrontlight() then
     }
 end
 
+if Device:hasUsbGadget() then
+    local UsbGadget = require("device/usbgadget")
+    common_settings.usb_gadget = {
+        text = _("USB Mode"),
+        sub_item_table = UsbGadget:getMenuTable()
+    }
+end
+
 if Device:setDateTime() then
     common_settings.time = {
         text = _("Time and date"),

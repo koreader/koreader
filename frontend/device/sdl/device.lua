@@ -10,6 +10,7 @@ local Device = Generic:new{
     model = "SDL",
     isSDL = yes,
     hasKeyboard = yes,
+    hasUsbGadget = yes,
     hasKeys = yes,
     hasDPad = yes,
     hasFrontlight = yes,
@@ -194,6 +195,22 @@ function Device:simulateResume()
     UIManager:show(InfoMessage:new{
         text = _("Resume")
     })
+end
+
+function Device:usbStorageIn()
+    logger.info("Fake Usb Storage In")
+end
+
+function Device:usbStorageOut()
+    logger.info("Fake Usb Storage Out")
+end
+
+function Device:usbNetworkIn()
+    logger.info("Fake Usb Network In")
+end
+
+function Device:usbNetworkOut()
+    logger.info("Fake Usb Network Out")
 end
 
 return Device
