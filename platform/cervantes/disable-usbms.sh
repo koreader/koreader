@@ -1,5 +1,6 @@
 #!/bin/sh
 
+# exit w/ error if usbms kernel module is not loaded
 lsmod | grep -q g_file_storage || exit 1
 
 modprobe -r g_file_storage
@@ -14,13 +15,12 @@ else
     PARTITION="${DISK}0p4"
 fi
 
-MOUNT_ARGS="noatime,nodiratime,shortname=mixed,utf8"
-
+# fsck internal partition
 dosfsck -a -w "$PARTITION" >dosfsck.log 2>&1
 
-mount -o "$MOUNT_ARGS" -t vfat "$PARTITION" /mnt/onboard
+MOUNT_ARGS="noatime,nodiratime,shortname=mixed,utf8"
+mount -o "$MOUNT_ARGS" -t vfat "$PARTITION" /mnt/public
 
 PARTITION=${DISK}1p1
 
 [ -e "$PARTITION" ] && mount -o "$MOUNT_ARGS" -t vfat "$PARTITION" /mnt/sd
-

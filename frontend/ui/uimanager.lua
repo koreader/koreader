@@ -209,32 +209,32 @@ function UIManager:init()
             end
         end
         self.event_handlers["Charging"] = function()
-            logger.info("USB POWER IN")
-            --[[self:_beforeCharging()
+            self:_beforeCharging()
             if Device.screen_saver_mode then
                 self:suspend()
-            end]]--
+            end
         end
         self.event_handlers["NotCharging"] = function()
-            logger.info("USB POWER OUT")
-            --[[self:_afterNotCharging()
+            self:_afterNotCharging()
             if Device.screen_saver_mode then
                 self:suspend()
-            end]]--
+            end
         end
         self.event_handlers["UsbPlugIn"] = function()
-            logger.info("USB HOST IN")
-            --[[self:_beforeCharging()
+            self:_beforeCharging()
             if Device.screen_saver_mode then
                 self:suspend()
-            end]]--
+            else
+                require("device/usbgadget"):plugIn()
+            end
         end
-        self.event_handlers["USbPlugOut"] = function()
-            logger.info("USB HOST OUT")
-            --[[self:_afterNotCharging()
+        self.event_handlers["UsbPlugOut"] = function()
+            self:_afterNotCharging()
             if Device.screen_saver_mode then
                 self:suspend()
-            end]]--
+            else
+                require("device/usbgadget"):plugOut()
+            end
         end
         self.event_handlers["__default__"] = function(input_event)
             -- Suspension in Cervantes can be interrupted by screen updates. We ignore user touch input

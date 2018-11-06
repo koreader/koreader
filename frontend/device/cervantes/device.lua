@@ -22,6 +22,7 @@ local Cervantes = Generic:new{
     touch_mirrored_x = true,
     touch_probe_ev_epoch_time = true,
     hasOTAUpdates = yes,
+    hasUsbGadget = yes,
     hasKeys = yes,
     internal_storage_mount_point = "/mnt/public/",
 }
@@ -200,6 +201,20 @@ function Cervantes:reboot()
 end
 function Cervantes:powerOff()
     os.execute("halt")
+end
+
+-- usb
+function Cervantes:usbStorageIn()
+    os.execute("./enable-usbms.sh")
+end
+function Cervantes:usbStorageOut()
+    os.execute("./disable-usbms.sh")
+end
+function Cervantes:usbNetworkIn()
+    os.execute("./enable-usbnet.sh")
+end
+function Cervantes:usbNetworkOut()
+    os.execute("./disable-usbnet.sh")
 end
 
 -------------- device probe ------------
