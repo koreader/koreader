@@ -103,8 +103,6 @@ local FootnoteWidget = InputContainer:new{
         top = Screen:scaleBySize(10),
         bottom = Screen:scaleBySize(10),
     },
-    width = Screen:getWidth(),
-    height = math.floor(Screen:getHeight() * 1/3), -- will be decreased when content is smaller
     follow_callback = nil,
     on_tap_close_callback = nil,
     close_callback = nil,
@@ -112,6 +110,10 @@ local FootnoteWidget = InputContainer:new{
 }
 
 function FootnoteWidget:init()
+    -- Set widget size
+    self.width = Screen:getWidth()
+    self.height = math.floor(Screen:getHeight() * 1/3) -- will be decreased when content is smaller
+
     if Device:isTouchDevice() then
         local range = Geom:new{
             x = 0, y = 0,
