@@ -54,11 +54,20 @@ function DjvuDocument:updateColorRendering()
 end
 
 function DjvuDocument:getProps()
+    local props = self._document:getMetadata()
     local _, _, docname = self.file:find(".*/(.*)")
     docname = docname or self.file
-    return {
-        title = docname:match("(.*)%.")
-    }
+
+    -- According to djvused(1), the convention is that
+    -- BibTex keys are always lowercase and DocInfo capitalized
+    props.title = props.title or props.Title or docname:match("(.*)%.")
+    props.authors = props.author or props.Author
+    props.series = props.series or props.Series
+    props.language = props.language or props.Language
+    props.keywords = props.keywords or props.Keywords
+    props.description = props.description or props.Description
+
+    return props
 end
 
 function DjvuDocument:getPageTextBoxes(pageno)
