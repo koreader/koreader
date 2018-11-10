@@ -3,6 +3,7 @@ local TimeVal = require("ui/timeval")
 local logger = require("logger")
 
 local function yes() return true end
+local function no() return false end
 
 local function getProductId()
     local ntxinfo_pcb = io.popen("/usr/bin/ntxinfo /dev/mmcblk0 | grep pcb | cut -d ':' -f2", "r")
@@ -21,6 +22,7 @@ local Cervantes = Generic:new{
     touch_switch_xy = true,
     touch_mirrored_x = true,
     touch_probe_ev_epoch_time = true,
+    hasNaturalLight = no,
     hasOTAUpdates = yes,
     hasKeys = yes,
     internal_storage_mount_point = "/mnt/public/",
