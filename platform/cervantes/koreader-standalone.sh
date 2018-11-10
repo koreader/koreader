@@ -41,19 +41,34 @@ if [ "$PCB_ID" -eq 68 ] && lsmod | grep -q 8189fs; then
     modprobe -r 8189fs
 fi
 
-# start usbnet using BQ scripts (192.168.4.1/24 w/ hardcoded MAC addr)
-/usr/bin/usbup.sh
-/usr/sbin/inetd
+# use 'safemode' tool whenever possible instead of enabling usbnet unconditionally.
+if [ -x /usr/bin/safemode ]; then
+    safemode network
+else
+    # start usbnet using BQ scripts
+    /usr/bin/usbup.sh
+    /usr/sbin/inetd
+fi
 
 # check if KOReader script exists.
 if [ -x /mnt/private/koreader/koreader.sh ]; then
     # yada! KOReader is installed and ready to run.
     while true; do
         /mnt/private/koreader/koreader.sh
-        sleep 1
+        if [ -x /usr/bin/safemode ]; then
+            safemode storage || sleep 1
+        else
+            sleep 1
+        fi
     done
 else
-    # nothing to do, leaving rc.local.
+    # KOReader script not found or not executable.
+    # if 'safemode' was found enable usbnet now, since it is currently disabled
+    if [ -x /usr/bin/safemode ]; then
+        /usr/bin/usbup.sh
+        /usr/sbin/inetd
+    fi
+
     exit 1
 fi
 
