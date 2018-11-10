@@ -209,38 +209,31 @@ function UIManager:init()
             end
         end
         self.event_handlers["Charging"] = function()
-            logger.info("USB POWER IN")
-            --[[self:_beforeCharging()
+            self:_beforeCharging()
             if Device.screen_saver_mode then
                 self:suspend()
-            end]]--
+            end
         end
         self.event_handlers["NotCharging"] = function()
-            logger.info("USB POWER OUT")
-            --[[self:_afterNotCharging()
+            self:_afterNotCharging()
             if Device.screen_saver_mode then
                 self:suspend()
-            end]]--
+            end
         end
         self.event_handlers["UsbPlugIn"] = function()
-            logger.info("USB HOST IN")
-            --[[self:_beforeCharging()
+            self:_beforeCharging()
             if Device.screen_saver_mode then
                 self:suspend()
-            end]]--
+            end
         end
         self.event_handlers["USbPlugOut"] = function()
-            logger.info("USB HOST OUT")
-            --[[self:_afterNotCharging()
+            self:_afterNotCharging()
             if Device.screen_saver_mode then
                 self:suspend()
-            end]]--
+            end
         end
         self.event_handlers["__default__"] = function(input_event)
-            -- Suspension in Cervantes can be interrupted by screen updates. We ignore user touch input
-            -- in screen_saver_mode so screen updates won't be triggered in suspend mode.
-            -- We should not call self:suspend() in screen_saver_mode lest we stay on forever
-            -- trying to reschedule suspend. Other systems take care of unintended wake-up.
+            -- Same as in Kobo: we want to ignore keys during suspension
             if not Device.screen_saver_mode then
                 self:sendEvent(input_event)
             end
