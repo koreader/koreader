@@ -29,30 +29,30 @@ local Cervantes = Generic:new{
 }
 -- Cervantes Touch
 local CervantesTouch = Cervantes:new{
-    model = "Cervantes Touch",
+    model = "CervantesTouch",
     display_dpi = 167,
 }
 -- Cervantes TouchLight / Fnac Touch Plus
 local CervantesTouchLight = Cervantes:new{
-    model = "Cervantes TouchLight",
+    model = "CervantesTouchLight",
     display_dpi = 167,
     hasFrontlight = yes,
 }
 -- Cervantes 2013 / Fnac Touch Light
 local Cervantes2013 = Cervantes:new{
-    model = "Cervantes 2013",
+    model = "Cervantes2013",
     display_dpi = 212,
     hasFrontlight = yes,
 }
 -- Cervantes 3 / Fnac Touch Light 2
 local Cervantes3 = Cervantes:new{
-    model = "Cervantes 3",
+    model = "Cervantes3",
     display_dpi = 300,
     hasFrontlight = yes,
 }
 -- Cervantes 4
 local Cervantes4 = Cervantes:new{
-    model = "Cervantes 4",
+    model = "Cervantes4",
     display_dpi = 300,
     hasFrontlight = yes,
     hasNaturalLight = yes,
