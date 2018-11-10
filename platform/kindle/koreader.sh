@@ -183,6 +183,10 @@ if [ "${STOP_FRAMEWORK}" = "yes" ]; then
     fi
 fi
 
+# Normalize a version string for easy numeric comparisons
+# c.f., https://stackoverflow.com/a/37939589
+function version { echo "$@" | awk -F. '{ printf("%d%03d%03d%03d\n", $1,$2,$3,$4); }'; }
+
 # check if kpvbooklet was launched more than once, if not we will disable pillow
 # there's no pillow if we stopped the framework, and it's only there on systems with upstart anyway
 if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
@@ -190,16 +194,16 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
     if [ "$count" = "" ] || [ "$count" = "0" ]; then
         # NOTE: Dump the fb so we can restore something useful on exit...
         cat /dev/fb0 >/var/tmp/koreader-fb.dump
+        # We're going to need our current FW version...
+        FW_VERSION="$(grep '^Kindle 5' /etc/prettyversion.txt 2>&1 | sed -n -r 's/^(Kindle)([[:blank:]]*)([[:digit:]\.]*)(.*?)$/\3/p')"
         # NOTE: We want to disable the status bar (at the very least). Unfortunately, the soft hide/unhide method doesn't work properly anymore since FW 5.6.5...
-        # shellcheck disable=SC2046
-        if [ "$(printf "%.3s" $(grep '^Kindle 5' /etc/prettyversion.txt 2>&1 | sed -n -r 's/^(Kindle)([[:blank:]]*)([[:digit:].]*)(.*?)$/\3/p' | tr -d '.'))" -ge "565" ]; then
+        if [ $(version ${FW_VERSION}) -ge $(version "5.6.5") ]; then
             PILLOW_HARD_DISABLED="yes"
             # FIXME: So we resort to killing pillow completely on FW >= 5.6.5...
             logmsg "Disabling pillow . . ."
             lipc-set-prop com.lab126.pillow disableEnablePillow disable
             # NOTE: And, oh, joy, on FW >= 5.7.2, this is not enough to prevent the clock from refreshing, so, take the bull by the horns, and SIGSTOP the WM while we run...
-            # shellcheck disable=SC2046
-            if [ "$(printf "%.3s" $(grep '^Kindle 5' /etc/prettyversion.txt 2>&1 | sed -n -r 's/^(Kindle)([[:blank:]]*)([[:digit:].]*)(.*?)$/\3/p' | tr -d '.'))" -ge "572" ]; then
+            if [ $(version ${FW_VERSION}) -ge $(version "5.7.2") ]; then
                 logmsg "Stopping awesome . . ."
                 killall -stop awesome
                 AWESOME_STOPPED="yes"
