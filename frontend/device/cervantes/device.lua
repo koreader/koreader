@@ -13,6 +13,14 @@ local function getProductId()
     return product_id
 end
 
+local function isConnected()
+    local file = io.open("/sys/class/net/eth0/carrier", "rb")
+    if not file then return 0 end
+    local carrier = tonumber(file:read("*all")) or 0
+    file:close()
+    return carrier
+end
+
 local Cervantes = Generic:new{
     model = "Cervantes",
     isCervantes = yes,
@@ -142,6 +150,7 @@ end
 function Cervantes:initNetworkManager(NetworkMgr)
     function NetworkMgr:turnOffWifi(complete_callback)
         logger.info("Cervantes: disabling WiFi")
+        self:releaseIP()
         os.execute("./disable-wifi.sh")
         if complete_callback then
             complete_callback()
@@ -163,7 +172,7 @@ function Cervantes:initNetworkManager(NetworkMgr)
         os.execute("./restore-wifi-async.sh")
     end
     function NetworkMgr:isWifiOn()
-        return 0 == os.execute("lsmod | grep -q 8189fs")
+        return 1 == isConnected()
     end
 end
 
