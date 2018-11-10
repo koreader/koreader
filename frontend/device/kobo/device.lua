@@ -199,7 +199,7 @@ local KoboNova = Kobo:new{
 }
 
 -- Kobo Forma:
--- FIXME: Will need initial rotation trickery like the Kindle Oasis, current HW rota available via self.screen.fb_rota
+-- FIXME: Will need initial rotation trickery like the Kindle Oasis, startup HW rota available via self.screen.fb_rota
 --        In the meantime, start KOReader with the Forma in Upright Portrait mode in order to have working touch input.
 --        (That's Portrait with the buttons on the right).
 --        c.f., #4291
