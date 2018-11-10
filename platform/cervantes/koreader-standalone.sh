@@ -33,8 +33,11 @@ if [ -b /dev/mmcblk1p1 ]; then
     mount /dev/mmcblk1p1 /mnt/sd
 fi
 
-# remove wireless module since it wastes battery.
-if lsmod | grep -q 8189fs; then
+# stop connman daemon, KOReader will use wpa_supplicant directly.
+[ -x /etc/init.d/connman ] && /etc/init.d/connman stop
+
+# for Cervantes 4 unload realtek module.
+if [ "$PCB_ID" -eq 68 ] && lsmod | grep -q 8189fs; then
     modprobe -r 8189fs
 fi
 

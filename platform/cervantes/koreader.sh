@@ -76,6 +76,7 @@ fi
 
 if [ "${STANDALONE}" != "true" ]; then
     stopapp.sh >/dev/null 2>&1
+    [ -x /etc/init.d/connman ] && /etc/init.d/connman stop
 fi
 
 RETURN_VALUE=85
@@ -85,5 +86,6 @@ while [ "${RETURN_VALUE}" -eq 85 ]; do
 done
 
 if [ "${STANDALONE}" != "true" ]; then
+    [ -x /etc/init.d/connman ] && /etc/init.d/connman start
     restart.sh >/dev/null 2>&1
 fi
