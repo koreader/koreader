@@ -198,6 +198,27 @@ local KoboNova = Kobo:new{
     },
 }
 
+-- Kobo Forma:
+-- FIXME: Will need initial rotation trickery like the Kindle Oasis, startup HW rota available via self.screen.fb_rota
+--        In the meantime, start KOReader with the Forma in Upright Portrait mode in order to have working touch input.
+--        (That's Portrait with the buttons on the right).
+--        c.f., #4291
+-- FIXME: FrontLight/NaturalLight is untested
+-- FIXME: touch_probe_ev_epoch_time is possibly unneeded
+local KoboFrost = Kobo:new{
+    model = "Kobo_frost",
+    hasFrontlight = yes,
+    hasKeys = yes,
+    touch_probe_ev_epoch_time = true,
+    touch_snow_protocol = true,
+    display_dpi = 300,
+    hasNaturalLight = yes,
+    frontlight_settings = {
+        frontlight_white = "/sys/class/backlight/mxc_msp430.0",
+        frontlight_red = "/sys/class/backlight/tlc5947_bl",
+    }
+}
+
 function Kobo:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     -- NOTE: Something about the extra work needed to handle RGB565 conversions is making the JIT optimizer crazy when doing
@@ -220,6 +241,8 @@ function Kobo:init()
             [90] = "LightButton",
             [102] = "Home",
             [116] = "Power",
+            [193] = "RPgBack",
+            [194] = "RPgFwd",
         },
         event_map_adapter = {
             SleepCover = function(ev)
@@ -673,6 +696,8 @@ elseif codename == "snow" then
     return KoboSnow
 elseif codename == "nova" then
     return KoboNova
+elseif codename == "frost" then
+    return KoboFrost
 else
     error("unrecognized Kobo model "..codename)
 end
