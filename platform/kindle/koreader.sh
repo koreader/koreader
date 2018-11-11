@@ -197,15 +197,13 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
         # We're going to need our current FW version...
         FW_VERSION="$(grep '^Kindle 5' /etc/prettyversion.txt 2>&1 | sed -n -r 's/^(Kindle)([[:blank:]]*)([[:digit:]\.]*)(.*?)$/\3/p')"
         # NOTE: We want to disable the status bar (at the very least). Unfortunately, the soft hide/unhide method doesn't work properly anymore since FW 5.6.5...
-        # shellcheck disable=SC2046
-        if [ $(version ${FW_VERSION}) -ge $(version "5.6.5") ]; then
+        if [ "$(version "${FW_VERSION}")" -ge "$(version "5.6.5")" ]; then
             PILLOW_HARD_DISABLED="yes"
             # FIXME: So we resort to killing pillow completely on FW >= 5.6.5...
             logmsg "Disabling pillow . . ."
             lipc-set-prop com.lab126.pillow disableEnablePillow disable
             # NOTE: And, oh, joy, on FW >= 5.7.2, this is not enough to prevent the clock from refreshing, so, take the bull by the horns, and SIGSTOP the WM while we run...
-            # shellcheck disable=SC2046
-            if [ $(version ${FW_VERSION}) -ge $(version "5.7.2") ]; then
+            if [ "$(version "${FW_VERSION}")" -ge "$(version "5.7.2")" ]; then
                 logmsg "Stopping awesome . . ."
                 killall -stop awesome
                 AWESOME_STOPPED="yes"
