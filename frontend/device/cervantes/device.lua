@@ -33,7 +33,6 @@ local Cervantes = Generic:new{
     hasNaturalLight = no,
     hasOTAUpdates = yes,
     hasKeys = yes,
-    internal_storage_mount_point = "/mnt/public/",
 }
 -- Cervantes Touch
 local CervantesTouch = Cervantes:new{
