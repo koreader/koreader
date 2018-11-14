@@ -185,7 +185,7 @@ fi
 
 # Normalize a version string for easy numeric comparisons
 # c.f., https://stackoverflow.com/a/37939589
-version() { echo "$@" | awk -F. '{ printf("%d%03d%03d%03d\n", $1,$2,$3,$4); }'; }
+version() { echo "$@" | awk -F. '{ printf("%d%03d%03d\n", $1,$2,$3); }'; }
 
 # check if kpvbooklet was launched more than once, if not we will disable pillow
 # there's no pillow if we stopped the framework, and it's only there on systems with upstart anyway
