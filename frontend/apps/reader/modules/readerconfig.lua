@@ -93,9 +93,6 @@ function ReaderConfig:onSwipeShowConfigMenu(ges)
 end
 
 function ReaderConfig:onSetDimensions(dimen)
-    if Device:isTouchDevice() then
-        self:initGesListener()
-    end
     -- since we cannot redraw config_dialog with new size, we close
     -- the old one on screen size change
     if self.config_dialog then

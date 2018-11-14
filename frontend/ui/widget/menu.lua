@@ -695,7 +695,9 @@ function Menu:init()
     -- return button
     self.page_return_arrow = Button:new{
         icon = "resources/icons/appbar.arrow.left.up.png",
-        callback = function() self:onReturn() end,
+        callback = function()
+            if self.onReturn then self:onReturn() end
+        end,
         bordersize = 0,
         show_parent = self,
         readonly = self.return_arrow_propagation,

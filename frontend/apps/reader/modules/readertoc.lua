@@ -85,7 +85,9 @@ function ReaderToc:onPageUpdate(pageno)
 end
 
 function ReaderToc:onPosUpdate(pos, pageno)
-    self.pageno = pageno
+    if pageno then
+        self.pageno = pageno
+    end
 end
 
 function ReaderToc:fillToc()

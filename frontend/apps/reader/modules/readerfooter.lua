@@ -579,7 +579,9 @@ function ReaderFooter:_updateFooterText()
     end
     self.text_container.dimen.w = self.text_width
     self.horizontal_group:resetLayout()
-    UIManager:setDirty(self.view.dialog, "ui", self.footer_content.dimen)
+    UIManager:setDirty(self.view.dialog, function()
+        return "ui", self.footer_content.dimen
+    end)
 end
 
 function ReaderFooter:onPageUpdate(pageno)
