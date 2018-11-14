@@ -131,6 +131,8 @@ function Kindle:outofScreenSaver()
             end
         end
         local UIManager = require("ui/uimanager")
+        -- NOTE: If we *really* wanted to avoid the framework seeping through, we could use tickAfterNext instead,
+        --       at the cost of an extra flashing update...
         UIManager:nextTick(function() UIManager:setDirty("all", "full") end)
     end
     self.powerd:afterResume()
