@@ -407,13 +407,21 @@ end
 function ReaderRolling:onDoubleTapForward()
     local visible_page_count = self.ui.document:getVisiblePageCount()
     local pageno = self.current_page + (visible_page_count > 1 and 1 or 0)
-    self:onGotoPage(self.ui.toc:getNextChapter(pageno, 0))
+    local new_page = self.ui.toc:getNextChapter(pageno, 0)
+    if new_page then
+        self.ui.link:addCurrentLocationToStack()
+        self:onGotoPage(new_page)
+    end
     return true
 end
 
 function ReaderRolling:onDoubleTapBackward()
     local pageno = self.current_page
-    self:onGotoPage(self.ui.toc:getPreviousChapter(pageno, 0))
+    local new_page = self.ui.toc:getPreviousChapter(pageno, 0)
+    if new_page then
+        self.ui.link:addCurrentLocationToStack()
+        self:onGotoPage(new_page)
+    end
     return true
 end
 
