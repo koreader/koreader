@@ -187,11 +187,17 @@ fi
 # c.f., https://stackoverflow.com/a/37939589
 version() { echo "$@" | awk -F. '{ printf("%d%03d%03d\n", $1,$2,$3); }'; }
 
-# check if kpvbooklet was launched more than once, if not we will disable pillow
-# there's no pillow if we stopped the framework, and it's only there on systems with upstart anyway
+# There's no pillow if we stopped the framework, and it's only there on systems with upstart anyway
 if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
-    count="$(lipc-get-prop -eiq com.github.koreader.kpvbooklet.timer count)"
-    if [ "$count" = "" ] || [ "$count" = "0" ]; then
+    # NOTE: If we were launched from KUAL, don't even try to deal with KPVBooklet-specific workarounds
+    if [ "${FROM_KUAL}" = "yes" ]; then
+        kpv_launch_count="0"
+    else
+        kpv_launch_count="$(lipc-get-prop -eiq com.github.koreader.kpvbooklet.timer count)"
+    fi
+    # Check if KPVBooklet was launched more than once, if not we will disable pillow
+    # c.f., https://github.com/koreader/koreader/commit/60f83e842ccce57931cbed5ffcebb28515f6f5d7
+    if [ "${kpv_launch_count}" = "" ] || [ "${kpv_launch_count}" = "0" ]; then
         # NOTE: Dump the fb so we can restore something useful on exit...
         cat /dev/fb0 >/var/tmp/koreader-fb.dump
         # We're going to need our current FW version...
