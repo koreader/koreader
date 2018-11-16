@@ -61,6 +61,9 @@ export TESSDATA_PREFIX="data"
 # export dict directory
 export STARDICT_DATA_DIR="data/dict"
 
+# export external font directory
+export EXT_FONT_DIR="/usr/lib/fonts"
+
 # we keep at most 500k worth of crash log
 if [ -e crash.log ]; then
     tail -c 500000 crash.log >crash.log.new

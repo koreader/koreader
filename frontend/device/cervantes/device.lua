@@ -30,39 +30,40 @@ local Cervantes = Generic:new{
     touch_switch_xy = true,
     touch_mirrored_x = true,
     touch_probe_ev_epoch_time = true,
-    hasNaturalLight = no,
     hasOTAUpdates = yes,
     hasKeys = yes,
-    internal_storage_mount_point = "/mnt/public/",
+
+    -- all devices, except the original Cervantes Touch, have frontlight
+    hasFrontlight = yes,
+
+    -- currently only Cervantes 4 has coloured frontlight
+    hasNaturalLight = no,
 }
 -- Cervantes Touch
 local CervantesTouch = Cervantes:new{
     model = "CervantesTouch",
     display_dpi = 167,
+    hasFrontlight = no,
 }
 -- Cervantes TouchLight / Fnac Touch Plus
 local CervantesTouchLight = Cervantes:new{
     model = "CervantesTouchLight",
     display_dpi = 167,
-    hasFrontlight = yes,
 }
 -- Cervantes 2013 / Fnac Touch Light
 local Cervantes2013 = Cervantes:new{
     model = "Cervantes2013",
     display_dpi = 212,
-    hasFrontlight = yes,
 }
 -- Cervantes 3 / Fnac Touch Light 2
 local Cervantes3 = Cervantes:new{
     model = "Cervantes3",
     display_dpi = 300,
-    hasFrontlight = yes,
 }
 -- Cervantes 4
 local Cervantes4 = Cervantes:new{
     model = "Cervantes4",
     display_dpi = 300,
-    hasFrontlight = yes,
     hasNaturalLight = yes,
     frontlight_settings = {
         frontlight_white = "/sys/class/backlight/lm3630a_ledb",
@@ -169,7 +170,6 @@ function Cervantes:initNetworkManager(NetworkMgr)
         os.execute("./release-ip.sh")
     end
     function NetworkMgr:restoreWifiAsync()
-        os.execute("./restore-wifi-async.sh")
     end
     function NetworkMgr:isWifiOn()
         return 1 == isConnected()
