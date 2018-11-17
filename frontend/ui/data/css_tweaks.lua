@@ -187,7 +187,7 @@ img {
         },
         {
             id = "image_valign_middle";
-            title = _("Middle align images with text"),
+            title = _("Vertically center-align images relative to text"),
             css = [[img { vertical-align: middle; }]],
         },
     },
