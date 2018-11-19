@@ -204,7 +204,7 @@ function Wallabag:addToMainMenu(menu_items)
 
 Articles marked as finished or 100% read can be deleted from the server. Those articles can also be deleted automatically when downloading new articles if the 'Process deletions during download' option is enabled.
 
-The 'Synchronise remotely deleted files' option will remove local files that do not exist anymore on the server.]])
+The 'Synchronise remotely deleted files' option will remove local files that no longer exist on the server.]])
                             })
                         end,
                     }
