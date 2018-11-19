@@ -25,6 +25,7 @@ local Screen = require("device").screen
 -- constants
 local article_id_preffix = "[w-id_"
 local article_id_postfix = "] "
+local failed, skipped, downloaded = 1, 2, 3
 
 local Wallabag = WidgetContainer:new{
     name = "wallabag",
@@ -47,11 +48,21 @@ function Wallabag:init()
     self.username = self.wb_settings.data.wallabag.username
     self.password = self.wb_settings.data.wallabag.password
     self.directory = self.wb_settings.data.wallabag.directory
-    self.is_delete_finished = self.wb_settings.data.wallabag.is_delete_finished
-    self.is_delete_read = self.wb_settings.data.wallabag.is_delete_read
-    self.is_auto_delete = self.wb_settings.data.wallabag.is_auto_delete
-    self.is_sync_remote_delete = self.wb_settings.data.wallabag.is_sync_remote_delete
-    self.filter_tag = self.wb_settings.data.wallabag.filter_tag
+    if self.wb_settings.data.wallabag.is_delete_finished ~= nil then
+        self.is_delete_finished = self.wb_settings.data.wallabag.is_delete_finished
+    end
+    if self.wb_settings.data.wallabag.is_delete_read ~= nil then
+        self.is_delete_read = self.wb_settings.data.wallabag.is_delete_read
+    end
+    if self.wb_settings.data.wallabag.is_auto_delete ~= nil then
+        self.is_auto_delete = self.wb_settings.data.wallabag.is_auto_delete
+    end
+    if self.wb_settings.data.wallabag.is_sync_remote_delete ~= nil then
+        self.is_sync_remote_delete = self.wb_settings.data.wallabag.is_sync_remote_delete
+    end
+    if self.wb_settings.data.wallabag.filter_tag then
+        self.filter_tag = self.wb_settings.data.wallabag.filter_tag
+    end
 
     -- workaround for dateparser only available if newsdownloader is active
     self.is_dateparser_available = false
@@ -193,7 +204,7 @@ function Wallabag:addToMainMenu(menu_items)
 
 Articles marked as finished or 100% read can be deleted from the server. Those articles can also be deleted automatically when downloading new articles if the 'Process deletions during download' option is enabled.
 
-The 'Synchronise remotely delete files' option will remove local files that do not exist anymore on the server.]])
+The 'Synchronise remotely deleted files' option will remove local files that do not exist anymore on the server.]])
                             })
                         end,
                     }
@@ -278,7 +289,11 @@ function Wallabag:getBearerToken()
 end
 
 function Wallabag:getArticleList()
-    local articles_url = "/api/entries.json?archive=0&tags=" .. self.filter_tag
+    local filtering = ""
+    if self.filter_tag ~= "" then
+        filtering = "&tags=" .. self.filter_tag
+    end
+    local articles_url = "/api/entries.json?archive=0" .. filtering
     return self:callAPI( "GET", articles_url, nil, "", "" )
 end
 
@@ -309,8 +324,13 @@ function Wallabag:download(article)
     end
 
     if skip_article == false then
-        return self:callAPI( "GET", item_url, nil, "", local_path)
+        if self:callAPI( "GET", item_url, nil, "", local_path) then
+            return downloaded
+        else
+            return failed
+        end
     end
+    return skipped
 end
 
 -- method: (mandatory) GET, POST, DELETE, PATCH, etc...
@@ -343,7 +363,8 @@ function Wallabag:callAPI( method, apiurl, headers, body, filepath )
     local code, resp_headers = socket.skip(1, httpRequest(request))
     -- raise error message when network is unavailable
     if resp_headers == nil then
-        error(code)
+        logger.dbg("Server error: ", code)
+        return false
     end
     if code == 200 then
         if filepath ~= "" then
@@ -355,7 +376,7 @@ function Wallabag:callAPI( method, apiurl, headers, body, filepath )
                 local ok, result = pcall(JSON.decode, content)
                 if ok and result then
                     -- Only enable this log when needed, the output can be large
-                    --logger.dbg("result ", result)
+                    -- logger.dbg("result ", result)
                     return result
                 else
                     UIManager:show(InfoMessage:new{
@@ -369,12 +390,15 @@ function Wallabag:callAPI( method, apiurl, headers, body, filepath )
     else
         local msg
         if filepath ~= "" then
-            msg = _("Could not download document.")
+            local entry_mode = lfs.attributes(filepath, "mode")
+            if entry_mode == "file" then
+                os.remove(filepath)
+                logger.dbg("Removed failed download: ", filepath)
+            end
         else
-            msg = _("Communication with server failed.")
+            UIManager:show(InfoMessage:new{
+                text = _("Communication with server failed."), })
         end
-        UIManager:show(InfoMessage:new{
-            text = msg, })
         return false
     end
 end
@@ -398,36 +422,41 @@ function Wallabag:synchronise()
 
     local remote_article_ids = {}
     local downloaded_count = 0
+    local failed_count = 0
     if self.access_token ~= "" then
         local articles = self:getArticleList()
-        logger.dbg("number of articles: ", articles.total)
-        --logger.dbg("articles: ", articles)
+        if articles then
+            logger.dbg("number of articles: ", articles.total)
+            --logger.dbg("articles: ", articles)
 
-        info = InfoMessage:new{ text = _("Downloading articles…") }
-        UIManager:show(info)
-        UIManager:forceRePaint()
-        UIManager:close(info)
-        for _, article in ipairs(articles._embedded.items) do
-            logger.dbg("article: ", article.id)
-            remote_article_ids[ tostring( article.id ) ] = true
-            if self:download(article) then
-                downloaded_count = downloaded_count + 1
+            info = InfoMessage:new{ text = _("Downloading articles…") }
+            UIManager:show(info)
+            UIManager:forceRePaint()
+            UIManager:close(info)
+            for _, article in ipairs(articles._embedded.items) do
+                logger.dbg("article: ", article.id)
+                remote_article_ids[ tostring( article.id ) ] = true
+                local res = self:download(article)
+                if res == downloaded then
+                    downloaded_count = downloaded_count + 1
+                elseif res == failed then
+                    failed_count = failed_count + 1
+                end
             end
-        end
-    end
+            -- synchronise remote deletions
+            deleted_count = deleted_count + self:processRemoteDeletes( remote_article_ids )
 
-    -- synchronise remote deletions
-    deleted_count = deleted_count + self:processRemoteDeletes( remote_article_ids )
-
-    local msg
-    if deleted_count ~= 0 then
-        msg = _("Processing finished.\n\nArticles downloaded: %1\nDeleted: %2")
-        info = InfoMessage:new{ text = T( msg, downloaded_count, deleted_count ) }
-    else
-        msg = _("Processing finished.\n\nArticles downloaded: %1")
-        info = InfoMessage:new{ text = T( msg, downloaded_count ) }
-    end
-    UIManager:show(info)
+            local msg
+            if failed_count ~= 0 then
+                msg = _("Processing finished.\n\nArticles downloaded: %1\nDeleted: %2\nFailed: %3")
+                info = InfoMessage:new{ text = T( msg, downloaded_count, deleted_count, failed_count ) }
+            else
+                msg = _("Processing finished.\n\nArticles downloaded: %1\nDeleted: %2")
+                info = InfoMessage:new{ text = T( msg, downloaded_count, deleted_count ) }
+            end
+            UIManager:show(info)
+        end -- articles
+    end -- access_token
 end
 
 function Wallabag:processRemoteDeletes( remote_article_ids )
