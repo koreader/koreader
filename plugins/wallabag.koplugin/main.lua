@@ -388,7 +388,6 @@ function Wallabag:callAPI( method, apiurl, headers, body, filepath )
             end
         end
     else
-        local msg
         if filepath ~= "" then
             local entry_mode = lfs.attributes(filepath, "mode")
             if entry_mode == "file" then
