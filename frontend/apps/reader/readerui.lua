@@ -263,6 +263,11 @@ function ReaderUI:init()
             document = self.document,
         })
     else
+        -- load crengine default settings (from cr3.ini, some of these
+        -- will be overriden by our settings by some reader modules below)
+        if self.document.setupDefaultView then
+            self.document:setupDefaultView()
+        end
         -- make sure we render document first before calling any callback
         self:registerPostInitCallback(function()
             if not self.document:loadDocument() then
