@@ -36,10 +36,17 @@ local OptionTextItem = InputContainer:new{}
 function OptionTextItem:init()
     local text_widget = self[1]
 
-    self[1] = UnderlineContainer:new{
+    self.underline_container = UnderlineContainer:new{
         text_widget,
-        padding = self.padding,
+        padding = self.underline_padding, -- vertical padding between text and underline
         color = self.color,
+    }
+    self[1] = FrameContainer:new{
+        padding = 0,
+        padding_left = self.padding_left,
+        padding_right = self.padding_right,
+        bordersize = 0,
+        self.underline_container,
     }
     self.dimen = self[1]:getSize()
     -- we need this table per-instance, so we declare it here
@@ -64,19 +71,19 @@ function OptionTextItem:init()
 end
 
 function OptionTextItem:onFocus()
-    self[1].color = Blitbuffer.COLOR_BLACK
+    self.underline_container.color = Blitbuffer.COLOR_BLACK
 end
 
 function OptionTextItem:onUnfocus()
-    self[1].color = Blitbuffer.COLOR_WHITE
+    self.underline_container.color = Blitbuffer.COLOR_WHITE
 end
 
 function OptionTextItem:onTapSelect()
     if not self.enabled then return true end
     for _, item in pairs(self.items) do
-        item[1].color = Blitbuffer.COLOR_WHITE
+        item.underline_container.color = Blitbuffer.COLOR_WHITE
     end
-    self[1].color = Blitbuffer.COLOR_BLACK
+    self.underline_container.color = Blitbuffer.COLOR_BLACK
     self.config:onConfigChoose(self.values, self.name,
                     self.event, self.args,
                     self.events, self.current_item)
@@ -96,12 +103,19 @@ end
 
 local OptionIconItem = InputContainer:new{}
 function OptionIconItem:init()
-    self.dimen = self.icon:getSize()
-    self[1] = UnderlineContainer:new{
+    self.underline_container = UnderlineContainer:new{
         self.icon,
-        padding = self.padding,
+        padding = self.underline_padding,
         color = self.color,
     }
+    self[1] = FrameContainer:new{
+        padding = 0,
+        padding_left = self.padding_left,
+        padding_right = self.padding_right,
+        bordersize = 0,
+        self.underline_container,
+    }
+    self.dimen = self[1]:getSize()
     -- we need this table per-instance, so we declare it here
     if Device:isTouchDevice() then
         self.ges_events = {
@@ -136,10 +150,10 @@ function OptionIconItem:onTapSelect()
     if not self.enabled then return true end
     for _, item in pairs(self.items) do
         --item[1][1].invert = false
-        item[1].color = Blitbuffer.COLOR_WHITE
+        item.underline_container.color = Blitbuffer.COLOR_WHITE
     end
     --self[1][1].invert = true
-    self[1].color = Blitbuffer.COLOR_BLACK
+    self.underline_container.color = Blitbuffer.COLOR_BLACK
     self.config:onConfigChoose(self.values, self.name,
                     self.event, self.args,
                     self.events, self.current_item)
@@ -322,13 +336,10 @@ function ConfigOption:init()
                 end
                 local max_item_spacing = (Screen:getWidth() * item_align - items_width) / items_count
                 local width = math.min(max_item_spacing, item_spacing_width)
-
                 if max_item_spacing < item_spacing_width / 2 then
                     width = item_spacing_width / 2
                 end
-                local items_spacing = HorizontalSpan:new{
-                    width = width
-                }
+                local horizontal_half_padding = width / 2
                 local max_item_text_width = (Screen:getWidth() * item_align - items_count * width) / items_count
                 for d = 1, #self.options[c].item_text do
                     local option_item
@@ -339,7 +350,9 @@ function ConfigOption:init()
                                 face = Font:getFace(item_font_face, item_font_size[d]),
                                 fgcolor = Blitbuffer.gray(enabled and 1.0 or 0.5),
                             },
-                            padding = padding_button,
+                            underline_padding = padding_button,
+                            padding_left = d > 1 and horizontal_half_padding,
+                            padding_right = d < #self.options[c].item_text and horizontal_half_padding,
                             color = d == current_item and Blitbuffer.gray(enabled and 1.0 or 0.5) or Blitbuffer.COLOR_WHITE,
                             enabled = enabled,
                         }
@@ -356,7 +369,9 @@ function ConfigOption:init()
                                 face = face,
                                 fgcolor = Blitbuffer.gray(enabled and 1.0 or 0.5),
                             },
-                            padding = -padding_button,
+                            underline_padding = -padding_button,
+                            padding_left = d > 1 and horizontal_half_padding,
+                            padding_right = d < #self.options[c].item_text and horizontal_half_padding,
                             color = d == current_item and Blitbuffer.gray(enabled and 1.0 or 0.5) or Blitbuffer.COLOR_WHITE,
                             enabled = enabled,
                         }
@@ -372,9 +387,6 @@ function ConfigOption:init()
                     option_item.current_item = d
                     option_item.config = self.config
                     table.insert(option_items_group, option_item)
-                    if d ~= #self.options[c].item_text then
-                        table.insert(option_items_group, items_spacing)
-                    end
                 end
             end
 
@@ -387,16 +399,16 @@ function ConfigOption:init()
                 }
                 local max_item_spacing = (Screen:getWidth() * item_align -
                         first_item:getSize().w * items_count) / items_count
-                local items_spacing = HorizontalSpan:new{
-                    width = math.min(max_item_spacing, item_spacing_width)
-                }
+                local horizontal_half_padding = math.min(max_item_spacing, item_spacing_width) / 2
                 for d = 1, #self.options[c].item_icons do
                     local option_item = OptionIconItem:new{
                         icon = ImageWidget:new{
                             file = self.options[c].item_icons[d],
                             dim = not enabled,
                         },
-                        padding = -padding_button,
+                        underline_padding = -padding_button,
+                        padding_left = d > 1 and horizontal_half_padding,
+                        padding_right = d < #self.options[c].item_icons and horizontal_half_padding,
                         color = d == current_item and Blitbuffer.gray(enabled and 1.0 or 0.5) or Blitbuffer.COLOR_WHITE,
                         enabled = enabled,
                     }
@@ -410,9 +422,6 @@ function ConfigOption:init()
                     option_item.current_item = d
                     option_item.config = self.config
                     table.insert(option_items_group, option_item)
-                    if d ~= #self.options[c].item_icons then
-                        table.insert(option_items_group, items_spacing)
-                    end
                 end
             end
 
