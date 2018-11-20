@@ -633,12 +633,11 @@ function KindleBasic2:init()
     self.input.open("fake_events")
 end
 
--- NOTE: FrontLight might be wrong, TBC!
 function KindlePaperWhite4:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
-        fl_intensity_file = "/sys/class/backlight/max77696-bl/brightness",
+        fl_intensity_file = "/sys/class/backlight/bl/brightness",
         batt_capacity_file = "/sys/class/power_supply/bd71827_bat/capacity",
         is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
     }
