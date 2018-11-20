@@ -504,6 +504,9 @@ function Search:onMenuHold(item)
     local thumbnail
     local doc = DocumentRegistry:openDocument(item.path)
     if doc then
+        if doc.loadDocument then -- CreDocument
+            doc:loadDocument(false) -- load only metadata
+        end
         thumbnail = doc:getCoverPageImage()
         doc:close()
     end

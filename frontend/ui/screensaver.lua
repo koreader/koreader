@@ -249,6 +249,9 @@ function Screensaver:show(event, fallback_message)
         if exclude ~= true then
             if lfs.attributes(lastfile, "mode") == "file" then
                 local doc = DocumentRegistry:openDocument(lastfile)
+                if doc.loadDocument then -- CreDocument
+                    doc:loadDocument(false) -- load only metadata
+                end
                 local image = doc:getCoverPageImage()
                 doc:close()
                 if image ~= nil then

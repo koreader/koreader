@@ -124,18 +124,6 @@ function CreDocument:init()
         error(self._document)  -- will contain error message
     end
 
-    -- adjust font sizes according to screen dpi
-    self._document:adjustFontSizes(Screen:getDPI())
-
-    if G_reader_settings:readSetting("cre_header_status_font_size") then
-        self._document:setIntProperty("crengine.page.header.font.size",
-            G_reader_settings:readSetting("cre_header_status_font_size"))
-    end
-
-    -- set fallback font face
-    self._document:setStringProperty("crengine.font.fallback.face",
-        G_reader_settings:readSetting("fallback_font") or self.fallback_font)
-
     -- We would have liked to call self._document:loadDocument(self.file)
     -- here, to detect early if file is a supported document, but we
     -- need to delay it till after some crengine settings are set for a
@@ -158,6 +146,34 @@ end
 function CreDocument:requestDomVersion(version)
     logger.dbg("CreDocument: requesting DOM version:", version)
     cre.requestDomVersion(version)
+end
+
+function CreDocument:setupDefaultView()
+    if self.loaded then
+        -- Don't apply defaults if the document has already been loaded
+        -- as this must be done before calling loadDocument()
+        return
+    end
+    -- have crengine load defaults from cr3.ini
+    self._document:readDefaults()
+    logger.dbg("CreDocument: applied cr3.ini default settings.")
+
+    -- set fallback font face (this was formerly done in :init(), but it
+    -- affects crengine calcGlobalSettingsHash() and would invalidate the
+    -- cache from the main currently being read document when we just
+    -- loadDocument(only_metadata) another document go get its metadata
+    -- or cover image, eg. from History hold menu).
+    self._document:setStringProperty("crengine.font.fallback.face",
+        G_reader_settings:readSetting("fallback_font") or self.fallback_font)
+
+    -- adjust font sizes according to screen dpi
+    self._document:adjustFontSizes(Screen:getDPI())
+
+    -- set top status bar font size
+    if G_reader_settings:readSetting("cre_header_status_font_size") then
+        self._document:setIntProperty("crengine.page.header.font.size",
+            G_reader_settings:readSetting("cre_header_status_font_size"))
+    end
 end
 
 function CreDocument:loadDocument(full_document)
