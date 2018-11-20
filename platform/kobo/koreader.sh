@@ -135,6 +135,22 @@ if [ ! -n "${INTERFACE}" ]; then
 fi
 # end of value check of PLATFORM
 
+# If we're on a Forma, make sure we start in an orientation we know how to handle (i.e., Portrait, buttons on the Right)
+# Because NTX likes mounting panels in weird native rotations, this is actually FB_ROTATE_CCW (3).
+# And because shit gets even weirder, we have to echo 1 to get 3 (possibly because 2 is the native rotation, and 3 ^ 2 = 1).
+if [ "${PRODUCT}" = "frost" ]; then
+    # Only mess with this if we were started from Nickel
+    if [ "${FROM_NICKEL}" = "true" ]; then
+        # Don't do anything if we're already in the right orientation.
+        if [ "$(cat /sys/class/graphics/fb0/rotate)" -ne "3" ]; then
+            echo 1 > /sys/class/graphics/fb0/rotate
+            # Sleep a bit, for good measure
+            usleep 250000
+        fi
+    fi
+fi
+# NOTE: We don't have to restore anything on exit, nickel's startup process will take care of everything (pickel -> nickel).
+
 # Remount the SD card RW if it's inserted and currently RO
 if awk '$4~/(^|,)ro($|,)/' /proc/mounts | grep ' /mnt/sd '; then
     mount -o remount,rw /mnt/sd
