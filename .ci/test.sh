@@ -10,6 +10,6 @@ pushd koreader-emulator-x86_64-linux-gnu/koreader && {
 } && popd || exit
 
 # symlink to prevent trouble finding the lib on Ubuntu 16.04 in the Docker image
-ln -sf /usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0 ./libs/libSDL2.so
+ln -sf /usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0 koreader-emulator-x86_64-linux-gnu/libs/libSDL2.so
 
 make testfront BUSTED_SPEC_FILE="${BUSTED_SPEC_FILE}"
