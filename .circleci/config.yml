@@ -10,6 +10,8 @@ jobs:
     parallelism: 2
     steps:
       - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
       - restore_cache:
           keys:
             # binary dependencies require {{ arch }} because there are different CPUs in use on the servers
