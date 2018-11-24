@@ -110,6 +110,42 @@ h4, h5, h6 { page-break-after: avoid !important; }
             },
         },
         {
+            title = _("Paragraph display"),
+            {
+                id = "paragraph_no_indent";
+                title = _("No indentation on first paragraph line"),
+                description = _("Do not indent the first line of paragraphs."),
+                css = [[p + p { text-indent: 0 !important; }]],
+            },
+            {
+                id = "paragraph_indent";
+                title = _("Indentation on first paragraph line"),
+                description = _("Indentation on the first line of a paragraph is the default, but it may be overridden by publisher styles. This will force KOReader's defaults on common elements."),
+                css = [[
+p { text-indent: 1.2em !important; }
+body, h1, h2, h3, h4, h5, h6, div, li, td, th { text-indent: 0 !important; }
+                ]],
+            },
+            {
+                id = "paragraph_whitespace";
+                title = _("Spacing between paragraphs"),
+                description = _("Add a line of whitespace between paragraphs."),
+                css = [[p + p { margin-top: 1em !important; }]],
+            },
+            {
+                id = "paragraph_whitespace_half";
+                title = _("Spacing between paragraphs (half)"),
+                description = _("Add half a line of whitespace between paragraphs."),
+                css = [[p + p { margin-top: .5em !important; }]],
+            },
+            {
+                id = "paragraph_no_whitespace";
+                title = _("No spacing between paragraphs"),
+                description = _("No whitespace between paragraphs is the default, but it may be overridden by publisher styles. This will re-enable it for paragraphs and list items."),
+                css = [[p, li { margin: 0 !important; }]],
+            },
+        },
+        {
             id = "sub_sup_smaller";
             title = _("Smaller sub- and superscript"),
             description = _("Prevent sub- and superscript from affecting line-height."),
