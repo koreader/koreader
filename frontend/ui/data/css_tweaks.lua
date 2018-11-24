@@ -132,6 +132,30 @@ h1, h2, h3, h4, h5, h6 { hyphens: none !important; }
             ]],
         },
         {
+            id = "no_indent_paragraph";
+            title = _("No indentation on first paragraph line"),
+            description = _("Do not indent the first line of paragraphs."),
+            css = [[
+p + p { text-indent: 0 !important; }
+            ]],
+        },
+        {
+            id = "whitespace_paragraph";
+            title = _("Whitespace between paragraphs"),
+            description = _("Add a line of whitespace between paragraphs."),
+            css = [[
+p + p { margin-top: 1em !important; }
+            ]],
+        },
+        {
+            id = "whitespace_paragraph_half";
+            title = _("Whitespace between paragraphs (half)"),
+            description = _("Add half a line of whitespace between paragraphs."),
+            css = [[
+p + p { margin-top: .5em !important; }
+            ]],
+        },
+        {
             id = "lineheight_all_inherit";
             title = _("Ignore publisher line heights"),
             description = _("Disable line-height specified in embedded styles, and may allow KOReader's line spacing settings to work on books where they would not."),
