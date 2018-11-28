@@ -50,16 +50,28 @@ function filemanagerutil.purgeSettings(file)
     end
 end
 
--- Remove from history and update lastfile to top item in history
+-- Remove from history (and update lastfile to an existing file)
 -- if autoremove_deleted_items_from_history is enabled
 function filemanagerutil.removeFileFromHistoryIfWanted(file)
     if G_reader_settings:readSetting("autoremove_deleted_items_from_history") then
         local readhistory = require("readhistory")
         readhistory:removeItemByPath(file)
-        if G_reader_settings:readSetting("lastfile") == file then
-            G_reader_settings:saveSetting("lastfile", #readhistory.hist > 0 and readhistory.hist[1].file or nil)
+        filemanagerutil.ensureLastFileExists()
+    end
+end
+
+-- Update lastfile setting to the most recent one in history
+-- that still exists
+function filemanagerutil.ensureLastFileExists()
+    local last_existing_file = nil
+    local readhistory = require("readhistory")
+    for i=1, #readhistory.hist do
+        if lfs.attributes(readhistory.hist[i].file, "mode") == "file" then
+            last_existing_file = readhistory.hist[i].file
+            break
         end
     end
+    G_reader_settings:saveSetting("lastfile", last_existing_file)
 end
 
 return filemanagerutil

@@ -87,6 +87,7 @@ function FileManagerHistory:onMenuHold(item)
                             FileManager:deleteFile(item.file)
                             filemanagerutil.removeFileFromHistoryIfWanted(item.file)
                             require("readhistory"):setDeleted(item)
+                            filemanagerutil.ensureLastFileExists()
                             self._manager:updateItemTable()
                             UIManager:close(self.histfile_dialog)
                         end,
