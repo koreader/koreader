@@ -228,6 +228,7 @@ function FileManager:init()
                             ok_callback = function()
                                 deleteFile(file)
                                 filemanagerutil.removeFileFromHistoryIfWanted(file)
+                                filemanagerutil.ensureLastFileExists()
                                 self:refreshPath()
                                 UIManager:close(self.file_dialog)
                             end,
