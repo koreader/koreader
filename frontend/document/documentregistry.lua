@@ -13,6 +13,7 @@ local DocumentRegistry = {
 }
 
 function DocumentRegistry:addProvider(extension, mimetype, provider, weight)
+    extension = string.lower(extension)
     table.insert(self.providers, {
         extension = extension,
         mimetype = mimetype,
@@ -53,7 +54,7 @@ end
 -- @string file
 -- @treturn boolean
 function DocumentRegistry:hasProvider(file)
-    local filename_suffix = util.getFileNameSuffix(file)
+    local filename_suffix = string.lower(util.getFileNameSuffix(file))
 
     if self.filetype_provider[filename_suffix] then
         return true
