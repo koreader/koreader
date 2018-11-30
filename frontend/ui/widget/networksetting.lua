@@ -225,7 +225,7 @@ function NetworkItem:connect()
     end
 
     self:refresh()
-    UIManager:show(InfoMessage:new{text = text})
+    UIManager:show(InfoMessage:new{text = text, timeout = 3})
 end
 
 function NetworkItem:disconnect()
