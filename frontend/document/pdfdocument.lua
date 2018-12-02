@@ -8,6 +8,7 @@ local logger = require("logger")
 local util = require("util")
 local ffi = require("ffi")
 local C = ffi.C
+local Screen = Device.screen
 local pdf = nil
 
 
@@ -16,6 +17,8 @@ local PdfDocument = Document:new{
     is_pdf = true,
     dc_null = DrawContext.new(),
     options = KoptOptions,
+    epub_font_size = G_reader_settings:readSetting("copt_font_size")
+            or DCREREADER_CONFIG_DEFAULT_FONT_SIZE or 22,
     koptinterface = nil,
     provider = "mupdf",
     provider_name = "MuPDF",
@@ -42,6 +45,9 @@ function PdfDocument:init()
     if not ok then
         error(self._document)  -- will contain error message
     end
+    -- no-op on PDF
+    self._document:layoutDocument(Screen:getWidth(), Screen:getHeight(),
+                                  Screen:scaleBySize(self.epub_font_size))
     self.is_open = true
     self.info.has_pages = true
     self.info.configurable = true
