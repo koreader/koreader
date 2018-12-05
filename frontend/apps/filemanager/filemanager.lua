@@ -129,7 +129,7 @@ function FileManager:init()
     local g_show_hidden = G_reader_settings:readSetting("show_hidden")
     local show_hidden = g_show_hidden == nil and DSHOWHIDDENFILES or g_show_hidden
     local file_chooser = FileChooser:new{
-        -- remeber to adjust the height when new item is added to the group
+        -- remember to adjust the height when new item is added to the group
         path = self.root_path,
         focused_path = self.focused_file,
         collate = G_reader_settings:readSetting("collate") or "strcoll",
@@ -150,6 +150,8 @@ function FileManager:init()
         close_callback = function() return self:onClose() end,
         -- allow left bottom tap gesture, otherwise it is eaten by hidden return button
         return_arrow_propagation = true,
+        -- allow Menu widget to delegate handling of some gestures to GestureManager
+        is_file_manager = true,
     }
     self.file_chooser = file_chooser
     self.focused_file = nil -- use it only once

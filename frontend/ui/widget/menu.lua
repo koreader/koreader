@@ -1191,7 +1191,8 @@ function Menu:onSwipe(arg, ges_ev)
         -- no use for now
         do end -- luacheck: ignore 541
     else -- diagonal swipe
-        if G_reader_settings:readSetting("gesture_fm") and G_reader_settings:readSetting("gesture_fm")["short_diagonal_swipe"] then
+        if self.is_file_manager and G_reader_settings:readSetting("gesture_fm") and
+                G_reader_settings:readSetting("gesture_fm")["short_diagonal_swipe"] then
             -- managed by gesture manager
             do end -- luacheck: ignore 541
         else
