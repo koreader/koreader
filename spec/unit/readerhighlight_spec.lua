@@ -85,22 +85,22 @@ describe("Readerhighlight module", function()
             readerui.highlight:clear()
         end)
         it("should highlight single word", function()
-            highlight_single_word(readerui, Geom:new{ x = 260, y = 80 })
+            highlight_single_word(readerui, Geom:new{ x = 400, y = 110 })
             Screen:shot("screenshots/reader_highlight_single_word_epub.png")
             assert.truthy(readerui.view.highlight.saved[page])
         end)
         it("should highlight text", function()
             highlight_text(readerui,
-                           Geom:new{ x = 260, y = 60 },
-                           Geom:new{ x = 260, y = 90 })
+                           Geom:new{ x = 400, y = 110 },
+                           Geom:new{ x = 400, y = 170 })
             Screen:shot("screenshots/reader_highlight_text_epub.png")
             assert.truthy(readerui.view.highlight.saved[page])
         end)
         it("should response on tap gesture", function()
             tap_highlight_text(readerui,
-                               Geom:new{ x = 151, y = 120  },
-                               Geom:new{ x = 290, y = 301 },
-                               Geom:new{ x = 200, y = 268 })
+                               Geom:new{ x = 151, y = 115  },
+                               Geom:new{ x = 300, y = 285 },
+                               Geom:new{ x = 120, y = 240 })
             Screen:shot("screenshots/reader_tap_highlight_text_epub.png")
         end)
     end)

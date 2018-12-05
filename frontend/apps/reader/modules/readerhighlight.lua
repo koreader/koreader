@@ -392,6 +392,7 @@ function ReaderHighlight:viewSelectionHTML(debug_view)
             -- Each node on a line, with markers and numbers of skipped chars and siblings shown,
             -- with possibly invalid HTML (text nodes not escaped)
             html_flags = 0x3353
+            -- html_flags = 0x3753 -- use this to additionally see rendering methods
         end
         local html, css_files = self.ui.document:getHTMLFromXPointers(self.selected_text.pos0,
                                     self.selected_text.pos1, html_flags, true)

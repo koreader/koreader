@@ -992,6 +992,13 @@ li.gallerybox div.gallerytext p {
 .citation {
     font-style: italic;
 }
+/* make tables full-width - Wikipedia tables are often set as float
+ * elements and have a fixed width, often in em (22em), which would
+ * make them quite small with blank space on their right, as we don't
+ * support float */
+table {
+    width: 100% !important;
+}
 /* hide some view/edit/discuss short links displayed as "v m d" */
 .nv-view, .nv-edit, .nv-talk {
     display: none;

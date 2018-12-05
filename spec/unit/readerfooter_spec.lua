@@ -146,7 +146,7 @@ describe("Readerfooter module", function()
         local timeinfo = footer.textGeneratorMap.time()
         local page_count = readerui.document:getPageCount()
         -- stats has not been initialized here, so we get na TB and TC
-        assert.are.same('1 / '..page_count..' | '..timeinfo..' | => 0 | B:0% | R:1% | TB: na | TC: na',
+        assert.are.same('1 / '..page_count..' | '..timeinfo..' | => 1 | B:0% | R:0% | TB: na | TC: na',
                         footer.footer_text.text)
     end)
 
@@ -295,8 +295,8 @@ describe("Readerfooter module", function()
         assert.are.same(365, footer.text_width)
 
         footer:onPageUpdate(100)
-        assert.are.same(191, footer.progress_bar.width)
-        assert.are.same(389, footer.text_width)
+        assert.are.same(183, footer.progress_bar.width)
+        assert.are.same(397, footer.text_width)
     end)
 
     it("should support chapter markers", function()
@@ -545,7 +545,7 @@ describe("Readerfooter module", function()
         assert.is.same(0, footer.text_width)
 
         tapFooterMenu(fake_menu, "Progress percentage")
-        assert.are.same('R:1%', footer.footer_text.text)
+        assert.are.same('R:0%', footer.footer_text.text)
         assert.is.same(false, footer.has_no_mode)
         assert.is.same(footer.footer_text:getSize().w + footer.text_left_margin,
                        footer.text_width)
