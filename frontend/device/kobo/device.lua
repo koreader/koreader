@@ -236,14 +236,7 @@ function Kobo:init()
     self.powerd = require("device/kobo/powerd"):new{device = self}
     self.input = require("device/input"):new{
         device = self,
-        event_map = {
-            [59] = "SleepCover",
-            [90] = "LightButton",
-            [102] = "Home",
-            [116] = "Power",
-            [193] = "RPgBack",
-            [194] = "RPgFwd",
-        },
+        event_map = require("device/kobo/event_map_keyboard"),
         event_map_adapter = {
             SleepCover = function(ev)
                 if self.input:isEvKeyPress(ev) then
