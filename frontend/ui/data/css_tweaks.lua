@@ -13,7 +13,7 @@ local _ = require("gettext")
 
 local CssTweaks = {
     {
-        title = _("Page"),
+        title = _("Pages"),
         {
             id = "margin_body_0";
             title = _("Ignore publisher page margins"),
@@ -54,31 +54,43 @@ h4, h5, h6 { page-break-after: avoid !important; }
         },
     },
     {
-        title = _("Text"),
+        title = _("Paragraphs"),
         {
-            title = _("Links color and weight"),
-            {
-                id = "a_black";
-                title = _("Links always black"),
-                css = [[a { color: black !important; }]],
-            },
-            {
-                id = "a_blue";
-                title = _("Links always blue"),
-                css = [[a { color: blue !important; }]],
-                separator = true,
-            },
-            {
-                id = "a_bold";
-                title = _("Links always bold"),
-                css = [[a { font-weight: bold !important; }]],
-            },
-            {
-                id = "a_not_bold";
-                title = _("Links never bold"),
-                css = [[a { font-weight: normal !important; }]],
-            },
+            id = "paragraph_no_indent";
+            title = _("No indentation on first paragraph line"),
+            description = _("Do not indent the first line of paragraphs."),
+            css = [[p + p { text-indent: 0 !important; }]],
         },
+        {
+            id = "paragraph_indent";
+            title = _("Indentation on first paragraph line"),
+            description = _("Indentation on the first line of a paragraph is the default, but it may be overridden by publisher styles. This will force KOReader's defaults on common elements."),
+            css = [[
+p { text-indent: 1.2em !important; }
+body, h1, h2, h3, h4, h5, h6, div, li, td, th { text-indent: 0 !important; }
+            ]],
+        },
+        {
+            id = "paragraph_whitespace";
+            title = _("Spacing between paragraphs"),
+            description = _("Add a line of whitespace between paragraphs."),
+            css = [[p + p { margin-top: 1em !important; }]],
+        },
+        {
+            id = "paragraph_whitespace_half";
+            title = _("Spacing between paragraphs (half)"),
+            description = _("Add half a line of whitespace between paragraphs."),
+            css = [[p + p { margin-top: .5em !important; }]],
+        },
+        {
+            id = "paragraph_no_whitespace";
+            title = _("No spacing between paragraphs"),
+            description = _("No whitespace between paragraphs is the default, but it may be overridden by publisher styles. This will re-enable it for paragraphs and list items."),
+            css = [[p, li { margin: 0 !important; }]],
+        },
+    },
+    {
+        title = _("Text"),
         {
             title = _("Text alignment"),
             {
@@ -107,42 +119,6 @@ h4, h5, h6 { page-break-after: avoid !important; }
                 title = _("Justify all elements"),
                 description = _("Text justification is the default, but it may be overridden by publisher styles. This will re-enable it for all elements, which may lose centering in some of them."),
                 css = [[* { text-align: justify !important; }]],
-            },
-        },
-        {
-            title = _("Paragraph display"),
-            {
-                id = "paragraph_no_indent";
-                title = _("No indentation on first paragraph line"),
-                description = _("Do not indent the first line of paragraphs."),
-                css = [[p + p { text-indent: 0 !important; }]],
-            },
-            {
-                id = "paragraph_indent";
-                title = _("Indentation on first paragraph line"),
-                description = _("Indentation on the first line of a paragraph is the default, but it may be overridden by publisher styles. This will force KOReader's defaults on common elements."),
-                css = [[
-p { text-indent: 1.2em !important; }
-body, h1, h2, h3, h4, h5, h6, div, li, td, th { text-indent: 0 !important; }
-                ]],
-            },
-            {
-                id = "paragraph_whitespace";
-                title = _("Spacing between paragraphs"),
-                description = _("Add a line of whitespace between paragraphs."),
-                css = [[p + p { margin-top: 1em !important; }]],
-            },
-            {
-                id = "paragraph_whitespace_half";
-                title = _("Spacing between paragraphs (half)"),
-                description = _("Add half a line of whitespace between paragraphs."),
-                css = [[p + p { margin-top: .5em !important; }]],
-            },
-            {
-                id = "paragraph_no_whitespace";
-                title = _("No spacing between paragraphs"),
-                description = _("No whitespace between paragraphs is the default, but it may be overridden by publisher styles. This will re-enable it for paragraphs and list items."),
-                css = [[p, li { margin: 0 !important; }]],
             },
         },
         {
@@ -186,6 +162,30 @@ h1, h2, h3, h4, h5, h6 { hyphens: none !important; }
             description = _("Disable font-size specified in embedded styles."),
             css = [[* { font-size: inherit !important; }]],
             separator = true,
+        },
+    },
+    {
+        title = _("Links"),
+        {
+            id = "a_black";
+            title = _("Links always black"),
+            css = [[a { color: black !important; }]],
+        },
+        {
+            id = "a_blue";
+            title = _("Links always blue"),
+            css = [[a { color: blue !important; }]],
+            separator = true,
+        },
+        {
+            id = "a_bold";
+            title = _("Links always bold"),
+            css = [[a { font-weight: bold !important; }]],
+        },
+        {
+            id = "a_not_bold";
+            title = _("Links never bold"),
+            css = [[a { font-weight: normal !important; }]],
         },
     },
     {
@@ -256,6 +256,7 @@ width: 100% !important;
             css = [[img { vertical-align: middle; }]],
         },
     },
+    -- No current need for Miscellaneous
     -- {
     --     title = _("Miscellaneous"),
     -- },
