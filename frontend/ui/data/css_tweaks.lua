@@ -189,76 +189,76 @@ h1, h2, h3, h4, h5, h6 { hyphens: none !important; }
         },
     },
     {
-        title = _("Miscellaneous"),
+        title = _("Tables"),
         {
-            title = _("Tables"),
-            {
-                id = "table_full_width";
-                title = _("Full-width tables"),
-                description = _("Make table expand to the full width of the page. (Tables with small content now use only the width needed to display that content. This restores the previous behavior.)"),
-                css = [[table { width: 100% !important; }]],
-            },
-            {
-                id = "table_td_width_auto";
-                title = _("Ignore publisher table and cell widths"),
-                description = _("Ignore table and cells widths specified by the publisher, and let the engine decide the most appropriate widths."),
-                css = [[table, td, th { width: auto !important; }]],
-            },
-            {
-                id = "table_margin_left_right_auto";
-                title = _("Center small tables"),
-                description = _("Horizontally center tables that do not use the full page width."),
-                css = [[table { margin-left: auto !important; margin-right: auto !important; }]],
-                separator = true,
-            },
-            {
-                id = "td_vertical_align_none";
-                title = _("Ignore publisher vertical alignment in tables"),
-                -- Using "vertical-align: top" would vertical-align children text nodes to top.
-                -- "vertical-align: baseline" has no meaning in table rendering, and is as fine
-                css = [[td { vertical-align: baseline !important; }]],
-            },
-            {
-                id = "table_row_odd_even";
-                title = _("Alternate background color of table rows"),
-                css = [[
+            id = "table_full_width";
+            title = _("Full-width tables"),
+            description = _("Make table expand to the full width of the page. (Tables with small content now use only the width needed to display that content. This restores the previous behavior.)"),
+            css = [[table { width: 100% !important; }]],
+        },
+        {
+            id = "table_td_width_auto";
+            title = _("Ignore publisher table and cell widths"),
+            description = _("Ignore table and cells widths specified by the publisher, and let the engine decide the most appropriate widths."),
+            css = [[table, td, th { width: auto !important; }]],
+        },
+        {
+            id = "table_margin_left_right_auto";
+            title = _("Center small tables"),
+            description = _("Horizontally center tables that do not use the full page width."),
+            css = [[table { margin-left: auto !important; margin-right: auto !important; }]],
+            separator = true,
+        },
+        {
+            id = "td_vertical_align_none";
+            title = _("Ignore publisher vertical alignment in tables"),
+            -- Using "vertical-align: top" would vertical-align children text nodes to top.
+            -- "vertical-align: baseline" has no meaning in table rendering, and is as fine
+            css = [[td { vertical-align: baseline !important; }]],
+        },
+        {
+            id = "table_row_odd_even";
+            title = _("Alternate background color of table rows"),
+            css = [[
 tr:nth-child(odd)  { background-color: #EEE !important; }
 tr:nth-child(even) { background-color: #CCC !important; }
-                ]],
-            },
-            {
-                id = "table_force_border";
-                title = _("Show borders on all tables"),
-                css = [[
-table, tcaption, tr, th, td { border: black solid 1px; border-collapse: collapse; }
-                ]],
-                separator = true,
-            },
+            ]],
         },
         {
-            title = _("Images"),
-            {
-                id = "image_full_width";
-                title = _("Full-width images"),
-                description = _("Useful for books containing only images, when they are smaller than your screen. May stretch images in some cases."),
-                -- This helped me once with a book. Will mess with aspect ratio
-                -- when images have a style="width: NNpx; heigh: NNpx"
-                css = [[
-img {
-   text-align: center !important;
-   text-indent: 0px !important;
-   display: block !important;
-   width: 100% !important;
-}
-                ]],
-            },
-            {
-                id = "image_valign_middle";
-                title = _("Vertically center-align images relative to text"),
-                css = [[img { vertical-align: middle; }]],
-            },
+            id = "table_force_border";
+            title = _("Show borders on all tables"),
+            css = [[
+table, tcaption, tr, th, td { border: black solid 1px; border-collapse: collapse; }
+            ]],
+            separator = true,
         },
     },
+    {
+        title = _("Images"),
+        {
+            id = "image_full_width";
+            title = _("Full-width images"),
+            description = _("Useful for books containing only images, when they are smaller than your screen. May stretch images in some cases."),
+            -- This helped me once with a book. Will mess with aspect ratio
+            -- when images have a style="width: NNpx; heigh: NNpx"
+            css = [[
+img {
+text-align: center !important;
+text-indent: 0px !important;
+display: block !important;
+width: 100% !important;
+}
+            ]],
+        },
+        {
+            id = "image_valign_middle";
+            title = _("Vertically center-align images relative to text"),
+            css = [[img { vertical-align: middle; }]],
+        },
+    },
+    -- {
+    --     title = _("Miscellaneous"),
+    -- },
     -- No current need for workarounds
     -- {
     --     title = _("Workarounds"),
