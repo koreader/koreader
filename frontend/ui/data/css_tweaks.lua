@@ -144,6 +144,7 @@ h1, h2, h3, h4, h5, h6 { hyphens: none !important; }
 p { text-indent: 1.2em !important; }
 body, h1, h2, h3, h4, h5, h6, div, li, td, th { text-indent: 0 !important; }
             ]],
+            separator = true,
         },
         {
             id = "paragraph_whitespace";
