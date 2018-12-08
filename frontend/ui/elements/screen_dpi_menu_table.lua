@@ -1,5 +1,6 @@
 local _ = require("gettext")
 local Screen = require("device").screen
+local T = require("ffi/util").template
 
 
 local function dpi() return G_reader_settings:readSetting("screen_dpi") end
@@ -10,7 +11,7 @@ local function setDPI(_dpi)
     local InfoMessage = require("ui/widget/infomessage")
     local UIManager = require("ui/uimanager")
     UIManager:show(InfoMessage:new{
-        text = _("This will take effect on next restart."),
+        text = _("This will take effect after restarting."),
     })
     Screen:setDPI(_dpi)
 end
@@ -51,23 +52,24 @@ return {
             callback = function() setDPI(240) end
         },
         {
-            text = _("Custom DPI") .. ": " .. (custom() or 160),
+            text = T(_("Custom DPI: %1 (hold to set)"), custom() or 160),
             checked_func = function()
                 local _dpi, _custom = dpi(), custom()
                 return _custom and _dpi == _custom
             end,
             callback = function() setDPI(custom() or 160) end,
             hold_input = {
-                title = _("Input screen DPI"),
+                title = _("Enter custom screen DPI"),
                 type = "number",
-                hint = "(90 - 600)",
+                hint = "(90 - 900)",
                 callback = function(input)
                     local _dpi = tonumber(input)
                     _dpi = _dpi < 90 and 90 or _dpi
-                    _dpi = _dpi > 600 and 600 or _dpi
+                    _dpi = _dpi > 900 and 900 or _dpi
                     G_reader_settings:saveSetting("custom_screen_dpi", _dpi)
                     setDPI(_dpi)
                 end,
+                ok_text = _("Set custom DPI"),
             },
         },
     }
