@@ -257,10 +257,23 @@ width: 100% !important;
             css = [[img { vertical-align: middle; }]],
         },
     },
-    -- No current need for Miscellaneous
-    -- {
-    --     title = _("Miscellaneous"),
-    -- },
+    {
+        title = _("Miscellaneous"),
+        {
+            id = "epub_switch_show_case";
+            title = _("Toggle alternative EPUB content"),
+            description = _([[
+The EPUB3 format allows a
+<epub:switch> <epub:case> <epub:default>
+construct to provide alternative content to engines that support optional features.
+KOReader currently falls back to hiding all <epub:case> content and shows the <epub:default> content (usually an image).
+This tweak toggles this behavior, and may show the <epub:case> content as plain text.]]),
+            css = [[
+switch > case    { display: inline; }
+switch > default { display: none; }
+            ]],
+        },
+    },
     -- No current need for workarounds
     -- {
     --     title = _("Workarounds"),
