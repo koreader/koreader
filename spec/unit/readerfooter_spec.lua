@@ -146,7 +146,7 @@ describe("Readerfooter module", function()
         local timeinfo = footer.textGeneratorMap.time()
         local page_count = readerui.document:getPageCount()
         -- stats has not been initialized here, so we get na TB and TC
-        assert.are.same('1 / '..page_count..' | '..timeinfo..' | => 1 | B:0% | R:0% | TB: na | TC: na',
+        assert.are.same('1 / '..page_count..' | '..timeinfo..' | => 0 | B:0% | R:0% | TB: na | TC: na',
                         footer.footer_text.text)
     end)
 
