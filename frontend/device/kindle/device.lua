@@ -16,6 +16,30 @@ local function kindleEnableWifi(toggle)
     end
 end
 
+local function isWifiUp()
+    -- NOTE: Pilfered from Cervantes, c.f., #4380
+    --       Possibly simpler and more compatible than the lipc approach ;).
+    local file = io.open("/sys/class/net/wlan0/carrier", "rb")
+    if not file then return 0 end
+    local status = tonumber(file:read("*all")) or 0
+    file:close()
+    return status
+
+    --[[
+    local status = 0
+    local haslipc, lipc = pcall(require, "liblipclua")
+    local lipc_handle = nil
+    if haslipc and lipc then
+        lipc_handle = lipc.init("com.github.koreader.networkmgr")
+    end
+    if lipc_handle then
+        status = lipc_handle:get_int_property("com.lab126.wifid", "enable")
+        lipc_handle:close()
+    end
+    return status
+    --]]
+end
+
 --[[
 Test if a kindle device has Special Offers
 --]]
@@ -61,6 +85,10 @@ function Kindle:initNetworkManager(NetworkMgr)
 
     NetworkMgr.turnOffWifi = function()
         kindleEnableWifi(0)
+    end
+
+    NetworkMgr.isWifiOn = function()
+        return 1 == isWifiUp()
     end
 end
 
