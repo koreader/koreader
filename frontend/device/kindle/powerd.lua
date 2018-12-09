@@ -26,13 +26,15 @@ function KindlePowerD:frontlightIntensityHW()
 end
 
 function KindlePowerD:setIntensityHW(intensity)
-    if self.lipc_handle ~= nil and intensity > 0 then
+    if self.lipc_handle ~= nil then
         -- NOTE: We want to bypass setIntensity's shenanigans and simply restore the light as-is
         self.lipc_handle:set_int_property(
             "com.lab126.powerd", "flIntensity", intensity)
-    else
-        -- NOTE: when intensity is 0, We want to really kill the light, so do it manually
-        -- (asking lipc to set it to 0 would in fact set it to 1)...
+    end
+    if intensity == 0 then
+        -- NOTE: when intensity is 0, we want to *really* kill the light, so do it manually
+        -- (asking lipc to set it to 0 would in fact set it to 1 on most Kindles).
+        -- We do *both* to make the fl restore on resume less jarring on devices where lipc 0 != off.
         os.execute("echo -n ".. intensity .." > " .. self.fl_intensity_file)
     end
 end
@@ -70,12 +72,14 @@ function KindlePowerD:afterResume()
     if not self.device.hasFrontlight() then
         return
     end
+    local UIManager = require("ui/uimanager")
     if self:isFrontlightOn() then
-        -- Kindle stock software should turn on the front light automatically. The follow statement
-        -- ensure the consistency of intensity.
-        self:turnOnFrontlightHW()
+        -- The Kindle framework should turn the front light back on automatically.
+        -- The following statement ensures consistency of intensity, but should basically always be redundant,
+        -- since we set intensity via lipc and not sysfs ;).
+        UIManager:tickAfterNext(function() self:turnOnFrontlightHW() end)
     else
-        self:turnOffFrontlightHW()
+        UIManager:tickAfterNext(function() self:turnOffFrontlightHW() end)
     end
 end
 
