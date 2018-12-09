@@ -77,8 +77,10 @@ function KindlePowerD:afterResume()
         -- The Kindle framework should turn the front light back on automatically.
         -- The following statement ensures consistency of intensity, but should basically always be redundant,
         -- since we set intensity via lipc and not sysfs ;).
+        -- NOTE: This is race-y, and we want to *lose* the race, hence the use of the scheduler (c.f., #4392)
         UIManager:tickAfterNext(function() self:turnOnFrontlightHW() end)
     else
+        -- But in the off case, we *do* use sysfs, so this one actually matters.
         UIManager:tickAfterNext(function() self:turnOffFrontlightHW() end)
     end
 end
