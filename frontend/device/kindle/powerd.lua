@@ -21,11 +21,15 @@ function KindlePowerD:frontlightIntensityHW()
     if self.lipc_handle ~= nil then
         return self.lipc_handle:get_int_property("com.lab126.powerd", "flIntensity")
     else
+        -- NOTE: This fallback is of dubious use, as it will NOT match our expected [fl_min..fl_max] range,
+        --       each model has a specific curve.
         return self:_readFLIntensity()
     end
 end
 
 function KindlePowerD:setIntensityHW(intensity)
+    -- NOTE: This means we *require* a working lipc handle to set the FL:
+    --       it knows what the UI values should map to for the specific hardware much better than us.
     if self.lipc_handle ~= nil then
         -- NOTE: We want to bypass setIntensity's shenanigans and simply restore the light as-is
         self.lipc_handle:set_int_property(
