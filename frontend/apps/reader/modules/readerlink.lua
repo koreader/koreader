@@ -422,6 +422,7 @@ end
 -- they should not provide allow_footnote_popup=true)
 function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_popup)
     logger.dbg("onGotoLink:", link)
+    local link_url
     if self.ui.document.info.has_pages then
         -- internal pdf links have a "page" attribute, while external ones have an "uri" attribute
         if link.page then -- Internal link
@@ -432,7 +433,7 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
             self.ui:handleEvent(Event:new("GotoPage", link.page + 1))
             return true
         end
-        link = link.uri -- external link
+        link_url = link.uri -- external link
     else
         -- For crengine, internal links may look like :
         --   #_doc_fragment_0_Organisation (link from anchor)
@@ -478,11 +479,12 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
             self.ui:handleEvent(Event:new("GotoXPointer", link.xpointer, link.marker_xpointer))
             return true
         end
+        link_url = link.xpointer -- external link
     end
-    logger.dbg("External link:", link)
+    logger.dbg("External link:", link_url)
 
     -- Check if it is a wikipedia link
-    local wiki_lang, wiki_page = link.xpointer:match([[https?://([^%.]+).wikipedia.org/wiki/([^/]+)]])
+    local wiki_lang, wiki_page = link_url:match([[https?://([^%.]+).wikipedia.org/wiki/([^/]+)]])
     if wiki_lang and wiki_page then
         logger.dbg("Wikipedia link:", wiki_lang, wiki_page)
         -- Ask for user confirmation before launching lookup (on a
@@ -543,7 +545,7 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
     end
 
     -- Check if it is a link to a local file
-    local linked_filename = link.xpointer:gsub("^file:", "") -- remove local file protocol if any
+    local linked_filename = link_url:gsub("^file:", "") -- remove local file protocol if any
     local anchor
     if linked_filename:find("?") then -- remove any query string (including any following anchor)
         linked_filename, anchor = linked_filename:match("^(.-)(%?.*)$")
@@ -572,7 +574,7 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
             })
         else
             UIManager:show(InfoMessage:new{
-                text = T(_("Link to unsupported local file:\n%1"), link.xpointer),
+                text = T(_("Link to unsupported local file:\n%1"), link_url),
             })
         end
         return true
@@ -580,7 +582,7 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
 
     -- Not supported
     UIManager:show(InfoMessage:new{
-        text = T(_("Invalid or external link:\n%1"), link.xpointer),
+        text = T(_("Invalid or external link:\n%1"), link_url),
         -- no timeout to allow user to type that link in his web browser
     })
     -- don't propagate, user will notice and tap elsewhere if he wants to change page
