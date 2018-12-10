@@ -232,18 +232,20 @@ describe("device module", function()
 
             assert.is.same(kindle_dev.powerd.fl_intensity, 12)
             kindle_dev.powerd:setIntensity(5)
-            assert.stub(os.execute).was_called_with(
-                "echo -n 5 > /sys/class/backlight/max77696-bl/brightness")
             assert.is.same(kindle_dev.powerd.fl_intensity, 5)
 
             kindle_dev.powerd:toggleFrontlight()
             assert.stub(os.execute).was_called_with(
                 "echo -n 0 > /sys/class/backlight/max77696-bl/brightness")
+            -- Here be shenanigans: we don't override powerd's fl_intensity when we turn the light off,
+            -- so that we can properly turn it back on at the previous intensity ;)
             assert.is.same(kindle_dev.powerd.fl_intensity, 5)
+            -- But if we were to cat /sys/class/backlight/max77696-bl/brightness, it should now be 0.
 
             kindle_dev.powerd:toggleFrontlight()
-            assert.stub(os.execute).was_called_with(
-                "echo -n 5 > /sys/class/backlight/max77696-bl/brightness")
+            assert.is.same(kindle_dev.powerd.fl_intensity, 5)
+            -- And /sys/class/backlight/max77696-bl/brightness is now !0
+            -- (exact value is HW-dependent, each model has a different curve, we let lipc do the work for us).
         end)
 
         it("oasis should interpret orientation event", function()
