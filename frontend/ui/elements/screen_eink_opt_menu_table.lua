@@ -1,10 +1,10 @@
+local Device = require("device")
 local _ = require("gettext")
-local Screen = require("device").screen
+local Screen = Device.screen
 
-return {
+local eink_settings_table = {
     text = _("E-ink settings"),
     sub_item_table = {
-        require("ui/elements/refresh_menu_table"),
         {
             text = _("Use smaller panning rate"),
             checked_func = function() return Screen.low_pan_rate end,
@@ -23,3 +23,10 @@ return {
 
     },
 }
+
+-- TODO reactivate if someone reverse engineers Android E Ink stuff
+if not Device:isAndroid() then
+    table.insert(eink_settings_table.sub_item_table, 1, require("ui/elements/refresh_menu_table"))
+end
+
+return eink_settings_table
