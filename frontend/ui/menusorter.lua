@@ -156,12 +156,15 @@ function MenuSorter:sort(item_table, order)
 
     -- remove top level reference before orphan handling
     item_table["KOMenu:menu_buttons"] = nil
-        --attach orphans based on menu_hint
+
+    -- attach orphans based on sorting_hint, or with a NEW prefix in the first menu if none found
     for k,v in pairs(item_table) do
+        local sorting_hint = v.sorting_hint
+
         -- normally there should be menu text but check to be sure
         if v.text and v.new ~= true then
             v.id = k
-            v.text = self.orphaned_prefix .. v.text
+            if not sorting_hint then v.text = self.orphaned_prefix .. v.text end
             -- prevent text being prepended to item on menu reload, i.e., on switching between reader and filemanager
             v.new = true
             -- deal with orphaned submenus
@@ -172,7 +175,13 @@ function MenuSorter:sort(item_table, order)
                 end
             end
         end
-        table.insert(menu_table["KOMenu:menu_buttons"][1], v)
+        if sorting_hint then
+            local sorting_hint_menu = self:findById(menu_table["KOMenu:menu_buttons"], sorting_hint)
+            sorting_hint_menu = sorting_hint_menu.sub_item_table or sorting_hint_menu
+            table.insert(sorting_hint_menu, v)
+        else
+            table.insert(menu_table["KOMenu:menu_buttons"][1], v)
+        end
     end
     return menu_table["KOMenu:menu_buttons"]
 end
@@ -193,10 +202,13 @@ function MenuSorter:findById(tbl, needle_id)
     local k, v
     k, v = next(items, nil)
     while k do
-        if v.id == needle_id then
+        local id_match = v.id == needle_id
+        local sub_table = v.sub_item_table or type(v) == "table" and v
+
+        if id_match then
             return v
-        elseif v.sub_item_table then
-            for _,item in pairs(v.sub_item_table) do
+        elseif sub_table then
+            for _,item in pairs(sub_table) do
                 if type(item) == "table" and item.id then
                     table.insert(items, item)
                 end
