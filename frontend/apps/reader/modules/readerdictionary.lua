@@ -790,7 +790,7 @@ function ReaderDictionary:downloadDictionary(dict, download_location, continue)
     if not continue then
         local file_size
         --local r, c, h = httpRequest {
-        local code, headers, status = socket.skip(1, httpRequest{
+        local dummy, headers, dummy = socket.skip(1, httpRequest{
             method = "HEAD",
             url = dict.url,
             --redirect = true,
@@ -818,9 +818,7 @@ function ReaderDictionary:downloadDictionary(dict, download_location, continue)
         end)
     end
 
-    local c
-    local dummy
-    dummy, c, dummy = httpRequest{
+    local dummy, c, dummy = httpRequest{
         url = dict.url,
         sink = ltn12.sink.file(io.open(download_location, "w")),
     }
