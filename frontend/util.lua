@@ -140,11 +140,11 @@ function util.tableEquals(o1, o2, ignore_mt)
 end
 
 --- Returns number of keys in a table.
----- @param T Lua table
----- @treturn int number of keys in table T
-function util.tableSize(T)
+---- @param t Lua table
+---- @treturn int number of keys in table t
+function util.tableSize(t)
     local count = 0
-    for _ in pairs(T) do count = count + 1 end
+    for _ in pairs(t) do count = count + 1 end
     return count
 end
 
