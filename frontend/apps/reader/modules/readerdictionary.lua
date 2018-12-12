@@ -797,9 +797,9 @@ function ReaderDictionary:downloadDictionary(dict, download_location, continue)
             url = dict.url,
             --redirect = true,
         })
-logger.dbg(status)
-logger.dbg(headers)
-logger.dbg(code)
+        --logger.dbg(status)
+        --logger.dbg(headers)
+        --logger.dbg(code)
         file_size = headers and headers["content-length"]
 
         UIManager:show(ConfirmBox:new{

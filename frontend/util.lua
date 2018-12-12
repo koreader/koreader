@@ -446,9 +446,9 @@ end
 ---- @int size (bytes)
 ---- @treturn string
 function util.getFriendlySize(size)
+    size = tonumber(size)
     if not size or type(size) ~= "number" then return end
     local s
-    size = tonumber(size)
     if size > 1024*1024*1024 then
         s = string.format("%4.1f GB", size/1024/1024/1024)
     elseif size > 1024*1024 then
