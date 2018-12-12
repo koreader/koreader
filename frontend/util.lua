@@ -3,6 +3,10 @@ This module contains miscellaneous helper functions for the KOReader frontend.
 ]]
 
 local BaseUtil = require("ffi/util")
+local dbg = require("dbg")
+local _ = require("gettext")
+local T = BaseUtil.template
+
 local util = {}
 
 --- Strips all punctuation and spaces from a string.
@@ -714,16 +718,16 @@ end
 -- @param extract_to string: Destination directory.
 -- @return boolean or (boolean, string): true on success, false and an error message on failure.
 function util.unpackArchive(archive, extract_to)
-    assert(type(archive) == "string")
+    dbg.dassert(type(archive) == "string")
 
     local ok
     if archive:match("%.tar%.bz2$") or archive:match("%.tar%.gz$") or archive:match("%.tar%.lz$") or archive:match("%.tgz$") then
         ok = os.execute(("./tar xf %q -C %q"):format(archive, extract_to))
     else
-        return false, "Couldn't extract archive "..archive..": unrecognized filename extension"
+        return false, T(_("Couldn't extract archive:\n\n%1\n\nUnrecognized filename extension."), archive)
     end
     if not ok then
-        return false, "Failed extracting "..archive
+        return false, T(_("Extracting archive failed:\n\n%1", archive))
     end
     return true
 end
