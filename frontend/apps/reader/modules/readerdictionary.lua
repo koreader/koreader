@@ -820,6 +820,7 @@ function ReaderDictionary:downloadDictionary(dict, download_location, continue)
         end)
     end
 
+    local c
     local dummy
     dummy, c, dummy = httpRequest{
         url = dict.url,
