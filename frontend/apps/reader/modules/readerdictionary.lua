@@ -788,7 +788,7 @@ function ReaderDictionary:downloadDictionary(dict, download_location, continue)
 
     local parsed = url.parse(dict.url)
     local httpRequest = parsed.scheme == 'http' and http.request or https.request
-    
+
     if not continue then
         local file_size
         --local r, c, h = httpRequest {
@@ -820,7 +820,8 @@ function ReaderDictionary:downloadDictionary(dict, download_location, continue)
         end)
     end
 
-    local dummy, c, dummy = httpRequest{
+    local dummy
+    dummy, c, dummy = httpRequest{
         url = dict.url,
         sink = ltn12.sink.file(io.open(download_location, "w")),
     }
