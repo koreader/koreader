@@ -1,5 +1,4 @@
 unused_args = false
-unused_secondaries = false
 std = "luajit"
 -- ignore implicit self
 self = false
