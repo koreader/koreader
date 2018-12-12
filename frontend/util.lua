@@ -95,7 +95,6 @@ function util.secondsToClock(seconds, withoutSeconds)
     end
 end
 
-<<<<<<< HEAD
 --[[--
 Compares values in two different tables.
 
@@ -134,7 +133,8 @@ function util.tableEquals(o1, o2, ignore_mt)
         if not keySet[key2] then return false end
     end
     return true
-=======
+end
+
 --- Makes a shallow copy of a table.
 function util.tableShallowCopy(orig)
     local orig_type = type(orig)
@@ -148,7 +148,6 @@ function util.tableShallowCopy(orig)
         copy = orig
     end
     return copy
->>>>>>> trying some random stuff
 end
 
 --- Returns number of keys in a table.
