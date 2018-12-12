@@ -215,10 +215,6 @@ function ReaderDictionary:addToMainMenu(menu_items)
         text = _("Dictionary settings"),
         sub_item_table = {
             {
-                text = _("Download dictionaries"),
-                sub_item_table = self:_genDownloadDictionariesMenu()
-            },
-            {
                 text_func = function()
                     local nb_available, nb_enabled, nb_disabled = self:getNumberOfDictionaries()
                     local nb_str = nb_available
@@ -243,6 +239,10 @@ function ReaderDictionary:addToMainMenu(menu_items)
 - move them back there, one by one, in the order you want them to be used.]]), self.data_dir)
                     })
                 end,
+            },
+            {
+                text = _("Download dictionaries"),
+                sub_item_table = self:_genDownloadDictionariesMenu()
             },
             {
                 text = _("Enable fuzzy search"),
@@ -776,8 +776,6 @@ function ReaderDictionary:downloadDictionaryPrep(dict, size)
     end
 end
 
-
-
 function ReaderDictionary:downloadDictionary(dict, download_location, continue)
     continue = continue or false
     local socket = require("socket")
@@ -787,7 +785,7 @@ function ReaderDictionary:downloadDictionary(dict, download_location, continue)
     local url = socket.url
 
     local parsed = url.parse(dict.url)
-    local httpRequest = parsed.scheme == 'http' and http.request or https.request
+    local httpRequest = parsed.scheme == "http" and http.request or https.request
 
     if not continue then
         local file_size
