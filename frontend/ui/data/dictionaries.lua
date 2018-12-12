@@ -8,7 +8,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 2577,
         license = _("Public Domain"),
-        url = "https://github.com/koreader/stardict-dictionaries/releases/download/v0.1/factbook.tar.lz",
+        url = "http://build.koreader.rocks/download/dict/factbook.tar.lz",
     },
     {
         name = "GNU Collaborative International Dictionary of English",
@@ -16,7 +16,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 108121,
         license = "GPLv3+",
-        url = "https://github.com/koreader/stardict-dictionaries/releases/download/v0.1/gcide.tar.lz",
+        url = "http://build.koreader.rocks/download/dict/gcide.tar.lz",
     },
     {
         name = "Douglas Harper's Online Etymology Dictionary",
@@ -24,7 +24,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 46133,
         license = "Unknown/©Douglas Harper",
-        url = "https://github.com/koreader/stardict-dictionaries/releases/download/v0.1/etymonline.tar.lz",
+        url = "https://gitlab.com/koreader/stardict-dictionaries/uploads/1f3a66fe3f776e718590a66958df1b9b/etymonline.tar.lz",
     },
     {
         name = "Folkets lexikon",
@@ -32,7 +32,7 @@ local dictionaries = {
         lang_out = "Swedish",
         entries = 53618,
         license = "CC-BY-SA 2.5",
-        url = "https://github.com/koreader/stardict-dictionaries/releases/download/v0.1/folkets_en-sv.tar.lz",
+        url = "https://gitlab.com/koreader/stardict-dictionaries/uploads/fad990cc29c6dd448f22469ce8648825/folkets_en-sv.tar.lz",
     },
     {
         name = "Folkets lexikon",
@@ -40,7 +40,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 36513,
         license = "CC-BY-SA 2.5",
-        url = "https://github.com/koreader/stardict-dictionaries/releases/download/v0.1/folkets_sv-en.tar.lz",
+        url = "https://gitlab.com/koreader/stardict-dictionaries/uploads/fdc4265bbfc9af27fa4b1742ce3bdadd/folkets_sv-en.tar.lz",
     },
     {
         name = "Dictionnaire Littré (xmlittre)",
@@ -56,7 +56,7 @@ local dictionaries = {
         lang_out = "French",
         entries = 31934,
         license = _("Public Domain (copyright expired, published 1935)"),
-        url = "https://github.com/koreader/stardict-dictionaries/releases/download/v0.1/acadfran.tar.lz",
+        url = "https://gitlab.com/koreader/stardict-dictionaries/uploads/a8b3027e84f344f64723fb7fe5c63c04/acadfran.tar.lz",
     },
     {
         name = "Pape: Handwörterbuch der griechischen Sprache",
@@ -64,7 +64,7 @@ local dictionaries = {
         lang_out = "German",
         entries = 98893,
         license = _("Public Domain (copyright expired, published 1880)"),
-        url = "https://github.com/koreader/stardict-dictionaries/releases/download/v0.1/pape_gr-de.tar.lz",
+        url = "https://gitlab.com/koreader/stardict-dictionaries/uploads/3ee9cb3acaca679bb9a95d845b813673/pape_gr-de.tar.lz",
     },
     {
         name = "Georges: Ausführliches lateinisch-deutsches Handwörterbuch",
@@ -72,7 +72,7 @@ local dictionaries = {
         lang_out = "German",
         entries = 54831,
         license = _("Public Domain (copyright expired, published 1913)"),
-        url = "https://github.com/koreader/stardict-dictionaries/releases/download/v0.1/georges_lat-de.tar.lz",
+        url = "https://gitlab.com/koreader/stardict-dictionaries/uploads/8d1e52d6c28d3b6865415979bc221fa6/georges_lat-de.tar.lz",
     },
     {
         name = "Georges: Kleines deutsch-lateinisches Handwörterbuch",
@@ -80,7 +80,7 @@ local dictionaries = {
         lang_out = "Latin",
         entries = 26608,
         license = _("Public Domain (copyright expired, published 1910)"),
-        url = "https://github.com/koreader/stardict-dictionaries/releases/download/v0.1/georges_de-lat.tar.lz",
+        url = "https://gitlab.com/koreader/stardict-dictionaries/uploads/a66b2a7655a4b102150fb5c6f1789cc5/georges_de-lat.tar.lz",
     },
     {
         name = "Dicionário Aberto",
