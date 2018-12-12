@@ -787,7 +787,7 @@ function ReaderDictionary:downloadDictionary(dict, download_location, continue)
     local url = socket.url
 
     local parsed = url.parse(dict.url)
-    local httpRequest = parsed.scheme == 'http' and http.request or util.httpsRequest
+    local httpRequest = parsed.scheme == 'http' and http.request or https.request
     
     if not continue then
         local file_size
