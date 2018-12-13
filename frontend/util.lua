@@ -3,6 +3,10 @@ This module contains miscellaneous helper functions for the KOReader frontend.
 ]]
 
 local BaseUtil = require("ffi/util")
+local dbg = require("dbg")
+local _ = require("gettext")
+local T = BaseUtil.template
+
 local util = {}
 
 --- Strips all punctuation and spaces from a string.
@@ -136,11 +140,11 @@ function util.tableEquals(o1, o2, ignore_mt)
 end
 
 --- Returns number of keys in a table.
----- @param T Lua table
----- @treturn int number of keys in table T
-function util.tableSize(T)
+---- @param t Lua table
+---- @treturn int number of keys in table t
+function util.tableSize(t)
     local count = 0
-    for _ in pairs(T) do count = count + 1 end
+    for _ in pairs(t) do count = count + 1 end
     return count
 end
 
@@ -431,6 +435,7 @@ end
 ---- @int size (bytes)
 ---- @treturn string
 function util.getFriendlySize(size)
+    size = tonumber(size)
     if not size or type(size) ~= "number" then return end
     local s
     if size > 1024*1024*1024 then
@@ -689,6 +694,27 @@ function util.checkLuaSyntax(lua_text)
     -- with: Line 3: '=' expected near '123'
     err = err:gsub("%[string \".-%\"]:", "Line ")
     return err
+end
+
+--- Unpack an archive.
+-- Extract the contents of an archive, detecting its format by
+-- filename extension. Inspired by luarocks archive_unpack()
+-- @param archive string: Filename of archive.
+-- @param extract_to string: Destination directory.
+-- @return boolean or (boolean, string): true on success, false and an error message on failure.
+function util.unpackArchive(archive, extract_to)
+    dbg.dassert(type(archive) == "string")
+
+    local ok
+    if archive:match("%.tar%.bz2$") or archive:match("%.tar%.gz$") or archive:match("%.tar%.lz$") or archive:match("%.tgz$") then
+        ok = os.execute(("./tar xf %q -C %q"):format(archive, extract_to))
+    else
+        return false, T(_("Couldn't extract archive:\n\n%1\n\nUnrecognized filename extension."), archive)
+    end
+    if not ok then
+        return false, T(_("Extracting archive failed:\n\n%1", archive))
+    end
+    return true
 end
 
 return util

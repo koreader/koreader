@@ -122,4 +122,5 @@ files["spec/unit/*"].globals = {
 ignore = {
     "211/__*",
     "631",
+    "dummy",
 }
