@@ -1268,22 +1268,6 @@ local dictionaries = {
         url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/264aadf8/002d/stardict-comn_sdict_axm05_Vietnamese_English-2.4.2.tar.bz2",
     },
     {
-        name = "Webster's 1913 Dictionary",
-        lang_in = "English",
-        lang_out = "English",
-        entries = 182698,
-        license = "Public domain",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/264aadf8/002d/stardict-comn_sdict_axm05_webster_1913-2.4.2.tar.bz2",
-    },
-    {
-        name = "Webster's Revised Unabridged Dictionary (1913)",
-        lang_in = "English",
-        lang_out = "English",
-        entries = 160161,
-        license = "ftp://ftp.uga.edu/pub/misc/webster/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/264aadf8/001/stardict-comn_dictd03_web1913-2.4.2.tar.bz2",
-    },
-    {
         name = "WordNet (r) 1.7",
         lang_in = "English",
         lang_out = "English",
