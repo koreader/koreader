@@ -1,8 +1,10 @@
 describe("MenuSorter module", function()
     local MenuSorter
+    local equals
     setup(function()
         require("commonrequire")
         MenuSorter = require("ui/menusorter")
+        equals = require("util").tableEquals
     end)
 
     it("should put menu items in the defined order", function()
@@ -79,6 +81,79 @@ describe("MenuSorter module", function()
             -- it should have NEW: prepended
             assert.is_true(string.sub(menu_item.text,1,string.len(MenuSorter.orphaned_prefix))==MenuSorter.orphaned_prefix)
         end
+    end)
+    it("should put orphans with sorting_hint in the right menu", function()
+        local menu_items = {
+            ["KOMenu:menu_buttons"] = {},
+            main = {text="Main"},
+            search = {text="Search", sorting_hint="tools",},
+            tools = {text="Tools"},
+            setting = {text="Settings"},
+            submenu = {text="Submenu"},
+            submenu_item1 = {text="Submenu item 1", sorting_hint="submenu",},
+            submenu_item2 = {text="Submenu item 2"},
+        }
+        local order = {
+            ["KOMenu:menu_buttons"] = {
+                "setting",
+            },
+            tools = {},
+            setting = {
+                "tools",
+                "submenu"
+            },
+            submenu = {
+                "submenu_item2",
+            },
+        }
+
+        local test_menu = MenuSorter:sort(menu_items, order)
+        local result_menu = {
+            [1] = {
+                [1] = {
+                    ["id"] = "tools",
+                    ["sub_item_table"] = {
+                        [1] = {
+                            ["sorting_hint"] = "tools",
+                            ["new"] = true,
+                            ["id"] = "search",
+                            ["text"] = "Search"
+                        },
+                        ["text"] = "Tools",
+                        ["id"] = "tools"
+                    },
+                    ["text"] = "Tools"
+                },
+                [2] = {
+                    ["id"] = "submenu",
+                    ["sub_item_table"] = {
+                        [1] = {
+                            ["id"] = "submenu_item2",
+                            ["text"] = "Submenu item 2"
+                        },
+                        [2] = {
+                            ["sorting_hint"] = "submenu",
+                            ["new"] = true,
+                            ["id"] = "submenu_item1",
+                            ["text"] = "Submenu item 1"
+                        },
+                        ["text"] = "Submenu",
+                        ["id"] = "submenu"
+                    },
+                    ["text"] = "Submenu"
+                },
+                [3] = {
+                    ["new"] = true,
+                    ["text"] = "NEW: Main",
+                    ["id"] = "main"
+                },
+                ["id"] = "setting",
+                ["text"] = "Settings"
+            },
+            ["id"] = "KOMenu:menu_buttons"
+        }
+
+        assert.is_true( equals(result_menu, test_menu) )
     end)
     it("should display submenu of orphaned submenu", function()
         local menu_items = {
