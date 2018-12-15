@@ -44,8 +44,14 @@ local ota_channels = {
     nightly = _("Development"),
 }
 
+-- "x86", "x64", "arm", "arm64", "ppc", "mips" or "mips64".
+local arch = jit.arch
+
 function OTAManager:getOTAModel()
     if Device:isAndroid() then
+        if arch == "x86" then
+            return "android-x86"
+        end
         return "android"
     elseif Device:isCervantes() then
         return "cervantes"
