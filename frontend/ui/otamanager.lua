@@ -44,32 +44,11 @@ local ota_channels = {
     nightly = _("Development"),
 }
 
-local arch_patterns = {
-    ["i[%d]86"] = "x86",
-    ["x86_64"] = "x86_64",
-    ["arm"] = "arm",
-}
-
-local function getArch()
-    local arch_name
-
-    local std_out = io.popen("uname -a")
-    if std_out then
-        arch_name = std_out:read("*all")
-        std_out:close()
-    end
-
-    for pattern, name in pairs(arch_patterns) do
-        if arch_name:match(pattern) then
-            return name
-        end
-    end
-end
+-- "x86", "x64", "arm", "arm64", "ppc", "mips" or "mips64".
+local arch = jit.arch
 
 function OTAManager:getOTAModel()
     if Device:isAndroid() then
-        local arch = getArch()
-
         if arch == "x86" then
             return "android-x86"
         end
