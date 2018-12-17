@@ -121,7 +121,7 @@ function Wallabag:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = "Settings",
+                text = _("Settings"),
                 callback_func = function()
                     return nil
                 end,
@@ -137,7 +137,7 @@ function Wallabag:addToMainMenu(menu_items)
                         text_func = function()
                             local path
                             if not self.directory or self.directory == "" then
-                                path = "Not set"
+                                path = _("Not set")
                             else
                                 path = filemanagerutil.abbreviate(self.directory)
                             end
@@ -152,7 +152,7 @@ function Wallabag:addToMainMenu(menu_items)
                         text_func = function()
                             local filter
                             if not self.filter_tag or self.filter_tag == "" then
-                                filter = "All articles"
+                                filter = _("All articles")
                             else
                                 filter = self.filter_tag
                             end
