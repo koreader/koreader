@@ -102,6 +102,8 @@ local order = {
         "wikipedia_history",
         "wikipedia_settings",
         "----------------------------",
+        "translation_settings",
+        "----------------------------",
         "goodreads",
         "----------------------------",
         "fulltext_search",
