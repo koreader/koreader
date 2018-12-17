@@ -9,8 +9,133 @@ This module translates text using Google Translate.
 --  https://github.com/ssut/py-googletrans/blob/master/googletrans/client.py
 --  https://stackoverflow.com/questions/26714426/what-is-the-meaning-of-google-translate-query-params
 
+local InfoMessage = require("ui/widget/infomessage")
+local TextViewer = require("ui/widget/textviewer")
+local UIManager = require("ui/uimanager")
 local JSON = require("json")
+local Screen = require("device").screen
+local ffiutil  = require("ffi/util")
 local logger = require("logger")
+local util = require("util")
+local T = require("ffi/util").template
+local _ = require("gettext")
+
+-- From https://cloud.google.com/translate/docs/languages
+-- 20181217: 104 supported languages
+local AUTODETECT_LANGUAGE = "auto"
+local SUPPORTED_LANGUAGES = {
+    af = _("Afrikaans"),
+    sq = _("Albanian"),
+    am = _("Amharic"),
+    ar = _("Arabic"),
+    hy = _("Armenian"),
+    az = _("Azerbaijani"),
+    eu = _("Basque"),
+    be = _("Belarusian"),
+    bn = _("Bengali"),
+    bs = _("Bosnian"),
+    bg = _("Bulgarian"),
+    ca = _("Catalan"),
+    ceb = _("Cebuano"),
+    zh = _("Chinese (Simplified)"), -- "Simplified Chinese may be specified either by zh-CN or zh"
+    zh_TW = _("Chinese (Traditional)"), -- converted to "zh-TW" below
+    co = _("Corsican"),
+    hr = _("Croatian"),
+    cs = _("Czech"),
+    da = _("Danish"),
+    nl = _("Dutch"),
+    en = _("English"),
+    eo = _("Esperanto"),
+    et = _("Estonian"),
+    fi = _("Finnish"),
+    fr = _("French"),
+    fy = _("Frisian"),
+    gl = _("Galician"),
+    ka = _("Georgian"),
+    de = _("German"),
+    el = _("Greek"),
+    gu = _("Gujarati"),
+    ht = _("Haitian Creole"),
+    ha = _("Hausa"),
+    haw = _("Hawaiian"),
+    he = _("Hebrew"), -- "Hebrew may be specified either by he or iw"
+    hi = _("Hindi"),
+    hmn = _("Hmong"),
+    hu = _("Hungarian"),
+    is = _("Icelandic"),
+    ig = _("Igbo"),
+    id = _("Indonesian"),
+    ga = _("Irish"),
+    it = _("Italian"),
+    ja = _("Japanese"),
+    jw = _("Javanese"),
+    kn = _("Kannada"),
+    kk = _("Kazakh"),
+    km = _("Khmer"),
+    ko = _("Korean"),
+    ku = _("Kurdish"),
+    ky = _("Kyrgyz"),
+    lo = _("Lao"),
+    la = _("Latin"),
+    lv = _("Latvian"),
+    lt = _("Lithuanian"),
+    lb = _("Luxembourgish"),
+    mk = _("Macedonian"),
+    mg = _("Malagasy"),
+    ms = _("Malay"),
+    ml = _("Malayalam"),
+    mt = _("Maltese"),
+    mi = _("Maori"),
+    mr = _("Marathi"),
+    mn = _("Mongolian"),
+    my = _("Myanmar (Burmese)"),
+    ne = _("Nepali"),
+    no = _("Norwegian"),
+    ny = _("Nyanja (Chichewa)"),
+    ps = _("Pashto"),
+    fa = _("Persian"),
+    pl = _("Polish"),
+    pt = _("Portuguese"),
+    pa = _("Punjabi"),
+    ro = _("Romanian"),
+    ru = _("Russian"),
+    sm = _("Samoan"),
+    gd = _("Scots Gaelic"),
+    sr = _("Serbian"),
+    st = _("Sesotho"),
+    sn = _("Shona"),
+    sd = _("Sindhi"),
+    si = _("Sinhala (Sinhalese)"),
+    sk = _("Slovak"),
+    sl = _("Slovenian"),
+    so = _("Somali"),
+    es = _("Spanish"),
+    su = _("Sundanese"),
+    sw = _("Swahili"),
+    sv = _("Swedish"),
+    tl = _("Tagalog (Filipino)"),
+    tg = _("Tajik"),
+    ta = _("Tamil"),
+    te = _("Telugu"),
+    th = _("Thai"),
+    tr = _("Turkish"),
+    uk = _("Ukrainian"),
+    ur = _("Urdu"),
+    uz = _("Uzbek"),
+    vi = _("Vietnamese"),
+    cy = _("Welsh"),
+    xh = _("Xhosa"),
+    yi = _("Yiddish"),
+    yo = _("Yoruba"),
+    zu = _("Zulu"),
+}
+-- Fix zh_TW => zh-TW:
+SUPPORTED_LANGUAGES["zh-TW"] = SUPPORTED_LANGUAGES["zh_TW"]
+SUPPORTED_LANGUAGES["zh_TW"] = nil
+
+local ALT_LANGUAGE_CODES = {}
+ALT_LANGUAGE_CODES["zh-CN"] = "zh"
+ALT_LANGUAGE_CODES["iw"] = "he"
 
 local Translator = {
     trans_servers = {
@@ -51,9 +176,86 @@ function Translator:getTransServer()
     return G_reader_settings:readSetting("trans_server") or self.trans_servers[1]
 end
 
+function Translator:getLanguageName(lang, default_string)
+    if SUPPORTED_LANGUAGES[lang] then
+        return SUPPORTED_LANGUAGES[lang]
+    elseif ALT_LANGUAGE_CODES[lang] then
+        return SUPPORTED_LANGUAGES[ALT_LANGUAGE_CODES[lang]]
+    elseif lang then
+        return lang:upper()
+    end
+    return default_string
+end
+
+-- Will be called by ReaderHighlight to make it available in Reader menu
+function Translator:genSettingsMenu()
+    local function genLanguagesItems(setting_name, default_checked_item)
+        local items_table = {}
+        for lang_key, lang_name in ffiutil.orderedPairs(SUPPORTED_LANGUAGES) do
+            table.insert(items_table, {
+                text_func = function()
+                    return T("%1 (%2)", lang_name, lang_key)
+                end,
+                checked_func = function()
+                    if G_reader_settings:readSetting(setting_name) then
+                        return lang_key == G_reader_settings:readSetting(setting_name)
+                    else
+                        return lang_key == default_checked_item
+                    end
+                end,
+                callback = function()
+                    G_reader_settings:saveSetting(setting_name, lang_key)
+                end,
+            })
+        end
+        return items_table
+    end
+    return {
+        text = _("Translation settings"),
+        sub_item_table = {
+            {
+                text = _("Auto-detect source language"),
+                checked_func = function()
+                    return G_reader_settings:nilOrTrue("translator_from_auto_detect")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrTrue("translator_from_auto_detect")
+                end,
+            },
+            {
+                text_func = function()
+                    local lang = G_reader_settings:readSetting("translator_from_language")
+                    return T(_("Translate from: %1"), self:getLanguageName(lang, ""))
+                end,
+                enabled_func = function()
+                    return not G_reader_settings:nilOrTrue("translator_from_auto_detect")
+                end,
+                sub_item_table = genLanguagesItems("translator_from_language"),
+                keep_menu_open = true,
+                separator = true,
+            },
+            {
+                text_func = function()
+                    local lang = self:getTargetLanguage()
+                    return T(_("Translate to: %1"), self:getLanguageName(lang, ""))
+                end,
+                sub_item_table = genLanguagesItems("translator_to_language", self:getTargetLanguage()),
+                keep_menu_open = true,
+            },
+        },
+    }
+end
+
+function Translator:getSourceLanguage()
+    if G_reader_settings:isFalse("translator_from_auto_detect") and
+            G_reader_settings:readSetting("translator_from_language") then
+        return G_reader_settings:readSetting("translator_from_language")
+    end
+    return AUTODETECT_LANGUAGE -- "auto"
+end
+
 function Translator:getTargetLanguage()
-    -- One can manually set his prefered target language
-    local lang = G_reader_settings:readSetting("translator_target_language")
+    local lang = G_reader_settings:readSetting("translator_to_language")
     if not lang then
         -- Fallback to the UI language the user has selected
         lang = G_reader_settings:readSetting("language")
@@ -165,7 +367,7 @@ Tries to automatically detect language of `text`.
 @treturn string lang (`"en"`, `"fr"`, `…`)
 --]]
 function Translator:detect(text)
-    local result = self:loadPage(text, "en", "auto")
+    local result = self:loadPage(text, "en", AUTODETECT_LANGUAGE)
     if result and result[3] then
         local src_lang = result[3]
         logger.dbg("detected language:", src_lang)
@@ -188,7 +390,7 @@ function Translator:translate(text, target_lang, source_lang)
         target_lang = self:getTargetLanguage()
     end
     if not source_lang then
-        source_lang = "auto"
+        source_lang = self:getSourceLanguage()
     end
     local result = self:loadPage(text, target_lang, source_lang)
     if result and result[1] and type(result[1]) == "table" then
@@ -223,22 +425,14 @@ function Translator:showTranslation(text, target_lang, source_lang)
 end
 
 function Translator:_showTranslation(text, target_lang, source_lang)
-    local InfoMessage = require("ui/widget/infomessage")
-    local TextViewer = require("ui/widget/textviewer")
-    local Trapper = require("ui/trapper")
-    local UIManager = require("ui/uimanager")
-    local util = require("util")
-    local Screen = require("device").screen
-    local T = require("ffi/util").template
-    local _ = require("gettext")
-
     if not target_lang then
         target_lang = self:getTargetLanguage()
     end
     if not source_lang then
-        source_lang = "auto"
+        source_lang = self:getSourceLanguage()
     end
 
+    local Trapper = require("ui/trapper")
     local completed, result = Trapper:dismissableRunInSubprocess(function()
         return self:loadPage(text, target_lang, source_lang)
     end, _("Querying translation service…"))
@@ -297,9 +491,12 @@ function Translator:_showTranslation(text, target_lang, source_lang)
 
     -- table.insert(output, require("dump")(result)) -- for debugging
     UIManager:show(TextViewer:new{
-        title = T(_("Translation from %1 to %2"), source_lang:upper(), target_lang:upper()),
+        title = T(_("Translation from %1"), self:getLanguageName(source_lang, "?")),
+            -- Showing the translation target language in this title may make
+            -- it quite long and wrapped, taking valuable vertical spacing
         text = table.concat(output, "\n"),
-        height = Screen:getHeight() * 3/4,
+        height = Screen:getHeight() * 4/5,
+        justified = G_reader_settings:nilOrTrue("dict_justify"),
     })
 end
 

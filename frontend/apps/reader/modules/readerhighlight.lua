@@ -5,6 +5,7 @@ local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local TimeVal = require("ui/timeval")
+local Translator = require("ui/translator")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
@@ -73,6 +74,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
         text = _("Highlighting"),
         sub_item_table = self:genHighlightDrawerMenu(),
     }
+    menu_items.translation_settings = Translator:genSettingsMenu()
 end
 
 local highlight_style = {
@@ -503,7 +505,6 @@ function ReaderHighlight:translate(selected_text)
 end
 
 function ReaderHighlight:onTranslateText(text)
-    local Translator = require("ui/translator")
     Translator:showTranslation(text)
 end
 
