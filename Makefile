@@ -52,7 +52,7 @@ APPIMAGETOOL=appimagetool-x86_64.AppImage
 APPIMAGETOOL_URL=https://github.com/AppImage/AppImageKit/releases/download/11/appimagetool-x86_64.AppImage
 
 # set to 1 if in Docker
-DOCKER:=$(shell grep -q docker /proc/1/cgroup && echo 1)
+DOCKER:=$(shell grep -q docker /proc/1/cgroup 2>/dev/null && echo 1)
 
 # files to link from main directory
 INSTALL_FILES=reader.lua setupkoenv.lua frontend resources defaults.lua datastorage.lua \
