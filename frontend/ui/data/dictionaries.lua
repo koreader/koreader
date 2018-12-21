@@ -132,46 +132,6 @@ local dictionaries = {
         url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002c/stardict-comn_sdict05_afrikaans-english-2.4.2.tar.gz"
     },
     {
-        name = "Albanian-English dictionary",
-        lang_in = "Albanian",
-        lang_out = "English",
-        entries = 2694,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_Albanian_English-2.4.2.tar.gz"
-    },
-    {
-        name = "American-English dictionary",
-        lang_in = "English",
-        lang_out = "English",
-        entries = 273,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_American_English-2.4.2.tar.gz"
-    },
-    {
-        name = "Basque-English dictionary",
-        lang_in = "Basque",
-        lang_out = "English",
-        entries = 4206,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_Basque_English-2.4.2.tar.gz"
-    },
-    {
-        name = "Brazilian Portuguese-English dictionary",
-        lang_in = "Portugese",
-        lang_out = "English",
-        entries = 20952,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_Brazilian_Portuguese_English-2.4.2.tar.gz"
-    },
-    {
-        name = "Catalan-English dictionary",
-        lang_in = "Catalan",
-        lang_out = "English",
-        entries = 1040,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_Catalan_English-2.4.2.tar.gz"
-    },
-    {
         name = "Chinese-English dictionary",
         lang_in = "Chinese",
         lang_out = "English",
@@ -204,28 +164,12 @@ local dictionaries = {
         url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002b/stardict-comn_dls03_xn_stroika_en-ru-2.4.2.tar.gz"
     },
     {
-        name = "Cornish-English dictionary",
-        lang_in = "Cornish",
-        lang_out = "English",
-        entries = 3091,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_Cornish_English-2.4.2.tar.gz"
-    },
-    {
         name = "CyberLexicon(En-Es)",
         lang_in = "English",
         lang_out = "Spanish",
         entries = 861,
         license = "",
         url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002b/stardict-comn_dls03_cyber_lexicon_en-es-2.4.2.tar.gz"
-    },
-    {
-        name = "Czech-English dictionary",
-        lang_in = "Czech",
-        lang_out = "English",
-        entries = 112448,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_Czech_English-2.4.2.tar.gz"
     },
     {
         name = "Czech-Russian dictionary",
@@ -271,14 +215,6 @@ local dictionaries = {
         name = "Dutch-English dictionary",
         lang_in = "Dutch",
         lang_out = "English",
-        entries = 13031,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_Dutch_English-2.4.2.tar.gz"
-    },
-    {
-        name = "Dutch-English dictionary",
-        lang_in = "Dutch",
-        lang_out = "English",
         entries = 18244,
         license = "GNU Public License",
         url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002c/stardict-comn_sdict05_dutch-english-2.4.2.tar.gz"
@@ -316,30 +252,6 @@ local dictionaries = {
         url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002c/stardict-comn_sdict05_eng_eng_nw-2.4.2.tar.gz"
     },
     {
-        name = "English-Afrikaans dictionary",
-        lang_in = "English",
-        lang_out = "Afrikaans",
-        entries = 4319,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_Afrikaans-2.4.2.tar.gz"
-    },
-    {
-        name = "English-Albanian dictionary",
-        lang_in = "English",
-        lang_out = "Albanian",
-        entries = 3207,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_Albanian-2.4.2.tar.gz"
-    },
-    {
-        name = "English-American dictionary",
-        lang_in = "English",
-        lang_out = "English",
-        entries = 289,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_American-2.4.2.tar.gz"
-    },
-    {
         name = "English-Arabic dictionary",
         lang_in = "English",
         lang_out = "Arabic",
@@ -356,60 +268,12 @@ local dictionaries = {
         url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/001/stardict-comn_dictd03_compbe-2.4.2.tar.gz"
     },
     {
-        name = "English-Brazilian Portuguese dictionary",
-        lang_in = "English",
-        lang_out = "Brazilian",
-        entries = 19759,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/001/stardict-comn_sdict_axm03_English_Brazilian_Portuguese-2.4.2.tar.gz"
-    },
-    {
         name = "English-Bulgarian computer dictionary",
         lang_in = "English",
         lang_out = "Bulgarian",
         entries = 523,
         license = "SA Dictionary, http://sa.dir.bg/sa.htm",
         url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002c/stardict-comn_sdict05_bulg_comp-2.4.2.tar.gz"
-    },
-    {
-        name = "English-Catalan dictionary",
-        lang_in = "English",
-        lang_out = "Catalan",
-        entries = 1018,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_Catalan-2.4.2.tar.gz"
-    },
-    {
-        name = "English-Cornish dictionary",
-        lang_in = "English",
-        lang_out = "Cornish",
-        entries = 3230,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_Cornish-2.4.2.tar.gz"
-    },
-    {
-        name = "English-Czech dictionary",
-        lang_in = "English",
-        lang_out = "Czech",
-        entries = 69285,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_Czech-2.4.2.tar.gz"
-    },
-    {
-        name = "English-Danish dictionary",
-        lang_in = "English",
-        lang_out = "Danish",
-        entries = 4208,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_Danish-2.4.2.tar.gz"
-    },
-    {
-        name = "English-Dutch dictionary",
-        lang_in = "English",
-        lang_out = "Dutch",
-        entries = 9971,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_Dutch-2.4.2.tar.gz"
     },
     {
         name = "English-Finnish dictionary",
@@ -420,38 +284,6 @@ local dictionaries = {
         url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002c/stardict-comn_sdict05_eng_fin-2.4.2.tar.gz"
     },
     {
-        name = "English-French dictionary",
-        lang_in = "English",
-        lang_out = "French",
-        entries = 38876,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_French-2.4.2.tar.gz"
-    },
-    {
-        name = "English-French geography dictionary",
-        lang_in = "English",
-        lang_out = "French",
-        entries = 7018,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_French_geography-2.4.2.tar.gz"
-    },
-    {
-        name = "English-French history dictionary",
-        lang_in = "English",
-        lang_out = "French",
-        entries = 1656,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_French_history-2.4.2.tar.gz"
-    },
-    {
-        name = "English-French_botanics dictionary",
-        lang_in = "English",
-        lang_out = "French_botanics",
-        entries = 368,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_French_botanics-2.4.2.tar.gz"
-    },
-    {
         name = "English-German dictionary",
         lang_in = "English",
         lang_out = "German",
@@ -460,164 +292,12 @@ local dictionaries = {
         url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_German-2.4.2.tar.gz"
     },
     {
-        name = "English-Gothic dictionary",
-        lang_in = "English",
-        lang_out = "Gothic",
-        entries = 2773,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_Gothic-2.4.2.tar.gz"
-    },
-    {
-        name = "English-Greek dictionary",
-        lang_in = "English",
-        lang_out = "Greek",
-        entries = 21237,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_Greek-2.4.2.tar.gz"
-    },
-    {
-        name = "English-Haitian creole dictionary",
-        lang_in = "English",
-        lang_out = "Haitian",
-        entries = 3614,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_Haitian_creole-2.4.2.tar.gz"
-    },
-    {
-        name = "English-Hebrew romanized dictionary",
-        lang_in = "English",
-        lang_out = "Hebrew",
-        entries = 3154,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_Hebrew_romanized-2.4.2.tar.gz"
-    },
-    {
-        name = "English-Hindi dictionary",
-        lang_in = "English",
-        lang_out = "Hindi",
-        entries = 3338,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_Hindi-2.4.2.tar.gz"
-    },
-    {
-        name = "English-Hungarian dictionary",
-        lang_in = "English",
-        lang_out = "Hungarian",
-        entries = 63183,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_Hungarian-2.4.2.tar.gz"
-    },
-    {
         name = "English-Hungarian dictionary",
         lang_in = "English",
         lang_out = "Hungarian",
         entries = 67262,
         license = "jDictionary project, http://jdictionary.info",
         url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002c/stardict-comn_sdict05_eng-hung-2.4.2.tar.gz"
-    },
-    {
-        name = "English-Icelandic dictionary",
-        lang_in = "English",
-        lang_out = "Icelandic",
-        entries = 5088,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_Icelandic-2.4.2.tar.gz"
-    },
-    {
-        name = "English-Indonesian dictionary",
-        lang_in = "English",
-        lang_out = "Indonesian",
-        entries = 1070,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_Indonesian-2.4.2.tar.gz"
-    },
-    {
-        name = "English-Irish Gaelic dictionary",
-        lang_in = "English",
-        lang_out = "Irish Gaelic",
-        entries = 11445,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_Irish_Gaelic-2.4.2.tar.gz"
-    },
-    {
-        name = "English-Kipsigis dictionary",
-        lang_in = "English",
-        lang_out = "Kipsigis",
-        entries = 1128,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_Kipsigis-2.4.2.tar.gz"
-    },
-    {
-        name = "English-Kurdish dictionary",
-        lang_in = "English",
-        lang_out = "Kurdish",
-        entries = 2695,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_Kurdish-2.4.2.tar.gz"
-    },
-    {
-        name = "English-Latin dictionary",
-        lang_in = "English",
-        lang_out = "Latin",
-        entries = 11786,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_Latin-2.4.2.tar.gz"
-    },
-    {
-        name = "English-Norwegian dictionary",
-        lang_in = "English",
-        lang_out = "Norwegian",
-        entries = 12395,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_Norwegian-2.4.2.tar.gz"
-    },
-    {
-        name = "English-Occitan dictionary",
-        lang_in = "English",
-        lang_out = "Occitan",
-        entries = 1216,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_Occitan-2.4.2.tar.gz"
-    },
-    {
-        name = "English-Old English dictionary",
-        lang_in = "English",
-        lang_out = "English",
-        entries = 4250,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_Old_English-2.4.2.tar.gz"
-    },
-    {
-        name = "English-Persian dictionary",
-        lang_in = "English",
-        lang_out = "Persian",
-        entries = 8022,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_Persian-2.4.2.tar.gz"
-    },
-    {
-        name = "English-Polish dictionary",
-        lang_in = "English",
-        lang_out = "Polish",
-        entries = 4567,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_Polish-2.4.2.tar.gz"
-    },
-    {
-        name = "English-Portuguese dictionary",
-        lang_in = "English",
-        lang_out = "Portuguese",
-        entries = 6955,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_Portuguese-2.4.2.tar.gz"
-    },
-    {
-        name = "English-Romanian dictionary",
-        lang_in = "English",
-        lang_out = "Romanian",
-        entries = 3072,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_Romanian-2.4.2.tar.gz"
     },
     {
         name = "English-Russian business dictionary",
@@ -676,60 +356,12 @@ local dictionaries = {
         url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002c/stardict-comn_sdict05_eng_serb-2.4.2.tar.gz"
     },
     {
-        name = "English-Slovene dictionary",
-        lang_in = "English",
-        lang_out = "Slovene",
-        entries = 2825,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_Slovene-2.4.2.tar.gz"
-    },
-    {
         name = "English-Spanish dictionary",
         lang_in = "English",
         lang_out = "Spanish",
         entries = 22527,
         license = "jDictionary project, http://jdictionary.info",
         url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002c/stardict-comn_sdict05_eng-spa-2.4.2.tar.gz"
-    },
-    {
-        name = "English-Swedish dictionary",
-        lang_in = "English",
-        lang_out = "Swedish",
-        entries = 10054,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_Swedish-2.4.2.tar.gz"
-    },
-    {
-        name = "English-Turkish dictionary",
-        lang_in = "English",
-        lang_out = "Turkish",
-        entries = 2760,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_Turkish-2.4.2.tar.gz"
-    },
-    {
-        name = "English-Vietnamese dictionary",
-        lang_in = "English",
-        lang_out = "Vietnamese",
-        entries = 3588,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_Vietnamese-2.4.2.tar.gz"
-    },
-    {
-        name = "English_Basque.wb dictionary",
-        lang_in = "English",
-        lang_out = "Basque",
-        entries = 4355,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_Basque-2.4.2.tar.gz"
-    },
-    {
-        name = "English_Italian dictionary",
-        lang_in = "English",
-        lang_out = "Italian",
-        entries = 33838,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_English_Italian-2.4.2.tar.gz"
     },
     {
         name = "Esperanto-Russian dictionary",
@@ -764,44 +396,12 @@ local dictionaries = {
         url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002c/stardict-comn_sdict05_fin_eng-2.4.2.tar.gz"
     },
     {
-        name = "French-English botanics dictionary",
-        lang_in = "French",
-        lang_out = "English",
-        entries = 314,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_French_botanics_English-2.4.2.tar.gz"
-    },
-    {
-        name = "French-English dictionary",
-        lang_in = "French",
-        lang_out = "English",
-        entries = 38607,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_French_English-2.4.2.tar.gz"
-    },
-    {
         name = "French-English dictionary",
         lang_in = "French",
         lang_out = "English",
         entries = 41398,
         license = "GNU Public License",
         url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002c/stardict-comn_sdict05_french-english-2.4.2.tar.gz"
-    },
-    {
-        name = "French-English geography dictionary",
-        lang_in = "French",
-        lang_out = "English",
-        entries = 7197,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_French_geography_English-2.4.2.tar.gz"
-    },
-    {
-        name = "French-English history dictionary",
-        lang_in = "French",
-        lang_out = "English",
-        entries = 1657,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_French_history_English-2.4.2.tar.gz"
     },
     {
         name = "French-Hungarian dictionary",
@@ -884,28 +484,12 @@ local dictionaries = {
         url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/001/stardict-comn_dsl02_glazunov-2.4.2.tar.gz"
     },
     {
-        name = "Gothic-English dictionary",
-        lang_in = "Gothic",
-        lang_out = "English",
-        entries = 2374,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_Gothic_English-2.4.2.tar.gz"
-    },
-    {
         name = "Grand dictionnaire de cuisine (1873)",
         lang_in = "French",
         lang_out = "French",
         entries = 2463,
         license = "",
         url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002e/stardict-user_hctr01_dictionnaireCuisine38-2.4.2.tar.gz"
-    },
-    {
-        name = "Hebrew romanized-English dictionary",
-        lang_in = "Hebrew",
-        lang_out = "English",
-        entries = 2401,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_Hebrew_romanized_English-2.4.2.tar.gz"
     },
     {
         name = "Hungarian-English Expressions dictionary",
@@ -919,25 +503,9 @@ local dictionaries = {
         name = "Hungarian-English dictionary",
         lang_in = "Hungarian",
         lang_out = "English",
-        entries = 98675,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_Hungarian_English-2.4.2.tar.gz"
-    },
-    {
-        name = "Hungarian-English dictionary",
-        lang_in = "Hungarian",
-        lang_out = "English",
         entries = 131568,
         license = "GNU Public License",
         url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002c/stardict-comn_sdict05_hungarian-english-2.4.2.tar.gz"
-    },
-    {
-        name = "Indonesian-English dictionary",
-        lang_in = "Indonesian",
-        lang_out = "English",
-        entries = 765,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_Indonesian_English-2.4.2.tar.gz"
     },
     {
         name = "Islandsko-český slovník 1.3",
@@ -964,36 +532,12 @@ local dictionaries = {
         url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002c/stardict-comn_sdict05_jap-eng-2.4.2.tar.gz"
     },
     {
-        name = "Kipsigis-English dictionary",
-        lang_in = "Kipsigis",
-        lang_out = "English",
-        entries = 1020,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_Kipsigis_English-2.4.2.tar.gz"
-    },
-    {
-        name = "Kurdish-English dictionary",
-        lang_in = "Kurdish",
-        lang_out = "English",
-        entries = 4328,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_Kurdish_English-2.4.2.tar.gz"
-    },
-    {
         name = "Latin-English dictionary",
         lang_in = "Latin",
         lang_out = "English",
         entries = 4453,
         license = "GNU Public License",
         url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002c/stardict-comn_sdict05_latin-english-2.4.2.tar.gz"
-    },
-    {
-        name = "Latin-English dictionary",
-        lang_in = "Latin",
-        lang_out = "English",
-        entries = 8737,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_Latin_English-2.4.2.tar.gz"
     },
     {
         name = "Lingvo GSM E (En-Ru)",
@@ -1036,52 +580,12 @@ local dictionaries = {
         url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002c/stardict-comn_sdict05_norwegian-english-2.4.2.tar.gz"
     },
     {
-        name = "Norwegian-English dictionary",
-        lang_in = "Norwegian",
-        lang_out = "English",
-        entries = 13653,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_Norwegian_English-2.4.2.tar.gz"
-    },
-    {
-        name = "Occitan-English dictionary",
-        lang_in = "Occitan",
-        lang_out = "English",
-        entries = 1222,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_Occitan_English-2.4.2.tar.gz"
-    },
-    {
-        name = "Polish-English dictionary",
-        lang_in = "Polish",
-        lang_out = "English",
-        entries = 6181,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_Polish_English-2.4.2.tar.gz"
-    },
-    {
         name = "Portuguese-English dictionary",
         lang_in = "Portuguese",
         lang_out = "English",
         entries = 6106,
         license = "GNU Public License",
         url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002c/stardict-comn_sdict05_portuguese-english-2.4.2.tar.gz"
-    },
-    {
-        name = "Portuguese-English dictionary",
-        lang_in = "Portuguese",
-        lang_out = "English",
-        entries = 9864,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_Portuguese_English-2.4.2.tar.gz"
-    },
-    {
-        name = "Romanian-English dictionary",
-        lang_in = "Romanian",
-        lang_out = "English",
-        entries = 3615,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_Romanian_English-2.4.2.tar.gz"
     },
     {
         name = "Russian-Deutsch dictionary",
@@ -1140,14 +644,6 @@ local dictionaries = {
         url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002b/stardict-comn_dls03_Security_v8-2.4.2.tar.gz"
     },
     {
-        name = "Slovene-English dictionary",
-        lang_in = "Slovene",
-        lang_out = "English",
-        entries = 2391,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_Slovene_English-2.4.2.tar.gz"
-    },
-    {
         name = "Sociology (En-Ru)",
         lang_in = "English",
         lang_out = "Russian",
@@ -1199,14 +695,6 @@ local dictionaries = {
         name = "Swedish-English dictionary",
         lang_in = "Swedish",
         lang_out = "English",
-        entries = 11351,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_Swedish_English-2.4.2.tar.gz"
-    },
-    {
-        name = "Swedish-English dictionary",
-        lang_in = "Swedish",
-        lang_out = "English",
         entries = 30260,
         license = "GNU Public License",
         url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002c/stardict-comn_sdict05_swedish-english-2.4.2.tar.gz"
@@ -1236,14 +724,6 @@ local dictionaries = {
         url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002b/stardict-comn_dls03_tradeport_gloss_en-en-2.4.2.tar.gz"
     },
     {
-        name = "Turkish-English dictionary",
-        lang_in = "Turkish",
-        lang_out = "English",
-        entries = 2796,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_Turkish_English-2.4.2.tar.gz"
-    },
-    {
         name = "U.S. Gazetteer (1990)",
         lang_in = "English",
         lang_out = "English",
@@ -1266,14 +746,6 @@ local dictionaries = {
         entries = 64231,
         license = nil,
         url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/001/stardict-comn_dsl02_zorko-2.4.2.tar.gz"
-    },
-    {
-        name = "Vietnamese-English dictionary",
-        lang_in = "Vietnamese",
-        lang_out = "English",
-        entries = 3669,
-        license = "http://www.freelang.net/dictionary/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002d/stardict-comn_sdict_axm05_Vietnamese_English-2.4.2.tar.gz"
     },
     {
         name = "WordNet (r) 1.7",
