@@ -102,7 +102,7 @@ local Input = {
         },
     },
 
-    -- NOTE: When looking at the device in Portrait mode, that's assume PgBack is on TOP, and PgFwd on the BOTTOM
+    -- NOTE: When looking at the device in Portrait mode, that's assuming PgBack is on TOP, and PgFwd on the BOTTOM
     rotation_map = {
         [framebuffer.ORIENTATION_PORTRAIT] = {},
         [framebuffer.ORIENTATION_LANDSCAPE] = { Up = "Right", Right = "Down", Down = "Left", Left = "Up", LPgBack = "LPgFwd", LPgFwd = "LPgBack", RPgBack = "RPgFwd", RPgFwd = "RPgBack" },
