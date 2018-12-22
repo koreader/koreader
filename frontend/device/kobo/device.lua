@@ -199,13 +199,12 @@ local KoboNova = Kobo:new{
 }
 
 -- Kobo Forma:
--- FIXME: Will need initial rotation trickery like the Kindle Oasis, startup HW rota available via self.screen.fb_rota
---        In the meantime, start KOReader with the Forma in Upright Portrait mode in order to have working touch input.
---        (That's Portrait with the buttons on the right).
---        c.f., #4291
+-- NOTE: Right now, we enforce Portrait orientation on startup to avoid getting touch coordinates wrong,
+--       and that even if we were started from Nickel in inverted Portrait (c.f., platform/kobo/koreader.sh).
 -- NOTE: For the FL, assume brightness is WO, and actual_brightness is RO!
 --       i.e., we could have a real KoboPowerD:frontlightIntensityHW() by reading actual_brightness ;).
 -- NOTE: Might need to make all four orientations available...
+--       As well as handling the accelerometer if someone actually cares about that ;).
 local KoboFrost = Kobo:new{
     model = "Kobo_frost",
     hasFrontlight = yes,
