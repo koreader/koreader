@@ -200,7 +200,7 @@ local KoboNova = Kobo:new{
 
 -- Kobo Forma:
 -- NOTE: Right now, we enforce Portrait orientation on startup to avoid getting touch coordinates wrong,
---       and that even if we were started from Nickel in inverted Portrait (c.f., platform/kobo/koreader.sh).
+--       no matter the rotation we were started from (c.f., platform/kobo/koreader.sh).
 -- NOTE: For the FL, assume brightness is WO, and actual_brightness is RO!
 --       i.e., we could have a real KoboPowerD:frontlightIntensityHW() by reading actual_brightness ;).
 -- NOTE: Might need to make all four orientations available...
