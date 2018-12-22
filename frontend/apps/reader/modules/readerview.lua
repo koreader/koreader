@@ -654,10 +654,12 @@ end
 function ReaderView:onSetScreenMode(new_mode, rotation)
     if new_mode == "landscape" or new_mode == "portrait" then
         self.screen_mode = new_mode
-        if rotation ~= nil then
+        -- NOTE: Hacky hack! If rotation is "true", that's actually an "interactive" flag for setScreenMode
+        --       I couldn't get this event to take *two* optional arguments, they were dropped at the first nil?!
+        if rotation ~= nil and rotation ~= true then
             Screen:setRotationMode(rotation)
         else
-            Screen:setScreenMode(new_mode)
+            Screen:setScreenMode(new_mode, rotation)
         end
         UIManager:setDirty(self.dialog, "full")
         local new_screen_size = Screen:getSize()
