@@ -205,6 +205,8 @@ local KoboNova = Kobo:new{
 --        c.f., #4291
 -- NOTE: For the FL, assume brightness is WO, and actual_brightness is RO!
 --       i.e., we could have a real KoboPowerD:frontlightIntensityHW() by reading actual_brightness ;).
+-- NOTE: We probably need to make the button mapping dynamic, because right now its inverted in landscape...
+--       And also make all four orientations available? Do we do that anywhere?
 local KoboFrost = Kobo:new{
     model = "Kobo_frost",
     hasFrontlight = yes,
@@ -233,6 +235,7 @@ function Kobo:init()
         self.hasBGRFrameBuffer = no
     end
     self.powerd = require("device/kobo/powerd"):new{device = self}
+    -- NOTE: For the Forma, with the buttons on the right, 193 is Top, 194 Bottom.
     self.input = require("device/input"):new{
         device = self,
         event_map = {
