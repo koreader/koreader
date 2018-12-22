@@ -240,8 +240,8 @@ function Kobo:init()
             [90] = "LightButton",
             [102] = "Home",
             [116] = "Power",
-            [194] = "RPgBack",
-            [193] = "RPgFwd",
+            [193] = "RPgBack",
+            [194] = "RPgFwd",
         },
         event_map_adapter = {
             SleepCover = function(ev)
