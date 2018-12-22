@@ -203,19 +203,16 @@ local KoboNova = Kobo:new{
 --        In the meantime, start KOReader with the Forma in Upright Portrait mode in order to have working touch input.
 --        (That's Portrait with the buttons on the right).
 --        c.f., #4291
--- FIXME: FrontLight/NaturalLight is untested
--- FIXME: touch_probe_ev_epoch_time is possibly unneeded
 local KoboFrost = Kobo:new{
     model = "Kobo_frost",
     hasFrontlight = yes,
     hasKeys = yes,
-    touch_probe_ev_epoch_time = true,
     touch_snow_protocol = true,
     display_dpi = 300,
     hasNaturalLight = yes,
     frontlight_settings = {
         frontlight_white = "/sys/class/backlight/mxc_msp430.0",
-        frontlight_red = "/sys/class/backlight/tlc5947_bl",
+        frontlight_mixer = "/sys/class/backlight/tlc5947_bl",
     }
 }
 

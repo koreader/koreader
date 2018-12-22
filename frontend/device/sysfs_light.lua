@@ -9,6 +9,7 @@ local SysfsLight = {
     frontlight_white = nil,
     frontlight_red = nil,
     frontlight_green = nil,
+    frontlight_mixer = nil,
     current_brightness = 0,
     current_warmth = 0,
     white_gain = 25,
@@ -56,29 +57,36 @@ function SysfsLight:setNaturalBrightness(brightness, warmth)
         warmth = self.current_warmth
     end
 
-    local red = 0
-    local green = 0
-    local white = 0
-    if brightness > 0 then
-        -- On Nickel, the values for white/red/green are roughly linearly dependent
-        -- on the 4th root of brightness and warmth.
-        white = math.min(self.white_gain * math.pow(brightness, self.exponent) *
+    -- Newer devices use a mixer instead of writting values per color.
+    if self.frontlight_mixer then
+        warmth = math.floor(warmth/10)
+        self:_write_value(self.frontlight_white, brightness)
+        self:_write_value(self.frontlight_mixer, 10 - warmth)
+    else
+        local red = 0
+        local green = 0
+        local white = 0
+        if brightness > 0 then
+            -- On Nickel, the values for white/red/green are roughly linearly dependent
+            -- on the 4th root of brightness and warmth.
+            white = math.min(self.white_gain * math.pow(brightness, self.exponent) *
                              math.pow(100 - warmth, self.exponent) + self.white_offset, 255)
-    end
-    if warmth > 0 then
-        red = math.min(self.red_gain * math.pow(brightness, self.exponent) *
+        end
+        if warmth > 0 then
+            red = math.min(self.red_gain * math.pow(brightness, self.exponent) *
                            math.pow(warmth, self.exponent) + self.red_offset, 255)
-        green = math.min(self.green_gain * math.pow(brightness, self.exponent) *
+            green = math.min(self.green_gain * math.pow(brightness, self.exponent) *
                              math.pow(warmth, self.exponent) + self.green_offset, 255)
+        end
+
+        white = math.max(white, 0)
+        red = math.max(red, 0)
+        green = math.max(green, 0)
+
+        self:_set_light_value(self.frontlight_white, math.floor(white))
+        self:_set_light_value(self.frontlight_green, math.floor(green))
+        self:_set_light_value(self.frontlight_red, math.floor(red))
     end
-
-    white = math.max(white, 0)
-    red = math.max(red, 0)
-    green = math.max(green, 0)
-
-    self:_set_light_value(self.frontlight_white, math.floor(white))
-    self:_set_light_value(self.frontlight_green, math.floor(green))
-    self:_set_light_value(self.frontlight_red, math.floor(red))
 
     self.current_brightness = brightness
     self.current_warmth = warmth

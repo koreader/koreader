@@ -169,8 +169,8 @@ function KoboLight:onSwipe(_, ges)
         return false  -- don't consume swipe event if it's not matched
     end
 
-    -- when new_intensity <=0, toggle light off
-    if new_intensity <=0 then
+    -- when new_intensity <= 0, toggle light off
+    if new_intensity <= 0 then
         if powerd.is_fl_on then
             powerd:toggleFrontlight()
         end
