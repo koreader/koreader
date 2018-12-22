@@ -204,6 +204,7 @@ local KoboNova = Kobo:new{
 --        (That's Portrait with the buttons on the right).
 --        c.f., #4291
 -- NOTE: For the FL, assume brightness is WO, and actual_brightness is RO!
+--       i.e., we could have a real KoboPowerD:frontlightIntensityHW() by reading actual_brightness ;).
 local KoboFrost = Kobo:new{
     model = "Kobo_frost",
     hasFrontlight = yes,

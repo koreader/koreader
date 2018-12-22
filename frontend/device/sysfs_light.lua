@@ -59,8 +59,10 @@ function SysfsLight:setNaturalBrightness(brightness, warmth)
 
     -- Newer devices use a mixer instead of writting values per color.
     if self.frontlight_mixer then
+        -- And the warmth is now on a scale of 0 to 10 ;).
         warmth = math.floor(warmth/10)
         self:_write_value(self.frontlight_white, brightness)
+        -- And it's inverted... (cold is 10, warm is 0)
         self:_write_value(self.frontlight_mixer, 10 - warmth)
     else
         local red = 0

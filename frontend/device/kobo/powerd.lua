@@ -42,8 +42,9 @@ function KoboPowerD:_syncKoboLightOnStart()
             if self.fl_warmth ~= nil then
                 local new_color = NickelConf.colorSetting.get()
                 if new_color ~= nil then
-                    -- ColorSetting is in [1500,6400], with '1500'
-                    -- being maximum warmth, so normalize this to [0,100]
+                    -- ColorSetting is stored as a color temperature scale in Kelvin,
+                    -- from 1500 to 6400
+                    -- so normalize this to [0,100] on our end.
                     new_warmth = (100 - math.floor((new_color - 1500) / 49))
                 end
                 auto_warmth = NickelConf.autoColorEnabled.get()
