@@ -203,8 +203,7 @@ local KoboNova = Kobo:new{
 --       no matter the rotation we were started from (c.f., platform/kobo/koreader.sh).
 -- NOTE: For the FL, assume brightness is WO, and actual_brightness is RO!
 --       i.e., we could have a real KoboPowerD:frontlightIntensityHW() by reading actual_brightness ;).
--- NOTE: Might need to make all four orientations available...
---       As well as handling the accelerometer if someone actually cares about that ;).
+-- NOTE: Handling the accelerometer might be nice, if someone actually cares about that ;).
 local KoboFrost = Kobo:new{
     model = "Kobo_frost",
     hasFrontlight = yes,
