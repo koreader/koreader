@@ -143,7 +143,7 @@ if [ "${PRODUCT}" = "frost" ]; then
     if [ "${FROM_NICKEL}" = "true" ]; then
         # Don't do anything if we're already in the right orientation.
         if [ "$(cat /sys/class/graphics/fb0/rotate)" -ne "3" ]; then
-            echo 1 > /sys/class/graphics/fb0/rotate
+            echo 1 >/sys/class/graphics/fb0/rotate
             # Sleep a bit, for good measure
             usleep 250000
         fi
