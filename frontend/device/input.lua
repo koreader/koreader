@@ -102,11 +102,12 @@ local Input = {
         },
     },
 
+    -- NOTE: When looking at the device in Portrait mode, that's assume PgBack is on TOP, and PgFwd on the BOTTOM
     rotation_map = {
         [framebuffer.ORIENTATION_PORTRAIT] = {},
-        [framebuffer.ORIENTATION_LANDSCAPE] = { Up = "Right", Right = "Down", Down = "Left", Left = "Up" },
+        [framebuffer.ORIENTATION_LANDSCAPE] = { Up = "Right", Right = "Down", Down = "Left", Left = "Up", LPgBack = "LPgFwd", LPgFwd = "LPgBack", RPgBack = "RPgFwd", RPgFwd = "RPgBack" },
         [framebuffer.ORIENTATION_PORTRAIT_ROTATED] = { Up = "Down", Right = "Left", Down = "Up", Left = "Right", LPgFwd = "LPgBack", LPgBack = "LPgFwd", RPgFwd = "RPgBack", RPgBack = "RPgFwd" },
-        [framebuffer.ORIENTATION_LANDSCAPE_ROTATED] = { Up = "Left", Right = "Up", Down = "Right", Left = "Down" , LPgFwd = "LPgBack", LPgBack = "LPgFwd", RPgFwd = "RPgBack", RPgBack = "RPgFwd" }
+        [framebuffer.ORIENTATION_LANDSCAPE_ROTATED] = { Up = "Left", Right = "Up", Down = "Right", Left = "Down" }
     },
 
     timer_callbacks = {},

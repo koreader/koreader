@@ -205,8 +205,7 @@ local KoboNova = Kobo:new{
 --        c.f., #4291
 -- NOTE: For the FL, assume brightness is WO, and actual_brightness is RO!
 --       i.e., we could have a real KoboPowerD:frontlightIntensityHW() by reading actual_brightness ;).
--- NOTE: We probably need to make the button mapping dynamic, because right now its inverted in landscape...
---       And also make all four orientations available? Do we do that anywhere?
+-- NOTE: Might need to make all four orientations available...
 local KoboFrost = Kobo:new{
     model = "Kobo_frost",
     hasFrontlight = yes,
