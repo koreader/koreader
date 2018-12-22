@@ -130,7 +130,7 @@ local KoboSnow = Kobo:new{
 -- Kobo Aura H2O2, Rev2:
 -- FIXME: Check if the Clara fix actually helps here... (#4015)
 local KoboSnowRev2 = Kobo:new{
-    model = "Kobo_snow",
+    model = "Kobo_snow_r2",
     hasFrontlight = yes,
     touch_snow_protocol = true,
     display_dpi = 265,
@@ -157,7 +157,7 @@ local KoboStar = Kobo:new{
 -- Kobo Aura second edition, Rev 2:
 -- FIXME: Confirm that this is accurate? If it is, and matches the Rev1, ditch the special casing.
 local KoboStarRev2 = Kobo:new{
-    model = "Kobo_star",
+    model = "Kobo_star_r2",
     hasFrontlight = yes,
     touch_probe_ev_epoch_time = true,
     touch_phoenix_protocol = true,
