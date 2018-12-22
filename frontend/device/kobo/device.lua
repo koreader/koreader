@@ -203,6 +203,7 @@ local KoboNova = Kobo:new{
 --        In the meantime, start KOReader with the Forma in Upright Portrait mode in order to have working touch input.
 --        (That's Portrait with the buttons on the right).
 --        c.f., #4291
+-- NOTE: For the FL, assume brightness is WO, and actual_brightness is RO!
 local KoboFrost = Kobo:new{
     model = "Kobo_frost",
     hasFrontlight = yes,
@@ -211,8 +212,8 @@ local KoboFrost = Kobo:new{
     display_dpi = 300,
     hasNaturalLight = yes,
     frontlight_settings = {
-        frontlight_white = "/sys/class/backlight/mxc_msp430.0",
-        frontlight_mixer = "/sys/class/backlight/tlc5947_bl",
+        frontlight_white = "/sys/class/backlight/mxc_msp430.0/brightness",
+        frontlight_mixer = "/sys/class/backlight/tlc5947_bl/color",
     }
 }
 
