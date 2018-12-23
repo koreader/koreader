@@ -655,7 +655,10 @@ function ReaderView:onSetScreenMode(new_mode, rotation)
     if new_mode == "landscape" or new_mode == "portrait" then
         self.screen_mode = new_mode
         -- NOTE: Hacky hack! If rotation is "true", that's actually an "interactive" flag for setScreenMode
-        --       I couldn't get this event to take *two* optional arguments, they were dropped at the first nil?!
+        -- FIXME: That's because we can't store nils in a table, which is what Even:new attempts to do ;).
+        --        c.f., https://stackoverflow.com/q/7183998/ & http://lua-users.org/wiki/VarargTheSecondClassCitizen
+        --        With a fixed Event implementation, we'd instead stick "interactive" in a third argument,
+        --        which we could happily pass while still keeping rotation nil ;).
         if rotation ~= nil and rotation ~= true then
             Screen:setRotationMode(rotation)
         else
