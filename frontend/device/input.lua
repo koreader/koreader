@@ -643,6 +643,8 @@ function Input:handleMiscEvNTX(ev)
     local old_rotation_mode = self.device.screen:getRotationMode()
     local old_screen_mode = self.device.screen:getScreenMode()
     -- NOTE: Try to handle ScreenMode changes sanely, without wrecking the FM, which only supports Portrait/Inverted ;).
+    -- NOTE: See the Oasis version just above us for a variant that's locked to the current ScreenMode.
+    --       Might be nice to expose the two behaviors to the user, somehow?
     if rotation_mode ~= old_rotation_mode then
         if screen_mode ~= old_screen_mode then
             return Event:new("ChangeScreenMode", screen_mode, rotation_mode)
