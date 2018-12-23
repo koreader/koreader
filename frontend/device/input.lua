@@ -69,6 +69,7 @@ local MSC_RAW_GSENSOR_PORTRAIT_DOWN = 0x17
 local MSC_RAW_GSENSOR_PORTRAIT_UP = 0x18
 local MSC_RAW_GSENSOR_LANDSCAPE_RIGHT = 0x19
 local MSC_RAW_GSENSOR_LANDSCAPE_LEFT = 0x1a
+-- Not that we care about those, but they are reported, and accurate ;).
 local MSC_RAW_GSENSOR_BACK = 0x1b
 local MSC_RAW_GSENSOR_FRONT = 0x1c
 
@@ -633,15 +634,23 @@ function Input:handleMiscEvNTX(ev)
             -- i.e., CCW
             rotation_mode = framebuffer.ORIENTATION_LANDSCAPE_ROTATED
             screen_mode = 'landscape'
+        else
+            -- Discard FRONT/BACK
+            return
         end
     end
 
     local old_rotation_mode = self.device.screen:getRotationMode()
     local old_screen_mode = self.device.screen:getScreenMode()
-    if rotation_mode ~= old_rotation_mode and screen_mode == old_screen_mode then
-        self.device.screen:setRotationMode(rotation_mode)
-        local UIManager = require("ui/uimanager")
-        UIManager:onRotation()
+    -- NOTE: Try to handle ScreenMode changes sanely, without wrecking the FM, which only supports Portrait/Inverted ;).
+    if rotation_mode ~= old_rotation_mode then
+        if screen_mode ~= old_screen_mode then
+            return Event:new("ChangeScreenMode", screen_mode, rotation_mode)
+        else
+            self.device.screen:setRotationMode(rotation_mode)
+            local UIManager = require("ui/uimanager")
+            UIManager:onRotation()
+        end
     end
 end
 

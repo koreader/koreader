@@ -639,12 +639,12 @@ function ReaderRolling:onSetDimensions(dimen)
     self.ui.document:setViewDimen(Screen:getSize())
 end
 
-function ReaderRolling:onChangeScreenMode(mode)
+function ReaderRolling:onChangeScreenMode(mode, rotation)
     -- We need to temporarily re-enable internal history as crengine
     -- uses it to reposition after resize
     self.ui.document:enableInternalHistory(true)
     -- Flag it as interactive so we can properly swap to Inverted orientations (we usurp the second argument, which usually means rotation)
-    self.ui:handleEvent(Event:new("SetScreenMode", mode, true))
+    self.ui:handleEvent(Event:new("SetScreenMode", mode, rotation or true))
     self.ui.document:setViewDimen(Screen:getSize())
     self:onChangeViewMode()
     self:onUpdatePos()
