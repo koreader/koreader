@@ -410,6 +410,7 @@ function ReaderDictionary:_genDownloadDictionariesMenu()
     local menu_items = {}
     for lang_key, available_langs in ffiUtil.orderedPairs(languages) do
         table.insert(menu_items, {
+            keep_menu_open = true,
             text = lang_key,
             callback = function()
                 self:showDownload(available_langs)
