@@ -638,6 +638,9 @@ function Input:handleMiscEvNTX(ev)
             -- Discard FRONT/BACK
             return
         end
+    else
+        -- Discard unhandled event codes, just to future-proof this ;).
+        return
     end
 
     local old_rotation_mode = self.device.screen:getRotationMode()
