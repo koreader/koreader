@@ -114,7 +114,7 @@ function KoboPowerD:init()
     if self.device.hasFrontlight() then
         -- If this device has natural light (currently only KA1 & Forma)
         -- Use the SysFS interface, and ioctl otherwise.
-        -- NOTE: On the Forma, nickel still appear to prefer using ntx_io to handle the FL,
+        -- NOTE: On the Forma, nickel still appears to prefer using ntx_io to handle the FL,
         --       but it does use sysfs for the NL...
         if self.device.hasNaturalLight() then
             local nl_config = G_reader_settings:readSetting("natural_light_config")
