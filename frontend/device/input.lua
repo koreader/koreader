@@ -61,6 +61,17 @@ local DEVICE_ORIENTATION_PORTRAIT_ROTATED = 20
 local DEVICE_ORIENTATION_LANDSCAPE = 21
 local DEVICE_ORIENTATION_LANDSCAPE_ROTATED = 22
 
+-- For the events of the Forma accelerometer (MSC.code)
+local MSC_RAW = 0x03
+
+-- For the events of the Forma accelerometer (MSC.value)
+local MSC_RAW_GSENSOR_PORTRAIT_DOWN = 0x17
+local MSC_RAW_GSENSOR_PORTRAIT_UP = 0x18
+local MSC_RAW_GSENSOR_LANDSCAPE_RIGHT = 0x19
+local MSC_RAW_GSENSOR_LANDSCAPE_LEFT = 0x1a
+local MSC_RAW_GSENSOR_BACK = 0x1b
+local MSC_RAW_GSENSOR_FRONT = 0x1c
+
 -- luacheck: pop
 
 local Input = {
@@ -591,6 +602,38 @@ function Input:handleOasisOrientationEv(ev)
     elseif ev.value == DEVICE_ORIENTATION_LANDSCAPE_ROTATED then
         rotation_mode = framebuffer.ORIENTATION_LANDSCAPE_ROTATED
         screen_mode = 'landscape'
+    end
+
+    local old_rotation_mode = self.device.screen:getRotationMode()
+    local old_screen_mode = self.device.screen:getScreenMode()
+    if rotation_mode ~= old_rotation_mode and screen_mode == old_screen_mode then
+        self.device.screen:setRotationMode(rotation_mode)
+        local UIManager = require("ui/uimanager")
+        UIManager:onRotation()
+    end
+end
+
+-- Accelerometer on the Forma, c.f., drivers/hwmon/mma8x5x.c
+function Input:handleMiscEvNTX(ev)
+    local rotation_mode, screen_mode
+    if ev.code == MSC_RAW then
+        if ev.value == MSC_RAW_GSENSOR_PORTRAIT_UP then
+            -- i.e., UR
+            rotation_mode = framebuffer.ORIENTATION_PORTRAIT
+            screen_mode = 'portrait'
+        elseif ev.value == MSC_RAW_GSENSOR_LANDSCAPE_RIGHT then
+            -- i.e., CW
+            rotation_mode = framebuffer.ORIENTATION_LANDSCAPE
+            screen_mode = 'landscape'
+        elseif ev.value == MSC_RAW_GSENSOR_PORTRAIT_DOWN then
+            -- i.e., UD
+            rotation_mode = framebuffer.ORIENTATION_PORTRAIT_ROTATED
+            screen_mode = 'portrait'
+        elseif ev.value == MSC_RAW_GSENSOR_LANDSCAPE_LEFT then
+            -- i.e., CCW
+            rotation_mode = framebuffer.ORIENTATION_LANDSCAPE_ROTATED
+            screen_mode = 'landscape'
+        end
     end
 
     local old_rotation_mode = self.device.screen:getRotationMode()

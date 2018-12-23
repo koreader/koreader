@@ -203,12 +203,12 @@ local KoboNova = Kobo:new{
 --       no matter the rotation we were started from (c.f., platform/kobo/koreader.sh).
 -- NOTE: For the FL, assume brightness is WO, and actual_brightness is RO!
 --       i.e., we could have a real KoboPowerD:frontlightIntensityHW() by reading actual_brightness ;).
--- NOTE: Handling the accelerometer might be nice, if someone actually cares about that ;).
 local KoboFrost = Kobo:new{
     model = "Kobo_frost",
     hasFrontlight = yes,
     hasKeys = yes,
     touch_snow_protocol = true,
+    misc_ntx_gsensor_protocol = true,
     display_dpi = 300,
     hasNaturalLight = yes,
     frontlight_settings = {
@@ -261,8 +261,8 @@ function Kobo:init()
 
     Generic.init(self)
 
-    -- event2 is for MMA7660 sensor (3-Axis Orientation/Motion Detection)
-    self.input.open("/dev/input/event0") -- Light button and sleep slider
+    -- When present, event2 is the raw accelerometer data (3-Axis Orientation/Motion Detection)
+    self.input.open("/dev/input/event0") -- Various HW Buttons, Switches & Synthetized NTX events
     self.input.open("/dev/input/event1")
     -- fake_events is only used for usb plug event so far
     -- NOTE: usb hotplug event is also available in /tmp/nickel-hardware-status
@@ -391,7 +391,7 @@ function Kobo:initEventAdjustHooks()
     if self.touch_mirrored_x then
         self.input:registerEventAdjustHook(
             self.input.adjustTouchMirrorX,
-            -- FIXME: what if we change the screen protrait mode?
+            -- FIXME: what if we change the screen portrait mode?
             self.screen:getWidth()
         )
     end
@@ -412,6 +412,11 @@ function Kobo:initEventAdjustHooks()
 
     if self.touch_phoenix_protocol then
         self.input.handleTouchEv = self.input.handleTouchEvPhoenix
+    end
+
+    -- Accelerometer on the Forma
+    if self.misc_ntx_gsensor_protocol then
+        self.input.handleMiscEv = self.input.handleMiscEvNTX
     end
 end
 
