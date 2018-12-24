@@ -65,7 +65,7 @@ function SSH:start()
     logger.dbg("[Network] Launching SSH server : ", cmd)
     if os.execute(cmd) == 0 then
         local info = InfoMessage:new{
-                timeout = 5,
+                timeout = 10,
                 text = string.format("%s %s \n %s",
                     _("SSH port: "), self.SSH_port,
                     Device.retrieveNetworkInfo and Device:retrieveNetworkInfo() or _("Could not retrieve network info.")),
