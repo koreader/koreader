@@ -17,6 +17,7 @@ local KoboPowerD = BasePowerD:new{
 
     batt_capacity_file = batt_state_folder .. "capacity",
     is_charging_file = batt_state_folder .. "status",
+    fl_warmth_min = 0, fl_warmth_max = 100,
     fl_warmth = nil,
     auto_warmth = false,
     max_warmth_hour = 23,
@@ -122,6 +123,11 @@ function KoboPowerD:init()
                 for key,val in pairs(nl_config) do
                     self.device.frontlight_settings[key] = val
                 end
+            end
+            -- Do we have a custom NaturalLight setup?
+            if self.device.naturallight_settings then
+                self.fl_warmth_min = self.device.naturallight_settings["nl_min"]
+                self.fl_warmth_max = self.device.naturallight_settings["nl_max"]
             end
             self.fl = SysfsLight:new(self.device.frontlight_settings)
             self.fl_warmth = 0

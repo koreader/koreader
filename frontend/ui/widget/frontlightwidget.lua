@@ -51,8 +51,15 @@ function FrontLightWidget:init()
     if (self.steps - 1) * self.one_step < self.fl_max - self.fl_min then
         self.steps = self.steps + 1
     end
-    self.steps = math.min(self.steps , steps_fl)
+    self.steps = math.min(self.steps, steps_fl)
     self.natural_light = (Device:isCervantes() or Device:isKobo()) and Device:hasNaturalLight()
+    -- Handle Warmth separately, because it may use a different scale
+    if self.natural_light then
+        self.nl_min = self.powerd.fl_warmth_min
+        self.nl_max = self.powerd.fl_warmth_max
+        -- NOTE: fl_warmth is always [0...100] even when internal scale is [0...10]
+        self.nl_scale = (100 / self.nl_max)
+    end
 
     -- button width to fit screen size
     local button_margin = Size.margin.tiny
@@ -237,17 +244,17 @@ function FrontLightWidget:setProgress(num, step, num_warmth)
     if self.natural_light then
         -- Only insert 'brightness' caption if we also add 'warmth'
         -- widgets below.
-        table.insert(vertical_group,text_br)
+        table.insert(vertical_group, text_br)
     end
     table.insert(button_group_up, button_table_up)
     table.insert(button_group_down, button_table_down)
-    table.insert(vertical_group,padding_span)
-    table.insert(vertical_group,button_group_up)
-    table.insert(vertical_group,padding_span)
-    table.insert(vertical_group,fl_group)
-    table.insert(vertical_group,padding_span)
-    table.insert(vertical_group,button_group_down)
-    table.insert(vertical_group,padding_span)
+    table.insert(vertical_group, padding_span)
+    table.insert(vertical_group, button_group_up)
+    table.insert(vertical_group, padding_span)
+    table.insert(vertical_group, fl_group)
+    table.insert(vertical_group, padding_span)
+    table.insert(vertical_group, button_group_down)
+    table.insert(vertical_group, padding_span)
     if self.natural_light then
         -- If the device supports natural light, add the widgets for 'warmth'
         -- and a 'Configure' button
@@ -294,8 +301,8 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
         enable_button_minus = false
         button_color = Blitbuffer.COLOR_GREY
     else
-        if num_warmth == self.fl_max then enable_button_plus = false end
-        if num_warmth == self.fl_min then enable_button_minus = false end
+        if math.floor(num_warmth / self.nl_scale) <= self.nl_min then enable_button_minus = false end
+        if math.floor(num_warmth / self.nl_scale) >= self.nl_max then enable_button_plus = false end
     end
 
     if self.natural_light and num_warmth then
@@ -330,22 +337,22 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
         width = self.screen_width * 0.95
     }
     local button_minus = Button:new{
-        text = "-1",
+        text = "-" .. (1 * self.nl_scale),
         margin = Size.margin.small,
         radius = 0,
         enabled = enable_button_minus,
         width = self.screen_width * 0.20,
         show_parent = self,
-        callback = function()  self:setProgress(self.fl_cur, step, num_warmth - 1) end,
+        callback = function()  self:setProgress(self.fl_cur, step, (num_warmth - (1 * self.nl_scale))) end,
     }
     local button_plus = Button:new{
-        text = "+1",
+        text = "+" .. (1 * self.nl_scale),
         margin = Size.margin.small,
         radius = 0,
         enabled = enable_button_plus,
         width = self.screen_width * 0.20,
         show_parent = self,
-        callback = function() self:setProgress(self.fl_cur, step, num_warmth + 1) end,
+        callback = function() self:setProgress(self.fl_cur, step, (num_warmth + (1 * self.nl_scale))) end,
     }
     local item_level = TextBoxWidget:new{
         text = num_warmth,
@@ -360,7 +367,7 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
         enabled = not self.powerd.auto_warmth,
         width = self.screen_width * 0.20,
         show_parent = self,
-        callback = function() self:setProgress(self.fl_cur, step, self.fl_min) end,
+        callback = function() self:setProgress(self.fl_cur, step, self.nl_min) end,
     }
     local button_max = Button:new{
         text = _("Max"),
@@ -369,7 +376,7 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
         enabled = not self.powerd.auto_warmth,
         width = self.screen_width * 0.20,
         show_parent = self,
-        callback = function() self:setProgress(self.fl_cur, step, self.fl_max) end,
+        callback = function() self:setProgress(self.fl_cur, step, (self.nl_max * self.nl_scale)) end,
     }
     local empty_space = HorizontalSpan:new{
         width = (self.screen_width * 0.95 - 1.2 * button_minus.width - 1.2 * button_plus.width) / 2,
@@ -459,7 +466,7 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
         end,
     }
 
-    table.insert(vertical_group,text_warmth)
+    table.insert(vertical_group, text_warmth)
     table.insert(button_group_up, button_table_up)
     table.insert(button_group_down, button_table_down)
     table.insert(auto_nl_group, checkbutton_auto_nl)
@@ -468,14 +475,14 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
     table.insert(auto_nl_group, text_hour)
     table.insert(auto_nl_group, button_plus_one_hour)
 
-    table.insert(vertical_group,padding_span)
-    table.insert(vertical_group,button_group_up)
-    table.insert(vertical_group,padding_span)
-    table.insert(vertical_group,warmth_group)
-    table.insert(vertical_group,padding_span)
-    table.insert(vertical_group,button_group_down)
-    table.insert(vertical_group,padding_span)
-    table.insert(vertical_group,auto_nl_group)
+    table.insert(vertical_group, padding_span)
+    table.insert(vertical_group, button_group_up)
+    table.insert(vertical_group, padding_span)
+    table.insert(vertical_group, warmth_group)
+    table.insert(vertical_group, padding_span)
+    table.insert(vertical_group, button_group_down)
+    table.insert(vertical_group, padding_span)
+    table.insert(vertical_group, auto_nl_group)
 end
 
 function FrontLightWidget:update()

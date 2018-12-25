@@ -214,7 +214,12 @@ local KoboFrost = Kobo:new{
     frontlight_settings = {
         frontlight_white = "/sys/class/backlight/mxc_msp430.0/brightness",
         frontlight_mixer = "/sys/class/backlight/tlc5947_bl/color",
-    }
+    },
+    -- Warmth goes from 0 to 10 on the device's side (our own internal scale is still normalized to [0...100])
+    naturallight_settings = {
+        nl_min = 0,
+        nl_max = 10,
+    },
 }
 
 function Kobo:init()
