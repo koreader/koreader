@@ -651,7 +651,19 @@ function ReaderView:restoreViewContext(ctx)
     end
 end
 
+-- NOTE: This is just a shim for kopt, because we want to be able to pass an optional second argument...
+function ReaderView:onSwapScreenMode(new_mode, rotation)
+    logger.dbg("ReaderView:onSwapScreenMode: new_mode:", new_mode or "nil", "rotation:", rotation or "nil")
+    -- Don't do anything if rotation hasn't changed, because we may be sending this event *right after* a ChangeScreenMode in CRe (gyro)
+    if rotation ~= nil and rotation == Screen:getRotationMode() then
+        return true
+    end
+    -- Otherwise (Orientation buttons from the bottom menu), propagate...
+    self.ui:handleEvent(Event:new("SetScreenMode", new_mode, rotation or true))
+end
+
 function ReaderView:onSetScreenMode(new_mode, rotation)
+    logger.dbg("ReaderView:onSetScreenMode: new_mode:", new_mode or "nil", "rotation:", rotation or "nil")
     if new_mode == "landscape" or new_mode == "portrait" then
         self.screen_mode = new_mode
         -- NOTE: Hacky hack! If rotation is "true", that's actually an "interactive" flag for setScreenMode

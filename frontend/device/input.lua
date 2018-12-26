@@ -650,7 +650,7 @@ function Input:handleMiscEvNTX(ev)
     --       Might be nice to expose the two behaviors to the user, somehow?
     if rotation_mode ~= old_rotation_mode then
         if screen_mode ~= old_screen_mode then
-            return Event:new("ChangeScreenMode", screen_mode, rotation_mode)
+            return Event:new("SwapScreenMode", screen_mode, rotation_mode)
         else
             self.device.screen:setRotationMode(rotation_mode)
             local UIManager = require("ui/uimanager")
