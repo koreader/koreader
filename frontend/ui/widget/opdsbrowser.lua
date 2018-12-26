@@ -473,15 +473,33 @@ function OPDSBrowser:downloadFile(item, format, remote_url)
         UIManager:scheduleIn(1, function()
             logger.dbg("downloading file", local_path, "from", remote_url)
             local parsed = url.parse(remote_url)
-            local hostname = parsed.host
             http.TIMEOUT, https.TIMEOUT = 20, 20
-            local httpRequest = parsed.scheme == 'http' and http.request or https.request
-            local auth = string.format("%s:%s", item.username, item.password)
-            local __, c = httpRequest {
-                url = remote_url,
-                headers = { Authorization = "Basic " .. mime.b64(auth), ["Host"] = hostname, },
-                sink = ltn12.sink.file(io.open(local_path, "w")),
-            }
+
+            local dummy, c = nil
+
+            if parsed.scheme == "http" then
+                dummy, c = http.request {
+                    url         = remote_url,
+                    sink        = ltn12.sink.file(io.open(local_path, "w")),
+                    user        = item.username,
+                    password    = item.password
+                }
+            elseif parsed.scheme == "https" then
+                local auth = string.format("%s:%s", item.username, item.password)
+                local hostname = parsed.host
+
+                dummy, c = https.request {
+                    url         = remote_url,
+                    headers     = { Authorization = "Basic " .. mime.b64(auth), ["Host"] = hostname },
+                    sink        = ltn12.sink.file(io.open(local_path, "w")),
+                }
+            else
+                UIManager:show(InfoMessage:new {
+                    text = T(_("Invalid protocol:\n%1"), parsed.scheme),
+                    timeout = 3,
+                })
+            end
+
             if c == 200 then
                 logger.dbg("file downloaded to", local_path)
                 if self.file_downloaded_callback then
