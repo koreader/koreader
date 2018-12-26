@@ -467,21 +467,6 @@ function Input:handleTouchEv(ev)
             self:setCurrentMtSlot("x", ev.value)
         elseif ev.code == ABS_MT_POSITION_Y then
             self:setCurrentMtSlot("y", ev.value)
-
-        -- code to emulate mt protocol on kobos
-        -- we "confirm" abs_x, abs_y only when pressure ~= 0
-        elseif ev.code == ABS_X then
-            self:setCurrentMtSlot("abs_x", ev.value)
-        elseif ev.code == ABS_Y then
-            self:setCurrentMtSlot("abs_y", ev.value)
-        elseif ev.code == ABS_PRESSURE then
-            if ev.value ~= 0 then
-                self:setCurrentMtSlot("id", 1)
-                self:confirmAbsxy()
-            else
-                self:cleanAbsxy()
-                self:setCurrentMtSlot("id", -1)
-            end
         end
     elseif ev.type == EV_SYN then
         if ev.code == SYN_REPORT then
