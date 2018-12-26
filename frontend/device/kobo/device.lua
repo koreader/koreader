@@ -267,7 +267,7 @@ function Kobo:init()
     Generic.init(self)
 
     -- When present, event2 is the raw accelerometer data (3-Axis Orientation/Motion Detection)
-    self.input.open("/dev/input/event0") -- Various HW Buttons, Switches & Synthetized NTX events
+    self.input.open("/dev/input/event0") -- Various HW Buttons, Switches & Synthetic NTX events
     self.input.open("/dev/input/event1")
     -- fake_events is only used for usb plug event so far
     -- NOTE: usb hotplug event is also available in /tmp/nickel-hardware-status
