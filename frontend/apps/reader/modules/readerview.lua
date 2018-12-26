@@ -663,15 +663,17 @@ function ReaderView:onSwapScreenMode(new_mode, rotation)
     -- CRe
     self.ui:handleEvent(Event:new("ChangeScreenMode", new_mode, rotation or true))
     -- KOpt (On Cre, since it's redundant (RR:onChangeScreenMode already sends one), this'll get discarded early)
-    self.ui:handleEvent(Event:new("SetScreenMode", new_mode, rotation or true))
+    self:onSetScreenMode("SetScreenMode", new_mode, rotation or true)
 end
 
 function ReaderView:onSetScreenMode(new_mode, rotation)
     -- Don't do anything if an explicit rotation was requested, but it hasn't actually changed,
     -- because we may be sending this event *right after* a ChangeScreenMode in CRe (gyro)
+    --[[
     if rotation ~= nil and rotation ~= true and rotation == Screen:getRotationMode() then
         return true
     end
+    --]]
     if new_mode == "landscape" or new_mode == "portrait" then
         self.screen_mode = new_mode
         -- NOTE: Hacky hack! If rotation is "true", that's actually an "interactive" flag for setScreenMode
@@ -690,7 +692,7 @@ function ReaderView:onSetScreenMode(new_mode, rotation)
         self.ui:onScreenResize(new_screen_size)
         self.ui:handleEvent(Event:new("InitScrollPageStates"))
     end
-    self.cur_rotation_mode = Screen.cur_rotation_mode
+    self.cur_rotation_mode = Screen:getRotationMode()
     return true
 end
 
