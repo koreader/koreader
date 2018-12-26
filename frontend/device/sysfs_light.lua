@@ -10,6 +10,9 @@ local SysfsLight = {
     frontlight_red = nil,
     frontlight_green = nil,
     frontlight_mixer = nil,
+    nl_min = nil,
+    nl_max = nil,
+    nl_inverted = nil,
     current_brightness = 0,
     current_warmth = 0,
     white_gain = 25,
@@ -59,11 +62,15 @@ function SysfsLight:setNaturalBrightness(brightness, warmth)
 
     -- Newer devices use a mixer instead of writting values per color.
     if self.frontlight_mixer then
-        -- And the warmth is now on a scale of 0 to 10 ;).
-        warmth = math.floor(warmth/10)
+        -- Honor the device's scale, which may not be [0...100] (f.g., it's [0...10] on the Forma) ;).
+        warmth = math.floor(warmth / self.nl_max)
         self:_write_value(self.frontlight_white, brightness)
-        -- And it's inverted... (cold is 10, warm is 0)
-        self:_write_value(self.frontlight_mixer, 10 - warmth)
+        -- And it may be inverted... (cold is nl_max, warm is nl_min)
+        if self.nl_inverted then
+            self:_write_value(self.frontlight_mixer, self.nl_max - warmth)
+        else
+            self:_write_value(self.frontlight_mixer, warmth)
+        end
     else
         local red = 0
         local green = 0

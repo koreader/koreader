@@ -124,11 +124,9 @@ function KoboPowerD:init()
                     self.device.frontlight_settings[key] = val
                 end
             end
-            -- Do we have a custom NaturalLight setup?
-            if self.device.naturallight_settings then
-                self.fl_warmth_min = self.device.naturallight_settings["nl_min"]
-                self.fl_warmth_max = self.device.naturallight_settings["nl_max"]
-            end
+            -- Does this device's NaturalLight use a custom scale?
+            self.fl_warmth_min = self.device.frontlight_settings["nl_min"] or self.fl_warmth_min
+            self.fl_warmth_max = self.device.frontlight_settings["nl_max"] or self.fl_warmth_max
             self.fl = SysfsLight:new(self.device.frontlight_settings)
             self.fl_warmth = 0
             self:_syncKoboLightOnStart()
