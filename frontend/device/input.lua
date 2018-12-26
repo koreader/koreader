@@ -570,8 +570,21 @@ function Input:handleTouchEvPhoenix(ev)
     end
 end
 function Input:handleTouchEvLegacy(ev)
-    -- Single Touch Protocol. Some devices emit both singletouch and multitouch events.
-    -- In those devices the 'handleTouchEv' function doesn't work as expected. Use this function instead.
+    --[[ Single Touch Protocol
+
+        ABS_X
+        ABS_Y
+        ABS_PRESSURE
+        SYN_REPORT
+
+        ABS_PRESSURE is used to detect touch (ev.value = 1) and release (ev.value = 0) events.
+
+        If you are porting KOReader to a new device (2013+) you probably won't need this function,
+        since even lazy companies are implementing MT-B on top of ST
+        see: https://github.com/koreader/koreader/issues/4275#issuecomment-430827648
+
+        This is used on legacy Kobos(Touch,Mini,AuraHD,Glo) and Cervantes(Touch,TouchLight,2013)
+    ]]--
     if ev.type == EV_ABS then
         if #self.MTSlots == 0 then
             table.insert(self.MTSlots, self:getMtSlot(self.cur_slot))
