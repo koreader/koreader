@@ -302,7 +302,7 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
         button_color = Blitbuffer.COLOR_GREY
     else
         if math.floor(num_warmth / self.nl_scale) <= self.nl_min then enable_button_minus = false end
-        if math.floor(num_warmth / self.nl_scale) >= self.nl_max then enable_button_plus = false end
+        if math.ceil(num_warmth / self.nl_scale) >= self.nl_max then enable_button_plus = false end
     end
 
     if self.natural_light and num_warmth then
