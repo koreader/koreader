@@ -639,22 +639,7 @@ function ReaderRolling:onSetDimensions(dimen)
     self.ui.document:setViewDimen(Screen:getSize())
 end
 
---[[
--- NOTE: This is just a shim for gsensor input events...
-function ReaderRolling:onSwapScreenMode(new_mode, rotation)
-    logger.dbg("ReaderRolling:onSwapScreenMode: new_mode:", new_mode or "nil", "rotation:", rotation or "nil")
-    -- Don't do anything if rotation hasn't changed, because we may be sending this event *right after* a RV:SwapScreenMode in CRe (gyro)
-    if rotation ~= nil and rotation ~= true and rotation == Screen:getRotationMode() then
-        logger.dbg("ReaderRolling:onSwapScreenMode: Early abort")
-        return true
-    end
-    -- Otherwise (Orientation buttons from the bottom menu), propagate...
-    self.ui:handleEvent(Event:new("ChangeScreenMode", new_mode, rotation or true))
-end
---]]
-
 function ReaderRolling:onChangeScreenMode(mode, rotation)
-    logger.dbg("ReaderRolling:onChangeScreenMode: mode:", mode or "nil", "rotation:", rotation or "nil")
     -- We need to temporarily re-enable internal history as crengine
     -- uses it to reposition after resize
     self.ui.document:enableInternalHistory(true)

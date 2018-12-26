@@ -655,23 +655,21 @@ end
 --       This is also used as a sink for gsensor input events, because we can only send a single event per input,
 --       and we need to cover both CRe & KOpt...
 function ReaderView:onSwapScreenMode(new_mode, rotation)
-    logger.dbg("ReaderView:onSwapScreenMode: new_mode:", new_mode or "nil", "rotation:", rotation or "nil")
-    -- Don't do anything if rotation hasn't changed, because we may be sending this event *right before* a ChangeScreenMode in CRe (gyro)
+    -- Don't do anything if an explicit rotation was requested, but it hasn't actually changed,
+    -- because we may be sending this event *right before* a ChangeScreenMode in CRe (gyro)
     if rotation ~= nil and rotation ~= true and rotation == Screen:getRotationMode() then
-        logger.dbg("ReaderView:onSwapScreenMode: Early abort")
         return true
     end
     -- CRe
     self.ui:handleEvent(Event:new("ChangeScreenMode", new_mode, rotation or true))
-    -- KOpt (On Cre, since it's redundant (RR:onChangeScreenMode sends one), this'll get discarded early)
+    -- KOpt (On Cre, since it's redundant (RR:onChangeScreenMode already sends one), this'll get discarded early)
     self.ui:handleEvent(Event:new("SetScreenMode", new_mode, rotation or true))
 end
 
 function ReaderView:onSetScreenMode(new_mode, rotation)
-    logger.dbg("ReaderView:onSetScreenMode: new_mode:", new_mode or "nil", "rotation:", rotation or "nil")
-    -- Don't do anything if rotation hasn't changed, because we may be sending this event *right after* a ChangeScreenMode in CRe (gyro)
+    -- Don't do anything if an explicit rotation was requested, but it hasn't actually changed,
+    -- because we may be sending this event *right after* a ChangeScreenMode in CRe (gyro)
     if rotation ~= nil and rotation ~= true and rotation == Screen:getRotationMode() then
-        logger.dbg("ReaderView:onSetScreenMode: Early abort")
         return true
     end
     if new_mode == "landscape" or new_mode == "portrait" then
