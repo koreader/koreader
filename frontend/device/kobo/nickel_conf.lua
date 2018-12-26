@@ -181,13 +181,13 @@ function NickelConf.autoColorEnabled.set(new_autocolor)
 end
 
 dbg:guard(NickelConf.colorSetting, 'set',
-          function(self, new_color)
+          function(new_color)
               assert(new_color >= 1500 and new_color <= 6400,
                      "Wrong colorSetting value given!")
           end)
 
 dbg:guard(NickelConf.autoColorEnabled, 'set',
-          function(self, new_autocolor)
+          function(new_autocolor)
               assert(type(new_autocolor) == "boolean",
                      "Wrong type for autocolor (expected boolean)!")
           end)
