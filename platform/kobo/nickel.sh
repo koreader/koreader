@@ -11,7 +11,6 @@ export LD_LIBRARY_PATH="/usr/local/Kobo"
 cd /
 unset OLDPWD EXT_FONT_DIR TESSDATA_PREFIX FROM_NICKEL STARDICT_DATA_DIR LC_ALL
 
-
 # Ensures fmon will restart. Note that we don't have to worry about reaping this, nickel kills on-animator.sh on start.
 (
     if [ "${PLATFORM}" = "freescale" ] || [ "${PLATFORM}" = "mx50-ntx" ] || [ "${PLATFORM}" = "mx6sl-ntx" ]; then
