@@ -7,6 +7,7 @@ PATH="/sbin:/bin:/usr/sbin:/usr/bin:/usr/lib:"
 export LD_LIBRARY_PATH="/usr/local/Kobo"
 
 # Clear up our own custom stuff from the env while we're there...
+# shellcheck disable=SC2164
 cd /
 unset OLDPWD EXT_FONT_DIR TESSDATA_PREFIX FROM_NICKEL STARDICT_DATA_DIR LC_ALL
 
