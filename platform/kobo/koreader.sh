@@ -97,7 +97,7 @@ if [ "${FROM_NICKEL}" = "true" ]; then
     sync
     # stop kobo software because it's running
     # NOTE: We don't need to kill KFMon, it's smart enough not to allow running anything else while we're up
-    killall nickel hindenburg sickel fickel fmon 2>/dev/null
+    killall -TERM nickel hindenburg sickel fickel fmon 2>/dev/null
 fi
 
 # fallback for old fmon, KFMon and advboot users (-> if no args were passed to the script, start the FM)

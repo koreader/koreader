@@ -6,6 +6,11 @@ PATH="/sbin:/bin:/usr/sbin:/usr/bin:/usr/lib:"
 # NOTE: LD_LIBRARY_PATH is the only late export from rcS we don't siphon in koreader.sh, for obvious reasons ;).
 export LD_LIBRARY_PATH="/usr/local/Kobo"
 
+# Clear up our own custom stuff from the env while we're there...
+cd /
+unset OLDPWD EXT_FONT_DIR TESSDATA_PREFIX FROM_NICKEL STARDICT_DATA_DIR LC_ALL
+
+
 # Ensures fmon will restart. Note that we don't have to worry about reaping this, nickel kills on-animator.sh on start.
 (
     if [ "${PLATFORM}" = "freescale" ] || [ "${PLATFORM}" = "mx50-ntx" ] || [ "${PLATFORM}" = "mx6sl-ntx" ]; then
@@ -35,9 +40,10 @@ sync
 
 # And finally, simply restart nickel.
 # We don't care about horribly legacy stuff, because if people switch between nickel and KOReader in the first place, I assume they're using a decently recent enough FW version.
-# Last tested on an H2O running FW 4.7.x - 4.8.x
+# Last tested on an H2O & a Forma running FW 4.7.x - 4.12.x
 /usr/local/Kobo/hindenburg &
 LIBC_FATAL_STDERR_=1 /usr/local/Kobo/nickel -platform kobo -skipFontLoad &
+udevadm trigger &
 
 # Handle sdcard
 if [ -e "/dev/mmcblk1p1" ]; then
