@@ -17,6 +17,7 @@ local KoboPowerD = BasePowerD:new{
 
     batt_capacity_file = batt_state_folder .. "capacity",
     is_charging_file = batt_state_folder .. "status",
+    fl_warmth_min = 0, fl_warmth_max = 100,
     fl_warmth = nil,
     auto_warmth = false,
     max_warmth_hour = 23,
@@ -42,8 +43,9 @@ function KoboPowerD:_syncKoboLightOnStart()
             if self.fl_warmth ~= nil then
                 local new_color = NickelConf.colorSetting.get()
                 if new_color ~= nil then
-                    -- ColorSetting is in [1500,6400], with '1500'
-                    -- being maximum warmth, so normalize this to [0,100]
+                    -- ColorSetting is stored as a color temperature scale in Kelvin,
+                    -- from 1500 to 6400
+                    -- so normalize this to [0,100] on our end.
                     new_warmth = (100 - math.floor((new_color - 1500) / 49))
                 end
                 auto_warmth = NickelConf.autoColorEnabled.get()
@@ -111,8 +113,10 @@ function KoboPowerD:init()
     self.autowarmth_job_running = false
 
     if self.device.hasFrontlight() then
-        -- If this device has natural light (currently only KA1)
-        -- use the SysFS interface, and ioctl otherwise.
+        -- If this device has natural light (currently only KA1 & Forma)
+        -- Use the SysFS interface, and ioctl otherwise.
+        -- NOTE: On the Forma, nickel still appears to prefer using ntx_io to handle the FL,
+        --       but it does use sysfs for the NL...
         if self.device.hasNaturalLight() then
             local nl_config = G_reader_settings:readSetting("natural_light_config")
             if nl_config then
@@ -120,6 +124,9 @@ function KoboPowerD:init()
                     self.device.frontlight_settings[key] = val
                 end
             end
+            -- Does this device's NaturalLight use a custom scale?
+            self.fl_warmth_min = self.device.frontlight_settings["nl_min"] or self.fl_warmth_min
+            self.fl_warmth_max = self.device.frontlight_settings["nl_max"] or self.fl_warmth_max
             self.fl = SysfsLight:new(self.device.frontlight_settings)
             self.fl_warmth = 0
             self:_syncKoboLightOnStart()

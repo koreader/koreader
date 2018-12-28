@@ -12,6 +12,8 @@ local CervantesPowerD = BasePowerD:new{
 
     fl_min = 0,
     fl_max = 100,
+    fl_warmth_min = 0,
+    fl_warmth_max = 100,
     capacity_file = battery_sysfs .. 'capacity',
     status_file = battery_sysfs .. 'status'
 }

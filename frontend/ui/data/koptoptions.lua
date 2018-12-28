@@ -17,7 +17,7 @@ local KoptOptions = {
                 args = {"portrait", "landscape"},
                 default_arg = "portrait",
                 current_func = function() return Screen:getScreenMode() end,
-                event = "SetScreenMode",
+                event = "SwapScreenMode",
                 name_text_hold_callback = optionsutil.showValues,
             }
         }

@@ -651,13 +651,39 @@ function ReaderView:restoreViewContext(ctx)
     end
 end
 
-function ReaderView:onSetScreenMode(new_mode, rotation)
+-- NOTE: This is just a shim for koptoptions, because we want to be able to pass an optional second argument to SetScreenMode...
+--       This is also used as a sink for gsensor input events, because we can only send a single event per input,
+--       and we need to cover both CRe & KOpt...
+function ReaderView:onSwapScreenMode(new_mode, rotation)
+    -- Don't do anything if an explicit rotation was requested, but it hasn't actually changed,
+    -- because we may be sending this event *right before* a ChangeScreenMode in CRe (gyro)
+    if rotation ~= nil and rotation ~= true and rotation == Screen:getRotationMode() then
+        return true
+    end
+    -- CRe
+    self.ui:handleEvent(Event:new("ChangeScreenMode", new_mode, rotation or true))
+    -- KOpt (On CRe, since it's redundant (RR:onChangeScreenMode already sends one), this'll get discarded early)
+    self.ui:handleEvent(Event:new("SetScreenMode", new_mode, rotation or true))
+end
+
+function ReaderView:onSetScreenMode(new_mode, rotation, noskip)
+    -- Don't do anything if an explicit rotation was requested, but it hasn't actually changed,
+    -- because we may be sending this event *right after* a ChangeScreenMode in CRe (gsensor)
+    -- We only want to let the onReadSettings one go through, otherwise the testsuite blows up...
+    if noskip == nil and rotation ~= nil and rotation ~= true and rotation == Screen:getRotationMode() then
+        return true
+    end
     if new_mode == "landscape" or new_mode == "portrait" then
         self.screen_mode = new_mode
-        if rotation ~= nil then
+        -- NOTE: Hacky hack! If rotation is "true", that's actually an "interactive" flag for setScreenMode
+        -- FIXME: That's because we can't store nils in a table, which is what Event:new attempts to do ;).
+        --        c.f., https://stackoverflow.com/q/7183998/ & http://lua-users.org/wiki/VarargTheSecondClassCitizen
+        --        With a fixed Event implementation, we'd instead stick "interactive" in a third argument,
+        --        which we could happily pass while still keeping rotation nil ;).
+        if rotation ~= nil and rotation ~= true then
             Screen:setRotationMode(rotation)
         else
-            Screen:setScreenMode(new_mode)
+            Screen:setScreenMode(new_mode, rotation)
         end
         UIManager:setDirty(self.dialog, "full")
         local new_screen_size = Screen:getSize()
@@ -665,7 +691,7 @@ function ReaderView:onSetScreenMode(new_mode, rotation)
         self.ui:onScreenResize(new_screen_size)
         self.ui:handleEvent(Event:new("InitScrollPageStates"))
     end
-    self.cur_rotation_mode = Screen.cur_rotation_mode
+    self.cur_rotation_mode = Screen:getRotationMode()
     return true
 end
 
@@ -704,7 +730,7 @@ function ReaderView:onReadSettings(config)
     end
     if screen_mode then
         Screen:setScreenMode(screen_mode)
-        self:onSetScreenMode(screen_mode, config:readSetting("rotation_mode"))
+        self:onSetScreenMode(screen_mode, config:readSetting("rotation_mode"), true)
     end
     self.state.gamma = config:readSetting("gamma") or DGLOBALGAMMA
     local full_screen = config:readSetting("kopt_full_screen") or self.document.configurable.full_screen

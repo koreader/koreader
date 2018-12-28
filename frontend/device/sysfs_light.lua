@@ -9,6 +9,10 @@ local SysfsLight = {
     frontlight_white = nil,
     frontlight_red = nil,
     frontlight_green = nil,
+    frontlight_mixer = nil,
+    nl_min = nil,
+    nl_max = nil,
+    nl_inverted = nil,
     current_brightness = 0,
     current_warmth = 0,
     white_gain = 25,
@@ -56,29 +60,42 @@ function SysfsLight:setNaturalBrightness(brightness, warmth)
         warmth = self.current_warmth
     end
 
-    local red = 0
-    local green = 0
-    local white = 0
-    if brightness > 0 then
-        -- On Nickel, the values for white/red/green are roughly linearly dependent
-        -- on the 4th root of brightness and warmth.
-        white = math.min(self.white_gain * math.pow(brightness, self.exponent) *
+    -- Newer devices use a mixer instead of writting values per color.
+    if self.frontlight_mixer then
+        -- Honor the device's scale, which may not be [0...100] (f.g., it's [0...10] on the Forma) ;).
+        warmth = math.floor(warmth / self.nl_max)
+        self:_write_value(self.frontlight_white, brightness)
+        -- And it may be inverted... (cold is nl_max, warm is nl_min)
+        if self.nl_inverted then
+            self:_write_value(self.frontlight_mixer, self.nl_max - warmth)
+        else
+            self:_write_value(self.frontlight_mixer, warmth)
+        end
+    else
+        local red = 0
+        local green = 0
+        local white = 0
+        if brightness > 0 then
+            -- On Nickel, the values for white/red/green are roughly linearly dependent
+            -- on the 4th root of brightness and warmth.
+            white = math.min(self.white_gain * math.pow(brightness, self.exponent) *
                              math.pow(100 - warmth, self.exponent) + self.white_offset, 255)
-    end
-    if warmth > 0 then
-        red = math.min(self.red_gain * math.pow(brightness, self.exponent) *
+        end
+        if warmth > 0 then
+            red = math.min(self.red_gain * math.pow(brightness, self.exponent) *
                            math.pow(warmth, self.exponent) + self.red_offset, 255)
-        green = math.min(self.green_gain * math.pow(brightness, self.exponent) *
+            green = math.min(self.green_gain * math.pow(brightness, self.exponent) *
                              math.pow(warmth, self.exponent) + self.green_offset, 255)
+        end
+
+        white = math.max(white, 0)
+        red = math.max(red, 0)
+        green = math.max(green, 0)
+
+        self:_set_light_value(self.frontlight_white, math.floor(white))
+        self:_set_light_value(self.frontlight_green, math.floor(green))
+        self:_set_light_value(self.frontlight_red, math.floor(red))
     end
-
-    white = math.max(white, 0)
-    red = math.max(red, 0)
-    green = math.max(green, 0)
-
-    self:_set_light_value(self.frontlight_white, math.floor(white))
-    self:_set_light_value(self.frontlight_green, math.floor(green))
-    self:_set_light_value(self.frontlight_red, math.floor(red))
 
     self.current_brightness = brightness
     self.current_warmth = warmth

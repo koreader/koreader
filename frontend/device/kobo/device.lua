@@ -130,7 +130,7 @@ local KoboSnow = Kobo:new{
 -- Kobo Aura H2O2, Rev2:
 -- FIXME: Check if the Clara fix actually helps here... (#4015)
 local KoboSnowRev2 = Kobo:new{
-    model = "Kobo_snow",
+    model = "Kobo_snow_r2",
     hasFrontlight = yes,
     touch_snow_protocol = true,
     display_dpi = 265,
@@ -157,7 +157,7 @@ local KoboStar = Kobo:new{
 -- Kobo Aura second edition, Rev 2:
 -- FIXME: Confirm that this is accurate? If it is, and matches the Rev1, ditch the special casing.
 local KoboStarRev2 = Kobo:new{
-    model = "Kobo_star",
+    model = "Kobo_star_r2",
     hasFrontlight = yes,
     touch_probe_ev_epoch_time = true,
     touch_phoenix_protocol = true,
@@ -199,24 +199,27 @@ local KoboNova = Kobo:new{
 }
 
 -- Kobo Forma:
--- FIXME: Will need initial rotation trickery like the Kindle Oasis, startup HW rota available via self.screen.fb_rota
---        In the meantime, start KOReader with the Forma in Upright Portrait mode in order to have working touch input.
---        (That's Portrait with the buttons on the right).
---        c.f., #4291
--- FIXME: FrontLight/NaturalLight is untested
--- FIXME: touch_probe_ev_epoch_time is possibly unneeded
+-- NOTE: Right now, we enforce Portrait orientation on startup to avoid getting touch coordinates wrong,
+--       no matter the rotation we were started from (c.f., platform/kobo/koreader.sh).
+-- NOTE: For the FL, assume brightness is WO, and actual_brightness is RO!
+--       i.e., we could have a real KoboPowerD:frontlightIntensityHW() by reading actual_brightness ;).
 local KoboFrost = Kobo:new{
     model = "Kobo_frost",
     hasFrontlight = yes,
     hasKeys = yes,
-    touch_probe_ev_epoch_time = true,
     touch_snow_protocol = true,
+    misc_ntx_gsensor_protocol = true,
     display_dpi = 300,
     hasNaturalLight = yes,
     frontlight_settings = {
-        frontlight_white = "/sys/class/backlight/mxc_msp430.0",
-        frontlight_red = "/sys/class/backlight/tlc5947_bl",
-    }
+        frontlight_white = "/sys/class/backlight/mxc_msp430.0/brightness",
+        frontlight_mixer = "/sys/class/backlight/tlc5947_bl/color",
+        -- Warmth goes from 0 to 10 on the device's side (our own internal scale is still normalized to [0...100])
+        -- NOTE: Those three extra keys are *MANDATORY* if frontlight_mixer is set!
+        nl_min = 0,
+        nl_max = 10,
+        nl_inverted = true,
+    },
 }
 
 function Kobo:init()
@@ -234,6 +237,7 @@ function Kobo:init()
         self.hasBGRFrameBuffer = no
     end
     self.powerd = require("device/kobo/powerd"):new{device = self}
+    -- NOTE: For the Forma, with the buttons on the right, 193 is Top, 194 Bottom.
     self.input = require("device/input"):new{
         device = self,
         event_map = {
@@ -241,8 +245,8 @@ function Kobo:init()
             [90] = "LightButton",
             [102] = "Home",
             [116] = "Power",
-            [194] = "RPgBack",
-            [193] = "RPgFwd",
+            [193] = "RPgBack",
+            [194] = "RPgFwd",
         },
         event_map_adapter = {
             SleepCover = function(ev)
@@ -262,8 +266,8 @@ function Kobo:init()
 
     Generic.init(self)
 
-    -- event2 is for MMA7660 sensor (3-Axis Orientation/Motion Detection)
-    self.input.open("/dev/input/event0") -- Light button and sleep slider
+    -- When present, event2 is the raw accelerometer data (3-Axis Orientation/Motion Detection)
+    self.input.open("/dev/input/event0") -- Various HW Buttons, Switches & Synthetic NTX events
     self.input.open("/dev/input/event1")
     -- fake_events is only used for usb plug event so far
     -- NOTE: usb hotplug event is also available in /tmp/nickel-hardware-status
@@ -392,7 +396,7 @@ function Kobo:initEventAdjustHooks()
     if self.touch_mirrored_x then
         self.input:registerEventAdjustHook(
             self.input.adjustTouchMirrorX,
-            -- FIXME: what if we change the screen protrait mode?
+            -- FIXME: what if we change the screen portrait mode?
             self.screen:getWidth()
         )
     end
@@ -413,6 +417,11 @@ function Kobo:initEventAdjustHooks()
 
     if self.touch_phoenix_protocol then
         self.input.handleTouchEv = self.input.handleTouchEvPhoenix
+    end
+
+    -- Accelerometer on the Forma
+    if self.misc_ntx_gsensor_protocol then
+        self.input.handleMiscEv = self.input.handleMiscEvNTX
     end
 end
 
