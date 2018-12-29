@@ -21,7 +21,7 @@ local function LvDEBUG(lv, ...)
         end
     end
     if isAndroid then
-        android.LOGI("#"..line)
+        android.LOGV(line)
     else
         io.stdout:write(string.format("# %s %s\n", os.date("%x-%X"), line))
         io.stdout:flush()
