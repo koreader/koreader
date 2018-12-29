@@ -29,7 +29,10 @@ local file = A.jni:context(A.app.activity.vm, function(JNI)
         return JNI:to_string(path)
     end
 end)
-A.LOGI("intent file path " .. (file or ""))
+
+if file ~= nil then
+    A.LOGI("intent file path " .. file)
+end
 
 -- update koreader from ota
 local function update()
