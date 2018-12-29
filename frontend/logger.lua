@@ -50,7 +50,15 @@ local function log(log_lvl, dump_lvl, ...)
         end
     end
     if isAndroid then
-        android.LOGI(LOG_PREFIX[log_lvl]..line)
+        if log_lvl == "dbg" then
+            android.LOGV(line)
+        elseif log_lvl == "info" then
+            android.LOGI(line)
+        elseif log_lvl == "warn" then
+            android.LOGW(line)
+        elseif log_lvl == "err" then
+            android.LOGE(line)
+        end
     else
         io.stdout:write(os.date("%x-%X"), " ", LOG_PREFIX[log_lvl], line, "\n")
         io.stdout:flush()
