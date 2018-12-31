@@ -41,7 +41,7 @@ if command_exists "$COMMAND"; then
         echo "Depends: libsdl2-2.0-0"
         echo "Architecture: ${ARCH}"
         echo "Version: ${VERSION}"
-        echo "Installed-Size: $(du -ks ${INSTALL_DIR}/debian/usr/ | cut -f 1)"
+        echo "Installed-Size: $(du -ks "${INSTALL_DIR}/debian/usr/" | cut -f 1)"
 
         echo "Package: KOReader"
         echo "Maintainer: KOReader team"
@@ -50,8 +50,8 @@ if command_exists "$COMMAND"; then
 
     } >"${INSTALL_DIR}/debian/DEBIAN/control"
 
-    (cd "${INSTALL_DIR}/.." && \
-        fakeroot dpkg-deb -b "${INSTALL_DIR}/debian" "koreader-${VERSION}-${ARCH}.deb")
+    (cd "${INSTALL_DIR}/.." \
+        && fakeroot dpkg-deb -b "${INSTALL_DIR}/debian" "koreader-${VERSION}-${ARCH}.deb")
 else
     echo "${COMMAND} not found, unable to build Debian package"
     exit 1
