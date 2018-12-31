@@ -47,6 +47,8 @@ if command_exists "$COMMAND"; then
         echo "Maintainer: KOReader team"
         echo "Homepage: https://koreader.rocks"
         echo "Description: An ebook reader application supporting PDF, DjVu, EPUB, FB2 and many more formats"
+        echo " KOReader is a document viewer application, originally created for Kindle e-ink readers."
+        echo " It currently runs on Kindle, Kobo, PocketBook, Ubuntu Touch, Android and Linux devices"
 
     } >"${INSTALL_DIR}/debian/DEBIAN/control"
 
