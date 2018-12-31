@@ -180,6 +180,10 @@ function OTAManager:fetchAndProcessUpdate()
                             text = _("Failed to update KOReader.\nYou can:\nCancel, keeping temporary files intact.\nRetry the update process but this time, with a full download.\nAbort and cleanup all temporary files."),
                             choice1_text = _("Retry"),
                             choice1_callback = function()
+                                UIManager:show(InfoMessage:new{
+                                    text = _("Downloading may take several minutes…"),
+                                    timeout = 3,
+                                })
                                 -- Clear the installed package, as well as the complete/incomplete update download
                                 os.execute("rm " .. self.installed_package)
                                 os.execute("rm " .. self.updated_package .. "*")
@@ -271,7 +275,7 @@ function OTAManager:_buildLocalPackage()
 end
 
 function OTAManager:zsync(full_dl)
-    if self:_buildLocalPackage() == 0 then
+    if full_dl or self:_buildLocalPackage() == 0 then
         local zsync_wrapper = "zsync"
         -- With visual feedback if supported...
         if self.can_pretty_print then
