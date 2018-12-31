@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Figure out whether that's a delta or a full download given the number of arguments passed...
-if [ $# -lt 7 ] ; then
+if [ $# -lt 7 ]; then
     ZSYNC_MESSAGE="Downloading update data"
 else
     ZSYNC_MESSAGE="Computing zsync delta"
