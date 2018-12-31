@@ -26,6 +26,7 @@ trace-out.txt
 
 koreader-*.zip
 koreader-*.apk
+koreader-*.deb
 koreader-*.tar.gz
 koreader-*.targz
 koreader-*.click
@@ -42,6 +43,10 @@ koreader-android-arm-linux-androideabi*
 koreader-android-i686-linux-android*
 koreader-cervantes-arm-linux-gnueabi*
 koreader-cervantes-arm-cervantes-linux-gnueabi*
+koreader-debian-i686-linux-gnu*
+koreader-debian-x86_64-linux-gnu*
+koreader-debian-armel-arm-linux-gnueabi*
+koreader-debian-armhf-arm-linux-gnueabihf*
 koreader-kindle-legacy-arm-kindle-linux-gnueabi*
 koreader-kindle-arm-linux-gnueabi*
 koreader-kobo-arm-linux-gnueabihf*

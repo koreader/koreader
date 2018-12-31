@@ -122,6 +122,9 @@ SUPPORTED_TARGETS="
     pocketbook
     ubuntu-touch
     appimage
+    debian          Debian package for current arch
+    debian-armel    Debian package for generic armel devices
+    debian-armhf    Debian package for generic armhf devices
     emu             (*default) If no TARGET is given, assume emulator
     win32
 "
@@ -228,6 +231,18 @@ ${SUPPORTED_TARGETS}"
             make TARGET=appimage
             assert_ret_zero $?
             ;;
+        debian)
+            make TARGET=debian
+            assert_ret_zero $?
+            ;;
+        debian-armel)
+            make TARGET=debian-armel
+            assert_ret_zero $?
+            ;;
+        debian-armhf)
+            make TARGET=debian-armhf
+            assert_ret_zero $?
+            ;;
         win32)
             make TARGET=win32
             assert_ret_zero $?
@@ -307,6 +322,15 @@ ${SUPPORTED_TARGETS}"
             ;;
         appimage)
             make TARGET=appimage clean
+            ;;
+        debian)
+            make TARGET=debian clean
+            ;;
+        debian-armel)
+            make TARGET=debian-armel clean
+            ;;
+        debian-armhf)
+            make TARGET=debian-armhf clean
             ;;
         win32)
             make TARGET=win32 clean
@@ -427,6 +451,18 @@ ${SUPPORTED_RELEASE_TARGETS}"
         appimage)
             kodev-build appimage
             make TARGET=appimage update
+            ;;
+        debian)
+            kodev-build debian
+            make TARGET=debian update
+            ;;
+        debian-armel)
+            kodev-build debian-armel
+            make TARGET=debian-armel update
+            ;;
+        debian-armhf)
+            kodev-build debian-armhf
+            make TARGET=debian-armhf update
             ;;
         *)
             echo "Unsupported target for release: $1."
