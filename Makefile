@@ -379,7 +379,7 @@ debianupdate: all
 	cp -Lr $(INSTALL_DIR)/koreader $(INSTALL_DIR)/debian/usr/local/share
 	cd $(INSTALL_DIR)/debian/usr/local/share/koreader && pwd && \
 		rm -rf ota cache clipboard screenshots spec && \
-		rm -rf resources/icons/src && \
+		rm -rf resources/fonts resources/icons/src && \
 		rm -rf ev_replay.py
 
 sony-prstuxupdate: all
