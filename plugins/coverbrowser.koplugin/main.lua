@@ -295,6 +295,30 @@ function CoverBrowser:addToMainMenu(menu_items)
                         end,
                     },
                     {
+                        text = _("Show number of pages read instead of progress %"),
+                        checked_func = function() return BookInfoManager:getSetting("show_pages_read_as_progress") end,
+                        callback = function()
+                            if BookInfoManager:getSetting("show_pages_read_as_progress") then
+                                BookInfoManager:saveSetting("show_pages_read_as_progress", false)
+                            else
+                                BookInfoManager:saveSetting("show_pages_read_as_progress", true)
+                            end
+                            self:refreshFileManagerInstance()
+                        end,
+                    },
+                    {
+                        text = _("Show number of pages left to read"),
+                        checked_func = function() return BookInfoManager:getSetting("show_pages_left_in_progress") end,
+                        callback = function()
+                            if BookInfoManager:getSetting("show_pages_left_in_progress") then
+                                BookInfoManager:saveSetting("show_pages_left_in_progress", false)
+                            else
+                                BookInfoManager:saveSetting("show_pages_left_in_progress", true)
+                            end
+                            self:refreshFileManagerInstance()
+                        end,
+                    },
+                    {
                         text = _("Append series metadata to authors"),
                         checked_func = function() return BookInfoManager:getSetting("append_series_to_authors") end,
                         callback = function()

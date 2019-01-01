@@ -13,6 +13,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
+local Math = require("optmath")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local RightContainer = require("ui/widget/container/rightcontainer")
 local Size = require("ui/size")
@@ -364,7 +365,14 @@ function ListMenuItem:update()
                 end
             elseif percent_finished then
                 if pages then
-                    pages_str = T(_("%1 % of %2 pages"), math.floor(100*percent_finished), pages)
+                    if BookInfoManager:getSetting("show_pages_read_as_progress") then
+                        pages_str = T(_("page %1 of %2"), Math.round(percent_finished*pages), pages)
+                    else
+                        pages_str = T(_("%1 % of %2 pages"), math.floor(100*percent_finished), pages)
+                    end
+                    if BookInfoManager:getSetting("show_pages_left_in_progress") then
+                        pages_str = T(_("%1, %2 to read"), pages_str, Math.round(pages-percent_finished*pages), pages)
+                    end
                 else
                     pages_str = string.format("%d %%", math.floor(100*percent_finished))
                 end
