@@ -355,11 +355,7 @@ function ReaderRolling:onTapBackward()
 end
 
 function ReaderRolling:onSwipe(_, ges)
-    if ges.direction == "north" then
-        self:onGotoViewRel(1)
-    elseif ges.direction == "south" then
-        self:onGotoViewRel(-1)
-    elseif ges.direction == "west" then
+    if ges.direction == "west" then
         if self.inverse_reading_order then
             self:onGotoViewRel(-1)
         else
