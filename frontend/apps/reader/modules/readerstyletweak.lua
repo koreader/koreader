@@ -430,6 +430,26 @@ You can enable individual tweaks on this book with a tap, or view more details a
                 end,
                 separator = item.separator,
             })
+        elseif item.info_text then -- informative menu item
+            table.insert(menu, {
+                text = item.title or "### undefined menu title ###",
+                -- No check box.
+                -- Show the info text when either tap or hold
+                keep_menu_open = true,
+                callback = function()
+                    UIManager:show(InfoMessage:new{
+                        text = item.info_text,
+                        face = Font:getFace(item.smaller_font and "x_smallinfofont" or "smallinfofont"),
+                    })
+                end,
+                hold_callback = function()
+                    UIManager:show(InfoMessage:new{
+                        text = item.info_text,
+                        face = Font:getFace(item.smaller_font and "x_smallinfofont" or "smallinfofont"),
+                    })
+                end,
+                separator = item.separator,
+            })
         else
             table.insert(menu, {
                 text = item.if_empty_menu_title or _("This section is empty"),

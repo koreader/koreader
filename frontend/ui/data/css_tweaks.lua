@@ -134,7 +134,7 @@ h1, h2, h3, h4, h5, h6 { hyphens: none !important; }
             id = "paragraph_no_indent";
             title = _("No indentation on first paragraph line"),
             description = _("Do not indent the first line of paragraphs."),
-            css = [[p + p { text-indent: 0 !important; }]],
+            css = [[p { text-indent: 0 !important; }]],
         },
         {
             id = "paragraph_indent";
@@ -162,7 +162,7 @@ body, h1, h2, h3, h4, h5, h6, div, li, td, th { text-indent: 0 !important; }
             id = "paragraph_no_whitespace";
             title = _("No spacing between paragraphs"),
             description = _("No whitespace between paragraphs is the default, but it may be overridden by publisher styles. This will re-enable it for paragraphs and list items."),
-            css = [[p, li { margin: 0 !important; }]],
+            css = [[p, li { margin-top: 0 !important; margin-bottom: 0 !important; }]],
         },
     },
     {
@@ -259,6 +259,122 @@ width: 100% !important;
     },
     {
         title = _("Miscellaneous"),
+        {
+            title = _("Alternative TOC hints"),
+            {
+                title = _("About alternative TOC"),
+                smaller_font = true,
+                info_text = _([[
+An alternative table of content can be built with a long-press on the "Table of content" menu item.
+
+It will be built from document headings <H1> to <H6>. Some of these can be ignored with the tweaks available here.
+If the document contains no heading, or all are ignored, the alternative TOC will be built from the document fragments, to point to the start of each individual HTML file in the EPUB.
+
+Hints can be set to other non-heading elements, for them to be used as TOC items, in some user style tweaks (as they would be quite book-specific, see last tweak here for some examples).
+
+After applying these tweaks, it is needed to re-build the alternative TOC by long-pressing "Table of content" twice (once to restore the original TOC, once to build again the alternative TOC).]]),
+                separator = true,
+            },
+            {
+                id = "alt_toc_ignore_h_all";
+                title = _("Ignore all <H1> to <H6>"),
+                css = [[h1, h2, h3, h4, h5, h6 { -cr-hint: toc-ignore; }]],
+            },
+            {
+                id = "alt_toc_ignore_h1";
+                title = _("Ignore <H1>"),
+                css = [[h1 { -cr-hint: toc-ignore; }]],
+            },
+            {
+                id = "alt_toc_ignore_h2";
+                title = _("Ignore <H2>"),
+                css = [[h2 { -cr-hint: toc-ignore; }]],
+            },
+            {
+                id = "alt_toc_ignore_h3";
+                title = _("Ignore <H3>"),
+                css = [[h3 { -cr-hint: toc-ignore; }]],
+            },
+            {
+                id = "alt_toc_ignore_h4";
+                title = _("Ignore <H4>"),
+                css = [[h4 { -cr-hint: toc-ignore; }]],
+            },
+            {
+                id = "alt_toc_ignore_h5";
+                title = _("Ignore <H5>"),
+                css = [[h5 { -cr-hint: toc-ignore; }]],
+            },
+            {
+                id = "alt_toc_ignore_h6";
+                title = _("Ignore <H6>"),
+                css = [[h6 { -cr-hint: toc-ignore; }]],
+                separator = true,
+            },
+            {
+                id = "alt_toc_level_example";
+                title = _("Example of book specific TOC hints"),
+                description = _([[
+If headings or document fragments do not give a usable TOC, you may inspect the HTML and look for elements that contain chapter titles, and set hints to their class names.
+This is just an example, that will need to be adapted in a user style tweak.]]),
+                css = [[
+.book_n    { -cr-hint: toc-level1; }
+.part_n    { -cr-hint: toc-level2; }
+.chap_tit  { -cr-hint: toc-level3; }
+.chap_tit1 { -cr-hint: toc-level3; }
+                ]],
+            },
+        },
+        {
+            id = "epub_footnote-inpage";
+            title = _("Show EPUB footnotes in pages"),
+            description = _([[
+Show footnotes text at the bottom of pages that contain links to them.
+This only works with footnotes that have specific attributes set by the publisher.]]),
+            css = [[
+/* EPUB attributes: */
+*[type~="note"], *[type~="footnote"],
+*[type~="rearnote"],
+*[role~="doc-note"], *[role~="doc-footnote"],
+*[role~="doc-rearnote"],
+/* Wikipedia EPUBs footnotes: */
+ol.references > li,
+/* Classic footnotes class names: */
+.footnote, .note, .note1
+{
+    -cr-hint: footnote-inpage;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+/* Wikipedia EPUBs: hide backlinks */
+ol.references > li > .noprint { display: none; }
+            ]],
+        },
+        {
+            id = "epub_footnote-inpage_smaller";
+            title = _("Show smaller EPUB footnotes in pages"),
+            description = _([[Decrease font size of footnotes text displayed in pages.]]),
+            -- Include the whole content of previous style, so toggling this one is enough
+            css = [[
+/* EPUB attributes: */
+*[type~="note"], *[type~="footnote"],
+*[type~="rearnote"],
+*[role~="doc-note"], *[role~="doc-footnote"],
+*[role~="doc-rearnote"],
+/* Wikipedia EPUBs footnotes: */
+ol.references > li,
+/* Classic footnotes class names: */
+.footnote, .note, .note1
+{
+    -cr-hint: footnote-inpage;
+    font-size: 80% !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+/* Wikipedia EPUBs: hide backlinks */
+ol.references > li > .noprint { display: none; }
+            ]],
+        },
         {
             id = "epub_switch_show_case";
             title = _("Toggle alternative EPUB content"),
