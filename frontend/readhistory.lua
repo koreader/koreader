@@ -1,6 +1,7 @@
 local DataStorage = require("datastorage")
 local DocSettings = require("docsettings")
 local dump = require("dump")
+local getFriendlySize = require("util").getFriendlySize
 local joinPath = require("ffi/util").joinPath
 local lfs = require("libs/libkoreader-lfs")
 local realpath = require("ffi/util").realpath
@@ -13,11 +14,13 @@ local ReadHistory = {
 }
 
 local function buildEntry(input_time, input_file)
+    local file_exists = lfs.attributes(input_file, "mode") == "file"
     return {
         time = input_time,
         text = input_file:gsub(".*/", ""),
         file = realpath(input_file) or input_file, -- keep orig file path of deleted files
-        dim = lfs.attributes(input_file, "mode") ~= "file", -- "dim", as expected by Menu
+        dim = not file_exists, -- "dim", as expected by Menu
+        mandatory = file_exists and getFriendlySize(lfs.attributes(input_file, "size") or 0),
         callback = function()
             local ReaderUI = require("apps/reader/readerui")
             ReaderUI:showReader(input_file)
