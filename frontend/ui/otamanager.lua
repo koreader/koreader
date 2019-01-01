@@ -2,6 +2,7 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
+local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
 local Version = require("version")
@@ -175,9 +176,43 @@ function OTAManager:fetchAndProcessUpdate()
                         if self.can_pretty_print then
                             os.execute("./fbink -q -y -7 -pm ' '  ' '")
                         end
-                        UIManager:show(ConfirmBox:new{
-                            text = _("Error updating KOReader. Would you like to delete temporary files?"),
-                            ok_callback = function()
+                        UIManager:show(MultiConfirmBox:new{
+                            text = _("Failed to update KOReader.\n\nYou can:\nCancel, keeping temporary files.\nRetry the update process with a full download.\nAbort and cleanup all temporary files."),
+                            choice1_text = _("Retry"),
+                            choice1_callback = function()
+                                UIManager:show(InfoMessage:new{
+                                    text = _("Downloading may take several minutes…"),
+                                    timeout = 3,
+                                })
+                                -- Clear the installed package, as well as the complete/incomplete update download
+                                os.execute("rm " .. self.installed_package)
+                                os.execute("rm " .. self.updated_package .. "*")
+                                -- And then relaunch zsync in full download mode...
+                                UIManager:scheduleIn(1, function()
+                                    if OTAManager:zsync(true) == 0 then
+                                        UIManager:show(InfoMessage:new{
+                                            text = _("KOReader will be updated on next restart."),
+                                        })
+                                        -- Make it clear that zsync is done
+                                        if self.can_pretty_print then
+                                            os.execute("./fbink -q -y -7 -pm ' '  ' '")
+                                        end
+                                    else
+                                        -- Make it clear that zsync is done
+                                        if self.can_pretty_print then
+                                            os.execute("./fbink -q -y -7 -pm ' '  ' '")
+                                        end
+                                        UIManager:show(ConfirmBox:new{
+                                            text = _("Error updating KOReader. Would you like to delete temporary files?"),
+                                            ok_callback = function()
+                                                os.execute("rm " .. ota_dir .. "ko*")
+                                            end,
+                                        })
+                                    end
+                                end)
+                            end,
+                            choice2_text = _("Abort"),
+                            choice2_callback = function()
                                 os.execute("rm " .. ota_dir .. "ko*")
                             end,
                         })
@@ -239,22 +274,34 @@ function OTAManager:_buildLocalPackage()
     end
 end
 
-function OTAManager:zsync()
-    if self:_buildLocalPackage() == 0 then
+function OTAManager:zsync(full_dl)
+    if full_dl or self:_buildLocalPackage() == 0 then
         local zsync_wrapper = "zsync"
         -- With visual feedback if supported...
         if self.can_pretty_print then
             zsync_wrapper = "spinning_zsync"
         end
-        return os.execute(
-        ("./%s -i '%s' -o '%s' -u '%s' '%s%s'"):format(
-            zsync_wrapper,
-            self.installed_package,
-            self.updated_package,
-            self:getOTAServer(),
-            ota_dir,
-            self:getZsyncFilename())
-        )
+        -- If that's a full-download fallback, drop the input tarball
+        if full_dl then
+            return os.execute(
+            ("./%s -o '%s' -u '%s' '%s%s'"):format(
+                zsync_wrapper,
+                self.updated_package,
+                self:getOTAServer(),
+                ota_dir,
+                self:getZsyncFilename())
+            )
+        else
+            return os.execute(
+            ("./%s -i '%s' -o '%s' -u '%s' '%s%s'"):format(
+                zsync_wrapper,
+                self.installed_package,
+                self.updated_package,
+                self:getOTAServer(),
+                ota_dir,
+                self:getZsyncFilename())
+            )
+        end
     end
 end
 

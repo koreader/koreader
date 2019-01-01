@@ -1,7 +1,14 @@
 #!/bin/sh
 
+# Figure out whether that's a delta or a full download given the number of arguments passed...
+if [ $# -lt 7 ]; then
+    ZSYNC_MESSAGE="Downloading update data"
+else
+    ZSYNC_MESSAGE="Computing zsync delta"
+fi
+
 # Small zsync wrapper so we can get a pretty spinner while it works...
-./fbink -q -y -7 -pmh 'Computing zsync delta !'
+./fbink -q -y -7 -pmh "${ZSYNC_MESSAGE} !"
 # Clear any potential leftover from the local OTA tarball creation.
 ./fbink -q -y -6 -pm ' '
 
@@ -26,7 +33,7 @@
             usleep 500000
             # NOTE: Throw stderr to the void because I'm cheating w/ U+FFFD for a blank character,
             #       which FBInk replaces by a blank, but not before shouting at us on stderr ;).
-            ./fbink -q -y -7 -pmh "Computing zsync delta ${spin}" 2>/dev/null
+            ./fbink -q -y -7 -pmh "${ZSYNC_MESSAGE} ${spin}" 2>/dev/null
         done
     done
 ) &
