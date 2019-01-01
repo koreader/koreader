@@ -177,7 +177,7 @@ function OTAManager:fetchAndProcessUpdate()
                             os.execute("./fbink -q -y -7 -pm ' '  ' '")
                         end
                         UIManager:show(MultiConfirmBox:new{
-                            text = _("Failed to update KOReader.\n\nYou can:\nCancel, keeping temporary files intact.\nRetry the update process but this time, with a full download.\nAbort and cleanup all temporary files."),
+                            text = _("Failed to update KOReader.\n\nYou can:\nCancel, keeping temporary files.\nRetry the update process with a full download.\nAbort and cleanup all temporary files."),
                             choice1_text = _("Retry"),
                             choice1_callback = function()
                                 UIManager:show(InfoMessage:new{
