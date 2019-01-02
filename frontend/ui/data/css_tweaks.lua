@@ -267,12 +267,12 @@ width: 100% !important;
                 info_text = _([[
 An alternative table of content can be built with a long-press on the "Table of content" menu item.
 
-It will be built from document headings <H1> to <H6>. Some of these can be ignored with the tweaks available here.
-If the document contains no heading, or all are ignored, the alternative TOC will be built from the document fragments, to point to the start of each individual HTML file in the EPUB.
+The TOC will be built from document headings <H1> to <H6>. Some of these can be ignored with the tweaks available here.
+If the document contains no headings, or all are ignored, the alternative TOC will be built from document fragments and will point to the start of each individual HTML file in the EPUB.
 
-Hints can be set to other non-heading elements, for them to be used as TOC items, in some user style tweaks (as they would be quite book-specific, see last tweak here for some examples).
+Hints can be set to other non-heading elements in a user style tweak, so they can be used as TOC items. Since this would be quite book-specific, please see the final tweak for some examples.
 
-After applying these tweaks, it is needed to re-build the alternative TOC by long-pressing "Table of content" twice (once to restore the original TOC, once to build again the alternative TOC).]]),
+After applying these tweaks, the alternative TOC needs to be rebuilt by long-pressing "Table of content" twice: once to restore the original TOC, and once to build the alternative TOC again.]]),
                 separator = true,
             },
             {
@@ -315,8 +315,8 @@ After applying these tweaks, it is needed to re-build the alternative TOC by lon
                 id = "alt_toc_level_example";
                 title = _("Example of book specific TOC hints"),
                 description = _([[
-If headings or document fragments do not give a usable TOC, you may inspect the HTML and look for elements that contain chapter titles, and set hints to their class names.
-This is just an example, that will need to be adapted in a user style tweak.]]),
+If headings or document fragments do not result in a usable TOC, you can inspect the HTML and look for elements that contain chapter titles. Then you can set hints to their class names.
+This is just an example, that will need to be adapted into a user style tweak.]]),
                 css = [[
 .book_n    { -cr-hint: toc-level1; }
 .part_n    { -cr-hint: toc-level2; }
