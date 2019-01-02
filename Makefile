@@ -367,17 +367,19 @@ androidupdate: all
 		koreader-android-$(MACHINE)-$(VERSION).apk
 
 debianupdate: all
-	mkdir -p $(INSTALL_DIR)/debian/usr/local/share/pixmaps
-	cp -pr resources/koreader.png $(INSTALL_DIR)/debian/usr/local/share/pixmaps
+	mkdir -p $(INSTALL_DIR)/debian/usr/share/pixmaps
+	cp -pr resources/koreader.png $(INSTALL_DIR)/debian/usr/share/pixmaps
 
-	mkdir -p $(INSTALL_DIR)/debian/usr/local/share/applications
-	cp -pr $(DEBIAN_DIR)/koreader.desktop $(INSTALL_DIR)/debian/usr/local/share/applications
+	mkdir -p $(INSTALL_DIR)/debian/usr/share/applications
+	cp -pr $(DEBIAN_DIR)/koreader.desktop $(INSTALL_DIR)/debian/usr/share/applications
 
-	mkdir -p $(INSTALL_DIR)/debian/usr/local/bin
-	cp -pr $(DEBIAN_DIR)/koreader.sh $(INSTALL_DIR)/debian/usr/local/bin/koreader
+	mkdir -p $(INSTALL_DIR)/debian/usr/bin
+	cp -pr $(DEBIAN_DIR)/koreader.sh $(INSTALL_DIR)/debian/usr/bin/koreader
 
-	cp -Lr $(INSTALL_DIR)/koreader $(INSTALL_DIR)/debian/usr/local/share
-	cd $(INSTALL_DIR)/debian/usr/local/share/koreader && pwd && \
+	mkdir -p $(INSTALL_DIR)/debian/usr/lib
+	cp -Lr $(INSTALL_DIR)/koreader $(INSTALL_DIR)/debian/usr/lib
+
+	cd $(INSTALL_DIR)/debian/usr/lib/koreader && pwd && \
 		rm -rf ota cache clipboard screenshots spec && \
 		rm -rf resources/fonts resources/icons/src && \
 		rm -rf ev_replay.py

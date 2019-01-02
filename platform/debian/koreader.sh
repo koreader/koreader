@@ -15,7 +15,7 @@ else
 fi
 
 # working directory of koreader
-KOREADER_DIR="/usr/local/share/koreader"
+KOREADER_DIR="/usr/lib/koreader"
 
 # we're always starting from our working directory
 cd "${KOREADER_DIR}" || exit
