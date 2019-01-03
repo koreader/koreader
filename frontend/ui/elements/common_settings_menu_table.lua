@@ -190,6 +190,15 @@ if Device:hasKeys() then
                     },
                 },
             },
+            {
+                text = _("Enable back history"),
+                checked_func = function()
+                    return G_reader_settings:nilOrTrue("enable_back_history")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrTrue("enable_back_history")
+                end,
+            },
         }
     }
 end
