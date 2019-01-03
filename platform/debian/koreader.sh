@@ -24,7 +24,8 @@ cd "${KOREADER_DIR}" || exit
 export LD_LIBRARY_PATH=${KOREADER_DIR}/libs:$LD_LIBRARY_PATH
 
 # export external font directory
-export EXT_FONT_DIR="{HOME}/.fonts"
+export EXT_FONT_DIR="${HOME}/.config/koreader/fonts"
+[ ! -d "${EXT_FONT_DIR}" ] && mkdir -pv "${EXT_FONT_DIR}"
 
 RETURN_VALUE=85
 while [ $RETURN_VALUE -eq 85 ]; do
