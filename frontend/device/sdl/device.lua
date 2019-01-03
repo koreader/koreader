@@ -12,25 +12,46 @@ local Device = Generic:new{
     hasKeyboard = yes,
     hasKeys = yes,
     hasDPad = yes,
-    hasFrontlight = yes,
     isTouchDevice = yes,
     needsScreenRefreshAfterResume = no,
     hasColorScreen = yes,
 }
 
-if os.getenv("DISABLE_TOUCH") == "1" then
-    Device.isTouchDevice = no
-end
+local AppImage = Device:new{
+    model = "AppImage",
+}
+
+local Emulator = Device:new{
+    model = "Emulator",
+    isEmulator = yes,
+    hasFrontlight = yes,
+}
+
+local Linux = Device:new{
+    model = "Linux",
+}
+
+local UbuntuTouch = Device:new{
+    model = "UbuntuTouch",
+    hasFrontlight = yes,
+}
 
 function Device:init()
+    local emulator = self.isEmulator
     -- allows to set a viewport via environment variable
     -- syntax is Lua table syntax, e.g. EMULATE_READER_VIEWPORT="{x=10,w=550,y=5,h=790}"
     local viewport = os.getenv("EMULATE_READER_VIEWPORT")
-    if viewport then
+    if emulator and viewport then
         self.viewport = require("ui/geometry"):new(loadstring("return " .. viewport)())
     end
+
+    local touchless = os.getenv("DISABLE_TOUCH") == "1"
+    if emulator and touchless then
+        self.isTouchDevice = no
+    end
+
     local portrait = os.getenv("EMULATE_READER_FORCE_PORTRAIT")
-    if portrait then
+    if emulator and portrait then
         self.isAlwaysPortrait = yes
     end
 
@@ -151,7 +172,7 @@ function Device:init()
 
     self.keyboard_layout = require("device/sdl/keyboard_layout")
 
-    if portrait then
+    if emulator and portrait then
         self.input:registerEventAdjustHook(self.input.adjustTouchSwitchXY)
         self.input:registerEventAdjustHook(
             self.input.adjustTouchMirrorX,
@@ -196,4 +217,13 @@ function Device:simulateResume()
     })
 end
 
-return Device
+-------------- device probe ------------
+if os.getenv("APPIMAGE") then
+    return AppImage
+elseif os.getenv("KO_MULTIUSER") then
+    return Linux
+elseif os.getenv("UBUNTU_APPLICATION_ISOLATION") then
+    return UbuntuTouch
+else
+    return Emulator
+end

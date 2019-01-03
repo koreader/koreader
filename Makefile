@@ -39,6 +39,7 @@ ANDROID_DIR=$(PLATFORM_DIR)/android
 ANDROID_LAUNCHER_DIR:=$(ANDROID_DIR)/luajit-launcher
 APPIMAGE_DIR=$(PLATFORM_DIR)/appimage
 CERVANTES_DIR=$(PLATFORM_DIR)/cervantes
+DEBIAN_DIR=$(PLATFORM_DIR)/debian
 KINDLE_DIR=$(PLATFORM_DIR)/kindle
 KOBO_DIR=$(PLATFORM_DIR)/kobo
 POCKETBOOK_DIR=$(PLATFORM_DIR)/pocketbook
@@ -365,6 +366,24 @@ androidupdate: all
 	cp $(ANDROID_LAUNCHER_DIR)/bin/NativeActivity-debug.apk \
 		koreader-android-$(MACHINE)-$(VERSION).apk
 
+debianupdate: all
+	mkdir -p $(INSTALL_DIR)/debian/usr/share/pixmaps
+	cp -pr resources/koreader.png $(INSTALL_DIR)/debian/usr/share/pixmaps
+
+	mkdir -p $(INSTALL_DIR)/debian/usr/share/applications
+	cp -pr $(DEBIAN_DIR)/koreader.desktop $(INSTALL_DIR)/debian/usr/share/applications
+
+	mkdir -p $(INSTALL_DIR)/debian/usr/bin
+	cp -pr $(DEBIAN_DIR)/koreader.sh $(INSTALL_DIR)/debian/usr/bin/koreader
+
+	mkdir -p $(INSTALL_DIR)/debian/usr/lib
+	cp -Lr $(INSTALL_DIR)/koreader $(INSTALL_DIR)/debian/usr/lib
+
+	cd $(INSTALL_DIR)/debian/usr/lib/koreader && pwd && \
+		rm -rf ota cache clipboard screenshots spec && \
+		rm -rf resources/fonts resources/icons/src && \
+		rm -rf ev_replay.py
+
 sony-prstuxupdate: all
 	# ensure that the binaries were built for ARM
 	file $(INSTALL_DIR)/koreader/luajit | grep ARM || exit 1
@@ -439,6 +458,15 @@ else ifeq ($(TARGET), sony-prstux)
 	make sony-prstuxupdate
 else ifeq ($(TARGET), ubuntu-touch)
 	make utupdate
+else ifeq ($(TARGET), debian)
+	make debianupdate
+	$(CURDIR)/platform/debian/do_debian_package.sh $(INSTALL_DIR)
+else ifeq ($(TARGET), debian-armel)
+	make debianupdate
+	$(CURDIR)/platform/debian/do_debian_package.sh $(INSTALL_DIR) armel
+else ifeq ($(TARGET), debian-armhf)
+	make debianupdate
+	$(CURDIR)/platform/debian/do_debian_package.sh $(INSTALL_DIR) armhf
 endif
 
 androiddev: androidupdate

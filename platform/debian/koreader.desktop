@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=KOReader
+Comment=KOReader is a document viewer
+Exec=koreader %u
+Icon=koreader
+Terminal=false
+Type=Application
+Categories=Graphics;
+MimeType=application/pdf;application/x-cbz;application/epub+zip;image/vnd.djvu;text/plain;

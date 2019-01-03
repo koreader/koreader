@@ -17,7 +17,7 @@ function DataStorage:getDataDir()
         local package_name = app_id:match("^(.-)_")
         -- confined ubuntu app has write access to this dir
         data_dir = string.format("%s/%s", os.getenv("XDG_DATA_HOME"), package_name)
-    elseif os.getenv("APPIMAGE") then
+    elseif os.getenv("APPIMAGE") or os.getenv("KO_MULTIUSER") then
         data_dir = string.format("%s/%s/%s", os.getenv("HOME"), ".config", "koreader")
     else
         data_dir = "."

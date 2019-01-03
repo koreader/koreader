@@ -39,6 +39,7 @@ local Device = {
     isPocketBook = no,
     isSonyPRSTUX = no,
     isSDL = no,
+    isEmulator = no,
 
     -- some devices have part of their screen covered by the bezel
     viewport = nil,
