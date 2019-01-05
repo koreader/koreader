@@ -261,20 +261,22 @@ function Wallabag:getBearerToken()
 
     local login_url = "/oauth/v2/token"
 
-    local body = string.format( [[{
-"grant_type": "password",
-"client_id": "%s",
-"client_secret": "%s",
-"username": "%s",
-"password": "%s"
-}]], self.client_id, self.client_secret, self.username, self.password )
+    local body = {
+      grant_type = "password",
+      client_id = self.client_id,
+      client_secret = self.client_secret,
+      username = self.username,
+      password = self.password
+    }
+
+    local bodyJSON = JSON.encode(body)
 
     local headers = {
         ["Content-type"] = "application/json",
         ["Accept"] = "application/json, */*",
-        ["Content-Length"] = tostring(#body),
+        ["Content-Length"] = tostring(#bodyJSON),
         }
-    local result = self:callAPI( "POST", login_url, headers, body, "" )
+    local result = self:callAPI( "POST", login_url, headers, bodyJSON, "" )
 
     if result then
         self.access_token = result.access_token
