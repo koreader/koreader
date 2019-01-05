@@ -238,6 +238,15 @@ local PocketBook630 = PocketBook:new{
     emu_events_dev = "/dev/shm/emu_events",
 }
 
+-- PocketBook Aqua 2
+local PocketBook641 = PocketBook:new{
+    isTouchDevice = yes,
+    hasKeys = yes,
+    hasFrontlight = yes,
+    display_dpi = 212,
+    emu_events_dev = "/var/dev/shm/emu_events",
+}
+
 -- PocketBook Color Lux
 local PocketBookColorLux = PocketBook:new{
     isTouchDevice = yes,
@@ -261,6 +270,8 @@ elseif codename == "PB631" then
     return PocketBook631
 elseif codename == "PB632" then
     return PocketBook632
+elseif codename == "PB641" then
+    return PocketBook641
 elseif codename == "PocketBook 626" then
     return PocketBook626
 elseif codename == "PocketBook 624" then
