@@ -130,7 +130,7 @@ function Device:init()
 
     -- Handle button mappings shenanigans
     if self:hasKeys() then
-        local inverted_buttons = G_reader_settings:readSetting("input_invert_buttons")
+        local inverted_buttons = G_reader_settings:readSetting("input_invert_page_turn_keys")
         if inverted_buttons then
             self:invertButtons()
         end
