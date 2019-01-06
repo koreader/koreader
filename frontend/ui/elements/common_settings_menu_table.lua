@@ -207,6 +207,7 @@ if Device:hasKeys() then
                 end,
                 callback = function()
                     G_reader_settings:flipNilOrFalse("input_invert_buttons")
+                    Device:invertButtons()
                 end,
             },
         }

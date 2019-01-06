@@ -65,6 +65,23 @@ function Device:new(o)
     return o
 end
 
+-- Inverts PageTurn button mappings
+function Device:invertButtons()
+    if self.hasKeys() and self.input and self.input.event_map then
+        for key, value in pairs(self.input.event_map) do
+            if value == "LPgFwd" then
+                self.input.event_map[key] = "LPgBack"
+            elseif value == "LPgBack" then
+                self.input.event_map[key] = "LPgFwd"
+            elseif value == "RPgFwd" then
+                self.input.event_map[key] = "RPgBack"
+            elseif value == "RPgBack" then
+                self.input.event_map[key] = "RPgFwd"
+            end
+        end
+    end
+end
+
 function Device:init()
     assert(self ~= nil)
     if not self.screen then
@@ -98,6 +115,14 @@ function Device:init()
         self.input:registerEventAdjustHook(
             self.input.adjustTouchTranslate,
             {x = 0 - self.viewport.x, y = 0 - self.viewport.y})
+    end
+
+    -- Handle mapping shenanigans, like button inversion on the Forma
+    if self:hasKeys() then
+        local inverted_buttons = G_reader_settings:readSetting("input_invert_buttons")
+        if inverted_buttons then
+            self:invertButtons()
+        end
     end
 end
 

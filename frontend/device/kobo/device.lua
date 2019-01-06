@@ -282,13 +282,6 @@ function Kobo:init()
         }
     }
 
-    -- Handle mapping shenanigans, like button inversion on the Forma
-    local inverted_buttons = G_reader_settings:readSetting("input_invert_buttons")
-    if inverted_buttons then
-        self.input.event_map[193] = "RPgFwd"
-        self.input.event_map[194] = "RPgBack"
-    end
-
     Generic.init(self)
 
     -- When present, event2 is the raw accelerometer data (3-Axis Orientation/Motion Detection)
