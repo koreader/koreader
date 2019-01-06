@@ -222,6 +222,24 @@ local KoboFrost = Kobo:new{
     },
 }
 
+local probeEvEpochTime
+-- this function will update itself after the first touch event
+probeEvEpochTime = function(self, ev)
+    local now = TimeVal:now()
+    -- This check should work as long as main UI loop is not blocked for more
+    -- than 10 minute before handling the first touch event.
+    if ev.time.sec <= now.sec - 600 then
+        -- time is seconds since boot, force it to epoch
+        probeEvEpochTime = function(_, _ev)
+            _ev.time = TimeVal:now()
+        end
+        ev.time = now
+    else
+        -- time is already epoch time, no need to do anything
+        probeEvEpochTime = function(_, _) end
+    end
+end
+
 function Kobo:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     -- NOTE: Something about the extra work needed to handle RGB565 conversions is making the JIT optimizer crazy when doing
@@ -278,6 +296,15 @@ function Kobo:init()
     else
         -- if touch probe is required, we postpone EventAdjustHook
         -- initialization to when self:touchScreenProbe is called
+        -- Except we may need bits of EventAdjustHook for stuff to be functional, so,
+        -- re-order things in the most horrible way possible!
+        if self.touch_probe_ev_epoch_time then
+            self.input:registerEventAdjustHook(function(_, ev)
+                probeEvEpochTime(_, ev)
+            end)
+            -- And don't do it again during the real initEventAdjustHooks ;)
+            self.touch_probe_ev_epoch_time = nil
+        end
         self.touchScreenProbe = function()
             -- if user has not set KOBO_TOUCH_MIRRORED yet
             if KOBO_TOUCH_MIRRORED == nil then
@@ -354,24 +381,6 @@ function Kobo:initNetworkManager(NetworkMgr)
 end
 
 function Kobo:supportsScreensaver() return true end
-
-local probeEvEpochTime
--- this function will update itself after the first touch event
-probeEvEpochTime = function(self, ev)
-    local now = TimeVal:now()
-    -- This check should work as long as main UI loop is not blocked for more
-    -- than 10 minute before handling the first touch event.
-    if ev.time.sec <= now.sec - 600 then
-        -- time is seconds since boot, force it to epoch
-        probeEvEpochTime = function(_, _ev)
-            _ev.time = TimeVal:now()
-        end
-        ev.time = now
-    else
-        -- time is already epoch time, no need to do anything
-        probeEvEpochTime = function(_, _) end
-    end
-end
 
 local ABS_MT_TRACKING_ID = 57
 local EV_ABS = 3
