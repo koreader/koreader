@@ -226,6 +226,7 @@ local KoboFrost = Kobo:new{
 local probeEvEpochTime
 -- this function will update itself after the first touch event
 probeEvEpochTime = function(self, ev)
+    print("probeEvEpochTime: ev.time.sec:", ev.time.sec)
     local now = TimeVal:now()
     -- This check should work as long as main UI loop is not blocked for more
     -- than 10 minute before handling the first touch event.
