@@ -145,10 +145,15 @@ describe("device module", function()
                 time = {sec = 1000}
             }
 
+            print("ev_x.time.sec:", ev_x.time.sec)
+            print("ev_y.time.sec:", ev_y.time.sec)
             kobo_dev.input:eventAdjustHook(ev_x)
             kobo_dev.input:eventAdjustHook(ev_y)
             local cur_sec = TimeVal:now().sec
-            --assert.truthy(cur_sec - ev_x.time.sec < 10)
+            print("cur_sec:", cur_sec)
+            print("ev_x.time.sec:", ev_x.time.sec)
+            print("ev_y.time.sec:", ev_y.time.sec)
+            assert.truthy(cur_sec - ev_x.time.sec < 10)
             assert.truthy(cur_sec - ev_y.time.sec < 10)
 
             kobo_dev.input.eventAdjustHook = function() end
