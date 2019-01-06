@@ -224,14 +224,16 @@ local KoboFrost = Kobo:new{
 }
 
 -- This function will update itself after the first touch event
+local probeEvEpochTime
 local probeEvEpochTimeFunc = function(self, ev)
-    print("probeEvEpochTime: ev.time.sec:", ev.time.sec)
+    print("probeEvEpochTime (Default): ev.time.sec:", ev.time.sec)
     local now = TimeVal:now()
     -- This check should work as long as main UI loop is not blocked for more
     -- than 10 minute before handling the first touch event.
     if ev.time.sec <= now.sec - 600 then
         -- time is seconds since boot, force it to epoch
         probeEvEpochTime = function(_, _ev)
+            print("probeEvEpochTime (!epoch)")
             _ev.time = TimeVal:now()
         end
         ev.time = now
@@ -240,7 +242,6 @@ local probeEvEpochTimeFunc = function(self, ev)
         probeEvEpochTime = function(_, _) end
     end
 end
-local probeEvEpochTime
 
 function Kobo:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
