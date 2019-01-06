@@ -82,6 +82,7 @@ describe("device module", function()
 
             assert.is.same("Kobo_trilogy", kobo_dev.model)
             assert.truthy(kobo_dev:needsTouchScreenProbe())
+            -- This gets reset to nil during Kobo:init() since #4450
             assert.falsy(kobo_dev.touch_probe_ev_epoch_time)
             G_reader_settings:saveSetting("kobo_touch_switch_xy", true)
             kobo_dev:touchScreenProbe()
@@ -130,6 +131,7 @@ describe("device module", function()
 
             assert.is.same("Kobo_trilogy", kobo_dev.model)
             assert.truthy(kobo_dev:needsTouchScreenProbe())
+            -- This gets reset to nil during Kobo:init() since #4450
             assert.falsy(kobo_dev.touch_probe_ev_epoch_time)
             kobo_dev:touchScreenProbe()
             local x, y = Screen:getWidth()-5, 10
