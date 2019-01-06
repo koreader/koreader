@@ -117,7 +117,7 @@ function Device:init()
             {x = 0 - self.viewport.x, y = 0 - self.viewport.y})
     end
 
-    -- Handle mapping shenanigans, like button inversion on the Forma
+    -- Handle button mappings shenanigans
     if self:hasKeys() then
         local inverted_buttons = G_reader_settings:readSetting("input_invert_buttons")
         if inverted_buttons then
