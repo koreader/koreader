@@ -126,6 +126,9 @@ describe("device module", function()
             kobo_dev:init()
             local Screen = kobo_dev.screen
 
+            -- This got nil'ed during init() since #4450
+            assert.falsy(kobo_dev.touch_probe_ev_epoch_time)
+            kobo_dev.touch_probe_ev_epoch_time = true
             assert.is.same("Kobo_trilogy", kobo_dev.model)
             local x, y = Screen:getWidth()-5, 10
             local EV_ABS = 3
@@ -145,8 +148,7 @@ describe("device module", function()
                 time = {sec = 1000}
             }
 
-            -- This gets nil'ed in every case since #4450
-            assert.falsy(kobo_dev.touch_probe_ev_epoch_time)
+            assert.truthy(kobo_dev.touch_probe_ev_epoch_time)
             G_reader_settings:saveSetting("kobo_touch_switch_xy", true)
             kobo_dev:touchScreenProbe()
 
