@@ -67,7 +67,7 @@ end
 
 -- Inverts PageTurn button mappings
 function Device:invertButtons()
-    if self.hasKeys() and self.input and self.input.event_map then
+    if self:hasKeys() and self.input and self.input.event_map then
         for key, value in pairs(self.input.event_map) do
             if value == "LPgFwd" then
                 self.input.event_map[key] = "LPgBack"
