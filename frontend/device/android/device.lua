@@ -2,6 +2,7 @@ local Generic = require("device/generic/device")
 local _, android = pcall(require, "android")
 local ffi = require("ffi")
 local C = ffi.C
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
 local function yes() return true end
@@ -34,6 +35,13 @@ function Device:init()
                 this.device.screen:refreshFull()
             elseif ev.code == C.APP_CMD_WINDOW_REDRAW_NEEDED then
                 this.device.screen:refreshFull()
+            elseif ev.code == C.APP_CMD_RESUME then
+                local new_file = android.getIntent()
+                if new_file ~= nil and lfs.attributes(new_file, "mode") == "file" then
+                    logger.warn("Loading new file from intent: " .. new_file)
+                    local ReaderUI = require("apps/reader/readerui")
+                    ReaderUI:doShowReader(new_file)
+                end
             end
         end,
         hasClipboardText = function()
