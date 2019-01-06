@@ -223,9 +223,8 @@ local KoboFrost = Kobo:new{
     },
 }
 
-local probeEvEpochTime
--- this function will update itself after the first touch event
-probeEvEpochTime = function(self, ev)
+-- This function will update itself after the first touch event
+local probeEvEpochTimeFunc = function(self, ev)
     print("probeEvEpochTime: ev.time.sec:", ev.time.sec)
     local now = TimeVal:now()
     -- This check should work as long as main UI loop is not blocked for more
@@ -241,6 +240,7 @@ probeEvEpochTime = function(self, ev)
         probeEvEpochTime = function(_, _) end
     end
 end
+local probeEvEpochTime
 
 function Kobo:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
@@ -292,6 +292,9 @@ function Kobo:init()
     -- fake_events is only used for usb plug event so far
     -- NOTE: usb hotplug event is also available in /tmp/nickel-hardware-status
     self.input.open("fake_events")
+
+    -- Reset probeEvEpochTime to its default state to make sure the testsuite is in a sane state, as the tests are not sandboxed.
+    probeEvEpochTime = probeEvEpochTimeFunc
 
     if not self.needsTouchScreenProbe() then
         self:initEventAdjustHooks()
