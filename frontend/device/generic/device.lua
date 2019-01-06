@@ -83,16 +83,6 @@ function Device:invertButtons()
     end
 end
 
--- Toggle GSensor
-function Device:toggleGSensor()
-    if self:canToggleGSensor() and self.input then
-        -- Currently only supported on the Forma
-        if self.misc_ntx_gsensor_protocol then
-            self.input:toggleMiscEvNTX()
-        end
-    end
-end
-
 function Device:init()
     assert(self ~= nil)
     if not self.screen then
@@ -242,6 +232,9 @@ function Device:setDateTime(year, month, day, hour, min, sec) end
 
 -- Device specific method if any setting needs being saved
 function Device:saveSettings() end
+
+-- Device specific method for toggling the GSensor
+function Device:toggleGSensor() end
 
 --[[
 prepare for application shutdown

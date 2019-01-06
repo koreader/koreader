@@ -688,6 +688,15 @@ function Kobo:reboot()
     os.execute("reboot")
 end
 
+function Kobo:toggleGSensor()
+    if self:canToggleGSensor() and self.input then
+        -- Currently only supported on the Forma
+        if self.misc_ntx_gsensor_protocol then
+            self.input:toggleMiscEvNTX()
+        end
+    end
+end
+
 -------------- device probe ------------
 
 local codename = Kobo:getCodeName()
