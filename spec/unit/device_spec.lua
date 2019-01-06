@@ -148,7 +148,7 @@ describe("device module", function()
             }
 
             -- This gets nil'ed in every case since #4450
-            assert.falsy(touch_probe_ev_epoch_time)
+            assert.falsy(kobo_dev.touch_probe_ev_epoch_time)
             G_reader_settings:saveSetting("kobo_touch_switch_xy", true)
             kobo_dev:touchScreenProbe()
 
