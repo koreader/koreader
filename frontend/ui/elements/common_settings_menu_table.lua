@@ -199,6 +199,16 @@ if Device:hasKeys() then
                     G_reader_settings:flipNilOrTrue("enable_back_history")
                 end,
             },
+            {
+                text = _("Invert PageTurn Buttons"),
+                enabled_func = return Device:hasKeys() end,
+                checked_func = function()
+                    return G_reader_settings:nilOrTrue("input_invert_buttons")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrTrue("input_invert_buttons")
+                end,
+            },
         }
     }
 end
