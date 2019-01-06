@@ -110,10 +110,11 @@ common_settings.screen = {
     sub_item_table = {
         require("ui/elements/screen_dpi_menu_table"),
         require("ui/elements/screen_eink_opt_menu_table"),
-        require("ui/elements/menu_activate"),
-        require("ui/elements/screen_disable_double_tap_table"),
         require("ui/elements/flash_ui"),
         require("ui/elements/flash_keyboard"),
+        require("ui/elements/menu_activate"),
+        require("ui/elements/screen_disable_double_tap_table"),
+        require("ui/elements/screen_toggle_gsensor"),
     },
 }
 if Screen.isColorScreen() then

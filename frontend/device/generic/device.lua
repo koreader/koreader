@@ -27,6 +27,7 @@ local Device = {
     hasClipboard = no,
     hasColorScreen = no,
     hasBGRFrameBuffer = no,
+    canToggleGSensor = no,
 
     -- use these only as a last resort. We should abstract the functionality
     -- and have device dependent implementations in the corresponting
@@ -78,6 +79,16 @@ function Device:invertButtons()
             elseif value == "RPgBack" then
                 self.input.event_map[key] = "RPgFwd"
             end
+        end
+    end
+end
+
+-- Toggle GSensor
+function Device:toggleGSensor()
+    if self:canToggleGSensor and self.input then
+        -- Currently only supported on the Forma
+        if self.misc_ntx_gsensor_protocol then
+            self.input:toggleMiscEvNTX()
         end
     end
 end

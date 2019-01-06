@@ -207,6 +207,7 @@ local KoboFrost = Kobo:new{
     model = "Kobo_frost",
     hasFrontlight = yes,
     hasKeys = yes,
+    canToggleGSensor = yes,
     touch_snow_protocol = true,
     misc_ntx_gsensor_protocol = true,
     display_dpi = 300,
@@ -431,6 +432,7 @@ function Kobo:initEventAdjustHooks()
     -- Accelerometer on the Forma
     if self.misc_ntx_gsensor_protocol then
         self.input.handleMiscEv = self.input.handleMiscEvNTX
+        self.input.isNTXAccelHooked = true
     end
 end
 
