@@ -201,7 +201,7 @@ if Device:hasKeys() then
             },
             {
                 text = _("Invert PageTurn Buttons"),
-                enabled_func = return Device:hasKeys() end,
+                enabled_func = function() return Device:hasKeys() end,
                 checked_func = function()
                     return G_reader_settings:nilOrTrue("input_invert_buttons")
                 end,
