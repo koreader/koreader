@@ -944,6 +944,14 @@ a.newwikinonexistent {
 ul, ol {
     margin-left: 0em;
 }
+/* OL in Wikipedia pages may inherit their style-type from a wrapping div,
+ * ensure they fallback to decimal with inheritance */
+body {
+    list-style-type: decimal;
+}
+ol.references {
+    list-style-type: inherit;
+}
 /* show a box around image thumbnails */
 div.thumb {
     border: dotted 1px black;

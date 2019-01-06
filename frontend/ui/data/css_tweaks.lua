@@ -326,54 +326,115 @@ This is just an example, that will need to be adapted into a user style tweak.]]
             },
         },
         {
-            id = "epub_footnote-inpage";
-            title = _("Show EPUB footnotes in pages"),
-            description = _([[
-Show footnotes text at the bottom of pages that contain links to them.
+            title = _("In-page footnotes"),
+            {
+                id = "footnote-inpage_epub";
+                title = _("In-page EPUB footnotes"),
+                description = _([[
+Show EPUB footnotes text at the bottom of pages that contain links to them.
 This only works with footnotes that have specific attributes set by the publisher.]]),
-            css = [[
-/* EPUB attributes: */
-*[type~="note"], *[type~="footnote"],
+                css = [[
+*[type~="note"],
+*[type~="footnote"],
 *[type~="rearnote"],
-*[role~="doc-note"], *[role~="doc-footnote"],
-*[role~="doc-rearnote"],
-/* Wikipedia EPUBs footnotes: */
-ol.references > li,
-/* Classic footnotes class names: */
-.footnote, .note, .note1
+*[role~="doc-note"],
+*[role~="doc-footnote"],
+*[role~="doc-rearnote"]
 {
     -cr-hint: footnote-inpage;
     margin-top: 0 !important;
     margin-bottom: 0 !important;
 }
-/* Wikipedia EPUBs: hide backlinks */
-ol.references > li > .noprint { display: none; }
-            ]],
-        },
-        {
-            id = "epub_footnote-inpage_smaller";
-            title = _("Show smaller EPUB footnotes in pages"),
-            description = _([[Decrease font size of footnotes text displayed in pages.]]),
-            -- Include the whole content of previous style, so toggling this one is enough
-            css = [[
-/* EPUB attributes: */
-*[type~="note"], *[type~="footnote"],
+                ]],
+            },
+            {
+                id = "footnote-inpage_epub_smaller";
+                title = _("In-page EPUB footnotes (smaller)"),
+                description = _([[
+Show EPUB footnotes text at the bottom of pages that contain links to them.
+This only works with footnotes that have specific attributes set by the publisher.]]),
+                css = [[
+*[type~="note"],
+*[type~="footnote"],
 *[type~="rearnote"],
-*[role~="doc-note"], *[role~="doc-footnote"],
-*[role~="doc-rearnote"],
-/* Wikipedia EPUBs footnotes: */
-ol.references > li,
-/* Classic footnotes class names: */
-.footnote, .note, .note1
+*[role~="doc-note"],
+*[role~="doc-footnote"],
+*[role~="doc-rearnote"]
 {
     -cr-hint: footnote-inpage;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
     font-size: 80% !important;
+}
+                ]],
+                separator = true,
+            },
+            {
+                id = "footnote-inpage_wikipedia";
+                title = _("In-page Wikipedia footnotes"),
+                description = _([[Show footnotes at the bottom of pages in Wikipedia EPUBs.]]),
+                css = [[
+ol.references > li {
+    -cr-hint: footnote-inpage;
     margin-top: 0 !important;
     margin-bottom: 0 !important;
 }
-/* Wikipedia EPUBs: hide backlinks */
+/* hide backlinks */
 ol.references > li > .noprint { display: none; }
-            ]],
+ol.references > li > .mw-cite-backlink { display: none; }
+                ]],
+            },
+            {
+                id = "footnote-inpage_wikipedia_smaller";
+                title = _("In-page Wikipedia footnotes (smaller)"),
+                description = _([[Show footnotes at the bottom of pages in Wikipedia EPUBs.]]),
+                css = [[
+ol.references > li {
+    -cr-hint: footnote-inpage;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    font-size: 80% !important;
+}
+/* hide backlinks */
+ol.references > li > .noprint { display: none; }
+ol.references > li > .mw-cite-backlink { display: none; }
+                ]],
+                separator = true,
+            },
+            -- We can add other classic class names to the 2 following
+            -- tweaks (except when named 'calibreN', as the N number is
+            -- usually random across books).
+            {
+                id = "footnote-inpage_classic_classnames";
+                title = _("In-page classic classname footnotes"),
+                description = _([[
+Show footnotes with classic class names at the bottom of pages.
+This tweak can be duplicated as a user style tweak when books contain footnotes wrapped with other class names.]]),
+                css = [[
+.footnote, .note, .note1, .ntb
+{
+    -cr-hint: footnote-inpage;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+                ]],
+            },
+            {
+                id = "footnote-inpage_classic_classnames_smaller";
+                title = _("In-page classic classname footnotes (smaller)"),
+                description = _([[
+Show footnotes with classic classname at the bottom of pages.
+This tweak can be duplicated as a user style tweak when books contain footnotes wrapped with other class names.]]),
+                css = [[
+.footnote, .note, .note1, .ntb
+{
+    -cr-hint: footnote-inpage;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    font-size: 80% !important;
+}
+                ]],
+            },
         },
         {
             id = "epub_switch_show_case";
