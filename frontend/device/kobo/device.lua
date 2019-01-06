@@ -225,15 +225,13 @@ local KoboFrost = Kobo:new{
 
 -- This function will update itself after the first touch event
 local probeEvEpochTime
-local probeEvEpochTimeFunc = function(self, ev)
-    print("probeEvEpochTime (Default): ev.time.sec:", ev.time.sec)
+probeEvEpochTime = function(self, ev)
     local now = TimeVal:now()
     -- This check should work as long as main UI loop is not blocked for more
     -- than 10 minute before handling the first touch event.
     if ev.time.sec <= now.sec - 600 then
         -- time is seconds since boot, force it to epoch
         probeEvEpochTime = function(_, _ev)
-            print("probeEvEpochTime (!epoch)")
             _ev.time = TimeVal:now()
         end
         ev.time = now
@@ -293,9 +291,6 @@ function Kobo:init()
     -- fake_events is only used for usb plug event so far
     -- NOTE: usb hotplug event is also available in /tmp/nickel-hardware-status
     self.input.open("fake_events")
-
-    -- Reset probeEvEpochTime to its default state to make sure the testsuite is in a sane state, as the tests are not sandboxed.
-    probeEvEpochTime = probeEvEpochTimeFunc
 
     if not self.needsTouchScreenProbe() then
         self:initEventAdjustHooks()
