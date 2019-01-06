@@ -85,7 +85,7 @@ end
 
 -- Toggle GSensor
 function Device:toggleGSensor()
-    if self:canToggleGSensor and self.input then
+    if self:canToggleGSensor() and self.input then
         -- Currently only supported on the Forma
         if self.misc_ntx_gsensor_protocol then
             self.input:toggleMiscEvNTX()

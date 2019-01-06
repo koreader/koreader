@@ -1,3 +1,4 @@
+local Device = require("device")
 local _ = require("gettext")
 
 return {

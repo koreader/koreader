@@ -431,8 +431,13 @@ function Kobo:initEventAdjustHooks()
 
     -- Accelerometer on the Forma
     if self.misc_ntx_gsensor_protocol then
-        self.input.handleMiscEv = self.input.handleMiscEvNTX
-        self.input.isNTXAccelHooked = true
+        local ignore_gsensor = G_reader_settings:readSetting("input_ignore_gsensor")
+        if not ignore_gsensor then
+            self.input.handleMiscEv = self.input.handleMiscEvNTX
+            self.input.isNTXAccelHooked = true
+        else
+            self.input.isNTXAccelHooked = false
+        end
     end
 end
 
