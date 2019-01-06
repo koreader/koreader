@@ -66,6 +66,54 @@ describe("device module", function()
             assert.is.same("Kobo_dahlia", kobo_dev.model)
         end)
 
+        it("should setup eventAdjustHooks properly for input in trilogy", function()
+            os.getenv.invokes(function(key)
+                if key == "PRODUCT" then
+                    return "trilogy"
+                else
+                    return osgetenv(key)
+                end
+            end)
+
+            package.loaded['device/kobo/device'] = nil
+            local kobo_dev = require("device/kobo/device")
+            kobo_dev:init()
+            local Screen = kobo_dev.screen
+
+            assert.is.same("Kobo_trilogy", kobo_dev.model)
+            assert.truthy(kobo_dev:needsTouchScreenProbe())
+            assert.falsy(kobo_dev.touch_probe_ev_epoch_time)
+            G_reader_settings:saveSetting("kobo_touch_switch_xy", true)
+            kobo_dev:touchScreenProbe()
+            local x, y = Screen:getWidth()-5, 10
+            local EV_ABS = 3
+            local ABS_X = 00
+            local ABS_Y = 01
+            -- mirror x, then switch_xy
+            local ev_x = {
+                type = EV_ABS,
+                code = ABS_X,
+                value = y,
+                time = TimeVal:now(),
+            }
+            local ev_y = {
+                type = EV_ABS,
+                code = ABS_Y,
+                value = Screen:getWidth()-x,
+                time = TimeVal:now(),
+            }
+
+            kobo_dev.input:eventAdjustHook(ev_x)
+            kobo_dev.input:eventAdjustHook(ev_y)
+            assert.is.same(x, ev_y.value)
+            assert.is.same(ABS_X, ev_y.code)
+            assert.is.same(y, ev_x.value)
+            assert.is.same(ABS_Y, ev_x.code)
+
+            -- reset eventAdjustHook
+            kobo_dev.input.eventAdjustHook = function() end
+        end)
+
         it("should setup eventAdjustHooks properly for trilogy with non-epoch ev time", function()
             os.getenv.invokes(function(key)
                 if key == "PRODUCT" then
@@ -111,52 +159,6 @@ describe("device module", function()
             print("ev_y.time.sec:", ev_y.time.sec)
             assert.truthy(cur_sec - ev_x.time.sec < 10)
             assert.truthy(cur_sec - ev_y.time.sec < 10)
-
-            kobo_dev.input.eventAdjustHook = function() end
-        end)
-
-        it("should setup eventAdjustHooks properly for input in trilogy", function()
-            os.getenv.invokes(function(key)
-                if key == "PRODUCT" then
-                    return "trilogy"
-                else
-                    return osgetenv(key)
-                end
-            end)
-
-            local kobo_dev = require("device/kobo/device")
-            kobo_dev:init()
-            local Screen = kobo_dev.screen
-
-            assert.is.same("Kobo_trilogy", kobo_dev.model)
-            assert.truthy(kobo_dev:needsTouchScreenProbe())
-            assert.falsy(kobo_dev.touch_probe_ev_epoch_time)
-            G_reader_settings:saveSetting("kobo_touch_switch_xy", true)
-            kobo_dev:touchScreenProbe()
-            local x, y = Screen:getWidth()-5, 10
-            local EV_ABS = 3
-            local ABS_X = 00
-            local ABS_Y = 01
-            -- mirror x, then switch_xy
-            local ev_x = {
-                type = EV_ABS,
-                code = ABS_X,
-                value = y,
-                time = TimeVal:now(),
-            }
-            local ev_y = {
-                type = EV_ABS,
-                code = ABS_Y,
-                value = Screen:getWidth()-x,
-                time = TimeVal:now(),
-            }
-
-            kobo_dev.input:eventAdjustHook(ev_x)
-            kobo_dev.input:eventAdjustHook(ev_y)
-            assert.is.same(x, ev_y.value)
-            assert.is.same(ABS_X, ev_y.code)
-            assert.is.same(y, ev_x.value)
-            assert.is.same(ABS_Y, ev_x.code)
 
             -- reset eventAdjustHook
             kobo_dev.input.eventAdjustHook = function() end
