@@ -331,7 +331,7 @@ This is just an example, that will need to be adapted into a user style tweak.]]
                 id = "footnote-inpage_epub";
                 title = _("In-page EPUB footnotes"),
                 description = _([[
-Show EPUB footnotes text at the bottom of pages that contain links to them.
+Show EPUB footnote text at the bottom of pages that contain links to them.
 This only works with footnotes that have specific attributes set by the publisher.]]),
                 css = [[
 *[type~="note"],
@@ -351,7 +351,7 @@ This only works with footnotes that have specific attributes set by the publishe
                 id = "footnote-inpage_epub_smaller";
                 title = _("In-page EPUB footnotes (smaller)"),
                 description = _([[
-Show EPUB footnotes text at the bottom of pages that contain links to them.
+Show EPUB footnote text at the bottom of pages that contain links to them.
 This only works with footnotes that have specific attributes set by the publisher.]]),
                 css = [[
 *[type~="note"],
