@@ -271,7 +271,7 @@ function Kobo:init()
             SleepCover = function(ev)
                 if self.input:isEvKeyPress(ev) then
                     return "SleepCoverClosed"
-                else
+                elseif self.input:isEvKeyRelease(ev)
                     return "SleepCoverOpened"
                 end
             end,

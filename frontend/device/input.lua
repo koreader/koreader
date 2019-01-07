@@ -715,6 +715,10 @@ function Input:isEvKeyPress(ev)
     return ev.value == EVENT_VALUE_KEY_PRESS
 end
 
+function Input:isEvKeyRepeat(ev)
+    return ev.value == EVENT_VALUE_KEY_REPEAT
+end
+
 function Input:isEvKeyRelease(ev)
     return ev.value == EVENT_VALUE_KEY_RELEASE
 end
