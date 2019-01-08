@@ -160,7 +160,7 @@ function Cervantes:initNetworkManager(NetworkMgr)
     function NetworkMgr:turnOnWifi(complete_callback)
         logger.info("Cervantes: enabling WiFi")
         os.execute("./enable-wifi.sh")
-        self:showNetworkMenu(complete_callback)
+        self:reconnectOrShowNetworkMenu(complete_callback)
     end
     NetworkMgr:setWirelessBackend("wpa_supplicant", {ctrl_interface = "/var/run/wpa_supplicant/eth0"})
     function NetworkMgr:obtainIP()
