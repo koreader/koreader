@@ -81,6 +81,9 @@ function Device:invertButtons()
                 self.input.event_map[key] = "RPgFwd"
             end
         end
+
+        -- NOTE: We currently leave self.input.rotation_map alone,
+        --       which will definitely yield fairly stupid mappings in Landscape...
     end
 end
 
@@ -121,8 +124,7 @@ function Device:init()
 
     -- Handle button mappings shenanigans
     if self:hasKeys() then
-        local inverted_buttons = G_reader_settings:readSetting("input_invert_page_turn_keys")
-        if inverted_buttons then
+        if G_reader_settings:isTrue("input_invert_page_turn_keys") then
             self:invertButtons()
         end
     end
