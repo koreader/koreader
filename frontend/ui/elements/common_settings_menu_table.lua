@@ -112,10 +112,11 @@ common_settings.screen = {
         require("ui/elements/screen_eink_opt_menu_table"),
         require("ui/elements/menu_activate"),
         require("ui/elements/screen_disable_double_tap_table"),
-        require("ui/elements/flash_ui"),
-        require("ui/elements/flash_keyboard"),
     },
 }
+if Device:canToggleGSensor() then
+    table.insert(common_settings.screen.sub_item_table, require("ui/elements/screen_toggle_gsensor"))
+end
 if Screen.isColorScreen() then
     table.insert(common_settings.screen.sub_item_table, 3, require("ui/elements/screen_color_menu_table"))
     common_settings.screen.sub_item_table[3].separator = true
@@ -197,6 +198,16 @@ if Device:hasKeys() then
                 end,
                 callback = function()
                     G_reader_settings:flipNilOrTrue("enable_back_history")
+                end,
+            },
+            {
+                text = _("Invert page turn buttons"),
+                checked_func = function()
+                    return G_reader_settings:isTrue("input_invert_page_turn_keys")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrFalse("input_invert_page_turn_keys")
+                    Device:invertButtons()
                 end,
             },
         }

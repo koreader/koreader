@@ -8,7 +8,7 @@ local _ = require("gettext")
 
 local default_gesture = {
     tap_right_bottom_corner = "nothing",
-    tap_left_bottom_corner = Device.hasFrontlight() and "toggle_frontlight" or "nothing",
+    tap_left_bottom_corner = Device:hasFrontlight() and "toggle_frontlight" or "nothing",
     short_diagonal_swipe = "full_refresh",
 }
 
@@ -70,7 +70,8 @@ function ReaderGesture:buildMenu(ges, default)
         {_("Reading progress"), "reading_progress", ReaderGesture.getReaderProgress ~= nil},
         {_("Full screen refresh"), "full_refresh", true},
         {_("Night mode"), "night_mode", true},
-        {_("Toggle frontlight"), "toggle_frontlight", Device.hasFrontlight()},
+        {_("Toggle frontlight"), "toggle_frontlight", Device:hasFrontlight()},
+        {_("Toggle accelerometer"), "toggle_gsensor", Device:canToggleGSensor()},
     }
     local return_menu = {}
     -- add default action to the top of the submenu
@@ -190,15 +191,19 @@ function ReaderGesture:gestureAction(action)
         UIManager:setDirty("all", "full")
     elseif action == "bookmarks" then
         self.ui:handleEvent(Event:new("ShowBookmark"))
-    elseif action =="page_update_up10" then
+    elseif action == "page_update_up10" then
         self:pageUpdate(10)
-    elseif action =="page_update_down10" then
+    elseif action == "page_update_down10" then
         self:pageUpdate(-10)
-    elseif action =="folder_up" then
+    elseif action == "folder_up" then
         self.ui.file_chooser:changeToPath(string.format("%s/..", self.ui.file_chooser.path))
-    elseif action =="toggle_frontlight" then
+    elseif action == "toggle_frontlight" then
         Device:getPowerDevice():toggleFrontlight()
         self:onShowFLOnOff()
+    elseif action == "toggle_gsensor" then
+        G_reader_settings:flipNilOrFalse("input_ignore_gsensor")
+        Device:toggleGSensor()
+        self:onGSensorToggle()
     end
     return true
 end
@@ -225,6 +230,21 @@ function ReaderGesture:onShowFLOnOff()
         new_text = _("Frontlight is on.")
     else
         new_text = _("Frontlight is off.")
+    end
+    UIManager:show(Notification:new{
+        text = new_text,
+        timeout = 1.0,
+    })
+    return true
+end
+
+function ReaderGesture:onGSensorToggle()
+    local Notification = require("ui/widget/notification")
+    local new_text
+    if G_reader_settings:isTrue("input_ignore_gsensor") then
+        new_text = _("Accelerometer rotation events will now be ignored.")
+    else
+        new_text = _("Accelerometer rotation events will now be honored.")
     end
     UIManager:show(Notification:new{
         text = new_text,

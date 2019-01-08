@@ -659,6 +659,16 @@ function Input:handleMiscEvNTX(ev)
     end
 end
 
+-- Allow toggling it at runtime
+function Input:toggleMiscEvNTX()
+    if self.isNTXAccelHooked then
+        self.handleMiscEv = function() end
+    else
+        self.handleMiscEv = self.handleMiscEvNTX
+    end
+
+    self.isNTXAccelHooked = not self.isNTXAccelHooked
+end
 
 -- helpers for touch event data management:
 
@@ -703,6 +713,10 @@ end
 
 function Input:isEvKeyPress(ev)
     return ev.value == EVENT_VALUE_KEY_PRESS
+end
+
+function Input:isEvKeyRepeat(ev)
+    return ev.value == EVENT_VALUE_KEY_REPEAT
 end
 
 function Input:isEvKeyRelease(ev)

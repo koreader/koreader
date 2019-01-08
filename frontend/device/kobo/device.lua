@@ -207,6 +207,7 @@ local KoboFrost = Kobo:new{
     model = "Kobo_frost",
     hasFrontlight = yes,
     hasKeys = yes,
+    canToggleGSensor = yes,
     touch_snow_protocol = true,
     misc_ntx_gsensor_protocol = true,
     display_dpi = 300,
@@ -221,6 +222,24 @@ local KoboFrost = Kobo:new{
         nl_inverted = true,
     },
 }
+
+-- This function will update itself after the first touch event
+local probeEvEpochTime
+probeEvEpochTime = function(self, ev)
+    local now = TimeVal:now()
+    -- This check should work as long as main UI loop is not blocked for more
+    -- than 10 minute before handling the first touch event.
+    if ev.time.sec <= now.sec - 600 then
+        -- time is seconds since boot, force it to epoch
+        probeEvEpochTime = function(_, _ev)
+            _ev.time = TimeVal:now()
+        end
+        ev.time = now
+    else
+        -- time is already epoch time, no need to do anything
+        probeEvEpochTime = function(_, _) end
+    end
+end
 
 function Kobo:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
@@ -252,7 +271,7 @@ function Kobo:init()
             SleepCover = function(ev)
                 if self.input:isEvKeyPress(ev) then
                     return "SleepCoverClosed"
-                else
+                elseif self.input:isEvKeyRelease(ev) then
                     return "SleepCoverOpened"
                 end
             end,
@@ -278,6 +297,15 @@ function Kobo:init()
     else
         -- if touch probe is required, we postpone EventAdjustHook
         -- initialization to when self:touchScreenProbe is called
+        -- Except we may need bits of EventAdjustHook for stuff to be functional, so,
+        -- re-order things in the most horrible way possible!
+        if self.touch_probe_ev_epoch_time then
+            self.input:registerEventAdjustHook(function(_, ev)
+                probeEvEpochTime(_, ev)
+            end)
+            -- And don't do it again during the real initEventAdjustHooks ;)
+            self.touch_probe_ev_epoch_time = nil
+        end
         self.touchScreenProbe = function()
             -- if user has not set KOBO_TOUCH_MIRRORED yet
             if KOBO_TOUCH_MIRRORED == nil then
@@ -349,29 +377,11 @@ function Kobo:initNetworkManager(NetworkMgr)
     -- NOTE: Cheap-ass way of checking if WiFi seems to be enabled...
     --       Since the crux of the issues lies in race-y module unloading, this is perfectly fine for our usage.
     function NetworkMgr:isWifiOn()
-        return 0 == os.execute("lsmod | grep -q sdio_wifi_pwr")
+        return 0 == os.execute("lsmod | grep -q " .. os.getenv("WIFI_MODULE") or "sdio_wifi_pwr")
     end
 end
 
 function Kobo:supportsScreensaver() return true end
-
-local probeEvEpochTime
--- this function will update itself after the first touch event
-probeEvEpochTime = function(self, ev)
-    local now = TimeVal:now()
-    -- This check should work as long as main UI loop is not blocked for more
-    -- than 10 minute before handling the first touch event.
-    if ev.time.sec <= now.sec - 600 then
-        -- time is seconds since boot, force it to epoch
-        probeEvEpochTime = function(_, _ev)
-            _ev.time = TimeVal:now()
-        end
-        ev.time = now
-    else
-        -- time is already epoch time, no need to do anything
-        probeEvEpochTime = function(_, _) end
-    end
-end
 
 local ABS_MT_TRACKING_ID = 57
 local EV_ABS = 3
@@ -421,7 +431,12 @@ function Kobo:initEventAdjustHooks()
 
     -- Accelerometer on the Forma
     if self.misc_ntx_gsensor_protocol then
-        self.input.handleMiscEv = self.input.handleMiscEvNTX
+        if G_reader_settings:isTrue("input_ignore_gsensor") then
+            self.input.isNTXAccelHooked = false
+        else
+            self.input.handleMiscEv = self.input.handleMiscEvNTX
+            self.input.isNTXAccelHooked = true
+        end
     end
 end
 
@@ -670,6 +685,15 @@ end
 
 function Kobo:reboot()
     os.execute("reboot")
+end
+
+function Kobo:toggleGSensor()
+    if self:canToggleGSensor() and self.input then
+        -- Currently only supported on the Forma
+        if self.misc_ntx_gsensor_protocol then
+            self.input:toggleMiscEvNTX()
+        end
+    end
 end
 
 -------------- device probe ------------

@@ -80,9 +80,10 @@ describe("device module", function()
             kobo_dev:init()
             local Screen = kobo_dev.screen
 
-            kobo_dev.touch_probe_ev_epoch_time = false
             assert.is.same("Kobo_trilogy", kobo_dev.model)
             assert.truthy(kobo_dev:needsTouchScreenProbe())
+            -- This gets reset to nil during Kobo:init() since #4450
+            assert.falsy(kobo_dev.touch_probe_ev_epoch_time)
             G_reader_settings:saveSetting("kobo_touch_switch_xy", true)
             kobo_dev:touchScreenProbe()
             local x, y = Screen:getWidth()-5, 10
@@ -94,11 +95,13 @@ describe("device module", function()
                 type = EV_ABS,
                 code = ABS_X,
                 value = y,
+                time = TimeVal:now(),
             }
             local ev_y = {
                 type = EV_ABS,
                 code = ABS_Y,
                 value = Screen:getWidth()-x,
+                time = TimeVal:now(),
             }
 
             kobo_dev.input:eventAdjustHook(ev_x)
@@ -110,7 +113,6 @@ describe("device module", function()
 
             -- reset eventAdjustHook
             kobo_dev.input.eventAdjustHook = function() end
-            kobo_dev.touch_probe_ev_epoch_time = true
         end)
 
         it("should setup eventAdjustHooks properly for trilogy with non-epoch ev time", function()
@@ -121,16 +123,21 @@ describe("device module", function()
                     return osgetenv(key)
                 end
             end)
+
+            package.loaded['device/kobo/device'] = nil
             local kobo_dev = require("device/kobo/device")
             kobo_dev:init()
             local Screen = kobo_dev.screen
 
             assert.is.same("Kobo_trilogy", kobo_dev.model)
+            assert.truthy(kobo_dev:needsTouchScreenProbe())
+            -- This gets reset to nil during Kobo:init() since #4450
+            assert.falsy(kobo_dev.touch_probe_ev_epoch_time)
+            kobo_dev:touchScreenProbe()
             local x, y = Screen:getWidth()-5, 10
             local EV_ABS = 3
             local ABS_X = 00
             local ABS_Y = 01
-            -- mirror x, then switch_xy
             local ev_x = {
                 type = EV_ABS,
                 code = ABS_X,
@@ -144,16 +151,13 @@ describe("device module", function()
                 time = {sec = 1000}
             }
 
-            assert.truthy(kobo_dev.touch_probe_ev_epoch_time)
-            G_reader_settings:saveSetting("kobo_touch_switch_xy", true)
-            kobo_dev:touchScreenProbe()
-
             kobo_dev.input:eventAdjustHook(ev_x)
             kobo_dev.input:eventAdjustHook(ev_y)
             local cur_sec = TimeVal:now().sec
             assert.truthy(cur_sec - ev_x.time.sec < 10)
             assert.truthy(cur_sec - ev_y.time.sec < 10)
 
+            -- reset eventAdjustHook
             kobo_dev.input.eventAdjustHook = function() end
         end)
 

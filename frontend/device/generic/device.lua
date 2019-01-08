@@ -27,6 +27,7 @@ local Device = {
     hasClipboard = no,
     hasColorScreen = no,
     hasBGRFrameBuffer = no,
+    canToggleGSensor = no,
 
     -- use these only as a last resort. We should abstract the functionality
     -- and have device dependent implementations in the corresponting
@@ -65,6 +66,27 @@ function Device:new(o)
     return o
 end
 
+-- Inverts PageTurn button mappings
+-- NOTE: For ref. on Kobo, stored by Nickel in the [Reading] section as invertPageTurnButtons=true
+function Device:invertButtons()
+    if self:hasKeys() and self.input and self.input.event_map then
+        for key, value in pairs(self.input.event_map) do
+            if value == "LPgFwd" then
+                self.input.event_map[key] = "LPgBack"
+            elseif value == "LPgBack" then
+                self.input.event_map[key] = "LPgFwd"
+            elseif value == "RPgFwd" then
+                self.input.event_map[key] = "RPgBack"
+            elseif value == "RPgBack" then
+                self.input.event_map[key] = "RPgFwd"
+            end
+        end
+
+        -- NOTE: We currently leave self.input.rotation_map alone,
+        --       which will definitely yield fairly stupid mappings in Landscape...
+    end
+end
+
 function Device:init()
     assert(self ~= nil)
     if not self.screen then
@@ -98,6 +120,13 @@ function Device:init()
         self.input:registerEventAdjustHook(
             self.input.adjustTouchTranslate,
             {x = 0 - self.viewport.x, y = 0 - self.viewport.y})
+    end
+
+    -- Handle button mappings shenanigans
+    if self:hasKeys() then
+        if G_reader_settings:isTrue("input_invert_page_turn_keys") then
+            self:invertButtons()
+        end
     end
 end
 
@@ -206,6 +235,9 @@ function Device:setDateTime(year, month, day, hour, min, sec) end
 
 -- Device specific method if any setting needs being saved
 function Device:saveSettings() end
+
+-- Device specific method for toggling the GSensor
+function Device:toggleGSensor() end
 
 --[[
 prepare for application shutdown
