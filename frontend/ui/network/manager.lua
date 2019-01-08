@@ -124,7 +124,7 @@ function NetworkMgr:getWifiMenuTable()
         enabled_func = function() return Device:isAndroid() or Device:isCervantes() or Device:isKindle() or Device:isKobo() or Device:isSonyPRSTUX() end,
         checked_func = function() return NetworkMgr:isWifiOn() end,
         callback = function(touchmenu_instance)
-            local wifi_status = NetworkMgr:isWifiOn()
+            local wifi_status = NetworkMgr:isWifiOn() and NetworkMgr:isConnected()
             local complete_callback = function()
                 -- notify touch menu to update item check state
                 touchmenu_instance:updateItems()
@@ -272,6 +272,16 @@ function NetworkMgr:showNetworkMenu(complete_callback)
         if network_list == nil then
             UIManager:show(InfoMessage:new{text = err})
             return
+        end
+        -- NOTE: Fairly hackish workaround for #4387,
+        --       rescan if the first scan appeared to yield an empty list.
+        -- FIXME: This *might* be an issue better handled in lj-wpaclient...
+        if (table.getn(network_list) == 0) then
+            network_list, err = self:getNetworkList()
+            if network_list == nil then
+                UIManager:show(InfoMessage:new{text = err})
+                return
+            end
         end
         UIManager:show(require("ui/widget/networksetting"):new{
             network_list = network_list,
