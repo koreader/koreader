@@ -280,6 +280,45 @@ function NetworkMgr:showNetworkMenu(complete_callback)
     end)
 end
 
+function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback)
+    local info = InfoMessage:new{text = _("Scanning…")}
+    UIManager:show(info)
+    UIManager:nextTick(function()
+        local network_list, err = self:getNetworkList()
+        UIManager:close(info)
+        if network_list == nil then
+            UIManager:show(InfoMessage:new{text = err})
+            return
+        end
+        table.sort(network_list,
+           function(l, r) return l.signal_quality > r.signal_quality end)
+        local success = false
+        table.foreach(network_list,
+           function(idx, network)
+               if network.password then
+                   success = NetworkMgr:authenticateNetwork(network)
+                   if success then
+                       NetworkMgr:obtainIP()
+                       if complete_callback then
+                           complete_callback()
+                       end
+                       UIManager:show(InfoMessage:new{
+                           text = T(_("Connected to network %1"), network.ssid),
+                           timeout = 3,
+                       })
+                       return
+                   end
+               end
+           end)
+        if not success then
+            UIManager:show(require("ui/widget/networksetting"):new{
+                network_list = network_list,
+                connect_callback = complete_callback,
+            })
+        end
+    end)
+end
+
 function NetworkMgr:saveNetwork(setting)
     if not self.nw_settings then self:readNWSettings() end
 
