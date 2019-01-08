@@ -67,6 +67,7 @@ function Device:new(o)
 end
 
 -- Inverts PageTurn button mappings
+-- NOTE: For ref. on Kobo, stored by Nickel in the [Reading] section as invertPageTurnButtons=true
 function Device:invertButtons()
     if self:hasKeys() and self.input and self.input.event_map then
         for key, value in pairs(self.input.event_map) do
