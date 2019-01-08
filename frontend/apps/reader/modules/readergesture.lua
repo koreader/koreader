@@ -203,6 +203,7 @@ function ReaderGesture:gestureAction(action)
     elseif action == "toggle_gsensor" then
         G_reader_settings:flipNilOrFalse("input_ignore_gsensor")
         Device:toggleGSensor()
+        self:onGSensorToggle()
     end
     return true
 end
@@ -229,6 +230,21 @@ function ReaderGesture:onShowFLOnOff()
         new_text = _("Frontlight is on.")
     else
         new_text = _("Frontlight is off.")
+    end
+    UIManager:show(Notification:new{
+        text = new_text,
+        timeout = 1.0,
+    })
+    return true
+end
+
+function ReaderGesture:onGSensorToggle()
+    local Notification = require("ui/widget/notification")
+    local new_text
+    if G_reader_settings:isTrue("input_ignore_gsensor") then
+        new_text = _("Accelerometer rotation events will now be ignored.")
+    else
+        new_text = _("Accelerometer rotation events will now be honored.")
     end
     UIManager:show(Notification:new{
         text = new_text,
