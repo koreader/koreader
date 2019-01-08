@@ -170,6 +170,7 @@ function Cervantes:initNetworkManager(NetworkMgr)
         os.execute("./release-ip.sh")
     end
     function NetworkMgr:restoreWifiAsync()
+        os.execute("./restore-wifi-async.sh")
     end
     function NetworkMgr:isWifiOn()
         return 1 == isConnected()
