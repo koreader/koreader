@@ -125,6 +125,7 @@ else
 end
 if Device:isAndroid() then
     table.insert(common_settings.screen.sub_item_table, require("ui/elements/screen_fullscreen_menu_table"))
+    table.insert(common_settings.screen.sub_item_table, require("ui/elements/screen_keep_on_menu_table"))
 end
 
 if Device:hasKeys() then
