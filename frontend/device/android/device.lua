@@ -30,9 +30,9 @@ function Device:init()
             logger.dbg("Android application event", ev.code)
             if ev.code == C.APP_CMD_SAVE_STATE then
                 return "SaveState"
-            elseif ev.code == C.APP_CMD_GAINED_FOCUS then
-                this.device.screen:refreshFull()
-            elseif ev.code == C.APP_CMD_WINDOW_REDRAW_NEEDED then
+            elseif ev.code == C.APP_CMD_GAINED_FOCUS
+                or ev.code == C.APP_CMD_INIT_WINDOW
+                or ev.code == C.APP_CMD_WINDOW_REDRAW_NEEDED then
                 this.device.screen:refreshFull()
             end
         end,
@@ -58,6 +58,11 @@ function Device:init()
        ~= C.ACONFIGURATION_TOUCHSCREEN_NOTOUCH
     then
         self.isTouchDevice = yes
+    end
+
+    -- check if we disabled support for wakelocks
+    if G_reader_settings:isTrue("disable_android_wakelock") then
+        android.setWakeLock(false)
     end
 
     Generic.init(self)
