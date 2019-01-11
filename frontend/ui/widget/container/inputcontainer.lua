@@ -228,6 +228,20 @@ function InputContainer:onKeyPress(key)
     end
 end
 
+-- NOTE: Currently a verbatim copy of onKeyPress ;).
+function InputContainer:onKeyRepeat(key)
+    for name, seq in pairs(self.key_events) do
+        if not seq.is_inactive then
+            for _, oneseq in ipairs(seq) do
+                if key:match(oneseq) then
+                    local eventname = seq.event or name
+                    return self:handleEvent(Event:new(eventname, seq.args, key))
+                end
+            end
+        end
+    end
+end
+
 function InputContainer:onGesture(ev)
     for _, tzone in ipairs(self._ordered_touch_zones) do
         if tzone.gs_range:match(ev) and tzone.handler(ev) then

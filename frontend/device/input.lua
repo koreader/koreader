@@ -134,6 +134,9 @@ local Input = {
         Shift = false,
     },
 
+    -- repeat state:
+    repeat_count = 0,
+
     -- touch state:
     cur_slot = 0,
     MTSlots = {},
@@ -388,7 +391,27 @@ function Input:handleKeyBoardEv(ev)
 
     if ev.value == EVENT_VALUE_KEY_PRESS then
         return Event:new("KeyPress", key)
+    elseif ev.value == EVENT_VALUE_KEY_REPEAT then
+        -- NOTE: We only care about repeat events from the pageturn buttons...
+        --       And we *definitely* don't want to flood the Event queue with useless SleepCover repeats!
+        if keycode == "LPgBack"
+        or keycode == "RPgBack"
+        or keycode == "LPgFwd"
+        or keycode == "RPgFwd" then
+            -- FIXME: Crappy event staggering!
+            --        The Forma repeats every 80ms after a 400ms delay, and 500ms roughly corresponds to a flashing update,
+            --        so stuff is usually in sync when you release the key.
+            --        Obvious downside is that this ends up slower than just mashing the key.
+            -- FIXME: A better approach would be an onKeyRelease handler that flushes the Event queue...
+            self.repeat_count = self.repeat_count + 1
+            if self.repeat_count == 1 then
+                return Event:new("KeyRepeat", key)
+            elseif self.repeat_count >= 6 then
+                self.repeat_count = 0
+            end
+        end
     elseif ev.value == EVENT_VALUE_KEY_RELEASE then
+        self.repeat_count = 0
         return Event:new("KeyRelease", key)
     end
 end
