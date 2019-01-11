@@ -271,28 +271,28 @@ logger.info('SoftwareVersion: ', PocketBook:getSoftwareVersion())
 
 local codename = PocketBook:getDeviceModel()
 
-if codename == "PocketBook 840" then
-    return PocketBook840
+if codename == "PocketBook 623" then
+    return PocketBook623
+elseif codename == "PocketBook 624" then
+    return PocketBook624
+elseif codename == "PB625" then
+    return PocketBook625
+elseif codename == "PB626" or codename == "PocketBook 626" then
+    return PocketBook626
 elseif codename == "PB627" then
     return PocketBook627
+elseif codename == "PocketBook 630" then
+    return PocketBook630
 elseif codename == "PB631" then
     return PocketBook631
 elseif codename == "PB632" then
     return PocketBook632
 elseif codename == "PB641" then
     return PocketBook641
-elseif codename == "PocketBook 626" then
-    return PocketBook626
-elseif codename == "PocketBook 624" then
-    return PocketBook624
-elseif codename == "PocketBook 623" then
-    return PocketBook623
-elseif codename == "PocketBook 630" then
-    return PocketBook630
-elseif codename == "PB625" then
-    return PocketBook625
 elseif codename == "PB740" then
     return PocketBook740
+elseif codename == "PocketBook 840" then
+    return PocketBook840
 elseif codename == "PocketBook Color Lux" then
     return PocketBookColorLux
 else
