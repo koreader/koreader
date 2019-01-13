@@ -227,8 +227,9 @@ You can still follow them from the dictionary window or the selection menu after
         -- Swipe section
         menu_items.follow_links.sub_item_table[8].separator = nil
         table.insert(menu_items.follow_links.sub_item_table, 9, {
-            text = _("Show footnotes in popup"),
+            text = _("Swipe to show footnotes in popup"),
             checked_func = isSwipeLinkFootnotePopupEnabled,
+            enabled_func = isSwipeToFollowNearestLinkEnabled,
             callback = function()
                 G_reader_settings:saveSetting("swipe_link_footnote_popup",
                     not isSwipeLinkFootnotePopupEnabled())
