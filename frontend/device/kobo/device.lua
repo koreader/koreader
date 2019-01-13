@@ -23,18 +23,18 @@ local Kobo = Generic:new{
     model = "Kobo",
     isKobo = yes,
     isTouchDevice = yes, -- all of them are
-    hasBGRFrameBuffer = yes, -- True when >16bpp
+    hasBGRFrameBuffer = yes, -- True when >16bpp (i.e., on current FW)
     hasOTAUpdates = yes,
 
     -- most Kobos have X/Y switched for the touch screen
     touch_switch_xy = true,
     -- most Kobos have also mirrored X coordinates
     touch_mirrored_x = true,
-    -- enforce protrait mode on Kobos:
+    -- enforce portrait mode on Kobos
     isAlwaysPortrait = yes,
     -- the internal storage mount point users can write to
     internal_storage_mount_point = "/mnt/onboard/",
-    -- currently only Aura One has coloured frontlight
+    -- currently only the Aura One and Forma have coloured frontlights
     hasNaturalLight = no,
 }
 
