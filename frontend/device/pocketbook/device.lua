@@ -177,7 +177,7 @@ local PocketBook627 = PocketBook:new{
 
 -- PocketBook Touch HD
 local PocketBook631 = PocketBook:new{
-    model = "PBTouchHD631",
+    model = "PBTouchHD",
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = yes,
@@ -247,9 +247,9 @@ local PocketBook740 = PocketBook:new{
     emu_events_dev = "/var/dev/shm/emu_events",
 }
 
--- PocketBook Touch HD
+-- PocketBook Sense
 local PocketBook630 = PocketBook:new{
-    model = "PBTouchHD630",
+    model = "PBSense",
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = yes,
