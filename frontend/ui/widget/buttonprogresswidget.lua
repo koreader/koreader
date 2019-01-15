@@ -13,6 +13,7 @@ local Screen = Device.screen
 local ButtonProgressWidget = InputContainer:new{
     width = Screen:scaleBySize(216),
     height = Size.item.height_default,
+    padding = Size.padding.small,
     font_face = "cfont",
     font_size = 16,
     enabled = true,
@@ -26,7 +27,7 @@ function ButtonProgressWidget:init()
         color = Blitbuffer.COLOR_GREY,
         radius = Size.radius.window,
         bordersize = 0,
-        padding = Size.padding.small,
+        padding = self.padding,
         dim = not self.enabled,
     }
 
