@@ -178,7 +178,7 @@ function FootnoteWidget:init()
     -- We may use a font size a bit smaller than the document one (because
     -- footnotes are usually smaller, and because NotoSans is a bit on the
     -- larger size when compared to other fonts at the same size)
-    local font_size = self.doc_font_size - 2
+    local font_size = self.doc_font_size + (G_reader_settings:readSetting("footnote_popup_relative_font_size") or -2)
 
     -- We want to display the footnote text with the same margins as
     -- the document, but keep the scrollbar in the right margin, so
