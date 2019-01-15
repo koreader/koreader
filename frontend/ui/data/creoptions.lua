@@ -182,17 +182,18 @@ Note that your selected font size is not affected by this setting.]]),
             {
                 name = "font_kerning",
                 name_text = S.FONT_KERNING,
-                toggle = {S.OFF, S.FAST, S.ENHANCED},
-                values = {0, 1, 2},
+                toggle = {S.OFF, S.FAST, S.GOOD, S.BEST},
+                values = {0, 1, 2, 3},
                 default_value = 1,
-                args = {0, 1, 2},
+                args = {0, 1, 2, 3},
                 event = "SetFontKerning",
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Font kerning is the process of adjusting the spacing between individual letter forms, to achieve a visually pleasing result.
 
 - off: no kerning.
 - fast: use FreeType's kerning implementation (no ligatures).
-- enhanced: use HarfBuzz's kerning implementation (slower, but may support ligatures with some fonts).
+- good: use HarfBuzz's light kerning implementation (faster than full but no ligatures and limited support for non-western scripts)
+- best: use HarfBuzz's full kerning implementation (slower, but may support ligatures with some fonts).
 
 (Font Hinting may need to be adjusted for the best result with either kerning implementation.)]]),
             },
