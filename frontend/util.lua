@@ -188,10 +188,48 @@ function util.splitToChars(text)
     local tab = {}
     if text ~= nil then
         local prevcharcode, charcode = 0
+        -- Supports WTF-8 : https://en.wikipedia.org/wiki/UTF-8#WTF-8
+        -- a superset of UTF-8, that includes UTF-16 surrogates
+        -- in UTF-8 bytes (forbidden in well-formed UTF-8).
+        -- We may get that from bad producers or converters.
+        -- (luajson, used to decode Wikipedia API json, will not correctly decode
+        -- this sample: <span lang=\"got\">\ud800\udf45</span> : single Unicode
+        -- char https://www.compart.com/en/unicode/U+10345 and will give us
+        -- "\xed\xa0\x80\xed\xbd\x85" as UTF8, instead of the correct "\xf0\x90\x8d\x85")
+        -- From http://www.unicode.org/faq/utf_bom.html#utf16-1
+        --   Surrogates are code points from two special ranges of
+        --   Unicode values, reserved for use as the leading, and
+        --   trailing values of paired code units in UTF-16. Leading,
+        --   also called high, surrogates are from D800 to DBFF, and
+        --   trailing, or low, surrogates are from DC00 to DFFF. They
+        --   are called surrogates, since they do not represent
+        --   characters directly, but only as a pair.
+        local hi_surrogate
+        local hi_surrogate_uchar
         for uchar in string.gmatch(text, "([%z\1-\127\194-\244][\128-\191]*)") do
             charcode = BaseUtil.utf8charcode(uchar)
+            -- (not sure why we need this prevcharcode check; we could get
+            -- charcode=nil with invalid UTF-8, but should we then really
+            -- ignore the following charcode ?)
             if prevcharcode then -- utf8
-                table.insert(tab, uchar)
+                if charcode and charcode >= 0xD800 and charcode <= 0xDBFF then
+                    if hi_surrogate then -- previous unconsumed one, add it even if invalid
+                        table.insert(tab, hi_surrogate_uchar)
+                    end
+                    hi_surrogate = charcode
+                    hi_surrogate_uchar = uchar -- will be added if not followed by low surrogate
+                elseif hi_surrogate and charcode and charcode >= 0xDC00 and charcode <= 0xDFFF then
+                    -- low surrogate following a high surrogate, good, let's make them a single char
+                    charcode = (hi_surrogate - 0xD800) * 0x400 + (charcode - 0xDC00) + 0x10000
+                    table.insert(tab, util.unicodeCodepointToUtf8(charcode))
+                    hi_surrogate = nil
+                else
+                    if hi_surrogate then -- previous unconsumed one, add it even if invalid
+                        table.insert(tab, hi_surrogate_uchar)
+                    end
+                    hi_surrogate = nil
+                    table.insert(tab, uchar)
+                end
             end
             prevcharcode = charcode
         end
