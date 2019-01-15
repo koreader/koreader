@@ -117,11 +117,13 @@ function Font:getFace(font, size)
         end
         --- Freetype font face wrapper object
         -- @table FontFaceObj
+        -- @field orig_font font name requested
         -- @field size size of the font face (after scaled by screen size)
         -- @field orig_size raw size of the font face (before scale)
         -- @field ftface font face object from freetype
         -- @field hash hash key for this font face
         face_obj = {
+            orig_font = font,
             size = size,
             orig_size = orig_size,
             ftface = face,
