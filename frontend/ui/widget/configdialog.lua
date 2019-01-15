@@ -33,6 +33,7 @@ local Screen = Device.screen
 local T = require("ffi/util").template
 
 local OptionTextItem = InputContainer:new{}
+
 function OptionTextItem:init()
     local text_widget = self[1]
 
@@ -102,6 +103,7 @@ function OptionTextItem:onHoldSelect()
 end
 
 local OptionIconItem = InputContainer:new{}
+
 function OptionIconItem:init()
     self.underline_container = UnderlineContainer:new{
         self.icon,
@@ -170,39 +172,56 @@ function OptionIconItem:onHoldSelect()
 end
 
 local ConfigOption = CenterContainer:new{}
+
 function ConfigOption:init()
     -- make default styles
     local default_name_font_size = 20
-    local default_item_font_size = 16
-    local default_items_spacing = 40
-    local default_option_height = 50
-    local default_option_padding = Size.padding.large
+    local default_item_font_size = 16 -- font size for letters, toggles and buttonprogress
+    local default_items_spacing = 40  -- spacing between letters (font sizes) and icons
+    local default_option_height = 50  -- height of each line
+    -- The next ones are already scaleBySize()'d:
+    local default_option_vpadding = Size.padding.large -- vertical padding at top and bottom
+    local default_option_hpadding = Size.padding.fullscreen
+        -- horizontal padding at left and right, and between name and option items
+    local padding_small = Size.padding.small   -- internal padding for options names (left)
+    local padding_button = Size.padding.button -- padding for underline below letters and icons
+
+    -- @TODO restore setting when there are more advanced settings
+    --local show_advanced = G_reader_settings:readSetting("show_advanced") or false
+    local show_advanced = true
+
+    -- Get the width needed by the longest option name shown on the left
     local max_option_name_width = 0
-    local txt_width = 0
-    local padding_small = Size.padding.small
-    local padding_button = Size.padding.button
     for c = 1, #self.options do
-        local name_font_face = self.options[c].name_font_face and self.options[c].name_font_face or "cfont"
-        local name_font_size = self.options[c].name_font_size and self.options[c].name_font_size or default_name_font_size
-        local text = self.options[c].name_text
-        local face = Font:getFace(name_font_face, name_font_size)
-        if text ~= nil then
-            txt_width = RenderText:sizeUtf8Text(0, Screen:getWidth(), face, text).x
+        -- Ignore names of options that won't be shown
+        local show_default = not self.options[c].advanced or show_advanced
+        if self.options[c].show ~= false and show_default then
+            local name_font_face = self.options[c].name_font_face and self.options[c].name_font_face or "cfont"
+            local name_font_size = self.options[c].name_font_size and self.options[c].name_font_size or default_name_font_size
+            local text = self.options[c].name_text
+            local face = Font:getFace(name_font_face, name_font_size)
+            local txt_width = 0
+            if text ~= nil then
+                txt_width = RenderText:sizeUtf8Text(0, Screen:getWidth(), face, text).x
+            end
+            max_option_name_width = math.max(max_option_name_width, txt_width)
         end
-        max_option_name_width = math.max(max_option_name_width, txt_width)
     end
-    local default_name_align_right = math.max((max_option_name_width + Screen:scaleBySize(10))/Screen:getWidth(), 0.33)
+    -- Have option names take min 25% and max 50% of screen width
+    -- They will carry the left default_option_hpadding, but the in-between
+    -- one (and the right one) will be carried by the option items.
+    -- (Both these variables are between 0 and 1 and represent a % of screen width)
+    local default_name_align_right = (max_option_name_width + default_option_hpadding + 2*padding_small) / Screen:getWidth()
+    default_name_align_right = math.max(default_name_align_right, 0.25)
     default_name_align_right = math.min(default_name_align_right, 0.5)
     local default_item_align_center = 1 - default_name_align_right
 
     -- fill vertical group of config tab
     local vertical_group = VerticalGroup:new{}
     table.insert(vertical_group, VerticalSpan:new{
-        width = default_option_padding,
+        width = default_option_vpadding,
     })
-    -- @TODO restore setting when there are more advanced settings
-    --local show_advanced = G_reader_settings:readSetting("show_advanced") or false
-    local show_advanced = true
+
     for c = 1, #self.options do
         local show_default = not self.options[c].advanced or show_advanced
         if self.options[c].show ~= false and show_default then
@@ -227,16 +246,21 @@ function ConfigOption:init()
                 enabled = self.options[c].enabled_func(self.config.configurable)
             end
             local horizontal_group = HorizontalGroup:new{}
+
+            -- Deal with the name on the left
             if self.options[c].name_text then
+                -- the horizontal padding on the left will be ensured by the RightContainer
+                local name_widget_width = math.floor(name_align * Screen:getWidth())
+                local name_text_max_width = name_widget_width - default_option_hpadding - 2*padding_small
                 local text = self.options[c].name_text
                 local face = Font:getFace(name_font_face, name_font_size)
                 local width_name_text = RenderText:sizeUtf8Text(0, Screen:getWidth(), face, text).x
-                if math.floor(name_align * Screen:getWidth()) - 2*padding_small < width_name_text then
-                    text = RenderText:truncateTextByWidth(text, face, name_align * Screen:getWidth() - 2*padding_small)
+                if width_name_text > name_text_max_width then
+                    text = RenderText:truncateTextByWidth(text, face, name_text_max_width)
                 end
 
                 local option_name_container = RightContainer:new{
-                    dimen = Geom:new{ w = Screen:getWidth()*name_align, h = option_height},
+                    dimen = Geom:new{ w = name_widget_width, h = option_height},
                 }
                 local option_name = Button:new{
                     text = text,
@@ -258,8 +282,16 @@ function ConfigOption:init()
                 table.insert(horizontal_group, option_name_container)
             end
 
+            -- Deal with the option widget on the right
+            -- The horizontal padding between name and this option widget, and
+            -- the one on the right, are ensured by this CenterContainer
+            local option_widget_outer_width = math.floor(item_align * Screen:getWidth())
+            local option_widget_width = option_widget_outer_width - 2*default_option_hpadding
             local option_items_container = CenterContainer:new{
-                dimen = Geom:new{w = Screen:getWidth()*item_align, h = option_height}
+                dimen = Geom:new{
+                    w = option_widget_outer_width,
+                    h = option_height
+                }
             }
             local option_items_group = HorizontalGroup:new{}
             local option_items_fixed = false
@@ -268,7 +300,8 @@ function ConfigOption:init()
                 option_items_group.align = "bottom"
                 option_items_fixed = true
             end
-            -- make current index according to configurable table
+
+            -- Find out currently selected item
             local current_item = nil
             local function value_diff(val1, val2, name)
                 if type(val1) ~= type(val2) then
@@ -320,6 +353,10 @@ function ConfigOption:init()
                     end
                 end
             end
+
+            -- Deal with the various kind of config widgets
+
+            -- Plain letters (ex: font sizes)
             if self.options[c].item_text then
                 local items_count = #self.options[c].item_text
                 local items_width = 0
@@ -334,13 +371,13 @@ function ConfigOption:init()
                     }
                     items_width = items_width + item:getSize().w
                 end
-                local max_item_spacing = (Screen:getWidth() * item_align - items_width) / items_count
+                local max_item_spacing = (option_widget_width - items_width) / items_count
                 local width = math.min(max_item_spacing, item_spacing_width)
                 if max_item_spacing < item_spacing_width / 2 then
                     width = item_spacing_width / 2
                 end
                 local horizontal_half_padding = width / 2
-                local max_item_text_width = (Screen:getWidth() * item_align - items_count * width) / items_count
+                local max_item_text_width = (option_widget_width - items_count * width) / items_count
                 for d = 1, #self.options[c].item_text do
                     local option_item
                     if option_items_fixed then
@@ -390,6 +427,7 @@ function ConfigOption:init()
                 end
             end
 
+            -- Icons (ex: columns, text align, with PDF)
             if self.options[c].item_icons then
                 local items_count = #self.options[c].item_icons
                 local first_item = OptionIconItem:new{
@@ -397,7 +435,7 @@ function ConfigOption:init()
                         file = self.options[c].item_icons[1]
                     }
                 }
-                local max_item_spacing = (Screen:getWidth() * item_align -
+                local max_item_spacing = (option_widget_width -
                         first_item:getSize().w * items_count) / items_count
                 local horizontal_half_padding = math.min(max_item_spacing, item_spacing_width) / 2
                 for d = 1, #self.options[c].item_icons do
@@ -425,9 +463,11 @@ function ConfigOption:init()
                 end
             end
 
+            -- Toggles (ex: mostly everything else)
             if self.options[c].toggle then
-                local max_toggle_width = Screen:getWidth() * item_align * 0.85
-                local toggle_width = Screen:scaleBySize(self.options[c].width or max_toggle_width)
+                local max_toggle_width = option_widget_width
+                local toggle_width = self.options[c].width and Screen:scaleBySize(self.options[c].width)
+                                        or max_toggle_width
                 local row_count = self.options[c].row_count or 1
                 local toggle_height = Screen:scaleBySize(self.options[c].height
                                                          or 30 * row_count)
@@ -453,12 +493,15 @@ function ConfigOption:init()
                 table.insert(option_items_group, switch)
             end
 
+            -- Progress bar (ex: contrast)
             if self.options[c].buttonprogress then
-                local max_buttonprogress_width = Screen:getWidth() * item_align * 0.85
-                local buttonprogress_width = Screen:scaleBySize(self.options[c].width or max_buttonprogress_width)
+                local max_buttonprogress_width = option_widget_width
+                local buttonprogress_width = self.options[c].width and Screen:scaleBySize(self.options[c].width)
+                                                or max_buttonprogress_width
                 local switch = ButtonProgressWidget:new{
                     width = math.min(max_buttonprogress_width, buttonprogress_width),
                     height = option_height,
+                    padding = 0,
                     font_face = item_font_face,
                     font_size = item_font_size,
                     num_buttons = #self.options[c].values,
@@ -481,14 +524,17 @@ function ConfigOption:init()
                 switch:setPosition(position)
                 table.insert(option_items_group, switch)
             end
+
+            -- Add it to our CenterContainer
             table.insert(option_items_container, option_items_group)
             --add line of item to the second last place in the focusmanager so the menubar stay at the bottom
             table.insert(self.config.layout, #self.config.layout,self:_itemGroupToLayoutLine(option_items_group))
             table.insert(horizontal_group, option_items_container)
             table.insert(vertical_group, horizontal_group)
-        end -- if
-    end -- for
-    table.insert(vertical_group, VerticalSpan:new{ width = default_option_padding })
+        end -- if self.options[c].show ~= false
+    end -- for c = 1, #self.options
+
+    table.insert(vertical_group, VerticalSpan:new{ width = default_option_vpadding })
     self[1] = vertical_group
     self.dimen = vertical_group:getSize()
 end
@@ -510,7 +556,11 @@ function ConfigOption:_itemGroupToLayoutLine(option_items_group)
     return layout_line
 end
 
-local ConfigPanel = FrameContainer:new{ background = Blitbuffer.COLOR_WHITE, bordersize = 0, }
+local ConfigPanel = FrameContainer:new{
+    background = Blitbuffer.COLOR_WHITE,
+    bordersize = 0,
+}
+
 function ConfigPanel:init()
     local config_options = self.config_dialog.config_options
     local default_option = config_options.default_options and config_options.default_options
