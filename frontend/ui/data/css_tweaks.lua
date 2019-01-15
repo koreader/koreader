@@ -263,7 +263,6 @@ width: 100% !important;
             title = _("Alternative TOC hints"),
             {
                 title = _("About alternative TOC"),
-                smaller_font = true,
                 info_text = _([[
 An alternative table of content can be built with a long-press on the "Table of content" menu item.
 
