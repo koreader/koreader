@@ -73,14 +73,14 @@ function TouchMenuItem:init()
         item_checkable = true
         item_checked = self.item.checked_func()
     end
-    local checked_widget = CheckMark:new{
+    local checkmark_widget = CheckMark:new{
+        checkable = item_checkable,
+        checked = item_checked,
+        enabled = item_enabled,
+    }
+
+    local checked_widget = CheckMark:new{ -- for layout, to :getSize()
         checked = true,
-    }
-    local unchecked_widget = CheckMark:new{
-        checked = false,
-    }
-    local empty_widget = CheckMark:new{
-        checkable = false,
     }
 
     -- text_max_width should be the TouchMenuItem width minus the below
@@ -98,11 +98,7 @@ function TouchMenuItem:init()
             align = "center",
             CenterContainer:new{
                 dimen = Geom:new{ w = checked_widget:getSize().w },
-                item_checkable and (
-                    item_checked and checked_widget
-                    or unchecked_widget
-                )
-                or empty_widget
+                checkmark_widget,
             },
             TextWidget:new{
                 text = text,

@@ -14,6 +14,7 @@ Example:
 
 ]]
 
+local Blitbuffer = require("ffi/blitbuffer")
 local Font = require("ui/font")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local OverlapGroup = require("ui/widget/overlapgroup")
@@ -22,6 +23,7 @@ local TextWidget = require("ui/widget/textwidget")
 local CheckMark = InputContainer:new{
     checkable = true,
     checked = false,
+    enabled = true,
     face = Font:getFace("smallinfofont"),
     width = 0,
     height = 0,
@@ -36,16 +38,37 @@ function CheckMark:init()
         text = "▢ ",
         face = self.face,
     }
+    local disabled_checked_widget = TextWidget:new{
+        text = " ✓", -- preceded by thin space for better alignment
+        face = self.face,
+        fgcolor = Blitbuffer.COLOR_GREY,
+    }
+    local disabled_unchecked_widget = TextWidget:new{
+        text = "▢ ",
+        face = self.face,
+        fgcolor = Blitbuffer.COLOR_GREY,
+    }
     local empty_widget = TextWidget:new{
         text = "",
         face = self.face,
     }
-    self[1] = self.checkable and OverlapGroup:new{
-        (self.checked and checked_widget or empty_widget),
-        unchecked_widget
-    }
-    or empty_widget
-
+    local widget
+    if self.checkable then
+        if self.enabled then
+            widget = OverlapGroup:new{
+                (self.checked and checked_widget or empty_widget),
+                unchecked_widget
+            }
+        else
+            widget = OverlapGroup:new{
+                (self.checked and disabled_checked_widget or empty_widget),
+                disabled_unchecked_widget
+            }
+        end
+    else
+        widget = empty_widget
+    end
+    self[1] = widget
     self.dimen = unchecked_widget:getSize()
 end
 
