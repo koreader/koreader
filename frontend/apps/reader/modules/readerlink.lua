@@ -33,6 +33,13 @@ function ReaderLink:init()
     -- For relative local file links
     local directory, filename = util.splitFilePathName(self.ui.document.file) -- luacheck: no unused
     self.document_dir = directory
+    -- Migrate these old settings to the new common one
+    if G_reader_settings:isTrue("tap_link_footnote_popup")
+            or G_reader_settings:isTrue("swipe_link_footnote_popup") then
+        G_reader_settings:saveSetting("tap_link_footnote_popup", nil)
+        G_reader_settings:saveSetting("swipe_link_footnote_popup", nil)
+        G_reader_settings:saveSetting("footnote_link_in_popup", true)
+    end
 end
 
 function ReaderLink:onReadSettings(config)
@@ -79,8 +86,8 @@ local function isTapIgnoreExternalLinksEnabled()
     return G_reader_settings:isTrue("tap_ignore_external_links")
 end
 
-local function isTapLinkFootnotePopupEnabled()
-    return G_reader_settings:isTrue("tap_link_footnote_popup")
+local function isFootnoteLinkInPopupEnabled()
+    return G_reader_settings:isTrue("footnote_link_in_popup")
 end
 
 local function isPreferFootnoteEnabled()
@@ -97,10 +104,6 @@ end
 
 local function isSwipeToFollowNearestLinkEnabled()
     return G_reader_settings:isTrue("swipe_to_follow_nearest_link")
-end
-
-local function isSwipeLinkFootnotePopupEnabled()
-    return G_reader_settings:isTrue("swipe_link_footnote_popup")
 end
 
 local function isSwipeToJumpToLatestBookmarkEnabled()
@@ -176,17 +179,11 @@ If any of the other Swipe to follow link options is enabled, this will work only
     -- followed a link, than on EPUB, it's safer to not use them on PDF documents
     -- even if the user enabled these features for EPUB documents).
     if not self.ui.document.info.has_pages then
-        local footnote_popup_help_text = _([[
-Show internal link target content in a footnote popup when it looks like it might be a footnote, instead of following the link.
-
-Note that depending on the book quality, footnote detection may not always work correctly.
-The footnote content may be empty, truncated, or include other footnotes.
-
-From the footnote popup, you can jump to the footnote location in the book by swiping to the left.]])
         -- Tap section
         menu_items.follow_links.sub_item_table[1].separator = nil
         table.insert(menu_items.follow_links.sub_item_table, 2, {
             text = _("Allow larger tap area around links"),
+            enabled_func = isTapToFollowLinksOn,
             checked_func = isLargerTapAreaToFollowLinksEnabled,
             callback = function()
                 G_reader_settings:saveSetting("larger_tap_area_to_follow_links",
@@ -196,6 +193,7 @@ From the footnote popup, you can jump to the footnote location in the book by sw
         })
         table.insert(menu_items.follow_links.sub_item_table, 3, {
             text = _("Ignore external links"),
+            enabled_func = isTapToFollowLinksOn,
             checked_func = isTapIgnoreExternalLinksEnabled,
             callback = function()
                 G_reader_settings:saveSetting("tap_ignore_external_links",
@@ -203,38 +201,69 @@ From the footnote popup, you can jump to the footnote location in the book by sw
             end,
             help_text = _([[Ignore taps on external links. Useful with Wikipedia EPUBs to make page turning easier.
 You can still follow them from the dictionary window or the selection menu after holding on them.]]),
+            separator = true,
         })
         table.insert(menu_items.follow_links.sub_item_table, 4, {
             text = _("Show footnotes in popup"),
-            checked_func = isTapLinkFootnotePopupEnabled,
-            callback = function()
-                G_reader_settings:saveSetting("tap_link_footnote_popup",
-                    not isTapLinkFootnotePopupEnabled())
+            enabled_func = function()
+                return isTapToFollowLinksOn() or isSwipeToFollowNearestLinkEnabled()
             end,
-            help_text = footnote_popup_help_text,
-            separator = true,
+            checked_func = isFootnoteLinkInPopupEnabled,
+            callback = function()
+                G_reader_settings:saveSetting("footnote_link_in_popup",
+                    not isFootnoteLinkInPopupEnabled())
+            end,
+            help_text = _([[
+Show internal link target content in a footnote popup when it looks like it might be a footnote, instead of following the link.
+
+Note that depending on the book quality, footnote detection may not always work correctly.
+The footnote content may be empty, truncated, or include other footnotes.
+
+From the footnote popup, you can jump to the footnote location in the book by swiping to the left.]]),
         })
         table.insert(menu_items.follow_links.sub_item_table, 5, {
             text = _("Show more links as footnotes"),
+            enabled_func = function()
+                return isFootnoteLinkInPopupEnabled() and
+                    (isTapToFollowLinksOn() or isSwipeToFollowNearestLinkEnabled())
+            end,
             checked_func = isPreferFootnoteEnabled,
             callback = function()
                 G_reader_settings:saveSetting("link_prefer_footnote",
                     not isPreferFootnoteEnabled())
             end,
             help_text = _([[Loosen footnote detection rules to show more links as footnotes.]]),
-            separator = true,
         })
-        -- Swipe section
-        menu_items.follow_links.sub_item_table[8].separator = nil
-        table.insert(menu_items.follow_links.sub_item_table, 9, {
-            text = _("Swipe to show footnotes in popup"),
-            checked_func = isSwipeLinkFootnotePopupEnabled,
-            enabled_func = isSwipeToFollowNearestLinkEnabled,
-            callback = function()
-                G_reader_settings:saveSetting("swipe_link_footnote_popup",
-                    not isSwipeLinkFootnotePopupEnabled())
+        table.insert(menu_items.follow_links.sub_item_table, 6, {
+            text = _("Set footnote popup font size"),
+            enabled_func = function()
+                return isFootnoteLinkInPopupEnabled() and
+                    (isTapToFollowLinksOn() or isSwipeToFollowNearestLinkEnabled())
             end,
-            help_text = footnote_popup_help_text,
+            keep_menu_open = true,
+            callback = function()
+                local SpinWidget = require("ui/widget/spinwidget")
+                UIManager:show(SpinWidget:new{
+                    width = Screen:getWidth() * 0.75,
+                    value = G_reader_settings:readSetting("footnote_popup_relative_font_size") or -2,
+                    value_min = -10,
+                    value_max = 5,
+                    precision = "%+d",
+                    ok_text = _("Set font size"),
+                    title_text =  _("Set footnote popup font size"),
+                    text = _([[
+The footnote popup font adjusts to the font size you've set for the document.
+You can specify here how much smaller or larger it should be relative to the document font size.
+A negative value will make it smaller, while a positive one will make it larger.
+The recommended value is -2.]]),
+                    callback = function(spin)
+                        G_reader_settings:saveSetting("footnote_popup_relative_font_size", spin.value)
+                    end,
+                })
+            end,
+            help_text = _([[
+The footnote popup font adjusts to the font size you've set for the document.
+This allows you to specify how much smaller or larger it should be relative to the document font size.]]),
             separator = true,
         })
     end
@@ -376,7 +405,7 @@ function ReaderLink:onTap(_, ges)
         end
         return
     end
-    local allow_footnote_popup = isTapLinkFootnotePopupEnabled()
+    local allow_footnote_popup = isFootnoteLinkInPopupEnabled()
     -- If tap_ignore_external_links, skip precise tap detection to really
     -- ignore a tap on an external link, and allow using onGoToPageLink()
     -- to find the nearest internal link
@@ -627,7 +656,7 @@ function ReaderLink:onSwipe(arg, ges)
             -- no sense allowing footnote popup if first link
             ret = self:onGoToPageLink(ges, true)
         elseif isSwipeToFollowNearestLinkEnabled() then
-            local allow_footnote_popup = isSwipeLinkFootnotePopupEnabled()
+            local allow_footnote_popup = isFootnoteLinkInPopupEnabled()
             ret = self:onGoToPageLink(ges, false, allow_footnote_popup)
         end
         -- If no link found, or no follow link option enabled,

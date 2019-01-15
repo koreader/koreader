@@ -13,6 +13,7 @@ local LineWidget = require("ui/widget/linewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local NumberPickerWidget = require("ui/widget/numberpickerwidget")
 local Size = require("ui/size")
+local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -22,6 +23,7 @@ local Screen = Device.screen
 
 local SpinWidget = InputContainer:new{
     title_face = Font:getFace("x_smalltfont"),
+    text = nil,
     width = Screen:getWidth() * 0.95,
     height = Screen:getHeight(),
     value = 1,
@@ -68,6 +70,7 @@ function SpinWidget:update()
         value_max = self.value_max,
         value_step = self.value_step,
         value_hold_step = self.value_hold_step,
+        precision = self.precision,
     }
     local value_group = HorizontalGroup:new{
         align = "center",
@@ -127,30 +130,43 @@ function SpinWidget:update()
         show_parent = self,
     }
 
+    local vgroup = VerticalGroup:new{
+        align = "left",
+        value_bar,
+        value_line,
+    }
+    if self.text then
+        table.insert(vgroup, FrameContainer:new{
+            padding = Size.padding.default,
+            margin = Size.margin.small,
+            bordersize = 0,
+            TextBoxWidget:new{
+                text = self.text,
+                face = Font:getFace("x_smallinfofont"),
+                width = self.width * 0.9,
+            }
+        })
+    end
+    table.insert(vgroup, CenterContainer:new{
+        dimen = Geom:new{
+            w = self.width,
+            h = value_group:getSize().h + self.screen_height * 0.1,
+        },
+        value_group
+    })
+    table.insert(vgroup, CenterContainer:new{
+        dimen = Geom:new{
+            w = self.width,
+            h = ok_cancel_buttons:getSize().h,
+        },
+        ok_cancel_buttons
+    })
     self.spin_frame = FrameContainer:new{
         radius = Size.radius.window,
         padding = 0,
         margin = 0,
         background = Blitbuffer.COLOR_WHITE,
-        VerticalGroup:new{
-            align = "left",
-            value_bar,
-            value_line,
-            CenterContainer:new{
-                dimen = Geom:new{
-                    w = self.width,
-                    h = value_group:getSize().h + self.screen_height * 0.1,
-                },
-                value_group
-            },
-            CenterContainer:new{
-                dimen = Geom:new{
-                    w = self.width,
-                    h = ok_cancel_buttons:getSize().h,
-                },
-                ok_cancel_buttons
-            }
-        }
+        vgroup,
     }
     self[1] = WidgetContainer:new{
         align = "center",
