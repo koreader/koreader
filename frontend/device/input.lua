@@ -75,6 +75,8 @@ local MSC_RAW_GSENSOR_FRONT = 0x1c
 
 -- luacheck: pop
 
+local _internal_clipboard_text = nil -- holds the last copied text
+
 local Input = {
     -- this depends on keyboard layout and should be overridden:
     event_map = {},
@@ -141,6 +143,17 @@ local Input = {
         }
     },
     gesture_detector = nil,
+
+    -- simple internal clipboard implementation, can be overidden to use system clipboard
+    hasClipboardText = function()
+        return _internal_clipboard_text ~= nil and _internal_clipboard_text ~= ""
+    end,
+    getClipboardText = function()
+        return _internal_clipboard_text
+    end,
+    setClipboardText = function(text)
+        _internal_clipboard_text = text
+    end,
 }
 
 function Input:new(o)
