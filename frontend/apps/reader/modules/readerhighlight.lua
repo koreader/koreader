@@ -523,8 +523,7 @@ function ReaderHighlight:onHoldRelease()
 
     if self.selected_text then
         local default_highlight_action = G_reader_settings:readSetting("default_highlight_action")
-        if default_highlight_action == nil or default_highlight_action == "ask" then
-            logger.dbg("show highlight dialog")
+        if not default_highlight_action then
             local highlight_buttons = {
                 {
                     {

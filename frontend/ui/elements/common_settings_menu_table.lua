@@ -323,7 +323,7 @@ common_settings.document = {
                 {
                     text = _("Ask with popup dialog"),
                     checked_func = function()
-                        return G_reader_settings:readSetting("default_highlight_action") == nil
+                        return G_reader_settings:nilOrFalse('default_highlight_action')
                     end,
                     callback = function()
                         G_reader_settings:saveSetting("default_highlight_action", nil)
