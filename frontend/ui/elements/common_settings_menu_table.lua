@@ -337,6 +337,47 @@ common_settings.document = {
 
             }
         },
+        {
+            text = _("Highlight action"),
+            sub_item_table = {
+                {
+                    text = _("Ask with popup dialog"),
+                    checked_func = function()
+                        return G_reader_settings:nilOrFalse("default_highlight_action")
+                    end,
+                    callback = function()
+                        G_reader_settings:saveSetting("default_highlight_action", nil)
+                    end,
+                },
+                {
+                    text = _("Highlight"),
+                    checked_func = function()
+                        return G_reader_settings:readSetting("default_highlight_action") == "highlight"
+                    end,
+                    callback = function()
+                        G_reader_settings:saveSetting("default_highlight_action", "highlight")
+                    end,
+                },
+                {
+                    text = _("Translate"),
+                    checked_func = function()
+                        return G_reader_settings:readSetting("default_highlight_action") == "translate"
+                    end,
+                    callback = function()
+                        G_reader_settings:saveSetting("default_highlight_action", "translate")
+                    end,
+                },
+                {
+                    text = _("Wikipedia"),
+                    checked_func = function()
+                        return G_reader_settings:readSetting("default_highlight_action") == "wikipedia"
+                    end,
+                    callback = function()
+                        G_reader_settings:saveSetting("default_highlight_action", "wikipedia")
+                    end,
+                },
+            }
+        },
     },
 }
 common_settings.language = Language:getLangMenuTable()
