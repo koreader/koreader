@@ -86,6 +86,69 @@ h4, h5, h6 { page-break-after: avoid !important; }
             },
         },
         {
+            title = _("Widows and orphans"),
+            {
+                title = _("About widow and orphan lines"),
+                info_text = _([[
+Widows and orphans are lines at the beginning or end of a paragraph, which are left dangling at the top or bottom of a page, separated from the rest of the paragraph.
+The first line of a paragraph alone at the bottom of a page is called an orphan line.
+The last line of a paragraph alone at the top of a page is called a widow line.
+
+Some people (and publishers) don't like widows and orphans, and can avoid them with CSS rules.
+To avoid widows and orphans, some lines have to be pushed to the next page to accompany what would otherwise be widows and orphans. This may leave some blank space at the bottom of the previous page, which might be more disturbing to others.
+
+The default is to allow widows and orphans.
+These tweaks allow you to change this behavior, and to override publisher rules.]]),
+                separator = true,
+            },
+            -- To avoid duplicating these 2 tweaks into 2 others for ignoring publisher rules,
+            -- we apply the rules to BODY without !important (so they can still be overriden
+            -- by publisher rules applied to BODY), and to DocFragment with !important (so
+            -- that with "* {widows/orphans: inherit !important}", all elements will inherit
+            -- from the DocFragment rules.
+            -- This trick will work with EPUB, but not with single file HTML.
+            {
+                id = "widows_orphans_avoid";
+                title = _("Avoid widows and orphans"),
+                description = _("Avoid widow and orphan lines, allowing for some possible blank space at the bottom of pages."),
+                css = [[
+body { orphans: 2; widows: 2; }
+DocFragment {
+    orphans: 2 !important;
+    widows:  2 !important;
+}
+                ]],
+                priority = 2, -- so it overrides the * inherit below for DocFragment
+            },
+            {
+                id = "widows_avoid_orphans_allow";
+                title = _("Avoid widows but allow orphans"),
+                description = _([[
+Avoid widow lines, but allow orphan lines, allowing for some possible blank space at the bottom of pages.
+Allowing orphans avoids ambiguous blank space at the bottom of a page, which could otherwise be confused with real spacing between paragraphs.]]),
+                css = [[
+body { orphans: 1; widows: 2; }
+DocFragment {
+    orphans: 1 !important;
+    widows:  2 !important;
+}
+                ]],
+                priority = 2, -- so it overrides the * inherit below for DocFragment
+                separator = true,
+            },
+            {
+                id = "widows_orphans_all_inherit";
+                title = _("Ignore publisher orphan and widow rules"),
+                description = _("Disable orphan and widow rules specified in embedded styles."),
+                css = [[
+* {
+    orphans: inherit !important;
+    widows:  inherit !important;
+}
+                ]],
+            },
+        },
+        {
             id = "sub_sup_smaller";
             title = _("Smaller sub- and superscript"),
             description = _("Prevent sub- and superscript from affecting line-height."),
@@ -125,7 +188,6 @@ h1, h2, h3, h4, h5, h6 { hyphens: none !important; }
             title = _("Ignore publisher font sizes"),
             description = _("Disable font-size specified in embedded styles."),
             css = [[* { font-size: inherit !important; }]],
-            separator = true,
         },
     },
     {
@@ -207,7 +269,6 @@ tr:nth-child(even) { background-color: #CCC !important; }
             css = [[
 table, tcaption, tr, th, td { border: black solid 1px; border-collapse: collapse; }
             ]],
-            separator = true,
         },
     },
     {
