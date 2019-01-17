@@ -318,16 +318,15 @@ common_settings.document = {
             }
         },
         {
-            text = _("Default action when highlighting"),
+            text = _("Highlight action"),
             sub_item_table = {
                 {
-                    text = _("Default(show menu)"),
+                    text = _("Ask with popup dialog"),
                     checked_func = function()
-                        local setting = G_reader_settings:readSetting("default_highlight_action")
-                        return setting == "ask" or setting == nil
+                        return G_reader_settings:readSetting("default_highlight_action") == nil
                     end,
                     callback = function()
-                        G_reader_settings:saveSetting("default_highlight_action", "ask")
+                        G_reader_settings:saveSetting("default_highlight_action", nil)
                     end,
                 },
                 {

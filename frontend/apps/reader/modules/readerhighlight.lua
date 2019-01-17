@@ -522,8 +522,8 @@ function ReaderHighlight:onHoldRelease()
     end
 
     if self.selected_text then
-        local default_action_when_highlighting = G_reader_settings:readSetting("default_highlight_action")
-        if default_action_when_highlighting == nil or default_action_when_highlighting == "ask" then
+        local default_highlight_action = G_reader_settings:readSetting("default_highlight_action")
+        if default_highlight_action == nil or default_highlight_action == "ask" then
             logger.dbg("show highlight dialog")
             local highlight_buttons = {
                 {
@@ -616,13 +616,13 @@ function ReaderHighlight:onHoldRelease()
                 tap_close_callback = function() self:handleEvent(Event:new("Tap")) end,
             }
             UIManager:show(self.highlight_dialog)
-        elseif default_action_when_highlighting == "highlight" then
+        elseif default_highlight_action == "highlight" then
             self:saveHighlight()
             self:onClose()
-        elseif default_action_when_highlighting == "translate" then
+        elseif default_highlight_action == "translate" then
             self:translate(self.selected_text)
             self:onClose()
-        elseif default_action_when_highlighting == "wikipedia" then
+        elseif default_highlight_action == "wikipedia" then
             self:lookupWikipedia()
             self:onClose()
         end
