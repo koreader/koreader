@@ -123,9 +123,29 @@ if Screen.isColorScreen() then
 else
     common_settings.screen.sub_item_table[2].separator = true
 end
+
 if Device:isAndroid() then
-    table.insert(common_settings.screen.sub_item_table, require("ui/elements/screen_fullscreen_menu_table"))
-    table.insert(common_settings.screen.sub_item_table, require("ui/elements/screen_keep_on_menu_table"))
+    -- android common settings
+    local isAndroid, android = pcall(require, "android")
+    if not isAndroid then return end
+
+    -- keep screen on
+    table.insert(common_settings.screen.sub_item_table,
+        {
+            text = _("Keep screen on"),
+            checked_func = function() return not G_reader_settings:isTrue("disable_android_wakelock") end,
+            callback = function() require("ui/elements/screen_android"):toggleWakelock() end,
+        })
+
+    -- fullscreen
+    if Device.firmware_rev <= 16 then
+        table.insert(common_settings.screen.sub_item_table,
+            {
+                text = _("Fullscreen"),
+                checked_func = function() return android.isFullscreen() end,
+                callback = function() require("ui/elements/screen_android"):toggleFullscreen() end,
+            })
+    end
 end
 
 if Device:hasKeys() then

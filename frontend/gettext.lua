@@ -51,7 +51,7 @@ function GetText_mt.__index.changeLang(new_lang)
     local po = io.open(file, "r")
 
     if not po then
-        logger.warn("cannot open translation file:", file)
+        logger.dbg("cannot open translation file:", file)
         return false
     end
 

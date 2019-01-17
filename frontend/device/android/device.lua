@@ -9,12 +9,12 @@ local function yes() return true end
 local function no() return false end
 
 local Device = Generic:new{
-    model = "Android",
+    model = android.getProduct(),
     hasKeys = yes,
     hasDPad = no,
     isAndroid = yes,
     hasFrontlight = yes,
-    firmware_rev = "none",
+    firmware_rev = android.app.activity.sdkVersion,
     display_dpi = android.lib.AConfiguration_getDensity(android.app.config),
     hasClipboard = yes,
     hasColorScreen = yes,
@@ -88,5 +88,39 @@ function Device:initNetworkManager(NetworkMgr)
         return android.isWifiEnabled()
     end
 end
+
+function Device:exit()
+    android.log_name = 'luajit-launcher'
+    android.LOGI("Finishing luajit launcher main activity");
+    android.lib.ANativeActivity_finish(android.app.activity)
+end
+
+local function getCodename()
+    local api = Device.firmware_rev
+    local codename = nil
+
+    if api > 27 then
+        codename = "Pie"
+    elseif api == 27 or api == 26 then
+        codename = "Oreo"
+    elseif api == 25 or api == 24 then
+        codename = "Nougat"
+    elseif api == 23 then
+        codename = "Marshmallow"
+    elseif api == 22 or api == 21 then
+        codename = "Lollipop"
+    elseif api == 19 then
+        codename = "KitKat"
+    elseif api < 19 and api >= 16 then
+        codename = "Jelly Bean"
+    elseif api < 16 and api >= 14 then
+        codename = "Ice Cream Sandwich"
+    end
+
+    return codename or ""
+end
+
+android.LOGI(string.format("Android %s - %s (API %d)",
+    android.getVersion(), getCodename(), Device.firmware_rev))
 
 return Device
