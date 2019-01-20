@@ -82,7 +82,7 @@ function OTAManager:getOTAModel()
     elseif Device:isCervantes() then
         return "cervantes"
     elseif Device:isKindle() then
-        if Device:isTouchDevice() then
+        if Device:isTouchDevice() or Device.model == "Kindle4" then
             if self:_isKindleWarioOrMore() then
                 return "kindlepw2"
             else
