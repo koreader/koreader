@@ -45,6 +45,31 @@ local ota_channels = {
     nightly = _("Development"),
 }
 
+-- Try to detect WARIO+ Kindle boards (i.MX6 & i.MX7)
+function OTAManager:_isKindleWarioOrMore()
+    local cpu_hw = nil
+    -- Parse cpuinfo line by line, until we find the Hardware description
+    for line in io.lines("/proc/cpuinfo") do
+        if line:find("^Hardware") then
+            cpu_hw = line:match("^Hardware%s*:%s([%g%s]*)$")
+        end
+    end
+    -- NOTE: I couldn't dig up a cpuinfo dump from an Oasis 2 to check the CPU part value,
+    --       but for Wario (Cortex A9), matching that to 0xc09 would work, too.
+    --       On the other hand, I'm already using the Hardware match in MRPI, so, that sealed the deal ;).
+
+    -- If we've got a Hardware string, check if it mentions an i.MX 6 or 7...
+    if cpu_hw then
+        if cpu_hw:find("i.MX [6-7]") then
+            return true
+        else
+            return false
+        end
+    else
+        return false
+    end
+end
+
 -- "x86", "x64", "arm", "arm64", "ppc", "mips" or "mips64".
 local arch = jit.arch
 
@@ -58,7 +83,11 @@ function OTAManager:getOTAModel()
         return "cervantes"
     elseif Device:isKindle() then
         if Device:isTouchDevice() then
-            return "kindle"
+            if self:_isKindleWarioOrMore() then
+                return "kindlepw2"
+            else
+                return "kindle"
+            end
         else
             return "kindle-legacy"
         end
