@@ -68,9 +68,9 @@ function Device:init()
         self.isTouchDevice = yes
     end
 
-    -- check if we disabled support for wakelocks
-    if G_reader_settings:isTrue("disable_android_wakelock") then
-        android.setWakeLock(false)
+    -- check if we enabled support for wakelocks
+    if G_reader_settings:isTrue("enable_android_wakelock") then
+        android.setWakeLock(true)
     end
 
     Generic.init(self)

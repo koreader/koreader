@@ -44,9 +44,9 @@ end
 
 -- toggle android wakelock support
 function ScreenHelper:toggleWakelock()
-    local is_wakelock = not G_reader_settings:isTrue("disable_android_wakelock")
+    local is_wakelock = G_reader_settings:isTrue("enable_android_wakelock")
     android.setWakeLock(not is_wakelock)
-    G_reader_settings:saveSetting("disable_android_wakelock", is_wakelock)
+    G_reader_settings:saveSetting("enable_android_wakelock", not is_wakelock)
 end
 
 return ScreenHelper
