@@ -1,3 +1,5 @@
+local Device = require("device")
+
 local order = {
     ["KOMenu:menu_buttons"] = {
         "navi",
@@ -141,5 +143,9 @@ local order = {
         "exit",
     }
 }
+
+if Device:isAndroid() then
+    order.exit_menu = nil
+end
 
 return order
