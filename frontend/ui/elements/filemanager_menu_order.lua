@@ -1,3 +1,5 @@
+local Device = require("device")
+
 local order = {
     ["KOMenu:menu_buttons"] = {
         "filemanager_settings",
@@ -118,5 +120,9 @@ local order = {
         "exit",
     }
 }
+
+if Device:isAndroid() then
+    order.exit_menu = nil
+end
 
 return order

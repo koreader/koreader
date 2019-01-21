@@ -185,6 +185,11 @@ function ReaderMenu:setUpdateItemTable()
             self:exitOrRestart(function() UIManager:restartKOReader() end)
         end,
     }
+    if Device:isAndroid() then
+        self.menu_items.exit_menu = self.menu_items.exit
+        self.menu_items.exit = nil
+        self.menu_items.restart_koreader = nil
+    end
 
     local getPreviousFile = function()
         local previous_file = nil
