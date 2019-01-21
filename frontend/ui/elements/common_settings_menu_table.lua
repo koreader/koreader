@@ -133,7 +133,7 @@ if Device:isAndroid() then
     table.insert(common_settings.screen.sub_item_table,
         {
             text = _("Keep screen on"),
-            checked_func = function() return not G_reader_settings:isTrue("disable_android_wakelock") end,
+            checked_func = function() return G_reader_settings:isTrue("enable_android_wakelock") end,
             callback = function() require("ui/elements/screen_android"):toggleWakelock() end,
         })
 
