@@ -341,7 +341,7 @@ end
 -- filepath: downloads the file if provided, returns JSON otherwise
 function Wallabag:callAPI( method, apiurl, headers, body, filepath )
     local request, sink = {}, {}
-    local parsed = url.parse(apiurl)
+    local parsed = url.parse(self.server_url)
     request["url"] = self.server_url .. apiurl
     request["method"] = method
     if filepath ~= "" then
