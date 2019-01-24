@@ -1,4 +1,4 @@
-local DataStorage = require("datastorage")
+﻿local DataStorage = require("datastorage")
 local DownloadBackend = require("internaldownloadbackend")
 --local DownloadBackend = require("luahttpdownloadbackend")
 local ReadHistory = require("readhistory")
@@ -33,9 +33,9 @@ local news_download_dir_path, feed_config_path
 -- where [1] is the title string and the attributes are also available
 local function getFeedTitle(possible_title)
     if type(possible_title) == "string" then
-        return possible_title
+        return util.htmlEntitiesToUtf8(possible_title)
     elseif possible_title[1] and type(possible_title[1]) == "string" then
-        return possible_title[1]
+        return util.htmlEntitiesToUtf8(possible_title[1])
     end
 end
 
@@ -284,7 +284,7 @@ end
 
 function NewsDownloader:processRSS(feeds, limit, download_full_article)
     local feed_output_dir = ("%s%s/"):format(
-        news_download_dir_path, util.replaceInvalidChars(feeds.rss.channel.title))
+        news_download_dir_path, util.replaceInvalidChars(util.htmlEntitiesToUtf8(feeds.rss.channel.title)))
     if not lfs.attributes(feed_output_dir, "mode") then
         lfs.mkdir(feed_output_dir)
     end
