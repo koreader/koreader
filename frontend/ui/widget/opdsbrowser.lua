@@ -80,11 +80,11 @@ function OPDSBrowser:init()
              url = "https://bookserver.archive.org/",
           },
           {
-             title = "Flibusta (russian)",
+             title = "Flibusta (Russian)",
              url = "http://www.flibusta.is/opds",
           },
           {
-             title = "textos.info (spanish)",
+             title = "textos.info (Spanish)",
              url = "https://www.textos.info/catalogo.atom",
           },
         }
