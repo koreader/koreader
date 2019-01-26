@@ -79,6 +79,14 @@ function OPDSBrowser:init()
              title = "Internet Archive",
              url = "https://bookserver.archive.org/",
           },
+          {
+             title = "Flibusta (Russian)",
+             url = "http://www.flibusta.is/opds",
+          },
+          {
+             title = "textos.info (Spanish)",
+             url = "https://www.textos.info/catalogo.atom",
+          },
         }
         G_reader_settings:saveSetting("opds_servers", servers)
     elseif servers[4].title == "Internet Archive" and servers[4].url == "http://bookserver.archive.org/catalog/"  then
