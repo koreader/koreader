@@ -376,6 +376,7 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
                 if link.type:find(self.catalog_type)
                         and (not link.rel
                              or link.rel == "subsection"
+                             or link.rel == "http://opds-spec.org/subsection"
                              or link.rel == "http://opds-spec.org/sort/popular"
                              or link.rel == "http://opds-spec.org/sort/new") then
                     item.url = build_href(link.href)
