@@ -218,8 +218,8 @@ function ReaderStatistics:checkInitDatabase()
     if self.convert_to_db then      -- if conversion to sqlite was doing earlier
         if not conn:exec("pragma table_info('book');") then
             UIManager:show(ConfirmBox:new{
-                text = T(_(
-[[Cannot open database in %1.
+                text = T(_([[
+Cannot open database in %1.
 The database may have been moved or deleted.
 Do you want to create an empty database?
 ]]),
@@ -243,8 +243,8 @@ Do you want to create an empty database?
         if not conn:exec("pragma table_info('book');") then
             if #ReadHistory.hist > 0 then
                 local info = InfoMessage:new{
-                    text =_(
-[[New version of statistics plugin detected.
+                    text =_([[
+New version of statistics plugin detected.
 Statistics data needs to be converted into the new database format.
 This may take a few minutes.
 Please wait…
