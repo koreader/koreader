@@ -93,8 +93,8 @@ function optionsutil.showValuesMargins(configurable, option)
     end
     if not default then
         UIManager:show(InfoMessage:new{
-            text = T(_(
-[[%1:
+            text = T(_([[
+%1:
 Current value: %2
   left: %3
   top: %4
@@ -112,8 +112,8 @@ Default value: not set]]),
             end
         end
         UIManager:show(InfoMessage:new{
-            text = T(_(
-[[%1:
+            text = T(_([[
+%1:
 Current value: %2
   left: %3
   top: %4

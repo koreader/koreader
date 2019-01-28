@@ -481,8 +481,8 @@ function TextEditor:editFile(file_path, readonly)
                         return false, T(_("Failed saving file: %1"), err)
                     end
                 end
-                local save_anyway = Trapper:confirm(T(_(
-[[Lua syntax check failed:
+                local save_anyway = Trapper:confirm(T(_([[
+Lua syntax check failed:
 
 %1
 
@@ -502,8 +502,8 @@ Do you really want to save to this file?
                     return false, false -- no need for more InfoMessage
                 end
             else -- If content is empty, propose to delete the file
-                local delete_file = Trapper:confirm(T(_(
-[[Text content is empty.
+                local delete_file = Trapper:confirm(T(_([[
+Text content is empty.
 Do you want to keep this file as empty, or do you prefer to delete it?
 
 %1]]), file_path), _("Keep empty file"), _("Delete file"))

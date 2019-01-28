@@ -167,7 +167,8 @@ function ReaderLink:addToMainMenu(menu_items)
                     G_reader_settings:saveSetting("swipe_to_jump_to_latest_bookmark",
                         not isSwipeToJumpToLatestBookmarkEnabled())
                 end,
-                help_text = _([[Swipe to the left to go the most recently bookmarked page.
+                help_text = _([[
+Swipe to the left to go the most recently bookmarked page.
 This can be useful to quickly swipe back and forth between what you are reading and some reference page (for example notes, a map or a characters list).
 If any of the other Swipe to follow link options is enabled, this will work only when the current page contains no link.]]),
             },
@@ -199,7 +200,8 @@ If any of the other Swipe to follow link options is enabled, this will work only
                 G_reader_settings:saveSetting("tap_ignore_external_links",
                     not isTapIgnoreExternalLinksEnabled())
             end,
-            help_text = _([[Ignore taps on external links. Useful with Wikipedia EPUBs to make page turning easier.
+            help_text = _([[
+Ignore taps on external links. Useful with Wikipedia EPUBs to make page turning easier.
 You can still follow them from the dictionary window or the selection menu after holding on them.]]),
             separator = true,
         })
