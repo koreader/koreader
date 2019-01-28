@@ -193,6 +193,23 @@ h1, h2, h3, h4, h5, h6 { hyphens: none !important; }
     {
         title = _("Paragraphs"),
         {
+            id = "paragraph_web_browser_style";
+            title = _("Generic web browser paragraph style"),
+            description = _([[
+Display paragraphs as browsers do, in full-block style without indentation or justification, discarding KOReader's book paragraph style.
+This might be needed with some documents that expect this style as the default, and only use CSS when it needs to diverge from this default.]]),
+            priority = -1,
+            css = [[
+p {
+    text-align: left;
+    text-indent: 0;
+    margin-top: 1em;
+    margin-bottom: 1em;
+}
+            ]],
+            separator = true,
+        },
+        {
             id = "paragraph_no_indent";
             title = _("No indentation on first paragraph line"),
             description = _("Do not indent the first line of paragraphs."),
@@ -325,14 +342,14 @@ width: 100% !important;
             {
                 title = _("About alternative TOC"),
                 info_text = _([[
-An alternative table of content can be built with a long-press on the "Table of content" menu item.
+An alternative table of contents can be built with a long-press on the "Table of contents" menu item.
 
 The TOC will be built from document headings <H1> to <H6>. Some of these can be ignored with the tweaks available here.
 If the document contains no headings, or all are ignored, the alternative TOC will be built from document fragments and will point to the start of each individual HTML file in the EPUB.
 
 Hints can be set to other non-heading elements in a user style tweak, so they can be used as TOC items. Since this would be quite book-specific, please see the final tweak for some examples.
 
-After applying these tweaks, the alternative TOC needs to be rebuilt by long-pressing "Table of content" twice: once to restore the original TOC, and once to build the alternative TOC again.]]),
+After applying these tweaks, the alternative TOC needs to be rebuilt by long-pressing "Table of contents" twice: once to restore the original TOC, and once to build the alternative TOC again.]]),
                 separator = true,
             },
             {
