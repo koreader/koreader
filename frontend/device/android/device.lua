@@ -13,6 +13,7 @@ local Device = Generic:new{
     hasKeys = yes,
     hasDPad = no,
     isAndroid = yes,
+    hasEinkScreen = android.isEink(),
     hasFrontlight = yes,
     firmware_rev = android.app.activity.sdkVersion,
     display_dpi = android.lib.AConfiguration_getDensity(android.app.config),
