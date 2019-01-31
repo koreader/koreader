@@ -190,11 +190,11 @@ local KoboNova = Kobo:new{
     display_dpi = 300,
     hasNaturalLight = yes,
     frontlight_settings = {
-        frontlight_white = "/sys/class/backlight/lm3630a_ledb",
-        frontlight_red = "/sys/class/backlight/lm3630a_leda",
-        -- NOTE: There doesn't appear to be a dedicated "green" LED, instead,
-        --       there's a knob that mixes the white & red ones together (/sys/class/backlight/lm3630a_led).
-        --       c.f., https://www.mobileread.com/forums/showpost.php?p=3728236&postcount=2947
+        frontlight_white = "/sys/class/backlight/mxc_msp430.0/brightness",
+        frontlight_mixer = "/sys/class/backlight/lm3630a_led/color",
+        nl_min = 0,
+        nl_max = 10,
+        nl_inverted = true,
     },
 }
 
