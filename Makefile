@@ -365,8 +365,8 @@ androidupdate: all
 	cd $(INSTALL_DIR)/koreader && 7z a -l -mx=1 \
 		../../$(ANDROID_LAUNCHER_DIR)/assets/module/koreader-$(VERSION).7z * \
 		-x!resources/fonts -x!resources/icons/src -x!spec
-	$(MAKE) -C $(ANDROID_LAUNCHER_DIR) apk
-	cp $(ANDROID_LAUNCHER_DIR)/bin/NativeActivity-debug.apk \
+	$(MAKE) -C $(ANDROID_LAUNCHER_DIR) $(if $(KODEBUG), debug, release)
+	cp $(ANDROID_LAUNCHER_DIR)/bin/NativeActivity.apk \
 		koreader-android-$(MACHINE)-$(VERSION).apk
 
 debianupdate: all
