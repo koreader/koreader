@@ -23,8 +23,15 @@ fi
 
 tab_detected=$(grep -P "\\t" --include \*.lua --exclude={dateparser.lua,xml.lua} --recursive {reader,setupkoenv,datastorage}.lua frontend plugins spec || true)
 if [ "${tab_detected}" ]; then
-    echo -e "\\n${ANSI_RED}Error TAB character detected"
+    echo -e "\\n${ANSI_RED}Warning: tab character detected. Please use spaces."
     echo "${tab_detected}"
+    exit 1
+fi
+
+newline_split=$(grep -Pzo "(_|gettext)\((\n|\s)+('|\"|\[\[)" --include \*.lua --exclude={dateparser.lua,xml.lua} --recursive {reader,setupkoenv,datastorage}.lua frontend plugins spec || true)
+if [ "${newline_split}" ]; then
+    echo -e "\\n${ANSI_RED}Warning: whitespace detected between gettext() call and string."
+    echo "${newline_split}"
     exit 1
 fi
 
