@@ -25,8 +25,7 @@ local eink_settings_table = {
     },
 }
 
--- TODO reactivate if someone reverse engineers Android E Ink stuff
-if not Device:isAndroid() then
+if Device.hasEinkScreen then
     table.insert(eink_settings_table.sub_item_table, 1, require("ui/elements/refresh_menu_table"))
 end
 

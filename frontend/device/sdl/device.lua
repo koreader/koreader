@@ -15,6 +15,7 @@ local Device = Generic:new{
     isTouchDevice = yes,
     needsScreenRefreshAfterResume = no,
     hasColorScreen = yes,
+    hasEinkScreen = no,
 }
 
 local AppImage = Device:new{
@@ -24,6 +25,7 @@ local AppImage = Device:new{
 local Emulator = Device:new{
     model = "Emulator",
     isEmulator = yes,
+    hasEinkScreen = yes,
     hasFrontlight = yes,
 }
 
