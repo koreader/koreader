@@ -152,7 +152,7 @@ function ReaderStatus:showStatus(before_show_callback)
     if before_show_callback then
         before_show_callback()
     end
-    UIManager:show(status_page)
+    UIManager:show(status_page, "full", nil, 0, 0, true)
 end
 
 function ReaderStatus:onReadSettings(config)
