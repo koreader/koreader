@@ -471,7 +471,6 @@ NOTE: You'll notice a trend on UI elements that are usually shown *over* some ki
 The final parameter (refreshdither) is an optional hint for devices with hardware dithering support that this repaint
 could benefit from dithering (i.e., it contains an image).
 
-
 @usage
 
 UIManager:setDirty(self.widget, "partial")
