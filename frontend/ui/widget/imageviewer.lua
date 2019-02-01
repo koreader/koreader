@@ -392,10 +392,12 @@ function ImageViewer:update()
             self.main_frame,
         }
     }
+    -- NOTE: We use UI instead of partial, because we do NOT want to end up using a REAGL waveform...
+    --       We also disable dithering, because it risks leaving a truckload of ghosting artefacts without a flash...
     UIManager:setDirty("all", function()
         local update_region = self.main_frame.dimen:combine(orig_dimen)
         logger.dbg("update image region", update_region)
-        return "partial", update_region, true
+        return "ui", update_region, false
     end)
 end
 
