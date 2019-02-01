@@ -841,11 +841,12 @@ local page_overlap_styles = {
     dim = _("Gray out"),
 }
 
-function ReaderView:genOverlapStyleMenu()
+function ReaderView:genOverlapStyleMenu(overlap_enabled_func)
     local view = self
     local get_overlap_style = function(style)
         return {
             text = page_overlap_styles[style],
+            enabled_func = overlap_enabled_func,
             checked_func = function()
                 return view.page_overlap_style == style
             end,

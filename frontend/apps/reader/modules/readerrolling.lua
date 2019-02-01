@@ -9,6 +9,7 @@ local logger = require("logger")
 local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
+local T = require("ffi/util").template
 
 --[[
     Rolling is just like paging in page-based documents except that
@@ -42,8 +43,6 @@ local ReaderRolling = InputContainer:new{
     xpointer = nil,
     panning_steps = ReaderPanning.panning_steps,
     show_overlap_enable = nil,
-    -- nb of lines from previous page to show on next page (scroll mode only)
-    overlap_lines = G_reader_settings:readSetting("copt_overlap_lines") or 1,
     cre_top_bar_enabled = false,
 }
 
@@ -311,10 +310,14 @@ function ReaderRolling:addToMainMenu(menu_items)
     -- FIXME: repeated code with page overlap menu for readerpaging
     -- needs to keep only one copy of the logic as for the DRY principle.
     -- The difference between the two menus is only the enabled func.
+    local overlap_lines_help_text = _([[
+When page overlap is enabled, some lines from the previous page will be displayed on the next page.
+You can set how many lines are shown.]])
     local page_overlap_menu = {
         {
-            text_func = function()
-                return self.show_overlap_enable and _("Disable") or _("Enable")
+            text = _("Page overlap"),
+            checked_func = function()
+                return self.show_overlap_enable
             end,
             callback = function()
                 self.show_overlap_enable = not self.show_overlap_enable
@@ -323,13 +326,43 @@ function ReaderRolling:addToMainMenu(menu_items)
                 end
             end
         },
+        {
+            text_func = function()
+                return T(_("Number of lines: %1"), G_reader_settings:readSetting("copt_overlap_lines") or 1)
+            end,
+            enabled_func = function()
+                return self.show_overlap_enable
+            end,
+            callback = function(touchmenu_instance)
+                local SpinWidget = require("ui/widget/spinwidget")
+                UIManager:show(SpinWidget:new{
+                    width = Screen:getWidth() * 0.75,
+                    value = G_reader_settings:readSetting("copt_overlap_lines") or 1,
+                    value_min = 1,
+                    value_max = 10,
+                    precision = "%d",
+                    ok_text = _("Set"),
+                    title_text =  _("Set overlapped lines"),
+                    text = overlap_lines_help_text,
+                    callback = function(spin)
+                        G_reader_settings:saveSetting("copt_overlap_lines", spin.value)
+                        touchmenu_instance:updateItems()
+                    end,
+                })
+            end,
+            keep_menu_open = true,
+            help_text = overlap_lines_help_text,
+            separator = true,
+        },
     }
-    for _, menu_entry in ipairs(self.view:genOverlapStyleMenu()) do
+    local overlap_enabled_func = function() return self.show_overlap_enable end
+    for _, menu_entry in ipairs(self.view:genOverlapStyleMenu(overlap_enabled_func)) do
         table.insert(page_overlap_menu, menu_entry)
     end
     menu_items.page_overlap = {
         text = _("Page overlap"),
         enabled_func = function() return self.view.view_mode ~= "page" end,
+        help_text = _([[When page overlap is enabled, some lines from the previous pages are shown on the next page.]]),
         sub_item_table = page_overlap_menu,
     }
 end
@@ -525,7 +558,8 @@ function ReaderRolling:onGotoViewRel(diff)
         local page_visible_height = self.ui.dimen.h - footer_height
         local pan_diff = diff * page_visible_height
         if self.show_overlap_enable then
-            local overlap_h = Screen:scaleBySize(self.ui.font.font_size * 1.1 * self.ui.font.line_space_percent/100.0) * self.overlap_lines
+            local overlap_lines = G_reader_settings:readSetting("copt_overlap_lines") or 1
+            local overlap_h = Screen:scaleBySize(self.ui.font.font_size * 1.1 * self.ui.font.line_space_percent/100.0) * overlap_lines
             if pan_diff > overlap_h then
                 pan_diff = pan_diff - overlap_h
             elseif pan_diff < -overlap_h then
