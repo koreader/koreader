@@ -56,6 +56,7 @@ function UIManager:init()
         self._entered_poweroff_stage = true;
         Screen:setRotationMode(0)
         require("ui/screensaver"):show("poweroff", _("Powered off"))
+        -- FIXME: Dither this?
         Screen:refreshFull()
         UIManager:nextTick(function()
             Device:saveSettings()
@@ -67,6 +68,7 @@ function UIManager:init()
         self._entered_poweroff_stage = true;
         Screen:setRotationMode(0)
         require("ui/screensaver"):show("reboot", _("Rebooting..."))
+        -- FIXME: Dither this?
         Screen:refreshFull()
         UIManager:nextTick(function()
             Device:saveSettings()
@@ -261,8 +263,9 @@ For refreshtype & refreshregion see description of setDirty().
 ---- @param refreshregion a Geom object
 ---- @int x
 ---- @int y
+---- @param refreshdither an optional bool
 ---- @see setDirty
-function UIManager:show(widget, refreshtype, refreshregion, x, y)
+function UIManager:show(widget, refreshtype, refreshregion, x, y, refreshdither)
     if not widget then
         logger.dbg("widget not exist to be shown")
         return
@@ -281,7 +284,7 @@ function UIManager:show(widget, refreshtype, refreshregion, x, y)
         end
     end
     -- and schedule it to be painted
-    self:setDirty(widget, refreshtype, refreshregion)
+    self:setDirty(widget, refreshtype, refreshregion, refreshdither)
     -- tell the widget that it is shown now
     widget:handleEvent(Event:new("Show"))
     -- check if this widget disables double tap gesture
@@ -300,8 +303,9 @@ For refreshtype & refreshregion see description of setDirty().
 ---- @param widget a widget object
 ---- @param refreshtype "full", "flashpartial", "flashui", "partial", "ui", "fast"
 ---- @param refreshregion a Geom object
+---- @param refreshdither an optional bool
 ---- @see setDirty
-function UIManager:close(widget, refreshtype, refreshregion)
+function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
     if not widget then
         logger.dbg("widget to be closed does not exist")
         return
@@ -328,7 +332,7 @@ function UIManager:close(widget, refreshtype, refreshregion)
         for i = 1, #self._window_stack do
             self:setDirty(self._window_stack[i].widget)
         end
-        self:_refresh(refreshtype, refreshregion)
+        self:_refresh(refreshtype, refreshregion, refreshdither)
     end
 end
 
@@ -464,6 +468,9 @@ NOTE: You'll notice a trend on UI elements that are usually shown *over* some ki
       That said, depending on your use case, using "ui" onClose can be a perfectly valid decision, and will ensure
       never seeing a flash because of that widget.
 
+The final parameter (refreshdither) is an optional hint for device with hardware dithering support that this repaint
+could benefit from dithering (i.e., it contains an image).
+
 
 @usage
 
@@ -475,7 +482,8 @@ UIManager:setDirty(self.widget, function() return "ui", self.someelement.dimen e
 ---- @param widget a widget object
 ---- @param refreshtype "full", "flashpartial", "flashui", "partial", "ui", "fast"
 ---- @param refreshregion a Geom object
-function UIManager:setDirty(widget, refreshtype, refreshregion)
+---- @param refreshdither an optional bool
+function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
     if widget then
         if widget == "all" then
             -- special case: set all top-level widgets as being "dirty".
@@ -497,19 +505,19 @@ function UIManager:setDirty(widget, refreshtype, refreshregion)
         end
     else
         -- otherwise, enqueue refresh
-        self:_refresh(refreshtype, refreshregion)
+        self:_refresh(refreshtype, refreshregion, refreshdither)
         if dbg.is_on then
             if refreshregion then
-                logger.dbg("setDirty", refreshtype and refreshtype or "nil", "from widget", widget and (widget.name or widget.id or tostring(widget)) or "nil", "w/ region", refreshregion.x, refreshregion.y, refreshregion.w, refreshregion.h)
+                logger.dbg("setDirty", refreshtype and refreshtype or "nil", "from widget", widget and (widget.name or widget.id or tostring(widget)) or "nil", "w/ region", refreshregion.x, refreshregion.y, refreshregion.w, refreshregion.h, refreshdither and "AND w/ HW dithering")
             else
-                logger.dbg("setDirty", refreshtype and refreshtype or "nil", "from widget", widget and (widget.name or widget.id or tostring(widget)) or "nil", "w/ NO region")
+                logger.dbg("setDirty", refreshtype and refreshtype or "nil", "from widget", widget and (widget.name or widget.id or tostring(widget)) or "nil", "w/ NO region", refreshdither and "AND w/ HW dithering")
             end
         end
     end
 end
 dbg:guard(UIManager, 'setDirty',
     nil,
-    function(self, widget, refreshtype, refreshregion)
+    function(self, widget, refreshtype, refreshregion, refreshdither)
         if not widget or widget == "all" then return end
         -- when debugging, we check if we get handed a valid widget,
         -- which would be a dialog that was previously passed via show()
@@ -704,6 +712,20 @@ local function update_mode(mode1, mode2)
     end
 end
 
+--[[
+Compares dither hints.
+
+Dither always wins.
+--]]
+local function update_dither(dither1, dither2)
+    if dither1 and not dither2 then
+        logger.dbg("update_dither: Update dither hint", dither2, "to", dither1)
+        return dither1
+    else
+        return dither2
+    end
+end
+
 --[[--
 Enqueues a refresh.
 
@@ -716,8 +738,11 @@ UIManager that a certain part of the screen is to be refreshed.
     Rect() that specifies the region to be updated
     optional, update will affect whole screen if not specified.
     Note that this should be the exception.
+@param dither
+    Bool, a hint to request hardware dithering (if supported)
+    optional, no dithering requested if not specified or not supported.
 --]]
-function UIManager:_refresh(mode, region)
+function UIManager:_refresh(mode, region, dither)
     if not mode then return end
     if not region and mode == "full" then
         self.refresh_count = 0 -- reset counter on explicit full refresh
@@ -763,6 +788,9 @@ function UIManager:_refresh(mode, region)
     -- if no region is specified, define default region
     region = region or Geom:new{w=Screen:getWidth(), h=Screen:getHeight()}
 
+    -- if no dithering hint was specified, don't request dithering
+    dither = dither or false
+
     -- NOTE: While, ideally, we shouldn't merge refreshes w/ different waveform modes,
     --       this allows us to optimize away a number of quirks of our rendering stack
     --       (f.g., multiple setDirty calls queued when showing/closing a widget because of update mechanisms),
@@ -775,16 +803,18 @@ function UIManager:_refresh(mode, region)
             local combined = region:combine(self._refresh_stack[i].region)
             -- update the mode, if needed
             mode = update_mode(mode, self._refresh_stack[i].mode)
+            -- make sure dithering hint persist
+            dither = update_dither(dither, self._refresh_stack[i].dither)
             -- remove colliding refresh
             table.remove(self._refresh_stack, i)
             -- and try again with combined data
-            return self:_refresh(mode, combined)
+            return self:_refresh(mode, combined, dither)
         end
     end
 
     -- if we've stopped hitting collisions, enqueue the refresh
-    logger.dbg("_refresh: Enqueued", mode, "update for region", region.x, region.y, region.w, region.h)
-    table.insert(self._refresh_stack, {mode = mode, region = region})
+    logger.dbg("_refresh: Enqueued", mode, "update for region", region.x, region.y, region.w, region.h, dither and "w/ HW dithering")
+    table.insert(self._refresh_stack, {mode = mode, region = region, dither = dither})
 end
 
 --- Repaints dirty widgets.
@@ -825,8 +855,8 @@ function UIManager:_repaint()
 
     -- execute pending refresh functions
     for _, refreshfunc in ipairs(self._refresh_func_stack) do
-        local refreshtype, region = refreshfunc()
-        if refreshtype then self:_refresh(refreshtype, region) end
+        local refreshtype, region, dither = refreshfunc()
+        if refreshtype then self:_refresh(refreshtype, region, dither) end
     end
     self._refresh_func_stack = {}
 
@@ -845,7 +875,8 @@ function UIManager:_repaint()
         --       but checkBounds & getPhysicalRect will sanitize that in mxc_update @ ffi/framebuffer_mxcfb ;).
         Screen[refresh_methods[refresh.mode]](Screen,
             refresh.region.x - 1, refresh.region.y - 1,
-            refresh.region.w + 2, refresh.region.h + 2)
+            refresh.region.w + 2, refresh.region.h + 2,
+            refresh.dither)
     end
     self._refresh_stack = {}
     self.refresh_counted = false
