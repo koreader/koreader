@@ -393,11 +393,13 @@ function ImageViewer:update()
         }
     }
     -- NOTE: We use UI instead of partial, because we do NOT want to end up using a REAGL waveform...
-    --       We also disable dithering, because it risks leaving a truckload of ghosting artefacts without a flash...
+    -- NOTE: Disabling dithering here makes for a perfect test-case of how well it works:
+    --       page turns will show color quantization artefacts (i.e., banding) like crazy,
+    --       while a long touch will trigger a dithered, flashing full-refresh that'll make everything shiny :).
     UIManager:setDirty("all", function()
         local update_region = self.main_frame.dimen:combine(orig_dimen)
         logger.dbg("update image region", update_region)
-        return "ui", update_region, false
+        return "ui", update_region, true
     end)
 end
 
