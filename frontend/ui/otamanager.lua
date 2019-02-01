@@ -60,7 +60,7 @@ function OTAManager:_isKindleWarioOrMore()
 
     -- If we've got a Hardware string, check if it mentions an i.MX 6 or 7...
     if cpu_hw then
-        if cpu_hw:find("i.MX [6-7]") then
+        if cpu_hw:find("i.MX%s?[6-7]") then
             return true
         else
             return false
