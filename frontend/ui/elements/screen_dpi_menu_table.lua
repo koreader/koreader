@@ -2,7 +2,6 @@ local _ = require("gettext")
 local Screen = require("device").screen
 local T = require("ffi/util").template
 
-
 local function dpi() return G_reader_settings:readSetting("screen_dpi") end
 
 local function custom() return G_reader_settings:readSetting("custom_screen_dpi") end
@@ -11,13 +10,14 @@ local function setDPI(_dpi)
     local InfoMessage = require("ui/widget/infomessage")
     local UIManager = require("ui/uimanager")
     UIManager:show(InfoMessage:new{
-        text = T(_("DPI set to %1. This will take effect after restarting."), _dpi),
+        text = _dpi and T(_("DPI set to %1. This will take effect after restarting."), _dpi)
+               or _("DPI set to auto. This will take effect after restarting."),
     })
     G_reader_settings:saveSetting("screen_dpi", _dpi)
     Screen:setDPI(_dpi)
 end
 
-local dpi_auto = Screen:getDPI()
+local dpi_auto = Screen.device.screen_dpi
 local dpi_small = 120
 local dpi_medium = 160
 local dpi_large = 240
@@ -29,7 +29,7 @@ return {
     text = _("Screen DPI"),
     sub_item_table = {
         {
-            text = T(_("Auto DPI (%1)"), dpi_auto),
+            text = dpi_auto and T(_("Auto DPI (%1)"), dpi_auto) or _("Auto DPI"),
             help_text = _("The DPI of your screen is automatically detected so items can be drawn with the right amount of pixels. This will usually display at (roughly) the same size on different devices, while remaining sharp. Increasing the DPI setting will result in larger text and icons, while a lower DPI setting will look smaller on the screen."),
             checked_func = function()
                 return dpi() == nil
