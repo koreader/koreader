@@ -468,7 +468,7 @@ NOTE: You'll notice a trend on UI elements that are usually shown *over* some ki
       That said, depending on your use case, using "ui" onClose can be a perfectly valid decision, and will ensure
       never seeing a flash because of that widget.
 
-The final parameter (refreshdither) is an optional hint for device with hardware dithering support that this repaint
+The final parameter (refreshdither) is an optional hint for devices with hardware dithering support that this repaint
 could benefit from dithering (i.e., it contains an image).
 
 
@@ -803,7 +803,7 @@ function UIManager:_refresh(mode, region, dither)
             local combined = region:combine(self._refresh_stack[i].region)
             -- update the mode, if needed
             mode = update_mode(mode, self._refresh_stack[i].mode)
-            -- make sure dithering hint persist
+            -- make sure dithering hints persist
             dither = update_dither(dither, self._refresh_stack[i].dither)
             -- remove colliding refresh
             table.remove(self._refresh_stack, i)
