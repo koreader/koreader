@@ -323,7 +323,7 @@ function CreDocument:drawCurrentView(target, x, y, rect, pos)
     -- change has been made, to avoid having crengine redraw the exact
     -- same buffer.
     -- And it could only change when some other methods from here are called
-    self._document:drawCurrentPage(self.buffer, self.render_color)
+    self._drawn_images_count, self._drawn_images_surface_ratio = self._document:drawCurrentPage(self.buffer, self.render_color)
     target:blitFrom(self.buffer, x, y, 0, 0, rect.w, rect.h)
 end
 
