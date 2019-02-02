@@ -311,7 +311,6 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
     end
     logger.dbg("close widget:", widget.name or widget.id or tostring(widget))
     local dirty = false
-    refreshdither = refreshdither or false
     -- Ensure all the widgets can get onFlushSettings event.
     widget:handleEvent(Event:new("FlushSettings"))
     -- first send close event to widget
@@ -491,7 +490,6 @@ UIManager:setDirty(self.widget, function() return "ui", self.someelement.dimen e
 ---- @param refreshregion a Geom object
 ---- @param refreshdither an optional bool
 function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
-    refreshdither = refreshdither or false
     if widget then
         if widget == "all" then
             -- special case: set all top-level widgets as being "dirty".
@@ -505,7 +503,8 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
             end
         elseif not widget.invisible then
             self._dirty[widget] = true
-            logger.dbg("Flagging visible widget", widget and (widget.name or widget.id or tostring(widget)), "w/ dithering hint:", refreshdither)
+            -- Again, ideally, we'd want to honor refreshdither when it's passed via a refreshtype function...
+            logger.dbg("Flagging visible widget", widget and (widget.name or widget.id or tostring(widget)), "w/ dithering hint:", refreshdither and refreshdither or "nil")
             self._dithered[widget] = refreshdither
         end
     end
@@ -870,8 +869,8 @@ function UIManager:_repaint()
 
             -- and remove from list after painting
             self._dirty[widget.widget] = nil
-            -- Don't clobber genuine dithered hints
-            if not self._dithered[widget.widget] then
+            -- Don't clobber genuine dithered hints (true/false)
+            if self._dithered[widget.widget] == nil then
                 logger.dbg("Flagging just painted widget:", widget.widget.name or widget.widget.id or tostring(widget), "as possibly dithered")
                 self._dithered[widget.widget] = "maybe"
             end
