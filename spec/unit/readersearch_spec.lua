@@ -66,8 +66,8 @@ describe("Readersearch module", function()
         end)
         it("should find the last occurrence", function()
             -- local logger = require("logger")
-            -- logger.info("nb of pages", doc:getPageCount())
-            -- 20181208: currently 266 pages
+            -- logger.warn("nb of pages", doc:getPageCount())
+            -- 20190202: currently 242 pages
             for i = 100, 180, 10 do
                 rolling:onGotoPage(i)
                 local words = search:searchFromEnd("Verona")
