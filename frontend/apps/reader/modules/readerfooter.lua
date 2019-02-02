@@ -579,6 +579,8 @@ function ReaderFooter:_updateFooterText()
     end
     self.text_container.dimen.w = self.text_width
     self.horizontal_group:resetLayout()
+    -- NOTE: This is essentially preventing us from truly using "fast" for panning,
+    --       since it'll get coalesced in the "fast" panning update, upgrading it to "ui".
     UIManager:setDirty(self.view.dialog, function()
         return "ui", self.footer_content.dimen
     end)

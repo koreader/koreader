@@ -596,6 +596,7 @@ function ReaderView:recalculate()
         self.state.offset.x = (self.dimen.w - self.visible_area.w) / 2
     end
     -- flag a repaint so self:paintTo will be called
+    -- NOTE: This is also unfortunately called during panning, essentially making sure we'll never be using "fast" for pans ;).
     UIManager:setDirty(self.dialog, "partial")
 end
 

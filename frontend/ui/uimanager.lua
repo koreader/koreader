@@ -761,7 +761,7 @@ function UIManager:_refresh(mode, region, dither)
     if not mode then
         -- If we're trying to float a dither hint up from a lower widget after a close, mode might be nil...
         if dither then
-            mode = "ui"
+            mode = "fast"
         else
             return
         end
