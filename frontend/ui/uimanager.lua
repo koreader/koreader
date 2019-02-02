@@ -883,12 +883,12 @@ function UIManager:_repaint()
     -- execute pending refresh functions
     for _, refreshfunc in ipairs(self._refresh_func_stack) do
         local refreshtype, region, dither = refreshfunc()
-        -- Flag the dirty widgets we've just painted as dithered if the queued refresh was asking for dithering...
-        if dirty and dither then
+        -- Flag the dirty widgets we've just painted properly now that we've consumed refreshfunc...
+        if dirty and dither ~= nil then
             for i = start_idx, #self._window_stack do
                 local widget = self._window_stack[i]
                 if self._dithered[widget.widget] == "maybe" then
-                    logger.dbg("Flagging potentially dithered widget:", widget.widget.name or widget.widget.id or tostring(widget), "as genuinely dithered")
+                    logger.dbg("Flagging potentially dithered widget:", widget.widget.name or widget.widget.id or tostring(widget), "as", dithered and "genuinely dithered" or "not dithered")
                     self._dithered[widget.widget] = true
                 end
             end
