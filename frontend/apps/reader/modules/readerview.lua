@@ -225,7 +225,7 @@ function ReaderView:paintTo(bb, x, y)
         -- If we're attempting to show a large enough amount of image data, request dithering (without triggering another repaint ;)).
         -- FIXME: Make sure this doesn't blow up on engines where getDrawnImagesStatistics is not implemented!
         local img_count, img_coverage = self.ui.document:getDrawnImagesStatistics()
-        if img_count > 0 and img_coverage >= 0.50 then
+        if img_count > 0 and img_coverage >= 0.10 then
             UIManager:setDirty(nil, "fast", nil, true)
         end
     --]]
