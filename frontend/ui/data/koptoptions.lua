@@ -258,7 +258,7 @@ This can also be used to remove some gray background or to convert a grayscale o
                 values = {1, 0},
                 default_value = 0,
                 advanced = true,
-                show = function() return Device:hasEinkScreen() and Device:canHWDither() end,
+                show = Device:hasEinkScreen() and Device:canHWDither(),
                 name_text_hold_callback = optionsutil.showValues,
             },
             {
