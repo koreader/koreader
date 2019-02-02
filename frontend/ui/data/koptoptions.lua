@@ -252,6 +252,15 @@ This can also be used to remove some gray background or to convert a grayscale o
                 name_text_hold_callback = optionsutil.showValues,
             },
             {
+                name = "hw_dithering",
+                name_text = S.HW_DITHERING,
+                toggle = {S.ON, S.OFF},
+                values = {1, 0},
+                default_value = 0,
+                advanced = true,
+                name_text_hold_callback = optionsutil.showValues,
+            },
+            {
                 name = "forced_ocr",
                 name_text = S.FORCED_OCR,
                 toggle = {S.ON, S.OFF},
