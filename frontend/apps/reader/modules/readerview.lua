@@ -213,6 +213,15 @@ function ReaderView:paintTo(bb, x, y)
     end
     -- stop activity indicator
     self.ui:handleEvent(Event:new("StopActivityIndicator"))
+
+    --[[
+    -- If we're attempting to show a large enough amount of image data, request dithering (without triggering another repaint ;)).
+    -- FIXME: Make sure this doesn't blow up on engines where getDrawnImagesStatistics is not implemented!
+    local img_count, img_coverage = self.ui.document:getDrawnImagesStatistics()
+    if img_count > 0 and img_coverage >= 0.50 then
+        UIManager:setDirty(nil, "partial", nil, true)
+    end
+    --]]
 end
 
 --[[
