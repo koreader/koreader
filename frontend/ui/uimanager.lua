@@ -31,6 +31,7 @@ local UIManager = {
     _task_queue = {},
     _task_queue_dirty = false,
     _dirty = {},
+    _dithered = {},
     _zeromqs = {},
     _refresh_stack = {},
     _refresh_func_stack = {},
@@ -270,7 +271,7 @@ function UIManager:show(widget, refreshtype, refreshregion, x, y, refreshdither)
         logger.dbg("widget not exist to be shown")
         return
     end
-    logger.dbg("show widget", widget.id or widget.name or "unknown")
+    logger.dbg("show widget:", widget.id or widget.name or tostring(widget))
 
     self._running = true
     local window = {x = x or 0, y = y or 0, widget = widget}
@@ -310,8 +311,9 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
         logger.dbg("widget to be closed does not exist")
         return
     end
-    logger.dbg("close widget", widget.id or widget.name)
+    logger.dbg("close widget:", widget.name or widget.id or tostring(widget))
     local dirty = false
+    refreshdither = refreshdither or false
     -- Ensure all the widgets can get onFlushSettings event.
     widget:handleEvent(Event:new("FlushSettings"))
     -- first send close event to widget
@@ -323,8 +325,16 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
         if self._window_stack[i].widget == widget then
             table.remove(self._window_stack, i)
             dirty = true
-        elseif self._window_stack[i].widget.disable_double_tap == false then
-            Input.disable_double_tap = false
+        else
+            -- If anything else on the stack was dithered, honor the hint
+            if self._dithered[self._window_stack[i].widget] then
+                refreshdither = true
+                logger.dbg("Lower widget", self._window_stack[i].widget.name or self._window_stack[i].widget.id or tostring(self._window_stack[i].widget), "was dithered, honoring the dithering hint")
+            end
+
+            if self._window_stack[i].widget.disable_double_tap == false then
+                Input.disable_double_tap = false
+            end
         end
     end
     if dirty and not widget.invisible then
@@ -483,14 +493,29 @@ UIManager:setDirty(self.widget, function() return "ui", self.someelement.dimen e
 ---- @param refreshregion a Geom object
 ---- @param refreshdither an optional bool
 function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
+    refreshdither = refreshdither or false
     if widget then
         if widget == "all" then
             -- special case: set all top-level widgets as being "dirty".
             for i = 1, #self._window_stack do
                 self._dirty[self._window_stack[i].widget] = true
+                -- Ideally, we'd honor refreshdither, but we can't when it's passed via a refreshtype function...
+                self._dithered[self._window_stack[i].widget] = true
             end
         elseif not widget.invisible then
             self._dirty[widget] = true
+            if self._dithered[widget] then
+                logger.dbg("Visible widget", widget and (widget.name or widget.id or tostring(widget)), "was dithered, honoring the dithering hint")
+                refreshdither = true
+            else
+                logger.dbg("Flagging visible widget", widget and (widget.name or widget.id or tostring(widget)), "w/ dithering hint:", refreshdither)
+                self._dithered[widget] = refreshdither
+            end
+        else
+            if self._dithered[widget] then
+                logger.dbg("Invisible widget", widget and (widget.name or widget.id or tostring(widget)), "was dithered, honoring the dithering hint")
+                refreshdither = true
+            end
         end
     end
     -- handle refresh information
@@ -507,9 +532,9 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
         self:_refresh(refreshtype, refreshregion, refreshdither)
         if dbg.is_on then
             if refreshregion then
-                logger.dbg("setDirty", refreshtype and refreshtype or "nil", "from widget", widget and (widget.name or widget.id or tostring(widget)) or "nil", "w/ region", refreshregion.x, refreshregion.y, refreshregion.w, refreshregion.h, refreshdither and "AND w/ HW dithering")
+                logger.dbg("setDirty", refreshtype and refreshtype or "nil", "from widget", widget and (widget.name or widget.id or tostring(widget)) or "nil", "w/ region", refreshregion.x, refreshregion.y, refreshregion.w, refreshregion.h, refreshdither and "AND w/ HW dithering" or "")
             else
-                logger.dbg("setDirty", refreshtype and refreshtype or "nil", "from widget", widget and (widget.name or widget.id or tostring(widget)) or "nil", "w/ NO region", refreshdither and "AND w/ HW dithering")
+                logger.dbg("setDirty", refreshtype and refreshtype or "nil", "from widget", widget and (widget.name or widget.id or tostring(widget)) or "nil", "w/ NO region", refreshdither and "AND w/ HW dithering" or "")
             end
         end
     end
@@ -537,6 +562,7 @@ dbg:guard(UIManager, 'setDirty',
 function UIManager:clearRenderStack()
     logger.dbg("clearRenderStack: Clearing the full render stack!")
     self._dirty = {}
+    self._dithered = {}
     self._refresh_func_stack = {}
     self._refresh_stack = {}
 end
@@ -717,6 +743,7 @@ Compares dither hints.
 Dither always wins.
 --]]
 local function update_dither(dither1, dither2)
+    logger.dbg("update_dither: Comparing hint2", dither2, "to hint1", dither1)
     if dither1 and not dither2 then
         logger.dbg("update_dither: Update dither hint", dither2, "to", dither1)
         return dither1
@@ -742,7 +769,14 @@ UIManager that a certain part of the screen is to be refreshed.
     optional, no dithering requested if not specified or not supported.
 --]]
 function UIManager:_refresh(mode, region, dither)
-    if not mode then return end
+    if not mode then
+        -- If we're trying to float a dither hint up from a lower widget after a close, mode might be nil...
+        if dither then
+            mode = "ui"
+        else
+            return
+        end
+    end
     if not region and mode == "full" then
         self.refresh_count = 0 -- reset counter on explicit full refresh
     end
@@ -812,7 +846,7 @@ function UIManager:_refresh(mode, region, dither)
     end
 
     -- if we've stopped hitting collisions, enqueue the refresh
-    logger.dbg("_refresh: Enqueued", mode, "update for region", region.x, region.y, region.w, region.h, dither and "w/ HW dithering")
+    logger.dbg("_refresh: Enqueued", mode, "update for region", region.x, region.y, region.w, region.h, dither and "w/ HW dithering" or "")
     table.insert(self._refresh_stack, {mode = mode, region = region, dither = dither})
 end
 
@@ -846,6 +880,7 @@ function UIManager:_repaint()
 
             -- and remove from list after painting
             self._dirty[widget.widget] = nil
+            --self._dithered[widget.widget] = nil
 
             -- trigger repaint
             dirty = true
@@ -925,6 +960,7 @@ function UIManager:handleInput()
         --dbg("exec stack", self._task_queue)
         --dbg("window stack", self._window_stack)
         --dbg("dirty stack", self._dirty)
+        --dbg("dithered stack", self._dithered)
         --dbg("---------------------------------------------------")
 
         -- stop when we have no window to show
