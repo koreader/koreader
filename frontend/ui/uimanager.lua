@@ -497,7 +497,7 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
                 self._dirty[self._window_stack[i].widget] = true
                 -- Ideally, we'd honor refreshdither, but we can't when it's passed via a refreshtype function...
                 -- So instead, we do this here, plus a genuinely horrendous heuristic in _repaint, once we've consumed refreshtype
-                if refreshdither and not self._window_stack[i].widget.invisible then
+                if refreshdither then
                     self._dithered[self._window_stack[i].widget] = true
                 end
             end
@@ -889,7 +889,7 @@ function UIManager:_repaint()
                 local widget = self._window_stack[i]
                 if self._dithered[widget.widget] == "maybe" then
                     logger.dbg("Flagging potentially dithered widget:", widget.widget.name or widget.widget.id or tostring(widget), "as", dither and "genuinely dithered" or "not dithered")
-                    self._dithered[widget.widget] = true
+                    self._dithered[widget.widget] = dither
                 end
             end
         end
