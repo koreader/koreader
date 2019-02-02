@@ -57,7 +57,6 @@ function UIManager:init()
         self._entered_poweroff_stage = true;
         Screen:setRotationMode(0)
         require("ui/screensaver"):show("poweroff", _("Powered off"))
-        -- FIXME: Dither this?
         Screen:refreshFull()
         UIManager:nextTick(function()
             Device:saveSettings()
@@ -69,7 +68,6 @@ function UIManager:init()
         self._entered_poweroff_stage = true;
         Screen:setRotationMode(0)
         require("ui/screensaver"):show("reboot", _("Rebooting..."))
-        -- FIXME: Dither this?
         Screen:refreshFull()
         UIManager:nextTick(function()
             Device:saveSettings()
@@ -500,7 +498,10 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
             for i = 1, #self._window_stack do
                 self._dirty[self._window_stack[i].widget] = true
                 -- Ideally, we'd honor refreshdither, but we can't when it's passed via a refreshtype function...
-                self._dithered[self._window_stack[i].widget] = true
+                -- So instead, we do this here, plus a genuinely horrendous heuristic in _repaint, once we've consumed refreshtype
+                if refreshdither and not self._window_stack[i].widget.invisible then
+                    self._dithered[self._window_stack[i].widget] = true
+                end
             end
         elseif not widget.invisible then
             self._dirty[widget] = true
@@ -510,11 +511,6 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
             else
                 logger.dbg("Flagging visible widget", widget and (widget.name or widget.id or tostring(widget)), "w/ dithering hint:", refreshdither)
                 self._dithered[widget] = refreshdither
-            end
-        else
-            if self._dithered[widget] then
-                logger.dbg("Invisible widget", widget and (widget.name or widget.id or tostring(widget)), "was dithered, honoring the dithering hint")
-                refreshdither = true
             end
         end
     end
@@ -743,7 +739,6 @@ Compares dither hints.
 Dither always wins.
 --]]
 local function update_dither(dither1, dither2)
-    logger.dbg("update_dither: Comparing hint2", dither2, "to hint1", dither1)
     if dither1 and not dither2 then
         logger.dbg("update_dither: Update dither hint", dither2, "to", dither1)
         return dither1
@@ -880,7 +875,11 @@ function UIManager:_repaint()
 
             -- and remove from list after painting
             self._dirty[widget.widget] = nil
-            --self._dithered[widget.widget] = nil
+            -- Don't clobber genuine dithered hints
+            if not self._dithered[widget.widget] then
+                logger.dbg("Flagging just painted widget:", widget.widget.name or widget.widget.id or tostring(widget), "as possibly dithered")
+                self._dithered[widget.widget] = "maybe"
+            end
 
             -- trigger repaint
             dirty = true
@@ -890,6 +889,16 @@ function UIManager:_repaint()
     -- execute pending refresh functions
     for _, refreshfunc in ipairs(self._refresh_func_stack) do
         local refreshtype, region, dither = refreshfunc()
+        -- Flag the dirty widgets we've just painted as dithered if the queued refresh was asking for dithering...
+        if dirty and dither then
+            for i = start_idx, #self._window_stack do
+                local widget = self._window_stack[i]
+                if self._dithered[widget.widget] == "maybe" then
+                    logger.dbg("Flagging potentially dithered widget:", widget.widget.name or widget.widget.id or tostring(widget), "as genuinely dithered")
+                    self._dithered[widget.widget] = true
+                end
+            end
+        end
         if refreshtype then self:_refresh(refreshtype, region, dither) end
     end
     self._refresh_func_stack = {}
