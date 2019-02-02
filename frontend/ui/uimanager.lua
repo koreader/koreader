@@ -888,7 +888,7 @@ function UIManager:_repaint()
             for i = start_idx, #self._window_stack do
                 local widget = self._window_stack[i]
                 if self._dithered[widget.widget] == "maybe" then
-                    logger.dbg("Flagging potentially dithered widget:", widget.widget.name or widget.widget.id or tostring(widget), "as", dithered and "genuinely dithered" or "not dithered")
+                    logger.dbg("Flagging potentially dithered widget:", widget.widget.name or widget.widget.id or tostring(widget), "as", dither and "genuinely dithered" or "not dithered")
                     self._dithered[widget.widget] = true
                 end
             end
