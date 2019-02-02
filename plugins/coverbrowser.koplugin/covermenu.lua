@@ -77,7 +77,9 @@ function CoverMenu:updateItems(select_number)
     collectgarbage()
 
     -- Specific UI building implementation (defined in some other module)
+    self._has_cover_images = false
     self:_updateItemsBuildUI()
+    logger.info("covermenu has cover images?", self._has_cover_images)
 
     -- Set the local variables with the things we know
     current_path = self.path
@@ -93,7 +95,7 @@ function CoverMenu:updateItems(select_number)
         local refresh_dimen =
             old_dimen and old_dimen:combine(self.dimen)
             or self.dimen
-        return "partial", refresh_dimen, true
+        return "partial", refresh_dimen, self._has_cover_images
     end)
 
     -- As additionally done in FileChooser:updateItems()
@@ -137,13 +139,14 @@ function CoverMenu:updateItems(select_number)
                 item:update()
                 if item.bookinfo_found then
                     logger.dbg("  found", item.text)
+                    logger.info("covermenu updated item has cover image?", item._has_cover_image)
                     local refreshfunc = function()
                         if item.refresh_dimen then
                             -- MosaicMenuItem may exceed its own dimen in its paintTo
                             -- with its "description" hint
-                            return "ui", item.refresh_dimen, true
+                            return "ui", item.refresh_dimen, item._has_cover_image
                         else
-                            return "ui", item[1].dimen, true
+                            return "ui", item[1].dimen, item._has_cover_image
                         end
                     end
                     UIManager:setDirty(self.show_parent, refreshfunc)

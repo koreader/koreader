@@ -144,7 +144,7 @@ function FileManagerHistory:onShowHist()
             UIManager:close(self.hist_menu)
         end)
     end
-    UIManager:show(self.hist_menu, "full", nil, 0, 0, true)
+    UIManager:show(self.hist_menu, "full")
     return true
 end
 
