@@ -325,7 +325,7 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
             dirty = true
         else
             -- If anything else on the stack was dithered, honor the hint
-            if self._dithered[self._window_stack[i].widget] then
+            if self._dithered[self._window_stack[i].widget] == true then
                 refreshdither = true
                 logger.dbg("Lower widget", self._window_stack[i].widget.name or self._window_stack[i].widget.id or tostring(self._window_stack[i].widget), "was dithered, honoring the dithering hint")
             end
@@ -505,13 +505,8 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
             end
         elseif not widget.invisible then
             self._dirty[widget] = true
-            if self._dithered[widget] then
-                logger.dbg("Visible widget", widget and (widget.name or widget.id or tostring(widget)), "was dithered, honoring the dithering hint")
-                refreshdither = true
-            else
-                logger.dbg("Flagging visible widget", widget and (widget.name or widget.id or tostring(widget)), "w/ dithering hint:", refreshdither)
-                self._dithered[widget] = refreshdither
-            end
+            logger.dbg("Flagging visible widget", widget and (widget.name or widget.id or tostring(widget)), "w/ dithering hint:", refreshdither)
+            self._dithered[widget] = refreshdither
         end
     end
     -- handle refresh information
