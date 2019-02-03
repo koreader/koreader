@@ -103,9 +103,9 @@ end
 
 dbg:guard(SysfsLight, 'setNaturalBrightness',
           function(self, brightness, warmth)
-              brightness and assert(brightness >= 0 and brightness <= 100,
+              assert(brightness == nil or (brightness >= 0 and brightness <= 100),
                      "Wrong brightness value given!")
-              warmth and assert(warmth >= 0 and warmth <= 100,
+              assert(warmth == nil or (warmth >= 0 and warmth <= 100),
                      "Wrong warmth value given!")
           end)
 
