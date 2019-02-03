@@ -605,7 +605,8 @@ function TouchMenu:updateItems()
 
     -- NOTE: We use a slightly ugly hack to detect a brand new menu vs. a tab switch,
     --       in order to optionally flash on initial menu popup...
-    UIManager:setDirty("all", function()
+    -- NOTE: Also avoid repainting what's underneath us on initial popup.
+    UIManager:setDirty(self.is_fresh and self.show_parent or "all", function()
         local refresh_dimen =
             old_dimen and old_dimen:combine(self.dimen)
             or self.dimen
