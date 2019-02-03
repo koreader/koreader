@@ -402,6 +402,11 @@ function Document:drawPage(target, x, y, rect, pageno, zoom, rotation, gamma, re
         rect.w, rect.h)
 end
 
+function Document:getDrawnImagesStatistics()
+    -- For now, only set by CreDocument in CreDocument:drawCurrentView()
+    return self._drawn_images_count, self._drawn_images_surface_ratio
+end
+
 function Document:getPageText(pageno)
     -- is this worth caching? not done yet.
     local page = self._document:openPage(pageno)
