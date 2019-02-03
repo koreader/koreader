@@ -337,6 +337,7 @@ function ImageWidget:panBy(x, y)
         UIManager:setDirty("all", function()
             return "partial", self.dimen, true
         end)
+        self.dithered = true
     end
     -- return new center ratio, so caller can use them later to create a new
     -- ImageWidget with a different scale_factor, while keeping center point

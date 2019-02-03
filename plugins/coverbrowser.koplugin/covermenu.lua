@@ -90,12 +90,13 @@ function CoverMenu:updateItems(select_number)
     if self.show_path then
         self.path_text.text = self:truncatePath(self.path)
     end
-    UIManager:setDirty("all", function()
+    UIManager:setDirty(self.show_parent, function()
         local refresh_dimen =
             old_dimen and old_dimen:combine(self.dimen)
             or self.dimen
         return "partial", refresh_dimen, self._has_cover_images
     end)
+    self.show_parent.dithered = self._has_cover_images
 
     -- As additionally done in FileChooser:updateItems()
     if self.path_items then
@@ -148,6 +149,7 @@ function CoverMenu:updateItems(select_number)
                         end
                     end
                     UIManager:setDirty(self.show_parent, refreshfunc)
+                    self.show_parent.dithered = item._has_cover_image
                     table.remove(self.items_to_update, i)
                 else
                     logger.dbg("  not yet found", item.text)

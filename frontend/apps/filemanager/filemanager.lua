@@ -158,9 +158,12 @@ function FileManager:init()
 
     function file_chooser:onPathChanged(path)  -- luacheck: ignore
         FileManager.instance.path_text:setText(truncatePath(filemanagerutil.abbreviate(path)))
+        local dithered = FileManager.instance.dithered
         UIManager:setDirty(FileManager.instance, function()
-            return "partial", FileManager.instance.path_text.dimen
+            return "partial", FileManager.instance.path_text.dimen, FileManager.instance.dithered
         end)
+        -- Re-set the expected dither flag, because setDirty will have wiped it since we're using a func
+        FileManager.instance.dithered = dithered
         return true
     end
 

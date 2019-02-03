@@ -111,6 +111,8 @@ function BookStatusWidget:init()
         padding = 0,
         self:getStatusContent(screen_size.w),
     }
+
+    self.dithered = true
 end
 
 function BookStatusWidget:getStats()
