@@ -587,25 +587,25 @@ function Menu:init()
         icon = "resources/icons/appbar.chevron.left.png",
         callback = function() self:onPrevPage() end,
         bordersize = 0,
-        show_parent = self,
+        show_parent = self.show_parent,
     }
     self.page_info_right_chev = Button:new{
         icon = "resources/icons/appbar.chevron.right.png",
         callback = function() self:onNextPage() end,
         bordersize = 0,
-        show_parent = self,
+        show_parent = self.show_parent,
     }
     self.page_info_first_chev = Button:new{
         icon = "resources/icons/appbar.chevron.first.png",
         callback = function() self:onFirstPage() end,
         bordersize = 0,
-        show_parent = self,
+        show_parent = self.show_parent,
     }
     self.page_info_last_chev = Button:new{
         icon = "resources/icons/appbar.chevron.last.png",
         callback = function() self:onLastPage() end,
         bordersize = 0,
-        show_parent = self,
+        show_parent = self.show_parent,
     }
     self.page_info_spacer = HorizontalSpan:new{
         width = Screen:scaleBySize(32),
