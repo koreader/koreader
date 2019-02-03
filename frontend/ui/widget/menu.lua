@@ -699,7 +699,7 @@ function Menu:init()
             if self.onReturn then self:onReturn() end
         end,
         bordersize = 0,
-        show_parent = self,
+        show_parent = self.show_parent,
         readonly = self.return_arrow_propagation,
     }
     self.page_return_arrow:hide()
