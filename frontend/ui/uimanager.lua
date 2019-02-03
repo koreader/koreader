@@ -763,8 +763,9 @@ UIManager that a certain part of the screen is to be refreshed.
 function UIManager:_refresh(mode, region, dither)
     if not mode then
         -- If we're trying to float a dither hint up from a lower widget after a close, mode might be nil...
+        -- So use the lowest priority refresh mode (short of fast, because that'd do half-toning).
         if dither then
-            mode = "fast"
+            mode = "ui"
         else
             return
         end
