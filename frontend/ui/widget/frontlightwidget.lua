@@ -276,7 +276,7 @@ function FrontLightWidget:setProgress(num, step, num_warmth)
     -- Reset container height to what it actually contains
     self.fl_container.dimen.h = vertical_group:getSize().h
 
-    UIManager:setDirty(self, "ui", self.fl_container.dimen)
+    UIManager:setDirty(self, "ui")
     return true
 end
 
