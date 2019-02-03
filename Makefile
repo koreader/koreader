@@ -12,6 +12,10 @@ ifneq (,$(findstring -,$(VERSION)))
 	VERSION:=$(VERSION)_$(shell git describe HEAD | xargs git show -s --format=format:"%cd" --date=short)
 endif
 
+# Use the git commit count as the (integer) Android version code
+ANDROID_VERSION?=$(git rev-list --count HEAD)
+ANDROID_NAME?=$(VERSION)
+
 # set PATH to find CC in managed toolchains
 ifeq ($(TARGET), android)
 	PATH:=$(ANDROID_TOOLCHAIN)/bin:$(PATH)
@@ -365,7 +369,7 @@ androidupdate: all
 	cd $(INSTALL_DIR)/koreader && 7z a -l -mx=1 \
 		../../$(ANDROID_LAUNCHER_DIR)/assets/module/koreader-$(VERSION).7z * \
 		-x!resources/fonts -x!resources/icons/src -x!spec
-	$(MAKE) -C $(ANDROID_LAUNCHER_DIR) $(if $(KODEBUG), debug, release)
+	$(MAKE) -C $(ANDROID_LAUNCHER_DIR) $(if $(KODEBUG), debug, release) ANDROID_VERSION=$(ANDROID_VERSION) ANDROID_NAME=$(ANDROID_NAME)
 	cp $(ANDROID_LAUNCHER_DIR)/bin/NativeActivity.apk \
 		koreader-android-$(MACHINE)-$(VERSION).apk
 
