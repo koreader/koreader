@@ -407,15 +407,15 @@ function MenuItem:onTapSelect(arg, ges)
             return "fast", self[1].dimen
         end)
         UIManager:tickAfterNext(function()
-            self[1].invert = false
-            UIManager:setDirty(self.show_parent, function()
-                return "ui", self[1].dimen
-            end)
             logger.dbg("creating coroutine for menu select")
             local co = coroutine.create(function()
                 self.menu:onMenuSelect(self.table, pos)
             end)
             coroutine.resume(co)
+            self[1].invert = false
+            UIManager:setDirty(self.show_parent, function()
+                return "ui", self[1].dimen
+            end)
         end)
     end
     return true
@@ -431,11 +431,11 @@ function MenuItem:onHoldSelect(arg, ges)
             return "fast", self[1].dimen
         end)
         UIManager:tickAfterNext(function()
+            self.menu:onMenuHold(self.table, pos)
             self[1].invert = false
             UIManager:setDirty(self.show_parent, function()
                 return "ui", self[1].dimen
             end)
-            self.menu:onMenuHold(self.table, pos)
         end)
     end
     return true
