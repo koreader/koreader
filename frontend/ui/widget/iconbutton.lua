@@ -96,15 +96,13 @@ function IconButton:onTapIconButton()
         self.callback()
     else
         self.image.invert = true
-        --[[
-        -- Optimize that out, there's a high probability our callback will force a repaint.
+        -- For ConfigDialog icons, we can't avoid that initial repaint...
         UIManager:setDirty(self.show_parent, function()
             return "fast", self.dimen
         end)
-        --]]
-        self.callback()
-        -- tickAfterNext is usually a bit too soon, which may cause tearing artefacts...
-        UIManager:scheduleIn(0.075, function()
+        -- And, we usually need to delay the callback for the same reasons as Button...
+        UIManager:tickAfterNext(function()
+            self.callback()
             self.image.invert = false
             UIManager:setDirty(self.show_parent, function()
                 return "fast", self.dimen
