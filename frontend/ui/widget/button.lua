@@ -194,15 +194,13 @@ function Button:onTapSelectButton()
             self.callback()
         else
             self[1].invert = true
-            --[[
-            -- Optimize that out, there's a high probability our callback will force a repaint.
+            -- For most of our buttons, we can't avoid that initial repaint...
             UIManager:setDirty(self.show_parent, function()
                 return "fast", self[1].dimen
             end)
-            --]]
-            self.callback()
-            -- tickAfterNext is usually a bit too soon, which may cause tearing artefacts...
-            UIManager:scheduleIn(0.075, function()
+            -- And we also often have to delay the callback to both see the flash and/or avoid tearing artefact w/ fast refreshes...
+            UIManager:tickAfterNext(function()
+                self.callback()
                 self[1].invert = false
                 UIManager:setDirty(self.show_parent, function()
                     return "fast", self[1].dimen
