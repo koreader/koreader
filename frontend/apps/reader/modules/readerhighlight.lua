@@ -10,6 +10,7 @@ local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
 local T = require("ffi/util").template
+local Screen = Device.screen
 
 local ReaderHighlight = InputContainer:new{}
 
@@ -138,6 +139,11 @@ function ReaderHighlight:clear(clear_id)
     else
         self.ui.document:clearSelection()
     end
+    if self.restore_page_mode_func then
+        self.restore_page_mode_func()
+        self.restore_page_mode_func = nil
+    end
+    self.selected_text_start_xpointer = nil
     if self.hold_pos then
         self.hold_pos = nil
         self.selected_text = nil
@@ -334,8 +340,62 @@ function ReaderHighlight:onHoldPan(_, ges)
 
     self.holdpan_pos = self.view:screenToPageTransform(ges.pos)
     logger.dbg("holdpan position in page", self.holdpan_pos)
+
+    if not self.ui.document.info.has_pages and self.selected_text_start_xpointer then
+        -- With CreDocuments, allow text selection across multiple pages
+        -- by (temporarily) switching to scroll mode when panning to the
+        -- top left or bottom right corners.
+        local is_in_top_left_corner = self.holdpan_pos.y < 1/8*Screen:getHeight()
+                                  and self.holdpan_pos.x < 1/8*Screen:getWidth()
+        local is_in_bottom_right_corner = self.holdpan_pos.y > 7/8*Screen:getHeight()
+                                      and self.holdpan_pos.x > 7/8*Screen:getWidth()
+        if is_in_top_left_corner or is_in_bottom_right_corner then
+            if self.was_in_some_corner then
+                -- Do nothing, wait for the user to move his finger out of that corner
+                return true
+            end
+            self.was_in_some_corner = true
+            -- We'll adjust hold_pos.y after the mode switch and the scroll
+            -- so it's accurate in the new screen coordinates
+            local orig_y = self.ui.document:getScreenPositionFromXPointer(self.selected_text_start_xpointer)
+            if self.view.view_mode ~= "scroll" then
+                -- Switch from page mode to scroll mode
+                local restore_page_mode_xpointer = self.ui.document:getXPointer() -- top of current page
+                self.restore_page_mode_func = function()
+                    self.ui:handleEvent(Event:new("SetViewMode", "page"))
+                    self.ui.rolling:onGotoXPointer(restore_page_mode_xpointer, self.selected_text_start_xpointer)
+                end
+                self.ui:handleEvent(Event:new("SetViewMode", "scroll"))
+            end
+            -- (using rolling:onGotoViewRel(1/3) has some strange side effects)
+            local scroll_distance = math.floor(Screen:getHeight() * 1/3)
+            local move_y = is_in_bottom_right_corner and scroll_distance or -scroll_distance
+            self.ui.rolling:_gotoPos(self.ui.document:getCurrentPos() + move_y)
+            local new_y = self.ui.document:getScreenPositionFromXPointer(self.selected_text_start_xpointer)
+            self.hold_pos.y = self.hold_pos.y - orig_y + new_y
+            UIManager:setDirty(self.dialog, "ui")
+            return true
+        else
+            self.was_in_some_corner = nil
+        end
+    end
+
     local old_text = self.selected_text and self.selected_text.text
     self.selected_text = self.ui.document:getTextFromPositions(self.hold_pos, self.holdpan_pos)
+
+    if self.selected_text and self.selected_text.pos0 then
+        -- Remember original highlight start position, so we can show
+        -- a marker when back from scroll mode if that switch happened.
+        -- (getTextFromPositions() does order pos0 and pos1, so it's not
+        -- certain pos0 is where we started from - we get the one from the
+        -- first pan, which is hopefully small enough to not span too
+        -- much height, so the marker points to the start position if the
+        -- user later pans backward)
+        if not self.selected_text_start_xpointer then
+            self.selected_text_start_xpointer = self.selected_text.pos0
+        end
+    end
+
     if self.selected_text and old_text and old_text == self.selected_text.text then
         -- no modification
         return
