@@ -21,6 +21,7 @@ local CreDocument = Document:new{
 
     _document = false,
     _loaded = false,
+    _view_mode = nil,
 
     line_space_percent = 100,
     default_font = "Noto Serif",
@@ -114,12 +115,11 @@ function CreDocument:init()
         self.default_css = "./data/fb2.css"
     end
 
-    -- @TODO check the default view_mode to a global user configurable
-    -- variable  22.12 2012 (houqp)
+    -- This mode must be the same as the default one set as ReaderView.view_mode
+    self._view_mode = DCREREADER_VIEW_MODE == "scroll" and self.SCROLL_VIEW_MODE or self.PAGE_VIEW_MODE
+
     local ok
-    ok, self._document = pcall(cre.newDocView, Screen:getWidth(), Screen:getHeight(),
-        DCREREADER_VIEW_MODE == "scroll" and self.SCROLL_VIEW_MODE or self.PAGE_VIEW_MODE
-    ) -- this mode must be the same as the default one set as ReaderView.view_mode
+    ok, self._document = pcall(cre.newDocView, Screen:getWidth(), Screen:getHeight(), self._view_mode)
     if not ok then
         error(self._document)  -- will contain error message
     end
@@ -375,6 +375,22 @@ function CreDocument:getPageFromXPointer(xp)
     return self._document:getPageFromXPointer(xp)
 end
 
+function CreDocument:getScreenPositionFromXPointer(xp)
+    -- We do not ensure xp is in the current page: we may return
+    -- a negative screen_y, which could be useful in some contexts
+    local doc_margins = self:getPageMargins()
+    local doc_y, doc_x = self:getPosFromXPointer(xp)
+    local top_y = self:getCurrentPos()
+    local screen_y = doc_y - top_y
+    if self._view_mode == self.PAGE_VIEW_MODE then
+        screen_y = screen_y + doc_margins["top"] + self:getHeaderHeight()
+    end
+    local screen_x = doc_x + doc_margins["left"]
+    -- Just as getPosFromXPointer() does, we return y first and x second,
+    -- as callers most often just need the y
+    return screen_y, screen_x
+end
+
 function CreDocument:getFontFace()
     return self._document:getFontFace()
 end
@@ -554,10 +570,11 @@ function CreDocument:setViewMode(new_mode)
     if new_mode then
         logger.dbg("CreDocument: set view mode", new_mode)
         if new_mode == "scroll" then
-            self._document:setViewMode(self.SCROLL_VIEW_MODE)
+            self._view_mode = self.SCROLL_VIEW_MODE
         else
-            self._document:setViewMode(self.PAGE_VIEW_MODE)
+            self._view_mode = self.PAGE_VIEW_MODE
         end
+        self._document:setViewMode(self._view_mode)
     end
 end
 
