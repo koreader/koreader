@@ -320,6 +320,8 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
     -- then remove all references to that widget on stack and refresh
     for i = #self._window_stack, 1, -1 do
         if self._window_stack[i].widget == widget then
+            self._dirty[self._window_stack[i].widget] = nil
+            self._dithered[self._window_stack[i].widget] = nil
             table.remove(self._window_stack, i)
             dirty = true
         else
