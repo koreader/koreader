@@ -953,7 +953,7 @@ function Menu:updateItems(select_number)
         self.path_text.text = self:truncatePath(self.path)
     end
 
-    UIManager:setDirty("all", function()
+    UIManager:setDirty(self.show_parent, function()
         local refresh_dimen =
             old_dimen and old_dimen:combine(self.dimen)
             or self.dimen

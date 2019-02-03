@@ -553,7 +553,7 @@ function KeyValuePage:onReturn()
     if self.callback_return then
         self:callback_return()
         UIManager:close(self)
-        UIManager:setDirty("all", "ui")
+        UIManager:setDirty(nil, "ui")
     end
 end
 
