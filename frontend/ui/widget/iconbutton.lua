@@ -96,12 +96,15 @@ function IconButton:onTapIconButton()
         self.callback()
     else
         self.image.invert = true
+        --[[
+        -- Optimize that out, there's a high probability our callback will force a repaint.
         UIManager:setDirty(self.show_parent, function()
             return "fast", self.dimen
         end)
-        -- Make sure button reacts before doing callback
-        UIManager:tickAfterNext(function()
-            self.callback()
+        --]]
+        self.callback()
+        -- tickAfterNext is usually a bit too soon, which may cause tearing artefacts...
+        UIManager:scheduleIn(0.05, function()
             self.image.invert = false
             UIManager:setDirty(self.show_parent, function()
                 return "fast", self.dimen
