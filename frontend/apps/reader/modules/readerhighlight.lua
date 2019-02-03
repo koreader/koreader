@@ -100,8 +100,9 @@ function ReaderHighlight:genHighlightDrawerMenu()
     end
     return {
         {
-            text_func = function()
-                return self.view.highlight.disabled and _("Enable") or _("Disable")
+            text = _("Allow highlighting"),
+            checked_func = function()
+                return not self.view.highlight.disabled
             end,
             callback = function()
                 self.view.highlight.disabled = not self.view.highlight.disabled
@@ -109,6 +110,7 @@ function ReaderHighlight:genHighlightDrawerMenu()
             hold_callback = function(touchmenu_instance)
                 self:makeDefault(not self.view.highlight.disabled)
             end,
+            separator = true,
         },
         get_highlight_style("lighten"),
         get_highlight_style("underscore"),

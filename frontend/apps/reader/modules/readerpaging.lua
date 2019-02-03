@@ -187,18 +187,21 @@ function ReaderPaging:addToMainMenu(menu_items)
     -- The difference between the two menus is only the enabled func.
     local page_overlap_menu = {
         {
-            text_func = function()
-                return self.show_overlap_enable and _("Disable") or _("Enable")
+            text = _("Page overlap"),
+            checked_func = function()
+                return self.show_overlap_enable
             end,
             callback = function()
                 self.show_overlap_enable = not self.show_overlap_enable
                 if not self.show_overlap_enable then
                     self.view:resetDimArea()
                 end
-            end
+            end,
+            separator = true,
         },
     }
-    for _, menu_entry in ipairs(self.view:genOverlapStyleMenu()) do
+    local overlap_enabled_func = function() return self.show_overlap_enable end
+    for _, menu_entry in ipairs(self.view:genOverlapStyleMenu(overlap_enabled_func)) do
         table.insert(page_overlap_menu, menu_entry)
     end
     menu_items.page_overlap = {
