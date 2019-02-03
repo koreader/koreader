@@ -571,8 +571,7 @@ end
 function BookStatusWidget:onClose()
     self:saveSummary()
     -- NOTE: Flash on close to avoid ghosting, since we show an image.
-    UIManager:setDirty("all", "flashpartial")
-    UIManager:close(self)
+    UIManager:close(self, "flashpartial")
     return true
 end
 
