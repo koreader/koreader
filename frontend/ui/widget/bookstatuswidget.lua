@@ -256,7 +256,8 @@ function BookStatusWidget:setStar(num)
 
     table.insert(self.stars_container, stars_group)
 
-    UIManager:setDirty(nil, "ui")
+    -- Individual stars are Buttons, which'll trigger a flash on their own, we want to refresh the group *after* that...
+    UIManager:scheduleIn(0.5, function() UIManager:setDirty(self.stars_container, "ui", nil, true) end)
     return true
 end
 
@@ -560,7 +561,7 @@ function BookStatusWidget:onSwipe(arg, ges_ev)
         do end -- luacheck: ignore 541
     else -- diagonal swipe
         -- trigger full refresh
-        UIManager:setDirty(nil, "full")
+        UIManager:setDirty(nil, "full", nil, true)
         -- a long diagonal swipe may also be used for taking a screenshot,
         -- so let it propagate
         return false
