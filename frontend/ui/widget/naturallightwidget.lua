@@ -353,7 +353,7 @@ function NaturalLightWidget:createMainContent(width, height)
     table.insert(self.fl_container, vertical_group)
     -- Reset container height to what it actually contains
     self.fl_container.dimen.h = vertical_group:getSize().h
-    UIManager:setDirty("all", "ui")
+    UIManager:setDirty(self, "ui")
     return self.fl_container
 end
 

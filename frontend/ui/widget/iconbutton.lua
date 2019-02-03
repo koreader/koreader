@@ -104,7 +104,7 @@ function IconButton:onTapIconButton()
         --]]
         self.callback()
         -- tickAfterNext is usually a bit too soon, which may cause tearing artefacts...
-        UIManager:scheduleIn(0.05, function()
+        UIManager:scheduleIn(0.075, function()
             self.image.invert = false
             UIManager:setDirty(self.show_parent, function()
                 return "fast", self.dimen

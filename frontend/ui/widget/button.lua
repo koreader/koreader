@@ -202,7 +202,7 @@ function Button:onTapSelectButton()
             --]]
             self.callback()
             -- tickAfterNext is usually a bit too soon, which may cause tearing artefacts...
-            UIManager:scheduleIn(0.05, function()
+            UIManager:scheduleIn(0.075, function()
                 self[1].invert = false
                 UIManager:setDirty(self.show_parent, function()
                     return "fast", self[1].dimen
