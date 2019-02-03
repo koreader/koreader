@@ -214,10 +214,12 @@ function ReaderView:paintTo(bb, x, y)
     -- stop activity indicator
     self.ui:handleEvent(Event:new("StopActivityIndicator"))
 
+    -- Most pages should not require dithering
+    self.dialog.dithered = nil
     -- For KOpt, let the user choose.
     if self.ui.document.info.has_pages then
         if self.document.configurable.hw_dithering == 1 then
-            UIManager:setDirty(nil, "fast", nil, true)
+            self.dialog.dithered = true
         end
     --[[
     else
@@ -226,7 +228,7 @@ function ReaderView:paintTo(bb, x, y)
         -- FIXME: Make sure this doesn't blow up on engines where getDrawnImagesStatistics is not implemented!
         local img_count, img_coverage = self.ui.document:getDrawnImagesStatistics()
         if img_count > 0 and img_coverage >= 0.10 then
-            UIManager:setDirty(nil, "fast", nil, true)
+            self.dialog.dithered = true
         end
     --]]
     end

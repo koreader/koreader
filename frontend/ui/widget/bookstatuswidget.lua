@@ -542,7 +542,7 @@ function BookStatusWidget:onConfigChoose(values, name, event, args, events, posi
         if values then
             self:onChangeBookStatus(args, position)
         end
-        UIManager:setDirty("all", "ui", nil, true)
+        UIManager:setDirty(nil, "ui", nil, true)
     end)
 end
 

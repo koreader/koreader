@@ -504,14 +504,9 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
             end
         elseif not widget.invisible then
             self._dirty[widget] = true
-            -- NOTE: We need to reset the dithered flag on widgets that may or may not always be dithered...
-            --       This is why we re-set it manually (outside of UImanager),
-            --       right *after* a setDirty call when we've just made one with a refreshtype *func*,
-            --       because this won't be accurate in these cases, as refreshdither will be nil,
-            --       even if it isn't inside the refreshtype func...
+            -- Again, if it's flagged as dithered, honor that
             if widget.dithered then
-                logger.dbg("Flagging potentially dithered widget", widget and (widget.name or widget.id or tostring(widget)), "w/ dithering hint:", refreshdither and refreshdither or "nil")
-                widget.dithered = refreshdither
+                refreshdither = true
             end
         end
     end

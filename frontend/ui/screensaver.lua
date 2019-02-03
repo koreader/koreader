@@ -387,8 +387,9 @@ function Screensaver:show(event, fallback_message)
             covers_fullscreen = covers_fullscreen,
         }
         self.left_msg.modal = true
-        -- refresh whole screen for other types
-        UIManager:show(self.left_msg, "full", nil, 0, 0, true)
+        -- Refresh whole screen for other types
+        self.left_msg.dithered = true
+        UIManager:show(self.left_msg, "full")
     end
 end
 

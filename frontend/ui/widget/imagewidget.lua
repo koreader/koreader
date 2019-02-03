@@ -334,10 +334,10 @@ function ImageWidget:panBy(x, y)
     if new_offset_x ~= self._offset_x or new_offset_y ~= self._offset_y then
         self._offset_x = new_offset_x
         self._offset_y = new_offset_y
+        self.dithered = true
         UIManager:setDirty("all", function()
             return "partial", self.dimen, true
         end)
-        self.dithered = true
     end
     -- return new center ratio, so caller can use them later to create a new
     -- ImageWidget with a different scale_factor, while keeping center point
