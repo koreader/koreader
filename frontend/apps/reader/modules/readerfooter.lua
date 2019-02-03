@@ -417,7 +417,6 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end
                 if should_update then
                     self:updateFooter()
-                    UIManager:setDirty("all", "partial")
                 end
             end,
         }
@@ -436,7 +435,6 @@ function ReaderFooter:addToMainMenu(menu_items)
                 callback = function()
                     self.settings.disable_progress_bar = not self.settings.disable_progress_bar
                     self:updateFooter()
-                    UIManager:setDirty("all", "partial")
                 end,
             },
             getMinibarOption("toc_markers", self.setTocMarkers),
