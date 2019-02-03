@@ -475,14 +475,8 @@ function ReaderRolling:onGotoXPointer(xp, marker_xp)
     if marker_xp and marker_setting then
         -- Show a mark on left side of screen to give a visual feedback of
         -- where xpointer target is (and remove if after 1s)
-        local doc_y = self.ui.document:getPosFromXPointer(marker_xp)
-        local top_y = self.ui.document:getCurrentPos()
-        local screen_y = doc_y - top_y
+        local screen_y = self.ui.document:getScreenPositionFromXPointer(marker_xp)
         local doc_margins = self.ui.document:getPageMargins()
-        local header_height = self.ui.document:getHeaderHeight() -- top full status bar (0 when bottom mini bar used)
-        if self.view.view_mode == "page" then
-            screen_y = screen_y + doc_margins["top"] + header_height
-        end
         local marker_h = Screen:scaleBySize(self.ui.font.font_size * 1.1 * self.ui.font.line_space_percent/100.0)
         -- Make it 4/5 of left margin wide (and bigger when huge margin)
         local marker_w = math.floor(math.max(doc_margins["left"] - Screen:scaleBySize(5), doc_margins["left"] * 4/5))
