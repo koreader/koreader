@@ -230,6 +230,10 @@ function ReaderView:paintTo(bb, x, y)
         end
     --]]
     end
+    -- NOTE: We set the widget to nil because we don't actually want to repaint anything,
+    --       we just want to infect the refresh queue with a viral dithering request ;).
+    --       In the same vein, we set refreshtype to fast so as not to affect the final refreshtype of the queue,
+    --       (fast has the lowest priority).
 end
 
 --[[
