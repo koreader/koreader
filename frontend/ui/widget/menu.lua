@@ -403,7 +403,8 @@ function MenuItem:onTapSelect(arg, ges)
         coroutine.resume(co)
     else
         self[1].invert = true
-        UIManager:setDirty(self.show_parent, function()
+        UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+        UIManager:setDirty(nil, function()
             return "fast", self[1].dimen
         end)
         UIManager:tickAfterNext(function()
@@ -413,7 +414,8 @@ function MenuItem:onTapSelect(arg, ges)
             end)
             coroutine.resume(co)
             self[1].invert = false
-            UIManager:setDirty(self.show_parent, function()
+            UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+            UIManager:setDirty(nil, function()
                 return "ui", self[1].dimen
             end)
         end)
@@ -427,13 +429,15 @@ function MenuItem:onHoldSelect(arg, ges)
         self.menu:onMenuHold(self.table, pos)
     else
         self[1].invert = true
-        UIManager:setDirty(self.show_parent, function()
+        UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+        UIManager:setDirty(nil, function()
             return "fast", self[1].dimen
         end)
         UIManager:tickAfterNext(function()
             self.menu:onMenuHold(self.table, pos)
             self[1].invert = false
-            UIManager:setDirty(self.show_parent, function()
+            UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+            UIManager:setDirty(nil, function()
                 return "ui", self[1].dimen
             end)
         end)
