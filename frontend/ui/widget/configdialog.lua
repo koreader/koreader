@@ -711,6 +711,7 @@ Widget that displays config menubar and config panel
 local ConfigDialog = FocusManager:new{
     --is_borderless = false,
     panel_index = 1,
+    is_fresh = true,
 }
 
 function ConfigDialog:init()
@@ -783,7 +784,7 @@ end
 
 function ConfigDialog:onCloseWidget()
     -- NOTE: As much as we would like to flash here, don't, because of adverse interactions with touchmenu that might lead to a double flash...
-    UIManager:setDirty("all", function()
+    UIManager:setDirty(nil, function()
         return "partial", self.dialog_frame.dimen
     end)
 end
@@ -794,10 +795,11 @@ function ConfigDialog:onShowConfigPanel(index)
     self:update()
     -- NOTE: Keep that one as UI to avoid delay when both this and the topmenu are shown.
     --       Plus, this is also called for each tab anyway, so that wouldn't have been great.
-    UIManager:setDirty("all", function()
+    UIManager:setDirty(self.is_fresh and self or "all", function()
         local refresh_dimen =
             old_dimen and old_dimen:combine(self.dialog_frame.dimen)
             or self.dialog_frame.dimen
+        self.is_fresh = false
         return "ui", refresh_dimen
     end)
     return true
