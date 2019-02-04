@@ -116,20 +116,18 @@ function RadioButton:onTapCheckButton()
         if G_reader_settings:isFalse("flash_ui") then
             self.callback()
         else
-            -- We want to refresh the button only, not the full width. Fitting circles into squares!
-            -- NOTE: The frame includes the button plus a space, so tweak the w/h...
-            local rbutton_dimen = Geom:new{ x = self.dimen.x + self.dimen.h/8, y = self.dimen.y + self.dimen.h/4, w = self.dimen.h/2, h = self.dimen.h/2 }
+            -- While I'd like to only flash the button itself, we have to make do with flashing the full width of the TextWidget...
             self.frame.invert = true
             UIManager:widgetRepaint(self.frame, self.dimen.x, self.dimen.y)
             UIManager:setDirty(nil, function()
-                return "fast", rbutton_dimen
+                return "fast", self.dimen
             end)
             UIManager:tickAfterNext(function()
                 self.callback()
                 self.frame.invert = false
                 UIManager:widgetRepaint(self.frame, self.dimen.x, self.dimen.y)
                 UIManager:setDirty(nil, function()
-                    return "fast", rbutton_dimen
+                    return "fast", self.dimen
                 end)
             end)
         end
