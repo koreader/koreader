@@ -507,7 +507,15 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
                 end
             end
         elseif not widget.invisible then
-            self._dirty[widget] = true
+            -- We only ever check the dirty flag on top-level widgets, so only set it there!
+            for i = 1, #self._window_stack do
+                if self._window_stack[i].widget == widget then
+                    self._dirty[widget] = true
+                end
+            end
+            if not self._dirty[widget] then
+                logger.dbg("Tried to set a dirty flag on a non-toplevel widget", widget and (widget.name or widget.id or tostring(widget)) or "nil")
+            end
             -- Again, if it's flagged as dithered, honor that
             if widget.dithered then
                 refreshdither = true
@@ -521,7 +529,7 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
         if dbg.is_on then
             -- FIXME: We can't consume the return values of refreshtype by running it, because for a reason that is beyond me (scoping? gc?), that renders it useless later, meaning we then enqueue refreshes with bogus arguments...
             --        Thankfully, we can track them in _refresh()'s logging very soon after that...
-            logger.dbg("setDirty via a func from widget", widget and (widget.name or widget.id or tostring(widget)))
+            logger.dbg("setDirty via a func from widget", widget and (widget.name or widget.id or tostring(widget)) or "nil")
         end
     else
         -- otherwise, enqueue refresh
