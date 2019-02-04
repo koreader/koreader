@@ -141,7 +141,8 @@ function TouchMenuItem:onTapSelect(arg, ges)
         self.menu:onMenuSelect(self.item)
     else
         self.item_frame.invert = true
-        UIManager:setDirty(self.show_parent, function()
+        UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+        UIManager:setDirty(nil, function()
             return "fast", self.dimen
         end)
         -- yield to main UI loop to invert item
@@ -153,7 +154,8 @@ function TouchMenuItem:onTapSelect(arg, ges)
             --       Since it's an *un*highlight containing text, we make it "ui" and not "fast", both so it won't mangle text,
             --       and because "fast" can have some weird side-effects on some devices in this specific instance...
             if self.item.hold_keep_menu_open or self.item.keep_menu_open then
-                UIManager:setDirty(self.show_parent, function()
+                UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+                UIManager:setDirty(nil, function()
                     return "ui", self.dimen
                 end)
             end
