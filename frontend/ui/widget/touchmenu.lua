@@ -184,6 +184,7 @@ function TouchMenuItem:onHoldSelect(arg, ges)
         end)
         UIManager:scheduleIn(0.5, function()
             self.item_frame.invert = false
+            -- NOTE: For some reason, this is finicky (I end up with a solid black bar, i.e., text gets inverted, but not the bg?!)
             --UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
             UIManager:setDirty(self.show_parent, function()
                 return "ui", self.dimen
