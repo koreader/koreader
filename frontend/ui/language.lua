@@ -50,6 +50,7 @@ function Language:getLangMenuTable()
                 --self:genLanguageSubItem("Polski2", "pl_PL"),
                 self:genLanguageSubItem("Português", "pt_PT"),
                 self:genLanguageSubItem("Português do Brasil", "pt_BR"),
+                self:genLanguageSubItem("Slovenčina", "sk"),
                 self:genLanguageSubItem("Svenska", "sv"),
                 self:genLanguageSubItem("Tiếng Việt", "vi"),
                 self:genLanguageSubItem("Türkçe", "tr"),
