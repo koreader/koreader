@@ -401,8 +401,7 @@ function Screensaver:close()
         UIManager:scheduleIn(screensaver_delay_number, function()
             logger.dbg("close screensaver")
             if self.left_msg then
-                UIManager:close(self.left_msg)
-                UIManager:setDirty("all", "full")
+                UIManager:close(self.left_msg, "full")
                 self.left_msg = nil
             end
         end)
