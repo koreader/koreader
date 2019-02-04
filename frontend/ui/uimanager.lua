@@ -508,13 +508,11 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
             end
         elseif not widget.invisible then
             -- We only ever check the dirty flag on top-level widgets, so only set it there!
+            -- NOTE: Enable verbose debug to catch misbehaving widgets via our post-guard.
             for i = 1, #self._window_stack do
                 if self._window_stack[i].widget == widget then
                     self._dirty[widget] = true
                 end
-            end
-            if not self._dirty[widget] then
-                logger.dbg("Tried to set a dirty flag on a non-toplevel widget", widget and (widget.name or widget.id or tostring(widget)) or "nil")
             end
             -- Again, if it's flagged as dithered, honor that
             if widget.dithered then
