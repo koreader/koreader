@@ -260,8 +260,7 @@ function GoodreadsBook:onAnyKeyPressed()
 end
 
 function GoodreadsBook:onClose()
-    UIManager:setDirty("all")
-    UIManager:close(self)
+    UIManager:close(self, "flashui")
     return true
 end
 
