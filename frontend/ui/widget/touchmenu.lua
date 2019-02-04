@@ -175,7 +175,8 @@ function TouchMenuItem:onHoldSelect(arg, ges)
         self.menu:onMenuHold(self.item)
     else
         self.item_frame.invert = true
-        UIManager:setDirty(self.show_parent, function()
+        UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+        UIManager:setDirty(nil, function()
             return "fast", self.dimen
         end)
         UIManager:tickAfterNext(function()
@@ -183,7 +184,8 @@ function TouchMenuItem:onHoldSelect(arg, ges)
         end)
         UIManager:scheduleIn(0.5, function()
             self.item_frame.invert = false
-            UIManager:setDirty(self.show_parent, function()
+            UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+            UIManager:setDirty(nil, function()
                 return "ui", self.dimen
             end)
         end)
