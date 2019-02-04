@@ -96,14 +96,16 @@ function CheckButton:onTapCheckButton()
         if G_reader_settings:isFalse("flash_ui") then
             self.callback()
         else
-            self.invert = true
-            UIManager:setDirty(self.show_parent, function()
+            self[1].invert = true
+            UIManager:widgetRepaint(self[1], self.dimen.x, self.dimen.y)
+            UIManager:setDirty(nil, function()
                 return "fast", self.dimen
             end)
             UIManager:tickAfterNext(function()
                 self.callback()
-                self.invert = false
-                UIManager:setDirty(self.show_parent, function()
+                self[1].invert = false
+                UIManager:widgetRepaint(self[1], self.dimen.x, self.dimen.y)
+                UIManager:setDirty(nil, function()
                     return "fast", self.dimen
                 end)
             end)
