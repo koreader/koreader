@@ -226,7 +226,7 @@ function ReaderView:paintTo(bb, x, y)
         -- If we're attempting to show a large enough amount of image data, request dithering (without triggering another repaint ;)).
         local img_count, img_coverage = self.ui.document:getDrawnImagesStatistics()
         -- With some nil guards because this may not be implemented in every engine ;).
-        if img_count and img_count > 0 and img_coverage and img_coverage >= 0.10 then
+        if img_count and img_count > 0 and img_coverage and img_coverage >= 0.075 then
             self.dialog.dithered = true
         end
     end
@@ -562,6 +562,9 @@ end
 This method is supposed to be only used by ReaderPaging
 --]]
 function ReaderView:recalculate()
+    -- Start by resetting the dithering flag early, so it doesn't carry over from the previous page.
+    self.dialog.dithered = nil
+
     if self.ui.document.info.has_pages and self.state.page then
         self.page_area = self:getPageArea(
             self.state.page,
