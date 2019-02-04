@@ -938,7 +938,7 @@ end
 -- Useful to avoid repainting a complex widget when we just want to invert an icon, for instance.
 -- No safety checks on x & y *by design*. I want this to blow up if used wrong.
 function UIManager:widgetRepaint(widget, x, y)
-    if not widget then end
+    if not widget then return end
 
     logger.dbg("Explicit widgetRepaint:", widget.name or widget.id or tostring(widget), "@ (", x, ",", y, ")")
     widget:paintTo(Screen.bb, x, y)
