@@ -13,7 +13,7 @@ ifneq (,$(findstring -,$(VERSION)))
 endif
 
 # Use the git commit count as the (integer) Android version code
-ANDROID_VERSION?=$(git rev-list --count HEAD)
+ANDROID_VERSION?=$(shell git rev-list --count HEAD)
 ANDROID_NAME?=$(VERSION)
 
 # set PATH to find CC in managed toolchains
