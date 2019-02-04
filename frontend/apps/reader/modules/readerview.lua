@@ -221,7 +221,6 @@ function ReaderView:paintTo(bb, x, y)
         if self.document.configurable.hw_dithering == 1 then
             self.dialog.dithered = true
         end
-    --[[
     else
         -- Whereas for CRe,
         -- If we're attempting to show a large enough amount of image data, request dithering (without triggering another repaint ;)).
@@ -230,7 +229,6 @@ function ReaderView:paintTo(bb, x, y)
         if img_count and img_count > 0 and img_coverage and img_coverage >= 0.10 then
             self.dialog.dithered = true
         end
-    --]]
     end
 end
 
