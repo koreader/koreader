@@ -56,7 +56,9 @@ function UIManager:init()
         self._entered_poweroff_stage = true;
         Screen:setRotationMode(0)
         require("ui/screensaver"):show("poweroff", _("Powered off"))
-        Screen:refreshFull()
+        if Device:needsScreenRefreshAfterResume() then
+            Screen:refreshFull()
+        end
         UIManager:nextTick(function()
             Device:saveSettings()
             self:broadcastEvent(Event:new("Close"))
@@ -67,7 +69,9 @@ function UIManager:init()
         self._entered_poweroff_stage = true;
         Screen:setRotationMode(0)
         require("ui/screensaver"):show("reboot", _("Rebooting..."))
-        Screen:refreshFull()
+        if Device:needsScreenRefreshAfterResume() then
+            Screen:refreshFull()
+        end
         UIManager:nextTick(function()
             Device:saveSettings()
             self:broadcastEvent(Event:new("Close"))
