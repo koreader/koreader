@@ -122,7 +122,7 @@ function MultiInputDialog:init()
         },
         self.dialog_frame,
     }
-    UIManager:setDirty("all", "full")
+    UIManager:setDirty(self, "ui")
 end
 
 function MultiInputDialog:getFields()
