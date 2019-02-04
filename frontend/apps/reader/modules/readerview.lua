@@ -225,17 +225,13 @@ function ReaderView:paintTo(bb, x, y)
     else
         -- Whereas for CRe,
         -- If we're attempting to show a large enough amount of image data, request dithering (without triggering another repaint ;)).
-        -- FIXME: Make sure this doesn't blow up on engines where getDrawnImagesStatistics is not implemented!
         local img_count, img_coverage = self.ui.document:getDrawnImagesStatistics()
-        if img_count > 0 and img_coverage >= 0.10 then
+        -- With some nil guards because this may not be implemented in every engine ;).
+        if img_count and img_count > 0 and img_coverage and img_coverage >= 0.10 then
             self.dialog.dithered = true
         end
     --]]
     end
-    -- NOTE: We set the widget to nil because we don't actually want to repaint anything,
-    --       we just want to infect the refresh queue with a viral dithering request ;).
-    --       In the same vein, we set refreshtype to fast so as not to affect the final refreshtype of the queue,
-    --       (fast has the lowest priority).
 end
 
 --[[
