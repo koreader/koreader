@@ -926,6 +926,16 @@ function UIManager:forceRePaint()
     self:_repaint()
 end
 
+-- Used to repaint a specific sub-widget that isn't on the _window_stack itself
+-- Useful to avoid repainting a complex widget when we just want to invert an icon, for instance.
+-- No safety checks on x & y *by design*. I want this to blow up if used wrong.
+function UIManager:widgetRepaint(widget, x, y)
+    if not widget then end
+
+    logger.dbg("Explicit widgetRepaint:", widget.name or widget.id or tostring(widget), "@ (", x, ",", y, ")")
+    widget:paintTo(Screen.bb, x, y)
+end
+
 function UIManager:setInputTimeout(timeout)
     self.INPUT_TIMEOUT = timeout or 200*1000
 end

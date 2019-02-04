@@ -195,14 +195,16 @@ function Button:onTapSelectButton()
         else
             self[1].invert = true
             -- For most of our buttons, we can't avoid that initial repaint...
-            UIManager:setDirty(self.show_parent, function()
+            UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+            UIManager:setDirty(self[1], function()
                 return "fast", self[1].dimen
             end)
             -- And we also often have to delay the callback to both see the flash and/or avoid tearing artefacts w/ fast refreshes...
             UIManager:tickAfterNext(function()
                 self.callback()
                 self[1].invert = false
-                UIManager:setDirty(self.show_parent, function()
+                UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+                UIManager:setDirty(self[1], function()
                     return "fast", self[1].dimen
                 end)
             end)
