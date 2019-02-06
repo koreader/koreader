@@ -336,7 +336,7 @@ function ImageWidget:panBy(x, y)
         self._offset_y = new_offset_y
         self.dithered = true
         UIManager:setDirty("all", function()
-            return "partial", self.dimen, true
+            return "ui", self.dimen, true
         end)
     end
     -- return new center ratio, so caller can use them later to create a new
