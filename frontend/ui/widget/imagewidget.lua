@@ -335,7 +335,9 @@ function ImageWidget:panBy(x, y)
         self._offset_x = new_offset_x
         self._offset_y = new_offset_y
         self.dithered = true
-        UIManager:setDirty("all", function()
+        -- Try to only repaint ourselves...
+        UIManager:widgetRepaint(self, self.dimen.x, self.dimen.y)
+        UIManager:setDirty(nil, function()
             return "ui", self.dimen, true
         end)
     end
