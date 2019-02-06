@@ -256,8 +256,9 @@ function BookStatusWidget:setStar(num)
 
     table.insert(self.stars_container, stars_group)
 
-    -- Individual stars are Buttons, which'll trigger a flash on their own, we want to refresh the group *after* that...
-    UIManager:scheduleIn(0.5, function() UIManager:setDirty(self.stars_container, "ui", nil, true) end)
+    -- Individual stars are Button, w/ flash_ui, they'll have their own flash.
+    -- And we need to redraw the full widget, because we don't know the coordinates of stars_container :/.
+    UIManager:setDirty(self, "ui", nil, true)
     return true
 end
 
