@@ -1,9 +1,11 @@
 local Generic = require("device/generic/device")
-local _, android = pcall(require, "android")
+local A, android = pcall(require, "android")  -- luacheck: ignore
 local ffi = require("ffi")
 local C = ffi.C
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local _ = require("gettext")
+local T = require("ffi/util").template
 
 local function yes() return true end
 local function no() return false end
@@ -87,6 +89,15 @@ function Device:initNetworkManager(NetworkMgr)
     end
     NetworkMgr.isWifiOn = function()
         return android.isWifiEnabled()
+    end
+end
+
+function Device:retrieveNetworkInfo()
+    local ssid, ip, gw = android.getNetworkInfo()
+    if ip == 0 or gw == 0 then
+        return _("Not connected")
+    else
+        return T(_("Connected to %1\n IP address: %2\n gateway: %3"), ssid, ip, gw)
     end
 end
 

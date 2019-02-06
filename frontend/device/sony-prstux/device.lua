@@ -11,6 +11,7 @@ local SonyPRSTUX = Generic:new{
     isSonyPRSTUX = yes,
     hasKeys = yes,
     hasOTAUpdates = yes,
+    hasWifiManager = yes,
 }
 
 

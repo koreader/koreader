@@ -40,6 +40,7 @@ local Cervantes = Generic:new{
     touch_probe_ev_epoch_time = true,
     hasOTAUpdates = yes,
     hasKeys = yes,
+    hasWifiManager = yes,
 
     -- do we support usb mass storage?
     canToggleMassStorage = function() return isMassStorageSupported() end,

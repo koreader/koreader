@@ -12,6 +12,7 @@ local Device = Generic:new{
     hasKeyboard = yes,
     hasKeys = yes,
     hasDPad = yes,
+    hasWifiToggle = no,
     isTouchDevice = yes,
     needsScreenRefreshAfterResume = no,
     hasColorScreen = yes,
@@ -27,6 +28,8 @@ local Emulator = Device:new{
     isEmulator = yes,
     hasEinkScreen = yes,
     hasFrontlight = yes,
+    hasWifiToggle = yes,
+    hasWifiManager = yes,
 }
 
 local Linux = Device:new{
