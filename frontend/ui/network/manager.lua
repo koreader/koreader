@@ -129,7 +129,7 @@ end
 function NetworkMgr:getWifiMenuTable()
     return {
         text = _("Wi-Fi connection"),
-        enabled_func = function() return Device:isAndroid() or Device:isCervantes() or Device:isKindle() or Device:isKobo() or Device:isSonyPRSTUX() end,
+        enabled_func = function() return Device:hasWifiToggle() and not Device:isEmulator() end,
         checked_func = function() return NetworkMgr:isWifiOn() end,
         callback = function(touchmenu_instance)
             local wifi_status = NetworkMgr:isWifiOn() and NetworkMgr:isConnected()
@@ -195,7 +195,7 @@ function NetworkMgr:getRestoreMenuTable()
     return {
         text = _("Automatically restore Wi-Fi connection after resume"),
         checked_func = function() return G_reader_settings:isTrue("auto_restore_wifi") end,
-        enabled_func = function() return Device:isKobo() or Device:isCervantes() end,
+        enabled_func = function() return Device:hasWifiManager() and not Device:isEmulator() end,
         callback = function() G_reader_settings:flipNilOrFalse("auto_restore_wifi") end,
     }
 end
@@ -220,7 +220,6 @@ function NetworkMgr:getInfoMenuTable()
         end
     }
 end
-
 
 function NetworkMgr:getBeforeWifiActionMenuTable()
    local wifi_enable_action_setting = G_reader_settings:readSetting("wifi_enable_action") or "prompt"
@@ -257,18 +256,24 @@ function NetworkMgr:getDismissScanMenuTable()
     return {
         text = _("Dismiss Wi-Fi scan popup after connection"),
         checked_func = function() return G_reader_settings:nilOrTrue("auto_dismiss_wifi_scan") end,
-        --enabled_func = function() return Device:isKobo() end,
+        enabled_func = function() return Device:hasWifiManager() and not Device:isEmulator() end,
         callback = function() G_reader_settings:flipNilOrTrue("auto_dismiss_wifi_scan") end,
     }
 end
 
 function NetworkMgr:getMenuTable(common_settings)
-    common_settings.network_wifi = self:getWifiMenuTable()
+    if Device:hasWifiToggle() then
+        common_settings.network_wifi = self:getWifiMenuTable()
+    end
+
     common_settings.network_proxy = self:getProxyMenuTable()
-    common_settings.network_restore = self:getRestoreMenuTable()
     common_settings.network_info = self:getInfoMenuTable()
-    common_settings.network_before_wifi_action = self:getBeforeWifiActionMenuTable()
-    common_settings.network_dismiss_scan = self:getDismissScanMenuTable()
+
+    if Device:hasWifiManager() then
+        common_settings.network_restore = self:getRestoreMenuTable()
+        common_settings.network_dismiss_scan = self:getDismissScanMenuTable()
+        common_settings.network_before_wifi_action = self:getBeforeWifiActionMenuTable()
+    end
 end
 
 function NetworkMgr:showNetworkMenu(complete_callback)
