@@ -94,7 +94,7 @@ end
 
 function Device:retrieveNetworkInfo()
     local ssid, ip, gw = android.getNetworkInfo()
-    if ip == 0 or gw == 0 then
+    if ip == "0" or gw == "0" then
         return _("Not connected")
     else
         return T(_("Connected to %1\n IP address: %2\n gateway: %3"), ssid, ip, gw)
