@@ -194,8 +194,10 @@ function Button:onTapSelectButton()
             self.callback()
         else
             self[1].invert = true
+            self.frame.invert = true
             -- For most of our buttons, we can't avoid that initial repaint...
             UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+            UIManager:widgetRepaint(self.frame, self.frame.dimen.x, self.frame.dimen.y)
             UIManager:setDirty(nil, function()
                 return "fast", self[1].dimen
             end)
@@ -203,7 +205,9 @@ function Button:onTapSelectButton()
             UIManager:tickAfterNext(function()
                 self.callback()
                 self[1].invert = false
+                self.frame.invert = false
                 UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+                UIManager:widgetRepaint(self.frame, self.frame.dimen.x, self.frame.dimen.y)
                 UIManager:setDirty(nil, function()
                     return "fast", self[1].dimen
                 end)
