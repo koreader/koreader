@@ -193,10 +193,11 @@ function Button:onTapSelectButton()
         if G_reader_settings:isFalse("flash_ui") then
             self.callback()
         else
-            self[1].invert = true
-            self.frame.invert = true
             -- For most of our buttons, we can't avoid that initial repaint...
+            self[1].invert = true
             UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+            -- NOTE: This completely insane double repaint is needed to avoid cosmetic issues with FrameContainer's rounded corners on Text buttons...
+            self.frame.invert = true
             UIManager:widgetRepaint(self.frame, self.frame.dimen.x, self.frame.dimen.y)
             UIManager:setDirty(nil, function()
                 return "fast", self[1].dimen
@@ -205,8 +206,8 @@ function Button:onTapSelectButton()
             UIManager:tickAfterNext(function()
                 self.callback()
                 self[1].invert = false
-                self.frame.invert = false
                 UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+                self.frame.invert = false
                 UIManager:widgetRepaint(self.frame, self.frame.dimen.x, self.frame.dimen.y)
                 UIManager:setDirty(nil, function()
                     return "fast", self[1].dimen
