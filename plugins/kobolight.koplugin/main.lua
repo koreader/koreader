@@ -235,8 +235,7 @@ function KoboLight:addToMainMenu(menu_items)
                          (self:disabled() and _("Do you want to enable the frontlight gesture controller?") or _("Do you want to disable the frontlight gesture controller?")),
                 ok_text = self:disabled() and _("Enable") or _("Disable"),
                 ok_callback = function()
-                    UIManager:close(image)
-                    UIManager:setDirty("all", "full")
+                    UIManager:close(image, "full")
                     UIManager:show(InfoMessage:new{
                         text = T(_("You have %1 the frontlight gesture controller. It will take effect on next restart."),
                                  self:disabled() and _("enabled") or _("disabled"))
@@ -245,8 +244,7 @@ function KoboLight:addToMainMenu(menu_items)
                 end,
                 cancel_text = _("Close"),
                 cancel_callback = function()
-                    UIManager:close(image)
-                    UIManager:setDirty("all", "full")
+                    UIManager:close(image, "full")
                 end,
             })
             UIManager:setDirty("all", "full")

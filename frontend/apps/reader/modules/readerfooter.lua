@@ -417,7 +417,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end
                 if should_update then
                     self:updateFooter()
-                    UIManager:setDirty("all", "partial")
+                    UIManager:setDirty(nil, "ui")
                 end
             end,
         }
@@ -436,7 +436,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 callback = function()
                     self.settings.disable_progress_bar = not self.settings.disable_progress_bar
                     self:updateFooter()
-                    UIManager:setDirty("all", "partial")
+                    UIManager:setDirty(nil, "ui")
                 end,
             },
             getMinibarOption("toc_markers", self.setTocMarkers),
@@ -579,6 +579,8 @@ function ReaderFooter:_updateFooterText()
     end
     self.text_container.dimen.w = self.text_width
     self.horizontal_group:resetLayout()
+    -- NOTE: This is essentially preventing us from truly using "fast" for panning,
+    --       since it'll get coalesced in the "fast" panning update, upgrading it to "ui".
     UIManager:setDirty(self.view.dialog, function()
         return "ui", self.footer_content.dimen
     end)

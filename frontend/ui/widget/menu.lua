@@ -403,19 +403,21 @@ function MenuItem:onTapSelect(arg, ges)
         coroutine.resume(co)
     else
         self[1].invert = true
-        UIManager:setDirty(self.show_parent, function()
+        UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+        UIManager:setDirty(nil, function()
             return "fast", self[1].dimen
         end)
         UIManager:tickAfterNext(function()
-            self[1].invert = false
-            UIManager:setDirty(self.show_parent, function()
-                return "ui", self[1].dimen
-            end)
             logger.dbg("creating coroutine for menu select")
             local co = coroutine.create(function()
                 self.menu:onMenuSelect(self.table, pos)
             end)
             coroutine.resume(co)
+            self[1].invert = false
+            --UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+            UIManager:setDirty(self.show_parent, function()
+                return "ui", self[1].dimen
+            end)
         end)
     end
     return true
@@ -427,15 +429,17 @@ function MenuItem:onHoldSelect(arg, ges)
         self.menu:onMenuHold(self.table, pos)
     else
         self[1].invert = true
-        UIManager:setDirty(self.show_parent, function()
+        UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+        UIManager:setDirty(nil, function()
             return "fast", self[1].dimen
         end)
         UIManager:tickAfterNext(function()
+            self.menu:onMenuHold(self.table, pos)
             self[1].invert = false
+            --UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
             UIManager:setDirty(self.show_parent, function()
                 return "ui", self[1].dimen
             end)
-            self.menu:onMenuHold(self.table, pos)
         end)
     end
     return true
@@ -587,25 +591,25 @@ function Menu:init()
         icon = "resources/icons/appbar.chevron.left.png",
         callback = function() self:onPrevPage() end,
         bordersize = 0,
-        show_parent = self,
+        show_parent = self.show_parent,
     }
     self.page_info_right_chev = Button:new{
         icon = "resources/icons/appbar.chevron.right.png",
         callback = function() self:onNextPage() end,
         bordersize = 0,
-        show_parent = self,
+        show_parent = self.show_parent,
     }
     self.page_info_first_chev = Button:new{
         icon = "resources/icons/appbar.chevron.first.png",
         callback = function() self:onFirstPage() end,
         bordersize = 0,
-        show_parent = self,
+        show_parent = self.show_parent,
     }
     self.page_info_last_chev = Button:new{
         icon = "resources/icons/appbar.chevron.last.png",
         callback = function() self:onLastPage() end,
         bordersize = 0,
-        show_parent = self,
+        show_parent = self.show_parent,
     }
     self.page_info_spacer = HorizontalSpan:new{
         width = Screen:scaleBySize(32),
@@ -699,7 +703,7 @@ function Menu:init()
             if self.onReturn then self:onReturn() end
         end,
         bordersize = 0,
-        show_parent = self,
+        show_parent = self.show_parent,
         readonly = self.return_arrow_propagation,
     }
     self.page_return_arrow:hide()
@@ -953,7 +957,7 @@ function Menu:updateItems(select_number)
         self.path_text.text = self:truncatePath(self.path)
     end
 
-    UIManager:setDirty("all", function()
+    UIManager:setDirty(self.show_parent, function()
         local refresh_dimen =
             old_dimen and old_dimen:combine(self.dimen)
             or self.dimen

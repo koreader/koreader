@@ -551,7 +551,7 @@ function DictQuickLookup:update()
         dimen = self.region,
         self.movable,
     }
-    UIManager:setDirty("all", function()
+    UIManager:setDirty(self, function()
         local update_region = self.dict_frame and self.dict_frame.dimen and self.dict_frame.dimen:combine(orig_dimen) or orig_dimen
         logger.dbg("update dict region", update_region)
         return "partial", update_region

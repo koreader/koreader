@@ -111,6 +111,8 @@ function BookStatusWidget:init()
         padding = 0,
         self:getStatusContent(screen_size.w),
     }
+
+    self.dithered = true
 end
 
 function BookStatusWidget:getStats()
@@ -254,7 +256,9 @@ function BookStatusWidget:setStar(num)
 
     table.insert(self.stars_container, stars_group)
 
-    UIManager:setDirty(nil, "ui")
+    -- Individual stars are Button, w/ flash_ui, they'll have their own flash.
+    -- And we need to redraw the full widget, because we don't know the coordinates of stars_container :/.
+    UIManager:setDirty(self, "ui", nil, true)
     return true
 end
 
@@ -540,7 +544,7 @@ function BookStatusWidget:onConfigChoose(values, name, event, args, events, posi
         if values then
             self:onChangeBookStatus(args, position)
         end
-        UIManager:setDirty("all", "ui")
+        UIManager:setDirty(nil, "ui", nil, true)
     end)
 end
 
@@ -558,7 +562,7 @@ function BookStatusWidget:onSwipe(arg, ges_ev)
         do end -- luacheck: ignore 541
     else -- diagonal swipe
         -- trigger full refresh
-        UIManager:setDirty(nil, "full")
+        UIManager:setDirty(nil, "full", nil, true)
         -- a long diagonal swipe may also be used for taking a screenshot,
         -- so let it propagate
         return false
@@ -568,8 +572,7 @@ end
 function BookStatusWidget:onClose()
     self:saveSummary()
     -- NOTE: Flash on close to avoid ghosting, since we show an image.
-    UIManager:setDirty("all", "flashpartial")
-    UIManager:close(self)
+    UIManager:close(self, "flashpartial")
     return true
 end
 

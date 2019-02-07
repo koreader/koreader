@@ -173,14 +173,16 @@ function DoubleKeyValueItem:onTap()
             UIManager:close(info)
         else
             self[1].invert = true
-            UIManager:setDirty(self.show_parent, function()
+            UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+            UIManager:setDirty(nil, function()
                 return "fast", self[1].dimen
             end)
             UIManager:tickAfterNext(function()
                 self.callback()
                 UIManager:close(info)
                 self[1].invert = false
-                UIManager:setDirty(self.show_parent, function()
+                UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+                UIManager:setDirty(nil, function()
                     return "ui", self[1].dimen
                 end)
             end)

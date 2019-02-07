@@ -392,16 +392,22 @@ function ImageViewer:update()
             self.main_frame,
         }
     }
-    UIManager:setDirty("all", function()
+    -- NOTE: We use UI instead of partial, because we do NOT want to end up using a REAGL waveform...
+    -- NOTE: Disabling dithering here makes for a perfect test-case of how well it works:
+    --       page turns will show color quantization artefacts (i.e., banding) like crazy,
+    --       while a long touch will trigger a dithered, flashing full-refresh that'll make everything shiny :).
+    self.dithered = true
+    UIManager:setDirty(self, function()
         local update_region = self.main_frame.dimen:combine(orig_dimen)
         logger.dbg("update image region", update_region)
-        return "partial", update_region
+        return "ui", update_region, true
     end)
 end
 
 function ImageViewer:onShow()
+    self.dithered = true
     UIManager:setDirty(self, function()
-        return "full", self.main_frame.dimen
+        return "full", self.main_frame.dimen, true
     end)
     return true
 end
@@ -508,7 +514,8 @@ function ImageViewer:onHoldRelease(_, ges)
         self._pan_relative_y = ges.pos.y - self._pan_relative_y
         if math.abs(self._pan_relative_x) < self.pan_threshold and math.abs(self._pan_relative_y) < self.pan_threshold then
             -- Hold with no move (or less than pan_threshold): use this to trigger full refresh
-            UIManager:setDirty(nil, "full")
+            self.dithered = true
+            UIManager:setDirty(nil, "full", nil, true)
         else
             self:panBy(-self._pan_relative_x, -self._pan_relative_y)
         end
@@ -601,6 +608,7 @@ function ImageViewer:onCloseWidget()
     if self._images_list and self._images_list_disposable and self._images_list.free then
         self._images_list.free()
     end
+    -- NOTE: Assume there's no image beneath us, so, no dithering request
     UIManager:setDirty(nil, function()
         return "flashui", self.main_frame.dimen
     end)

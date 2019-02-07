@@ -141,7 +141,8 @@ function TouchMenuItem:onTapSelect(arg, ges)
         self.menu:onMenuSelect(self.item)
     else
         self.item_frame.invert = true
-        UIManager:setDirty(self.show_parent, function()
+        UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+        UIManager:setDirty(nil, function()
             return "fast", self.dimen
         end)
         -- yield to main UI loop to invert item
@@ -153,6 +154,7 @@ function TouchMenuItem:onTapSelect(arg, ges)
             --       Since it's an *un*highlight containing text, we make it "ui" and not "fast", both so it won't mangle text,
             --       and because "fast" can have some weird side-effects on some devices in this specific instance...
             if self.item.hold_keep_menu_open or self.item.keep_menu_open then
+                --UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
                 UIManager:setDirty(self.show_parent, function()
                     return "ui", self.dimen
                 end)
@@ -173,7 +175,8 @@ function TouchMenuItem:onHoldSelect(arg, ges)
         self.menu:onMenuHold(self.item)
     else
         self.item_frame.invert = true
-        UIManager:setDirty(self.show_parent, function()
+        UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+        UIManager:setDirty(nil, function()
             return "fast", self.dimen
         end)
         UIManager:tickAfterNext(function()
@@ -181,6 +184,8 @@ function TouchMenuItem:onHoldSelect(arg, ges)
         end)
         UIManager:scheduleIn(0.5, function()
             self.item_frame.invert = false
+            -- NOTE: For some reason, this is finicky (I end up with a solid black bar, i.e., text gets inverted, but not the bg?!)
+            --UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
             UIManager:setDirty(self.show_parent, function()
                 return "ui", self.dimen
             end)
@@ -431,13 +436,13 @@ function TouchMenu:init()
         icon = "resources/icons/appbar.chevron.left.png",
         callback = function() self:onPrevPage() end,
         bordersize = 0,
-        show_parent = self,
+        show_parent = self.show_parent,
     }
     self.page_info_right_chev = Button:new{
         icon = "resources/icons/appbar.chevron.right.png",
         callback = function() self:onNextPage() end,
         bordersize = 0,
-        show_parent = self,
+        show_parent = self.show_parent,
     }
     self.page_info_left_chev:hide()
     self.page_info_right_chev:hide()
@@ -518,8 +523,8 @@ function TouchMenu:init()
 end
 
 function TouchMenu:onCloseWidget()
-    -- NOTE: We pass a nil region to ensure a full-screen flash to avoid ghosting
-    UIManager:setDirty(nil, "flashui", nil)
+    -- NOTE: We don't pass a region in order to ensure a full-screen flash to avoid ghosting
+    UIManager:setDirty(nil, "flashui")
 end
 
 function TouchMenu:_recalculatePageLayout()
@@ -605,7 +610,8 @@ function TouchMenu:updateItems()
 
     -- NOTE: We use a slightly ugly hack to detect a brand new menu vs. a tab switch,
     --       in order to optionally flash on initial menu popup...
-    UIManager:setDirty("all", function()
+    -- NOTE: Also avoid repainting what's underneath us on initial popup.
+    UIManager:setDirty(self.is_fresh and self.show_parent or "all", function()
         local refresh_dimen =
             old_dimen and old_dimen:combine(self.dimen)
             or self.dimen

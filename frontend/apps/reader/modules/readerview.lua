@@ -213,6 +213,23 @@ function ReaderView:paintTo(bb, x, y)
     end
     -- stop activity indicator
     self.ui:handleEvent(Event:new("StopActivityIndicator"))
+
+    -- Most pages should not require dithering
+    self.dialog.dithered = nil
+    -- For KOpt, let the user choose.
+    if self.ui.document.info.has_pages then
+        if self.document.configurable.hw_dithering == 1 then
+            self.dialog.dithered = true
+        end
+    else
+        -- Whereas for CRe,
+        -- If we're attempting to show a large enough amount of image data, request dithering (without triggering another repaint ;)).
+        local img_count, img_coverage = self.ui.document:getDrawnImagesStatistics()
+        -- With some nil guards because this may not be implemented in every engine ;).
+        if img_count and img_count > 0 and img_coverage and img_coverage >= 0.075 then
+            self.dialog.dithered = true
+        end
+    end
 end
 
 --[[
@@ -545,6 +562,9 @@ end
 This method is supposed to be only used by ReaderPaging
 --]]
 function ReaderView:recalculate()
+    -- Start by resetting the dithering flag early, so it doesn't carry over from the previous page.
+    self.dialog.dithered = nil
+
     if self.ui.document.info.has_pages and self.state.page then
         self.page_area = self:getPageArea(
             self.state.page,
@@ -579,6 +599,7 @@ function ReaderView:recalculate()
         self.state.offset.x = (self.dimen.w - self.visible_area.w) / 2
     end
     -- flag a repaint so self:paintTo will be called
+    -- NOTE: This is also unfortunately called during panning, essentially making sure we'll never be using "fast" for pans ;).
     UIManager:setDirty(self.dialog, "partial")
 end
 
@@ -588,7 +609,7 @@ function ReaderView:PanningUpdate(dx, dy)
     self.visible_area:offsetWithin(self.page_area, dx, dy)
     if self.visible_area ~= old then
         -- flag a repaint
-        UIManager:setDirty(self.dialog, "partial")
+        UIManager:setDirty(self.dialog, "fast")
         logger.dbg("on pan: page_area", self.page_area)
         logger.dbg("on pan: visible_area", self.visible_area)
         self.ui:handleEvent(
@@ -605,7 +626,7 @@ function ReaderView:PanningStart(x, y)
     self.visible_area = self.panning_visible_area:copy()
     self.visible_area:offsetWithin(self.page_area, x, y)
     self.ui:handleEvent(Event:new("ViewRecalculate", self.visible_area, self.page_area))
-    UIManager:setDirty(self.dialog, "partial")
+    UIManager:setDirty(self.dialog, "fast")
 end
 
 function ReaderView:PanningStop()

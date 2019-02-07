@@ -193,16 +193,18 @@ function Button:onTapSelectButton()
         if G_reader_settings:isFalse("flash_ui") then
             self.callback()
         else
-            -- NOTE: Flag all widgets as dirty to force a repaint, so we actually get to see the highlight.
-            --       (For some reason (wrong widget passed to setDirty?), we never saw the effects on the FM chevrons without this hack).
             self[1].invert = true
-            UIManager:setDirty("all", function()
+            -- For most of our buttons, we can't avoid that initial repaint...
+            UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+            UIManager:setDirty(nil, function()
                 return "fast", self[1].dimen
             end)
+            -- And we also often have to delay the callback to both see the flash and/or avoid tearing artefacts w/ fast refreshes...
             UIManager:tickAfterNext(function()
                 self.callback()
                 self[1].invert = false
-                UIManager:setDirty("all", function()
+                UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+                UIManager:setDirty(nil, function()
                     return "fast", self[1].dimen
                 end)
             end)

@@ -32,6 +32,7 @@ S.EMBEDDED_FONTS = _("Embedded Fonts")
 S.WRITING_DIR = _("Writing Direction")
 S.PROGRESS_BAR = _("Progress Bar")
 S.FORCED_OCR = _("Forced OCR")
+S.HW_DITHERING = _("Dithering")
 S.INVERSE_READING_ORDER = _("Inverse Order")
 
 S.ON = _("on")

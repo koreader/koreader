@@ -96,14 +96,17 @@ function IconButton:onTapIconButton()
         self.callback()
     else
         self.image.invert = true
-        UIManager:setDirty(self.show_parent, function()
+        -- For ConfigDialog icons, we can't avoid that initial repaint...
+        UIManager:widgetRepaint(self.image, self.dimen.x + self.padding_left, self.dimen.y + self.padding_top)
+        UIManager:setDirty(nil, function()
             return "fast", self.dimen
         end)
-        -- Make sure button reacts before doing callback
+        -- And, we usually need to delay the callback for the same reasons as Button...
         UIManager:tickAfterNext(function()
             self.callback()
             self.image.invert = false
-            UIManager:setDirty(self.show_parent, function()
+            UIManager:widgetRepaint(self.image, self.dimen.x + self.padding_left, self.dimen.y + self.padding_top)
+            UIManager:setDirty(nil, function()
                 return "fast", self.dimen
             end)
         end)

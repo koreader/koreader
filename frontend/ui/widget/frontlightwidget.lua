@@ -276,7 +276,7 @@ function FrontLightWidget:setProgress(num, step, num_warmth)
     -- Reset container height to what it actually contains
     self.fl_container.dimen.h = vertical_group:getSize().h
 
-    UIManager:setDirty("all", "ui")
+    UIManager:setDirty(self, "ui")
     return true
 end
 
@@ -596,7 +596,7 @@ function FrontLightWidget:naturalLightConfigOpen()
     self.nl_configure_open = true
     -- Move to the bottom to make place for the new widget
     self[1].align="bottom"
-    UIManager:setDirty("all", "ui")
+    UIManager:setDirty(self, "ui")
 end
 
 function FrontLightWidget:naturalLightConfigClose()
@@ -606,7 +606,7 @@ function FrontLightWidget:naturalLightConfigClose()
     self.configure_button:enable()
     self.nl_configure_open = false
     self[1].align="center"
-    UIManager:setDirty("all", "ui")
+    UIManager:setDirty(self, "ui")
 end
 
 return FrontLightWidget

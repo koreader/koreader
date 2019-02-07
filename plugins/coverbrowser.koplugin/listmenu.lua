@@ -288,6 +288,9 @@ function ListMenuItem:update()
                             wimage,
                         }
                     }
+                    -- Let menu know it has some item with images
+                    self.menu._has_cover_images = true
+                    self._has_cover_image = true
                 else
                     -- empty element the size of an image
                     wleft = CenterContainer:new{

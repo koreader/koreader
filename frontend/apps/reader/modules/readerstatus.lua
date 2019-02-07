@@ -152,7 +152,8 @@ function ReaderStatus:showStatus(before_show_callback)
     if before_show_callback then
         before_show_callback()
     end
-    UIManager:show(status_page)
+    status_page.dithered = true
+    UIManager:show(status_page, "full")
 end
 
 function ReaderStatus:onReadSettings(config)

@@ -133,7 +133,9 @@ function VirtualKey:update_keyboard(want_flash, want_fast)
         if want_fast then
             refresh_type = "fast"
         end
-        UIManager:setDirty(self.keyboard, function()
+        -- Only repaint the key itself, not the full board...
+        UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+        UIManager:setDirty(nil, function()
             logger.dbg("update key region", self[1].dimen)
             return refresh_type, self[1].dimen
         end)

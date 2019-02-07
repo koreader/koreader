@@ -387,7 +387,8 @@ function Screensaver:show(event, fallback_message)
             covers_fullscreen = covers_fullscreen,
         }
         self.left_msg.modal = true
-        -- refresh whole screen for other types
+        -- Refresh whole screen for other types
+        self.left_msg.dithered = true
         UIManager:show(self.left_msg, "full")
     end
 end
@@ -400,8 +401,7 @@ function Screensaver:close()
         UIManager:scheduleIn(screensaver_delay_number, function()
             logger.dbg("close screensaver")
             if self.left_msg then
-                UIManager:close(self.left_msg)
-                UIManager:setDirty("all", "full")
+                UIManager:close(self.left_msg, "full")
                 self.left_msg = nil
             end
         end)

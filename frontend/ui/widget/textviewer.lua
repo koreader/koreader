@@ -200,7 +200,7 @@ function TextViewer:init()
         dimen = self.region,
         self.movable,
     }
-    UIManager:setDirty("all", function()
+    UIManager:setDirty(self, function()
         local update_region = self.frame.dimen:combine(orig_dimen)
         logger.dbg("update region", update_region)
         return "partial", update_region

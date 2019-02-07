@@ -116,14 +116,17 @@ function RadioButton:onTapCheckButton()
         if G_reader_settings:isFalse("flash_ui") then
             self.callback()
         else
-            self.invert = true
-            UIManager:setDirty(self.show_parent, function()
+            -- While I'd like to only flash the button itself, we have to make do with flashing the full width of the TextWidget...
+            self.frame.invert = true
+            UIManager:widgetRepaint(self.frame, self.dimen.x, self.dimen.y)
+            UIManager:setDirty(nil, function()
                 return "fast", self.dimen
             end)
             UIManager:tickAfterNext(function()
                 self.callback()
-                self.invert = false
-                UIManager:setDirty(self.show_parent, function()
+                self.frame.invert = false
+                UIManager:widgetRepaint(self.frame, self.dimen.x, self.dimen.y)
+                UIManager:setDirty(nil, function()
                     return "fast", self.dimen
                 end)
             end)

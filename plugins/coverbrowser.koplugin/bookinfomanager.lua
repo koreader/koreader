@@ -146,7 +146,7 @@ function BookInfoManager:createDB()
     -- Check version (not updated by previous exec if already there)
     local res = db_conn:exec("SELECT value FROM config where key='version';")
     if res[1][1] ~= BOOKINFO_DB_VERSION then
-        logger.warn("BookInfo cache DB schema updated from version ", res[1][1], "to version", BOOKINFO_DB_VERSION)
+        logger.warn("BookInfo cache DB schema updated from version", res[1][1], "to version", BOOKINFO_DB_VERSION)
         logger.warn("Deleting existing", self.db_location, "to recreate it")
         db_conn:close()
         os.remove(self.db_location)
@@ -451,7 +451,7 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
                     -- release memory used by uncompressed data:
                     cover_data = nil -- luacheck: no unused
                     dbrow.cover_dataz = SQ3.blob(cover_dataz) -- cast to blob for sqlite
-                    logger.dbg("cover for", filename, "scaled by", scale_factor, "=>", cbb_w, "x", cbb_h, "(compressed from ", dbrow.cover_datalen, " to ", cover_dataz:len())
+                    logger.dbg("cover for", filename, "scaled by", scale_factor, "=>", cbb_w, "x", cbb_h, ", compressed from", dbrow.cover_datalen, "to", cover_dataz:len())
                 end
             end
         end
@@ -554,7 +554,7 @@ function BookInfoManager:collectSubprocesses()
             -- have caused a terminateBackgroundJobs() - if we're here, it's
             -- that user has left reader in FileBrower and went away)
             if util.gettime() > self.subprocesses_last_added_ts + self.subprocesses_killall_timeout_seconds then
-                logger.warn("Some subprocess were running for too long, killing them")
+                logger.warn("Some subprocesses were running for too long, killing them")
                 self:terminateBackgroundJobs()
                 -- we'll collect them next time we're run
             end

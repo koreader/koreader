@@ -26,6 +26,7 @@ local Device = {
     needsTouchScreenProbe = no,
     hasClipboard = yes, -- generic internal clipboard on all devices
     hasEinkScreen = yes,
+    canHWDither = no,
     hasColorScreen = no,
     hasBGRFrameBuffer = no,
     canToggleGSensor = no,
@@ -190,7 +191,9 @@ function Device:onPowerEvent(ev)
             self.orig_rotation_mode = nil
         end
         require("ui/screensaver"):show()
-        self.screen:refreshFull()
+        if self:needsScreenRefreshAfterResume() then
+            self.screen:refreshFull()
+        end
         self.screen_saver_mode = true
         UIManager:scheduleIn(0.1, function()
           local network_manager = require("ui/network/manager")
