@@ -373,7 +373,7 @@ function InputDialog:init()
     if self.allow_newline then -- remove any enter_callback
         self._input_widget.enter_callback = nil
     end
-    if Device:hasKeys() then
+    if Device:hasDPad() then
         --little hack to piggyback on the layout of the button_table to handle the new InputText
         table.insert(self.button_table.layout, 1, {self._input_widget})
     end

@@ -34,6 +34,7 @@ function FocusManager:init()
     if not self.selected then
         self.selected = { x = 1, y = 1 }
     end
+
     if Device:hasDPad() then
         self.key_events = {
             -- these will all generate the same event, just with different arguments
@@ -84,7 +85,7 @@ function FocusManager:onFocusMove(args)
             self.layout[self.selected.y][self.selected.x]:handleEvent(Event:new("Focus"))
             -- trigger a fast repaint, this does not count toward a flashing eink resfresh
             -- TODO: is this really needed?
-            UIManager:setDirty(self.show_parent or self, "fast")
+            --UIManager:setDirty(self.show_parent or self, "fast")
             break
         end
     end

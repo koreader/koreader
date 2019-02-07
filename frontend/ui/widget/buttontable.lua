@@ -89,7 +89,7 @@ function ButtonTable:init()
         end
     end -- end for each button line
     self:addHorizontalSep(true, false, false)
-    if Device:hasKeys() then
+    if Device:hasDPad() then
         self.layout = self.buttons_layout
         self.layout[1][1]:onFocus()
         self.key_events.SelectByKeyPress = { {{"Press"}} }

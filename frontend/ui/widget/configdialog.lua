@@ -772,7 +772,7 @@ function ConfigDialog:update()
             self.config_menubar,
         },
     }
-    --reset the focusmanager cursor
+    -- Reset the focusmanager cursor
     self.selected.y=#self.layout
     self.selected.x=self.panel_index
 
@@ -896,7 +896,7 @@ end
 
 function ConfigDialog:onSelect()
     self:getFocusItem():handleEvent(Event:new("TapSelect"))
-   return true
+    return true
 end
 
 return ConfigDialog
