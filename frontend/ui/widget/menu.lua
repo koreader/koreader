@@ -813,6 +813,9 @@ function Menu:init()
         self.key_events.PrevPage = {
             {Input.group.PgBack}, doc = "goto previous page of the menu"
         }
+    end
+
+    if Device:hasDPad() then
         -- we won't catch presses to "Right", leave that to MenuItem.
         self.key_events.FocusRight = nil
         -- shortcut icon is not needed for touch device
@@ -826,7 +829,6 @@ function Menu:init()
             {"Right"}, doc = "hold  menu item"
         }
     end
-
 
     if #self.item_table > 0 then
         -- if the table is not yet initialized, this call
@@ -868,7 +870,7 @@ end
 
 function Menu:updatePageInfo(select_number)
     if self.item_group[1] then
-        if Device:hasKeys() then
+        if Device:hasDPad() then
             -- reset focus manager accordingly
             self.selected = { x = 1, y = select_number }
         end
