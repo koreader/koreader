@@ -747,6 +747,8 @@ function ConfigDialog:init()
     if Device:hasKeys() then
         -- set up keyboard events
         self.key_events.Close = { {"Back"}, doc = "close config menu" }
+    end
+    if Device:hasDPad() then
         self.key_events.Select = { {"Press"}, doc = "select current menu item" }
     end
 end
