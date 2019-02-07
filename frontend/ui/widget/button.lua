@@ -198,10 +198,9 @@ function Button:onTapSelectButton()
             UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
             -- NOTE: This completely insane double repaint is needed to avoid cosmetic issues with FrameContainer's rounded corners on Text buttons...
             --       On the upside, we now actually get to *see* those rounded corners (as the highlight), where it was a simple square before.
-            -- NOTE: Yes, self[1] -> self.frame !
+            -- NOTE: self[1] -> self.frame, if you're confused about what this does vs. onFocus/onUnfocus ;).
             if self.text then
-                self.frame.invert = true
-                UIManager:widgetRepaint(self.frame, self.frame.dimen.x, self.frame.dimen.y)
+                UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
             end
             UIManager:setDirty(nil, function()
                 return "fast", self[1].dimen
@@ -212,8 +211,7 @@ function Button:onTapSelectButton()
                 self[1].invert = false
                 UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
                 if self.text then
-                    self.frame.invert = false
-                    UIManager:widgetRepaint(self.frame, self.frame.dimen.x, self.frame.dimen.y)
+                    UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
                 end
                 UIManager:setDirty(nil, function()
                     return "fast", self[1].dimen
