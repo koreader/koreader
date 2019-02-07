@@ -51,8 +51,8 @@ function MultiInputDialog:init()
             padding = field.padding or nil,
             margin = field.margin or nil,
         }
-        if Device:hasKeys() then
-            --little hack to piggyback on the layout of the button_table to handle the new InputText
+        if Device:hasDPad() then
+            -- little hack to piggyback on the layout of the button_table to handle the new InputText
             table.insert(self.button_table.layout, #self.button_table.layout, {input_field[k]})
         end
         if field.description then
@@ -83,8 +83,8 @@ function MultiInputDialog:init()
         })
     end
 
-    if Device:hasKeys() then
-        --remove the not needed hack in inputdialog
+    if Device:hasDPad() then
+        -- remove the not needed hack in inputdialog
         table.remove(self.button_table.layout, 1)
     end
     -- Add same vertical space after than before InputText

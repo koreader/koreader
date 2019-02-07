@@ -232,8 +232,10 @@ function VirtualKeyboard:init()
     self.umlautmode_keys = keyboard.umlautmode_keys
     self.height = Screen:scaleBySize(64 * #self.KEYS)
     self:initLayout(self.keyboard_layout)
-    if Device:hasKeys() then
+    if Device:hasDPad() then
         self.key_events.PressKey = { {"Press"}, doc = "select key" }
+    end
+    if Device:hasKeys() then
         self.key_events.Close = { {"Back"}, doc = "close keyboard" }
     end
 end

@@ -97,7 +97,7 @@ function ScrollTextWidget:init()
             }
         end
     end
-    if Device:hasKeyboard() or Device:hasKeys() then
+    if Device:hasKeys() then
         self.key_events = {
             ScrollDown = {{Input.group.PgFwd}, doc = "scroll down"},
             ScrollUp = {{Input.group.PgBack}, doc = "scroll up"},

@@ -34,7 +34,8 @@ function FocusManager:init()
     if not self.selected then
         self.selected = { x = 1, y = 1 }
     end
-    if Device:hasKeys() then
+
+    if Device:hasDPad() then
         self.key_events = {
             -- these will all generate the same event, just with different arguments
             FocusUp =    { {"Up"},    doc = "move focus up",    event = "FocusMove", args = {0, -1} },
@@ -82,8 +83,9 @@ function FocusManager:onFocusMove(args)
             -- we found a different object to focus
             current_item:handleEvent(Event:new("Unfocus"))
             self.layout[self.selected.y][self.selected.x]:handleEvent(Event:new("Focus"))
-            -- trigger a fast repaint, this does not count toward a flashing eink resfresh
-            -- TODO: is this really needed?
+            -- Trigger a fast repaint, this does not count toward a flashing eink refresh
+            -- NOTE: Ideally, we'd only have to repaint the specific subwidget we're highlighting,
+            --       but we may not know its exact coordinates, so, redraw the parent widget instead.
             UIManager:setDirty(self.show_parent or self, "fast")
             break
         end

@@ -747,6 +747,8 @@ function ConfigDialog:init()
     if Device:hasKeys() then
         -- set up keyboard events
         self.key_events.Close = { {"Back"}, doc = "close config menu" }
+    end
+    if Device:hasDPad() then
         self.key_events.Select = { {"Press"}, doc = "select current menu item" }
     end
 end
@@ -772,7 +774,7 @@ function ConfigDialog:update()
             self.config_menubar,
         },
     }
-    --reset the focusmanager cursor
+    -- Reset the focusmanager cursor
     self.selected.y=#self.layout
     self.selected.x=self.panel_index
 
@@ -896,7 +898,7 @@ end
 
 function ConfigDialog:onSelect()
     self:getFocusItem():handleEvent(Event:new("TapSelect"))
-   return true
+    return true
 end
 
 return ConfigDialog

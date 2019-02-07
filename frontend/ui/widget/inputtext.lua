@@ -150,20 +150,20 @@ if Device.isTouchDevice() or Device.hasDPad() then
         end
 
     end
-    if Device.hasKeys() then
+    if Device.hasDPad() then
         if not InputText.initEventListener then
             function InputText:initEventListener() end
         end
 
         function InputText:onFocus()
-            --Event called by the focusmanager
+            -- Event called by the focusmanager
             self.key_events.ShowKeyboard = { {"Press"}, doc = "show keyboard" }
             self:focus()
             return true
         end
 
         function InputText:onUnfocus()
-            --Event called by the focusmanager
+            -- Event called by the focusmanager
             self.key_events = {}
             self:unfocus()
             return true

@@ -193,9 +193,16 @@ function Button:onTapSelectButton()
         if G_reader_settings:isFalse("flash_ui") then
             self.callback()
         else
-            self[1].invert = true
             -- For most of our buttons, we can't avoid that initial repaint...
+            self[1].invert = true
             UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+            -- NOTE: This completely insane double repaint is needed to avoid cosmetic issues with FrameContainer's rounded corners on Text buttons...
+            --       On the upside, we now actually get to *see* those rounded corners (as the highlight), where it was a simple square before.
+            --       c.f., #4554 & #4541
+            -- NOTE: self[1] -> self.frame, if you're confused about what this does vs. onFocus/onUnfocus ;).
+            if self.text then
+                UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+            end
             UIManager:setDirty(nil, function()
                 return "fast", self[1].dimen
             end)
@@ -204,6 +211,9 @@ function Button:onTapSelectButton()
                 self.callback()
                 self[1].invert = false
                 UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+                if self.text then
+                    UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+                end
                 UIManager:setDirty(nil, function()
                     return "fast", self[1].dimen
                 end)
