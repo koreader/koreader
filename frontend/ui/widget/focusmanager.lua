@@ -34,7 +34,7 @@ function FocusManager:init()
     if not self.selected then
         self.selected = { x = 1, y = 1 }
     end
-    if Device:hasKeys() then
+    if Device:hasDPad() then
         self.key_events = {
             -- these will all generate the same event, just with different arguments
             FocusUp =    { {"Up"},    doc = "move focus up",    event = "FocusMove", args = {0, -1} },
