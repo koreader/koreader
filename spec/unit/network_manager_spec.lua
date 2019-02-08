@@ -6,6 +6,7 @@ describe("network_manager module", function()
     local release_ip_called
 
     local function clearState()
+        G_reader_settings:saveSetting("auto_restore_wifi", true)
         turn_on_wifi_called = 0
         turn_off_wifi_called = 0
         obtain_ip_called = 0
@@ -43,12 +44,6 @@ describe("network_manager module", function()
             function NetworkMgr:restoreWifiAsync()
                 self:turnOnWifi()
                 self:obtainIP()
-            end
-            function NetworkMgr:isWifiOn()
-                return turn_on_wifi_called == 1 and true or false
-            end
-            function NetworkMgr:isConnected()
-                return self:ifWifiOn()
             end
         end
     end)
