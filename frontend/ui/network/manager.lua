@@ -24,7 +24,7 @@ function NetworkMgr:init()
     end
 
     self.wifi_was_on = G_reader_settings:isTrue("wifi_was_on")
-    if self.wifi_was_on and G_reader_settings:nilOrTrue("auto_restore_wifi") then
+    if self.wifi_was_on and G_reader_settings:isTrue("auto_restore_wifi") then
         self:restoreWifiAsync()
     end
 end
@@ -194,9 +194,9 @@ end
 function NetworkMgr:getRestoreMenuTable()
     return {
         text = _("Automatically restore Wi-Fi connection after resume"),
-        checked_func = function() return G_reader_settings:nilOrTrue("auto_restore_wifi") end,
+        checked_func = function() return G_reader_settings:isTrue("auto_restore_wifi") end,
         enabled_func = function() return Device:isKobo() or Device:isCervantes() end,
-        callback = function() G_reader_settings:flipNilOrTrue("auto_restore_wifi") end,
+        callback = function() G_reader_settings:flipNilOrFalse("auto_restore_wifi") end,
     }
 end
 
