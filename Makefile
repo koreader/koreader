@@ -366,7 +366,7 @@ androidupdate: all
 		tar -czah --no-recursion -f ../../koreader-android-$(MACHINE)-$(VERSION).targz \
 		-T ota/package.index
 	# make android update apk
-	cd $(INSTALL_DIR)/koreader && 7z a -l -mx=1 \
+	cd $(INSTALL_DIR)/koreader && 7z a -l -m0=lzma2 -mx=1 \
 		../../$(ANDROID_LAUNCHER_DIR)/assets/module/koreader-$(VERSION).7z * \
 		-x!resources/fonts -x!resources/icons/src -x!spec
 	$(MAKE) -C $(ANDROID_LAUNCHER_DIR) $(if $(KODEBUG), debug, release) ANDROID_VERSION=$(ANDROID_VERSION) ANDROID_NAME=$(ANDROID_NAME)
