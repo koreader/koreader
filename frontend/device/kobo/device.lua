@@ -205,6 +205,10 @@ local KoboNova = Kobo:new{
 --       no matter the rotation we were started from (c.f., platform/kobo/koreader.sh).
 -- NOTE: For the FL, assume brightness is WO, and actual_brightness is RO!
 --       i.e., we could have a real KoboPowerD:frontlightIntensityHW() by reading actual_brightness ;).
+-- NOTE: Rotation events *may* not be enabled if Nickel has never been brought up in that power cycle.
+--       i.e., this will affect KSM users.
+--       c.f., https://github.com/koreader/koreader/pull/4414#issuecomment-449652335
+--       There's also a CM_ROTARY_ENABLE command, but which seems to do as much nothing as the STATUS one...
 local KoboFrost = Kobo:new{
     model = "Kobo_frost",
     hasFrontlight = yes,
