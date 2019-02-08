@@ -5,6 +5,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("luasettings")
 local UIManager = require("ui/uimanager")
 local ffiutil = require("ffi/util")
+local logger = require("logger")
 local _ = require("gettext")
 local T = ffiutil.template
 
@@ -15,8 +16,15 @@ function NetworkMgr:readNWSettings()
 end
 
 function NetworkMgr:init()
+    -- On Kobo, kill WiFi if NetworkMgr:isWifiOn() and NOT NetworkMgr:isConnected()
+    -- (i.e., if the launcher left the WiFi in an inconsistent state: modules loaded, but no route to gateway).
+    if Device:isKobo() and self:isWifiOn() and not self:isConnected() then
+        logger.info("Kobo WiFi: Left in an inconsistent state by launcher!")
+        self:turnOffWifi()
+    end
+
     self.wifi_was_on = G_reader_settings:isTrue("wifi_was_on")
-    if self.wifi_was_on and G_reader_settings:nilOrTrue("auto_restore_wifi") then
+    if self.wifi_was_on and G_reader_settings:isTrue("auto_restore_wifi") then
         self:restoreWifiAsync()
     end
 end
@@ -186,9 +194,9 @@ end
 function NetworkMgr:getRestoreMenuTable()
     return {
         text = _("Automatically restore Wi-Fi connection after resume"),
-        checked_func = function() return G_reader_settings:nilOrTrue("auto_restore_wifi") end,
+        checked_func = function() return G_reader_settings:isTrue("auto_restore_wifi") end,
         enabled_func = function() return Device:isKobo() or Device:isCervantes() end,
-        callback = function() G_reader_settings:flipNilOrTrue("auto_restore_wifi") end,
+        callback = function() G_reader_settings:flipNilOrFalse("auto_restore_wifi") end,
     }
 end
 
