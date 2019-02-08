@@ -44,6 +44,12 @@ describe("network_manager module", function()
                 self:turnOnWifi()
                 self:obtainIP()
             end
+            function NetworkMgr:isWifiOn()
+                return turn_on_wifi_called == 1 and true or false
+            end
+            function NetworkMgr:isConnected()
+                return self:ifWifiOn()
+            end
         end
     end)
 
