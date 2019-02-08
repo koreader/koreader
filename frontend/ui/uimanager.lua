@@ -182,6 +182,23 @@ function UIManager:init()
                 Device:suspend()
             end
         end
+        self.event_handlers["Charging"] = function()
+            self:_beforeCharging()
+        end
+        self.event_handlers["NotCharging"] = function()
+            self:_afterNotCharging()
+        end
+        self.event_handlers["UsbPlugIn"] = function()
+            if Device.screen_saver_mode then
+                Device:resume()
+                Device:outofScreenSaver()
+                self:_afterResume()
+            end
+            Device:usbPlugIn()
+        end
+        self.event_handlers["UsbPlugOut"] = function()
+            Device:usbPlugOut()
+        end
         self.event_handlers["Suspend"] = self.event_handlers["PowerRelease"]
         self.event_handlers["Resume"] = function()
             Device:resume()
