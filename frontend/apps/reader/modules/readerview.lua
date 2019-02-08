@@ -218,7 +218,7 @@ function ReaderView:paintTo(bb, x, y)
     self.dialog.dithered = nil
     -- For KOpt, let the user choose.
     if self.ui.document.info.has_pages then
-        if self.document.configurable.hw_dithering == 1 then
+        if self.ui.document.is_pic or self.document.configurable.hw_dithering == 1 then
             self.dialog.dithered = true
         end
     else
