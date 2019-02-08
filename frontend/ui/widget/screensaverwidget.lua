@@ -53,7 +53,7 @@ function ScreenSaverWidget:update()
     self[1] = self.main_frame
     UIManager:setDirty(self, function()
         local update_region = self.main_frame.dimen
-        return "partial", update_region
+        return "full", update_region
     end)
 end
 
@@ -83,7 +83,7 @@ end
 
 function ScreenSaverWidget:onCloseWidget()
     UIManager:setDirty(nil, function()
-        return "partial", self.main_frame.dimen
+        return "full", self.main_frame.dimen
     end)
     return true
 end
