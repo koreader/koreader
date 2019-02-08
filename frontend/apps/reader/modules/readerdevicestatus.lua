@@ -16,7 +16,9 @@ function ReaderDeviceStatus:init()
         self.checkLowBattery = function()
             local threshold = G_reader_settings:readSetting("low_battery_threshold") or 20
             local battery_capacity = powerd:getCapacity()
-            if powerd:getDissmisBatteryStatus() ~= true and battery_capacity <= threshold then
+            if powerd:isCharging() then
+                powerd:setDissmisBatteryStatus(false)
+            elseif powerd:getDissmisBatteryStatus() ~= true and battery_capacity <= threshold then
                 local low_battery_info
                 low_battery_info = ButtonDialogTitle:new {
                     modal = true,
