@@ -21,7 +21,7 @@ local ZSync = InputContainer:new{
 
 function ZSync:init()
     self.ui.menu:registerToMainMenu(self)
-    self.outbox = DataStorage:getFullDataDir().."/outbox"
+    self.outbox = DataStorage:getFullDataDir().."/zsync-outbox"
     self.server_config = self.path.."/server.cfg"
     self.client_config = self.path.."/client.cfg"
 end
