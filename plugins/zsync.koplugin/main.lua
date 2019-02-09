@@ -1,3 +1,4 @@
+local DataStorage = require("datastorage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
@@ -20,7 +21,7 @@ local ZSync = InputContainer:new{
 
 function ZSync:init()
     self.ui.menu:registerToMainMenu(self)
-    self.outbox = self.path.."/outbox"
+    self.outbox = DataStorage:getFullDataDir().."/zsync-outbox"
     self.server_config = self.path.."/server.cfg"
     self.client_config = self.path.."/client.cfg"
 end
