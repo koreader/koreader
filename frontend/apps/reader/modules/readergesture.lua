@@ -62,8 +62,10 @@ function ReaderGesture:buildMenu(ges, default)
     local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
     local menu = {
         {_("Nothing"), "nothing", true },
-        {_("Back 10 pages"), "page_update_down10", not self.is_docless},
-        {_("Forward 10 pages"), "page_update_up10", not self.is_docless},
+        {_("Back 10 pages"), "page_jmp_back_10", not self.is_docless},
+        {_("Previous page"), "page_jmp_back_1", not self.is_docless},
+        {_("Forward 10 pages"), "page_jmp_fwd_10", not self.is_docless},
+        {_("Next page"), "page_jmp_fwd_1", not self.is_docless},
         {_("Folder up"), "folder_up", self.is_docless},
         {_("Bookmarks"), "bookmarks", not self.is_docless},
         {_("Table of contents"), "toc", not self.is_docless},
@@ -191,10 +193,14 @@ function ReaderGesture:gestureAction(action)
         UIManager:setDirty("all", "full")
     elseif action == "bookmarks" then
         self.ui:handleEvent(Event:new("ShowBookmark"))
-    elseif action == "page_update_up10" then
+    elseif action == "page_jmp_fwd_10" then
         self:pageUpdate(10)
-    elseif action == "page_update_down10" then
+    elseif action == "page_jmp_fwd_1" then
+        self:pageUpdate(1)
+    elseif action == "page_jmp_back_10" then
         self:pageUpdate(-10)
+    elseif action == "page_jmp_back_1" then
+        self:pageUpdate(-1)
     elseif action == "folder_up" then
         self.ui.file_chooser:changeToPath(string.format("%s/..", self.ui.file_chooser.path))
     elseif action == "toggle_frontlight" then
