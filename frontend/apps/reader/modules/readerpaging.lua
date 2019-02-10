@@ -715,7 +715,7 @@ function ReaderPaging:onScrollPanRel(diff)
     -- update current pageno to the very last part in current view
     self:_gotoPage(self.view.page_states[#self.view.page_states].page,
                    "scrolling")
-    UIManager:setDirty(self.view.dialog, "fast")
+    UIManager:setDirty(self.view.dialog, "partial")
     return true
 end
 
