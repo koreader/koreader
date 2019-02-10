@@ -26,6 +26,7 @@ local Cervantes = Generic:new{
     isCervantes = yes,
     isAlwaysPortrait = yes,
     isTouchDevice = yes,
+    touch_legacy = true,
     touch_switch_xy = true,
     touch_mirrored_x = true,
     touch_probe_ev_epoch_time = true,
@@ -43,19 +44,16 @@ local CervantesTouch = Cervantes:new{
     model = "CervantesTouch",
     display_dpi = 167,
     hasFrontlight = no,
-    touch_legacy = true,
 }
 -- Cervantes TouchLight / Fnac Touch Plus
 local CervantesTouchLight = Cervantes:new{
     model = "CervantesTouchLight",
     display_dpi = 167,
-    touch_legacy = true,
 }
 -- Cervantes 2013 / Fnac Touch Light
 local Cervantes2013 = Cervantes:new{
     model = "Cervantes2013",
     display_dpi = 212,
-    touch_legacy = true,
 }
 -- Cervantes 3 / Fnac Touch Light 2
 local Cervantes3 = Cervantes:new{
@@ -66,6 +64,9 @@ local Cervantes3 = Cervantes:new{
 local Cervantes4 = Cervantes:new{
     model = "Cervantes4",
     display_dpi = 300,
+    touch_legacy = false,
+    touch_switch_xy = false,
+    touch_mirrored_x = false,
     hasNaturalLight = yes,
     frontlight_settings = {
         frontlight_white = "/sys/class/backlight/lm3630a_ledb",
