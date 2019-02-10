@@ -585,19 +585,9 @@ function ReaderFooter:_updateFooterText(force_repaint)
     -- NOTE: We skip repaints on page turns/pos update, as that's redundant (and slow).
     if force_repaint then
         -- NOTE: We need to repaint everything when toggling the progress bar, for some reason.
-        if self.view.flipping_visible then
-            UIManager:setDirty(self.view.dialog, function()
-                return "ui", self.footer_content.dimen
-            end)
-        else
-            if self.footer_content.dimen then
-                -- Behind a nil guard, because this is nil when opening a document.
-                UIManager:widgetRepaint(self.footer_content, self.footer_content.dimen.x, self.footer_content.dimen.y)
-            end
-            UIManager:setDirty(nil, function()
-                return "ui", self.footer_content.dimen
-            end)
-        end
+        UIManager:setDirty(self.view.dialog, function()
+            return "ui", self.footer_content.dimen
+        end)
     end
 end
 
