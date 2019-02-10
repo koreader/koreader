@@ -541,25 +541,25 @@ function ReaderFooter:updateFooter()
     end
 end
 
-function ReaderFooter:updateFooterPage()
+function ReaderFooter:updateFooterPage(skip_repaint)
     if type(self.pageno) ~= "number" then return end
     self.progress_bar.percentage = self.pageno / self.pages
-    self:updateFooterText()
+    self:updateFooterText(skip_repaint)
 end
 
-function ReaderFooter:updateFooterPos()
+function ReaderFooter:updateFooterPos(skip_repaint)
     if type(self.position) ~= "number" then return end
     self.progress_bar.percentage = self.position / self.doc_height
-    self:updateFooterText()
+    self:updateFooterText(skip_repaint)
 end
 
 -- updateFooterText will start as a noop. After onReaderReady event is
 -- received, it will initialized as _updateFooterText below
-function ReaderFooter:updateFooterText()
+function ReaderFooter:updateFooterText(skip_repaint)
 end
 
 -- only call this function after document is fully loaded
-function ReaderFooter:_updateFooterText()
+function ReaderFooter:_updateFooterText(skip_repaint)
     self.footer_text:setText(self:genFooterText())
     if self.settings.disable_progress_bar then
         if self.has_no_mode then
@@ -581,16 +581,31 @@ function ReaderFooter:_updateFooterText()
     self.horizontal_group:resetLayout()
     -- NOTE: This is essentially preventing us from truly using "fast" for panning,
     --       since it'll get coalesced in the "fast" panning update, upgrading it to "ui".
-    UIManager:setDirty(self.view.dialog, function()
-        return "ui", self.footer_content.dimen
-    end)
+    -- NOTE: That's assuming using "fast" for pans was a good idea, which, it turned out, not so much ;).
+    -- NOTE: We skip repaints on page turns/pos update, as that's redundant (and slow).
+    if not skip_repaint then
+        -- NOTE: We need to repaint everything when toggling the progress bar, for some reason.
+        if self.settings.disable_progress_bar then
+            UIManager:setDirty(self.view.dialog, function()
+                return "ui", self.footer_content.dimen
+            end)
+        else
+            if self.footer_content.dimen then
+                -- Behind a nil guard, because this is nil when opening a document.
+                UIManager:widgetRepaint(self.footer_content, self.footer_content.dimen.x, self.footer_content.dimen.y)
+            end
+            UIManager:setDirty(nil, function()
+                return "ui", self.footer_content.dimen
+            end)
+        end
+    end
 end
 
 function ReaderFooter:onPageUpdate(pageno)
     self.pageno = pageno
     self.pages = self.view.document:getPageCount()
     self.ui.doc_settings:saveSetting("doc_pages", self.pages) -- for Book information
-    self:updateFooterPage()
+    self:updateFooterPage(true)
 end
 
 function ReaderFooter:onPosUpdate(pos, pageno)
@@ -601,7 +616,7 @@ function ReaderFooter:onPosUpdate(pos, pageno)
         self.pages = self.view.document:getPageCount()
         self.ui.doc_settings:saveSetting("doc_pages", self.pages) -- for Book information
     end
-    self:updateFooterPos()
+    self:updateFooterPos(true)
 end
 
 -- recalculate footer sizes when document page count is updated
