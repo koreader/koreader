@@ -306,6 +306,14 @@ function CreDocument:getScreenBoxesFromPositions(pos0, pos1, get_segments)
     return line_boxes
 end
 
+function CreDocument:getNextVisibleWordEnd(pos0, pos1)
+    return self._document:nextVisibleWordEnd(pos0, pos1)
+end
+
+function CreDocument:getPrevVisibleWordEnd(pos0, pos1)
+    return self._document:prevVisibleWordEnd(pos0, pos1)
+end
+
 function CreDocument:drawCurrentView(target, x, y, rect, pos)
     if self.buffer and (self.buffer.w ~= rect.w or self.buffer.h ~= rect.h) then
         self.buffer:free()

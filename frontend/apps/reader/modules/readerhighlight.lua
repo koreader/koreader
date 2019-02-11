@@ -248,6 +248,31 @@ function ReaderHighlight:onTapXPointerSavedHighlight(ges)
     end
 end
 
+function ReaderHighlight:updateHighlight(page, index, move_from_beginning, dir)
+    local highlight = self.view.highlight.saved[page][index]
+    local highlight_beginning = highlight.pos0
+    local highlight_end = highlight.pos1
+    if move_from_beginning then
+        if dir == 1 then
+            local updated_highlight = self.ui.document:getNextVisibleWordEnd(highlight_beginning)
+            self.view.highlight.saved[page][index].pos0 = updated_highlight
+        else
+            local updated_highlight = self.ui.document:getPrevVisibleWordEnd(highlight_beginning)
+            self.view.highlight.saved[page][index].pos0 = updated_highlight
+        end
+    else
+        if dir == 1 then
+            local updated_highlight = self.ui.document:getNextVisibleWordEnd(highlight_end)
+            self.view.highlight.saved[page][index].pos1 = updated_highlight
+        else
+            local updated_highlight = self.ui.document:getPrevVisibleWordEnd(highlight_end)
+            self.view.highlight.saved[page][index].pos1 = updated_highlight
+        end
+    end
+    UIManager:setDirty(self.dialog, "ui")
+--    self.ui.document:clearSelection() -- do we really need this?
+end
+
 function ReaderHighlight:onShowHighlightDialog(page, index)
     self.edit_highlight_dialog = ButtonDialog:new{
         buttons = {
@@ -268,6 +293,34 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
                     end,
                 },
             },
+            {
+                {
+                    text = _("<<"),
+                    callback = function()
+                        self:updateHighlight(page, index, true, -1)
+                    end,
+                },
+                {
+                    text = _(">>"),
+                    callback = function()
+                        self:updateHighlight(page, index, true, 1)
+                    end,
+                },
+            },
+            {
+                {
+                    text = _("<"),
+                    callback = function()
+                        self:updateHighlight(page, index, false, -1)
+                    end,
+                },
+                {
+                    text = _(">"),
+                    callback = function()
+                        self:updateHighlight(page, index, false, 1)
+                    end,
+                },
+            }
         },
     }
     UIManager:show(self.edit_highlight_dialog)
