@@ -306,12 +306,20 @@ function CreDocument:getScreenBoxesFromPositions(pos0, pos1, get_segments)
     return line_boxes
 end
 
-function CreDocument:getNextVisibleWordEnd(pos0, pos1)
-    return self._document:nextVisibleWordEnd(pos0, pos1)
+function CreDocument:getNextVisibleWordStart(xp)
+    return self._document:getNextVisibleWordStart(xp)
 end
 
-function CreDocument:getPrevVisibleWordEnd(pos0, pos1)
-    return self._document:prevVisibleWordEnd(pos0, pos1)
+function CreDocument:getNextVisibleWordEnd(xp)
+    return self._document:getNextVisibleWordEnd(xp)
+end
+
+function CreDocument:getPrevVisibleWordStart(xp)
+    return self._document:getPrevVisibleWordStart(xp)
+end
+
+function CreDocument:getPrevVisibleWordEnd(xp)
+    return self._document:getPrevVisibleWordEnd(xp)
 end
 
 function CreDocument:drawCurrentView(target, x, y, rect, pos)
