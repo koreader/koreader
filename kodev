@@ -864,6 +864,7 @@ Supported commands:
     release             Build KOReader release package
     run                 Run KOReader
     test                Run tests
+    check               Run static-analysis
     wbuilder            Run wbuilder.lua script (useful for building new UI widget)
 "
 [ $# -lt 1 ] && {
@@ -904,6 +905,9 @@ case "${1}" in
     test)
         shift 1
         kodev-test "$@"
+        ;;
+    check)
+        luacheck -q {reader,setupkoenv,datastorage}.lua frontend plugins spec
         ;;
     cov)
         shift 1
