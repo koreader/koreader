@@ -37,7 +37,7 @@ end
 -- setup various runtime control
 local Runtimectl = require("runtimectl")
 local Device = require("device")
-Runtimectl:setDevice(Device)
+Runtimectl:init(Device)
 
 local Font = require("ui/font")
 Font:setScreen(Device.screen)
