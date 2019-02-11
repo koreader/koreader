@@ -16,12 +16,17 @@ G_reader_settings = require("luasettings"):open(".reader")
 einkfb = require("ffi/framebuffer") --luacheck: ignore
 einkfb.dummy = true --luacheck: ignore
 
+local Device = require("device")
+
+local Runtimectl = require("runtimectl")
+Runtimectl:init(Device)
+
 -- init output device
-local Screen = require("device").screen
+local Screen = Device.screen
 Screen:init()
 
 -- init input device (do not show SDL window)
-local Input = require("device").input
+local Input = Device.input
 Input.dummy = true
 
 package.unload = function(module)

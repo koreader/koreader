@@ -39,9 +39,6 @@ local Runtimectl = require("runtimectl")
 local Device = require("device")
 Runtimectl:init(Device)
 
-local Font = require("ui/font")
-Font:setScreen(Device.screen)
-
 if G_reader_settings:has("color_rendering") then
     Runtimectl:setColorRenderingEnabled(G_reader_settings:isTrue("color_rendering"))
 else
@@ -138,6 +135,7 @@ end
 -- font
 local fontmap = G_reader_settings:readSetting("fontmap")
 if fontmap ~= nil then
+    local Font = require("ui/font")
     for k, v in pairs(fontmap) do
         Font.fontmap[k] = v
     end

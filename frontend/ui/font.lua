@@ -85,16 +85,7 @@ local Font = {
 
     -- face table
     faces = {},
-
-    -- set by self.setScreen
-    screen = nil,
 }
-
---- Sets the screen object that will be used by font module for font size scaling
--- NOTE: this call is required for using KOReader UI framework
-function Font:setScreen(screen)
-    self.screen = screen
-end
 
 --- Gets font face object.
 -- @string font
@@ -107,7 +98,7 @@ function Font:getFace(font, size)
     if not size then size = self.sizemap[font] end
     -- original size before scaling by screen DPI
     local orig_size = size
-    size = self.screen:scaleBySize(size)
+    size = Runtimectl:scaleByRenderSize(size)
 
     local hash = font..size
     local face_obj = self.faces[hash]
