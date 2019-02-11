@@ -229,7 +229,7 @@ end
 function ReaderFooter:setupAutoRefreshTime()
     if not self.autoRefreshTime then
         self.autoRefreshTime = function()
-            self:updateFooter()
+            self:updateFooter(true)
             UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshTime)
         end
     end
@@ -533,33 +533,33 @@ function ReaderFooter:getDataFromStatistics(title, pages)
     return title .. sec
 end
 
-function ReaderFooter:updateFooter()
+function ReaderFooter:updateFooter(force_repaint)
     if self.pageno then
-        self:updateFooterPage()
+        self:updateFooterPage(force_repaint)
     else
-        self:updateFooterPos()
+        self:updateFooterPos(force_repaint)
     end
 end
 
-function ReaderFooter:updateFooterPage()
+function ReaderFooter:updateFooterPage(force_repaint)
     if type(self.pageno) ~= "number" then return end
     self.progress_bar.percentage = self.pageno / self.pages
-    self:updateFooterText()
+    self:updateFooterText(force_repaint)
 end
 
-function ReaderFooter:updateFooterPos()
+function ReaderFooter:updateFooterPos(force_repaint)
     if type(self.position) ~= "number" then return end
     self.progress_bar.percentage = self.position / self.doc_height
-    self:updateFooterText()
+    self:updateFooterText(force_repaint)
 end
 
 -- updateFooterText will start as a noop. After onReaderReady event is
 -- received, it will initialized as _updateFooterText below
-function ReaderFooter:updateFooterText()
+function ReaderFooter:updateFooterText(force_repaint)
 end
 
 -- only call this function after document is fully loaded
-function ReaderFooter:_updateFooterText()
+function ReaderFooter:_updateFooterText(force_repaint)
     self.footer_text:setText(self:genFooterText())
     if self.settings.disable_progress_bar then
         if self.has_no_mode then
@@ -581,9 +581,14 @@ function ReaderFooter:_updateFooterText()
     self.horizontal_group:resetLayout()
     -- NOTE: This is essentially preventing us from truly using "fast" for panning,
     --       since it'll get coalesced in the "fast" panning update, upgrading it to "ui".
-    UIManager:setDirty(self.view.dialog, function()
-        return "ui", self.footer_content.dimen
-    end)
+    -- NOTE: That's assuming using "fast" for pans was a good idea, which, it turned out, not so much ;).
+    -- NOTE: We skip repaints on page turns/pos update, as that's redundant (and slow).
+    if force_repaint then
+        -- NOTE: We need to repaint everything when toggling the progress bar, for some reason.
+        UIManager:setDirty(self.view.dialog, function()
+            return "ui", self.footer_content.dimen
+        end)
+    end
 end
 
 function ReaderFooter:onPageUpdate(pageno)
@@ -686,7 +691,7 @@ function ReaderFooter:onTapFooter(ges)
         self:applyFooterMode()
         G_reader_settings:saveSetting("reader_footer_mode", self.mode)
     end
-    self:updateFooter()
+    self:updateFooter(true)
     return true
 end
 

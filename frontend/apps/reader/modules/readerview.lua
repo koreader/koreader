@@ -610,7 +610,7 @@ function ReaderView:PanningUpdate(dx, dy)
     self.visible_area:offsetWithin(self.page_area, dx, dy)
     if self.visible_area ~= old then
         -- flag a repaint
-        UIManager:setDirty(self.dialog, "fast")
+        UIManager:setDirty(self.dialog, "partial")
         logger.dbg("on pan: page_area", self.page_area)
         logger.dbg("on pan: visible_area", self.visible_area)
         self.ui:handleEvent(
@@ -627,7 +627,7 @@ function ReaderView:PanningStart(x, y)
     self.visible_area = self.panning_visible_area:copy()
     self.visible_area:offsetWithin(self.page_area, x, y)
     self.ui:handleEvent(Event:new("ViewRecalculate", self.visible_area, self.page_area))
-    UIManager:setDirty(self.dialog, "fast")
+    UIManager:setDirty(self.dialog, "partial")
 end
 
 function ReaderView:PanningStop()
