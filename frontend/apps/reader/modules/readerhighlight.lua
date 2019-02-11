@@ -285,55 +285,80 @@ function ReaderHighlight:updateHighlight(page, index, side, direction)
 end
 
 function ReaderHighlight:onShowHighlightDialog(page, index)
-    self.edit_highlight_dialog = ButtonDialog:new{
-        buttons = {
-            {
+    if not self.ui.document.info.has_pages then
+        self.edit_highlight_dialog = ButtonDialog:new{
+            buttons = {
                 {
-                    text = _("Delete"),
-                    callback = function()
-                        self:deleteHighlight(page, index)
-                        -- other part outside of the dialog may be dirty
-                        UIManager:close(self.edit_highlight_dialog, "ui")
-                    end,
+                    {
+                        text = _("Delete"),
+                        callback = function()
+                            self:deleteHighlight(page, index)
+                            -- other part outside of the dialog may be dirty
+                            UIManager:close(self.edit_highlight_dialog, "ui")
+                        end,
+                    },
+                    {
+                        text = _("Edit"),
+                        callback = function()
+                            self:editHighlight(page, index)
+                            UIManager:close(self.edit_highlight_dialog)
+                        end,
+                    },
                 },
                 {
-                    text = _("Edit"),
-                    callback = function()
-                        self:editHighlight(page, index)
-                        UIManager:close(self.edit_highlight_dialog)
-                    end,
+                    {
+                        text = _("◁⇱"),
+                        callback = function()
+                            self:updateHighlight(page, index, 0, -1)
+                        end,
+                    },
+                    {
+                        text = _("⇱▷"),
+                        callback = function()
+                            self:updateHighlight(page, index, 0, 1)
+                        end,
+                    },
+                },
+                {
+                    {
+                        text = _("◁⇲"),
+                        callback = function()
+                            self:updateHighlight(page, index, 1, -1)
+                        end,
+                    },
+                    {
+                        text = _("⇲▷"),
+                        callback = function()
+                            self:updateHighlight(page, index, 1, 1)
+                        end,
+                    },
+                }
+            },
+        }
+    else
+        self.edit_highlight_dialog = ButtonDialog:new{
+            buttons = {
+                {
+                    {
+                        text = _("Delete"),
+                        callback = function()
+                            self:deleteHighlight(page, index)
+                            -- other part outside of the dialog may be dirty
+                            UIManager:close(self.edit_highlight_dialog, "ui")
+                        end,
+                    },
+                    {
+                        text = _("Edit"),
+                        callback = function()
+                            self:editHighlight(page, index)
+                            UIManager:close(self.edit_highlight_dialog)
+                        end,
+                    },
                 },
             },
-            {
-                {
-                    text = _("◁⇱"),
-                    callback = function()
-                        self:updateHighlight(page, index, 0, -1)
-                    end,
-                },
-                {
-                    text = _("⇱▷"),
-                    callback = function()
-                        self:updateHighlight(page, index, 0, 1)
-                    end,
-                },
-            },
-            {
-                {
-                    text = _("◁⇲"),
-                    callback = function()
-                        self:updateHighlight(page, index, 1, -1)
-                    end,
-                },
-                {
-                    text = _("⇲▷"),
-                    callback = function()
-                        self:updateHighlight(page, index, 1, 1)
-                    end,
-                },
-            }
-        },
-    }
+        }
+
+    end
     UIManager:show(self.edit_highlight_dialog)
     return true
 end
