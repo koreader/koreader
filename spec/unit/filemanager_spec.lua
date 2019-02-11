@@ -3,6 +3,7 @@ describe("FileManager module", function()
     setup(function()
         require("commonrequire")
         package.unloadAll()
+        require("runtimectl"):init(require("device"))
         FileManager = require("apps/filemanager/filemanager")
         Screen = require("device").screen
         UIManager = require("ui/uimanager")
