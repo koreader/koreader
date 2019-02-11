@@ -248,29 +248,40 @@ function ReaderHighlight:onTapXPointerSavedHighlight(ges)
     end
 end
 
-function ReaderHighlight:updateHighlight(page, index, move_from_beginning, dir)
+function ReaderHighlight:updateHighlight(page, index, side, direction)
+    if self.ui.document.info.has_pages then -- we do this only if it's epub file
+        return
+    end
+
     local highlight = self.view.highlight.saved[page][index]
     local highlight_beginning = highlight.pos0
     local highlight_end = highlight.pos1
-    if move_from_beginning then
-        if dir == 1 then
-            local updated_highlight = self.ui.document:getNextVisibleWordEnd(highlight_beginning)
-            self.view.highlight.saved[page][index].pos0 = updated_highlight
-        else
-            local updated_highlight = self.ui.document:getPrevVisibleWordEnd(highlight_beginning)
-            self.view.highlight.saved[page][index].pos0 = updated_highlight
+    if side == 0 then -- we move from pos0
+        if direction == 1 then -- move highlight to the right
+            local updated_highlight = self.ui.document:getNextVisibleWordStart(highlight_beginning)
+            if updated_highlight then -- in theory crengine could return nil
+                self.view.highlight.saved[page][index].pos0 = updated_highlight
+            end
+         else -- move highlight to the left
+            local updated_highlight = self.ui.document:getPrevVisibleWordStart(highlight_beginning)
+            if updated_highlight then
+                self.view.highlight.saved[page][index].pos0 = updated_highlight
+            end
         end
-    else
-        if dir == 1 then
+    else -- we move from pos1
+        if direction == 1 then
             local updated_highlight = self.ui.document:getNextVisibleWordEnd(highlight_end)
-            self.view.highlight.saved[page][index].pos1 = updated_highlight
+            if updated_highlight then
+                self.view.highlight.saved[page][index].pos1 = updated_highlight
+            end
         else
             local updated_highlight = self.ui.document:getPrevVisibleWordEnd(highlight_end)
-            self.view.highlight.saved[page][index].pos1 = updated_highlight
+            if updated_highlight then
+                self.view.highlight.saved[page][index].pos1 = updated_highlight
+            end
         end
     end
     UIManager:setDirty(self.dialog, "ui")
---    self.ui.document:clearSelection() -- do we really need this?
 end
 
 function ReaderHighlight:onShowHighlightDialog(page, index)
@@ -295,29 +306,29 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
             },
             {
                 {
-                    text = _("<<"),
+                    text = _("◁⇱"),
                     callback = function()
-                        self:updateHighlight(page, index, true, -1)
+                        self:updateHighlight(page, index, 0, -1)
                     end,
                 },
                 {
-                    text = _(">>"),
+                    text = _("⇱▷"),
                     callback = function()
-                        self:updateHighlight(page, index, true, 1)
+                        self:updateHighlight(page, index, 0, 1)
                     end,
                 },
             },
             {
                 {
-                    text = _("<"),
+                    text = _("◁⇲"),
                     callback = function()
-                        self:updateHighlight(page, index, false, -1)
+                        self:updateHighlight(page, index, 1, -1)
                     end,
                 },
                 {
-                    text = _(">"),
+                    text = _("⇲▷"),
                     callback = function()
-                        self:updateHighlight(page, index, false, 1)
+                        self:updateHighlight(page, index, 1, 1)
                     end,
                 },
             }
