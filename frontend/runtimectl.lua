@@ -6,7 +6,20 @@ local Runtimectl = {
     is_bgr = false,
 }
 
-function Runtimectl:setDevice(device)
+--[[
+Initialize runtimectl with settings from device.
+
+The following key is required for a device object:
+
+* hasBGRFrameBuffer: function() -> boolean
+* screen: object with following methods:
+    * getWidth() -> int
+    * getHeight() -> int
+    * getDPI() -> int
+    * getSize() -> Rect
+    * scaleBySize(int) -> int
+]]--
+function Runtimectl:init(device)
     self.screen = device.screen
     self.isAndroid = device.isAndroid
     self.isKindle = device.isKindle
