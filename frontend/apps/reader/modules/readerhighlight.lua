@@ -285,7 +285,7 @@ function ReaderHighlight:updateHighlight(page, index, side, direction)
 end
 
 function ReaderHighlight:onShowHighlightDialog(page, index)
-    buttons = {
+    local buttons = {
                 {
                     {
                         text = _("Delete"),
