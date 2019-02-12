@@ -285,9 +285,7 @@ function ReaderHighlight:updateHighlight(page, index, side, direction)
 end
 
 function ReaderHighlight:onShowHighlightDialog(page, index)
-    if not self.ui.document.info.has_pages then
-        self.edit_highlight_dialog = ButtonDialog:new{
-            buttons = {
+    buttons = {
                 {
                     {
                         text = _("Delete"),
@@ -305,60 +303,41 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
                         end,
                     },
                 },
-                {
-                    {
-                        text = _("◁⇱"),
-                        callback = function()
-                            self:updateHighlight(page, index, 0, -1)
-                        end,
-                    },
-                    {
-                        text = _("⇱▷"),
-                        callback = function()
-                            self:updateHighlight(page, index, 0, 1)
-                        end,
-                    },
-                },
-                {
-                    {
-                        text = _("◁⇲"),
-                        callback = function()
-                            self:updateHighlight(page, index, 1, -1)
-                        end,
-                    },
-                    {
-                        text = _("⇲▷"),
-                        callback = function()
-                            self:updateHighlight(page, index, 1, 1)
-                        end,
-                    },
-                }
-            },
-        }
-    else
-        self.edit_highlight_dialog = ButtonDialog:new{
-            buttons = {
-                {
-                    {
-                        text = _("Delete"),
-                        callback = function()
-                            self:deleteHighlight(page, index)
-                            -- other part outside of the dialog may be dirty
-                            UIManager:close(self.edit_highlight_dialog, "ui")
-                        end,
-                    },
-                    {
-                        text = _("Edit"),
-                        callback = function()
-                            self:editHighlight(page, index)
-                            UIManager:close(self.edit_highlight_dialog)
-                        end,
-                    },
-                },
-            },
-        }
+             }
 
+    if not self.ui.document.info.has_pages then
+        table.insert(buttons, {
+                        {
+                            text = _("◁⇱"),
+                            callback = function()
+                                self:updateHighlight(page, index, 0, -1)
+                            end,
+                        },
+                        {
+                            text = _("⇱▷"),
+                            callback = function()
+                                self:updateHighlight(page, index, 0, 1)
+                            end,
+                        },
+                    })
+        table.insert(buttons, {
+                        {
+                            text = _("◁⇲"),
+                            callback = function()
+                                self:updateHighlight(page, index, 1, -1)
+                            end,
+                        },
+                        {
+                            text = _("⇲▷"),
+                            callback = function()
+                                self:updateHighlight(page, index, 1, 1)
+                            end,
+                        },
+                    })
     end
+    self.edit_highlight_dialog = ButtonDialog:new{
+        buttons = buttons
+    }
     UIManager:show(self.edit_highlight_dialog)
     return true
 end
