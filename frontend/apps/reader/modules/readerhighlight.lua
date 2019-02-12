@@ -258,26 +258,26 @@ function ReaderHighlight:updateHighlight(page, index, side, direction)
     local highlight_end = highlight.pos1
     if side == 0 then -- we move from pos0
         if direction == 1 then -- move highlight to the right
-            local updated_highlight = self.ui.document:getNextVisibleWordStart(highlight_beginning)
-            if updated_highlight then -- in theory crengine could return nil
-                self.view.highlight.saved[page][index].pos0 = updated_highlight
+            local updated_highlight_beginning = self.ui.document:getNextVisibleWordStart(highlight_beginning)
+            if updated_highlight_beginning then -- in theory crengine could return nil
+                self.view.highlight.saved[page][index].pos0 = updated_highlight_beginning
             end
          else -- move highlight to the left
-            local updated_highlight = self.ui.document:getPrevVisibleWordStart(highlight_beginning)
-            if updated_highlight then
-                self.view.highlight.saved[page][index].pos0 = updated_highlight
+            local updated_highlight_beginning = self.ui.document:getPrevVisibleWordStart(highlight_beginning)
+            if updated_highlight_beginning then
+                self.view.highlight.saved[page][index].pos0 = updated_highlight_beginning
             end
         end
     else -- we move from pos1
         if direction == 1 then
-            local updated_highlight = self.ui.document:getNextVisibleWordEnd(highlight_end)
-            if updated_highlight then
-                self.view.highlight.saved[page][index].pos1 = updated_highlight
+            local updated_highlight_end = self.ui.document:getNextVisibleWordEnd(highlight_end)
+            if updated_highlight_end then
+                self.view.highlight.saved[page][index].pos1 = updated_highlight_end
             end
         else
-            local updated_highlight = self.ui.document:getPrevVisibleWordEnd(highlight_end)
-            if updated_highlight then
-                self.view.highlight.saved[page][index].pos1 = updated_highlight
+            local updated_highlight_end = self.ui.document:getPrevVisibleWordEnd(highlight_end)
+            if updated_highlight_end then
+                self.view.highlight.saved[page][index].pos1 = updated_highlight_end
             end
         end
     end
