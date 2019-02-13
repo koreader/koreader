@@ -30,7 +30,7 @@ fi
     #SPINNER="▌ ▛ ▀ ▜ ▐ ▟ ▄ ▙"
     while :; do
         for spin in ${SPINNER}; do
-            usleep 500000
+            usleep 500000 2>/dev/null || sleep 0.5
             # NOTE: Throw stderr to the void because I'm cheating w/ U+FFFD for a blank character,
             #       which FBInk replaces by a blank, but not before shouting at us on stderr ;).
             ./fbink -q -y -7 -pmh "${ZSYNC_MESSAGE} ${spin}" 2>/dev/null
