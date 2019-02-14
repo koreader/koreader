@@ -449,7 +449,7 @@ function ReaderBookmark:updateBookmark(item)
             self.bookmarks[i].page = item.updated_highlight.pos0
             self.bookmarks[i].pos0 = item.updated_highlight.pos0
             self.bookmarks[i].pos1 = item.updated_highlight.pos1
-            self.bookmarks[i].text = item.updated_highlight.text
+            self.bookmarks[i].notes = item.updated_highlight.notes
             self.bookmarks[i].datetime = item.updated_highlight.datetime
             self:onSaveSettings()
         end
