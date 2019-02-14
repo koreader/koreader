@@ -188,7 +188,9 @@ function Device:onPowerEvent(ev)
             self.screen:setRotationMode(0)
 
             -- If we're using a screensaver mode that shows an image, flash the screen to white first, to eliminate ghosting.
-            if G_reader_settings:readSetting("screensaver_type") ~= "disable" then
+            if G_reader_settings:readSetting("screensaver_type") == "cover" or
+               G_reader_settings:readSetting("screensaver_type") == "random_image" or
+               G_reader_settings:readSetting("screensaver_type") == "image_file" then
                 self.screen:clear(self.screen:getScreenWidth(), self.screen:getScreenHeight())
                 self.screen:refreshFull()
             end
