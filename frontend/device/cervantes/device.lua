@@ -66,8 +66,11 @@ local Cervantes4 = Cervantes:new{
     display_dpi = 300,
     hasNaturalLight = yes,
     frontlight_settings = {
-        frontlight_white = "/sys/class/backlight/lm3630a_ledb",
-        frontlight_red = "/sys/class/backlight/lm3630a_leda",
+        frontlight_white = "/sys/class/backlight/mxc_msp430_fl.0/brightness",
+        frontlight_mixer = "/sys/class/backlight/lm3630a_led/color",
+        nl_min = 0,
+        nl_max = 10,
+        nl_inverted = true,
     },
 }
 
