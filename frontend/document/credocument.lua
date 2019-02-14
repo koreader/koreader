@@ -444,6 +444,10 @@ function CreDocument:getTextFromXPointer(xp)
     end
 end
 
+function CreDocument:getTextFromXPointers(pos0, pos1)
+    return self._document:getTextFromXPointers(pos0, pos1)
+end
+
 function CreDocument:getHTMLFromXPointer(xp, flags, from_final_parent)
     if xp then
         return self._document:getHTMLFromXPointer(xp, flags, from_final_parent)

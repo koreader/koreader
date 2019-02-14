@@ -254,6 +254,7 @@ function ReaderHighlight:updateHighlight(page, index, side, direction)
     end
 
     local highlight = self.view.highlight.saved[page][index]
+    local highlight_time = highlight.datetime
     local highlight_beginning = highlight.pos0
     local highlight_end = highlight.pos1
     if side == 0 then -- we move from pos0
@@ -281,6 +282,17 @@ function ReaderHighlight:updateHighlight(page, index, side, direction)
             end
         end
     end
+
+    local new_beginning = self.view.highlight.saved[page][index].pos0
+    local new_end = self.view.highlight.saved[page][index].pos1
+    local new_text = self.ui.document:getTextFromXPointers(new_beginning, new_end)
+    self.view.highlight.saved[page][index].text = new_text
+    local new_highlight = self.view.highlight.saved[page][index]
+    self.ui.bookmark:updateBookmark({
+        page = highlight_beginning,
+        datetime = highlight_time,
+        updated_highlight = new_highlight
+    }, true)
     UIManager:setDirty(self.dialog, "ui")
 end
 
@@ -966,7 +978,6 @@ function ReaderHighlight:deleteHighlight(page, i, bookmark_item)
 end
 
 function ReaderHighlight:editHighlight(page, i)
-    logger.info("edit highlight", page, i)
     local item = self.view.highlight.saved[page][i]
     self.ui.bookmark:renameBookmark({
         page = self.ui.document.info.has_pages and page or item.pos0,
