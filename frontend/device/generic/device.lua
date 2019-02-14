@@ -176,7 +176,7 @@ function Device:onPowerEvent(ev)
             logger.dbg("Already in screen saver mode, suspending...")
             self:rescheduleSuspend()
         end
-    -- else we we not in screensaver mode
+    -- else we were not in screensaver mode
     elseif ev == "Power" or ev == "Suspend" then
         self.powerd:beforeSuspend()
         local UIManager = require("ui/uimanager")
@@ -186,6 +186,16 @@ function Device:onPowerEvent(ev)
         if G_reader_settings:readSetting("screensaver_type") ~= "message" then
             self.orig_rotation_mode = self.screen:getRotationMode()
             self.screen:setRotationMode(0)
+
+            -- On eInk, if we're using a screensaver mode that shows an image,
+            -- flash the screen to white first, to eliminate ghosting.
+            if self:hasEinkScreen() and
+               G_reader_settings:readSetting("screensaver_type") == "cover" or
+               G_reader_settings:readSetting("screensaver_type") == "random_image" or
+               G_reader_settings:readSetting("screensaver_type") == "image_file" then
+                self.screen:clear(self.screen:getScreenWidth(), self.screen:getScreenHeight())
+                self.screen:refreshFull()
+            end
         else
             -- nil it, in case user switched ScreenSaver modes during our lifetime.
             self.orig_rotation_mode = nil
