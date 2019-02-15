@@ -446,8 +446,8 @@ end
 function ReaderBookmark:updateBookmark(item)
     for i=1, #self.bookmarks do
         if item.datetime == self.bookmarks[i].datetime and item.page == self.bookmarks[i].page then
-            page = self.ui.document:getPageFromXPointer(item.updated_highlight.pos0)
-            new_text = item.updated_highlight.text
+            local page = self.ui.document:getPageFromXPointer(item.updated_highlight.pos0)
+            local new_text = item.updated_highlight.text
             self.bookmarks[i].page = item.updated_highlight.pos0
             self.bookmarks[i].pos0 = item.updated_highlight.pos0
             self.bookmarks[i].pos1 = item.updated_highlight.pos1
