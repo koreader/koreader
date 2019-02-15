@@ -248,7 +248,7 @@ function ReaderHighlight:onTapXPointerSavedHighlight(ges)
     end
 end
 
-function ReaderHighlight:updateHighlight(page, index, side, direction)
+function ReaderHighlight:updateHighlight(page, index, side, direction, move_char)
     if self.ui.document.info.has_pages then -- we do this only if it's epub file
         return
     end
@@ -259,24 +259,44 @@ function ReaderHighlight:updateHighlight(page, index, side, direction)
     local highlight_end = highlight.pos1
     if side == 0 then -- we move from pos0
         if direction == 1 then -- move highlight to the right
-            local updated_highlight_beginning = self.ui.document:getNextVisibleWordStart(highlight_beginning)
+            local updated_highlight_beginning
+            if move_char then
+                updated_highlight_beginning = self.ui.document:getNextVisibleChar(highlight_beginning)
+            else
+                updated_highlight_beginning = self.ui.document:getNextVisibleWordStart(highlight_beginning)
+            end
             if updated_highlight_beginning then -- in theory crengine could return nil
                 self.view.highlight.saved[page][index].pos0 = updated_highlight_beginning
             end
          else -- move highlight to the left
-            local updated_highlight_beginning = self.ui.document:getPrevVisibleWordStart(highlight_beginning)
+            local updated_highlight_beginning
+            if move_char then
+                updated_highlight_beginning = self.ui.document:getPrevVisibleChar(highlight_beginning)
+            else
+                updated_highlight_beginning = self.ui.document:getPrevVisibleWordStart(highlight_beginning)
+            end
             if updated_highlight_beginning then
                 self.view.highlight.saved[page][index].pos0 = updated_highlight_beginning
             end
         end
     else -- we move from pos1
         if direction == 1 then
-            local updated_highlight_end = self.ui.document:getNextVisibleWordEnd(highlight_end)
+            local updated_highlight_end
+            if move_char then
+                updated_highlight_end = self.ui.document:getNextVisibleChar(highlight_end)
+            else
+                updated_highlight_end = self.ui.document:getNextVisibleWordEnd(highlight_end)
+            end
             if updated_highlight_end then
                 self.view.highlight.saved[page][index].pos1 = updated_highlight_end
             end
         else
-            local updated_highlight_end = self.ui.document:getPrevVisibleWordEnd(highlight_end)
+            local updated_highlight_end
+            if move_char then
+                updated_highlight_end = self.ui.document:getPrevVisibleChar(highlight_end)
+            else
+                updated_highlight_end = self.ui.document:getPrevVisibleWordEnd(highlight_end)
+            end
             if updated_highlight_end then
                 self.view.highlight.saved[page][index].pos1 = updated_highlight_end
             end
@@ -322,26 +342,41 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
             {
                 text = _("◁⇱"),
                 callback = function()
-                    self:updateHighlight(page, index, 0, -1)
+                    self:updateHighlight(page, index, 0, -1, false)
                 end,
+                hold_callback = function()
+                    logger.dbg("detected hold!!")
+                    self:updateHighlight(page, index, 0, -1, true)
+                    return true
+                end
             },
             {
                 text = _("⇱▷"),
                 callback = function()
-                    self:updateHighlight(page, index, 0, 1)
+                    self:updateHighlight(page, index, 0, 1, false)
                 end,
+                hold_callback = function()
+                    self:updateHighlight(page, index, 0, 1, true)
+                    return true
+                end
             },
             {
                 text = _("◁⇲"),
                 callback = function()
-                    self:updateHighlight(page, index, 1, -1)
+                    self:updateHighlight(page, index, 1, -1, false)
                 end,
+                hold_callback = function()
+                    self:updateHighlight(page, index, 1, -1, true)
+                end
             },
             {
                 text = _("⇲▷"),
                 callback = function()
-                    self:updateHighlight(page, index, 1, 1)
+                    self:updateHighlight(page, index, 1, 1, false)
                 end,
+                hold_callback = function()
+                    self:updateHighlight(page, index, 1, 1, true)
+                end
             }
         })
     end
