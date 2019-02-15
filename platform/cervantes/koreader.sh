@@ -82,10 +82,25 @@ if [ "${STANDALONE}" != "true" ]; then
     [ -x /etc/init.d/connman ] && /etc/init.d/connman stop
 fi
 
-RETURN_VALUE=85
-while [ "${RETURN_VALUE}" -eq 85 ]; do
+# **magic** values to request shell stuff. It starts at 85,
+# any number lower than that will exit this script.
+RESTART_KOREADER=85
+ENTER_USBMS=86
+RETURN_VALUE="${RESTART_KOREADER}"
+
+# Loop forever until KOReader requests a normal exit.
+while [ "${RETURN_VALUE}" -ge "${RESTART_KOREADER}" ]; do
     ./reader.lua "${args}" >>crash.log 2>&1
     RETURN_VALUE=$?
+
+    # check if KOReader requested to enter in mass storage mode.
+    if [ "${RETURN_VALUE}" -eq "${ENTER_USBMS}" ]; then
+        # NOTE: at this point we're sure that the safemode tool
+        # is recent enough to support the "--force" flag.
+
+        safemode storage --force 2>/dev/null
+        # waiting forever for home button events.
+    fi
 done
 
 if [ "${STANDALONE}" != "true" ]; then

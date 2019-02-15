@@ -30,6 +30,7 @@ local Device = {
     hasColorScreen = no,
     hasBGRFrameBuffer = no,
     canToggleGSensor = no,
+    canToggleMassStorage = no,
 
     -- use these only as a last resort. We should abstract the functionality
     -- and have device dependent implementations in the corresponting
