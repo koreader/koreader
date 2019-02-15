@@ -248,7 +248,7 @@ function ReaderHighlight:onTapXPointerSavedHighlight(ges)
     end
 end
 
-function ReaderHighlight:updateHighlight(page, index, side, direction, move_char)
+function ReaderHighlight:updateHighlight(page, index, side, direction, move_by_char)
     if self.ui.document.info.has_pages then -- we do this only if it's epub file
         return
     end
@@ -260,7 +260,7 @@ function ReaderHighlight:updateHighlight(page, index, side, direction, move_char
     if side == 0 then -- we move from pos0
         if direction == 1 then -- move highlight to the right
             local updated_highlight_beginning
-            if move_char then
+            if move_by_char then
                 updated_highlight_beginning = self.ui.document:getNextVisibleChar(highlight_beginning)
             else
                 updated_highlight_beginning = self.ui.document:getNextVisibleWordStart(highlight_beginning)
@@ -270,7 +270,7 @@ function ReaderHighlight:updateHighlight(page, index, side, direction, move_char
             end
          else -- move highlight to the left
             local updated_highlight_beginning
-            if move_char then
+            if move_by_char then
                 updated_highlight_beginning = self.ui.document:getPrevVisibleChar(highlight_beginning)
             else
                 updated_highlight_beginning = self.ui.document:getPrevVisibleWordStart(highlight_beginning)
@@ -282,7 +282,7 @@ function ReaderHighlight:updateHighlight(page, index, side, direction, move_char
     else -- we move from pos1
         if direction == 1 then
             local updated_highlight_end
-            if move_char then
+            if move_by_char then
                 updated_highlight_end = self.ui.document:getNextVisibleChar(highlight_end)
             else
                 updated_highlight_end = self.ui.document:getNextVisibleWordEnd(highlight_end)
@@ -292,7 +292,7 @@ function ReaderHighlight:updateHighlight(page, index, side, direction, move_char
             end
         else
             local updated_highlight_end
-            if move_char then
+            if move_by_char then
                 updated_highlight_end = self.ui.document:getPrevVisibleChar(highlight_end)
             else
                 updated_highlight_end = self.ui.document:getPrevVisibleWordEnd(highlight_end)
@@ -345,7 +345,6 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
                     self:updateHighlight(page, index, 0, -1, false)
                 end,
                 hold_callback = function()
-                    logger.dbg("detected hold!!")
                     self:updateHighlight(page, index, 0, -1, true)
                     return true
                 end
