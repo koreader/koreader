@@ -322,6 +322,14 @@ function CreDocument:getPrevVisibleWordEnd(xp)
     return self._document:getPrevVisibleWordEnd(xp)
 end
 
+function CreDocument:getPrevVisibleChar(xp)
+    return self._document:getPrevVisibleChar(xp)
+end
+
+function CreDocument:getNextVisibleChar(xp)
+    return self._document:getNextVisibleChar(xp)
+end
+
 function CreDocument:drawCurrentView(target, x, y, rect, pos)
     if self.buffer and (self.buffer.w ~= rect.w or self.buffer.h ~= rect.h) then
         self.buffer:free()
