@@ -102,6 +102,13 @@ function Button:init()
                     range = self.dimen,
                 },
                 doc = "Hold Button",
+            },
+            -- Safe-guard for when used inside a MovableContainer
+            HoldReleaseSelectButton = {
+                GestureRange:new{
+                    ges = "hold_release",
+                    range = self.dimen,
+                },
             }
         }
     end
@@ -238,6 +245,18 @@ function Button:onHoldSelectButton()
         self:onInput(self.hold_input_func())
     end
     return true
+end
+
+function Button:onHoldReleaseSelectButton()
+    -- Safe-guard for when used inside a MovableContainer,
+    -- which would handle HoldRelease and process it like
+    -- a Hold if we wouldn't return true here
+    if self.enabled and self.hold_callback then
+        return true
+    elseif self.hold_input or type(self.hold_input_func) == "function" then
+        return true
+    end
+    return false
 end
 
 return Button
