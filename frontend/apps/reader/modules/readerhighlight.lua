@@ -257,7 +257,7 @@ function ReaderHighlight:updateHighlight(page, index, side, direction, move_by_c
     local highlight_time = highlight.datetime
     local highlight_beginning = highlight.pos0
     local highlight_end = highlight.pos1
-    if side == 0 then -- we move from pos0
+    if side == 0 then -- we move pos0
         if direction == 1 then -- move highlight to the right
             local updated_highlight_beginning
             if move_by_char then
@@ -279,8 +279,8 @@ function ReaderHighlight:updateHighlight(page, index, side, direction, move_by_c
                 self.view.highlight.saved[page][index].pos0 = updated_highlight_beginning
             end
         end
-    else -- we move from pos1
-        if direction == 1 then
+    else -- we move pos1
+        if direction == 1 then -- move highlight to the right
             local updated_highlight_end
             if move_by_char then
                 updated_highlight_end = self.ui.document:getNextVisibleChar(highlight_end)
@@ -290,7 +290,7 @@ function ReaderHighlight:updateHighlight(page, index, side, direction, move_by_c
             if updated_highlight_end then
                 self.view.highlight.saved[page][index].pos1 = updated_highlight_end
             end
-        else
+        else -- move highlight to the left
             local updated_highlight_end
             if move_by_char then
                 updated_highlight_end = self.ui.document:getPrevVisibleChar(highlight_end)
