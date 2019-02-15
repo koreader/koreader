@@ -443,6 +443,24 @@ function ReaderBookmark:removeBookmark(item)
     logger.warn("removeBookmark: full scan search didn't find bookmark")
 end
 
+function ReaderBookmark:updateBookmark(item)
+    for i=1, #self.bookmarks do
+        if item.datetime == self.bookmarks[i].datetime and item.page == self.bookmarks[i].page then
+            local page = self.ui.document:getPageFromXPointer(item.updated_highlight.pos0)
+            local new_text = item.updated_highlight.text
+            self.bookmarks[i].page = item.updated_highlight.pos0
+            self.bookmarks[i].pos0 = item.updated_highlight.pos0
+            self.bookmarks[i].pos1 = item.updated_highlight.pos1
+            self.bookmarks[i].notes = item.updated_highlight.text
+            self.bookmarks[i].text = T(_("Page %1 %2 @ %3"), page,
+                                        new_text,
+                                        item.updated_highlight.datetime)
+            self.bookmarks[i].datetime = item.updated_highlight.datetime
+            self:onSaveSettings()
+        end
+    end
+end
+
 function ReaderBookmark:renameBookmark(item, from_highlight)
     if from_highlight then
         -- Called by ReaderHighlight:editHighlight, we need to find the bookmark

@@ -306,6 +306,30 @@ function CreDocument:getScreenBoxesFromPositions(pos0, pos1, get_segments)
     return line_boxes
 end
 
+function CreDocument:getNextVisibleWordStart(xp)
+    return self._document:getNextVisibleWordStart(xp)
+end
+
+function CreDocument:getNextVisibleWordEnd(xp)
+    return self._document:getNextVisibleWordEnd(xp)
+end
+
+function CreDocument:getPrevVisibleWordStart(xp)
+    return self._document:getPrevVisibleWordStart(xp)
+end
+
+function CreDocument:getPrevVisibleWordEnd(xp)
+    return self._document:getPrevVisibleWordEnd(xp)
+end
+
+function CreDocument:getPrevVisibleChar(xp)
+    return self._document:getPrevVisibleChar(xp)
+end
+
+function CreDocument:getNextVisibleChar(xp)
+    return self._document:getNextVisibleChar(xp)
+end
+
 function CreDocument:drawCurrentView(target, x, y, rect, pos)
     if self.buffer and (self.buffer.w ~= rect.w or self.buffer.h ~= rect.h) then
         self.buffer:free()
@@ -426,6 +450,10 @@ function CreDocument:getTextFromXPointer(xp)
     if xp then
         return self._document:getTextFromXPointer(xp)
     end
+end
+
+function CreDocument:getTextFromXPointers(pos0, pos1)
+    return self._document:getTextFromXPointers(pos0, pos1)
 end
 
 function CreDocument:getHTMLFromXPointer(xp, flags, from_final_parent)

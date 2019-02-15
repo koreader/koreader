@@ -248,27 +248,139 @@ function ReaderHighlight:onTapXPointerSavedHighlight(ges)
     end
 end
 
+function ReaderHighlight:updateHighlight(page, index, side, direction, move_by_char)
+    if self.ui.document.info.has_pages then -- we do this only if it's epub file
+        return
+    end
+
+    local highlight = self.view.highlight.saved[page][index]
+    local highlight_time = highlight.datetime
+    local highlight_beginning = highlight.pos0
+    local highlight_end = highlight.pos1
+    if side == 0 then -- we move pos0
+        if direction == 1 then -- move highlight to the right
+            local updated_highlight_beginning
+            if move_by_char then
+                updated_highlight_beginning = self.ui.document:getNextVisibleChar(highlight_beginning)
+            else
+                updated_highlight_beginning = self.ui.document:getNextVisibleWordStart(highlight_beginning)
+            end
+            if updated_highlight_beginning then -- in theory crengine could return nil
+                self.view.highlight.saved[page][index].pos0 = updated_highlight_beginning
+            end
+         else -- move highlight to the left
+            local updated_highlight_beginning
+            if move_by_char then
+                updated_highlight_beginning = self.ui.document:getPrevVisibleChar(highlight_beginning)
+            else
+                updated_highlight_beginning = self.ui.document:getPrevVisibleWordStart(highlight_beginning)
+            end
+            if updated_highlight_beginning then
+                self.view.highlight.saved[page][index].pos0 = updated_highlight_beginning
+            end
+        end
+    else -- we move pos1
+        if direction == 1 then -- move highlight to the right
+            local updated_highlight_end
+            if move_by_char then
+                updated_highlight_end = self.ui.document:getNextVisibleChar(highlight_end)
+            else
+                updated_highlight_end = self.ui.document:getNextVisibleWordEnd(highlight_end)
+            end
+            if updated_highlight_end then
+                self.view.highlight.saved[page][index].pos1 = updated_highlight_end
+            end
+        else -- move highlight to the left
+            local updated_highlight_end
+            if move_by_char then
+                updated_highlight_end = self.ui.document:getPrevVisibleChar(highlight_end)
+            else
+                updated_highlight_end = self.ui.document:getPrevVisibleWordEnd(highlight_end)
+            end
+            if updated_highlight_end then
+                self.view.highlight.saved[page][index].pos1 = updated_highlight_end
+            end
+        end
+    end
+
+    local new_beginning = self.view.highlight.saved[page][index].pos0
+    local new_end = self.view.highlight.saved[page][index].pos1
+    local new_text = self.ui.document:getTextFromXPointers(new_beginning, new_end)
+    self.view.highlight.saved[page][index].text = new_text
+    local new_highlight = self.view.highlight.saved[page][index]
+    self.ui.bookmark:updateBookmark({
+        page = highlight_beginning,
+        datetime = highlight_time,
+        updated_highlight = new_highlight
+    }, true)
+    UIManager:setDirty(self.dialog, "ui")
+end
+
 function ReaderHighlight:onShowHighlightDialog(page, index)
-    self.edit_highlight_dialog = ButtonDialog:new{
-        buttons = {
+    local buttons = {
+        {
             {
-                {
-                    text = _("Delete"),
-                    callback = function()
-                        self:deleteHighlight(page, index)
-                        -- other part outside of the dialog may be dirty
-                        UIManager:close(self.edit_highlight_dialog, "ui")
-                    end,
-                },
-                {
-                    text = _("Edit"),
-                    callback = function()
-                        self:editHighlight(page, index)
-                        UIManager:close(self.edit_highlight_dialog)
-                    end,
-                },
+                text = _("Delete"),
+                callback = function()
+                    self:deleteHighlight(page, index)
+                    -- other part outside of the dialog may be dirty
+                    UIManager:close(self.edit_highlight_dialog, "ui")
+                end,
             },
-        },
+            {
+                text = _("Edit"),
+                callback = function()
+                    self:editHighlight(page, index)
+                    UIManager:close(self.edit_highlight_dialog)
+                end,
+            },
+        }
+    }
+
+    if not self.ui.document.info.has_pages then
+        table.insert(buttons, {
+            {
+                text = _("◁⇱"),
+                callback = function()
+                    self:updateHighlight(page, index, 0, -1, false)
+                end,
+                hold_callback = function()
+                    self:updateHighlight(page, index, 0, -1, true)
+                    return true
+                end
+            },
+            {
+                text = _("⇱▷"),
+                callback = function()
+                    self:updateHighlight(page, index, 0, 1, false)
+                end,
+                hold_callback = function()
+                    self:updateHighlight(page, index, 0, 1, true)
+                    return true
+                end
+            },
+            {
+                text = _("◁⇲"),
+                callback = function()
+                    self:updateHighlight(page, index, 1, -1, false)
+                end,
+                hold_callback = function()
+                    self:updateHighlight(page, index, 1, -1, true)
+                end
+            },
+            {
+                text = _("⇲▷"),
+                callback = function()
+                    self:updateHighlight(page, index, 1, 1, false)
+                end,
+                hold_callback = function()
+                    self:updateHighlight(page, index, 1, 1, true)
+                end
+            }
+        })
+    end
+    self.edit_highlight_dialog = ButtonDialog:new{
+        buttons = buttons
     }
     UIManager:show(self.edit_highlight_dialog)
     return true
@@ -900,7 +1012,6 @@ function ReaderHighlight:deleteHighlight(page, i, bookmark_item)
 end
 
 function ReaderHighlight:editHighlight(page, i)
-    logger.info("edit highlight", page, i)
     local item = self.view.highlight.saved[page][i]
     self.ui.bookmark:renameBookmark({
         page = self.ui.document.info.has_pages and page or item.pos0,
