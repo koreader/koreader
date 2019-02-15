@@ -21,6 +21,22 @@ if Device:hasFrontlight() then
     }
 end
 
+if Device:canToggleMassStorage() then
+    local MassStorage = require("ui/elements/mass_storage")
+
+    -- mass storage settings
+    common_settings.mass_storage_settings = {
+        text = _("USB mass storage"),
+        sub_item_table = MassStorage:getSettingsMenuTable()
+    }
+
+    -- mass storage actions
+    common_settings.mass_storage_actions = {
+        text = _("Start USB storage"),
+        callback = function() MassStorage:start() end,
+    }
+end
+
 if Device:setDateTime() then
     common_settings.time = {
         text = _("Time and date"),

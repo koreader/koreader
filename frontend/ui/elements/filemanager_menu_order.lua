@@ -39,6 +39,7 @@ local order = {
         "time",
         "battery",
         "gesture",
+        "mass_storage_settings",
     },
     network = {
         "network_wifi",
@@ -95,6 +96,7 @@ local order = {
         "open_last_document",
         "----------------------------",
         "system_statistics",
+        "mass_storage_actions",
         "----------------------------",
         "ota_update", -- if Device:hasOTAUpdates()
         "version",

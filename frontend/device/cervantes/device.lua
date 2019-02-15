@@ -21,6 +21,14 @@ local function isConnected()
     return carrier
 end
 
+local function isMassStorageSupported()
+    -- we rely on 3rd party package for that. It should be installed as part of KOReader prerequisites,
+    local safemode_version = io.open("/usr/share/safemode/version", "rb")
+    if not safemode_version then return false end
+    safemode_version:close()
+    return true
+end
+
 local Cervantes = Generic:new{
     model = "Cervantes",
     isCervantes = yes,
@@ -32,6 +40,9 @@ local Cervantes = Generic:new{
     touch_probe_ev_epoch_time = true,
     hasOTAUpdates = yes,
     hasKeys = yes,
+
+    -- do we support usb mass storage?
+    canToggleMassStorage = function() return isMassStorageSupported() end,
 
     -- all devices, except the original Cervantes Touch, have frontlight
     hasFrontlight = yes,
