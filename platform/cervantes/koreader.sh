@@ -90,6 +90,11 @@ RETURN_VALUE="${RESTART_KOREADER}"
 
 # Loop forever until KOReader requests a normal exit.
 while [ "${RETURN_VALUE}" -ge "${RESTART_KOREADER}" ]; do
+
+    # move dictionaries from external storage to koreader private partition.
+    find /mnt/public/dict -type f -exec mv -v \{\} /mnt/private/koreader/data/dict \; 2>/dev/null
+
+    # run KOReader
     ./reader.lua "${args}" >>crash.log 2>&1
     RETURN_VALUE=$?
 
