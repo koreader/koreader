@@ -9,7 +9,7 @@
 [![Build Status][circleci-badge]][circleci-link]
 [![Coverage Status][coverage-badge]][coverage-link]
 [![AGPL Licence][licence-badge]](COPYING)
-
+[![Latest tag][tag-badge]](https://github.com/koreader/koreader/releases/)
 
 KOReader is a document viewer application, originally created for Kindle
 e-ink readers. It currently runs on Kindle, Kobo, PocketBook, Ubuntu Touch
@@ -333,6 +333,7 @@ KOReader's build system. To install ccache:
 [coverage-badge]:https://codecov.io/gh/koreader/koreader/branch/master/graph/badge.svg
 [coverage-link]:https://codecov.io/gh/koreader/koreader
 [licence-badge]:http://img.shields.io/badge/licence-AGPL-brightgreen.svg
+[tag-badge]:https://img.shields.io/github/tag-date/koreader/koreader.svg
 [gitter-badge]:https://badges.gitter.im/Join%20Chat.svg
 [gitter-link]:https://gitter.im/koreader/koreader?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 
