@@ -77,6 +77,7 @@ function ReaderGesture:buildMenu(ges, default)
         {_("Suspend"), "suspend", true},
         {_("Toggle frontlight"), "toggle_frontlight", Device:hasFrontlight()},
         {_("Toggle accelerometer"), "toggle_gsensor", Device:canToggleGSensor()},
+        {_("Toggle rotation"), "toggle_rotation", not self.is_docless},
     }
     local return_menu = {}
     -- add default action to the top of the submenu
@@ -217,6 +218,12 @@ function ReaderGesture:gestureAction(action)
         G_reader_settings:flipNilOrFalse("input_ignore_gsensor")
         Device:toggleGSensor()
         self:onGSensorToggle()
+    elseif action == "toggle_rotation" then
+        if Screen:getScreenMode() == "portrait" then
+            self.ui:handleEvent(Event:new("SetScreenMode", "landscape"))
+        else
+            self.ui:handleEvent(Event:new("SetScreenMode", "portrait"))
+        end
     elseif action == "suspend" then
         UIManager:suspend()
     end
