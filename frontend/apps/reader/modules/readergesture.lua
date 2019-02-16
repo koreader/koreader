@@ -69,6 +69,7 @@ function ReaderGesture:buildMenu(ges, default)
         {_("Back to previous location"), "previous_location", not self.is_docless},
         {_("Folder up"), "folder_up", self.is_docless},
         {_("Bookmarks"), "bookmarks", not self.is_docless},
+        {_("History"), "history", true},
         {_("Table of contents"), "toc", not self.is_docless},
         {_("Reading progress"), "reading_progress", ReaderGesture.getReaderProgress ~= nil},
         {_("Full screen refresh"), "full_refresh", true},
@@ -195,6 +196,8 @@ function ReaderGesture:gestureAction(action)
         UIManager:setDirty("all", "full")
     elseif action == "bookmarks" then
         self.ui:handleEvent(Event:new("ShowBookmark"))
+    elseif action == "history" then
+        self.ui:handleEvent(Event:new("ShowHist"))
     elseif action == "page_jmp_fwd_10" then
         self:pageUpdate(10)
     elseif action == "page_jmp_fwd_1" then
