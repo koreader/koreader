@@ -73,6 +73,7 @@ function ReaderGesture:buildMenu(ges, default)
         {_("Reading progress"), "reading_progress", ReaderGesture.getReaderProgress ~= nil},
         {_("Full screen refresh"), "full_refresh", true},
         {_("Night mode"), "night_mode", true},
+        {_("Suspend"), "suspend", true},
         {_("Toggle frontlight"), "toggle_frontlight", Device:hasFrontlight()},
         {_("Toggle accelerometer"), "toggle_gsensor", Device:canToggleGSensor()},
     }
@@ -213,6 +214,8 @@ function ReaderGesture:gestureAction(action)
         G_reader_settings:flipNilOrFalse("input_ignore_gsensor")
         Device:toggleGSensor()
         self:onGSensorToggle()
+    elseif action == "suspend" then
+        UIManager:suspend()
     end
     return true
 end
