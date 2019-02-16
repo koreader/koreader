@@ -340,7 +340,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
     if not self.ui.document.info.has_pages then
         table.insert(buttons, {
             {
-                text = _("◁⇱"),
+                text = "◁⇱",
                 callback = function()
                     self:updateHighlight(page, index, 0, -1, false)
                 end,
@@ -350,7 +350,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
                 end
             },
             {
-                text = _("⇱▷"),
+                text = "⇱▷",
                 callback = function()
                     self:updateHighlight(page, index, 0, 1, false)
                 end,
@@ -360,7 +360,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
                 end
             },
             {
-                text = _("◁⇲"),
+                text = "◁⇲",
                 callback = function()
                     self:updateHighlight(page, index, 1, -1, false)
                 end,
@@ -369,7 +369,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
                 end
             },
             {
-                text = _("⇲▷"),
+                text = "⇲▷",
                 callback = function()
                     self:updateHighlight(page, index, 1, 1, false)
                 end,
