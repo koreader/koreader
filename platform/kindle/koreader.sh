@@ -107,9 +107,14 @@ ko_update_check() {
         FILESIZE="$(stat -c %b "${NEWUPDATE}")"
         BLOCKS="$((FILESIZE / 20))"
         export CPOINTS="$((BLOCKS / 100))"
+        # NOTE: To avoid blowing up when tar truncates itself during an update, copy our GNU tar binary to the system's tmpfs,
+        #       and run that one (c.f., #4602)...
+        cp -pf ./tar /var/tmp/gnutar
         # shellcheck disable=SC2016
-        ./tar --no-same-permissions --no-same-owner --checkpoint="${CPOINTS}" --checkpoint-action=exec='./fbink -q -y -6 -P $(($TAR_CHECKPOINT/$CPOINTS))' -C "/mnt/us" -xf "${NEWUPDATE}"
+        /var/tmp/gnutar --no-same-permissions --no-same-owner --checkpoint="${CPOINTS}" --checkpoint-action=exec='./fbink -q -y -6 -P $(($TAR_CHECKPOINT/$CPOINTS))' -C "/mnt/us" -xf "${NEWUPDATE}"
         fail=$?
+        # And remove our temporary tar binary...
+        rm -f /var/tmp/gnutar
         # Cleanup behind us...
         if [ "${fail}" -eq 0 ]; then
             mv "${NEWUPDATE}" "${INSTALLED}"
