@@ -108,7 +108,7 @@ ko_update_check() {
         BLOCKS="$((FILESIZE / 20))"
         export CPOINTS="$((BLOCKS / 100))"
         # shellcheck disable=SC2016
-        ${KOREADER_DIR}/tar -C "/mnt/us" --no-same-owner --no-same-permissions --checkpoint="${CPOINTS}" --checkpoint-action=exec='$KOREADER_DIR/fbink -q -y -6 -P $(($TAR_CHECKPOINT/$CPOINTS))' -xf "${NEWUPDATE}"
+        ./tar --no-same-permissions --no-same-owner --checkpoint="${CPOINTS}" --checkpoint-action=exec='./fbink -q -y -6 -P $(($TAR_CHECKPOINT/$CPOINTS))' -C "/mnt/us" -xf "${NEWUPDATE}"
         fail=$?
         # Cleanup behind us...
         if [ "${fail}" -eq 0 ]; then
@@ -118,7 +118,7 @@ ko_update_check() {
             eips_print_bottom_centered "KOReader will start momentarily . . ." 1
         else
             # Huh ho...
-            logmsg "Update failed :("
+            logmsg "Update failed :( (${fail})"
             eips_print_bottom_centered "Update failed :(" 2
             eips_print_bottom_centered "KOReader may fail to function properly" 1
         fi
