@@ -72,6 +72,8 @@ local GestureDetector = {
     -- latest feeded touch event in each slots
     last_tevs = {},
     first_tevs = {},
+    -- for multiswipe gestures
+    multiswipe_directions = {},
     -- detecting status on each slots
     detectings = {},
     -- for single/double tap
@@ -91,6 +93,7 @@ function GestureDetector:init()
     self.DOUBLE_TAP_DISTANCE = 50 * self.screen:getDPI() / 167
     self.TWO_FINGER_TAP_REGION = 20 * self.screen:getDPI() / 167
     self.PAN_THRESHOLD = 50 * self.screen:getDPI() / 167
+    self.MULTISWIPE_THRESHOLD = 50 * self.screen:getDPI() / 167
 end
 
 --[[--
@@ -162,18 +165,24 @@ end
 --[[--
 Compares `last_pan` with `first_tev` in this slot.
 
+The second boolean argument `simple` results in only four directions if true.
+
 @return (direction, distance) pan direction and distance
 --]]
-function GestureDetector:getPath(slot)
-    local x_diff = self.last_tevs[slot].x - self.first_tevs[slot].x
-    local y_diff = self.last_tevs[slot].y - self.first_tevs[slot].y
+function GestureDetector:getPath(slot, simple, first_tev)
+    first_tev = first_tev or self.first_tevs
+
+    local x_diff = self.last_tevs[slot].x - first_tev[slot].x
+    local y_diff = self.last_tevs[slot].y - first_tev[slot].y
     local direction = nil
     local distance = math.sqrt(x_diff*x_diff + y_diff*y_diff)
     if x_diff ~= 0 or y_diff ~= 0 then
         local v_direction = y_diff < 0 and "north" or "south"
         local h_direction = x_diff < 0 and "west" or "east"
-        if math.abs(y_diff) > 0.577*math.abs(x_diff)
-            and math.abs(y_diff) < 1.732*math.abs(x_diff) then
+        if not simple
+           and math.abs(y_diff) > 0.577*math.abs(x_diff)
+           and math.abs(y_diff) < 1.732*math.abs(x_diff)
+        then
             direction = v_direction..h_direction
         elseif (math.abs(x_diff) > math.abs(y_diff)) then
             direction = h_direction
@@ -217,6 +226,7 @@ function GestureDetector:clearState(slot)
     self.detectings[slot] = false
     self.first_tevs[slot] = nil
     self.last_tevs[slot] = nil
+    self.multiswipe_directions = {}
 end
 
 function GestureDetector:clearStates()
@@ -431,6 +441,22 @@ function GestureDetector:handleSwipe(tev)
         y = self.first_tevs[slot].y,
         w = 0, h = 0,
     }
+    local ges = "swipe"
+    local multiswipe_directions
+
+    if #self.multiswipe_directions > 1 then
+        ges = "multiswipe"
+        multiswipe_directions = ""
+        for k, v in pairs(self.multiswipe_directions) do
+            local sep = ""
+            if k > 1 then
+                sep = " "
+            end
+            multiswipe_directions = multiswipe_directions .. sep .. v[1]
+        end
+        logger.dbg("multiswipe", multiswipe_directions)
+    end
+
     -- TODO: dirty hack for some weird devices, replace it with better solution
     if swipe_direction == "west" and DCHANGE_WEST_SWIPE_TO_EAST then
         swipe_direction = "east"
@@ -440,10 +466,11 @@ function GestureDetector:handleSwipe(tev)
     logger.dbg("swipe", swipe_direction, swipe_distance, "detected in slot", slot)
     self:clearState(slot)
     return {
-        ges = "swipe",
+        ges = ges,
         -- use first pan tev coordination as swipe start point
         pos = start_pos,
         direction = swipe_direction,
+        multiswipe_directions = multiswipe_directions,
         distance = swipe_distance,
         time = tev.timev,
     }
@@ -455,6 +482,7 @@ function GestureDetector:handlePan(tev)
         return self:handleTwoFingerPan(tev)
     else
         local pan_direction, pan_distance = self:getPath(slot)
+
         local pan_ev = {
             ges = "pan",
             relative = {
@@ -474,6 +502,41 @@ function GestureDetector:handlePan(tev)
             y = self.last_tevs[slot].y,
             w = 0, h = 0,
         }
+
+        local msd_cnt = #self.multiswipe_directions
+        local msd_direction_prev = (msd_cnt > 0) and self.multiswipe_directions[msd_cnt][1] or ""
+
+        if msd_cnt == 0
+           or pan_direction ~= msd_direction_prev
+        then
+            local prev_ms_ev, fake_first_tev
+
+            if msd_cnt > 0 then
+                prev_ms_ev = self.multiswipe_directions[msd_cnt][2]
+                fake_first_tev = {
+                    [0] = {
+                        ["x"] = prev_ms_ev.pos.x,
+                        ["y"] = prev_ms_ev.pos.y,
+                        ["slot"] = slot,
+                    },
+                }
+            end
+
+            local msd_direction, msd_distance = self:getPath(slot, true, fake_first_tev)
+
+            if msd_distance > self.MULTISWIPE_THRESHOLD
+               and (msd_cnt == 0
+                    or not pan_direction:match(msd_direction_prev))
+            then
+                if msd_direction ~= msd_direction_prev then
+                    self.multiswipe_directions[msd_cnt+1] = {
+                        [1] = msd_direction,
+                        [2] = pan_ev,
+                    }
+                end
+            end
+        end
+
         return pan_ev
     end
 end
