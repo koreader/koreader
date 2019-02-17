@@ -80,12 +80,20 @@ function Device:init()
 end
 
 function Device:initNetworkManager(NetworkMgr)
-    NetworkMgr.turnOnWifi = function()
+    function NetworkMgr:turnOnWifi(complete_callback)
         android.setWifiEnabled(true)
+        if complete_callback then
+            local UIManager = require("ui/uimanager")
+            UIManager:scheduleIn(1, complete_callback)
+        end
     end
 
-    NetworkMgr.turnOffWifi = function()
+    function NetworkMgr:turnOffWifi(complete_callback)
         android.setWifiEnabled(false)
+        if complete_callback then
+            local UIManager = require("ui/uimanager")
+            UIManager:scheduleIn(1, complete_callback)
+        end
     end
     NetworkMgr.isWifiOn = function()
         return android.isWifiEnabled()
