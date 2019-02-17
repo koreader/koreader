@@ -109,6 +109,8 @@ ko_update_check() {
         export CPOINTS="$((BLOCKS / 100))"
         # NOTE: To avoid blowing up when tar truncates itself during an update, copy our GNU tar binary to the system's tmpfs,
         #       and run that one (c.f., #4602)...
+        #       This is most likely a side-effect of the weird fuse overlay being used for /mnt/us (vs. the real vfat on /mnt/base-us),
+        #       which we cannot use because it's been mounted noexec for a few years now...
         cp -pf ./tar /var/tmp/gnutar
         # shellcheck disable=SC2016
         /var/tmp/gnutar --no-same-permissions --no-same-owner --checkpoint="${CPOINTS}" --checkpoint-action=exec='./fbink -q -y -6 -P $(($TAR_CHECKPOINT/$CPOINTS))' -C "/mnt/us" -xf "${NEWUPDATE}"
@@ -121,6 +123,9 @@ ko_update_check() {
             logmsg "Update successful :)"
             eips_print_bottom_centered "Update successful :)" 2
             eips_print_bottom_centered "KOReader will start momentarily . . ." 1
+            # NOTE: Because, yep, that'll probably happen, as there's a high probability sh will throw a bogus syntax error,
+            #       probably for the same fuse-related reasons as tar...
+            eips_print_bottom_centered "If it doesn't, you can safely relaunch it!" 0
         else
             # Huh ho...
             logmsg "Update failed :( (${fail})"
