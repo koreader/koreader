@@ -1,3 +1,5 @@
+local ConfirmBox = require("ui/widget/confirmbox")
+local DataStorage = require("datastorage")
 local Device = require("device")
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -5,15 +7,21 @@ local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local T = require("ffi/util").template
 local _ = require("gettext")
+local util = require("util")
 
 local default_gesture = {
     tap_right_bottom_corner = "nothing",
     tap_left_bottom_corner = Device:hasFrontlight() and "toggle_frontlight" or "nothing",
     short_diagonal_swipe = "full_refresh",
+    multiswipe = "nothing",
 }
 
 local ReaderGesture = InputContainer:new{
+    multiswipes_enabled = G_reader_settings:readSetting("multiswipes_enabled"),
 }
+
+local multiswipes_info_text = _([[
+Multiswipes allow you to perform complex gestures built up out of multiple straight swipes.]])
 
 function ReaderGesture:init()
     if not Device:isTouchDevice() then return end
@@ -43,16 +51,31 @@ function ReaderGesture:addToMainMenu(menu_items)
         text = _("Gesture manager"),
         sub_item_table = {
             {
+                text = _("Enable multiswipes"),
+                checked_func = function() return self.multiswipes_enabled end,
+                callback = function()
+                    G_reader_settings:saveSetting("multiswipes_enabled", not self.multiswipes_enabled)
+                    self.multiswipes_enabled = G_reader_settings:isTrue("multiswipes_enabled")
+                end,
+                help_text = multiswipes_info_text,
+            },
+            {
+                text = _("Multiswipe"),
+                sub_item_table = self:buildMultiswipeMenu(),
+                enabled_func = function() return self.multiswipes_enabled end,
+                separator = true,
+            },
+            {
                 text = _("Tap bottom left corner"),
-                sub_item_table = self:buildMenu("tap_left_bottom_corner", default_gesture["tap_left_bottom_corner"])
+                sub_item_table = self:buildMenu("tap_left_bottom_corner", default_gesture["tap_left_bottom_corner"]),
             },
             {
                 text = _("Tap bottom right corner"),
-                sub_item_table = self:buildMenu("tap_right_bottom_corner", default_gesture["tap_right_bottom_corner"])
+                sub_item_table = self:buildMenu("tap_right_bottom_corner", default_gesture["tap_right_bottom_corner"]),
             },
             {
                 text = _("Short diagonal swipe"),
-                sub_item_table = self:buildMenu("short_diagonal_swipe", default_gesture["short_diagonal_swipe"])
+                sub_item_table = self:buildMenu("short_diagonal_swipe", default_gesture["short_diagonal_swipe"]),
             },
         },
     }
@@ -101,6 +124,39 @@ function ReaderGesture:buildMenu(ges, default)
     return return_menu
 end
 
+local multiswipes = {
+    "west east",
+    "east west",
+    "north south",
+    "south north",
+    "south west",
+    "south east",
+    "east south",
+    "west south",
+}
+local custom_multiswipes_path = DataStorage:getSettingsDir().."/multiswipes"
+if util.pathExists(custom_multiswipes_path..".lua") then
+    for k, v in pairs(require(custom_multiswipes_path)) do
+        table.insert(multiswipes, v)
+    end
+end
+
+function ReaderGesture:buildMultiswipeMenu()
+    local menu = {}
+
+    for i=1, #multiswipes do
+        local multiswipe = multiswipes[i]
+        local friendly_multiswipe_name = self:friendlyMultiswipeName(multiswipe)
+        local safe_multiswipe_name = self:safeMultiswipeName(multiswipe)
+        table.insert(menu, {
+            text = friendly_multiswipe_name,
+            sub_item_table = self:buildMenu("multiswipe_"..safe_multiswipe_name, default_gesture["nothing"]),
+        })
+    end
+
+    return menu
+end
+
 function ReaderGesture:createSubMenu(text, action, ges, separator)
     local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
     return {
@@ -117,12 +173,41 @@ function ReaderGesture:createSubMenu(text, action, ges, separator)
     }
 end
 
+local multiswipe_to_arrow = {
+    east = "↦",
+    west = "↤",
+    north = "↥",
+    south = "↧",
+}
+function ReaderGesture:friendlyMultiswipeName(multiswipe)
+    for k, v in pairs(multiswipe_to_arrow) do
+        multiswipe = multiswipe:gsub(k, v)
+    end
+    return multiswipe
+end
+
+function ReaderGesture:safeMultiswipeName(multiswipe)
+    return multiswipe:gsub(" ", "_")
+end
+
 function ReaderGesture:setupGesture(ges, action)
     local ges_type
     local zone
     local overrides
     local direction, distance
-    if ges == "tap_right_bottom_corner" then
+    if ges == "multiswipe" then
+        ges_type = "multiswipe"
+        zone = {
+            ratio_x = 0.0, ratio_y = 0,
+            ratio_w = 1, ratio_h = 1,
+        }
+        direction = {
+            northeast = true, northwest = true,
+            southeast = true, southwest = true,
+            east = true, west = true,
+            north = true, south = true,
+        }
+    elseif ges == "tap_right_bottom_corner" then
         ges_type = "tap"
         zone = {
             ratio_x = 0.9, ratio_y = 0.9,
@@ -172,6 +257,27 @@ function ReaderGesture:registerGesture(ges, action, ges_type, zone, overrides, d
             handler = function(gest)
                 if distance == "short" and gest.distance > Screen:scaleBySize(300) then return end
                 if direction and not direction[gest.direction] then return end
+
+                if ges == "multiswipe" then
+                    if self.multiswipes_enabled == nil then
+                        UIManager:show(ConfirmBox:new{
+                            text = _("You have just performed a multiswipe gesture for the first time.") .."\n\n".. multiswipes_info_text,
+                            ok_text = _("Enable"),
+                            ok_callback = function()
+                                G_reader_settings:saveSetting("multiswipes_enabled", true)
+                                self.multiswipes_enabled = true
+                            end,
+                            cancel_text = _("Disable"),
+                            cancel_callback = function()
+                                G_reader_settings:saveSetting("multiswipes_enabled", false)
+                                self.multiswipes_enabled = false
+                            end,
+                        })
+                    else
+                        return self:multiswipeAction(gest.multiswipe_directions)
+                    end
+                end
+
                 return self:gestureAction(action)
             end,
             overrides = overrides,
@@ -228,6 +334,16 @@ function ReaderGesture:gestureAction(action)
         UIManager:suspend()
     end
     return true
+end
+
+function ReaderGesture:multiswipeAction(multiswipe_directions)
+    local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
+    local multiswipe_gesture_name = "multiswipe_"..self:safeMultiswipeName(multiswipe_directions)
+    for gesture, action in pairs(gesture_manager) do
+        if gesture == multiswipe_gesture_name then
+            return self:gestureAction(action)
+        end
+    end
 end
 
 function ReaderGesture:pageUpdate(page)
