@@ -258,46 +258,44 @@ function ReaderHighlight:updateHighlight(page, index, side, direction, move_by_c
     local highlight_beginning = highlight.pos0
     local highlight_end = highlight.pos1
     if side == 0 then -- we move pos0
+        local updated_highlight_beginning
         if direction == 1 then -- move highlight to the right
-            local updated_highlight_beginning
             if move_by_char then
                 updated_highlight_beginning = self.ui.document:getNextVisibleChar(highlight_beginning)
             else
                 updated_highlight_beginning = self.ui.document:getNextVisibleWordStart(highlight_beginning)
             end
-            if updated_highlight_beginning then -- in theory crengine could return nil
-                self.view.highlight.saved[page][index].pos0 = updated_highlight_beginning
-            end
          else -- move highlight to the left
-            local updated_highlight_beginning
             if move_by_char then
                 updated_highlight_beginning = self.ui.document:getPrevVisibleChar(highlight_beginning)
             else
                 updated_highlight_beginning = self.ui.document:getPrevVisibleWordStart(highlight_beginning)
             end
-            if updated_highlight_beginning then
+        end
+        if updated_highlight_beginning then
+            local order = self.ui.document:compareXPointers(updated_highlight_beginning, highlight_end)
+            if order and order > 0 then -- only if beginning did not go past end
                 self.view.highlight.saved[page][index].pos0 = updated_highlight_beginning
             end
         end
     else -- we move pos1
+        local updated_highlight_end
         if direction == 1 then -- move highlight to the right
-            local updated_highlight_end
             if move_by_char then
                 updated_highlight_end = self.ui.document:getNextVisibleChar(highlight_end)
             else
                 updated_highlight_end = self.ui.document:getNextVisibleWordEnd(highlight_end)
             end
-            if updated_highlight_end then
-                self.view.highlight.saved[page][index].pos1 = updated_highlight_end
-            end
         else -- move highlight to the left
-            local updated_highlight_end
             if move_by_char then
                 updated_highlight_end = self.ui.document:getPrevVisibleChar(highlight_end)
             else
                 updated_highlight_end = self.ui.document:getPrevVisibleWordEnd(highlight_end)
             end
-            if updated_highlight_end then
+        end
+        if updated_highlight_end then
+            local order = self.ui.document:compareXPointers(highlight_beginning, updated_highlight_end)
+            if order and order > 0 then -- only if end did not go back past beginning
                 self.view.highlight.saved[page][index].pos1 = updated_highlight_end
             end
         end
