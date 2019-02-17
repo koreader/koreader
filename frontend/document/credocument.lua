@@ -306,6 +306,11 @@ function CreDocument:getScreenBoxesFromPositions(pos0, pos1, get_segments)
     return line_boxes
 end
 
+function CreDocument:compareXPointers(xp1, xp2)
+    -- Returns 1 if XPointers are ordered (if xp2 is after xp1), -1 if not, 0 if same
+    return self._document:compareXPointers(xp1, xp2)
+end
+
 function CreDocument:getNextVisibleWordStart(xp)
     return self._document:getNextVisibleWordStart(xp)
 end
