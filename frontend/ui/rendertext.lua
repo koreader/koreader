@@ -6,10 +6,10 @@ local Font = require("ui/font")
 local Cache = require("cache")
 local CacheItem = require("cacheitem")
 local BlitBuffer = require("ffi/blitbuffer")
+local Device = require("device")
 local logger = require("logger")
 
-local CanvasContext = require("document/canvascontext")
-if CanvasContext.should_restrict_JIT then
+if Device.should_restrict_JIT then
     require("jit").off(true, true)
 end
 
