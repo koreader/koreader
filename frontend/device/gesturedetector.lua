@@ -514,7 +514,7 @@ function GestureDetector:handlePan(tev)
             if msd_cnt > 0 then
                 prev_ms_ev = self.multiswipe_directions[msd_cnt][2]
                 fake_first_tev = {
-                    [0] = {
+                    [slot] = {
                         ["x"] = prev_ms_ev.pos.x,
                         ["y"] = prev_ms_ev.pos.y,
                         ["slot"] = slot,
