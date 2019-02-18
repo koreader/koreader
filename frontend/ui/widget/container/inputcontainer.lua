@@ -30,11 +30,11 @@ local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local Device = require("device")
+local Screen = Device.screen
 local _ = require("gettext")
-local Screen = require("device").screen
 
-local CanvasContext = require("document/canvascontext")
-if CanvasContext.should_restrict_JIT then
+if Device.should_restrict_JIT then
     require("jit").off(true, true)
 end
 
