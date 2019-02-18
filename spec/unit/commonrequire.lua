@@ -18,8 +18,8 @@ einkfb.dummy = true --luacheck: ignore
 
 local Device = require("device")
 
-local Runtimectl = require("runtimectl")
-Runtimectl:init(Device)
+local CanvasContext = require("document/canvascontext")
+CanvasContext:init(Device)
 
 -- init output device
 local Screen = Device.screen

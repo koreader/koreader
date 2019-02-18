@@ -34,20 +34,18 @@ if lang_locale then
     _.changeLang(lang_locale)
 end
 
--- setup various runtime control
-local Runtimectl = require("runtimectl")
 local Device = require("device")
-Runtimectl:init(Device)
-
-if G_reader_settings:has("color_rendering") then
-    Runtimectl:setColorRenderingEnabled(G_reader_settings:isTrue("color_rendering"))
-else
-    Runtimectl:setColorRenderingEnabled(Device.screen.isColorScreen())
-end
-
 local dpi_override = G_reader_settings:readSetting("screen_dpi")
 if dpi_override ~= nil then
     Device.screen:setDPI(dpi_override)
+end
+
+local CanvasContext = require("document/canvascontext")
+CanvasContext:init(Device)
+if G_reader_settings:has("color_rendering") then
+    CanvasContext:setColorRenderingEnabled(G_reader_settings:isTrue("color_rendering"))
+else
+    CanvasContext:setColorRenderingEnabled(Device.screen.isColorScreen())
 end
 
 -- option parsing:

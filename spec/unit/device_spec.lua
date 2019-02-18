@@ -20,7 +20,7 @@ describe("device module", function()
         }
         require("commonrequire")
         package.unloadAll()
-        require("runtimectl"):init(require("device"))
+        require("document/canvascontext"):init(require("device"))
     end)
 
     before_each(function()

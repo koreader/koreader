@@ -9,7 +9,7 @@ local TileCacheItem = require("document/tilecacheitem")
 local logger = require("logger")
 local serial = require("serialize")
 local util = require("ffi/util")
-local Runtimectl = require("runtimectl")
+local CanvasContext = require("document/canvascontext")
 
 local KoptInterface = {
     ocrengine = "ocrengine",
@@ -88,7 +88,7 @@ function KoptInterface:createContext(doc, pageno, bbox)
     -- Now koptcontext keeps track of its dst bitmap reflowed by libk2pdfopt.
     -- So there is no need to check background context when creating new context.
     local kc = KOPTContext.new()
-    local screen_size = Runtimectl:getRenderSize()
+    local canvas_size = CanvasContext:getSize()
     local lang = doc.configurable.doc_language
     if lang == "chi_sim" or lang == "chi_tra" or
         lang == "jpn" or lang == "kor" then
@@ -99,8 +99,8 @@ function KoptInterface:createContext(doc, pageno, bbox)
     kc:setWrap(doc.configurable.text_wrap)
     kc:setIndent(doc.configurable.detect_indent)
     kc:setColumns(doc.configurable.max_columns)
-    kc:setDeviceDim(screen_size.w, screen_size.h)
-    kc:setDeviceDPI(Runtimectl:getRenderDPI())
+    kc:setDeviceDim(canvas_size.w, canvas_size.h)
+    kc:setDeviceDPI(CanvasContext:getDPI())
     kc:setStraighten(doc.configurable.auto_straighten)
     kc:setJustification(doc.configurable.justification)
     kc:setWritingDirection(doc.configurable.writing_direction)
@@ -124,11 +124,11 @@ function KoptInterface:createContext(doc, pageno, bbox)
 end
 
 function KoptInterface:getContextHash(doc, pageno, bbox)
-    local screen_size = Runtimectl:getRenderSize()
-    local screen_size_hash = screen_size.w.."|"..screen_size.h
+    local canvas_size = CanvasContext:getSize()
+    local canvas_size_hash = canvas_size.w.."|"..canvas_size.h
     local bbox_hash = bbox.x0.."|"..bbox.y0.."|"..bbox.x1.."|"..bbox.y1
     return doc.file.."|"..doc.mod_time.."|"..pageno.."|"
-            ..doc.configurable:hash("|").."|"..bbox_hash.."|"..screen_size_hash
+            ..doc.configurable:hash("|").."|"..bbox_hash.."|"..canvas_size_hash
 end
 
 function KoptInterface:getPageBBox(doc, pageno)
@@ -276,8 +276,8 @@ get first page image
 --]]
 function KoptInterface:getCoverPageImage(doc)
     local native_size = Document.getNativePageDimensions(doc, 1)
-    local screen_size = Runtimectl:getRenderSize()
-    local zoom = math.min(screen_size.w / native_size.w, screen_size.h / native_size.h)
+    local canvas_size = CanvasContext:getSize()
+    local zoom = math.min(canvas_size.w / native_size.w, canvas_size.h / native_size.h)
     local tile = Document.renderPage(doc, 1, nil, zoom, 0, 1, 0)
     if tile then
         return tile.bb:copy()
@@ -571,9 +571,8 @@ function KoptInterface:getPageBlock(doc, pageno, x, y)
             y1 = page_size.h,
         }
         local kc = self:createContext(doc, pageno, full_page_bbox)
-        local screen_size = Runtimectl:getRenderSize()
         -- leptonica needs a source image of at least 300dpi
-        kc:setZoom(screen_size.w / page_size.w * 300 / Runtimectl:getRenderDPI())
+        kc:setZoom(CanvasContext:getWidth() / page_size.w * 300 / CanvasContext:getDPI())
         local page = doc._document:openPage(pageno)
         page:getPagePix(kc)
         kc:findPageBlocks()
@@ -938,8 +937,8 @@ function KoptInterface:getLinkFromPosition(doc, pageno, pos)
             pos = self:reflowToNativePosTransform(doc, pageno, pos, {x=0.5, y=0.5})
         end
 
-        local offset = Runtimectl:scaleByRenderSize(5)
-        local len = Runtimectl:scaleByRenderSize(10)
+        local offset = CanvasContext:scaleBySize(5)
+        local len = CanvasContext:scaleBySize(10)
         for i = 1, #page_links do
             local link = page_links[i]
             -- enlarge tappable link box

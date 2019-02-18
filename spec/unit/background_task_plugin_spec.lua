@@ -15,7 +15,7 @@ describe("BackgroundTaskPlugin", function()
     teardown(function()
         MockTime:uninstall()
         package.unloadAll()
-        require("runtimectl"):init(require("device"))
+        require("document/canvascontext"):init(require("device"))
         stopBackgroundRunner()
     end)
 

@@ -9,6 +9,7 @@ local Device = {
     charging_mode = false,
     survive_screen_saver = false,
     is_cover_closed = false,
+    should_restrict_JIT = false,
     model = nil,
     powerd = nil,
     screen = nil,

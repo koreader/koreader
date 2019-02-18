@@ -3,7 +3,7 @@ local Cache = require("cache")
 local CacheItem = require("cacheitem")
 local Configurable = require("configurable")
 local DrawContext = require("ffi/drawcontext")
-local Runtimectl = require("runtimectl")
+local CanvasContext = require("document/canvascontext")
 local Geom = require("ui/geometry")
 local Math = require("optmath")
 local TileCacheItem = require("document/tilecacheitem")
@@ -291,7 +291,7 @@ function Document:findText()
 end
 
 function Document:updateColorRendering()
-    if self.is_color_capable and Runtimectl.is_color_rendering_enabled then
+    if self.is_color_capable and CanvasContext.is_color_rendering_enabled then
         self.render_color = true
     else
         self.render_color = false

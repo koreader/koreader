@@ -7,8 +7,8 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local md5 = require("ffi/MD5")
 
-local runtimectl = require("runtimectl")
-if runtimectl.should_restrict_JIT then
+local CanvasContext = require("document/canvascontext")
+if CanvasContext.should_restrict_JIT then
     require("jit").off(true, true)
 end
 
