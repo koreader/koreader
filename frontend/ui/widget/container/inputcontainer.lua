@@ -33,8 +33,8 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local Screen = require("device").screen
 
-local runtimectl = require("runtimectl")
-if runtimectl.should_restrict_JIT then
+local CanvasContext = require("document/canvascontext")
+if CanvasContext.should_restrict_JIT then
     require("jit").off(true, true)
 end
 

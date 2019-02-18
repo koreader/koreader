@@ -7,7 +7,7 @@ local util = require("util")
 local ffi = require("ffi")
 local C = ffi.C
 local pdf = nil
-local Runtimectl = require("runtimectl")
+local CanvasContext = require("document/canvascontext")
 
 
 local PdfDocument = Document:new{
@@ -37,8 +37,10 @@ function PdfDocument:init()
         error(self._document)  -- will contain error message
     end
     -- no-op on PDF
-    self._document:layoutDocument(Runtimectl:getRenderWidth(), Runtimectl:getRenderHeight(),
-                                  Runtimectl:scaleByRenderSize(self.epub_font_size))
+    self._document:layoutDocument(
+        CanvasContext:getWidth(),
+        CanvasContext:getHeight(),
+        CanvasContext:scaleBySize(self.epub_font_size))
     self.is_open = true
     self.info.has_pages = true
     self.info.configurable = true

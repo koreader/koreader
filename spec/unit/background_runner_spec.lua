@@ -4,7 +4,7 @@ describe("BackgroundRunner widget tests", function()
     setup(function()
         require("commonrequire")
         package.unloadAll()
-        require("runtimectl"):init(require("device"))
+        require("document/canvascontext"):init(require("device"))
         -- Device needs to be loaded before UIManager.
         Device = require("device")
         Device.input.waitEvent = function() end
@@ -19,7 +19,7 @@ describe("BackgroundRunner widget tests", function()
     teardown(function()
         MockTime:uninstall()
         package.unloadAll()
-        require("runtimectl"):init(require("device"))
+        require("document/canvascontext"):init(require("device"))
         stopBackgroundRunner()
     end)
 

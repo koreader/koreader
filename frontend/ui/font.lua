@@ -5,7 +5,7 @@ Font module.
 local Freetype = require("ffi/freetype")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local Runtimectl = require("runtimectl")
+local CanvasContext = require("document/canvascontext")
 
 local Font = {
     fontmap = {
@@ -98,7 +98,7 @@ function Font:getFace(font, size)
     if not size then size = self.sizemap[font] end
     -- original size before scaling by screen DPI
     local orig_size = size
-    size = Runtimectl:scaleByRenderSize(size)
+    size = CanvasContext:scaleBySize(size)
 
     local hash = font..size
     local face_obj = self.faces[hash]
@@ -188,7 +188,7 @@ local kindle_fonts_blacklist = {
 
 local function isInFontsBlacklist(f)
     -- write test for this
-    return Runtimectl.isKindle() and kindle_fonts_blacklist[f]
+    return CanvasContext.isKindle() and kindle_fonts_blacklist[f]
 end
 
 function Font:_readList(target, dir)
@@ -212,11 +212,19 @@ function Font:_readList(target, dir)
     end
 end
 
+local function getExternalFontDir()
+    if CanvasContext.isAndroid() then
+        return ANDROID_FONT_DIR
+    else
+        return os.getenv("EXT_FONT_DIR")
+    end
+end
+
 function Font:getFontList()
     local fontlist = {}
     self:_readList(fontlist, self.fontdir)
     -- multiple paths should be joined with semicolon
-    for dir in string.gmatch(Runtimectl:getExternalFontDir() or "", "([^;]+)") do
+    for dir in string.gmatch(getExternalFontDir() or "", "([^;]+)") do
         self:_readList(fontlist, dir)
     end
     table.sort(fontlist)
