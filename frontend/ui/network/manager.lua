@@ -142,7 +142,17 @@ function NetworkMgr:getWifiMenuTable()
                 if wifi_status then
                     UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
                 else
-                    UIManager:broadcastEvent(Event:new("NetworkConnected"))
+                    -- Check that the connection attempt was actually successful...
+                    local NetworkMgr = require("ui/network/manager")
+                    if NetworkMgr:isWifiOn() and NetworkMgr:isConnected() then
+                        UIManager:broadcastEvent(Event:new("NetworkConnected"))
+                    elseif NetworkMgr:isWifiOn() and not NetworkMgr:isConnected() then
+                        -- Don't leave WiFi in an inconsistent state if the connection failed (i.e., unload modules on Kobo).
+                        self.wifi_was_on = false
+                        G_reader_settings:saveSetting("wifi_was_on", false)
+                        NetworkMgr:turnOffWifi()
+                        touchmenu_instance:updateItems()
+                    end
                 end
             end
             if wifi_status then
