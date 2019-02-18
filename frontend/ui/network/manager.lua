@@ -143,7 +143,6 @@ function NetworkMgr:getWifiMenuTable()
                     UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
                 else
                     -- Check that the connection attempt was actually successful...
-                    local NetworkMgr = require("ui/network/manager")
                     if NetworkMgr:isWifiOn() and NetworkMgr:isConnected() then
                         UIManager:broadcastEvent(Event:new("NetworkConnected"))
                     elseif NetworkMgr:isWifiOn() and not NetworkMgr:isConnected() then
@@ -158,7 +157,6 @@ function NetworkMgr:getWifiMenuTable()
                         --       Kobo: Yes please.
                         --       Cervantes: Loads/unloads module, probably could use it like Kobo.
                         --       Kindle: Probably could use it, if only because leaving Wireless on is generally a terrible idea on Kindle.
-                        local Device = require("device")
                         if Device:isKobo() or Device:isCervantes() or Device:isKindle() then
                             NetworkMgr:turnOffWifi()
                         end
