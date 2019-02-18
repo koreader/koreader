@@ -7,11 +7,11 @@ local _ = require("gettext")
 return {
     text = _("Color rendering"),
     enabled_func = Screen.isColorScreen,
-    checked_func = function() return Runtimectl.is_color_rendering_enabled end,
+    checked_func = Screen.isColorEnabled,
     callback = function()
-        Runtimectl:setColorRenderingEnabled(not Runtimectl.is_color_rendering_enabled)
-        G_reader_settings:saveSetting(
-            "color_rendering", Runtimectl.is_color_rendering_enabled)
+        local new_val = Screen.isColorEnabled()
+        Runtimectl:setColorRenderingEnabled(new_val)
+        G_reader_settings:saveSetting("color_rendering", new_val)
         UIManager:broadcastEvent(Event:new("ColorRenderingUpdate"))
     end
 }

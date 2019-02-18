@@ -99,6 +99,13 @@ function Device:init()
     end
 
     self.screen.isColorScreen = self.hasColorScreen
+    self.screen.isColorEnabled = function()
+        if G_reader_settings:has("color_rendering") then
+            return G_reader_settings:isTrue("color_rendering")
+        else
+            return self.screen.isColorScreen()
+        end
+    end
 
     self.screen.isBGRFrameBuffer = self.hasBGRFrameBuffer
 
