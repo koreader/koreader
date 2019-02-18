@@ -8,10 +8,10 @@ local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Mupdf = require("ffi/mupdf")
+local Screen = Device.screen
 local TimeVal = require("ui/timeval")
 local logger = require("logger")
 local util  = require("util")
-local Runtimectl = require("runtimectl")
 
 local HtmlBoxWidget = InputContainer:new{
     bb = nil,
@@ -83,7 +83,7 @@ function HtmlBoxWidget:_render()
     -- In pdfdocument.lua, color is activated only at the moment of
     -- rendering and then immediately disabled, for safety with kopt.
     -- We do the same here.
-    Mupdf.color = Runtimectl.is_color_rendering_enabled
+    Mupdf.color = Screen:isColorEnabled()
 
     local page = self.document:openPage(self.page_number)
     local dc = DrawContext.new()
