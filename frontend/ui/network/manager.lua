@@ -150,7 +150,18 @@ function NetworkMgr:getWifiMenuTable()
                         -- Don't leave WiFi in an inconsistent state if the connection failed (i.e., unload modules on Kobo).
                         self.wifi_was_on = false
                         G_reader_settings:saveSetting("wifi_was_on", false)
-                        NetworkMgr:turnOffWifi()
+                        -- NOTE: Limit that to only a few platforms, as it might be overkill on some devices.
+                        --       The intent being to unload kernel modules, and make a subsequent turnOnWifi behave sanely.
+                        --       PB: netagent, no idea what it does, but it's not using this codepath anyway (!hasWifiToggle)
+                        --       Android: definitely shouldn't do it.
+                        --       Sony: Doesn't play with modules, don't do it
+                        --       Kobo: Yes please.
+                        --       Cervantes: Loads/unloads module, probably could use it like Kobo.
+                        --       Kindle: Probably could use it, if only because leaving Wireless on is generally a terrible idea on Kindle.
+                        local Device = require("device")
+                        if Device:isKobo() or Device:isCervantes() or Device:isKindle() then
+                            NetworkMgr:turnOffWifi()
+                        end
                         touchmenu_instance:updateItems()
                     end
                 end
