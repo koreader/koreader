@@ -153,10 +153,10 @@ function ReaderGesture:buildMultiswipeMenu()
         local multiswipe = multiswipes[i]
         local friendly_multiswipe_name = self:friendlyMultiswipeName(multiswipe)
         local safe_multiswipe_name = "multiswipe_"..self:safeMultiswipeName(multiswipe)
-        local default_gesture = default_gesture[safe_multiswipe_name] and default_gesture[safe_multiswipe_name] or "nothing"
+        local default_action = default_gesture[safe_multiswipe_name] and default_gesture[safe_multiswipe_name] or "nothing"
         table.insert(menu, {
             text = friendly_multiswipe_name,
-            sub_item_table = self:buildMenu(safe_multiswipe_name, default_gesture),
+            sub_item_table = self:buildMenu(safe_multiswipe_name, default_action),
         })
     end
 
