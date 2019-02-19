@@ -10,42 +10,41 @@ describe("gesturedetector module", function()
             local ges = {
                 ges = ges_type,
                 direction = direction,
+                multiswipe_directions = direction,
             }
             GestureDetector.screen = {}
             GestureDetector.screen.cur_rotation_mode = rotation_mode
+
             return GestureDetector:adjustGesCoordinate(ges).direction
         end
-        it("should not translate rotation 0", function()
-            assert.is_equal("north", adjustTest("swipe", "north", 0))
 
-            --ges.ges = ""
+        it("should not translate rotation 0", function()
+            assert.are.equal("north", adjustTest("swipe", "north", 0))
+            assert.are.equal("north", adjustTest("multiswipe", "north", 0))
+            assert.are.equal("north", adjustTest("pan", "north", 0))
+            assert.are.equal("north", adjustTest("two_finger_swipe", "north", 0))
+            assert.are.equal("north", adjustTest("two_finger_pan", "north", 0))
         end)
         it("should translate rotation 90", function()
-            local ges = {
-                ges = "swipe",
-                direction = "north",
-            }
-            GestureDetector.screen = {}
-            GestureDetector.screen.cur_rotation_mode = 3
-            assert.is_equal("west", GestureDetector:adjustGesCoordinate(ges).direction)
+            assert.are.equal("west", adjustTest("swipe", "north", 3))
+            assert.are.equal("west", adjustTest("multiswipe", "north", 3))
+            assert.are.equal("west", adjustTest("pan", "north", 3))
+            assert.are.equal("west", adjustTest("two_finger_swipe", "north", 3))
+            assert.are.equal("west", adjustTest("two_finger_pan", "north", 3))
         end)
         it("should translate rotation 180", function()
-            local ges = {
-                ges = "swipe",
-                direction = "north",
-            }
-            GestureDetector.screen = {}
-            GestureDetector.screen.cur_rotation_mode = 2
-            assert.is_equal("south", GestureDetector:adjustGesCoordinate(ges).direction)
+            assert.are.equal("south", adjustTest("swipe", "north", 2))
+            assert.are.equal("south", adjustTest("multiswipe", "north", 2))
+            assert.are.equal("south", adjustTest("pan", "north", 2))
+            assert.are.equal("south", adjustTest("two_finger_swipe", "north", 2))
+            assert.are.equal("south", adjustTest("two_finger_pan", "north", 2))
         end)
         it("should translate rotation 270", function()
-            local ges = {
-                ges = "swipe",
-                direction = "north",
-            }
-            GestureDetector.screen = {}
-            GestureDetector.screen.cur_rotation_mode = 1
-            assert.is_equal("east", GestureDetector:adjustGesCoordinate(ges).direction)
+            assert.are.equal("east", adjustTest("swipe", "north", 1))
+            assert.are.equal("east", adjustTest("multiswipe", "north", 1))
+            assert.are.equal("east", adjustTest("pan", "north", 1))
+            assert.are.equal("east", adjustTest("two_finger_swipe", "north", 1))
+            assert.are.equal("east", adjustTest("two_finger_pan", "north", 1))
         end)
     end)
 end)
