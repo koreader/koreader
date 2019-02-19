@@ -408,7 +408,7 @@ function Screensaver:close()
     elseif screensaver_delay == "disable" or screensaver_delay == nil then
         logger.dbg("close screensaver")
         if self.left_msg then
-            UIManager:close(self.left_msg)
+            UIManager:close(self.left_msg, "full")
             self.left_msg = nil
         end
     else
