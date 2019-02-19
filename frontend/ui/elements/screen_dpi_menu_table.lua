@@ -2,7 +2,7 @@ local _ = require("gettext")
 local Screen = require("device").screen
 local T = require("ffi/util").template
 
-local function dpi() return G_reader_settings:readSetting("screen_dpi") end
+local function dpi() return Screen:getDPI() end
 
 local function custom() return G_reader_settings:readSetting("custom_screen_dpi") end
 
