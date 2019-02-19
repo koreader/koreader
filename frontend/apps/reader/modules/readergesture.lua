@@ -13,7 +13,7 @@ local default_gesture = {
     tap_right_bottom_corner = "nothing",
     tap_left_bottom_corner = Device:hasFrontlight() and "toggle_frontlight" or "nothing",
     short_diagonal_swipe = "full_refresh",
-    multiswipe = "nothing",
+    multiswipe_west_south = "previous_location",
 }
 
 local ReaderGesture = InputContainer:new{
@@ -108,6 +108,11 @@ function ReaderGesture:buildMenu(ges, default)
         if entry[2] == default then
             local menu_entry_default = T(_("%1 (default)"), entry[1])
             table.insert(return_menu, self:createSubMenu(menu_entry_default, entry[2], ges, true))
+
+            if not gesture_manager[ges] then
+                gesture_manager[ges] = default
+                G_reader_settings:saveSetting(self.ges_mode, gesture_manager)
+            end
             break
         end
     end
@@ -147,10 +152,11 @@ function ReaderGesture:buildMultiswipeMenu()
     for i=1, #multiswipes do
         local multiswipe = multiswipes[i]
         local friendly_multiswipe_name = self:friendlyMultiswipeName(multiswipe)
-        local safe_multiswipe_name = self:safeMultiswipeName(multiswipe)
+        local safe_multiswipe_name = "multiswipe_"..self:safeMultiswipeName(multiswipe)
+        local default_gesture = default_gesture[safe_multiswipe_name] and default_gesture[safe_multiswipe_name] or "nothing"
         table.insert(menu, {
             text = friendly_multiswipe_name,
-            sub_item_table = self:buildMenu("multiswipe_"..safe_multiswipe_name, default_gesture["nothing"]),
+            sub_item_table = self:buildMenu(safe_multiswipe_name, default_gesture),
         })
     end
 
