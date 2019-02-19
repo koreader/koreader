@@ -8,7 +8,6 @@ local UIManager = require("ui/uimanager")
 local Version = require("version")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
@@ -170,8 +169,8 @@ function OTAManager:checkUpdate()
             for line in update_info:lines() do
                 i = i + 1
                 if i == 1 then
-                    link = self:getOTAServer() .. line
-                    dummy, ota_package = util.splitFilePathName(line)
+                    ota_package = line
+                    link = self:getOTAServer() .. ota_package
                 end
             end
         else
