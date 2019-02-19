@@ -156,8 +156,10 @@ function NetworkMgr:getWifiMenuTable()
                         --       Sony: Doesn't play with modules, don't do it
                         --       Kobo: Yes please.
                         --       Cervantes: Loads/unloads module, probably could use it like Kobo.
-                        --       Kindle: Probably could use it, if only because leaving Wireless on is generally a terrible idea on Kindle.
-                        if Device:isKobo() or Device:isCervantes() or Device:isKindle() then
+                        --       Kindle: Probably could use it, if only because leaving Wireless on is generally a terrible idea on Kindle,
+                        --               except that we defer to lipc, and the callback is simply delayed by 1s,
+                        --               we can't be sure the system will actually have finished bringing WiFi up by then...
+                        if Device:isKobo() or Device:isCervantes() then
                             NetworkMgr:turnOffWifi()
                         end
                         touchmenu_instance:updateItems()
