@@ -6,16 +6,19 @@ describe("gesturedetector module", function()
     end)
 
     describe("adjustGesCoordinate", function()
-        it("should not translate rotation 0", function()
+        local function adjustTest(ges_type, direction, rotation_mode)
             local ges = {
-                ges = "swipe",
-                direction = "north",
+                ges = ges_type,
+                direction = direction,
             }
             GestureDetector.screen = {}
-            GestureDetector.screen.cur_rotation_mode = 0
-            assert.is_equal("north", GestureDetector:adjustGesCoordinate(ges).direction)
+            GestureDetector.screen.cur_rotation_mode = rotation_mode
+            return GestureDetector:adjustGesCoordinate(ges).direction
+        end
+        it("should not translate rotation 0", function()
+            assert.is_equal("north", adjustTest("swipe", "north", 0))
 
-            ges.ges = ""
+            --ges.ges = ""
         end)
         it("should translate rotation 90", function()
             local ges = {
