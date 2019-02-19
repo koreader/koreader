@@ -21,6 +21,7 @@ local Device = Generic:new{
 
 local AppImage = Device:new{
     model = "AppImage",
+    hasOTAUpdates = yes,
 }
 
 local Emulator = Device:new{
