@@ -161,11 +161,11 @@ function Device:onPowerEvent(ev)
                     network_manager:restoreWifiAsync()
                 end
                 self:resume()
-                require("ui/screensaver"):close()
                 -- restore to previous rotation mode, if need be.
                 if self.orig_rotation_mode then
                     self.screen:setRotationMode(self.orig_rotation_mode)
                 end
+                require("ui/screensaver"):close()
                 if self:needsScreenRefreshAfterResume() then
                     UIManager:scheduleIn(1, function() self.screen:refreshFull() end)
                 end
