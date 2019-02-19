@@ -340,19 +340,19 @@ function ReaderGesture:gestureAction(action)
     elseif action == "suspend" then
         UIManager:suspend()
     elseif action == "zoom_contentwidth" then
-        self.ui.zooming:setZoomMode("contentwidth")
+        self.ui:handleEvent(Event:new("SetZoomMode", "contentwidth"))
     elseif action == "zoom_contentheight" then
-        self.ui.zooming:setZoomMode("contentheight")
+        self.ui:handleEvent(Event:new("SetZoomMode", "contentheight"))
     elseif action == "zoom_pagewidth" then
-        self.ui.zooming:setZoomMode("pagewidth")
+        self.ui:handleEvent(Event:new("SetZoomMode", "pagewidth"))
     elseif action == "zoom_pageheight" then
-        self.ui.zooming:setZoomMode("pageheight")
+        self.ui:handleEvent(Event:new("SetZoomMode", "pageheight"))
     elseif action == "zoom_column" then
-        self.ui.zooming:setZoomMode("column")
+        self.ui:handleEvent(Event:new("SetZoomMode", "column"))
     elseif action == "zoom_content" then
-        self.ui.zooming:setZoomMode("content")
+        self.ui:handleEvent(Event:new("SetZoomMode", "content"))
     elseif action == "zoom_page" then
-        self.ui.zooming:setZoomMode("page")
+        self.ui:handleEvent(Event:new("SetZoomMode", "page"))
     end
     return true
 end

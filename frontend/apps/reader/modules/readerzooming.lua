@@ -197,6 +197,7 @@ function ReaderZooming:onSetZoomMode(new_mode)
         self.ui:handleEvent(Event:new("ZoomModeUpdate", new_mode))
         self.zoom_mode = new_mode
         self:setZoom()
+        self.ui:handleEvent(Event:new("InitScrollPageStates", new_mode))
     end
 end
 
