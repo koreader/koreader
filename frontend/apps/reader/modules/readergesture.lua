@@ -101,6 +101,13 @@ function ReaderGesture:buildMenu(ges, default)
         {_("Toggle frontlight"), "toggle_frontlight", Device:hasFrontlight()},
         {_("Toggle accelerometer"), "toggle_gsensor", Device:canToggleGSensor()},
         {_("Toggle rotation"), "toggle_rotation", not self.is_docless},
+        {_("Zoom to fit content width"), "zoom_contentwidth", not self.is_docless},
+        {_("Zoom to fit content height"), "zoom_contentheight", not self.is_docless},
+        {_("Zoom to fit page width"), "zoom_pagewidth", not self.is_docless},
+        {_("Zoom to fit page height"), "zoom_pageheight", not self.is_docless},
+        {_("Zoom to fit column"), "zoom_column", not self.is_docless},
+        {_("Zoom to fit content"), "zoom_content", not self.is_docless},
+        {_("Zoom to fit page"), "zoom_page", not self.is_docless},
     }
     local return_menu = {}
     -- add default action to the top of the submenu
@@ -338,6 +345,20 @@ function ReaderGesture:gestureAction(action)
         end
     elseif action == "suspend" then
         UIManager:suspend()
+    elseif action == "zoom_contentwidth" then
+        self.ui:handleEvent(Event:new("SetZoomMode", "contentwidth"))
+    elseif action == "zoom_contentheight" then
+        self.ui:handleEvent(Event:new("SetZoomMode", "contentheight"))
+    elseif action == "zoom_pagewidth" then
+        self.ui:handleEvent(Event:new("SetZoomMode", "pagewidth"))
+    elseif action == "zoom_pageheight" then
+        self.ui:handleEvent(Event:new("SetZoomMode", "pageheight"))
+    elseif action == "zoom_column" then
+        self.ui:handleEvent(Event:new("SetZoomMode", "column"))
+    elseif action == "zoom_content" then
+        self.ui:handleEvent(Event:new("SetZoomMode", "content"))
+    elseif action == "zoom_page" then
+        self.ui:handleEvent(Event:new("SetZoomMode", "page"))
     end
     return true
 end
