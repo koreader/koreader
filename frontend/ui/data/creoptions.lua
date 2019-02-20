@@ -1,5 +1,4 @@
 local Device = require("device")
-local Screen = Device.screen
 local S = require("ui/data/strings")
 local optionsutil = require("ui/data/optionsutil")
 local _ = require("gettext")
@@ -27,7 +26,7 @@ local CreOptions = {
                 alternate = false,
                 args = {"portrait", "landscape"},
                 default_arg = "portrait",
-                current_func = function() return Screen:getScreenMode() end,
+                current_func = function() return Device.screen:getScreenMode() end,
                 event = "ChangeScreenMode",
                 name_text_hold_callback = optionsutil.showValues,
             }
