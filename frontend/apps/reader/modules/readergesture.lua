@@ -13,7 +13,7 @@ local default_gesture = {
     tap_right_bottom_corner = "nothing",
     tap_left_bottom_corner = Device:hasFrontlight() and "toggle_frontlight" or "nothing",
     short_diagonal_swipe = "full_refresh",
-    multiswipe_west_south = "previous_location",
+    multiswipe_west_east = "previous_location",
 }
 
 local ReaderGesture = InputContainer:new{
