@@ -142,7 +142,32 @@ function NetworkMgr:getWifiMenuTable()
                 if wifi_status then
                     UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
                 else
-                    UIManager:broadcastEvent(Event:new("NetworkConnected"))
+                    -- On hasWifiManager devices that play with kernel modules directly,
+                    -- double-check that the connection attempt was actually successful...
+                    if Device:isKobo() or Device:isCervantes() then
+                        if NetworkMgr:isWifiOn() and NetworkMgr:isConnected() then
+                            UIManager:broadcastEvent(Event:new("NetworkConnected"))
+                        elseif NetworkMgr:isWifiOn() and not NetworkMgr:isConnected() then
+                            -- Don't leave WiFi in an inconsistent state if the connection failed.
+                            self.wifi_was_on = false
+                            G_reader_settings:saveSetting("wifi_was_on", false)
+                            -- NOTE: We're limiting this to only a few platforms, as it might be actually harmful on some devices.
+                            --       The intent being to unload kernel modules, and make a subsequent turnOnWifi behave sanely.
+                            --       PB: Relies on netagent, no idea what it does, but it's not using this codepath anyway (!hasWifiToggle)
+                            --       Android: Definitely shouldn't do it.
+                            --       Sony: Doesn't play with modules, don't do it.
+                            --       Kobo: Yes, please.
+                            --       Cervantes: Loads/unloads module, probably could use it like Kobo.
+                            --       Kindle: Probably could use it, if only because leaving Wireless on is generally a terrible idea on Kindle,
+                            --               except that we defer to lipc, which makes WiFi handling asynchronous, and the callback is simply delayed by 1s,
+                            --               so we can't be sure the system will actually have finished bringing WiFi up by then...
+                            NetworkMgr:turnOffWifi()
+                            touchmenu_instance:updateItems()
+                        end
+                    else
+                        -- Assume success on other platforms
+                        UIManager:broadcastEvent(Event:new("NetworkConnected"))
+                    end
                 end
             end
             if wifi_status then
