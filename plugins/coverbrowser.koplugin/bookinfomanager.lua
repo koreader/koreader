@@ -438,7 +438,7 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
                         scale_factor = math.min(spec_max_cover_w / cbb_w, spec_max_cover_h / cbb_h)
                         cbb_w = math.min(math.floor(cbb_w * scale_factor)+1, spec_max_cover_w)
                         cbb_h = math.min(math.floor(cbb_h * scale_factor)+1, spec_max_cover_h)
-                        cover_bb = RenderImage:scaleBlitBuffer(cover_bb, cbb_w, cbb_h)
+                        cover_bb = RenderImage:scaleBlitBuffer(cover_bb, cbb_w, cbb_h, true)
                     end
                     dbrow.cover_w = cbb_w
                     dbrow.cover_h = cbb_h
