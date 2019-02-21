@@ -171,10 +171,22 @@ case "${ORIG_FB_BPP}" in
         unset ORIG_FB_BPP
         ;;
 esac
-# Swap to 8bpp if things looke sane
-if [ -n "${ORIG_FB_BPP}" ]; then
-    ./fbdepth -d 8 >>crash.log 2>&1
-fi
+
+# The actual swap is done in a function, because we can disable it in the Developer settings, and we want to honor it on restart.
+ko_do_fbdepth() {
+    # Check if the swap has been disabled...
+    if grep -q '\["dev_startup_no_fbdepth"\] = true' 'settings.reader.lua' 2>/dev/null; then
+        # Swap back to the original bitdepth (in case this was a restart)
+        if [ -n "${ORIG_FB_BPP}" ]; then
+            ./fbdepth -d "${ORIG_FB_BPP}" >>crash.log 2>&1
+        fi
+    else
+        # Swap to 8bpp if things looke sane
+        if [ -n "${ORIG_FB_BPP}" ]; then
+            ./fbdepth -d 8 >>crash.log 2>&1
+        fi
+    fi
+}
 
 # Remount the SD card RW if it's inserted and currently RO
 if awk '$4~/(^|,)ro($|,)/' /proc/mounts | grep ' /mnt/sd '; then
@@ -191,8 +203,18 @@ RETURN_VALUE=85
 while [ $RETURN_VALUE -eq 85 ]; do
     # Do an update check now, so we can actually update KOReader via the "Restart KOReader" menu entry ;).
     ko_update_check
+    # Do the fb depth switch, unless it's been disabled
+    ko_do_fbdepth
+    # Check if we wanted to enable debug logging...
+    DEV_ARGS=""
+    if grep -q '\["dev_startup_debug"\] = true' 'settings.reader.lua' 2>/dev/null; then
+        DEV_ARGS="-d"
+    fi
+    if grep -q '\["dev_startup_debug_verbose"\] = true' 'settings.reader.lua' 2>/dev/null; then
+        DEV_ARGS="-d -v"
+    fi
 
-    ./reader.lua "${args}" >>crash.log 2>&1
+    ./reader.lua ${DEV_ARGS} "${args}" >>crash.log 2>&1
     RETURN_VALUE=$?
 done
 
