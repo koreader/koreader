@@ -214,6 +214,7 @@ while [ $RETURN_VALUE -eq 85 ]; do
         DEV_ARGS="-d -v"
     fi
 
+    # shellcheck disable=SC2086
     ./reader.lua ${DEV_ARGS} "${args}" >>crash.log 2>&1
     RETURN_VALUE=$?
 done
