@@ -292,6 +292,8 @@ function ReaderZooming:getZoom(pageno)
                 zoom = zoom - 0.005
             end
             logger.dbg("new zoom: "..zoom)
+
+            if zoom < 0 then return 0 end
         end
     end
     return zoom
