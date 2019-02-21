@@ -212,40 +212,40 @@ function FileManagerMenu:setUpdateItemTable()
                     })
                 end,
             },
-            if Device:isKobo() then
-                {
-                    text = _("Enable debug logging"),
-                    checked_func = function()
-                        return G_reader_settings:isTrue("dev_startup_debug")
-                    end,
-                    callback = function()
-                        G_reader_settings:flipNilOrFalse("dev_startup_debug")
-                    end,
-                },
-                {
-                    text = _("Enable verbose debug logging"),
-                    enabled_func = function()
-                        return G_reader_settings:isTrue("dev_startup_debug")
-                    end,
-                    checked_func = function()
-                        return G_reader_settings:isTrue("dev_startup_debug_verbose")
-                    end,
-                    callback = function()
-                        G_reader_settings:flipNilOrFalse("dev_startup_debug_verbose")
-                    end,
-                },
-                {
-                    text = _("Don't drop fb bitdepth to 8bpp"),
-                    checked_func = function()
-                        return G_reader_settings:isTrue("dev_startup_no_fbdepth")
-                    end,
-                    callback = function()
-                        G_reader_settings:flipNilOrFalse("dev_startup_no_fbdepth")
-                    end,
-                },
-            end
         }
     }
+    if Device:isKobo() then
+        table.insert(self.menu_items.developer_options.sub_item_table, {
+            text = _("Enable debug logging"),
+            checked_func = function()
+                return G_reader_settings:isTrue("dev_startup_debug")
+            end,
+            callback = function()
+                G_reader_settings:flipNilOrFalse("dev_startup_debug")
+            end,
+        })
+        table.insert(self.menu_items.developer_options.sub_item_table, {
+            text = _("Enable verbose debug logging"),
+            enabled_func = function()
+                return G_reader_settings:isTrue("dev_startup_debug")
+            end,
+            checked_func = function()
+                return G_reader_settings:isTrue("dev_startup_debug_verbose")
+            end,
+            callback = function()
+                G_reader_settings:flipNilOrFalse("dev_startup_debug_verbose")
+            end,
+        })
+        table.insert(self.menu_items.developer_options.sub_item_table, {
+            text = _("Don't drop fb bitdepth to 8bpp"),
+            checked_func = function()
+                return G_reader_settings:isTrue("dev_startup_no_fbdepth")
+            end,
+            callback = function()
+                G_reader_settings:flipNilOrFalse("dev_startup_no_fbdepth")
+            end,
+        })
+    end
     self.menu_items.cloud_storage = {
         text = _("Cloud storage"),
         callback = function()
