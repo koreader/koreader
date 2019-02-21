@@ -162,10 +162,8 @@ fi
 ORIG_FB_BPP="$(./fbdepth -g)"
 # Sanity check...
 case "${ORIG_FB_BPP}" in
-    16)
-        ;;
-    32)
-        ;;
+    16) ;;
+    32) ;;
     *)
         # Hu oh? Don't do anything...
         unset ORIG_FB_BPP
