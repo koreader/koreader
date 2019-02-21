@@ -92,12 +92,15 @@ ifdef WIN32
 	cd $(INSTALL_DIR)/koreader && cp ../../$(WIN32_DIR)/*.dll .
 endif
 	@echo "[*] Install plugins"
-	@# TODO: link istead of cp?
+	@# TODO: link instead of cp?
 	$(RCP) plugins/. $(INSTALL_DIR)/koreader/plugins/.
 	@# purge deleted plugins
 	for d in $$(ls $(INSTALL_DIR)/koreader/plugins); do \
 		test -d plugins/$$d || rm -rf $(INSTALL_DIR)/koreader/plugins/$$d ; done
-	@echo "[*] Installresources"
+	@echo "[*] Generating CHANGELOG"
+	rm $(INSTALL_DIR)/CHANGELOG.md || true
+	for t in $$(git tag --list --sort=-version:refname 'v*'); do git cat-file -p "$$(git rev-parse "$$t")" >>$(INSTALL_DIR)/CHANGELOG.md; done
+	@echo "[*] Installing resources"
 	$(RCP) -pL resources/fonts/. $(INSTALL_DIR)/koreader/fonts/.
 	install -d $(INSTALL_DIR)/koreader/{screenshots,data/{dict,tessdata},fonts/host,ota}
 ifeq ($(or $(EMULATE_READER),$(WIN32)),)
