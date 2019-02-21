@@ -43,7 +43,7 @@ end
 function PicDocument:getCoverPageImage()
     local first_page = self._document:openPage(1)
     if first_page.image_bb then
-        return first_page.image_bb
+        return first_page.image_bb:copy()
     end
     return nil
 end
