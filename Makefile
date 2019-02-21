@@ -348,25 +348,6 @@ androidupdate: all
 	-rm $(ANDROID_LAUNCHER_DIR)/assets/module/koreader-*
 	# in runtime luajit-launcher's libluajit.so will be loaded
 	-rm $(INSTALL_DIR)/koreader/libs/libluajit.so
-	# create zip package
-	cd $(INSTALL_DIR)/koreader && \
-		zip -9 -r \
-			../../koreader-android-$(MACHINE)-$(VERSION).zip \
-			* -x "resources/fonts/*" "resources/icons/src/*" "spec/*" \
-			$(ZIP_EXCLUDE)
-	# generate android update package index file
-	zipinfo -1 koreader-android-$(MACHINE)-$(VERSION).zip > \
-		$(INSTALL_DIR)/koreader/ota/package.index
-	rm -f koreader-android-$(MACHINE)-$(VERSION).zip
-	echo "ota/package.index" >> $(INSTALL_DIR)/koreader/ota/package.index
-	cp $(INSTALL_DIR)/koreader/git-rev $(INSTALL_DIR)/koreader/ota-rev
-	# don't update the git-rev so that the next start won't revert back
-	# the older 7z version in the assets
-	$(ISED) '/git-rev/d' $(INSTALL_DIR)/koreader/ota/package.index
-	# make gzip android update for zsync OTA update
-	-cd $(INSTALL_DIR)/koreader && \
-		tar -czah --no-recursion -f ../../koreader-android-$(MACHINE)-$(VERSION).targz \
-		-T ota/package.index
 	# make android update apk
 	cd $(INSTALL_DIR)/koreader && 7z a -l -m0=lzma2 -mx=1 \
 		../../$(ANDROID_LAUNCHER_DIR)/assets/module/koreader-$(VERSION).7z * \
