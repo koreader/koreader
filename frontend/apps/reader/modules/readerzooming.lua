@@ -1,3 +1,4 @@
+local Cache = require("cache")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local GestureRange = require("ui/gesturerange")
@@ -276,6 +277,25 @@ function ReaderZooming:getZoom(pageno)
         zoom = zoom_h
     elseif self.zoom_mode == "free" then
         zoom = self.zoom
+    end
+    if zoom and zoom > 10 and not Cache:willAccept(zoom * (self.dimen.w * self.dimen.h + 64)) then
+        logger.dbg("zoom too large, adjusting")
+        while not Cache:willAccept(zoom * (self.dimen.w * self.dimen.h + 64)) do
+            if zoom > 100 then
+                zoom = zoom - 50
+            elseif zoom > 10 then
+                zoom = zoom - 5
+            elseif zoom > 1 then
+                zoom = zoom - 0.5
+            elseif zoom > 0.1 then
+                zoom = zoom - 0.05
+            else
+                zoom = zoom - 0.005
+            end
+            logger.dbg("new zoom: "..zoom)
+
+            if zoom < 0 then return 0 end
+        end
     end
     return zoom
 end
