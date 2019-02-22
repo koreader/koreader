@@ -505,22 +505,24 @@ function GestureDetector:handlePan(tev)
 
         local msd_cnt = #self.multiswipe_directions
         local msd_direction_prev = (msd_cnt > 0) and self.multiswipe_directions[msd_cnt][1] or ""
+        local prev_ms_ev, fake_first_tev
+
+        -- recompute a more accurate direction and distance in a multiswipe context
+        if msd_cnt > 0 then
+            prev_ms_ev = self.multiswipe_directions[msd_cnt][2]
+            fake_first_tev = {
+                [slot] = {
+                    ["x"] = prev_ms_ev.pos.x,
+                    ["y"] = prev_ms_ev.pos.y,
+                    ["slot"] = slot,
+                },
+            }
+            pan_direction = self:getPath(slot, false, fake_first_tev)
+        end
 
         if msd_cnt == 0
            or pan_direction ~= msd_direction_prev
         then
-            local prev_ms_ev, fake_first_tev
-
-            if msd_cnt > 0 then
-                prev_ms_ev = self.multiswipe_directions[msd_cnt][2]
-                fake_first_tev = {
-                    [slot] = {
-                        ["x"] = prev_ms_ev.pos.x,
-                        ["y"] = prev_ms_ev.pos.y,
-                        ["slot"] = slot,
-                    },
-                }
-            end
 
             local msd_direction, msd_distance = self:getPath(slot, true, fake_first_tev)
 
