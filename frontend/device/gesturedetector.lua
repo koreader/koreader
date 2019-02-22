@@ -523,7 +523,6 @@ function GestureDetector:handlePan(tev)
         if msd_cnt == 0
            or pan_direction ~= msd_direction_prev
         then
-
             local msd_direction, msd_distance = self:getPath(slot, true, fake_first_tev)
 
             if msd_distance > self.MULTISWIPE_THRESHOLD
