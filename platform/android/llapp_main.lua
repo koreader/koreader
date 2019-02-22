@@ -16,22 +16,6 @@ if file ~= nil then
     A.LOGI("intent file path " .. file)
 end
 
--- update koreader from ota
-local function update()
-    local new_update = "/sdcard/koreader/ota/koreader.update.tar"
-    local installed = "/sdcard/koreader/ota/koreader.installed.tar"
-    local update_file = io.open(new_update, "r")
-    if update_file ~= nil then
-        io.close(update_file)
-        A.showProgress()
-        if os.execute("tar xf " .. new_update) == 0 then
-            os.execute("mv " .. new_update .. " " .. installed)
-        end
-        A.dismissProgress()
-    end
-
-end
-
 -- (Disabled, since we hide navbar on start now no need for this hack)
 -- run koreader patch before koreader startup
 pcall(dofile, "/sdcard/koreader/patch.lua")
