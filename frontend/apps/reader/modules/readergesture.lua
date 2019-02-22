@@ -12,7 +12,6 @@ local UIManager = require("ui/uimanager")
 local T = require("ffi/util").template
 local _ = require("gettext")
 local logger = require("logger")
-local util = require("util")
 
 local default_gesture = {
     tap_right_bottom_corner = "nothing",
