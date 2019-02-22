@@ -224,7 +224,7 @@ function OTAManager:fetchAndProcessUpdate()
                     if isAndroid then
                         -- download the package if not present.
                         if android.download(link, ota_package) then
-                            android.notification(T(_("File %1 is already downloaded"), ota_package))
+                            android.notification(T(_("The file %1 already exists."), ota_package))
                         else
                             android.notification(T(_("Downloading %1"), ota_package))
                         end
