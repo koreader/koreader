@@ -211,8 +211,10 @@ local multiswipes = {
     "west south",
 }
 
-for k, v in pairs(custom_multiswipes_table) do
-    table.insert(multiswipes, v)
+if custom_multiswipes_table then
+    for k, v in pairs(custom_multiswipes_table) do
+        table.insert(multiswipes, v)
+    end
 end
 
 function ReaderGesture:buildMultiswipeMenu()
