@@ -97,6 +97,7 @@ function ReaderGesture:buildMenu(ges, default)
         {_("Reading progress"), "reading_progress", ReaderGesture.getReaderProgress ~= nil},
         {_("Full screen refresh"), "full_refresh", true},
         {_("Night mode"), "night_mode", true},
+        {_("Open previous document"), "open_previous_document", true},
         {_("Suspend"), "suspend", true},
         {_("Toggle frontlight"), "toggle_frontlight", Device:hasFrontlight()},
         {_("Toggle accelerometer"), "toggle_gsensor", Device:canToggleGSensor()},
@@ -330,6 +331,14 @@ function ReaderGesture:gestureAction(action)
         self.ui:handleEvent(Event:new("GoBackLink"))
     elseif action == "folder_up" then
         self.ui.file_chooser:changeToPath(string.format("%s/..", self.ui.file_chooser.path))
+    elseif action == "open_previous_document" then
+        -- FileManager
+        if self.ui.menu.openLastDoc and G_reader_settings:readSetting("lastfile") ~= nil then
+            self.ui.menu:openLastDoc()
+        -- ReaderUI
+        elseif self.ui.switchDocument and self.ui.menu then
+            self.ui:switchDocument(self.ui.menu:getPreviousFile())
+        end
     elseif action == "toggle_frontlight" then
         Device:getPowerDevice():toggleFrontlight()
         self:onShowFLOnOff()
