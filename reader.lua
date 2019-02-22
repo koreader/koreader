@@ -63,6 +63,7 @@ end
 -- modules, otherwise DEBUG in some modules may not be printed.
 local dbg = require("dbg")
 if G_reader_settings:isTrue("debug") then dbg:turnOn() end
+if G_reader_settings:isTrue("debug") and G_reader_settings:isTrue("debug_verbose") then dbg:setVerbose(true) end
 
 local Profiler = nil
 local ARGV = arg

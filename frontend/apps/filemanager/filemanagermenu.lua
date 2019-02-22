@@ -212,44 +212,44 @@ function FileManagerMenu:setUpdateItemTable()
                     })
                 end,
             },
+            {
+                text = _("Enable debug logging"),
+                checked_func = function()
+                    return G_reader_settings:isTrue("debug")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrFalse("debug")
+                    if G_reader_settings:isTrue("debug") then
+                        dbg:turnOn()
+                    else
+                        dbg:setVerbose(false)
+                        dbg:turnOff()
+                        G_reader_settings:flipTrue("debug_verbose")
+                    end
+                end,
+            },
+            {
+                text = _("Enable verbose debug logging"),
+                enabled_func = function()
+                    return G_reader_settings:isTrue("debug")
+                end,
+                checked_func = function()
+                    return G_reader_settings:isTrue("debug_verbose")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrFalse("debug_verbose")
+                    if G_reader_settings:isTrue("debug_verbose") then
+                        dbg:setVerbose(true)
+                    else
+                        dbg:setVerbose(false)
+                    end
+                end,
+            },
         }
     }
     if Device:isKobo() then
         table.insert(self.menu_items.developer_options.sub_item_table, {
-            text = _("Enable debug logging"),
-            checked_func = function()
-                return G_reader_settings:isTrue("debug")
-            end,
-            callback = function()
-                G_reader_settings:flipNilOrFalse("debug")
-                if G_reader_settings:isTrue("debug") then
-                    dbg:turnOn()
-                else
-                    dbg:setVerbose(false)
-                    dbg:turnOff()
-                    G_reader_settings:flipTrue("dev_startup_debug_verbose")
-                end
-            end,
-        })
-        table.insert(self.menu_items.developer_options.sub_item_table, {
-            text = _("Enable verbose debug logging"),
-            enabled_func = function()
-                return G_reader_settings:isTrue("debug")
-            end,
-            checked_func = function()
-                return G_reader_settings:isTrue("dev_startup_debug_verbose")
-            end,
-            callback = function()
-                G_reader_settings:flipNilOrFalse("dev_startup_debug_verbose")
-                if G_reader_settings:isTrue("dev_startup_debug_verbose") then
-                    dbg:setVerbose(true)
-                else
-                    dbg:setVerbose(false)
-                end
-            end,
-        })
-        table.insert(self.menu_items.developer_options.sub_item_table, {
-            text = _("Don't drop fb bitdepth to 8bpp"),
+            text = _("Disable forced 8-bit color space"),
             checked_func = function()
                 return G_reader_settings:isTrue("dev_startup_no_fbdepth")
             end,

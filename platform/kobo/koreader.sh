@@ -203,17 +203,9 @@ while [ $RETURN_VALUE -eq 85 ]; do
     ko_update_check
     # Do the fb depth switch, unless it's been disabled
     ko_do_fbdepth
-    # Check if we wanted to enable debug logging...
-    DEV_ARGS=""
-    if grep -q '\["debug"\] = true' 'settings.reader.lua' 2>/dev/null; then
-        DEV_ARGS="-d"
-    fi
-    if grep -q '\["dev_startup_debug_verbose"\] = true' 'settings.reader.lua' 2>/dev/null; then
-        DEV_ARGS="-d -v"
-    fi
 
     # shellcheck disable=SC2086
-    ./reader.lua ${DEV_ARGS} "${args}" >>crash.log 2>&1
+    ./reader.lua "${args}" >>crash.log 2>&1
     RETURN_VALUE=$?
 done
 
