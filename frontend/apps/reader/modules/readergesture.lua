@@ -13,6 +13,7 @@ local default_gesture = {
     tap_right_bottom_corner = "nothing",
     tap_left_bottom_corner = Device:hasFrontlight() and "toggle_frontlight" or "nothing",
     short_diagonal_swipe = "full_refresh",
+    multiswipe = "nothing", -- otherwise registerGesture() won't pick up on multiswipes
     multiswipe_west_east = "previous_location",
 }
 
