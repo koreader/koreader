@@ -62,7 +62,7 @@ end
 -- should check DEBUG option in arg and turn on DEBUG before loading other
 -- modules, otherwise DEBUG in some modules may not be printed.
 local dbg = require("dbg")
-if G_reader_settings:readSetting("debug") then dbg:turnOn() end
+if G_reader_settings:isTrue("debug") then dbg:turnOn() end
 
 local Profiler = nil
 local ARGV = arg

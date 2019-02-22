@@ -205,7 +205,7 @@ while [ $RETURN_VALUE -eq 85 ]; do
     ko_do_fbdepth
     # Check if we wanted to enable debug logging...
     DEV_ARGS=""
-    if grep -q '\["dev_startup_debug"\] = true' 'settings.reader.lua' 2>/dev/null; then
+    if grep -q '\["debug"\] = true' 'settings.reader.lua' 2>/dev/null; then
         DEV_ARGS="-d"
     fi
     if grep -q '\["dev_startup_debug_verbose"\] = true' 'settings.reader.lua' 2>/dev/null; then

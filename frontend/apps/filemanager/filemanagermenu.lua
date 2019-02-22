@@ -218,11 +218,11 @@ function FileManagerMenu:setUpdateItemTable()
         table.insert(self.menu_items.developer_options.sub_item_table, {
             text = _("Enable debug logging"),
             checked_func = function()
-                return G_reader_settings:isTrue("dev_startup_debug")
+                return G_reader_settings:isTrue("debug")
             end,
             callback = function()
-                G_reader_settings:flipNilOrFalse("dev_startup_debug")
-                if G_reader_settings:isTrue("dev_startup_debug") then
+                G_reader_settings:flipNilOrFalse("debug")
+                if G_reader_settings:isTrue("debug") then
                     dbg:turnOn()
                 else
                     dbg:setVerbose(false)
@@ -234,7 +234,7 @@ function FileManagerMenu:setUpdateItemTable()
         table.insert(self.menu_items.developer_options.sub_item_table, {
             text = _("Enable verbose debug logging"),
             enabled_func = function()
-                return G_reader_settings:isTrue("dev_startup_debug")
+                return G_reader_settings:isTrue("debug")
             end,
             checked_func = function()
                 return G_reader_settings:isTrue("dev_startup_debug_verbose")
