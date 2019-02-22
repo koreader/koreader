@@ -684,6 +684,7 @@ function ReaderUI:reloadDocument(after_close_callback)
 end
 
 function ReaderUI:switchDocument(new_file)
+    if not new_file then return end
     self:handleEvent(Event:new("CloseReaderMenu"))
     self:handleEvent(Event:new("CloseConfigMenu"))
     self.highlight:onClose() -- close highlight dialog if any
