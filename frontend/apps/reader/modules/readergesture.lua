@@ -2,11 +2,16 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
 local Event = require("ui/event")
+local Geom = require("ui/geometry")
+local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local InputDialog = require("ui/widget/inputdialog")
+local LuaData = require("luadata")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local T = require("ffi/util").template
 local _ = require("gettext")
+local logger = require("logger")
 local util = require("util")
 
 local default_gesture = {
@@ -20,6 +25,10 @@ local default_gesture = {
 local ReaderGesture = InputContainer:new{
     multiswipes_enabled = G_reader_settings:readSetting("multiswipes_enabled"),
 }
+
+local custom_multiswipes_path = DataStorage:getSettingsDir().."/multiswipes.lua"
+local custom_multiswipes = LuaData:open(custom_multiswipes_path, { name = "MultiSwipes" })
+local custom_multiswipes_table = custom_multiswipes:readSetting("multiswipes")
 
 local multiswipes_info_text = _([[
 Multiswipes allow you to perform complex gestures built up out of multiple straight swipes.]])
@@ -59,6 +68,60 @@ function ReaderGesture:addToMainMenu(menu_items)
                     self.multiswipes_enabled = G_reader_settings:isTrue("multiswipes_enabled")
                 end,
                 help_text = multiswipes_info_text,
+            },
+            {
+                text = _("Multiswipe recorder"),
+                enabled_func = function() return self.multiswipes_enabled end,
+                callback = function()
+                    local multiswipe_recorder
+                    multiswipe_recorder = InputDialog:new{
+                        title = _("Multiswipe recorder"),
+                        input_hint = _("Make a multiswipe gesture"),
+                        buttons = {
+                            {
+                                {
+                                    text = _("Cancel"),
+                                    callback = function()
+                                        UIManager:close(multiswipe_recorder)
+                                    end,
+                                },
+                                {
+                                    text = _("Save"),
+                                    is_enter_default = true,
+                                    callback = function()
+                                        local recorded_multiswipe = multiswipe_recorder._raw_multiswipe
+                                        if not recorded_multiswipe then return end
+                                        logger.dbg("Multiswipe recorder detected:", recorded_multiswipe)
+
+                                        custom_multiswipes:addTableItem("multiswipes", recorded_multiswipe)
+
+                                        UIManager:close(multiswipe_recorder)
+                                    end,
+                                },
+                            }
+                        },
+                    }
+
+                    multiswipe_recorder.ges_events.Multiswipe = {
+                        GestureRange:new{
+                            ges = "multiswipe",
+                            range = Geom:new{
+                                x = 0, y = 0,
+                                w = Screen:getWidth(),
+                                h = Screen:getHeight(),
+                            },
+                            doc = "Multiswipe in gesture creator"
+                        }
+                    }
+
+                    function multiswipe_recorder:onMultiswipe(arg, ges)
+                        multiswipe_recorder._raw_multiswipe = ges.multiswipe_directions
+                        multiswipe_recorder:setInputText(ReaderGesture:friendlyMultiswipeName(multiswipe_recorder._raw_multiswipe))
+                    end
+
+                    UIManager:show(multiswipe_recorder)
+                end,
+                help_text = _("The number of possible multiswipe gestures is theoretically infinite. With the multiswipe recorder you can easily record your own."),
             },
             {
                 text = _("Multiswipe"),
@@ -149,11 +212,9 @@ local multiswipes = {
     "east south",
     "west south",
 }
-local custom_multiswipes_path = DataStorage:getSettingsDir().."/multiswipes"
-if util.pathExists(custom_multiswipes_path..".lua") then
-    for k, v in pairs(require(custom_multiswipes_path)) do
-        table.insert(multiswipes, v)
-    end
+
+for k, v in pairs(custom_multiswipes_table) do
+    table.insert(multiswipes, v)
 end
 
 function ReaderGesture:buildMultiswipeMenu()
