@@ -70,6 +70,19 @@ function ReaderMenu:init()
     end
 end
 
+function ReaderMenu:getPreviousFile()
+    local previous_file = nil
+    local readhistory = require("readhistory")
+    for i=2, #readhistory.hist do -- skip first one which is current book
+        -- skip deleted items kept in history
+        if lfs.attributes(readhistory.hist[i].file, "mode") == "file" then
+            previous_file = readhistory.hist[i].file
+            break
+        end
+    end
+    return previous_file
+end
+
 function ReaderMenu:onReaderReady()
     -- deligate gesture listener to readerui
     self.ges_events = {}
@@ -191,21 +204,9 @@ function ReaderMenu:setUpdateItemTable()
         self.menu_items.restart_koreader = nil
     end
 
-    local getPreviousFile = function()
-        local previous_file = nil
-        local readhistory = require("readhistory")
-        for i=2, #readhistory.hist do -- skip first one which is current book
-            -- skip deleted items kept in history
-            if lfs.attributes(readhistory.hist[i].file, "mode") == "file" then
-                previous_file = readhistory.hist[i].file
-                break
-            end
-        end
-        return previous_file
-    end
     self.menu_items.open_previous_document = {
         text_func = function()
-            local previous_file = getPreviousFile()
+            local previous_file = self:getPreviousFile()
             if not G_reader_settings:isTrue("open_last_menu_show_filename") or not previous_file then
                 return _("Open previous document")
             end
@@ -213,13 +214,13 @@ function ReaderMenu:setUpdateItemTable()
             return T(_("Previous: %1"), file_name)
         end,
         enabled_func = function()
-            return getPreviousFile() ~= nil
+            return self:getPreviousFile() ~= nil
         end,
         callback = function()
-            self.ui:switchDocument(getPreviousFile())
+            self.ui:switchDocument(self:getPreviousFile())
         end,
         hold_callback = function()
-            local previous_file = getPreviousFile()
+            local previous_file = self:getPreviousFile()
             UIManager:show(ConfirmBox:new{
                 text = T(_("Would you like to open the previous document: %1?"), previous_file),
                 ok_text = _("OK"),

@@ -93,6 +93,7 @@ function ReaderGesture:buildMenu(ges, default)
         {_("Folder up"), "folder_up", self.is_docless},
         {_("Bookmarks"), "bookmarks", not self.is_docless},
         {_("History"), "history", true},
+        {_("Open previous document"), "open_previous_document", true, true},
         {_("Table of contents"), "toc", not self.is_docless},
         {_("Reading progress"), "reading_progress", ReaderGesture.getReaderProgress ~= nil},
         {_("Full screen refresh"), "full_refresh", true},
@@ -130,7 +131,8 @@ function ReaderGesture:buildMenu(ges, default)
             G_reader_settings:saveSetting(self.ges_mode, gesture_manager)
         end
         if entry[2] ~= default and entry[3] then
-            table.insert(return_menu, self:createSubMenu(entry[1], entry[2], ges, entry[2] == "nothing"))
+            local sep = entry[2] == "nothing" or entry[4] == true
+            table.insert(return_menu, self:createSubMenu(entry[1], entry[2], ges, sep))
         end
     end
     return return_menu
@@ -330,6 +332,14 @@ function ReaderGesture:gestureAction(action)
         self.ui:handleEvent(Event:new("GoBackLink"))
     elseif action == "folder_up" then
         self.ui.file_chooser:changeToPath(string.format("%s/..", self.ui.file_chooser.path))
+    elseif action == "open_previous_document" then
+        -- FileManager
+        if self.ui.menu.openLastDoc and G_reader_settings:readSetting("lastfile") ~= nil then
+            self.ui.menu:openLastDoc()
+        -- ReaderUI
+        elseif self.ui.switchDocument and self.ui.menu then
+            self.ui:switchDocument(self.ui.menu:getPreviousFile())
+        end
     elseif action == "toggle_frontlight" then
         Device:getPowerDevice():toggleFrontlight()
         self:onShowFLOnOff()

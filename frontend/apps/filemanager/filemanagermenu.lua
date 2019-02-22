@@ -94,7 +94,12 @@ function FileManagerMenu:openLastDoc()
     end
     local ReaderUI = require("apps/reader/readerui")
     ReaderUI:showReader(last_file)
-    self:onCloseFileManagerMenu()
+
+    -- only close menu if we were called from the menu
+    if self.menu_container then
+        self:onCloseFileManagerMenu()
+    end
+
     local FileManager = require("apps/filemanager/filemanager")
     FileManager.instance:onClose()
 end
