@@ -12,7 +12,6 @@ local UIManager = require("ui/uimanager")
 local T = require("ffi/util").template
 local _ = require("gettext")
 local logger = require("logger")
-local util = require("util")
 
 local default_gesture = {
     tap_right_bottom_corner = "nothing",
@@ -211,8 +210,10 @@ local multiswipes = {
     "west south",
 }
 
-for k, v in pairs(custom_multiswipes_table) do
-    table.insert(multiswipes, v)
+if custom_multiswipes_table then
+    for k, v in pairs(custom_multiswipes_table) do
+        table.insert(multiswipes, v)
+    end
 end
 
 function ReaderGesture:buildMultiswipeMenu()
