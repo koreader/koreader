@@ -92,9 +92,7 @@ function ReaderGesture:addToMainMenu(menu_items)
                                         local recorded_multiswipe = multiswipe_recorder._raw_multiswipe
                                         if not recorded_multiswipe then return end
                                         logger.dbg("Multiswipe recorder detected:", recorded_multiswipe)
-
                                         custom_multiswipes:addTableItem("multiswipes", recorded_multiswipe)
-
                                         UIManager:close(multiswipe_recorder)
                                     end,
                                 },
