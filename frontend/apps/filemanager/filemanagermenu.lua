@@ -222,6 +222,13 @@ function FileManagerMenu:setUpdateItemTable()
             end,
             callback = function()
                 G_reader_settings:flipNilOrFalse("dev_startup_debug")
+                if G_reader_settings:isTrue("dev_startup_debug") then
+                    dbg:turnOn()
+                else
+                    dbg:setVerbose(false)
+                    dbg:turnOff()
+                    G_reader_settings:flipTrue("dev_startup_debug_verbose")
+                end
             end,
         })
         table.insert(self.menu_items.developer_options.sub_item_table, {
@@ -234,6 +241,11 @@ function FileManagerMenu:setUpdateItemTable()
             end,
             callback = function()
                 G_reader_settings:flipNilOrFalse("dev_startup_debug_verbose")
+                if G_reader_settings:isTrue("dev_startup_debug_verbose") then
+                    dbg:setVerbose(true)
+                else
+                    dbg:setVerbose(false)
+                end
             end,
         })
         table.insert(self.menu_items.developer_options.sub_item_table, {
