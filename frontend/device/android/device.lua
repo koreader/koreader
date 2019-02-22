@@ -21,7 +21,7 @@ local Device = Generic:new{
     display_dpi = android.lib.AConfiguration_getDensity(android.app.config),
     hasClipboard = yes,
     hasColorScreen = yes,
-    hasOTAUpdates = no,
+    hasOTAUpdates = yes,
 }
 
 function Device:init()

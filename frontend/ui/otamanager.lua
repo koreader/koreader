@@ -192,14 +192,14 @@ function OTAManager:checkUpdate()
     -- larger than the local package version
     if local_ok and ota_ok and ota_version and local_version and
         ota_version ~= local_version then
-        return ota_version, local_version, link
+        return ota_version, local_version, link, ota_package
     elseif ota_version and ota_version == local_version then
         return 0
     end
 end
 
 function OTAManager:fetchAndProcessUpdate()
-    local ota_version, local_version, link = OTAManager:checkUpdate()
+    local ota_version, local_version, link, ota_package = OTAManager:checkUpdate()
 
     if ota_version == 0 then
         UIManager:show(InfoMessage:new{
@@ -220,7 +220,15 @@ function OTAManager:fetchAndProcessUpdate()
                 ),
                 ok_text = _("Update"),
                 ok_callback = function()
-                    if Device:isSDL() then
+                    local isAndroid, android = pcall(require, "android")
+                    if isAndroid then
+                        -- download the package if not present.
+                        if android.download(link, ota_package) then
+                            android.notification(T(_("File %1 is already downloaded"), ota_package))
+                        else
+                            android.notification(T(_("Downloading %1"), ota_package))
+                        end
+                    elseif Device:isSDL() then
                         os.execute("xdg-open '"..link.."'")
                     end
                 end
