@@ -93,11 +93,11 @@ function ReaderGesture:buildMenu(ges, default)
         {_("Folder up"), "folder_up", self.is_docless},
         {_("Bookmarks"), "bookmarks", not self.is_docless},
         {_("History"), "history", true},
+        {_("Open previous document"), "open_previous_document", true, true},
         {_("Table of contents"), "toc", not self.is_docless},
         {_("Reading progress"), "reading_progress", ReaderGesture.getReaderProgress ~= nil},
         {_("Full screen refresh"), "full_refresh", true},
         {_("Night mode"), "night_mode", true},
-        {_("Open previous document"), "open_previous_document", true},
         {_("Suspend"), "suspend", true},
         {_("Toggle frontlight"), "toggle_frontlight", Device:hasFrontlight()},
         {_("Toggle accelerometer"), "toggle_gsensor", Device:canToggleGSensor()},
@@ -131,7 +131,8 @@ function ReaderGesture:buildMenu(ges, default)
             G_reader_settings:saveSetting(self.ges_mode, gesture_manager)
         end
         if entry[2] ~= default and entry[3] then
-            table.insert(return_menu, self:createSubMenu(entry[1], entry[2], ges, entry[2] == "nothing"))
+            local sep = entry[2] == "nothing" or entry[4] == true
+            table.insert(return_menu, self:createSubMenu(entry[1], entry[2], ges, sep))
         end
     end
     return return_menu
