@@ -520,21 +520,20 @@ function GestureDetector:handlePan(tev)
             pan_direction = self:getPath(slot, false, fake_first_tev)
         end
 
-        if msd_cnt == 0
-           or pan_direction ~= msd_direction_prev
-        then
-            local msd_direction, msd_distance = self:getPath(slot, true, fake_first_tev)
+        local msd_direction, msd_distance = self:getPath(slot, true, fake_first_tev)
 
-            if msd_distance > self.MULTISWIPE_THRESHOLD
-               and (msd_cnt == 0
-                    or not pan_direction:match(msd_direction_prev))
-            then
-                if msd_direction ~= msd_direction_prev then
-                    self.multiswipe_directions[msd_cnt+1] = {
-                        [1] = msd_direction,
-                        [2] = pan_ev,
-                    }
-                end
+        if msd_distance > self.MULTISWIPE_THRESHOLD then
+            if msd_direction ~= msd_direction_prev then
+                self.multiswipe_directions[msd_cnt+1] = {
+                    [1] = msd_direction,
+                    [2] = pan_ev,
+                }
+            -- update ongoing swipe direction to the new maximum
+            else
+                self.multiswipe_directions[msd_cnt] = {
+                    [1] = msd_direction,
+                    [2] = pan_ev,
+                }
             end
         end
 
