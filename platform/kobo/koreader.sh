@@ -204,7 +204,6 @@ while [ $RETURN_VALUE -eq 85 ]; do
     # Do the fb depth switch, unless it's been disabled
     ko_do_fbdepth
 
-    # shellcheck disable=SC2086
     ./reader.lua "${args}" >>crash.log 2>&1
     RETURN_VALUE=$?
 done
