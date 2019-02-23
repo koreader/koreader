@@ -517,7 +517,6 @@ function GestureDetector:handlePan(tev)
                     ["slot"] = slot,
                 },
             }
-            pan_direction = self:getPath(slot, false, fake_first_tev)
         end
 
         local msd_direction, msd_distance = self:getPath(slot, true, fake_first_tev)
