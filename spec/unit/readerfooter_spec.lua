@@ -594,8 +594,25 @@ describe("Readerfooter module", function()
         local footer = readerui.view.footer
 
         assert.truthy(footer.has_no_mode)
-        assert.falsy(readerui.view.footer_visible)
+        assert.truthy(readerui.view.footer_visible)
         assert.is.same(15, footer:getHeight())
+    end)
+
+    it("should disable footer when all modes + progressbar are disabled", function()
+        local sample_epub = "spec/front/unit/data/juliet.epub"
+        purgeDir(DocSettings:getSidecarDir(sample_epub))
+        os.remove(DocSettings:getHistoryPath(sample_epub))
+        UIManager:quit()
+
+        G_reader_settings:saveSetting("reader_footer_mode", 1)
+        G_reader_settings:saveSetting("footer", {disable_progress_bar = true})
+        local readerui = ReaderUI:new{
+            document = DocumentRegistry:openDocument(sample_epub),
+        }
+        local footer = readerui.view.footer
+
+        assert.truthy(footer.has_no_mode)
+        assert.falsy(readerui.view.footer_visible)
     end)
 
     it("should disable footer if settings.disabled is true", function()
