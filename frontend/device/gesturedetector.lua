@@ -519,6 +519,7 @@ function GestureDetector:handlePan(tev)
             }
         end
 
+        -- the first time fake_first_tev is nil, so self.first_tevs is automatically used instead
         local msd_direction, msd_distance = self:getPath(slot, true, fake_first_tev)
 
         if msd_distance > self.MULTISWIPE_THRESHOLD then
