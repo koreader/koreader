@@ -251,7 +251,7 @@ function ReaderGesture:buildMenu(ges, default)
     local return_menu = {}
     -- add default action to the top of the submenu
     for __, entry in pairs(menu) do
-        if entry[2] == default then
+        if entry[1] == default then
             local menu_entry_default = T(_("%1 (default)"), action_strings[entry[1]])
             table.insert(return_menu, self:createSubMenu(menu_entry_default, entry[1], ges, true))
 
