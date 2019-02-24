@@ -1,3 +1,16 @@
+--[[
+CanvasContext is introduced to abstract out screen hardware code from document
+render module. This abstraction makes it possible to use core document module
+in headless mode.
+
+You can think of canvas as a virtual screen. It provides render related
+settings like canvas dimension and DPI. User of document module need to
+initialize CanvasContext with settings from the actual hardware screen before
+calling renderPage/drawPage.
+
+Note: CanvasContext is a singleton and it is not thread safe.
+]]--
+
 local Mupdf = require("ffi/mupdf")
 
 local CanvasContext = {
