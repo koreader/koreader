@@ -474,7 +474,7 @@ function ReaderGesture:gestureAction(action)
     elseif action == "page_jmp_fwd_10" then
         self:pageUpdate(10)
     elseif action == "page_jmp_fwd_1" then
-        self:pageUpdate(1)
+        self.ui:handleEvent(Event:new("TapForward"))
     elseif action == "page_jmp_back_10" then
         self:pageUpdate(-10)
     elseif action == "page_jmp_back_1" then
