@@ -4,6 +4,7 @@ local Device = require("device")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
+local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local LuaData = require("luadata")
@@ -19,6 +20,7 @@ local default_gesture = {
     short_diagonal_swipe = "full_refresh",
     multiswipe = "nothing", -- otherwise registerGesture() won't pick up on multiswipes
     multiswipe_west_east = "previous_location",
+    multiswipe_east_south_west_north = "full_refresh",
 }
 
 local ReaderGesture = InputContainer:new{
@@ -29,6 +31,22 @@ local custom_multiswipes_path = DataStorage:getSettingsDir().."/multiswipes.lua"
 local custom_multiswipes = LuaData:open(custom_multiswipes_path, { name = "MultiSwipes" })
 local custom_multiswipes_table = custom_multiswipes:readSetting("multiswipes")
 
+local default_multiswipes = {
+    "west east",
+    "east west",
+    "north south",
+    "south north",
+    "north west",
+    "north east",
+    "south west",
+    "south east",
+    "east north",
+    "west north",
+    "east south",
+    "west south",
+    "east south west north",
+}
+local multiswipes = {}
 local multiswipes_info_text = _([[
 Multiswipes allow you to perform complex gestures built up out of multiple straight swipes.]])
 
@@ -55,6 +73,15 @@ function ReaderGesture:initGesture()
     G_reader_settings:saveSetting(self.ges_mode, gesture_manager)
 end
 
+function ReaderGesture:genMultiswipeSubmenu()
+    return {
+        text = _("Multiswipe"),
+        sub_item_table = self:buildMultiswipeMenu(),
+        enabled_func = function() return self.multiswipes_enabled end,
+        separator = true,
+    }
+end
+
 function ReaderGesture:addToMainMenu(menu_items)
     menu_items.gesture = {
         text = _("Gesture manager"),
@@ -71,7 +98,7 @@ function ReaderGesture:addToMainMenu(menu_items)
             {
                 text = _("Multiswipe recorder"),
                 enabled_func = function() return self.multiswipes_enabled end,
-                callback = function()
+                callback = function(touchmenu_instance)
                     local multiswipe_recorder
                     multiswipe_recorder = InputDialog:new{
                         title = _("Multiswipe recorder"),
@@ -91,7 +118,21 @@ function ReaderGesture:addToMainMenu(menu_items)
                                         local recorded_multiswipe = multiswipe_recorder._raw_multiswipe
                                         if not recorded_multiswipe then return end
                                         logger.dbg("Multiswipe recorder detected:", recorded_multiswipe)
+
+                                        for k, multiswipe in pairs(multiswipes) do
+                                            if recorded_multiswipe == multiswipe then
+                                                UIManager:show(InfoMessage:new{
+                                                    text = _("Recorded multiswipe already exists."),
+                                                    show_icon = false,
+                                                    timeout = 5,
+                                                })
+                                                return
+                                            end
+                                        end
+
                                         custom_multiswipes:addTableItem("multiswipes", recorded_multiswipe)
+                                        -- TODO implement some nicer method in TouchMenu than this ugly hack for updating the menu
+                                        touchmenu_instance.item_table[3] = self:genMultiswipeSubmenu()
                                         UIManager:close(multiswipe_recorder)
                                     end,
                                 },
@@ -120,12 +161,8 @@ function ReaderGesture:addToMainMenu(menu_items)
                 end,
                 help_text = _("The number of possible multiswipe gestures is theoretically infinite. With the multiswipe recorder you can easily record your own."),
             },
-            {
-                text = _("Multiswipe"),
-                sub_item_table = self:buildMultiswipeMenu(),
-                enabled_func = function() return self.multiswipes_enabled end,
-                separator = true,
-            },
+            -- NB If this changes from position 3, also update the position of this menu in multigesture recorder callback
+            self:genMultiswipeSubmenu(),
             {
                 text = _("Tap bottom left corner"),
                 sub_item_table = self:buildMenu("tap_left_bottom_corner", default_gesture["tap_left_bottom_corner"]),
@@ -199,25 +236,19 @@ function ReaderGesture:buildMenu(ges, default)
     return return_menu
 end
 
-local multiswipes = {
-    "west east",
-    "east west",
-    "north south",
-    "south north",
-    "south west",
-    "south east",
-    "east south",
-    "west south",
-}
-
-if custom_multiswipes_table then
-    for k, v in pairs(custom_multiswipes_table) do
-        table.insert(multiswipes, v)
-    end
-end
-
 function ReaderGesture:buildMultiswipeMenu()
     local menu = {}
+    multiswipes = {}
+
+    for k, v in pairs(default_multiswipes) do
+        table.insert(multiswipes, v)
+    end
+
+    if custom_multiswipes_table then
+        for k, v in pairs(custom_multiswipes_table) do
+            table.insert(multiswipes, v)
+        end
+    end
 
     for i=1, #multiswipes do
         local multiswipe = multiswipes[i]
@@ -227,6 +258,21 @@ function ReaderGesture:buildMultiswipeMenu()
         table.insert(menu, {
             text = friendly_multiswipe_name,
             sub_item_table = self:buildMenu(safe_multiswipe_name, default_action),
+            hold_callback = function(touchmenu_instance)
+                if i > #default_multiswipes then
+                    UIManager:show(ConfirmBox:new{
+                        text = T(_("Remove custom multiswipe %1?"), friendly_multiswipe_name),
+                        ok_text = _("Remove"),
+                        ok_callback = function()
+                            -- multiswipes are a combined table, first defaults, then custom
+                            -- so the right index is minus #defalt_multiswipes
+                            custom_multiswipes:removeTableItem("multiswipes", i-#default_multiswipes)
+                            touchmenu_instance.item_table = self:buildMultiswipeMenu()
+                            touchmenu_instance:updateItems()
+                        end,
+                    })
+                end
+            end,
         })
     end
 
