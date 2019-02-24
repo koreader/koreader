@@ -20,6 +20,7 @@ local default_gesture = {
     short_diagonal_swipe = "full_refresh",
     multiswipe = "nothing", -- otherwise registerGesture() won't pick up on multiswipes
     multiswipe_west_east = "previous_location",
+    multiswipe_east_west = "latest_bookmark",
     multiswipe_east_south_west_north = "full_refresh",
 }
 
@@ -34,6 +35,7 @@ local action_strings = {
     page_jmp_fwd_1 = _("Next page"),
     skim = _("Skim"),
     previous_location = _("Back to previous location"),
+    latest_bookmark = _("Go to latest bookmark"),
 
     toc = _("Table of contents"),
     bookmarks = _("Bookmarks"),
@@ -222,7 +224,8 @@ function ReaderGesture:buildMenu(ges, default)
         {"page_jmp_fwd_10", not self.is_docless},
         {"page_jmp_fwd_1", not self.is_docless},
         {"skim", not self.is_docless},
-        {"previous_location", not self.is_docless, true},
+        {"previous_location", not self.is_docless},
+        {"latest_bookmark", not self.is_docless, true},
 
         {"folder_up", self.is_docless, true},
 
@@ -483,6 +486,8 @@ function ReaderGesture:gestureAction(action)
         self.ui:handleEvent(Event:new("ShowSkimtoDialog"))
     elseif action == "previous_location" then
         self.ui:handleEvent(Event:new("GoBackLink"))
+    elseif action == "latest_bookmark" then
+        self.ui.link:onGoToLatestBookmark()
     elseif action == "folder_up" then
         self.ui.file_chooser:changeToPath(string.format("%s/..", self.ui.file_chooser.path))
     elseif action == "open_previous_document" then
