@@ -25,6 +25,41 @@ local default_gesture = {
 
 local ReaderGesture = InputContainer:new{}
 
+local action_strings = {
+    nothing = _("Nothing"),
+
+    page_jmp_back_10 = _("Back 10 pages"),
+    page_jmp_back_1 = _("Previous page"),
+    page_jmp_fwd_10 = _("Forward 10 pages"),
+    page_jmp_fwd_1 = _("Next page"),
+    skim = _("Skim"),
+    previous_location = _("Back to previous location"),
+
+    toc = _("Table of contents"),
+    bookmarks = _("Bookmarks"),
+    reading_progress = _("Reading progress"),
+
+    history = _("History"),
+    open_previous_document = _("Open previous document"),
+
+    full_refresh = _("Full screen refresh"),
+    night_mode = _("Night mode"),
+    suspend = _("Suspend"),
+    toggle_frontlight = _("Toggle frontlight"),
+    toggle_gsensor = _("Toggle accelerometer"),
+    toggle_rotation = _("Toggle rotation"),
+
+    zoom_contentwidth = _("Zoom to fit content width"),
+    zoom_contentheight = _("Zoom to fit content height"),
+    zoom_pagewidth = _("Zoom to fit page width"),
+    zoom_pageheight = _("Zoom to fit page height"),
+    zoom_column = _("Zoom to fit column"),
+    zoom_content = _("Zoom to fit content"),
+    zoom_page = _("Zoom to fit page"),
+
+    folder_up = _("Folder up"),
+}
+
 local custom_multiswipes_path = DataStorage:getSettingsDir().."/multiswipes.lua"
 local custom_multiswipes = LuaData:open(custom_multiswipes_path, { name = "MultiSwipes" })
 local custom_multiswipes_table = custom_multiswipes:readSetting("multiswipes")
@@ -181,44 +216,44 @@ end
 function ReaderGesture:buildMenu(ges, default)
     local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
     local menu = {
-        {_("Nothing"), "nothing", true },
-        {_("Back 10 pages"), "page_jmp_back_10", not self.is_docless},
-        {_("Previous page"), "page_jmp_back_1", not self.is_docless},
-        {_("Forward 10 pages"), "page_jmp_fwd_10", not self.is_docless},
-        {_("Next page"), "page_jmp_fwd_1", not self.is_docless},
-        {_("Skim"), "skim", not self.is_docless},
-        {_("Back to previous location"), "previous_location", not self.is_docless, true},
+        {"nothing", true },
+        {"page_jmp_back_10", not self.is_docless},
+        {"page_jmp_back_1", not self.is_docless},
+        {"page_jmp_fwd_10", not self.is_docless},
+        {"page_jmp_fwd_1", not self.is_docless},
+        {"skim", not self.is_docless},
+        {"previous_location", not self.is_docless, true},
 
-        {_("Folder up"), "folder_up", self.is_docless, true},
+        {"folder_up", self.is_docless, true},
 
-        {_("Table of contents"), "toc", not self.is_docless},
-        {_("Bookmarks"), "bookmarks", not self.is_docless},
-        {_("Reading progress"), "reading_progress", ReaderGesture.getReaderProgress ~= nil, true},
+        { "toc", not self.is_docless},
+        {"bookmarks", not self.is_docless},
+        {"reading_progress", ReaderGesture.getReaderProgress ~= nil, true},
 
-        {_("History"), "history", true},
-        {_("Open previous document"), "open_previous_document", true, true},
+        {"history", true},
+        {"open_previous_document", true, true},
 
-        {_("Full screen refresh"), "full_refresh", true},
-        {_("Night mode"), "night_mode", true},
-        {_("Suspend"), "suspend", true},
-        {_("Toggle frontlight"), "toggle_frontlight", Device:hasFrontlight()},
-        {_("Toggle accelerometer"), "toggle_gsensor", Device:canToggleGSensor()},
-        {_("Toggle rotation"), "toggle_rotation", not self.is_docless, true},
+        {"full_refresh", true},
+        {"night_mode", true},
+        {"suspend", true},
+        {"toggle_frontlight", Device:hasFrontlight()},
+        {"toggle_gsensor", Device:canToggleGSensor()},
+        {"toggle_rotation", not self.is_docless, true},
 
-        {_("Zoom to fit content width"), "zoom_contentwidth", not self.is_docless},
-        {_("Zoom to fit content height"), "zoom_contentheight", not self.is_docless},
-        {_("Zoom to fit page width"), "zoom_pagewidth", not self.is_docless},
-        {_("Zoom to fit page height"), "zoom_pageheight", not self.is_docless},
-        {_("Zoom to fit column"), "zoom_column", not self.is_docless},
-        {_("Zoom to fit content"), "zoom_content", not self.is_docless},
-        {_("Zoom to fit page"), "zoom_page", not self.is_docless},
+        {"zoom_contentwidth", not self.is_docless},
+        {"zoom_contentheight", not self.is_docless},
+        {"zoom_pagewidth", not self.is_docless},
+        {"zoom_pageheight", not self.is_docless},
+        {"zoom_column", not self.is_docless},
+        {"zoom_content", not self.is_docless},
+        {"zoom_page", not self.is_docless},
     }
     local return_menu = {}
     -- add default action to the top of the submenu
     for __, entry in pairs(menu) do
         if entry[2] == default then
-            local menu_entry_default = T(_("%1 (default)"), entry[1])
-            table.insert(return_menu, self:createSubMenu(menu_entry_default, entry[2], ges, true))
+            local menu_entry_default = T(_("%1 (default)"), action_strings[entry[1]])
+            table.insert(return_menu, self:createSubMenu(menu_entry_default, entry[1], ges, true))
 
             if not gesture_manager[ges] then
                 gesture_manager[ges] = default
@@ -229,19 +264,20 @@ function ReaderGesture:buildMenu(ges, default)
     end
     -- another elements
     for _, entry in pairs(menu) do
-        if not entry[3] and gesture_manager[ges] == entry[2] then
+        if not entry[2] and gesture_manager[ges] == entry[1] then
             gesture_manager[ges] = "nothing"
             G_reader_settings:saveSetting(self.ges_mode, gesture_manager)
         end
-        if entry[2] ~= default and entry[3] then
-            local sep = entry[2] == "nothing" or entry[4] == true
-            table.insert(return_menu, self:createSubMenu(entry[1], entry[2], ges, sep))
+        if entry[1] ~= default and entry[2] then
+            local sep = entry[1] == "nothing" or entry[3] == true
+            table.insert(return_menu, self:createSubMenu(action_strings[entry[1]], entry[1], ges, sep))
         end
     end
     return return_menu
 end
 
 function ReaderGesture:buildMultiswipeMenu()
+    local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
     local menu = {}
     multiswipes = {}
 
@@ -261,7 +297,10 @@ function ReaderGesture:buildMultiswipeMenu()
         local safe_multiswipe_name = "multiswipe_"..self:safeMultiswipeName(multiswipe)
         local default_action = default_gesture[safe_multiswipe_name] and default_gesture[safe_multiswipe_name] or "nothing"
         table.insert(menu, {
-            text = friendly_multiswipe_name,
+            text_func = function()
+                local action_name = gesture_manager[safe_multiswipe_name] ~= "nothing" and action_strings[gesture_manager[safe_multiswipe_name]] or _("Available")
+                return T(_("%1   (%2)"), friendly_multiswipe_name, action_name)
+            end,
             sub_item_table = self:buildMenu(safe_multiswipe_name, default_action),
             hold_callback = function(touchmenu_instance)
                 if i > #default_multiswipes then
