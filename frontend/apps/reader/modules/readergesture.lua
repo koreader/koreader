@@ -23,9 +23,7 @@ local default_gesture = {
     multiswipe_east_south_west_north = "full_refresh",
 }
 
-local ReaderGesture = InputContainer:new{
-    multiswipes_enabled = G_reader_settings:readSetting("multiswipes_enabled"),
-}
+local ReaderGesture = InputContainer:new{}
 
 local custom_multiswipes_path = DataStorage:getSettingsDir().."/multiswipes.lua"
 local custom_multiswipes = LuaData:open(custom_multiswipes_path, { name = "MultiSwipes" })
@@ -52,6 +50,7 @@ Multiswipes allow you to perform complex gestures built up out of multiple strai
 
 function ReaderGesture:init()
     if not Device:isTouchDevice() then return end
+    self.multiswipes_enabled = G_reader_settings:readSetting("multiswipes_enabled")
     self.is_docless = self.ui == nil or self.ui.document == nil
     self.ges_mode = self.is_docless and "gesture_fm" or "gesture_reader"
     local gm = G_reader_settings:readSetting(self.ges_mode)
@@ -187,19 +186,25 @@ function ReaderGesture:buildMenu(ges, default)
         {_("Previous page"), "page_jmp_back_1", not self.is_docless},
         {_("Forward 10 pages"), "page_jmp_fwd_10", not self.is_docless},
         {_("Next page"), "page_jmp_fwd_1", not self.is_docless},
-        {_("Back to previous location"), "previous_location", not self.is_docless},
-        {_("Folder up"), "folder_up", self.is_docless},
+        {_("Skim"), "skim", not self.is_docless},
+        {_("Back to previous location"), "previous_location", not self.is_docless, true},
+
+        {_("Folder up"), "folder_up", self.is_docless, true},
+
+        {_("Table of contents"), "toc", not self.is_docless},
         {_("Bookmarks"), "bookmarks", not self.is_docless},
+        {_("Reading progress"), "reading_progress", ReaderGesture.getReaderProgress ~= nil, true},
+
         {_("History"), "history", true},
         {_("Open previous document"), "open_previous_document", true, true},
-        {_("Table of contents"), "toc", not self.is_docless},
-        {_("Reading progress"), "reading_progress", ReaderGesture.getReaderProgress ~= nil},
+
         {_("Full screen refresh"), "full_refresh", true},
         {_("Night mode"), "night_mode", true},
         {_("Suspend"), "suspend", true},
         {_("Toggle frontlight"), "toggle_frontlight", Device:hasFrontlight()},
         {_("Toggle accelerometer"), "toggle_gsensor", Device:canToggleGSensor()},
-        {_("Toggle rotation"), "toggle_rotation", not self.is_docless},
+        {_("Toggle rotation"), "toggle_rotation", not self.is_docless, true},
+
         {_("Zoom to fit content width"), "zoom_contentwidth", not self.is_docless},
         {_("Zoom to fit content height"), "zoom_contentheight", not self.is_docless},
         {_("Zoom to fit page width"), "zoom_pagewidth", not self.is_docless},
@@ -435,6 +440,8 @@ function ReaderGesture:gestureAction(action)
         self:pageUpdate(-10)
     elseif action == "page_jmp_back_1" then
         self:pageUpdate(-1)
+    elseif action == "skim" then
+        self.ui:handleEvent(Event:new("ShowSkimtoDialog"))
     elseif action == "previous_location" then
         self.ui:handleEvent(Event:new("GoBackLink"))
     elseif action == "folder_up" then
