@@ -298,7 +298,8 @@ function ReaderGesture:buildMultiswipeMenu()
         local default_action = default_gesture[safe_multiswipe_name] and default_gesture[safe_multiswipe_name] or "nothing"
         table.insert(menu, {
             text_func = function()
-                return T(_("%1 (%2)"), friendly_multiswipe_name, action_strings[gesture_manager[safe_multiswipe_name]])
+                local action_name = gesture_manager[safe_multiswipe_name] ~= "nothing" and action_strings[gesture_manager[safe_multiswipe_name]] or _("Available")
+                return T(_("%1   (%2)"), friendly_multiswipe_name, action_name)
             end,
             sub_item_table = self:buildMenu(safe_multiswipe_name, default_action),
             hold_callback = function(touchmenu_instance)
