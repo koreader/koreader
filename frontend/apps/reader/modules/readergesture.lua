@@ -329,7 +329,7 @@ function ReaderGesture:createSubMenu(text, action, ges, separator)
         checked_func = function()
             return gesture_manager[ges] == action
         end,
-        callback = function(touchmenu_instance)
+        callback = function()
             gesture_manager[ges] = action
             G_reader_settings:saveSetting(self.ges_mode, gesture_manager)
             self:setupGesture(ges, action)
