@@ -216,7 +216,7 @@ function OTAManager:fetchAndProcessUpdate()
                                  ota_version)
         local update_ok_text = _("Update")
         if ota_version < local_version then
-            update_message =  T(_("The currently installed version is newer than the available version.\nWould you still like to update?\nInstalled version: %1\nAvailable version: %2"),
+            update_message =  T(_("The currently installed version is newer than the available version.\nWould you still like to continue and downgrade?\nInstalled version: %1\nAvailable version: %2"),
                                 local_version,
                                 ota_version)
             update_ok_text = _("Downgrade")
