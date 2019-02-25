@@ -211,14 +211,21 @@ function OTAManager:fetchAndProcessUpdate()
             text = T(_("Update information not available on %1 channel."), channel),
         })
     elseif ota_version then
+        local update_message = T(_("Do you want to update?\nInstalled version: %1\nAvailable version: %2"),
+                                 local_version,
+                                 ota_version)
+        local update_ok_text = _("Update")
+        if ota_version < local_version then
+            update_message =  T(_("The currently installed version is newer than the available version.\nWould you still like to continue and downgrade?\nInstalled version: %1\nAvailable version: %2"),
+                                local_version,
+                                ota_version)
+            update_ok_text = _("Downgrade")
+        end
+
         if OTAManager:getOTAType() == "link" then
             UIManager:show(ConfirmBox:new{
-                text = T(
-                    _("Do you want to update?\nInstalled version: %1\nAvailable version: %2"),
-                    local_version,
-                    ota_version
-                ),
-                ok_text = _("Update"),
+                text = update_message,
+                ok_text = update_ok_text,
                 ok_callback = function()
                     local isAndroid, android = pcall(require, "android")
                     if isAndroid then
@@ -235,12 +242,8 @@ function OTAManager:fetchAndProcessUpdate()
             })
         else
             UIManager:show(ConfirmBox:new{
-                text = T(
-                    _("Do you want to update?\nInstalled version: %1\nAvailable version: %2"),
-                    local_version,
-                    ota_version
-                ),
-                ok_text = _("Update"),
+                text = update_message,
+                ok_text = update_ok_text,
                 ok_callback = function()
                     UIManager:show(InfoMessage:new{
                         text = _("Downloading may take several minutes…"),
