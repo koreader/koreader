@@ -211,13 +211,18 @@ function OTAManager:fetchAndProcessUpdate()
             text = T(_("Update information not available on %1 channel."), channel),
         })
     elseif ota_version then
+        local update_message = T(_("Do you want to update?\nInstalled version: %1\nAvailable version: %2"),
+                                 local_version,
+                                 ota_version)
+        if ota_version < local_version then
+            update_message =  T(_("The currently installed version is newer than the available version.\nWould you still like to update?\nInstalled version: %1\nAvailable version: %2"),
+                                local_version,
+                                ota_version)
+        end
+
         if OTAManager:getOTAType() == "link" then
             UIManager:show(ConfirmBox:new{
-                text = T(
-                    _("Do you want to update?\nInstalled version: %1\nAvailable version: %2"),
-                    local_version,
-                    ota_version
-                ),
+                text = update_message,
                 ok_text = _("Update"),
                 ok_callback = function()
                     local isAndroid, android = pcall(require, "android")
@@ -235,11 +240,7 @@ function OTAManager:fetchAndProcessUpdate()
             })
         else
             UIManager:show(ConfirmBox:new{
-                text = T(
-                    _("Do you want to update?\nInstalled version: %1\nAvailable version: %2"),
-                    local_version,
-                    ota_version
-                ),
+                text = update_message,
                 ok_text = _("Update"),
                 ok_callback = function()
                     UIManager:show(InfoMessage:new{
