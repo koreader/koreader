@@ -19,8 +19,17 @@ local default_gesture = {
     tap_left_bottom_corner = Device:hasFrontlight() and "toggle_frontlight" or "nothing",
     short_diagonal_swipe = "full_refresh",
     multiswipe = "nothing", -- otherwise registerGesture() won't pick up on multiswipes
-    multiswipe_west_east = "latest_bookmark",
-    multiswipe_east_west = "previous_location",
+    multiswipe_west_east = "previous_location",
+    multiswipe_east_west = "latest_bookmark",
+    multiswipe_north_east = "toc",
+    multiswipe_north_west = "bookmarks",
+    multiswipe_east_north = "history",
+    multiswipe_south_north = "skim",
+    multiswipe_west_east_west = "open_previous_document",
+    multiswipe_east_north_west = "zoom_contentwidth",
+    multiswipe_south_east_north = "zoom_contentheight",
+    multiswipe_east_north_west_east = "zoom_pagewidth",
+    multiswipe_south_east_north_south = "zoom_pageheight",
     multiswipe_east_south_west_north = "full_refresh",
 }
 
@@ -79,6 +88,11 @@ local default_multiswipes = {
     "west north",
     "east south",
     "west south",
+    "west east west",
+    "east north west",
+    "south east north",
+    "east north west east",
+    "south east north south",
     "east south west north",
 }
 local multiswipes = {}
