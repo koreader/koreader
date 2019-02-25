@@ -14,25 +14,6 @@ local T = require("ffi/util").template
 local _ = require("gettext")
 local logger = require("logger")
 
-local default_gesture = {
-    tap_right_bottom_corner = "nothing",
-    tap_left_bottom_corner = Device:hasFrontlight() and "toggle_frontlight" or "nothing",
-    short_diagonal_swipe = "full_refresh",
-    multiswipe = "nothing", -- otherwise registerGesture() won't pick up on multiswipes
-    multiswipe_west_east = "previous_location",
-    multiswipe_east_west = "latest_bookmark",
-    multiswipe_north_east = "toc",
-    multiswipe_north_west = "bookmarks",
-    multiswipe_east_north = "history",
-    multiswipe_south_north = "skim",
-    multiswipe_west_east_west = "open_previous_document",
-    multiswipe_east_north_west = "zoom_contentwidth",
-    multiswipe_south_east_north = "zoom_contentheight",
-    multiswipe_east_north_west_east = "zoom_pagewidth",
-    multiswipe_south_east_north_south = "zoom_pageheight",
-    multiswipe_east_south_west_north = "full_refresh",
-}
-
 local ReaderGesture = InputContainer:new{}
 
 local action_strings = {
@@ -104,6 +85,24 @@ function ReaderGesture:init()
     self.multiswipes_enabled = G_reader_settings:readSetting("multiswipes_enabled")
     self.is_docless = self.ui == nil or self.ui.document == nil
     self.ges_mode = self.is_docless and "gesture_fm" or "gesture_reader"
+    self.default_gesture = {
+        tap_right_bottom_corner = "nothing",
+        tap_left_bottom_corner = Device:hasFrontlight() and "toggle_frontlight" or "nothing",
+        short_diagonal_swipe = "full_refresh",
+        multiswipe = "nothing", -- otherwise registerGesture() won't pick up on multiswipes
+        multiswipe_west_east = "previous_location",
+        multiswipe_east_west = "latest_bookmark",
+        multiswipe_north_east = "toc",
+        multiswipe_north_west = self.ges_mode == "gesture_fm" and "folder_up" or "bookmarks",
+        multiswipe_east_north = "history",
+        multiswipe_south_north = "skim",
+        multiswipe_west_east_west = "open_previous_document",
+        multiswipe_east_north_west = "zoom_contentwidth",
+        multiswipe_south_east_north = "zoom_contentheight",
+        multiswipe_east_north_west_east = "zoom_pagewidth",
+        multiswipe_south_east_north_south = "zoom_pageheight",
+        multiswipe_east_south_west_north = "full_refresh",
+    }
     local gm = G_reader_settings:readSetting(self.ges_mode)
     if gm == nil then G_reader_settings:saveSetting(self.ges_mode, {}) end
     self.ui.menu:registerToMainMenu(self)
@@ -112,7 +111,7 @@ end
 
 function ReaderGesture:initGesture()
     local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
-    for gesture, action in pairs(default_gesture) do
+    for gesture, action in pairs(self.default_gesture) do
         if not gesture_manager[gesture] then
             gesture_manager[gesture] = action
         end
@@ -215,15 +214,15 @@ function ReaderGesture:addToMainMenu(menu_items)
             self:genMultiswipeSubmenu(),
             {
                 text = _("Tap bottom left corner"),
-                sub_item_table = self:buildMenu("tap_left_bottom_corner", default_gesture["tap_left_bottom_corner"]),
+                sub_item_table = self:buildMenu("tap_left_bottom_corner", self.default_gesture["tap_left_bottom_corner"]),
             },
             {
                 text = _("Tap bottom right corner"),
-                sub_item_table = self:buildMenu("tap_right_bottom_corner", default_gesture["tap_right_bottom_corner"]),
+                sub_item_table = self:buildMenu("tap_right_bottom_corner", self.default_gesture["tap_right_bottom_corner"]),
             },
             {
                 text = _("Short diagonal swipe"),
-                sub_item_table = self:buildMenu("short_diagonal_swipe", default_gesture["short_diagonal_swipe"]),
+                sub_item_table = self:buildMenu("short_diagonal_swipe", self.default_gesture["short_diagonal_swipe"]),
             },
         },
     }
@@ -312,7 +311,7 @@ function ReaderGesture:buildMultiswipeMenu()
         local multiswipe = multiswipes[i]
         local friendly_multiswipe_name = self:friendlyMultiswipeName(multiswipe)
         local safe_multiswipe_name = "multiswipe_"..self:safeMultiswipeName(multiswipe)
-        local default_action = default_gesture[safe_multiswipe_name] and default_gesture[safe_multiswipe_name] or "nothing"
+        local default_action = self.default_gesture[safe_multiswipe_name] and self.default_gesture[safe_multiswipe_name] or "nothing"
         table.insert(menu, {
             text_func = function()
                 local action_name = gesture_manager[safe_multiswipe_name] ~= "nothing" and action_strings[gesture_manager[safe_multiswipe_name]] or _("Available")
