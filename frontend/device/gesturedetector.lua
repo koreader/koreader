@@ -53,6 +53,7 @@ local GestureDetector = {
     DOUBLE_TAP_INTERVAL = 300 * 1000,
     TWO_FINGER_TAP_DURATION = 300 * 1000,
     HOLD_INTERVAL = 500 * 1000,
+    PAN_INTERVAL = 300 * 1000,
     SWIPE_INTERVAL = 900 * 1000,
     -- pinch/spread direction table
     DIRECTION_TABLE = {
@@ -535,6 +536,15 @@ function GestureDetector:handlePan(tev)
                     [2] = pan_ev,
                 }
             end
+        end
+
+        -- wait a little while to start actually panning to reduce the potential
+        -- for panning on swipe (e.g., for the menu or for multiswipe)
+        if (tv_diff.sec == 0) and (tv_diff.usec < self.PAN_INTERVAL) then
+            pan_ev.relative = {
+                x = 0,
+                y = 0,
+            }
         end
 
         return pan_ev
