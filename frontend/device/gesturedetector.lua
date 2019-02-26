@@ -540,6 +540,7 @@ function GestureDetector:handlePan(tev)
 
         -- wait a little while to start actually panning to reduce the potential
         -- for panning on swipe (e.g., for the menu or for multiswipe)
+        local tv_diff = self.first_tevs[slot].timev - self.last_tevs[slot].timev
         if (tv_diff.sec == 0) and (tv_diff.usec < self.PAN_INTERVAL) then
             pan_ev.relative = {
                 x = 0,
