@@ -37,6 +37,8 @@ local action_strings = {
     full_refresh = _("Full screen refresh"),
     night_mode = _("Night mode"),
     suspend = _("Suspend"),
+    show_menu = _("Show menu"),
+    show_config_menu = _("Show bottom menu"),
     show_frontlight_dialog = _("Show frontlight dialog"),
     toggle_frontlight = _("Toggle frontlight"),
     toggle_gsensor = _("Toggle accelerometer"),
@@ -254,6 +256,8 @@ function ReaderGesture:buildMenu(ges, default)
         {"full_refresh", true},
         {"night_mode", true},
         {"suspend", true},
+        {"show_menu", true},
+        {"show_config_menu", not self.is_docless},
         {"show_frontlight_dialog", Device:hasFrontlight()},
         {"toggle_frontlight", Device:hasFrontlight()},
         {"toggle_gsensor", Device:canToggleGSensor()},
@@ -514,6 +518,14 @@ function ReaderGesture:gestureAction(action)
         elseif self.ui.switchDocument and self.ui.menu then
             self.ui:switchDocument(self.ui.menu:getPreviousFile())
         end
+    elseif action == "show_menu" then
+        if self.ges_mode == "gesture_fm" then
+            self.ui:handleEvent(Event:new("ShowMenu"))
+        else
+            self.ui:handleEvent(Event:new("ShowReaderMenu"))
+        end
+    elseif action == "show_config_menu" then
+        self.ui:handleEvent(Event:new("ShowConfigMenu"))
     elseif action == "show_frontlight_dialog" then
         if self.ges_mode == "gesture_fm" then
             local ReaderFrontLight = require("apps/reader/modules/readerfrontlight")
