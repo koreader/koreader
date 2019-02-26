@@ -483,6 +483,7 @@ function GestureDetector:handlePan(tev)
         return self:handleTwoFingerPan(tev)
     else
         local pan_direction, pan_distance = self:getPath(slot)
+        local tv_diff = self.first_tevs[slot].timev - self.last_tevs[slot].timev
 
         local pan_ev = {
             ges = "pan",
@@ -496,8 +497,14 @@ function GestureDetector:handlePan(tev)
             distance = pan_distance,
             time = tev.timev,
         }
-        pan_ev.relative.x = tev.x - self.first_tevs[slot].x
-        pan_ev.relative.y = tev.y - self.first_tevs[slot].y
+
+        -- wait a little while to start actually panning to reduce the potential
+        -- for panning on swipe (e.g., for the menu or for multiswipe)
+        if not ((tv_diff.sec == 0) and (tv_diff.usec < self.PAN_INTERVAL)) then
+            pan_ev.relative.x = tev.x - self.first_tevs[slot].x
+            pan_ev.relative.y = tev.y - self.first_tevs[slot].y
+        end
+
         pan_ev.pos = Geom:new{
             x = self.last_tevs[slot].x,
             y = self.last_tevs[slot].y,
@@ -536,16 +543,6 @@ function GestureDetector:handlePan(tev)
                     [2] = pan_ev,
                 }
             end
-        end
-
-        -- wait a little while to start actually panning to reduce the potential
-        -- for panning on swipe (e.g., for the menu or for multiswipe)
-        local tv_diff = self.first_tevs[slot].timev - self.last_tevs[slot].timev
-        if (tv_diff.sec == 0) and (tv_diff.usec < self.PAN_INTERVAL) then
-            pan_ev.relative = {
-                x = 0,
-                y = 0,
-            }
         end
 
         return pan_ev
