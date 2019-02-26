@@ -401,8 +401,8 @@ function ReaderPaging:onPan(_, ges)
             self.view:PanningStart(-ges.relative.x, -ges.relative.y)
         end
     elseif ges.direction == "north" or ges.direction == "south" then
-        self:onPanningRel(self.last_pan_relative_y - ges.relative.y)
-        self.last_pan_relative_y = ges.relative.y
+        self:onPanningRel(self.last_pan_relative_y - ges.relative_delayed.y)
+        self.last_pan_relative_y = ges.relative_delayed.y
     end
     return true
 end
