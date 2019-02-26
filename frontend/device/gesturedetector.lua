@@ -507,7 +507,7 @@ function GestureDetector:handlePan(tev)
         pan_ev.relative.x = tev.x - self.first_tevs[slot].x
         pan_ev.relative.y = tev.y - self.first_tevs[slot].y
 
-        -- delayed pan, used where to reduce potential activation of panning
+        -- delayed pan, used where necessary to reduce potential activation of panning
         -- when swiping is intended (e.g., for the menu or for multiswipe)
         if not ((tv_diff.sec == 0) and (tv_diff.usec < self.PAN_DELAYED_INTERVAL)) then
             pan_ev.relative_delayed.x = tev.x - self.first_tevs[slot].x
