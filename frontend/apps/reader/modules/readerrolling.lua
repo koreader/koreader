@@ -39,7 +39,6 @@ local ReaderRolling = InputContainer:new{
     inverse_reading_order = false,
     -- only used for page view mode
     current_page= nil,
-    doc_height = nil,
     xpointer = nil,
     panning_steps = ReaderPanning.panning_steps,
     show_overlap_enable = nil,
@@ -106,9 +105,8 @@ function ReaderRolling:init()
     end
 
     table.insert(self.ui.postInitCallback, function()
-        self.doc_height = self.ui.document.info.doc_height
-        self.old_doc_height = self.doc_height
         self.ui.document:_readMetadata()
+        self.old_doc_height = self.ui.document.info.doc_height
         self.old_page = self.ui.document.info.number_of_pages
     end)
     table.insert(self.ui.postReaderCallback, function()
@@ -386,7 +384,7 @@ function ReaderRolling:getLastPercent()
     else
         -- FIXME: the calculated percent is not accurate in "scroll" mode.
         return self.ui.document:getPosFromXPointer(
-            self.ui.document:getXPointer()) / self.doc_height
+            self.ui.document:getXPointer()) / self.ui.document.info.doc_height
     end
 end
 
@@ -700,7 +698,10 @@ end
 function ReaderRolling:_gotoPos(new_pos, do_dim_area)
     if new_pos == self.current_pos then return end
     if new_pos < 0 then new_pos = 0 end
-    if new_pos > self.doc_height then new_pos = self.doc_height end
+    -- Don't go past end of document, and ensure last line of the document
+    -- is shown just above the footer, whether footer is visible or not
+    local max_pos = self.ui.document.info.doc_height - self.ui.dimen.h + self.view.footer:getHeight()
+    if new_pos > max_pos then new_pos = max_pos end
     -- adjust dim_area according to new_pos
     if self.view.view_mode ~= "page" and self.show_overlap_enable and do_dim_area then
         local footer_height = (self.view.footer_visible and 1 or 0) * self.view.footer:getHeight()
@@ -714,6 +715,11 @@ function ReaderRolling:_gotoPos(new_pos, do_dim_area)
         elseif panned_step > 0 then
             self.view.dim_area.y = 0
         end
+        if self.current_pos > max_pos - self.ui.dimen.h/2 then
+            -- Avoid a fully dimmed page when reaching end of document
+            -- (the scroll would bump and not be a full page long)
+            self.view:resetDimArea()
+        end
     else
         self.view:resetDimArea()
     end
@@ -725,7 +731,7 @@ function ReaderRolling:_gotoPos(new_pos, do_dim_area)
 end
 
 function ReaderRolling:_gotoPercent(new_percent)
-    self:_gotoPos(new_percent * self.doc_height / 10000)
+    self:_gotoPos(new_percent * self.ui.document.info.doc_height / 10000)
 end
 
 function ReaderRolling:_gotoPage(new_page)

@@ -200,10 +200,19 @@ function CreDocument:render()
     end
     logger.dbg("CreDocument: rendering document...")
     self._document:renderDocument()
-    if not self.info.has_pages then
+    self.info.doc_height = self._document:getFullHeight()
+    self.been_rendered = true
+    logger.dbg("CreDocument: rendering done.")
+end
+
+function CreDocument:_readMetadata()
+    Document._readMetadata(self) -- will grab/update self.info.number_of_pages
+    if self.been_rendered then
+        -- getFullHeight() would crash if the document is not
+        -- yet rendered
         self.info.doc_height = self._document:getFullHeight()
     end
-    logger.dbg("CreDocument: rendering done.")
+    return true
 end
 
 function CreDocument:close()
