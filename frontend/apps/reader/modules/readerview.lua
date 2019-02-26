@@ -495,32 +495,41 @@ function ReaderView:drawXPointerSavedHighlight(bb, x, y)
     -- showing menu...). We might want to cache these boxes per page (and
     -- clear that cache when page layout change or highlights are added
     -- or removed).
-    local cur_page
-    -- In scroll mode, we'll need to check for highlights in previous or next
-    -- page too as some parts of them may be displayed
-    local neighbour_pages = self.view_mode ~= "page" and 1 or 0
+    local cur_page, cur_scroll_top, cur_scroll_bottom
     for page, _ in pairs(self.highlight.saved) do
         local items = self.highlight.saved[page]
         if not items then items = {} end
         for j = 1, #items do
-            if not cur_page then
-                cur_page = self.ui.document:getPageFromXPointer(self.ui.document:getXPointer())
-            end
             local item = items[j]
             local pos0, pos1 = item.pos0, item.pos1
             -- document:getScreenBoxesFromPositions() is expensive, so we
             -- first check this item is on current page
-            local page0 = self.ui.document:getPageFromXPointer(pos0)
-            local page1 = self.ui.document:getPageFromXPointer(pos1)
-            local start_page = math.min(page0, page1)
-            local end_page = math.max(page0, page1)
-            -- In scroll mode, we may be displaying cur_page and cur_page+1, so
-            -- we have to check the highlight start_page is <= cur_page+1.
-            -- Same thinking with highlight's end_page >= cur_page-1 as we may
-            -- be displaying a part of cur_page-1.
-            -- (A highlight starting on cur_page-17 and ending on cur_page+13 is
-            -- a highlight to consider)
-            if start_page <= cur_page + neighbour_pages and end_page >= cur_page - neighbour_pages then
+            local is_in_view = false
+            if self.view_mode == "page" then
+                if not cur_page then
+                    cur_page = self.ui.document:getPageFromXPointer(self.ui.document:getXPointer())
+                end
+                local page0 = self.ui.document:getPageFromXPointer(pos0)
+                local page1 = self.ui.document:getPageFromXPointer(pos1)
+                local start_page = math.min(page0, page1)
+                local end_page = math.max(page0, page1)
+                if start_page <= cur_page and end_page >= cur_page then
+                    is_in_view = true
+                end
+            else
+                if not cur_scroll_top then
+                    cur_scroll_top = self.ui.document:getPosFromXPointer(self.ui.document:getXPointer())
+                    cur_scroll_bottom = cur_scroll_top + self.ui.dimen.h
+                end
+                local spos0 = self.ui.document:getPosFromXPointer(pos0)
+                local spos1 = self.ui.document:getPosFromXPointer(pos1)
+                local start_pos = math.min(spos0, spos1)
+                local end_pos = math.max(spos0, spos1)
+                if start_pos <= cur_scroll_bottom and end_pos >= cur_scroll_top then
+                    is_in_view = true
+                end
+            end
+            if is_in_view then
                 local boxes = self.ui.document:getScreenBoxesFromPositions(pos0, pos1, true) -- get_segments=true
                 if boxes then
                     for _, box in pairs(boxes) do
