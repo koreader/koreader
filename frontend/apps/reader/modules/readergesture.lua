@@ -37,6 +37,7 @@ local action_strings = {
     full_refresh = _("Full screen refresh"),
     night_mode = _("Night mode"),
     suspend = _("Suspend"),
+    show_frontlight_dialog = _("Show frontlight dialog"),
     toggle_frontlight = _("Toggle frontlight"),
     toggle_gsensor = _("Toggle accelerometer"),
     toggle_rotation = _("Toggle rotation"),
@@ -96,6 +97,7 @@ function ReaderGesture:init()
         multiswipe_north_west = self.ges_mode == "gesture_fm" and "folder_up" or "bookmarks",
         multiswipe_east_north = "history",
         multiswipe_south_north = "skim",
+        multiswipe_south_west = "show_frontlight_dialog",
         multiswipe_west_east_west = "open_previous_document",
         multiswipe_east_north_west = "zoom_contentwidth",
         multiswipe_south_east_north = "zoom_contentheight",
@@ -252,6 +254,7 @@ function ReaderGesture:buildMenu(ges, default)
         {"full_refresh", true},
         {"night_mode", true},
         {"suspend", true},
+        {"show_frontlight_dialog", Device:hasFrontlight()},
         {"toggle_frontlight", Device:hasFrontlight()},
         {"toggle_gsensor", Device:canToggleGSensor()},
         {"toggle_rotation", not self.is_docless, true},
@@ -510,6 +513,13 @@ function ReaderGesture:gestureAction(action)
         -- ReaderUI
         elseif self.ui.switchDocument and self.ui.menu then
             self.ui:switchDocument(self.ui.menu:getPreviousFile())
+        end
+    elseif action == "show_frontlight_dialog" then
+        if self.ges_mode == "gesture_fm" then
+            local ReaderFrontLight = require("apps/reader/modules/readerfrontlight")
+            ReaderFrontLight:onShowFlDialog()
+        else
+            self.ui:handleEvent(Event:new("ShowFlDialog"))
         end
     elseif action == "toggle_frontlight" then
         Device:getPowerDevice():toggleFrontlight()
