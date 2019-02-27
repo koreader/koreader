@@ -13,6 +13,7 @@ A simple module to module to compare and do arithmetic with time values.
     local tv_duration_seconds_float = tv_duration.sec + tv_duration.usec/1000000
 ]]
 
+local dbg = require("dbg")
 local util = require("ffi/util")
 
 --[[--
@@ -109,6 +110,12 @@ function TimeVal:__sub(time_b)
 
     return diff
 end
+
+dbg:guard(TimeVal, '__sub',
+          function(self, time_b)
+              assert(self.sec > time_b.sec or (self.sec == time_b.sec and self.usec >= time_b.usec),
+                     "Subtract the first timeval from the latest, not vice versa.")
+          end)
 
 function TimeVal:__add(time_b)
     local sum = TimeVal:new{}

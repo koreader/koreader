@@ -195,7 +195,7 @@ end
 
 function GestureDetector:isSwipe(slot)
     if not self.first_tevs[slot] or not self.last_tevs[slot] then return end
-    local tv_diff = self.first_tevs[slot].timev - self.last_tevs[slot].timev
+    local tv_diff = self.last_tevs[slot].timev - self.first_tevs[slot].timev
     if (tv_diff.sec == 0) and (tv_diff.usec < self.SWIPE_INTERVAL) then
         local x_diff = self.last_tevs[slot].x - self.first_tevs[slot].x
         local y_diff = self.last_tevs[slot].y - self.first_tevs[slot].y
