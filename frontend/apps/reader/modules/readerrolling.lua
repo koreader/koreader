@@ -422,9 +422,9 @@ end
 function ReaderRolling:onPan(_, ges)
     if self.view.view_mode == "scroll" then
         if ges.direction == "north" then
-            self:_gotoPos(self.current_pos + ges.distance)
+            self:_gotoPos(self.current_pos + ges.distance_delayed)
         elseif ges.direction == "south" then
-            self:_gotoPos(self.current_pos - ges.distance)
+            self:_gotoPos(self.current_pos - ges.distance_delayed)
         end
     end
     return true

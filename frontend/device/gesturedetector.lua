@@ -500,6 +500,7 @@ function GestureDetector:handlePan(tev)
             pos = nil,
             direction = pan_direction,
             distance = pan_distance,
+            distance_delayed = 0,
             time = tev.timev,
         }
 
@@ -512,8 +513,7 @@ function GestureDetector:handlePan(tev)
         if not ((tv_diff.sec == 0) and (tv_diff.usec < self.PAN_DELAYED_INTERVAL)) then
             pan_ev.relative_delayed.x = tev.x - self.first_tevs[slot].x
             pan_ev.relative_delayed.y = tev.y - self.first_tevs[slot].y
-        else
-            pan_ev.distance = 0
+            pan_ev.distance_delayed = pan_distance
         end
 
         pan_ev.pos = Geom:new{
