@@ -53,7 +53,7 @@ local GestureDetector = {
     DOUBLE_TAP_INTERVAL = 300 * 1000,
     TWO_FINGER_TAP_DURATION = 300 * 1000,
     HOLD_INTERVAL = 500 * 1000,
-    PAN_DELAYED_INTERVAL = 200 * 1000,
+    PAN_DELAYED_INTERVAL = 500 * 1000,
     SWIPE_INTERVAL = 900 * 1000,
     -- pinch/spread direction table
     DIRECTION_TABLE = {
@@ -196,7 +196,7 @@ end
 
 function GestureDetector:isSwipe(slot)
     if not self.first_tevs[slot] or not self.last_tevs[slot] then return end
-    local tv_diff = self.first_tevs[slot].timev - self.last_tevs[slot].timev
+    local tv_diff = self.last_tevs[slot].timev - self.first_tevs[slot].timev
     if (tv_diff.sec == 0) and (tv_diff.usec < self.SWIPE_INTERVAL) then
         local x_diff = self.last_tevs[slot].x - self.first_tevs[slot].x
         local y_diff = self.last_tevs[slot].y - self.first_tevs[slot].y
@@ -483,7 +483,7 @@ function GestureDetector:handlePan(tev)
         return self:handleTwoFingerPan(tev)
     else
         local pan_direction, pan_distance = self:getPath(slot)
-        local tv_diff = self.first_tevs[slot].timev - self.last_tevs[slot].timev
+        local tv_diff = self.last_tevs[slot].timev - self.first_tevs[slot].timev
 
         local pan_ev = {
             ges = "pan",
