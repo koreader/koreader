@@ -159,6 +159,12 @@ if Device:isAndroid() then
     end
 end
 
+if Device:isTouchDevice() then
+    common_settings.taps_and_gestures = {
+        text = _("Taps and gestures"),
+    }
+end
+
 if Device:hasKeys() then
     common_settings.navigation = {
         text = _("Navigation"),

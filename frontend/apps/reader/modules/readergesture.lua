@@ -137,7 +137,7 @@ function ReaderGesture:genMultiswipeSubmenu()
 end
 
 function ReaderGesture:addToMainMenu(menu_items)
-    menu_items.gesture = {
+    menu_items.gesture_manager = {
         text = _("Gesture manager"),
         sub_item_table = {
             {
