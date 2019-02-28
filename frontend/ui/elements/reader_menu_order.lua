@@ -47,8 +47,8 @@ local order = {
         "screen",
         "----------------------------",
         "document",
+        "taps_and_gestures",
         "navigation",
-        "follow_links",
         "----------------------------",
         "language",
         "device",
@@ -59,7 +59,6 @@ local order = {
     device = {
         "time",
         "battery",
-        "gesture",
         "mass_storage_settings",
     },
     network = {
@@ -79,12 +78,19 @@ local order = {
         "screen_eink_opt",
         "color_rendering",
         "----------------------------",
-        "menu_activate",
-        "screen_disable_double_tab",
         "screen_toggle_gsensor",
         "----------------------------",
         "keep_screen_on",
         "fullscreen",
+    },
+    taps_and_gestures = {
+        "gesture_manager",
+        "frontlight_gesture_controller",
+        "----------------------------",
+        "follow_links",
+        "----------------------------",
+        "menu_activate",
+        "screen_disable_double_tab",
     },
     tools = {
         "read_timer",
@@ -103,7 +109,6 @@ local order = {
     },
     more_plugins = {
         "auto_frontlight",
-        "frontlight_gesture_controller",
         "battery_statistics",
         "synchronize_time",
         "keep_alive",
