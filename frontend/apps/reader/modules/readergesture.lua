@@ -33,6 +33,7 @@ local action_strings = {
 
     history = _("History"),
     open_previous_document = _("Open previous document"),
+    filemanager = _("File browser"),
 
     full_refresh = _("Full screen refresh"),
     night_mode = _("Night mode"),
@@ -52,7 +53,6 @@ local action_strings = {
     zoom_content = _("Zoom to fit content"),
     zoom_page = _("Zoom to fit page"),
 
-    filemanager = _("File browser"),
     folder_up = _("Folder up"),
 }
 
@@ -245,7 +245,6 @@ function ReaderGesture:buildMenu(ges, default)
         {"previous_location", not self.is_docless},
         {"latest_bookmark", not self.is_docless, true},
 
-        {"filemanager", not self.is_docless, true},
         {"folder_up", self.is_docless, true},
 
         { "toc", not self.is_docless},
@@ -254,6 +253,7 @@ function ReaderGesture:buildMenu(ges, default)
 
         {"history", true},
         {"open_previous_document", true, true},
+        {"filemanager", not self.is_docless, true},
 
         {"full_refresh", true},
         {"night_mode", true},
