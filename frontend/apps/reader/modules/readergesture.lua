@@ -52,6 +52,7 @@ local action_strings = {
     zoom_content = _("Zoom to fit content"),
     zoom_page = _("Zoom to fit page"),
 
+    filemanager = _("File browser"),
     folder_up = _("Folder up"),
 }
 
@@ -244,6 +245,7 @@ function ReaderGesture:buildMenu(ges, default)
         {"previous_location", not self.is_docless},
         {"latest_bookmark", not self.is_docless, true},
 
+        {"filemanager", not self.is_docless, true},
         {"folder_up", self.is_docless, true},
 
         { "toc", not self.is_docless},
@@ -508,6 +510,9 @@ function ReaderGesture:gestureAction(action)
         self.ui:handleEvent(Event:new("GoBackLink"))
     elseif action == "latest_bookmark" then
         self.ui.link:onGoToLatestBookmark()
+    elseif action == "filemanager" then
+        self.ui:onClose()
+        self.ui:showFileManager()
     elseif action == "folder_up" then
         self.ui.file_chooser:changeToPath(string.format("%s/..", self.ui.file_chooser.path))
     elseif action == "open_previous_document" then
