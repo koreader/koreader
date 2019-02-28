@@ -421,10 +421,14 @@ end
 
 function ReaderRolling:onPan(_, ges)
     if self.view.view_mode == "scroll" then
+        local distance_type = "distance"
+        if self.ui.gesture and self.ui.gesture.multiswipes_enabled then
+            distance_type = "distance_delayed"
+        end
         if ges.direction == "north" then
-            self:_gotoPos(self.current_pos + ges.distance)
+            self:_gotoPos(self.current_pos + ges[distance_type])
         elseif ges.direction == "south" then
-            self:_gotoPos(self.current_pos - ges.distance)
+            self:_gotoPos(self.current_pos - ges[distance_type])
         end
     end
     return true

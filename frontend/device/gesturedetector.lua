@@ -53,6 +53,7 @@ local GestureDetector = {
     DOUBLE_TAP_INTERVAL = 300 * 1000,
     TWO_FINGER_TAP_DURATION = 300 * 1000,
     HOLD_INTERVAL = 500 * 1000,
+    PAN_DELAYED_INTERVAL = 500 * 1000,
     SWIPE_INTERVAL = 900 * 1000,
     -- pinch/spread direction table
     DIRECTION_TABLE = {
@@ -482,6 +483,7 @@ function GestureDetector:handlePan(tev)
         return self:handleTwoFingerPan(tev)
     else
         local pan_direction, pan_distance = self:getPath(slot)
+        local tv_diff = self.last_tevs[slot].timev - self.first_tevs[slot].timev
 
         local pan_ev = {
             ges = "pan",
@@ -490,13 +492,30 @@ function GestureDetector:handlePan(tev)
                 x = 0,
                 y = 0,
             },
+            relative_delayed = {
+                -- default to pan 0
+                x = 0,
+                y = 0,
+            },
             pos = nil,
             direction = pan_direction,
             distance = pan_distance,
+            distance_delayed = 0,
             time = tev.timev,
         }
+
+        -- regular pan
         pan_ev.relative.x = tev.x - self.first_tevs[slot].x
         pan_ev.relative.y = tev.y - self.first_tevs[slot].y
+
+        -- delayed pan, used where necessary to reduce potential activation of panning
+        -- when swiping is intended (e.g., for the menu or for multiswipe)
+        if not ((tv_diff.sec == 0) and (tv_diff.usec < self.PAN_DELAYED_INTERVAL)) then
+            pan_ev.relative_delayed.x = tev.x - self.first_tevs[slot].x
+            pan_ev.relative_delayed.y = tev.y - self.first_tevs[slot].y
+            pan_ev.distance_delayed = pan_distance
+        end
+
         pan_ev.pos = Geom:new{
             x = self.last_tevs[slot].x,
             y = self.last_tevs[slot].y,
