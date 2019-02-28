@@ -168,11 +168,20 @@ end
 common_settings.navigation = {
     text = _("Navigation"),
 }
+local back_to_exit_str = {
+    prompt = {_("Prompt"), _("prompt")},
+    always = {_("Always"), _("always")},
+    disable ={_("Disable"), _("disable")},
+}
 common_settings.back_to_exit = {
-    text = _("Back to exit KOReader"),
+    text_func = function()
+        local back_to_exit = G_reader_settings:readSetting("back_to_exit") or "prompt"
+        return T(_("Back to exit (%1)"),
+                 back_to_exit_str[back_to_exit][2])
+    end,
     sub_item_table = {
         {
-            text = _("Prompt"),
+            text = back_to_exit_str.prompt[1],
             checked_func = function()
                 local setting = G_reader_settings:readSetting("back_to_exit")
                 return setting == "prompt" or setting == nil
@@ -182,7 +191,7 @@ common_settings.back_to_exit = {
             end,
         },
         {
-            text = _("Always"),
+            text = back_to_exit_str.always[1],
             checked_func = function()
                 return G_reader_settings:readSetting("back_to_exit")
                            == "always"
@@ -192,7 +201,7 @@ common_settings.back_to_exit = {
             end,
         },
         {
-            text = _("Disable"),
+            text = back_to_exit_str.disable[1],
             checked_func = function()
                 return G_reader_settings:readSetting("back_to_exit")
                            == "disable"
@@ -207,7 +216,11 @@ common_settings.back_in_filemanager = {
     text = _("Back in file browser"),
     sub_item_table = {
         {
-            text = _("Defer to back to exit setting"),
+            text_func = function()
+                local back_to_exit = G_reader_settings:readSetting("back_to_exit") or "prompt"
+                return T(_("Back to exit (%1)"),
+                         back_to_exit_str[back_to_exit][2])
+            end,
             checked_func = function()
                 local back_in_filemanager = G_reader_settings:readSetting("back_in_filemanager")
                 return back_in_filemanager == nil or back_in_filemanager == "default"
