@@ -123,21 +123,18 @@ NetworkMgr:getMenuTable(common_settings)
 
 common_settings.screen = {
     text = _("Screen"),
-    sub_item_table = {
-        require("ui/elements/screen_dpi_menu_table"),
-        require("ui/elements/screen_eink_opt_menu_table"),
-        require("ui/elements/menu_activate"),
-        require("ui/elements/screen_disable_double_tap_table"),
-    },
 }
+common_settings.screen_dpi = require("ui/elements/screen_dpi_menu_table")
+common_settings.screen_eink_opt = require("ui/elements/screen_eink_opt_menu_table")
+common_settings.menu_activate = require("ui/elements/menu_activate")
+common_settings.screen_disable_double_tab = require("ui/elements/screen_disable_double_tap_table")
+
 if Device:canToggleGSensor() then
-    table.insert(common_settings.screen.sub_item_table, require("ui/elements/screen_toggle_gsensor"))
+    common_settings.screen_toggle_gsensor = require("ui/elements/screen_toggle_gsensor")
 end
+
 if Screen.isColorScreen() then
-    table.insert(common_settings.screen.sub_item_table, 3, require("ui/elements/screen_color_menu_table"))
-    common_settings.screen.sub_item_table[3].separator = true
-else
-    common_settings.screen.sub_item_table[2].separator = true
+    common_settings.color_rendering = require("ui/elements/screen_color_menu_table")
 end
 
 if Device:isAndroid() then
@@ -146,21 +143,19 @@ if Device:isAndroid() then
     if not isAndroid then return end
 
     -- keep screen on
-    table.insert(common_settings.screen.sub_item_table,
-        {
-            text = _("Keep screen on"),
-            checked_func = function() return G_reader_settings:isTrue("enable_android_wakelock") end,
-            callback = function() require("ui/elements/screen_android"):toggleWakelock() end,
-        })
+    common_settings.keep_screen_on = {
+        text = _("Keep screen on"),
+        checked_func = function() return G_reader_settings:isTrue("enable_android_wakelock") end,
+        callback = function() require("ui/elements/screen_android"):toggleWakelock() end,
+    }
 
     -- fullscreen
     if Device.firmware_rev <= 16 then
-        table.insert(common_settings.screen.sub_item_table,
-            {
-                text = _("Fullscreen"),
-                checked_func = function() return android.isFullscreen() end,
-                callback = function() require("ui/elements/screen_android"):toggleFullscreen() end,
-            })
+        common_settings.fullscreen = {
+            text = _("Fullscreen"),
+            checked_func = function() return android.isFullscreen() end,
+            callback = function() require("ui/elements/screen_android"):toggleFullscreen() end,
+        }
     end
 end
 
