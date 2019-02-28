@@ -165,92 +165,91 @@ if Device:isTouchDevice() then
     }
 end
 
+common_settings.navigation = {
+    text = _("Navigation"),
+}
+common_settings.back_to_exit = {
+    text = _("Back to exit KOReader"),
+    sub_item_table = {
+        {
+            text = _("Prompt"),
+            checked_func = function()
+                local setting = G_reader_settings:readSetting("back_to_exit")
+                return setting == "prompt" or setting == nil
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("back_to_exit", "prompt")
+            end,
+        },
+        {
+            text = _("Always"),
+            checked_func = function()
+                return G_reader_settings:readSetting("back_to_exit")
+                           == "always"
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("back_to_exit", "always")
+            end,
+        },
+        {
+            text = _("Disable"),
+            checked_func = function()
+                return G_reader_settings:readSetting("back_to_exit")
+                           == "disable"
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("back_to_exit", "disable")
+            end,
+        },
+    },
+}
+common_settings.back_in_filemanager = {
+    text = _("Back in file browser"),
+    sub_item_table = {
+        {
+            text = _("Defer to back to exit setting"),
+            checked_func = function()
+                local back_in_filemanager = G_reader_settings:readSetting("back_in_filemanager")
+                return back_in_filemanager == nil or back_in_filemanager == "default"
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("back_in_filemanager", "default")
+            end,
+        },
+        {
+            text = _("Go to parent folder"),
+            checked_func = function()
+                return G_reader_settings:readSetting("back_in_filemanager")
+                           == "parent_folder"
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("back_in_filemanager", "parent_folder")
+            end,
+        },
+    },
+}
+common_settings.enable_back_history = {
+    text = _("Enable back history"),
+    checked_func = function()
+        return G_reader_settings:nilOrTrue("enable_back_history")
+    end,
+    callback = function()
+        G_reader_settings:flipNilOrTrue("enable_back_history")
+    end,
+}
 if Device:hasKeys() then
-    common_settings.navigation = {
-        text = _("Navigation"),
-        sub_item_table = {
-            {
-                text = _("Back key to exit KOReader"),
-                sub_item_table = {
-                    {
-                        text = _("Prompt"),
-                        checked_func = function()
-                            local setting = G_reader_settings:readSetting("back_to_exit")
-                            return setting == "prompt" or setting == nil
-                        end,
-                        callback = function()
-                            G_reader_settings:saveSetting("back_to_exit", "prompt")
-                        end,
-                    },
-                    {
-                        text = _("Always"),
-                        checked_func = function()
-                            return G_reader_settings:readSetting("back_to_exit")
-                                       == "always"
-                        end,
-                        callback = function()
-                            G_reader_settings:saveSetting("back_to_exit", "always")
-                        end,
-                    },
-                    {
-                        text = _("Disable"),
-                        checked_func = function()
-                            return G_reader_settings:readSetting("back_to_exit")
-                                       == "disable"
-                        end,
-                        callback = function()
-                            G_reader_settings:saveSetting("back_to_exit", "disable")
-                        end,
-                    },
-                },
-            },
-            {
-                text = _("Back key in file browser"),
-                sub_item_table = {
-                    {
-                        text = _("Default"),
-                        checked_func = function()
-                            return G_reader_settings:readSetting("back_in_filemanager")
-                                       == "default"
-                        end,
-                        callback = function()
-                            G_reader_settings:saveSetting("back_in_filemanager", "default")
-                        end,
-                    },
-                    {
-                        text = _("Go to parent folder"),
-                        checked_func = function()
-                            return G_reader_settings:readSetting("back_in_filemanager")
-                                       == "parent_folder"
-                        end,
-                        callback = function()
-                            G_reader_settings:saveSetting("back_in_filemanager", "parent_folder")
-                        end,
-                    },
-                },
-            },
-            {
-                text = _("Enable back history"),
-                checked_func = function()
-                    return G_reader_settings:nilOrTrue("enable_back_history")
-                end,
-                callback = function()
-                    G_reader_settings:flipNilOrTrue("enable_back_history")
-                end,
-            },
-            {
-                text = _("Invert page turn buttons"),
-                checked_func = function()
-                    return G_reader_settings:isTrue("input_invert_page_turn_keys")
-                end,
-                callback = function()
-                    G_reader_settings:flipNilOrFalse("input_invert_page_turn_keys")
-                    Device:invertButtons()
-                end,
-            },
-        }
+    common_settings.invert_page_turn_buttons = {
+        text = _("Invert page turn buttons"),
+        checked_func = function()
+            return G_reader_settings:isTrue("input_invert_page_turn_keys")
+        end,
+        callback = function()
+            G_reader_settings:flipNilOrFalse("input_invert_page_turn_keys")
+            Device:invertButtons()
+        end,
     }
 end
+
 common_settings.document = {
     text = _("Document"),
     sub_item_table = {
