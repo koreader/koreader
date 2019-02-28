@@ -61,6 +61,13 @@ local order = {
         "battery",
         "mass_storage_settings",
     },
+    navigation = {
+        "back_to_exit",
+        "back_in_filemanager",
+        "enable_back_history",
+        "----------------------------",
+        "invert_page_turn_buttons",
+    },
     network = {
         "network_wifi",
         "network_proxy",

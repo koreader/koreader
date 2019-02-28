@@ -24,6 +24,7 @@ local action_strings = {
     page_jmp_fwd_10 = _("Forward 10 pages"),
     page_jmp_fwd_1 = _("Next page"),
     skim = _("Skim"),
+    back = _("Back"),
     previous_location = _("Back to previous location"),
     latest_bookmark = _("Go to latest bookmark"),
 
@@ -101,6 +102,7 @@ function ReaderGesture:init()
         multiswipe_east_north = "history",
         multiswipe_south_north = "skim",
         multiswipe_south_west = "show_frontlight_dialog",
+        multiswipe_west_south = "back",
         multiswipe_west_east_west = "open_previous_document",
         multiswipe_east_north_west = "zoom_contentwidth",
         multiswipe_south_east_north = "zoom_contentheight",
@@ -242,6 +244,7 @@ function ReaderGesture:buildMenu(ges, default)
         {"page_jmp_fwd_10", not self.is_docless},
         {"page_jmp_fwd_1", not self.is_docless},
         {"skim", not self.is_docless},
+        {"back", true},
         {"previous_location", not self.is_docless},
         {"latest_bookmark", not self.is_docless, true},
 
@@ -506,6 +509,8 @@ function ReaderGesture:gestureAction(action)
         self:pageUpdate(-1)
     elseif action == "skim" then
         self.ui:handleEvent(Event:new("ShowSkimtoDialog"))
+    elseif action == "back" then
+        self.ui:handleEvent(Event:new("Back"))
     elseif action == "previous_location" then
         self.ui:handleEvent(Event:new("GoBackLink"))
     elseif action == "latest_bookmark" then
