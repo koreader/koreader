@@ -18,8 +18,10 @@ describe("TimeVal module", function()
     it("should add", function()
         local timev1 = TimeVal:new{ sec = 5, usec = 5000}
         local timev2 = TimeVal:new{ sec = 10, usec = 6000}
+        local timev3 = TimeVal:new{ sec = 10, usec = 50000000}
 
         assert.is.same({sec = 15,usec = 11000}, timev1 + timev2)
+        assert.is.same({sec = 65,usec = 5000}, timev1 + timev3)
     end)
 
     it("should subtract", function()
@@ -49,14 +51,22 @@ describe("TimeVal module", function()
         local timev1 = TimeVal:new{ sec = 5, usec = 5000}
         local timev2 = TimeVal:new{ sec = 10, usec = 6000}
         local timev3 = TimeVal:new{ sec = 5, usec = 5000}
+        local timev4 = TimeVal:new{ sec = 5, usec = 6000}
 
         assert.is_true(timev2 > timev1)
+        assert.is_false(timev2 < timev1)
         assert.is_true(timev2 >= timev1)
 
+        assert.is_true(timev4 > timev1)
+        assert.is_false(timev4 < timev1)
+        assert.is_true(timev4 >= timev1)
+
         assert.is_true(timev1 < timev2)
+        assert.is_false(timev1 > timev2)
         assert.is_true(timev1 <= timev2)
 
         assert.is_true(timev1 == timev3)
+        assert.is_false(timev1 == timev2)
         assert.is_true(timev1 >= timev3)
         assert.is_true(timev1 <= timev3)
     end)
