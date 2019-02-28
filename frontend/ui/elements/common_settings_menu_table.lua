@@ -133,6 +133,10 @@ if Device:canToggleGSensor() then
     common_settings.screen_toggle_gsensor = require("ui/elements/screen_toggle_gsensor")
 end
 
+if Screen.isColorScreen() then
+    common_settings.color_rendering = require("ui/elements/screen_color_menu_table")
+end
+
 if Device:isAndroid() then
     -- android common settings
     local isAndroid, android = pcall(require, "android")

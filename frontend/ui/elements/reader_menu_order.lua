@@ -77,6 +77,7 @@ local order = {
         "----------------------------",
         "screen_dpi",
         "screen_eink_opt",
+        "color_rendering",
         "----------------------------",
         "menu_activate",
         "screen_disable_double_tab",

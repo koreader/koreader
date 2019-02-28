@@ -25,16 +25,8 @@ local eink_settings_table = {
     },
 }
 
-local color_insert = 3
 if Device:hasEinkScreen() then
     table.insert(eink_settings_table.sub_item_table, 1, require("ui/elements/refresh_menu_table"))
-    color_insert = color_insert + 1
-end
-if Screen.isColorScreen() then
-    table.insert(eink_settings_table.sub_item_table, color_insert, require("ui/elements/screen_color_menu_table"))
-    eink_settings_table.sub_item_table[color_insert].separator = true
-else
-    eink_settings_table.sub_item_table[color_insert-1].separator = true
 end
 
 return eink_settings_table
