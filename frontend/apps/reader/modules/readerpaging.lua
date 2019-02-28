@@ -401,8 +401,12 @@ function ReaderPaging:onPan(_, ges)
             self.view:PanningStart(-ges.relative.x, -ges.relative.y)
         end
     elseif ges.direction == "north" or ges.direction == "south" then
-        self:onPanningRel(self.last_pan_relative_y - ges.relative_delayed.y)
-        self.last_pan_relative_y = ges.relative_delayed.y
+        local relative_type = "relative"
+        if self.ui.gesture and self.ui.gesture.multiswipes_enabled then
+            relative_type = "relative_delayed"
+        end
+        self:onPanningRel(self.last_pan_relative_y - ges[relative_type].y)
+        self.last_pan_relative_y = ges[relative_type].y
     end
     return true
 end
