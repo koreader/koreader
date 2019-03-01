@@ -43,13 +43,15 @@ function ButtonProgressWidget:update()
     local button_margin = Size.margin.tiny
     local button_padding = Size.padding.button
     local button_bordersize = Size.border.button
-    local preselect
+    local preselect, background
     local button_width = math.floor(self.width / self.num_buttons) - 2*button_padding - 2*button_margin - 2*button_bordersize
     for i = 1, self.num_buttons do
         if self.position >= i then
             preselect = true
+            background = Blitbuffer.COLOR_GREY
         else
             preselect = false
+            background = Blitbuffer.COLOR_WHITE
         end
         local button = Button:new{
             text = "",
@@ -60,6 +62,7 @@ function ButtonProgressWidget:update()
             enabled = true,
             width = button_width,
             preselect = preselect,
+            background = background,
             text_font_face = self.font_face,
             text_font_size = self.font_size,
             callback = function()
