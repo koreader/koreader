@@ -43,26 +43,19 @@ function ButtonProgressWidget:update()
     local button_margin = Size.margin.tiny
     local button_padding = Size.padding.button
     local button_bordersize = Size.border.button
-    local preselect, background
     local button_width = math.floor(self.width / self.num_buttons) - 2*button_padding - 2*button_margin - 2*button_bordersize
     for i = 1, self.num_buttons do
-        if self.position >= i then
-            preselect = true
-            background = Blitbuffer.COLOR_GREY
-        else
-            preselect = false
-            background = Blitbuffer.COLOR_WHITE
-        end
+        local blackened = i <= self.position
         local button = Button:new{
             text = "",
             radius = 0,
-            margin = button_margin,
+            margin = blackened and 0 or button_margin, -- margin will be provided by FrameContainer below
             padding = button_padding,
             bordersize = button_bordersize,
             enabled = true,
             width = button_width,
-            preselect = preselect,
-            background = background,
+            preselect = blackened,
+            background = blackened and Blitbuffer.COLOR_GREY or Blitbuffer.COLOR_WHITE,
             text_font_face = self.font_face,
             text_font_size = self.font_size,
             callback = function()
@@ -75,6 +68,17 @@ function ButtonProgressWidget:update()
                 self.hold_callback(i)
             end,
         }
+        if blackened then
+            -- If we want no black border on grey squares:
+            button.frame.color = Blitbuffer.COLOR_GREY
+            -- Add back button margin
+            button = FrameContainer:new{
+                margin = button_margin,
+                padding = 0,
+                bordersize = 0,
+                button,
+            }
+        end
         table.insert(self.buttonprogress_content, button)
     end
 
