@@ -526,8 +526,14 @@ function GestureDetector:handlePan(tev)
         local msd_direction_prev = (msd_cnt > 0) and self.multiswipe_directions[msd_cnt][1] or ""
         local prev_ms_ev, fake_first_tev
 
+        if msd_cnt == 0 then
+            -- do not initiate multiswipe unless we have a clear north/south/east/west direction
+            if pan_direction ~= "north" and pan_direction ~= "south"
+               and pan_direction ~= "east" and pan_direction ~= "west" then
+                return pan_ev
+            end
         -- recompute a more accurate direction and distance in a multiswipe context
-        if msd_cnt > 0 then
+        elseif msd_cnt > 0 then
             prev_ms_ev = self.multiswipe_directions[msd_cnt][2]
             fake_first_tev = {
                 [slot] = {
