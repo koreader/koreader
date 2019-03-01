@@ -41,7 +41,7 @@ describe("Readerrolling module", function()
             local toc = readerui.toc
             for i = 30, 50, 5 do
                 rolling:onGotoPage(i)
-                rolling:onDoubleTapForward()
+                rolling:onGotoNextChapter()
                 assert.are.same(toc:getNextChapter(i, 0), rolling.current_page)
             end
         end)
@@ -50,7 +50,7 @@ describe("Readerrolling module", function()
             local toc = readerui.toc
             for i = 60, 80, 5 do
                 rolling:onGotoPage(i)
-                rolling:onDoubleTapBackward()
+                rolling:onGotoPrevChapter()
                 assert.are.same(toc:getPreviousChapter(i, 0), rolling.current_page)
             end
         end)
@@ -129,7 +129,7 @@ describe("Readerrolling module", function()
             local toc = readerui.toc
             for i = 30, 50, 5 do
                 rolling:onGotoPage(i)
-                rolling:onDoubleTapForward()
+                rolling:onGotoNextChapter()
                 assert.are.same(toc:getNextChapter(i, 0), rolling.current_page)
             end
         end)
@@ -137,7 +137,7 @@ describe("Readerrolling module", function()
             local toc = readerui.toc
             for i = 60, 80, 5 do
                 rolling:onGotoPage(i)
-                rolling:onDoubleTapBackward()
+                rolling:onGotoPrevChapter()
                 assert.are.same(toc:getPreviousChapter(i, 0), rolling.current_page)
             end
         end)
