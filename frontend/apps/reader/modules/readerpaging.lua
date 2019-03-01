@@ -959,4 +959,26 @@ function ReaderPaging:onGotoPercentage(percentage)
     return true
 end
 
+-- These might need additional work to behave fine in scroll
+-- mode, and other zoom modes than Fit page
+function ReaderPaging:onGotoNextChapter()
+    local pageno = self.current_page
+    local new_page = self.ui.toc:getNextChapter(pageno, 0)
+    if new_page then
+        self.ui.link:addCurrentLocationToStack()
+        self:onGotoPage(new_page)
+    end
+    return true
+end
+
+function ReaderPaging:onGotoPrevChapter()
+    local pageno = self.current_page
+    local new_page = self.ui.toc:getPreviousChapter(pageno, 0)
+    if new_page then
+        self.ui.link:addCurrentLocationToStack()
+        self:onGotoPage(new_page)
+    end
+    return true
+end
+
 return ReaderPaging

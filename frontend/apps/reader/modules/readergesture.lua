@@ -23,6 +23,8 @@ local action_strings = {
     page_jmp_back_1 = _("Previous page"),
     page_jmp_fwd_10 = _("Forward 10 pages"),
     page_jmp_fwd_1 = _("Next page"),
+    prev_chapter = _("Previous chapter"),
+    next_chapter = _("Next chapter"),
     go_to = _("Go to"),
     skim = _("Skim"),
     back = _("Back"),
@@ -247,6 +249,8 @@ function ReaderGesture:buildMenu(ges, default)
         {"page_jmp_back_1", not self.is_docless},
         {"page_jmp_fwd_10", not self.is_docless},
         {"page_jmp_fwd_1", not self.is_docless},
+        {"prev_chapter", not self.is_docless},
+        {"next_chapter", not self.is_docless},
         {"go_to", true},
         {"skim", not self.is_docless},
         {"back", true},
@@ -513,6 +517,10 @@ function ReaderGesture:gestureAction(action)
         self:pageUpdate(-10)
     elseif action == "page_jmp_back_1" then
         self:pageUpdate(-1)
+    elseif action == "next_chapter" then
+        self.ui:handleEvent(Event:new("GotoNextChapter"))
+    elseif action == "prev_chapter" then
+        self.ui:handleEvent(Event:new("GotoPrevChapter"))
     elseif action == "go_to" then
         self.ui:handleEvent(Event:new("ShowGotoDialog"))
     elseif action == "skim" then
