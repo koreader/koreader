@@ -28,13 +28,13 @@ local KoptOptions = {
             {
                 name = "trim_page",
                 name_text = S.PAGE_CROP,
-                toggle = {S.MANUAL, S.AUTO, S.SEMIAUTO},
+                toggle = {S.MANUAL, S.AUTO, S.SEMIAUTO, S.NONE},
                 alternate = false,
-                values = {0, 1, 2},
+                values = {0, 1, 2, 3},
                 default_value = DKOPTREADER_CONFIG_TRIM_PAGE,
                 enabled_func = Device.isTouchDevice,
                 event = "PageCrop",
-                args = {"manual", "auto", "semi-auto"},
+                args = {"manual", "auto", "semi-auto", "none"},
                 name_text_hold_callback = optionsutil.showValues,
             }
         }
