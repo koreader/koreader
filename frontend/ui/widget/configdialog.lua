@@ -27,6 +27,7 @@ local UIManager = require("ui/uimanager")
 local UnderlineContainer = require("ui/widget/container/underlinecontainer")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
+local dump = require("dump")
 local logger = require("logger")
 local _ = require("gettext")
 local Screen = Device.screen
@@ -844,15 +845,30 @@ function ConfigDialog:onConfigChoose(values, name, event, args, events, position
 end
 
 function ConfigDialog:onMakeDefault(name, name_text, values, labels, position)
+    local display_value = labels[position]
     if name == "font_fine_tune" then
         return
+    -- known table value, make it pretty
+    elseif name == "page_margins" then
+        display_value = T(_([[
+
+  left: %1
+  top: %2
+  right: %3
+  bottom: %4
+]]),
+        display_value[1], display_value[2], display_value[3], display_value[4])
+    end
+    -- generic fallback to support table values
+    if type(display_value) == "table" then
+        display_value = dump(display_value)
     end
 
     UIManager:show(ConfirmBox:new{
         text = T(
             _("Set default %1 to %2?"),
             (name_text or ""),
-            labels[position]
+            display_value
         ),
         ok_text = T(_("Set default")),
         ok_callback = function()
