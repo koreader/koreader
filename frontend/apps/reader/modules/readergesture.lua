@@ -45,6 +45,7 @@ local action_strings = {
     toggle_frontlight = _("Toggle frontlight"),
     toggle_gsensor = _("Toggle accelerometer"),
     toggle_rotation = _("Toggle rotation"),
+    toggle_reflow = _("Toggle reflow"),
 
     zoom_contentwidth = _("Zoom to fit content width"),
     zoom_contentheight = _("Zoom to fit content height"),
@@ -101,6 +102,7 @@ function ReaderGesture:init()
         multiswipe_north_west = self.ges_mode == "gesture_fm" and "folder_up" or "bookmarks",
         multiswipe_east_north = "history",
         multiswipe_south_north = "skim",
+        multiswipe_south_east = "toggle_reflow",
         multiswipe_south_west = "show_frontlight_dialog",
         multiswipe_west_south = "back",
         multiswipe_west_east_west = "open_previous_document",
@@ -267,6 +269,7 @@ function ReaderGesture:buildMenu(ges, default)
         {"toggle_frontlight", Device:hasFrontlight()},
         {"toggle_gsensor", Device:canToggleGSensor()},
         {"toggle_rotation", not self.is_docless, true},
+        {"toggle_reflow", not self.is_docless, true},
 
         {"zoom_contentwidth", not self.is_docless},
         {"zoom_contentheight", not self.is_docless},
@@ -550,6 +553,15 @@ function ReaderGesture:gestureAction(action)
         G_reader_settings:flipNilOrFalse("input_ignore_gsensor")
         Device:toggleGSensor()
         self:onGSensorToggle()
+    elseif action == "toggle_reflow" then
+        if self.document.configurable.text_wrap == 1 then
+            self.document.configurable.text_wrap = 0
+        else
+            self.document.configurable.text_wrap = 1
+        end
+        self.ui:handleEvent(Event:new("RedrawCurrentPage"))
+        self.ui:handleEvent(Event:new("RestoreZoomMode"))
+        self.ui:handleEvent(Event:new("InitScrollPageStates"))
     elseif action == "toggle_rotation" then
         if Screen:getScreenMode() == "portrait" then
             self.ui:handleEvent(Event:new("SetScreenMode", "landscape"))
