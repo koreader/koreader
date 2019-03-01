@@ -285,13 +285,13 @@ function ReaderRolling:setupTouchZones()
             id = "double_tap_forward",
             ges = "double_tap",
             screen_zone = forward_double_tap_zone,
-            handler = function() return self:onDoubleTapForward() end
+            handler = function() return self:onGotoNextChapter() end
         },
         {
             id = "double_tap_backward",
             ges = "double_tap",
             screen_zone = backward_double_tap_zone,
-            handler = function() return self:onDoubleTapBackward() end
+            handler = function() return self:onGotoPrevChapter() end
         },
         {
             id = "rolling_swipe",
@@ -448,7 +448,7 @@ function ReaderRolling:onResume()
     self:updateBatteryState()
 end
 
-function ReaderRolling:onDoubleTapForward()
+function ReaderRolling:onGotoNextChapter()
     local visible_page_count = self.ui.document:getVisiblePageCount()
     local pageno = self.current_page + (visible_page_count > 1 and 1 or 0)
     local new_page = self.ui.toc:getNextChapter(pageno, 0)
@@ -459,7 +459,7 @@ function ReaderRolling:onDoubleTapForward()
     return true
 end
 
-function ReaderRolling:onDoubleTapBackward()
+function ReaderRolling:onGotoPrevChapter()
     local pageno = self.current_page
     local new_page = self.ui.toc:getPreviousChapter(pageno, 0)
     if new_page then
