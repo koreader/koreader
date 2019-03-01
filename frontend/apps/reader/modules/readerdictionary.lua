@@ -5,6 +5,7 @@ local DictQuickLookup = require("ui/widget/dictquicklookup")
 local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local InputDialog = require("ui/widget/inputdialog")
 local JSON = require("json")
 local KeyValuePage = require("ui/widget/keyvaluepage")
 local LuaData = require("luadata")
@@ -173,14 +174,9 @@ end
 function ReaderDictionary:addToMainMenu(menu_items)
     menu_items.dictionary_lookup = {
         text = _("Dictionary lookup"),
-        tap_input = {
-            title = _("Enter a word to look up"),
-            ok_text = _("Search dictionary"),
-            type = "text",
-            callback = function(input)
-                self:onLookupWord(input)
-            end,
-        },
+        callback = function()
+            self:onShowDictionaryLookup()
+        end,
     }
     menu_items.dictionary_lookup_history = {
         text = _("Dictionary lookup history"),
@@ -554,6 +550,35 @@ function ReaderDictionary:dismissLookupInfo()
         -- UIManager:forceRePaint()
     end
     self.lookup_progress_msg = nil
+end
+
+function ReaderDictionary:onShowDictionaryLookup()
+    self.dictionary_lookup_dialog = InputDialog:new{
+        title = _("Enter a word to look up"),
+        input = "",
+        input_type = "text",
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    callback = function()
+                        UIManager:close(self.dictionary_lookup_dialog)
+                    end,
+                },
+                {
+                    text = _("Search dictionary"),
+                    is_enter_default = true,
+                    callback = function()
+                        UIManager:close(self.dictionary_lookup_dialog)
+                        self:onLookupWord(self.dictionary_lookup_dialog:getInputText())
+                    end,
+                },
+            }
+        },
+    }
+    UIManager:show(self.dictionary_lookup_dialog)
+    self.dictionary_lookup_dialog:onShowKeyboard()
+    return true
 end
 
 function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)

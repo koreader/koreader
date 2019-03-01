@@ -65,13 +65,7 @@ end
 function ReaderWikipedia:addToMainMenu(menu_items)
     menu_items.wikipedia_lookup =  {
         text = _("Wikipedia lookup"),
-        callback = function()
-            if NetworkMgr:isOnline() then
-                self:lookupInput()
-            else
-                NetworkMgr:promptWifiOn()
-            end
-        end
+        callback = function() self:onShowWikipediaLookup() end,
     }
     menu_items.wikipedia_history = {
         text = _("Wikipedia history"),
@@ -526,6 +520,15 @@ end
 
 -- override onSaveSettings in ReaderDictionary
 function ReaderWikipedia:onSaveSettings()
+end
+
+function ReaderWikipedia:onShowWikipediaLookup()
+    if NetworkMgr:isOnline() then
+        self:lookupInput()
+    else
+        NetworkMgr:promptWifiOn()
+    end
+    return true
 end
 
 return ReaderWikipedia
