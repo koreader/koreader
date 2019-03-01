@@ -85,8 +85,7 @@ function ReaderCropping:onPageCrop(mode)
             self:setCropZoomMode(true)
         end
         return
-    end
-    if mode == "none" then
+    elseif mode == "none" then
         if self.document.configurable.text_wrap ~= 1 then
             self.ui:handleEvent(Event:new("SetZoomMode", "pagewidth", "cropping"))
         end
