@@ -353,7 +353,7 @@ function KeyValuePage:init()
     self.page_info_text = Button:new{
         text = "",
         hold_input = {
-            title = _("Input page number"),
+            title = _("Enter page number"),
             type = "number",
             hint_func = function()
                 return "(" .. "1 - " .. self.pages .. ")"
