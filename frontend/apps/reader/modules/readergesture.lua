@@ -23,6 +23,7 @@ local action_strings = {
     page_jmp_back_1 = _("Previous page"),
     page_jmp_fwd_10 = _("Forward 10 pages"),
     page_jmp_fwd_1 = _("Next page"),
+    go_to = _("Go to"),
     skim = _("Skim"),
     back = _("Back"),
     previous_location = _("Back to previous location"),
@@ -101,6 +102,7 @@ function ReaderGesture:init()
         multiswipe_north_east = "toc",
         multiswipe_north_west = self.ges_mode == "gesture_fm" and "folder_up" or "bookmarks",
         multiswipe_east_north = "history",
+        multiswipe_east_south = "go_to",
         multiswipe_south_north = "skim",
         multiswipe_south_east = "toggle_reflow",
         multiswipe_south_west = "show_frontlight_dialog",
@@ -245,6 +247,7 @@ function ReaderGesture:buildMenu(ges, default)
         {"page_jmp_back_1", not self.is_docless},
         {"page_jmp_fwd_10", not self.is_docless},
         {"page_jmp_fwd_1", not self.is_docless},
+        {"go_to", true},
         {"skim", not self.is_docless},
         {"back", true},
         {"previous_location", not self.is_docless},
@@ -510,6 +513,8 @@ function ReaderGesture:gestureAction(action)
         self:pageUpdate(-10)
     elseif action == "page_jmp_back_1" then
         self:pageUpdate(-1)
+    elseif action == "go_to" then
+        self.ui:handleEvent(Event:new("ShowGotoDialog"))
     elseif action == "skim" then
         self.ui:handleEvent(Event:new("ShowSkimtoDialog"))
     elseif action == "back" then

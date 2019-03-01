@@ -643,7 +643,7 @@ function Menu:init()
     }
 
     if self.goto_letter then
-        title_goto = _("Input page number or letter")
+        title_goto = _("Enter page number or letter")
         type_goto = "string"
         hint_func = function()
             return string.format("(1 - %s) or (a - z)", self.page_num)
@@ -666,7 +666,7 @@ function Menu:init()
             end,
         })
     else
-        title_goto = _("Input page number")
+        title_goto = _("Enter page number")
         type_goto = "number"
         hint_func = function()
             return string.format("(1 - %s)", self.page_num)
@@ -1030,6 +1030,12 @@ function Menu:onSelectByShortCut(_, keyevent)
         end
     end
     return true
+end
+
+function Menu:onShowGotoDialog()
+    if self.page_info_text and self.page_info_text.hold_input then
+        self.page_info_text:onInput(self.page_info_text.hold_input)
+    end
 end
 
 function Menu:onWrapFirst()
