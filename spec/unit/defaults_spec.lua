@@ -8,8 +8,8 @@ describe("defaults module", function()
 
     it("should load all defaults from defaults.lua", function()
         Defaults:init()
-        assert.is_same(#Defaults.defaults_name, 77)
-        assert.is_same(Defaults.defaults_name[28], 'DHINTCOUNT')
+        assert.is_same(82, #Defaults.defaults_name)
+        assert.is_same("DFULL_SCREEN", Defaults.defaults_name[28])
     end)
 
     it("should save changes to defaults.persistent.lua", function()
@@ -23,30 +23,29 @@ describe("defaults module", function()
         Defaults.changed[63] = true
         Defaults.changed[77] = true
         Defaults:saveSettings()
-        assert.is_same(#Defaults.defaults_name, 77)
-        assert.is_same(Defaults.defaults_name[28], 'DHINTCOUNT')
-        assert.is_same(Defaults.defaults_name[77], 'SEARCH_TITLE')
-        assert.is_same(Defaults.defaults_name[63], 'DTAP_ZONE_MENU')
-        assert.is_same(Defaults.defaults_name[19], 'DCREREADER_VIEW_MODE')
-        assert.is_same(Defaults.defaults_name[11],
-                       'DCREREADER_CONFIG_MARGIN_SIZES_LARGE')
+        assert.is_same(82, #Defaults.defaults_name)
+        assert.is_same("DFULL_SCREEN", Defaults.defaults_name[28])
+        assert.is_same("SEARCH_LIBRARY_PATH", Defaults.defaults_name[77])
+        assert.is_same("DTAP_ZONE_BACKWARD", Defaults.defaults_name[63])
+        assert.is_same("DCREREADER_CONFIG_WORD_GAP_LARGE", Defaults.defaults_name[19])
+        assert.is_same("DCREREADER_CONFIG_MARGIN_SIZES_HUGE", Defaults.defaults_name[11])
         local fd = io.open(persistent_filename, "r")
         assert.Equals(
 [[-- For configuration changes that persists between updates
-SEARCH_TITLE = true
-DCREREADER_CONFIG_MARGIN_SIZES_LARGE = {
-    [1] = 20,
-    [2] = 20,
-    [3] = 20,
-    [4] = 20
-}
-DCREREADER_VIEW_MODE = "page"
-DHINTCOUNT = 1
-DTAP_ZONE_MENU = {
+SEARCH_LIBRARY_PATH = ""
+DTAP_ZONE_BACKWARD = {
     ["y"] = 0,
-    ["x"] = 0.125,
-    ["h"] = 0.125,
-    ["w"] = 0.75
+    ["x"] = 0,
+    ["h"] = 1,
+    ["w"] = 0.25
+}
+DCREREADER_CONFIG_WORD_GAP_LARGE = 100
+DFULL_SCREEN = 1
+DCREREADER_CONFIG_MARGIN_SIZES_HUGE = {
+    [1] = 100,
+    [2] = 100,
+    [3] = 100,
+    [4] = 100
 }
 ]],
                        fd:read("*a"))
@@ -67,21 +66,21 @@ DTAP_ZONE_MENU = {
         fd = io.open(persistent_filename)
         assert.Equals(
 [[-- For configuration changes that persists between updates
-SEARCH_TITLE = true
-DHINTCOUNT = 2
-DTAP_ZONE_MENU = {
+SEARCH_LIBRARY_PATH = ""
+DTAP_ZONE_BACKWARD = {
     ["y"] = 10,
     ["x"] = 10.125,
     ["h"] = 20.25,
     ["w"] = 20.75
 }
-DCREREADER_CONFIG_MARGIN_SIZES_LARGE = {
-    [1] = 20,
-    [2] = 20,
-    [3] = 20,
-    [4] = 20
+DCREREADER_CONFIG_WORD_GAP_LARGE = 100
+DFULL_SCREEN = 2
+DCREREADER_CONFIG_MARGIN_SIZES_HUGE = {
+    [1] = 100,
+    [2] = 100,
+    [3] = 100,
+    [4] = 100
 }
-DCREREADER_VIEW_MODE = "page"
 ]],
                        fd:read("*a"))
         fd:close()
@@ -114,13 +113,15 @@ DHINTCOUNT = 2
         assert.Equals(
 [[-- For configuration changes that persists between updates
 SEARCH_TITLE = true
-DCREREADER_VIEW_MODE = "page"
+DHINTCOUNT = 2
 DCREREADER_CONFIG_MARGIN_SIZES_LARGE = {
     [1] = 20,
     [2] = 20,
     [3] = 20,
     [4] = 20
 }
+DFULL_SCREEN = 1
+DCREREADER_VIEW_MODE = "page"
 ]],
                        fd:read("*a"))
         fd:close()
