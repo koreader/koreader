@@ -554,6 +554,7 @@ function ReaderGesture:gestureAction(action)
         Device:toggleGSensor()
         self:onGSensorToggle()
     elseif action == "toggle_reflow" then
+        if not self.document.info.has_pages then return end
         if self.document.configurable.text_wrap == 1 then
             self.document.configurable.text_wrap = 0
         else
