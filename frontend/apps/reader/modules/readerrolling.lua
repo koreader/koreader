@@ -273,13 +273,13 @@ function ReaderRolling:setupTouchZones()
             id = "tap_forward",
             ges = "tap",
             screen_zone = forward_zone,
-            handler = function() return self:onTapForward() end
+            handler = function() return self:onGotoViewRel(1) end,
         },
         {
             id = "tap_backward",
             ges = "tap",
             screen_zone = backward_zone,
-            handler = function() return self:onTapBackward() end
+            handler = function() return self:onGotoViewRel(-1) end,
         },
         {
             id = "double_tap_forward",
@@ -386,16 +386,6 @@ function ReaderRolling:getLastPercent()
         return self.ui.document:getPosFromXPointer(
             self.ui.document:getXPointer()) / self.ui.document.info.doc_height
     end
-end
-
-function ReaderRolling:onTapForward()
-    self:onGotoViewRel(1)
-    return true
-end
-
-function ReaderRolling:onTapBackward()
-    self:onGotoViewRel(-1)
-    return true
 end
 
 function ReaderRolling:onSwipe(_, ges)

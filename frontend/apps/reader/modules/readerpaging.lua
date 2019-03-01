@@ -44,11 +44,11 @@ function ReaderPaging:init()
     if Device:hasKeys() then
         self.key_events.GotoNextPage = {
             {Input.group.PgFwd}, doc = "go to next page",
-            event = "PagingRel", args = 1,
+            event = "GotoViewRel", args = 1,
         }
         self.key_events.GotoPrevPage = {
             {Input.group.PgBack}, doc = "go to previous page",
-            event = "PagingRel", args = -1,
+            event = "GotoViewRel", args = -1,
         }
     end
     if Device:hasKeyboard() then
@@ -111,13 +111,13 @@ function ReaderPaging:setupTapTouchZones()
             id = "tap_forward",
             ges = "tap",
             screen_zone = forward_zone,
-            handler = function() return self:onTapForward() end
+            handler = function() return self:onGotoViewRel(1) end,
         },
         {
             id = "tap_backward",
             ges = "tap",
             screen_zone = backward_zone,
-            handler = function() return self:onTapBackward() end
+            handler = function() return self:onGotoViewRel(-1) end,
         },
     })
 end
@@ -262,16 +262,6 @@ function ReaderPaging:getPagePosition(page)
     return self.page_positions[page] or 0
 end
 
-function ReaderPaging:onTapForward()
-    self:onPagingRel(1)
-    return true
-end
-
-function ReaderPaging:onTapBackward()
-    self:onPagingRel(-1)
-    return true
-end
-
 function ReaderPaging:onTogglePageFlipping()
     self.view.flipping_visible = not self.view.flipping_visible
     self.page_flipping_mode = self.view.flipping_visible
@@ -373,15 +363,15 @@ function ReaderPaging:onSwipe(_, ges)
         self:_gotoPage(self.original_page)
     elseif ges.direction == "west" then
         if self.inverse_reading_order then
-            self:onPagingRel(-1)
+            self:onGotoViewRel(-1)
         else
-            self:onPagingRel(1)
+            self:onGotoViewRel(1)
         end
     elseif ges.direction == "east" then
         if self.inverse_reading_order then
-            self:onPagingRel(1)
+            self:onGotoViewRel(1)
         else
-            self:onPagingRel(-1)
+            self:onGotoViewRel(-1)
         end
     else
         -- update footer (time & battery)
@@ -454,7 +444,7 @@ function ReaderPaging:onGotoPercent(percent)
     return true
 end
 
-function ReaderPaging:onPagingRel(diff)
+function ReaderPaging:onGotoViewRel(diff)
     if self.view.page_scroll then
         self:onScrollPageRel(diff)
     else

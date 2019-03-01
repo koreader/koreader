@@ -136,13 +136,25 @@ describe("ReaderLink module", function()
         readerui.view:onSetScrollMode(true)
         assert.is.same(true, readerui.view.page_scroll)
         assert.is.same(1, readerui.paging.current_page)
-        readerui.paging:onTapForward()
+
+        readerui.paging:onGotoViewRel(1)
         assert.is.same(2, readerui.paging.current_page)
-        readerui.paging:onTapForward()
+
+        readerui.paging:onGotoViewRel(-1)
+        assert.is.same(1, readerui.paging.current_page)
+
+        readerui.paging:onGotoViewRel(1)
+        readerui.paging:onGotoViewRel(1)
         assert.is.same(3, readerui.paging.current_page)
-        readerui.paging:onTapForward()
+
+        readerui.paging:onGotoViewRel(-1)
+        assert.is.same(2, readerui.paging.current_page)
+
+        readerui.paging:onGotoViewRel(1)
+        readerui.paging:onGotoViewRel(1)
         assert.is.same(4, readerui.paging.current_page)
         assert.are.same(expected_page_states, readerui.view.page_states)
+
         readerui.link:onTap(nil, {pos = {x = 181, y = 366}})
         UIManager:run()
         assert.is.same(22, readerui.paging.current_page)

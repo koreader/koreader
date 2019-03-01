@@ -31,7 +31,7 @@ describe("Readerpaging module", function()
             readerui.onEndOfBook = function()
                 called = true
             end
-            paging:onPagingRel(1)
+            paging:onGotoViewRel(1)
             assert.is.truthy(called)
             readerui.onEndOfBook = nil
             UIManager:quit()
@@ -64,8 +64,8 @@ describe("Readerpaging module", function()
             readerui.onEndOfBook = function()
                 called = true
             end
-            paging:onPagingRel(1)
-            paging:onPagingRel(1)
+            paging:onGotoViewRel(1)
+            paging:onGotoViewRel(1)
             assert.is.truthy(called)
             readerui.onEndOfBook = nil
             UIManager:quit()
