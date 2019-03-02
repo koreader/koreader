@@ -22,7 +22,7 @@ function ReaderSearch:addToMainMenu(menu_items)
     menu_items.fulltext_search = {
         text = _("Fulltext search"),
         callback = function()
-            self:onShowSearchInput()
+            self:onShowFulltextSearchInput()
         end,
     }
 end
