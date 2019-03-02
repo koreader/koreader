@@ -21,14 +21,20 @@ end
 function ReaderSearch:addToMainMenu(menu_items)
     menu_items.fulltext_search = {
         text = _("Fulltext search"),
-        tap_input = {
-            title = _("Input text to search for"),
-            ok_text = _("Search all text"),
-            type = "text",
-            callback = function(input)
-                self:onShowSearchDialog(input)
-            end,
-        },
+        callback = function()
+            self:onShowSearchInput()
+        end,
+    }
+end
+
+function ReaderSearch:onShowFulltextSearchInput()
+    self:onInput{
+        title = _("Enter text to search for"),
+        ok_text = _("Search all text"),
+        type = "text",
+        callback = function(input)
+            self:onShowSearchDialog(input)
+        end,
     }
 end
 

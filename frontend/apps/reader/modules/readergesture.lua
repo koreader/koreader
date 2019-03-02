@@ -41,6 +41,7 @@ local action_strings = {
 
     dictionary_lookup = _("Dictionary lookup"),
     wikipedia_lookup = _("Wikipedia lookup"),
+    fulltext_search = _("Fulltext search"),
 
     full_refresh = _("Full screen refresh"),
     night_mode = _("Night mode"),
@@ -278,6 +279,7 @@ function ReaderGesture:buildMenu(ges, default)
 
         {"dictionary_lookup", true},
         {"wikipedia_lookup", true, true},
+        {"fulltext_search", not self.is_docless, true},
 
         {"full_refresh", true},
         {"night_mode", true},
@@ -561,6 +563,8 @@ function ReaderGesture:gestureAction(action)
         self.ui:handleEvent(Event:new("ShowDictionaryLookup"))
     elseif action == "wikipedia_lookup" then
         self.ui:handleEvent(Event:new("ShowWikipediaLookup"))
+    elseif action == "fulltext_search" then
+        self.ui:handleEvent(Event:new("ShowFulltextSearchInput"))
     elseif action == "show_menu" then
         if self.ges_mode == "gesture_fm" then
             self.ui:handleEvent(Event:new("ShowMenu"))
