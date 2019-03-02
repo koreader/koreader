@@ -210,7 +210,7 @@ function ReaderFooter:init()
     self[1] = self.footer_positioner
 
     self.mode = G_reader_settings:readSetting("reader_footer_mode") or self.mode
-    if self.has_no_mode then
+    if self.has_no_mode and self.settings.disable_progress_bar then
         self.mode = MODE.off
         self.view.footer_visible = false
         self:resetLayout()
