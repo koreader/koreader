@@ -30,6 +30,7 @@ local action_strings = {
     back = _("Back"),
     previous_location = _("Back to previous location"),
     latest_bookmark = _("Go to latest bookmark"),
+    follow_nearest_link = _("Follow nearest link"),
 
     toc = _("Table of contents"),
     bookmarks = _("Bookmarks"),
@@ -89,6 +90,7 @@ local default_multiswipes = {
     "east north west east",
     "south east north south",
     "east south west north",
+    "southeast northeast",
 }
 local multiswipes = {}
 local multiswipes_info_text = _([[
@@ -124,6 +126,7 @@ function ReaderGesture:init()
         multiswipe_east_north_west_east = self.ges_mode == "gesture_reader" and "zoom_pagewidth" or "nothing",
         multiswipe_south_east_north_south = self.ges_mode == "gesture_reader" and "zoom_pageheight" or "nothing",
         multiswipe_east_south_west_north = "full_refresh",
+        multiswipe_southeast_northeast = self.ges_mode == "gesture_reader" and "follow_nearest_link" or "nothing",
     }
     local gm = G_reader_settings:readSetting(self.ges_mode)
     if gm == nil then G_reader_settings:saveSetting(self.ges_mode, {}) end
@@ -264,7 +267,8 @@ function ReaderGesture:buildMenu(ges, default)
         {"skim", not self.is_docless},
         {"back", true},
         {"previous_location", not self.is_docless},
-        {"latest_bookmark", not self.is_docless, true},
+        {"latest_bookmark", not self.is_docless},
+        {"follow_nearest_link", not self.is_docless, true},
 
         {"folder_up", self.is_docless, true},
 
@@ -491,18 +495,18 @@ function ReaderGesture:registerGesture(ges, action, ges_type, zone, overrides, d
                             end,
                         })
                     else
-                        return self:multiswipeAction(gest.multiswipe_directions)
+                        return self:multiswipeAction(gest.multiswipe_directions, gest)
                     end
                 end
 
-                return self:gestureAction(action)
+                return self:gestureAction(action, gest)
             end,
             overrides = overrides,
         },
     })
 end
 
-function ReaderGesture:gestureAction(action)
+function ReaderGesture:gestureAction(action, ges)
     if action == "reading_progress" and ReaderGesture.getReaderProgress then
         UIManager:show(ReaderGesture.getReaderProgress())
     elseif action == "toc" then
@@ -544,6 +548,8 @@ function ReaderGesture:gestureAction(action)
         self.ui:handleEvent(Event:new("GoBackLink"))
     elseif action == "latest_bookmark" then
         self.ui.link:onGoToLatestBookmark()
+    elseif action == "follow_nearest_link" then
+        self.ui:handleEvent(Event:new("GoToPageLink", ges, false, G_reader_settings:isTrue("footnote_link_in_popup")))
     elseif action == "filemanager" then
         self.ui:onClose()
         self.ui:showFileManager()
@@ -619,13 +625,13 @@ function ReaderGesture:gestureAction(action)
     return true
 end
 
-function ReaderGesture:multiswipeAction(multiswipe_directions)
+function ReaderGesture:multiswipeAction(multiswipe_directions, ges)
     if not self.multiswipes_enabled then return end
     local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
     local multiswipe_gesture_name = "multiswipe_"..self:safeMultiswipeName(multiswipe_directions)
     for gesture, action in pairs(gesture_manager) do
         if gesture == multiswipe_gesture_name then
-            return self:gestureAction(action)
+            return self:gestureAction(action, ges)
         end
     end
 end
