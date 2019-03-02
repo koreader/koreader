@@ -132,7 +132,7 @@ function ReaderMenu:setUpdateItemTable()
 
     -- settings tab
     -- insert common settings
-    for id, common_setting in pairs(require("ui/elements/common_settings_menu_table")) do
+    for id, common_setting in pairs(dofile("frontend/ui/elements/common_settings_menu_table.lua")) do
         self.menu_items[id] = common_setting
     end
     -- insert DjVu render mode submenu just before the last entry (show advanced)
@@ -176,7 +176,7 @@ function ReaderMenu:setUpdateItemTable()
     }
     -- main menu tab
     -- insert common info
-    for id, common_setting in pairs(require("ui/elements/common_info_menu_table")) do
+    for id, common_setting in pairs(dofile("frontend/ui/elements/common_info_menu_table.lua")) do
         self.menu_items[id] = common_setting
     end
 

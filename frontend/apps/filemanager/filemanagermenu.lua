@@ -158,7 +158,7 @@ function FileManagerMenu:setUpdateItemTable()
         }
     end
     -- insert common settings
-    for id, common_setting in pairs(require("ui/elements/common_settings_menu_table")) do
+    for id, common_setting in pairs(dofile("frontend/ui/elements/common_settings_menu_table.lua")) do
         self.menu_items[id] = common_setting
     end
 
@@ -275,7 +275,7 @@ function FileManagerMenu:setUpdateItemTable()
         end
     }
     -- insert common info
-    for id, common_setting in pairs(require("ui/elements/common_info_menu_table")) do
+    for id, common_setting in pairs(dofile("frontend/ui/elements/common_info_menu_table.lua")) do
         self.menu_items[id] = common_setting
     end
     self.menu_items.exit_menu = {
