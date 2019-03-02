@@ -334,7 +334,7 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
                 logger.dbg("Lower widget", self._window_stack[i].widget.name or self._window_stack[i].widget.id or tostring(self._window_stack[i].widget), "was dithered, honoring the dithering hint")
             end
 
-            -- Set double tap to how the topest widget that specifies how it wants it want it
+            -- Set double tap to how the topmost specifying widget wants it
             if requested_disable_double_tap == nil and self._window_stack[i].widget.disable_double_tap ~= nil then
                 requested_disable_double_tap = self._window_stack[i].widget.disable_double_tap
             end
