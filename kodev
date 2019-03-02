@@ -22,6 +22,10 @@ fi
 NDKABI=${NDKABI:-14}
 export NDKABI
 
+# Default android flavor
+ANDROID_FLAVOR=${ANDROID_FLAVOR:-rocks}
+export ANDROID_FLAVOR
+
 function assert_ret_zero() {
     if [ "${1}" -ne 0 ]; then
         if [ -n "${2}" ]; then
