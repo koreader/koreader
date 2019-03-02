@@ -92,7 +92,9 @@ local default_multiswipes = {
 }
 local multiswipes = {}
 local multiswipes_info_text = _([[
-Multiswipes allow you to perform complex gestures built up out of multiple straight swipes.]])
+Multiswipes allow you to perform complex gestures built up out of multiple swipe directions, never losing touch with the screen.
+
+These advanced gestures consist of either straight swipes or diagonal swipes. To ensure accuracy, they can't be mixed.]])
 
 function ReaderGesture:init()
     if not Device:isTouchDevice() then return end
@@ -388,16 +390,17 @@ function ReaderGesture:createSubMenu(text, action, ges, separator)
 end
 
 local multiswipe_to_arrow = {
-    east = "↦",
-    west = "↤",
-    north = "↥",
-    south = "↧",
+    east = "➡",
+    west = "⬅",
+    north = "⬆",
+    south = "⬇",
+    northeast = "⬉", -- @TODO swap back, see https://github.com/koreader/koreader/issues/4707
+    northwest = "⬈", -- @TODO swap back, see https://github.com/koreader/koreader/issues/4707
+    southeast = "⬊",
+    southwest = "⬋",
 }
 function ReaderGesture:friendlyMultiswipeName(multiswipe)
-    for k, v in pairs(multiswipe_to_arrow) do
-        multiswipe = multiswipe:gsub(k, v)
-    end
-    return multiswipe
+    return multiswipe:gsub("%S+", multiswipe_to_arrow)
 end
 
 function ReaderGesture:safeMultiswipeName(multiswipe)
