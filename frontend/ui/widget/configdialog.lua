@@ -503,6 +503,7 @@ function ConfigOption:init()
                     width = math.min(max_buttonprogress_width, buttonprogress_width),
                     height = option_height,
                     padding = 0,
+                    thin_grey_style = true,
                     font_face = item_font_face,
                     font_size = item_font_size,
                     num_buttons = #self.options[c].values,

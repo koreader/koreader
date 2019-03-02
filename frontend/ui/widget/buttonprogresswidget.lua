@@ -19,6 +19,7 @@ local ButtonProgressWidget = InputContainer:new{
     enabled = true,
     num_buttons = 2,
     position = 1,
+    thin_grey_style = false, -- default to black
 }
 
 function ButtonProgressWidget:init()
@@ -42,24 +43,23 @@ function ButtonProgressWidget:update()
     self.buttonprogress_content:clear()
     local button_margin = Size.margin.tiny
     local button_padding = Size.padding.button
-    local button_bordersize = Size.border.button
-    local preselect
+    local button_bordersize = self.thin_grey_style and Size.border.thin or Size.border.button
     local button_width = math.floor(self.width / self.num_buttons) - 2*button_padding - 2*button_margin - 2*button_bordersize
     for i = 1, self.num_buttons do
-        if self.position >= i then
-            preselect = true
-        else
-            preselect = false
+        local highlighted = i <= self.position
+        local margin = button_margin
+        if self.thin_grey_style and highlighted then
+            margin = 0 -- moved outside button so it's not inverted
         end
         local button = Button:new{
             text = "",
             radius = 0,
-            margin = button_margin,
+            margin = margin,
             padding = button_padding,
             bordersize = button_bordersize,
             enabled = true,
             width = button_width,
-            preselect = preselect,
+            preselect = highlighted,
             text_font_face = self.font_face,
             text_font_size = self.font_size,
             callback = function()
@@ -72,6 +72,18 @@ function ButtonProgressWidget:update()
                 self.hold_callback(i)
             end,
         }
+        if self.thin_grey_style then
+            button.frame.color = Blitbuffer.COLOR_GREY -- no black border around grey squares
+            if highlighted then
+                button.frame.background = Blitbuffer.COLOR_GREY
+                button = FrameContainer:new{ -- add margin back
+                    margin = button_margin,
+                    padding = 0,
+                    bordersize = 0,
+                    button,
+                }
+            end
+        end
         table.insert(self.buttonprogress_content, button)
     end
 
