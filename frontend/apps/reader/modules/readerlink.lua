@@ -278,7 +278,7 @@ This allows you to specify how much smaller or larger it should be relative to t
                 text = _("Clear location history?"),
                 ok_text = _("Clear"),
                 ok_callback = function()
-                    self.location_stack = {}
+                    self:onClearLocationStack()
                     touchmenu_instance:closeMenu()
                 end,
             })
@@ -438,6 +438,17 @@ function ReaderLink:addCurrentLocationToStack()
             xpointer = self.ui.rolling:getBookLocation(),
         })
     end
+end
+
+function ReaderLink:onClearLocationStack(show_notification)
+    self.location_stack = {}
+    if show_notification then
+        UIManager:show(Notification:new{
+            text = _("Location history cleared."),
+            timeout = 2,
+        })
+    end
+    return true
 end
 
 --- Goes to link.
@@ -613,12 +624,17 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
 end
 
 --- Goes back to previous location.
-function ReaderLink:onGoBackLink()
+function ReaderLink:onGoBackLink(show_notification_if_empty)
     local saved_location = table.remove(self.location_stack)
     if saved_location then
         logger.dbg("GoBack: restoring:", saved_location)
         self.ui:handleEvent(Event:new('RestoreBookLocation', saved_location))
         return true
+    elseif show_notification_if_empty then
+        UIManager:show(Notification:new{
+            text = _("Location history is empty."),
+            timeout = 2,
+        })
     end
 end
 
@@ -637,7 +653,7 @@ function ReaderLink:onSwipe(arg, ges)
                 -- Make that gesture don't do anything, and show a Notification
                 -- so the user knows why
                 UIManager:show(Notification:new{
-                    text = _("Location history is empty"),
+                    text = _("Location history is empty."),
                     timeout = 2,
                 })
                 return true
