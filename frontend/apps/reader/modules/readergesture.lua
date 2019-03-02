@@ -39,6 +39,9 @@ local action_strings = {
     open_previous_document = _("Open previous document"),
     filemanager = _("File browser"),
 
+    dictionary_lookup = _("Dictionary lookup"),
+    wikipedia_lookup = _("Wikipedia lookup"),
+
     full_refresh = _("Full screen refresh"),
     night_mode = _("Night mode"),
     suspend = _("Suspend"),
@@ -270,6 +273,9 @@ function ReaderGesture:buildMenu(ges, default)
         {"history", true},
         {"open_previous_document", true, true},
         {"filemanager", not self.is_docless, true},
+
+        {"dictionary_lookup", true},
+        {"wikipedia_lookup", true, true},
 
         {"full_refresh", true},
         {"night_mode", true},
@@ -548,6 +554,10 @@ function ReaderGesture:gestureAction(action)
         elseif self.ui.switchDocument and self.ui.menu then
             self.ui:switchDocument(self.ui.menu:getPreviousFile())
         end
+    elseif action == "dictionary_lookup" then
+        self.ui:handleEvent(Event:new("ShowDictionaryLookup"))
+    elseif action == "wikipedia_lookup" then
+        self.ui:handleEvent(Event:new("ShowWikipediaLookup"))
     elseif action == "show_menu" then
         if self.ges_mode == "gesture_fm" then
             self.ui:handleEvent(Event:new("ShowMenu"))
