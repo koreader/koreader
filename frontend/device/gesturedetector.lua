@@ -170,7 +170,7 @@ The second boolean argument `simple` results in only four directions if true.
 
 @return (direction, distance) pan direction and distance
 --]]
-function GestureDetector:getPath(slot, simple, first_tev)
+function GestureDetector:getPath(slot, simple, diagonal, first_tev)
     first_tev = first_tev or self.first_tevs
 
     local x_diff = self.last_tevs[slot].x - first_tev[slot].x
@@ -180,9 +180,10 @@ function GestureDetector:getPath(slot, simple, first_tev)
     if x_diff ~= 0 or y_diff ~= 0 then
         local v_direction = y_diff < 0 and "north" or "south"
         local h_direction = x_diff < 0 and "west" or "east"
-        if not simple
-           and math.abs(y_diff) > 0.577*math.abs(x_diff)
-           and math.abs(y_diff) < 1.732*math.abs(x_diff)
+        if (not simple
+            and math.abs(y_diff) > 0.577*math.abs(x_diff)
+            and math.abs(y_diff) < 1.732*math.abs(x_diff))
+           or (simple and diagonal)
         then
             direction = v_direction..h_direction
         elseif (math.abs(x_diff) > math.abs(y_diff)) then
@@ -228,6 +229,7 @@ function GestureDetector:clearState(slot)
     self.first_tevs[slot] = nil
     self.last_tevs[slot] = nil
     self.multiswipe_directions = {}
+    self.multiswipe_type = nil
 end
 
 function GestureDetector:clearStates()
@@ -527,10 +529,11 @@ function GestureDetector:handlePan(tev)
         local prev_ms_ev, fake_first_tev
 
         if msd_cnt == 0 then
-            -- do not initiate multiswipe unless we have a clear north/south/east/west direction
+            -- determine whether to initiate a straight or diagonal multiswipe
+            self.multiswipe_type = "straight"
             if pan_direction ~= "north" and pan_direction ~= "south"
                and pan_direction ~= "east" and pan_direction ~= "west" then
-                return pan_ev
+                self.multiswipe_type = "diagonal"
             end
         -- recompute a more accurate direction and distance in a multiswipe context
         elseif msd_cnt > 0 then
@@ -545,7 +548,12 @@ function GestureDetector:handlePan(tev)
         end
 
         -- the first time fake_first_tev is nil, so self.first_tevs is automatically used instead
-        local msd_direction, msd_distance = self:getPath(slot, true, fake_first_tev)
+        local msd_direction, msd_distance
+        if self.multiswipe_type == "straight" then
+            msd_direction, msd_distance = self:getPath(slot, true, false, fake_first_tev)
+        else
+            msd_direction, msd_distance = self:getPath(slot, true, true, fake_first_tev)
+        end
 
         if msd_distance > self.MULTISWIPE_THRESHOLD then
             if msd_direction ~= msd_direction_prev then
