@@ -318,8 +318,9 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
     widget:handleEvent(Event:new("FlushSettings"))
     -- first send close event to widget
     widget:handleEvent(Event:new("CloseWidget"))
-    -- make it disabled by default and check any widget that enables it
+    -- make it disabled by default and check if any widget wants it disabled or enabled
     Input.disable_double_tap = true
+    local requested_disable_double_tap = nil
     -- then remove all references to that widget on stack and refresh
     for i = #self._window_stack, 1, -1 do
         if self._window_stack[i].widget == widget then
@@ -333,10 +334,14 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
                 logger.dbg("Lower widget", self._window_stack[i].widget.name or self._window_stack[i].widget.id or tostring(self._window_stack[i].widget), "was dithered, honoring the dithering hint")
             end
 
-            if self._window_stack[i].widget.disable_double_tap == false then
-                Input.disable_double_tap = false
+            -- Set double tap to how the topest widget that specifies how it wants it want it
+            if requested_disable_double_tap == nil and self._window_stack[i].widget.disable_double_tap ~= nil then
+                requested_disable_double_tap = self._window_stack[i].widget.disable_double_tap
             end
         end
+    end
+    if requested_disable_double_tap ~= nil then
+        Input.disable_double_tap = requested_disable_double_tap
     end
     if dirty and not widget.invisible then
         -- schedule remaining widgets to be painted
