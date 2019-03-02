@@ -444,7 +444,7 @@ function ReaderLink:onClearLocationStack(show_notification)
     self.location_stack = {}
     if show_notification then
         UIManager:show(Notification:new{
-            text = _("Location history cleared"),
+            text = _("Location history cleared."),
             timeout = 2,
         })
     end
@@ -632,7 +632,7 @@ function ReaderLink:onGoBackLink(show_notification_if_empty)
         return true
     elseif show_notification_if_empty then
         UIManager:show(Notification:new{
-            text = _("Location history is empty"),
+            text = _("Location history is empty."),
             timeout = 2,
         })
     end
@@ -653,7 +653,7 @@ function ReaderLink:onSwipe(arg, ges)
                 -- Make that gesture don't do anything, and show a Notification
                 -- so the user knows why
                 UIManager:show(Notification:new{
-                    text = _("Location history is empty"),
+                    text = _("Location history is empty."),
                     timeout = 2,
                 })
                 return true
