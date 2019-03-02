@@ -73,59 +73,35 @@ function optionsutil.showValues(configurable, option, prefix)
     UIManager:show(InfoMessage:new{ text=text })
 end
 
-local function tableComp(a,b)
-    if #a ~= #b then return false end
-    for i=1,#a do
-        if a[i] ~= b[i] then return false end
-    end
-    return true
-end
-
 function optionsutil.showValuesMargins(configurable, option)
     local default = G_reader_settings:readSetting("copt_"..option.name)
     local current = configurable[option.name]
-    local current_string
-    for i=1,#option.toggle do
-        if tableComp(current, option.values[i]) then
-            current_string = option.toggle[i]
-            break
-        end
-    end
     if not default then
         UIManager:show(InfoMessage:new{
             text = T(_([[
-%1:
-Current value: %2
-  left: %3
-  top: %4
-  right: %5
-  bottom: %6
-Default value: not set]]),
-                option.name_text, current_string, current[1], current[2], current[3], current[4])
+Current margin:
+  left: %1
+  top: %2
+  right: %3
+  bottom: %4
+Default margin: not set]]),
+                current[1], current[2], current[3], current[4])
         })
     else
-        local default_string
-        for i=1,#option.toggle do
-            if tableComp(default, option.values[i]) then
-                default_string = option.toggle[i]
-                break
-            end
-        end
         UIManager:show(InfoMessage:new{
             text = T(_([[
-%1:
-Current value: %2
-  left: %3
-  top: %4
-  right: %5
-  bottom: %6
-Default value: %7
-  left: %8
-  top: %9
-  right: %10
-  bottom: %11]]),
-                option.name_text, current_string, current[1], current[2], current[3], current[4],
-                default_string, default[1], default[2], default[3], default[4])
+Current margin:
+  left: %1
+  top: %2
+  right: %3
+  bottom: %4
+Default margin:
+  left: %5
+  top: %6
+  right: %7
+  bottom: %8]]),
+                current[1], current[2], current[3], current[4],
+                default[1], default[2], default[3], default[4])
         })
     end
 end
