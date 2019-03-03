@@ -10,6 +10,11 @@ local T = require("ffi/util").template
 local function yes() return true end
 local function no() return false end
 
+local function canUpdateApk()
+    -- disable updates on fdroid builds, since they manage their own repo.
+    return (android.getFlavor() ~= "fdroid")
+end
+
 local Device = Generic:new{
     model = android.getProduct(),
     hasKeys = yes,
@@ -21,7 +26,7 @@ local Device = Generic:new{
     display_dpi = android.lib.AConfiguration_getDensity(android.app.config),
     hasClipboard = yes,
     hasColorScreen = yes,
-    hasOTAUpdates = yes,
+    hasOTAUpdates = canUpdateApk,
 }
 
 function Device:init()
@@ -140,7 +145,7 @@ local function getCodename()
     return codename or ""
 end
 
-android.LOGI(string.format("Android %s - %s (API %d)",
-    android.getVersion(), getCodename(), Device.firmware_rev))
+android.LOGI(string.format("Android %s - %s (API %d) - flavor: %s",
+    android.getVersion(), getCodename(), Device.firmware_rev, android.getFlavor()))
 
 return Device
