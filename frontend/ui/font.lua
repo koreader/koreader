@@ -3,9 +3,9 @@ Font module.
 ]]
 
 local Freetype = require("ffi/freetype")
-local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local CanvasContext = require("document/canvascontext")
+local Screen = require("device").screen
+local FontList = require("fontlist")
 
 local Font = {
     fontmap = {
@@ -81,8 +81,6 @@ local Font = {
         [4] = "freefont/FreeSerif.ttf",
     },
 
-    fontdir = "./fonts",
-
     -- face table
     faces = {},
 }
@@ -98,7 +96,7 @@ function Font:getFace(font, size)
     if not size then size = self.sizemap[font] end
     -- original size before scaling by screen DPI
     local orig_size = size
-    size = CanvasContext:scaleBySize(size)
+    size = Screen:scaleBySize(size)
 
     local hash = font..size
     local face_obj = self.faces[hash]
@@ -108,7 +106,7 @@ function Font:getFace(font, size)
         if not realname then
             realname = font
         end
-        realname = self.fontdir.."/"..realname
+        realname = FontList.fontdir.."/"..realname
         local ok, face = pcall(Freetype.newFace, realname, size)
         if not ok then
             logger.warn("#! Font ", font, " (", realname, ") not supported: ", face)
@@ -131,104 +129,6 @@ function Font:getFace(font, size)
         self.faces[hash] = face_obj
     end
     return face_obj
-end
-
---[[
-    These non-LGC Kindle system fonts fail CRe's moronic header check.
---]]
-local kindle_fonts_blacklist = {
-    ["DiwanMuna-Bold.ttf"] = true,
-    ["DiwanMuna-Regular.ttf"] = true,
-    ["HYGothicBold.ttf"] = true,
-    ["HYGothicMedium.ttf"] = true,
-    ["HYMyeongJoBold.ttf"] = true,
-    ["HYMyeongJoMedium.ttf"] = true,
-    ["KindleBlackboxBoldItalic.ttf"] = true,
-    ["KindleBlackboxBold.ttf"] = true,
-    ["KindleBlackboxItalic.ttf"] = true,
-    ["KindleBlackboxRegular.ttf"] = true,
-    ["Kindle_MonospacedSymbol.ttf"] = true,
-    ["Kindle_Symbol.ttf"] = true,
-    ["MTChineseSurrogates.ttf"] = true,
-    ["MYingHeiTBold.ttf"] = true,
-    ["MYingHeiTMedium.ttf"] = true,
-    ["NotoNaskhArabicUI-Bold.ttf"] = true,
-    ["NotoNaskhArabicUI-Regular.ttf"] = true,
-    ["NotoNaskh-Bold.ttf"] = true,
-    ["NotoNaskh-Regular.ttf"] = true,
-    ["NotoSansBengali-Regular.ttf"] = true,
-    ["NotoSansDevanagari-Regular.ttf"] = true,
-    ["NotoSansGujarati-Regular.ttf"] = true,
-    ["NotoSansKannada-Regular.ttf"] = true,
-    ["NotoSansMalayalam-Regular.ttf"] = true,
-    ["NotoSansTamil-Regular.ttf"] = true,
-    ["NotoSansTelugu-Regular.ttf"] = true,
-    ["SakkalKitab-Bold.ttf"] = true,
-    ["SakkalKitab-Regular.ttf"] = true,
-    ["SongTBold.ttf"] = true,
-    ["SongTMedium.ttf"] = true,
-    ["STHeitiBold.ttf"] = true,
-    ["STHeitiMedium.ttf"] = true,
-    ["STSongBold.ttf"] = true,
-    ["STSongMedium.ttf"] = true,
-    ["TBGothicBold_213.ttf"] = true,
-    ["TBGothicMed_213.ttf"] = true,
-    ["TBMinchoBold_213.ttf"] = true,
-    ["TBMinchoMedium_213.ttf"] = true,
-    ["STKaiMedium.ttf"] = true,
-    ["Caecilia_LT_67_Cond_Medium.ttf"] = true,
-    ["Caecilia_LT_68_Cond_Medium_Italic.ttf"] = true,
-    ["Caecilia_LT_77_Cond_Bold.ttf"] = true,
-    ["Caecilia_LT_78_Cond_Bold_Italic.ttf"] = true,
-    ["Helvetica_LT_65_Medium.ttf"] = true,
-    ["Helvetica_LT_66_Medium_Italic.ttf"] = true,
-    ["Helvetica_LT_75_Bold.ttf"] = true,
-    ["Helvetica_LT_76_Bold_Italic.ttf"] = true,
-}
-
-local function isInFontsBlacklist(f)
-    -- write test for this
-    return CanvasContext.isKindle() and kindle_fonts_blacklist[f]
-end
-
-function Font:_readList(target, dir)
-    -- lfs.dir non-exsitent directory will give error, weird!
-    local ok, iter, dir_obj = pcall(lfs.dir, dir)
-    if not ok then return end
-    for f in iter, dir_obj do
-        if lfs.attributes(dir.."/"..f, "mode") == "directory" and f ~= "." and f ~= ".." then
-            self:_readList(target, dir.."/"..f)
-        else
-            if string.sub(f, 1, 1) ~= "." then
-                local file_type = string.lower(string.match(f, ".+%.([^.]+)") or "")
-                if file_type == "ttf" or file_type == "ttc"
-                    or file_type == "cff" or file_type == "otf" then
-                    if not isInFontsBlacklist(f) then
-                        table.insert(target, dir.."/"..f)
-                    end
-                end
-            end
-        end
-    end
-end
-
-local function getExternalFontDir()
-    if CanvasContext.isAndroid() then
-        return ANDROID_FONT_DIR
-    else
-        return os.getenv("EXT_FONT_DIR")
-    end
-end
-
-function Font:getFontList()
-    local fontlist = {}
-    self:_readList(fontlist, self.fontdir)
-    -- multiple paths should be joined with semicolon
-    for dir in string.gmatch(getExternalFontDir() or "", "([^;]+)") do
-        self:_readList(fontlist, dir)
-    end
-    table.sort(fontlist)
-    return fontlist
 end
 
 return Font

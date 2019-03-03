@@ -1,10 +1,10 @@
 local Blitbuffer = require("ffi/blitbuffer")
+local CanvasContext = require("document/canvascontext")
 local DataStorage = require("datastorage")
 local Document = require("document/document")
-local Font = require("ui/font")
+local FontList = require("fontlist")
 local Geom = require("ui/geometry")
 local RenderImage = require("ui/renderimage")
-local CanvasContext = require("document/canvascontext")
 local ffi = require("ffi")
 local C = ffi.C
 local lfs = require("libs/libkoreader-lfs")
@@ -75,7 +75,7 @@ function CreDocument:engineInit()
         cre.initHyphDict("./data/hyph/")
 
         -- we need to initialize the CRE font list
-        local fonts = Font:getFontList()
+        local fonts = FontList:getFontList()
         for _k, _v in ipairs(fonts) do
             if not _v:find("/urw/") then
                 local ok, err = pcall(cre.registerFont, _v)
