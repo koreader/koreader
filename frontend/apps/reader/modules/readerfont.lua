@@ -383,6 +383,16 @@ function ReaderFont:buildFontsTestDocument()
 <html>
 <head>
 <title>%s</title>
+<style>
+section > title {
+  font-size: large;
+  font-weight: bold;
+  text-align: center;
+  page-break-before: always;
+  margin-bottom: 0.5em;
+}
+a { color: black; }
+</style>
 </head>
 <body>
 <section id="list"><title>%s</title></section>
