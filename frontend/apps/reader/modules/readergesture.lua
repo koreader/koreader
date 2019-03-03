@@ -44,6 +44,7 @@ local action_strings = {
     dictionary_lookup = _("Dictionary lookup"),
     wikipedia_lookup = _("Wikipedia lookup"),
     fulltext_search = _("Fulltext search"),
+    file_search = _("File search"),
 
     full_refresh = _("Full screen refresh"),
     night_mode = _("Night mode"),
@@ -285,7 +286,8 @@ function ReaderGesture:buildMenu(ges, default)
 
         {"dictionary_lookup", true},
         {"wikipedia_lookup", true, true},
-        {"fulltext_search", not self.is_docless, true},
+        {"fulltext_search", not self.is_docless},
+        {"file_search", true, true},
 
         {"full_refresh", true},
         {"night_mode", true},
@@ -559,6 +561,13 @@ function ReaderGesture:gestureAction(action, ges)
     elseif action == "filemanager" then
         self.ui:onClose()
         self.ui:showFileManager()
+    elseif action == "file_search" then
+        if self.ges_mode == "gesture_fm" then
+            self.ui:handleEvent(Event:new("ShowFileSearch", self.ui.file_chooser.path))
+        else
+            local last_dir = self.ui:getLastDirFile()
+            self.ui:handleEvent(Event:new("ShowFileSearch", last_dir))
+        end
     elseif action == "folder_up" then
         self.ui.file_chooser:changeToPath(string.format("%s/..", self.ui.file_chooser.path))
     elseif action == "open_previous_document" then

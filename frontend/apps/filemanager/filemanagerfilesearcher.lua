@@ -102,7 +102,7 @@ function FileSearcher:close()
     end
 end
 
-function FileSearcher:showSearch(search_path)
+function FileSearcher:onShowFileSearch(search_path)
     local dummy = self.search_value
     local enabled_search_home_dir = true
     if not G_reader_settings:readSetting("home_dir") then

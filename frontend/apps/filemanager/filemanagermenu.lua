@@ -2,7 +2,7 @@ local CenterContainer = require("ui/widget/container/centercontainer")
 local CloudStorage = require("apps/cloudstorage/cloudstorage")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
-local FileSearcher = require("apps/filemanager/filemanagerfilesearcher")
+local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local PluginLoader = require("pluginloader")
 local Search = require("apps/filemanager/filemanagersearch")
@@ -287,7 +287,7 @@ function FileManagerMenu:setUpdateItemTable()
     self.menu_items.find_file = {
         text = _("Find a file"),
         callback = function()
-            FileSearcher:showSearch(self.ui.file_chooser.path)
+            self.ui:handleEvent(Event:new("ShowFileSearch", self.ui.file_chooser.path))
         end
     }
 

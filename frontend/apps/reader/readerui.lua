@@ -12,6 +12,7 @@ local DocumentRegistry = require("document/documentregistry")
 local Event = require("ui/event")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
+local FileManagerFileSearcher = require("apps/filemanager/filemanagerfilesearcher")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
@@ -330,6 +331,11 @@ function ReaderUI:init()
         document = self.document,
         view = self.view,
     })
+    -- file searcher
+    self:registerModule("filesearcher", FileManagerFileSearcher:new{
+        dialog = self.dialog,
+        ui = self,
+    })
     -- history view
     self:registerModule("history", FileManagerHistory:new{
         dialog = self.dialog,
@@ -390,8 +396,7 @@ function ReaderUI:init()
     self.postReaderCallback = nil
 end
 
-function ReaderUI:showFileManager()
-    local FileManager = require("apps/filemanager/filemanager")
+function ReaderUI:getLastDirFile()
     local QuickStart = require("ui/quickstart")
     local last_dir
     local last_file = G_reader_settings:readSetting("lastfile")
@@ -399,6 +404,14 @@ function ReaderUI:showFileManager()
     if last_file and last_file ~= QuickStart.quickstart_filename then
         last_dir = last_file:match("(.*)/")
     end
+    return last_dir, last_file
+end
+
+function ReaderUI:showFileManager()
+    local FileManager = require("apps/filemanager/filemanager")
+
+    local last_dir, last_file = self:getLastDirFile()
+
     if FileManager.instance then
         FileManager.instance:reinit(last_dir, last_file)
     else
