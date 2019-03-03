@@ -85,6 +85,11 @@ function ReaderCropping:onPageCrop(mode)
             self:setCropZoomMode(true)
         end
         return
+    elseif mode == "none" then
+        if self.document.configurable.text_wrap ~= 1 then
+            self.ui:handleEvent(Event:new("SetZoomMode", "pagewidth", "cropping"))
+        end
+        return
     end
     -- backup original view dimen
     self.orig_view_dimen = Geom:new{w = self.view.dimen.w, h = self.view.dimen.h}
