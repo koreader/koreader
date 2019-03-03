@@ -21,11 +21,11 @@ local Device = Generic:new{
     hasDPad = no,
     isAndroid = yes,
     hasEinkScreen = function() return android.isEink() end,
+    hasColorScreen = function() return not android.isEink() end,
     hasFrontlight = yes,
     firmware_rev = android.app.activity.sdkVersion,
     display_dpi = android.lib.AConfiguration_getDensity(android.app.config),
     hasClipboard = yes,
-    hasColorScreen = yes,
     hasOTAUpdates = canUpdateApk,
     --[[
     Disable jit on some modules on android to make koreader on Android more stable.
