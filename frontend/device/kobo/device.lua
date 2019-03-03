@@ -23,7 +23,6 @@ local Kobo = Generic:new{
     model = "Kobo",
     isKobo = yes,
     isTouchDevice = yes, -- all of them are
-    hasBGRFrameBuffer = yes, -- True when >16bpp (i.e., on current FW)
     hasOTAUpdates = yes,
     hasWifiManager = yes,
 
@@ -260,7 +259,9 @@ function Kobo:init()
     if self.screen.fb_bpp == 16 then
         logger.info("Enabling Kobo @ 16bpp tweaks")
         jit.opt.start("loopunroll=45")
-        self.hasBGRFrameBuffer = no
+    elseif self.screen.fb_bpp == 32 then
+        -- Ensure we decode images properly, as our framebuffer is BGRA...
+        self.hasBGRFrameBuffer = yes
     end
     self.powerd = require("device/kobo/powerd"):new{device = self}
     -- NOTE: For the Forma, with the buttons on the right, 193 is Top, 194 Bottom.

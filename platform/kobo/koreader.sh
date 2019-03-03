@@ -151,6 +151,41 @@ if [ "${PRODUCT}" = "frost" ]; then
 fi
 # NOTE: We don't have to restore anything on exit, nickel's startup process will take care of everything (pickel -> nickel).
 
+# In the same vein, swap to 8bpp,
+# because 16bpp is the worst idea in the history of time, as RGB565 is generally a PITA without hardware blitting,
+# and 32bpp usually gains us nothing except a performance hit (we're not Qt5 with its QPainter constraints).
+# The reduced size & complexity should hopefully make things snappier,
+# (and hopefully prevent the JIT for going crazy on high-density screens...).
+# NOTE: Even though pickel/Nickel appear to restore their preferred fb setup, we'll have to do it ourselves,
+#       because things are a bit wonky otherwise. Plus, we get to play nice with every launch method that way.
+#       So, remember the current bitdepth, so we can restore it on exit.
+ORIG_FB_BPP="$(./fbdepth -g)"
+# Sanity check...
+case "${ORIG_FB_BPP}" in
+    16) ;;
+    32) ;;
+    *)
+        # Hu oh? Don't do anything...
+        unset ORIG_FB_BPP
+        ;;
+esac
+
+# The actual swap is done in a function, because we can disable it in the Developer settings, and we want to honor it on restart.
+ko_do_fbdepth() {
+    # Check if the swap has been disabled...
+    if grep -q '\["dev_startup_no_fbdepth"\] = true' 'settings.reader.lua' 2>/dev/null; then
+        # Swap back to the original bitdepth (in case this was a restart)
+        if [ -n "${ORIG_FB_BPP}" ]; then
+            ./fbdepth -d "${ORIG_FB_BPP}" >>crash.log 2>&1
+        fi
+    else
+        # Swap to 8bpp if things looke sane
+        if [ -n "${ORIG_FB_BPP}" ]; then
+            ./fbdepth -d 8 >>crash.log 2>&1
+        fi
+    fi
+}
+
 # Remount the SD card RW if it's inserted and currently RO
 if awk '$4~/(^|,)ro($|,)/' /proc/mounts | grep ' /mnt/sd '; then
     mount -o remount,rw /mnt/sd
@@ -166,10 +201,17 @@ RETURN_VALUE=85
 while [ $RETURN_VALUE -eq 85 ]; do
     # Do an update check now, so we can actually update KOReader via the "Restart KOReader" menu entry ;).
     ko_update_check
+    # Do the fb depth switch, unless it's been disabled
+    ko_do_fbdepth
 
     ./reader.lua "${args}" >>crash.log 2>&1
     RETURN_VALUE=$?
 done
+
+# Restore original fb bitdepth if need be...
+if [ -n "${ORIG_FB_BPP}" ]; then
+    ./fbdepth -d "${ORIG_FB_BPP}" >>crash.log 2>&1
+fi
 
 # Restore original CPUFreq governor if need be...
 if [ -n "${ORIG_CPUFREQ_GOV}" ]; then
