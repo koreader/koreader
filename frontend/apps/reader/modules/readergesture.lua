@@ -714,10 +714,9 @@ function ReaderGesture:multiswipeAction(multiswipe_directions, ges)
     if not self.multiswipes_enabled then return end
     local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
     local multiswipe_gesture_name = "multiswipe_"..self:safeMultiswipeName(multiswipe_directions)
-    for gesture, action in pairs(gesture_manager) do
-        if gesture == multiswipe_gesture_name then
-            return self:gestureAction(action, ges)
-        end
+    local action = gesture_manager[multiswipe_gesture_name]
+    if action and action ~= "nothing" then
+        return self:gestureAction(action, ges)
     end
 end
 
