@@ -345,6 +345,7 @@ function FileManager:init()
         ui = self,
     })
     table.insert(self, FileManagerFileSearcher:new{ ui = self })
+    table.insert(self, FileManagerShortcuts:new{ ui = self })
     table.insert(self, ReaderDictionary:new{ ui = self })
     table.insert(self, ReaderWikipedia:new{ ui = self })
     table.insert(self, ReaderDeviceStatus:new{ ui = self })
@@ -479,17 +480,7 @@ function FileManager:tapPlus()
             {
                 text = _("Folder shortcuts"),
                 callback = function()
-                    local fm_bookmark =  FileManagerShortcuts:new{
-                        title = _("Folder shortcuts"),
-                        show_parent = self,
-                        curr_path = self.file_chooser.path,
-                        goFolder = function(folder)
-                            if folder ~= nil and lfs.attributes(folder, "mode") == "directory" then
-                                self.file_chooser:changeToPath(folder)
-                            end
-                        end,
-                    }
-                    UIManager:show(fm_bookmark)
+                    self:handleEvent(Event:new("ShowFolderShortcutsDialog"))
                     UIManager:close(self.file_dialog)
                 end
             }

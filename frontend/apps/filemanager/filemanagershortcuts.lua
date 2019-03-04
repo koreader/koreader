@@ -189,4 +189,18 @@ function FileManagerShortcuts:deleteFolderShortcut(item)
     self:init()
 end
 
+function FileManagerShortcuts:onShowFolderShortcutsDialog()
+    local fm_bookmark =  FileManagerShortcuts:new{
+        title = _("Folder shortcuts"),
+        show_parent = self.ui,
+        curr_path = self.ui.file_chooser.path,
+        goFolder = function(folder)
+            if folder ~= nil and lfs.attributes(folder, "mode") == "directory" then
+                self.ui.file_chooser:changeToPath(folder)
+            end
+        end,
+    }
+    UIManager:show(fm_bookmark)
+end
+
 return FileManagerShortcuts
