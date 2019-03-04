@@ -49,6 +49,8 @@ local action_strings = {
     full_refresh = _("Full screen refresh"),
     night_mode = _("Night mode"),
     suspend = _("Suspend"),
+    exit = _("Exit KOReader"),
+    restart = _("Restart KOReader"),
     show_menu = _("Show menu"),
     show_config_menu = _("Show bottom menu"),
     show_frontlight_dialog = _("Show frontlight dialog"),
@@ -77,6 +79,7 @@ local default_multiswipes = {
     "east west",
     "north south",
     "south north",
+    true, -- separator
     "north west",
     "north east",
     "south west",
@@ -85,15 +88,33 @@ local default_multiswipes = {
     "west north",
     "east south",
     "west south",
+    true, -- separator
     "north south north",
     "south north south",
     "west east west",
+    "east west east",
+    true, -- separator
+    "south west north",
+    "north east south",
+    "north west south",
+    "west south east",
+    "west north east",
+    "east south west",
     "east north west",
     "south east north",
+    true, -- separator
     "east north west east",
     "south east north south",
+    true, -- separator
     "east south west north",
+    "west south east north",
+    "south east north west",
+    "south west north east",
+    true, -- separator
     "southeast northeast",
+    "northeast southeast",
+    -- "southwest northwest", -- visually ambiguous
+    -- "northwest southwest", -- visually ambiguous
 }
 local multiswipes = {}
 local multiswipes_info_text = _([[
@@ -292,6 +313,9 @@ function ReaderGesture:buildMenu(ges, default)
         {"full_refresh", true},
         {"night_mode", true},
         {"suspend", true},
+        {"exit", true},
+        {"restart", not Device:isAndroid()},
+
         {"show_menu", true},
         {"show_config_menu", not self.is_docless},
         {"show_frontlight_dialog", Device:hasFrontlight()},
@@ -345,39 +369,61 @@ function ReaderGesture:buildMultiswipeMenu()
         table.insert(multiswipes, v)
     end
 
-    if custom_multiswipes_table then
+    if custom_multiswipes_table and #custom_multiswipes_table > 0 then
+        table.insert(multiswipes, true) -- add separator
         for k, v in pairs(custom_multiswipes_table) do
             table.insert(multiswipes, v)
         end
     end
 
     for i=1, #multiswipes do
-        local multiswipe = multiswipes[i]
-        local friendly_multiswipe_name = self:friendlyMultiswipeName(multiswipe)
-        local safe_multiswipe_name = "multiswipe_"..self:safeMultiswipeName(multiswipe)
-        local default_action = self.default_gesture[safe_multiswipe_name] and self.default_gesture[safe_multiswipe_name] or "nothing"
-        table.insert(menu, {
-            text_func = function()
-                local action_name = gesture_manager[safe_multiswipe_name] ~= "nothing" and action_strings[gesture_manager[safe_multiswipe_name]] or _("Available")
-                return T(_("%1   (%2)"), friendly_multiswipe_name, action_name)
-            end,
-            sub_item_table = self:buildMenu(safe_multiswipe_name, default_action),
-            hold_callback = function(touchmenu_instance)
-                if i > #default_multiswipes then
-                    UIManager:show(ConfirmBox:new{
-                        text = T(_("Remove custom multiswipe %1?"), friendly_multiswipe_name),
-                        ok_text = _("Remove"),
-                        ok_callback = function()
-                            -- multiswipes are a combined table, first defaults, then custom
-                            -- so the right index is minus #defalt_multiswipes
-                            custom_multiswipes:removeTableItem("multiswipes", i-#default_multiswipes)
-                            touchmenu_instance.item_table = self:buildMultiswipeMenu()
-                            touchmenu_instance:updateItems()
-                        end,
-                    })
-                end
-            end,
-        })
+        separator = false
+        if i < #multiswipes and multiswipes[i+1] == true then
+            separator = true
+        end
+        if type(multiswipes[i]) == "string" then -- skip separators (true)
+            local multiswipe = multiswipes[i]
+            local friendly_multiswipe_name = self:friendlyMultiswipeName(multiswipe)
+            -- friendly_multiswipe_name = friendly_multiswipe_name .. os.time() -- for debugging menu updates
+            local safe_multiswipe_name = "multiswipe_"..self:safeMultiswipeName(multiswipe)
+            local default_action = self.default_gesture[safe_multiswipe_name] and self.default_gesture[safe_multiswipe_name] or "nothing"
+            table.insert(menu, {
+                text_func = function()
+                    local action_name = gesture_manager[safe_multiswipe_name] ~= "nothing" and action_strings[gesture_manager[safe_multiswipe_name]] or _("Available")
+                    return T(_("%1   (%2)"), friendly_multiswipe_name, action_name)
+                end,
+                sub_item_table = self:buildMenu(safe_multiswipe_name, default_action),
+                hold_callback = function(touchmenu_instance)
+                    if i > #default_multiswipes + 1 then -- +1 for added separator (true)
+                        UIManager:show(ConfirmBox:new{
+                            text = T(_("Remove custom multiswipe %1?"), friendly_multiswipe_name),
+                            ok_text = _("Remove"),
+                            ok_callback = function()
+                                -- multiswipes are a combined table, first defaults, then custom
+                                -- so the right index is minus #defalt_multiswipes minus 1 added separator
+                                custom_multiswipes:removeTableItem("multiswipes", i-#default_multiswipes-1)
+                                -- touchmenu_instance.item_table = self:buildMultiswipeMenu()
+                                -- We need to update touchmenu_instance.item_table in-place for the upper
+                                -- menu to have it updated too
+                                local item_table = touchmenu_instance.item_table
+                                while #item_table > 0 do
+                                    table.remove(item_table, #item_table)
+                                end
+                                for __, v in ipairs(self:buildMultiswipeMenu()) do
+                                    table.insert(item_table, v)
+                                end
+                                touchmenu_instance:updateItems()
+                                -- Also remove associated action from settings
+                                gesture_manager[safe_multiswipe_name] = nil
+                                -- TODO: we should also some place else remove any past multiswipe_name that
+                                -- is no more referenced in our default and custom multiswipes lists
+                            end,
+                        })
+                    end
+                end,
+                separator = separator,
+            })
+        end
     end
 
     return menu
@@ -624,6 +670,10 @@ function ReaderGesture:gestureAction(action, ges)
         end
     elseif action == "suspend" then
         UIManager:suspend()
+    elseif action == "exit" then
+        self.ui.menu:exitOrRestart()
+    elseif action == "restart" then
+        self.ui.menu:exitOrRestart(function() UIManager:restartKOReader() end)
     elseif action == "zoom_contentwidth" then
         self.ui:handleEvent(Event:new("SetZoomMode", "contentwidth"))
     elseif action == "zoom_contentheight" then
