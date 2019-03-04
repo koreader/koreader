@@ -196,6 +196,7 @@ function ReaderGesture:addToMainMenu(menu_items)
             {
                 text = _("Multiswipe recorder"),
                 enabled_func = function() return self.multiswipes_enabled end,
+                keep_menu_open = true,
                 callback = function(touchmenu_instance)
                     local multiswipe_recorder
                     multiswipe_recorder = InputDialog:new{
@@ -231,6 +232,7 @@ function ReaderGesture:addToMainMenu(menu_items)
                                         custom_multiswipes:addTableItem("multiswipes", recorded_multiswipe)
                                         -- TODO implement some nicer method in TouchMenu than this ugly hack for updating the menu
                                         touchmenu_instance.item_table[3] = self:genMultiswipeSubmenu()
+                                        touchmenu_instance:updateItems()
                                         UIManager:close(multiswipe_recorder)
                                     end,
                                 },
