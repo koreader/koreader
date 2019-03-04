@@ -45,6 +45,7 @@ detection result when you feed a touch release event to it.
 local Geom = require("ui/geometry")
 local TimeVal = require("ui/timeval")
 local logger = require("logger")
+local util = require("util")
 
 local GestureDetector = {
     -- must be initialized with the Input singleton class
@@ -556,16 +557,22 @@ function GestureDetector:handlePan(tev)
         end
 
         if msd_distance > self.MULTISWIPE_THRESHOLD then
+            local pan_ev_multiswipe = pan_ev
+            -- store a copy of pan_ev without rotation adjustment
+            -- for multiswipe calculations when rotated
+            if self.screen.cur_rotation_mode > 0 then
+                pan_ev_multiswipe = util.tableDeepCopy(pan_ev)
+            end
             if msd_direction ~= msd_direction_prev then
                 self.multiswipe_directions[msd_cnt+1] = {
                     [1] = msd_direction,
-                    [2] = pan_ev,
+                    [2] = pan_ev_multiswipe,
                 }
             -- update ongoing swipe direction to the new maximum
             else
                 self.multiswipe_directions[msd_cnt] = {
                     [1] = msd_direction,
-                    [2] = pan_ev,
+                    [2] = pan_ev_multiswipe,
                 }
             end
         end
@@ -729,7 +736,7 @@ local function translateGesDirCoordinate(direction, translation_table)
     return translation_table[direction]
 end
 local function translateMultiswipeGesDirCoordinate(multiswipe_directions, translation_table)
-    return multiswipe_directions:gsub(multiswipe_directions, translation_table)
+    return multiswipe_directions:gsub("%S+", translation_table)
 end
 
 --[[--
@@ -755,6 +762,7 @@ function GestureDetector:adjustGesCoordinate(ges)
             end
             if ges.relative then
                 ges.relative.x, ges.relative.y = -ges.relative.y, ges.relative.x
+                ges.relative_delayed.x, ges.relative_delayed.y = -ges.relative_delayed.y, ges.relative_delayed.x
             end
         elseif ges.ges == "pinch" or ges.ges == "spread"
             or ges.ges == "inward_pan"
@@ -781,6 +789,7 @@ function GestureDetector:adjustGesCoordinate(ges)
             end
             if ges.relative then
                 ges.relative.x, ges.relative.y = ges.relative.y, -ges.relative.x
+                ges.relative_delayed.x, ges.relative_delayed.y = ges.relative_delayed.y, -ges.relative_delayed.x
             end
         elseif ges.ges == "pinch" or ges.ges == "spread"
             or ges.ges == "inward_pan"
@@ -807,6 +816,7 @@ function GestureDetector:adjustGesCoordinate(ges)
             end
             if ges.relative then
                 ges.relative.x, ges.relative.y = -ges.relative.x, -ges.relative.y
+                ges.relative_delayed.x, ges.relative_delayed.y = -ges.relative_delayed.x, -ges.relative_delayed.y
             end
         elseif ges.ges == "pinch" or ges.ges == "spread"
                 or ges.ges == "inward_pan"

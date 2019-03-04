@@ -139,6 +139,33 @@ function util.tableEquals(o1, o2, ignore_mt)
     return true
 end
 
+--[[--
+Makes a deep copy of a table.
+
+Source: <a href="https://stackoverflow.com/a/16077650/2470572">https://stackoverflow.com/a/16077650/2470572</a>
+]]
+---- @param o Lua table
+---- @treturn Lua table
+function util.tableDeepCopy(o, seen)
+  seen = seen or {}
+  if o == nil then return nil end
+  if seen[o] then return seen[o] end
+
+  local no
+  if type(o) == "table" then
+    no = {}
+    seen[o] = no
+
+    for k, v in next, o, nil do
+      no[util.tableDeepCopy(k, seen)] = util.tableDeepCopy(v, seen)
+    end
+    setmetatable(no, util.tableDeepCopy(getmetatable(o), seen))
+  else -- number, string, boolean, etc
+    no = o
+  end
+  return no
+end
+
 --- Returns number of keys in a table.
 ---- @param t Lua table
 ---- @treturn int number of keys in table t
