@@ -111,7 +111,11 @@ function Device:init()
     self.screen.isBGRFrameBuffer = self.hasBGRFrameBuffer
 
     local low_pan_rate = G_reader_settings:readSetting("low_pan_rate")
-    self.screen.low_pan_rate = low_pan_rate or self.hasEinkScreen()
+    if low_pan_rate ~= nil then
+        self.screen.low_pan_rate = low_pan_rate
+    else
+        self.screen.low_pan_rate = self.hasEinkScreen()
+    end
 
     logger.info("initializing for device", self.model)
     logger.info("framebuffer resolution:", self.screen:getSize())
