@@ -557,22 +557,22 @@ function GestureDetector:handlePan(tev)
         end
 
         if msd_distance > self.MULTISWIPE_THRESHOLD then
-            local pan_ev_ms = pan_ev
+            local pan_ev_multiswipe = pan_ev
             -- store a copy of pan_ev without rotation adjustment
             -- for multiswipe calculations when rotated
             if self.screen.cur_rotation_mode > 0 then
-                pan_ev_ms = util.tableDeepCopy(pan_ev)
+                pan_ev_multiswipe = util.tableDeepCopy(pan_ev)
             end
             if msd_direction ~= msd_direction_prev then
                 self.multiswipe_directions[msd_cnt+1] = {
                     [1] = msd_direction,
-                    [2] = pan_ev_ms,
+                    [2] = pan_ev_multiswipe,
                 }
             -- update ongoing swipe direction to the new maximum
             else
                 self.multiswipe_directions[msd_cnt] = {
                     [1] = msd_direction,
-                    [2] = pan_ev_ms,
+                    [2] = pan_ev_multiswipe,
                 }
             end
         end
