@@ -45,6 +45,7 @@ detection result when you feed a touch release event to it.
 local Geom = require("ui/geometry")
 local TimeVal = require("ui/timeval")
 local logger = require("logger")
+local util = require("util")
 
 local GestureDetector = {
     -- must be initialized with the Input singleton class
