@@ -377,7 +377,7 @@ function ReaderGesture:buildMultiswipeMenu()
     end
 
     for i=1, #multiswipes do
-        separator = false
+        local separator = false
         if i < #multiswipes and multiswipes[i+1] == true then
             separator = true
         end
