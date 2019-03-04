@@ -365,14 +365,34 @@ function ReaderGesture:buildMultiswipeMenu()
     local menu = {}
     multiswipes = {}
 
+    -- Build a list of gestures in settings, so we can show those
+    -- that don't appear anymore in default or custom lists, and
+    -- allow removing them (as they will still work)
+    local settings_gestures = {}
+    for k, v in pairs(gesture_manager) do
+        if k:sub(1, 11) == "multiswipe_" then
+            k = k:sub(12):gsub("_", " ")
+            settings_gestures[k] = v
+        end
+    end
+
     for k, v in pairs(default_multiswipes) do
         table.insert(multiswipes, v)
+        settings_gestures[v] = nil -- remove from settings list
     end
 
     if custom_multiswipes_table and #custom_multiswipes_table > 0 then
         table.insert(multiswipes, true) -- add separator
         for k, v in pairs(custom_multiswipes_table) do
             table.insert(multiswipes, v)
+            settings_gestures[v] = nil -- remove from settings list
+        end
+    end
+
+    if next(settings_gestures) then -- there are old gestures in settings
+        table.insert(multiswipes, true) -- add separator
+        for k, v in pairs(settings_gestures) do
+            table.insert(multiswipes, k)
         end
     end
 
@@ -399,6 +419,8 @@ function ReaderGesture:buildMultiswipeMenu()
                             text = T(_("Remove custom multiswipe %1?"), friendly_multiswipe_name),
                             ok_text = _("Remove"),
                             ok_callback = function()
+                                -- Remove associated action from settings
+                                gesture_manager[safe_multiswipe_name] = nil
                                 -- multiswipes are a combined table, first defaults, then custom
                                 -- so the right index is minus #defalt_multiswipes minus 1 added separator
                                 custom_multiswipes:removeTableItem("multiswipes", i-#default_multiswipes-1)
@@ -413,10 +435,6 @@ function ReaderGesture:buildMultiswipeMenu()
                                     table.insert(item_table, v)
                                 end
                                 touchmenu_instance:updateItems()
-                                -- Also remove associated action from settings
-                                gesture_manager[safe_multiswipe_name] = nil
-                                -- TODO: we should also some place else remove any past multiswipe_name that
-                                -- is no more referenced in our default and custom multiswipes lists
                             end,
                         })
                     end
