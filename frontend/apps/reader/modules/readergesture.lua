@@ -68,6 +68,7 @@ local action_strings = {
     zoom_page = _("Zoom to fit page"),
 
     folder_up = _("Folder up"),
+    folder_shortcuts = _("Folder shortcuts"),
 }
 
 local custom_multiswipes_path = DataStorage:getSettingsDir().."/multiswipes.lua"
@@ -135,7 +136,8 @@ function ReaderGesture:init()
         multiswipe_west_east = self.ges_mode == "gesture_reader" and "previous_location" or "nothing",
         multiswipe_east_west = self.ges_mode == "gesture_reader" and "latest_bookmark" or "nothing",
         multiswipe_north_east = self.ges_mode == "gesture_reader" and "toc" or "nothing",
-        multiswipe_north_west = self.ges_mode == "gesture_fm" and "folder_up" or "bookmarks",
+        multiswipe_north_west = self.ges_mode == "gesture_reader" and "bookmarks" or "folder_shortcuts",
+        multiswipe_north_south = self.ges_mode == "gesture_reader" and "nothing" or "folder_up",
         multiswipe_east_north = "history",
         multiswipe_east_south = "go_to",
         multiswipe_south_north = self.ges_mode == "gesture_reader" and "skim" or "nothing",
@@ -297,7 +299,8 @@ function ReaderGesture:buildMenu(ges, default)
         {"follow_nearest_link", not self.is_docless},
         {"clear_location_history", not self.is_docless, true},
 
-        {"folder_up", self.is_docless, true},
+        {"folder_up", self.is_docless},
+        {"folder_shortcuts", self.is_docless, true},
 
         { "toc", not self.is_docless},
         {"bookmarks", not self.is_docless},
@@ -636,6 +639,8 @@ function ReaderGesture:gestureAction(action, ges)
         end
     elseif action == "folder_up" then
         self.ui.file_chooser:changeToPath(string.format("%s/..", self.ui.file_chooser.path))
+    elseif action == "folder_shortcuts" then
+        self.ui:handleEvent(Event:new("ShowFolderShortcutsDialog"))
     elseif action == "open_previous_document" then
         -- FileManager
         if self.ui.menu.openLastDoc and G_reader_settings:readSetting("lastfile") ~= nil then
