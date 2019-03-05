@@ -54,7 +54,7 @@ function Device:init()
             elseif ev.code == C.APP_CMD_GAINED_FOCUS
                 or ev.code == C.APP_CMD_INIT_WINDOW
                 or ev.code == C.APP_CMD_WINDOW_REDRAW_NEEDED then
-                this.device.screen:refreshFull()
+                this.device.screen:_updateWindow()
             elseif ev.code == C.APP_CMD_RESUME then
                 local new_file = android.getIntent()
                 if new_file ~= nil and lfs.attributes(new_file, "mode") == "file" then
