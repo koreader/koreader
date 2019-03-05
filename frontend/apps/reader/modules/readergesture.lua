@@ -692,11 +692,9 @@ function ReaderGesture:gestureAction(action, ges)
         self.ui:handleEvent(Event:new("RestoreZoomMode"))
         self.ui:handleEvent(Event:new("InitScrollPageStates"))
     elseif action == "toggle_rotation" then
-        if Screen:getScreenMode() == "portrait" then
-            self.ui:handleEvent(Event:new("SetScreenMode", "landscape"))
-        else
-            self.ui:handleEvent(Event:new("SetScreenMode", "portrait"))
-        end
+        local event_name = self.document.info.has_pages and "SwapScreenMode" or "ChangeScreenMode"
+        local arg = Screen:getScreenMode() == "portrait" and "landscape" or "portrait"
+        self.ui:handleEvent(Event:new(event_name, arg))
     elseif action == "suspend" then
         UIManager:suspend()
     elseif action == "exit" then
