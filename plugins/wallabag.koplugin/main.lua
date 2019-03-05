@@ -1,5 +1,6 @@
 local DataStorage = require("datastorage")
-local DocSettings = require("frontend/docsettings")
+local DocSettings = require("docsettings")
+local Event = require("ui/event")
 local FFIUtil = require("ffi/util")
 local FileManager = require("apps/filemanager/filemanager")
 local InfoMessage = require("ui/widget/infomessage")
@@ -85,12 +86,7 @@ function Wallabag:addToMainMenu(menu_items)
             {
                 text = _("Retrieve new articles from server"),
                 callback = function()
-                    if not NetworkMgr:isOnline() then
-                        NetworkMgr:promptWifiOn()
-                        return
-                    end
-                    self:synchronise()
-                    self:refreshCurrentDirIfNeeded()
+                    self.ui:handleEvent(Event:new("SynchronizeWallabag"))
                 end,
             },
             {
@@ -188,7 +184,7 @@ function Wallabag:addToMainMenu(menu_items)
                         end,
                     },
                     {
-                        text = _("Synchronise remotely deleted files"),
+                        text = _("Synchronize remotely deleted files"),
                         checked_func = function() return self.is_sync_remote_delete end,
                         callback = function()
                             self.is_sync_remote_delete = not self.is_sync_remote_delete
@@ -204,7 +200,7 @@ function Wallabag:addToMainMenu(menu_items)
 
 Articles marked as finished or 100% read can be deleted from the server. Those articles can also be deleted automatically when downloading new articles if the 'Process deletions during download' option is enabled.
 
-The 'Synchronise remotely deleted files' option will remove local files that no longer exist on the server.]])
+The 'Synchronize remotely deleted files' option will remove local files that no longer exist on the server.]])
                             })
                         end,
                     }
@@ -215,7 +211,7 @@ The 'Synchronise remotely deleted files' option will remove local files that no 
                 keep_menu_open = true,
                 callback = function()
                     UIManager:show(InfoMessage:new{
-                        text = T(_([[Wallabag is an open source read-it-later service. This plugin synchronises with a Wallabag server.
+                        text = T(_([[Wallabag is an open source read-it-later service. This plugin synchronizes with a Wallabag server.
 
 More details: https://wallabag.org
 
@@ -403,7 +399,7 @@ function Wallabag:callAPI( method, apiurl, headers, body, filepath )
     end
 end
 
-function Wallabag:synchronise()
+function Wallabag:synchronize()
     local info = InfoMessage:new{ text = _("Connecting…") }
     UIManager:show(info)
     UIManager:forceRePaint()
@@ -442,7 +438,7 @@ function Wallabag:synchronise()
                     failed_count = failed_count + 1
                 end
             end
-            -- synchronise remote deletions
+            -- synchronize remote deletions
             deleted_count = deleted_count + self:processRemoteDeletes( remote_article_ids )
 
             local msg
@@ -728,6 +724,15 @@ function Wallabag:saveWBSettings(setting)
     if not self.wb_settings then self:readSettings() end
     self.wb_settings:saveSetting("wallabag", setting)
     self.wb_settings:flush()
+end
+
+function Wallabag:onSynchronizeWallabag()
+    if not NetworkMgr:isOnline() then
+        NetworkMgr:promptWifiOn()
+        return
+    end
+    self:synchronize()
+    self:refreshCurrentDirIfNeeded()
 end
 
 return Wallabag
