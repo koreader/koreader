@@ -58,9 +58,18 @@ function Device:init()
             elseif ev.code == C.APP_CMD_RESUME then
                 local new_file = android.getIntent()
                 if new_file ~= nil and lfs.attributes(new_file, "mode") == "file" then
-                    logger.warn("Loading new file from intent: " .. new_file)
-                    local ReaderUI = require("apps/reader/readerui")
-                    ReaderUI:doShowReader(new_file)
+                    -- we cannot blit to a window here since we have no focus yet.
+                    local UIManager = require("ui/uimanager")
+                    local InfoMessage = require("ui/widget/infomessage")
+                    UIManager:scheduleIn(0.1, function()
+                        UIManager:show(InfoMessage:new{
+                            text = T(_("Opening file '%1'."), new_file),
+                            timeout = 0.0,
+                        })
+                    end)
+                    UIManager:scheduleIn(0.2, function()
+                        require("apps/reader/readerui"):doShowReader(new_file)
+                    end)
                 end
             end
         end,
