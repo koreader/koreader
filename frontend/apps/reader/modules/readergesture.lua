@@ -69,6 +69,8 @@ local action_strings = {
 
     folder_up = _("Folder up"),
     folder_shortcuts = _("Folder shortcuts"),
+
+    wallabag_download = _("Wallabag retrieval"),
 }
 
 local custom_multiswipes_path = DataStorage:getSettingsDir().."/multiswipes.lua"
@@ -335,7 +337,9 @@ function ReaderGesture:buildMenu(ges, default)
         {"zoom_pageheight", not self.is_docless},
         {"zoom_column", not self.is_docless},
         {"zoom_content", not self.is_docless},
-        {"zoom_page", not self.is_docless},
+        {"zoom_page", not self.is_docless, true},
+
+        {"wallabag_download", self.ui.wallabag ~= nil, true},
     }
     local return_menu = {}
     -- add default action to the top of the submenu
@@ -713,6 +717,8 @@ function ReaderGesture:gestureAction(action, ges)
         self.ui:handleEvent(Event:new("SetZoomMode", "content"))
     elseif action == "zoom_page" then
         self.ui:handleEvent(Event:new("SetZoomMode", "page"))
+    elseif action == "wallabag_download" then
+        self.ui:handleEvent(Event:new("SynchronizeWallabag"))
     end
     return true
 end
