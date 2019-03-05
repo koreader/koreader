@@ -492,8 +492,8 @@ local multiswipe_to_arrow = {
     west = "⬅",
     north = "⬆",
     south = "⬇",
-    northeast = "⬉", -- @TODO swap back, see https://github.com/koreader/koreader/issues/4707
-    northwest = "⬈", -- @TODO swap back, see https://github.com/koreader/koreader/issues/4707
+    northeast = "⬈",
+    northwest = "⬉",
     southeast = "⬊",
     southwest = "⬋",
 }
