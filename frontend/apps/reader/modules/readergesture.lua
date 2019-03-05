@@ -57,6 +57,11 @@ local action_strings = {
     toggle_frontlight = _("Toggle frontlight"),
     toggle_gsensor = _("Toggle accelerometer"),
     toggle_rotation = _("Toggle rotation"),
+
+    wifi_on = _("Enable wifi"),
+    wifi_off = _("Disable wifi"),
+    toggle_wifi = _("Toggle wifi"),
+
     toggle_reflow = _("Toggle reflow"),
 
     zoom_contentwidth = _("Zoom to fit content width"),
@@ -118,6 +123,9 @@ local default_multiswipes = {
     "northeast southeast",
     -- "southwest northwest", -- visually ambiguous
     -- "northwest southwest", -- visually ambiguous
+    "northwest southwest northwest",
+    "southeast southwest northwest",
+    "southeast northeast northwest",
 }
 local multiswipes = {}
 local multiswipes_info_text = _([[
@@ -155,6 +163,9 @@ function ReaderGesture:init()
         multiswipe_south_east_north_south = self.ges_mode == "gesture_reader" and "zoom_pageheight" or "nothing",
         multiswipe_east_south_west_north = "full_refresh",
         multiswipe_southeast_northeast = self.ges_mode == "gesture_reader" and "follow_nearest_link" or "nothing",
+        multiswipe_northwest_southwest_northwest = Device:hasWifiToggle() and "toggle_wifi" or "nothing",
+        multiswipe_southeast_southwest_northwest = Device:hasWifiToggle() and "wifi_off" or "nothing",
+        multiswipe_southeast_northeast_northwest = Device:hasWifiToggle() and "wifi_on" or "nothing",
     }
     local gm = G_reader_settings:readSetting(self.ges_mode)
     if gm == nil then G_reader_settings:saveSetting(self.ges_mode, {}) end
@@ -324,13 +335,17 @@ function ReaderGesture:buildMenu(ges, default)
         {"restart", not Device:isAndroid()},
 
         {"show_menu", true},
-        {"show_config_menu", not self.is_docless},
+        {"show_config_menu", not self.is_docless, true},
         {"show_frontlight_dialog", Device:hasFrontlight()},
-        {"toggle_frontlight", Device:hasFrontlight()},
+        {"toggle_frontlight", Device:hasFrontlight(), true},
         {"toggle_gsensor", Device:canToggleGSensor()},
         {"toggle_rotation", not self.is_docless, true},
-        {"toggle_reflow", not self.is_docless, true},
 
+        {"wifi_on", Device:hasWifiToggle()},
+        {"wifi_off", Device:hasWifiToggle()},
+        {"toggle_wifi", Device:hasWifiToggle(), true},
+
+        {"toggle_reflow", not self.is_docless, true},
         {"zoom_contentwidth", not self.is_docless},
         {"zoom_contentheight", not self.is_docless},
         {"zoom_pagewidth", not self.is_docless},
@@ -695,6 +710,51 @@ function ReaderGesture:gestureAction(action, ges)
         local event_name = self.document.info.has_pages and "SwapScreenMode" or "ChangeScreenMode"
         local arg = Screen:getScreenMode() == "portrait" and "landscape" or "portrait"
         self.ui:handleEvent(Event:new(event_name, arg))
+    elseif action == "toggle_wifi" then
+        local NetworkMgr = require("ui/network/manager")
+
+        if not NetworkMgr:isOnline() then
+            -- NB Normal widgets should use NetworkMgr:promptWifiOn()
+            -- This is specifically the toggle wifi action, so consent is implied.
+            NetworkMgr:turnOnWifi()
+        else
+            NetworkMgr:turnOffWifi()
+
+            UIManager:show(InfoMessage:new{
+                text = _("Wifi disabled."),
+                timeout = 1,
+            })
+        end
+    elseif action == "wifi_off" then
+        local NetworkMgr = require("ui/network/manager")
+        -- can't hurt
+        NetworkMgr:turnOffWifi()
+
+        UIManager:show(InfoMessage:new{
+            text = _("Wifi disabled."),
+            timeout = 1,
+        })
+    elseif action == "wifi_on" then
+        local NetworkMgr = require("ui/network/manager")
+
+        if not NetworkMgr:isOnline() then
+            -- NB Normal widgets should use NetworkMgr:promptWifiOn()
+            -- This is specifically the toggle wifi action, so consent is implied.
+            NetworkMgr:turnOnWifi()
+        else
+            local info_text
+            local current_network = NetworkMgr:getCurrentNetwork()
+            -- this method is only available for some implementations
+            if current_network then
+                info_text = T(_("Already connected to network %1."), NetworkMgr:getCurrentNetwork())
+            else
+                info_text = _("Already connected.")
+            end
+            UIManager:show(InfoMessage:new{
+                text = info_text,
+                timeout = 1,
+            })
+        end
     elseif action == "suspend" then
         UIManager:suspend()
     elseif action == "exit" then
