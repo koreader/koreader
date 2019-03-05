@@ -143,6 +143,11 @@ function Device:init()
     end
 end
 
+function Device:setScreenDPI(dpi_override)
+    self.screen:setDPI(dpi_override)
+    self.input.gesture_detector:init()
+end
+
 function Device:getPowerDevice()
     return self.powerd
 end

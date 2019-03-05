@@ -37,7 +37,7 @@ end
 local Device = require("device")
 local dpi_override = G_reader_settings:readSetting("screen_dpi")
 if dpi_override ~= nil then
-    Device.screen:setDPI(dpi_override)
+    Device:setScreenDPI(dpi_override)
 end
 
 local CanvasContext = require("document/canvascontext")
