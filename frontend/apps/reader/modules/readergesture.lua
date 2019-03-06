@@ -357,7 +357,7 @@ function ReaderGesture:buildMenu(ges, default)
         {"zoom_content", not self.is_docless},
         {"zoom_page", not self.is_docless, true},
 
-        {"wallabag_download", self.ui.wallabag ~= nil, true},
+        {"wallabag_download", self.ui.wallabag ~= nil},
     }
     local return_menu = {}
     -- add default action to the top of the submenu
