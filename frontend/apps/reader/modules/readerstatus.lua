@@ -31,7 +31,7 @@ function ReaderStatus:addToMainMenu(menu_items)
     menu_items.book_status = {
         text = _("Book status"),
         callback = function()
-            self:showStatus()
+            self:onShowBookStatus()
         end,
     }
 end
@@ -141,7 +141,7 @@ function ReaderStatus:openNextFile(next_file)
     end
 end
 
-function ReaderStatus:showStatus(before_show_callback)
+function ReaderStatus:onShowBookStatus(before_show_callback)
     local status_page = BookStatusWidget:new {
         thumbnail = self.document:getCoverPageImage(),
         props = self.document:getProps(),
@@ -154,6 +154,7 @@ function ReaderStatus:showStatus(before_show_callback)
     end
     status_page.dithered = true
     UIManager:show(status_page, "full")
+    return true
 end
 
 function ReaderStatus:onReadSettings(config)
