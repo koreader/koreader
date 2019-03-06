@@ -150,7 +150,7 @@ function ReaderGesture:init()
         multiswipe_north_west = self.ges_mode == "gesture_reader" and "bookmarks" or "folder_shortcuts",
         multiswipe_north_south = self.ges_mode == "gesture_reader" and "nothing" or "folder_up",
         multiswipe_east_north = "history",
-        multiswipe_west_north = "book_status",
+        multiswipe_west_north = self.ges_mode == "gesture_reader" and "book_status" or "nothing",
         multiswipe_east_south = "go_to",
         multiswipe_south_north = self.ges_mode == "gesture_reader" and "skim" or "nothing",
         multiswipe_south_east = self.ges_mode == "gesture_reader" and "toggle_reflow" or "nothing",
