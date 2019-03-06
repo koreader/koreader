@@ -36,6 +36,7 @@ local action_strings = {
     toc = _("Table of contents"),
     bookmarks = _("Bookmarks"),
     reading_progress = _("Reading progress"),
+    book_status = _("Book status"),
 
     history = _("History"),
     open_previous_document = _("Open previous document"),
@@ -149,6 +150,7 @@ function ReaderGesture:init()
         multiswipe_north_west = self.ges_mode == "gesture_reader" and "bookmarks" or "folder_shortcuts",
         multiswipe_north_south = self.ges_mode == "gesture_reader" and "nothing" or "folder_up",
         multiswipe_east_north = "history",
+        multiswipe_west_north = "book_status",
         multiswipe_east_south = "go_to",
         multiswipe_south_north = self.ges_mode == "gesture_reader" and "skim" or "nothing",
         multiswipe_south_east = self.ges_mode == "gesture_reader" and "toggle_reflow" or "nothing",
@@ -317,7 +319,8 @@ function ReaderGesture:buildMenu(ges, default)
 
         { "toc", not self.is_docless},
         {"bookmarks", not self.is_docless},
-        {"reading_progress", ReaderGesture.getReaderProgress ~= nil, true},
+        {"reading_progress", ReaderGesture.getReaderProgress ~= nil},
+        {"book_status", not self.is_docless, true},
 
         {"history", true},
         {"open_previous_document", true, true},
@@ -620,6 +623,8 @@ function ReaderGesture:gestureAction(action, ges)
         self.ui:handleEvent(Event:new("ShowBookmark"))
     elseif action == "history" then
         self.ui:handleEvent(Event:new("ShowHist"))
+    elseif action == "book_status" then
+        self.ui:handleEvent(Event:new("ShowBookStatus"))
     elseif action == "page_jmp_fwd_10" then
         self:pageUpdate(10)
     elseif action == "page_jmp_fwd_1" then
