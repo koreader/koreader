@@ -2,7 +2,7 @@
 export LC_ALL="en_US.UTF-8"
 
 # import ntx_hwconfig into environment variables
-export $(ntx_hwconfig -s /dev/mmcblk0 |sed -n "/^\[/s,^.[^ ]* ,,;s,',,gp")
+IFS=$'\n' ; export $(ntx_hwconfig -s /dev/mmcblk0 |sed -n "/^\[/s,^.[^ ]* ,,;s,',,gp") ; IFS=
 
 # working directory of koreader
 KOREADER_DIR="${0%/*}"
