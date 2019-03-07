@@ -61,7 +61,7 @@ function ReaderStatus:onEndOfBook()
                 {
                     text = _("Book status"),
                     callback = function()
-                        self:showStatus()
+                        self:onShowBookStatus()
                         UIManager:close(choose_action)
                     end,
                 },
@@ -93,7 +93,7 @@ function ReaderStatus:onEndOfBook()
 
         UIManager:show(choose_action)
     elseif settings == "book_status" then
-        self:showStatus()
+        self:onShowBookStatus()
     elseif settings == "next_file" then
         if G_reader_settings:readSetting("collate") ~= "access" then
             local info = InfoMessage:new{
@@ -112,7 +112,7 @@ function ReaderStatus:onEndOfBook()
         self:openFileBrowser()
     elseif settings == "book_status_file_browser" then
         local before_show_callback = function() self:openFileBrowser() end
-        self:showStatus(before_show_callback)
+        self:onShowBookStatus(before_show_callback)
     end
 end
 
