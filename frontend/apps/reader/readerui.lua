@@ -448,7 +448,7 @@ function ReaderUI:showReader(file, provider)
                         doc_settings:close()
                         self:showReaderCoroutine(file, provider)
                     end,
-                    cancel_callback = self.showFileManager,
+                    cancel_callback = function() self:showFileManager() end,
                 })
         else
             self:showReaderCoroutine(file, provider)
