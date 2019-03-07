@@ -665,7 +665,23 @@ function ReaderRolling:onRedrawCurrentView()
 end
 
 function ReaderRolling:onSetDimensions(dimen)
+    -- This is called during reader initialization, where
+    -- we don't need to do much. But it may be called after,
+    -- when resizing the window on SDL, where we need to
+    -- do a bit more
+    if self.ui.postReaderCallback == nil then -- ReaderUI:init() done
+        -- We need to temporarily re-enable internal history as crengine
+        -- uses it to reposition after resize
+        self.ui.document:enableInternalHistory(true)
+    end
     self.ui.document:setViewDimen(Screen:getSize())
+    if self.ui.postReaderCallback == nil then -- ReaderUI:init() done
+        self:onChangeViewMode()
+        self:onUpdatePos()
+        -- Re-disable internal history, with required redraw
+        self.ui.document:enableInternalHistory(false)
+        self:onRedrawCurrentView()
+    end
 end
 
 function ReaderRolling:onChangeScreenMode(mode, rotation)
