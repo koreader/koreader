@@ -207,28 +207,30 @@ function ReaderHighlight:onTapXPointerSavedHighlight(ges)
     -- showing menu...). We might want to cache these boxes per page (and
     -- clear that cache when page layout change or highlights are added
     -- or removed).
-    local cur_page, cur_scroll_top, cur_scroll_bottom
+    local cur_page, cur_page2, cur_scroll_top, cur_scroll_bottom
     local pos = self.view:screenToPageTransform(ges.pos)
     for page, _ in pairs(self.view.highlight.saved) do
         local items = self.view.highlight.saved[page]
         if items then
             for i = 1, #items do
-                if not cur_page then
-                    cur_page = self.ui.document:getPageFromXPointer(self.ui.document:getXPointer())
-                end
                 local pos0, pos1 = items[i].pos0, items[i].pos1
                 -- document:getScreenBoxesFromPositions() is expensive, so we
                 -- first check this item is on current page
                 local is_in_view = false
-                if self.view_mode == "page" then
+                if self.view.view_mode == "page" then
                     if not cur_page then
                         cur_page = self.ui.document:getPageFromXPointer(self.ui.document:getXPointer())
+                        if self.ui.document:getVisiblePageCount() > 1 then
+                            cur_page2 = cur_page + 1
+                        end
                     end
                     local page0 = self.ui.document:getPageFromXPointer(pos0)
                     local page1 = self.ui.document:getPageFromXPointer(pos1)
                     local start_page = math.min(page0, page1)
                     local end_page = math.max(page0, page1)
                     if start_page <= cur_page and end_page >= cur_page then
+                        is_in_view = true
+                    elseif cur_page2 and start_page <= cur_page2 and end_page >= cur_page2 then
                         is_in_view = true
                     end
                 else

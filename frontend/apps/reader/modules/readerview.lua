@@ -495,7 +495,7 @@ function ReaderView:drawXPointerSavedHighlight(bb, x, y)
     -- showing menu...). We might want to cache these boxes per page (and
     -- clear that cache when page layout change or highlights are added
     -- or removed).
-    local cur_page, cur_scroll_top, cur_scroll_bottom
+    local cur_page, cur_page2, cur_scroll_top, cur_scroll_bottom
     for page, _ in pairs(self.highlight.saved) do
         local items = self.highlight.saved[page]
         if not items then items = {} end
@@ -508,12 +508,17 @@ function ReaderView:drawXPointerSavedHighlight(bb, x, y)
             if self.view_mode == "page" then
                 if not cur_page then
                     cur_page = self.ui.document:getPageFromXPointer(self.ui.document:getXPointer())
+                    if self.ui.document:getVisiblePageCount() > 1 then
+                        cur_page2 = cur_page + 1
+                    end
                 end
                 local page0 = self.ui.document:getPageFromXPointer(pos0)
                 local page1 = self.ui.document:getPageFromXPointer(pos1)
                 local start_page = math.min(page0, page1)
                 local end_page = math.max(page0, page1)
                 if start_page <= cur_page and end_page >= cur_page then
+                    is_in_view = true
+                elseif cur_page2 and start_page <= cur_page2 and end_page >= cur_page2 then
                     is_in_view = true
                 end
             else
