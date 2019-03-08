@@ -665,17 +665,20 @@ function ReaderRolling:onRedrawCurrentView()
 end
 
 function ReaderRolling:onSetDimensions(dimen)
-    -- This is called during reader initialization, where
-    -- we don't need to do much. But it may be called after,
-    -- when resizing the window on SDL, where we need to
-    -- do a bit more
-    if self.ui.postReaderCallback == nil then -- ReaderUI:init() done
+    if self.ui.postReaderCallback ~= nil then
+        -- ReaderUI:init() not yet done: just set document dimensions
+        self.ui.document:setViewDimen(Screen:getSize())
+        -- (what's done in the following else is done elsewhere by
+        -- the initialization code)
+    else
+        -- Initialization done: we are called on orientation change
+        -- or on window resize (SDL, Android possibly).
         -- We need to temporarily re-enable internal history as crengine
         -- uses it to reposition after resize
         self.ui.document:enableInternalHistory(true)
-    end
-    self.ui.document:setViewDimen(Screen:getSize())
-    if self.ui.postReaderCallback == nil then -- ReaderUI:init() done
+        -- Set document dimensions
+        self.ui.document:setViewDimen(Screen:getSize())
+        -- Re-setup previous position
         self:onChangeViewMode()
         self:onUpdatePos()
         -- Re-disable internal history, with required redraw
@@ -685,17 +688,11 @@ function ReaderRolling:onSetDimensions(dimen)
 end
 
 function ReaderRolling:onChangeScreenMode(mode, rotation)
-    -- We need to temporarily re-enable internal history as crengine
-    -- uses it to reposition after resize
-    self.ui.document:enableInternalHistory(true)
-    -- Flag it as interactive so we can properly swap to Inverted orientations (we usurp the second argument, which usually means rotation)
+    -- Flag it as interactive so we can properly swap to Inverted orientations
+    -- (we usurp the second argument, which usually means rotation)
     self.ui:handleEvent(Event:new("SetScreenMode", mode, rotation or true))
-    self.ui.document:setViewDimen(Screen:getSize())
-    self:onChangeViewMode()
-    self:onUpdatePos()
-    -- Re-disable internal history, with required redraw
-    self.ui.document:enableInternalHistory(false)
-    self:onRedrawCurrentView()
+    -- (This had the above ReaderRolling:onSetDimensions() called to resize
+    -- document dimensions and keep up with current position)
 end
 
 function ReaderRolling:onColorRenderingUpdate()
