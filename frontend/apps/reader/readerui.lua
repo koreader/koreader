@@ -13,6 +13,7 @@ local Event = require("ui/event")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
 local FileManagerFileSearcher = require("apps/filemanager/filemanagerfilesearcher")
+local FileManagerShortcuts = require("apps/filemanager/filemanagershortcuts")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
@@ -333,6 +334,11 @@ function ReaderUI:init()
     })
     -- file searcher
     self:registerModule("filesearcher", FileManagerFileSearcher:new{
+        dialog = self.dialog,
+        ui = self,
+    })
+    -- folder shortcuts
+    self:registerModule("folder_shortcuts", FileManagerShortcuts:new{
         dialog = self.dialog,
         ui = self,
     })
