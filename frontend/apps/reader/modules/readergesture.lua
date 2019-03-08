@@ -315,7 +315,7 @@ function ReaderGesture:buildMenu(ges, default)
         {"clear_location_history", not self.is_docless, true},
 
         {"folder_up", self.is_docless},
-        {"folder_shortcuts", self.is_docless, true},
+        {"folder_shortcuts", true, true},
 
         { "toc", not self.is_docless},
         {"bookmarks", not self.is_docless},

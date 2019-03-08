@@ -190,13 +190,24 @@ function FileManagerShortcuts:deleteFolderShortcut(item)
 end
 
 function FileManagerShortcuts:onShowFolderShortcutsDialog()
-    local fm_bookmark =  FileManagerShortcuts:new{
+    local fm_bookmark = self:new{
         title = _("Folder shortcuts"),
         show_parent = self.ui,
-        curr_path = self.ui.file_chooser.path,
+        curr_path = self.ui.file_chooser and self.ui.file_chooser.path or self.ui:getLastDirFile(),
         goFolder = function(folder)
             if folder ~= nil and lfs.attributes(folder, "mode") == "directory" then
-                self.ui.file_chooser:changeToPath(folder)
+                if self.ui.file_chooser then
+                    self.ui.file_chooser:changeToPath(folder)
+                else
+                    local FileManager = require("apps/filemanager/filemanager")
+
+                    self.ui:onClose()
+                    if FileManager.instance then
+                        FileManager.instance:reinit(folder)
+                    else
+                        FileManager:showFiles(folder)
+                    end
+                end
             end
         end,
     }
