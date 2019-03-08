@@ -1036,6 +1036,7 @@ function Menu:onShowGotoDialog()
     if self.page_info_text and self.page_info_text.hold_input then
         self.page_info_text:onInput(self.page_info_text.hold_input)
     end
+    return true
 end
 
 function Menu:onWrapFirst()
