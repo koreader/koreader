@@ -198,7 +198,7 @@ function FileManagerShortcuts:onShowFolderShortcutsDialog()
             if folder ~= nil and lfs.attributes(folder, "mode") == "directory" then
                 if self.ui.file_chooser then
                     self.ui.file_chooser:changeToPath(folder)
-                else
+                else -- called from Reader
                     local FileManager = require("apps/filemanager/filemanager")
 
                     self.ui:onClose()
