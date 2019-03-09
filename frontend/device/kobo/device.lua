@@ -256,6 +256,8 @@ function Kobo:init()
     --       As this may have a detrimental effect on performance, we try to deviate from defaults as little as possible,
     --       completely avoiding it if possible...
     --       c.f., #4137 for the gory details.
+    -- FIXME: Might want to make that mandatory, because we've been finding more and more ways to make the JIT go crazy,
+    --        both at 32bpp and at 8bpp (c.f., #4752).
     if self.screen.fb_bpp == 16 then
         logger.info("Enabling Kobo @ 16bpp tweaks")
         jit.opt.start("loopunroll=45")
