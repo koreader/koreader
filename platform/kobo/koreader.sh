@@ -137,7 +137,7 @@ fi
 
 # If we're on a Forma, make sure we start in an orientation we know how to handle (i.e., Portrait, buttons on the Right)
 # Because NTX likes mounting panels in weird native rotations, this is actually FB_ROTATE_CCW (3).
-# And because shit gets even weirder, we have to echo 1 to get 3 (possibly because 2 is the native rotation, and 3 ^ 2 = 1).
+# And because shit gets even weirder, we have to echo 1 to get 3 (because the kernel inverts Landscape FB constants, and 3 ^ 2 = 1).
 if [ "${PRODUCT}" = "frost" ]; then
     # Only mess with this if we were started from Nickel
     if [ "${FROM_NICKEL}" = "true" ]; then
@@ -160,6 +160,7 @@ fi
 #       because things are a bit wonky otherwise. Plus, we get to play nice with every launch method that way.
 #       So, remember the current bitdepth, so we can restore it on exit.
 ORIG_FB_BPP="$(./fbdepth -g)"
+echo "Original fb bitdepth is set @ ${ORIG_FB_BPP}bpp" >>crash.log 2>&1
 # Sanity check...
 case "${ORIG_FB_BPP}" in
     16) ;;
@@ -176,11 +177,13 @@ ko_do_fbdepth() {
     if grep -q '\["dev_startup_no_fbdepth"\] = true' 'settings.reader.lua' 2>/dev/null; then
         # Swap back to the original bitdepth (in case this was a restart)
         if [ -n "${ORIG_FB_BPP}" ]; then
+            echo "Making sure we're using the original fb bitdepth @ ${ORIG_FB_BPP}bpp" >>crash.log 2>&1
             ./fbdepth -d "${ORIG_FB_BPP}" >>crash.log 2>&1
         fi
     else
         # Swap to 8bpp if things looke sane
         if [ -n "${ORIG_FB_BPP}" ]; then
+            echo "Switching fb bitdepth to 8bpp" >>crash.log 2>&1
             ./fbdepth -d 8 >>crash.log 2>&1
         fi
     fi
@@ -210,6 +213,7 @@ done
 
 # Restore original fb bitdepth if need be...
 if [ -n "${ORIG_FB_BPP}" ]; then
+    echo "Restoring original fb bitdepth @ ${ORIG_FB_BPP}bpp" >>crash.log 2>&1
     ./fbdepth -d "${ORIG_FB_BPP}" >>crash.log 2>&1
 fi
 
