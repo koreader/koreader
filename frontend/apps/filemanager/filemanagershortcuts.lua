@@ -208,7 +208,6 @@ end
 function FileManagerShortcuts:onShowFolderShortcutsDialog()
     self.fm_bookmark = Menu:new{
         title = _("Folder shortcuts"),
-        item_table = self.shortcuts,
         show_parent = self.ui,
         width = Screen:getWidth(),
         height = Screen:getHeight(),
