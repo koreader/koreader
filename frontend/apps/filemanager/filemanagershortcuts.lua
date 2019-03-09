@@ -1,5 +1,6 @@
 local ButtonDialog = require("ui/widget/buttondialog")
 local InfoMessage = require("ui/widget/infomessage")
+local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
 local Screen = require("device").screen
@@ -8,22 +9,9 @@ local util = require("ffi/util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
-local FileManagerShortcuts = Menu:extend{
-    width = Screen:getWidth(),
-    height = Screen:getHeight(),
-    no_title = false,
-    parent = nil,
-    has_close_button = true,
-    is_popout = false,
-    is_borderless = true,
-}
+local FileManagerShortcuts = InputContainer:extend{}
 
-function FileManagerShortcuts:init()
-    self.item_table = self:genItemTableFromRoot()
-    Menu.init(self)
-end
-
-function FileManagerShortcuts:genItemTableFromRoot()
+function FileManagerShortcuts:updateItemTable()
     local item_table = {}
     local folder_shortcuts = G_reader_settings:readSetting("folder_shortcuts") or {}
     table.insert(item_table, {
@@ -40,12 +28,36 @@ function FileManagerShortcuts:genItemTableFromRoot()
             deletable = true,
             editable = true,
             callback = function()
-                UIManager:close(self)
-                self.goFolder(item.folder)
+                UIManager:close(self.fm_bookmark)
+
+                local folder = item.folder
+                if folder ~= nil and lfs.attributes(folder, "mode") == "directory" then
+                    if self.ui.file_chooser then
+                        self.ui.file_chooser:changeToPath(folder)
+                    else -- called from Reader
+                        local FileManager = require("apps/filemanager/filemanager")
+
+                        self.ui:onClose()
+                        if FileManager.instance then
+                            FileManager.instance:reinit(folder)
+                        else
+                            FileManager:showFiles(folder)
+                        end
+                    end
+                end
             end,
         })
     end
-    return item_table
+
+    -- try to stay on current page
+    local select_number = nil
+
+    if self.fm_bookmark.page and self.fm_bookmark.perpage then
+        select_number = (self.fm_bookmark.page - 1) * self.fm_bookmark.perpage + 1
+    end
+
+    self.fm_bookmark:switchItemTable(nil,
+                                     item_table, select_number)
 end
 
 function FileManagerShortcuts:addNewFolder()
@@ -53,7 +65,7 @@ function FileManagerShortcuts:addNewFolder()
     local path_chooser = PathChooser:new{
         select_directory = true,
         select_file = false,
-        path = self.curr_path,
+        path = self.fm_bookmark.curr_path,
         onConfirm = function(path)
             local add_folder_input
             local friendly_name = util.basename(path) or _("my folder")
@@ -74,7 +86,7 @@ function FileManagerShortcuts:addNewFolder()
                             text = _("Add"),
                             is_enter_default = true,
                             callback = function()
-                                self:addFolderFromInput(friendly_name, path)
+                                self:addFolderFromInput(add_folder_input:getInputValue(), path)
                                 UIManager:close(add_folder_input)
                             end,
                         },
@@ -103,7 +115,7 @@ function FileManagerShortcuts:addFolderFromInput(friendly_name, folder)
         folder = folder,
     })
     G_reader_settings:saveSetting("folder_shortcuts", folder_shortcuts)
-    self:init()
+    self:updateItemTable()
 end
 
 function FileManagerShortcuts:onMenuHold(item)
@@ -117,7 +129,7 @@ function FileManagerShortcuts:onMenuHold(item)
                         enabled = item.editable,
                         callback = function()
                             UIManager:close(folder_shortcuts_dialog)
-                            self:editFolderShortcut(item)
+                            self._manager:editFolderShortcut(item)
                         end
                     },
                     {
@@ -125,7 +137,7 @@ function FileManagerShortcuts:onMenuHold(item)
                         enabled = item.deletable,
                         callback = function()
                             UIManager:close(folder_shortcuts_dialog)
-                            self:deleteFolderShortcut(item)
+                            self._manager:deleteFolderShortcut(item)
                         end
                     },
                 },
@@ -175,7 +187,7 @@ function FileManagerShortcuts:renameFolderShortcut(item, new_name)
         table.insert(folder_shortcuts, element)
     end
     G_reader_settings:saveSetting("folder_shortcuts", folder_shortcuts)
-    self:init()
+    self:updateItemTable()
 end
 
 function FileManagerShortcuts:deleteFolderShortcut(item)
@@ -186,32 +198,31 @@ function FileManagerShortcuts:deleteFolderShortcut(item)
         end
     end
     G_reader_settings:saveSetting("folder_shortcuts", folder_shortcuts)
-    self:init()
+    self:updateItemTable()
+end
+
+function FileManagerShortcuts:onSetDimensions(dimen)
+    self.dimen = dimen
 end
 
 function FileManagerShortcuts:onShowFolderShortcutsDialog()
-    local fm_bookmark = self:new{
+    self.fm_bookmark = Menu:new{
         title = _("Folder shortcuts"),
+        item_table = self.shortcuts,
         show_parent = self.ui,
+        width = Screen:getWidth(),
+        height = Screen:getHeight(),
+        no_title = false,
+        parent = nil,
+        has_close_button = true,
+        is_popout = false,
+        is_borderless = true,
         curr_path = self.ui.file_chooser and self.ui.file_chooser.path or self.ui:getLastDirFile(),
-        goFolder = function(folder)
-            if folder ~= nil and lfs.attributes(folder, "mode") == "directory" then
-                if self.ui.file_chooser then
-                    self.ui.file_chooser:changeToPath(folder)
-                else -- called from Reader
-                    local FileManager = require("apps/filemanager/filemanager")
-
-                    self.ui:onClose()
-                    if FileManager.instance then
-                        FileManager.instance:reinit(folder)
-                    else
-                        FileManager:showFiles(folder)
-                    end
-                end
-            end
-        end,
+        onMenuHold = self.onMenuHold,
+        _manager = self,
     }
-    UIManager:show(fm_bookmark)
+    self:updateItemTable()
+    UIManager:show(self.fm_bookmark)
 end
 
 return FileManagerShortcuts
