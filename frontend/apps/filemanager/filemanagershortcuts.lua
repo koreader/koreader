@@ -205,7 +205,10 @@ function FileManagerShortcuts:onSetDimensions(dimen)
     self.dimen = dimen
 end
 
-function FileManagerShortcuts:onShowFolderShortcutsDialog()
+function FileManagerShortcuts:onShowFolderShortcutsDialog(curr_path)
+    if curr_path == nil and self.ui then
+        curr_path = self.ui.file_chooser and self.ui.file_chooser.path or self.ui:getLastDirFile()
+    end
     self.fm_bookmark = Menu:new{
         title = _("Folder shortcuts"),
         show_parent = self.ui,
@@ -216,7 +219,7 @@ function FileManagerShortcuts:onShowFolderShortcutsDialog()
         has_close_button = true,
         is_popout = false,
         is_borderless = true,
-        curr_path = self.ui.file_chooser and self.ui.file_chooser.path or self.ui:getLastDirFile(),
+        curr_path = curr_path,
         onMenuHold = self.onMenuHold,
         _manager = self,
     }
