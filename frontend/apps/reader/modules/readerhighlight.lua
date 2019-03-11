@@ -721,13 +721,8 @@ function ReaderHighlight:onHoldRelease()
                     },
                     {
                         text = _("Add Note"),
-                        enabled = true,
                         callback = function()
-                            local page, index = self:saveHighlight()
-                            if page and index then -- saveHighlight can return nil, nil
-                                self:editHighlight(page, index)
-                                UIManager:close(self.edit_highlight_dialog)
-                            end
+                            self:addNote()
                             self:onClose()
                         end,
                     },
@@ -979,7 +974,10 @@ function ReaderHighlight:exportToDocument(page, item)
 end
 
 function ReaderHighlight:addNote()
-    self:handleEvent(Event:new("addNote"))
+    self:handleEvent(Event:new("AddNote"))
+    local page, index = self:saveHighlight()
+    self:editHighlight(page, index)
+    UIManager:close(self.edit_highlight_dialog)
     logger.dbg("add Note")
 end
 
