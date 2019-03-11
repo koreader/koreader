@@ -207,7 +207,9 @@ if ARGV[argidx] and ARGV[argidx] ~= "" then
         elseif start_with == "folder_shortcuts" then
             local FileManagerShortcuts = require("apps/filemanager/filemanagershortcuts")
             UIManager:nextTick(function()
-                FileManagerShortcuts:onShowFolderShortcutsDialog(home_dir)
+                FileManagerShortcuts:new{
+                    ui = FileManager.instance,
+                }:onShowFolderShortcutsDialog()
             end)
         end
     end
