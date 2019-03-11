@@ -13,6 +13,7 @@ local Device = {
     model = nil,
     powerd = nil,
     screen = nil,
+    screen_dpi_override = nil,
     input = nil,
     -- For Kobo, wait at least 15 seconds before calling suspend script. Otherwise, suspend might
     -- fail and the battery will be drained while we are in screensaver mode
@@ -146,6 +147,7 @@ end
 function Device:setScreenDPI(dpi_override)
     self.screen:setDPI(dpi_override)
     self.input.gesture_detector:init()
+    self.screen_dpi_override = dpi_override
 end
 
 function Device:getPowerDevice()
