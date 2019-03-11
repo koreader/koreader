@@ -206,18 +206,10 @@ if ARGV[argidx] and ARGV[argidx] ~= "" then
             end)
         elseif start_with == "folder_shortcuts" then
             local FileManagerShortcuts = require("apps/filemanager/filemanagershortcuts")
-            local fm_bookmark =  FileManagerShortcuts:new{
-                title = _("Folder shortcuts"),
-                show_parent = FileManager,
-                curr_path = home_dir,
-                goFolder = function(folder)
-                    if folder ~= nil and lfs.attributes(folder, "mode") == "directory" then
-                        FileManager.instance.file_chooser:changeToPath(folder)
-                    end
-                end,
-            }
             UIManager:nextTick(function()
-                UIManager:show(fm_bookmark)
+                FileManagerShortcuts:new{
+                    ui = FileManager.instance,
+                }:onShowFolderShortcutsDialog()
             end)
         end
     end
