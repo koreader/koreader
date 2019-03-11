@@ -721,9 +721,13 @@ function ReaderHighlight:onHoldRelease()
                     },
                     {
                         text = _("Add Note"),
-                        enabled = false,
+                        enabled = true,
                         callback = function()
-                            self:addNote()
+                            local page, index = self:saveHighlight()
+                            if page and index then -- saveHighlight can return nil, nil
+                                self:editHighlight(page, index)
+                                UIManager:close(self.edit_highlight_dialog)
+                            end
                             self:onClose()
                         end,
                     },
@@ -946,6 +950,7 @@ function ReaderHighlight:saveHighlight()
         if self.selected_text.pboxes then
             self:exportToDocument(page, hl_item)
         end
+        return page, #self.view.highlight.saved[page]
     end
 end
 
