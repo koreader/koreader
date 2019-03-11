@@ -974,7 +974,7 @@ function ReaderHighlight:exportToDocument(page, item)
 end
 
 function ReaderHighlight:addNote()
-    self:handleEvent(Event:new("AddNote"))
+    self.ui:handleEvent(Event:new("AddNote"))
     local page, index = self:saveHighlight()
     self:editHighlight(page, index)
     UIManager:close(self.edit_highlight_dialog)
