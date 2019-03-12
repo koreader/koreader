@@ -145,8 +145,6 @@ if [ "${PRODUCT}" = "frost" ]; then
     # Don't do anything if we're already in the right orientation.
     if [ "${ORIG_FB_ROTA}" -ne "3" ]; then
         echo 1 >/sys/class/graphics/fb0/rotate
-        # Sleep a bit, for good measure
-        usleep 250000
     fi
 fi
 # NOTE: We don't have to restore anything on exit, nickel's startup process will take care of everything (pickel -> nickel).
@@ -223,8 +221,6 @@ if [ "${PRODUCT}" = "frost" ]; then
     if [ "${FROM_NICKEL}" != "true" ]; then
         # The Forma kernel inverts odd rotation constants, counteract that, à la Plato because one-liner ;p.
         echo "$(((4 - ORIG_FB_ROTA) % 4))" >/sys/class/graphics/fb0/rotate
-        # Sleep a bit, for good measure
-        usleep 150000
     fi
 fi
 
