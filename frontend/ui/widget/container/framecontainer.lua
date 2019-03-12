@@ -69,6 +69,7 @@ function FrameContainer:paintTo(bb, x, y)
                             self.background, self.radius)
     end
     if self.inner_bordersize > 0 then
+        -- NOTE: This doesn't actually support radius, it'll always be a square.
         bb:paintInnerBorder(x + self.margin, y + self.margin,
             container_width - self.margin * 2,
             container_height - self.margin * 2,
