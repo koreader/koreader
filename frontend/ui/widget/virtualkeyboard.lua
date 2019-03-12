@@ -33,7 +33,7 @@ local VirtualKey = InputContainer:new{
 
     width = nil,
     height = math.max(Screen:getWidth(), Screen:getHeight())*0.33,
-    bordersize = 0,
+    bordersize = Size.border.thin,
     focused_bordersize = Size.border.default * 5,
     radius = 0,
     face = Font:getFace("infont"),
