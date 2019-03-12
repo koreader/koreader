@@ -149,7 +149,7 @@ function VirtualKey:onFocus()
 end
 
 function VirtualKey:onUnfocus()
-    self[1].inner_bordersize = self.bordersize
+    self[1].inner_bordersize = 0
 end
 
 function VirtualKey:onTapSelect()
@@ -188,7 +188,7 @@ function VirtualKey:invert(invert, hold)
     if invert then
         self[1].inner_bordersize = self.focused_bordersize
     else
-        self[1].inner_bordersize = self.bordersize
+        self[1].inner_bordersize = 0
     end
     self:update_keyboard(hold, false)
 end
