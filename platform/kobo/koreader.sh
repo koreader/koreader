@@ -139,14 +139,13 @@ fi
 # Because NTX likes mounting panels in weird native rotations, this is actually FB_ROTATE_CCW (3).
 # And because shit gets even weirder, we have to echo 1 to get 3 (because the kernel inverts Landscape FB constants, and 3 ^ 2 = 1).
 if [ "${PRODUCT}" = "frost" ]; then
-    # Only mess with this if we were started from Nickel
-    if [ "${FROM_NICKEL}" = "true" ]; then
-        # Don't do anything if we're already in the right orientation.
-        if [ "$(cat /sys/class/graphics/fb0/rotate)" -ne "3" ]; then
-            echo 1 >/sys/class/graphics/fb0/rotate
-            # Sleep a bit, for good measure
-            usleep 250000
-        fi
+    # NOTE: We enforce this *everywhere*, because KSM is currently emulating a bogus pickel rotation (0, instead of 3),
+    #       and current kernels are surreptitiously broken when UR @ 8bpp (especially as far as A2 handling is concerned)...
+    # Don't do anything if we're already in the right orientation.
+    if [ "$(cat /sys/class/graphics/fb0/rotate)" -ne "3" ]; then
+        echo 1 >/sys/class/graphics/fb0/rotate
+        # Sleep a bit, for good measure
+        usleep 250000
     fi
 fi
 # NOTE: We don't have to restore anything on exit, nickel's startup process will take care of everything (pickel -> nickel).
@@ -215,6 +214,16 @@ done
 if [ -n "${ORIG_FB_BPP}" ]; then
     echo "Restoring original fb bitdepth @ ${ORIG_FB_BPP}bpp" >>crash.log 2>&1
     ./fbdepth -d "${ORIG_FB_BPP}" >>crash.log 2>&1
+fi
+
+# Restore original fb rotation on the Forma, for KSM
+if [ "${PRODUCT}" = "frost" ]; then
+    # Only needed for KSM, pickel -> Nickel will restore its own rota properly
+    if [ "${FROM_NICKEL}" != "true" ]; then
+        echo 0 >/sys/class/graphics/fb0/rotate
+        # Sleep a bit, for good measure
+        usleep 150000
+    fi
 fi
 
 # Restore original CPUFreq governor if need be...
