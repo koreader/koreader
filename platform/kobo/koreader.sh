@@ -139,7 +139,7 @@ fi
 # Because NTX likes mounting panels in weird native rotations, this is actually FB_ROTATE_CCW (3).
 # And because shit gets even weirder, we have to echo 1 to get 3 (because the kernel inverts Landscape FB constants, and 3 ^ 2 = 1).
 if [ "${PRODUCT}" = "frost" ]; then
-    # NOTE: We enforce this *everywhere*, because KSM is currently emulating a bogus pickel rotation (0, instead of 3),
+    # NOTE: We enforce this *everywhere*, because KSM is currently emulating a bogus pickel rotation (UR (0), instead of CCW (3)),
     #       and current kernels are surreptitiously broken when UR @ 8bpp (especially as far as A2 handling is concerned)...
     ORIG_FB_ROTA="$(cat /sys/class/graphics/fb0/rotate)"
     # Don't do anything if we're already in the right orientation.
@@ -219,7 +219,7 @@ fi
 if [ "${PRODUCT}" = "frost" ]; then
     # Only needed for KSM, pickel -> Nickel will restore its own rota properly
     if [ "${FROM_NICKEL}" != "true" ]; then
-        # The Forma kernel inverts odd rotation constants, counteract that, à la Plato because one-liner ;p.
+        # The Forma kernel inverts odd rotation constants, counteract that, à la Plato, because one-liner ;p.
         echo "$(((4 - ORIG_FB_ROTA) % 4))" >/sys/class/graphics/fb0/rotate
     fi
 fi
