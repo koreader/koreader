@@ -153,7 +153,7 @@ fi
 # because 16bpp is the worst idea in the history of time, as RGB565 is generally a PITA without hardware blitting,
 # and 32bpp usually gains us nothing except a performance hit (we're not Qt5 with its QPainter constraints).
 # The reduced size & complexity should hopefully make things snappier,
-# (and hopefully prevent the JIT for going crazy on high-density screens...).
+# (and hopefully prevent the JIT from going crazy on high-density screens...).
 # NOTE: Even though both pickel & Nickel appear to restore their preferred fb setup, we'll have to do it ourselves,
 #       as they fail to flip the grayscale flag properly. Plus, we get to play nice with every launch method that way.
 #       So, remember the current bitdepth, so we can restore it on exit.
