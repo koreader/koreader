@@ -974,11 +974,10 @@ function ReaderHighlight:exportToDocument(page, item)
 end
 
 function ReaderHighlight:addNote()
-    self.ui:handleEvent(Event:new("AddNote"))
     local page, index = self:saveHighlight()
     self:editHighlight(page, index)
     UIManager:close(self.edit_highlight_dialog)
-    logger.dbg("add Note")
+    self.ui:handleEvent(Event:new("AddNote"))
 end
 
 function ReaderHighlight:lookupWikipedia()
