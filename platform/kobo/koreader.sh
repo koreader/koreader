@@ -108,13 +108,13 @@ else
 fi
 
 # check whether PLATFORM & PRODUCT have a value assigned by rcS
-if [ ! -n "${PRODUCT}" ]; then
+if [ -z "${PRODUCT}" ]; then
     PRODUCT="$(/bin/kobo_config.sh 2>/dev/null)"
     export PRODUCT
 fi
 
 # PLATFORM is used in koreader for the path to the WiFi drivers (as well as when restarting nickel)
-if [ ! -n "${PLATFORM}" ]; then
+if [ -z "${PLATFORM}" ]; then
     PLATFORM="freescale"
     if dd if="/dev/mmcblk0" bs=512 skip=1024 count=1 | grep -q "HW CONFIG"; then
         CPU="$(ntx_hwconfig -s -p /dev/mmcblk0 CPU 2>/dev/null)"
@@ -128,7 +128,7 @@ if [ ! -n "${PLATFORM}" ]; then
 fi
 
 # Make sure we have a sane-ish INTERFACE env var set...
-if [ ! -n "${INTERFACE}" ]; then
+if [ -z "${INTERFACE}" ]; then
     # That's what we used to hardcode anyway
     INTERFACE="eth0"
     export INTERFACE
