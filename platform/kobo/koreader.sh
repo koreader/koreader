@@ -221,7 +221,7 @@ fi
 if [ "${PRODUCT}" = "frost" ]; then
     # Only needed for KSM, pickel -> Nickel will restore its own rota properly
     if [ "${FROM_NICKEL}" != "true" ]; then
-        # The Forma kernel inverts odd rotation constants, counteract that, àla Plato because one-liner ;p.
+        # The Forma kernel inverts odd rotation constants, counteract that, à la Plato because one-liner ;p.
         echo "$(((4 - ORIG_FB_ROTA) % 4))" >/sys/class/graphics/fb0/rotate
         # Sleep a bit, for good measure
         usleep 150000
