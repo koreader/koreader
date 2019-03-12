@@ -98,7 +98,7 @@ function NetworkMgr:beforeWifiAction(callback)
  end
 
 function NetworkMgr:isConnected()
-    if Device:isAndroid() or Device:isCervantes() then
+    if Device:isAndroid() or Device:isCervantes() or Device:isPocketBook() then
         return self:isWifiOn()
     else
         -- `-c1` try only once; `-w2` wait 2 seconds
