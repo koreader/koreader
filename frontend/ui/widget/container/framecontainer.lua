@@ -28,6 +28,7 @@ local FrameContainer = WidgetContainer:new{
     color = Blitbuffer.COLOR_BLACK,
     margin = 0,
     radius = 0,
+    inner_bordersize = 0,
     bordersize = Size.border.window,
     padding = Size.padding.default,
     padding_top = nil,
@@ -66,6 +67,12 @@ function FrameContainer:paintTo(bb, x, y)
         bb:paintRoundedRect(x, y,
                             container_width, container_height,
                             self.background, self.radius)
+    end
+    if self.inner_bordersize > 0 then
+        bb:paintInnerBorder(x + self.margin, y + self.margin,
+            container_width - self.margin * 2,
+            container_height - self.margin * 2,
+            self.inner_bordersize, self.color, self.radius)
     end
     if self.bordersize > 0 then
         bb:paintBorder(x + self.margin, y + self.margin,
