@@ -36,6 +36,7 @@ local action_strings = {
     toc = _("Table of contents"),
     bookmarks = _("Bookmarks"),
     reading_progress = _("Reading progress"),
+    book_info = _("Book information"),
     book_status = _("Book status"),
 
     history = _("History"),
@@ -320,6 +321,7 @@ function ReaderGesture:buildMenu(ges, default)
         { "toc", not self.is_docless},
         {"bookmarks", not self.is_docless},
         {"reading_progress", ReaderGesture.getReaderProgress ~= nil},
+        {"book_info", not self.is_docless},
         {"book_status", not self.is_docless, true},
 
         {"history", true},
@@ -623,6 +625,8 @@ function ReaderGesture:gestureAction(action, ges)
         self.ui:handleEvent(Event:new("ShowBookmark"))
     elseif action == "history" then
         self.ui:handleEvent(Event:new("ShowHist"))
+    elseif action == "book_info" then
+        self.ui:handleEvent(Event:new("ShowBookInfo"))
     elseif action == "book_status" then
         self.ui:handleEvent(Event:new("ShowBookStatus"))
     elseif action == "page_jmp_fwd_10" then

@@ -28,16 +28,7 @@ function BookInfo:addToMainMenu(menu_items)
     menu_items.book_info = {
         text = self.bookinfo_menu_title,
         callback = function()
-            -- Get them directly from ReaderUI's doc_settings
-            local doc_props = self.ui.doc_settings:readSetting("doc_props")
-            -- Make a copy, so we don't add "pages" to the original doc_props
-            -- that will be saved at some point by ReaderUI.
-            local book_props = {}
-            for k, v in pairs(doc_props) do
-                book_props[k] = v
-            end
-            book_props.pages = self.ui.doc_settings:readSetting("doc_pages")
-            self:show(self.document.file, book_props)
+            self:onShowBookInfo()
         end,
     }
 end
@@ -201,6 +192,19 @@ function BookInfo:show(file, book_props)
         kv_pairs = kv_pairs,
     }
     UIManager:show(widget)
+end
+
+function BookInfo:onShowBookInfo()
+    -- Get them directly from ReaderUI's doc_settings
+    local doc_props = self.ui.doc_settings:readSetting("doc_props")
+    -- Make a copy, so we don't add "pages" to the original doc_props
+    -- that will be saved at some point by ReaderUI.
+    local book_props = {}
+    for k, v in pairs(doc_props) do
+        book_props[k] = v
+    end
+    book_props.pages = self.ui.doc_settings:readSetting("doc_pages")
+    self:show(self.document.file, book_props)
 end
 
 return BookInfo
