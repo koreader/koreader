@@ -141,8 +141,9 @@ fi
 if [ "${PRODUCT}" = "frost" ]; then
     # NOTE: We enforce this *everywhere*, because KSM is currently emulating a bogus pickel rotation (0, instead of 3),
     #       and current kernels are surreptitiously broken when UR @ 8bpp (especially as far as A2 handling is concerned)...
+    ORIG_FB_ROTA="$(cat /sys/class/graphics/fb0/rotate)"
     # Don't do anything if we're already in the right orientation.
-    if [ "$(cat /sys/class/graphics/fb0/rotate)" -ne "3" ]; then
+    if [ "${ORIG_FB_ROTA}" -ne "3" ]; then
         echo 1 >/sys/class/graphics/fb0/rotate
         # Sleep a bit, for good measure
         usleep 250000
@@ -220,7 +221,7 @@ fi
 if [ "${PRODUCT}" = "frost" ]; then
     # Only needed for KSM, pickel -> Nickel will restore its own rota properly
     if [ "${FROM_NICKEL}" != "true" ]; then
-        echo 0 >/sys/class/graphics/fb0/rotate
+        echo "${ORIG_FB_ROTA}" >/sys/class/graphics/fb0/rotate
         # Sleep a bit, for good measure
         usleep 150000
     fi
