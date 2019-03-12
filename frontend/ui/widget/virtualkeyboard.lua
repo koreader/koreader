@@ -33,7 +33,9 @@ local VirtualKey = InputContainer:new{
 
     width = nil,
     height = math.max(Screen:getWidth(), Screen:getHeight())*0.33,
-    bordersize = Size.border.default,
+    bordersize = Size.border.thin,
+    focused_bordersize = Size.border.default * 5,
+    radius = 0,
     face = Font:getFace("infont"),
 }
 
@@ -87,7 +89,7 @@ function VirtualKey:init()
         margin = 0,
         bordersize = self.bordersize,
         background = Blitbuffer.COLOR_WHITE,
-        radius = Size.radius.window,
+        radius = 0,
         padding = 0,
         CenterContainer:new{
             dimen = Geom:new{
@@ -143,16 +145,16 @@ function VirtualKey:update_keyboard(want_flash, want_fast)
 end
 
 function VirtualKey:onFocus()
-    self[1].invert = true
+    self[1].inner_bordersize = self.focused_bordersize
 end
 
 function VirtualKey:onUnfocus()
-    self[1].invert = false
+    self[1].inner_bordersize = 0
 end
 
 function VirtualKey:onTapSelect()
     if self.flash_keyboard and not self.skiptap then
-        self[1].invert = true
+        self[1].inner_bordersize = self.focused_bordersize
         self:update_keyboard(false, true)
         if self.callback then
             self.callback()
@@ -168,7 +170,7 @@ end
 
 function VirtualKey:onHoldSelect()
     if self.flash_keyboard and not self.skiphold then
-        self[1].invert = true
+        self[1].inner_bordersize = self.focused_bordersize
         self:update_keyboard(false, true)
         if self.hold_callback then
             self.hold_callback()
@@ -183,7 +185,11 @@ function VirtualKey:onHoldSelect()
 end
 
 function VirtualKey:invert(invert, hold)
-    self[1].invert = invert
+    if invert then
+        self[1].inner_bordersize = self.focused_bordersize
+    else
+        self[1].inner_bordersize = 0
+    end
     self:update_keyboard(hold, false)
 end
 
@@ -333,14 +339,14 @@ function VirtualKeyboard:addKeys()
 
     local keyboard_frame = FrameContainer:new{
         margin = 0,
-        bordersize = self.bordersize,
+        bordersize = Size.border.default,
         background = Blitbuffer.COLOR_WHITE,
         radius = 0,
         padding = self.padding,
         CenterContainer:new{
             dimen = Geom:new{
-                w = self.width - 2*self.bordersize -2*self.padding,
-                h = self.height - 2*self.bordersize -2*self.padding,
+                w = self.width - 2*Size.border.default - 2*self.padding,
+                h = self.height - 2*Size.border.default - 2*self.padding,
             },
             vertical_group,
         }
