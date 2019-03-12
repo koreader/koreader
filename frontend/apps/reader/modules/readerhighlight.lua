@@ -721,7 +721,6 @@ function ReaderHighlight:onHoldRelease()
                     },
                     {
                         text = _("Add Note"),
-                        enabled = false,
                         callback = function()
                             self:addNote()
                             self:onClose()
@@ -946,6 +945,7 @@ function ReaderHighlight:saveHighlight()
         if self.selected_text.pboxes then
             self:exportToDocument(page, hl_item)
         end
+        return page, #self.view.highlight.saved[page]
     end
 end
 
@@ -974,8 +974,10 @@ function ReaderHighlight:exportToDocument(page, item)
 end
 
 function ReaderHighlight:addNote()
-    self:handleEvent(Event:new("addNote"))
-    logger.dbg("add Note")
+    local page, index = self:saveHighlight()
+    self:editHighlight(page, index)
+    UIManager:close(self.edit_highlight_dialog)
+    self.ui:handleEvent(Event:new("AddNote"))
 end
 
 function ReaderHighlight:lookupWikipedia()
