@@ -723,6 +723,11 @@ function ReaderGesture:gestureAction(action, ges)
         local NetworkMgr = require("ui/network/manager")
 
         if not NetworkMgr:isOnline() then
+            UIManager:show(InfoMessage:new{
+                text = _("Enabling wifi…"),
+                timeout = 1,
+            })
+
             -- NB Normal widgets should use NetworkMgr:promptWifiOn()
             -- This is specifically the toggle wifi action, so consent is implied.
             NetworkMgr:turnOnWifi()
@@ -747,6 +752,11 @@ function ReaderGesture:gestureAction(action, ges)
         local NetworkMgr = require("ui/network/manager")
 
         if not NetworkMgr:isOnline() then
+            UIManager:show(InfoMessage:new{
+                text = _("Enabling wifi…"),
+                timeout = 1,
+            })
+
             -- NB Normal widgets should use NetworkMgr:promptWifiOn()
             -- This is specifically the toggle wifi action, so consent is implied.
             NetworkMgr:turnOnWifi()
