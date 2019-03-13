@@ -1062,9 +1062,15 @@ function ReaderLink:showAsFootnotePopup(link, neglect_current_location)
         UIManager:setDirty(self.dialog, "ui")
         close_callback = function(footnote_height)
             -- remove this highlight (actually all) on close
+            local highlight_page = self.ui.document:getCurrentPage()
             local clear_highlight = function()
                 self.ui.document:highlightXPointer()
-                UIManager:setDirty(self.dialog, "ui")
+                -- Only refresh if we stayed on the same page, otherwise
+                -- this could remove too early a marker on the target page
+                -- after this footnote is followed
+                if self.ui.document:getCurrentPage() == highlight_page then
+                    UIManager:setDirty(self.dialog, "ui")
+                end
             end
             if footnote_height then
                 -- If the link was hidden by the footnote popup,
