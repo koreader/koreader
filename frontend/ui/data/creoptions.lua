@@ -32,7 +32,7 @@ local CreOptions = {
             },
             {
                 name = "visible_pages",
-                name_text = S.TWO_PAGES,
+                name_text = S.DUAL_PAGES,
                 toggle = {S.OFF, S.ON},
                 values = {1, 2},
                 default_value = 1,
