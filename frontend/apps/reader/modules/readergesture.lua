@@ -755,6 +755,11 @@ function ReaderGesture:gestureAction(action, ges)
             -- NB Normal widgets should use NetworkMgr:promptWifiOn()
             -- This is specifically the toggle wifi action, so consent is implied.
             NetworkMgr:turnOnWifi()
+
+            UIManager:show(InfoMessage:new{
+                text = _("Wifi enabled."),
+                timeout = 1,
+            })
         else
             local info_text
             local current_network = NetworkMgr:getCurrentNetwork()
