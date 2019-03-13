@@ -280,6 +280,11 @@ function CreDocument:getWordFromPosition(pos)
             w = 20, h = 20,
         }
     end
+    if text_range then
+        -- add xpointers if found, might be useful for across pages highlighting
+        wordbox.pos0 = text_range.pos0
+        wordbox.pos1 = text_range.pos1
+    end
     return wordbox
 end
 

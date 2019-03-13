@@ -434,6 +434,12 @@ function ReaderHighlight:onHold(arg, ges)
         -- Unfortunately, CREngine does not return good coordinates
         -- UIManager:setDirty(self.dialog, "partial", self.selected_word.sbox)
         self.hold_start_tv = TimeVal.now()
+        if word.pos0 then
+            -- Remember original highlight start position, so we can show
+            -- a marker when back from across-pages text selection, which
+            -- is handled in onHoldPan()
+            self.selected_text_start_xpointer = word.pos0
+        end
     end
     return true
 end
@@ -466,26 +472,60 @@ function ReaderHighlight:onHoldPan(_, ges)
                 return true
             end
             self.was_in_some_corner = true
-            -- We'll adjust hold_pos.y after the mode switch and the scroll
-            -- so it's accurate in the new screen coordinates
-            local orig_y = self.ui.document:getScreenPositionFromXPointer(self.selected_text_start_xpointer)
-            if self.view.view_mode ~= "scroll" then
-                -- Switch from page mode to scroll mode
+            if self.ui.document:getVisiblePageCount() == 1 then -- single page mode
+                -- We'll adjust hold_pos.y after the mode switch and the scroll
+                -- so it's accurate in the new screen coordinates
+                local orig_y = self.ui.document:getScreenPositionFromXPointer(self.selected_text_start_xpointer)
+                if self.view.view_mode ~= "scroll" then
+                    -- Switch from page mode to scroll mode
+                    local restore_page_mode_xpointer = self.ui.document:getXPointer() -- top of current page
+                    self.restore_page_mode_func = function()
+                        self.ui:handleEvent(Event:new("SetViewMode", "page"))
+                        self.ui.rolling:onGotoXPointer(restore_page_mode_xpointer, self.selected_text_start_xpointer)
+                    end
+                    self.ui:handleEvent(Event:new("SetViewMode", "scroll"))
+                end
+                -- (using rolling:onGotoViewRel(1/3) has some strange side effects)
+                local scroll_distance = math.floor(Screen:getHeight() * 1/3)
+                local move_y = is_in_bottom_right_corner and scroll_distance or -scroll_distance
+                self.ui.rolling:_gotoPos(self.ui.document:getCurrentPos() + move_y)
+                local new_y = self.ui.document:getScreenPositionFromXPointer(self.selected_text_start_xpointer)
+                self.hold_pos.y = self.hold_pos.y - orig_y + new_y
+                UIManager:setDirty(self.dialog, "ui")
+                return true
+            else -- two pages mode
+                -- We don't switch to scroll mode: we just turn 1 page to
+                -- allow continuing the selection.
+                -- Unlike in 1-page mode, we have a limitation here: we can't adjust
+                -- the selection to further than current page and prev/next one.
+                -- So don't handle another corner if we already handled one:
+                if self.restore_page_mode_func then
+                    return true
+                end
+                -- Also, we are not able to move hold_pos.x out of screen,
+                -- so if we started on the right page, ignore top left corner,
+                -- and if we started on the left page, ignore bottom right corner.
+                local screen_half_width = math.floor(Screen:getWidth() * 1/2)
+                if self.hold_pos.x >= screen_half_width and is_in_top_left_corner then
+                    return true
+                elseif self.hold_pos.x <= screen_half_width and is_in_bottom_right_corner then
+                    return true
+                end
+                local cur_page = self.ui.document:getCurrentPage()
                 local restore_page_mode_xpointer = self.ui.document:getXPointer() -- top of current page
                 self.restore_page_mode_func = function()
-                    self.ui:handleEvent(Event:new("SetViewMode", "page"))
                     self.ui.rolling:onGotoXPointer(restore_page_mode_xpointer, self.selected_text_start_xpointer)
                 end
-                self.ui:handleEvent(Event:new("SetViewMode", "scroll"))
+                if is_in_bottom_right_corner then
+                    self.ui.rolling:_gotoPage(cur_page + 1, true) -- no odd left page enforcement
+                    self.hold_pos.x = self.hold_pos.x - screen_half_width
+                else
+                    self.ui.rolling:_gotoPage(cur_page - 1, true) -- no odd left page enforcement
+                    self.hold_pos.x = self.hold_pos.x + screen_half_width
+                end
+                UIManager:setDirty(self.dialog, "ui")
+                return true
             end
-            -- (using rolling:onGotoViewRel(1/3) has some strange side effects)
-            local scroll_distance = math.floor(Screen:getHeight() * 1/3)
-            local move_y = is_in_bottom_right_corner and scroll_distance or -scroll_distance
-            self.ui.rolling:_gotoPos(self.ui.document:getCurrentPos() + move_y)
-            local new_y = self.ui.document:getScreenPositionFromXPointer(self.selected_text_start_xpointer)
-            self.hold_pos.y = self.hold_pos.y - orig_y + new_y
-            UIManager:setDirty(self.dialog, "ui")
-            return true
         else
             self.was_in_some_corner = nil
         end
@@ -495,14 +535,15 @@ function ReaderHighlight:onHoldPan(_, ges)
     self.selected_text = self.ui.document:getTextFromPositions(self.hold_pos, self.holdpan_pos)
 
     if self.selected_text and self.selected_text.pos0 then
-        -- Remember original highlight start position, so we can show
-        -- a marker when back from scroll mode if that switch happened.
-        -- (getTextFromPositions() does order pos0 and pos1, so it's not
-        -- certain pos0 is where we started from - we get the one from the
-        -- first pan, which is hopefully small enough to not span too
-        -- much height, so the marker points to the start position if the
-        -- user later pans backward)
         if not self.selected_text_start_xpointer then
+            -- This should have been set in onHold(), where we would get
+            -- a precise pos0 on the first word selected.
+            -- Do it here too in case onHold() missed it, but it could be
+            -- less precise (getTextFromPositions() does order pos0 and pos1,
+            -- so it's not certain pos0 is where we started from; we get
+            -- the ones from the first pan, and if it is not small enough
+            -- and spans quite some height, the marker could point away
+            -- from the start position)
             self.selected_text_start_xpointer = self.selected_text.pos0
         end
     end
