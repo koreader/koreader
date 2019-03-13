@@ -29,7 +29,32 @@ local CreOptions = {
                 current_func = function() return Device.screen:getScreenMode() end,
                 event = "ChangeScreenMode",
                 name_text_hold_callback = optionsutil.showValues,
-            }
+            },
+            {
+                name = "visible_pages",
+                name_text = S.TWO_PAGES,
+                toggle = {S.OFF, S.ON},
+                values = {1, 2},
+                default_value = 1,
+                args = {1, 2},
+                default_arg = 1,
+                event = "SetVisiblePages",
+                current_func = function()
+                    -- If not in landscape mode, shows "1" as selected
+                    if Device.screen:getScreenMode() ~= "landscape" then
+                        return 1
+                    end
+                    -- if we return nil, ConfigDialog will pick the one from the
+                    -- configurable as if we hadn't provided this 'current_func'
+                end,
+                enabled_func = function(configurable)
+                    return Device.screen:getScreenMode() == "landscape" and
+                        optionsutil.enableIfEquals(configurable, "view_mode", 0) -- "page"
+                end,
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[In landscape mode, you can choose to display one or two pages of the book on the screen.
+Note that this may not be ensured under some conditions: in scroll mode, when a very big font size is used, or on devices with a very low aspect ratio.]]),
+            },
         }
     },
     {

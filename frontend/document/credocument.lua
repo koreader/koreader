@@ -190,11 +190,12 @@ end
 function CreDocument:render()
     -- load document before rendering
     self:loadDocument()
-    -- set visible page count in landscape
-    if math.max(CanvasContext:getWidth(), CanvasContext:getHeight()) / CanvasContext:getDPI()
-        < DCREREADER_TWO_PAGE_THRESHOLD then
-        self:setVisiblePageCount(1)
-    end
+    -- This is now configurable and done by ReaderRolling:
+    -- -- set visible page count in landscape
+    -- if math.max(CanvasContext:getWidth(), CanvasContext:getHeight()) / CanvasContext:getDPI()
+    --     < DCREREADER_TWO_PAGE_THRESHOLD then
+    --     self:setVisiblePageCount(1)
+    -- end
     logger.dbg("CreDocument: rendering document...")
     self._document:renderDocument()
     self.info.doc_height = self._document:getFullHeight()

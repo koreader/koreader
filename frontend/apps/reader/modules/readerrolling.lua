@@ -43,6 +43,11 @@ local ReaderRolling = InputContainer:new{
     panning_steps = ReaderPanning.panning_steps,
     show_overlap_enable = nil,
     cre_top_bar_enabled = false,
+    visible_pages = 1,
+    -- With visible_pages=2, in 2-pages mode, ensure the first
+    -- page is always odd or even (odd is logical to avoid a
+    -- same page when turning first 2-pages set of document)
+    odd_or_even_first_page = 1 -- 1 = odd, 2 = even, nil or others = free
 }
 
 function ReaderRolling:init()
@@ -182,6 +187,16 @@ function ReaderRolling:onReadSettings(config)
         self.show_overlap_enable = DSHOWOVERLAP
     end
     self.inverse_reading_order = config:readSetting("inverse_reading_order") or false
+
+    -- This self.visible_pages may not be the current nb of visible pages
+    -- as crengine may decide to not ensure that in some conditions.
+    -- It's the one we got from settings, the one the user has decided on
+    -- with config toggle, and the one that we will save for next load.
+    -- Use self.ui.document:getVisiblePageCount() to get the current
+    -- crengine used value.
+    self.visible_pages = config:readSetting("visible_pages") or
+        G_reader_settings:readSetting("copt_visible_pages") or 1
+    self.ui.document:setVisiblePageCount(self.visible_pages)
 end
 
 -- in scroll mode percent_finished must be save before close document
@@ -228,6 +243,7 @@ function ReaderRolling:onSaveSettings()
     end
     self.ui.doc_settings:saveSetting("show_overlap_enable", self.show_overlap_enable)
     self.ui.doc_settings:saveSetting("inverse_reading_order", self.inverse_reading_order)
+    self.ui.doc_settings:saveSetting("visible_pages", self.visible_pages)
 end
 
 function ReaderRolling:onReaderReady()
@@ -741,7 +757,21 @@ function ReaderRolling:_gotoPercent(new_percent)
     self:_gotoPos(new_percent * self.ui.document.info.doc_height / 10000)
 end
 
-function ReaderRolling:_gotoPage(new_page)
+function ReaderRolling:_gotoPage(new_page, free_first_page)
+    if self.ui.document:getVisiblePageCount() > 1 and not free_first_page then
+        -- Ensure we always have the first of the two pages odd
+        if self.odd_or_even_first_page == 1 then -- odd
+            if new_page % 2 == 0 then
+                -- requested page will be shown as the right page
+                new_page = new_page - 1
+            end
+        elseif self.odd_or_even_first_page == 2 then -- (or 'even' if requested)
+            if new_page % 2 == 1 then
+                -- requested page will be shown as the right page
+                new_page = new_page - 1
+            end
+        end
+    end
     self.ui.document:gotoPage(new_page)
     if self.view.view_mode == "page" then
         self.ui:handleEvent(Event:new("PageUpdate", self.ui.document:getCurrentPage()))
@@ -767,6 +797,26 @@ function ReaderRolling:updatePageLink()
     self.view.links = links
 end
 --]]
+
+function ReaderRolling:onSetVisiblePages(visible_pages)
+    -- crengine may decide to not ensure the value we request
+    -- (for example, in 2-pages mode, it may stop being ensured
+    -- when we increase the font size up to a point where a line
+    -- would contain less that 20 glyphs).
+    -- crengine may enforce visible_page=1 when:
+    --   - not in page mode but in scroll mode
+    --   - screen w/h < 6/5
+    --   - w < 20*em
+    -- We nevertheless update the setting (that will saved) with what
+    -- the user has requested - and not what crengine has enforced.
+    self.visible_pages = visible_pages
+    local prev_visible_pages = self.ui.document:getVisiblePageCount()
+    self.ui.document:setVisiblePageCount(visible_pages)
+    local cur_visible_pages = self.ui.document:getVisiblePageCount()
+    if cur_visible_pages ~= prev_visible_pages then
+        self.ui:handleEvent(Event:new("UpdatePos"))
+    end
+end
 
 function ReaderRolling:onSetStatusLine(status_line, on_read_settings)
     -- status_line values:
