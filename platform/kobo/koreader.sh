@@ -108,13 +108,13 @@ else
 fi
 
 # check whether PLATFORM & PRODUCT have a value assigned by rcS
-if [ ! -n "${PRODUCT}" ]; then
+if [ -z "${PRODUCT}" ]; then
     PRODUCT="$(/bin/kobo_config.sh 2>/dev/null)"
     export PRODUCT
 fi
 
 # PLATFORM is used in koreader for the path to the WiFi drivers (as well as when restarting nickel)
-if [ ! -n "${PLATFORM}" ]; then
+if [ -z "${PLATFORM}" ]; then
     PLATFORM="freescale"
     if dd if="/dev/mmcblk0" bs=512 skip=1024 count=1 | grep -q "HW CONFIG"; then
         CPU="$(ntx_hwconfig -s -p /dev/mmcblk0 CPU 2>/dev/null)"
@@ -128,7 +128,7 @@ if [ ! -n "${PLATFORM}" ]; then
 fi
 
 # Make sure we have a sane-ish INTERFACE env var set...
-if [ ! -n "${INTERFACE}" ]; then
+if [ -z "${INTERFACE}" ]; then
     # That's what we used to hardcode anyway
     INTERFACE="eth0"
     export INTERFACE
@@ -139,14 +139,12 @@ fi
 # Because NTX likes mounting panels in weird native rotations, this is actually FB_ROTATE_CCW (3).
 # And because shit gets even weirder, we have to echo 1 to get 3 (because the kernel inverts Landscape FB constants, and 3 ^ 2 = 1).
 if [ "${PRODUCT}" = "frost" ]; then
-    # Only mess with this if we were started from Nickel
-    if [ "${FROM_NICKEL}" = "true" ]; then
-        # Don't do anything if we're already in the right orientation.
-        if [ "$(cat /sys/class/graphics/fb0/rotate)" -ne "3" ]; then
-            echo 1 >/sys/class/graphics/fb0/rotate
-            # Sleep a bit, for good measure
-            usleep 250000
-        fi
+    # NOTE: We enforce this *everywhere*, because KSM is currently emulating a bogus pickel rotation (UR (0), instead of CCW (3)),
+    #       and current kernels are surreptitiously broken when UR @ 8bpp (especially as far as A2 handling is concerned)...
+    ORIG_FB_ROTA="$(cat /sys/class/graphics/fb0/rotate)"
+    # Don't do anything if we're already in the right orientation.
+    if [ "${ORIG_FB_ROTA}" -ne "3" ]; then
+        echo 1 >/sys/class/graphics/fb0/rotate
     fi
 fi
 # NOTE: We don't have to restore anything on exit, nickel's startup process will take care of everything (pickel -> nickel).
@@ -155,9 +153,9 @@ fi
 # because 16bpp is the worst idea in the history of time, as RGB565 is generally a PITA without hardware blitting,
 # and 32bpp usually gains us nothing except a performance hit (we're not Qt5 with its QPainter constraints).
 # The reduced size & complexity should hopefully make things snappier,
-# (and hopefully prevent the JIT for going crazy on high-density screens...).
-# NOTE: Even though pickel/Nickel appear to restore their preferred fb setup, we'll have to do it ourselves,
-#       because things are a bit wonky otherwise. Plus, we get to play nice with every launch method that way.
+# (and hopefully prevent the JIT from going crazy on high-density screens...).
+# NOTE: Even though both pickel & Nickel appear to restore their preferred fb setup, we'll have to do it ourselves,
+#       as they fail to flip the grayscale flag properly. Plus, we get to play nice with every launch method that way.
 #       So, remember the current bitdepth, so we can restore it on exit.
 ORIG_FB_BPP="$(./fbdepth -g)"
 echo "Original fb bitdepth is set @ ${ORIG_FB_BPP}bpp" >>crash.log 2>&1
@@ -215,6 +213,15 @@ done
 if [ -n "${ORIG_FB_BPP}" ]; then
     echo "Restoring original fb bitdepth @ ${ORIG_FB_BPP}bpp" >>crash.log 2>&1
     ./fbdepth -d "${ORIG_FB_BPP}" >>crash.log 2>&1
+fi
+
+# Restore original fb rotation on the Forma, for KSM
+if [ "${PRODUCT}" = "frost" ]; then
+    # Only needed for KSM, pickel -> Nickel will restore its own rota properly
+    if [ "${FROM_NICKEL}" != "true" ]; then
+        # The Forma kernel inverts odd rotation constants, counteract that, à la Plato, because one-liner ;p.
+        echo "$(((4 - ORIG_FB_ROTA) % 4))" >/sys/class/graphics/fb0/rotate
+    fi
 fi
 
 # Restore original CPUFreq governor if need be...
