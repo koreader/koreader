@@ -3,6 +3,7 @@ local _ = require("gettext")
 local S = {}
 
 S.SCREEN_MODE = _("Orientation")
+S.TWO_PAGES = _("Two Pages")
 S.PAGE_CROP = _("Page Crop")
 S.FULL_SCREEN = _("Full Screen")
 S.SCROLL_MODE = _("Scroll Mode")
