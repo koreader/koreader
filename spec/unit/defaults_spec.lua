@@ -8,7 +8,7 @@ describe("defaults module", function()
 
     it("should load all defaults from defaults.lua", function()
         Defaults:init()
-        assert.is_same(82, #Defaults.defaults_name)
+        assert.is_same(87, #Defaults.defaults_name)
         assert.is_same("DFULL_SCREEN", Defaults.defaults_name[28])
     end)
 
@@ -23,7 +23,7 @@ describe("defaults module", function()
         Defaults.changed[63] = true
         Defaults.changed[77] = true
         Defaults:saveSettings()
-        assert.is_same(82, #Defaults.defaults_name)
+        assert.is_same(87, #Defaults.defaults_name)
         assert.is_same("DFULL_SCREEN", Defaults.defaults_name[28])
         assert.is_same("SEARCH_LIBRARY_PATH", Defaults.defaults_name[77])
         assert.is_same("DTAP_ZONE_BACKWARD", Defaults.defaults_name[63])
