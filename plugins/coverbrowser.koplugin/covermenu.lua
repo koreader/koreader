@@ -81,8 +81,13 @@ function CoverMenu:updateItems(select_number)
     self:_updateItemsBuildUI()
 
     -- Set the local variables with the things we know
-    current_path = self.path
-    current_cover_specs = self.cover_specs
+    -- These are used only by extractBooksInDirectory(), which should
+    -- use the cover_specs set for FileBrowser, and not those from History.
+    -- Hopefully, we get self.path=nil when called fro History
+    if self.path then
+        current_path = self.path
+        current_cover_specs = self.cover_specs
+    end
 
     -- As done in Menu:updateItems()
     self:updatePageInfo(select_number)

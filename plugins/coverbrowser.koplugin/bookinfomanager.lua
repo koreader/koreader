@@ -849,6 +849,7 @@ Do you want to prune cache of removed books?]]
             },
             text_widget
         })
+        info.movable[1][1]._size = nil -- reset HorizontalGroup size
         info.movable:setMovedOffset(orig_moved_offset)
         info:paintTo(Screen.bb, 0,0)
         local d = info.movable[1].dimen
