@@ -418,10 +418,21 @@ function CreDocument:getScreenPositionFromXPointer(xp)
     local doc_y, doc_x = self:getPosFromXPointer(xp)
     local top_y = self:getCurrentPos()
     local screen_y = doc_y - top_y
+    local screen_x = doc_x + doc_margins["left"]
     if self._view_mode == self.PAGE_VIEW_MODE then
+        if self:getVisiblePageCount() > 1 then
+            -- Correct coordinates if on the 2nd page in 2-pages mode
+            local next_page = self:getCurrentPage() + 1
+            if next_page <= self:getPageCount() then
+                local next_top_y = self._document:getPageStartY(next_page)
+                if doc_y >= next_top_y then
+                    screen_y = doc_y - next_top_y
+                    screen_x = screen_x + self._document:getPageOffsetX(next_page)
+                end
+            end
+        end
         screen_y = screen_y + doc_margins["top"] + self:getHeaderHeight()
     end
-    local screen_x = doc_x + doc_margins["left"]
     -- Just as getPosFromXPointer() does, we return y first and x second,
     -- as callers most often just need the y
     return screen_y, screen_x

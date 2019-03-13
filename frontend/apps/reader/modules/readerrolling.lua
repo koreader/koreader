@@ -529,16 +529,32 @@ function ReaderRolling:onGotoXPointer(xp, marker_xp)
     if marker_xp and marker_setting then
         -- Show a mark on left side of screen to give a visual feedback of
         -- where xpointer target is (and remove if after 1s)
-        local screen_y = self.ui.document:getScreenPositionFromXPointer(marker_xp)
+        local screen_y, screen_x = self.ui.document:getScreenPositionFromXPointer(marker_xp)
         local doc_margins = self.ui.document:getPageMargins()
         local marker_h = Screen:scaleBySize(self.ui.font.font_size * 1.1 * self.ui.font.line_space_percent/100.0)
         -- Make it 4/5 of left margin wide (and bigger when huge margin)
         local marker_w = math.floor(math.max(doc_margins["left"] - Screen:scaleBySize(5), doc_margins["left"] * 4/5))
 
+        if self.ui.document:getVisiblePageCount() > 1 and screen_x > Screen:getWidth() / 2 then
+            -- On right page in 2-pages mode
+            -- We could show the marker on the right of the page with:
+            --   screen_x = Screen:getWidth() - marker_w
+            -- But it's best to show it on the left of text, so in
+            -- the middle margin, so it still shows just left of a
+            -- footnote number.
+            -- This is a bit tricky with how the middle margin is sized
+            -- by crengine (see LVDocView::updateLayout() in lvdocview.cpp)
+            screen_x = Screen:getWidth() / 2
+            local page2_x = self.ui.document._document:getPageOffsetX(self.ui.document:getCurrentPage()+1)
+            marker_w = page2_x + marker_w - screen_x
+        else
+            screen_x = 0
+        end
+
         self.mark_func = function()
             self.mark_func = nil
-            Screen.bb:paintRect(0, screen_y, marker_w, marker_h, Blitbuffer.COLOR_BLACK)
-            Screen["refreshFast"](Screen, 0, screen_y, marker_w, marker_h)
+            Screen.bb:paintRect(screen_x, screen_y, marker_w, marker_h, Blitbuffer.COLOR_BLACK)
+            Screen["refreshFast"](Screen, screen_x, screen_y, marker_w, marker_h)
             if type(marker_setting) == "number" then -- hide it
                 self.unmark_func = function()
                     self.unmark_func = nil
@@ -547,8 +563,8 @@ function ReaderRolling:onGotoXPointer(xp, marker_xp)
                     -- re-render the page, which may take a few seconds on big
                     -- documents): we drew our black marker in the margin, we
                     -- can just draw a white one to make it disappear
-                    Screen.bb:paintRect(0, screen_y, marker_w, marker_h, Blitbuffer.COLOR_WHITE)
-                    Screen["refreshUI"](Screen, 0, screen_y, marker_w, marker_h)
+                    Screen.bb:paintRect(screen_x, screen_y, marker_w, marker_h, Blitbuffer.COLOR_WHITE)
+                    Screen["refreshUI"](Screen, screen_x, screen_y, marker_w, marker_h)
                 end
                 UIManager:scheduleIn(marker_setting, self.unmark_func)
             end
