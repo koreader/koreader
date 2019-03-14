@@ -35,7 +35,6 @@ function ReaderDogear:setupDogear(new_dogear_size)
             dimen = Geom:new{w = Screen:getWidth(), h = self.dogear_size},
             ImageWidget:new{
                 file = "resources/icons/dogear.png",
-                alpha = true,
                 width = self.dogear_size,
                 height = self.dogear_size,
             }
