@@ -20,6 +20,7 @@ Show image from memory example:
 
 ]]
 
+local Blitbuffer = require("ffi/blitbuffer")
 local Cache = require("cache")
 local CacheItem = require("cacheitem")
 local Geom = require("ui/geometry")
@@ -355,7 +356,13 @@ function ImageWidget:paintTo(bb, x, y)
     }
     logger.dbg("blitFrom", x, y, self._offset_x, self._offset_y, size.w, size.h)
     if self.alpha == true then
-        bb:alphablitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
+        -- Only actually try to alpha-blend if the image really has an alpha channel...
+        local bbtype = self._bb:getType()
+        if bbtype == BlitBuffer.TYPE_BB8A or bbtype == BlitBuffer.TYPE_BBRGB32 then
+            bb:alphablitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
+        else
+            bb:blitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
+        end
     else
         bb:blitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
     end
