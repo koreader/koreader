@@ -391,7 +391,7 @@ function ConfigOption:init()
                             underline_padding = padding_button,
                             padding_left = d > 1 and horizontal_half_padding,
                             padding_right = d < #self.options[c].item_text and horizontal_half_padding,
-                            color = d == current_item and enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_WHITE,
+                            color = d == current_item and (enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY) or Blitbuffer.COLOR_WHITE,
                             enabled = enabled,
                         }
                     else
@@ -410,7 +410,7 @@ function ConfigOption:init()
                             underline_padding = -padding_button,
                             padding_left = d > 1 and horizontal_half_padding,
                             padding_right = d < #self.options[c].item_text and horizontal_half_padding,
-                            color = d == current_item and enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_WHITE,
+                            color = d == current_item and (enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY) or Blitbuffer.COLOR_WHITE,
                             enabled = enabled,
                         }
                     end
@@ -448,7 +448,7 @@ function ConfigOption:init()
                         underline_padding = -padding_button,
                         padding_left = d > 1 and horizontal_half_padding,
                         padding_right = d < #self.options[c].item_icons and horizontal_half_padding,
-                        color = d == current_item and enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_WHITE,
+                        color = d == current_item and (enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY) or Blitbuffer.COLOR_WHITE,
                         enabled = enabled,
                     }
                     option_items[d] = option_item
