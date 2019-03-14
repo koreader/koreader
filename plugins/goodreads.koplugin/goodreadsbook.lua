@@ -65,7 +65,7 @@ function GoodreadsBook:genHeader(title)
     local header_title = TextWidget:new{
         text = title,
         face = self.medium_font_face,
-        fgcolor = Blitbuffer.COLOR_GRAY_9,
+        fgcolor = Blitbuffer.COLOR_WEB_GRAY,
     }
     local padding_span = HorizontalSpan:new{ width = self.padding}
     local line_width = (self.screen_width - header_title:getSize().w) / 2 - self.padding * 2
