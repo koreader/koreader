@@ -787,7 +787,7 @@ function ReaderGesture:gestureAction(action, ges)
     elseif action == "wallabag_download" then
         self.ui:handleEvent(Event:new("SynchronizeWallabag"))
     elseif action == "toggle_highlight_action" then
-        self.ui:handleEvent(Event:new("ToggleHighlightAction"))
+        self.ui:handleEvent(Event:new("CycleHighlightAction"))
     end
     return true
 end

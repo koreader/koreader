@@ -843,8 +843,8 @@ function ReaderHighlight:onHoldRelease()
     return true
 end
 
-function ReaderHighlight:onToggleHighlightAction()
-    local actions = {
+function ReaderHighlight:onCycleHighlightAction()
+    local next_actions = {
         highlight = "translate",
         translate = "wikipedia",
         wikipedia = nil
@@ -853,14 +853,14 @@ function ReaderHighlight:onToggleHighlightAction()
     if not current_action then
         G_reader_settings:saveSetting("default_highlight_action", "highlight")
         UIManager:show(InfoMessage:new{
-            text = _("Default highlight action is now: highlight"),
+            text = _("Default highlight action changed to highlight"),
             timeout = 1,
         })
     else
-        local next_action = actions[current_action]
+        local next_action = next_actions[current_action]
         G_reader_settings:saveSetting("default_highlight_action", next_action)
         UIManager:show(InfoMessage:new{
-            text = _("Default highlight action is now: " .. (next_action or "default")),
+            text = _("Default highlight action changed to highlight " .. (next_action or "default")),
             timeout = 1,
         })
     end
