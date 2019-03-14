@@ -249,20 +249,9 @@ end
 
 function Kobo:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
-    -- NOTE: Something about the extra work needed to handle RGB565 conversions is making the JIT optimizer crazy when doing
-    --       alpha-blending, causing it to very quickly blacklist the entire blitbuffer code, which basically murders performance.
-    --       The least terrible workaround we could come up with is tweaking the optimizer's thresholds a bit,
-    --       to convince it not to give up too early.
-    --       As this may have a detrimental effect on performance, we try to deviate from defaults as little as possible,
-    --       completely avoiding it if possible...
-    --       c.f., #4137 for the gory details.
-    -- FIXME: Might want to make that mandatory, because we've been finding more and more ways to make the JIT go crazy,
-    --        both at 32bpp and at 8bpp (c.f., #4752).
-    if self.screen.fb_bpp == 16 then
-        logger.info("Enabling Kobo @ 16bpp tweaks")
-        jit.opt.start("loopunroll=45")
-    elseif self.screen.fb_bpp == 32 then
+    if self.screen.fb_bpp == 32 then
         -- Ensure we decode images properly, as our framebuffer is BGRA...
+        logger.info("Enabling Kobo @ 32bpp BGR tweaks")
         self.hasBGRFrameBuffer = yes
     end
     self.powerd = require("device/kobo/powerd"):new{device = self}
