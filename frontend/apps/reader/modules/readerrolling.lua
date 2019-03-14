@@ -643,6 +643,15 @@ function ReaderRolling:onUpdatePos()
         -- we have set above) to avoid multiple refreshes.
         return true
     end
+    -- Calling this now ensures the re-rendering is done by crengine
+    -- so the delayed updatePos() has good info and can reposition
+    -- the previous xpointer accurately:
+    self.ui.document:getCurrentPos()
+    -- Otherwise, _readMetadata() would do that, but the positionning
+    -- would not work as expected, for some reason (it worked
+    -- previously because of some bad setDirty() in ConfigDialog widgets
+    -- that were triggering a full repaint of crengine (so, the needed
+    -- rerendering) before updatePos() is called.
     UIManager:scheduleIn(0.1, function () self:updatePos() end)
     return true
 end

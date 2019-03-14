@@ -6,6 +6,7 @@ local Screen = Device.screen
 
 local KoptOptions = {
     prefix = 'kopt',
+    needs_redraw_on_change = true,
     {
         icon = "resources/icons/appbar.transform.rotate.right.large.png",
         options = {

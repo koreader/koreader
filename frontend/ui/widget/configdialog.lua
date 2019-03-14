@@ -499,7 +499,8 @@ function ConfigOption:init()
                 local max_buttonprogress_width = option_widget_width
                 local buttonprogress_width = self.options[c].width and Screen:scaleBySize(self.options[c].width)
                                                 or max_buttonprogress_width
-                local switch = ButtonProgressWidget:new{
+                local switch
+                switch = ButtonProgressWidget:new{
                     width = math.min(max_buttonprogress_width, buttonprogress_width),
                     height = option_height,
                     padding = 0,
@@ -509,10 +510,10 @@ function ConfigOption:init()
                     num_buttons = #self.options[c].values,
                     position = self.options[c].default_pos,
                     callback = function(arg)
-                        UIManager:tickAfterNext(function()
-                            self.config:onConfigChoice(self.options[c].name, self.options[c].values[arg])
-                            self.config:onConfigEvent(self.options[c].event, self.options[c].args[arg])
-                            UIManager:setDirty("all")
+                        self.config:onConfigChoose(self.options[c].values, self.options[c].name,
+                                self.options[c].event, self.options[c].args, self.options[c].events, arg)
+                        UIManager:setDirty(self.config, function()
+                            return "fast", switch.dimen
                         end)
                     end,
                     hold_callback = function(arg)
@@ -840,8 +841,23 @@ function ConfigDialog:onConfigChoose(values, name, event, args, events, position
         if events then
             self:onConfigEvents(events, position)
         end
+        -- Even if each toggle refreshes itself when toggled, we still
+        -- need to update and repaint the whole config panel, as other
+        -- toggles may have their state (enabled/disabled) modified
+        -- after this toggle update.
         self:update()
-        UIManager:setDirty("all")
+        if self.config_options.needs_redraw_on_change then
+            -- Some Kopt document event handlers just save their setting,
+            -- and need a full repaint for kopt to load these settings,
+            -- notice the change, and redraw the document
+            UIManager:setDirty("all", "partial")
+        else
+            -- CreDocument event handlers do their own refresh:
+            -- we can just redraw our frame
+            UIManager:setDirty(self, function()
+                return "ui", self.dialog_frame.dimen
+            end)
+        end
     end)
 end
 
