@@ -539,7 +539,7 @@ function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer)
 
     if drawer == "underscore" then
         self.highlight.line_width = self.highlight.line_width or 2
-        self.highlight.line_color = self.highlight.line_color or Blitbuffer.gray(0.33)
+        self.highlight.line_color = self.highlight.line_color or Blitbuffer.COLOR_GRAY_A
         bb:paintRect(x, y+h-1, w,
             self.highlight.line_width,
             self.highlight.line_color)

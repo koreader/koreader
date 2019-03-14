@@ -95,7 +95,7 @@ function ReaderCropping:onPageCrop(mode)
     self.orig_view_dimen = Geom:new{w = self.view.dimen.w, h = self.view.dimen.h}
     -- backup original view bgcolor
     self.orig_view_bgcolor = self.view.outer_page_color
-    self.view.outer_page_color = Blitbuffer.COLOR_GREY
+    self.view.outer_page_color = Blitbuffer.COLOR_GRAY
     -- backup original page scroll
     self.orig_page_scroll = self.view.page_scroll
     self.view.page_scroll = false

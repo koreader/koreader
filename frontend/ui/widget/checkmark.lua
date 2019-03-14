@@ -41,12 +41,12 @@ function CheckMark:init()
     local disabled_checked_widget = TextWidget:new{
         text = " ✓", -- preceded by thin space for better alignment
         face = self.face,
-        fgcolor = Blitbuffer.COLOR_GREY,
+        fgcolor = Blitbuffer.COLOR_GRAY,
     }
     local disabled_unchecked_widget = TextWidget:new{
         text = "▢ ",
         face = self.face,
-        fgcolor = Blitbuffer.COLOR_GREY,
+        fgcolor = Blitbuffer.COLOR_GRAY,
     }
     local empty_widget = TextWidget:new{
         text = "",

@@ -22,8 +22,8 @@ local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local LINE_COLOR = Blitbuffer.gray(0.4)
-local BG_COLOR = Blitbuffer.gray(0.2)
+local LINE_COLOR = Blitbuffer.COLOR_GRAY_9
+local BG_COLOR = Blitbuffer.COLOR_LIGHT_GRAY
 
 local ReaderProgress = InputContainer:new{
     padding = Size.padding.fullscreen,

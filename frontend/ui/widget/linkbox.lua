@@ -9,7 +9,7 @@ local Screen = Device.screen
 
 local LinkBox = InputContainer:new{
     box = nil,
-    color = Blitbuffer.COLOR_GREY,
+    color = Blitbuffer.COLOR_GRAY,
     radius = 0,
     bordersize = Size.line.medium,
 }

@@ -52,7 +52,7 @@ function Button:init()
         self.label_widget = TextWidget:new{
             text = self.text,
             max_width = self.max_width and self.max_width - 2*self.padding - 2*self.margin - 2*self.bordersize or nil,
-            fgcolor = self.enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_GREY,
+            fgcolor = self.enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_GRAY,
             bold = self.text_font_bold,
             face = Font:getFace(self.text_font_face, self.text_font_size)
         }
@@ -144,7 +144,7 @@ function Button:enable()
         if self.enabled then
             self.label_widget.fgcolor = Blitbuffer.COLOR_BLACK
         else
-            self.label_widget.fgcolor = Blitbuffer.COLOR_GREY
+            self.label_widget.fgcolor = Blitbuffer.COLOR_GRAY
         end
     else
         self.label_widget.dim = not self.enabled
@@ -157,7 +157,7 @@ function Button:disable()
         if self.enabled then
             self.label_widget.fgcolor = Blitbuffer.COLOR_BLACK
         else
-            self.label_widget.fgcolor = Blitbuffer.COLOR_GREY
+            self.label_widget.fgcolor = Blitbuffer.COLOR_GRAY
         end
     else
         self.label_widget.dim = not self.enabled

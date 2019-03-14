@@ -60,7 +60,7 @@ function ItemShortCutIcon:init()
     if self.style == "rounded_corner" then
         radius = math.floor(self.width/2)
     elseif self.style == "grey_square" then
-        background = Blitbuffer.gray(0.2)
+        background = Blitbuffer.COLOR_LIGHT_GRAY
     end
     local sc_face
     if self.key:len() > 1 then
@@ -261,7 +261,7 @@ function FakeCover:init()
 
     if self.file_deleted then
         self.dim = true
-        self.color = Blitbuffer.COLOR_GREY
+        self.color = Blitbuffer.COLOR_GRAY
     end
 
     -- As we are a FrameContainer, a border will be painted around self[1]
@@ -494,7 +494,7 @@ function MosaicMenuItem:update()
                         padding = 0,
                         bordersize = border_size,
                         dim = self.file_deleted,
-                        color = self.file_deleted and Blitbuffer.COLOR_GREY or nil,
+                        color = self.file_deleted and Blitbuffer.COLOR_GRAY or nil,
                         image,
                     }
                 }

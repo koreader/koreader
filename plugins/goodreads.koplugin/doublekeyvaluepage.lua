@@ -62,7 +62,7 @@ function DoubleKeyValueTitle:init()
         dimen = { w = self.width, h = Screen:scaleBySize(2) },
         LineWidget:new{
             dimen = Geom:new{ w = self.width, h = Screen:scaleBySize(2) },
-            background = Blitbuffer.COLOR_GREY,
+            background = Blitbuffer.COLOR_GRAY,
             style = "solid",
         },
     }
@@ -76,7 +76,7 @@ function DoubleKeyValueTitle:init()
             overlap_offset = {0, -15},
             TextWidget:new{
                 text = "",  -- page count
-                fgcolor = Blitbuffer.COLOR_GREY,
+                fgcolor = Blitbuffer.COLOR_GRAY,
                 face = Font:getFace("smallffont"),
             },
         }
@@ -383,7 +383,7 @@ function DoubleKeyValuePage:_populateItems()
             local c = string.sub(entry, 1, 1)
             if c == "-" then
                 table.insert(self.main_content, LineWidget:new{
-                    background = Blitbuffer.COLOR_LIGHT_GREY,
+                    background = Blitbuffer.COLOR_LIGHT_GRAY,
                     dimen = Geom:new{
                         w = self.item_width,
                         h = Screen:scaleBySize(2)

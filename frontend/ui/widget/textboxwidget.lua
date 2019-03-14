@@ -448,7 +448,7 @@ function TextBoxWidget:_renderImage(start_row_idx)
         local status_widget = TextWidget:new{
             text = status_text,
             face = Font:getFace("cfont", 20),
-            fgcolor = Blitbuffer.COLOR_GREY,
+            fgcolor = Blitbuffer.COLOR_GRAY,
             bold = true,
         }
         status_height = status_widget:getSize().h

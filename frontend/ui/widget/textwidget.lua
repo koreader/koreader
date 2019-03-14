@@ -7,7 +7,7 @@ Example:
         text = "Make it so.",
         face = Font:getFace("cfont"),
         bold = true,
-        fgcolor = Blitbuffer.COLOR_GREY,
+        fgcolor = Blitbuffer.COLOR_GRAY,
     })
 
 --]]

@@ -299,7 +299,7 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
     if self.powerd.auto_warmth then
         enable_button_plus = false
         enable_button_minus = false
-        button_color = Blitbuffer.COLOR_GREY
+        button_color = Blitbuffer.COLOR_GRAY
     else
         if math.floor(num_warmth / self.nl_scale) <= self.nl_min then enable_button_minus = false end
         if math.ceil(num_warmth / self.nl_scale) >= self.nl_max then enable_button_plus = false end
@@ -413,7 +413,7 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
         face = self.larger_font_face,
         alignment = "right",
         fgcolor = self.powerd.auto_warmth and Blitbuffer.COLOR_BLACK or
-            Blitbuffer.COLOR_GREY,
+            Blitbuffer.COLOR_GRAY,
         width = self.screen_width * 0.3
     }
     local text_hour = TextBoxWidget:new{
@@ -422,7 +422,7 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
         face = self.larger_font_face,
         alignment = "center",
         fgcolor =self.powerd.auto_warmth and Blitbuffer.COLOR_BLACK or
-            Blitbuffer.COLOR_GREY,
+            Blitbuffer.COLOR_GRAY,
         width = self.screen_width * 0.15
     }
     local button_minus_one_hour = Button:new{

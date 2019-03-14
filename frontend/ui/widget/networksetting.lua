@@ -83,11 +83,11 @@ function MinimalPaginator:paintTo(bb, x, y)
     -- paint background
     bb:paintRoundedRect(x, y,
                         self.dimen.w, self.dimen.h,
-                        Blitbuffer.COLOR_LIGHT_GREY)
+                        Blitbuffer.COLOR_LIGHT_GRAY)
     -- paint percentage infill
     bb:paintRect(x, y,
                  math.ceil(self.dimen.w*self.progress), self.dimen.h,
-                 Blitbuffer.COLOR_GREY)
+                 Blitbuffer.COLOR_GRAY)
 end
 
 function MinimalPaginator:setProgress(progress) self.progress = progress end
@@ -380,7 +380,7 @@ function NetworkSetting:init()
     self.width = self.width or Screen:getWidth() - Screen:scaleBySize(50)
     self.width = math.min(self.width, Screen:scaleBySize(600))
 
-    local gray_bg = Blitbuffer.gray(0.1)
+    local gray_bg = Blitbuffer.COLOR_GRAY_E
     local items = {}
     table.sort(self.network_list,
                function(l, r) return l.signal_quality > r.signal_quality end)

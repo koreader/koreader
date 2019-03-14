@@ -102,7 +102,7 @@ function TouchMenuItem:init()
             },
             TextWidget:new{
                 text = text,
-                fgcolor = item_enabled ~= false and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_GREY,
+                fgcolor = item_enabled ~= false and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_GRAY,
                 face = self.face,
             },
         },
@@ -510,7 +510,7 @@ function TouchMenu:init()
         -- pad with 10 pixel to align with the up arrow in footer
         HorizontalSpan:new{width = Size.span.horizontal_default},
         LineWidget:new{
-            background = Blitbuffer.gray(0.33),
+            background = Blitbuffer.COLOR_GRAY_A,
             dimen = Geom:new{
                 w = self.item_width - 2*Size.span.horizontal_default,
                 h = Size.line.medium,
