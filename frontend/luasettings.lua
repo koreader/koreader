@@ -150,7 +150,7 @@ function LuaSettings:flipFalse(key)
     if self:isFalse(key) then
         self:delSetting(key)
     else
-        self:saveSetting(key, true)
+        self:saveSetting(key, false)
     end
     return self
 end
