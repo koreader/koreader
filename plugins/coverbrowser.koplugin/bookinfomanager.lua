@@ -391,9 +391,6 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
     if document then
         local pages
         if document.loadDocument then -- needed for crengine
-            -- Setting a default font before loading document
-            -- actually do prevent some crashes
-            document:setFontFace(document.default_font)
             if not document:loadDocument(false) then -- load only metadata
                 -- failed loading, calling other methods would segfault
                 loaded = false
