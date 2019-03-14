@@ -76,7 +76,7 @@ local action_strings = {
 
     folder_up = _("Folder up"),
     folder_shortcuts = _("Folder shortcuts"),
-
+    toggle_highlight_action = _("Toggle highlight action"),
     wallabag_download = _("Wallabag retrieval"),
 }
 
@@ -358,7 +358,7 @@ function ReaderGesture:buildMenu(ges, default)
         {"zoom_column", not self.is_docless},
         {"zoom_content", not self.is_docless},
         {"zoom_page", not self.is_docless, true},
-
+        {"toggle_highlight_action", not self.is_docless},
         {"wallabag_download", self.ui.wallabag ~= nil},
     }
     local return_menu = {}
@@ -796,6 +796,8 @@ function ReaderGesture:gestureAction(action, ges)
         self.ui:handleEvent(Event:new("SetZoomMode", "page"))
     elseif action == "wallabag_download" then
         self.ui:handleEvent(Event:new("SynchronizeWallabag"))
+    elseif action == "toggle_highlight_action" then
+        self.ui:handleEvent(Event:new("ToggleHighlightAction"))
     end
     return true
 end
