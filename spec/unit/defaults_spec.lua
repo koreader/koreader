@@ -8,8 +8,8 @@ describe("defaults module", function()
 
     it("should load all defaults from defaults.lua", function()
         Defaults:init()
-        assert.is_same(82, #Defaults.defaults_name)
-        assert.is_same("DFULL_SCREEN", Defaults.defaults_name[28])
+        assert.is_same(92, #Defaults.defaults_name)
+        assert.is_same("DFULL_SCREEN", Defaults.defaults_name[38])
     end)
 
     it("should save changes to defaults.persistent.lua", function()
@@ -17,18 +17,18 @@ describe("defaults module", function()
         os.remove(persistent_filename)
 
         -- not in persistent but checked in defaults
-        Defaults.changed[11] = true
-        Defaults.changed[19] = true
-        Defaults.changed[28] = true
-        Defaults.changed[63] = true
-        Defaults.changed[77] = true
+        Defaults.changed[21] = true
+        Defaults.changed[29] = true
+        Defaults.changed[38] = true
+        Defaults.changed[73] = true
+        Defaults.changed[87] = true
         Defaults:saveSettings()
-        assert.is_same(82, #Defaults.defaults_name)
-        assert.is_same("DFULL_SCREEN", Defaults.defaults_name[28])
-        assert.is_same("SEARCH_LIBRARY_PATH", Defaults.defaults_name[77])
-        assert.is_same("DTAP_ZONE_BACKWARD", Defaults.defaults_name[63])
-        assert.is_same("DCREREADER_CONFIG_WORD_GAP_LARGE", Defaults.defaults_name[19])
-        assert.is_same("DCREREADER_CONFIG_MARGIN_SIZES_HUGE", Defaults.defaults_name[11])
+        assert.is_same(92, #Defaults.defaults_name)
+        assert.is_same("DFULL_SCREEN", Defaults.defaults_name[38])
+        assert.is_same("SEARCH_LIBRARY_PATH", Defaults.defaults_name[87])
+        assert.is_same("DTAP_ZONE_BACKWARD", Defaults.defaults_name[73])
+        assert.is_same("DCREREADER_CONFIG_WORD_GAP_LARGE", Defaults.defaults_name[29])
+        assert.is_same("DCREREADER_CONFIG_MARGIN_SIZES_HUGE", Defaults.defaults_name[21])
         local fd = io.open(persistent_filename, "r")
         assert.Equals(
 [[-- For configuration changes that persists between updates
@@ -53,10 +53,10 @@ DCREREADER_CONFIG_MARGIN_SIZES_HUGE = {
 
         -- in persistent
         Defaults:init()
-        Defaults.changed[28] = true
-        Defaults.defaults_value[28] = 2
-        Defaults.changed[63] = true
-        Defaults.defaults_value[63] = {
+        Defaults.changed[38] = true
+        Defaults.defaults_value[38] = 2
+        Defaults.changed[73] = true
+        Defaults.defaults_value[73] = {
             y = 10,
             x = 10.125,
             h = 20.25,
@@ -106,8 +106,8 @@ DHINTCOUNT = 2
 
         -- in persistent
         Defaults:init()
-        Defaults.changed[28] = true
-        Defaults.defaults_value[28] = 1
+        Defaults.changed[38] = true
+        Defaults.defaults_value[38] = 1
         Defaults:saveSettings()
         fd = io.open(persistent_filename)
         assert.Equals(

@@ -233,7 +233,7 @@ function ReaderFont:onSetFontSize(new_size)
 end
 
 function ReaderFont:onSetLineSpace(space)
-    self.line_space_percent = math.min(200, math.max(80, space))
+    self.line_space_percent = math.min(200, math.max(50, space))
     UIManager:show(Notification:new{
         text = T( _("Line spacing set to %1%."), self.line_space_percent),
         timeout = 2,
