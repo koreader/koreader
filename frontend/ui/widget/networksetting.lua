@@ -87,7 +87,7 @@ function MinimalPaginator:paintTo(bb, x, y)
     -- paint percentage infill
     bb:paintRect(x, y,
                  math.ceil(self.dimen.w*self.progress), self.dimen.h,
-                 Blitbuffer.COLOR_GRAY)
+                 Blitbuffer.COLOR_DARK_GRAY)
 end
 
 function MinimalPaginator:setProgress(progress) self.progress = progress end

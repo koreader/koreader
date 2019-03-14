@@ -25,7 +25,7 @@ local ButtonProgressWidget = InputContainer:new{
 function ButtonProgressWidget:init()
     self.buttonprogress_frame = FrameContainer:new{
         background = Blitbuffer.COLOR_WHITE,
-        color = Blitbuffer.COLOR_GRAY,
+        color = Blitbuffer.COLOR_DARK_GRAY,
         radius = Size.radius.window,
         bordersize = 0,
         padding = self.padding,
@@ -73,9 +73,9 @@ function ButtonProgressWidget:update()
             end,
         }
         if self.thin_grey_style then
-            button.frame.color = Blitbuffer.COLOR_GRAY -- no black border around gray squares
+            button.frame.color = Blitbuffer.COLOR_DARK_GRAY -- no black border around gray squares
             if highlighted then
-                button.frame.background = Blitbuffer.COLOR_GRAY
+                button.frame.background = Blitbuffer.COLOR_DARK_GRAY
                 button = FrameContainer:new{ -- add margin back
                     margin = button_margin,
                     padding = 0,

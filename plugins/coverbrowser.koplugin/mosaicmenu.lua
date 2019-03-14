@@ -261,7 +261,7 @@ function FakeCover:init()
 
     if self.file_deleted then
         self.dim = true
-        self.color = Blitbuffer.COLOR_GRAY
+        self.color = Blitbuffer.COLOR_DARK_GRAY
     end
 
     -- As we are a FrameContainer, a border will be painted around self[1]
@@ -494,7 +494,7 @@ function MosaicMenuItem:update()
                         padding = 0,
                         bordersize = border_size,
                         dim = self.file_deleted,
-                        color = self.file_deleted and Blitbuffer.COLOR_GRAY or nil,
+                        color = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
                         image,
                     }
                 }

@@ -210,13 +210,13 @@ function MenuItem:init()
             text = self.text,
             face = self.face,
             bold = self.bold,
-            fgcolor = self.dim and Blitbuffer.COLOR_GRAY or nil,
+            fgcolor = self.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
         }
         mandatory_widget = TextWidget:new{
             text = mandatory,
             face = self.info_face,
             bold = self.bold,
-            fgcolor = self.dim and Blitbuffer.COLOR_GRAY or nil,
+            fgcolor = self.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
         }
     else
         while true do
@@ -228,7 +228,7 @@ function MenuItem:init()
                 text = mandatory,
                 face = Font:getFace(self.infont, self.infont_size),
                 bold = self.bold,
-                fgcolor = self.dim and Blitbuffer.COLOR_GRAY or nil,
+                fgcolor = self.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
             }
             local height = mandatory_widget:getSize().h
 
@@ -259,7 +259,7 @@ function MenuItem:init()
                 width = self.content_width - mandatory_w - state_button_width - text_mandatory_padding,
                 alignment = "left",
                 bold = self.bold,
-                fgcolor = self.dim and Blitbuffer.COLOR_GRAY or nil,
+                fgcolor = self.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
             }
             local height = item_name:getSize().h
             if height < max_item_height or flag_fit then -- we fit !
@@ -496,7 +496,7 @@ local Menu = FocusManager:new{
     close_callback = nil,
     linesize = Size.line.medium,
     perpage = G_reader_settings:readSetting("items_per_page") or 14,
-    line_color = Blitbuffer.COLOR_GRAY,
+    line_color = Blitbuffer.COLOR_DARK_GRAY,
 }
 
 function Menu:_recalculateDimen()

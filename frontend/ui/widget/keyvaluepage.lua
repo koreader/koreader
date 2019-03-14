@@ -80,7 +80,7 @@ function KeyValueTitle:init()
         dimen = { w = self.width, h = Size.line.thick },
         LineWidget:new{
             dimen = Geom:new{ w = self.width, h = Size.line.thick },
-            background = Blitbuffer.COLOR_GRAY,
+            background = Blitbuffer.COLOR_DARK_GRAY,
             style = "solid",
         },
     }
@@ -94,7 +94,7 @@ function KeyValueTitle:init()
             overlap_offset = {0, -15},
             TextWidget:new{
                 text = "",  -- page count
-                fgcolor = Blitbuffer.COLOR_GRAY,
+                fgcolor = Blitbuffer.COLOR_DARK_GRAY,
                 face = Font:getFace("smallffont"),
             },
         }

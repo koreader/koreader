@@ -102,7 +102,7 @@ function TouchMenuItem:init()
             },
             TextWidget:new{
                 text = text,
-                fgcolor = item_enabled ~= false and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_GRAY,
+                fgcolor = item_enabled ~= false and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
                 face = self.face,
             },
         },
