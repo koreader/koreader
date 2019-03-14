@@ -843,6 +843,29 @@ function ReaderHighlight:onHoldRelease()
     return true
 end
 
+function ReaderHighlight:onToggleHighlightAction()
+    local actions = {
+        highlight = "translate",
+        translate = "wikipedia",
+        wikipedia = nil
+    }
+    local current_action = G_reader_settings:readSetting("default_highlight_action")
+    if not current_action then
+        G_reader_settings:saveSetting("default_highlight_action", "highlight")
+        UIManager:show(InfoMessage:new{
+            text = _("Default highlight action is now: highlight"),
+            timeout = 1,
+        })
+    else
+        local next_action = actions[current_action]
+        G_reader_settings:saveSetting("default_highlight_action", next_action)
+        UIManager:show(InfoMessage:new{
+            text = _("Default highlight action is now: " .. (next_action or "default")),
+            timeout = 1,
+        })
+    end
+end
+
 function ReaderHighlight:highlightFromHoldPos()
     if self.hold_pos then
         if not self.selected_text then
