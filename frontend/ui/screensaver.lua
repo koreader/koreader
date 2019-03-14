@@ -166,6 +166,10 @@ function Screensaver:whiteBackground()
     return G_reader_settings:isTrue("screensaver_white_background")
 end
 
+function Screensaver:noBackground()
+    return G_reader_settings:isTrue("screensaver_no_background")
+end
+
 function Screensaver:excluded()
     local lastfile = G_reader_settings:readSetting("lastfile")
     local exclude_ss = false -- consider it not excluded if there's no docsetting
@@ -237,7 +241,12 @@ function Screensaver:show(event, fallback_message)
         return
     end
     local widget = nil
-    local background = Blitbuffer.COLOR_WHITE
+    local background = Blitbuffer.COLOR_BLACK
+    if self:whiteBackground() then
+        background = Blitbuffer.COLOR_WHITE
+    elseif self:noBackground() then
+        background = nil
+    end
     if screensaver_type == "cover" then
         local lastfile = G_reader_settings:readSetting("lastfile")
         local exclude = false -- consider it not excluded if there's no docsetting
@@ -262,9 +271,6 @@ function Screensaver:show(event, fallback_message)
                         width = Screen:getWidth(),
                         scale_factor = not self:stretchImages() and 0 or nil,
                     }
-                    if not self:whiteBackground() then
-                        background = Blitbuffer.COLOR_BLACK
-                    end
                 else
                     screensaver_type = "random_image"
                 end
@@ -319,9 +325,6 @@ function Screensaver:show(event, fallback_message)
                 width = Screen:getWidth(),
                 scale_factor = not self:stretchImages() and 0 or nil,
             }
-            if not self:whiteBackground() then
-                background = Blitbuffer.COLOR_BLACK
-            end
         end
     end
     if screensaver_type == "image_file" then
@@ -343,9 +346,6 @@ function Screensaver:show(event, fallback_message)
                 width = Screen:getWidth(),
                 scale_factor = not self:stretchImages() and 0 or nil,
             }
-            if not self:whiteBackground() then
-                background = Blitbuffer.COLOR_BLACK
-            end
         end
     end
     if screensaver_type == "readingprogress" then
