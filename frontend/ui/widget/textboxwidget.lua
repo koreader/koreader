@@ -361,20 +361,7 @@ function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
     if self._bb then self._bb:free() end
     local bbtype = nil
     if self.line_num_to_image and self.line_num_to_image[start_row_idx] then
-        -- Whether Screen:isColorEnabled or not, it's best to
-        -- always use BBRGB32 and alphablitFrom() for the best display of
-        -- various images:
-        --   With greyscale screen TYPE_BB8 (the default, and
-        --   what we would have chosen when not Screen:isColorEnabled):
-        --     alphablitFrom: some images are all white (ex: flags on Milan,
-        --     Ilkhanides on wiki.fr)
-        --     blitFrom: some images have a black background (ex: RDA,
-        --     Allemagne on wiki.fr)
-        --   With TYPE_BBRGB32:
-        --     blitFrom: some images have a black background (ex: RDA,
-        --     Allemagne on wiki.fr)
-        --     alphablitFrom: all these images looks good, with a white background
-        bbtype = Blitbuffer.TYPE_BBRGB32
+        bbtype = Screen:isColorEnabled() and Blitbuffer.TYPE_BBRGB32 or Blitbuffer.TYPE_BB8
     end
     self._bb = Blitbuffer.new(self.width, h, bbtype)
     self._bb:fill(Blitbuffer.COLOR_WHITE)
@@ -441,7 +428,13 @@ function TextBoxWidget:_renderImage(start_row_idx)
     -- logger.dbg("display_bb:", display_bb, "display_alt", display_alt, "status_text:", status_text, "do_schedule_update:", do_schedule_update)
     -- Do what's been decided
     if display_bb then
-        self._bb:alphablitFrom(image.bb, self.width - image.width, 0)
+        -- With alpha-blending if the image contains an alpha channel
+        local bbtype = image.bb:getType()
+        if bbtype == Blitbuffer.TYPE_BB8A or bbtype == Blitbuffer.TYPE_BBRGB32 then
+            self._bb:alphablitFrom(image.bb, self.width - image.width, 0)
+        else
+            self._bb:blitFrom(image.bb, self.width - image.width, 0)
+        end
     end
     local status_height = 0
     if status_text then
