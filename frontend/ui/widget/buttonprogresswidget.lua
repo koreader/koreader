@@ -75,7 +75,9 @@ function ButtonProgressWidget:update()
         if self.thin_grey_style then
             button.frame.color = Blitbuffer.COLOR_DARK_GRAY -- no black border around gray squares
             if highlighted then
-                button.frame.background = Blitbuffer.COLOR_DARK_GRAY
+                -- The button and its frame background will be inverted,
+                -- so invert the color we want so it gets inverted back
+                button.frame.background = Blitbuffer.COLOR_DARK_GRAY:invert()
                 button = FrameContainer:new{ -- add margin back
                     margin = button_margin,
                     padding = 0,
