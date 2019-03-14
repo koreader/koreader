@@ -314,6 +314,7 @@ function Screensaver:show(event, fallback_message)
             widget = ImageWidget:new{
                 file = image_file,
                 file_do_cache = false,
+                alpha = true,
                 height = Screen:getHeight(),
                 width = Screen:getWidth(),
                 scale_factor = not self:stretchImages() and 0 or nil,
@@ -337,6 +338,7 @@ function Screensaver:show(event, fallback_message)
             widget = ImageWidget:new{
                 file = screensaver_image,
                 file_do_cache = false,
+                alpha = true,
                 height = Screen:getHeight(),
                 width = Screen:getWidth(),
                 scale_factor = not self:stretchImages() and 0 or nil,
