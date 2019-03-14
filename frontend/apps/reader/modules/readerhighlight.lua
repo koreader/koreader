@@ -3,6 +3,7 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
+local Notification = require("ui/widget/notification")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local TimeVal = require("ui/timeval")
 local Translator = require("ui/translator")
@@ -852,14 +853,14 @@ function ReaderHighlight:onCycleHighlightAction()
     local current_action = G_reader_settings:readSetting("default_highlight_action")
     if not current_action then
         G_reader_settings:saveSetting("default_highlight_action", "highlight")
-        UIManager:show(InfoMessage:new{
+        UIManager:show(Notification:new{
             text = _("Default highlight action changed to highlight"),
             timeout = 1,
         })
     else
         local next_action = next_actions[current_action]
         G_reader_settings:saveSetting("default_highlight_action", next_action)
-        UIManager:show(InfoMessage:new{
+        UIManager:show(Notification:new{
             text = _("Default highlight action changed to " .. (next_action or "default")),
             timeout = 1,
         })
