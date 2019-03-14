@@ -36,8 +36,10 @@ local action_strings = {
     toc = _("Table of contents"),
     bookmarks = _("Bookmarks"),
     reading_progress = _("Reading progress"),
-    book_info = _("Book information"),
     book_status = _("Book status"),
+    book_info = _("Book information"),
+    book_description = _("Book description"),
+    book_cover = _("Book cover"),
 
     history = _("History"),
     open_previous_document = _("Open previous document"),
@@ -321,8 +323,10 @@ function ReaderGesture:buildMenu(ges, default)
         { "toc", not self.is_docless},
         {"bookmarks", not self.is_docless},
         {"reading_progress", ReaderGesture.getReaderProgress ~= nil},
+        {"book_status", not self.is_docless},
         {"book_info", not self.is_docless},
-        {"book_status", not self.is_docless, true},
+        {"book_description", not self.is_docless},
+        {"book_cover", not self.is_docless, true},
 
         {"history", true},
         {"open_previous_document", true, true},
@@ -627,6 +631,33 @@ function ReaderGesture:gestureAction(action, ges)
         self.ui:handleEvent(Event:new("ShowHist"))
     elseif action == "book_info" then
         self.ui:handleEvent(Event:new("ShowBookInfo"))
+    elseif action == "book_description" then
+        local description = self.document:getProps().description
+        if description and description ~= "" then
+            local TextViewer = require("ui/widget/textviewer")
+            UIManager:show(TextViewer:new{
+                title = _("Book description:"),
+                text = description,
+            })
+        else
+            UIManager:show(InfoMessage:new{
+                text = _("No book description available."),
+            })
+        end
+    elseif action == "book_cover" then
+        local cover_bb = self.document:getCoverPageImage()
+        if cover_bb then
+            local ImageViewer = require("ui/widget/imageviewer")
+            UIManager:show(ImageViewer:new{
+                image = cover_bb,
+                with_title_bar = false,
+                fullscreen = true,
+            })
+        else
+            UIManager:show(InfoMessage:new{
+                text = _("No cover image available."),
+            })
+        end
     elseif action == "book_status" then
         self.ui:handleEvent(Event:new("ShowBookStatus"))
     elseif action == "page_jmp_fwd_10" then
