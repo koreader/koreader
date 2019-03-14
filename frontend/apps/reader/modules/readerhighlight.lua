@@ -860,7 +860,7 @@ function ReaderHighlight:onCycleHighlightAction()
         local next_action = next_actions[current_action]
         G_reader_settings:saveSetting("default_highlight_action", next_action)
         UIManager:show(InfoMessage:new{
-            text = _("Default highlight action changed to highlight " .. (next_action or "default")),
+            text = _("Default highlight action changed to " .. (next_action or "default")),
             timeout = 1,
         })
     end
