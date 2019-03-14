@@ -237,7 +237,7 @@ function InputText:initTextBox(text, char_added)
     if show_text == "" or show_text == nil then
         -- no preset value, use hint text if set
         show_text = self.hint
-        fgcolor = Blitbuffer.COLOR_GREY
+        fgcolor = Blitbuffer.COLOR_DARK_GRAY
         self.charlist = {}
         self.charpos = 1
     else
@@ -346,7 +346,7 @@ function InputText:initTextBox(text, char_added)
         bordersize = self.bordersize,
         padding = self.padding,
         margin = self.margin,
-        color = self.focused and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_GREY,
+        color = self.focused and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
         self.text_widget,
     }
     self._verticalgroup = VerticalGroup:new{
@@ -387,7 +387,7 @@ end
 function InputText:unfocus()
     self.focused = false
     self.text_widget:unfocus()
-    self._frame_textwidget.color = Blitbuffer.COLOR_GREY
+    self._frame_textwidget.color = Blitbuffer.COLOR_DARK_GRAY
 end
 
 function InputText:focus()

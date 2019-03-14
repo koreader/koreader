@@ -52,7 +52,7 @@ function PhysicalNumericKey:init()
             VerticalGroup:new{
                 label_widget,
                 TextWidget:new{
-                    fgcolor = Blitbuffer.COLOR_GREY,
+                    fgcolor = Blitbuffer.COLOR_DARK_GRAY,
                     text = self.physical_key_label,
                     face = self.pkey_face,
                 },

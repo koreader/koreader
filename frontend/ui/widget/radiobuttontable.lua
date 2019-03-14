@@ -88,7 +88,7 @@ function RadioButtonTable:init()
 
             local button_dim = button:getSize()
             local vertical_sep = LineWidget:new{
-                background = Blitbuffer.COLOR_GREY,
+                background = Blitbuffer.COLOR_DARK_GRAY,
                 dimen = Geom:new{
                     w = self.sep_width,
                     h = button_dim.h,
@@ -129,7 +129,7 @@ function RadioButtonTable:addHorizontalSep(vspan_before, add_line, vspan_after, 
     end
     if add_line then
         table.insert(self.container, LineWidget:new{
-            background = black_line and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_GREY,
+            background = black_line and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
             dimen = Geom:new{
                 w = self.width,
                 h = self.sep_width,

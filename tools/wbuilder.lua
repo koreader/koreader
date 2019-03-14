@@ -131,7 +131,7 @@ Background = InputContainer:new{
     },
     -- contains a gray rectangular desktop
     FrameContainer:new{
-        background = Blitbuffer.COLOR_GREY,
+        background = Blitbuffer.COLOR_DARK_GRAY,
         bordersize = 0,
         dimen = Screen:getSize(),
         Widget:new{

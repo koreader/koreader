@@ -96,7 +96,6 @@ function InfoMessage:init()
             image_widget = ImageWidget:new{
                 file = self.icon_file or "resources/info-i.png",
                 scale_for_dpi = true,
-                alpha = true,
             }
         end
     else

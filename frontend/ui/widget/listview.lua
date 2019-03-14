@@ -22,7 +22,7 @@ Example:
             },
             FrameContainer:new{
                 bordersize = 0,
-                background = Blitbuffer.COLOR_LIGHT_GREY,
+                background = Blitbuffer.COLOR_LIGHT_GRAY,
                 TextWidget:new{
                     text = "bar",
                     fact = Font:getFace("cfont"),

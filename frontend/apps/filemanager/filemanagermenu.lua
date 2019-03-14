@@ -229,7 +229,7 @@ function FileManagerMenu:setUpdateItemTable()
                     else
                         dbg:setVerbose(false)
                         dbg:turnOff()
-                        G_reader_settings:flipTrue("debug_verbose")
+                        G_reader_settings:flipFalse("debug_verbose")
                     end
                 end,
             },

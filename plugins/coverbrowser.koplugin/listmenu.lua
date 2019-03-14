@@ -62,7 +62,7 @@ function ItemShortCutIcon:init()
     if self.style == "rounded_corner" then
         radius = math.floor(self.width/2)
     elseif self.style == "grey_square" then
-        background = Blitbuffer.gray(0.2)
+        background = Blitbuffer.COLOR_LIGHT_GRAY
     end
     local sc_face
     if self.key:len() > 1 then
@@ -390,12 +390,12 @@ function ListMenuItem:update()
             local wfileinfo = TextWidget:new{
                 text = fileinfo_str,
                 face = Font:getFace("cfont", 14),
-                fgcolor = self.file_deleted and Blitbuffer.COLOR_GREY or nil,
+                fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
             }
             local wpageinfo = TextWidget:new{
                 text = pages_str,
                 face = Font:getFace("cfont", 14),
-                fgcolor = self.file_deleted and Blitbuffer.COLOR_GREY or nil,
+                fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
             }
 
             local wright_width = math.max(wfileinfo:getSize().w, wpageinfo:getSize().w)
@@ -511,7 +511,7 @@ function ListMenuItem:update()
                     width = wmain_width,
                     alignment = "left",
                     bold = true,
-                    fgcolor = self.file_deleted and Blitbuffer.COLOR_GREY or nil,
+                    fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
                 }
                 local height = wtitle:getSize().h
                 if authors then
@@ -520,7 +520,7 @@ function ListMenuItem:update()
                         face = Font:getFace(fontname_authors, fontsize_authors),
                         width = wmain_width,
                         alignment = "left",
-                        fgcolor = self.file_deleted and Blitbuffer.COLOR_GREY or nil,
+                        fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
                     }
                     height = height + wauthors:getSize().h
                 end
@@ -614,7 +614,7 @@ function ListMenuItem:update()
                         face = Font:getFace("cfont", 18),
                         width = dimen.w - 2 * Screen:scaleBySize(10),
                         alignment = "left",
-                        fgcolor = self.file_deleted and Blitbuffer.COLOR_GREY or nil,
+                        fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
                     }
                 },
             }
@@ -790,7 +790,7 @@ function ListMenu:_updateItemsBuildUI()
     -- Build our list
     table.insert(self.item_group, LineWidget:new{
                     dimen = Geom:new{ w = self.width, h = Size.line.thin },
-                    background = Blitbuffer.COLOR_GREY,
+                    background = Blitbuffer.COLOR_DARK_GRAY,
                     style = "solid",
                 })
     local idx_offset = (self.page - 1) * self.perpage
@@ -828,7 +828,7 @@ function ListMenu:_updateItemsBuildUI()
         table.insert(self.item_group, item_tmp)
         table.insert(self.item_group, LineWidget:new{
                         dimen = Geom:new{ w = self.width, h = Size.line.thin },
-                        background = Blitbuffer.COLOR_GREY,
+                        background = Blitbuffer.COLOR_DARK_GRAY,
                         style = "solid",
                     })
 

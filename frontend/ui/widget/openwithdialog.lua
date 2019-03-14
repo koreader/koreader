@@ -113,7 +113,7 @@ function OpenWithDialog:init()
                     h = Size.span.vertical_large*2,
                 },
                 LineWidget:new{
-                    background = Blitbuffer.COLOR_GREY,
+                    background = Blitbuffer.COLOR_DARK_GRAY,
                     dimen = Geom:new{
                         w = self.width * 0.9,
                         h = Size.line.medium,

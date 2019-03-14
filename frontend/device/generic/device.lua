@@ -211,7 +211,9 @@ function Device:onPowerEvent(ev)
                G_reader_settings:readSetting("screensaver_type") == "cover" or
                G_reader_settings:readSetting("screensaver_type") == "random_image" or
                G_reader_settings:readSetting("screensaver_type") == "image_file" then
-                self.screen:clear(self.screen:getScreenWidth(), self.screen:getScreenHeight())
+                if not G_reader_settings:isTrue("screensaver_no_background") then
+                    self.screen:clear(self.screen:getScreenWidth(), self.screen:getScreenHeight())
+                end
                 self.screen:refreshFull()
             end
         else

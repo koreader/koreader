@@ -11,6 +11,7 @@ local function lastFile()
     end
 end
 local function whiteBackground() return G_reader_settings:isTrue("screensaver_white_background") end
+local function noBackground() return G_reader_settings:isTrue("screensaver_no_background") end
 local function stretchImages() return G_reader_settings:isTrue("screensaver_stretch_images") end
 
 return {
@@ -137,6 +138,15 @@ return {
                 checked_func = whiteBackground,
                 callback = function()
                     G_reader_settings:saveSetting("screensaver_white_background", not whiteBackground())
+                    G_reader_settings:flipFalse("screensaver_no_background")
+                end,
+            },
+            {
+                text = _("Leave background as-is behind message and images"),
+                checked_func = noBackground,
+                callback = function()
+                    G_reader_settings:saveSetting("screensaver_no_background", not noBackground())
+                    G_reader_settings:flipFalse("screensaver_white_background")
                 end,
             },
             {

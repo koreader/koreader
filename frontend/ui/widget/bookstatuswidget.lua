@@ -174,7 +174,7 @@ function BookStatusWidget:genHeader(title)
     local header_title = TextWidget:new{
         text = title,
         face = self.medium_font_face,
-        fgcolor = Blitbuffer.gray(0.4),
+        fgcolor = Blitbuffer.COLOR_WEB_GRAY,
     }
 
     local padding_span = HorizontalSpan:new{ width = self.padding }
@@ -182,7 +182,7 @@ function BookStatusWidget:genHeader(title)
     local line_container = LeftContainer:new{
         dimen = Geom:new{ w = line_width, h = height },
         LineWidget:new{
-            background = Blitbuffer.gray(0.2),
+            background = Blitbuffer.COLOR_LIGHT_GRAY,
             dimen = Geom:new{
                 w = line_width,
                 h = Size.line.thick,

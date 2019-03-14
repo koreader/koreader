@@ -386,12 +386,12 @@ function ConfigOption:init()
                             FixedTextWidget:new{
                                 text = self.options[c].item_text[d],
                                 face = Font:getFace(item_font_face, item_font_size[d]),
-                                fgcolor = Blitbuffer.gray(enabled and 1.0 or 0.5),
+                                fgcolor = enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
                             },
                             underline_padding = padding_button,
                             padding_left = d > 1 and horizontal_half_padding,
                             padding_right = d < #self.options[c].item_text and horizontal_half_padding,
-                            color = d == current_item and Blitbuffer.gray(enabled and 1.0 or 0.5) or Blitbuffer.COLOR_WHITE,
+                            color = d == current_item and enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_WHITE,
                             enabled = enabled,
                         }
                     else
@@ -405,12 +405,12 @@ function ConfigOption:init()
                             TextWidget:new{
                                 text = text,
                                 face = face,
-                                fgcolor = Blitbuffer.gray(enabled and 1.0 or 0.5),
+                                fgcolor = enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
                             },
                             underline_padding = -padding_button,
                             padding_left = d > 1 and horizontal_half_padding,
                             padding_right = d < #self.options[c].item_text and horizontal_half_padding,
-                            color = d == current_item and Blitbuffer.gray(enabled and 1.0 or 0.5) or Blitbuffer.COLOR_WHITE,
+                            color = d == current_item and enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_WHITE,
                             enabled = enabled,
                         }
                     end
@@ -448,7 +448,7 @@ function ConfigOption:init()
                         underline_padding = -padding_button,
                         padding_left = d > 1 and horizontal_half_padding,
                         padding_right = d < #self.options[c].item_icons and horizontal_half_padding,
-                        color = d == current_item and Blitbuffer.gray(enabled and 1.0 or 0.5) or Blitbuffer.COLOR_WHITE,
+                        color = d == current_item and enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_WHITE,
                         enabled = enabled,
                     }
                     option_items[d] = option_item
