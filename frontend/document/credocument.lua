@@ -177,6 +177,11 @@ function CreDocument:loadDocument(full_document)
     if not self._loaded then
         local only_metadata = full_document == false
         logger.dbg("CreDocument: loading document...")
+        if only_metadata then
+            -- Setting a default font before loading document
+            -- actually do prevent some crashes
+            self:setFontFace(self.default_font)
+        end
         if self._document:loadDocument(self.file, only_metadata) then
             self._loaded = true
             logger.dbg("CreDocument: loading done.")

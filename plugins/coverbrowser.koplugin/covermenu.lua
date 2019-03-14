@@ -1,6 +1,7 @@
 local DocumentRegistry = require("document/documentregistry")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local ImageViewer = require("ui/widget/imageviewer")
+local InfoMessage = require("ui/widget/infomessage")
 local Menu = require("ui/widget/menu")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
@@ -127,7 +128,6 @@ function CoverMenu:updateItems(select_number)
                     UIManager:unschedule(self.items_update_action)
                     self.items_update_action = nil
                 end
-                local InfoMessage = require("ui/widget/infomessage")
                 UIManager:show(InfoMessage:new{
                     text = _("Start-up of background extraction job failed.\nPlease restart KOReader or your device.")
                 })
@@ -232,13 +232,22 @@ function CoverMenu:updateItems(select_number)
                         callback = function()
                             local document = DocumentRegistry:openDocument(file)
                             if document then
+                                if document.loadDocument then -- needed for crengine
+                                    document:loadDocument(false) -- load only metadata
+                                end
                                 local cover_bb = document:getCoverPageImage()
-                                local imgviewer = ImageViewer:new{
-                                    image = cover_bb,
-                                    with_title_bar = false,
-                                    fullscreen = true,
-                                }
-                                UIManager:show(imgviewer)
+                                if cover_bb then
+                                    local imgviewer = ImageViewer:new{
+                                        image = cover_bb,
+                                        with_title_bar = false,
+                                        fullscreen = true,
+                                    }
+                                    UIManager:show(imgviewer)
+                                else
+                                    UIManager:show(InfoMessage:new{
+                                        text = _("No cover image available."),
+                                    })
+                                end
                                 UIManager:close(self.file_dialog)
                                 DocumentRegistry:closeDocument(file)
                             end
@@ -352,13 +361,22 @@ function CoverMenu:onHistoryMenuHold(item)
             callback = function()
                 local document = DocumentRegistry:openDocument(file)
                 if document then
+                    if document.loadDocument then -- needed for crengine
+                        document:loadDocument(false) -- load only metadata
+                    end
                     local cover_bb = document:getCoverPageImage()
-                    local imgviewer = ImageViewer:new{
-                        image = cover_bb,
-                        with_title_bar = false,
-                        fullscreen = true,
-                    }
-                    UIManager:show(imgviewer)
+                    if cover_bb then
+                        local imgviewer = ImageViewer:new{
+                            image = cover_bb,
+                            with_title_bar = false,
+                            fullscreen = true,
+                        }
+                        UIManager:show(imgviewer)
+                    else
+                        UIManager:show(InfoMessage:new{
+                            text = _("No cover image available."),
+                        })
+                    end
                     UIManager:close(self.histfile_dialog)
                     DocumentRegistry:closeDocument(file)
                 end
