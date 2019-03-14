@@ -358,7 +358,7 @@ function ImageWidget:paintTo(bb, x, y)
     if self.alpha == true then
         -- Only actually try to alpha-blend if the image really has an alpha channel...
         local bbtype = self._bb:getType()
-        if bbtype == BlitBuffer.TYPE_BB8A or bbtype == BlitBuffer.TYPE_BBRGB32 then
+        if bbtype == Blitbuffer.TYPE_BB8A or bbtype == Blitbuffer.TYPE_BBRGB32 then
             bb:alphablitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
         else
             bb:blitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
