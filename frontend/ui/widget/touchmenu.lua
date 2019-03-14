@@ -510,7 +510,7 @@ function TouchMenu:init()
         -- pad with 10 pixel to align with the up arrow in footer
         HorizontalSpan:new{width = Size.span.horizontal_default},
         LineWidget:new{
-            background = Blitbuffer.COLOR_GRAY_A,
+            background = Blitbuffer.COLOR_GRAY,
             dimen = Geom:new{
                 w = self.item_width - 2*Size.span.horizontal_default,
                 h = Size.line.medium,
