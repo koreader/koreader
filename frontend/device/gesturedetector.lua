@@ -709,7 +709,7 @@ local ges_coordinate_translation_90 = {
     east = "north",
     west = "south",
     northeast = "northwest",
-    northwest = "southeast",
+    northwest = "southwest",
     southeast = "northeast",
     southwest = "southeast",
 }
