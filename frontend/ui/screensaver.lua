@@ -99,43 +99,28 @@ function Screensaver:chooseFile()
             text = _("Choose screensaver image"),
             callback = function()
                 UIManager:close(self.choose_dialog)
-                local FileChooser = require("ui/widget/filechooser")
-                    local image_chooser = FileChooser:new{
-                    title = _("Choose screensaver image"),
-                    no_title = false,
-                    path = self.root_path,
-                    show_hidden = G_reader_settings:readSetting("show_hidden"),
-                    focused_path = self.focused_file,
-                    collate = G_reader_settings:readSetting("collate") or "strcoll",
-                    reverse_collate = G_reader_settings:isTrue("reverse_collate"),
-                    show_parent = self.show_parent,
-                    width = Screen:getWidth(),
-                    height = Screen:getHeight(),
-                    is_popout = false,
-                    is_borderless = true,
-                    has_close_button = true,
-                    perpage = G_reader_settings:readSetting("items_per_page"),
+                local util = require("util")
+                local PathChooser = require("ui/widget/pathchooser")
+                local path_chooser = PathChooser:new{
+                    select_directory = false,
+                    select_file = true,
                     file_filter = function(filename)
-                        local util = require("util")
                         local suffix = util.getFileNameSuffix(filename)
                         if screensaver_provider[suffix] then
                             return true
                         end
                     end,
+                    detailed_file_info = true,
+                    path = self.root_path,
+                    onConfirm = function(file_path)
+                        G_reader_settings:saveSetting("screensaver_image", file_path)
+                        UIManager:show(InfoMessage:new{
+                            text = T(_("Screensaver image set to:\n%1"), file_path),
+                            timeout = 3,
+                        })
+                    end
                 }
-                function image_chooser:onFileSelect(file)  -- luacheck: ignore
-                    local ConfirmBox = require("ui/widget/confirmbox")
-                    UIManager:show(ConfirmBox:new{
-                        text = T(_("Set screensaver image to:\n%1"), require("ffi/util").basename(file)),
-                        ok_callback = function()
-                            G_reader_settings:saveSetting("screensaver_image", file)
-                            UIManager:close(image_chooser)
-                        end
-                    })
-                    return true
-                end
-
-                UIManager:show(image_chooser)
+                UIManager:show(path_chooser)
             end,
         }
     })
