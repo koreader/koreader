@@ -302,8 +302,9 @@ function ConfigOption:init()
                 option_items_fixed = true
             end
 
-            -- Find out currently selected item
+            -- Find out currently selected and default items indexes
             local current_item = nil
+            local default_item = self.options[c].default_pos
             local function value_diff(val1, val2, name)
                 if type(val1) ~= type(val2) then
                     logger.dbg("different data types in option")
@@ -350,6 +351,34 @@ function ConfigOption:init()
                         if arg_ == arg then
                             current_item = idx
                             break
+                        end
+                    end
+                end
+                local default_option_name = self.config.config_options.prefix.."_"..self.options[c].name
+                local default_value = G_reader_settings:readSetting(default_option_name)
+                if default_value then
+                    local val = default_value
+                    local min_diff
+                    if type(val) == "table" then
+                        min_diff = value_diff(val[1], self.options[c].values[1][1])
+                    else
+                        min_diff = value_diff(val, self.options[c].values[1])
+                    end
+
+                    local diff
+                    for index, val_ in pairs(self.options[c].values) do
+                        if type(val) == "table" then
+                            diff = value_diff(val[1], val_[1])
+                        else
+                            diff = value_diff(val, val_)
+                        end
+                        if val == val_ then
+                            default_item = index
+                            break
+                        end
+                        if diff <= min_diff then
+                            min_diff = diff
+                            default_item = index
                         end
                     end
                 end
@@ -523,8 +552,7 @@ function ConfigOption:init()
                     show_parrent = self.config,
                     enabled = enabled,
                 }
-                local position = current_item
-                switch:setPosition(position)
+                switch:setPosition(current_item, default_item)
                 table.insert(option_items_group, switch)
             end
 
@@ -891,6 +919,10 @@ function ConfigDialog:onMakeDefault(name, name_text, values, labels, position)
         ok_callback = function()
             name = self.config_options.prefix.."_"..name
             G_reader_settings:saveSetting(name, values[position])
+            self:update()
+            UIManager:setDirty(self, function()
+                return "ui", self.dialog_frame.dimen
+            end)
         end,
     })
 end
