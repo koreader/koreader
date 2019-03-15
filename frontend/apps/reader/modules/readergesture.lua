@@ -632,32 +632,9 @@ function ReaderGesture:gestureAction(action, ges)
     elseif action == "book_info" then
         self.ui:handleEvent(Event:new("ShowBookInfo"))
     elseif action == "book_description" then
-        local description = self.document:getProps().description
-        if description and description ~= "" then
-            local TextViewer = require("ui/widget/textviewer")
-            UIManager:show(TextViewer:new{
-                title = _("Book description:"),
-                text = description,
-            })
-        else
-            UIManager:show(InfoMessage:new{
-                text = _("No book description available."),
-            })
-        end
+        self.ui:handleEvent(Event:new("ShowBookDescription"))
     elseif action == "book_cover" then
-        local cover_bb = self.document:getCoverPageImage()
-        if cover_bb then
-            local ImageViewer = require("ui/widget/imageviewer")
-            UIManager:show(ImageViewer:new{
-                image = cover_bb,
-                with_title_bar = false,
-                fullscreen = true,
-            })
-        else
-            UIManager:show(InfoMessage:new{
-                text = _("No cover image available."),
-            })
-        end
+        self.ui:handleEvent(Event:new("ShowBookCover"))
     elseif action == "book_status" then
         self.ui:handleEvent(Event:new("ShowBookStatus"))
     elseif action == "page_jmp_fwd_10" then
