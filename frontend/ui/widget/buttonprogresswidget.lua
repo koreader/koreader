@@ -19,6 +19,7 @@ local ButtonProgressWidget = InputContainer:new{
     enabled = true,
     num_buttons = 2,
     position = 1,
+    default_position = nil,
     thin_grey_style = false, -- default to black
 }
 
@@ -47,18 +48,24 @@ function ButtonProgressWidget:update()
     local button_width = math.floor(self.width / self.num_buttons) - 2*button_padding - 2*button_margin - 2*button_bordersize
     for i = 1, self.num_buttons do
         local highlighted = i <= self.position
+        local is_default = i == self.default_position
         local margin = button_margin
         if self.thin_grey_style and highlighted then
             margin = 0 -- moved outside button so it's not inverted
+        end
+        local extra_border_size = 0
+        if not self.thin_grey_style and is_default then
+            -- make the border a bit bigger on the default button
+            extra_border_size = Size.border.thin
         end
         local button = Button:new{
             text = "",
             radius = 0,
             margin = margin,
             padding = button_padding,
-            bordersize = button_bordersize,
+            bordersize = button_bordersize + extra_border_size,
             enabled = true,
-            width = button_width,
+            width = button_width - 2*extra_border_size,
             preselect = highlighted,
             text_font_face = self.font_face,
             text_font_size = self.font_size,
@@ -73,7 +80,14 @@ function ButtonProgressWidget:update()
             end,
         }
         if self.thin_grey_style then
-            button.frame.color = Blitbuffer.COLOR_DARK_GRAY -- no black border around gray squares
+            if is_default then
+                -- use a black border as a discreet visual hint
+                button.frame.color = Blitbuffer.COLOR_BLACK
+            else
+                -- otherwise, gray border, same as the filled
+                -- button, so looking as if no border
+                button.frame.color = Blitbuffer.COLOR_DARK_GRAY
+            end
             if highlighted then
                 -- The button and its frame background will be inverted,
                 -- so invert the color we want so it gets inverted back
@@ -94,8 +108,9 @@ function ButtonProgressWidget:update()
     end)
 end
 
-function ButtonProgressWidget:setPosition(position)
+function ButtonProgressWidget:setPosition(position, default_position)
     self.position = position
+    self.default_position = default_position
     self:update()
 end
 
