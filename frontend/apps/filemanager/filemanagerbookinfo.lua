@@ -195,6 +195,7 @@ function BookInfo:show(file, book_props)
 end
 
 function BookInfo:onShowBookInfo()
+    if not self.document then return end
     -- Get them directly from ReaderUI's doc_settings
     local doc_props = self.ui.doc_settings:readSetting("doc_props")
     -- Make a copy, so we don't add "pages" to the original doc_props
@@ -205,6 +206,41 @@ function BookInfo:onShowBookInfo()
     end
     book_props.pages = self.ui.doc_settings:readSetting("doc_pages")
     self:show(self.document.file, book_props)
+end
+
+function BookInfo:onShowBookDescription()
+    if not self.document then return end
+    local description = self.document:getProps().description
+    if description and description ~= "" then
+        -- Description may (often in EPUB, but not always) or may not (rarely
+        -- in PDF) be HTML.
+        description = util.htmlToPlainTextIfHtml(description)
+        local TextViewer = require("ui/widget/textviewer")
+        UIManager:show(TextViewer:new{
+            title = _("Book description:"),
+            text = description,
+        })
+    else
+        UIManager:show(InfoMessage:new{
+            text = _("No book description available."),
+        })
+    end
+end
+
+function BookInfo:onShowBookCover()
+    if not self.document then return end
+    local cover_bb = self.document:getCoverPageImage()
+    if cover_bb then
+        UIManager:show(ImageViewer:new{
+            image = cover_bb,
+            with_title_bar = false,
+            fullscreen = true,
+        })
+    else
+        UIManager:show(InfoMessage:new{
+            text = _("No cover image available."),
+        })
+    end
 end
 
 return BookInfo
