@@ -359,7 +359,8 @@ function ImageWidget:paintTo(bb, x, y)
         -- Only actually try to alpha-blend if the image really has an alpha channel...
         local bbtype = self._bb:getType()
         if bbtype == Blitbuffer.TYPE_BB8A or bbtype == Blitbuffer.TYPE_BBRGB32 then
-            bb:alphablitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
+            -- NOTE: MuPDF feeds us premultiplied alpha (and we don't care w/ GifLib, as alpha is all or nothing).
+            bb:pmulalphablitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
         else
             bb:blitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
         end
