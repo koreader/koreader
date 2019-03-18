@@ -31,21 +31,6 @@ function ReaderToc:init()
                 doc = "show Table of Content menu" },
         }
     end
-    if Device:isTouchDevice() then
-        self.ges_events = {
-            ShowToc = {
-                GestureRange:new{
-                    ges = "two_finger_swipe",
-                    range = Geom:new{
-                        x = 0, y = 0,
-                        w = Screen:getWidth(),
-                        h = Screen:getHeight(),
-                    },
-                    direction = "east"
-                }
-            },
-        }
-    end
     self:resetToc()
     self.ui.menu:registerToMainMenu(self)
 end

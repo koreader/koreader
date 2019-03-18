@@ -29,21 +29,6 @@ function ReaderBookmark:init()
                 doc = "show bookmarks" },
         }
     end
-    if Device:isTouchDevice() then
-        self.ges_events = {
-            ShowBookmark = {
-                GestureRange:new{
-                    ges = "two_finger_swipe",
-                    range = Geom:new{
-                        x = 0, y = 0,
-                        w = Screen:getWidth(),
-                        h = Screen:getHeight(),
-                    },
-                    direction = "west"
-                }
-            },
-        }
-    end
     self.ui.menu:registerToMainMenu(self)
 end
 
