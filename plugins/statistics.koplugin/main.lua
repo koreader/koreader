@@ -269,6 +269,7 @@ function ReaderStatistics:partialMd5(file)
     if file == nil then
         return nil
     end
+    local bit = require("bit")
     local md5 = require("ffi/MD5")
     local lshift = bit.lshift
     local step, size = 1024, 1024

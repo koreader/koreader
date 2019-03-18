@@ -134,6 +134,7 @@ function Document:fastDigest(docsettings)
         local result = docsettings:readSetting("partial_md5_checksum")
         if not result then
             logger.dbg("computing and storing partial_md5_checksum")
+            local bit = require("bit")
             local md5 = require("ffi/MD5")
             local lshift = bit.lshift
             local step, size = 1024, 1024

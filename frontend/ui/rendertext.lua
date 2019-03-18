@@ -2,6 +2,7 @@
 Text rendering module.
 ]]
 
+local bit = require("bit")
 local Font = require("ui/font")
 local Cache = require("cache")
 local CacheItem = require("cacheitem")
