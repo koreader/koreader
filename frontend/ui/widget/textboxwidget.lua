@@ -431,7 +431,8 @@ function TextBoxWidget:_renderImage(start_row_idx)
         -- With alpha-blending if the image contains an alpha channel
         local bbtype = image.bb:getType()
         if bbtype == Blitbuffer.TYPE_BB8A or bbtype == Blitbuffer.TYPE_BBRGB32 then
-            self._bb:alphablitFrom(image.bb, self.width - image.width, 0)
+            -- NOTE: MuPDF feeds us premultiplied alpha (and we don't care w/ GifLib, as alpha is all or nothing).
+            self._bb:pmulalphablitFrom(image.bb, self.width - image.width, 0)
         else
             self._bb:blitFrom(image.bb, self.width - image.width, 0)
         end
