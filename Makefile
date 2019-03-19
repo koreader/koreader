@@ -501,4 +501,4 @@ static-check:
 doc:
 	make -C doc
 
-.PHONY: test doc
+.PHONY: all clean doc test update
