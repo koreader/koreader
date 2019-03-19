@@ -21,6 +21,7 @@ local Device = Generic:new{
 
 local AppImage = Device:new{
     model = "AppImage",
+    hasMultitouch = no,
     hasOTAUpdates = yes,
 }
 
@@ -29,7 +30,6 @@ local Emulator = Device:new{
     isEmulator = yes,
     hasEinkScreen = yes,
     hasFrontlight = yes,
-    hasMultitouch = yes,
     hasWifiToggle = yes,
     hasWifiManager = yes,
 }

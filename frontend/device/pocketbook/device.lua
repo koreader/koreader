@@ -178,7 +178,6 @@ local PocketBook840 = PocketBook:new{
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = yes,
-    hasMultitouch = yes,
     display_dpi = 250,
     emu_events_dev = "/var/dev/shm/emu_events",
 }
@@ -189,7 +188,6 @@ local PocketBook627 = PocketBook:new{
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = yes,
-    hasMultitouch = yes,
     display_dpi = 212,
     emu_events_dev = "/var/dev/shm/emu_events",
 }
@@ -200,7 +198,6 @@ local PocketBook631 = PocketBook:new{
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = yes,
-    hasMultitouch = yes,
     display_dpi = 300,
     emu_events_dev = "/dev/shm/emu_events",
 }
@@ -211,7 +208,6 @@ local PocketBook632 = PocketBook:new{
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = yes,
-    hasMultitouch = yes,
     display_dpi = 300,
     isAlwaysPortrait = yes,
     emu_events_dev = "/dev/shm/emu_events",
@@ -223,7 +219,6 @@ local PocketBook626 = PocketBook:new{
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = yes,
-    hasMultitouch = yes,
     display_dpi = 212,
     emu_events_dev = "/var/dev/shm/emu_events",
 }
@@ -234,7 +229,6 @@ local PocketBook624 = PocketBook:new{
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = no,
-    hasMultitouch = yes,
     display_dpi = 166,
     emu_events_dev = "/var/dev/shm/emu_events",
 }
@@ -245,7 +239,6 @@ local PocketBook625 = PocketBook:new{
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = no,
-    hasMultitouch = yes,
     display_dpi = 166,
     emu_events_dev = "/var/dev/shm/emu_events",
 }
@@ -256,7 +249,6 @@ local PocketBook623 = PocketBook:new{
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = yes,
-    hasMultitouch = yes,
     display_dpi = 212,
     emu_events_dev = "/var/dev/shm/emu_events",
 }
@@ -267,7 +259,6 @@ local PocketBook740 = PocketBook:new{
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = yes,
-    hasMultitouch = yes,
     isAlwaysPortrait = yes,
     display_dpi = 300,
     emu_events_dev = "/var/dev/shm/emu_events",
@@ -279,7 +270,6 @@ local PocketBook630 = PocketBook:new{
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = yes,
-    hasMultitouch = yes,
     display_dpi = 212,
     emu_events_dev = "/dev/shm/emu_events",
 }
@@ -290,7 +280,6 @@ local PocketBook641 = PocketBook:new{
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = yes,
-    hasMultitouch = yes,
     display_dpi = 212,
     emu_events_dev = "/var/dev/shm/emu_events",
 }
@@ -301,7 +290,6 @@ local PocketBookColorLux = PocketBook:new{
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = yes,
-    hasMultitouch = yes,
     hasColorScreen = yes,
     has3BytesWideFrameBuffer = yes,
     isAlwaysPortrait = no,

@@ -23,7 +23,6 @@ local Kobo = Generic:new{
     model = "Kobo",
     isKobo = yes,
     isTouchDevice = yes, -- all of them are
-    hasMultitouch = yes,
     hasOTAUpdates = yes,
     hasWifiManager = yes,
 
