@@ -30,6 +30,7 @@ Example:
 
 ]]
 
+local bit = require("bit")
 local Blitbuffer = require("ffi/blitbuffer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
@@ -56,6 +57,8 @@ local Widget = require("ui/widget/widget")
 local _ = require("gettext")
 local T = require("ffi/util").template
 local Screen = Device.screen
+
+local band = bit.band
 
 local function obtainIP()
     -- TODO: check for DHCP result
@@ -386,7 +389,7 @@ function NetworkSetting:init()
                function(l, r) return l.signal_quality > r.signal_quality end)
     for idx, network in ipairs(self.network_list) do
         local bg
-        if idx % 2 == 0 then
+        if band(idx, 1) == 0 then
             bg = gray_bg
         else
             bg = Blitbuffer.COLOR_WHITE

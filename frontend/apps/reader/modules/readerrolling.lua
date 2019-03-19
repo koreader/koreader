@@ -1,3 +1,4 @@
+local bit = require("bit")
 local Blitbuffer = require("ffi/blitbuffer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
@@ -10,6 +11,8 @@ local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
 local T = require("ffi/util").template
+
+local band = bit.band
 
 --[[
     Rolling is just like paging in page-based documents except that
@@ -789,12 +792,12 @@ function ReaderRolling:_gotoPage(new_page, free_first_page)
     if self.ui.document:getVisiblePageCount() > 1 and not free_first_page then
         -- Ensure we always have the first of the two pages odd
         if self.odd_or_even_first_page == 1 then -- odd
-            if new_page % 2 == 0 then
+            if band(new_page, 1) == 0 then
                 -- requested page will be shown as the right page
                 new_page = new_page - 1
             end
         elseif self.odd_or_even_first_page == 2 then -- (or 'even' if requested)
-            if new_page % 2 == 1 then
+            if band(new_page, 1) == 1 then
                 -- requested page will be shown as the right page
                 new_page = new_page - 1
             end

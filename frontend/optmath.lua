@@ -2,7 +2,11 @@
 Simple math helper functions
 ]]
 
+local bit = require("bit")
+
 local Math = {}
+
+local band = bit.band
 
 function Math.roundAwayFromZero(num)
     if num > 0 then
@@ -17,7 +21,7 @@ function Math.round(num)
 end
 
 function Math.oddEven(number)
-    if number % 2 == 1 then
+    if band(number, 1) == 1 then
         return "odd"
     else
         return "even"
