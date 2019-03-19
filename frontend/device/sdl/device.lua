@@ -21,6 +21,7 @@ local Device = Generic:new{
 
 local AppImage = Device:new{
     model = "AppImage",
+    hasMultitouch = no,
     hasOTAUpdates = yes,
 }
 

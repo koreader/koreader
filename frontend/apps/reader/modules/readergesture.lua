@@ -171,6 +171,9 @@ function ReaderGesture:init()
         multiswipe_northwest_southwest_northwest = Device:hasWifiToggle() and "toggle_wifi" or "nothing",
         multiswipe_southeast_southwest_northwest = Device:hasWifiToggle() and "wifi_off" or "nothing",
         multiswipe_southeast_northeast_northwest = Device:hasWifiToggle() and "wifi_on" or "nothing",
+
+        two_finger_swipe_west = self.ges_mode == "gesture_reader" and "bookmarks" or "folder_shortcuts",
+        two_finger_swipe_east = self.ges_mode == "gesture_reader" and "toc" or "nothing",
     }
     local gm = G_reader_settings:readSetting(self.ges_mode)
     if gm == nil then G_reader_settings:saveSetting(self.ges_mode, {}) end
@@ -290,6 +293,7 @@ function ReaderGesture:addToMainMenu(menu_items)
             {
                 text = _("Tap bottom right corner"),
                 sub_item_table = self:buildMenu("tap_right_bottom_corner", self.default_gesture["tap_right_bottom_corner"]),
+                separator = true,
             },
             {
                 text = _("Short diagonal swipe"),
@@ -297,6 +301,21 @@ function ReaderGesture:addToMainMenu(menu_items)
             },
         },
     }
+    if Device:hasMultitouch() then
+        table.insert(menu_items.gesture_manager.sub_item_table, {
+            text = _("Two-finger swipes"),
+            sub_item_table = {
+                {
+                    text = _("Two-finger swipe left"),
+                    sub_item_table = self:buildMenu("two_finger_swipe_west", self.default_gesture["two_finger_swipe_west"]),
+                },
+                {
+                    text = _("Two-finger swipe right"),
+                    sub_item_table = self:buildMenu("two_finger_swipe_east", self.default_gesture["two_finger_swipe_east"]),
+                },
+            },
+        })
+    end
 end
 
 function ReaderGesture:buildMenu(ges, default)
@@ -519,12 +538,15 @@ function ReaderGesture:setupGesture(ges, action)
     local zone
     local overrides
     local direction, distance
+
+    local zone_fullscreen = {
+        ratio_x = 0.0, ratio_y = 0,
+        ratio_w = 1, ratio_h = 1,
+    }
+
     if ges == "multiswipe" then
         ges_type = "multiswipe"
-        zone = {
-            ratio_x = 0.0, ratio_y = 0,
-            ratio_w = 1, ratio_h = 1,
-        }
+        zone = zone_fullscreen
         direction = {
             northeast = true, northwest = true,
             southeast = true, southwest = true,
@@ -553,6 +575,14 @@ function ReaderGesture:setupGesture(ges, action)
         else
             overrides = { 'readerfooter_tap', 'filemanager_tap' }
         end
+    elseif ges == "two_finger_swipe_west" then
+        ges_type = "two_finger_swipe"
+        zone = zone_fullscreen
+        direction = {west = true}
+    elseif ges == "two_finger_swipe_east" then
+        ges_type = "two_finger_swipe"
+        zone = zone_fullscreen
+        direction = {east = true}
     elseif ges == "short_diagonal_swipe" then
         ges_type = "swipe"
         zone = {

@@ -52,12 +52,14 @@ local KoboTrilogy = Kobo:new{
     -- hook accordingly
     touch_probe_ev_epoch_time = true,
     hasKeys = yes,
+    hasMultitouch = no,
 }
 
 -- Kobo Mini:
 local KoboPixie = Kobo:new{
     model = "Kobo_pixie",
     display_dpi = 200,
+    hasMultitouch = no,
     -- bezel:
     viewport = Geom:new{x=0, y=2, w=596, h=794},
 }
@@ -81,6 +83,7 @@ local KoboDaylight = Kobo:new{
 local KoboDahlia = Kobo:new{
     model = "Kobo_dahlia",
     hasFrontlight = yes,
+    hasMultitouch = no,
     touch_phoenix_protocol = true,
     display_dpi = 265,
     -- the bezel covers the top 11 pixels:
@@ -91,6 +94,7 @@ local KoboDahlia = Kobo:new{
 local KoboDragon = Kobo:new{
     model = "Kobo_dragon",
     hasFrontlight = yes,
+    hasMultitouch = no,
     display_dpi = 265,
 }
 
@@ -98,6 +102,7 @@ local KoboDragon = Kobo:new{
 local KoboKraken = Kobo:new{
     model = "Kobo_kraken",
     hasFrontlight = yes,
+    hasMultitouch = no,
     display_dpi = 212,
 }
 

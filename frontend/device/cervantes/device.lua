@@ -56,21 +56,25 @@ local CervantesTouch = Cervantes:new{
     model = "CervantesTouch",
     display_dpi = 167,
     hasFrontlight = no,
+    hasMultitouch = no,
 }
 -- Cervantes TouchLight / Fnac Touch Plus
 local CervantesTouchLight = Cervantes:new{
     model = "CervantesTouchLight",
     display_dpi = 167,
+    hasMultitouch = no,
 }
 -- Cervantes 2013 / Fnac Touch Light
 local Cervantes2013 = Cervantes:new{
     model = "Cervantes2013",
     display_dpi = 212,
+    hasMultitouch = no,
 }
 -- Cervantes 3 / Fnac Touch Light 2
 local Cervantes3 = Cervantes:new{
     model = "Cervantes3",
     display_dpi = 300,
+    hasMultitouch = no,
 }
 -- Cervantes 4
 local Cervantes4 = Cervantes:new{

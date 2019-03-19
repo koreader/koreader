@@ -100,6 +100,11 @@ function Device:init()
         error("screen/framebuffer must be implemented")
     end
 
+    if self.hasMultitouch == nil then
+        -- default to assuming multitouch when dealing with a touch device
+        self.hasMultitouch = self.isTouchDevice
+    end
+
     self.screen.isColorScreen = self.hasColorScreen
     self.screen.isColorEnabled = function()
         if G_reader_settings:has("color_rendering") then
