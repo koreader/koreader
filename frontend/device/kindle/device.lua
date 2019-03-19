@@ -232,7 +232,6 @@ local KindleTouch = Kindle:new{
     model = "KindleTouch",
     isTouchDevice = yes,
     hasKeys = yes,
-    hasMultitouch = yes,
     touch_dev = "/dev/input/event3",
 }
 
@@ -240,7 +239,6 @@ local KindlePaperWhite = Kindle:new{
     model = "KindlePaperWhite",
     isTouchDevice = yes,
     hasFrontlight = yes,
-    hasMultitouch = yes,
     display_dpi = 212,
     touch_dev = "/dev/input/event0",
 }
@@ -249,7 +247,6 @@ local KindlePaperWhite2 = Kindle:new{
     model = "KindlePaperWhite2",
     isTouchDevice = yes,
     hasFrontlight = yes,
-    hasMultitouch = yes,
     display_dpi = 212,
     touch_dev = "/dev/input/event1",
 }
@@ -257,7 +254,6 @@ local KindlePaperWhite2 = Kindle:new{
 local KindleBasic = Kindle:new{
     model = "KindleBasic",
     isTouchDevice = yes,
-    hasMultitouch = yes,
     touch_dev = "/dev/input/event1",
 }
 
@@ -265,7 +261,6 @@ local KindleVoyage = Kindle:new{
     model = "KindleVoyage",
     isTouchDevice = yes,
     hasFrontlight = yes,
-    hasMultitouch = yes,
     hasKeys = yes,
     display_dpi = 300,
     touch_dev = "/dev/input/event1",
@@ -275,7 +270,6 @@ local KindlePaperWhite3 = Kindle:new{
     model = "KindlePaperWhite3",
     isTouchDevice = yes,
     hasFrontlight = yes,
-    hasMultitouch = yes,
     display_dpi = 300,
     touch_dev = "/dev/input/event1",
 }
@@ -285,7 +279,6 @@ local KindleOasis = Kindle:new{
     isTouchDevice = yes,
     hasFrontlight = yes,
     hasKeys = yes,
-    hasMultitouch = yes,
     display_dpi = 300,
     --[[
     -- NOTE: Points to event3 on WiFi devices, event4 on 3G devices...
@@ -301,7 +294,6 @@ local KindleOasis2 = Kindle:new{
     isTouchDevice = yes,
     hasFrontlight = yes,
     hasKeys = yes,
-    hasMultitouch = yes,
     display_dpi = 300,
     touch_dev = "/dev/input/by-path/platform-30a30000.i2c-event",
 }
@@ -309,7 +301,6 @@ local KindleOasis2 = Kindle:new{
 local KindleBasic2 = Kindle:new{
     model = "KindleBasic2",
     isTouchDevice = yes,
-    hasMultitouch = yes,
     touch_dev = "/dev/input/event0",
 }
 
@@ -317,7 +308,6 @@ local KindlePaperWhite4 = Kindle:new{
     model = "KindlePaperWhite4",
     isTouchDevice = yes,
     hasFrontlight = yes,
-    hasMultitouch = yes,
     display_dpi = 300,
     touch_dev = "/dev/input/event2",
 }
