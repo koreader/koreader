@@ -79,7 +79,6 @@ local action_strings = {
     folder_up = _("Folder up"),
     folder_shortcuts = _("Folder shortcuts"),
     cycle_highlight_action = _("Cycle highlight action"),
-    screenshot = _("Take screenshot"),
     wallabag_download = _("Wallabag retrieval"),
 }
 
@@ -580,6 +579,10 @@ function ReaderGesture:setupGesture(ges, action)
         ges_type = "two_finger_swipe"
         zone = zone_fullscreen
         direction = {west = true}
+    elseif ges == "two_finger_swipe_east" then
+        ges_type = "two_finger_swipe"
+        zone = zone_fullscreen
+        direction = {east = true}
     elseif ges == "short_diagonal_swipe" then
         ges_type = "swipe"
         zone = {
