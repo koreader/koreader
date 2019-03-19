@@ -174,6 +174,7 @@ local SonyPRSTUX_T2 = SonyPRSTUX:new{
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = no,
+    hasMultitouch = yes,
     display_dpi = 166,
 }
 

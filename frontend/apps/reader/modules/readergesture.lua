@@ -300,16 +300,23 @@ function ReaderGesture:addToMainMenu(menu_items)
                 text = _("Short diagonal swipe"),
                 sub_item_table = self:buildMenu("short_diagonal_swipe", self.default_gesture["short_diagonal_swipe"]),
             },
-            {
-                text = _("Two-finger swipe left"),
-                sub_item_table = self:buildMenu("two_finger_swipe_west", self.default_gesture["two_finger_swipe_west"]),
-            },
-            {
-                text = _("Two-finger swipe right"),
-                sub_item_table = self:buildMenu("two_finger_swipe_east", self.default_gesture["two_finger_swipe_east"]),
-            },
         },
     }
+    if Device:hasMultitouch() then
+        table.insert(menu_items.gesture_manager.sub_item_table, {
+            text = _("Two-finger swipes"),
+            sub_item_table = {
+                {
+                    text = _("Two-finger swipe left"),
+                    sub_item_table = self:buildMenu("two_finger_swipe_west", self.default_gesture["two_finger_swipe_west"]),
+                },
+                {
+                    text = _("Two-finger swipe right"),
+                    sub_item_table = self:buildMenu("two_finger_swipe_east", self.default_gesture["two_finger_swipe_east"]),
+                },
+            },
+        })
+    end
 end
 
 function ReaderGesture:buildMenu(ges, default)

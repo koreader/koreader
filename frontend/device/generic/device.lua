@@ -26,6 +26,7 @@ local Device = {
     hasWifiToggle = yes,
     hasWifiManager = no,
     isTouchDevice = no,
+    hasMultitouch = no,
     hasFrontlight = no,
     needsTouchScreenProbe = no,
     hasClipboard = yes, -- generic internal clipboard on all devices

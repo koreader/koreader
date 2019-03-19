@@ -26,6 +26,7 @@ local Device = Generic:new{
     firmware_rev = android.app.activity.sdkVersion,
     display_dpi = android.lib.AConfiguration_getDensity(android.app.config),
     hasClipboard = yes,
+    hasMultitouch = yes,
     hasOTAUpdates = canUpdateApk,
     --[[
     Disable jit on some modules on android to make koreader on Android more stable.
