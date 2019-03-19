@@ -172,8 +172,12 @@ function ReaderGesture:init()
         multiswipe_southeast_southwest_northwest = Device:hasWifiToggle() and "wifi_off" or "nothing",
         multiswipe_southeast_northeast_northwest = Device:hasWifiToggle() and "wifi_on" or "nothing",
 
-        two_finger_swipe_west = self.ges_mode == "gesture_reader" and "bookmarks" or "folder_shortcuts",
         two_finger_swipe_east = self.ges_mode == "gesture_reader" and "toc" or "nothing",
+        two_finger_swipe_west = self.ges_mode == "gesture_reader" and "bookmarks" or "folder_shortcuts",
+        two_finger_swipe_northeast = "nothing",
+        two_finger_swipe_northwest = "nothing",
+        two_finger_swipe_southeast = "nothing",
+        two_finger_swipe_southwest = "nothing",
     }
     local gm = G_reader_settings:readSetting(self.ges_mode)
     if gm == nil then G_reader_settings:saveSetting(self.ges_mode, {}) end
@@ -306,12 +310,28 @@ function ReaderGesture:addToMainMenu(menu_items)
             text = _("Two-finger swipes"),
             sub_item_table = {
                 {
-                    text = _("Two-finger swipe left"),
+                    text = _("Two-finger swipe ➡"),
+                    sub_item_table = self:buildMenu("two_finger_swipe_east", self.default_gesture["two_finger_swipe_east"]),
+                },
+                {
+                    text = _("Two-finger swipe ⬅"),
                     sub_item_table = self:buildMenu("two_finger_swipe_west", self.default_gesture["two_finger_swipe_west"]),
                 },
                 {
-                    text = _("Two-finger swipe right"),
-                    sub_item_table = self:buildMenu("two_finger_swipe_east", self.default_gesture["two_finger_swipe_east"]),
+                    text = _("Two-finger swipe ⬈"),
+                    sub_item_table = self:buildMenu("two_finger_swipe_northeast", self.default_gesture["two_finger_swipe_northeast"]),
+                },
+                {
+                    text = _("Two-finger swipe ⬉"),
+                    sub_item_table = self:buildMenu("two_finger_swipe_northwest", self.default_gesture["two_finger_swipe_northwest"]),
+                },
+                {
+                    text = _("Two-finger swipe ⬊"),
+                    sub_item_table = self:buildMenu("two_finger_swipe_southeast", self.default_gesture["two_finger_swipe_southeast"]),
+                },
+                {
+                    text = _("Two-finger swipe ⬋"),
+                    sub_item_table = self:buildMenu("two_finger_swipe_southwest", self.default_gesture["two_finger_swipe_southwest"]),
                 },
             },
         })
@@ -583,6 +603,22 @@ function ReaderGesture:setupGesture(ges, action)
         ges_type = "two_finger_swipe"
         zone = zone_fullscreen
         direction = {east = true}
+    elseif ges == "two_finger_swipe_northwest" then
+        ges_type = "two_finger_swipe"
+        zone = zone_fullscreen
+        direction = {northwest = true}
+    elseif ges == "two_finger_swipe_northeast" then
+        ges_type = "two_finger_swipe"
+        zone = zone_fullscreen
+        direction = {northeast = true}
+    elseif ges == "two_finger_swipe_southwest" then
+        ges_type = "two_finger_swipe"
+        zone = zone_fullscreen
+        direction = {southwest = true}
+    elseif ges == "two_finger_swipe_southeast" then
+        ges_type = "two_finger_swipe"
+        zone = zone_fullscreen
+        direction = {southeast = true}
     elseif ges == "short_diagonal_swipe" then
         ges_type = "swipe"
         zone = {
