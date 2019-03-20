@@ -1109,7 +1109,7 @@ function UIManager:suspend()
     if Device:isCervantes() or Device:isKobo() or Device:isSDL() or Device:isSonyPRSTUX() then
         self.event_handlers["Suspend"]()
     elseif Device:isKindle() then
-        self.event_handlers["IntoSS"]()
+        Device.powerd:toggleSuspend(1)
     end
 end
 

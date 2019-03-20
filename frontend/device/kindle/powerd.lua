@@ -89,4 +89,10 @@ function KindlePowerD:afterResume()
     end
 end
 
+function KindlePowerD:toggleSuspend(status)
+    if self.lipc_handle then
+        self.lipc_handle:set_int_property("com.lab126.powerd", "powerButton", status)
+    end
+end
+
 return KindlePowerD
