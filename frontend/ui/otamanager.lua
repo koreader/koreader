@@ -236,7 +236,7 @@ function OTAManager:fetchAndProcessUpdate()
                             android.notification(T(_("Downloading %1"), ota_package))
                         end
                     elseif Device:isSDL() then
-                        os.execute("xdg-open '"..link.."'")
+                        Device:openLink(link)
                     end
                 end
             })

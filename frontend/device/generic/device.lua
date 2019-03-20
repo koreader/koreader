@@ -64,6 +64,8 @@ local Device = {
 
     -- set to yes on devices that support over-the-air incremental updates.
     hasOTAUpdates = no,
+
+    openLink = no,
 }
 
 function Device:new(o)
