@@ -18,7 +18,7 @@ local Device = Generic:new{
     hasColorScreen = yes,
     hasEinkScreen = no,
     openLink = function(self, link)
-        if not link or type(link) ~= string then return end
+        if not link or type(link) ~= "string" then return end
         return os.execute("xdg-open '"..link.."'") == 0
     end,
 }
