@@ -17,6 +17,10 @@ local Device = Generic:new{
     needsScreenRefreshAfterResume = no,
     hasColorScreen = yes,
     hasEinkScreen = no,
+    openLink = function(self, link)
+        if not link or type(link) ~= "string" then return end
+        return os.execute("xdg-open '"..link.."'") == 0
+    end,
 }
 
 local AppImage = Device:new{

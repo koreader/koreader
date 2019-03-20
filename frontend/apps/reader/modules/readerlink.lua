@@ -614,6 +614,11 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
         return true
     end
 
+    -- try opening link in native browser
+    if Device:openLink(link_url) then
+        return true
+    end
+
     -- Not supported
     UIManager:show(InfoMessage:new{
         text = T(_("Invalid or external link:\n%1"), link_url),
