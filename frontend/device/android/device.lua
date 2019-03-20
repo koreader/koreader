@@ -27,6 +27,10 @@ local Device = Generic:new{
     display_dpi = android.lib.AConfiguration_getDensity(android.app.config),
     hasClipboard = yes,
     hasOTAUpdates = canUpdateApk,
+    openLink = function(self, link)
+        if not link or type(link) ~= "string" then return end
+        return android.openLink(link) == 0
+    end,
     --[[
     Disable jit on some modules on android to make koreader on Android more stable.
 
