@@ -783,11 +783,7 @@ function ReaderGesture:gestureAction(action, ges)
             })
         end
     elseif action == "suspend" then
-        if Device:isKindle() then
-            Device.powerd:toggleSuspend(1)
-        else
             UIManager:suspend()
-        end
     elseif action == "exit" then
         self.ui.menu:exitOrRestart()
     elseif action == "restart" then
