@@ -783,7 +783,7 @@ function ReaderGesture:gestureAction(action, ges)
             })
         end
     elseif action == "suspend" then
-            UIManager:suspend()
+        UIManager:suspend()
     elseif action == "exit" then
         self.ui.menu:exitOrRestart()
     elseif action == "restart" then
