@@ -166,8 +166,15 @@ ko_do_fbdepth() {
     if grep -q '\["dev_startup_no_fbdepth"\] = true' 'settings.reader.lua' 2>/dev/null; then
         # Swap back to the original bitdepth (in case this was a restart)
         if [ -n "${ORIG_FB_BPP}" ]; then
-            echo "Making sure we're using the original fb bitdepth @ ${ORIG_FB_BPP}bpp, and that rotation is set to Portrait" >>crash.log 2>&1
-            ./fbdepth -d "${ORIG_FB_BPP}" -r -1 >>crash.log 2>&1
+            # Unless we're a Forma, don't even bother to swap rotation if the fb is @ 16bpp, because RGB565 is terrible anyways,
+            # so there's no faster codepath to achieve, and running in Portrait @ 16bpp might actually be broken on some setups...
+            if [ "${ORIG_FB_BPP}" -eq "16" ] && [ "${PRODUCT}" != "frost" ] ; then
+                echo "Making sure we're using the original fb bitdepth @ ${ORIG_FB_BPP}bpp & rotation @ ${ORIG_FB_ROTA}" >>crash.log 2>&1
+                ./fbdepth -d "${ORIG_FB_BPP}" -r "${ORIG_FB_ROTA}" >>crash.log 2>&1
+            else
+                echo "Making sure we're using the original fb bitdepth @ ${ORIG_FB_BPP}bpp, and that rotation is set to Portrait" >>crash.log 2>&1
+                ./fbdepth -d "${ORIG_FB_BPP}" -r -1 >>crash.log 2>&1
+            fi
         fi
     else
         # Swap to 8bpp if things looke sane
@@ -201,22 +208,13 @@ while [ $RETURN_VALUE -eq 85 ]; do
 done
 
 # Restore original fb bitdepth if need be...
-# Since we enforce Portrait no matter what, we also have to restore the original rotation no matter what ;).
+# Since we also (almost) always enforce Portrait, we also have to restore the original rotation no matter what ;).
 if [ -n "${ORIG_FB_BPP}" ]; then
     echo "Restoring original fb bitdepth @ ${ORIG_FB_BPP}bpp & rotation @ ${ORIG_FB_ROTA}" >>crash.log 2>&1
     ./fbdepth -d "${ORIG_FB_BPP}" -r "${ORIG_FB_ROTA}" >>crash.log 2>&1
 else
     echo "Restoring original fb rotation @ ${ORIG_FB_ROTA}" >>crash.log 2>&1
     ./fbdepth -r "${ORIG_FB_ROTA}" >>crash.log 2>&1
-fi
-
-# Restore original fb rotation on the Forma, for KSM
-if [ "${PRODUCT}" = "frost" ]; then
-    # Only needed for KSM, pickel -> Nickel will restore its own rota properly
-    if [ "${FROM_NICKEL}" != "true" ]; then
-        # The Forma kernel inverts odd rotation constants, counteract that, à la Plato, because one-liner ;p.
-        echo "$(((4 - ORIG_FB_ROTA) & 3))" >/sys/class/graphics/fb0/rotate
-    fi
 fi
 
 # Restore original CPUFreq governor if need be...
