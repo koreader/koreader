@@ -135,19 +135,10 @@ if [ -z "${INTERFACE}" ]; then
 fi
 # end of value check of PLATFORM
 
-# If we're on a Forma, make sure we start in an orientation we know how to handle (i.e., Portrait, buttons on the Right)
-# Because NTX likes mounting panels in weird native rotations, this is actually FB_ROTATE_CCW (3).
-# And because shit gets even weirder, we have to echo 1 to get 3 (because the kernel inverts Landscape FB constants, and 3 ^ 2 = 1).
-if [ "${PRODUCT}" = "frost" ]; then
-    # NOTE: We enforce this *everywhere*, because KSM is currently emulating a bogus pickel rotation (UR (0), instead of CCW (3)),
-    #       and current kernels are surreptitiously broken when UR @ 8bpp (especially as far as A2 handling is concerned)...
-    ORIG_FB_ROTA="$(cat /sys/class/graphics/fb0/rotate)"
-    # Don't do anything if we're already in the right orientation.
-    if [ "${ORIG_FB_ROTA}" -ne "3" ]; then
-        echo 1 >/sys/class/graphics/fb0/rotate
-    fi
-fi
-# NOTE: We don't have to restore anything on exit, nickel's startup process will take care of everything (pickel -> nickel).
+# We'll want to ensure Portrait rotation to allow us to use faster blitting codepaths @ 8bpp,
+# so remember the current one before fbdepth does its thing.
+ORIG_FB_ROTA="$(cat /sys/class/graphics/fb0/rotate)"
+echo "Original fb rotation is set @ ${ORIG_FB_ROTA}" >>crash.log 2>&1
 
 # In the same vein, swap to 8bpp,
 # because 16bpp is the worst idea in the history of time, as RGB565 is generally a PITA without hardware blitting,
@@ -175,14 +166,14 @@ ko_do_fbdepth() {
     if grep -q '\["dev_startup_no_fbdepth"\] = true' 'settings.reader.lua' 2>/dev/null; then
         # Swap back to the original bitdepth (in case this was a restart)
         if [ -n "${ORIG_FB_BPP}" ]; then
-            echo "Making sure we're using the original fb bitdepth @ ${ORIG_FB_BPP}bpp" >>crash.log 2>&1
-            ./fbdepth -d "${ORIG_FB_BPP}" >>crash.log 2>&1
+            echo "Making sure we're using the original fb bitdepth @ ${ORIG_FB_BPP}bpp, and that rotation is set to Portrait" >>crash.log 2>&1
+            ./fbdepth -d "${ORIG_FB_BPP}" -r -1 >>crash.log 2>&1
         fi
     else
         # Swap to 8bpp if things looke sane
         if [ -n "${ORIG_FB_BPP}" ]; then
-            echo "Switching fb bitdepth to 8bpp" >>crash.log 2>&1
-            ./fbdepth -d 8 >>crash.log 2>&1
+            echo "Switching fb bitdepth to 8bpp & rotation to Portrait" >>crash.log 2>&1
+            ./fbdepth -d 8 -r -1 >>crash.log 2>&1
         fi
     fi
 }
@@ -210,9 +201,13 @@ while [ $RETURN_VALUE -eq 85 ]; do
 done
 
 # Restore original fb bitdepth if need be...
+# Since we enforce Portrait no matter what, we also have to restore the original rotation no matter what ;).
 if [ -n "${ORIG_FB_BPP}" ]; then
-    echo "Restoring original fb bitdepth @ ${ORIG_FB_BPP}bpp" >>crash.log 2>&1
-    ./fbdepth -d "${ORIG_FB_BPP}" >>crash.log 2>&1
+    echo "Restoring original fb bitdepth @ ${ORIG_FB_BPP}bpp & rotation @ ${ORIG_FB_ROTA}" >>crash.log 2>&1
+    ./fbdepth -d "${ORIG_FB_BPP}" -r "${ORIG_FB_ROTA}" >>crash.log 2>&1
+else
+    echo "Restoring original fb rotation @ ${ORIG_FB_ROTA}" >>crash.log 2>&1
+    ./fbdepth -r "${ORIG_FB_ROTA}" >>crash.log 2>&1
 fi
 
 # Restore original fb rotation on the Forma, for KSM
@@ -220,7 +215,7 @@ if [ "${PRODUCT}" = "frost" ]; then
     # Only needed for KSM, pickel -> Nickel will restore its own rota properly
     if [ "${FROM_NICKEL}" != "true" ]; then
         # The Forma kernel inverts odd rotation constants, counteract that, à la Plato, because one-liner ;p.
-        echo "$(((4 - ORIG_FB_ROTA) % 4))" >/sys/class/graphics/fb0/rotate
+        echo "$(((4 - ORIG_FB_ROTA) & 3))" >/sys/class/graphics/fb0/rotate
     fi
 fi
 
