@@ -236,6 +236,7 @@ end
 
 function ReaderPaging:onColorRenderingUpdate()
     self.ui.document:updateColorRendering()
+    UIManager:setDirty(self.view.dialog, "partial")
 end
 
 --[[
