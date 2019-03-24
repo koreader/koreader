@@ -738,6 +738,7 @@ end
 
 function ReaderRolling:onColorRenderingUpdate()
     self.ui.document:updateColorRendering()
+    UIManager:setDirty(self.view.dialog, "partial")
 end
 
 --[[
