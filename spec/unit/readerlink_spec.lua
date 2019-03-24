@@ -19,7 +19,7 @@ describe("ReaderLink module", function()
         }
         readerui.rolling:onGotoPage(5)
         readerui.link:onTap(nil, {pos = {x = 340, y = 70}})
-        assert.is.same(39, readerui.rolling.current_page)
+        assert.is.same(38, readerui.rolling.current_page)
     end)
 
     it("should jump to links in pdf page mode", function()
@@ -56,7 +56,7 @@ describe("ReaderLink module", function()
         }
         readerui.rolling:onGotoPage(5)
         readerui.link:onTap(nil, {pos = {x = 340, y = 70}})
-        assert.is.same(39, readerui.rolling.current_page)
+        assert.is.same(38, readerui.rolling.current_page)
         readerui.link:onGoBackLink()
         assert.is.same(5, readerui.rolling.current_page)
     end)
