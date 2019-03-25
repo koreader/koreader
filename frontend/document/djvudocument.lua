@@ -9,7 +9,7 @@ local DjvuDocument = Document:new{
     djvulibre_cache_size = nil,
     dc_null = DrawContext.new(),
     koptinterface = nil,
-    color_bb_type = Blitbuffer.TYPE_BBRGB32,
+    color_bb_type = Blitbuffer.TYPE_BBRGB24,
     provider = "djvulibre",
     provider_name = "DjVu Libre",
 }
