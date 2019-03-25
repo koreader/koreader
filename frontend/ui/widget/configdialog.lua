@@ -356,7 +356,7 @@ function ConfigOption:init()
                 end
                 local default_option_name = self.config.config_options.prefix.."_"..self.options[c].name
                 local default_value = G_reader_settings:readSetting(default_option_name)
-                if default_value then
+                if default_value and self.options[c].values then
                     local val = default_value
                     local min_diff
                     if type(val) == "table" then
