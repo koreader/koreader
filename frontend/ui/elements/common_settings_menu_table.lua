@@ -106,6 +106,38 @@ if Device:setDateTime() then
     }
 end
 
+if Device:isCervantes() or Device:isKobo() or Device:isSDL() or Device:isSonyPRSTUX() then
+    common_settings.autosuspend = {
+        text = _("Autosuspend timeout"),
+        enabled_func = function()
+            -- NOTE: Pilfered from frontend/pluginloader.lua
+            local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
+            return plugins_disabled["autosuspend"] ~= true
+        end,
+        callback = function()
+            local SpinWidget = require("ui/widget/spinwidget")
+            local curr_items = G_reader_settings:readSetting("auto_suspend_timeout_seconds") or 60*60
+            local autosuspend_spin = SpinWidget:new {
+                width = Screen:getWidth() * 0.6,
+                value = curr_items / 60,
+                value_min = 5,
+                value_max = 240,
+                value_hold_step = 15,
+                ok_text = _("Set timeout"),
+                title_text = _("Timeout in minutes"),
+                callback = function(autosuspend_spin)
+                    G_reader_settings:saveSetting("auto_suspend_timeout_seconds", autosuspend_spin.value * 60)
+                    -- NOTE: Will only take effect after a restart, as we don't have a method to set this live...
+                    UIManager:show(InfoMessage:new{
+                        text = _("This will take effect on next restart."),
+                    })
+                end
+            }
+            UIManager:show(autosuspend_spin)
+        end
+    }
+end
+
 common_settings.night_mode = {
     text = _("Night mode"),
     checked_func = function() return G_reader_settings:readSetting("night_mode") end,
