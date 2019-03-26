@@ -39,6 +39,7 @@ local order = {
     device = {
         "time",
         "battery",
+        "autosuspend",
         "mass_storage_settings",
     },
     navigation = {
