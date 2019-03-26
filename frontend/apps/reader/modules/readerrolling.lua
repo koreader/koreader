@@ -688,6 +688,8 @@ function ReaderRolling:onChangeViewMode()
     self.ui:handleEvent(Event:new("UpdateToc"))
     if self.xpointer then
         self:_gotoXPointer(self.xpointer)
+        -- Ensure a whole screen refresh is always enqueued
+        UIManager:setDirty(self.view.dialog, "partial")
     else
         table.insert(self.ui.postInitCallback, function()
             self:_gotoXPointer(self.xpointer)
