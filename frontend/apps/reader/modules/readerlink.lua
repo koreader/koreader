@@ -1114,7 +1114,9 @@ function ReaderLink:showAsFootnotePopup(link, neglect_current_location)
             if not self:onTap(arg, ges) then
                 -- If we did tap on another link, onTap has already cleared our
                 -- highlight. If not, call close_callback to unhighlight it.
-                close_callback(footnote_height)
+                if close_callback then -- not set if xpointer not coherent
+                    close_callback(footnote_height)
+                end
             end
         end,
         dialog = self.dialog,
