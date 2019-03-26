@@ -138,6 +138,18 @@ if Device:isCervantes() or Device:isKobo() or Device:isSDL() or Device:isSonyPRS
     }
 end
 
+if Device:isKobo() then
+    common_settings.sleepcover = {
+        text = _("Ignore sleepcover events"),
+        checked_func = function()
+            return G_reader_settings:isTrue("ignore_power_sleepcover")
+        end,
+        callback = function()
+            G_reader_settings:flipNilOrFalse("ignore_power_sleepcover")
+        end
+    }
+end
+
 common_settings.night_mode = {
     text = _("Night mode"),
     checked_func = function() return G_reader_settings:readSetting("night_mode") end,
