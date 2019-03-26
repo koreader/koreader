@@ -91,14 +91,22 @@ function UIManager:init()
     if Device:isKobo() then
         -- We do not want auto suspend procedure to waste battery during
         -- suspend. So let's unschedule it when suspending, and restart it after
-        -- resume.
+        -- resume. Done via the plugin's onSuspend/onResume handlers.
         self.event_handlers["Suspend"] = function()
+            -- Ignore the accelerometer (if that's not already the case) while we're alseep
+            if G_reader_settings:nilOrFalse("input_ignore_gsensor") then
+                Device:toggleGSensor()
+            end
             self:_beforeSuspend()
             Device:onPowerEvent("Suspend")
         end
         self.event_handlers["Resume"] = function()
             Device:onPowerEvent("Resume")
             self:_afterResume()
+            -- Stop ignoring the accelerometer (unless requested) when we wakeup
+            if G_reader_settings:nilOrFalse("input_ignore_gsensor") then
+                Device:toggleGSensor()
+            end
         end
         self.event_handlers["PowerPress"] = function()
             UIManager:scheduleIn(2, self.poweroff_action)
