@@ -207,7 +207,7 @@ end
     UpdatePos event is used to tell ReaderRolling to update pos.
 --]]
 function ReaderFont:onChangeSize(direction, font_delta)
-    local delta = direction == "decrease" and -1 or 1
+    local delta = direction == "decrease" and -0.5 or 0.5
     if font_delta then
         self.font_size = self.font_size + font_delta * delta
     else
