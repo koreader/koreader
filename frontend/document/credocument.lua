@@ -360,7 +360,7 @@ function CreDocument:drawCurrentView(target, x, y, rect, pos)
     if not self.buffer then
         -- Note about color rendering:
         -- We use TYPE_BBRGB32 (and LVColorDrawBuf drawBuf(..., 32) in cre.cpp),
-        -- to match thecreen's BB type, allowing us to take shortcuts when blitting.
+        -- to match the screen's BB type, allowing us to take shortcuts when blitting.
         self.buffer = Blitbuffer.new(rect.w, rect.h, self.render_color and Blitbuffer.TYPE_BBRGB32 or nil)
     end
     -- TODO: self.buffer could be re-used when no page/layout/highlights
