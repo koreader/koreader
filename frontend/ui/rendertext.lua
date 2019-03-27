@@ -157,7 +157,7 @@ end
 function RenderText:sizeUtf8Text(x, width, face, text, kerning, bold)
     if not text then
         logger.warn("sizeUtf8Text called without text");
-        return
+        return { x = 0, y_top = 0, y_bottom = 0 }
     end
 
     -- may still need more adaptive pen placement when kerning,
