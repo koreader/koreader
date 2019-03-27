@@ -2,12 +2,17 @@
 Text rendering module.
 ]]
 
+local bit = require("bit")
 local Font = require("ui/font")
 local Cache = require("cache")
 local CacheItem = require("cacheitem")
 local BlitBuffer = require("ffi/blitbuffer")
 local Device = require("device")
 local logger = require("logger")
+
+local band = bit.band
+local bor = bit.bor
+local lshift = bit.lshift
 
 if Device.should_restrict_JIT then
     require("jit").off(true, true)
@@ -31,23 +36,23 @@ local function utf8Chars(input_text)
     local function read_next_glyph(input, pos)
         if string.len(input) < pos then return nil end
         local value = string.byte(input, pos)
-        if bit.band(value, 0x80) == 0 then
+        if band(value, 0x80) == 0 then
             -- TODO: check valid ranges
             return pos+1, value, string.sub(input, pos, pos)
-        elseif bit.band(value, 0xC0) == 0x80 -- invalid, continuation
-        or bit.band(value, 0xF8) == 0xF8 -- 5-or-more byte sequence, illegal due to RFC3629
+        elseif band(value, 0xC0) == 0x80 -- invalid, continuation
+        or band(value, 0xF8) == 0xF8 -- 5-or-more byte sequence, illegal due to RFC3629
         then
             return pos+1, 0xFFFD, "\xFF\xFD"
         else
             local glyph, bytes_left
-            if bit.band(value, 0xE0) == 0xC0 then
-                glyph = bit.band(value, 0x1F)
+            if band(value, 0xE0) == 0xC0 then
+                glyph = band(value, 0x1F)
                 bytes_left = 1
-            elseif bit.band(value, 0xF0) == 0xE0 then
-                glyph = bit.band(value, 0x0F)
+            elseif band(value, 0xF0) == 0xE0 then
+                glyph = band(value, 0x0F)
                 bytes_left = 2
-            elseif bit.band(value, 0xF8) == 0xF0 then
-                glyph = bit.band(value, 0x07)
+            elseif band(value, 0xF8) == 0xF0 then
+                glyph = band(value, 0x07)
                 bytes_left = 3
             else
                 return pos+1, 0xFFFD, "\xFF\xFD"
@@ -57,8 +62,8 @@ local function utf8Chars(input_text)
             end
             for i = pos+1, pos + bytes_left do
                 value = string.byte(input, i)
-                if bit.band(value, 0xC0) == 0x80 then
-                    glyph = bit.bor(bit.lshift(glyph, 6), bit.band(value, 0x3F))
+                if band(value, 0xC0) == 0x80 then
+                    glyph = bor(lshift(glyph, 6), band(value, 0x3F))
                 else
                     -- invalid UTF8 continuation - don't be greedy, just skip
                     -- the initial char of the sequence.

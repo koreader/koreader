@@ -359,18 +359,20 @@ function CreDocument:drawCurrentView(target, x, y, rect, pos)
     end
     if not self.buffer then
         -- Note about color rendering:
-        -- If we use TYPE_BBRGB32 (and LVColorDrawBuf drawBuf(..., 32) in cre.cpp),
-        -- we get inverted Red and Blue in the blitbuffer (could be that
-        -- crengine/src/lvdrawbuf.cpp treats our 32bits not as RGBA).
-        -- But it is all fine if we use TYPE_BBRGB16.
-        self.buffer = Blitbuffer.new(rect.w, rect.h, self.render_color and Blitbuffer.TYPE_BBRGB16 or nil)
+        -- We use TYPE_BBRGB32 (and LVColorDrawBuf drawBuf(..., 32) in cre.cpp),
+        -- to match the screen's BB type, allowing us to take shortcuts when blitting.
+        self.buffer = Blitbuffer.new(rect.w, rect.h, self.render_color and Blitbuffer.TYPE_BBRGB32 or nil)
     end
     -- TODO: self.buffer could be re-used when no page/layout/highlights
     -- change has been made, to avoid having crengine redraw the exact
     -- same buffer.
     -- And it could only change when some other methods from here are called
+    --local start_clock = os.clock()
     self._drawn_images_count, self._drawn_images_surface_ratio = self._document:drawCurrentPage(self.buffer, self.render_color)
+    --print(string.format("CreDocument:drawCurrentView: Rendering took %9.3f ms", (os.clock() - start_clock) * 1000))
+    --start_clock = os.clock()
     target:blitFrom(self.buffer, x, y, 0, 0, rect.w, rect.h)
+    --print(string.format("CreDocument:drawCurrentView: Blitting took  %9.3f ms", (os.clock() - start_clock) * 1000))
 end
 
 function CreDocument:drawCurrentViewByPos(target, x, y, rect, pos)
