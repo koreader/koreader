@@ -153,8 +153,6 @@ local KoboStar = Kobo:new{
     touch_probe_ev_epoch_time = true,
     touch_phoenix_protocol = true,
     display_dpi = 212,
-    -- the bezel covers 1-2 pixels on each side:
-    viewport = Geom:new{x=1, y=0, w=756, h=1024},
 }
 
 -- Kobo Aura second edition, Rev 2:
@@ -165,8 +163,6 @@ local KoboStarRev2 = Kobo:new{
     touch_probe_ev_epoch_time = true,
     touch_phoenix_protocol = true,
     display_dpi = 212,
-    -- the bezel covers 1-2 pixels on each side:
-    viewport = Geom:new{x=1, y=0, w=756, h=1024},
 }
 
 -- Kobo Glo HD:
