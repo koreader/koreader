@@ -168,7 +168,7 @@ ko_do_fbdepth() {
         if [ -n "${ORIG_FB_BPP}" ]; then
             # Unless we're a Forma, don't even bother to swap rotation if the fb is @ 16bpp, because RGB565 is terrible anyways,
             # so there's no faster codepath to achieve, and running in Portrait @ 16bpp might actually be broken on some setups...
-            if [ "${ORIG_FB_BPP}" -eq "16" ] && [ "${PRODUCT}" != "frost" ] ; then
+            if [ "${ORIG_FB_BPP}" -eq "16" ] && [ "${PRODUCT}" != "frost" ]; then
                 echo "Making sure we're using the original fb bitdepth @ ${ORIG_FB_BPP}bpp & rotation @ ${ORIG_FB_ROTA}" >>crash.log 2>&1
                 ./fbdepth -d "${ORIG_FB_BPP}" -r "${ORIG_FB_ROTA}" >>crash.log 2>&1
             else
