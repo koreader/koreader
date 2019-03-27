@@ -124,8 +124,6 @@ local KoboSnow = Kobo:new{
     touch_mirrored_x = false,
     touch_probe_ev_epoch_time = true,
     display_dpi = 265,
-    -- the bezel covers the top 11 pixels:
-    viewport = Geom:new{x=0, y=11, w=1080, h=1429},
     hasNaturalLight = yes,
     frontlight_settings = {
         frontlight_white = "/sys/class/backlight/lm3630a_ledb",
@@ -141,8 +139,6 @@ local KoboSnowRev2 = Kobo:new{
     hasFrontlight = yes,
     touch_snow_protocol = true,
     display_dpi = 265,
-    -- the bezel covers the top 11 pixels:
-    viewport = Geom:new{x=0, y=11, w=1080, h=1429},
     hasNaturalLight = yes,
     frontlight_settings = {
         frontlight_white = "/sys/class/backlight/lm3630a_ledb",
