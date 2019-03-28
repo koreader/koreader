@@ -3,11 +3,8 @@ A.dl.library_path = A.dl.library_path .. ":" .. A.dir .. "/libs"
 A.log_name = 'KOReader'
 
 local ffi = require("ffi")
+local dummy = require("ffi/posix_h")
 local C = ffi.C
-ffi.cdef[[
-    char *getenv(const char *name);
-    int putenv(const char *envvar);
-]]
 
 -- check uri of the intent that starts this application
 local file = A.getIntent()

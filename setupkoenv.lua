@@ -8,13 +8,10 @@ package.cpath =
 
 -- set search path for 'ffi.load()'
 local ffi = require("ffi")
-ffi.cdef[[
-    char *getenv(const char *name);
-    int putenv(const char *envvar);
-    int _putenv(const char *envvar);
-]]
+local dummy = require("ffi/posix_h")
+local C = ffi.C
 if ffi.os == "Windows" then
-    ffi.C._putenv("PATH=libs;common;")
+    C._putenv("PATH=libs;common;")
 end
 local ffi_load = ffi.load
 -- patch ffi.load for thirdparty luajit libraries
