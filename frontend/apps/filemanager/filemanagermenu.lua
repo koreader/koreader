@@ -265,7 +265,7 @@ function FileManagerMenu:setUpdateItemTable()
     end
     if not Device.should_restrict_JIT then
         table.insert(self.menu_items.developer_options.sub_item_table, {
-            text = _("Disable use of the C blitter"),
+            text = _("Disable C blitter"),
             enabled_func = function()
                 local lfs = require("libs/libkoreader-lfs")
                 return lfs.attributes("libs/libblitbuffer.so", "mode") == "file"
