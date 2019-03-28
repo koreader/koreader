@@ -263,6 +263,21 @@ function FileManagerMenu:setUpdateItemTable()
             end,
         })
     end
+    if not Device.should_restrict_JIT then
+        table.insert(self.menu_items.developer_options.sub_item_table, {
+            text = _("Disable use of the C blitter"),
+            enabled_func = function()
+                local lfs = require("libs/libkoreader-lfs")
+                return lfs.attributes("libs/libblitbuffer.so", "mode") == "file"
+            end,
+            checked_func = function()
+                return G_reader_settings:isTrue("dev_no_c_blitter")
+            end,
+            callback = function()
+                G_reader_settings:flipNilOrFalse("dev_no_c_blitter")
+            end,
+        })
+    end
     self.menu_items.cloud_storage = {
         text = _("Cloud storage"),
         callback = function()
