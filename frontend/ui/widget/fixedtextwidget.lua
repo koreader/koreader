@@ -10,7 +10,7 @@ local FixedTextWidget = TextWidget:new{}
 
 function FixedTextWidget:getSize()
     local tsize = RenderText:sizeUtf8Text(0, Screen:getWidth(), self.face, self.text, true, self.bold)
-    if not tsize then
+    if tsize.x == 0 then
         return Geom:new{}
     end
     self._length = tsize.x
