@@ -560,16 +560,19 @@ end
 
 -- only call this function after document is fully loaded
 function ReaderFooter:_updateFooterText(force_repaint)
-    self.footer_text:setText(self:genFooterText())
+    local text = self:genFooterText()
+    if text then
+        self.footer_text:setText(self:genFooterText())
+    end
     if self.settings.disable_progress_bar then
-        if self.has_no_mode then
+        if self.has_no_mode or not text then
             self.text_width = 0
         else
             self.text_width = self.footer_text:getSize().w
         end
         self.progress_bar.width = 0
     else
-        if self.has_no_mode then
+        if self.has_no_mode or not text then
             self.text_width = 0
         else
             self.text_width = self.footer_text:getSize().w + self.text_left_margin
