@@ -640,7 +640,16 @@ function ReaderFooter:applyFooterMode(mode)
     -- 10 for wifi status
     if mode ~= nil then self.mode = mode end
     self.view.footer_visible = (self.mode ~= MODE.off)
-    if not self.view.footer_visible or self.settings.all_at_once then return end
+
+    -- If all-at-once is enabled, just hide, but the text will keep being processed...
+    if self.settings.all_at_once then
+        return
+    end
+    -- We're not in all-at-once mode, disable text generation entirely when we're hidden
+    if not self.view.footer_visible then
+        self.genFooterText = footerTextGeneratorMap.empty
+        return
+    end
 
     local mode_name = MODE_INDEX[self.mode]
     if not self.settings[mode_name] or self.has_no_mode then
