@@ -298,12 +298,15 @@ end
 
 function FootnoteWidget:onClose()
     UIManager:close(self)
+    if self.close_callback then
+        self.close_callback(self.height)
+    end
     return true
 end
 
 function FootnoteWidget:onTapClose(arg, ges)
     if ges.pos:notIntersectWith(self.container.dimen) then
-        self:onClose()
+        UIManager:close(self)
         -- Allow ReaderLink to check if our dismiss tap
         -- was itself on another footnote, and display
         -- it. This avoids having to tap 2 times to
@@ -327,6 +330,7 @@ function FootnoteWidget:onSwipeFollow(arg, ges)
             return self.follow_callback()
         end
     elseif ges.direction == "south" or ges.direction == "east" then
+        UIManager:close(self)
         -- We can close with swipe down. If footnote is scrollable,
         -- this event will be eaten by ScrollHtmlWidget, and it will
         -- work only when started outside the footnote.
@@ -335,7 +339,6 @@ function FootnoteWidget:onSwipeFollow(arg, ges)
         if self.close_callback then
             self.close_callback(self.height)
         end
-        self:onClose()
         return true
     elseif ges.direction == "north" then
         -- no use for now
