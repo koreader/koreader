@@ -526,6 +526,29 @@ function Wallabag:processLocalFiles( mode )
     return num_deleted
 end
 
+function Wallabag:addArticle(url)
+    logger.dbg("Wallabag: adding article ", url)
+
+    if not url or self:getBearerToken() == false then
+        return false
+    end
+
+    local body = {
+        url = url,
+    }
+
+    local body_JSON = JSON.encode(body)
+
+    local headers = {
+        ["Content-type"] = "application/json",
+        ["Accept"] = "application/json, */*",
+        ["Content-Length"] = tostring(#body_JSON),
+        ["Authorization"] = "Bearer " .. self.access_token,
+    }
+
+    self:callAPI("POST", "/api/entries.json", headers, body_JSON, "")
+end
+
 function Wallabag:deleteArticle( path )
     logger.dbg("Wallabag: deleting article ", path )
     local id = self:getArticleID( path )
