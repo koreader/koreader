@@ -260,6 +260,10 @@ function FileManagerMenu:setUpdateItemTable()
             end,
             callback = function()
                 G_reader_settings:flipNilOrFalse("dev_startup_no_fbdepth")
+                local InfoMessage = require("ui/widget/infomessage")
+                UIManager:show(InfoMessage:new{
+                    text = _("This will take effect on next restart."),
+                })
             end,
         })
     end
@@ -275,6 +279,10 @@ function FileManagerMenu:setUpdateItemTable()
             end,
             callback = function()
                 G_reader_settings:flipNilOrFalse("dev_no_c_blitter")
+                local InfoMessage = require("ui/widget/infomessage")
+                UIManager:show(InfoMessage:new{
+                    text = _("This will take effect on next restart."),
+                })
             end,
         })
     end
