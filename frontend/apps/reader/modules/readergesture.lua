@@ -310,27 +310,27 @@ function ReaderGesture:addToMainMenu(menu_items)
             text = _("Two-finger swipes"),
             sub_item_table = {
                 {
-                    text = _("Two-finger swipe ➡"),
+                    text = "➡",
                     sub_item_table = self:buildMenu("two_finger_swipe_east", self.default_gesture["two_finger_swipe_east"]),
                 },
                 {
-                    text = _("Two-finger swipe ⬅"),
+                    text = "⬅",
                     sub_item_table = self:buildMenu("two_finger_swipe_west", self.default_gesture["two_finger_swipe_west"]),
                 },
                 {
-                    text = _("Two-finger swipe ⬈"),
+                    text = "⬈",
                     sub_item_table = self:buildMenu("two_finger_swipe_northeast", self.default_gesture["two_finger_swipe_northeast"]),
                 },
                 {
-                    text = _("Two-finger swipe ⬉"),
+                    text = "⬉",
                     sub_item_table = self:buildMenu("two_finger_swipe_northwest", self.default_gesture["two_finger_swipe_northwest"]),
                 },
                 {
-                    text = _("Two-finger swipe ⬊"),
+                    text = "⬊",
                     sub_item_table = self:buildMenu("two_finger_swipe_southeast", self.default_gesture["two_finger_swipe_southeast"]),
                 },
                 {
-                    text = _("Two-finger swipe ⬋"),
+                    text = "⬋",
                     sub_item_table = self:buildMenu("two_finger_swipe_southwest", self.default_gesture["two_finger_swipe_southwest"]),
                 },
             },
