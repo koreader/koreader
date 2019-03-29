@@ -560,16 +560,19 @@ end
 
 -- only call this function after document is fully loaded
 function ReaderFooter:_updateFooterText(force_repaint)
-    self.footer_text:setText(self:genFooterText())
+    local text = self:genFooterText()
+    if text then
+        self.footer_text:setText(self:genFooterText())
+    end
     if self.settings.disable_progress_bar then
-        if self.has_no_mode then
+        if self.has_no_mode or not text then
             self.text_width = 0
         else
             self.text_width = self.footer_text:getSize().w
         end
         self.progress_bar.width = 0
     else
-        if self.has_no_mode then
+        if self.has_no_mode or not text then
             self.text_width = 0
         else
             self.text_width = self.footer_text:getSize().w + self.text_left_margin
@@ -637,7 +640,16 @@ function ReaderFooter:applyFooterMode(mode)
     -- 10 for wifi status
     if mode ~= nil then self.mode = mode end
     self.view.footer_visible = (self.mode ~= MODE.off)
-    if not self.view.footer_visible or self.settings.all_at_once then return end
+
+    -- If all-at-once is enabled, just hide, but the text will keep being processed...
+    if self.settings.all_at_once then
+        return
+    end
+    -- We're not in all-at-once mode, disable text generation entirely when we're hidden
+    if not self.view.footer_visible then
+        self.genFooterText = footerTextGeneratorMap.empty
+        return
+    end
 
     local mode_name = MODE_INDEX[self.mode]
     if not self.settings[mode_name] or self.has_no_mode then

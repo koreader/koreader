@@ -3,11 +3,8 @@ A.dl.library_path = A.dl.library_path .. ":" .. A.dir .. "/libs"
 A.log_name = 'KOReader'
 
 local ffi = require("ffi")
+local dummy = require("ffi/posix_h")
 local C = ffi.C
-ffi.cdef[[
-    char *getenv(const char *name);
-    int putenv(const char *envvar);
-]]
 
 -- check uri of the intent that starts this application
 local file = A.getIntent()
@@ -26,7 +23,7 @@ A.execute("chmod", "755", "./tar")
 A.execute("chmod", "755", "./zsync")
 
 -- set TESSDATA_PREFIX env var
-C.putenv("TESSDATA_PREFIX=/sdcard/koreader/data")
+C.setenv("TESSDATA_PREFIX", "/sdcard/koreader/data", 1)
 
 -- create fake command-line arguments
 arg = {"-d", file or "/sdcard"}

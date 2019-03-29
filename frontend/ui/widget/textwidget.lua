@@ -43,7 +43,7 @@ local TextWidget = Widget:new{
 
 function TextWidget:updateSize()
     local tsize = RenderText:sizeUtf8Text(0, self.max_width and self.max_width or Screen:getWidth(), self.face, self.text, true, self.bold)
-    if not tsize then
+    if tsize.x == 0 then
         self._length = 0
     else
         -- As text length includes last glyph pen "advance" (for positionning

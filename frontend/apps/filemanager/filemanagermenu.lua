@@ -260,6 +260,29 @@ function FileManagerMenu:setUpdateItemTable()
             end,
             callback = function()
                 G_reader_settings:flipNilOrFalse("dev_startup_no_fbdepth")
+                local InfoMessage = require("ui/widget/infomessage")
+                UIManager:show(InfoMessage:new{
+                    text = _("This will take effect on next restart."),
+                })
+            end,
+        })
+    end
+    if not Device.should_restrict_JIT then
+        table.insert(self.menu_items.developer_options.sub_item_table, {
+            text = _("Disable C blitter"),
+            enabled_func = function()
+                local lfs = require("libs/libkoreader-lfs")
+                return lfs.attributes("libs/libblitbuffer.so", "mode") == "file"
+            end,
+            checked_func = function()
+                return G_reader_settings:isTrue("dev_no_c_blitter")
+            end,
+            callback = function()
+                G_reader_settings:flipNilOrFalse("dev_no_c_blitter")
+                local InfoMessage = require("ui/widget/infomessage")
+                UIManager:show(InfoMessage:new{
+                    text = _("This will take effect on next restart."),
+                })
             end,
         })
     end

@@ -34,6 +34,24 @@ if lang_locale then
     _.changeLang(lang_locale)
 end
 
+-- Make the C blitter optional (ffi/blitbuffer.lua will check that env var)
+local ffi = require("ffi")
+local dummy = require("ffi/posix_h")
+local C = ffi.C
+if G_reader_settings:isTrue("dev_no_c_blitter") then
+    if ffi.os == "Windows" then
+        C._putenv("KO_NO_CBB=true")
+    else
+        C.setenv("KO_NO_CBB", "true", 1)
+    end
+else
+    if ffi.os == "Windows" then
+        C._putenv("KO_NO_CBB=false")
+    else
+        C.unsetenv("KO_NO_CBB")
+    end
+end
+
 local Device = require("device")
 local dpi_override = G_reader_settings:readSetting("screen_dpi")
 if dpi_override ~= nil then
