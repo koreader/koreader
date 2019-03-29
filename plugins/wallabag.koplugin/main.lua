@@ -526,15 +526,15 @@ function Wallabag:processLocalFiles( mode )
     return num_deleted
 end
 
-function Wallabag:addArticle(url)
-    logger.dbg("Wallabag: adding article ", url)
+function Wallabag:addArticle(article_url)
+    logger.dbg("Wallabag: adding article ", article_url)
 
-    if not url or self:getBearerToken() == false then
+    if not article_url or self:getBearerToken() == false then
         return false
     end
 
     local body = {
-        url = url,
+        url = article_url,
     }
 
     local body_JSON = JSON.encode(body)
