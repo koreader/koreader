@@ -365,14 +365,22 @@ function CreDocument:drawCurrentView(target, x, y, rect, pos)
     end
     -- TODO: self.buffer could be re-used when no page/layout/highlights
     -- change has been made, to avoid having crengine redraw the exact
-    -- same buffer.
-    -- And it could only change when some other methods from here are called
-    --local start_clock = os.clock()
-    self._drawn_images_count, self._drawn_images_surface_ratio = self._document:drawCurrentPage(self.buffer, self.render_color)
-    --print(string.format("CreDocument:drawCurrentView: Rendering took %9.3f ms", (os.clock() - start_clock) * 1000))
-    --start_clock = os.clock()
+    -- same buffer. And it could only change when some other methods
+    -- from here are called
+
+    -- If in night mode, ask crengine to invert all images, so they
+    -- get displayed in their original colors when the whole screen
+    -- is inverted by night mode
+    local invert_images = G_reader_settings:isTrue("night_mode")
+
+    -- local start_clock = os.clock()
+    self._drawn_images_count, self._drawn_images_surface_ratio =
+        self._document:drawCurrentPage(self.buffer, self.render_color, invert_images)
+    -- print(string.format("CreDocument:drawCurrentView: Rendering took %9.3f ms", (os.clock() - start_clock) * 1000))
+
+    -- start_clock = os.clock()
     target:blitFrom(self.buffer, x, y, 0, 0, rect.w, rect.h)
-    --print(string.format("CreDocument:drawCurrentView: Blitting took  %9.3f ms", (os.clock() - start_clock) * 1000))
+    -- print(string.format("CreDocument:drawCurrentView: Blitting took  %9.3f ms", (os.clock() - start_clock) * 1000))
 end
 
 function CreDocument:drawCurrentViewByPos(target, x, y, rect, pos)
