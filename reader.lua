@@ -42,13 +42,13 @@ if G_reader_settings:isTrue("dev_no_c_blitter") then
     if ffi.os == "Windows" then
         C._putenv("KO_NO_CBB=true")
     else
-        C.putenv("KO_NO_CBB=true")
+        C.setenv("KO_NO_CBB", "true", 1)
     end
 else
     if ffi.os == "Windows" then
         C._putenv("KO_NO_CBB=false")
     else
-        C.putenv("KO_NO_CBB=false")
+        C.unsetenv("KO_NO_CBB")
     end
 end
 

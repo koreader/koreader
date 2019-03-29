@@ -23,7 +23,7 @@ A.execute("chmod", "755", "./tar")
 A.execute("chmod", "755", "./zsync")
 
 -- set TESSDATA_PREFIX env var
-C.putenv("TESSDATA_PREFIX=/sdcard/koreader/data")
+C.setenv("TESSDATA_PREFIX", "/sdcard/koreader/data", 1)
 
 -- create fake command-line arguments
 arg = {"-d", file or "/sdcard"}
