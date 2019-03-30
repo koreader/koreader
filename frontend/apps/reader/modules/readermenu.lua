@@ -97,6 +97,7 @@ function ReaderMenu:onReaderReady()
                 ratio_x = DTAP_ZONE_MENU.x, ratio_y = DTAP_ZONE_MENU.y,
                 ratio_w = DTAP_ZONE_MENU.w, ratio_h = DTAP_ZONE_MENU.h,
             },
+            overrides = { 'tap_forward', 'tap_backward', },
             handler = function(ges) return self:onTapShowMenu(ges) end,
         },
         {
