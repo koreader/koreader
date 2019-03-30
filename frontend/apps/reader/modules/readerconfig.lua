@@ -44,7 +44,10 @@ function ReaderConfig:initGesListener()
                 ratio_x = DTAP_ZONE_CONFIG.x, ratio_y = DTAP_ZONE_CONFIG.y,
                 ratio_w = DTAP_ZONE_CONFIG.w, ratio_h = DTAP_ZONE_CONFIG.h,
             },
-            overrides = { 'tap_forward', 'tap_backward', },
+            overrides = {
+                "tap_forward",
+                "tap_backward",
+            },
             handler = function() return self:onTapShowConfigMenu() end,
         },
         {
@@ -54,7 +57,10 @@ function ReaderConfig:initGesListener()
                 ratio_x = DTAP_ZONE_CONFIG.x, ratio_y = DTAP_ZONE_CONFIG.y,
                 ratio_w = DTAP_ZONE_CONFIG.w, ratio_h = DTAP_ZONE_CONFIG.h,
             },
-            overrides = { "rolling_swipe", "paging_swipe", },
+            overrides = {
+                "rolling_swipe",
+                "paging_swipe",
+            },
             handler = function(ges) return self:onSwipeShowConfigMenu(ges) end,
         },
         {
@@ -64,7 +70,10 @@ function ReaderConfig:initGesListener()
                 ratio_x = DTAP_ZONE_CONFIG.x, ratio_y = DTAP_ZONE_CONFIG.y,
                 ratio_w = DTAP_ZONE_CONFIG.w, ratio_h = DTAP_ZONE_CONFIG.h,
             },
-            overrides = { "rolling_pan", "paging_pan", },
+            overrides = {
+                "rolling_pan",
+                "paging_pan",
+            },
             handler = function(ges) return self:onSwipeShowConfigMenu(ges) end,
         },
     })

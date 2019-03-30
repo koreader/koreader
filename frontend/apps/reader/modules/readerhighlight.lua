@@ -35,7 +35,12 @@ function ReaderHighlight:setupTouchZones()
             screen_zone = {
                 ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
             },
-            overrides = { 'tap_forward', 'tap_backward', 'readermenu_tap', 'readerconfigmenu_tap', },
+            overrides = {
+                "tap_forward",
+                "tap_backward",
+                "readermenu_tap",
+                "readerconfigmenu_tap",
+            },
             handler = function(ges) return self:onTap(nil, ges) end
         },
         {
