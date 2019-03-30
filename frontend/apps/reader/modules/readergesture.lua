@@ -305,32 +305,39 @@ function ReaderGesture:addToMainMenu(menu_items)
             },
         },
     }
+
+    local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
+    local twoFingerSwipeTextFunc = function(gesture, friendly_name)
+        local action_name = gesture_manager[gesture] ~= "nothing" and action_strings[gesture_manager[gesture]] or _("Available")
+        return T(_("%1   (%2)"), friendly_name, action_name)
+    end
+
     if Device:hasMultitouch() then
         table.insert(menu_items.gesture_manager.sub_item_table, {
             text = _("Two-finger swipes"),
             sub_item_table = {
                 {
-                    text = "➡",
+                    text_func = function() return twoFingerSwipeTextFunc("two_finger_swipe_east", "➡") end,
                     sub_item_table = self:buildMenu("two_finger_swipe_east", self.default_gesture["two_finger_swipe_east"]),
                 },
                 {
-                    text = "⬅",
+                    text_func = function() return twoFingerSwipeTextFunc("two_finger_swipe_west", "⬅") end,
                     sub_item_table = self:buildMenu("two_finger_swipe_west", self.default_gesture["two_finger_swipe_west"]),
                 },
                 {
-                    text = "⬈",
+                    text_func = function() return twoFingerSwipeTextFunc("two_finger_swipe_northeast", "⬈") end,
                     sub_item_table = self:buildMenu("two_finger_swipe_northeast", self.default_gesture["two_finger_swipe_northeast"]),
                 },
                 {
-                    text = "⬉",
+                    text_func = function() return twoFingerSwipeTextFunc("two_finger_swipe_northwest", "⬉") end,
                     sub_item_table = self:buildMenu("two_finger_swipe_northwest", self.default_gesture["two_finger_swipe_northwest"]),
                 },
                 {
-                    text = "⬊",
+                    text_func = function() return twoFingerSwipeTextFunc("two_finger_swipe_southeast", "⬊") end,
                     sub_item_table = self:buildMenu("two_finger_swipe_southeast", self.default_gesture["two_finger_swipe_southeast"]),
                 },
                 {
-                    text = "⬋",
+                    text_func = function() return twoFingerSwipeTextFunc("two_finger_swipe_southwest", "⬋") end,
                     sub_item_table = self:buildMenu("two_finger_swipe_southwest", self.default_gesture["two_finger_swipe_southwest"]),
                 },
             },
