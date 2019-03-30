@@ -252,7 +252,9 @@ function ReaderFooter:setupTouchZones()
             screen_zone = footer_screen_zone,
             handler = function(ges) return self:onTapFooter(ges) end,
             overrides = {
-                'tap_forward', 'tap_backward', 'readerconfigmenu_tap',
+                "tap_forward",
+                "tap_backward",
+                "readerconfigmenu_tap",
             },
         },
         {
@@ -260,7 +262,9 @@ function ReaderFooter:setupTouchZones()
             ges = "hold",
             screen_zone = footer_screen_zone,
             handler = function() return self:onHoldFooter() end,
-            overrides = {'readerhighlight_hold'},
+            overrides = {
+                "readerhighlight_hold",
+            },
         },
     })
 end

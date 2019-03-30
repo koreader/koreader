@@ -64,7 +64,10 @@ function KoboLight:setupTouchZones()
             ges = "swipe",
             screen_zone = swipe_zone,
             handler = function(ges) return self:onSwipe(nil, ges) end,
-            overrides = { 'paging_swipe', 'rolling_swipe', },
+            overrides = {
+                "paging_swipe",
+                "rolling_swipe",
+            },
         },
         {
             -- dummy zone to disable reader panning
@@ -72,7 +75,10 @@ function KoboLight:setupTouchZones()
             ges = "pan",
             screen_zone = swipe_zone,
             handler = function(ges) return true end,
-            overrides = { 'paging_pan', 'rolling_pan', },
+            overrides = {
+                "paging_pan",
+                "rolling_pan",
+            },
         },
         {
             -- dummy zone to disable reader panning
@@ -80,7 +86,9 @@ function KoboLight:setupTouchZones()
             ges = "pan_release",
             screen_zone = swipe_zone,
             handler = function(ges) return true end,
-            overrides = { 'paging_pan_release', },
+            overrides = {
+                "paging_pan_release",
+            },
         },
     })
     if with_natural_light then
@@ -90,7 +98,10 @@ function KoboLight:setupTouchZones()
             ges = "swipe",
             screen_zone = swipe_zone_warmth,
             handler = function(ges) return self:onSwipeWarmth(nil, ges) end,
-            overrides = { 'paging_swipe', 'rolling_swipe', },
+            overrides = {
+                "paging_swipe",
+                "rolling_swipe",
+            },
         },
         {
             -- dummy zone to disable reader panning
@@ -98,7 +109,10 @@ function KoboLight:setupTouchZones()
             ges = "pan",
             screen_zone = swipe_zone_warmth,
             handler = function(ges) return true end,
-            overrides = { 'paging_pan', 'rolling_pan', },
+            overrides = {
+                "paging_pan",
+                "rolling_pan",
+            },
         },
         {
             -- dummy zone to disable reader panning
@@ -106,7 +120,9 @@ function KoboLight:setupTouchZones()
             ges = "pan_release",
             screen_zone = swipe_zone_warmth,
             handler = function(ges) return true end,
-            overrides = { 'paging_pan_release', },
+            overrides = {
+                "paging_pan_release",
+            },
         },
         })
     end

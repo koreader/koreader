@@ -587,9 +587,13 @@ function ReaderGesture:setupGesture(ges, action)
             ratio_w = 0.1, ratio_h = 0.1,
         }
         if self.is_docless then
-            overrides = { 'filemanager_tap' }
+            overrides = {
+                "filemanager_tap",
+            }
         else
-            overrides = { 'readerfooter_tap' }
+            overrides = {
+                "readerfooter_tap",
+            }
         end
     elseif ges == "tap_left_bottom_corner" then
         ges_type = "tap"
@@ -598,9 +602,13 @@ function ReaderGesture:setupGesture(ges, action)
             ratio_w = 0.1, ratio_h = 0.1,
         }
         if self.is_docless then
-            overrides = { 'filemanager_tap' }
+            overrides = {
+                "filemanager_tap",
+            }
         else
-            overrides = { 'readerfooter_tap' }
+            overrides = {
+                "readerfooter_tap",
+            }
         end
     elseif ges == "two_finger_swipe_west" then
         ges_type = "two_finger_swipe"
@@ -635,9 +643,14 @@ function ReaderGesture:setupGesture(ges, action)
         direction = {northeast = true, northwest = true, southeast = true, southwest = true}
         distance = "short"
         if self.is_docless then
-            overrides = { 'filemanager_tap' }
+            overrides = {
+                "filemanager_tap",
+            }
         else
-            overrides = { 'rolling_swipe', 'paging_swipe' }
+            overrides = {
+                "rolling_swipe",
+                "paging_swipe",
+            }
         end
 
     else return
