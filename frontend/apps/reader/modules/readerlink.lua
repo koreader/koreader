@@ -686,7 +686,7 @@ function ReaderLink:onGoToExternalLink(link_url)
                     {
                         text = _("Add to Wallabag"),
                         callback = function()
-                            self.ui.wallabag:addArticle(link_url)
+                            self.ui:handleEvent(Event:new("AddWallabagArticle", link_url))
                             UIManager:close(choose_action)
                         end,
                     },
@@ -716,7 +716,8 @@ function ReaderLink:onGoToExternalLink(link_url)
 
             UIManager:show(choose_action)
         elseif external_link_action == "add_to_wallabag" then
-            self.ui.wallabag:addArticle(link_url)
+
+            self.ui:handleEvent(Event:new("AddWallabagArticle", link_url))
         elseif external_link_action == "open_in_browser" then
             Device:openLink(link_url)
         end
