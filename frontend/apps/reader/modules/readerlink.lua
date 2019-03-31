@@ -629,9 +629,9 @@ function ReaderLink:onGoToExternalLink(link_url)
         end
         return true
     elseif self.ui.wallabag then
-        local settings = G_reader_settings:readSetting("external_link_action")
+        local external_link_action = G_reader_external_link_action:readSetting("external_link_action")
         local choose_action
-        if settings == "pop-up" or settings == nil then
+        if external_link_action == "pop-up" or external_link_action == nil then
             local buttons = {
                 {
                     {
@@ -650,7 +650,7 @@ function ReaderLink:onGoToExternalLink(link_url)
 
                 },
             }
-            if Device:openLink() == nil then
+            if Device:openLink() ~= false then
                 table.insert(buttons, {
                     {
                         text = "–",
@@ -667,14 +667,14 @@ function ReaderLink:onGoToExternalLink(link_url)
             end
 
             choose_action = ButtonDialogTitle:new{
-                title = T(_("External link:\n\n'%1'"), link_url),
+                title = T(_("External link:\n\n%1"), link_url),
                 buttons = buttons,
             }
 
             UIManager:show(choose_action)
-        elseif settings == "add_to_wallabag" then
+        elseif external_link_action == "add_to_wallabag" then
             self.ui.wallabag:addArticle(link_url)
-        elseif settings == "open_in_browser" then
+        elseif external_link_action == "open_in_browser" then
             Device:openLink(link_url)
         end
         return true
