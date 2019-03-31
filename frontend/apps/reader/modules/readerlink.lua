@@ -128,7 +128,7 @@ function ReaderLink:addToMainMenu(menu_items)
             {
                 text = _("External link action"),
                 enabled_func = function()
-                    return self.ui.document.info.has_pages or not isTapIgnoreExternalLinksEnabled
+                    return self.ui.document.info.has_pages or not isTapIgnoreExternalLinksEnabled()
                 end,
                 sub_item_table = {
                     {
