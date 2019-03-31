@@ -629,7 +629,7 @@ function ReaderLink:onGoToExternalLink(link_url)
         end
         return true
     elseif self.ui.wallabag then
-        local external_link_action = G_reader_external_link_action:readSetting("external_link_action")
+        local external_link_action = G_reader_settings:readSetting("external_link_action")
         local choose_action
         if external_link_action == "pop-up" or external_link_action == nil then
             local buttons = {
