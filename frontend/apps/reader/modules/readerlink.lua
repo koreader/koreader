@@ -126,7 +126,50 @@ function ReaderLink:addToMainMenu(menu_items)
                 separator = true,
                 help_text = _([[Tap on links to follow them.]]),
             },
-
+            {
+                text = _("External link action"),
+                sub_item_table = {
+                    {
+                        text = _("Ask with pop-up dialog"),
+                        checked_func = function()
+                            local setting = G_reader_settings:readSetting("external_link_action")
+                            return setting == "pop-up" or setting == nil
+                        end,
+                        callback = function()
+                            G_reader_settings:saveSetting("external_link_action", "pop-up")
+                        end,
+                    },
+                    {
+                        text = _("Do nothing"),
+                        checked_func = function()
+                            return G_reader_settings:readSetting("external_link_action") == "nothing"
+                        end,
+                        callback = function()
+                            G_reader_settings:saveSetting("external_link_action", "nothing")
+                        end,
+                    },
+                    {
+                        text = _("Add to Wallabag"),
+                        checked_func = function()
+                            return G_reader_settings:readSetting("external_link_action") == "add_to_wallabag"
+                        end,
+                        enabled_func = function() return self.ui.wallabag ~= nil end,
+                        callback = function()
+                            G_reader_settings:saveSetting("external_link_action", "add_to_wallabag")
+                        end,
+                    },
+                    {
+                        text = _("Open in browser"),
+                        checked_func = function()
+                            return G_reader_settings:readSetting("external_link_action") == "open_in_browser"
+                        end,
+                        enabled_func = function() return Device:canOpenLink() end,
+                        callback = function()
+                            G_reader_settings:saveSetting("external_link_action", "open_in_browser")
+                        end,
+                    },
+                },
+            },
             {
                 text = _("Swipe to go back"),
                 checked_func = isSwipeToGoBackEnabled,
@@ -650,7 +693,7 @@ function ReaderLink:onGoToExternalLink(link_url)
 
                 },
             }
-            if Device:openLink() ~= false then
+            if Device:canOpenLink() then
                 table.insert(buttons, {
                     {
                         text = "–",

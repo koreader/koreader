@@ -27,6 +27,7 @@ local Device = Generic:new{
     display_dpi = android.lib.AConfiguration_getDensity(android.app.config),
     hasClipboard = yes,
     hasOTAUpdates = canUpdateApk,
+    canOpenLink = yes,
     openLink = function(self, link)
         if not link or type(link) ~= "string" then return end
         return android.openLink(link) == 0
