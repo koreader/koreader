@@ -352,7 +352,7 @@ androidupdate: all
 	cd $(INSTALL_DIR)/koreader && 7z a -l -m0=lzma2 -mx=1 \
 		../../$(ANDROID_LAUNCHER_DIR)/assets/module/koreader-$(VERSION).7z * \
 		-x!resources/fonts -x!resources/icons/src -x!spec
-	$(MAKE) -C $(ANDROID_LAUNCHER_DIR) $(if $(KODEBUG), debug, release) ANDROID_VERSION=$(ANDROID_VERSION) ANDROID_NAME=$(ANDROID_NAME) ANDROID_FLAVOR=$(ANDROID_FLAVOR)
+	$(MAKE) -C $(ANDROID_LAUNCHER_DIR) $(if $(KODEBUG), debug, release) ANDROID_APPNAME=KOReader ANDROID_VERSION=$(ANDROID_VERSION) ANDROID_NAME=$(ANDROID_NAME) ANDROID_FLAVOR=$(ANDROID_FLAVOR)
 	cp $(ANDROID_LAUNCHER_DIR)/bin/NativeActivity.apk \
 		koreader-android-$(MACHINE)-$(VERSION).apk
 

@@ -141,8 +141,7 @@ function Device:retrieveNetworkInfo()
 end
 
 function Device:exit()
-    android.log_name = 'luajit-launcher'
-    android.LOGI("Finishing luajit launcher main activity");
+    android.LOGI("Finishing main activity");
     android.lib.ANativeActivity_finish(android.app.activity)
 end
 
