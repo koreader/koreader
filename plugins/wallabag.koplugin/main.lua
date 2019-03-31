@@ -546,7 +546,7 @@ function Wallabag:addArticle(article_url)
         ["Authorization"] = "Bearer " .. self.access_token,
     }
 
-    self:callAPI("POST", "/api/entries.json", headers, body_JSON, "")
+    return self:callAPI("POST", "/api/entries.json", headers, body_JSON, "")
 end
 
 function Wallabag:deleteArticle( path )
@@ -749,6 +749,27 @@ function Wallabag:saveWBSettings(setting)
     self.wb_settings:flush()
 end
 
+function Wallabag:onAddWallabagArticle(article_url)
+    if not NetworkMgr:isOnline() then
+        NetworkMgr:promptWifiOn()
+        return
+    end
+
+    local wallabag_result = self:addArticle(article_url)
+    if wallabag_result then
+        UIManager:show(InfoMessage:new{
+            text = T(_("Article added to Wallabag:\n%1"), article_url),
+        })
+    else
+        UIManager:show(InfoMessage:new{
+            text = T(_("Error adding link to Wallabag:\n%1"), article_url),
+        })
+    end
+
+    -- stop propagation
+    return true
+end
+
 function Wallabag:onSynchronizeWallabag()
     if not NetworkMgr:isOnline() then
         NetworkMgr:promptWifiOn()
@@ -756,6 +777,9 @@ function Wallabag:onSynchronizeWallabag()
     end
     self:synchronize()
     self:refreshCurrentDirIfNeeded()
+
+    -- stop propagation
+    return true
 end
 
 return Wallabag

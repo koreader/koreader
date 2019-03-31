@@ -2,6 +2,7 @@
 ReaderLink is an abstraction for document-specific link interfaces.
 ]]
 
+local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
@@ -122,10 +123,56 @@ function ReaderLink:addToMainMenu(menu_items)
                     G_reader_settings:saveSetting("tap_to_follow_links",
                         not isTapToFollowLinksOn())
                 end,
-                separator = true,
                 help_text = _([[Tap on links to follow them.]]),
             },
-
+            {
+                text = _("External link action"),
+                enabled_func = function()
+                    return self.ui.document.info.has_pages or not isTapIgnoreExternalLinksEnabled()
+                end,
+                sub_item_table = {
+                    {
+                        text = _("Ask with pop-up dialog"),
+                        checked_func = function()
+                            local setting = G_reader_settings:readSetting("external_link_action")
+                            return setting == "pop-up" or setting == nil
+                        end,
+                        callback = function()
+                            G_reader_settings:saveSetting("external_link_action", "pop-up")
+                        end,
+                    },
+                    {
+                        text = _("Do nothing"),
+                        checked_func = function()
+                            return G_reader_settings:readSetting("external_link_action") == "nothing"
+                        end,
+                        callback = function()
+                            G_reader_settings:saveSetting("external_link_action", "nothing")
+                        end,
+                    },
+                    {
+                        text = _("Add to Wallabag"),
+                        checked_func = function()
+                            return G_reader_settings:readSetting("external_link_action") == "add_to_wallabag"
+                        end,
+                        enabled_func = function() return self.ui.wallabag ~= nil end,
+                        callback = function()
+                            G_reader_settings:saveSetting("external_link_action", "add_to_wallabag")
+                        end,
+                    },
+                    {
+                        text = _("Open in browser"),
+                        checked_func = function()
+                            return G_reader_settings:readSetting("external_link_action") == "open_in_browser"
+                        end,
+                        enabled_func = function() return Device:canOpenLink() end,
+                        callback = function()
+                            G_reader_settings:saveSetting("external_link_action", "open_in_browser")
+                        end,
+                    },
+                },
+                separator = true,
+            },
             {
                 text = _("Swipe to go back"),
                 checked_func = isSwipeToGoBackEnabled,
@@ -181,7 +228,6 @@ If any of the other Swipe to follow link options is enabled, this will work only
     -- even if the user enabled these features for EPUB documents).
     if not self.ui.document.info.has_pages then
         -- Tap section
-        menu_items.follow_links.sub_item_table[1].separator = nil
         table.insert(menu_items.follow_links.sub_item_table, 2, {
             text = _("Allow larger tap area around links"),
             enabled_func = isTapToFollowLinksOn,
@@ -203,9 +249,8 @@ If any of the other Swipe to follow link options is enabled, this will work only
             help_text = _([[
 Ignore taps on external links. Useful with Wikipedia EPUBs to make page turning easier.
 You can still follow them from the dictionary window or the selection menu after holding on them.]]),
-            separator = true,
         })
-        table.insert(menu_items.follow_links.sub_item_table, 4, {
+        table.insert(menu_items.follow_links.sub_item_table, 5, {
             text = _("Show footnotes in popup"),
             enabled_func = function()
                 return isTapToFollowLinksOn() or isSwipeToFollowNearestLinkEnabled()
@@ -223,7 +268,7 @@ The footnote content may be empty, truncated, or include other footnotes.
 
 From the footnote popup, you can jump to the footnote location in the book by swiping to the left.]]),
         })
-        table.insert(menu_items.follow_links.sub_item_table, 5, {
+        table.insert(menu_items.follow_links.sub_item_table, 6, {
             text = _("Show more links as footnotes"),
             enabled_func = function()
                 return isFootnoteLinkInPopupEnabled() and
@@ -236,7 +281,7 @@ From the footnote popup, you can jump to the footnote location in the book by sw
             end,
             help_text = _([[Loosen footnote detection rules to show more links as footnotes.]]),
         })
-        table.insert(menu_items.follow_links.sub_item_table, 6, {
+        table.insert(menu_items.follow_links.sub_item_table, 7, {
             text = _("Set footnote popup font size"),
             enabled_func = function()
                 return isFootnoteLinkInPopupEnabled() and
@@ -517,6 +562,57 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
     end
     logger.dbg("External link:", link_url)
 
+    local is_http_link = link_url:find("^https?://") ~= nil
+    if is_http_link and self:onGoToExternalLink(link_url) then
+        return true
+    end
+
+    -- Check if it is a link to a local file
+    local linked_filename = link_url:gsub("^file:", "") -- remove local file protocol if any
+    local anchor
+    if linked_filename:find("?") then -- remove any query string (including any following anchor)
+        linked_filename, anchor = linked_filename:match("^(.-)(%?.*)$")
+    elseif linked_filename:find("#") then -- remove any anchor
+        linked_filename, anchor = linked_filename:match("^(.-)(#.*)$")
+    end
+    linked_filename  = ffiutil.joinPath(self.document_dir, linked_filename) -- get full path
+    linked_filename = ffiutil.realpath(linked_filename) -- clean full path from ./ or ../
+    if linked_filename and lfs.attributes(linked_filename, "mode") == "file" then
+        local DocumentRegistry = require("document/documentregistry")
+        local provider = DocumentRegistry:getProvider(linked_filename)
+        if provider then
+            -- Display filename with anchor or query string, so the user gets
+            -- this information and can manually go to the appropriate place
+            local display_filename = linked_filename
+            if anchor then
+                display_filename = display_filename .. anchor
+            end
+            UIManager:show(ConfirmBox:new{
+                text = T(_("Would you like to read this local document?\n\n%1\n"), display_filename),
+                ok_callback = function()
+                    UIManager:scheduleIn(0.1, function()
+                        self.ui:switchDocument(linked_filename)
+                    end)
+                end
+            })
+        else
+            UIManager:show(InfoMessage:new{
+                text = T(_("Link to unsupported local file:\n%1"), link_url),
+            })
+        end
+        return true
+    end
+
+    -- Not supported
+    UIManager:show(InfoMessage:new{
+        text = T(_("Invalid or external link:\n%1"), link_url),
+        -- no timeout to allow user to type that link in his web browser
+    })
+    -- don't propagate, user will notice and tap elsewhere if he wants to change page
+    return true
+end
+
+function ReaderLink:onGoToExternalLink(link_url)
     -- Check if it is a wikipedia link
     local wiki_lang, wiki_page = link_url:match([[https?://([^%.]+).wikipedia.org/wiki/([^/]+)]])
     if wiki_lang and wiki_page then
@@ -576,56 +672,60 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
             })
         end
         return true
-    end
+    elseif self.ui.wallabag then
+        local external_link_action = G_reader_settings:readSetting("external_link_action")
+        local choose_action
+        if external_link_action == "pop-up" or external_link_action == nil then
+            local buttons = {
+                {
+                    {
+                        text = _("Cancel"),
+                        callback = function()
+                            UIManager:close(choose_action)
+                        end,
+                    },
+                    {
+                        text = _("Add to Wallabag"),
+                        callback = function()
+                            self.ui:handleEvent(Event:new("AddWallabagArticle", link_url))
+                            UIManager:close(choose_action)
+                        end,
+                    },
 
-    -- Check if it is a link to a local file
-    local linked_filename = link_url:gsub("^file:", "") -- remove local file protocol if any
-    local anchor
-    if linked_filename:find("?") then -- remove any query string (including any following anchor)
-        linked_filename, anchor = linked_filename:match("^(.-)(%?.*)$")
-    elseif linked_filename:find("#") then -- remove any anchor
-        linked_filename, anchor = linked_filename:match("^(.-)(#.*)$")
-    end
-    linked_filename  = ffiutil.joinPath(self.document_dir, linked_filename) -- get full path
-    linked_filename = ffiutil.realpath(linked_filename) -- clean full path from ./ or ../
-    if linked_filename and lfs.attributes(linked_filename, "mode") == "file" then
-        local DocumentRegistry = require("document/documentregistry")
-        local provider = DocumentRegistry:getProvider(linked_filename)
-        if provider then
-            -- Display filename with anchor or query string, so the user gets
-            -- this information and can manually go to the appropriate place
-            local display_filename = linked_filename
-            if anchor then
-                display_filename = display_filename .. anchor
+                },
+            }
+            if Device:canOpenLink() then
+                table.insert(buttons, {
+                    {
+                        text = "–",
+                        enabled = false,
+                    },
+                    {
+                        text = _("Open in browser"),
+                        callback = function()
+                            Device:openLink(link_url)
+                            UIManager:close(choose_action)
+                        end,
+                    },
+                })
             end
-            UIManager:show(ConfirmBox:new{
-                text = T(_("Would you like to read this local document?\n\n%1\n"), display_filename),
-                ok_callback = function()
-                    UIManager:scheduleIn(0.1, function()
-                        self.ui:switchDocument(linked_filename)
-                    end)
-                end
-            })
-        else
-            UIManager:show(InfoMessage:new{
-                text = T(_("Link to unsupported local file:\n%1"), link_url),
-            })
+
+            choose_action = ButtonDialogTitle:new{
+                title = T(_("External link:\n\n%1"), link_url),
+                buttons = buttons,
+            }
+
+            UIManager:show(choose_action)
+        elseif external_link_action == "add_to_wallabag" then
+            self.ui:handleEvent(Event:new("AddWallabagArticle", link_url))
+        elseif external_link_action == "open_in_browser" then
+            Device:openLink(link_url)
         end
         return true
-    end
-
     -- try opening link in native browser
-    if Device:openLink(link_url) then
+    elseif Device:openLink(link_url) then
         return true
     end
-
-    -- Not supported
-    UIManager:show(InfoMessage:new{
-        text = T(_("Invalid or external link:\n%1"), link_url),
-        -- no timeout to allow user to type that link in his web browser
-    })
-    -- don't propagate, user will notice and tap elsewhere if he wants to change page
-    return true
 end
 
 --- Goes back to previous location.

@@ -65,6 +65,7 @@ local Device = {
     -- set to yes on devices that support over-the-air incremental updates.
     hasOTAUpdates = no,
 
+    canOpenLink = no,
     openLink = no,
 }
 
