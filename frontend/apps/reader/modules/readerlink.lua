@@ -123,7 +123,6 @@ function ReaderLink:addToMainMenu(menu_items)
                     G_reader_settings:saveSetting("tap_to_follow_links",
                         not isTapToFollowLinksOn())
                 end,
-                separator = true,
                 help_text = _([[Tap on links to follow them.]]),
             },
             {
@@ -169,6 +168,7 @@ function ReaderLink:addToMainMenu(menu_items)
                         end,
                     },
                 },
+                separator = true,
             },
             {
                 text = _("Swipe to go back"),
@@ -225,7 +225,6 @@ If any of the other Swipe to follow link options is enabled, this will work only
     -- even if the user enabled these features for EPUB documents).
     if not self.ui.document.info.has_pages then
         -- Tap section
-        menu_items.follow_links.sub_item_table[1].separator = nil
         table.insert(menu_items.follow_links.sub_item_table, 2, {
             text = _("Allow larger tap area around links"),
             enabled_func = isTapToFollowLinksOn,
@@ -247,9 +246,8 @@ If any of the other Swipe to follow link options is enabled, this will work only
             help_text = _([[
 Ignore taps on external links. Useful with Wikipedia EPUBs to make page turning easier.
 You can still follow them from the dictionary window or the selection menu after holding on them.]]),
-            separator = true,
         })
-        table.insert(menu_items.follow_links.sub_item_table, 4, {
+        table.insert(menu_items.follow_links.sub_item_table, 5, {
             text = _("Show footnotes in popup"),
             enabled_func = function()
                 return isTapToFollowLinksOn() or isSwipeToFollowNearestLinkEnabled()
@@ -267,7 +265,7 @@ The footnote content may be empty, truncated, or include other footnotes.
 
 From the footnote popup, you can jump to the footnote location in the book by swiping to the left.]]),
         })
-        table.insert(menu_items.follow_links.sub_item_table, 5, {
+        table.insert(menu_items.follow_links.sub_item_table, 6, {
             text = _("Show more links as footnotes"),
             enabled_func = function()
                 return isFootnoteLinkInPopupEnabled() and
@@ -280,7 +278,7 @@ From the footnote popup, you can jump to the footnote location in the book by sw
             end,
             help_text = _([[Loosen footnote detection rules to show more links as footnotes.]]),
         })
-        table.insert(menu_items.follow_links.sub_item_table, 6, {
+        table.insert(menu_items.follow_links.sub_item_table, 7, {
             text = _("Set footnote popup font size"),
             enabled_func = function()
                 return isFootnoteLinkInPopupEnabled() and
@@ -716,7 +714,6 @@ function ReaderLink:onGoToExternalLink(link_url)
 
             UIManager:show(choose_action)
         elseif external_link_action == "add_to_wallabag" then
-
             self.ui:handleEvent(Event:new("AddWallabagArticle", link_url))
         elseif external_link_action == "open_in_browser" then
             Device:openLink(link_url)
