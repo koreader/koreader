@@ -1,6 +1,5 @@
 local A = require("android")
 A.dl.library_path = A.dl.library_path .. ":" .. A.dir .. "/libs"
-A.log_name = 'KOReader'
 
 local ffi = require("ffi")
 local dummy = require("ffi/posix_h")
@@ -17,7 +16,7 @@ end
 -- run koreader patch before koreader startup
 pcall(dofile, "/sdcard/koreader/patch.lua")
 
--- set proper permission for sdcv
+-- set proper permission for binaries
 A.execute("chmod", "755", "./sdcv")
 A.execute("chmod", "755", "./tar")
 A.execute("chmod", "755", "./zsync")
