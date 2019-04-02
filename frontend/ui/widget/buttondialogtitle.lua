@@ -22,6 +22,10 @@ local ButtonDialogTitle = InputContainer:new{
     title_face = Font:getFace("x_smalltfont"),
     title_padding = Size.padding.large,
     title_margin = Size.margin.title,
+    use_info_style = false, -- set to true to have the same look as ConfirmBox
+    info_face = Font:getFace("infofont"),
+    info_padding = Size.padding.default,
+    info_margin = Size.margin.default,
     buttons = nil,
     tap_close_callback = nil,
     dismissable = true, -- set to false if any button callback is required
@@ -55,13 +59,13 @@ function ButtonDialogTitle:init()
                 VerticalGroup:new{
                     align = "center",
                     FrameContainer:new{
-                        padding = self.title_padding,
-                        margin = self.title_margin,
+                        padding = self.use_info_style and self.info_padding or self.title_padding,
+                        margin = self.use_info_style and self.info_margin or self.title_margin,
                         bordersize = 0,
                         TextBoxWidget:new{
                             text = self.title,
                             width = Screen:getWidth() * 0.8 ,
-                            face = self.title_face,
+                            face = self.use_info_style and self.info_face or self.title_face,
                             alignment = self.title_align or "left",
                         },
                     },

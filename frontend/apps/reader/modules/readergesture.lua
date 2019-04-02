@@ -31,6 +31,7 @@ local action_strings = {
     previous_location = _("Back to previous location"),
     latest_bookmark = _("Go to latest bookmark"),
     follow_nearest_link = _("Follow nearest link"),
+    follow_nearest_internal_link = _("Follow nearest internal link"),
     clear_location_history = _("Clear location history"),
 
     toc = _("Table of contents"),
@@ -361,6 +362,7 @@ function ReaderGesture:buildMenu(ges, default)
         {"previous_location", not self.is_docless},
         {"latest_bookmark", not self.is_docless},
         {"follow_nearest_link", not self.is_docless},
+        {"follow_nearest_internal_link", not self.is_docless},
         {"clear_location_history", not self.is_docless, true},
 
         {"folder_up", self.is_docless},
@@ -747,6 +749,8 @@ function ReaderGesture:gestureAction(action, ges)
         self.ui:handleEvent(Event:new("GoToLatestBookmark"))
     elseif action == "follow_nearest_link" then
         self.ui:handleEvent(Event:new("GoToPageLink", ges, false, G_reader_settings:isTrue("footnote_link_in_popup")))
+    elseif action == "follow_nearest_internal_link" then
+        self.ui:handleEvent(Event:new("GoToPageLink", ges, true, G_reader_settings:isTrue("footnote_link_in_popup")))
     elseif action == "clear_location_history" then
         self.ui:handleEvent(Event:new("ClearLocationStack", true)) -- show_notification
     elseif action == "filemanager" then

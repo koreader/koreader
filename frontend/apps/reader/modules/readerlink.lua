@@ -99,12 +99,12 @@ local function isSwipeToGoBackEnabled()
     return G_reader_settings:isTrue("swipe_to_go_back")
 end
 
-local function isSwipeToFollowFirstLinkEnabled()
-    return G_reader_settings:isTrue("swipe_to_follow_first_link")
-end
-
 local function isSwipeToFollowNearestLinkEnabled()
     return G_reader_settings:isTrue("swipe_to_follow_nearest_link")
+end
+
+local function isSwipeIgnoreExternalLinksEnabled()
+    return G_reader_settings:nilOrTrue("swipe_ignore_external_links")
 end
 
 local function isSwipeToJumpToLatestBookmarkEnabled()
@@ -126,51 +126,16 @@ function ReaderLink:addToMainMenu(menu_items)
                 help_text = _([[Tap on links to follow them.]]),
             },
             {
-                text = _("External link action"),
-                enabled_func = function()
-                    return self.ui.document.info.has_pages or not isTapIgnoreExternalLinksEnabled()
+                text = _("Ignore external links on tap"),
+                enabled_func = isTapToFollowLinksOn,
+                checked_func = isTapIgnoreExternalLinksEnabled,
+                callback = function()
+                    G_reader_settings:saveSetting("tap_ignore_external_links",
+                        not isTapIgnoreExternalLinksEnabled())
                 end,
-                sub_item_table = {
-                    {
-                        text = _("Ask with pop-up dialog"),
-                        checked_func = function()
-                            local setting = G_reader_settings:readSetting("external_link_action")
-                            return setting == "pop-up" or setting == nil
-                        end,
-                        callback = function()
-                            G_reader_settings:saveSetting("external_link_action", "pop-up")
-                        end,
-                    },
-                    {
-                        text = _("Do nothing"),
-                        checked_func = function()
-                            return G_reader_settings:readSetting("external_link_action") == "nothing"
-                        end,
-                        callback = function()
-                            G_reader_settings:saveSetting("external_link_action", "nothing")
-                        end,
-                    },
-                    {
-                        text = _("Add to Wallabag"),
-                        checked_func = function()
-                            return G_reader_settings:readSetting("external_link_action") == "add_to_wallabag"
-                        end,
-                        enabled_func = function() return self.ui.wallabag ~= nil end,
-                        callback = function()
-                            G_reader_settings:saveSetting("external_link_action", "add_to_wallabag")
-                        end,
-                    },
-                    {
-                        text = _("Open in browser"),
-                        checked_func = function()
-                            return G_reader_settings:readSetting("external_link_action") == "open_in_browser"
-                        end,
-                        enabled_func = function() return Device:canOpenLink() end,
-                        callback = function()
-                            G_reader_settings:saveSetting("external_link_action", "open_in_browser")
-                        end,
-                    },
-                },
+                help_text = _([[
+Ignore taps on external links. Useful with Wikipedia EPUBs to make page turning easier.
+You can still follow them from the dictionary window or the selection menu after holding on them.]]),
                 separator = true,
             },
             {
@@ -183,28 +148,25 @@ function ReaderLink:addToMainMenu(menu_items)
                 help_text = _([[Swipe to the right to go back to the previous location after you have followed a link. When the location stack is empty, swiping to the right takes you to the previous page.]]),
             },
             {
-                text = _("Swipe to follow first link on page"),
-                checked_func = isSwipeToFollowFirstLinkEnabled,
-                callback = function()
-                    G_reader_settings:saveSetting("swipe_to_follow_first_link",
-                        not isSwipeToFollowFirstLinkEnabled())
-                    if isSwipeToFollowFirstLinkEnabled() then
-                        G_reader_settings:delSetting("swipe_to_follow_nearest_link") -- can't have both
-                    end
-                end,
-                help_text = _([[Swipe to the left to follow the first link in the current page.]]),
-            },
-            {
                 text = _("Swipe to follow nearest link"),
                 checked_func = isSwipeToFollowNearestLinkEnabled,
                 callback = function()
                     G_reader_settings:saveSetting("swipe_to_follow_nearest_link",
                         not isSwipeToFollowNearestLinkEnabled())
-                    if isSwipeToFollowNearestLinkEnabled() then
-                        G_reader_settings:delSetting("swipe_to_follow_first_link") -- can't have both
-                    end
                 end,
                 help_text = _([[Swipe to the left to follow the link nearest to where you started the swipe. This is useful when a small font is used and tapping on small links is tedious.]]),
+            },
+            {
+                text = _("Ignore external links on swipe"),
+                enabled_func = isSwipeToFollowNearestLinkEnabled,
+                checked_func = isSwipeIgnoreExternalLinksEnabled,
+                callback = function()
+                    G_reader_settings:saveSetting("swipe_ignore_external_links",
+                        not isSwipeIgnoreExternalLinksEnabled())
+                end,
+                help_text = _([[
+Ignore external links near swipe. Useful with Wikipedia EPUBs to follow only footnotes with swipe.
+You can still follow external links from the dictionary window or the selection menu after holding on them.]]),
                 separator = true,
             },
             {
@@ -238,19 +200,7 @@ If any of the other Swipe to follow link options is enabled, this will work only
             end,
             help_text = _([[Extends the tap area around internal links. Useful with a small font where tapping on small footnote links may be tedious.]]),
         })
-        table.insert(menu_items.follow_links.sub_item_table, 3, {
-            text = _("Ignore external links"),
-            enabled_func = isTapToFollowLinksOn,
-            checked_func = isTapIgnoreExternalLinksEnabled,
-            callback = function()
-                G_reader_settings:saveSetting("tap_ignore_external_links",
-                    not isTapIgnoreExternalLinksEnabled())
-            end,
-            help_text = _([[
-Ignore taps on external links. Useful with Wikipedia EPUBs to make page turning easier.
-You can still follow them from the dictionary window or the selection menu after holding on them.]]),
-        })
-        table.insert(menu_items.follow_links.sub_item_table, 5, {
+        table.insert(menu_items.follow_links.sub_item_table, 4, {
             text = _("Show footnotes in popup"),
             enabled_func = function()
                 return isTapToFollowLinksOn() or isSwipeToFollowNearestLinkEnabled()
@@ -268,7 +218,7 @@ The footnote content may be empty, truncated, or include other footnotes.
 
 From the footnote popup, you can jump to the footnote location in the book by swiping to the left.]]),
         })
-        table.insert(menu_items.follow_links.sub_item_table, 6, {
+        table.insert(menu_items.follow_links.sub_item_table, 5, {
             text = _("Show more links as footnotes"),
             enabled_func = function()
                 return isFootnoteLinkInPopupEnabled() and
@@ -281,7 +231,7 @@ From the footnote popup, you can jump to the footnote location in the book by sw
             end,
             help_text = _([[Loosen footnote detection rules to show more links as footnotes.]]),
         })
-        table.insert(menu_items.follow_links.sub_item_table, 7, {
+        table.insert(menu_items.follow_links.sub_item_table, 6, {
             text = _("Set footnote popup font size"),
             enabled_func = function()
                 return isFootnoteLinkInPopupEnabled() and
@@ -435,14 +385,18 @@ end
 function ReaderLink:onTap(_, ges)
     if not isTapToFollowLinksOn() then return end
     if self.ui.document.info.has_pages then
-        -- (footnote popup, larger tap area and ignore external links
-        -- are for now not supported with non-CreDocuments)
+        -- (footnote popup and larger tap area are for not
+        -- not supported with non-CreDocuments)
         local link = self:getLinkFromGes(ges)
         if link then
+            if link.link and link.link.uri and isTapIgnoreExternalLinksEnabled() then
+                return
+            end
             return self:showLinkBox(link)
         end
         return
     end
+    -- For CreDocuments only from now on
     local allow_footnote_popup = isFootnoteLinkInPopupEnabled()
     -- If tap_ignore_external_links, skip precise tap detection to really
     -- ignore a tap on an external link, and allow using onGoToPageLink()
@@ -458,10 +412,10 @@ function ReaderLink:onTap(_, ges)
         if isLargerTapAreaToFollowLinksEnabled() then
             -- If no link found exactly at the tap position,
             -- try to find any link in page around that tap position.
-            -- onGoToPageLink() will grab only internal links, which
-            -- is nice as url links are usually longer - so this
-            -- give more chance to catch a small link to footnote stuck
-            -- to a longer Wikipedia article name link.
+            -- With "Ignore external links", onGoToPageLink() will grab
+            -- only internal links, which is nice as url links are usually
+            -- longer - so this give more chance to catch a small link to
+            -- footnote stuck to a longer Wikipedia article name link.
             --
             -- 30px on a reference 167 dpi screen makes 0.45cm, which
             -- seems fine (on a 300dpi device, this will be scaled
@@ -470,7 +424,7 @@ function ReaderLink:onTap(_, ges)
             -- screen DPI if the user has set another one).
             max_distance = Screen:scaleByDPI(30)
         end
-        return self:onGoToPageLink(ges, false, allow_footnote_popup, max_distance)
+        return self:onGoToPageLink(ges, isTapIgnoreExternalLinksEnabled(), allow_footnote_popup, max_distance)
     end
 end
 
@@ -613,6 +567,47 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
 end
 
 function ReaderLink:onGoToExternalLink(link_url)
+    local text
+    local dialog
+    local buttons = {
+        {
+            {
+                text = _("Cancel"),
+                callback = function()
+                    UIManager:close(dialog)
+                end,
+            },
+        },
+    }
+    local add_button = function(button)
+        if #buttons[#buttons] >= 2 then
+            -- add new row if last contains already 2
+            table.insert(buttons, {})
+        end
+        -- append button to last row
+        table.insert(buttons[#buttons], button)
+    end
+    -- Set up buttons for alternative external link handling methods
+    local alt_handlers_buttons = {}
+    if self.ui.wallabag then
+        table.insert(alt_handlers_buttons, {
+            text = _("Add to Wallabag"),
+            callback = function()
+                UIManager:close(dialog)
+                self.ui:handleEvent(Event:new("AddWallabagArticle", link_url))
+            end,
+        })
+    end
+    if Device:canOpenLink() then
+        table.insert(alt_handlers_buttons, {
+            text = _("Open in browser"),
+            callback = function()
+                UIManager:close(dialog)
+                Device:openLink(link_url)
+            end,
+        })
+    end
+
     -- Check if it is a wikipedia link
     local wiki_lang, wiki_page = link_url:match([[https?://([^%.]+).wikipedia.org/wiki/([^/]+)]])
     if wiki_lang and wiki_page then
@@ -644,88 +639,47 @@ function ReaderLink:onGoToExternalLink(link_url)
                 end
             end
         end
+        text = T(_("Would you like to read this Wikipedia %1 article?\n\n%2\n"), wiki_lang:upper(), wiki_page:gsub("_", " "))
+        add_button({
+            text = _("Read online"),
+            callback = function()
+                UIManager:nextTick(function()
+                    UIManager:close(dialog)
+                    self.ui:handleEvent(Event:new("LookupWikipedia", wiki_page, false, true, wiki_lang))
+                end)
+            end,
+        })
         if epub_fullpath then
-            local MultiConfirmBox = require("ui/widget/multiconfirmbox")
-            UIManager:show(MultiConfirmBox:new{
-                text = T(_("Would you like to read this Wikipedia %1 article?\n\n%2\n\nThis article has previously been saved as EPUB. You may wish to read the saved EPUB instead."), wiki_lang:upper(), wiki_page:gsub("_", " "), epub_fullpath),
-                choice1_text = _("Read online"),
-                choice1_callback = function()
-                    UIManager:nextTick(function()
-                        self.ui:handleEvent(Event:new("LookupWikipedia", wiki_page, false, true, wiki_lang))
-                    end)
-                end,
-                choice2_text = _("Read EPUB"),
-                choice2_callback = function()
+            text = T("%1\n%2", text, _("This article has previously been saved as EPUB. You may wish to read the saved EPUB instead."))
+            add_button({
+                text = _("Read EPUB"),
+                callback = function()
                     UIManager:scheduleIn(0.1, function()
+                        UIManager:close(dialog)
                         self.ui:switchDocument(epub_fullpath)
                     end)
                 end,
             })
-        else
-            UIManager:show(ConfirmBox:new{
-                text = T(_("Would you like to read this Wikipedia %1 article?\n\n%2\n"), wiki_lang:upper(), wiki_page:gsub("_", " ")),
-                ok_callback = function()
-                    UIManager:nextTick(function()
-                        self.ui:handleEvent(Event:new("LookupWikipedia", wiki_page, false, true, wiki_lang))
-                    end)
-                end
-            })
         end
-        return true
-    elseif self.ui.wallabag then
-        local external_link_action = G_reader_settings:readSetting("external_link_action")
-        local choose_action
-        if external_link_action == "pop-up" or external_link_action == nil then
-            local buttons = {
-                {
-                    {
-                        text = _("Cancel"),
-                        callback = function()
-                            UIManager:close(choose_action)
-                        end,
-                    },
-                    {
-                        text = _("Add to Wallabag"),
-                        callback = function()
-                            self.ui:handleEvent(Event:new("AddWallabagArticle", link_url))
-                            UIManager:close(choose_action)
-                        end,
-                    },
-
-                },
-            }
-            if Device:canOpenLink() then
-                table.insert(buttons, {
-                    {
-                        text = "–",
-                        enabled = false,
-                    },
-                    {
-                        text = _("Open in browser"),
-                        callback = function()
-                            Device:openLink(link_url)
-                            UIManager:close(choose_action)
-                        end,
-                    },
-                })
-            end
-
-            choose_action = ButtonDialogTitle:new{
-                title = T(_("External link:\n\n%1"), link_url),
-                buttons = buttons,
-            }
-
-            UIManager:show(choose_action)
-        elseif external_link_action == "add_to_wallabag" then
-            self.ui:handleEvent(Event:new("AddWallabagArticle", link_url))
-        elseif external_link_action == "open_in_browser" then
-            Device:openLink(link_url)
+    else
+        if #alt_handlers_buttons == 0 then
+            -- No external link handler
+            return false
         end
-        return true
-    -- try opening link in native browser
-    elseif Device:openLink(link_url) then
-        return true
+        text = T(_("External link:\n\n%1"), link_url)
     end
+
+    -- Add all alternative handlers buttons
+    for __, button in ipairs(alt_handlers_buttons) do
+        add_button(button)
+    end
+    dialog = ButtonDialogTitle:new{
+        title = text,
+        use_info_style = true,
+        buttons = buttons,
+    }
+    UIManager:show(dialog)
+    return true
 end
 
 --- Goes back to previous location.
@@ -766,12 +720,8 @@ function ReaderLink:onSwipe(arg, ges)
         end
     elseif ges.direction == "west" then
         local ret = false
-        if isSwipeToFollowFirstLinkEnabled() then
-            -- no sense allowing footnote popup if first link
-            ret = self:onGoToPageLink(ges, true)
-        elseif isSwipeToFollowNearestLinkEnabled() then
-            local allow_footnote_popup = isFootnoteLinkInPopupEnabled()
-            ret = self:onGoToPageLink(ges, false, allow_footnote_popup)
+        if isSwipeToFollowNearestLinkEnabled() then
+            ret = self:onGoToPageLink(ges, isSwipeIgnoreExternalLinksEnabled(), isFootnoteLinkInPopupEnabled())
         end
         -- If no link found, or no follow link option enabled,
         -- jump to latest bookmark (if enabled)
@@ -783,7 +733,7 @@ function ReaderLink:onSwipe(arg, ges)
 end
 
 --- Goes to link nearest to the gesture (or first link in page)
-function ReaderLink:onGoToPageLink(ges, use_page_first_link, allow_footnote_popup, max_distance)
+function ReaderLink:onGoToPageLink(ges, internal_links_only, allow_footnote_popup, max_distance)
     local selected_link = nil
     local selected_distance2 = nil
     -- We use squares of distances all along the calculations, no need
@@ -810,26 +760,16 @@ function ReaderLink:onGoToPageLink(ges, use_page_first_link, allow_footnote_popu
         --     },
         local pos_x, pos_y = pos.x, pos.y
         local shortest_dist = nil
-        local first_y0 = nil
         for _, link in ipairs(links) do
-            if link["page"] then
-                if use_page_first_link then
-                    -- Links may not be in the order they are in the page, so let's
-                    -- find the one with the smallest y0.
-                    if first_y0 == nil or link["y0"] < first_y0 then
-                        selected_link = link
-                        first_y0 = link["y0"]
-                    end
-                else
-                    local start_dist = math.pow(link.x0 - pos_x, 2) + math.pow(link.y0 - pos_y, 2)
-                    local end_dist = math.pow(link.x1 - pos_x, 2) + math.pow(link.y1 - pos_y, 2)
-                    local min_dist = math.min(start_dist, end_dist)
-                    if shortest_dist == nil or min_dist < shortest_dist then
-                        -- onGotoLink()'s GotoPage event needs the link
-                        -- itself, and will use its "page" value
-                        selected_link = link
-                        shortest_dist = min_dist
-                    end
+            if not internal_links_only or link.page then
+                local start_dist = math.pow(link.x0 - pos_x, 2) + math.pow(link.y0 - pos_y, 2)
+                local end_dist = math.pow(link.x1 - pos_x, 2) + math.pow(link.y1 - pos_y, 2)
+                local min_dist = math.min(start_dist, end_dist)
+                if shortest_dist == nil or min_dist < shortest_dist then
+                    -- onGotoLink()'s GotoPage event needs the link
+                    -- itself, and will use its "page" value
+                    selected_link = link
+                    shortest_dist = min_dist
                 end
             end
         end
@@ -842,9 +782,9 @@ function ReaderLink:onGoToPageLink(ges, use_page_first_link, allow_footnote_popu
         -- this is done for each tap on screen (changing pages, showing
         -- menu...). We might want to cache these links per page (and
         -- clear that cache when page layout change).
-        -- As we care only about internal links, we request them only
+        -- If we care only about internal links, request them only
         -- (and avoid that expensive segments work on external links)
-        local links = self.ui.document:getPageLinks(true) -- only get internal links
+        local links = self.ui.document:getPageLinks(internal_links_only)
         if not links or #links == 0 then
             return
         end
@@ -895,72 +835,63 @@ function ReaderLink:onGoToPageLink(ges, use_page_first_link, allow_footnote_popu
         -- or nearest link...
         local pos_x, pos_y = ges.pos.x, ges.pos.y
         local shortest_dist = nil
-        local first_start_y = nil
         for _, link in ipairs(links) do
-            if link["section"] then
-                if use_page_first_link then
-                    -- links may not be in the order they are in the page, so let's
-                    -- find the one with the smallest start_y.
-                    if first_start_y == nil or link["start_y"] < first_start_y then
-                        selected_link = link
-                        first_start_y = link["start_y"]
+            -- link.uri may be an empty string with some invalid links: ignore them
+            if link.section or (link.uri and link.uri ~= "") then
+                if link.segments then
+                    -- With segments, each is a horizontal segment, with start_x < end_x,
+                    -- and we should compute the distance from gesture position to
+                    -- each segment.
+                    local segments_max_y = -1
+                    local link_is_shortest = false
+                    local segments = link.segments
+                    for i=1, #segments do
+                        local segment = segments[i]
+                        local segment_dist
+                        -- Distance here is kept squared (d^2 = diff_x^2 + diff_y^2),
+                        -- and we compute each part individually
+                        -- First, vertical distance (squared)
+                        if pos_y < segment.y0 then -- above the segment height
+                            segment_dist = math.pow(segment.y0 - pos_y, 2)
+                        elseif pos_y > segment.y1 then -- below the segment height
+                            segment_dist = math.pow(pos_y - segment.y1, 2)
+                        else -- gesture pos is on the segment height, no vertical distance
+                            segment_dist = 0
+                        end
+                        -- Next, horizontal distance (squared)
+                        if pos_x < segment.x0 then -- on the left of segment: calc dist to x0
+                            segment_dist = segment_dist + math.pow(segment.x0 - pos_x, 2)
+                        elseif pos_x > segment.x1 then -- on the right of segment : calc dist to x1
+                            segment_dist = segment_dist + math.pow(pos_x - segment.x1, 2)
+                        -- else -- gesture pos is in the segment width, no horizontal distance
+                        end
+                        if shortest_dist == nil or segment_dist < shortest_dist then
+                            selected_link = link
+                            shortest_dist = segment_dist
+                            link_is_shortest = true
+                        end
+                        if segment.y1 > segments_max_y then
+                            segments_max_y = segment.y1
+                        end
+                    end
+                    if link_is_shortest then
+                        -- update the selected_link we just set with its lower segment y
+                        selected_link.link_y = segments_max_y
                     end
                 else
-                    if link["segments"] then
-                        -- With segments, each is a horizontal segment, with start_x < end_x,
-                        -- and we should compute the distance from gesture position to
-                        -- each segment.
-                        local segments_max_y = -1
-                        local link_is_shortest = false
-                        local segments = link["segments"]
-                        for i=1, #segments do
-                            local segment = segments[i]
-                            local segment_dist
-                            -- Distance here is kept squared (d^2 = diff_x^2 + diff_y^2),
-                            -- and we compute each part individually
-                            -- First, vertical distance (squared)
-                            if pos_y < segment.y0 then -- above the segment height
-                                segment_dist = math.pow(segment.y0 - pos_y, 2)
-                            elseif pos_y > segment.y1 then -- below the segment height
-                                segment_dist = math.pow(pos_y - segment.y1, 2)
-                            else -- gesture pos is on the segment height, no vertical distance
-                                segment_dist = 0
-                            end
-                            -- Next, horizontal distance (squared)
-                            if pos_x < segment.x0 then -- on the left of segment: calc dist to x0
-                                segment_dist = segment_dist + math.pow(segment.x0 - pos_x, 2)
-                            elseif pos_x > segment.x1 then -- on the right of segment : calc dist to x1
-                                segment_dist = segment_dist + math.pow(pos_x - segment.x1, 2)
-                            -- else -- gesture pos is in the segment width, no horizontal distance
-                            end
-                            if shortest_dist == nil or segment_dist < shortest_dist then
-                                selected_link = link
-                                shortest_dist = segment_dist
-                                link_is_shortest = true
-                            end
-                            if segment.y1 > segments_max_y then
-                                segments_max_y = segment.y1
-                            end
-                        end
-                        if link_is_shortest then
-                            -- update the selected_link we just set with its lower segment y
-                            selected_link.link_y = segments_max_y
-                        end
-                    else
-                        -- Before "segments" were available, we did this:
-                        -- We'd only get a horizontal segment if the link is on a single line.
-                        -- When it is multi-lines, we can't do much calculation...
-                        -- We used to just check distance from start_x and end_x, and
-                        -- we could miss a tap in the middle of a long link.
-                        -- (also start_y = end_y = the top of the rect for a link on a single line)
-                        local start_dist = math.pow(link.start_x - pos_x, 2) + math.pow(link.start_y - pos_y, 2)
-                        local end_dist = math.pow(link.end_x - pos_x, 2) + math.pow(link.end_y - pos_y, 2)
-                        local min_dist = math.min(start_dist, end_dist)
-                        if shortest_dist == nil or min_dist < shortest_dist then
-                            selected_link = link
-                            selected_link.link_y = link.end_y
-                            shortest_dist = min_dist
-                        end
+                    -- Before "segments" were available, we did this:
+                    -- We'd only get a horizontal segment if the link is on a single line.
+                    -- When it is multi-lines, we can't do much calculation...
+                    -- We used to just check distance from start_x and end_x, and
+                    -- we could miss a tap in the middle of a long link.
+                    -- (also start_y = end_y = the top of the rect for a link on a single line)
+                    local start_dist = math.pow(link.start_x - pos_x, 2) + math.pow(link.start_y - pos_y, 2)
+                    local end_dist = math.pow(link.end_x - pos_x, 2) + math.pow(link.end_y - pos_y, 2)
+                    local min_dist = math.min(start_dist, end_dist)
+                    if shortest_dist == nil or min_dist < shortest_dist then
+                        selected_link = link
+                        selected_link.link_y = link.end_y
+                        shortest_dist = min_dist
                     end
                 end
             end
@@ -978,7 +909,7 @@ function ReaderLink:onGoToPageLink(ges, use_page_first_link, allow_footnote_popu
             end
             -- Make it a link as expected by onGotoLink
             selected_link = {
-                xpointer = selected_link.section,
+                xpointer = selected_link.section or selected_link.uri,
                 marker_xpointer = selected_link.section,
                 from_xpointer = from_xpointer,
                 -- (keep a_xpointer even if incoherent, might be needed for
@@ -1164,6 +1095,8 @@ function ReaderLink:showAsFootnotePopup(link, neglect_current_location)
     if link.from_xpointer then -- coherent xpointer
         self.ui.document:highlightXPointer() -- clear any previous one
         self.ui.document:highlightXPointer(link.from_xpointer)
+        -- Don't let a previous footnote popup clear our highlight
+        self._footnote_popup_discard_previous_close_callback = true
         UIManager:setDirty(self.dialog, "ui")
         close_callback = function(footnote_height)
             -- remove this highlight (actually all) on close
@@ -1209,15 +1142,19 @@ function ReaderLink:showAsFootnotePopup(link, neglect_current_location)
             self:onGotoLink(link, neglect_current_location)
         end,
         on_tap_close_callback = function(arg, ges, footnote_height)
+            self._footnote_popup_discard_previous_close_callback = nil
             -- On tap outside, see if we are tapping on another footnote,
             -- and display it if we do (avoid the need for 2 taps)
-            if not self:onTap(arg, ges) then
-                -- If we did tap on another link, onTap has already cleared our
-                -- highlight. If not, call close_callback to unhighlight it.
+            self:onTap(arg, ges)
+            -- If onTap() did show another FootnoteWidget, and it
+            -- has already cleared our highlight, avoid calling our
+            -- close_callback so we do not clear the new highlight
+            if not self._footnote_popup_discard_previous_close_callback then
                 if close_callback then -- not set if xpointer not coherent
                     close_callback(footnote_height)
                 end
             end
+            self._footnote_popup_discard_previous_close_callback = nil
         end,
         dialog = self.dialog,
     }
