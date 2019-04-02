@@ -948,7 +948,8 @@ function KoptInterface:getLinkFromPosition(doc, pageno, pos)
                 w = link.x1 - link.x0 + len,
                 h = link.y1 - link.y0 + len,
             }
-            if _inside_box(pos, lbox) and link.page then
+            -- Allow external links, with link.uri instead of link.page
+            if _inside_box(pos, lbox) then -- and link.page then
                 return link, lbox
             end
         end
