@@ -67,6 +67,9 @@ all: $(if $(ANDROID),,$(KOR_BASE)/$(OUTPUT_DIR)/luajit)
 	$(MAKE) -C $(KOR_BASE)
 	install -d $(INSTALL_DIR)/koreader
 	rm -f $(INSTALL_DIR)/koreader/git-rev; echo "$(VERSION)" > $(INSTALL_DIR)/koreader/git-rev
+ifdef ANDROID
+	rm -f android-fdroid-version; echo -e "$(ANDROID_NAME)\n$(ANDROID_VERSION)" > koreader-android-fdroid-latest
+endif
 ifneq ($(or $(EMULATE_READER),$(WIN32)),)
 	cp -f $(KOR_BASE)/ev_replay.py $(INSTALL_DIR)/koreader/
 	@echo "[*] create symlink instead of copying files in development mode"

@@ -41,6 +41,7 @@ i18n
 
 koreader-android-arm-linux-androideabi*
 koreader-android-i686-linux-android*
+koreader-android-fdroid-latest
 koreader-cervantes-arm-linux-gnueabi*
 koreader-cervantes-arm-cervantes-linux-gnueabi*
 koreader-debian-i686-linux-gnu*
