@@ -170,7 +170,7 @@ elseif not QuickStart:isShown() then
     last_file = QuickStart:getQuickStart()
 end
 -- night mode
-if G_reader_settings:readSetting("night_mode") then
+if G_reader_settings:isTrue("night_mode") then
     Device.screen:toggleNightMode()
 end
 
