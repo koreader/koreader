@@ -114,6 +114,9 @@ if Device:isKobo() then
         end,
         callback = function()
             G_reader_settings:flipNilOrFalse("ignore_power_sleepcover")
+            UIManager:show(InfoMessage:new{
+                text = _("This will take effect on next restart."),
+            })
         end
     }
 end
