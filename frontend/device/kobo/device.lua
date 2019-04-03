@@ -38,6 +38,8 @@ local Kobo = Generic:new{
     internal_storage_mount_point = "/mnt/onboard/",
     -- currently only the Aura One and Forma have coloured frontlights
     hasNaturalLight = no,
+    -- HW inversion is generally safe on Kobo, except on a few baords/kernels
+    canHWInvert = yes,
 }
 
 -- TODO: hasKeys for some devices?
@@ -114,6 +116,8 @@ local KoboPhoenix = Kobo:new{
     display_dpi = 212,
     -- the bezel covers 12 pixels at the bottom:
     viewport = Geom:new{x=0, y=0, w=758, h=1012},
+    -- NOTE: May have a buggy kernel, according to the nightmode hack...
+    canHWInvert = no,
 }
 
 -- Kobo Aura H2O2:
