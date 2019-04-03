@@ -703,7 +703,7 @@ function ReaderGesture:gestureAction(action, ges)
     elseif action == "toc" then
         self.ui:handleEvent(Event:new("ShowToc"))
     elseif action == "night_mode" then
-        local night_mode = G_reader_settings:isTrue("night_mode") or false
+        local night_mode = G_reader_settings:isTrue("night_mode")
         Screen:toggleNightMode()
         UIManager:setDirty("all", "full")
         G_reader_settings:saveSetting("night_mode", not night_mode)

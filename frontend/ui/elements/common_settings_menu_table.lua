@@ -125,7 +125,7 @@ common_settings.night_mode = {
     text = _("Night mode"),
     checked_func = function() return G_reader_settings:isTrue("night_mode") end,
     callback = function()
-        local night_mode = G_reader_settings:isTrue("night_mode") or false
+        local night_mode = G_reader_settings:isTrue("night_mode")
         Screen:toggleNightMode()
         UIManager:setDirty(nil, "full")
         G_reader_settings:saveSetting("night_mode", not night_mode)
