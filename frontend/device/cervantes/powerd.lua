@@ -121,10 +121,6 @@ function CervantesPowerD:isFrontlightOnHW()
     return self.hw_intensity > 0
 end
 
-function CervantesPowerD:turnOffFrontlightHW()
-    self:_setIntensity(0) -- will call setIntensityHW(0)
-end
-
 function CervantesPowerD:setIntensityHW(intensity)
     if self.fl == nil then return end
     if self.fl_warmth == nil then

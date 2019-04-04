@@ -201,10 +201,6 @@ function KoboPowerD:isFrontlightOnHW()
     return self.hw_intensity > 0
 end
 
-function KoboPowerD:turnOffFrontlightHW()
-    self:_setIntensity(0) -- will call setIntensityHW(0)
-end
-
 function KoboPowerD:setIntensityHW(intensity)
     if self.fl == nil then return end
     if self.fl_warmth == nil then
