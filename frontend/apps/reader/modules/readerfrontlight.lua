@@ -38,7 +38,7 @@ function ReaderFrontLight:init()
 end
 
 function ReaderFrontLight:onAdjust(arg, ges)
-    if not Device.hasFrontlight() then return true end
+    if not Device:hasFrontlight() then return true end
     local powerd = Device:getPowerDevice()
     logger.dbg("frontlight intensity", powerd:frontlightIntensity())
     local step = math.ceil(#self.steps * ges.distance / self.gestureScale)
@@ -65,7 +65,7 @@ function ReaderFrontLight:onAdjust(arg, ges)
 end
 
 function ReaderFrontLight:onShowIntensity()
-    if not Device.hasFrontlight() then return true end
+    if not Device:hasFrontlight() then return true end
     local powerd = Device:getPowerDevice()
     local new_text
     if powerd:isFrontlightOff() then

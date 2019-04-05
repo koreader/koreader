@@ -151,7 +151,7 @@ function KoboPowerD:init()
 end
 
 function KoboPowerD:saveSettings()
-    if self.device.hasFrontlight() then
+    if self.device:hasFrontlight() then
         -- Store BasePowerD values into settings (and not our hw_intensity, so
         -- that if frontlight was toggled off, we save and restore the previous
         -- untoggled intensity and toggle state at next startup)
