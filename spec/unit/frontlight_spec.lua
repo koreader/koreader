@@ -4,19 +4,18 @@ describe("Frontlight function in PowerD", function()
     setup(function()
         require("commonrequire")
 
-        PowerD = require("device/generic/powerd"):new{
-            frontlight = 0,
-        }
-
         param = {
+            frontlight = 2,
             fl_min = 1,
             fl_max = 5,
             fl_intensity = 2,
-            is_fl_on = true,
             device = {
                 hasFrontlight = function() return true end,
             },
+            is_fl_on = true,
         }
+
+        PowerD = require("device/generic/powerd"):new(param)
     end)
 
     before_each(function()
