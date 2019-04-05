@@ -204,17 +204,14 @@ function KoboPowerD:isFrontlightOnHW()
         -- give initial state to BasePowerD, which will
         -- reset our self.hw_intensity to 0 if self.initial_is_fl_on is false
         local ret = self.initial_is_fl_on
-        print("KoboPowerD:isFrontlightOnHW initial_is_fl_on", self.initial_is_fl_on)
         self.initial_is_fl_on = nil
         return ret
     end
-    print("KoboPowerD:isFrontlightOnHW hw_intensity", self.hw_intensity)
     return self.hw_intensity > 0
 end
 
 function KoboPowerD:setIntensityHW(intensity)
     if self.fl == nil then return end
-    print("KoboPowerD:setIntensityHW", intensity)
     if self.fl_warmth == nil then
         self.fl:setBrightness(intensity)
     else
@@ -280,9 +277,7 @@ function KoboPowerD:isChargingHW()
 end
 
 function KoboPowerD:turnOffFrontlightHW()
-    print("KoboPowerD:turnOffFrontlightHW")
     if self:isFrontlightOff() then
-        print("Already off!")
         return
     end
     local util = require("ffi/util")
@@ -299,9 +294,7 @@ function KoboPowerD:turnOffFrontlightHW()
     end, false, true)
 end
 function KoboPowerD:turnOnFrontlightHW()
-    print("KoboPowerD:turnOnFrontlightHW")
     if self:isFrontlightOn() then
-        print("Already on!")
         return
     end
     local util = require("ffi/util")

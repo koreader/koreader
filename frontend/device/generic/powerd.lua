@@ -33,17 +33,13 @@ function BasePowerD:isChargingHW() return false end
 function BasePowerD:frontlightIntensityHW() return 0 end
 function BasePowerD:isFrontlightOnHW() return self.fl_intensity > self.fl_min end
 function BasePowerD:turnOffFrontlightHW()
-    print("turnOffFrontlightHW")
     if self:isFrontlightOff() then
-        print("Already off!")
         return
     end
     self:_setIntensity(self.fl_min)
 end
 function BasePowerD:turnOnFrontlightHW()
-    print("turnOnFrontlightHW")
     if self:isFrontlightOn() then
-        print("Already on!")
         return
     end
     self:_setIntensity(self.fl_intensity)
@@ -57,7 +53,6 @@ function BasePowerD:afterResume() end
 
 function BasePowerD:isFrontlightOn()
     assert(self ~= nil)
-    print("isFrontlightOn", self.is_fl_on)
     return self.is_fl_on
 end
 
@@ -65,7 +60,6 @@ function BasePowerD:_decideFrontlightState()
     assert(self ~= nil)
     assert(self.device.hasFrontlight())
     self.is_fl_on = self:isFrontlightOnHW()
-    print("_decideFrontlightState", self.is_fl_on)
 end
 
 function BasePowerD:isFrontlightOff()
@@ -140,7 +134,7 @@ function BasePowerD:setIntensity(intensity)
     if intensity == self:frontlightIntensity() then return false end
     self.fl_intensity = self:normalizeIntensity(intensity)
     self:_decideFrontlightState()
-    print("set light intensity", self.fl_intensity)
+    logger.dbg("set light intensity", self.fl_intensity)
     self:_setIntensity(self.fl_intensity)
     return true
 end
@@ -158,7 +152,6 @@ function BasePowerD:isCharging()
 end
 
 function BasePowerD:_setIntensity(intensity)
-    print("_setIntensity", intensity)
     self:setIntensityHW(intensity)
     -- BasePowerD is loaded before UIManager. So we cannot broadcast events before UIManager has
     -- been loaded.

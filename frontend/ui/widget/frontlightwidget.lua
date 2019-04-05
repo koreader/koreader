@@ -130,7 +130,6 @@ function FrontLightWidget:setProgress(num, step, num_warmth)
         -- don't touch frontlight on first call (no self[1] means not yet out of update()),
         -- so that we don't untoggle light
         if self[1] then
-            print("set_fl", set_fl, "fl_cur", self.fl_cur, "fl_intensity", self.powerd.fl_intensity)
             if set_fl == self.fl_min then -- fl_min (which is always 0) means toggle
                 self.powerd:toggleFrontlight()
             else
@@ -294,7 +293,6 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
     local button_color = Blitbuffer.COLOR_WHITE
 
     if self[1] then
-        print("Calling setWarmth from FrontLightWidget")
         self.powerd:setWarmth(num_warmth)
     end
 

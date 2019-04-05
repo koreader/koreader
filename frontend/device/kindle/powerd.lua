@@ -28,7 +28,6 @@ function KindlePowerD:frontlightIntensityHW()
 end
 
 function KindlePowerD:setIntensityHW(intensity)
-    print("KindlePowerD:setIntensityHW", intensity)
     -- NOTE: This means we *require* a working lipc handle to set the FL:
     --       it knows what the UI values should map to for the specific hardware much better than us.
     if self.lipc_handle ~= nil then
@@ -42,7 +41,6 @@ function KindlePowerD:setIntensityHW(intensity)
         -- We do *both* to make the fl restore on resume less jarring on devices where lipc 0 != off.
         os.execute("echo -n ".. intensity .." > " .. self.fl_intensity_file)
     end
-    print("Done")
 end
 
 function KindlePowerD:getCapacityHW()

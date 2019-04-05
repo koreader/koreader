@@ -62,7 +62,6 @@ function NaturalLightWidget:applyValues()
     self.powerd.fl.green_gain = self.green_gain[2]:getText()
     self.powerd.fl.green_offset = self.green_offset[2]:getText()
     self.powerd.fl.exponent = self.exponent[2]:getText()
-    print("NaturalLightWidget:applyValues")
     self.powerd.fl:setNaturalBrightness()
 end
 
