@@ -103,9 +103,13 @@ function SysfsLight:setNaturalBrightness(brightness, warmth)
         red = math.max(red, 0)
         green = math.max(green, 0)
 
-        self:_set_light_value(self.frontlight_white, math.floor(white))
-        self:_set_light_value(self.frontlight_green, math.floor(green))
-        self:_set_light_value(self.frontlight_red, math.floor(red))
+        if set_brightness then
+            self:_set_light_value(self.frontlight_white, math.floor(white))
+        end
+        if set_warmth then
+            self:_set_light_value(self.frontlight_green, math.floor(green))
+            self:_set_light_value(self.frontlight_red, math.floor(red))
+        end
     end
 
     self.current_brightness = brightness

@@ -112,12 +112,12 @@ function KoboPowerD:init()
     self.initial_is_fl_on = true
     self.autowarmth_job_running = false
 
-    if self.device.hasFrontlight() then
+    if self.device:hasFrontlight() then
         -- If this device has natural light (currently only KA1 & Forma)
         -- Use the SysFS interface, and ioctl otherwise.
         -- NOTE: On the Forma, nickel still appears to prefer using ntx_io to handle the FL,
         --       but it does use sysfs for the NL...
-        if self.device.hasNaturalLight() then
+        if self.device:hasNaturalLight() then
             local nl_config = G_reader_settings:readSetting("natural_light_config")
             if nl_config then
                 for key,val in pairs(nl_config) do
@@ -289,9 +289,11 @@ function KoboPowerD:turnOffFrontlightHW()
     util.runInSubProcess(function()
         for i = 1,5 do
             self:_setIntensity(math.floor(self.fl_intensity - ((self.fl_intensity / 5) * i)))
-            -- NOTE: Sleep mainly to ensure a somewhat consistent behavior between frontlight backends...
-            if (i < 5) then
-                util.usleep(35 * 1000)
+            -- NOTE: We generally don't need to sleep when using sysfs as a backend...
+            if not self.device:hasNaturalLight() then
+                if (i < 5) then
+                    util.usleep(35 * 1000)
+                end
             end
         end
     end, false, true)
@@ -306,8 +308,10 @@ function KoboPowerD:turnOnFrontlightHW()
     util.runInSubProcess(function()
         for i = 1,5 do
             self:_setIntensity(math.ceil(self.fl_min + ((self.fl_intensity / 5) * i)))
-            if (i < 5) then
-                util.usleep(35 * 1000)
+            if not self.device:hasNaturalLight() then
+                if (i < 5) then
+                    util.usleep(35 * 1000)
+                end
             end
         end
     end, false, true)
