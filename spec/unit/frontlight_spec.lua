@@ -25,7 +25,6 @@ describe("Frontlight function in PowerD", function()
         PowerD.setIntensityHW = function(self, intensity)
             self.frontlight = intensity
         end
-        stub(PowerD, "isFrontlightOnHW")
         PowerD.isFrontlightOnHW = function(self)
                return self.fl_intensity > self.fl_min
         end
