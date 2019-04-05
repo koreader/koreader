@@ -11,6 +11,8 @@ describe("Frontlight function in PowerD", function()
         param = {
             fl_min = 1,
             fl_max = 5,
+            fl_intensity = 2,
+            is_fl_on = true,
             device = {
                 hasFrontlight = function() return true end,
             },
@@ -40,7 +42,7 @@ describe("Frontlight function in PowerD", function()
 
     test_when_off = function(fl_min)
         param.fl_min = fl_min
-        PowerD:setIntensityHW(0)
+        param.fl_intensity = 0
         local p = PowerD:new(param)
         p:setIntensity(0)
         p.frontlightIntensityHW.returns(param.fl_min)
@@ -121,7 +123,7 @@ describe("Frontlight function in PowerD", function()
     test_when_on = function(fl_min)
         assert(fl_min < 2)
         param.fl_min = fl_min
-        PowerD:setIntensityHW(2)
+        param.fl_intensity = 2
         local p = PowerD:new(param)
         p:setIntensity(2)
         p.frontlightIntensityHW.returns(2)
