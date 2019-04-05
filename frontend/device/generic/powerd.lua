@@ -38,16 +38,7 @@ function BasePowerD:turnOffFrontlightHW()
         print("Already off!")
         return
     end
-    local util = require("ffi/util")
-    util.runInSubProcess(function()
-        for i = 1,5 do
-            self:_setIntensity(math.floor(self.fl_intensity - ((self.fl_intensity / 5) * i)))
-            -- NOTE: Sleep mainly to ensure a somewhat consistent behavior between frontlight backends...
-            if (i < 5) then
-                util.usleep(35 * 1000)
-            end
-        end
-    end, false, true)
+    self:_setIntensity(self.fl_min)
 end
 function BasePowerD:turnOnFrontlightHW()
     print("turnOnFrontlightHW")
@@ -55,15 +46,7 @@ function BasePowerD:turnOnFrontlightHW()
         print("Already on!")
         return
     end
-    local util = require("ffi/util")
-    util.runInSubProcess(function()
-        for i = 1,5 do
-            self:_setIntensity(math.ceil(self.fl_min + ((self.fl_intensity / 5) * i)))
-            if (i < 5) then
-                util.usleep(35 * 1000)
-            end
-        end
-    end, false, true)
+    self:_setIntensity(self.fl_intensity)
 end
 -- Anything needs to be done before do a real hardware suspend. Such as turn off
 -- front light.

@@ -279,6 +279,40 @@ function KoboPowerD:isChargingHW()
     return self:read_str_file(self.is_charging_file) == "Charging\n"
 end
 
+function KoboPowerD:turnOffFrontlightHW()
+    print("KoboPowerD:turnOffFrontlightHW")
+    if self:isFrontlightOff() then
+        print("Already off!")
+        return
+    end
+    local util = require("ffi/util")
+    util.runInSubProcess(function()
+        for i = 1,5 do
+            self:_setIntensity(math.floor(self.fl_intensity - ((self.fl_intensity / 5) * i)))
+            -- NOTE: Sleep mainly to ensure a somewhat consistent behavior between frontlight backends...
+            if (i < 5) then
+                util.usleep(35 * 1000)
+            end
+        end
+    end, false, true)
+end
+function KoboPowerD:turnOnFrontlightHW()
+    print("KoboPowerD:turnOnFrontlightHW")
+    if self:isFrontlightOn() then
+        print("Already on!")
+        return
+    end
+    local util = require("ffi/util")
+    util.runInSubProcess(function()
+        for i = 1,5 do
+            self:_setIntensity(math.ceil(self.fl_min + ((self.fl_intensity / 5) * i)))
+            if (i < 5) then
+                util.usleep(35 * 1000)
+            end
+        end
+    end, false, true)
+end
+
 -- Turn off front light before suspend.
 function KoboPowerD:beforeSuspend()
     if self.fl == nil then return end
