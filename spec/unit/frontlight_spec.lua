@@ -13,9 +13,6 @@ describe("Frontlight function in PowerD", function()
             fl_max = 5,
             device = {
                 hasFrontlight = function() return true end,
-                -- TODO @Frenzie remove this once possibly turning on frontlight
-                -- on init is Kobo-only; see device/generic/powerd 2017-10-08
-                isAndroid = function() return false end,
             },
         }
     end)
@@ -48,7 +45,7 @@ describe("Frontlight function in PowerD", function()
         assert.are.equal(0, p:frontlightIntensity())
         assert.is.truthy(p:isFrontlightOff())
         assert.stub(p.init).is_called(1)
-        assert.stub(p.setIntensityHW).is_called(1)
+        assert.stub(p.setIntensityHW).is_called(0)
         assert.are.equal(param.fl_min, p.frontlight)
         assert.stub(p.frontlightIntensityHW).is_called(1)
         assert.spy(p.turnOnFrontlightHW).is_called(0)
@@ -126,7 +123,7 @@ describe("Frontlight function in PowerD", function()
         assert.are.equal(2, p:frontlightIntensity())
         assert.is.truthy(p:isFrontlightOn())
         assert.stub(p.init).is_called(1)
-        assert.stub(p.setIntensityHW).is_called(1)
+        assert.stub(p.setIntensityHW).is_called(0)
         assert.are.equal(2, p.frontlight)
         assert.spy(p.turnOnFrontlightHW).is_called(1)
         assert.spy(p.turnOffFrontlightHW).is_called(0)
