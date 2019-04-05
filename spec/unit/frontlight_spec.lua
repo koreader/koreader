@@ -21,9 +21,6 @@ describe("Frontlight function in PowerD", function()
     before_each(function()
         stub(PowerD, "init")
         stub(PowerD, "frontlightIntensityHW")
-        PowerD.frontlightIntensityHW = function(self)
-            return self.frontlight
-        end
         stub(PowerD, "setIntensityHW")
         PowerD.setIntensityHW = function(self, intensity)
             self.frontlight = intensity
