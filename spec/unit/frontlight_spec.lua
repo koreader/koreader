@@ -11,7 +11,6 @@ describe("Frontlight function in PowerD", function()
             fl_intensity = 2,
             device = {
                 hasFrontlight = function() return true end,
-                isAndroid = function() return false end,
             },
             is_fl_on = true,
         }
