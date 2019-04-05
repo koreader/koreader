@@ -32,18 +32,8 @@ function BasePowerD:setDissmisBatteryStatus(status) self.battery_warning = statu
 function BasePowerD:isChargingHW() return false end
 function BasePowerD:frontlightIntensityHW() return 0 end
 function BasePowerD:isFrontlightOnHW() return self.fl_intensity > self.fl_min end
-function BasePowerD:turnOffFrontlightHW()
-    if self:isFrontlightOff() then
-        return
-    end
-    self:_setIntensity(self.fl_min)
-end
-function BasePowerD:turnOnFrontlightHW()
-    if self:isFrontlightOn() then
-        return
-    end
-    self:_setIntensity(self.fl_intensity)
-end
+function BasePowerD:turnOffFrontlightHW() self:_setIntensity(self.fl_min) end
+function BasePowerD:turnOnFrontlightHW() self:_setIntensity(self.fl_intensity) end
 -- Anything needs to be done before do a real hardware suspend. Such as turn off
 -- front light.
 function BasePowerD:beforeSuspend() end
