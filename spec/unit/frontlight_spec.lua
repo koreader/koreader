@@ -21,9 +21,16 @@ describe("Frontlight function in PowerD", function()
     before_each(function()
         stub(PowerD, "init")
         stub(PowerD, "frontlightIntensityHW")
+        PowerD.frontlightIntensityHW = function(self)
+            return self.frontlight
+        end
         stub(PowerD, "setIntensityHW")
         PowerD.setIntensityHW = function(self, intensity)
             self.frontlight = intensity
+        end
+        stub(PowerD, "isFrontlightOnHW")
+        PowerD.isFrontlightOnHW = function(self)
+               return self.fl_intensity > self.fl_min
         end
         spy.on(PowerD, "setIntensityHW")
         spy.on(PowerD, "turnOnFrontlightHW")
