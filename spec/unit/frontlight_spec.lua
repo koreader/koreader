@@ -11,6 +11,7 @@ describe("Frontlight function in PowerD", function()
             fl_intensity = 2,
             device = {
                 hasFrontlight = function() return true end,
+                isAndroid = function() return false end,
             },
             is_fl_on = true,
         }
@@ -24,9 +25,6 @@ describe("Frontlight function in PowerD", function()
         stub(PowerD, "setIntensityHW")
         PowerD.setIntensityHW = function(self, intensity)
             self.frontlight = intensity
-        end
-        PowerD.isFrontlightOnHW = function(self)
-               return self.fl_intensity > self.fl_min
         end
         spy.on(PowerD, "setIntensityHW")
         spy.on(PowerD, "turnOnFrontlightHW")
