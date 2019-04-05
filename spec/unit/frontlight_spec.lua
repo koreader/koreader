@@ -15,7 +15,7 @@ describe("Frontlight function in PowerD", function()
             is_fl_on = true,
         }
 
-        PowerD = require("device/generic/powerd"):new(param)
+        PowerD = require("device/generic/powerd"):new{ param }
     end)
 
     before_each(function()
