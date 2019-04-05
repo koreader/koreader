@@ -128,8 +128,8 @@ if Device:isTouchDevice() or Device:hasDPad() then
             local y = ges.pos.y - self._frame_textwidget.dimen.y - textwidget_offset
             self.text_widget:moveCursorToXY(x, y, true) -- restrict_to_view=true
             self.charpos, self.top_line_num = self.text_widget:getCharPos()
-            if Device:hasClipboard() and Device.input:hasClipboardText() then
-                self:addChars(Device.input:getClipboardText())
+            if Device:hasClipboard() and Device.input.hasClipboardText() then
+                self:addChars(Device.input.getClipboardText())
             end
             return true
         end
