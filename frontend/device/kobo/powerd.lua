@@ -138,6 +138,15 @@ function KoboPowerD:init()
                 self:_syncKoboLightOnStart()
             end
         end
+        -- See discussion in https://github.com/koreader/koreader/issues/3118#issuecomment-334995879
+        -- for the reasoning behind this bit of insanity.
+        if self:isFrontlightOnHW() then
+            -- Use setIntensity to ensure it sets fl_intensity, and because we don't want the ramping behavior of turnOn
+            self:setIntensity(self:frontlightIntensityHW())
+        else
+            -- Use setIntensityHW so as *NOT* to set fl_intensity, so toggle will still work.
+            self:setIntensityHW(0)
+        end
     end
 end
 
@@ -195,14 +204,17 @@ function KoboPowerD:isFrontlightOnHW()
         -- give initial state to BasePowerD, which will
         -- reset our self.hw_intensity to 0 if self.initial_is_fl_on is false
         local ret = self.initial_is_fl_on
+        print("KoboPowerD:isFrontlightOnHW initial_is_fl_on", self.initial_is_fl_on)
         self.initial_is_fl_on = nil
         return ret
     end
+    print("KoboPowerD:isFrontlightOnHW hw_intensity", self.hw_intensity)
     return self.hw_intensity > 0
 end
 
 function KoboPowerD:setIntensityHW(intensity)
     if self.fl == nil then return end
+    print("KoboPowerD:setIntensityHW", intensity)
     if self.fl_warmth == nil then
         self.fl:setBrightness(intensity)
     else
@@ -270,22 +282,15 @@ end
 -- Turn off front light before suspend.
 function KoboPowerD:beforeSuspend()
     if self.fl == nil then return end
-    -- just turn off frontlight without remembering its state
-    self.fl:setBrightness(0)
+    -- Turn off the frontlight
+    self:turnOffFrontlight()
 end
 
 -- Restore front light state after resume.
 function KoboPowerD:afterResume()
     if self.fl == nil then return end
-    -- just re-set it to self.hw_intensity that we haven't change on Suspend
-    if self.fl_warmth == nil then
-        self.fl:setBrightness(self.hw_intensity)
-    else
-        if self.auto_warmth then
-            self:calculateAutoWarmth()
-        end
-        self.fl:setNaturalBrightness(self.hw_intensity, self.fl_warmth)
-    end
+    -- Turn the frontlight back on
+    self:turnOnFrontlight()
 end
 
 return KoboPowerD

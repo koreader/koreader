@@ -20,21 +20,6 @@ function BasePowerD:new(o)
     if o.device and o.device.hasFrontlight() then
         o.fl_intensity = o:frontlightIntensityHW()
         o:_decideFrontlightState()
-        -- Note added by @Frenzie 2017-10-08
-        -- I believe this should be `if isKobo()`, or better yet that the entire
-        -- block should be moved to `KoboPowerD:init()` because afaik that is the
-        -- only platform where the system doesn't provide trustworthy frontlight
-        -- information. But to be absolutely sure that I don't break anything (and I
-        -- don't want to spend any time on this atm) I'm temporarily excluding only
-        -- Android where this behavior is known to be problematic.
-        -- See discussion in https://github.com/koreader/koreader/issues/3118#issuecomment-334995879
-        if not o.device:isAndroid() then
-            if o:isFrontlightOn() then
-                o:turnOnFrontlightHW()
-            else
-                o:turnOffFrontlightHW()
-            end
-        end
     end
     return o
 end
@@ -47,8 +32,43 @@ function BasePowerD:setDissmisBatteryStatus(status) self.battery_warning = statu
 function BasePowerD:isChargingHW() return false end
 function BasePowerD:frontlightIntensityHW() return 0 end
 function BasePowerD:isFrontlightOnHW() return self.fl_intensity > self.fl_min end
-function BasePowerD:turnOffFrontlightHW() self:_setIntensity(self.fl_min) end
-function BasePowerD:turnOnFrontlightHW() self:_setIntensity(self.fl_intensity) end
+function BasePowerD:turnOffFrontlightHW()
+    print("turnOffFrontlightHW")
+    if self:isFrontlightOff() then
+        print("Already off!")
+        return
+    end
+    local util = require("ffi/util")
+    util.runInSubProcess(function()
+        for i = 1,5 do
+            self:_setIntensity(math.floor(self.fl_intensity - ((self.fl_intensity / 5) * i)))
+            -- NOTE: No need to sleep, the overhead of the syscalls is good enough ;).
+            --[[
+            if (i < 5) then
+                util.usleep(1)
+            end
+            --]]
+        end
+    end, false, true)
+end
+function BasePowerD:turnOnFrontlightHW()
+    print("turnOnFrontlightHW")
+    if self:isFrontlightOn() then
+        print("Already on!")
+        return
+    end
+    local util = require("ffi/util")
+    util.runInSubProcess(function()
+        for i = 1,5 do
+            self:_setIntensity(math.ceil(self.fl_min + ((self.fl_intensity / 5) * i)))
+            --[[
+            if (i < 5) then
+                util.usleep(1)
+            end
+            --]]
+        end
+    end, false, true)
+end
 -- Anything needs to be done before do a real hardware suspend. Such as turn off
 -- front light.
 function BasePowerD:beforeSuspend() end
@@ -58,6 +78,7 @@ function BasePowerD:afterResume() end
 
 function BasePowerD:isFrontlightOn()
     assert(self ~= nil)
+    print("isFrontlightOn", self.is_fl_on)
     return self.is_fl_on
 end
 
@@ -65,6 +86,7 @@ function BasePowerD:_decideFrontlightState()
     assert(self ~= nil)
     assert(self.device.hasFrontlight())
     self.is_fl_on = self:isFrontlightOnHW()
+    print("_decideFrontlightState", self.is_fl_on)
 end
 
 function BasePowerD:isFrontlightOff()
@@ -92,8 +114,8 @@ function BasePowerD:turnOffFrontlight()
     assert(self ~= nil)
     if not self.device.hasFrontlight() then return end
     if self:isFrontlightOff() then return false end
-    self.is_fl_on = false
     self:turnOffFrontlightHW()
+    self.is_fl_on = false
     return true
 end
 
@@ -102,8 +124,8 @@ function BasePowerD:turnOnFrontlight()
     if not self.device.hasFrontlight() then return end
     if self:isFrontlightOn() then return false end
     if self.fl_intensity == self.fl_min then return false end
-    self.is_fl_on = true
     self:turnOnFrontlightHW()
+    self.is_fl_on = true
     return true
 end
 
@@ -139,7 +161,7 @@ function BasePowerD:setIntensity(intensity)
     if intensity == self:frontlightIntensity() then return false end
     self.fl_intensity = self:normalizeIntensity(intensity)
     self:_decideFrontlightState()
-    logger.dbg("set light intensity", self.fl_intensity)
+    print("set light intensity", self.fl_intensity)
     self:_setIntensity(self.fl_intensity)
     return true
 end
@@ -157,6 +179,7 @@ function BasePowerD:isCharging()
 end
 
 function BasePowerD:_setIntensity(intensity)
+    print("_setIntensity", intensity)
     self:setIntensityHW(intensity)
     -- BasePowerD is loaded before UIManager. So we cannot broadcast events before UIManager has
     -- been loaded.
