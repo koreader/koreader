@@ -42,12 +42,10 @@ function BasePowerD:turnOffFrontlightHW()
     util.runInSubProcess(function()
         for i = 1,5 do
             self:_setIntensity(math.floor(self.fl_intensity - ((self.fl_intensity / 5) * i)))
-            -- NOTE: No need to sleep, the overhead of the syscalls is good enough ;).
-            --[[
+            -- NOTE: Sleep mainly to ensure a somewhat consistent behavior between frontlight backends...
             if (i < 5) then
-                util.usleep(1)
+                util.usleep(35 * 1000)
             end
-            --]]
         end
     end, false, true)
 end
@@ -61,11 +59,9 @@ function BasePowerD:turnOnFrontlightHW()
     util.runInSubProcess(function()
         for i = 1,5 do
             self:_setIntensity(math.ceil(self.fl_min + ((self.fl_intensity / 5) * i)))
-            --[[
             if (i < 5) then
-                util.usleep(1)
+                util.usleep(35 * 1000)
             end
-            --]]
         end
     end, false, true)
 end
