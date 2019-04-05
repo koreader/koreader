@@ -14,7 +14,7 @@ function SonyPRSTUX_PowerD:init()
 end
 
 function SonyPRSTUX_PowerD:frontlightIntensityHW()
-    if not self.device.hasFrontlight() then return 0 end
+    if not self.device:hasFrontlight() then return 0 end
 end
 
 function SonyPRSTUX_PowerD:setIntensityHW(intensity)
