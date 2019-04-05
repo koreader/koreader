@@ -40,7 +40,7 @@ describe("Frontlight function in PowerD", function()
 
     test_when_off = function(fl_min)
         param.fl_min = fl_min
-        PowerD:setIntensity(0)
+        PowerD:setIntensityHW(0)
         PowerD.frontlightIntensityHW.returns(param.fl_min)
         local p = PowerD:new(param)
         assert.are.equal(param.fl_min, p:frontlightIntensity())
@@ -120,7 +120,7 @@ describe("Frontlight function in PowerD", function()
     test_when_on = function(fl_min)
         assert(fl_min < 2)
         param.fl_min = fl_min
-        PowerD:setIntensity(2)
+        PowerD:setIntensityHW(2)
         PowerD.frontlightIntensityHW.returns(2)
         local p = PowerD:new(param)
         assert.are.equal(2, p:frontlightIntensity())
