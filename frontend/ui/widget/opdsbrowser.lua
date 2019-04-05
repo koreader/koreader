@@ -269,13 +269,13 @@ function OPDSBrowser:genItemTableFromRoot()
     return item_table
 end
 
-function OPDSBrowser:fetchFeed(item_url, username, password)
+function OPDSBrowser:fetchFeed(item_url, username, password, method)
     local request, sink = {}, {}
     local parsed = url.parse(item_url)
     local hostname = parsed.host
     local auth = string.format("%s:%s", username, password)
     request['url'] = item_url
-    request['method'] = 'GET'
+    request['method'] = method and method or "GET"
     request['sink'] = ltn12.sink.table(sink)
     request['headers'] = { Authorization = "Basic " .. mime.b64(auth), ["Host"] = hostname, }
     logger.info("request", request)
@@ -287,6 +287,13 @@ function OPDSBrowser:fetchFeed(item_url, username, password)
         error(code)
     end
     if code == 200 then
+        if method == "HEAD" then
+            if headers["last-modified"] then
+                return headers["last-modified"]
+            else
+                return
+            end
+        end
         local xml = table.concat(sink)
         if xml ~= "" then
             return xml
@@ -300,7 +307,12 @@ end
 
 function OPDSBrowser:parseFeed(item_url, username, password)
     local feed
+    local feed_last_modified = self:fetchFeed(item_url, username, password, "HEAD")
     local hash = "opds|catalog|" .. item_url
+    if feed_last_modified then
+        hash = hash .. feed_last_modified
+    end
+
     local cache = CatalogCache:check(hash)
     if cache then
         feed = cache.feed
