@@ -651,6 +651,7 @@ function ReaderGesture:setupGesture(ges, action)
             "tap_backward",
             "tap_forward",
             "readermenu_tap",
+            "readerconfigmenu_tap",
             "readerfooter_tap",
         }
         overrides_hold_corner = {
