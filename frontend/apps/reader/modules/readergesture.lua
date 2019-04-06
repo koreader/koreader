@@ -223,30 +223,29 @@ end
 function ReaderGesture:addToMainMenu(menu_items)
     local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
 
-    local actionTextFunc = function(gesture)
+    local actionTextFunc = function(gesture, gesture_name)
         local action_name = gesture_manager[gesture] ~= "nothing" and action_strings[gesture_manager[gesture]] or _("Available")
-        return T(_("%1   (%2)"), gesture, action_name)
+        return T(_("%1   (%2)"), gesture_name, action_name)
     end
     local corner_hold_submenu = {
         text = _("Hold corner"),
         sub_item_table = {
             {
-                text_func = function() return actionTextFunc(_("Top left")) end,
+                text_func = function() return actionTextFunc("hold_top_left_corner", _("Top left")) end,
                 enabled_func = function() return self.ges_mode == "gesture_reader" end,
                 sub_item_table = self:buildMenu("hold_top_left_corner", self.default_gesture["hold_top_left_corner"]),
             },
             {
-                text_func = function() return actionTextFunc(_("Top right")) end,
+                text_func = function() return actionTextFunc("hold_top_right_corner", _("Top right")) end,
                 sub_item_table = self:buildMenu("hold_top_right_corner", self.default_gesture["hold_top_right_corner"]),
             },
             {
-                text_func = function() return actionTextFunc(_("Bottom left")) end,
+                text_func = function() return actionTextFunc("hold_bottom_left_corner", _("Bottom left")) end,
                 sub_item_table = self:buildMenu("hold_bottom_left_corner", self.default_gesture["hold_bottom_left_corner"]),
             },
             {
-                text_func = function() return actionTextFunc(_("Bottom right")) end,
+                text_func = function() return actionTextFunc("hold_bottom_right_corner", _("Bottom right")) end,
                 sub_item_table = self:buildMenu("hold_bottom_right_corner", self.default_gesture["hold_bottom_right_corner"]),
-                separator = true,
             },
         },
     }
@@ -363,21 +362,21 @@ function ReaderGesture:addToMainMenu(menu_items)
             text = _("Two-finger tap corner"),
             sub_item_table = {
                 {
-                    text_func = function() return actionTextFunc(_("Top left")) end,
+                    text_func = function() return actionTextFunc("two_finger_tap_top_left_corner", _("Top left")) end,
+                    enabled_func = function() return self.ges_mode == "gesture_reader" end,
                     sub_item_table = self:buildMenu("two_finger_tap_top_left_corner", self.default_gesture["two_finger_tap_top_left_corner"]),
                 },
                 {
-                    text_func = function() return actionTextFunc(_("Top right")) end,
+                    text_func = function() return actionTextFunc("two_finger_tap_top_right_corner", _("Top right")) end,
                     sub_item_table = self:buildMenu("two_finger_tap_top_right_corner", self.default_gesture["two_finger_tap_top_right_corner"]),
                 },
                 {
-                    text_func = function() return actionTextFunc(_("Bottom left")) end,
+                    text_func = function() return actionTextFunc("two_finger_tap_bottom_left_corner", _("Bottom left")) end,
                     sub_item_table = self:buildMenu("two_finger_tap_bottom_left_corner", self.default_gesture["two_finger_tap_bottom_left_corner"]),
                 },
                 {
-                    text_func = function() return actionTextFunc(_("Bottom right")) end,
+                    text_func = function() return actionTextFunc("two_finger_tap_bottom_right_corner", _("Bottom right")) end,
                     sub_item_table = self:buildMenu("two_finger_tap_bottom_right_corner", self.default_gesture["two_finger_tap_bottom_right_corner"]),
-                    separator = true,
                 },
             },
         }
