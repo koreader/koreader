@@ -18,6 +18,7 @@ local ReaderGesture = InputContainer:new{}
 
 local action_strings = {
     nothing = _("Nothing"),
+    ignore = _("Ignore"),
 
     page_jmp_back_10 = _("Back 10 pages"),
     page_jmp_back_1 = _("Previous page"),
@@ -417,6 +418,7 @@ function ReaderGesture:buildMenu(ges, default)
     local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
     local menu = {
         {"nothing", true },
+        {"ignore", true, true },
         {"page_jmp_back_10", not self.is_docless},
         {"page_jmp_back_1", not self.is_docless},
         {"page_jmp_fwd_10", not self.is_docless},
@@ -825,7 +827,9 @@ function ReaderGesture:registerGesture(ges, action, ges_type, zone, overrides, d
 end
 
 function ReaderGesture:gestureAction(action, ges)
-    if action == "reading_progress" and ReaderGesture.getReaderProgress then
+    if action == "ignore" then
+        return
+    elseif action == "reading_progress" and ReaderGesture.getReaderProgress then
         UIManager:show(ReaderGesture.getReaderProgress())
     elseif action == "toc" then
         self.ui:handleEvent(Event:new("ShowToc"))
