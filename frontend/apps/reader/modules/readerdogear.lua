@@ -68,7 +68,6 @@ end
 function ReaderDogear:resetLayout()
     local new_screen_width = Screen:getWidth()
     if new_screen_width == self._last_screen_width then return end
-    local new_screen_height = Screen:getHeight()
     self._last_screen_width = new_screen_width
 
     self[1].dimen.w = new_screen_width
