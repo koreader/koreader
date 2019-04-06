@@ -149,6 +149,10 @@ function ReaderGesture:init()
         tap_top_right_corner = self.ges_mode == "gesture_reader" and "toggle_bookmark" or "show_plus_menu",
         tap_right_bottom_corner = "nothing",
         tap_left_bottom_corner = Device:hasFrontlight() and "toggle_frontlight" or "nothing",
+        hold_top_left_corner = "nothing",
+        hold_top_right_corner = "nothing",
+        hold_bottom_left_corner = "nothing",
+        hold_bottom_right_corner = "nothing",
         short_diagonal_swipe = "full_refresh",
         multiswipe = "nothing", -- otherwise registerGesture() won't pick up on multiswipes
         multiswipe_west_east = self.ges_mode == "gesture_reader" and "previous_location" or "nothing",
@@ -305,6 +309,24 @@ function ReaderGesture:addToMainMenu(menu_items)
             {
                 text = _("Tap bottom right corner"),
                 sub_item_table = self:buildMenu("tap_right_bottom_corner", self.default_gesture["tap_right_bottom_corner"]),
+                separator = true,
+            },
+            {
+                text = _("Hold top left corner"),
+                enabled_func = function() return self.ges_mode == "gesture_reader" end,
+                sub_item_table = self:buildMenu("hold_top_left_corner", self.default_gesture["hold_top_left_corner"]),
+            },
+            {
+                text = _("Hold top right corner"),
+                sub_item_table = self:buildMenu("hold_top_right_corner", self.default_gesture["hold_top_right_corner"]),
+            },
+            {
+                text = _("Hold bottom left corner"),
+                sub_item_table = self:buildMenu("hold_bottom_left_corner", self.default_gesture["hold_bottom_left_corner"]),
+            },
+            {
+                text = _("Hold bottom right corner"),
+                sub_item_table = self:buildMenu("hold_bottom_right_corner", self.default_gesture["hold_bottom_right_corner"]),
                 separator = true,
             },
             {
@@ -607,6 +629,24 @@ function ReaderGesture:setupGesture(ges, action)
         ratio_h = DTAP_ZONE_BOTTOM_RIGHT.h,
     }
 
+    local overrides_tap_corner
+    local overrides_hold_corner
+    if self.is_docless then
+        overrides_tap_corner = {
+            "filemanager_tap",
+        }
+    else
+        overrides_tap_corner = {
+            "tap_backward",
+            "tap_forward",
+            "readermenu_tap",
+            "readerfooter_tap",
+        }
+        overrides_hold_corner = {
+            "readerfooter_hold",
+        }
+    end
+
     if ges == "multiswipe" then
         ges_type = "multiswipe"
         zone = zone_fullscreen
@@ -619,45 +659,35 @@ function ReaderGesture:setupGesture(ges, action)
     elseif ges == "tap_top_left_corner" then
         ges_type = "tap"
         zone = zone_top_left_corner
-        if not self.is_docless then
-            overrides = {
-                "tap_backward",
-                "tap_forward",
-            }
-        end
+        overrides = overrides_tap_corner
     elseif ges == "tap_top_right_corner" then
         ges_type = "tap"
         zone = zone_top_right_corner
-        if not self.is_docless then
-            overrides = {
-                "tap_backward",
-                "tap_forward",
-            }
-        end
+        overrides = overrides_tap_corner
     elseif ges == "tap_right_bottom_corner" then
         ges_type = "tap"
         zone = zone_bottom_right_corner
-        if self.is_docless then
-            overrides = {
-                "filemanager_tap",
-            }
-        else
-            overrides = {
-                "readerfooter_tap",
-            }
-        end
+        overrides = overrides_tap_corner
     elseif ges == "tap_left_bottom_corner" then
         ges_type = "tap"
         zone = zone_bottom_left_corner
-        if self.is_docless then
-            overrides = {
-                "filemanager_tap",
-            }
-        else
-            overrides = {
-                "readerfooter_tap",
-            }
-        end
+        overrides = overrides_tap_corner
+    elseif ges == "hold_top_left_corner" then
+        ges_type = "hold"
+        zone = zone_top_left_corner
+        overrides = overrides_hold_corner
+    elseif ges == "hold_top_right_corner" then
+        ges_type = "hold"
+        zone = zone_top_right_corner
+        overrides = overrides_hold_corner
+    elseif ges == "hold_bottom_right_corner" then
+        ges_type = "hold"
+        zone = zone_bottom_right_corner
+        overrides = overrides_hold_corner
+    elseif ges == "hold_bottom_left_corner" then
+        ges_type = "hold"
+        zone = zone_bottom_left_corner
+        overrides = overrides_hold_corner
     elseif ges == "two_finger_swipe_west" then
         ges_type = "two_finger_swipe"
         zone = zone_fullscreen
