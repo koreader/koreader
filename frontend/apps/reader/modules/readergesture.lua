@@ -153,6 +153,10 @@ function ReaderGesture:init()
         hold_top_right_corner = "nothing",
         hold_bottom_left_corner = "nothing",
         hold_bottom_right_corner = "nothing",
+        two_finger_tap_top_left_corner = "nothing",
+        two_finger_tap_top_right_corner = "nothing",
+        two_finger_tap_bottom_left_corner = "nothing",
+        two_finger_tap_bottom_right_corner = "nothing",
         short_diagonal_swipe = "full_refresh",
         multiswipe = "nothing", -- otherwise registerGesture() won't pick up on multiswipes
         multiswipe_west_east = self.ges_mode == "gesture_reader" and "previous_location" or "nothing",
@@ -218,7 +222,7 @@ end
 function ReaderGesture:addToMainMenu(menu_items)
     local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
 
-    local cornerHoldTextFunc = function(gesture)
+    local actionTextFunc = function(gesture)
         local action_name = gesture_manager[gesture] ~= "nothing" and action_strings[gesture_manager[gesture]] or _("Available")
         return T(_("%1   (%2)"), gesture, action_name)
     end
@@ -226,20 +230,20 @@ function ReaderGesture:addToMainMenu(menu_items)
         text = _("Hold corner"),
         sub_item_table = {
             {
-                text_func = function() return cornerHoldTextFunc(_("Top left")) end,
+                text_func = function() return actionTextFunc(_("Top left")) end,
                 enabled_func = function() return self.ges_mode == "gesture_reader" end,
                 sub_item_table = self:buildMenu("hold_top_left_corner", self.default_gesture["hold_top_left_corner"]),
             },
             {
-                text_func = function() return cornerHoldTextFunc(_("Top right")) end,
+                text_func = function() return actionTextFunc(_("Top right")) end,
                 sub_item_table = self:buildMenu("hold_top_right_corner", self.default_gesture["hold_top_right_corner"]),
             },
             {
-                text_func = function() return cornerHoldTextFunc(_("Bottom left")) end,
+                text_func = function() return actionTextFunc(_("Bottom left")) end,
                 sub_item_table = self:buildMenu("hold_bottom_left_corner", self.default_gesture["hold_bottom_left_corner"]),
             },
             {
-                text_func = function() return cornerHoldTextFunc(_("Bottom right")) end,
+                text_func = function() return actionTextFunc(_("Bottom right")) end,
                 sub_item_table = self:buildMenu("hold_bottom_right_corner", self.default_gesture["hold_bottom_right_corner"]),
                 separator = true,
             },
@@ -354,8 +358,31 @@ function ReaderGesture:addToMainMenu(menu_items)
     end
 
     if Device:hasMultitouch() then
+        local corner_two_finger_tap_submenu = {
+            text = _("Two-finger tap corner"),
+            sub_item_table = {
+                {
+                    text_func = function() return actionTextFunc(_("Top left")) end,
+                    sub_item_table = self:buildMenu("two_finger_tap_top_left_corner", self.default_gesture["two_finger_tap_top_left_corner"]),
+                },
+                {
+                    text_func = function() return actionTextFunc(_("Top right")) end,
+                    sub_item_table = self:buildMenu("two_finger_tap_top_right_corner", self.default_gesture["two_finger_tap_top_right_corner"]),
+                },
+                {
+                    text_func = function() return actionTextFunc(_("Bottom left")) end,
+                    sub_item_table = self:buildMenu("two_finger_tap_bottom_left_corner", self.default_gesture["two_finger_tap_bottom_left_corner"]),
+                },
+                {
+                    text_func = function() return actionTextFunc(_("Bottom right")) end,
+                    sub_item_table = self:buildMenu("two_finger_tap_bottom_right_corner", self.default_gesture["two_finger_tap_bottom_right_corner"]),
+                    separator = true,
+                },
+            },
+        }
+        table.insert(menu_items.gesture_manager.sub_item_table, corner_two_finger_tap_submenu)
         table.insert(menu_items.gesture_manager.sub_item_table, {
-            text = _("Two-finger swipes"),
+            text = _("Two-finger swipe"),
             sub_item_table = {
                 {
                     text_func = function() return twoFingerSwipeTextFunc("two_finger_swipe_east", "➡") end,
