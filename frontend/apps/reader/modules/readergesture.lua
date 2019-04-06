@@ -148,16 +148,16 @@ function ReaderGesture:init()
     self.ges_mode = self.is_docless and "gesture_fm" or "gesture_reader"
     self.default_gesture = {
         tap_top_right_corner = self.ges_mode == "gesture_reader" and "toggle_bookmark" or "show_plus_menu",
-        tap_right_bottom_corner = "nothing",
-        tap_left_bottom_corner = Device:hasFrontlight() and "toggle_frontlight" or "nothing",
-        hold_top_left_corner = "nothing",
-        hold_top_right_corner = "nothing",
-        hold_bottom_left_corner = "nothing",
-        hold_bottom_right_corner = "nothing",
-        two_finger_tap_top_left_corner = "nothing",
-        two_finger_tap_top_right_corner = "nothing",
-        two_finger_tap_bottom_left_corner = "nothing",
-        two_finger_tap_bottom_right_corner = "nothing",
+        tap_right_bottom_corner = "ignore",
+        tap_left_bottom_corner = Device:hasFrontlight() and "toggle_frontlight" or "ignore",
+        hold_top_left_corner = "ignore",
+        hold_top_right_corner = "ignore",
+        hold_bottom_left_corner = "ignore",
+        hold_bottom_right_corner = "ignore",
+        two_finger_tap_top_left_corner = "ignore",
+        two_finger_tap_top_right_corner = "ignore",
+        two_finger_tap_bottom_left_corner = "ignore",
+        two_finger_tap_bottom_right_corner = "ignore",
         short_diagonal_swipe = "full_refresh",
         multiswipe = "nothing", -- otherwise registerGesture() won't pick up on multiswipes
         multiswipe_west_east = self.ges_mode == "gesture_reader" and "previous_location" or "nothing",
@@ -185,12 +185,12 @@ function ReaderGesture:init()
         multiswipe_southeast_southwest_northwest = Device:hasWifiToggle() and "wifi_off" or "nothing",
         multiswipe_southeast_northeast_northwest = Device:hasWifiToggle() and "wifi_on" or "nothing",
 
-        two_finger_swipe_east = self.ges_mode == "gesture_reader" and "toc" or "nothing",
+        two_finger_swipe_east = self.ges_mode == "gesture_reader" and "toc" or "ignore",
         two_finger_swipe_west = self.ges_mode == "gesture_reader" and "bookmarks" or "folder_shortcuts",
-        two_finger_swipe_northeast = "nothing",
-        two_finger_swipe_northwest = "nothing",
-        two_finger_swipe_southeast = "nothing",
-        two_finger_swipe_southwest = "nothing",
+        two_finger_swipe_northeast = "ignore",
+        two_finger_swipe_northwest = "ignore",
+        two_finger_swipe_southeast = "ignore",
+        two_finger_swipe_southwest = "ignore",
     }
     local gm = G_reader_settings:readSetting(self.ges_mode)
     if gm == nil then G_reader_settings:saveSetting(self.ges_mode, {}) end
