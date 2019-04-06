@@ -616,6 +616,15 @@ function ReaderGesture:setupGesture(ges, action)
             east = true, west = true,
             north = true, south = true,
         }
+    elseif ges == "tap_top_left_corner" then
+        ges_type = "tap"
+        zone = zone_top_left_corner
+        if not self.is_docless then
+            overrides = {
+                "tap_backward",
+                "tap_forward",
+            }
+        end
     elseif ges == "tap_top_right_corner" then
         ges_type = "tap"
         zone = zone_top_right_corner
