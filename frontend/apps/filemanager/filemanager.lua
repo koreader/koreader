@@ -406,6 +406,7 @@ end
 
 function FileManager:onShowPlusMenu()
     self:tapPlus()
+    return true
 end
 
 function FileManager:tapPlus()
