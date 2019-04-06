@@ -92,6 +92,7 @@ function IconButton:initGesListener()
 end
 
 function IconButton:onTapIconButton()
+    if not self.callback then return end
     if G_reader_settings:isFalse("flash_ui") then
         self.callback()
     else

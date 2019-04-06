@@ -79,6 +79,7 @@ local action_strings = {
     zoom_page = _("Zoom to fit page"),
 
     folder_up = _("Folder up"),
+    show_plus_menu = _("Show plus menu"),
     folder_shortcuts = _("Folder shortcuts"),
     cycle_highlight_action = _("Cycle highlight action"),
     wallabag_download = _("Wallabag retrieval"),
@@ -145,7 +146,7 @@ function ReaderGesture:init()
     self.is_docless = self.ui == nil or self.ui.document == nil
     self.ges_mode = self.is_docless and "gesture_fm" or "gesture_reader"
     self.default_gesture = {
-        tap_top_right_corner = self.ges_mode == "gesture_reader" and "toggle_bookmark" or "nothing",
+        tap_top_right_corner = self.ges_mode == "gesture_reader" and "toggle_bookmark" or "show_plus_menu",
         tap_right_bottom_corner = "nothing",
         tap_left_bottom_corner = Device:hasFrontlight() and "toggle_frontlight" or "nothing",
         short_diagonal_swipe = "full_refresh",
@@ -295,7 +296,6 @@ function ReaderGesture:addToMainMenu(menu_items)
             self:genMultiswipeSubmenu(),
             {
                 text = _("Tap top right corner"),
-                enabled_func = function() return self.ges_mode == "gesture_reader" end,
                 sub_item_table = self:buildMenu("tap_top_right_corner", self.default_gesture["tap_top_right_corner"]),
             },
             {
@@ -373,6 +373,7 @@ function ReaderGesture:buildMenu(ges, default)
         {"clear_location_history", not self.is_docless, true},
 
         {"folder_up", self.is_docless},
+        {"show_plus_menu", self.is_docless},
         {"folder_shortcuts", true, true},
 
         { "toc", not self.is_docless},
@@ -801,6 +802,8 @@ function ReaderGesture:gestureAction(action, ges)
         end
     elseif action == "folder_up" then
         self.ui.file_chooser:changeToPath(string.format("%s/..", self.ui.file_chooser.path))
+    elseif action == "show_plus_menu" then
+        self.ui:handleEvent(Event:new("ShowPlusMenu"))
     elseif action == "folder_shortcuts" then
         self.ui:handleEvent(Event:new("ShowFolderShortcutsDialog"))
     elseif action == "open_previous_document" then
