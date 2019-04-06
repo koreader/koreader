@@ -67,6 +67,7 @@ local action_strings = {
     wifi_off = _("Disable wifi"),
     toggle_wifi = _("Toggle wifi"),
 
+    toggle_bookmark = _("Toggle bookmark"),
     toggle_reflow = _("Toggle reflow"),
 
     zoom_contentwidth = _("Zoom to fit content width"),
@@ -144,6 +145,7 @@ function ReaderGesture:init()
     self.is_docless = self.ui == nil or self.ui.document == nil
     self.ges_mode = self.is_docless and "gesture_fm" or "gesture_reader"
     self.default_gesture = {
+        tap_top_right_corner = self.ges_mode == "gesture_reader" and "toggle_bookmark" or "nothing",
         tap_right_bottom_corner = "nothing",
         tap_left_bottom_corner = Device:hasFrontlight() and "toggle_frontlight" or "nothing",
         short_diagonal_swipe = "full_refresh",
@@ -292,6 +294,10 @@ function ReaderGesture:addToMainMenu(menu_items)
             -- NB If this changes from position 3, also update the position of this menu in multigesture recorder callback
             self:genMultiswipeSubmenu(),
             {
+                text = _("Tap top right corner"),
+                sub_item_table = self:buildMenu("tap_top_right_corner", self.default_gesture["tap_top_right_corner"]),
+            },
+            {
                 text = _("Tap bottom left corner"),
                 sub_item_table = self:buildMenu("tap_left_bottom_corner", self.default_gesture["tap_left_bottom_corner"]),
             },
@@ -300,6 +306,7 @@ function ReaderGesture:addToMainMenu(menu_items)
                 sub_item_table = self:buildMenu("tap_right_bottom_corner", self.default_gesture["tap_right_bottom_corner"]),
                 separator = true,
             },
+
             {
                 text = _("Short diagonal swipe"),
                 sub_item_table = self:buildMenu("short_diagonal_swipe", self.default_gesture["short_diagonal_swipe"]),
@@ -402,6 +409,7 @@ function ReaderGesture:buildMenu(ges, default)
         {"wifi_off", Device:hasWifiToggle()},
         {"toggle_wifi", Device:hasWifiToggle(), true},
 
+        {"toggle_bookmark", not self.is_docless, true},
         {"toggle_reflow", not self.is_docless, true},
         {"zoom_contentwidth", not self.is_docless},
         {"zoom_contentheight", not self.is_docless},
@@ -582,6 +590,18 @@ function ReaderGesture:setupGesture(ges, action)
             east = true, west = true,
             north = true, south = true,
         }
+    elseif ges == "tap_top_right_corner" then
+        ges_type = "tap"
+        zone = {
+            ratio_x = 0.9, ratio_y = 0.0,
+            ratio_w = 0.1, ratio_h = 0.1,
+        }
+        if not self.is_docless then
+            overrides = {
+                "tap_backward",
+                "tap_forward",
+            }
+        end
     elseif ges == "tap_right_bottom_corner" then
         ges_type = "tap"
         zone = {
@@ -796,6 +816,8 @@ function ReaderGesture:gestureAction(action, ges)
         else
             self.ui:handleEvent(Event:new("ShowFlDialog"))
         end
+    elseif action == "toggle_bookmark" then
+        self.ui:handleEvent(Event:new("ToggleBookmark"))
     elseif action == "toggle_frontlight" then
         Device:getPowerDevice():toggleFrontlight()
         self:onShowFLOnOff()

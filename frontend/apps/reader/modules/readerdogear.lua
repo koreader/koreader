@@ -74,26 +74,6 @@ function ReaderDogear:resetLayout()
     self._last_screen_width = new_screen_width
 
     self[1].dimen.w = new_screen_width
-    if Device:isTouchDevice() then
-        self.ges_events = {
-            Tap = {
-                GestureRange:new{
-                    ges = "tap",
-                    range = Geom:new{
-                        x = new_screen_width*DTAP_ZONE_BOOKMARK.x,
-                        y = new_screen_height*DTAP_ZONE_BOOKMARK.y,
-                        w = new_screen_width*DTAP_ZONE_BOOKMARK.w,
-                        h = new_screen_height*DTAP_ZONE_BOOKMARK.h
-                    }
-                }
-            }
-        }
-    end
-end
-
-function ReaderDogear:onTap()
-    self.ui:handleEvent(Event:new("ToggleBookmark"))
-    return true
 end
 
 function ReaderDogear:onSetDogearVisibility(visible)
