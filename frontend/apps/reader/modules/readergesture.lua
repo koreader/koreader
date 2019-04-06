@@ -727,6 +727,18 @@ function ReaderGesture:setupGesture(ges, action)
         ges_type = "hold"
         zone = zone_bottom_left_corner
         overrides = overrides_hold_corner
+    elseif ges == "two_finger_tap_top_left_corner" then
+        ges_type = "two_finger_tap"
+        zone = zone_top_left_corner
+    elseif ges == "two_finger_tap_top_right_corner" then
+        ges_type = "two_finger_tap"
+        zone = zone_top_right_corner
+    elseif ges == "two_finger_tap_bottom_right_corner" then
+        ges_type = "two_finger_tap"
+        zone = zone_bottom_right_corner
+    elseif ges == "two_finger_tap_bottom_left_corner" then
+        ges_type = "two_finger_tap"
+        zone = zone_bottom_left_corner
     elseif ges == "two_finger_swipe_west" then
         ges_type = "two_finger_swipe"
         zone = zone_fullscreen
