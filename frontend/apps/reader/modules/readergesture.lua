@@ -307,7 +307,6 @@ function ReaderGesture:addToMainMenu(menu_items)
                 sub_item_table = self:buildMenu("tap_right_bottom_corner", self.default_gesture["tap_right_bottom_corner"]),
                 separator = true,
             },
-
             {
                 text = _("Short diagonal swipe"),
                 sub_item_table = self:buildMenu("short_diagonal_swipe", self.default_gesture["short_diagonal_swipe"]),
@@ -582,6 +581,31 @@ function ReaderGesture:setupGesture(ges, action)
         ratio_w = 1, ratio_h = 1,
     }
 
+    local zone_top_left_corner = {
+        ratio_x = DTAP_ZONE_FLIPPING.x,
+        ratio_y = DTAP_ZONE_FLIPPING.y,
+        ratio_w = DTAP_ZONE_FLIPPING.w,
+        ratio_h = DTAP_ZONE_FLIPPING.h,
+    }
+    local zone_top_right_corner = {
+        ratio_x = DTAP_ZONE_BOOKMARK.x,
+        ratio_y = DTAP_ZONE_BOOKMARK.y,
+        ratio_w = DTAP_ZONE_BOOKMARK.w,
+        ratio_h = DTAP_ZONE_BOOKMARK.h,
+    }
+    local zone_bottom_left_corner = {
+        ratio_x = DTAP_ZONE_BOTTOM_LEFT.x,
+        ratio_y = DTAP_ZONE_BOTTOM_LEFT.y,
+        ratio_w = DTAP_ZONE_BOTTOM_LEFT.w,
+        ratio_h = DTAP_ZONE_BOTTOM_LEFT.h,
+    }
+    local zone_bottom_right_corner = {
+        ratio_x = DTAP_ZONE_BOTTOM_RIGHT.x,
+        ratio_y = DTAP_ZONE_BOTTOM_RIGHT.y,
+        ratio_w = DTAP_ZONE_BOTTOM_RIGHT.w,
+        ratio_h = DTAP_ZONE_BOTTOM_RIGHT.h,
+    }
+
     if ges == "multiswipe" then
         ges_type = "multiswipe"
         zone = zone_fullscreen
@@ -593,10 +617,7 @@ function ReaderGesture:setupGesture(ges, action)
         }
     elseif ges == "tap_top_right_corner" then
         ges_type = "tap"
-        zone = {
-            ratio_x = 0.9, ratio_y = 0.0,
-            ratio_w = 0.1, ratio_h = 0.1,
-        }
+        zone = zone_top_right_corner
         if not self.is_docless then
             overrides = {
                 "tap_backward",
@@ -605,10 +626,7 @@ function ReaderGesture:setupGesture(ges, action)
         end
     elseif ges == "tap_right_bottom_corner" then
         ges_type = "tap"
-        zone = {
-            ratio_x = 0.9, ratio_y = 0.9,
-            ratio_w = 0.1, ratio_h = 0.1,
-        }
+        zone = zone_bottom_right_corner
         if self.is_docless then
             overrides = {
                 "filemanager_tap",
@@ -620,10 +638,7 @@ function ReaderGesture:setupGesture(ges, action)
         end
     elseif ges == "tap_left_bottom_corner" then
         ges_type = "tap"
-        zone = {
-            ratio_x = 0.0, ratio_y = 0.9,
-            ratio_w = 0.1, ratio_h = 0.1,
-        }
+        zone = zone_bottom_left_corner
         if self.is_docless then
             overrides = {
                 "filemanager_tap",
