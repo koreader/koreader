@@ -216,6 +216,35 @@ function ReaderGesture:genMultiswipeSubmenu()
 end
 
 function ReaderGesture:addToMainMenu(menu_items)
+    local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
+
+    local cornerHoldTextFunc = function(gesture)
+        local action_name = gesture_manager[gesture] ~= "nothing" and action_strings[gesture_manager[gesture]] or _("Available")
+        return T(_("%1   (%2)"), gesture, action_name)
+    end
+    local corner_hold_submenu = {
+        text = _("Hold corner"),
+        sub_item_table = {
+            {
+                text_func = function() return cornerHoldTextFunc(_("Top left")) end,
+                enabled_func = function() return self.ges_mode == "gesture_reader" end,
+                sub_item_table = self:buildMenu("hold_top_left_corner", self.default_gesture["hold_top_left_corner"]),
+            },
+            {
+                text_func = function() return cornerHoldTextFunc(_("Top right")) end,
+                sub_item_table = self:buildMenu("hold_top_right_corner", self.default_gesture["hold_top_right_corner"]),
+            },
+            {
+                text_func = function() return cornerHoldTextFunc(_("Bottom left")) end,
+                sub_item_table = self:buildMenu("hold_bottom_left_corner", self.default_gesture["hold_bottom_left_corner"]),
+            },
+            {
+                text_func = function() return cornerHoldTextFunc(_("Bottom right")) end,
+                sub_item_table = self:buildMenu("hold_bottom_right_corner", self.default_gesture["hold_bottom_right_corner"]),
+                separator = true,
+            },
+        },
+    }
     menu_items.gesture_manager = {
         text = _("Gesture manager"),
         sub_item_table = {
@@ -311,24 +340,7 @@ function ReaderGesture:addToMainMenu(menu_items)
                 sub_item_table = self:buildMenu("tap_right_bottom_corner", self.default_gesture["tap_right_bottom_corner"]),
                 separator = true,
             },
-            {
-                text = _("Hold top left corner"),
-                enabled_func = function() return self.ges_mode == "gesture_reader" end,
-                sub_item_table = self:buildMenu("hold_top_left_corner", self.default_gesture["hold_top_left_corner"]),
-            },
-            {
-                text = _("Hold top right corner"),
-                sub_item_table = self:buildMenu("hold_top_right_corner", self.default_gesture["hold_top_right_corner"]),
-            },
-            {
-                text = _("Hold bottom left corner"),
-                sub_item_table = self:buildMenu("hold_bottom_left_corner", self.default_gesture["hold_bottom_left_corner"]),
-            },
-            {
-                text = _("Hold bottom right corner"),
-                sub_item_table = self:buildMenu("hold_bottom_right_corner", self.default_gesture["hold_bottom_right_corner"]),
-                separator = true,
-            },
+            corner_hold_submenu,
             {
                 text = _("Short diagonal swipe"),
                 sub_item_table = self:buildMenu("short_diagonal_swipe", self.default_gesture["short_diagonal_swipe"]),
@@ -336,7 +348,6 @@ function ReaderGesture:addToMainMenu(menu_items)
         },
     }
 
-    local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
     local twoFingerSwipeTextFunc = function(gesture, friendly_name)
         local action_name = gesture_manager[gesture] ~= "nothing" and action_strings[gesture_manager[gesture]] or _("Available")
         return T(_("%1   (%2)"), friendly_name, action_name)
