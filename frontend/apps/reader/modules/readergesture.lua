@@ -295,6 +295,7 @@ function ReaderGesture:addToMainMenu(menu_items)
             self:genMultiswipeSubmenu(),
             {
                 text = _("Tap top right corner"),
+                enabled_func = function() return self.ges_mode == "gesture_reader" end,
                 sub_item_table = self:buildMenu("tap_top_right_corner", self.default_gesture["tap_top_right_corner"]),
             },
             {
