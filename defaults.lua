@@ -64,17 +64,21 @@ DOVERLAPPIXELS = 30
 FOLLOW_LINK_TIMEOUT = 0.5
 
 -- customizable tap zones(rectangles)
--- x: x coordinate of top left corner in proportion of screen width
--- y: y coordinate of top left corner in proportion of screen height
--- w: width of tap zone in proportion of screen width
--- h: height of tap zone in proportion of screen height
+-- x: x coordinate of top left corner in proportion to screen width
+-- y: y coordinate of top left corner in proportion to screen height
+-- w: tap zone width in proportion to screen width
+-- h: tap zone height in proportion to screen height
 DTAP_ZONE_MENU = {x = 1/8, y = 0, w = 3/4, h = 1/8}
 DTAP_ZONE_CONFIG = {x = 1/8, y = 7/8, w = 3/4, h = 1/8}
 DTAP_ZONE_MINIBAR = {x = 0, y = 31/32, w = 1, h = 1/32}
 DTAP_ZONE_FORWARD = {x = 1/4, y = 0, w = 3/4, h = 1}
 DTAP_ZONE_BACKWARD = {x = 0, y = 0, w = 1/4, h = 1}
-DTAP_ZONE_BOOKMARK = {x = 7/8, y = 0, w = 1/8, h = 1/8}
-DTAP_ZONE_FLIPPING = {x = 0, y = 0, w = 1/8, h = 1/8}
+-- DTAP_ZONE_BOOKMARK = {x = 7/8, y = 0, w = 1/8, h = 1/8} -- deprecated
+-- DTAP_ZONE_FLIPPING = {x = 0, y = 0, w = 1/8, h = 1/8} -- deprecated
+DTAP_ZONE_TOP_LEFT = {x = 0, y = 0, w = 1/8, h = 1/8}
+DTAP_ZONE_TOP_RIGHT = {x = 7/8, y = 0, w = 1/8, h = 1/8}
+DTAP_ZONE_BOTTOM_LEFT = {x = 0, y = 7/8, w = 1/8, h = 1/8}
+DTAP_ZONE_BOTTOM_RIGHT = {x = 7/8, y = 7/8, w = 1/8, h = 1/8}
 DDOUBLE_TAP_ZONE_NEXT_CHAPTER = {x = 6/8, y = 0, w = 2/8, h = 2/8}
 DDOUBLE_TAP_ZONE_PREV_CHAPTER = {x = 0, y = 0, w = 2/8, h = 2/8}
 

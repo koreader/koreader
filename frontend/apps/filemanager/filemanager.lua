@@ -88,7 +88,7 @@ function FileManager:init()
         padding_left = Size.padding.large,
         padding_right = Size.padding.large,
         padding_bottom = 0,
-        callback = function() self:tapPlus() end,
+        callback = nil, -- top right corner callback handled by gesture manager
     }
 
     self.path_text = TextWidget:new{
@@ -402,6 +402,11 @@ function FileChooser:onBack()
         self:changeToPath(string.format("%s/..", self.path))
         return true
     end
+end
+
+function FileManager:onShowPlusMenu()
+    self:tapPlus()
+    return true
 end
 
 function FileManager:tapPlus()

@@ -8,7 +8,7 @@ describe("defaults module", function()
 
     it("should load all defaults from defaults.lua", function()
         Defaults:init()
-        assert.is_same(92, #Defaults.defaults_name)
+        assert.is_same(94, #Defaults.defaults_name)
         assert.is_same("DFULL_SCREEN", Defaults.defaults_name[38])
     end)
 
@@ -21,11 +21,11 @@ describe("defaults module", function()
         Defaults.changed[29] = true
         Defaults.changed[38] = true
         Defaults.changed[73] = true
-        Defaults.changed[87] = true
+        Defaults.changed[89] = true
         Defaults:saveSettings()
-        assert.is_same(92, #Defaults.defaults_name)
+        assert.is_same(94, #Defaults.defaults_name)
         assert.is_same("DFULL_SCREEN", Defaults.defaults_name[38])
-        assert.is_same("SEARCH_LIBRARY_PATH", Defaults.defaults_name[87])
+        assert.is_same("SEARCH_LIBRARY_PATH", Defaults.defaults_name[89])
         assert.is_same("DTAP_ZONE_BACKWARD", Defaults.defaults_name[73])
         assert.is_same("DCREREADER_CONFIG_WORD_GAP_LARGE", Defaults.defaults_name[29])
         assert.is_same("DCREREADER_CONFIG_MARGIN_SIZES_HUGE", Defaults.defaults_name[21])

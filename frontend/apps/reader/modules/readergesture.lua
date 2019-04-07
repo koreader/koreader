@@ -18,6 +18,7 @@ local ReaderGesture = InputContainer:new{}
 
 local action_strings = {
     nothing = _("Nothing"),
+    ignore = _("Ignore"),
 
     page_jmp_back_10 = _("Back 10 pages"),
     page_jmp_back_1 = _("Previous page"),
@@ -67,6 +68,8 @@ local action_strings = {
     wifi_off = _("Disable wifi"),
     toggle_wifi = _("Toggle wifi"),
 
+    toggle_bookmark = _("Toggle bookmark"),
+    toggle_page_flipping = _("Toggle page flipping"),
     toggle_reflow = _("Toggle reflow"),
 
     zoom_contentwidth = _("Zoom to fit content width"),
@@ -78,6 +81,7 @@ local action_strings = {
     zoom_page = _("Zoom to fit page"),
 
     folder_up = _("Folder up"),
+    show_plus_menu = _("Show plus menu"),
     folder_shortcuts = _("Folder shortcuts"),
     cycle_highlight_action = _("Cycle highlight action"),
     wallabag_download = _("Wallabag retrieval"),
@@ -144,8 +148,18 @@ function ReaderGesture:init()
     self.is_docless = self.ui == nil or self.ui.document == nil
     self.ges_mode = self.is_docless and "gesture_fm" or "gesture_reader"
     self.default_gesture = {
-        tap_right_bottom_corner = "nothing",
-        tap_left_bottom_corner = Device:hasFrontlight() and "toggle_frontlight" or "nothing",
+        tap_top_left_corner = self.ges_mode == "gesture_reader" and "toggle_page_flipping" or "ignore",
+        tap_top_right_corner = self.ges_mode == "gesture_reader" and "toggle_bookmark" or "show_plus_menu",
+        tap_right_bottom_corner = "ignore",
+        tap_left_bottom_corner = Device:hasFrontlight() and "toggle_frontlight" or "ignore",
+        hold_top_left_corner = "ignore",
+        hold_top_right_corner = "ignore",
+        hold_bottom_left_corner = "ignore",
+        hold_bottom_right_corner = "ignore",
+        two_finger_tap_top_left_corner = "ignore",
+        two_finger_tap_top_right_corner = "ignore",
+        two_finger_tap_bottom_left_corner = "ignore",
+        two_finger_tap_bottom_right_corner = "ignore",
         short_diagonal_swipe = "full_refresh",
         multiswipe = "nothing", -- otherwise registerGesture() won't pick up on multiswipes
         multiswipe_west_east = self.ges_mode == "gesture_reader" and "previous_location" or "nothing",
@@ -173,12 +187,12 @@ function ReaderGesture:init()
         multiswipe_southeast_southwest_northwest = Device:hasWifiToggle() and "wifi_off" or "nothing",
         multiswipe_southeast_northeast_northwest = Device:hasWifiToggle() and "wifi_on" or "nothing",
 
-        two_finger_swipe_east = self.ges_mode == "gesture_reader" and "toc" or "nothing",
+        two_finger_swipe_east = self.ges_mode == "gesture_reader" and "toc" or "ignore",
         two_finger_swipe_west = self.ges_mode == "gesture_reader" and "bookmarks" or "folder_shortcuts",
-        two_finger_swipe_northeast = "nothing",
-        two_finger_swipe_northwest = "nothing",
-        two_finger_swipe_southeast = "nothing",
-        two_finger_swipe_southwest = "nothing",
+        two_finger_swipe_northeast = "ignore",
+        two_finger_swipe_northwest = "ignore",
+        two_finger_swipe_southeast = "ignore",
+        two_finger_swipe_southwest = "ignore",
     }
     local gm = G_reader_settings:readSetting(self.ges_mode)
     if gm == nil then G_reader_settings:saveSetting(self.ges_mode, {}) end
@@ -209,6 +223,34 @@ function ReaderGesture:genMultiswipeSubmenu()
 end
 
 function ReaderGesture:addToMainMenu(menu_items)
+    local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
+
+    local actionTextFunc = function(gesture, gesture_name)
+        local action_name = gesture_manager[gesture] ~= "nothing" and action_strings[gesture_manager[gesture]] or _("Available")
+        return T(_("%1   (%2)"), gesture_name, action_name)
+    end
+    local corner_hold_submenu = {
+        text = _("Hold corner"),
+        sub_item_table = {
+            {
+                text_func = function() return actionTextFunc("hold_top_left_corner", _("Top left")) end,
+                enabled_func = function() return self.ges_mode == "gesture_reader" end,
+                sub_item_table = self:buildMenu("hold_top_left_corner", self.default_gesture["hold_top_left_corner"]),
+            },
+            {
+                text_func = function() return actionTextFunc("hold_top_right_corner", _("Top right")) end,
+                sub_item_table = self:buildMenu("hold_top_right_corner", self.default_gesture["hold_top_right_corner"]),
+            },
+            {
+                text_func = function() return actionTextFunc("hold_bottom_left_corner", _("Bottom left")) end,
+                sub_item_table = self:buildMenu("hold_bottom_left_corner", self.default_gesture["hold_bottom_left_corner"]),
+            },
+            {
+                text_func = function() return actionTextFunc("hold_bottom_right_corner", _("Bottom right")) end,
+                sub_item_table = self:buildMenu("hold_bottom_right_corner", self.default_gesture["hold_bottom_right_corner"]),
+            },
+        },
+    }
     menu_items.gesture_manager = {
         text = _("Gesture manager"),
         sub_item_table = {
@@ -292,6 +334,15 @@ function ReaderGesture:addToMainMenu(menu_items)
             -- NB If this changes from position 3, also update the position of this menu in multigesture recorder callback
             self:genMultiswipeSubmenu(),
             {
+                text = _("Tap top left corner"),
+                enabled_func = function() return self.ges_mode == "gesture_reader" end,
+                sub_item_table = self:buildMenu("tap_top_left_corner", self.default_gesture["tap_top_left_corner"]),
+            },
+            {
+                text = _("Tap top right corner"),
+                sub_item_table = self:buildMenu("tap_top_right_corner", self.default_gesture["tap_top_right_corner"]),
+            },
+            {
                 text = _("Tap bottom left corner"),
                 sub_item_table = self:buildMenu("tap_left_bottom_corner", self.default_gesture["tap_left_bottom_corner"]),
             },
@@ -300,6 +351,7 @@ function ReaderGesture:addToMainMenu(menu_items)
                 sub_item_table = self:buildMenu("tap_right_bottom_corner", self.default_gesture["tap_right_bottom_corner"]),
                 separator = true,
             },
+            corner_hold_submenu,
             {
                 text = _("Short diagonal swipe"),
                 sub_item_table = self:buildMenu("short_diagonal_swipe", self.default_gesture["short_diagonal_swipe"]),
@@ -307,15 +359,36 @@ function ReaderGesture:addToMainMenu(menu_items)
         },
     }
 
-    local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
     local twoFingerSwipeTextFunc = function(gesture, friendly_name)
         local action_name = gesture_manager[gesture] ~= "nothing" and action_strings[gesture_manager[gesture]] or _("Available")
         return T(_("%1   (%2)"), friendly_name, action_name)
     end
 
     if Device:hasMultitouch() then
+        local corner_two_finger_tap_submenu = {
+            text = _("Two-finger tap corner"),
+            sub_item_table = {
+                {
+                    text_func = function() return actionTextFunc("two_finger_tap_top_left_corner", _("Top left")) end,
+                    sub_item_table = self:buildMenu("two_finger_tap_top_left_corner", self.default_gesture["two_finger_tap_top_left_corner"]),
+                },
+                {
+                    text_func = function() return actionTextFunc("two_finger_tap_top_right_corner", _("Top right")) end,
+                    sub_item_table = self:buildMenu("two_finger_tap_top_right_corner", self.default_gesture["two_finger_tap_top_right_corner"]),
+                },
+                {
+                    text_func = function() return actionTextFunc("two_finger_tap_bottom_left_corner", _("Bottom left")) end,
+                    sub_item_table = self:buildMenu("two_finger_tap_bottom_left_corner", self.default_gesture["two_finger_tap_bottom_left_corner"]),
+                },
+                {
+                    text_func = function() return actionTextFunc("two_finger_tap_bottom_right_corner", _("Bottom right")) end,
+                    sub_item_table = self:buildMenu("two_finger_tap_bottom_right_corner", self.default_gesture["two_finger_tap_bottom_right_corner"]),
+                },
+            },
+        }
+        table.insert(menu_items.gesture_manager.sub_item_table, corner_two_finger_tap_submenu)
         table.insert(menu_items.gesture_manager.sub_item_table, {
-            text = _("Two-finger swipes"),
+            text = _("Two-finger swipe"),
             sub_item_table = {
                 {
                     text_func = function() return twoFingerSwipeTextFunc("two_finger_swipe_east", "➡") end,
@@ -350,6 +423,7 @@ function ReaderGesture:buildMenu(ges, default)
     local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
     local menu = {
         {"nothing", true },
+        {"ignore", true, true },
         {"page_jmp_back_10", not self.is_docless},
         {"page_jmp_back_1", not self.is_docless},
         {"page_jmp_fwd_10", not self.is_docless},
@@ -366,6 +440,7 @@ function ReaderGesture:buildMenu(ges, default)
         {"clear_location_history", not self.is_docless, true},
 
         {"folder_up", self.is_docless},
+        {"show_plus_menu", self.is_docless},
         {"folder_shortcuts", true, true},
 
         { "toc", not self.is_docless},
@@ -402,6 +477,8 @@ function ReaderGesture:buildMenu(ges, default)
         {"wifi_off", Device:hasWifiToggle()},
         {"toggle_wifi", Device:hasWifiToggle(), true},
 
+        {"toggle_bookmark", not self.is_docless, true},
+        {"toggle_page_flipping", not self.is_docless, true},
         {"toggle_reflow", not self.is_docless, true},
         {"zoom_contentwidth", not self.is_docless},
         {"zoom_contentheight", not self.is_docless},
@@ -573,6 +650,54 @@ function ReaderGesture:setupGesture(ges, action)
         ratio_w = 1, ratio_h = 1,
     }
 
+    -- legacy global variable DTAP_ZONE_FLIPPING may still be defined in default.persistent.lua
+    local dtap_zone_top_left = DTAP_ZONE_FLIPPING and DTAP_ZONE_FLIPPING or DTAP_ZONE_TOP_LEFT
+    local zone_top_left_corner = {
+        ratio_x = dtap_zone_top_left.x,
+        ratio_y = dtap_zone_top_left.y,
+        ratio_w = dtap_zone_top_left.w,
+        ratio_h = dtap_zone_top_left.h,
+    }
+    -- legacy global variable DTAP_ZONE_BOOKMARK may still be defined in default.persistent.lua
+    local dtap_zone_top_right = DTAP_ZONE_BOOKMARK and DTAP_ZONE_BOOKMARK or DTAP_ZONE_TOP_RIGHT
+    local zone_top_right_corner = {
+        ratio_x = dtap_zone_top_right.x,
+        ratio_y = dtap_zone_top_right.y,
+        ratio_w = dtap_zone_top_right.w,
+        ratio_h = dtap_zone_top_right.h,
+    }
+    local zone_bottom_left_corner = {
+        ratio_x = DTAP_ZONE_BOTTOM_LEFT.x,
+        ratio_y = DTAP_ZONE_BOTTOM_LEFT.y,
+        ratio_w = DTAP_ZONE_BOTTOM_LEFT.w,
+        ratio_h = DTAP_ZONE_BOTTOM_LEFT.h,
+    }
+    local zone_bottom_right_corner = {
+        ratio_x = DTAP_ZONE_BOTTOM_RIGHT.x,
+        ratio_y = DTAP_ZONE_BOTTOM_RIGHT.y,
+        ratio_w = DTAP_ZONE_BOTTOM_RIGHT.w,
+        ratio_h = DTAP_ZONE_BOTTOM_RIGHT.h,
+    }
+
+    local overrides_tap_corner
+    local overrides_hold_corner
+    if self.is_docless then
+        overrides_tap_corner = {
+            "filemanager_tap",
+        }
+    else
+        overrides_tap_corner = {
+            "tap_backward",
+            "tap_forward",
+            "readermenu_tap",
+            "readerconfigmenu_tap",
+            "readerfooter_tap",
+        }
+        overrides_hold_corner = {
+            "readerfooter_hold",
+        }
+    end
+
     if ges == "multiswipe" then
         ges_type = "multiswipe"
         zone = zone_fullscreen
@@ -582,36 +707,50 @@ function ReaderGesture:setupGesture(ges, action)
             east = true, west = true,
             north = true, south = true,
         }
+    elseif ges == "tap_top_left_corner" then
+        ges_type = "tap"
+        zone = zone_top_left_corner
+        overrides = overrides_tap_corner
+    elseif ges == "tap_top_right_corner" then
+        ges_type = "tap"
+        zone = zone_top_right_corner
+        overrides = overrides_tap_corner
     elseif ges == "tap_right_bottom_corner" then
         ges_type = "tap"
-        zone = {
-            ratio_x = 0.9, ratio_y = 0.9,
-            ratio_w = 0.1, ratio_h = 0.1,
-        }
-        if self.is_docless then
-            overrides = {
-                "filemanager_tap",
-            }
-        else
-            overrides = {
-                "readerfooter_tap",
-            }
-        end
+        zone = zone_bottom_right_corner
+        overrides = overrides_tap_corner
     elseif ges == "tap_left_bottom_corner" then
         ges_type = "tap"
-        zone = {
-            ratio_x = 0.0, ratio_y = 0.9,
-            ratio_w = 0.1, ratio_h = 0.1,
-        }
-        if self.is_docless then
-            overrides = {
-                "filemanager_tap",
-            }
-        else
-            overrides = {
-                "readerfooter_tap",
-            }
-        end
+        zone = zone_bottom_left_corner
+        overrides = overrides_tap_corner
+    elseif ges == "hold_top_left_corner" then
+        ges_type = "hold"
+        zone = zone_top_left_corner
+        overrides = overrides_hold_corner
+    elseif ges == "hold_top_right_corner" then
+        ges_type = "hold"
+        zone = zone_top_right_corner
+        overrides = overrides_hold_corner
+    elseif ges == "hold_bottom_right_corner" then
+        ges_type = "hold"
+        zone = zone_bottom_right_corner
+        overrides = overrides_hold_corner
+    elseif ges == "hold_bottom_left_corner" then
+        ges_type = "hold"
+        zone = zone_bottom_left_corner
+        overrides = overrides_hold_corner
+    elseif ges == "two_finger_tap_top_left_corner" then
+        ges_type = "two_finger_tap"
+        zone = zone_top_left_corner
+    elseif ges == "two_finger_tap_top_right_corner" then
+        ges_type = "two_finger_tap"
+        zone = zone_top_right_corner
+    elseif ges == "two_finger_tap_bottom_right_corner" then
+        ges_type = "two_finger_tap"
+        zone = zone_bottom_right_corner
+    elseif ges == "two_finger_tap_bottom_left_corner" then
+        ges_type = "two_finger_tap"
+        zone = zone_bottom_left_corner
     elseif ges == "two_finger_swipe_west" then
         ges_type = "two_finger_swipe"
         zone = zone_fullscreen
@@ -698,7 +837,9 @@ function ReaderGesture:registerGesture(ges, action, ges_type, zone, overrides, d
 end
 
 function ReaderGesture:gestureAction(action, ges)
-    if action == "reading_progress" and ReaderGesture.getReaderProgress then
+    if action == "ignore" then
+        return
+    elseif action == "reading_progress" and ReaderGesture.getReaderProgress then
         UIManager:show(ReaderGesture.getReaderProgress())
     elseif action == "toc" then
         self.ui:handleEvent(Event:new("ShowToc"))
@@ -765,6 +906,8 @@ function ReaderGesture:gestureAction(action, ges)
         end
     elseif action == "folder_up" then
         self.ui.file_chooser:changeToPath(string.format("%s/..", self.ui.file_chooser.path))
+    elseif action == "show_plus_menu" then
+        self.ui:handleEvent(Event:new("ShowPlusMenu"))
     elseif action == "folder_shortcuts" then
         self.ui:handleEvent(Event:new("ShowFolderShortcutsDialog"))
     elseif action == "open_previous_document" then
@@ -796,6 +939,8 @@ function ReaderGesture:gestureAction(action, ges)
         else
             self.ui:handleEvent(Event:new("ShowFlDialog"))
         end
+    elseif action == "toggle_bookmark" then
+        self.ui:handleEvent(Event:new("ToggleBookmark"))
     elseif action == "toggle_frontlight" then
         Device:getPowerDevice():toggleFrontlight()
         self:onShowFLOnOff()
@@ -803,6 +948,14 @@ function ReaderGesture:gestureAction(action, ges)
         G_reader_settings:flipNilOrFalse("input_ignore_gsensor")
         Device:toggleGSensor()
         self:onGSensorToggle()
+    elseif action == "toggle_page_flipping" then
+        if not self.ui.document.info.has_pages then
+            -- ReaderRolling has no support (yet) for onTogglePageFlipping,
+            -- so don't make that top left tap area unusable (and allow
+            -- taping on links there)
+            return false
+        end
+        self.ui:handleEvent(Event:new("TogglePageFlipping"))
     elseif action == "toggle_reflow" then
         if not self.document.info.has_pages then return end
         if self.document.configurable.text_wrap == 1 then
