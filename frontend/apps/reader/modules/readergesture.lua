@@ -69,6 +69,7 @@ local action_strings = {
     toggle_wifi = _("Toggle wifi"),
 
     toggle_bookmark = _("Toggle bookmark"),
+    toggle_page_flipping = _("Toggle page flipping"),
     toggle_reflow = _("Toggle reflow"),
 
     zoom_contentwidth = _("Zoom to fit content width"),
@@ -147,6 +148,7 @@ function ReaderGesture:init()
     self.is_docless = self.ui == nil or self.ui.document == nil
     self.ges_mode = self.is_docless and "gesture_fm" or "gesture_reader"
     self.default_gesture = {
+        tap_top_left_corner = self.ges_mode == "gesture_reader" and "toggle_page_flipping" or "ignore",
         tap_top_right_corner = self.ges_mode == "gesture_reader" and "toggle_bookmark" or "show_plus_menu",
         tap_right_bottom_corner = "ignore",
         tap_left_bottom_corner = Device:hasFrontlight() and "toggle_frontlight" or "ignore",
@@ -332,6 +334,11 @@ function ReaderGesture:addToMainMenu(menu_items)
             -- NB If this changes from position 3, also update the position of this menu in multigesture recorder callback
             self:genMultiswipeSubmenu(),
             {
+                text = _("Tap top left corner"),
+                enabled_func = function() return self.ges_mode == "gesture_reader" end,
+                sub_item_table = self:buildMenu("tap_top_left_corner", self.default_gesture["tap_top_left_corner"]),
+            },
+            {
                 text = _("Tap top right corner"),
                 sub_item_table = self:buildMenu("tap_top_right_corner", self.default_gesture["tap_top_right_corner"]),
             },
@@ -363,7 +370,6 @@ function ReaderGesture:addToMainMenu(menu_items)
             sub_item_table = {
                 {
                     text_func = function() return actionTextFunc("two_finger_tap_top_left_corner", _("Top left")) end,
-                    enabled_func = function() return self.ges_mode == "gesture_reader" end,
                     sub_item_table = self:buildMenu("two_finger_tap_top_left_corner", self.default_gesture["two_finger_tap_top_left_corner"]),
                 },
                 {
@@ -472,6 +478,7 @@ function ReaderGesture:buildMenu(ges, default)
         {"toggle_wifi", Device:hasWifiToggle(), true},
 
         {"toggle_bookmark", not self.is_docless, true},
+        {"toggle_page_flipping", not self.is_docless, true},
         {"toggle_reflow", not self.is_docless, true},
         {"zoom_contentwidth", not self.is_docless},
         {"zoom_contentheight", not self.is_docless},
@@ -943,6 +950,14 @@ function ReaderGesture:gestureAction(action, ges)
         G_reader_settings:flipNilOrFalse("input_ignore_gsensor")
         Device:toggleGSensor()
         self:onGSensorToggle()
+    elseif action == "toggle_page_flipping" then
+        if not self.ui.document.info.has_pages then
+            -- ReaderRolling has no support (yet) for onTogglePageFlipping,
+            -- so don't make that top left tap area unusable (and allow
+            -- taping on links there)
+            return false
+        end
+        self.ui:handleEvent(Event:new("TogglePageFlipping"))
     elseif action == "toggle_reflow" then
         if not self.document.info.has_pages then return end
         if self.document.configurable.text_wrap == 1 then
