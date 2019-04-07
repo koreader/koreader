@@ -29,16 +29,21 @@ function ReaderFlipping:resetLayout()
     self._last_screen_width = new_screen_width
 
     self[1].dimen.w = new_screen_width
+
+    if DTAP_ZONE_FLIPPING then -- legacy global variable, may still be defined in default.persistent.lua
+        DTAP_ZONE_TOP_LEFT = DTAP_ZONE_FLIPPING
+    end
+
     if Device:isTouchDevice() then
         self.ges_events = {
             Tap = {
                 GestureRange:new{
                     ges = "tap",
                     range = Geom:new{
-                        x = new_screen_width*DTAP_ZONE_FLIPPING.x,
-                        y = new_screen_height*DTAP_ZONE_FLIPPING.y,
-                        w = new_screen_width*DTAP_ZONE_FLIPPING.w,
-                        h = new_screen_height*DTAP_ZONE_FLIPPING.h
+                        x = new_screen_width*DTAP_ZONE_TOP_LEFT.x,
+                        y = new_screen_height*DTAP_ZONE_TOP_LEFT.y,
+                        w = new_screen_width*DTAP_ZONE_TOP_LEFT.w,
+                        h = new_screen_height*DTAP_ZONE_TOP_LEFT.h
                     }
                 }
             }

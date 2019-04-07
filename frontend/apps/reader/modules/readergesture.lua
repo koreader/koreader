@@ -643,17 +643,23 @@ function ReaderGesture:setupGesture(ges, action)
         ratio_w = 1, ratio_h = 1,
     }
 
+    if DTAP_ZONE_FLIPPING then -- legacy global variable, may still be defined in default.persistent.lua
+        DTAP_ZONE_TOP_LEFT = DTAP_ZONE_FLIPPING
+    end
     local zone_top_left_corner = {
-        ratio_x = DTAP_ZONE_FLIPPING.x,
-        ratio_y = DTAP_ZONE_FLIPPING.y,
-        ratio_w = DTAP_ZONE_FLIPPING.w,
-        ratio_h = DTAP_ZONE_FLIPPING.h,
+        ratio_x = DTAP_ZONE_TOP_LEFT.x,
+        ratio_y = DTAP_ZONE_TOP_LEFT.y,
+        ratio_w = DTAP_ZONE_TOP_LEFT.w,
+        ratio_h = DTAP_ZONE_TOP_LEFT.h,
     }
+    if DTAP_ZONE_BOOKMARK then -- legacy global variable, may still be defined in default.persistent.lua
+        DTAP_ZONE_TOP_RIGHT = DTAP_ZONE_BOOKMARK
+    end
     local zone_top_right_corner = {
-        ratio_x = DTAP_ZONE_BOOKMARK.x,
-        ratio_y = DTAP_ZONE_BOOKMARK.y,
-        ratio_w = DTAP_ZONE_BOOKMARK.w,
-        ratio_h = DTAP_ZONE_BOOKMARK.h,
+        ratio_x = DTAP_ZONE_TOP_RIGHT.x,
+        ratio_y = DTAP_ZONE_TOP_RIGHT.y,
+        ratio_w = DTAP_ZONE_TOP_RIGHT.w,
+        ratio_h = DTAP_ZONE_TOP_RIGHT.h,
     }
     local zone_bottom_left_corner = {
         ratio_x = DTAP_ZONE_BOTTOM_LEFT.x,
