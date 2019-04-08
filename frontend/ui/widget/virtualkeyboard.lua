@@ -338,11 +338,8 @@ function VirtualKeyboard:addKeys()
         for j = 1, #self.KEYS[i] do
             local key
             local key_chars = self.KEYS[i][j][self.keyboard_layout]
-            local swipe_callback
             if type(key_chars) == "table" then
-            --logger.dbg(key)
                 key = key_chars[1]
-                --key_ne = key_chars.ne
             else
                 key = key_chars
                 key_chars = nil
