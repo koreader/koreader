@@ -63,7 +63,7 @@ CanvasContext:init(Device)
 if G_reader_settings:has("color_rendering") then
     CanvasContext:setColorRenderingEnabled(G_reader_settings:isTrue("color_rendering"))
 else
-    CanvasContext:setColorRenderingEnabled(Device.screen.isColorScreen())
+    CanvasContext:setColorRenderingEnabled(Device.screen:isColorScreen())
 end
 
 -- option parsing:
@@ -170,7 +170,7 @@ elseif not QuickStart:isShown() then
     last_file = QuickStart:getQuickStart()
 end
 -- night mode
-if G_reader_settings:readSetting("night_mode") then
+if G_reader_settings:isTrue("night_mode") then
     Device.screen:toggleNightMode()
 end
 
@@ -181,7 +181,7 @@ end
 -- Inform once about color rendering on newly supported devices
 -- (there are some android devices that may not have a color screen,
 -- and we are not (yet?) able to guess that fact)
-if Device.hasColorScreen() and not G_reader_settings:has("color_rendering") then
+if Device:hasColorScreen() and not G_reader_settings:has("color_rendering") then
     -- enable it to prevent further display of this message
     G_reader_settings:saveSetting("color_rendering", true)
     local InfoMessage = require("ui/widget/infomessage")

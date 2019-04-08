@@ -31,6 +31,7 @@ local Device = {
     hasClipboard = yes, -- generic internal clipboard on all devices
     hasEinkScreen = yes,
     canHWDither = no,
+    canHWInvert = no,
     hasColorScreen = no,
     hasBGRFrameBuffer = no,
     canToggleGSensor = no,

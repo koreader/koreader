@@ -112,12 +112,12 @@ function KoboPowerD:init()
     self.initial_is_fl_on = true
     self.autowarmth_job_running = false
 
-    if self.device.hasFrontlight() then
+    if self.device:hasFrontlight() then
         -- If this device has natural light (currently only KA1 & Forma)
         -- Use the SysFS interface, and ioctl otherwise.
         -- NOTE: On the Forma, nickel still appears to prefer using ntx_io to handle the FL,
         --       but it does use sysfs for the NL...
-        if self.device.hasNaturalLight() then
+        if self.device:hasNaturalLight() then
             local nl_config = G_reader_settings:readSetting("natural_light_config")
             if nl_config then
                 for key,val in pairs(nl_config) do
@@ -138,11 +138,20 @@ function KoboPowerD:init()
                 self:_syncKoboLightOnStart()
             end
         end
+        -- See discussion in https://github.com/koreader/koreader/issues/3118#issuecomment-334995879
+        -- for the reasoning behind this bit of insanity.
+        if self:isFrontlightOnHW() then
+            -- Use setIntensity to ensure it sets fl_intensity, and because we don't want the ramping behavior of turnOn
+            self:setIntensity(self:frontlightIntensityHW())
+        else
+            -- Use setIntensityHW so as *NOT* to set fl_intensity, so toggle will still work.
+            self:setIntensityHW(0)
+        end
     end
 end
 
 function KoboPowerD:saveSettings()
-    if self.device.hasFrontlight() then
+    if self.device:hasFrontlight() then
         -- Store BasePowerD values into settings (and not our hw_intensity, so
         -- that if frontlight was toggled off, we save and restore the previous
         -- untoggled intensity and toggle state at next startup)
@@ -199,10 +208,6 @@ function KoboPowerD:isFrontlightOnHW()
         return ret
     end
     return self.hw_intensity > 0
-end
-
-function KoboPowerD:turnOffFrontlightHW()
-    self:_setIntensity(0) -- will call setIntensityHW(0)
 end
 
 function KoboPowerD:setIntensityHW(intensity)
@@ -271,25 +276,52 @@ function KoboPowerD:isChargingHW()
     return self:read_str_file(self.is_charging_file) == "Charging\n"
 end
 
+function KoboPowerD:turnOffFrontlightHW()
+    if self:isFrontlightOff() then
+        return
+    end
+    local util = require("ffi/util")
+    util.runInSubProcess(function()
+        for i = 1,5 do
+            self:_setIntensity(math.floor(self.fl_intensity - ((self.fl_intensity / 5) * i)))
+            -- NOTE: We generally don't need to sleep when using sysfs as a backend...
+            if not self.device:hasNaturalLight() then
+                if (i < 5) then
+                    util.usleep(35 * 1000)
+                end
+            end
+        end
+    end, false, true)
+end
+function KoboPowerD:turnOnFrontlightHW()
+    if self:isFrontlightOn() then
+        return
+    end
+    local util = require("ffi/util")
+    util.runInSubProcess(function()
+        for i = 1,5 do
+            self:_setIntensity(math.ceil(self.fl_min + ((self.fl_intensity / 5) * i)))
+            if not self.device:hasNaturalLight() then
+                if (i < 5) then
+                    util.usleep(35 * 1000)
+                end
+            end
+        end
+    end, false, true)
+end
+
 -- Turn off front light before suspend.
 function KoboPowerD:beforeSuspend()
     if self.fl == nil then return end
-    -- just turn off frontlight without remembering its state
-    self.fl:setBrightness(0)
+    -- Turn off the frontlight
+    self:turnOffFrontlight()
 end
 
 -- Restore front light state after resume.
 function KoboPowerD:afterResume()
     if self.fl == nil then return end
-    -- just re-set it to self.hw_intensity that we haven't change on Suspend
-    if self.fl_warmth == nil then
-        self.fl:setBrightness(self.hw_intensity)
-    else
-        if self.auto_warmth then
-            self:calculateAutoWarmth()
-        end
-        self.fl:setNaturalBrightness(self.hw_intensity, self.fl_warmth)
-    end
+    -- Turn the frontlight back on
+    self:turnOnFrontlight()
 end
 
 return KoboPowerD

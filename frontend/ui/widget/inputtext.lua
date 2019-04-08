@@ -53,9 +53,9 @@ local InputText = InputContainer:new{
 }
 
 -- only use PhysicalKeyboard if the device does not have touch screen
-if Device.isTouchDevice() or Device.hasDPad() then
+if Device:isTouchDevice() or Device:hasDPad() then
     Keyboard = require("ui/widget/virtualkeyboard")
-    if Device.isTouchDevice() then
+    if Device:isTouchDevice() then
         function InputText:initEventListener()
             self.ges_events = {
                 TapTextBox = {
@@ -150,7 +150,7 @@ if Device.isTouchDevice() or Device.hasDPad() then
         end
 
     end
-    if Device.hasDPad() then
+    if Device:hasDPad() then
         if not InputText.initEventListener then
             function InputText:initEventListener() end
         end

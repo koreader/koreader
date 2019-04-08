@@ -63,8 +63,8 @@ function CervantesPowerD:init()
     self.initial_is_fl_on = true
     self.autowarmth_job_running = false
 
-    if self.device.hasFrontlight() then
-        if self.device.hasNaturalLight() then
+    if self.device:hasFrontlight() then
+        if self.device:hasNaturalLight() then
             local nl_config = G_reader_settings:readSetting("natural_light_config")
             if nl_config then
                 for key,val in pairs(nl_config) do
@@ -86,7 +86,7 @@ function CervantesPowerD:init()
 end
 
 function CervantesPowerD:saveSettings()
-    if self.device.hasFrontlight() then
+    if self.device:hasFrontlight() then
         -- Store BasePowerD values into settings (and not our hw_intensity, so
         -- that if frontlight was toggled off, we save and restore the previous
         -- untoggled intensity and toggle state at next startup)
@@ -119,10 +119,6 @@ function CervantesPowerD:isFrontlightOnHW()
         return ret
     end
     return self.hw_intensity > 0
-end
-
-function CervantesPowerD:turnOffFrontlightHW()
-    self:_setIntensity(0) -- will call setIntensityHW(0)
 end
 
 function CervantesPowerD:setIntensityHW(intensity)

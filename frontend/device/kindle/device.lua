@@ -75,6 +75,8 @@ local Kindle = Generic:new{
     -- NOTE: We can cheat by adding a platform-specific entry here, because the only code that will check for this is here.
     isSpecialOffers = isSpecialOffers(),
     hasOTAUpdates = yes,
+    -- NOTE: HW inversion is generally safe on mxcfb Kindles
+    canHWInvert = yes,
 }
 
 function Kindle:initNetworkManager(NetworkMgr)
@@ -206,6 +208,7 @@ local Kindle2 = Kindle:new{
     hasKeyboard = yes,
     hasKeys = yes,
     hasDPad = yes,
+    canHWInvert = no,
 }
 
 local KindleDXG = Kindle:new{
@@ -213,6 +216,7 @@ local KindleDXG = Kindle:new{
     hasKeyboard = yes,
     hasKeys = yes,
     hasDPad = yes,
+    canHWInvert = no,
 }
 
 local Kindle3 = Kindle:new{
@@ -220,12 +224,14 @@ local Kindle3 = Kindle:new{
     hasKeyboard = yes,
     hasKeys = yes,
     hasDPad = yes,
+    canHWInvert = no,
 }
 
 local Kindle4 = Kindle:new{
     model = "Kindle4",
     hasKeys = yes,
     hasDPad = yes,
+    canHWInvert = no,
 }
 
 local KindleTouch = Kindle:new{

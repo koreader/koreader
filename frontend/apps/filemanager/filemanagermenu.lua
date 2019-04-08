@@ -257,7 +257,7 @@ function FileManagerMenu:setUpdateItemTable()
     }
     if Device:isKobo() then
         table.insert(self.menu_items.developer_options.sub_item_table, {
-            text = _("Disable forced 8-bit color space"),
+            text = _("Disable forced 8-bit pixel depth"),
             checked_func = function()
                 return G_reader_settings:isTrue("dev_startup_no_fbdepth")
             end,

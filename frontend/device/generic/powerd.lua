@@ -17,24 +17,9 @@ function BasePowerD:new(o)
     self.__index = self
     assert(o.fl_min < o.fl_max)
     if o.init then o:init() end
-    if o.device and o.device.hasFrontlight() then
+    if o.device and o.device:hasFrontlight() then
         o.fl_intensity = o:frontlightIntensityHW()
         o:_decideFrontlightState()
-        -- Note added by @Frenzie 2017-10-08
-        -- I believe this should be `if isKobo()`, or better yet that the entire
-        -- block should be moved to `KoboPowerD:init()` because afaik that is the
-        -- only platform where the system doesn't provide trustworthy frontlight
-        -- information. But to be absolutely sure that I don't break anything (and I
-        -- don't want to spend any time on this atm) I'm temporarily excluding only
-        -- Android where this behavior is known to be problematic.
-        -- See discussion in https://github.com/koreader/koreader/issues/3118#issuecomment-334995879
-        if not o.device:isAndroid() then
-            if o:isFrontlightOn() then
-                o:turnOnFrontlightHW()
-            else
-                o:turnOffFrontlightHW()
-            end
-        end
     end
     return o
 end
@@ -63,7 +48,7 @@ end
 
 function BasePowerD:_decideFrontlightState()
     assert(self ~= nil)
-    assert(self.device.hasFrontlight())
+    assert(self.device:hasFrontlight())
     self.is_fl_on = self:isFrontlightOnHW()
 end
 
@@ -73,14 +58,14 @@ end
 
 function BasePowerD:frontlightIntensity()
     assert(self ~= nil)
-    if not self.device.hasFrontlight() then return 0 end
+    if not self.device:hasFrontlight() then return 0 end
     if self:isFrontlightOff() then return 0 end
     return self.fl_intensity
 end
 
 function BasePowerD:toggleFrontlight()
     assert(self ~= nil)
-    if not self.device.hasFrontlight() then return false end
+    if not self.device:hasFrontlight() then return false end
     if self:isFrontlightOn() then
         return self:turnOffFrontlight()
     else
@@ -90,20 +75,20 @@ end
 
 function BasePowerD:turnOffFrontlight()
     assert(self ~= nil)
-    if not self.device.hasFrontlight() then return end
+    if not self.device:hasFrontlight() then return end
     if self:isFrontlightOff() then return false end
-    self.is_fl_on = false
     self:turnOffFrontlightHW()
+    self.is_fl_on = false
     return true
 end
 
 function BasePowerD:turnOnFrontlight()
     assert(self ~= nil)
-    if not self.device.hasFrontlight() then return end
+    if not self.device:hasFrontlight() then return end
     if self:isFrontlightOn() then return false end
     if self.fl_intensity == self.fl_min then return false end
-    self.is_fl_on = true
     self:turnOnFrontlightHW()
+    self.is_fl_on = true
     return true
 end
 
@@ -135,7 +120,7 @@ function BasePowerD:normalizeIntensity(intensity)
 end
 
 function BasePowerD:setIntensity(intensity)
-    if not self.device.hasFrontlight() then return false end
+    if not self.device:hasFrontlight() then return false end
     if intensity == self:frontlightIntensity() then return false end
     self.fl_intensity = self:normalizeIntensity(intensity)
     self:_decideFrontlightState()

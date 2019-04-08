@@ -33,7 +33,7 @@ function SysfsLight:new(o)
 end
 
 function SysfsLight:setBrightness(brightness)
-    self:setNaturalBrightness(brightness, self.current_warmth)
+    self:setNaturalBrightness(brightness, nil)
 end
 
 dbg:guard(SysfsLight, 'setBrightness',
@@ -43,7 +43,7 @@ dbg:guard(SysfsLight, 'setBrightness',
           end)
 
 function SysfsLight:setWarmth(warmth)
-    self:setNaturalBrightness(self.current_brightness, warmth)
+    self:setNaturalBrightness(nil, warmth)
 end
 
 dbg:guard(SysfsLight, 'setWarmth',
@@ -53,10 +53,14 @@ dbg:guard(SysfsLight, 'setWarmth',
           end)
 
 function SysfsLight:setNaturalBrightness(brightness, warmth)
+    local set_brightness = true
+    local set_warmth = true
     if not brightness then
+        set_brightness = false
         brightness = self.current_brightness
     end
     if not warmth then
+        set_warmth = false
         warmth = self.current_warmth
     end
 
@@ -64,12 +68,16 @@ function SysfsLight:setNaturalBrightness(brightness, warmth)
     if self.frontlight_mixer then
         -- Honor the device's scale, which may not be [0...100] (f.g., it's [0...10] on the Forma) ;).
         warmth = math.floor(warmth / self.nl_max)
-        self:_write_value(self.frontlight_white, brightness)
+        if set_brightness then
+            self:_write_value(self.frontlight_white, brightness)
+        end
         -- And it may be inverted... (cold is nl_max, warm is nl_min)
-        if self.nl_inverted then
-            self:_write_value(self.frontlight_mixer, self.nl_max - warmth)
-        else
-            self:_write_value(self.frontlight_mixer, warmth)
+        if set_warmth then
+            if self.nl_inverted then
+                self:_write_value(self.frontlight_mixer, self.nl_max - warmth)
+            else
+                self:_write_value(self.frontlight_mixer, warmth)
+            end
         end
     else
         local red = 0

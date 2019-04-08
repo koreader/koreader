@@ -114,15 +114,18 @@ if Device:isKobo() then
         end,
         callback = function()
             G_reader_settings:flipNilOrFalse("ignore_power_sleepcover")
+            UIManager:show(InfoMessage:new{
+                text = _("This will take effect on next restart."),
+            })
         end
     }
 end
 
 common_settings.night_mode = {
     text = _("Night mode"),
-    checked_func = function() return G_reader_settings:readSetting("night_mode") end,
+    checked_func = function() return G_reader_settings:isTrue("night_mode") end,
     callback = function()
-        local night_mode = G_reader_settings:readSetting("night_mode") or false
+        local night_mode = G_reader_settings:isTrue("night_mode")
         Screen:toggleNightMode()
         UIManager:setDirty(nil, "full")
         G_reader_settings:saveSetting("night_mode", not night_mode)

@@ -15,7 +15,7 @@ function KindlePowerD:init()
 end
 
 function KindlePowerD:frontlightIntensityHW()
-    if not self.device.hasFrontlight() then return 0 end
+    if not self.device:hasFrontlight() then return 0 end
     -- Kindle stock software does not use intensity file directly, so we need to read from its
     -- lipc property first.
     if self.lipc_handle ~= nil then
@@ -73,7 +73,7 @@ function KindlePowerD:_readFLIntensity()
 end
 
 function KindlePowerD:afterResume()
-    if not self.device.hasFrontlight() then
+    if not self.device:hasFrontlight() then
         return
     end
     local UIManager = require("ui/uimanager")

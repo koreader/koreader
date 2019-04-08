@@ -109,6 +109,7 @@ describe("AutoFrontlight widget tests", function()
     end)
 
     it("should turn on frontlight at the begining", function()
+        Device:getPowerDevice():turnOffFrontlight()
         Device.brightness = 0
         AutoFrontlight = class:new()
         MockTime:increase(2)
@@ -117,6 +118,7 @@ describe("AutoFrontlight widget tests", function()
     end)
 
     it("should turn off frontlight at the begining", function()
+        Device:getPowerDevice():turnOnFrontlight()
         Device.brightness = 3
         AutoFrontlight = class:new()
         MockTime:increase(2)
@@ -125,6 +127,7 @@ describe("AutoFrontlight widget tests", function()
     end)
 
     it("should handle configuration update", function()
+        Device:getPowerDevice():turnOffFrontlight()
         Device.brightness = 0
         AutoFrontlight = class:new()
         MockTime:increase(2)

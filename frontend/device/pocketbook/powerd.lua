@@ -22,7 +22,7 @@ function PocketBookPowerD:init()
 end
 
 function PocketBookPowerD:frontlightIntensityHW()
-    if not self.device.hasFrontlight() then return 0 end
+    if not self.device:hasFrontlight() then return 0 end
     return inkview.GetFrontlightState()
 end
 
