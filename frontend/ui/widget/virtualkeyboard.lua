@@ -318,8 +318,16 @@ function VirtualKeyPopup:init()
 
                 if v == key_char_orig then
                     virtual_key[1].background = Blitbuffer.COLOR_LIGHT_GRAY
-                    virtual_key.onHoldReleaseKey = function() end
-                    virtual_key.onPanReleaseKey = function() end
+
+                    -- restore ability to hold/pan release on central key after opening popup
+                    virtual_key._keyOrigHoldPanHandler = function()
+                        virtual_key.onHoldReleaseKey = virtual_key._onHoldReleaseKey
+                        virtual_key.onPanReleaseKey = virtual_key._onPanReleaseKey
+                    end
+                    virtual_key._onHoldReleaseKey = virtual_key.onHoldReleaseKey
+                    virtual_key.onHoldReleaseKey = virtual_key._keyOrigHoldPanHandler
+                    virtual_key._onPanReleaseKey = virtual_key.onPanReleaseKey
+                    virtual_key.onPanReleaseKey = virtual_key._keyOrigHoldPanHandler
                 end
 
                 table.insert(group, virtual_key)
