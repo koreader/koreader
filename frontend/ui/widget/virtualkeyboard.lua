@@ -21,6 +21,15 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local Screen = Device.screen
 
+
+
+local VirtualKeyPopup = FocusManager:new{
+    modal = true,
+    disable_double_tap = true,
+    inputbox = nil,
+    layout = {},
+}
+
 local VirtualKey = InputContainer:new{
     key = nil,
     icon = nil,
@@ -70,158 +79,9 @@ function VirtualKey:init()
         self.hold_callback = function()
             if not self.key_chars then return end
 
-            local popup_focus_manager = FocusManager:new{
-                modal = true,
-                disable_double_tap = true,
-                inputbox = nil,
-                layout = {},
+            VirtualKeyPopup:new{
+                parent_key = self,
             }
-
-            function popup_focus_manager:onTapClose(arg, ges)
-                if ges.pos:notIntersectWith(self[1][1].dimen) then
-                    UIManager:close(self)
-                    return true
-                end
-                return false
-            end
-
-            function popup_focus_manager:onClose()
-                UIManager:close(self)
-                return true
-            end
-
-            function popup_focus_manager:onPressKey()
-                self:getFocusItem():handleEvent(Event:new("TapSelect"))
-                return true
-            end
-
-            local key_chars = self.key_chars
-            local key_char_orig = key_chars[1]
-
-            local extra_key_chars = {}
-            extra_key_chars[1] = key_chars[2]
-            extra_key_chars[2] = key_chars[3]
-            extra_key_chars[3] = key_chars[4]
-            local top_key_chars = {}
-            top_key_chars[1] = key_chars.northwest
-            top_key_chars[2] = key_chars.north
-            top_key_chars[3] = key_chars.northeast
-            local middle_key_chars = {}
-            middle_key_chars[1] = key_chars.west
-            middle_key_chars[2] = key_char_orig
-            middle_key_chars[3] = key_chars.east
-            local bottom_key_chars = {}
-            bottom_key_chars[1] = key_chars.southwest
-            bottom_key_chars[2] = key_chars.south
-            bottom_key_chars[3] = key_chars.southeast
-
-            local blank = HorizontalSpan:new{width = self.width}
-            local h_key_padding = HorizontalSpan:new{width = self.keyboard.key_padding}
-            local v_key_padding = VerticalSpan:new{width = self.keyboard.key_padding}
-
-            local vertical_group = VerticalGroup:new{}
-            local horizontal_group_extra = HorizontalGroup:new{}
-            local horizontal_group_top = HorizontalGroup:new{}
-            local horizontal_group_middle = HorizontalGroup:new{}
-            local horizontal_group_bottom = HorizontalGroup:new{}
-
-            local function horizontalRow(chars, group)
-                local layout_horizontal = {}
-                for i = 1,3 do
-                    local v = chars[i]
-
-                    if v then
-                        local virtual_key = VirtualKey:new{
-                            key = v,
-                            label = v,
-                            keyboard = self.keyboard,
-                            width = self.width,
-                            height = self.height,
-                        }
-
-                        if v == key_char_orig then
-                            virtual_key[1].background = Blitbuffer.COLOR_LIGHT_GRAY
-                        end
-
-                        table.insert(group, virtual_key)
-                        table.insert(layout_horizontal, virtual_key)
-                    else
-                        table.insert(group, blank)
-                    end
-                    if i ~= #chars then
-                        table.insert(group, h_key_padding)
-                    end
-                end
-                table.insert(vertical_group, group)
-                table.insert(popup_focus_manager.layout, layout_horizontal)
-            end
-            horizontalRow(extra_key_chars, horizontal_group_extra)
-            table.insert(vertical_group, v_key_padding)
-            horizontalRow(top_key_chars, horizontal_group_top)
-            table.insert(vertical_group, v_key_padding)
-            horizontalRow(middle_key_chars, horizontal_group_middle)
-            table.insert(vertical_group, v_key_padding)
-            horizontalRow(bottom_key_chars, horizontal_group_bottom)
-
-            local keyboard_frame = FrameContainer:new{
-                margin = 0,
-                bordersize = Size.border.default,
-                background = Blitbuffer.COLOR_WHITE,
-                radius = 0,
-                padding = self.keyboard.padding,
-                CenterContainer:new{
-                    dimen = Geom:new{
-                        w = self.width*3 - 2*Size.border.default + 4*self.keyboard.key_padding,
-                        h = self.height*4 - 2*Size.border.default + 5*self.keyboard.key_padding,
-                    },
-                    vertical_group,
-                }
-            }
-            keyboard_frame.dimen = keyboard_frame:getSize()
-
-            popup_focus_manager.ges_events = {
-                TapClose = {
-                    GestureRange:new{
-                        ges = "tap",
-                    }
-                },
-            }
-
-            if Device:hasDPad() then
-                popup_focus_manager.key_events.PressKey = { {"Press"}, doc = "select key" }
-            end
-            if Device:hasKeys() then
-                popup_focus_manager.key_events.Close = { {"Back"}, doc = "close keyboard" }
-            end
-
-            local position_container = WidgetContainer:new{
-                dimen = {
-                    x = self.dimen.x - self.width - 6*self.keyboard.padding - self.keyboard.bordersize,
-                    y = self.dimen.y - self.height*2 - 8*self.keyboard.padding - self.keyboard.bordersize,
-                    h = Screen:getSize().h,
-                    w = Screen:getSize().w,
-                },
-                keyboard_frame,
-            }
-            if position_container.dimen.x < 0 then
-                position_container.dimen.x = 0
-            elseif position_container.dimen.x > Screen:getWidth() then
-                position_container.dimen.x = Screen:getWidth() - keyboard_frame.dimen.w
-            end
-            if position_container.dimen.y < 0 then
-                position_container.dimen.y = 0
-            elseif position_container.dimen.y > Screen:getHeight() then
-                position_container.dimen.y = Screen:getHeight() - keyboard_frame.dimen.h
-            end
-
-            popup_focus_manager[1] = position_container
-
-            UIManager:show(popup_focus_manager)
-
-            UIManager:setDirty(self, function()
-                return "ui", keyboard_frame.dimen
-            end)
-
         end
         self.swipe_callback = function(ges)
             self.keyboard:addChar(self.key_chars[ges.direction])
@@ -374,6 +234,157 @@ function VirtualKey:invert(invert, hold)
     end
     self:update_keyboard(hold, false)
 end
+
+
+function VirtualKeyPopup:onTapClose(arg, ges)
+    if ges.pos:notIntersectWith(self[1][1].dimen) then
+        UIManager:close(self)
+        return true
+    end
+    return false
+end
+
+function VirtualKeyPopup:onClose()
+    UIManager:close(self)
+    return true
+end
+
+function VirtualKeyPopup:onPressKey()
+    self:getFocusItem():handleEvent(Event:new("TapSelect"))
+    return true
+end
+
+function VirtualKeyPopup:init()
+    local key_chars = self.parent_key.key_chars
+    local key_char_orig = key_chars[1]
+
+    local extra_key_chars = {}
+    extra_key_chars[1] = key_chars[2]
+    extra_key_chars[2] = key_chars[3]
+    extra_key_chars[3] = key_chars[4]
+    local top_key_chars = {}
+    top_key_chars[1] = key_chars.northwest
+    top_key_chars[2] = key_chars.north
+    top_key_chars[3] = key_chars.northeast
+    local middle_key_chars = {}
+    middle_key_chars[1] = key_chars.west
+    middle_key_chars[2] = key_char_orig
+    middle_key_chars[3] = key_chars.east
+    local bottom_key_chars = {}
+    bottom_key_chars[1] = key_chars.southwest
+    bottom_key_chars[2] = key_chars.south
+    bottom_key_chars[3] = key_chars.southeast
+
+    local blank = HorizontalSpan:new{width = self.parent_key.width}
+    local h_key_padding = HorizontalSpan:new{width = self.parent_key.keyboard.key_padding}
+    local v_key_padding = VerticalSpan:new{width = self.parent_key.keyboard.key_padding}
+
+    local vertical_group = VerticalGroup:new{}
+    local horizontal_group_extra = HorizontalGroup:new{}
+    local horizontal_group_top = HorizontalGroup:new{}
+    local horizontal_group_middle = HorizontalGroup:new{}
+    local horizontal_group_bottom = HorizontalGroup:new{}
+
+    local function horizontalRow(chars, group)
+        local layout_horizontal = {}
+        for i = 1,3 do
+            local v = chars[i]
+
+            if v then
+                local virtual_key = VirtualKey:new{
+                    key = v,
+                    label = v,
+                    keyboard = self.parent_key.keyboard,
+                    width = self.parent_key.width,
+                    height = self.parent_key.height,
+                }
+
+                if v == key_char_orig then
+                    virtual_key[1].background = Blitbuffer.COLOR_LIGHT_GRAY
+                end
+
+                table.insert(group, virtual_key)
+                table.insert(layout_horizontal, virtual_key)
+            else
+                table.insert(group, blank)
+            end
+            if i ~= #chars then
+                table.insert(group, h_key_padding)
+            end
+        end
+        table.insert(vertical_group, group)
+        table.insert(VirtualKeyPopup.layout, layout_horizontal)
+    end
+    horizontalRow(extra_key_chars, horizontal_group_extra)
+    table.insert(vertical_group, v_key_padding)
+    horizontalRow(top_key_chars, horizontal_group_top)
+    table.insert(vertical_group, v_key_padding)
+    horizontalRow(middle_key_chars, horizontal_group_middle)
+    table.insert(vertical_group, v_key_padding)
+    horizontalRow(bottom_key_chars, horizontal_group_bottom)
+
+    local keyboard_frame = FrameContainer:new{
+        margin = 0,
+        bordersize = Size.border.default,
+        background = Blitbuffer.COLOR_WHITE,
+        radius = 0,
+        padding = self.parent_key.keyboard.padding,
+        CenterContainer:new{
+            dimen = Geom:new{
+                w = self.parent_key.width*3 - 2*Size.border.default + 4*self.parent_key.keyboard.key_padding,
+                h = self.parent_key.height*4 - 2*Size.border.default + 5*self.parent_key.keyboard.key_padding,
+            },
+            vertical_group,
+        }
+    }
+    keyboard_frame.dimen = keyboard_frame:getSize()
+
+    VirtualKeyPopup.ges_events = {
+        TapClose = {
+            GestureRange:new{
+                ges = "tap",
+            }
+        },
+    }
+
+    if Device:hasDPad() then
+        VirtualKeyPopup.key_events.PressKey = { {"Press"}, doc = "select key" }
+    end
+    if Device:hasKeys() then
+        VirtualKeyPopup.key_events.Close = { {"Back"}, doc = "close keyboard" }
+    end
+
+    local position_container = WidgetContainer:new{
+        dimen = {
+            x = self.parent_key.dimen.x - self.parent_key.width - 6*self.parent_key.keyboard.padding - self.parent_key.keyboard.bordersize,
+            y = self.parent_key.dimen.y - self.parent_key.height*2 - 8*self.parent_key.keyboard.padding - self.parent_key.keyboard.bordersize,
+            h = Screen:getSize().h,
+            w = Screen:getSize().w,
+        },
+        keyboard_frame,
+    }
+    if position_container.dimen.x < 0 then
+        position_container.dimen.x = 0
+    elseif position_container.dimen.x + keyboard_frame.dimen.w > Screen:getWidth() then
+        position_container.dimen.x = Screen:getWidth() - keyboard_frame.dimen.w
+    end
+    if position_container.dimen.y < 0 then
+        position_container.dimen.y = 0
+    elseif position_container.dimen.y + keyboard_frame.dimen.h > Screen:getHeight() then
+        position_container.dimen.y = Screen:getHeight() - keyboard_frame.dimen.h
+    end
+
+    VirtualKeyPopup[1] = position_container
+
+    UIManager:show(VirtualKeyPopup)
+
+    UIManager:setDirty(self.parent_key, function()
+        return "ui", keyboard_frame.dimen
+    end)
+end
+
+
+
 
 local VirtualKeyboard = FocusManager:new{
     modal = true,
