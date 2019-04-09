@@ -66,6 +66,9 @@ function VirtualKey:init()
         self.callback = function() self.keyboard:downLine() end
     else
         self.callback = function () self.keyboard:addChar(self.key) end
+        self.swipe_callback = function(ges)
+            self.keyboard:addChar(self.key_chars[ges.direction])
+        end
     end
 
     local label_widget
@@ -115,6 +118,12 @@ function VirtualKey:init()
             HoldSelect = {
                 GestureRange:new{
                     ges = "hold",
+                    range = self.dimen,
+                },
+            },
+            SwipeKey = {
+                GestureRange:new{
+                    ges = "swipe",
                     range = self.dimen,
                 },
             },
@@ -179,6 +188,22 @@ function VirtualKey:onHoldSelect()
     else
         if self.hold_callback then
             self.hold_callback()
+        end
+    end
+    return true
+end
+
+function VirtualKey:onSwipeKey(arg, ges)
+    if self.flash_keyboard and not self.skipswipe then
+        self[1].inner_bordersize = self.focused_bordersize
+        self:update_keyboard(false, true)
+        if self.swipe_callback then
+            self.swipe_callback(ges)
+        end
+        UIManager:tickAfterNext(function() self:invert(false, true) end)
+    else
+        if self.swipe_callback then
+            self.swipe_callback(ges)
         end
     end
     return true
@@ -311,21 +336,33 @@ function VirtualKeyboard:addKeys()
         local horizontal_group = HorizontalGroup:new{}
         local layout_horizontal = {}
         for j = 1, #self.KEYS[i] do
+            local key
+            local key_chars = self.KEYS[i][j][self.keyboard_layout]
+            if type(key_chars) == "table" then
+                key = key_chars[1]
+            else
+                key = key_chars
+                key_chars = nil
+            end
             local width_factor = self.KEYS[i][j].width or 1.0
             local key_width = math.floor((base_key_width + self.key_padding) * width_factor)
                             - self.key_padding
             local key_height = base_key_height
-            local label = self.KEYS[i][j].label or self.KEYS[i][j][self.keyboard_layout]
-            local key = VirtualKey:new{
-                key = self.KEYS[i][j][self.keyboard_layout],
+            local label = self.KEYS[i][j].label or key
+            local virtual_key = VirtualKey:new{
+                key = key,
+                key_chars = key_chars,
                 icon = self.KEYS[i][j].icon,
                 label = label,
                 keyboard = self,
                 width = key_width,
                 height = key_height,
             }
-            table.insert(horizontal_group, key)
-            table.insert(layout_horizontal, key)
+            if not key_chars then
+                virtual_key.swipe_callback = nil
+            end
+            table.insert(horizontal_group, virtual_key)
+            table.insert(layout_horizontal, virtual_key)
             if j ~= #self.KEYS[i] then
                 table.insert(horizontal_group, h_key_padding)
             end
