@@ -131,6 +131,18 @@ function VirtualKey:init()
                     range = self.dimen,
                 },
             },
+            HoldReleaseKey = {
+                GestureRange:new{
+                    ges = "hold_release",
+                    range = self.dimen,
+                },
+            },
+            PanReleaseKey = {
+                GestureRange:new{
+                    ges = "pan_release",
+                    range = self.dimen,
+                },
+            },
             SwipeKey = {
                 GestureRange:new{
                     ges = "swipe",
@@ -219,6 +231,9 @@ function VirtualKey:onSwipeKey(arg, ges)
     return true
 end
 
+VirtualKey.onHoldReleaseKey = VirtualKey.onTapSelect
+VirtualKey.onPanReleaseKey = VirtualKey.onTapSelect
+
 function VirtualKey:invert(invert, hold)
     if invert then
         self[1].inner_bordersize = self.focused_bordersize
@@ -298,11 +313,21 @@ function VirtualKeyPopup:init()
                     key_chars = key_chars,
                     width = parent_key.width,
                     height = parent_key.height,
-                    hold_callback = nil,
                 }
+                virtual_key.hold_callback = nil
 
                 if v == key_char_orig then
                     virtual_key[1].background = Blitbuffer.COLOR_LIGHT_GRAY
+
+                    -- restore ability to hold/pan release on central key after opening popup
+                    virtual_key._keyOrigHoldPanHandler = function()
+                        virtual_key.onHoldReleaseKey = virtual_key._onHoldReleaseKey
+                        virtual_key.onPanReleaseKey = virtual_key._onPanReleaseKey
+                    end
+                    virtual_key._onHoldReleaseKey = virtual_key.onHoldReleaseKey
+                    virtual_key.onHoldReleaseKey = virtual_key._keyOrigHoldPanHandler
+                    virtual_key._onPanReleaseKey = virtual_key.onPanReleaseKey
+                    virtual_key.onPanReleaseKey = virtual_key._keyOrigHoldPanHandler
                 end
 
                 table.insert(group, virtual_key)
