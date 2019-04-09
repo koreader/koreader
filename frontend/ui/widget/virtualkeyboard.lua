@@ -131,7 +131,6 @@ function VirtualKey:init()
 
             local function horizontalRow(chars, group)
                 local layout_horizontal = {}
-                local i
                 for i = 1,3 do
                     local v = chars[i]
                 print(i)
@@ -185,7 +184,6 @@ function VirtualKey:init()
                 TapClose = {
                     GestureRange:new{
                         ges = "tap",
-                        range = range,
                     }
                 },
             }
@@ -198,7 +196,7 @@ function VirtualKey:init()
             end
 
             UIManager:show(popup_focus_manager)
-            
+
             UIManager:setDirty(self, function()
                 return "ui", keyboard_frame:getSize()
             end)
