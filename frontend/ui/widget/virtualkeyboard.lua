@@ -101,6 +101,7 @@ function VirtualKey:init()
             end
 
             local key_chars = self.key_chars
+            local key_char_orig = key_chars[1]
 
             local extra_key_chars = {}
             extra_key_chars[1] = key_chars[2]
@@ -112,7 +113,7 @@ function VirtualKey:init()
             top_key_chars[3] = key_chars.northeast
             local middle_key_chars = {}
             middle_key_chars[1] = key_chars.west
-            middle_key_chars[2] = key_chars[1]
+            middle_key_chars[2] = key_char_orig
             middle_key_chars[3] = key_chars.east
             local bottom_key_chars = {}
             bottom_key_chars[1] = key_chars.southwest
@@ -133,8 +134,7 @@ function VirtualKey:init()
                 local layout_horizontal = {}
                 for i = 1,3 do
                     local v = chars[i]
-                print(i)
-                print(v)
+
                     if v then
                         local virtual_key = VirtualKey:new{
                             key = v,
@@ -143,6 +143,11 @@ function VirtualKey:init()
                             width = self.width,
                             height = self.height,
                         }
+
+                        if v == key_char_orig then
+                            virtual_key[1].background = Blitbuffer.COLOR_LIGHT_GRAY
+                        end
+
                         table.insert(group, virtual_key)
                         table.insert(layout_horizontal, virtual_key)
                     else
