@@ -203,6 +203,16 @@ function VirtualKey:init()
                 },
                 keyboard_frame,
             }
+            if position_container.dimen.x < 0 then
+                position_container.dimen.x = 0
+            elseif position_container.dimen.x > Screen:getWidth() then
+                position_container.dimen.x = Screen:getWidth() - keyboard_frame.dimen.w
+            end
+            if position_container.dimen.y < 0 then
+                position_container.dimen.y = 0
+            elseif position_container.dimen.y > Screen:getHeight() then
+                position_container.dimen.y = Screen:getHeight() - keyboard_frame.dimen.h
+            end
 
             popup_focus_manager[1] = position_container
 
