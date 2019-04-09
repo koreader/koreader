@@ -82,22 +82,13 @@ function VirtualKey:init()
                 key_padding = Size.padding.default,
             }
 
-function popup_focus_manager:onTapClose(arg, ges)
-    if ges.pos:notIntersectWith(self.dimen) then
-        UIManager:close(self)
-        -- Allow ReaderLink to check if our dismiss tap
-        -- was itself on another footnote, and display
-        -- it. This avoids having to tap 2 times to
-        -- see another footnote.
-        if self.on_tap_close_callback then
-            self.on_tap_close_callback(arg, ges, self.height)
-        elseif self.close_callback then
-            self.close_callback(self.height)
-        end
-        return true
-    end
-    return false
-end
+            function popup_focus_manager:onTapClose(arg, ges)
+                if ges.pos:notIntersectWith(self.dimen) then
+                    UIManager:close(self)
+                    return true
+                end
+                return false
+            end
 
             function popup_focus_manager:onClose()
                 UIManager:close(self)
@@ -110,8 +101,7 @@ end
             end
 
             local key_chars = self.key_chars
---logger.dbg(key_chars)
---error()
+
             local extra_key_chars = {}
             extra_key_chars[1] = key_chars[2]
             extra_key_chars[2] = key_chars[3]
@@ -158,6 +148,7 @@ end
                         table.insert(group, blank)
                     end
                 end
+                table.insert(vertical_group, group)
                 table.insert(popup_focus_manager.layout, layout_horizontal)
             end
             horizontalRow(extra_key_chars, horizontal_group_extra)
@@ -165,57 +156,44 @@ end
             horizontalRow(middle_key_chars, horizontal_group_middle)
             horizontalRow(bottom_key_chars, horizontal_group_bottom)
 
-            table.insert(vertical_group, horizontal_group_extra)
-            table.insert(vertical_group, horizontal_group_top)
-            table.insert(vertical_group, horizontal_group_middle)
-            table.insert(vertical_group, horizontal_group_bottom)
-
-    local keyboard_frame = FrameContainer:new{
-        margin = 0,
-        bordersize = Size.border.default,
-        background = Blitbuffer.COLOR_WHITE,
-        radius = 0,
-        padding = self.keyboard.padding,
-        CenterContainer:new{
-            dimen = Geom:new{
-                w = self.width*3 - 2*Size.border.default - 2*self.keyboard.padding,
-                h = self.height*4 - 2*Size.border.default - 2*self.keyboard.padding,
-            },
-            vertical_group,
-        }
-    }
-    --self[1] = BottomContainer:new{
-    --    dimen = Screen:getSize(),
-    --    keyboard_frame,
-    --}
-    --self.dimen = keyboard_frame:getSize()
-
-popup_focus_manager[1]=keyboard_frame
-
-        popup_focus_manager.ges_events = {
-            TapClose = {
-                GestureRange:new{
-                    ges = "tap",
-                    range = range,
+            local keyboard_frame = FrameContainer:new{
+                margin = 0,
+                bordersize = Size.border.default,
+                background = Blitbuffer.COLOR_WHITE,
+                radius = 0,
+                padding = self.keyboard.padding,
+                CenterContainer:new{
+                    dimen = Geom:new{
+                        w = self.width*3 - 2*Size.border.default - 2*self.keyboard.padding,
+                        h = self.height*4 - 2*Size.border.default - 2*self.keyboard.padding,
+                    },
+                    vertical_group,
                 }
-            },
-        }
+            }
 
-    if Device:hasDPad() then
-        popup_focus_manager.key_events.PressKey = { {"Press"}, doc = "select key" }
-    end
-    if Device:hasKeys() then
-        popup_focus_manager.key_events.Close = { {"Back"}, doc = "close keyboard" }
-    end
+            popup_focus_manager[1] = keyboard_frame
 
---self:_refresh()
---UIManager:show(keyboard_frame)
-UIManager:show(popup_focus_manager)
-            --error()
+            popup_focus_manager.ges_events = {
+                TapClose = {
+                    GestureRange:new{
+                        ges = "tap",
+                        range = range,
+                    }
+                },
+            }
+
+            if Device:hasDPad() then
+                popup_focus_manager.key_events.PressKey = { {"Press"}, doc = "select key" }
+            end
+            if Device:hasKeys() then
+                popup_focus_manager.key_events.Close = { {"Back"}, doc = "close keyboard" }
+            end
+
+            UIManager:show(popup_focus_manager)
             
-                UIManager:setDirty(self, function()
-        return "ui", keyboard_frame:getSize()
-end)
+            UIManager:setDirty(self, function()
+                return "ui", keyboard_frame:getSize()
+            end)
 
         end
         self.swipe_callback = function(ges)
