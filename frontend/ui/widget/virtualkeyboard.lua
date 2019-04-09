@@ -119,7 +119,9 @@ function VirtualKey:init()
             bottom_key_chars[2] = key_chars.south
             bottom_key_chars[3] = key_chars.southeast
 
-            local blank = VerticalSpan:new{width = self.width}
+            local blank = HorizontalSpan:new{width = self.width}
+            local h_key_padding = HorizontalSpan:new{width = self.keyboard.key_padding}
+            local v_key_padding = VerticalSpan:new{width = self.keyboard.key_padding}
 
             local vertical_group = VerticalGroup:new{}
             local horizontal_group_extra = HorizontalGroup:new{}
@@ -147,13 +149,19 @@ function VirtualKey:init()
                     else
                         table.insert(group, blank)
                     end
+                    if i ~= #chars then
+                        table.insert(group, h_key_padding)
+                    end
                 end
                 table.insert(vertical_group, group)
                 table.insert(popup_focus_manager.layout, layout_horizontal)
             end
             horizontalRow(extra_key_chars, horizontal_group_extra)
+            table.insert(vertical_group, v_key_padding)
             horizontalRow(top_key_chars, horizontal_group_top)
+            table.insert(vertical_group, v_key_padding)
             horizontalRow(middle_key_chars, horizontal_group_middle)
+            table.insert(vertical_group, v_key_padding)
             horizontalRow(bottom_key_chars, horizontal_group_bottom)
 
             local keyboard_frame = FrameContainer:new{
@@ -164,8 +172,8 @@ function VirtualKey:init()
                 padding = self.keyboard.padding,
                 CenterContainer:new{
                     dimen = Geom:new{
-                        w = self.width*3 - 2*Size.border.default - 2*self.keyboard.padding,
-                        h = self.height*4 - 2*Size.border.default - 2*self.keyboard.padding,
+                        w = self.width*3 - 2*Size.border.default + 4*self.keyboard.key_padding,
+                        h = self.height*4 - 2*Size.border.default + 5*self.keyboard.key_padding,
                     },
                     vertical_group,
                 }
