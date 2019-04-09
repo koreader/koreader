@@ -293,8 +293,10 @@ function VirtualKeyPopup:init()
                     key = v,
                     label = v,
                     keyboard = parent_key.keyboard,
+                    key_chars = key_chars,
                     width = parent_key.width,
                     height = parent_key.height,
+                    hold_callback = nil,
                 }
 
                 if v == key_char_orig then
