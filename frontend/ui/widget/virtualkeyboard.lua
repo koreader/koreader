@@ -17,6 +17,7 @@ local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local Screen = Device.screen
 
@@ -74,16 +75,10 @@ function VirtualKey:init()
                 disable_double_tap = true,
                 inputbox = nil,
                 layout = {},
-
-                width = self.width*3,
-                height = nil,
-                bordersize = Size.border.default,
-                padding = Size.padding.small,
-                key_padding = Size.padding.default,
             }
 
             function popup_focus_manager:onTapClose(arg, ges)
-                if ges.pos:notIntersectWith(self.dimen) then
+                if ges.pos:notIntersectWith(self[1][1].dimen) then
                     UIManager:close(self)
                     return true
                 end
@@ -182,8 +177,7 @@ function VirtualKey:init()
                     vertical_group,
                 }
             }
-
-            popup_focus_manager[1] = keyboard_frame
+            keyboard_frame.dimen = keyboard_frame:getSize()
 
             popup_focus_manager.ges_events = {
                 TapClose = {
@@ -200,10 +194,22 @@ function VirtualKey:init()
                 popup_focus_manager.key_events.Close = { {"Back"}, doc = "close keyboard" }
             end
 
+            local position_container = WidgetContainer:new{
+                dimen = {
+                    x = self.dimen.x - self.width - 6*self.keyboard.padding - self.keyboard.bordersize,
+                    y = self.dimen.y - self.height*2 - 8*self.keyboard.padding - self.keyboard.bordersize,
+                    h = Screen:getSize().h,
+                    w = Screen:getSize().w,
+                },
+                keyboard_frame,
+            }
+
+            popup_focus_manager[1] = position_container
+
             UIManager:show(popup_focus_manager)
 
             UIManager:setDirty(self, function()
-                return "ui", keyboard_frame:getSize()
+                return "ui", keyboard_frame.dimen
             end)
 
         end
