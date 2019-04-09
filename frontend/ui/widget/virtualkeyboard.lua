@@ -131,12 +131,6 @@ function VirtualKey:init()
                     range = self.dimen,
                 },
             },
-            SwipeKey = {
-                GestureRange:new{
-                    ges = "swipe",
-                    range = self.dimen,
-                },
-            },
             HoldReleaseKey = {
                 GestureRange:new{
                     ges = "hold_release",
@@ -146,6 +140,12 @@ function VirtualKey:init()
             PanReleaseKey = {
                 GestureRange:new{
                     ges = "pan_release",
+                    range = self.dimen,
+                },
+            },
+            SwipeKey = {
+                GestureRange:new{
+                    ges = "swipe",
                     range = self.dimen,
                 },
             },
@@ -318,6 +318,8 @@ function VirtualKeyPopup:init()
 
                 if v == key_char_orig then
                     virtual_key[1].background = Blitbuffer.COLOR_LIGHT_GRAY
+                    virtual_key.onHoldReleaseKey = function() end
+                    virtual_key.onPanReleaseKey = function() end
                 end
 
                 table.insert(group, virtual_key)
