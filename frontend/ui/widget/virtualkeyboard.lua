@@ -21,12 +21,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local Screen = Device.screen
 
-local VirtualKeyPopup = FocusManager:new{
-    modal = true,
-    disable_double_tap = true,
-    inputbox = nil,
-    layout = {},
-}
+local VirtualKeyPopup
 
 local VirtualKey = InputContainer:new{
     key = nil,
@@ -232,6 +227,13 @@ function VirtualKey:invert(invert, hold)
     end
     self:update_keyboard(hold, false)
 end
+
+VirtualKeyPopup = FocusManager:new{
+    modal = true,
+    disable_double_tap = true,
+    inputbox = nil,
+    layout = {},
+}
 
 function VirtualKeyPopup:onTapClose(arg, ges)
     if ges.pos:notIntersectWith(self[1][1].dimen) then
