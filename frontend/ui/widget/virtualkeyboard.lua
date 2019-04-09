@@ -344,7 +344,6 @@ function VirtualKeyboard:addKeys()
                 key = key_chars
                 key_chars = nil
             end
-            logger.dbg(key)
             local width_factor = self.KEYS[i][j].width or 1.0
             local key_width = math.floor((base_key_width + self.key_padding) * width_factor)
                             - self.key_padding
@@ -359,6 +358,9 @@ function VirtualKeyboard:addKeys()
                 width = key_width,
                 height = key_height,
             }
+            if not key_chars then
+                virtual_key.swipe_callback = nil
+            end
             table.insert(horizontal_group, virtual_key)
             table.insert(layout_horizontal, virtual_key)
             if j ~= #self.KEYS[i] then
