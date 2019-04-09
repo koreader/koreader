@@ -66,6 +66,158 @@ function VirtualKey:init()
         self.callback = function() self.keyboard:downLine() end
     else
         self.callback = function () self.keyboard:addChar(self.key) end
+        self.hold_callback = function()
+            if not self.key_chars then return end
+
+            local popup_focus_manager = FocusManager:new{
+                modal = true,
+                disable_double_tap = true,
+                inputbox = nil,
+                layout = {},
+
+                width = self.width*3,
+                height = nil,
+                bordersize = Size.border.default,
+                padding = Size.padding.small,
+                key_padding = Size.padding.default,
+            }
+
+function popup_focus_manager:onTapClose(arg, ges)
+    if ges.pos:notIntersectWith(self.dimen) then
+        UIManager:close(self)
+        -- Allow ReaderLink to check if our dismiss tap
+        -- was itself on another footnote, and display
+        -- it. This avoids having to tap 2 times to
+        -- see another footnote.
+        if self.on_tap_close_callback then
+            self.on_tap_close_callback(arg, ges, self.height)
+        elseif self.close_callback then
+            self.close_callback(self.height)
+        end
+        return true
+    end
+    return false
+end
+
+            function popup_focus_manager:onClose()
+                UIManager:close(self)
+                return true
+            end
+
+            function popup_focus_manager:onPressKey()
+                self:getFocusItem():handleEvent(Event:new("TapSelect"))
+                return true
+            end
+
+            local key_chars = self.key_chars
+--logger.dbg(key_chars)
+--error()
+            local extra_key_chars = {}
+            extra_key_chars[1] = key_chars[2]
+            extra_key_chars[2] = key_chars[3]
+            extra_key_chars[3] = key_chars[4]
+            local top_key_chars = {}
+            top_key_chars[1] = key_chars.northwest
+            top_key_chars[2] = key_chars.north
+            top_key_chars[3] = key_chars.northeast
+            local middle_key_chars = {}
+            middle_key_chars[1] = key_chars.west
+            middle_key_chars[2] = key_chars[1]
+            middle_key_chars[3] = key_chars.east
+            local bottom_key_chars = {}
+            bottom_key_chars[1] = key_chars.southwest
+            bottom_key_chars[2] = key_chars.south
+            bottom_key_chars[3] = key_chars.southeast
+
+            local blank = VerticalSpan:new{width = self.width}
+
+            local vertical_group = VerticalGroup:new{}
+            local horizontal_group_extra = HorizontalGroup:new{}
+            local horizontal_group_top = HorizontalGroup:new{}
+            local horizontal_group_middle = HorizontalGroup:new{}
+            local horizontal_group_bottom = HorizontalGroup:new{}
+
+            local function horizontalRow(chars, group)
+                local layout_horizontal = {}
+                local i
+                for i = 1,3 do
+                    local v = chars[i]
+                print(i)
+                print(v)
+                    if v then
+                        local virtual_key = VirtualKey:new{
+                            key = v,
+                            label = v,
+                            keyboard = self.keyboard,
+                            width = self.width,
+                            height = self.height,
+                        }
+                        table.insert(group, virtual_key)
+                        table.insert(layout_horizontal, virtual_key)
+                    else
+                        table.insert(group, blank)
+                    end
+                end
+                table.insert(popup_focus_manager.layout, layout_horizontal)
+            end
+            horizontalRow(extra_key_chars, horizontal_group_extra)
+            horizontalRow(top_key_chars, horizontal_group_top)
+            horizontalRow(middle_key_chars, horizontal_group_middle)
+            horizontalRow(bottom_key_chars, horizontal_group_bottom)
+
+            table.insert(vertical_group, horizontal_group_extra)
+            table.insert(vertical_group, horizontal_group_top)
+            table.insert(vertical_group, horizontal_group_middle)
+            table.insert(vertical_group, horizontal_group_bottom)
+
+    local keyboard_frame = FrameContainer:new{
+        margin = 0,
+        bordersize = Size.border.default,
+        background = Blitbuffer.COLOR_WHITE,
+        radius = 0,
+        padding = self.keyboard.padding,
+        CenterContainer:new{
+            dimen = Geom:new{
+                w = self.width*3 - 2*Size.border.default - 2*self.keyboard.padding,
+                h = self.height*4 - 2*Size.border.default - 2*self.keyboard.padding,
+            },
+            vertical_group,
+        }
+    }
+    --self[1] = BottomContainer:new{
+    --    dimen = Screen:getSize(),
+    --    keyboard_frame,
+    --}
+    --self.dimen = keyboard_frame:getSize()
+
+popup_focus_manager[1]=keyboard_frame
+
+        popup_focus_manager.ges_events = {
+            TapClose = {
+                GestureRange:new{
+                    ges = "tap",
+                    range = range,
+                }
+            },
+        }
+
+    if Device:hasDPad() then
+        popup_focus_manager.key_events.PressKey = { {"Press"}, doc = "select key" }
+    end
+    if Device:hasKeys() then
+        popup_focus_manager.key_events.Close = { {"Back"}, doc = "close keyboard" }
+    end
+
+--self:_refresh()
+--UIManager:show(keyboard_frame)
+UIManager:show(popup_focus_manager)
+            --error()
+            
+                UIManager:setDirty(self, function()
+        return "ui", keyboard_frame:getSize()
+end)
+
+        end
         self.swipe_callback = function(ges)
             self.keyboard:addChar(self.key_chars[ges.direction])
         end
