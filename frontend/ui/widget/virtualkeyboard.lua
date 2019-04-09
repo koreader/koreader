@@ -255,7 +255,8 @@ function VirtualKeyPopup:onPressKey()
 end
 
 function VirtualKeyPopup:init()
-    local key_chars = self.parent_key.key_chars
+    local parent_key = self.parent_key
+    local key_chars = parent_key.key_chars
     local key_char_orig = key_chars[1]
 
     local extra_key_chars = {}
@@ -275,9 +276,9 @@ function VirtualKeyPopup:init()
     bottom_key_chars[2] = key_chars.south
     bottom_key_chars[3] = key_chars.southeast
 
-    local blank = HorizontalSpan:new{width = self.parent_key.width}
-    local h_key_padding = HorizontalSpan:new{width = self.parent_key.keyboard.key_padding}
-    local v_key_padding = VerticalSpan:new{width = self.parent_key.keyboard.key_padding}
+    local blank = HorizontalSpan:new{width = parent_key.width}
+    local h_key_padding = HorizontalSpan:new{width = parent_key.keyboard.key_padding}
+    local v_key_padding = VerticalSpan:new{width = parent_key.keyboard.key_padding}
 
     local vertical_group = VerticalGroup:new{}
     local horizontal_group_extra = HorizontalGroup:new{}
@@ -294,9 +295,9 @@ function VirtualKeyPopup:init()
                 local virtual_key = VirtualKey:new{
                     key = v,
                     label = v,
-                    keyboard = self.parent_key.keyboard,
-                    width = self.parent_key.width,
-                    height = self.parent_key.height,
+                    keyboard = parent_key.keyboard,
+                    width = parent_key.width,
+                    height = parent_key.height,
                 }
 
                 if v == key_char_orig then
@@ -328,11 +329,11 @@ function VirtualKeyPopup:init()
         bordersize = Size.border.default,
         background = Blitbuffer.COLOR_WHITE,
         radius = 0,
-        padding = self.parent_key.keyboard.padding,
+        padding = parent_key.keyboard.padding,
         CenterContainer:new{
             dimen = Geom:new{
-                w = self.parent_key.width*3 - 2*Size.border.default + 4*self.parent_key.keyboard.key_padding,
-                h = self.parent_key.height*4 - 2*Size.border.default + 5*self.parent_key.keyboard.key_padding,
+                w = parent_key.width*3 - 2*Size.border.default + 4*parent_key.keyboard.key_padding,
+                h = parent_key.height*4 - 2*Size.border.default + 5*parent_key.keyboard.key_padding,
             },
             vertical_group,
         }
@@ -356,8 +357,8 @@ function VirtualKeyPopup:init()
 
     local position_container = WidgetContainer:new{
         dimen = {
-            x = self.parent_key.dimen.x - self.parent_key.width - 6*self.parent_key.keyboard.padding - self.parent_key.keyboard.bordersize,
-            y = self.parent_key.dimen.y - self.parent_key.height*2 - 8*self.parent_key.keyboard.padding - self.parent_key.keyboard.bordersize,
+            x = parent_key.dimen.x - parent_key.width - 6*parent_key.keyboard.padding - parent_key.keyboard.bordersize,
+            y = parent_key.dimen.y - parent_key.height*2 - 8*parent_key.keyboard.padding - parent_key.keyboard.bordersize,
             h = Screen:getSize().h,
             w = Screen:getSize().w,
         },
@@ -378,7 +379,7 @@ function VirtualKeyPopup:init()
 
     UIManager:show(VirtualKeyPopup)
 
-    UIManager:setDirty(self.parent_key, function()
+    UIManager:setDirty(self, function()
         return "ui", keyboard_frame.dimen
     end)
 end
