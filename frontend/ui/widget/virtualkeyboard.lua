@@ -383,9 +383,6 @@ function VirtualKeyPopup:init()
     end)
 end
 
-
-
-
 local VirtualKeyboard = FocusManager:new{
     modal = true,
     disable_double_tap = true,
