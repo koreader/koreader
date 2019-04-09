@@ -5,6 +5,10 @@ local _E_ = {
     northwest = "È",
     east = "Ê",
     west = "Ẽ",
+    south = "Ę",
+    southeast = "€",
+    southwest = "Ė",
+    "Ē",
 }
 local _e_ = {
     "e",
@@ -13,6 +17,10 @@ local _e_ = {
     northwest = "è",
     east = "ê",
     west = "ẽ",
+    south = "ę",
+    southeast = "€",
+    southwest = "ė",
+    "ē",
 }
 
 return {
