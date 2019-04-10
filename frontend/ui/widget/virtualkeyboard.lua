@@ -437,6 +437,7 @@ local VirtualKeyboard = FocusManager:new{
 
 local lang_to_keyboard_layout = {
     el = "el_keyboard",
+    en = "en_keyboard",
     es = "es_keyboard",
     fr = "fr_keyboard",
     ja = "ja_keyboard",
@@ -445,8 +446,8 @@ local lang_to_keyboard_layout = {
 }
 
 function VirtualKeyboard:init()
-    local lang = G_reader_settings:readSetting("language")
-    local keyboard_layout = lang_to_keyboard_layout[lang] or "std"
+    local lang = G_reader_settings:readSetting("language") or "en"
+    local keyboard_layout = lang_to_keyboard_layout[lang]
     local keyboard = require("ui/data/keyboardlayouts/" .. keyboard_layout)
     self.KEYS = keyboard.keys
     self.shiftmode_keys = keyboard.shiftmode_keys
