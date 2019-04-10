@@ -184,15 +184,13 @@ function VirtualKey:onUnfocus()
 end
 
 function VirtualKey:onTapSelect(skip_flash)
-    if self.flash_keyboard and not self.skiptap then
+    if self.flash_keyboard and not skip_flash and not self.skiptap then
         self[1].inner_bordersize = self.focused_bordersize
         self:update_keyboard(false, true)
         if self.callback then
             self.callback()
         end
-        if not skip_flash then
-            UIManager:tickAfterNext(function() self:invert(false) end)
-        end
+        UIManager:tickAfterNext(function() self:invert(false) end)
     else
         if self.callback then
             self.callback()
@@ -261,11 +259,7 @@ function VirtualKeyPopup:onTapClose(arg, ges)
 end
 
 function VirtualKeyPopup:onClose()
-    local dimen = self.dimen
     UIManager:close(self)
-    UIManager:setDirty(self, function()
-        return "partial", dimen
-    end)
     return true
 end
 
