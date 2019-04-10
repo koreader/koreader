@@ -1,62 +1,9 @@
-local _at = {
-    "@",
-    north = "Ⓒ",
-    northeast = "™",
-    northwest = "Ⓡ",
-}
-
-local _A_ = {
-    "A",
-    north = "Ä",
-    northeast = "Á",
-    northwest = "À",
-    east = "Â",
-    west = "Ã",
-    south = "Ą",
-    southeast = "Æ",
-    southwest = "Å",
-    "Ā",
-    "Ǎ",
-}
-local _a_ = {
-    "a",
-    north = "ä",
-    northeast = "á",
-    northwest = "à",
-    east = "â",
-    west = "ã",
-    south = "ą",
-    southeast = "æ",
-    southwest = "å",
-    "ā",
-    "ǎ",
-}
-local _E_ = {
-    "E",
-    north = "Ë",
-    northeast = "É",
-    northwest = "È",
-    east = "Ê",
-    west = "Ẽ",
-    south = "Ę",
-    southeast = "€",
-    southwest = "Ė",
-    "Ē",
-    "Ě",
-}
-local _e_ = {
-    "e",
-    north = "ë",
-    northeast = "é",
-    northwest = "è",
-    east = "ê",
-    west = "ẽ",
-    south = "ę",
-    southeast = "€",
-    southwest = "ė",
-    "ē",
-    "ě",
-}
+local en_popup = require("ui/data/keyboardlayouts/keypopup/en_popup")
+local _at = en_popup._at
+local _A_ = en_popup._A_
+local _a_ = en_popup._a_
+local _E_ = en_popup._E_
+local _e_ = en_popup._e_
 
 return {
     shiftmode_keys = {["Shift"] = true},
