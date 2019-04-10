@@ -129,6 +129,54 @@ return {
         "ī",
         "ɪ", -- small capital letter i, near-close front unrounded vowel IPA
     },
+    _K_ = {
+        "K",
+        north = '"',
+        south = "Ķ",
+        east = "–", -- hyphen minus
+        southeast = "—", -- em dash
+        southwest = "–", -- en dash
+        "Κ", -- kappa uppercase
+        "κ", -- kappa lowercase
+    },
+    _k_ = {
+        "k",
+        north = '"',
+        south = "ķ",
+        east = "–", -- hyphen minus
+        southeast = "—", -- em dash
+        southwest = "–", -- en dash
+        "Κ", -- kappa uppercase
+        "κ", -- kappa lowercase
+    },
+    _L_ = {
+        "L",
+        north = "'",
+        northeast = "Ĺ",
+        northwest = "Ľ",
+        east = "+",
+        west = "Ł",
+        south = "Ļ",
+        southeast = "£",
+        southwest = "ꝉ", -- abbreviation for vel (Latin or)
+        "Λ",
+        "λ",
+        "ɫ", -- dark l, velarized alveolar lateral approximant IPA
+    },
+    _l_ = {
+        "l",
+        north = "'",
+        northeast = "ĺ",
+        northwest = "ľ",
+        east = "+",
+        west = "ł",
+        south = "ļ",
+        southeast = "£",
+        southwest = "ꝉ", -- abbreviation for vel (Latin or)
+        "Λ",
+        "λ",
+        "ɫ", -- dark l, velarized alveolar lateral approximant IPA
+    },
     _O_ = {
         "O",
         north = "Ó",
