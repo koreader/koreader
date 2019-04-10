@@ -366,7 +366,7 @@ function VirtualKeyPopup:init()
         CenterContainer:new{
             dimen = Geom:new{
                 w = parent_key.width*3 - 2*Size.border.default + 4*parent_key.keyboard.key_padding,
-                h = parent_key.height*4 - 2*Size.border.default + 6*parent_key.keyboard.key_padding,
+                h = parent_key.height*4 - 2*Size.border.default + 5*parent_key.keyboard.key_padding,
             },
             vertical_group,
         }
