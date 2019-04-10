@@ -447,6 +447,7 @@ local lang_to_keyboard_layout = {
 
 function VirtualKeyboard:init()
     local lang = G_reader_settings:readSetting("language") or "en"
+    if lang == "C" then lang = "en" end
     local keyboard_layout = lang_to_keyboard_layout[lang]
     local keyboard = require("ui/data/keyboardlayouts/" .. keyboard_layout)
     self.KEYS = keyboard.keys
