@@ -1,4 +1,26 @@
 return {
+    com = {
+        ",",
+        north = ";",
+        northeast = "(",
+        northwest = "\\",
+        east = "?",
+        west = "¿",
+        "|",
+        "‖",
+        "¦",
+    },
+    prd = {
+        ".",
+        north = ":",
+        northeast = ")",
+        northwest = "/",
+        east = "…",
+        west = "!",
+        "~",
+        "-",
+        "_",
+    },
     _at = {
         "@",
         north = "Ⓒ",
@@ -30,6 +52,18 @@ return {
         southwest = "å",
         "ā",
         "ǎ",
+    },
+    _B_ = {
+        "B",
+        north = "Β",
+        northeast = "β",
+        northwest = "♭",
+    },
+    _b_ = {
+        "b",
+        north = "Β",
+        northeast = "β",
+        northwest = "♭",
     },
     _E_ = {
         "E",

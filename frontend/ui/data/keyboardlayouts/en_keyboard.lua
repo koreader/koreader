@@ -1,7 +1,11 @@
 local en_popup = require("ui/data/keyboardlayouts/keypopup/en_popup")
+local com = en_popup.com -- comma (,)
+local prd = en_popup.prd -- period (.)
 local _at = en_popup._at
 local _A_ = en_popup._A_
 local _a_ = en_popup._a_
+local _B_ = en_popup._B_
+local _b_ = en_popup._b_
 local _E_ = en_popup._E_
 local _e_ = en_popup._e_
 local _S_ = en_popup._S_
@@ -48,7 +52,7 @@ return {
             { "X",        "x",    "*",    "8",    "Ч",    "ч",    ";",    "8",    "Ø",    "ø",    "Ã",    "ã", },
             { "C",        "c",    "£",    "9",    "С",    "с",    "'",    "9",    "Í",    "í",    "Þ",    "þ", },
             { "V",        "v",    "<",    "‚",    "М",    "м",    "Ө",    "ө",    "Ñ",    "ñ",    "Ý",    "ý", },
-            { "B",        "b",    ">",    ".",    "И",    "и",    "Һ",    "һ",    "Ó",    "ó",    "†",    "‡", },
+            { _B_,        _b_,    ">",    prd,    "И",    "и",    "Һ",    "һ",    "Ó",    "ó",    "†",    "‡", },
             { "N",        "n",    "‘",    "↑",    "Т",    "т",    "Б",    "б",    "Ú",    "ú",    "–",    "—", },
             { "M",        "m",    "’",    "↓",    "Ь",    "ь",    "Ю",    "ю",    "Ç",    "ç",    "…",    "¨", },
             { label = "Backspace",
@@ -67,8 +71,8 @@ return {
             { label = "space",
               " ",        " ",    " ",    " ",    " ",    " ",    " ",    " ",    " ",    " ",    " ",    " ",
               width = 3.0},
-            { ",",        ",",    "“",    "←",    ",",    ",",    "Ё",    "ё",    "Ũ",   "ũ",    ",",    ",", },
-            { ".",        ".",    "”",    "→",    ".",    ".",    ".",    ".",    "Ĩ",   "ĩ",    ".",    ".", },
+            { com,        com,    "“",    "←",    com,    com,    "Ё",    "ё",    "Ũ",   "ũ",    com,    com, },
+            { prd,        prd,    "”",    "→",    prd,    prd,    prd,    prd,    "Ĩ",   "ĩ",    prd,    prd, },
             { label = "Enter",
               "\n",       "\n",   "\n",   "\n",   "\n",   "\n",   "\n",   "\n",   "\n",   "\n",   "\n",   "\n",
               icon = "resources/icons/appbar.arrow.enter.png",
