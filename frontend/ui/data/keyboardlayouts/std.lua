@@ -1,3 +1,36 @@
+local _at = {
+    "@",
+    north = "Ⓒ",
+    northeast = "™",
+    northwest = "Ⓡ",
+}
+
+local _A_ = {
+    "A",
+    north = "Ä",
+    northeast = "Á",
+    northwest = "À",
+    east = "Â",
+    west = "Ã",
+    south = "Ą",
+    southeast = "Æ",
+    southwest = "Å",
+    "Ā",
+    "Ǎ",
+}
+local _a_ = {
+    "a",
+    north = "ä",
+    northeast = "á",
+    northwest = "à",
+    east = "â",
+    west = "ã",
+    south = "ą",
+    southeast = "æ",
+    southwest = "å",
+    "ā",
+    "ǎ",
+}
 local _E_ = {
     "E",
     north = "Ë",
@@ -9,6 +42,7 @@ local _E_ = {
     southeast = "€",
     southwest = "Ė",
     "Ē",
+    "Ě",
 }
 local _e_ = {
     "e",
@@ -21,6 +55,7 @@ local _e_ = {
     southeast = "€",
     southwest = "ė",
     "ē",
+    "ě",
 }
 
 return {
@@ -44,7 +79,7 @@ return {
         },
         -- second row
         {  --  1           2       3       4       5       6       7       8       9       10      11      12
-            { "A",        "a",    "…",    "@",    "Ф",    "ф",    "*",    "0",    "Ê",    "ê",    "Ş",    "ş", },
+            { _A_,        _a_,    "…",    _at,    "Ф",    "ф",    "*",    "0",    "Ê",    "ê",    "Ş",    "ş", },
             { "S",        "s",    "$",    "4",    "Ы",    "ы",    "+",    "4",    "Ë",    "ë",    "İ",    "ı", },
             { "D",        "d",    "%",    "5",    "В",    "в",    "-",    "5",    "Î",    "î",    "Ğ",    "ğ", },
             { "F",        "f",    "^",    "6",    "А",    "а",    "=",    "6",    "Ï",    "ï",    "Ć",    "ć", },
