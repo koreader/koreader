@@ -183,8 +183,8 @@ function VirtualKey:onUnfocus()
     self[1].inner_bordersize = 0
 end
 
-function VirtualKey:onTapSelect()
-    if self.flash_keyboard and not self.skiptap then
+function VirtualKey:onTapSelect(skip_flash)
+    if self.flash_keyboard and not skip_flash and not self.skiptap then
         self[1].inner_bordersize = self.focused_bordersize
         self:update_keyboard(false, true)
         if self.callback then
@@ -314,7 +314,14 @@ function VirtualKeyPopup:init()
                     width = parent_key.width,
                     height = parent_key.height,
                 }
+                -- don't open another popup on hold
                 virtual_key.hold_callback = nil
+                -- close popup on hold release
+                virtual_key.onHoldReleaseKey = function()
+                    virtual_key:onTapSelect(true)
+                    UIManager:close(self)
+                end
+                virtual_key.onPanReleaseKey = virtual_key.onHoldReleaseKey
 
                 if v == key_char_orig then
                     virtual_key[1].background = Blitbuffer.COLOR_LIGHT_GRAY
@@ -340,7 +347,7 @@ function VirtualKeyPopup:init()
             end
         end
         table.insert(vertical_group, group)
-        table.insert(VirtualKeyPopup.layout, layout_horizontal)
+        table.insert(self.layout, layout_horizontal)
     end
     horizontalRow(extra_key_chars, horizontal_group_extra)
     table.insert(vertical_group, v_key_padding)
@@ -366,7 +373,7 @@ function VirtualKeyPopup:init()
     }
     keyboard_frame.dimen = keyboard_frame:getSize()
 
-    VirtualKeyPopup.ges_events = {
+    self.ges_events = {
         TapClose = {
             GestureRange:new{
                 ges = "tap",
@@ -375,10 +382,10 @@ function VirtualKeyPopup:init()
     }
 
     if Device:hasDPad() then
-        VirtualKeyPopup.key_events.PressKey = { {"Press"}, doc = "select key" }
+        self.key_events.PressKey = { {"Press"}, doc = "select key" }
     end
     if Device:hasKeys() then
-        VirtualKeyPopup.key_events.Close = { {"Back"}, doc = "close keyboard" }
+        self.key_events.Close = { {"Back"}, doc = "close keyboard" }
     end
 
     local position_container = WidgetContainer:new{
@@ -401,9 +408,9 @@ function VirtualKeyPopup:init()
         position_container.dimen.y = Screen:getHeight() - keyboard_frame.dimen.h
     end
 
-    VirtualKeyPopup[1] = position_container
+    self[1] = position_container
 
-    UIManager:show(VirtualKeyPopup)
+    UIManager:show(self)
 
     UIManager:setDirty(self, function()
         return "ui", keyboard_frame.dimen
