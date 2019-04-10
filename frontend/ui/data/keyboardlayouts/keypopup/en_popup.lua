@@ -59,7 +59,7 @@ return {
     },
     _S_ = {
         "S",
-        north = "ß",
+        north = "ẞ",
         northeast = "Ś",
         northwest = "ſ",
         east = "Ŝ",
