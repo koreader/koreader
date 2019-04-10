@@ -61,6 +61,7 @@ return {
         "S",
         north = "ß",
         northeast = "Ś",
+        northwest = "ſ",
         east = "Ŝ",
         west = "Š",
         south = "Ş",
