@@ -38,6 +38,7 @@ local Kobo = Generic:new{
     internal_storage_mount_point = "/mnt/onboard/",
     -- currently only the Aura One and Forma have coloured frontlights
     hasNaturalLight = no,
+    hasNaturalLightMixer = no,
     -- HW inversion is generally safe on Kobo, except on a few baords/kernels
     canHWInvert = yes,
 }
@@ -257,7 +258,7 @@ function Kobo:init()
     end
 
     -- Automagically set this so we never have to remember to do it manually ;p
-    if self.hasNaturalLight and self:hasNaturalLight() and self.frontlight_settings and self.frontlight_settings.frontlight_mixer then
+    if self:hasNaturalLight() and self.frontlight_settings and self.frontlight_settings.frontlight_mixer then
         self.hasNaturalLightMixer = yes
     end
 
