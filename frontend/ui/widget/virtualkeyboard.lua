@@ -19,6 +19,7 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
+local util = require("util")
 local Screen = Device.screen
 
 local VirtualKeyPopup
@@ -273,25 +274,45 @@ function VirtualKeyPopup:init()
     local key_chars = parent_key.key_chars
     local key_char_orig = key_chars[1]
 
-    local extra_key_chars = {}
-    extra_key_chars[1] = key_chars[2]
-    extra_key_chars[2] = key_chars[3]
-    extra_key_chars[3] = key_chars[4]
-    local top_key_chars = {}
-    top_key_chars[1] = key_chars.northwest
-    top_key_chars[2] = key_chars.north
-    top_key_chars[3] = key_chars.northeast
-    local middle_key_chars = {}
-    middle_key_chars[1] = key_chars.west
-    middle_key_chars[2] = key_char_orig
-    middle_key_chars[3] = key_chars.east
-    local bottom_key_chars = {}
-    bottom_key_chars[1] = key_chars.southwest
-    bottom_key_chars[2] = key_chars.south
-    bottom_key_chars[3] = key_chars.southeast
+    local rows = {
+        extra_key_chars = {
+            key_chars[2],
+            key_chars[3],
+            key_chars[4],
+        },
+        top_key_chars = {
+            key_chars.northwest,
+            key_chars.north,
+            key_chars.northeast,
+        },
+        middle_key_chars = {
+            key_chars.west,
+            key_char_orig,
+            key_chars.east,
+        },
+        bottom_key_chars = {
+            key_chars.southwest,
+            key_chars.south,
+            key_chars.southeast,
+        },
+    }
+    if util.tableSize(rows.extra_key_chars) == 0 then rows.extra_key_chars = nil end
+    if util.tableSize(rows.top_key_chars) == 0 then rows.top_key_chars = nil end
+    -- we should always have a middle
+    if util.tableSize(rows.bottom_key_chars) == 0 then rows.bottom_key_chars = nil end
 
-    local blank = HorizontalSpan:new{width = parent_key.width}
-    local h_key_padding = HorizontalSpan:new{width = parent_key.keyboard.key_padding}
+    -- to store if a column exists
+    local columns = {}
+    local blank = {
+        HorizontalSpan:new{width = 0},
+        HorizontalSpan:new{width = parent_key.width},
+        HorizontalSpan:new{width = 0},
+    }
+    local h_key_padding = {
+        HorizontalSpan:new{width = 0},
+        HorizontalSpan:new{width = parent_key.keyboard.key_padding},
+        HorizontalSpan:new{width = 0},
+    }
     local v_key_padding = VerticalSpan:new{width = parent_key.keyboard.key_padding}
 
     local vertical_group = VerticalGroup:new{}
@@ -302,10 +323,17 @@ function VirtualKeyPopup:init()
 
     local function horizontalRow(chars, group)
         local layout_horizontal = {}
+
         for i = 1,3 do
             local v = chars[i]
 
             if v then
+                columns[i] = true
+                blank[i].width = blank[2].width
+                if i == 1 then
+                    h_key_padding[i].width = h_key_padding[2].width
+                end
+
                 local virtual_key = VirtualKey:new{
                     key = v,
                     label = v,
@@ -340,22 +368,34 @@ function VirtualKeyPopup:init()
                 table.insert(group, virtual_key)
                 table.insert(layout_horizontal, virtual_key)
             else
-                table.insert(group, blank)
+                table.insert(group, blank[i])
             end
-            if i ~= #chars then
-                table.insert(group, h_key_padding)
-            end
+            table.insert(group, h_key_padding[i])
         end
         table.insert(vertical_group, group)
         table.insert(self.layout, layout_horizontal)
     end
-    horizontalRow(extra_key_chars, horizontal_group_extra)
-    table.insert(vertical_group, v_key_padding)
-    horizontalRow(top_key_chars, horizontal_group_top)
-    table.insert(vertical_group, v_key_padding)
-    horizontalRow(middle_key_chars, horizontal_group_middle)
-    table.insert(vertical_group, v_key_padding)
-    horizontalRow(bottom_key_chars, horizontal_group_bottom)
+    if rows.extra_key_chars then
+        horizontalRow(rows.extra_key_chars, horizontal_group_extra)
+        table.insert(vertical_group, v_key_padding)
+    end
+    if rows.top_key_chars then
+        horizontalRow(rows.top_key_chars, horizontal_group_top)
+        table.insert(vertical_group, v_key_padding)
+    end
+    -- always middle row
+    horizontalRow(rows.middle_key_chars, horizontal_group_middle)
+    if rows.bottom_key_chars then
+        table.insert(vertical_group, v_key_padding)
+        horizontalRow(rows.bottom_key_chars, horizontal_group_bottom)
+    end
+
+    if not columns[3] then
+        h_key_padding[2].width = 0
+    end
+
+    local num_rows = util.tableSize(rows)
+    local num_columns = util.tableSize(columns)
 
     local keyboard_frame = FrameContainer:new{
         margin = 0,
@@ -365,8 +405,8 @@ function VirtualKeyPopup:init()
         padding = parent_key.keyboard.padding,
         CenterContainer:new{
             dimen = Geom:new{
-                w = parent_key.width*3 - 2*Size.border.default + 4*parent_key.keyboard.key_padding,
-                h = parent_key.height*4 - 2*Size.border.default + 5*parent_key.keyboard.key_padding,
+                w = parent_key.width*num_columns + 2*Size.border.default + (num_columns)*parent_key.keyboard.key_padding,
+                h = parent_key.height*num_rows + 2*Size.border.default + num_rows*parent_key.keyboard.key_padding,
             },
             vertical_group,
         }
@@ -388,10 +428,23 @@ function VirtualKeyPopup:init()
         self.key_events.Close = { {"Back"}, doc = "close keyboard" }
     end
 
+    local offset_x = 2*parent_key.keyboard.padding + 2*parent_key.keyboard.bordersize
+    if columns[1] then
+        offset_x = offset_x + parent_key.width + parent_key.keyboard.padding + 2*parent_key.keyboard.bordersize
+    end
+
+    local offset_y = parent_key.keyboard.padding + parent_key.keyboard.padding + 2*parent_key.keyboard.bordersize
+    if rows.extra_key_chars then
+        offset_y = offset_y + parent_key.height + parent_key.keyboard.padding + 2*parent_key.keyboard.bordersize
+    end
+    if rows.top_key_chars then
+        offset_y = offset_y + parent_key.height + parent_key.keyboard.padding + 2*parent_key.keyboard.bordersize
+    end
+
     local position_container = WidgetContainer:new{
         dimen = {
-            x = parent_key.dimen.x - parent_key.width - 6*parent_key.keyboard.padding - parent_key.keyboard.bordersize,
-            y = parent_key.dimen.y - parent_key.height*2 - 8*parent_key.keyboard.padding - parent_key.keyboard.bordersize,
+            x = parent_key.dimen.x - offset_x,
+            y = parent_key.dimen.y - offset_y,
             h = Screen:getSize().h,
             w = Screen:getSize().w,
         },
