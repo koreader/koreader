@@ -320,6 +320,10 @@ end
 -- Restore front light state after resume.
 function KoboPowerD:afterResume()
     if self.fl == nil then return end
+    -- Update AutoWarmth state
+    if self.fl_warmth ~= nil and self.auto_warmth then
+        self:calculateAutoWarmth()
+    end
     -- Turn the frontlight back on
     self:turnOnFrontlight()
 end
