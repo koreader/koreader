@@ -160,7 +160,7 @@ function FileManager:init()
     function file_chooser:onPathChanged(path)  -- luacheck: ignore
         FileManager.instance.path_text:setText(truncatePath(filemanagerutil.abbreviate(path)))
         UIManager:setDirty(FileManager.instance, function()
-            return "partial", FileManager.instance.path_text.dimen, FileManager.instance.dithered
+            return "ui", FileManager.instance.path_text.dimen, FileManager.instance.dithered
         end)
         return true
     end
