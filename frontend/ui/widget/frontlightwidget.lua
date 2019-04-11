@@ -55,10 +55,10 @@ function FrontLightWidget:init()
     self.natural_light = (Device:isCervantes() or Device:isKobo()) and Device:hasNaturalLight()
     -- Bit of a dirty hack to differentiate devices with a NL mixer interface,
     -- so that we don't even try to show the per-led config UI, which won't work on those devices.
-    -- Handle Warmth separately, because it may use a different scale
     if self.natural_light then
         self.has_nl_mixer = Device.frontlight_settings.frontlight_mixer and true or false
     end
+    -- Handle Warmth separately, because it may use a different scale
     if self.natural_light then
         self.nl_min = self.powerd.fl_warmth_min
         self.nl_max = self.powerd.fl_warmth_max
