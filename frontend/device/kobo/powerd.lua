@@ -258,7 +258,8 @@ function KoboPowerD:calculateAutoWarmth()
     end
     self.fl_warmth = math.floor(self.fl_warmth + 0.5)
     -- Make sure sysfs_light actually picks that new value up without an explicit setWarmth call...
-    -- This avoids having to bypass the ramp-up on resume w/ an explicit setWarmth call ;).
+    -- This avoids having to bypass the ramp-up on resume w/ an explicit setWarmth call on devices where brightness & warmth
+    -- are linked (i.e., when there's no mixer) ;).
     -- NOTE: A potentially saner solution would be to ditch the internal sysfs_light current_* values,
     --       and just pass it a pointer to this powerd instance, so it has access to fl_warmth & hw_intensity.
     --       It seems harmless enough for warmth, but brightness might be a little trickier because of the insanity
