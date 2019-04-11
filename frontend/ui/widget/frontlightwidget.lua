@@ -53,9 +53,7 @@ function FrontLightWidget:init()
     end
     self.steps = math.min(self.steps, steps_fl)
     self.natural_light = Device:hasNaturalLight()
-    if self.natural_light then
-        self.has_nl_mixer = Device:hasNaturalLightMixer()
-    end
+    self.has_nl_mixer = Device:hasNaturalLightMixer()
     -- Handle Warmth separately, because it may use a different scale
     if self.natural_light then
         self.nl_min = self.powerd.fl_warmth_min

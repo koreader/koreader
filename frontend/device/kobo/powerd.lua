@@ -339,7 +339,7 @@ function KoboPowerD:afterResume()
     -- Update AutoWarmth state
     if self.fl_warmth ~= nil and self.auto_warmth then
         self:calculateAutoWarmth()
-        -- And we need an explicit setWarmth if the devices has a mixer, because turnOn won't touch the warmth on those ;).
+        -- And we need an explicit setWarmth if the device has a mixer, because turnOn won't touch the warmth on those ;).
         if self.device:hasNaturalLightMixer() then
             self:setWarmth(self.fl_warmth)
         end
