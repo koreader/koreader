@@ -70,12 +70,14 @@ return {
         north = "Đ",
         northeast = "Ð",
         northwest = "Ď",
+        east = "Δ",
     },
     _d_ = {
         "d",
         north = "đ",
         northeast = "ð",
         northwest = "ď",
+        east = "δ",
     },
     _E_ = {
         "E",
