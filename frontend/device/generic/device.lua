@@ -151,11 +151,6 @@ function Device:init()
             self:invertButtons()
         end
     end
-
-    -- Automagically set this so we never have to remember to do it manually ;p
-    if self:hasNaturalLight() and self.frontlight_settings and self.frontlight_settings.frontlight_mixer then
-        self.hasNaturalLightMixer = yes
-    end
 end
 
 function Device:setScreenDPI(dpi_override)
