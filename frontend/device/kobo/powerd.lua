@@ -141,6 +141,10 @@ function KoboPowerD:init()
         -- See discussion in https://github.com/koreader/koreader/issues/3118#issuecomment-334995879
         -- for the reasoning behind this bit of insanity.
         if self:isFrontlightOnHW() then
+            -- On devices with a mixer, setIntensity will *only* set the FL, so, ensure we honor the warmth, too.
+            if self.device:hasNaturalLightMixer() then
+               self:setWarmth(self.fl_warmth)
+            end
             -- Use setIntensity to ensure it sets fl_intensity, and because we don't want the ramping behavior of turnOn
             self:setIntensity(self:frontlightIntensityHW())
         else
@@ -334,6 +338,10 @@ function KoboPowerD:afterResume()
     -- Update AutoWarmth state
     if self.fl_warmth ~= nil and self.auto_warmth then
         self:calculateAutoWarmth()
+        -- And we need an explicit setWarmth if the devices has a mixer, because turnOn won't touch the warmth on those ;).
+        if self.device:hasNaturalLightMixer() then
+            self:setWarmth(self.fl_warmth)
+        end
     end
     -- Turn the frontlight back on
     self:turnOnFrontlight()

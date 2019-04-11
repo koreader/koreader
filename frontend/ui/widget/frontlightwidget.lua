@@ -52,11 +52,9 @@ function FrontLightWidget:init()
         self.steps = self.steps + 1
     end
     self.steps = math.min(self.steps, steps_fl)
-    self.natural_light = (Device:isCervantes() or Device:isKobo()) and Device:hasNaturalLight()
-    -- Bit of a dirty hack to differentiate devices with a NL mixer interface,
-    -- so that we don't even try to show the per-led config UI, which won't work on those devices.
+    self.natural_light = Device:hasNaturalLight()
     if self.natural_light then
-        self.has_nl_mixer = Device.frontlight_settings.frontlight_mixer and true or false
+        self.has_nl_mixer = Device:hasNaturalLightMixer()
     end
     -- Handle Warmth separately, because it may use a different scale
     if self.natural_light then
@@ -262,7 +260,7 @@ function FrontLightWidget:setProgress(num, step, num_warmth)
     table.insert(vertical_group, padding_span)
     if self.natural_light then
         -- If the device supports natural light, add the widgets for 'warmth',
-        -- and a 'Configure' button for devices without a mixer
+        -- as well as a 'Configure' button for devices *without* a mixer
         self:addWarmthWidgets(num_warmth, step, vertical_group)
         if not self.has_nl_mixer then
             self.configure_button =  Button:new{
