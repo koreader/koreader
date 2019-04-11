@@ -264,6 +264,12 @@ function VirtualKeyPopup:onClose()
     return true
 end
 
+function VirtualKeyPopup:onCloseWidget()
+    UIManager:setDirty(nil, function()
+        return "partial", self[1][1].dimen
+    end)
+end
+
 function VirtualKeyPopup:onPressKey()
     self:getFocusItem():handleEvent(Event:new("TapSelect"))
     return true
