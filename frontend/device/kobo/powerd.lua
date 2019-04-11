@@ -253,6 +253,17 @@ function KoboPowerD:calculateAutoWarmth()
         self.fl_warmth = math.max(100 - 50 * (22 - diff_time), 0)
     end
     self.fl_warmth = math.floor(self.fl_warmth + 0.5)
+    -- Make sure sysfs_light actually picks that new value up without an explicit setWarmth call...
+    -- This avoids having to bypass the ramp-up on resume w/ an explicit setWarmth call ;).
+    -- NOTE: A potentially saner solution would be to ditch the internal sysfs_light current_* values,
+    --       and just pass it a pointer to this powerd instance, so it has access to fl_warmth & hw_intensity.
+    --       It seems harmless enough for warmth, but brightness might be a little trickier because of the insanity
+    --       that is hw_intensity handling because we can't actually *read* the frontlight status...
+    --       (Technically, we could, on Mk. 7 devices, but we don't,
+    --       because this is already messy enough without piling on special cases.)
+    if self.fl then
+        self.fl.current_warmth = self.fl_warmth
+    end
     -- Enable background job for setting Warmth, if not already done.
     if not self.autowarmth_job_running then
         table.insert(PluginShare.backgroundJobs, {
