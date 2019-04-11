@@ -65,6 +65,18 @@ return {
         northeast = "β",
         northwest = "♭",
     },
+    _D_ = {
+        "D",
+        north = "Đ",
+        northeast = "Ð",
+        northwest = "Ď",
+    },
+    _d_ = {
+        "d",
+        north = "đ",
+        northeast = "ð",
+        northwest = "ď",
+    },
     _E_ = {
         "E",
         north = "Ë",
