@@ -91,6 +91,7 @@ return {
         southwest = "Ė",
         "Ē",
         "Ě",
+        "ɛ",
     },
     _e_ = {
         "e",
@@ -104,6 +105,53 @@ return {
         southwest = "ė",
         "ē",
         "ě",
+        "ɛ",
+    },
+    _I_ = {
+        "I",
+        north = "Í",
+        northeast = "Í",
+        northwest = "Ì",
+        east = "Î",
+        west = "Ĩ",
+        south = "Į",
+        "Ī",
+        "ɪ", -- small capital letter i, near-close front unrounded vowel IPA
+    },
+    _i_ = {
+        "i",
+        north = "ï",
+        northeast = "í",
+        northwest = "ì",
+        east = "î",
+        west = "ĩ",
+        south = "į",
+        "ī",
+        "ɪ", -- small capital letter i, near-close front unrounded vowel IPA
+    },
+    _O_ = {
+        "O",
+        north = "Ó",
+        northeast = "Ó",
+        northwest = "Ò",
+        east = "Ô",
+        west = "Õ",
+        south = "Ǫ",
+        "Ō",
+        "ɔ", -- open o, open-mid back rounded vowel IPA
+        "ɒ", -- turned alpha, open back rounded vowel IPA
+    },
+    _o_ = {
+        "o",
+        north = "ö",
+        northeast = "ó",
+        northwest = "ò",
+        east = "ô",
+        west = "õ",
+        south = "ǫ",
+        "ō",
+        "ɔ", -- open o, open-mid back rounded vowel IPA
+        "ɒ", -- turned alpha, open back rounded vowel IPA
     },
     _S_ = {
         "S",
@@ -158,5 +206,29 @@ return {
         southwest = "ṭ",
         "Τ",
         "τ",
+    },
+    _U_ = {
+        "U",
+        north = "Ü",
+        northeast = "Ú",
+        northwest = "Ù",
+        east = "Û",
+        west = "Ũ",
+        south = "Ų",
+        southwest = "Ů",
+        "Ū",
+        "ʌ", -- turned v, open-mid back unrounded vowel IPA
+    },
+    _u_ = {
+        "u",
+        north = "ü",
+        northeast = "ú",
+        northwest = "ù",
+        east = "û",
+        west = "ũ",
+        south = "ų",
+        southwest = "ů",
+        "ū",
+        "ʌ", -- turned v, open-mid back unrounded vowel IPA
     },
 }
