@@ -185,6 +185,7 @@ return {
         east = "Ô",
         west = "Õ",
         south = "Ǫ",
+        southeast = "Œ",
         "Ō",
         "ɔ", -- open o, open-mid back rounded vowel IPA
         "ɒ", -- turned alpha, open back rounded vowel IPA
@@ -197,6 +198,7 @@ return {
         east = "ô",
         west = "õ",
         south = "ǫ",
+        southeast = "œ",
         "ō",
         "ɔ", -- open o, open-mid back rounded vowel IPA
         "ɒ", -- turned alpha, open back rounded vowel IPA
@@ -278,5 +280,23 @@ return {
         southwest = "ů",
         "ū",
         "ʌ", -- turned v, open-mid back unrounded vowel IPA
+    },
+    _Z_ = {
+        "Z",
+        northeast = "Ź",
+        northwest = "Ζ", -- zeta uppercase
+        west = "Ž",
+        south = "ʐ", -- voiced retroflex sibilant fricative IPA
+        southeast = "ʒ", -- ezh, voiced palato-alveolar fricative IPA
+        southwest = "Ż",
+    },
+    _z_ = {
+        "z",
+        northeast = "ź",
+        northwest = "ζ", -- zeta lowercase
+        west = "ž",
+        south = "ʐ", -- voiced retroflex sibilant fricative IPA
+        southeast = "ʒ", -- ezh, voiced palato-alveolar fricative IPA
+        southwest = "ż",
     },
 }
