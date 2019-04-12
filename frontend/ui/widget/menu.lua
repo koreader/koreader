@@ -656,6 +656,7 @@ function Menu:init()
                     --TODO support utf8 lowercase
                     local filename = util.basename(v.path):lower()
                     local search_string = self.page_info_text.input_dialog:getInputText():lower()
+                    search_string = search_string:gsub("%s+", "")
                     local i, _ = filename:find(search_string)
                     if i == 1 and not v.is_go_up then
                         self:onGotoPage(math.ceil(k / self.perpage))
