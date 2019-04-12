@@ -24,6 +24,8 @@ local _T_ = en_popup._T_
 local _t_ = en_popup._t_
 local _U_ = en_popup._U_
 local _u_ = en_popup._u_
+local _Z_ = en_popup._Z_
+local _z_ = en_popup._z_
 
 return {
     shiftmode_keys = {["Shift"] = true},
@@ -62,7 +64,7 @@ return {
               icon = "resources/icons/appbar.arrow.shift.png",
               width = 1.5
             },
-            { "Z",        "z",    "&",    "7",    "Я",    "я",    ":",    "7",    "Á",    "á",    "Ű",    "ű", },
+            { _Z_,        _z_,    "&",    "7",    "Я",    "я",    ":",    "7",    "Á",    "á",    "Ű",    "ű", },
             { "X",        "x",    "*",    "8",    "Ч",    "ч",    ";",    "8",    "Ø",    "ø",    "Ã",    "ã", },
             { "C",        "c",    "£",    "9",    "С",    "с",    "'",    "9",    "Í",    "í",    "Þ",    "þ", },
             { "V",        "v",    "<",    "‚",    "М",    "м",    "Ө",    "ө",    "Ñ",    "ñ",    "Ý",    "ý", },
