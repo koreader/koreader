@@ -17,7 +17,8 @@ table.insert(keys[2],
 -- And swap the english M on the 3rd row to ','
 keys[3][8][1] = ","
 keys[3][8][2] = ","
--- And swap the ',' on the 4th row (an extended key including a popup) to ';'
+-- And swap the english ',' on the 4th row (an extended key
+-- including a popup) to ';'
 local en_com = keys[4][5][1]
 en_com[1] = ";"
 en_com.north = "," -- and swap the ';' there to ','
@@ -37,9 +38,7 @@ local popups = {
     keys[1][9][2], -- o
 }
 for _, popup in ipairs(popups) do
-    if popup.east and popup.north then -- not all implemented yet
-        popup.north, popup.east = popup.east, popup.north
-    end
+    popup.north, popup.east = popup.east, popup.north
 end
 
 -- Remove the "space" string
