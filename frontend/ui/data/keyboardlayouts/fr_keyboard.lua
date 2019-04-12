@@ -9,6 +9,19 @@ keys[1][1][2], keys[2][1][2] = keys[2][1][2], keys[1][1][2] -- q <> a
 keys[1][2][1], keys[3][2][1] = keys[3][2][1], keys[1][2][1] -- W <> Z
 keys[1][2][2], keys[3][2][2] = keys[3][2][2], keys[1][2][2] -- w <> z
 
+-- Insert an additional key at the end of 2nd row for M
+table.insert(keys[2],
+           --  1           2       3       4       5       6       7       8       9       10      11      12
+            { "M",        "m",    "§",    "+",    "Д",    "д",    "Э",    "э",    "Œ",    "œ",    "Ő",    "ő", }
+)
+-- And swap the english M on the 3rd row to ','
+keys[3][8][1] = ","
+keys[3][8][2] = ","
+-- And swap the ',' on the 4th row (an extended key including a popup) to ';'
+local en_com = keys[4][5][1]
+en_com[1] = ";"
+en_com.north = "," -- and swap the ';' there to ','
+
 -- Swap ê and ë (and the like) in the keyboard popups, so the
 -- common french accentuated chars are all on the upper row.
 local popups = {
