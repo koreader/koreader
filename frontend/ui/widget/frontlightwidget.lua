@@ -52,7 +52,8 @@ function FrontLightWidget:init()
         self.steps = self.steps + 1
     end
     self.steps = math.min(self.steps, steps_fl)
-    self.natural_light = (Device:isCervantes() or Device:isKobo()) and Device:hasNaturalLight()
+    self.natural_light = Device:hasNaturalLight()
+    self.has_nl_mixer = Device:hasNaturalLightMixer()
     -- Handle Warmth separately, because it may use a different scale
     if self.natural_light then
         self.nl_min = self.powerd.fl_warmth_min
@@ -256,21 +257,23 @@ function FrontLightWidget:setProgress(num, step, num_warmth)
     table.insert(vertical_group, button_group_down)
     table.insert(vertical_group, padding_span)
     if self.natural_light then
-        -- If the device supports natural light, add the widgets for 'warmth'
-        -- and a 'Configure' button
+        -- If the device supports natural light, add the widgets for 'warmth',
+        -- as well as a 'Configure' button for devices *without* a mixer
         self:addWarmthWidgets(num_warmth, step, vertical_group)
-        self.configure_button =  Button:new{
-            text = _("Configure"),
-            margin = Size.margin.small,
-            radius = 0,
-            width = self.screen_width * 0.20,
-            enabled = not self.nl_configure_open,
-            show_parent = self,
-            callback = function()
-                UIManager:show(NaturalLight:new{fl_widget = self})
-            end,
-        }
-        table.insert(vertical_group, self.configure_button)
+        if not self.has_nl_mixer then
+            self.configure_button =  Button:new{
+                text = _("Configure"),
+                margin = Size.margin.small,
+                radius = 0,
+                width = self.screen_width * 0.20,
+                enabled = not self.nl_configure_open,
+                show_parent = self,
+                callback = function()
+                    UIManager:show(NaturalLight:new{fl_widget = self})
+                end,
+            }
+            table.insert(vertical_group, self.configure_button)
+        end
     end
     table.insert(self.fl_container, vertical_group)
     -- Reset container height to what it actually contains

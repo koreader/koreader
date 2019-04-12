@@ -50,6 +50,7 @@ local Cervantes = Generic:new{
 
     -- currently only Cervantes 4 has coloured frontlight
     hasNaturalLight = no,
+    hasNaturalLightMixer = no,
 }
 -- Cervantes Touch
 local CervantesTouch = Cervantes:new{
@@ -131,6 +132,12 @@ end
 
 function Cervantes:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
+
+    -- Automagically set this so we never have to remember to do it manually ;p
+    if self:hasNaturalLight() and self.frontlight_settings and self.frontlight_settings.frontlight_mixer then
+        self.hasNaturalLightMixer = yes
+    end
+
     self.powerd = require("device/cervantes/powerd"):new{device = self}
     self.input = require("device/input"):new{
         device = self,

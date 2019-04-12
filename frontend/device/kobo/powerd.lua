@@ -141,6 +141,10 @@ function KoboPowerD:init()
         -- See discussion in https://github.com/koreader/koreader/issues/3118#issuecomment-334995879
         -- for the reasoning behind this bit of insanity.
         if self:isFrontlightOnHW() then
+            -- On devices with a mixer, setIntensity will *only* set the FL, so, ensure we honor the warmth, too.
+            if self.device:hasNaturalLightMixer() then
+               self:setWarmth(self.fl_warmth)
+            end
             -- Use setIntensity to ensure it sets fl_intensity, and because we don't want the ramping behavior of turnOn
             self:setIntensity(self:frontlightIntensityHW())
         else
@@ -253,6 +257,18 @@ function KoboPowerD:calculateAutoWarmth()
         self.fl_warmth = math.max(100 - 50 * (22 - diff_time), 0)
     end
     self.fl_warmth = math.floor(self.fl_warmth + 0.5)
+    -- Make sure sysfs_light actually picks that new value up without an explicit setWarmth call...
+    -- This avoids having to bypass the ramp-up on resume w/ an explicit setWarmth call on devices where brightness & warmth
+    -- are linked (i.e., when there's no mixer) ;).
+    -- NOTE: A potentially saner solution would be to ditch the internal sysfs_light current_* values,
+    --       and just pass it a pointer to this powerd instance, so it has access to fl_warmth & hw_intensity.
+    --       It seems harmless enough for warmth, but brightness might be a little trickier because of the insanity
+    --       that is hw_intensity handling because we can't actually *read* the frontlight status...
+    --       (Technically, we could, on Mk. 7 devices, but we don't,
+    --       because this is already messy enough without piling on special cases.)
+    if self.fl then
+        self.fl.current_warmth = self.fl_warmth
+    end
     -- Enable background job for setting Warmth, if not already done.
     if not self.autowarmth_job_running then
         table.insert(PluginShare.backgroundJobs, {
@@ -320,6 +336,14 @@ end
 -- Restore front light state after resume.
 function KoboPowerD:afterResume()
     if self.fl == nil then return end
+    -- Update AutoWarmth state
+    if self.fl_warmth ~= nil and self.auto_warmth then
+        self:calculateAutoWarmth()
+        -- And we need an explicit setWarmth if the device has a mixer, because turnOn won't touch the warmth on those ;).
+        if self.device:hasNaturalLightMixer() then
+            self:setWarmth(self.fl_warmth)
+        end
+    end
     -- Turn the frontlight back on
     self:turnOnFrontlight()
 end

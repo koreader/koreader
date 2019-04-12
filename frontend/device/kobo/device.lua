@@ -38,6 +38,7 @@ local Kobo = Generic:new{
     internal_storage_mount_point = "/mnt/onboard/",
     -- currently only the Aura One and Forma have coloured frontlights
     hasNaturalLight = no,
+    hasNaturalLightMixer = no,
     -- HW inversion is generally safe on Kobo, except on a few baords/kernels
     canHWInvert = yes,
 }
@@ -255,6 +256,12 @@ function Kobo:init()
         logger.info("Enabling Kobo @ 32bpp BGR tweaks")
         self.hasBGRFrameBuffer = yes
     end
+
+    -- Automagically set this so we never have to remember to do it manually ;p
+    if self:hasNaturalLight() and self.frontlight_settings and self.frontlight_settings.frontlight_mixer then
+        self.hasNaturalLightMixer = yes
+    end
+
     self.powerd = require("device/kobo/powerd"):new{device = self}
     -- NOTE: For the Forma, with the buttons on the right, 193 is Top, 194 Bottom.
     self.input = require("device/input"):new{
