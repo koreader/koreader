@@ -377,7 +377,7 @@ function ImageWidget:paintTo(bb, x, y)
     -- displayed when the whole screen is inverted by night mode.
     -- Except for our black & white icon files, that we want inverted
     -- in night mode.
-    if not self.file and G_reader_settings:isTrue("night_mode") then
+    if not self.file and Screen.night_mode then
         bb:invertRect(x, y, size.w, size.h)
     end
 end
