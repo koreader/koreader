@@ -173,6 +173,16 @@ end
 if G_reader_settings:isTrue("night_mode") then
     Device.screen:toggleNightMode()
 end
+-- dithering
+if Device:hasEinkScreen() then
+    Device.screen:setupDithering()
+    if Device.screen.hw_dither and G_reader_settings:isTrue("dev_no_hw_dither") then
+        Device.screen:toggleHWDithering()
+    end
+    if Device.screen.sw_dither and G_reader_settings:isTrue("dev_no_sw_dither") then
+        Device.screen:toggleSWDithering()
+    end
+end
 
 if Device:needsTouchScreenProbe() then
     Device:touchScreenProbe()

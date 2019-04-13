@@ -289,6 +289,35 @@ function FileManagerMenu:setUpdateItemTable()
             end,
         })
     end
+    if Device:hasEinkScreen() and Device:canHWDither() then
+        table.insert(self.menu_items.developer_options.sub_item_table, {
+            text = _("Disable HW dithering"),
+            checked_func = function()
+                return not Device.screen.hw_dithering
+            end,
+            callback = function()
+                G_reader_settings:flipNilOrFalse("dev_no_hw_dither")
+                Device.screen:toggleHWDithering()
+                UIManager:setDirty("all", "full")
+            end,
+        })
+    end
+    if Device:hasEinkScreen() then
+        table.insert(self.menu_items.developer_options.sub_item_table, {
+            text = _("Disable SW dithering"),
+            enabled_func = function()
+                return Device.screen.fb_bpp == 8
+            end,
+            checked_func = function()
+                return not Device.screen.sw_dithering
+            end,
+            callback = function()
+                G_reader_settings:flipNilOrFalse("dev_no_sw_dither")
+                Device.screen:toggleSWDithering()
+                UIManager:setDirty("all", "full")
+            end,
+        })
+    end
     self.menu_items.cloud_storage = {
         text = _("Cloud storage"),
         callback = function()
