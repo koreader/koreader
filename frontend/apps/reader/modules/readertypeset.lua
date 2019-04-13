@@ -82,7 +82,6 @@ function ReaderTypeset:onReadSettings(config)
         local global = G_reader_settings:readSetting("copt_smooth_scaling")
         self.smooth_scaling = (global == nil or global == 0) and 0 or 1
     end
-    print("RT: self.smooth_scaling", self.smooth_scaling)
     self:toggleImageScaling(self.smooth_scaling)
 end
 
@@ -106,7 +105,6 @@ function ReaderTypeset:onToggleEmbeddedFonts(toggle)
 end
 
 function ReaderTypeset:onToggleImageScaling(toggle)
-    print("RT: onToggleImageScaling", toggle)
     self:toggleImageScaling(toggle)
     return true
 end
@@ -265,7 +263,6 @@ function ReaderTypeset:toggleEmbeddedFonts(toggle)
 end
 
 function ReaderTypeset:toggleImageScaling(toggle)
-    print("RT: toggleImageScaling", toggle)
     if toggle and (toggle == true or toggle == 1) then
         self.smooth_scaling = true
         self.ui.document:setImageScaling(true)
