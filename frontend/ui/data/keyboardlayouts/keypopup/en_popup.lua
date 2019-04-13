@@ -65,6 +65,28 @@ return {
         northeast = "β",
         northwest = "♭",
     },
+    _C_ = {
+        "C",
+        north = "Ċ",
+        northeast = "Ć",
+        northwest = "🄯", -- copyleft symbol
+        east = "Ĉ",
+        west = "Č",
+        south = "Ç",
+        southeast = "©", -- copyright symbol
+        southwest = "¢", -- cent sign
+    },
+    _c_ = {
+        "c",
+        north = "ċ",
+        northeast = "ć",
+        northwest = "🄯", -- copyleft symbol
+        east = "ĉ",
+        west = "č",
+        south = "ç",
+        southeast = "©", -- copyright symbol
+        southwest = "¢", -- cent sign
+    },
     _D_ = {
         "D",
         north = "Đ",
