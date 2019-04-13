@@ -186,6 +186,7 @@ return {
         west = "Õ",
         south = "Ǫ",
         southeast = "Œ",
+        southwest = "Ø",
         "Ō",
         "ɔ", -- open o, open-mid back rounded vowel IPA
         "ɒ", -- turned alpha, open back rounded vowel IPA
@@ -199,6 +200,7 @@ return {
         west = "õ",
         south = "ǫ",
         southeast = "œ",
+        southwest = "ø",
         "ō",
         "ɔ", -- open o, open-mid back rounded vowel IPA
         "ɒ", -- turned alpha, open back rounded vowel IPA
