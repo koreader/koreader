@@ -227,6 +227,20 @@ return {
         "ɔ", -- open o, open-mid back rounded vowel IPA
         "ɒ", -- turned alpha, open back rounded vowel IPA
     },
+    _Q_ = {
+        "Q",
+        north = "[",
+        northeast = "{",
+        -- todo render q̃ correctly on key (not a problem in textbox?)
+        --east = {"q̃"}, -- Old/Middle French abbreviation of que
+    },
+    _q_ = {
+        "q",
+        north = "[",
+        northeast = "{",
+        -- todo render q̃ correctly on key (not a problem in textbox?)
+        --east = {"q̃"}, -- Old/Middle French abbreviation of que
+    },
     _S_ = {
         "S",
         north = "ẞ",
@@ -304,6 +318,20 @@ return {
         southwest = "ů",
         "ū",
         "ʌ", -- turned v, open-mid back unrounded vowel IPA
+    },
+    _W_ = {
+        "W",
+        north = "]",
+        northeast = "}",
+        northwest = "ʍ", -- inverted w, voiceless labial-velar approximant IPA
+        east = "Ƿ", -- wynn, Old English for /w/
+    },
+    _w_ = {
+        "w",
+        north = "]",
+        northeast = "}",
+        northwest = "ʍ", -- inverted w, voiceless labial-velar approximant IPA
+        east = "ƿ", -- wynn, Old English for /w/
     },
     _Z_ = {
         "Z",
