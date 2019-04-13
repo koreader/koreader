@@ -322,6 +322,19 @@ Note that your selected font size is not affected by this setting.]]),
                 help_text = _([[Enable or disable the use of the fonts embedded in the book.
 (Disabling the fonts specified in the publisher stylesheets can also be achieved via Style Tweaks in the main menu.)]]),
             },
+            {
+                name = "smooth_scaling",
+                name_text = S.IMAGE_SCALING,
+                toggle = {S.FAST, S.BEST},
+                values = {0, 1},
+                default_value = 0,
+                args = {false, true},
+                default_arg = nil,
+                event = "ToggleImageScaling",
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[- 'fast' uses a fast but inaccurate scaling algorithm when scaling images.
+- 'best' switches to a more costly but vastly more pleasing and accurate algorithm.]]),
+            },
         },
     },
 }

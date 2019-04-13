@@ -21,6 +21,7 @@ local CreDocument = Document:new{
     _document = false,
     _loaded = false,
     _view_mode = nil,
+    _smooth_scaling = false,
 
     line_space_percent = 100,
     default_font = "Noto Serif",
@@ -375,7 +376,7 @@ function CreDocument:drawCurrentView(target, x, y, rect, pos)
 
     -- local start_clock = os.clock()
     self._drawn_images_count, self._drawn_images_surface_ratio =
-        self._document:drawCurrentPage(self.buffer, self.render_color, invert_images)
+        self._document:drawCurrentPage(self.buffer, self.render_color, invert_images, self._smooth_scaling)
     -- print(string.format("CreDocument:drawCurrentView: Rendering took %9.3f ms", (os.clock() - start_clock) * 1000))
 
     -- start_clock = os.clock()
@@ -726,6 +727,11 @@ function CreDocument:setPageMargins(left, top, right, bottom)
     self._document:setIntProperty("crengine.page.margin.top", top)
     self._document:setIntProperty("crengine.page.margin.right", right)
     self._document:setIntProperty("crengine.page.margin.bottom", bottom)
+end
+
+function CreDocument:setImageScaling(toggle)
+    logger.dbg("CreDocument: set smooth scaling", toggle)
+    self._smooth_scaling = toggle
 end
 
 function CreDocument:setFloatingPunctuation(enabled)

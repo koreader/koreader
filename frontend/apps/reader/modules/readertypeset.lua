@@ -75,6 +75,11 @@ function ReaderTypeset:onReadSettings(config)
     self.txt_preformatted = config:readSetting("txt_preformatted") or
         G_reader_settings:readSetting("txt_preformatted") or 1
     self:toggleTxtPreFormatted(self.txt_preformatted)
+
+    -- default to disable smooth scaling for now.
+    self.smooth_scaling = config:readSetting("smooth_scaling") or
+        G_reader_settings:readSetting("smooth_scaling") or 0
+    self:toggleImageScaling(self.smooth_scaling)
 end
 
 function ReaderTypeset:onSaveSettings()
@@ -83,6 +88,7 @@ function ReaderTypeset:onSaveSettings()
     self.ui.doc_settings:saveSetting("floating_punctuation", self.floating_punctuation)
     self.ui.doc_settings:saveSetting("embedded_fonts", self.embedded_fonts)
     self.ui.doc_settings:saveSetting("render_dpi", self.render_dpi)
+    self.ui.doc_settings:saveSetting("smooth_scaling", self.smooth_scaling)
 end
 
 function ReaderTypeset:onToggleEmbeddedStyleSheet(toggle)
@@ -92,6 +98,11 @@ end
 
 function ReaderTypeset:onToggleEmbeddedFonts(toggle)
     self:toggleEmbeddedFonts(toggle)
+    return true
+end
+
+function ReaderTypeset:onToggleImageScaling(toggle)
+    self:toggleImageScaling(toggle)
     return true
 end
 
@@ -244,6 +255,17 @@ function ReaderTypeset:toggleEmbeddedFonts(toggle)
     else
         self.embedded_fonts = true
         self.ui.document:setEmbeddedFonts(1)
+    end
+    self.ui:handleEvent(Event:new("UpdatePos"))
+end
+
+function ReaderTypeset:toggleImageScaling(toggle)
+    if not toggle then
+        self.smooth_scaling = false
+        self.ui.document:setImageScaling(false)
+    else
+        self.smooth_scaling = true
+        self.ui.document:setImageScaling(true)
     end
     self.ui:handleEvent(Event:new("UpdatePos"))
 end
