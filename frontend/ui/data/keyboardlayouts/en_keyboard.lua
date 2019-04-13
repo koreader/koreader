@@ -20,12 +20,16 @@ local _L_ = en_popup._L_
 local _l_ = en_popup._l_
 local _O_ = en_popup._O_
 local _o_ = en_popup._o_
+local _Q_ = en_popup._Q_
+local _q_ = en_popup._q_
 local _S_ = en_popup._S_
 local _s_ = en_popup._s_
 local _T_ = en_popup._T_
 local _t_ = en_popup._t_
 local _U_ = en_popup._U_
 local _u_ = en_popup._u_
+local _W_ = en_popup._W_
+local _w_ = en_popup._w_
 local _Z_ = en_popup._Z_
 local _z_ = en_popup._z_
 
@@ -37,8 +41,8 @@ return {
     keys = {
         -- first row
         {  --  1           2       3       4       5       6       7       8       9       10      11      12
-            { "Q",        "q",    "„",    "0",    "Й",    "й",    "?",    "!",    "Å",    "å",    "1",    "ª", },
-            { "W",        "w",    "!",    "1",    "Ц",    "ц",    "(",    "1",    "Ä",    "ä",    "2",    "º", },
+            { _Q_,        _q_,    "„",    "0",    "Й",    "й",    "?",    "!",    "Å",    "å",    "1",    "ª", },
+            { _W_,        _w_,    "!",    "1",    "Ц",    "ц",    "(",    "1",    "Ä",    "ä",    "2",    "º", },
             { _E_,        _e_,    _at,    "2",    "У",    "у",    ")",    "2",    "Ö",    "ö",    "3",    "¡", },
             { "R",        "r",    "#",    "3",    "К",    "к",    "~",    "3",    "ß",    "ß",    "4",    "¿", },
             { _T_,        _t_,    "+",    "=",    "Е",    "е",    "Ә",    "ә",    "À",    "à",    "5",    "¼", },
