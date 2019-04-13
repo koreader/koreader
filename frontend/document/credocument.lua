@@ -375,6 +375,7 @@ function CreDocument:drawCurrentView(target, x, y, rect, pos)
     local invert_images = G_reader_settings:isTrue("night_mode")
 
     -- local start_clock = os.clock()
+    print("CRe: drawCurrentView w/ self._smooth_scaling", self._smooth_scaling)
     self._drawn_images_count, self._drawn_images_surface_ratio =
         self._document:drawCurrentPage(self.buffer, self.render_color, invert_images, self._smooth_scaling)
     -- print(string.format("CreDocument:drawCurrentView: Rendering took %9.3f ms", (os.clock() - start_clock) * 1000))
@@ -731,6 +732,7 @@ end
 
 function CreDocument:setImageScaling(toggle)
     logger.dbg("CreDocument: set smooth scaling", toggle)
+    print("CRe: self._smooth_scaling", toggle)
     self._smooth_scaling = toggle
 end
 

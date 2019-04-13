@@ -77,8 +77,12 @@ function ReaderTypeset:onReadSettings(config)
     self:toggleTxtPreFormatted(self.txt_preformatted)
 
     -- default to disable smooth scaling for now.
-    self.smooth_scaling = config:readSetting("smooth_scaling") or
-        G_reader_settings:readSetting("smooth_scaling") or 0
+    self.smooth_scaling = config:readSetting("smooth_scaling")
+    if self.smooth_scaling == nil then
+        local global = G_reader_settings:readSetting("copt_smooth_scaling")
+        self.smooth_scaling = (global == nil or global == 0) and 0 or 1
+    end
+    print("RT: self.smooth_scaling", self.smooth_scaling)
     self:toggleImageScaling(self.smooth_scaling)
 end
 
@@ -102,6 +106,7 @@ function ReaderTypeset:onToggleEmbeddedFonts(toggle)
 end
 
 function ReaderTypeset:onToggleImageScaling(toggle)
+    print("RT: onToggleImageScaling", toggle)
     self:toggleImageScaling(toggle)
     return true
 end
@@ -260,12 +265,13 @@ function ReaderTypeset:toggleEmbeddedFonts(toggle)
 end
 
 function ReaderTypeset:toggleImageScaling(toggle)
-    if not toggle then
-        self.smooth_scaling = false
-        self.ui.document:setImageScaling(false)
-    else
+    print("RT: toggleImageScaling", toggle)
+    if toggle and (toggle == true or toggle == 1) then
         self.smooth_scaling = true
         self.ui.document:setImageScaling(true)
+    else
+        self.smooth_scaling = false
+        self.ui.document:setImageScaling(false)
     end
     self.ui:handleEvent(Event:new("UpdatePos"))
 end
