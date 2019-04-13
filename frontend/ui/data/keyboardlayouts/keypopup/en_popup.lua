@@ -129,6 +129,26 @@ return {
         "ě",
         "ɛ",
     },
+    _F_ = {
+        "F",
+        east = "ƒ", -- Guilder/Florin
+        west = "Φ", -- uppercase phi
+    },
+    _f_ = {
+        "f",
+        east = "ƒ", -- Guilder/Florin
+        west = "φ", -- lowercase phi
+    },
+    _G_ = {
+        "G",
+        east = "ɣ", -- voiced velar fricative IPA
+        west = "Γ", -- uppercase gamma
+    },
+    _g_ = {
+        "g",
+        east = "ɣ", -- voiced velar fricative IPA
+        west = "γ", -- lowercase gamma
+    },
     _I_ = {
         "I",
         north = "Í",
