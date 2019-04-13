@@ -373,11 +373,12 @@ function CreDocument:drawCurrentView(target, x, y, rect, pos)
     -- If in night mode, we ask crengine to invert all images, so they
     -- get displayed in their original colors when the whole screen
     -- is inverted by night mode
-    -- We also honor the current smooth scaling setting
+    -- We also honor the current smooth scaling setting,
+    -- as well as the global SW dithering setting.
 
     -- local start_clock = os.clock()
     self._drawn_images_count, self._drawn_images_surface_ratio =
-        self._document:drawCurrentPage(self.buffer, self.render_color, Screen.night_mode, self._smooth_scaling)
+        self._document:drawCurrentPage(self.buffer, self.render_color, Screen.night_mode, self._smooth_scaling, Screen.sw_dithering)
     -- print(string.format("CreDocument:drawCurrentView: Rendering took %9.3f ms", (os.clock() - start_clock) * 1000))
 
     -- start_clock = os.clock()
