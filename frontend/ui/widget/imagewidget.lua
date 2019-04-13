@@ -29,6 +29,7 @@ local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local Widget = require("ui/widget/widget")
 local logger = require("logger")
+local util  = require("util")
 
 -- DPI_SCALE can't change without a restart, so let's compute it now
 local function get_dpi_scale()
@@ -377,7 +378,7 @@ function ImageWidget:paintTo(bb, x, y)
     -- displayed when the whole screen is inverted by night mode.
     -- Except for our black & white icon files, that we want inverted
     -- in night mode.
-    if not self.file and Screen.night_mode then
+    if Screen.night_mode and (not self.file or (self.file and not util.stringStartsWith(self.file, "resources/"))) then
         bb:invertRect(x, y, size.w, size.h)
     end
 end
