@@ -361,9 +361,17 @@ function ImageWidget:paintTo(bb, x, y)
         local bbtype = self._bb:getType()
         if bbtype == Blitbuffer.TYPE_BB8A or bbtype == Blitbuffer.TYPE_BBRGB32 then
             -- NOTE: MuPDF feeds us premultiplied alpha (and we don't care w/ GifLib, as alpha is all or nothing).
-            bb:pmulalphablitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
+            if Screen.sw_dithering then
+                bb:ditherpmulalphablitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
+            else
+                bb:pmulalphablitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
+            end
         else
-            bb:blitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
+            if Screen.sw_dithering then
+                bb:ditherblitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
+            else
+                bb:blitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
+            end
         end
     else
         bb:blitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
