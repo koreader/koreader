@@ -21,6 +21,7 @@ local KoboPowerD = BasePowerD:new{
     fl_warmth = nil,
     auto_warmth = false,
     max_warmth_hour = 23,
+    fl_was_on = nil,
 }
 
 -- TODO: Remove KOBO_LIGHT_ON_START
@@ -329,6 +330,8 @@ end
 -- Turn off front light before suspend.
 function KoboPowerD:beforeSuspend()
     if self.fl == nil then return end
+    -- Remember the current frontlight state
+    self.fl_was_on = self:isFrontlightOn()
     -- Turn off the frontlight
     self:turnOffFrontlight()
 end
@@ -336,6 +339,8 @@ end
 -- Restore front light state after resume.
 function KoboPowerD:afterResume()
     if self.fl == nil then return end
+    -- Don't bother if the light was already off on suspend
+    if not self.fl_was_on then return end
     -- Update AutoWarmth state
     if self.fl_warmth ~= nil and self.auto_warmth then
         self:calculateAutoWarmth()
