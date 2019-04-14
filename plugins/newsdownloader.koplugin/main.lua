@@ -1,6 +1,7 @@
 local DataStorage = require("datastorage")
-local DownloadBackend = require("internaldownloadbackend")
+--local DownloadBackend = require("internaldownloadbackend")
 --local DownloadBackend = require("luahttpdownloadbackend")
+local DownloadBackend = require("epubdownloadbackend")
 local ReadHistory = require("readhistory")
 local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
@@ -24,7 +25,7 @@ local wifi_enabled_before_action = true
 local feed_config_file_name = "feed_config.lua"
 local news_downloader_config_file = "news_downloader_settings.lua"
 local config_key_custom_dl_dir = "custom_dl_dir";
-local file_extension = ".html"
+local file_extension = ".epub"
 local news_download_dir_name = "news"
 local news_download_dir_path, feed_config_path
 
