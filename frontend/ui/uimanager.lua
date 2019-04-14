@@ -928,6 +928,8 @@ function UIManager:_repaint()
 
     -- execute refreshes:
     for _, refresh in ipairs(self._refresh_stack) do
+        -- Honor dithering hints from *anywhere* in the dirty stack
+        refresh.dither = update_dither(refresh.dither, dithered)
         -- If HW dithering is disabled, unconditionally drop the dither flag
         if not Screen.hw_dithering then
             refresh.dither = nil
