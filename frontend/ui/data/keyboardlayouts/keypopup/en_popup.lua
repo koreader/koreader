@@ -149,6 +149,16 @@ return {
         east = "ɣ", -- voiced velar fricative IPA
         west = "γ", -- lowercase gamma
     },
+    _H_ = {
+        "H",
+        east = "ɥ", -- labialized palatal approximant (like a combination between /w/ and /y/)
+        west = "Η", -- uppercase eta
+    },
+    _h_ = {
+        "h",
+        east = "ɥ", -- labialized palatal approximant (like a combination between /w/ and /y/)
+        west = "η", -- lowercase eta
+    },
     _I_ = {
         "I",
         north = "Í",
@@ -170,6 +180,14 @@ return {
         south = "į",
         "ī",
         "ɪ", -- small capital letter i, near-close front unrounded vowel IPA
+    },
+    _J_ = {
+        "J",
+        east = "ʝ", -- voiced palatal fricative
+    },
+    _j_ = {
+        "j",
+        east = "ʝ", -- voiced palatal fricative
     },
     _K_ = {
         "K",
