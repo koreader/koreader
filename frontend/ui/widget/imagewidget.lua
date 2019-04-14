@@ -356,25 +356,27 @@ function ImageWidget:paintTo(bb, x, y)
         h = size.h
     }
     logger.dbg("blitFrom", x, y, self._offset_x, self._offset_y, size.w, size.h)
+    -- Figure out if we're trying to render one of our own icons...
+    local not_an_icon = (not self.file or (self.file and not util.stringStartsWith(self.file, "resources/")))
     if self.alpha == true then
         -- Only actually try to alpha-blend if the image really has an alpha channel...
         local bbtype = self._bb:getType()
         if bbtype == Blitbuffer.TYPE_BB8A or bbtype == Blitbuffer.TYPE_BBRGB32 then
             -- NOTE: MuPDF feeds us premultiplied alpha (and we don't care w/ GifLib, as alpha is all or nothing).
-            if Screen.sw_dithering then
+            if Screen.sw_dithering and not_an_icon then
                 bb:ditherpmulalphablitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
             else
                 bb:pmulalphablitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
             end
         else
-            if Screen.sw_dithering then
+            if Screen.sw_dithering and not_an_icon then
                 bb:ditherblitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
             else
                 bb:blitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
             end
         end
     else
-        if Screen.sw_dithering then
+        if Screen.sw_dithering and not_an_icon then
             bb:ditherblitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
         else
             bb:blitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
@@ -390,7 +392,7 @@ function ImageWidget:paintTo(bb, x, y)
     -- displayed when the whole screen is inverted by night mode.
     -- Except for our black & white icon files, that we want inverted
     -- in night mode.
-    if Screen.night_mode and (not self.file or (self.file and not util.stringStartsWith(self.file, "resources/"))) then
+    if Screen.night_mode and not_an_icon then
         bb:invertRect(x, y, size.w, size.h)
     end
 end
