@@ -374,7 +374,11 @@ function ImageWidget:paintTo(bb, x, y)
             end
         end
     else
-        bb:blitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
+        if Screen.sw_dithering then
+            bb:ditherblitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
+        else
+            bb:blitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
+        end
     end
     if self.invert then
         bb:invertRect(x, y, size.w, size.h)
