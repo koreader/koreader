@@ -1,7 +1,7 @@
 local Device = require("device")
 
 local with_frontlight = (Device:isCervantes() or Device:isKindle() or Device:isKobo()) and Device:hasFrontlight()
-local with_natural_light = (Device:isCervantes() or Device:isKobo()) and Device:hasNaturalLight()
+local with_natural_light = Device:hasNaturalLight()
 if not (with_frontlight or Device:isSDL()) then
     return { disabled = true, }
 end
