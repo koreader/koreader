@@ -263,31 +263,30 @@ return {
     },
     _S_ = {
         "S",
-        north = "ẞ",
+        north = "ẞ", -- uppercase eszett
         northeast = "Ś",
-        northwest = "ſ",
+        northwest = "ʃ", -- esh, voiceless palato-alveolar fricative IPA
         east = "Ŝ",
         west = "Š",
         south = "Ş",
         southeast = "$",
         southwest = "Ṣ",
-        "Σ",
-        "σ",
-        "ς",
+        "ſ", -- long s
+        "Σ", -- uppercase sigma
     },
     _s_ = {
         "s",
-        north = "ß",
+        north = "ß", -- lowercase eszett
         northeast = "ś",
-        northwest = "ſ",
+        northwest = "ʃ", -- esh, voiceless palato-alveolar fricative IPA
         east = "ŝ",
         west = "š",
         south = "ş",
         southeast = "$",
         southwest = "ṣ",
-        "Σ",
-        "σ",
-        "ς",
+        "ſ", -- long s
+        "σ", -- lowercase sigma
+        "ς", -- lowercase word-end sigma
     },
     _T_ = {
         "T",
