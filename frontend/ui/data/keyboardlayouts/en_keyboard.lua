@@ -8,16 +8,20 @@ local _B_ = en_popup._B_
 local _b_ = en_popup._b_
 local _C_ = en_popup._C_
 local _c_ = en_popup._c_
+local _D_ = en_popup._D_
+local _d_ = en_popup._d_
 local _E_ = en_popup._E_
 local _e_ = en_popup._e_
 local _F_ = en_popup._F_
 local _f_ = en_popup._f_
 local _G_ = en_popup._G_
 local _g_ = en_popup._g_
-local _D_ = en_popup._D_
-local _d_ = en_popup._d_
+local _H_ = en_popup._H_
+local _h_ = en_popup._h_
 local _I_ = en_popup._I_
 local _i_ = en_popup._i_
+local _J_ = en_popup._J_
+local _j_ = en_popup._j_
 local _K_ = en_popup._K_
 local _k_ = en_popup._k_
 local _L_ = en_popup._L_
@@ -63,8 +67,8 @@ return {
             { _D_,        _d_,    "%",    "5",    "В",    "в",    "-",    "5",    "Î",    "î",    "Ğ",    "ğ", },
             { _F_,        _f_,    "^",    "6",    "А",    "а",    "=",    "6",    "Ï",    "ï",    "Ć",    "ć", },
             { _G_,        _g_,    ":",    ";",    "П",    "п",    "Ү",    "ү",    "Ô",    "ô",    "Č",    "č", },
-            { "H",        "h",    "\"",   "'",    "Р",    "р",    "Ұ",    "ұ",    "Œ",    "œ",    "Đ",    "đ", },
-            { "J",        "j",    "{",    "[",    "О",    "о",    "Қ",    "қ",    "Ù",    "ù",    "Š",    "š", },
+            { _H_,        _h_,    '"',    "'",    "Р",    "р",    "Ұ",    "ұ",    "Œ",    "œ",    "Đ",    "đ", },
+            { _J_,        _j_,    "{",    "[",    "О",    "о",    "Қ",    "қ",    "Ù",    "ù",    "Š",    "š", },
             { _K_,        _k_,    "}",    "]",   "Л",    "л",    "Ж",    "ж",    "Û",    "û",    "Ž",    "ž", },
             { _L_,        _l_,    "_",    "-",    "Д",    "д",    "Э",    "э",    "Ÿ",    "ÿ",    "Ő",    "ő", },
         },
