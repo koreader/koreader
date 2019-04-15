@@ -372,7 +372,7 @@ end
 function KoboPowerD:beforeSuspend()
     if self.fl == nil then return end
     -- Remember the current frontlight state
-    self.fl_was_on = self:isFrontlightOnHW()
+    self.fl_was_on = self.is_fl_on
     -- Turn off the frontlight
     self:turnOffFrontlight()
 end
