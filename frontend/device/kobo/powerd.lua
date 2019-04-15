@@ -149,8 +149,9 @@ function KoboPowerD:init()
             -- Use setIntensity to ensure it sets fl_intensity, and because we don't want the ramping behavior of turnOn
             self:setIntensity(self:frontlightIntensityHW())
         else
-            -- Use setIntensityHW so as *NOT* to set fl_intensity, so toggle will still work.
-            self:setIntensityHW(0)
+            -- Use _setIntensity for setIntensityHW so as *NOT* to set fl_intensity, so toggle will still work,
+            -- plus the FrontlightStateChanged event.
+            self:_setIntensity(0)
         end
     end
 end
@@ -205,6 +206,8 @@ function KoboPowerD:frontlightIntensityHW()
 end
 
 function KoboPowerD:isFrontlightOnHW()
+    print("isFrontlightOnHW: self.initial_is_fl_on", self.initial_is_fl_on)
+    print("isFrontlightOnHW: self.hw_intensity", self.hw_intensity)
     if self.initial_is_fl_on ~= nil then -- happens only once after init()
         -- give initial state to BasePowerD, which will
         -- reset our self.hw_intensity to 0 if self.initial_is_fl_on is false
@@ -294,7 +297,10 @@ function KoboPowerD:isChargingHW()
 end
 
 function KoboPowerD:turnOffFrontlightHW()
-    if self:isFrontlightOff() then
+    print("turnOff: self.fl_intensity", self.fl_intensity)
+    print("turnOff: self.hw_intensity", self.hw_intensity)
+    print("turnOff: self.is_fl_on", self.is_fl_on)
+    if not self:isFrontlightOnHW() then
         return
     end
     local util = require("ffi/util")
@@ -309,9 +315,24 @@ function KoboPowerD:turnOffFrontlightHW()
             end
         end
     end, false, true)
+    -- NOTE: This is essentially what _setIntensity does, except we don't actually touch the FL,
+    --       we only sync the state of the main process with the final state of what we're doing in the forks.
+    -- And update hw_intensity in our actual process ;).
+    self.hw_intensity = self.fl_min
+    --self.fl_intensity = self.fl_min
+    self:_decideFrontlightState()
+    -- And let the footer know of the change
+    if package.loaded["ui/uimanager"] ~= nil then
+        local Event = require("ui/event")
+        local UIManager = require("ui/uimanager")
+        UIManager:broadcastEvent(Event:new("FrontlightStateChanged"))
+    end
 end
 function KoboPowerD:turnOnFrontlightHW()
-    if self:isFrontlightOn() then
+    print("turnOn: self.fl_intensity", self.fl_intensity)
+    print("turnOn: self.hw_intensity", self.hw_intensity)
+    print("turnOn: self.is_fl_on", self.is_fl_on)
+    if self:isFrontlightOnHW() then
         return
     end
     local util = require("ffi/util")
@@ -325,13 +346,24 @@ function KoboPowerD:turnOnFrontlightHW()
             end
         end
     end, false, true)
+    -- NOTE: This is essentially what _setIntensity does, except we don't actually touch the FL,
+    --       we only sync the state of the main process with the final state of what we're doing in the forks.
+    -- And update hw_intensity in our actual process ;).
+    self.hw_intensity = self.fl_intensity
+    self:_decideFrontlightState()
+    -- And let the footer know of the change
+    if package.loaded["ui/uimanager"] ~= nil then
+        local Event = require("ui/event")
+        local UIManager = require("ui/uimanager")
+        UIManager:broadcastEvent(Event:new("FrontlightStateChanged"))
+    end
 end
 
 -- Turn off front light before suspend.
 function KoboPowerD:beforeSuspend()
     if self.fl == nil then return end
     -- Remember the current frontlight state
-    self.fl_was_on = self:isFrontlightOn()
+    self.fl_was_on = self:isFrontlightOnHW()
     -- Turn off the frontlight
     self:turnOffFrontlight()
 end
