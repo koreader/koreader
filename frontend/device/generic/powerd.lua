@@ -59,9 +59,7 @@ end
 function BasePowerD:frontlightIntensity()
     assert(self ~= nil)
     if not self.device:hasFrontlight() then return 0 end
-    print("BasePowerD:frontlightIntensity: self:isFrontlightOff()", self:isFrontlightOff())
     if self:isFrontlightOff() then return 0 end
-    print("BasePowerD:frontlightIntensity: self.fl_intensity", self.fl_intensity)
     return self.fl_intensity
 end
 

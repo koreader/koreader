@@ -45,7 +45,6 @@ local footerTextGeneratorMap = {
         local powerd = Device:getPowerDevice()
         if powerd:isFrontlightOn() then
             if Device:isCervantes() or Device:isKobo() then
-                print("flIntensity:", powerd:frontlightIntensity())
                 return ("L: %d%%"):format(powerd:frontlightIntensity())
             else
                 return ("L: %d"):format(powerd:frontlightIntensity())
@@ -747,7 +746,6 @@ function ReaderFooter:onSuspend()
 end
 
 function ReaderFooter:onFrontlightStateChanged()
-    print("ReaderFooter:onFrontlightStateChanged")
     if self.settings.frontlight then
         self:updateFooter(true)
     end

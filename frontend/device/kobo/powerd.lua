@@ -206,8 +206,6 @@ function KoboPowerD:frontlightIntensityHW()
 end
 
 function KoboPowerD:isFrontlightOnHW()
-    print("isFrontlightOnHW: self.initial_is_fl_on", self.initial_is_fl_on)
-    print("isFrontlightOnHW: self.hw_intensity", self.hw_intensity)
     if self.initial_is_fl_on ~= nil then -- happens only once after init()
         -- give initial state to BasePowerD, which will
         -- reset our self.hw_intensity to 0 if self.initial_is_fl_on is false
@@ -297,9 +295,6 @@ function KoboPowerD:isChargingHW()
 end
 
 function KoboPowerD:turnOffFrontlightHW()
-    print("turnOff: self.fl_intensity", self.fl_intensity)
-    print("turnOff: self.hw_intensity", self.hw_intensity)
-    print("turnOff: self.is_fl_on", self.is_fl_on)
     if not self:isFrontlightOnHW() then
         return
     end
@@ -319,7 +314,6 @@ function KoboPowerD:turnOffFrontlightHW()
     --       we only sync the state of the main process with the final state of what we're doing in the forks.
     -- And update hw_intensity in our actual process ;).
     self.hw_intensity = self.fl_min
-    --self.fl_intensity = self.fl_min
     self:_decideFrontlightState()
     -- And let the footer know of the change
     if package.loaded["ui/uimanager"] ~= nil then
@@ -329,9 +323,6 @@ function KoboPowerD:turnOffFrontlightHW()
     end
 end
 function KoboPowerD:turnOnFrontlightHW()
-    print("turnOn: self.fl_intensity", self.fl_intensity)
-    print("turnOn: self.hw_intensity", self.hw_intensity)
-    print("turnOn: self.is_fl_on", self.is_fl_on)
     if self:isFrontlightOnHW() then
         return
     end
