@@ -747,7 +747,7 @@ end
 
 function ReaderFooter:onFrontlightStateChanged()
     if self.settings.frontlight then
-        self:updateFooter()
+        self:updateFooter(true)
     end
 end
 
