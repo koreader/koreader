@@ -149,9 +149,13 @@ function KoboPowerD:init()
             -- Use setIntensity to ensure it sets fl_intensity, and because we don't want the ramping behavior of turnOn
             self:setIntensity(self:frontlightIntensityHW())
         else
-            -- Use _setIntensity for setIntensityHW so as *NOT* to set fl_intensity, so toggle will still work,
-            -- plus the FrontlightStateChanged event.
-            self:_setIntensity(0)
+            -- Use setBrightnes so as *NOT* to set hw_intensity, so toggle will still (mostly) work.
+            self.fl:setBrightness(0)
+            -- And make sure the fact that we started with the FL off propagates as best as possible.
+            self.initial_is_fl_on = false
+            -- NOTE: BasePowerD's init sets fl_intensity to hw_intensity right after this,
+            -- so, instead of simply setting hw_intensity to either 1 or fl_min or fl_intensity, depending on user preference,
+            -- we jump through a couple of hoops in turnOnFrontlightHW to recover from the first quirky toggle...
         end
     end
 end
@@ -323,6 +327,12 @@ function KoboPowerD:turnOffFrontlightHW()
     end
 end
 function KoboPowerD:turnOnFrontlightHW()
+    -- NOTE: Insane workaround for the first toggle after a startup with the FL off.
+    -- The light is actually off, but hw_intensity couldn't have been set to a sane value because of a number of interactions.
+    -- So, fix it now, so we pass the isFrontlightOnHW check (which checks if hw_intensity > fl_min).
+    if (self.is_fl_on == false and self.hw_intensity > self.fl_min and self.hw_intensity == self.fl_intensity) then
+        self.hw_intensity = self.fl_min
+    end
     if self:isFrontlightOnHW() then
         return
     end
@@ -354,7 +364,7 @@ end
 function KoboPowerD:beforeSuspend()
     if self.fl == nil then return end
     -- Remember the current frontlight state
-    self.fl_was_on = self:isFrontlightOnHW()
+    self.fl_was_on = self.is_fl_on
     -- Turn off the frontlight
     self:turnOffFrontlight()
 end
