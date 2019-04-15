@@ -153,11 +153,9 @@ function KoboPowerD:init()
             self.fl:setBrightness(0)
             -- And make sure the fact that we started with the FL off propagates as best as possible.
             self.initial_is_fl_on = false
-            -- The first toggle won't work, because BasePowerD's init sets fl_intensity to hw_intensity right after this,
-            -- which screws with things for a cycle, but the next cycle will properly toggle between 0 & hw_intensity.
-            -- So, instead of making things behave properly,
-            -- setting hw_intensity to 1 would here bypass any KOBO_LIGHT_ON_START behavior, and instead toggle between 0 & 1.
-            --self.hw_intensity = 1
+            -- NOTE: BasePowerD's init sets fl_intensity to hw_intensity right after this,
+            -- so, instead of simply setting hw_intensity to either 1 or fl_min or fl_intensity, depending on user preference,
+            -- we jump through a couple of hoops in turnOnFrontlightHW to recover from the first quirky toggle...
         end
     end
 end
@@ -301,6 +299,10 @@ function KoboPowerD:isChargingHW()
 end
 
 function KoboPowerD:turnOffFrontlightHW()
+    print("turnOffFrontlightHW: self.hw_intensity", self.hw_intensity)
+    print("turnOffFrontlightHW: self.fl_intensity", self.fl_intensity)
+    print("turnOffFrontlightHW: wasOn: self.initial_is_fl_on", self.initial_is_fl_on)
+    print("turnOffFrontlightHW: wasOn: self.is_fl_on", self.is_fl_on)
     if not self:isFrontlightOnHW() then
         return
     end
@@ -329,6 +331,16 @@ function KoboPowerD:turnOffFrontlightHW()
     end
 end
 function KoboPowerD:turnOnFrontlightHW()
+    print("turnOnFrontlightHW: self.hw_intensity", self.hw_intensity)
+    print("turnOnFrontlightHW: self.fl_intensity", self.fl_intensity)
+    print("turnOnFrontlightHW: wasOn: self.initial_is_fl_on", self.initial_is_fl_on)
+    print("turnOnFrontlightHW: wasOn: self.is_fl_on", self.is_fl_on)
+    -- NOTE: Insane workaround for the first toggle after a startup with the FL off.
+    -- The light is actually off, but hw_intensity couldn't have been set to a sane value because of a number of interactions.
+    -- So, fix it now, so we pass the isFrontlightOnHW check (which checks if hw_intensity > fl_min).
+    if (self.is_fl_on == false and self.hw_intensity > self.fl_min and self.hw_intensity == self.fl_intensity) then
+        self.hw_intensity = self.fl_min
+    end
     if self:isFrontlightOnHW() then
         return
     end
