@@ -299,10 +299,6 @@ function KoboPowerD:isChargingHW()
 end
 
 function KoboPowerD:turnOffFrontlightHW()
-    print("turnOffFrontlightHW: self.hw_intensity", self.hw_intensity)
-    print("turnOffFrontlightHW: self.fl_intensity", self.fl_intensity)
-    print("turnOffFrontlightHW: wasOn: self.initial_is_fl_on", self.initial_is_fl_on)
-    print("turnOffFrontlightHW: wasOn: self.is_fl_on", self.is_fl_on)
     if not self:isFrontlightOnHW() then
         return
     end
@@ -331,10 +327,6 @@ function KoboPowerD:turnOffFrontlightHW()
     end
 end
 function KoboPowerD:turnOnFrontlightHW()
-    print("turnOnFrontlightHW: self.hw_intensity", self.hw_intensity)
-    print("turnOnFrontlightHW: self.fl_intensity", self.fl_intensity)
-    print("turnOnFrontlightHW: wasOn: self.initial_is_fl_on", self.initial_is_fl_on)
-    print("turnOnFrontlightHW: wasOn: self.is_fl_on", self.is_fl_on)
     -- NOTE: Insane workaround for the first toggle after a startup with the FL off.
     -- The light is actually off, but hw_intensity couldn't have been set to a sane value because of a number of interactions.
     -- So, fix it now, so we pass the isFrontlightOnHW check (which checks if hw_intensity > fl_min).
