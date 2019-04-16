@@ -478,7 +478,10 @@ function ReaderUI:showReaderCoroutine(file, provider)
         if err ~= nil or ok == false then
             io.stderr:write('[!] doShowReader coroutine crashed:\n')
             io.stderr:write(debug.traceback(co, err, 1))
-            UIManager:quit()
+            UIManager:show(InfoMessage:new{
+                text = _("No reader engine for this file or invalid file.")
+            })
+            self:showFileManager()
         end
     end)
 end
