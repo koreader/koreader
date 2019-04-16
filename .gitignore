@@ -14,6 +14,7 @@ tags
 test/*
 *.tar
 *.log
+*.sdr/
 bin/
 install/
 spec/unit/data
@@ -23,13 +24,7 @@ git-rev-base
 emu
 luacov.stats.out
 trace-out.txt
-
-koreader-*.zip
-koreader-*.apk
-koreader-*.deb
-koreader-*.tar.gz
-koreader-*.targz
-koreader-*.click
+koreader-*
 
 l10n/*
 !l10n/Makefile
@@ -38,26 +33,3 @@ i18n
 
 /.cproject
 /.project
-
-koreader-android-arm-linux-androideabi*
-koreader-android-i686-linux-android*
-koreader-android-fdroid-latest
-koreader-cervantes-arm-linux-gnueabi*
-koreader-cervantes-arm-cervantes-linux-gnueabi*
-koreader-debian-i686-linux-gnu*
-koreader-debian-x86_64-linux-gnu*
-koreader-debian-armel-arm-linux-gnueabi*
-koreader-debian-armhf-arm-linux-gnueabihf*
-koreader-kindle-legacy-arm-kindle-linux-gnueabi*
-koreader-kindle-arm-linux-gnueabi*
-koreader-kobo-arm-linux-gnueabihf*
-koreader-kobo-arm-kobo-linux-gnueabi*
-koreader-emulator-i686-w64-mingw32*
-koreader-emulator-i686-linux-gnu*
-koreader-emulator-x86_64-linux-gnu*
-koreader-emulator-x86_64-pc-linux-gnu*
-koreader-emulator-x86_64-apple-darwin*
-koreader-pocketbook-arm-obreey-linux-gnueabi*
-koreader-ubuntu-touch-arm-linux-gnueabihf*
-koreader-sony[-_]prstux-arm-linux-gnueabihf*
-
