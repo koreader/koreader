@@ -237,6 +237,38 @@ return {
         "λ",
         "ɫ", -- dark l, velarized alveolar lateral approximant IPA
     },
+    _M_ = {
+        "M",
+        east = "ɱ", -- labiodental nasal IPA
+        west = "Μ", -- upptercase mu
+    },
+    _m_ = {
+        "m",
+        east = "ɱ", -- labiodental nasal IPA
+        west = "μ", -- lowercase mu
+    },
+    _N_ = {
+        "N",
+        north = "Ñ",
+        northeast = "Ń",
+        northwest = "Ǹ",
+        east = "ɲ", -- palatal nasal IPA
+        west = "Ν", -- uppercase nu
+        southeast = "Ŋ", -- uppercase letter eng (ligature of N and G)
+        south = "Ņ",
+        southwest = "Ň", -- Czech
+    },
+    _n_ = {
+        "n",
+        north = "ñ",
+        northeast = "ń",
+        northwest = "ǹ",
+        east = "ɲ", -- palatal nasal IPA
+        west = "ν", -- lowercase nu
+        southeast = "ŋ", -- letter eng (ligature of N and G), velar nasal IPA
+        south = "ņ",
+        southwest = "ň", -- Czech
+    },
     _O_ = {
         "O",
         north = "Ó",

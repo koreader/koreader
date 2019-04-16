@@ -26,6 +26,10 @@ local _K_ = en_popup._K_
 local _k_ = en_popup._k_
 local _L_ = en_popup._L_
 local _l_ = en_popup._l_
+local _M_ = en_popup._M_
+local _m_ = en_popup._m_
+local _N_ = en_popup._N_
+local _n_ = en_popup._n_
 local _O_ = en_popup._O_
 local _o_ = en_popup._o_
 local _Q_ = en_popup._Q_
@@ -83,8 +87,8 @@ return {
             { _C_,        _c_,    "£",    "9",    "С",    "с",    "'",    "9",    "Í",    "í",    "Þ",    "þ", },
             { "V",        "v",    "<",    "‚",    "М",    "м",    "Ө",    "ө",    "Ñ",    "ñ",    "Ý",    "ý", },
             { _B_,        _b_,    ">",    prd,    "И",    "и",    "Һ",    "һ",    "Ó",    "ó",    "†",    "‡", },
-            { "N",        "n",    "‘",    "↑",    "Т",    "т",    "Б",    "б",    "Ú",    "ú",    "–",    "—", },
-            { "M",        "m",    "’",    "↓",    "Ь",    "ь",    "Ю",    "ю",    "Ç",    "ç",    "…",    "¨", },
+            { _N_,        _n_,    "‘",    "↑",    "Т",    "т",    "Б",    "б",    "Ú",    "ú",    "–",    "—", },
+            { _M_,        _m_,    "’",    "↓",    "Ь",    "ь",    "Ю",    "ю",    "Ç",    "ç",    "…",    "¨", },
             { label = "Backspace",
               icon = "resources/icons/appbar.clear.reflect.horizontal.png",
               width = 1.5
