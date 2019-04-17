@@ -12,14 +12,14 @@ local function no() return false end
 
 local function canUpdateApk()
     -- disable updates on fdroid builds, since they manage their own repo.
-    return (android.getFlavor() ~= "fdroid")
+    return (android.prop.flavor ~= "fdroid")
 end
 
 local Device = Generic:new{
-    model = android.getProduct(),
+    isAndroid = yes,
+    model = android.prop.product,
     hasKeys = yes,
     hasDPad = no,
-    isAndroid = yes,
     hasEinkScreen = function() return android.isEink() end,
     hasColorScreen = function() return not android.isEink() end,
     hasFrontlight = yes,
@@ -141,7 +141,7 @@ function Device:retrieveNetworkInfo()
 end
 
 function Device:exit()
-    android.LOGI("Finishing main activity");
+    android.LOGI(string.format("Stopping %s main activity", android.prop.name));
     android.lib.ANativeActivity_finish(android.app.activity)
 end
 
@@ -171,6 +171,6 @@ local function getCodename()
 end
 
 android.LOGI(string.format("Android %s - %s (API %d) - flavor: %s",
-    android.getVersion(), getCodename(), Device.firmware_rev, android.getFlavor()))
+    android.prop.version, getCodename(), Device.firmware_rev, android.prop.flavor))
 
 return Device
