@@ -297,6 +297,14 @@ return {
         "ɔ", -- open o, open-mid back rounded vowel IPA
         "ɒ", -- turned alpha, open back rounded vowel IPA
     },
+    _P_ = {
+        "P",
+        west = "Π", -- uppercase pi
+    },
+    _p_ = {
+        "p",
+        west = "π", -- lowercase pi
+    },
     _Q_ = {
         "Q",
         north = "[",
