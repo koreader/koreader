@@ -17,6 +17,10 @@ return {--do NOT change this line
  -- 'download_full_article=false' - means use only feed description to create feeds (usually only beginning of the article)
  -- default value is 'true' (if no 'download_full_article' entry)
 
+ -- 'include_images=true' - means download any images on the page and inlude them in the article
+ -- 'include_images=false' - means ignore any images, only download the text (faster download, smaller file sizes)
+ -- default value is 'false' (if no 'include_images' entry)
+
  -- comment out line ("--" at line start) to stop downloading source
 
 
