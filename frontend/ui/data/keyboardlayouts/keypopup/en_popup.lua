@@ -319,6 +319,32 @@ return {
         -- todo render q̃ correctly on key (not a problem in textbox?)
         --east = {"q̃"}, -- Old/Middle French abbreviation of que
     },
+    _R_ = {
+        "R",
+        north = "ρ", -- lowercase rho
+        northeast = "Ŕ",
+        northwest = "Ρ ", -- uppercase rho
+        east = "ɾ", -- alveolar flap or tap IPA
+        west = "Ř", -- r with háček (Czech)
+        south = "Ŗ", -- r cedilla (Latvian)
+        southeast = "ɻ", -- retroflex approximant IPA
+        southwest = "ɹ", -- alveolar approximant IPA
+        "ʀ", -- uvular trill IPA
+        "ʁ", -- voiced uvular fricative IPA
+    },
+    _r_ = {
+        "r",
+        north = "ρ", -- lowercase rho
+        northeast = "ŕ",
+        northwest = "Ρ ", -- uppercase rho
+        east = "ɾ", -- alveolar flap or tap IPA
+        west = "ř", -- r with háček (Czech)
+        south = "ŗ", -- r cedilla (Latvian)
+        southeast = "ɻ", -- retroflex approximant IPA
+        southwest = "ɹ", -- alveolar approximant IPA
+        "ʀ", -- uvular trill IPA
+        "ʁ", -- voiced uvular fricative IPA
+    },
     _S_ = {
         "S",
         north = "ẞ", -- uppercase eszett
