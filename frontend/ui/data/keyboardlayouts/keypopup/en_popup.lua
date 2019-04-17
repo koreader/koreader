@@ -436,6 +436,28 @@ return {
         northwest = "ʍ", -- inverted w, voiceless labial-velar approximant IPA
         east = "ƿ", -- wynn, Old English for /w/
     },
+    _Y_ = {
+        "Y",
+        north = "Ŷ",
+        northeast = "Ý",
+        northwest = "Ỳ",
+        east = "Ÿ",
+        west = "Ỹ",
+        south = "ʎ", -- palatal lateral approximant IPA (looks like mirror lambda, but actually upside down y)
+        southeast = "ʏ", -- near-close, near-front rounded vowel IPA
+        southwest = "Υ", -- uppercase upsilon
+    },
+    _y_ = {
+        "y",
+        north = "ŷ",
+        northeast = "ý",
+        northwest = "ỳ",
+        east = "ÿ",
+        west = "ỹ",
+        south = "ʎ", -- palatal lateral approximant IPA (looks like mirror lambda, but actually upside down y)
+        southeast = "ʏ", -- near-close, near-front rounded vowel IPA
+        southwest = "υ", -- lowercase upsilon
+    },
     _Z_ = {
         "Z",
         northeast = "Ź",
