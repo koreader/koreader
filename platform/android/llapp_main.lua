@@ -25,5 +25,10 @@ A.execute("chmod", "755", "./zsync")
 C.setenv("TESSDATA_PREFIX", "/sdcard/koreader/data", 1)
 
 -- create fake command-line arguments
-arg = {"-d", file or "/sdcard"}
+if A.isDebuggable() then
+    arg = {"-d", file or "/sdcard"}
+else
+    arg = {file or "/sdcard"}
+end
+
 dofile(A.dir.."/reader.lua")
