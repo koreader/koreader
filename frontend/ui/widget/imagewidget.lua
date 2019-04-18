@@ -29,6 +29,7 @@ local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local Widget = require("ui/widget/widget")
 local logger = require("logger")
+local util  = require("util")
 
 -- DPI_SCALE can't change without a restart, so let's compute it now
 local function get_dpi_scale()
@@ -355,17 +356,31 @@ function ImageWidget:paintTo(bb, x, y)
         h = size.h
     }
     logger.dbg("blitFrom", x, y, self._offset_x, self._offset_y, size.w, size.h)
+    -- Figure out if we're trying to render one of our own icons...
+    local is_icon = self.file and util.stringStartsWith(self.file, "resources/")
     if self.alpha == true then
         -- Only actually try to alpha-blend if the image really has an alpha channel...
         local bbtype = self._bb:getType()
         if bbtype == Blitbuffer.TYPE_BB8A or bbtype == Blitbuffer.TYPE_BBRGB32 then
             -- NOTE: MuPDF feeds us premultiplied alpha (and we don't care w/ GifLib, as alpha is all or nothing).
-            bb:pmulalphablitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
+            if Screen.sw_dithering and not is_icon then
+                bb:ditherpmulalphablitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
+            else
+                bb:pmulalphablitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
+            end
+        else
+            if Screen.sw_dithering and not is_icon then
+                bb:ditherblitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
+            else
+                bb:blitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
+            end
+        end
+    else
+        if Screen.sw_dithering and not is_icon then
+            bb:ditherblitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
         else
             bb:blitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
         end
-    else
-        bb:blitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
     end
     if self.invert then
         bb:invertRect(x, y, size.w, size.h)
@@ -375,9 +390,9 @@ function ImageWidget:paintTo(bb, x, y)
     end
     -- If in night mode, invert all rendered images, so the original is
     -- displayed when the whole screen is inverted by night mode.
-    -- Except for our black & white icon files, that we want inverted
+    -- Except for our black & white icon files, that we do want inverted
     -- in night mode.
-    if not self.file and G_reader_settings:isTrue("night_mode") then
+    if Screen.night_mode and not is_icon then
         bb:invertRect(x, y, size.w, size.h)
     end
 end

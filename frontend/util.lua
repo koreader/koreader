@@ -782,4 +782,20 @@ function util.unpackArchive(archive, extract_to)
     return true
 end
 
+-- Simple startsWith / endsWith string helpers
+-- c.f., http://lua-users.org/wiki/StringRecipes
+-- @param str string: source string
+-- @param start string: string to match
+-- @return boolean: true on success
+function util.stringStartsWith(str, start)
+   return str:sub(1, #start) == start
+end
+
+-- @param str string: source string
+-- @param ending string: string to match
+-- @return boolean: true on success
+function util.stringEndsWith(str, ending)
+   return ending == "" or str:sub(-#ending) == ending
+end
+
 return util

@@ -928,6 +928,12 @@ function UIManager:_repaint()
 
     -- execute refreshes:
     for _, refresh in ipairs(self._refresh_stack) do
+        -- Honor dithering hints from *anywhere* in the dirty stack
+        refresh.dither = update_dither(refresh.dither, dithered)
+        -- If HW dithering is disabled, unconditionally drop the dither flag
+        if not Screen.hw_dithering then
+            refresh.dither = nil
+        end
         dbg:v("triggering refresh", refresh)
         -- NOTE: We overshoot by 1px to account for potential off-by-ones.
         --       This may not strictly be needed anymore, and is blatantly unneeded for full-screen updates,
