@@ -870,6 +870,22 @@ function ReaderHighlight:onCycleHighlightAction()
             timeout = 1,
         })
     end
+    return true
+end
+
+function ReaderHighlight:onCycleHighlightStyle()
+    local next_actions = {
+        lighten = "underscore",
+        underscore = "invert",
+        invert = "lighten"
+    }
+    self.view.highlight.saved_drawer = next_actions[self.view.highlight.saved_drawer]
+    self.ui.doc_settings:saveSetting("highlight_drawer", self.view.highlight.saved_drawer)
+    UIManager:show(Notification:new{
+        text = T(_("Default highlight style changed to '%1'."), self.view.highlight.saved_drawer),
+        timeout = 1,
+    })
+    return true
 end
 
 function ReaderHighlight:highlightFromHoldPos()

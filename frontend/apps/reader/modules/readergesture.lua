@@ -84,6 +84,7 @@ local action_strings = {
     show_plus_menu = _("Show plus menu"),
     folder_shortcuts = _("Folder shortcuts"),
     cycle_highlight_action = _("Cycle highlight action"),
+    cycle_highlight_style = _("Cycle highlight style"),
     wallabag_download = _("Wallabag retrieval"),
 }
 
@@ -488,6 +489,7 @@ function ReaderGesture:buildMenu(ges, default)
         {"zoom_content", not self.is_docless},
         {"zoom_page", not self.is_docless, true},
         {"cycle_highlight_action", not self.is_docless},
+        {"cycle_highlight_style", not self.is_docless},
         {"wallabag_download", self.ui.wallabag ~= nil},
     }
     local return_menu = {}
@@ -1049,6 +1051,8 @@ function ReaderGesture:gestureAction(action, ges)
         self.ui:handleEvent(Event:new("SynchronizeWallabag"))
     elseif action == "cycle_highlight_action" then
         self.ui:handleEvent(Event:new("CycleHighlightAction"))
+    elseif action == "cycle_highlight_style" then
+        self.ui:handleEvent(Event:new("CycleHighlightStyle"))
     end
     return true
 end
