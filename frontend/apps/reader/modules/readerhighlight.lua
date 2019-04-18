@@ -870,6 +870,7 @@ function ReaderHighlight:onCycleHighlightAction()
             timeout = 1,
         })
     end
+    return true
 end
 
 function ReaderHighlight:onCycleHighlightStyle()
@@ -884,6 +885,7 @@ function ReaderHighlight:onCycleHighlightStyle()
         text = T(_("Default highlight style changed to '%1'."), self.view.highlight.saved_drawer),
         timeout = 1,
     })
+    return true
 end
 
 function ReaderHighlight:highlightFromHoldPos()
