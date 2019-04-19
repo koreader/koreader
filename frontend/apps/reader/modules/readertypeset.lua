@@ -11,6 +11,7 @@ local ReaderTypeset = InputContainer:new{
     css_menu_title = _("Style"),
     css = nil,
     internal_css = true,
+    unscaled_margins = nil,
 }
 
 function ReaderTypeset:init()
@@ -64,8 +65,8 @@ function ReaderTypeset:onReadSettings(config)
     local v_margins = config:readSetting("copt_v_page_margins") or
         G_reader_settings:readSetting("copt_v_page_margins") or
         DCREREADER_CONFIG_V_MARGIN_SIZES_MEDIUM
-    local margins = { h_margins[1], v_margins[1], h_margins[2], v_margins[2] }
-    self:onSetPageMargins(margins)
+    self.unscaled_margins = { h_margins[1], v_margins[1], h_margins[2], v_margins[2] }
+    self:onSetPageMargins(self.unscaled_margins)
 
     -- default to disable floating punctuation
     -- the floating punctuation should not be boolean value for the following
@@ -341,19 +342,13 @@ function ReaderTypeset:makeDefaultStyleSheet(css, text, touchmenu_instance)
 end
 
 function ReaderTypeset:onSetPageHorizMargins(h_margins)
-    local v_margins = config:readSetting("copt_v_page_margins") or
-        G_reader_settings:readSetting("copt_v_page_margins") or
-        DCREREADER_CONFIG_V_MARGIN_SIZES_MEDIUM
-    local margins = { h_margins[1], v_margins[1], h_margins[2], v_margins[2] }
-    self:onSetPageMargins(margins)
+    self.unscaled_margins = { h_margins[1], self.unscaled_margins[2], h_margins[2], self.unscaled_margins[4] }
+    self:onSetPageMargins(self.unscaled_margins)
 end
 
 function ReaderTypeset:onSetPageVertMargins(v_margins)
-    local h_margins = config:readSetting("copt_h_page_margins") or
-        G_reader_settings:readSetting("copt_h_page_margins") or
-        DCREREADER_CONFIG_H_MARGIN_SIZES_MEDIUM
-    local margins = { h_margins[1], v_margins[1], h_margins[2], v_margins[2] }
-    self:onSetPageMargins(margins)
+    self.unscaled_margins = { self.unscaled_margins[1], v_margins[1], self.unscaled_margins[3], v_margins[2] }
+    self:onSetPageMargins(self.unscaled_margins)
 end
 
 function ReaderTypeset:onSetPageMargins(margins)
