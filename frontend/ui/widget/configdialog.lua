@@ -894,15 +894,20 @@ function ConfigDialog:onMakeDefault(name, name_text, values, labels, position)
     if name == "font_fine_tune" then
         return
     -- known table value, make it pretty
-    elseif name == "page_margins" then
+    elseif name == "h_page_margins" then
         display_value = T(_([[
 
-  left: %1
-  top: %2
-  right: %3
-  bottom: %4
+  left:  %1
+  right: %2
 ]]),
-        display_value[1], display_value[2], display_value[3], display_value[4])
+        display_value[1], display_value[2])
+    elseif name == "v_page_margins" then
+        display_value = T(_([[
+
+  top:    %1
+  bottom: %2
+]]),
+        display_value[1], display_value[2])
     end
     -- generic fallback to support table values
     if type(display_value) == "table" then

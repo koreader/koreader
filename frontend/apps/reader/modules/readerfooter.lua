@@ -402,14 +402,14 @@ function ReaderFooter:addToMainMenu(menu_items)
                 self.reclaim_height = self.settings.reclaim_height or false
                 -- refresh margins position
                 if self.has_no_mode then
-                    self.ui:handleEvent(Event:new("SetPageMargins", self.view.document.configurable.page_margins))
+                    self.ui:handleEvent(Event:new("SetPageVertMargins", self.view.document.configurable.v_page_margins))
                     self.genFooterText = footerTextGeneratorMap.empty
                     self.mode = MODE.off
                 elseif prev_has_no_mode then
-                    self.ui:handleEvent(Event:new("SetPageMargins", self.view.document.configurable.page_margins))
+                    self.ui:handleEvent(Event:new("SetPageVertMargins", self.view.document.configurable.v_page_margins))
                     G_reader_settings:saveSetting("reader_footer_mode", first_enabled_mode_num)
                 elseif self.reclaim_height ~= prev_reclaim_height then
-                    self.ui:handleEvent(Event:new("SetPageMargins", self.view.document.configurable.page_margins))
+                    self.ui:handleEvent(Event:new("SetPageVertMargins", self.view.document.configurable.v_page_margins))
                     should_update = true
                 end
                 if callback then

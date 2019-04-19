@@ -58,10 +58,14 @@ function ReaderTypeset:onReadSettings(config)
     -- self.ui.document:setRenderScaleFontWithDPI(1)
 
     -- set page margins
-    self:onSetPageMargins(
-        config:readSetting("copt_page_margins") or
-        G_reader_settings:readSetting("copt_page_margins") or
-        DCREREADER_CONFIG_MARGIN_SIZES_MEDIUM)
+    local h_margins = config:readSetting("copt_h_page_margins") or
+        G_reader_settings:readSetting("copt_h_page_margins") or
+        DCREREADER_CONFIG_H_MARGIN_SIZES_MEDIUM
+    local v_margins = config:readSetting("copt_v_page_margins") or
+        G_reader_settings:readSetting("copt_v_page_margins") or
+        DCREREADER_CONFIG_V_MARGIN_SIZES_MEDIUM
+    local margins = { h_margins[1], v_margins[1], h_margins[2], v_margins[2] }
+    self:onSetPageMargins(margins)
 
     -- default to disable floating punctuation
     -- the floating punctuation should not be boolean value for the following
@@ -334,6 +338,22 @@ function ReaderTypeset:makeDefaultStyleSheet(css, text, touchmenu_instance)
             if touchmenu_instance then touchmenu_instance:updateItems() end
         end,
     })
+end
+
+function ReaderTypeset:onSetPageHorizMargins(h_margins)
+    local v_margins = config:readSetting("copt_v_page_margins") or
+        G_reader_settings:readSetting("copt_v_page_margins") or
+        DCREREADER_CONFIG_V_MARGIN_SIZES_MEDIUM
+    local margins = { h_margins[1], v_margins[1], h_margins[2], v_margins[2] }
+    self:onSetPageMargins(margins)
+end
+
+function ReaderTypeset:onSetPageVertMargins(v_margins)
+    local h_margins = config:readSetting("copt_h_page_margins") or
+        G_reader_settings:readSetting("copt_h_page_margins") or
+        DCREREADER_CONFIG_H_MARGIN_SIZES_MEDIUM
+    local margins = { h_margins[1], v_margins[1], h_margins[2], v_margins[2] }
+    self:onSetPageMargins(margins)
 end
 
 function ReaderTypeset:onSetPageMargins(margins)
