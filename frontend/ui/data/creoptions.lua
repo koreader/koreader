@@ -133,7 +133,7 @@ Note that your selected font size is not affected by this setting.]]),
             },
             {
                 name = "h_page_margins",
-                name_text = S.H_PAGE_MARGIN,
+                name_text = S.H_PAGE_MARGINS,
                 buttonprogress = true,
                 values = {
                     DCREREADER_CONFIG_H_MARGIN_SIZES_SMALL,
@@ -164,7 +164,7 @@ Note that your selected font size is not affected by this setting.]]),
             },
                         {
                 name = "v_page_margins",
-                name_text = S.V_PAGE_MARGIN,
+                name_text = S.V_PAGE_MARGINS,
                 buttonprogress = true,
                 values = {
                     DCREREADER_CONFIG_V_MARGIN_SIZES_SMALL,
