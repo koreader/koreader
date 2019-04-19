@@ -72,11 +72,11 @@ DTAP_ZONE_BACKWARD = {
     ["w"] = 20.75
 }
 DCREREADER_CONFIG_WORD_GAP_LARGE = 100
-DFULL_SCREEN = 2
 DCREREADER_CONFIG_H_MARGIN_SIZES_XXX_LARGE = {
-    [1] = 50,
-    [2] = 50
+    [2] = 50,
+    [1] = 50
 }
+DFULL_SCREEN = 2
 ]],
                        fd:read("*a"))
         fd:close()
