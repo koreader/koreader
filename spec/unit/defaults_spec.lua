@@ -40,11 +40,11 @@ DTAP_ZONE_BACKWARD = {
     ["w"] = 0.25
 }
 DCREREADER_CONFIG_WORD_GAP_LARGE = 100
-DFULL_SCREEN = 1
 DCREREADER_CONFIG_H_MARGIN_SIZES_XXX_LARGE = {
     [1] = 50,
     [2] = 50
 }
+DFULL_SCREEN = 1
 ]],
                        fd:read("*a"))
         fd:close()
@@ -107,11 +107,11 @@ DHINTCOUNT = 2
         assert.Equals(
 [[-- For configuration changes that persists between updates
 SEARCH_TITLE = true
-DHINTCOUNT = 2
 DCREREADER_CONFIG_H_MARGIN_SIZES_LARGE = {
-    [1] = 15,
-    [2] = 15
+    [2] = 15,
+    [1] = 15
 }
+DHINTCOUNT = 2
 DFULL_SCREEN = 1
 DCREREADER_VIEW_MODE = "page"
 ]],
