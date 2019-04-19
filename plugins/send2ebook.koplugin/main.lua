@@ -193,14 +193,14 @@ end
 
 function Send2Ebook:setCustomDownloadDirectory()
     require("ui/downloadmgr"):new{
-       onConfirm = function(path)
-           logger.dbg("Send2Ebook: set download directory to: ", path)
-           send2ebook_settings:saveSetting(config_key_custom_dl_dir, ("%s/"):format(path))
-           send2ebook_settings:flush()
+        onConfirm = function(path)
+            logger.dbg("Send2Ebook: set download directory to: ", path)
+            send2ebook_settings:saveSetting(config_key_custom_dl_dir, ("%s/"):format(path))
+            send2ebook_settings:flush()
 
-           initialized = false
-           self:lazyInitialization()
-       end,
+            initialized = false
+            Send2Ebook:lazyInitialization()
+        end,
     }:chooseDir()
 end
 
