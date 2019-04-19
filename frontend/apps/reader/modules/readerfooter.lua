@@ -339,7 +339,7 @@ end
 
 local option_titles = {
     all_at_once = _("Show all at once"),
-    reclaim_height = _("Reclaim bar height"),
+    reclaim_height = _("Reclaim bar height from bottom margin"),
     toc_markers = _("Show chapter markers"),
     page_progress = _("Current page"),
     time = _("Current time"),
