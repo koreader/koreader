@@ -422,6 +422,20 @@ return {
         "ū",
         "ʌ", -- turned v, open-mid back unrounded vowel IPA
     },
+    _V_ = {
+        "V",
+        north = "ʌ", -- open-mid back unrounded vowel IPA
+        northwest = "Ʋ", -- v with hook
+        east = "Ꜹ",
+        west = "Ṽ",
+    },
+    _v_ = {
+        "v",
+        north = "ʌ", -- open-mid back unrounded vowel IPA
+        northwest = "ʋ", -- v with hook, labiodental approximant IPA
+        east = "ꜹ",
+        west = "ṽ",
+    },
     _W_ = {
         "W",
         north = "]",
