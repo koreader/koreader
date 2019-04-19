@@ -901,13 +901,6 @@ function ConfigDialog:onMakeDefault(name, name_text, values, labels, position)
   right: %2
 ]]),
         display_value[1], display_value[2])
-    elseif name == "v_page_margins" then
-        display_value = T(_([[
-
-  top:    %1
-  bottom: %2
-]]),
-        display_value[1], display_value[2])
     end
     -- generic fallback to support table values
     if type(display_value) == "table" then

@@ -100,31 +100,4 @@ Default margins:
     end
 end
 
-function optionsutil.showValuesVMargins(configurable, option)
-    local default = G_reader_settings:readSetting("copt_"..option.name)
-    local current = configurable[option.name]
-    if not default then
-        UIManager:show(InfoMessage:new{
-            text = T(_([[
-Current margins:
-  top:    %1
-  bottom: %2
-Default margins: not set]]),
-                current[1], current[2])
-        })
-    else
-        UIManager:show(InfoMessage:new{
-            text = T(_([[
-Current margins:
-  top:    %1
-  bottom: %2
-Default margins:
-  top:    %3
-  bottom: %4]]),
-                current[1], current[2],
-                default[1], default[2])
-        })
-    end
-end
-
 return optionsutil

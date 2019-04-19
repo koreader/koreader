@@ -62,10 +62,13 @@ function ReaderTypeset:onReadSettings(config)
     local h_margins = config:readSetting("copt_h_page_margins") or
         G_reader_settings:readSetting("copt_h_page_margins") or
         DCREREADER_CONFIG_H_MARGIN_SIZES_MEDIUM
-    local v_margins = config:readSetting("copt_v_page_margins") or
-        G_reader_settings:readSetting("copt_v_page_margins") or
-        DCREREADER_CONFIG_V_MARGIN_SIZES_MEDIUM
-    self.unscaled_margins = { h_margins[1], v_margins[1], h_margins[2], v_margins[2] }
+    local t_margin = config:readSetting("copt_t_page_margin") or
+        G_reader_settings:readSetting("copt_t_page_margin") or
+        DCREREADER_CONFIG_T_MARGIN_SIZES_MEDIUM
+    local b_margin = config:readSetting("copt_b_page_margin") or
+        G_reader_settings:readSetting("copt_b_page_margin") or
+        DCREREADER_CONFIG_B_MARGIN_SIZES_MEDIUM
+    self.unscaled_margins = { h_margins[1], t_margin, h_margins[2], b_margin }
     self:onSetPageMargins(self.unscaled_margins)
 
     -- default to disable floating punctuation
@@ -346,8 +349,13 @@ function ReaderTypeset:onSetPageHorizMargins(h_margins)
     self:onSetPageMargins(self.unscaled_margins)
 end
 
-function ReaderTypeset:onSetPageVertMargins(v_margins)
-    self.unscaled_margins = { self.unscaled_margins[1], v_margins[1], self.unscaled_margins[3], v_margins[2] }
+function ReaderTypeset:onSetPageTopMargin(t_margin)
+    self.unscaled_margins = { self.unscaled_margins[1], t_margin, self.unscaled_margins[3], self.unscaled_margins[4] }
+    self:onSetPageMargins(self.unscaled_margins)
+end
+
+function ReaderTypeset:onSetPageBottomMargin(b_margin)
+    self.unscaled_margins = { self.unscaled_margins[1], self.unscaled_margins[2], self.unscaled_margins[3], b_margin }
     self:onSetPageMargins(self.unscaled_margins)
 end
 
