@@ -137,6 +137,7 @@ function ReaderFooter:init()
         -- disable_progress_bar = true,
         disabled = false,
         all_at_once = false,
+        reclaim_height = false,
         toc_markers = true,
         battery = true,
         time = true,
@@ -158,6 +159,7 @@ function ReaderFooter:init()
 
     self.pageno = self.view.state.page
     self.has_no_mode = true
+    self.reclaim_height = self.settings.reclaim_height or false
     for _, m in ipairs(MODE_INDEX) do
         if self.settings[m] then
             self.has_no_mode = false
@@ -337,6 +339,7 @@ end
 
 local option_titles = {
     all_at_once = _("Show all at once"),
+    reclaim_height = _("Reclaim bar height"),
     toc_markers = _("Show chapter markers"),
     page_progress = _("Current page"),
     time = _("Current time"),
@@ -387,6 +390,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 local should_update = false
                 local first_enabled_mode_num
                 local prev_has_no_mode = self.has_no_mode
+                local prev_reclaim_height = self.reclaim_height
                 self.has_no_mode = true
                 for mode_num, m in pairs(MODE_INDEX) do
                     if self.settings[m] then
@@ -395,6 +399,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         break
                     end
                 end
+                self.reclaim_height = self.settings.reclaim_height or false
                 -- refresh margins position
                 if self.has_no_mode then
                     self.ui:handleEvent(Event:new("SetPageMargins", self.view.document.configurable.page_margins))
@@ -403,6 +408,9 @@ function ReaderFooter:addToMainMenu(menu_items)
                 elseif prev_has_no_mode then
                     self.ui:handleEvent(Event:new("SetPageMargins", self.view.document.configurable.page_margins))
                     G_reader_settings:saveSetting("reader_footer_mode", first_enabled_mode_num)
+                elseif self.reclaim_height ~= prev_reclaim_height then
+                    self.ui:handleEvent(Event:new("SetPageMargins", self.view.document.configurable.page_margins))
+                    should_update = true
                 end
                 if callback then
                     should_update = callback(self)
@@ -429,6 +437,8 @@ function ReaderFooter:addToMainMenu(menu_items)
 
     table.insert(sub_items,
                  getMinibarOption("all_at_once", self.updateFooterTextGenerator))
+    table.insert(sub_items,
+                 getMinibarOption("reclaim_height"))
     table.insert(sub_items, {
         text = _("Progress bar"),
         sub_item_table = {
