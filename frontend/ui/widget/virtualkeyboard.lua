@@ -204,10 +204,13 @@ function VirtualKey:onHoldSelect()
     if self.flash_keyboard and not self.skiphold then
         self[1].inner_bordersize = self.focused_bordersize
         self:update_keyboard(false, true)
+        -- Don't refresh the key region if we're going to show a popup on top of it ;).
         if self.hold_callback then
+            self[1].inner_bordersize = 0
             self.hold_callback()
+        else
+            UIManager:tickAfterNext(function() self:invert(false, true) end)
         end
-        UIManager:tickAfterNext(function() self:invert(false, true) end)
     else
         if self.hold_callback then
             self.hold_callback()
@@ -223,7 +226,7 @@ function VirtualKey:onSwipeKey(arg, ges)
         if self.swipe_callback then
             self.swipe_callback(ges)
         end
-        UIManager:tickAfterNext(function() self:invert(false, true) end)
+        UIManager:tickAfterNext(function() self:invert(false, false) end)
     else
         if self.swipe_callback then
             self.swipe_callback(ges)
@@ -266,7 +269,7 @@ end
 
 function VirtualKeyPopup:onCloseWidget()
     UIManager:setDirty(nil, function()
-        return "partial", self[1][1].dimen
+        return "ui", self[1][1].dimen
     end)
 end
 
@@ -541,7 +544,7 @@ function VirtualKeyboard:onPressKey()
 end
 
 function VirtualKeyboard:_refresh(want_flash)
-    local refresh_type = "partial"
+    local refresh_type = "ui"
     if want_flash then
         refresh_type = "flashui"
     end
