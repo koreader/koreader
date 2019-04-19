@@ -28,7 +28,7 @@ describe("defaults module", function()
         assert.is_same("SEARCH_LIBRARY_PATH", Defaults.defaults_name[108])
         assert.is_same("DTAP_ZONE_BACKWARD", Defaults.defaults_name[92])
         assert.is_same("DCREREADER_CONFIG_WORD_GAP_LARGE", Defaults.defaults_name[48])
-        assert.is_same("DCREREADER_CONFIG_H_MARGIN_SIZES_HUGE", Defaults.defaults_name[21])
+        assert.is_same("DCREREADER_CONFIG_H_MARGIN_SIZES_XXX_LARGE", Defaults.defaults_name[21])
         local fd = io.open(persistent_filename, "r")
         assert.Equals(
 [[-- For configuration changes that persists between updates
@@ -41,9 +41,9 @@ DTAP_ZONE_BACKWARD = {
 }
 DCREREADER_CONFIG_WORD_GAP_LARGE = 100
 DFULL_SCREEN = 1
-DCREREADER_CONFIG_H_MARGIN_SIZES_HUGE = {
-    [1] = 70,
-    [2] = 70
+DCREREADER_CONFIG_H_MARGIN_SIZES_XXX_LARGE = {
+    [1] = 50,
+    [2] = 50
 }
 ]],
                        fd:read("*a"))
@@ -73,9 +73,9 @@ DTAP_ZONE_BACKWARD = {
 }
 DCREREADER_CONFIG_WORD_GAP_LARGE = 100
 DFULL_SCREEN = 2
-DCREREADER_CONFIG_H_MARGIN_SIZES_HUGE = {
-    [1] = 70,
-    [2] = 70
+DCREREADER_CONFIG_H_MARGIN_SIZES_XXX_LARGE = {
+    [1] = 50,
+    [2] = 50
 }
 ]],
                        fd:read("*a"))
