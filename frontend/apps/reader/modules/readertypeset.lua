@@ -303,7 +303,7 @@ function ReaderTypeset:addToMainMenu(menu_items)
         sub_item_table = self:genStyleSheetMenu(),
     }
     menu_items.floating_punctuation = {
-        text = _("Floating punctuation"),
+        text = _("Hanging punctuation"),
         checked_func = function() return self.floating_punctuation == 1 end,
         callback = function()
             self.floating_punctuation = self.floating_punctuation == 1 and 0 or 1
@@ -317,7 +317,7 @@ function ReaderTypeset:makeDefaultFloatingPunctuation()
     local toggler = self.floating_punctuation == 1 and _("On") or _("Off")
     UIManager:show(ConfirmBox:new{
         text = T(
-            _("Set default floating punctuation to %1?"),
+            _("Set default hanging punctuation to %1?"),
             toggler
         ),
         ok_callback = function()
