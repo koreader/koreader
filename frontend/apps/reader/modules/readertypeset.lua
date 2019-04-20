@@ -1,6 +1,7 @@
 local ConfirmBox = require("ui/widget/confirmbox")
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local Notification = require("ui/widget/notification")
 local UIManager = require("ui/uimanager")
 local lfs = require("libs/libkoreader-lfs")
 local _ = require("gettext")
@@ -372,6 +373,17 @@ function ReaderTypeset:onSetPageMargins(margins)
     end
     self.ui.document:setPageMargins(left, top, right, bottom)
     self.ui:handleEvent(Event:new("UpdatePos"))
+    -- Show a toast on set, with the unscaled & scaled values
+    UIManager:show(Notification:new{
+        text = T(_([[
+Margins set to:
+  horizontal: %1 (%2px)
+  top: %3 (%4px)
+  bottom: %5 (%6px)
+]]),
+        margins[1], left, margins[2], top, margins[4], bottom),
+        timeout = 2,
+    })
     return true
 end
 
