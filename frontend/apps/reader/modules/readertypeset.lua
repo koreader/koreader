@@ -379,8 +379,7 @@ function ReaderTypeset:onSetPageMargins(margins, silent)
     Margins set to:
     horizontal: %1 (%2px)
     top: %3 (%4px)
-    bottom: %5 (%6px)
-    ]]),
+    bottom: %5 (%6px)]]),
             margins[1], left, margins[2], top, margins[4], bottom),
             timeout = 4,
         })
