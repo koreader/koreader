@@ -27,6 +27,17 @@ return {
         northeast = "™",
         northwest = "Ⓡ",
     },
+    _eq = {
+        "=",
+        north = "≠",
+        northeast = "»",
+        northwest = "«",
+        east = ">",
+        west = "<",
+        south = "≈",
+        southeast = "≥",
+        southwest = "≤",
+    },
     _A_ = {
         "A",
         north = "Ä",
