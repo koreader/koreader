@@ -461,6 +461,16 @@ return {
         northwest = "ʍ", -- inverted w, voiceless labial-velar approximant IPA
         east = "ƿ", -- wynn, Old English for /w/
     },
+    _X_ = {
+        "X",
+        east = "Χ", -- uppercase chi
+        west = "Ξ", -- uppercase xi
+    },
+    _x_ = {
+        "x",
+        east = "χ", -- lowercase chi
+        west = "ξ", -- lowercase xi
+    },
     _Y_ = {
         "Y",
         north = "Ŷ",
