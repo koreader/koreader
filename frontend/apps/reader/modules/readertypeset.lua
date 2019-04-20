@@ -70,7 +70,7 @@ function ReaderTypeset:onReadSettings(config)
         G_reader_settings:readSetting("copt_b_page_margin") or
         DCREREADER_CONFIG_B_MARGIN_SIZES_LARGE
     self.unscaled_margins = { h_margins[1], t_margin, h_margins[2], b_margin }
-    self:onSetPageMargins(self.unscaled_margins)
+    self:onSetPageMargins(self.unscaled_margins, true)
 
     -- default to disable floating punctuation
     -- the floating punctuation should not be boolean value for the following
@@ -361,7 +361,7 @@ function ReaderTypeset:onSetPageBottomMargin(b_margin)
     self:onSetPageMargins(self.unscaled_margins)
 end
 
-function ReaderTypeset:onSetPageMargins(margins)
+function ReaderTypeset:onSetPageMargins(margins, silent)
     local left = Screen:scaleBySize(margins[1])
     local top = Screen:scaleBySize(margins[2])
     local right = Screen:scaleBySize(margins[3])
@@ -373,17 +373,19 @@ function ReaderTypeset:onSetPageMargins(margins)
     end
     self.ui.document:setPageMargins(left, top, right, bottom)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    -- Show a toast on set, with the unscaled & scaled values
-    UIManager:show(InfoMessage:new{
-        text = T(_([[
-Margins set to:
-  horizontal: %1 (%2px)
-  top: %3 (%4px)
-  bottom: %5 (%6px)
-]]),
-        margins[1], left, margins[2], top, margins[4], bottom),
-        timeout = 4,
-    })
+    if not silent then
+        -- Show a toast on set, with the unscaled & scaled values
+        UIManager:show(InfoMessage:new{
+            text = T(_([[
+    Margins set to:
+    horizontal: %1 (%2px)
+    top: %3 (%4px)
+    bottom: %5 (%6px)
+    ]]),
+            margins[1], left, margins[2], top, margins[4], bottom),
+            timeout = 4,
+        })
+    end
     return true
 end
 
