@@ -59,10 +59,6 @@ function ButtonProgressWidget:update()
             margin = 0 -- moved outside button so it's not inverted
         end
         local extra_border_size = 0
-        if not self.thin_grey_style and is_default then
-            -- make the border a bit bigger on the default button
-            extra_border_size = Size.border.thin
-        end
         local button = Button:new{
             text = "-",
             radius = 0,
@@ -172,10 +168,6 @@ function ButtonProgressWidget:update()
             margin = 0 -- moved outside button so it's not inverted
         end
         local extra_border_size = 0
-        if not self.thin_grey_style and is_default then
-            -- make the border a bit bigger on the default button
-            extra_border_size = Size.border.thin
-        end
         local button = Button:new{
             text = "+",
             radius = 0,
