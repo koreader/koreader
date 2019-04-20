@@ -539,15 +539,25 @@ function ConfigOption:init()
                     num_buttons = #self.options[c].values,
                     position = self.options[c].default_pos,
                     callback = function(arg)
-                        self.config:onConfigChoose(self.options[c].values, self.options[c].name,
+                        if arg == "-" or arg == "+" then
+                            self.config:onConfigFineTuneChoose(self.options[c].values, self.options[c].name,
                                 self.options[c].event, self.options[c].args, self.options[c].events, arg)
+                        else
+                            self.config:onConfigChoose(self.options[c].values, self.options[c].name,
+                                self.options[c].event, self.options[c].args, self.options[c].events, arg)
+                        end
                         UIManager:setDirty(self.config, function()
                             return "fast", switch.dimen
                         end)
                     end,
                     hold_callback = function(arg)
-                        self.config:onMakeDefault(self.options[c].name, self.options[c].name_text, self.options[c].values,
-                            self.options[c].labels or self.options[c].args, arg)
+                        if arg == "-" or arg == "+" then
+                            self.config:onMakeFineTuneDefault(self.options[c].name, self.options[c].name_text, self.options[c].values,
+                                self.options[c].labels or self.options[c].args, arg)
+                        else
+                            self.config:onMakeDefault(self.options[c].name, self.options[c].name_text, self.options[c].values,
+                                self.options[c].labels or self.options[c].args, arg)
+                        end
                     end,
                     show_parrent = self.config,
                     enabled = enabled,
@@ -861,40 +871,76 @@ end
 function ConfigDialog:onConfigChoose(values, name, event, args, events, position)
     UIManager:tickAfterNext(function()
         if values then
+            self:onConfigChoice(name, values[position])
+        end
+        if event then
+            args = args or {}
+            self:onConfigEvent(event, args[position])
+        end
+        if events then
+            self:onConfigEvents(events, position)
+        end
+        -- Even if each toggle refreshes itself when toggled, we still
+        -- need to update and repaint the whole config panel, as other
+        -- toggles may have their state (enabled/disabled) modified
+        -- after this toggle update.
+        self:update()
+        if self.config_options.needs_redraw_on_change then
+            -- Some Kopt document event handlers just save their setting,
+            -- and need a full repaint for kopt to load these settings,
+            -- notice the change, and redraw the document
+            UIManager:setDirty("all", "partial")
+        else
+            -- CreDocument event handlers do their own refresh:
+            -- we can just redraw our frame
+            UIManager:setDirty(self, function()
+                return "ui", self.dialog_frame.dimen
+            end)
+        end
+    end)
+end
+
+-- Tweaked variant used with the fine_tune variant of buttonprogress (direction can only be "-" or "+")
+function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, events, direction)
+    UIManager:tickAfterNext(function()
+        print("onConfigFineTuneChoose: direction", direction, "current value:", self.configurable[name], "lowest value:", values[1], "highest value:", values[#values])
+        if values then
             local value
-            if position == "-" then
+            if direction == "-" then
                 value = self.configurable[name] or values[1]
                 value = value - 1
                 if value < 0 then
                     value = 0
                 end
-            elseif position == "+" then
+            else
                 value = self.configurable[name] or values[#values]
                 value = value + 1
-            else
-                value = values[position]
             end
+            print("Setting config to final value", value)
             self:onConfigChoice(name, value)
         end
         if event then
             args = args or {}
             local arg
-            if position == "-" then
+            if direction == "-" then
                 arg = self.configurable[name] or args[1]
-                arg = arg - 1
-                if arg < 0 then
-                    arg = 0
+                if not values then
+                    arg = arg - 1
+                    if arg < 0 then
+                        arg = 0
+                    end
                 end
-            elseif position == "+" then
-                arg = self.configurable[name] or args[#args]
-                arg = arg + 1
             else
-                arg = args[position]
+                arg = self.configurable[name] or args[#args]
+                if not values then
+                    arg = arg + 1
+                end
             end
+            print("lowest arg:", args[1], "highest arg:", args[#args], "final arg", arg)
             self:onConfigEvent(event, arg)
         end
         if events then
-            self:onConfigEvents(events, position)
+            self:onConfigEvents(events, direction)
         end
         -- Even if each toggle refreshes itself when toggled, we still
         -- need to update and repaint the whole config panel, as other
@@ -944,6 +990,29 @@ function ConfigDialog:onMakeDefault(name, name_text, values, labels, position)
         ok_callback = function()
             name = self.config_options.prefix.."_"..name
             G_reader_settings:saveSetting(name, values[position])
+            self:update()
+            UIManager:setDirty(self, function()
+                return "ui", self.dialog_frame.dimen
+            end)
+        end,
+    })
+end
+
+-- Tweaked variant used with the fine_tune variant of buttonprogress (direction can only be "-" or "+")
+-- NOTE: This sets the defaults to the *current* value, as the -/+ buttons have no fixed value ;).
+function ConfigDialog:onMakeFineTuneDefault(name, name_text, values, labels, direction)
+    local display_value = self.configurable[name] or direction == "-" and labels[1] or labels[#labels]
+
+    UIManager:show(ConfirmBox:new{
+        text = T(
+            _("Set default %1 to %2?"),
+            (name_text or ""),
+            display_value
+        ),
+        ok_text = T(_("Set default")),
+        ok_callback = function()
+            name = self.config_options.prefix.."_"..name
+            G_reader_settings:saveSetting(name, self.configurable[name])
             self:update()
             UIManager:setDirty(self, function()
                 return "ui", self.dialog_frame.dimen
