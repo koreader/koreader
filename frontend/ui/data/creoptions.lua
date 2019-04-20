@@ -131,6 +131,11 @@ Note that your selected font size is not affected by this setting.]]),
                 name_text_suffix = "%",
                 name_text_true_values = true,
             },
+        }
+    },
+    {
+        icon = "resources/icons/appbar.crop.large.png",
+        options = {
             {
                 name = "h_page_margins",
                 name_text = S.H_PAGE_MARGINS,
