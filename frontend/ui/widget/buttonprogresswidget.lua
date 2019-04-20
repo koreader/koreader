@@ -55,9 +55,6 @@ function ButtonProgressWidget:update()
     -- Minus button on the left
     if self.fine_tune then
         local margin = button_margin
-        if self.thin_grey_style and highlighted then
-            margin = 0 -- moved outside button so it's not inverted
-        end
         local extra_border_size = 0
         local button = Button:new{
             text = "-",
@@ -80,25 +77,7 @@ function ButtonProgressWidget:update()
             end,
         }
         if self.thin_grey_style then
-            if is_default then
-                -- use a black border as a discreet visual hint
-                button.frame.color = Blitbuffer.COLOR_BLACK
-            else
-                -- otherwise, gray border, same as the filled
-                -- button, so looking as if no border
-                button.frame.color = Blitbuffer.COLOR_DARK_GRAY
-            end
-            if highlighted then
-                -- The button and its frame background will be inverted,
-                -- so invert the color we want so it gets inverted back
-                button.frame.background = Blitbuffer.COLOR_DARK_GRAY:invert()
-                button = FrameContainer:new{ -- add margin back
-                    margin = button_margin,
-                    padding = 0,
-                    bordersize = 0,
-                    button,
-                }
-            end
+            button.frame.color = Blitbuffer.COLOR_DARK_GRAY
         end
         table.insert(self.buttonprogress_content, button)
     end
@@ -164,9 +143,6 @@ function ButtonProgressWidget:update()
     -- Plus button on the right
     if self.fine_tune then
         local margin = button_margin
-        if self.thin_grey_style and highlighted then
-            margin = 0 -- moved outside button so it's not inverted
-        end
         local extra_border_size = 0
         local button = Button:new{
             text = "+",
@@ -189,25 +165,7 @@ function ButtonProgressWidget:update()
             end,
         }
         if self.thin_grey_style then
-            if is_default then
-                -- use a black border as a discreet visual hint
-                button.frame.color = Blitbuffer.COLOR_BLACK
-            else
-                -- otherwise, gray border, same as the filled
-                -- button, so looking as if no border
-                button.frame.color = Blitbuffer.COLOR_DARK_GRAY
-            end
-            if highlighted then
-                -- The button and its frame background will be inverted,
-                -- so invert the color we want so it gets inverted back
-                button.frame.background = Blitbuffer.COLOR_DARK_GRAY:invert()
-                button = FrameContainer:new{ -- add margin back
-                    margin = button_margin,
-                    padding = 0,
-                    bordersize = 0,
-                    button,
-                }
-            end
+            button.frame.color = Blitbuffer.COLOR_DARK_GRAY
         end
         table.insert(self.buttonprogress_content, button)
     end
