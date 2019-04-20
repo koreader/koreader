@@ -903,7 +903,6 @@ end
 -- Tweaked variant used with the fine_tune variant of buttonprogress (direction can only be "-" or "+")
 function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, events, direction)
     UIManager:tickAfterNext(function()
-        print("onConfigFineTuneChoose: direction", direction, "current value:", self.configurable[name], "lowest value:", values[1], "highest value:", values[#values])
         if values then
             local value
             if direction == "-" then
@@ -916,7 +915,6 @@ function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, events, 
                 value = self.configurable[name] or values[#values]
                 value = value + 1
             end
-            print("Setting config to final value", value)
             self:onConfigChoice(name, value)
         end
         if event then
@@ -936,7 +934,6 @@ function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, events, 
                     arg = arg + 1
                 end
             end
-            print("lowest arg:", args[1], "highest arg:", args[#args], "final arg", arg)
             self:onConfigEvent(event, arg)
         end
         if events then
