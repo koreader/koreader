@@ -171,6 +171,7 @@ Note that your selected font size is not affected by this setting.]]),
                 name = "t_page_margin",
                 name_text = S.T_PAGE_MARGIN,
                 buttonprogress = true,
+                fine_tune = true,
                 values = {
                     DCREREADER_CONFIG_T_MARGIN_SIZES_SMALL,
                     DCREREADER_CONFIG_T_MARGIN_SIZES_MEDIUM,
