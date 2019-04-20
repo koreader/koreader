@@ -11,5 +11,5 @@
     "write_path": [
         "@{HOME}/"
     ],
-    "policy_version": 1.2
+    "policy_version": 16.04
 }
