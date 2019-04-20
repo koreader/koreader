@@ -21,6 +21,7 @@ local ButtonProgressWidget = InputContainer:new{
     position = 1,
     default_position = nil,
     thin_grey_style = false, -- default to black
+    fine_tune = false, -- no -/+ buttons on the extremities by default
 }
 
 function ButtonProgressWidget:init()
@@ -45,7 +46,68 @@ function ButtonProgressWidget:update()
     local button_margin = Size.margin.tiny
     local button_padding = Size.padding.button
     local button_bordersize = self.thin_grey_style and Size.border.thin or Size.border.button
-    local button_width = math.floor(self.width / self.num_buttons) - 2*button_padding - 2*button_margin - 2*button_bordersize
+    local buttons_count = self.num_buttons
+    if self.fine_tune then
+       buttons_count = buttons_count + 2
+    end
+    local button_width = math.floor(self.width / buttons_count) - 2*button_padding - 2*button_margin - 2*button_bordersize
+
+    -- Minus button on the left
+    if self.fine_tune then
+        local margin = button_margin
+        if self.thin_grey_style and highlighted then
+            margin = 0 -- moved outside button so it's not inverted
+        end
+        local extra_border_size = 0
+        if not self.thin_grey_style and is_default then
+            -- make the border a bit bigger on the default button
+            extra_border_size = Size.border.thin
+        end
+        local button = Button:new{
+            text = "-",
+            radius = 0,
+            margin = margin,
+            padding = button_padding,
+            bordersize = button_bordersize + extra_border_size,
+            enabled = true,
+            width = button_width - 2*extra_border_size,
+            preselect = false,
+            text_font_face = self.font_face,
+            text_font_size = self.font_size,
+            callback = function()
+                self.callback("-")
+                self:update()
+            end,
+            no_focus = true,
+            hold_callback = function()
+                self.hold_callback("-")
+            end,
+        }
+        if self.thin_grey_style then
+            if is_default then
+                -- use a black border as a discreet visual hint
+                button.frame.color = Blitbuffer.COLOR_BLACK
+            else
+                -- otherwise, gray border, same as the filled
+                -- button, so looking as if no border
+                button.frame.color = Blitbuffer.COLOR_DARK_GRAY
+            end
+            if highlighted then
+                -- The button and its frame background will be inverted,
+                -- so invert the color we want so it gets inverted back
+                button.frame.background = Blitbuffer.COLOR_DARK_GRAY:invert()
+                button = FrameContainer:new{ -- add margin back
+                    margin = button_margin,
+                    padding = 0,
+                    bordersize = 0,
+                    button,
+                }
+            end
+        end
+        table.insert(self.buttonprogress_content, button)
+    end
+
+    -- Actual progress bar
     for i = 1, self.num_buttons do
         local highlighted = i <= self.position
         local is_default = i == self.default_position
@@ -77,6 +139,61 @@ function ButtonProgressWidget:update()
             no_focus = true,
             hold_callback = function()
                 self.hold_callback(i)
+            end,
+        }
+        if self.thin_grey_style then
+            if is_default then
+                -- use a black border as a discreet visual hint
+                button.frame.color = Blitbuffer.COLOR_BLACK
+            else
+                -- otherwise, gray border, same as the filled
+                -- button, so looking as if no border
+                button.frame.color = Blitbuffer.COLOR_DARK_GRAY
+            end
+            if highlighted then
+                -- The button and its frame background will be inverted,
+                -- so invert the color we want so it gets inverted back
+                button.frame.background = Blitbuffer.COLOR_DARK_GRAY:invert()
+                button = FrameContainer:new{ -- add margin back
+                    margin = button_margin,
+                    padding = 0,
+                    bordersize = 0,
+                    button,
+                }
+            end
+        end
+        table.insert(self.buttonprogress_content, button)
+    end
+
+    -- Plus button on the right
+    if self.fine_tune then
+        local margin = button_margin
+        if self.thin_grey_style and highlighted then
+            margin = 0 -- moved outside button so it's not inverted
+        end
+        local extra_border_size = 0
+        if not self.thin_grey_style and is_default then
+            -- make the border a bit bigger on the default button
+            extra_border_size = Size.border.thin
+        end
+        local button = Button:new{
+            text = "+",
+            radius = 0,
+            margin = margin,
+            padding = button_padding,
+            bordersize = button_bordersize + extra_border_size,
+            enabled = true,
+            width = button_width - 2*extra_border_size,
+            preselect = false,
+            text_font_face = self.font_face,
+            text_font_size = self.font_size,
+            callback = function()
+                self.callback("+")
+                self:update()
+            end,
+            no_focus = true,
+            hold_callback = function()
+                self.hold_callback("+")
             end,
         }
         if self.thin_grey_style then

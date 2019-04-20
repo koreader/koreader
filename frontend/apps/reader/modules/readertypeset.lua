@@ -355,6 +355,7 @@ function ReaderTypeset:onSetPageTopMargin(t_margin)
 end
 
 function ReaderTypeset:onSetPageBottomMargin(b_margin)
+    print("ReaderTypeset:onSetPageBottomMargin", b_margin)
     self.unscaled_margins = { self.unscaled_margins[1], self.unscaled_margins[2], self.unscaled_margins[3], b_margin }
     self:onSetPageMargins(self.unscaled_margins)
 end

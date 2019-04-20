@@ -202,6 +202,7 @@ Note that your selected font size is not affected by this setting.]]),
                 name = "b_page_margin",
                 name_text = S.B_PAGE_MARGIN,
                 buttonprogress = true,
+                fine_tune = true,
                 values = {
                     DCREREADER_CONFIG_B_MARGIN_SIZES_SMALL,
                     DCREREADER_CONFIG_B_MARGIN_SIZES_MEDIUM,

@@ -551,6 +551,7 @@ function ConfigOption:init()
                     end,
                     show_parrent = self.config,
                     enabled = enabled,
+                    fine_tune = self.options[c].fine_tune,
                 }
                 switch:setPosition(current_item, default_item)
                 table.insert(option_items_group, switch)
@@ -860,11 +861,37 @@ end
 function ConfigDialog:onConfigChoose(values, name, event, args, events, position)
     UIManager:tickAfterNext(function()
         if values then
-            self:onConfigChoice(name, values[position])
+            local value
+            if position == "-" then
+                value = self.configurable[name] or values[1]
+                value = value - 1
+                if value < 0 then
+                    value = 0
+                end
+            elseif position == "+" then
+                value = self.configurable[name] or values[#values]
+                value = value + 1
+            else
+                value = values[position]
+            end
+            self:onConfigChoice(name, value)
         end
         if event then
             args = args or {}
-            self:onConfigEvent(event, args[position])
+            local arg
+            if position == "-" then
+                arg = self.configurable[name] or args[1]
+                arg = arg - 1
+                if arg < 0 then
+                    arg = 0
+                end
+            elseif position == "+" then
+                arg = self.configurable[name] or args[#args]
+                arg = arg + 1
+            else
+                arg = args[position]
+            end
+            self:onConfigEvent(event, arg)
         end
         if events then
             self:onConfigEvents(events, position)
