@@ -240,7 +240,12 @@ function KoboPowerD:setWarmth(warmth)
         self:calculateAutoWarmth()
     end
     self.fl_warmth = warmth or self.fl_warmth
-    self.fl:setWarmth(self.fl_warmth)
+    -- Don't turn the light back on on legacy NaturalLight devices just for the sake of setting the warmth!
+    -- That's because we can only set warmth independently of brightness on devices with a mixer.
+    -- On older ones, calling setWarmth *will* actually set the brightness, too!
+    if self.device:hasNaturalLightMixer() or self:isFrontlightOnHW() then
+        self.fl:setWarmth(self.fl_warmth)
+    end
 end
 
 -- Sets fl_warmth according to current hour and max_warmth_hour
