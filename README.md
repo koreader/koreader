@@ -12,17 +12,19 @@
 [![Latest release][release-badge]](https://github.com/koreader/koreader/releases/)
 
 
-KOReader is a document viewer application, originally created for Kindle
-e-ink readers. It currently runs on Kindle, Kobo, PocketBook, Ubuntu Touch
-and Android devices. Developers can also run a KOReader emulator
-for development purposes on desktop PCs with Linux, Windows and
-Mac OSX.
+KOReader is a document viewer primarily targeting e-ink readers.
+It runs on Cervantes, Kindle, Kobo, PocketBook and Android devices.
+Developers can also run a KOReader emulator on desktop PCs with Linux or Mac OS X.
+
+<a href="https://github.com/koreader/koreader-artwork/raw/master/koreader-menu.png"><img src="https://github.com/koreader/koreader-artwork/raw/master/koreader-menu-thumbnail.png" alt="" width="200px"></a>
+<a href="https://github.com/koreader/koreader-artwork/raw/master/koreader-footnotes.png"><img src="https://github.com/koreader/koreader-artwork/raw/master/koreader-footnotes-thumbnail.png" alt="" width="200px"></a>
+<a href="https://github.com/koreader/koreader-artwork/raw/master/koreader-dictionary.png"><img src="https://github.com/koreader/koreader-artwork/raw/master/koreader-dictionary-thumbnail.png" alt="" width="200px"></a>
 
 Main features for users
 -----------------------
 
 * supports multi-format documents including:
-  * paged fixed-layout formats: PDF, DjVu, CBT, and CBZ
+  * fixed page formats: PDF, DjVu, CBT, and CBZ
   * reflowable e-book formats: ePub, fb2, mobi, doc, chm and plain text
   * scanned PDF/DjVu documents can also be reflowed with built-in K2pdfopt
 * use StarDict dictionaries / Wikipedia to lookup words
