@@ -290,18 +290,6 @@ utupdate: all
 			"koreader/resources/icons/src/*" "koreader/spec/*" \
 			$(ZIP_EXCLUDE)
 
-	# generate update package index file
-	zipinfo -1 koreader-$(DIST)-$(MACHINE)-$(VERSION).zip > \
-		$(INSTALL_DIR)/koreader/ota/package.index
-	echo "koreader/ota/package.index" >> $(INSTALL_DIR)/koreader/ota/package.index
-	# update index file in zip package
-	cd $(INSTALL_DIR) && zip -u ../koreader-$(DIST)-$(MACHINE)-$(VERSION).zip \
-		koreader/ota/package.index
-	# make gzip update for zsync OTA update
-	cd $(INSTALL_DIR) && \
-		tar -czah --no-recursion -f ../koreader-$(DIST)-$(MACHINE)-$(VERSION).targz \
-		-T koreader/ota/package.index
-
 	# generate ubuntu touch click package
 	rm -rf $(INSTALL_DIR)/tmp && mkdir -p $(INSTALL_DIR)/tmp
 	cd $(INSTALL_DIR)/tmp && \
