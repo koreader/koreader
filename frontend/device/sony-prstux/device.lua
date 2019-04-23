@@ -1,8 +1,8 @@
 local Generic = require("device/generic/device") -- <= look at this file!
-local logger = require("logger")
-local TimeVal = require("ui/timeval")
 local PluginShare = require("pluginshare")
+local TimeVal = require("ui/timeval")
 local ffi = require("ffi")
+local logger = require("logger")
 
 local function yes() return true end
 local function no() return false end
