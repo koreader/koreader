@@ -738,6 +738,7 @@ OPTIONS:
         exit 1
     }
 
+    set -e
     check_submodules && make
     setup_env
 
