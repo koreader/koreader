@@ -10,8 +10,9 @@ return {
     checked_func = Screen.isColorEnabled,
     callback = function()
         local new_val = not Screen.isColorEnabled()
-        CanvasContext:setColorRenderingEnabled(new_val)
+        -- Screen.isColorEnabled reads G_reader_settings :'(
         G_reader_settings:saveSetting("color_rendering", new_val)
+        CanvasContext:setColorRenderingEnabled(new_val)
         UIManager:broadcastEvent(Event:new("ColorRenderingUpdate"))
     end
 }

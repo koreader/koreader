@@ -60,11 +60,6 @@ end
 
 local CanvasContext = require("document/canvascontext")
 CanvasContext:init(Device)
-if G_reader_settings:has("color_rendering") then
-    CanvasContext:setColorRenderingEnabled(G_reader_settings:isTrue("color_rendering"))
-else
-    CanvasContext:setColorRenderingEnabled(Device.screen:isColorScreen())
-end
 
 -- option parsing:
 local longopts = {

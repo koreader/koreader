@@ -18,12 +18,12 @@ einkfb.dummy = true --luacheck: ignore
 
 local Device = require("device")
 
-local CanvasContext = require("document/canvascontext")
-CanvasContext:init(Device)
-
 -- init output device
 local Screen = Device.screen
 Screen:init()
+
+local CanvasContext = require("document/canvascontext")
+CanvasContext:init(Device)
 
 -- init input device (do not show SDL window)
 local Input = Device.input

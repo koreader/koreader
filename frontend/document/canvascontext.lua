@@ -32,12 +32,14 @@ The following key is required for a device object:
     * getDPI() -> int
     * getSize() -> Rect
     * scaleBySize(int) -> int
+    * isColorEnabled() -> boolean
 ]]--
 function CanvasContext:init(device)
     self.screen = device.screen
     self.isAndroid = device.isAndroid
     self.isKindle = device.isKindle
     self.should_restrict_JIT = device.should_restrict_JIT
+    self:setColorRenderingEnabled(device.screen.isColorEnabled())
 
     -- NOTE: Kobo's fb is BGR, not RGB. Handle the conversion in MuPDF if needed.
     if device:hasBGRFrameBuffer() then
