@@ -1,0 +1,20 @@
+describe("menu table screen color module", function()
+    local menu, Screen, CanvasContext
+    setup(function()
+        require("commonrequire")
+        menu = require("ui/elements/screen_color_menu_table")
+        Screen = require("device").screen
+        CanvasContext = require("document/canvascontext")
+    end)
+
+    it("should toggle color rendering", function()
+        assert.is.truthy(Screen.isColorEnabled())
+        assert.is.truthy(CanvasContext.is_color_rendering_enabled)
+        menu.callback()
+        assert.is.falsy(Screen.isColorEnabled())
+        assert.is.falsy(CanvasContext.is_color_rendering_enabled)
+        menu.callback()
+        assert.is.truthy(Screen.isColorEnabled())
+        assert.is.truthy(CanvasContext.is_color_rendering_enabled)
+    end)
+end)
