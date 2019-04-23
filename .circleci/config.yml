@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: frenzie/koappimage:0.1.4
+      - image: koreader/koappimage:0.1.5
         environment:
           EMULATE_READER: 1
           # this is for shellcheck 0.4.5 and lower; can be removed for 0.4.6
