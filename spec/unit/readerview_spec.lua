@@ -47,8 +47,9 @@ describe("Readerview module", function()
         end
     end)
 
-    -- TODO FIX THESE TESTS THEY'RE BROKEN!!!
-    it("should return and restore view context in page mode #notest", function()
+    it("should return and restore view context in page mode", function()
+        -- we don't want a footer for this test
+        G_reader_settings:saveSetting("reader_footer_mode", 0)
         local sample_pdf = "spec/front/unit/data/2col.pdf"
         local readerui = ReaderUI:new{
             document = DocumentRegistry:openDocument(sample_pdf),
@@ -94,9 +95,12 @@ describe("Readerview module", function()
         assert.is.same(view.state.page, 2)
         assert.is.same(view.visible_area.x, 0)
         assert.is.same(view.visible_area.y, 10)
+        G_reader_settings:delSetting("reader_footer_mode")
     end)
 
-    it("should return and restore view context in scroll mode #notest", function()
+    it("should return and restore view context in scroll mode", function()
+        -- we don't want a footer for this test
+        G_reader_settings:saveSetting("reader_footer_mode", 0)
         local sample_pdf = "spec/front/unit/data/2col.pdf"
         local readerui = ReaderUI:new{
             document = DocumentRegistry:openDocument(sample_pdf),
@@ -142,5 +146,6 @@ describe("Readerview module", function()
         assert.is.same(view.page_states[1].page, 2)
         assert.is.same(view.page_states[1].visible_area.x, 0)
         assert.is.same(view.page_states[1].visible_area.y, 10)
+        G_reader_settings:delSetting("reader_footer_mode")
     end)
 end)
