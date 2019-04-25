@@ -704,6 +704,7 @@ usage: test <OPTIONS> [front|base] <TEST_NAME>
 OPTIONS:
 
     --tags=TAGS     only run tests with given tags
+    --no-debug      no debugging symbols (default for target devices)
     "
     while [[ "${1}" == '-'* ]]; do
         PARAM=$(echo "${1}" | awk -F= '{print $1}')
@@ -711,6 +712,10 @@ OPTIONS:
         case "${PARAM}" in
             --graph)
                 graph_memory=1
+                ;;
+            --no-debug)
+                export KODEBUG=
+                KODEBUG_NO_DEFAULT=1
                 ;;
             --tags)
                 opts="--tags=${VALUE}"
@@ -739,7 +744,7 @@ OPTIONS:
     }
 
     set -e
-    check_submodules && make
+    check_submodules && kodev-build
     setup_env
 
     make "${EMU_DIR}/.busted"
