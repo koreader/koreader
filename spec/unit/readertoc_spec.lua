@@ -9,14 +9,7 @@ describe("Readertoc module", function()
         ReaderUI = require("apps/reader/readerui")
         DEBUG = require("dbg")
 
-        G_reader_settings:reset({})
-
         local sample_epub = "spec/front/unit/data/juliet.epub"
-
-        local DocSettings = require("docsettings")
-        local purgeDir = require("ffi/util").purgeDir
-        purgeDir(DocSettings:getSidecarDir(sample_epub))
-        os.remove(DocSettings:getHistoryPath(sample_epub))
 
         readerui = ReaderUI:new{
             document = DocumentRegistry:openDocument(sample_epub),
