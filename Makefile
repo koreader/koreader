@@ -123,7 +123,6 @@ testfront: $(INSTALL_DIR)/koreader/.busted
 	-rm -rf spec/unit/data/*.sdr
 	cd $(INSTALL_DIR)/koreader && ./luajit $(shell which busted) \
 		--sort-files \
-		--no-auto-insulate \
 		--output=gtest \
 		--exclude-tags=notest $(BUSTED_OVERRIDES) $(BUSTED_SPEC_FILE)
 
@@ -136,7 +135,6 @@ coverage: $(INSTALL_DIR)/koreader/.luacov
 	cd $(INSTALL_DIR)/koreader && \
 		./luajit $(shell which busted) --output=gtest \
 			--sort-files \
-			--no-auto-insulate \
 			--coverage --exclude-tags=nocov
 	# coverage report summary
 	cd $(INSTALL_DIR)/koreader && tail -n \

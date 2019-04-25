@@ -8,7 +8,15 @@ describe("Readertoc module", function()
         ReaderUI = require("apps/reader/readerui")
         DEBUG = require("dbg")
 
+        G_reader_settings:reset({})
+
         local sample_epub = "spec/front/unit/data/juliet.epub"
+
+        local DocSettings = require("docsettings")
+        local purgeDir = require("ffi/util").purgeDir
+        purgeDir(DocSettings:getSidecarDir(sample_epub))
+        os.remove(DocSettings:getHistoryPath(sample_epub))
+
         readerui = ReaderUI:new{
             document = DocumentRegistry:openDocument(sample_epub),
         }
@@ -24,9 +32,9 @@ describe("Readertoc module", function()
     it("should get toc title from page", function()
         title = toc:getTocTitleByPage(60)
         DEBUG("toc", toc.toc)
-        assert(title == "SCENE V. A hall in Capulet's house.")
+        assert.is.equal("SCENE V. A hall in Capulet's house.", title)
         title = toc:getTocTitleByPage(187)
-        assert(title == "SCENE I. Friar Laurence's cell.")
+        assert.is.equal("SCENE II. Hall in Capulet's house.", title)
     end)
     describe("getTocTicks API", function()
         local ticks_level_0 = nil
@@ -68,12 +76,12 @@ describe("Readertoc module", function()
     end)
     it("should get page left of chapter", function()
         assert.truthy(toc:getChapterPagesLeft(10, 0) > 10)
-        assert.truthy(toc:getChapterPagesLeft(97, 0) > 10)
+        assert.are.same(10, toc:getChapterPagesLeft(97, 0))
         assert.are.same(nil, toc:getChapterPagesLeft(290, 0))
     end)
     it("should get page done of chapter", function()
         assert.truthy(toc:getChapterPagesDone(12, 0) < 5)
-        assert.truthy(toc:getChapterPagesDone(95, 0) < 5)
+        assert.is.same(6, toc:getChapterPagesDone(95, 0))
         assert.truthy(toc:getChapterPagesDone(290, 0) > 10)
     end)
     describe("collasible TOC", function()
