@@ -1,19 +1,23 @@
 describe("Readertoc module", function()
-    local DocumentRegistry, ReaderUI, DEBUG
+    local DocumentRegistry, Event, ReaderUI, DEBUG
     local readerui, toc, toc_max_depth, title
 
     setup(function()
         require("commonrequire")
         DocumentRegistry = require("document/documentregistry")
+        Event = require("ui/event")
         ReaderUI = require("apps/reader/readerui")
         DEBUG = require("dbg")
 
         local sample_epub = "spec/front/unit/data/juliet.epub"
+
         readerui = ReaderUI:new{
             document = DocumentRegistry:openDocument(sample_epub),
         }
         -- reset book to first page
         readerui.rolling:onGotoPage(0)
+        readerui.document:setSpaceCondensing(75)
+        readerui:handleEvent(Event:new("ChangeScreenMode", "portrait"))
         toc = readerui.toc
     end)
 
@@ -24,9 +28,9 @@ describe("Readertoc module", function()
     it("should get toc title from page", function()
         title = toc:getTocTitleByPage(60)
         DEBUG("toc", toc.toc)
-        assert(title == "SCENE V. A hall in Capulet's house.")
+        assert.is.equal("SCENE V. A hall in Capulet's house.", title)
         title = toc:getTocTitleByPage(187)
-        assert(title == "SCENE I. Friar Laurence's cell.")
+        assert.is.equal("SCENE I. Friar Laurence's cell.", title)
     end)
     describe("getTocTicks API", function()
         local ticks_level_0 = nil
