@@ -66,7 +66,7 @@ jobs:
           command: .ci/after_success.sh
       # by storing the test results CircleCI automatically distributes tests based on execution time
       - store_test_results:
-          path: koreader-emulator-x86_64-linux-gnu/koreader/junit-test-results.xml
+          path: koreader-emulator-x86_64-linux-gnu/koreader
       # CircleCI doesn't make the test results available as artifacts (October 2017)
       - store_artifacts:
           path: koreader-emulator-x86_64-linux-gnu/koreader/junit-test-results.xml
