@@ -749,18 +749,18 @@ OPTIONS:
 
     make "${EMU_DIR}/.busted"
     pushd "${EMU_DIR}" && {
-        test_path_base="./spec/$1/unit"
-        rm -rf "${test_path_base}"/data/*.sdr
+        test_path_basedir="./spec/$1/unit"
+        rm -rf "${test_path_basedir}"/data/*.sdr
 
-        test_path="${test_path_base}"
+        test_path="${test_path_basedir}"
         if [ -n "${2}" ]; then
-            test_path="${test_path_base}/$2"
+            test_path="${test_path_basedir}/$2"
         fi
 
         echo "Running tests in" "${test_path}"
         busted --lua="./luajit" "${opts}" \
             --output=gtest \
-            --lpath="${test_path_base}/?.lua" \
+            --lpath="${test_path_basedir}/?.lua" \
             --exclude-tags=notest "${test_path}"
     } && popd || exit
 }
