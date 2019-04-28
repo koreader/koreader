@@ -556,6 +556,7 @@ function Search:showresults()
                text = self.data[i][self.authors] .. ": " .. self.data[i][self.title],
                callback = function()
                    ReaderUI:showReader(book)
+                   self.search_menu:onClose()
                end
             })
             i = i + 1
@@ -662,6 +663,7 @@ function Search:browse(option, run, chosen)
                    path = self.data[i][self.path],
                    callback = function()
                        ReaderUI:showReader(book)
+                       self.search_menu:onClose()
                    end
                 })
             end
