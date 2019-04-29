@@ -232,18 +232,22 @@ function NewsDownloader:processFeedSource(url, limit, unsupported_feeds_urls, do
     local is_rss = feeds.rss and feeds.rss.channel and feeds.rss.channel.title and feeds.rss.channel.item and feeds.rss.channel.item[1] and feeds.rss.channel.item[1].title and feeds.rss.channel.item[1].link
     local is_atom = feeds.feed and feeds.feed.title and feeds.feed.entry[1] and feeds.feed.entry[1].title and feeds.feed.entry[1].link
 
-    if is_atom then
-        ok = pcall(function()
-            return self:processAtom(feeds, limit, download_full_article, include_images)
-        end)
-    elseif is_rss then
-        ok = pcall(function()
-            return self:processRSS(feeds, limit, download_full_article, include_images)
-        end)
-    end
-    if not ok or (not is_rss and not is_atom) then
-        table.insert(unsupported_feeds_urls, url)
-    end
+    local Trapper = require("ui/trapper")
+    Trapper:wrap(function()
+        if is_atom then
+            ok = pcall(function()
+                return self:processAtom(feeds, limit, download_full_article, include_images)
+            end)
+        elseif is_rss then
+            ok = pcall(function()
+                return self:processRSS(feeds, limit, download_full_article, include_images)
+            end)
+        end
+        if not ok or (not is_rss and not is_atom) then
+            table.insert(unsupported_feeds_urls, url)
+        end
+        Trapper:reset() -- close last InfoMessage
+    end)
 end
 
 function NewsDownloader:deserializeXMLString(xml_str)

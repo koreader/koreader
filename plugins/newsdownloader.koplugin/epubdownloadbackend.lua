@@ -22,14 +22,7 @@ local max_redirects = 5; --prevent infinite redirects
 
 function EpubDownloadBackend:download(url, path, include_images)
     logger.dbg("EpubDownloadBackend:download")
---    self:createEpub(path, url)
-    self:createEpubWithUI(path, url, include_images, function(success)
-        if (success) then
-            logger.dbg("createEpubWithUI success")
-        else
-            logger.dbg("createEpubWithUI failure")
-        end
-    end)
+    self:createEpub(path, url, include_images)
 end
 
 -- Codes that getUrlContent may get from requester.request()
@@ -505,9 +498,6 @@ function EpubDownloadBackend:createEpub(epub_path, url, include_images)
         UI:info(_("Packing EPUB…"))
     end
     epub:close()
-    -- This was nearly a no-op, so sleep a bit to make that progress step seen
-    ffiutil.usleep(300000)
-    UI:reset() -- close last InfoMessage
 
     if cancelled then
         -- Build was cancelled, remove half created .epub
@@ -526,32 +516,6 @@ function EpubDownloadBackend:createEpub(epub_path, url, include_images)
     collectgarbage()
     collectgarbage()
     return true
-end
-
--- Wrap EpubDownloadBackend:createEpub() with UI progress info, provided
--- by Trapper module.
-function EpubDownloadBackend:createEpubWithUI(epub_path, url, include_images, result_callback)
-    logger.dbg("EpubDownloadBackend:createEpubWithUI(", epub_path, ",", url, ",", title, ", ...)")
-    -- To do any UI interaction while building the EPUB, we need
-    -- to use a coroutine, so that our code can be suspended while waiting
-    -- for user interaction, and resumed by UI widgets callbacks.
-    -- All this is hidden and done by Trapper with a simple API.
-    local Trapper = require("ui/trapper")
-    Trapper:wrap(function()
-        Trapper:setPausedText("Download paused")
-        -- If errors in EpubDownloadBackend:createEpub(), the coroutine (used by
-        -- Trapper) would just abort (no reader crash, no error logged).
-        -- So we use pcall to catch any errors, log it, and report
-        -- the failure via result_callback.
-        local ok, success = pcall(self.createEpub, self, epub_path, url, include_images)
-        if ok and success then
-            result_callback(true)
-        else
-            Trapper:reset() -- close any last widget not cleaned if error
-            logger.warn("EpubDownloadBackend.createEpub pcall:", ok, success)
-            result_callback(false)
-        end
-    end)
 end
 
 return EpubDownloadBackend
