@@ -204,6 +204,8 @@ end
 -- Fine-grained CRe margins (#4945)
 local old_margins = G_reader_settings:readSetting("copt_page_margins")
 if old_margins then
+    io.stdout:write("Migrating old global CRe margin settings: L", old_margins[1], "T", old_margins[2], "R", old_margins[3], "B", old_margins[4], "\n")
+    io.stdout:flush()
     -- Format was: {left, top, right, bottom}
     G_reader_settings:saveSetting("copt_h_page_margins", {old_margins[1], old_margins[3]})
     G_reader_settings:saveSetting("copt_t_page_margin", old_margins[2])
