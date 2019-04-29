@@ -232,4 +232,19 @@ function DocSettings:purge()
     self.data = {}
 end
 
+-- Handles migration of per-document settings
+function DocSettings:migrateDocSettings()
+    -- Fine-grained CRe margins (#4945)
+    local old_margins = self:readSetting("copt_page_margins")
+    if old_margins then
+        logger.info("Migrating old local CRe margin settings: L", old_margins[1], "T", old_margins[2], "R", old_margins[3], "B", old_margins[4])
+        -- Format was: {left, top, right, bottom}
+        self:saveSetting("copt_h_page_margins", {old_margins[1], old_margins[3]})
+        self:saveSetting("copt_t_page_margin", old_margins[2])
+        self:saveSetting("copt_b_page_margin", old_margins[4])
+        -- Wipe it
+        self:delSetting("copt_page_margins")
+    end
+end
+
 return DocSettings

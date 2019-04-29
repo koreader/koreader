@@ -102,17 +102,7 @@ function ReaderUI:init()
     self.doc_settings = DocSettings:open(self.document.file)
 
     -- Handle local settings migration
-    -- Fine-grained CRe margins (#4945)
-    local old_margins = self.doc_settings:readSetting("copt_page_margins")
-    if old_margins then
-        logger.info("Migrating old local CRe margin settings: L", old_margins[1], "T", old_margins[2], "R", old_margins[3], "B", old_margins[4])
-        -- Format was: {left, top, right, bottom}
-        self.doc_settings:saveSetting("copt_h_page_margins", {old_margins[1], old_margins[3]})
-        self.doc_settings:saveSetting("copt_t_page_margin", old_margins[2])
-        self.doc_settings:saveSetting("copt_b_page_margin", old_margins[4])
-        -- Wipe it
-        self.doc_settings:delSetting("copt_page_margins")
-    end
+    self.doc_settings:migrateDocSettings()
 
     if Device:hasKeys() then
         self.key_events.Home = { {"Home"}, doc = "open file browser" }
