@@ -54,7 +54,7 @@ function ButtonProgressWidget:update()
 
     -- Minus button on the left
     if self.fine_tune then
-        local margin = button_margin
+        local margin = button_margin * 2
         local extra_border_size = 0
         local button = Button:new{
             text = "-",
@@ -142,7 +142,7 @@ function ButtonProgressWidget:update()
 
     -- Plus button on the right
     if self.fine_tune then
-        local margin = button_margin
+        local margin = button_margin * 2
         local extra_border_size = 0
         local button = Button:new{
             text = "+",
