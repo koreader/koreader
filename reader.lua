@@ -200,6 +200,18 @@ if Device:hasColorScreen() and not G_reader_settings:has("color_rendering") then
     })
 end
 
+-- Handle global settings migration
+-- Fine-grained CRe margins (#4945)
+local old_margins = G_reader_settings:readSetting("copt_page_margins")
+if old_margins then
+    -- Format was: {left, top, right, bottom}
+    G_reader_settings:saveSetting("copt_h_page_margins", {old_margins[1], old_margins[3]})
+    G_reader_settings:saveSetting("copt_t_page_margin", old_margins[2])
+    G_reader_settings:saveSetting("copt_b_page_margin", old_margins[4])
+    -- Wipe it
+    G_reader_settings:delSetting("copt_page_margins")
+end
+
 local exit_code
 
 if ARGV[argidx] and ARGV[argidx] ~= "" then
