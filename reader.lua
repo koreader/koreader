@@ -201,7 +201,8 @@ if Device:hasColorScreen() and not G_reader_settings:has("color_rendering") then
 end
 
 -- Handle global settings migration
-G_reader_settings:migrateReaderSettings()
+local SettingsMigration = require("ui/data/settings_migration")
+SettingsMigration:migrateSettings(G_reader_settings)
 
 local exit_code
 
