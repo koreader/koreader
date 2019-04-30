@@ -8,7 +8,7 @@ local logger = require("logger")
 
 local SettingsMigration = {}
 
--- Handles migration of per-document settings
+-- Shockingly, handles settings migration
 -- NOTE: supports LuaSettings & DocSettings objects as input, as both implement the same API
 function SettingsMigration:migrateSettings(config)
     -- Figure out what kind of object we were passed, to make the logging more precise
