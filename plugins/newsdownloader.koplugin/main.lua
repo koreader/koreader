@@ -79,9 +79,9 @@ function NewsDownloader:addToMainMenu(menu_items)
                 callback = function()
                     if not NetworkMgr:isOnline() then
                         wifi_enabled_before_action = false
-                        NetworkMgr:beforeWifiAction(self.loadConfigAndProcessFeeds)
+                        NetworkMgr:beforeWifiAction(self.loadConfigAndProcessFeedsWithUI)
                     else
-                        self:loadConfigAndProcessFeeds()
+                        self:loadConfigAndProcessFeedsWithUI()
                     end
                 end,
             },
@@ -156,16 +156,13 @@ function NewsDownloader:lazyInitialization()
 end
 
 function NewsDownloader:loadConfigAndProcessFeeds()
-    local info = InfoMessage:new{ text = _("Loading news feed config…") }
-    UIManager:show(info)
+    local UI = require("ui/trapper")
+    UI:info("Loading news feed config…")
     logger.dbg("force repaint due to upcoming blocking calls")
-    UIManager:forceRePaint()
-    UIManager:close(info)
 
     local ok, feed_config = pcall(dofile, feed_config_path)
     if not ok or not feed_config then
-        info = InfoMessage:new{ text = T(_("Invalid configuration file. Detailed error message:\n%1"), feed_config) }
-        UIManager:show(info)
+        UI:info(T(_("Invalid configuration file. Detailed error message:\n%1"), feed_config))
         return
     end
 
@@ -183,22 +180,15 @@ function NewsDownloader:loadConfigAndProcessFeeds()
         local download_full_article = feed.download_full_article == nil or feed.download_full_article
         local include_images = feed.include_images
         if url and limit then
-            info = InfoMessage:new{ text = T(_("Processing %1/%2:\n%3"), idx, total_feed_entries, url) }
-            UIManager:show(info)
-            -- processFeedSource is a blocking call, so manually force a UI refresh beforehand
-            UIManager:forceRePaint()
+            UI:info(T(_("Processing %1/%2:\n%3"), idx, total_feed_entries, url))
             NewsDownloader:processFeedSource(url, tonumber(limit), unsupported_feeds_urls, download_full_article, include_images)
-            UIManager:close(info)
         else
             logger.warn('NewsDownloader: invalid feed config entry', feed)
         end
     end
 
     if #unsupported_feeds_urls <= 0 then
-        UIManager:show(InfoMessage:new{
-            text = _("Downloading news finished."),
-            timeout = 1,
-        })
+        UI:info("Downloading news finished.")
     else
         local unsupported_urls = ""
         for k,url in pairs(unsupported_feeds_urls) do
@@ -207,11 +197,16 @@ function NewsDownloader:loadConfigAndProcessFeeds()
                 unsupported_urls = unsupported_urls .. ", "
             end
         end
-        UIManager:show(InfoMessage:new{
-            text = T(_("Downloading news finished. Could not process some feeds. Unsupported format in: %1"), unsupported_urls)
-        })
+        UI:info(T(_("Downloading news finished. Could not process some feeds. Unsupported format in: %1"), unsupported_urls))
     end
     NewsDownloader:afterWifiAction()
+end
+
+function NewsDownloader:loadConfigAndProcessFeedsWithUI()
+    local Trapper = require("ui/trapper")
+    Trapper:wrap(function()
+        self.loadConfigAndProcessFeeds()
+    end)
 end
 
 function NewsDownloader:processFeedSource(url, limit, unsupported_feeds_urls, download_full_article, include_images)
@@ -232,22 +227,18 @@ function NewsDownloader:processFeedSource(url, limit, unsupported_feeds_urls, do
     local is_rss = feeds.rss and feeds.rss.channel and feeds.rss.channel.title and feeds.rss.channel.item and feeds.rss.channel.item[1] and feeds.rss.channel.item[1].title and feeds.rss.channel.item[1].link
     local is_atom = feeds.feed and feeds.feed.title and feeds.feed.entry[1] and feeds.feed.entry[1].title and feeds.feed.entry[1].link
 
-    local Trapper = require("ui/trapper")
-    Trapper:wrap(function()
-        if is_atom then
-            ok = pcall(function()
-                return self:processAtom(feeds, limit, download_full_article, include_images)
-            end)
-        elseif is_rss then
-            ok = pcall(function()
-                return self:processRSS(feeds, limit, download_full_article, include_images)
-            end)
-        end
-        if not ok or (not is_rss and not is_atom) then
-            table.insert(unsupported_feeds_urls, url)
-        end
-        Trapper:reset() -- close last InfoMessage
-    end)
+    if is_atom then
+        ok = pcall(function()
+            return self:processAtom(feeds, limit, download_full_article, include_images)
+        end)
+    elseif is_rss then
+        ok = pcall(function()
+            return self:processRSS(feeds, limit, download_full_article, include_images)
+        end)
+    end
+    if not ok or (not is_rss and not is_atom) then
+        table.insert(unsupported_feeds_urls, url)
+    end
 end
 
 function NewsDownloader:deserializeXMLString(xml_str)
