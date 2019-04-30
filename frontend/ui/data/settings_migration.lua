@@ -13,11 +13,15 @@ local SettingsMigration = {}
 function SettingsMigration:migrateSettings(config)
     -- Figure out what kind of object we were passed, to make the logging more precise
     local cfg_mt_idx = getmetatable(config).__index
-    local cfg_class = "??"
+    local cfg_class
     if cfg_mt_idx == DocSettings then
         cfg_class = "local"
     elseif cfg_mt_idx == LuaSettings then
         cfg_class = "global"
+    else
+        -- Input object isn't a supported *Settings class, warn & abort instead of going kablooey.
+        logger.warn("Passed an unsupported object class to SettingsMigration!")
+        return
     end
 
     -- Fine-grained CRe margins (#4945)
