@@ -15,7 +15,7 @@ function SettingsMigration:migrateSettings(config)
     local cfg_mt_idx = getmetatable(config).__index
     local cfg_class
     if cfg_mt_idx == DocSettings then
-        cfg_class = "local"
+        cfg_class = "book"
     elseif cfg_mt_idx == LuaSettings then
         cfg_class = "global"
     else
