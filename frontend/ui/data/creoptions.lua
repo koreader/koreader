@@ -92,6 +92,22 @@ Note that this may not be ensured under some conditions: in scroll mode, when a 
                 name_text_hold_callback = optionsutil.showValuesHMargins,
             },
             {
+                name = "sync_t_b_page_margins",
+                name_text = S.SYNC_T_B_PAGE_MARGINS,
+                toggle = {S.OFF, S.ON},
+                values = {0, 1},
+                default_value = 0,
+                args = {false, true},
+                default_arg = false,
+                event = "SyncPageTopBottomMargins",
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Keep top and bottom margins synchronized.
+- 'off' allows different top and bottom margins.
+- 'on' keeps top and bottom margins locked, ensuring text is vertically centered in the page.
+
+In the top menu → Settings → Status bar, you can choose whether the bottom margin applies from the bottom of the screen, or from above the status bar.]]),
+            },
+            {
                 name = "t_page_margin",
                 name_text = S.T_PAGE_MARGIN,
                 buttonprogress = true,
@@ -154,23 +170,7 @@ Note that this may not be ensured under some conditions: in scroll mode, when a 
                     DCREREADER_CONFIG_B_MARGIN_SIZES_XX_HUGE,
                 },
                 name_text_hold_callback = optionsutil.showValues,
-                help_text = _([[You can select (in the top menu's Status bar submenu) whether the bottom margin should apply from the bottom of the screen, or from above the footer status bar.]]),
-            },
-            {
-                name = "sync_t_b_page_margins",
-                name_text = S.SYNC_T_B_PAGE_MARGINS,
-                toggle = {S.OFF, S.ON},
-                values = {0, 1},
-                default_value = 0,
-                args = {false, true},
-                default_arg = false,
-                event = "SyncPageTopBottomMargins",
-                name_text_hold_callback = optionsutil.showValues,
-                help_text = _([[Keep top and bottom margins synchronized.
-- 'off' allows different top and bottom margins.
-- 'on' keeps top and bottom margins equals, ensuring the text is vertically centered in the page.
-
-Note that you can select (in the top menu's Status bar submenu) whether the bottom margin should apply from the bottom of the screen, or from above the footer status bar.]]),
+                help_text = _([[In the top menu → Settings → Status bar, you can choose whether the bottom margin applies from the bottom of the screen, or from above the status bar.]]),
             },
         }
     },
