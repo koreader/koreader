@@ -58,82 +58,6 @@ Note that this may not be ensured under some conditions: in scroll mode, when a 
         }
     },
     {
-        icon = "resources/icons/appbar.column.two.large.png",
-        options = {
-            {
-                name = "view_mode",
-                name_text = S.VIEW_MODE,
-                toggle = {S.VIEW_SCROLL, S.VIEW_PAGE},
-                values = {1, 0},
-                default_value = 0,
-                args = {"scroll", "page"},
-                default_arg = "page",
-                event = "SetViewMode",
-                name_text_hold_callback = optionsutil.showValues,
-                help_text = _([[- 'scroll' mode allows you to scroll the text like you would in a web browser (the 'Page Overlap' setting is only available in this mode).
-- 'page' mode splits the text into pages, at the most acceptable places (page numbers and the number of pages may change when you change fonts, margins, styles, etc.).]]),
-            },
-            {
-                name = "render_dpi",
-                name_text = S.ZOOM_DPI,
-                toggle = {S.OFF, "48", "96¹’¹", "167", "212", "300"},
-                values = {0, 48, 96, 167, 212, 300},
-                default_value = 96,
-                args = {0, 48, 96, 167, 212, 300},
-                event = "SetRenderDPI",
-                name_text_hold_callback = optionsutil.showValues,
-                help_text = _([[Sets the DPI used to scale absolute CSS units and images:
-- off: ignore absolute units (old engine behavior).
-- 96¹’¹: at 96 DPI, 1 CSS pixel = 1 screen pixel and images are rendered at their original dimensions.
-- other values scale CSS absolute units and images by a factor (300 DPI = x3, 48 DPI = x0.5)
-Using your device's actual DPI will ensure 1 cm in CSS actually translates to 1 cm on screen.
-Note that your selected font size is not affected by this setting.]]),
-            },
-            {
-                name = "line_spacing",
-                name_text = S.LINE_SPACING,
-                buttonprogress = true,
-                values = {
-                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_X_TINY,
-                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_TINY,
-                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_XX_SMALL,
-                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_X_SMALL,
-                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_SMALL,
-                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_L_SMALL,
-                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_MEDIUM,
-                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_L_MEDIUM,
-                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_XL_MEDIUM,
-                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_XXL_MEDIUM,
-                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_LARGE,
-                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_X_LARGE,
-                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_XX_LARGE,
-                },
-                default_pos = 7,
-                default_value = DCREREADER_CONFIG_LINE_SPACE_PERCENT_MEDIUM,
-                event = "SetLineSpace",
-                args = {
-                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_X_TINY,
-                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_TINY,
-                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_XX_SMALL,
-                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_X_SMALL,
-                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_SMALL,
-                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_L_SMALL,
-                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_MEDIUM,
-                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_L_MEDIUM,
-                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_XL_MEDIUM,
-                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_XXL_MEDIUM,
-                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_LARGE,
-                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_X_LARGE,
-                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_XX_LARGE,
-                },
-                name_text_hold_callback = optionsutil.showValues,
-                -- used by showValues
-                name_text_suffix = "%",
-                name_text_true_values = true,
-            },
-        }
-    },
-    {
         icon = "resources/icons/appbar.crop.large.png",
         options = {
             {
@@ -230,6 +154,7 @@ Note that your selected font size is not affected by this setting.]]),
                     DCREREADER_CONFIG_B_MARGIN_SIZES_XX_HUGE,
                 },
                 name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[You can select (in the top menu's Status bar submenu) whether the bottom margin should apply from the bottom of the screen, or from above the footer status bar.]]),
             },
             {
                 name = "sync_t_b_page_margins",
@@ -245,7 +170,83 @@ Note that your selected font size is not affected by this setting.]]),
 - 'off' allows different top and bottom margins.
 - 'on' keeps top and bottom margins equals, ensuring the text is vertically centered in the page.
 
-Note that you can select (in the status bar top menu) whether the bottom margin should apply from the bottom of the screen, or from above the footer status bar.]]),
+Note that you can select (in the top menu's Status bar submenu) whether the bottom margin should apply from the bottom of the screen, or from above the footer status bar.]]),
+            },
+        }
+    },
+    {
+        icon = "resources/icons/appbar.column.two.large.png",
+        options = {
+            {
+                name = "view_mode",
+                name_text = S.VIEW_MODE,
+                toggle = {S.VIEW_SCROLL, S.VIEW_PAGE},
+                values = {1, 0},
+                default_value = 0,
+                args = {"scroll", "page"},
+                default_arg = "page",
+                event = "SetViewMode",
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[- 'scroll' mode allows you to scroll the text like you would in a web browser (the 'Page Overlap' setting is only available in this mode).
+- 'page' mode splits the text into pages, at the most acceptable places (page numbers and the number of pages may change when you change fonts, margins, styles, etc.).]]),
+            },
+            {
+                name = "render_dpi",
+                name_text = S.ZOOM_DPI,
+                toggle = {S.OFF, "48", "96¹’¹", "167", "212", "300"},
+                values = {0, 48, 96, 167, 212, 300},
+                default_value = 96,
+                args = {0, 48, 96, 167, 212, 300},
+                event = "SetRenderDPI",
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Sets the DPI used to scale absolute CSS units and images:
+- off: ignore absolute units (old engine behavior).
+- 96¹’¹: at 96 DPI, 1 CSS pixel = 1 screen pixel and images are rendered at their original dimensions.
+- other values scale CSS absolute units and images by a factor (300 DPI = x3, 48 DPI = x0.5)
+Using your device's actual DPI will ensure 1 cm in CSS actually translates to 1 cm on screen.
+Note that your selected font size is not affected by this setting.]]),
+            },
+            {
+                name = "line_spacing",
+                name_text = S.LINE_SPACING,
+                buttonprogress = true,
+                values = {
+                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_X_TINY,
+                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_TINY,
+                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_XX_SMALL,
+                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_X_SMALL,
+                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_SMALL,
+                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_L_SMALL,
+                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_MEDIUM,
+                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_L_MEDIUM,
+                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_XL_MEDIUM,
+                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_XXL_MEDIUM,
+                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_LARGE,
+                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_X_LARGE,
+                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_XX_LARGE,
+                },
+                default_pos = 7,
+                default_value = DCREREADER_CONFIG_LINE_SPACE_PERCENT_MEDIUM,
+                event = "SetLineSpace",
+                args = {
+                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_X_TINY,
+                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_TINY,
+                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_XX_SMALL,
+                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_X_SMALL,
+                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_SMALL,
+                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_L_SMALL,
+                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_MEDIUM,
+                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_L_MEDIUM,
+                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_XL_MEDIUM,
+                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_XXL_MEDIUM,
+                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_LARGE,
+                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_X_LARGE,
+                    DCREREADER_CONFIG_LINE_SPACE_PERCENT_XX_LARGE,
+                },
+                name_text_hold_callback = optionsutil.showValues,
+                -- used by showValues
+                name_text_suffix = "%",
+                name_text_true_values = true,
             },
         }
     },
