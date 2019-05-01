@@ -1,5 +1,6 @@
 local ConfirmBox = require("ui/widget/confirmbox")
 local Event = require("ui/event")
+local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
 local lfs = require("libs/libkoreader-lfs")
@@ -11,6 +12,7 @@ local ReaderTypeset = InputContainer:new{
     css_menu_title = _("Style"),
     css = nil,
     internal_css = true,
+    unscaled_margins = nil,
 }
 
 function ReaderTypeset:init()
@@ -58,10 +60,17 @@ function ReaderTypeset:onReadSettings(config)
     -- self.ui.document:setRenderScaleFontWithDPI(1)
 
     -- set page margins
-    self:onSetPageMargins(
-        config:readSetting("copt_page_margins") or
-        G_reader_settings:readSetting("copt_page_margins") or
-        DCREREADER_CONFIG_MARGIN_SIZES_MEDIUM)
+    local h_margins = config:readSetting("copt_h_page_margins") or
+        G_reader_settings:readSetting("copt_h_page_margins") or
+        DCREREADER_CONFIG_H_MARGIN_SIZES_MEDIUM
+    local t_margin = config:readSetting("copt_t_page_margin") or
+        G_reader_settings:readSetting("copt_t_page_margin") or
+        DCREREADER_CONFIG_T_MARGIN_SIZES_LARGE
+    local b_margin = config:readSetting("copt_b_page_margin") or
+        G_reader_settings:readSetting("copt_b_page_margin") or
+        DCREREADER_CONFIG_B_MARGIN_SIZES_LARGE
+    self.unscaled_margins = { h_margins[1], t_margin, h_margins[2], b_margin }
+    self:onSetPageMargins(self.unscaled_margins, true)
 
     -- default to disable floating punctuation
     -- the floating punctuation should not be boolean value for the following
@@ -336,18 +345,45 @@ function ReaderTypeset:makeDefaultStyleSheet(css, text, touchmenu_instance)
     })
 end
 
-function ReaderTypeset:onSetPageMargins(margins)
+function ReaderTypeset:onSetPageHorizMargins(h_margins)
+    self.unscaled_margins = { h_margins[1], self.unscaled_margins[2], h_margins[2], self.unscaled_margins[4] }
+    self:onSetPageMargins(self.unscaled_margins)
+end
+
+function ReaderTypeset:onSetPageTopMargin(t_margin)
+    self.unscaled_margins = { self.unscaled_margins[1], t_margin, self.unscaled_margins[3], self.unscaled_margins[4] }
+    self:onSetPageMargins(self.unscaled_margins)
+end
+
+function ReaderTypeset:onSetPageBottomMargin(b_margin)
+    self.unscaled_margins = { self.unscaled_margins[1], self.unscaled_margins[2], self.unscaled_margins[3], b_margin }
+    self:onSetPageMargins(self.unscaled_margins)
+end
+
+function ReaderTypeset:onSetPageMargins(margins, silent)
     local left = Screen:scaleBySize(margins[1])
     local top = Screen:scaleBySize(margins[2])
     local right = Screen:scaleBySize(margins[3])
     local bottom
-    if self.view.footer.has_no_mode then
+    if self.view.footer.has_no_mode or self.view.footer.reclaim_height then
         bottom = Screen:scaleBySize(margins[4])
     else
         bottom = Screen:scaleBySize(margins[4] + DMINIBAR_HEIGHT)
     end
     self.ui.document:setPageMargins(left, top, right, bottom)
     self.ui:handleEvent(Event:new("UpdatePos"))
+    if not silent then
+        -- Show a toast on set, with the unscaled & scaled values
+        UIManager:show(InfoMessage:new{
+            text = T(_([[
+    Margins set to:
+    horizontal: %1 (%2px)
+    top: %3 (%4px)
+    bottom: %5 (%6px)]]),
+            margins[1], left, margins[2], top, margins[4], bottom),
+            timeout = 4,
+        })
+    end
     return true
 end
 

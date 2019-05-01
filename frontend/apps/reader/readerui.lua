@@ -49,6 +49,7 @@ local ReaderView = require("apps/reader/modules/readerview")
 local ReaderWikipedia = require("apps/reader/modules/readerwikipedia")
 local ReaderZooming = require("apps/reader/modules/readerzooming")
 local Screenshoter = require("ui/widget/screenshoter")
+local SettingsMigration = require("ui/data/settings_migration")
 local UIManager = require("ui/uimanager")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
@@ -100,6 +101,8 @@ function ReaderUI:init()
     end
 
     self.doc_settings = DocSettings:open(self.document.file)
+    -- Handle local settings migration
+    SettingsMigration:migrateSettings(self.doc_settings)
 
     if Device:hasKeys() then
         self.key_events.Home = { {"Home"}, doc = "open file browser" }

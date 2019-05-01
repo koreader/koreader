@@ -73,35 +73,29 @@ function optionsutil.showValues(configurable, option, prefix)
     UIManager:show(InfoMessage:new{ text=text })
 end
 
-function optionsutil.showValuesMargins(configurable, option)
+function optionsutil.showValuesHMargins(configurable, option)
     local default = G_reader_settings:readSetting("copt_"..option.name)
     local current = configurable[option.name]
     if not default then
         UIManager:show(InfoMessage:new{
             text = T(_([[
-Current margin:
-  left: %1
-  top: %2
-  right: %3
-  bottom: %4
-Default margin: not set]]),
-                current[1], current[2], current[3], current[4])
+Current margins:
+  left:  %1
+  right: %2
+Default margins: not set]]),
+                current[1], current[2])
         })
     else
         UIManager:show(InfoMessage:new{
             text = T(_([[
-Current margin:
-  left: %1
-  top: %2
-  right: %3
-  bottom: %4
-Default margin:
-  left: %5
-  top: %6
-  right: %7
-  bottom: %8]]),
-                current[1], current[2], current[3], current[4],
-                default[1], default[2], default[3], default[4])
+Current margins:
+  left:  %1
+  right: %2
+Default margins:
+  left:  %3
+  right: %4]]),
+                current[1], current[2],
+                default[1], default[2])
         })
     end
 end
