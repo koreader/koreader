@@ -62,7 +62,31 @@ local PocketBook = Generic:new{
     hasWifiToggle = yes,
 }
 
+-- Make sure the C BB cannot be used on devices with a 24bpp fb
+function PocketBook:blacklistCBB()
+    local ffi = require("ffi")
+    local dummy = require("ffi/posix_h")
+    local C = ffi.C
+
+    -- As well as on those than can't do HW inversion, as otherwise NightMode would be ineffective.
+    -- FIXME: Either relax the HWInvert check, or actually enable HWInvert on PB if it's safe and it works,
+    --        as, currently, no PB device is marked as canHWInvert, so, the C BB is essentially *always* blacklisted.
+    if not self:canUseCBB() or not self:canHWInvert() then
+        logger.info("Blacklisting the C BB on this device")
+        if ffi.os == "Windows" then
+            C._putenv("KO_NO_CBB=true")
+        else
+            C.setenv("KO_NO_CBB", "true", 1)
+        end
+        -- Enforce the global setting, too, so the Dev menu is accurate...
+        G_reader_settings:saveSetting("dev_no_c_blitter", true)
+    end
+end
+
 function PocketBook:init()
+    -- Blacklist the C BB before the first BB require...
+    self:blacklistCBB()
+
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/pocketbook/powerd"):new{device = self}
     self.input = require("device/input"):new{
@@ -292,6 +316,7 @@ local PocketBookColorLux = PocketBook:new{
     hasFrontlight = yes,
     hasColorScreen = yes,
     has3BytesWideFrameBuffer = yes,
+    canUseCBB = no, -- 24bpp
     isAlwaysPortrait = no,
     emu_events_dev = "/var/dev/shm/emu_events",
 }
