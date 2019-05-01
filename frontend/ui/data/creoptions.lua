@@ -231,6 +231,22 @@ Note that your selected font size is not affected by this setting.]]),
                 },
                 name_text_hold_callback = optionsutil.showValues,
             },
+            {
+                name = "sync_t_b_page_margins",
+                name_text = S.SYNC_T_B_PAGE_MARGINS,
+                toggle = {S.OFF, S.ON},
+                values = {0, 1},
+                default_value = 0,
+                args = {false, true},
+                default_arg = false,
+                event = "SyncPageTopBottomMargins",
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Keep top and bottom margins synchronized.
+- 'off' allows different top and bottom margins.
+- 'on' keeps top and bottom margins equals, ensuring the text is vertically centered in the page.
+
+Note that you can select (in the status bar top menu) whether the bottom margin should apply from the bottom of the screen, or from above the footer status bar.]]),
+            },
         }
     },
     {
