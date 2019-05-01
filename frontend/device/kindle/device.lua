@@ -216,6 +216,8 @@ function Kindle:blacklistCBB()
         else
             C.setenv("KO_NO_CBB", "true", 1)
         end
+        -- Enforce the global setting, too, so the Dev menu is accurate...
+        G_reader_settings:saveSetting("dev_no_c_blitter", true)
     end
 end
 
