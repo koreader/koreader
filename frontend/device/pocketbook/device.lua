@@ -64,7 +64,6 @@ local PocketBook = Generic:new{
 
 -- Make sure the C BB cannot be used on devices with a 24bpp fb
 function PocketBook:blacklistCBB()
-    local ffi = require("ffi")
     local dummy = require("ffi/posix_h")
     local C = ffi.C
 
