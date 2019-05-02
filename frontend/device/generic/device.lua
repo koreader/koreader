@@ -34,6 +34,7 @@ local Device = {
     hasEinkScreen = yes,
     canHWDither = no,
     canHWInvert = no,
+    canUseCBB = yes, -- The C BB maintains a 1:1 feature parity with the Lua BB, except that is has NO support for BB4, and limited support for BBRGB24
     hasColorScreen = no,
     hasBGRFrameBuffer = no,
     canToggleGSensor = no,

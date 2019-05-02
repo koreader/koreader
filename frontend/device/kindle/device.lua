@@ -202,6 +202,24 @@ function Kindle:ambientBrightnessLevel()
     return 4
 end
 
+-- Make sure the C BB cannot be used on devices with a 4bpp fb
+function Kindle:blacklistCBB()
+    local ffi = require("ffi")
+    local dummy = require("ffi/posix_h")
+    local C = ffi.C
+
+    -- As well as on those than can't do HW inversion, as otherwise NightMode would be ineffective.
+    if not self:canUseCBB() or not self:canHWInvert() then
+        logger.info("Blacklisting the C BB on this device")
+        if ffi.os == "Windows" then
+            C._putenv("KO_NO_CBB=true")
+        else
+            C.setenv("KO_NO_CBB", "true", 1)
+        end
+        -- Enforce the global setting, too, so the Dev menu is accurate...
+        G_reader_settings:saveSetting("dev_no_c_blitter", true)
+    end
+end
 
 local Kindle2 = Kindle:new{
     model = "Kindle2",
@@ -209,6 +227,7 @@ local Kindle2 = Kindle:new{
     hasKeys = yes,
     hasDPad = yes,
     canHWInvert = no,
+    canUseCBB = no, -- 4bpp
 }
 
 local KindleDXG = Kindle:new{
@@ -217,6 +236,7 @@ local KindleDXG = Kindle:new{
     hasKeys = yes,
     hasDPad = yes,
     canHWInvert = no,
+    canUseCBB = no, -- 4bpp
 }
 
 local Kindle3 = Kindle:new{
@@ -225,6 +245,7 @@ local Kindle3 = Kindle:new{
     hasKeys = yes,
     hasDPad = yes,
     canHWInvert = no,
+    canUseCBB = no, -- 4bpp
 }
 
 local Kindle4 = Kindle:new{
@@ -232,6 +253,8 @@ local Kindle4 = Kindle:new{
     hasKeys = yes,
     hasDPad = yes,
     canHWInvert = no,
+    -- NOTE: It could *technically* use the C BB, as it's running @ 8bpp, but it's expecting an inverted palette...
+    canUseCBB = no,
 }
 
 local KindleTouch = Kindle:new{
@@ -319,6 +342,9 @@ local KindlePaperWhite4 = Kindle:new{
 }
 
 function Kindle2:init()
+    -- Blacklist the C BB before the first BB require...
+    self:blacklistCBB()
+
     self.screen = require("ffi/framebuffer_einkfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
@@ -334,6 +360,9 @@ function Kindle2:init()
 end
 
 function KindleDXG:init()
+    -- Blacklist the C BB before the first BB require...
+    self:blacklistCBB()
+
     self.screen = require("ffi/framebuffer_einkfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
@@ -350,6 +379,9 @@ function KindleDXG:init()
 end
 
 function Kindle3:init()
+    -- Blacklist the C BB before the first BB require...
+    self:blacklistCBB()
+
     self.screen = require("ffi/framebuffer_einkfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
@@ -367,6 +399,9 @@ function Kindle3:init()
 end
 
 function Kindle4:init()
+    -- Blacklist the C BB before the first BB require...
+    self:blacklistCBB()
+
     self.screen = require("ffi/framebuffer_einkfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
