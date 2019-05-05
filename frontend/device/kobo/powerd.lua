@@ -149,7 +149,7 @@ function KoboPowerD:init()
             -- Use setIntensity to ensure it sets fl_intensity, and because we don't want the ramping behavior of turnOn
             self:setIntensity(self:frontlightIntensityHW())
         else
-            -- Use setBrightnes so as *NOT* to set hw_intensity, so toggle will still (mostly) work.
+            -- Use setBrightness so as *NOT* to set hw_intensity, so toggle will still (mostly) work.
             self.fl:setBrightness(0)
             -- And make sure the fact that we started with the FL off propagates as best as possible.
             self.initial_is_fl_on = false
@@ -323,6 +323,10 @@ function KoboPowerD:turnOffFrontlightHW()
     --       we only sync the state of the main process with the final state of what we're doing in the forks.
     -- And update hw_intensity in our actual process ;).
     self.hw_intensity = self.fl_min
+    -- NOTE: And don't forget to update sysfs_light, too, as a real _setIntensity would via setBrightness
+    if self.fl then
+        self.fl.current_brightness = self.fl_min
+    end
     self:_decideFrontlightState()
     -- And let the footer know of the change
     if package.loaded["ui/uimanager"] ~= nil then
@@ -356,6 +360,10 @@ function KoboPowerD:turnOnFrontlightHW()
     --       we only sync the state of the main process with the final state of what we're doing in the forks.
     -- And update hw_intensity in our actual process ;).
     self.hw_intensity = self.fl_intensity
+    -- NOTE: And don't forget to update sysfs_light, too, as a real _setIntensity would via setBrightness
+    if self.fl then
+        self.fl.current_brightness = self.fl_intensity
+    end
     self:_decideFrontlightState()
     -- And let the footer know of the change
     if package.loaded["ui/uimanager"] ~= nil then
