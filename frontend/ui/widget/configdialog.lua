@@ -514,6 +514,7 @@ function ConfigOption:init()
                     args = self.options[c].args,
                     event = self.options[c].event,
                     events = self.options[c].events,
+                    delay_repaint = self.options[c].delay_repaint,
                     config = self.config,
                     enabled = enabled,
                     row_count = row_count,
@@ -541,10 +542,10 @@ function ConfigOption:init()
                     callback = function(arg)
                         if arg == "-" or arg == "+" then
                             self.config:onConfigFineTuneChoose(self.options[c].values, self.options[c].name,
-                                self.options[c].event, self.options[c].args, self.options[c].events, arg)
+                                self.options[c].event, self.options[c].args, self.options[c].events, arg, self.options[c].delay_repaint)
                         else
                             self.config:onConfigChoose(self.options[c].values, self.options[c].name,
-                                self.options[c].event, self.options[c].args, self.options[c].events, arg)
+                                self.options[c].event, self.options[c].args, self.options[c].events, arg, self.options[c].delay_repaint)
                         end
                         UIManager:setDirty(self.config, function()
                             return "fast", switch.dimen
@@ -855,8 +856,8 @@ function ConfigDialog:onConfigChoice(option_name, option_value)
     return true
 end
 
-function ConfigDialog:onConfigEvent(option_event, option_arg)
-    self.ui:handleEvent(Event:new(option_event, option_arg))
+function ConfigDialog:onConfigEvent(option_event, option_arg, refresh_callback)
+    self.ui:handleEvent(Event:new(option_event, option_arg, refresh_callback))
     return true
 end
 
@@ -868,14 +869,41 @@ function ConfigDialog:onConfigEvents(option_events, arg_index)
     return true
 end
 
-function ConfigDialog:onConfigChoose(values, name, event, args, events, position)
+function ConfigDialog:onConfigChoose(values, name, event, args, events, position, delay_repaint)
     UIManager:tickAfterNext(function()
+        -- Repainting may be delayed depending on options
+        local refresh_dialog_func = function()
+            self.skip_paint = nil
+            if self.config_options.needs_redraw_on_change then
+                -- Some Kopt document event handlers just save their setting,
+                -- and need a full repaint for kopt to load these settings,
+                -- notice the change, and redraw the document
+                UIManager:setDirty("all", "partial")
+            else
+                -- CreDocument event handlers do their own refresh:
+                -- we can just redraw our frame
+                UIManager:setDirty(self, function()
+                    return "ui", self.dialog_frame.dimen
+                end)
+            end
+        end
+        local refresh_callback = nil
+        if type(delay_repaint) == "number" then -- timeout
+            UIManager:scheduleIn(delay_repaint, refresh_dialog_func)
+            self.skip_paint = true
+        elseif delay_repaint then -- anything but nil or false: provide a callback
+            -- This needs the config option to have an "event" key
+            -- The event handler is responsible for calling this callback when
+            -- it considers it appropriate
+            refresh_callback = refresh_dialog_func
+            self.skip_paint = true
+        end
         if values then
             self:onConfigChoice(name, values[position])
         end
         if event then
             args = args or {}
-            self:onConfigEvent(event, args[position])
+            self:onConfigEvent(event, args[position], refresh_callback)
         end
         if events then
             self:onConfigEvents(events, position)
@@ -885,24 +913,42 @@ function ConfigDialog:onConfigChoose(values, name, event, args, events, position
         -- toggles may have their state (enabled/disabled) modified
         -- after this toggle update.
         self:update()
-        if self.config_options.needs_redraw_on_change then
-            -- Some Kopt document event handlers just save their setting,
-            -- and need a full repaint for kopt to load these settings,
-            -- notice the change, and redraw the document
-            UIManager:setDirty("all", "partial")
-        else
-            -- CreDocument event handlers do their own refresh:
-            -- we can just redraw our frame
-            UIManager:setDirty(self, function()
-                return "ui", self.dialog_frame.dimen
-            end)
+        if not delay_repaint then -- immediate refresh
+            refresh_dialog_func()
         end
     end)
 end
 
 -- Tweaked variant used with the fine_tune variant of buttonprogress (direction can only be "-" or "+")
-function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, events, direction)
+function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, events, direction, delay_repaint)
     UIManager:tickAfterNext(function()
+        -- Repainting may be delayed depending on options
+        local refresh_dialog_func = function()
+            self.skip_paint = nil
+            if self.config_options.needs_redraw_on_change then
+                -- Some Kopt document event handlers just save their setting,
+                -- and need a full repaint for kopt to load these settings,
+                -- notice the change, and redraw the document
+                UIManager:setDirty("all", "partial")
+            else
+                -- CreDocument event handlers do their own refresh:
+                -- we can just redraw our frame
+                UIManager:setDirty(self, function()
+                    return "ui", self.dialog_frame.dimen
+                end)
+            end
+        end
+        local refresh_callback = nil
+        if type(delay_repaint) == "number" then -- timeout
+            UIManager:scheduleIn(delay_repaint, refresh_dialog_func)
+            self.skip_paint = true
+        elseif delay_repaint then -- anything but nil or false: provide a callback
+            -- This needs the config option to have an "event" key
+            -- The event handler is responsible for calling this callback when
+            -- it considers it appropriate
+            refresh_callback = refresh_dialog_func
+            self.skip_paint = true
+        end
         if values then
             local value
             if direction == "-" then
@@ -934,7 +980,7 @@ function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, events, 
                     arg = arg + 1
                 end
             end
-            self:onConfigEvent(event, arg)
+            self:onConfigEvent(event, arg, refresh_callback)
         end
         if events then
             self:onConfigEvents(events, direction)
@@ -944,17 +990,8 @@ function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, events, 
         -- toggles may have their state (enabled/disabled) modified
         -- after this toggle update.
         self:update()
-        if self.config_options.needs_redraw_on_change then
-            -- Some Kopt document event handlers just save their setting,
-            -- and need a full repaint for kopt to load these settings,
-            -- notice the change, and redraw the document
-            UIManager:setDirty("all", "partial")
-        else
-            -- CreDocument event handlers do their own refresh:
-            -- we can just redraw our frame
-            UIManager:setDirty(self, function()
-                return "ui", self.dialog_frame.dimen
-            end)
+        if not delay_repaint then -- immediate refresh
+            refresh_dialog_func()
         end
     end)
 end
