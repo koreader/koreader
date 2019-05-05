@@ -202,7 +202,7 @@ function ToggleSwitch:onTapSelect(arg, gev)
     end
     --]]
     self.config:onConfigChoose(self.values, self.name,
-                    self.event, self.args, self.events, self.position)
+                    self.event, self.args, self.events, self.position, self.delay_repaint)
     UIManager:setDirty(self.config, function()
         return "ui", self.dimen
     end)

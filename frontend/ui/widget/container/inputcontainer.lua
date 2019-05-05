@@ -68,6 +68,9 @@ function InputContainer:paintTo(bb, x, y)
     if self[1] == nil then
         return
     end
+    if self.skip_paint then
+        return
+    end
 
     if not self.dimen then
         local content_size = self[1]:getSize()
