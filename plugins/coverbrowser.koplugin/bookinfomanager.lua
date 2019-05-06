@@ -873,7 +873,7 @@ Do you want to prune cache of removed books?]]
         end
     end
     UIManager:close(info)
-    info = InfoMessage:new{text = T(_("Processed %1 / %2 books.\n%3 extracted succesfully."), nb_done, nb_files, nb_success)}
+    info = InfoMessage:new{text = T(_("Processed %1 / %2 books.\n%3 extracted successfully."), nb_done, nb_files, nb_success)}
     UIManager:show(info)
 end
 
