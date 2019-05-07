@@ -321,11 +321,16 @@ end
 function NewsDownloader:downloadFeed(feed, feed_output_dir, include_images)
     local link = getFeedLink(feed.link)
     local news_dl_path = ("%s%s%s"):format(feed_output_dir,
-                                               getTitleWithDate(feed),
-                                               file_extension)
-    logger.dbg("NewsDownloader: News file will be stored to :", news_dl_path)
+                                           getTitleWithDate(feed),
+                                           file_extension)
 
-    DownloadBackend:download(link, news_dl_path, include_images)
+    local file_mode = lfs.attributes(news_dl_path, "mode")
+    if file_mode == "file" then
+        logger.dbg("NewsDownloader:", news_dl_path, "already exists. Skipping")
+    else
+        logger.dbg("NewsDownloader: News file will be stored to :", news_dl_path)
+        DownloadBackend:download(link, news_dl_path, include_images)
+    end
 end
 
 function NewsDownloader:createFromDescription(feed, context, feed_output_dir)
