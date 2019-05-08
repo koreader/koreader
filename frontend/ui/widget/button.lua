@@ -240,9 +240,9 @@ function Button:onHoldSelectButton()
     if self.enabled and self.hold_callback then
         self.hold_callback()
     elseif self.hold_input then
-        self:onInput(self.hold_input)
+        self:onInput(self.hold_input, true)
     elseif type(self.hold_input_func) == "function" then
-        self:onInput(self.hold_input_func())
+        self:onInput(self.hold_input_func(), true)
     end
     return true
 end

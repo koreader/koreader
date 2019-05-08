@@ -185,6 +185,8 @@ function VirtualKey:onUnfocus()
 end
 
 function VirtualKey:onTapSelect(skip_flash)
+    -- just in case it's not flipped to false on hold release where it's supposed to
+    self.keyboard.ignore_first_hold_release = false
     if self.flash_keyboard and not skip_flash and not self.skiptap then
         self[1].inner_bordersize = self.focused_bordersize
         self:update_keyboard(false, true)
@@ -235,8 +237,21 @@ function VirtualKey:onSwipeKey(arg, ges)
     return true
 end
 
-VirtualKey.onHoldReleaseKey = VirtualKey.onTapSelect
-VirtualKey.onPanReleaseKey = VirtualKey.onTapSelect
+function VirtualKey:onHoldReleaseKey()
+    if self.keyboard.ignore_first_hold_release then
+        self.keyboard.ignore_first_hold_release = false
+        return true
+    end
+    self:onTapSelect()
+end
+
+function VirtualKey:onPanReleaseKey()
+    if self.keyboard.ignore_first_hold_release then
+        self.keyboard.ignore_first_hold_release = false
+        return true
+    end
+    self:onTapSelect()
+end
 
 function VirtualKey:invert(invert, hold)
     if invert then

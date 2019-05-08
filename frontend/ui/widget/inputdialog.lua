@@ -466,9 +466,9 @@ function InputDialog:onCloseWidget()
     end)
 end
 
-function InputDialog:onShowKeyboard()
+function InputDialog:onShowKeyboard(ignore_first_hold_release)
     if not self.readonly and not self.keyboard_hidden then
-        self._input_widget:onShowKeyboard()
+        self._input_widget:onShowKeyboard(ignore_first_hold_release)
     end
 end
 

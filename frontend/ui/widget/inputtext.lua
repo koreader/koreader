@@ -396,7 +396,8 @@ function InputText:focus()
     self._frame_textwidget.color = Blitbuffer.COLOR_BLACK
 end
 
-function InputText:onShowKeyboard()
+function InputText:onShowKeyboard(ignore_first_hold_release)
+    self.keyboard.ignore_first_hold_release = ignore_first_hold_release
     UIManager:show(self.keyboard)
     return true
 end
