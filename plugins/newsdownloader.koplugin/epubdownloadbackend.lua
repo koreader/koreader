@@ -104,6 +104,12 @@ local function getUrlContent(url, timeout, maxtime, redirectCount)
     if not code or string.sub(code, 1, 1) ~= "2" then -- all 200..299 HTTP codes are OK
         if code and code > 299 and code < 400  and headers and headers.location then -- handle 301, 302...
            local redirected_url = headers.location
+           local parsed_redirect_location = socket_url.parse(redirected_url)
+           if not parsed_redirect_location.host then
+             parsed_redirect_location.host = parsed.host
+             parsed_redirect_location.scheme = parsed.scheme
+             redirected_url = socket_url.build(parsed_redirect_location)
+           end
            logger.dbg("getUrlContent: Redirecting to url: ", redirected_url)
            return getUrlContent(redirected_url, timeout, maxtime, redirectCount + 1)
         else
