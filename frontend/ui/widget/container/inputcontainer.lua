@@ -264,7 +264,7 @@ function InputContainer:onGesture(ev)
     end
 end
 
-function InputContainer:onInput(input)
+function InputContainer:onInput(input, ignore_first_hold_release)
     local InputDialog = require("ui/widget/inputdialog")
     self.input_dialog = InputDialog:new{
         title = input.title or "",
@@ -291,7 +291,7 @@ function InputContainer:onInput(input)
         },
     }
     UIManager:show(self.input_dialog)
-    self.input_dialog:onShowKeyboard()
+    self.input_dialog:onShowKeyboard(ignore_first_hold_release)
 end
 
 function InputContainer:closeInputDialog()
