@@ -1,23 +1,19 @@
 describe("Readertoc module", function()
-    local DocumentRegistry, Event, ReaderUI, DEBUG
+    local DocumentRegistry, ReaderUI, DEBUG
     local readerui, toc, toc_max_depth, title
 
     setup(function()
         require("commonrequire")
         DocumentRegistry = require("document/documentregistry")
-        Event = require("ui/event")
         ReaderUI = require("apps/reader/readerui")
         DEBUG = require("dbg")
 
         local sample_epub = "spec/front/unit/data/juliet.epub"
-
         readerui = ReaderUI:new{
             document = DocumentRegistry:openDocument(sample_epub),
         }
         -- reset book to first page
         readerui.rolling:onGotoPage(0)
-        readerui.document:setSpaceCondensing(75)
-        readerui:handleEvent(Event:new("ChangeScreenMode", "portrait"))
         toc = readerui.toc
     end)
 
