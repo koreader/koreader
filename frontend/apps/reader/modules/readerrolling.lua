@@ -220,7 +220,7 @@ function ReaderRolling:onCloseDocument()
 end
 
 function ReaderRolling:onCheckDomStyleCoherence()
-    if self.ui.document:isBuiltDomStale() then
+    if self.ui.document and self.ui.document:isBuiltDomStale() then
         UIManager:show(ConfirmBox:new{
             text = _("Styles have changed in such a way that fully reloading the document may be needed for a correct rendering.\nDo you want to reload the document?"),
             ok_callback = function()
