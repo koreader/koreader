@@ -500,7 +500,6 @@ function util.getSafeFilename(str, path, limit)
     filename = util.fixUtf8(filename, "")
 
     if suffix and suffix ~= "" then
-    error(suffix)
         safe_filename = replaceFunc(filename) .. "." .. replaceFunc(suffix)
     else
         safe_filename = replaceFunc(filename)
