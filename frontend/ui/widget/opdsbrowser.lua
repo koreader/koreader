@@ -480,13 +480,8 @@ function OPDSBrowser:downloadFile(item, format, remote_url)
     -- download to user selected directory or last opened dir
     local download_dir = self.getCurrentDownloadDir()
     local file_system = util.getFilesystemType(download_dir)
-    if file_system == "vfat" or file_system == "fuse.fsp" then
-        item.author = util.replaceInvalidChars(item.author)
-        item.title = util.replaceInvalidChars(item.title)
-    else
-        item.author = util.replaceSlashChar(item.author)
-        item.title = util.replaceSlashChar(item.title)
-    end
+    item.author = util.getSafeFilename(item.author)
+    item.title = util.getSafeFilename(item.title)
     local local_path = download_dir .. "/" .. item.author .. ' - ' .. item.title .. "." .. string.lower(format)
     local_path = util.fixUtf8(local_path, "_")
 

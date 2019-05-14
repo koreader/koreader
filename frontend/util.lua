@@ -453,7 +453,7 @@ end
 -- <code>/</code> poses a problem.
 ---- @string str filename
 ---- @treturn string sanitized filename
-function util.replaceInvalidChars(str)
+local function replaceAllInvalidChars(str)
     if str then
         return str:gsub('[\\,%/,:,%*,%?,%",%<,%>,%|]','_')
     end
@@ -462,10 +462,51 @@ end
 --- Replaces slash with an underscore.
 ---- @string str
 ---- @treturn string
-function util.replaceSlashChar(str)
+local function replaceSlashChar(str)
     if str then
         return str:gsub('%/','_')
     end
+end
+
+--- Replaces characters that are invalid filenames.
+--
+-- Replaces the characters <code>\/:*?"<>|</code> with an <code>_</code>
+-- unless an optional path is provided.
+-- These characters are problematic on Windows filesystems. On Linux only
+-- <code>/</code> poses a problem.
+-- If an optional path is provided, util.getFilesystemType() will be used
+-- to determine whether stricter VFAT restrictions should be applied.
+---- @string str
+---- @string path
+---- @int limit
+---- @treturn string
+function util.getSafeFilename(str, path, limit)
+    local filename, suffix = util.splitFileNameSuffix(str)
+    local replaceFunc = replaceSlashChar
+    local safe_filename
+    -- VFAT supports a maximum of 255 UCS-2 characters, although it's probably treated as UTF-16 by Windows
+    -- default to a slightly lower limit just in case
+    limit = limit or 240
+
+    if path then
+        local file_system = util.getFilesystemType(path)
+        if file_system == "vfat" or file_system == "fuse.fsp" then
+            replaceFunc = replaceAllInvalidChars
+        end
+    end
+
+    filename = filename:sub(1, limit)
+    -- the limit might result in broken UTF-8, which we don't want in the result
+    filename = util.fixUtf8(filename, "")
+
+    if suffix and suffix ~= "" then
+    error(suffix)
+        safe_filename = replaceFunc(filename) .. "." .. replaceFunc(suffix)
+    else
+        safe_filename = replaceFunc(filename)
+    end
+
+    return safe_filename
 end
 
 --- Splits a file into its directory path and file name.

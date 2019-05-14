@@ -262,7 +262,7 @@ end
 function NewsDownloader:processAtom(feeds, limit, download_full_article, include_images)
     local feed_output_dir = string.format("%s%s/",
                                           news_download_dir_path,
-                                          util.replaceInvalidChars(getFeedTitle(feeds.feed.title)))
+                                          util.getSafeFilename(getFeedTitle(feeds.feed.title)))
     if not lfs.attributes(feed_output_dir, "mode") then
         lfs.mkdir(feed_output_dir)
     end
@@ -281,7 +281,7 @@ end
 
 function NewsDownloader:processRSS(feeds, limit, download_full_article, include_images)
     local feed_output_dir = ("%s%s/"):format(
-        news_download_dir_path, util.replaceInvalidChars(util.htmlEntitiesToUtf8(feeds.rss.channel.title)))
+        news_download_dir_path, util.getSafeFilename(util.htmlEntitiesToUtf8(feeds.rss.channel.title)))
     if not lfs.attributes(feed_output_dir, "mode") then
         lfs.mkdir(feed_output_dir)
     end
@@ -307,7 +307,7 @@ local function parseDate(dateTime)
 end
 
 local function getTitleWithDate(feed)
-    local title = util.replaceInvalidChars(getFeedTitle(feed.title))
+    local title = util.getSafeFilename(getFeedTitle(feed.title))
     if feed.updated then
        title = parseDate(feed.updated) .. title
     elseif feed.pubDate then
