@@ -142,8 +142,8 @@ function PdfDocument:getPageLinks(pageno)
 end
 
 function PdfDocument:saveHighlight(pageno, item)
-    local _, suffix = util.splitFileNameSuffix(self.file)
-    if suffix ~= "pdf" then return end
+    local suffix = util.getFileNameSuffix(self.file)
+    if string.lower(suffix) ~= "pdf" then return end
 
     self.is_edited = true
     -- will also need mupdf_h.lua to be evaluated once
