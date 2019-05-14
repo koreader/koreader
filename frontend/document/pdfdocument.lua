@@ -1,5 +1,6 @@
 local Cache = require("cache")
 local CacheItem = require("cacheitem")
+local CanvasContext = require("document/canvascontext")
 local Document = require("document/document")
 local DrawContext = require("ffi/drawcontext")
 local logger = require("logger")
@@ -7,7 +8,6 @@ local util = require("util")
 local ffi = require("ffi")
 local C = ffi.C
 local pdf = nil
-local CanvasContext = require("document/canvascontext")
 
 
 local PdfDocument = Document:new{
@@ -142,6 +142,9 @@ function PdfDocument:getPageLinks(pageno)
 end
 
 function PdfDocument:saveHighlight(pageno, item)
+    local suffix = util.getFileNameSuffix(self.file)
+    if string.lower(suffix) ~= "pdf" then return end
+
     self.is_edited = true
     -- will also need mupdf_h.lua to be evaluated once
     -- but this is guaranteed at this point
