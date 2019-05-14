@@ -329,7 +329,7 @@ function DictQuickLookup:update()
                         local lang = self.lang or self.wiki_languages_copy[1]
                         -- Just to be safe (none of the invalid chars, except ':' for uninteresting
                         -- Portal: or File: wikipedia pages, should be in lookup_word)
-                        local cleaned_lookupword = util.replaceInvalidChars(self.lookupword:gsub("_", " "))
+                        local cleaned_lookupword = util.getSafeFilename(self.lookupword:gsub("_", " "))
                         local filename = cleaned_lookupword .. "."..string.upper(lang)..".epub"
                         -- Find a directory to save file into
                         local dir

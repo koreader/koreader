@@ -24,7 +24,7 @@ local T = FFIUtil.template
 local Screen = require("device").screen
 
 -- constants
-local article_id_preffix = "[w-id_"
+local article_id_prefix = "[w-id_"
 local article_id_postfix = "] "
 local failed, skipped, downloaded = 1, 2, 3
 
@@ -297,8 +297,8 @@ end
 function Wallabag:download(article)
     local skip_article = false
     local item_url = "/api/entries/" .. article.id .. "/export.epub"
-    local title = util.replaceInvalidChars(article.title)
-    local local_path = self.directory .. article_id_preffix .. article.id .. article_id_postfix .. title:sub(1,30) .. ".epub"
+    local title = util.getSafeFilename(article.title)
+    local local_path = self.directory .. article_id_prefix .. article.id .. article_id_postfix .. title .. ".epub"
     logger.dbg("Wallabag: DOWNLOAD: id: ", article.id)
     logger.dbg("Wallabag: DOWNLOAD: title: ", article.title)
     logger.dbg("Wallabag: DOWNLOAD: filename: ", local_path)
@@ -571,17 +571,17 @@ end
 function Wallabag:getArticleID( path )
     -- extract the Wallabag ID from the file name
     local offset = self.directory:len() + 2 -- skip / and advance to the next char
-    local preffix_len = article_id_preffix:len()
-    if path:sub( offset , offset + preffix_len - 1 ) ~= article_id_preffix then
-        logger.warn("Wallabag: getArticleID: no match! ", path:sub( offset , offset + preffix_len - 1 ) )
+    local prefix_len = article_id_prefix:len()
+    if path:sub( offset , offset + prefix_len - 1 ) ~= article_id_prefix then
+        logger.warn("Wallabag: getArticleID: no match! ", path:sub( offset , offset + prefix_len - 1 ) )
         return
     end
-    local endpos = path:find( article_id_postfix, offset + preffix_len )
+    local endpos = path:find( article_id_postfix, offset + prefix_len )
     if endpos == nil then
         logger.warn("Wallabag: getArticleID: no match! " )
         return
     end
-    local id = path:sub( offset + preffix_len, endpos - 1 )
+    local id = path:sub( offset + prefix_len, endpos - 1 )
     return id
 end
 
