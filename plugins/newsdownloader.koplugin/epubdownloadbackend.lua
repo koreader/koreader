@@ -20,9 +20,9 @@ local EpubDownloadBackend = {
 }
 local max_redirects = 5; --prevent infinite redirects
 
-function EpubDownloadBackend:download(url, path, include_images)
+function EpubDownloadBackend:download(url, path, include_images, message)
     logger.dbg("EpubDownloadBackend:download")
-    self:createEpub(path, url, include_images)
+    self:createEpub(path, url, include_images, message)
 end
 
 -- Codes that getUrlContent may get from requester.request()
@@ -188,14 +188,14 @@ local ext_to_mimetype = {
 }
 
 -- Create an epub file (with possibly images)
-function EpubDownloadBackend:createEpub(epub_path, url, include_images)
+function EpubDownloadBackend:createEpub(epub_path, url, include_images, message)
     logger.dbg("EpubDownloadBackend:createEpub(", epub_path, ",", url, ")")
     -- Use Trapper to display progress and ask questions through the UI.
     -- We need to have been Trapper.wrap()'ed for UI to be used, otherwise
     -- Trapper:info() and Trapper:confirm() will just use logger.
     local UI = require("ui/trapper")
 
-    UI:info(_("Retrieving article…"))
+    UI:info(T(_("%1\n\nRetrieving article…"), message))
     local html = self:loadPage(url)
     logger.dbg("Successfully retrieved article html")
     -- We may need to build absolute urls for non-absolute links and images urls
@@ -306,7 +306,7 @@ function EpubDownloadBackend:createEpub(epub_path, url, include_images)
         -- the images he chose to not get.
     end
 
-    UI:info(_("Building EPUB…"))
+    UI:info(T(_("%1\n\nBuilding EPUB…"), message))
     -- Open the zip file (with .tmp for now, as crengine may still
     -- have a handle to the final epub_path, and we don't want to
     -- delete a good one if we fail/cancel later)
@@ -456,7 +456,7 @@ function EpubDownloadBackend:createEpub(epub_path, url, include_images)
             -- Process can be interrupted at this point between each image download
             -- by tapping while the InfoMessage is displayed
             -- We use the fast_refresh option from image #2 for a quicker download
-            local go_on = UI:info(T(_("Retrieving image %1 / %2 …"), inum, nb_images), inum >= 2)
+            local go_on = UI:info(T(_("%1\n\nRetrieving image %2 / %3 …"), message, inum, nb_images), inum >= 2)
             if not go_on then
                 logger.dbg("cancelled")
                 cancelled = true
@@ -501,7 +501,7 @@ function EpubDownloadBackend:createEpub(epub_path, url, include_images)
     if cancelled then
         UI:info(_("Canceled. Cleaning up…"))
     else
-        UI:info(_("Packing EPUB…"))
+        UI:info(T(_("%1\n\nPacking EPUB…"), message))
     end
     epub:close()
 

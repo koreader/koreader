@@ -180,8 +180,9 @@ function NewsDownloader:loadConfigAndProcessFeeds()
         local download_full_article = feed.download_full_article == nil or feed.download_full_article
         local include_images = feed.include_images
         if url and limit then
-            UI:info(T(_("Processing %1/%2:\n%3"), idx, total_feed_entries, url))
-            NewsDownloader:processFeedSource(url, tonumber(limit), unsupported_feeds_urls, download_full_article, include_images)
+            local feed_message = T(_("Processing %1/%2:\n%3"), idx, total_feed_entries, url)
+            UI:info(feed_message)
+            NewsDownloader:processFeedSource(url, tonumber(limit), unsupported_feeds_urls, download_full_article, include_images, feed_message)
         else
             logger.warn('NewsDownloader: invalid feed config entry', feed)
         end
@@ -209,7 +210,7 @@ function NewsDownloader:loadConfigAndProcessFeedsWithUI()
     end)
 end
 
-function NewsDownloader:processFeedSource(url, limit, unsupported_feeds_urls, download_full_article, include_images)
+function NewsDownloader:processFeedSource(url, limit, unsupported_feeds_urls, download_full_article, include_images, message)
 
     local ok, response = pcall(function()
         return DownloadBackend:getResponseAsString(url)
@@ -229,11 +230,11 @@ function NewsDownloader:processFeedSource(url, limit, unsupported_feeds_urls, do
 
     if is_atom then
         ok = pcall(function()
-            return self:processAtom(feeds, limit, download_full_article, include_images)
+            return self:processAtom(feeds, limit, download_full_article, include_images, message)
         end)
     elseif is_rss then
         ok = pcall(function()
-            return self:processRSS(feeds, limit, download_full_article, include_images)
+            return self:processRSS(feeds, limit, download_full_article, include_images, message)
         end)
     end
     if not ok or (not is_rss and not is_atom) then
@@ -259,7 +260,7 @@ function NewsDownloader:deserializeXMLString(xml_str)
     return xmlhandler.root
 end
 
-function NewsDownloader:processAtom(feeds, limit, download_full_article, include_images)
+function NewsDownloader:processAtom(feeds, limit, download_full_article, include_images, message)
     local feed_output_dir = string.format("%s%s/",
                                           news_download_dir_path,
                                           util.getSafeFilename(getFeedTitle(feeds.feed.title)))
@@ -271,15 +272,16 @@ function NewsDownloader:processAtom(feeds, limit, download_full_article, include
         if limit ~= 0 and index - 1 == limit then
             break
         end
+        local article_message = T(_("%1\n\nFetching article %2/%3:"), message, index, limit == 0 and #feeds.rss.channel.item or limit)
         if download_full_article then
-            self:downloadFeed(feed, feed_output_dir, include_images)
+            self:downloadFeed(feed, feed_output_dir, include_images, article_message)
         else
             self:createFromDescription(feed, feed.context, feed_output_dir)
         end
     end
 end
 
-function NewsDownloader:processRSS(feeds, limit, download_full_article, include_images)
+function NewsDownloader:processRSS(feeds, limit, download_full_article, include_images, message)
     local feed_output_dir = ("%s%s/"):format(
         news_download_dir_path, util.getSafeFilename(util.htmlEntitiesToUtf8(feeds.rss.channel.title)))
     if not lfs.attributes(feed_output_dir, "mode") then
@@ -290,8 +292,9 @@ function NewsDownloader:processRSS(feeds, limit, download_full_article, include_
         if limit ~= 0 and index - 1 == limit then
             break
         end
+        local article_message = T(_("%1\n\nFetching article %2/%3:"), message, index, limit == 0 and #feeds.rss.channel.item or limit)
         if download_full_article then
-            self:downloadFeed(feed, feed_output_dir, include_images)
+            self:downloadFeed(feed, feed_output_dir, include_images, article_message)
         else
             self:createFromDescription(feed, feed.description, feed_output_dir)
         end
@@ -318,10 +321,11 @@ local function getTitleWithDate(feed)
     return title
 end
 
-function NewsDownloader:downloadFeed(feed, feed_output_dir, include_images)
+function NewsDownloader:downloadFeed(feed, feed_output_dir, include_images, message)
     local link = getFeedLink(feed.link)
+    local title_with_date = getTitleWithDate(feed)
     local news_dl_path = ("%s%s%s"):format(feed_output_dir,
-                                           getTitleWithDate(feed),
+                                           title_with_date,
                                            file_extension)
 
     local file_mode = lfs.attributes(news_dl_path, "mode")
@@ -329,7 +333,8 @@ function NewsDownloader:downloadFeed(feed, feed_output_dir, include_images)
         logger.dbg("NewsDownloader:", news_dl_path, "already exists. Skipping")
     else
         logger.dbg("NewsDownloader: News file will be stored to :", news_dl_path)
-        DownloadBackend:download(link, news_dl_path, include_images)
+        local article_message = T(_("%1\n%2"), message, title_with_date)
+        DownloadBackend:download(link, news_dl_path, include_images, article_message)
     end
 end
 
