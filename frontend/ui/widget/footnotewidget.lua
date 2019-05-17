@@ -174,6 +174,11 @@ function FootnoteWidget:init()
     --   <div>abc<br anyattr="anyvalue"/>def</div> : 3 lines, empty line in between
     -- Remove any attribute, let a <br/> be a plain <br/>
     self.html = self.html:gsub([[<br[^>]*>]], [[<br/>]])
+    -- Elements with a id= attribute get a line above them (by some internal MuPDF
+    -- code, possibly generate_anchor() in html-layout.c).
+    -- Working around it with the following does not work: *[id] {margin-top: -1em;}
+    -- So, just rename the id= attribute, as we don't follow links in this popup.
+    self.html = self.html:gsub([[(<[^>]* )[iI][dD]=]], [[%1disabledID=]])
 
     -- We may use a font size a bit smaller than the document one (because
     -- footnotes are usually smaller, and because NotoSans is a bit on the
