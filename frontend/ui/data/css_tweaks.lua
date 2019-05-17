@@ -419,8 +419,7 @@ This only works with footnotes that have specific attributes set by the publishe
 *[role~="doc-rearnote"]
 {
     -cr-hint: footnote-inpage;
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
+    margin: 0 !important;
 }
                 ]],
             },
@@ -439,8 +438,7 @@ This only works with footnotes that have specific attributes set by the publishe
 *[role~="doc-rearnote"]
 {
     -cr-hint: footnote-inpage;
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
+    margin: 0 !important;
     font-size: 80% !important;
 }
                 ]],
@@ -453,8 +451,7 @@ This only works with footnotes that have specific attributes set by the publishe
                 css = [[
 ol.references > li {
     -cr-hint: footnote-inpage;
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
+    margin: 0 !important;
 }
 /* hide backlinks */
 ol.references > li > .noprint { display: none; }
@@ -468,8 +465,7 @@ ol.references > li > .mw-cite-backlink { display: none; }
                 css = [[
 ol.references > li {
     -cr-hint: footnote-inpage;
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
+    margin: 0 !important;
     font-size: 80% !important;
 }
 /* hide backlinks */
@@ -488,11 +484,10 @@ ol.references > li > .mw-cite-backlink { display: none; }
 Show footnotes with classic class names at the bottom of pages.
 This tweak can be duplicated as a user style tweak when books contain footnotes wrapped with other class names.]]),
                 css = [[
-.footnote, .note, .note1, .ntb
+.footnote, .note, .note1, .ntb, .ntb-txt, .ntb-txt-j
 {
     -cr-hint: footnote-inpage;
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
+    margin: 0 !important;
 }
                 ]],
             },
@@ -503,11 +498,10 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
 Show footnotes with classic classname at the bottom of pages.
 This tweak can be duplicated as a user style tweak when books contain footnotes wrapped with other class names.]]),
                 css = [[
-.footnote, .note, .note1, .ntb
+.footnote, .note, .note1, .ntb, .ntb-txt, .ntb-txt-j
 {
     -cr-hint: footnote-inpage;
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
+    margin: 0 !important;
     font-size: 80% !important;
 }
                 ]],
