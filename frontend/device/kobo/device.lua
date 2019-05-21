@@ -115,8 +115,8 @@ local KoboPhoenix = Kobo:new{
     hasFrontlight = yes,
     touch_phoenix_protocol = true,
     display_dpi = 212,
-    -- the bezel covers 12 pixels at the bottom:
-    viewport = Geom:new{x=0, y=0, w=758, h=1012},
+    -- The bezel covers 10 pixels at the bottom:
+    viewport = Geom:new{x=0, y=0, w=758, h=1014},
     -- NOTE: May have a buggy kernel, according to the nightmode hack...
     canHWInvert = no,
 }
