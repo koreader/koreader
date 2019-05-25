@@ -20,11 +20,6 @@ local EpubDownloadBackend = {
 }
 local max_redirects = 5; --prevent infinite redirects
 
-function EpubDownloadBackend:download(url, path, include_images, message)
-    logger.dbg("EpubDownloadBackend:download")
-    self:createEpub(path, url, include_images, message)
-end
-
 -- Codes that getUrlContent may get from requester.request()
 local TIMEOUT_CODE = "timeout" -- from socket.lua
 local MAXTIME_CODE = "maxtime reached" -- from sink_table_with_maxtime
@@ -188,16 +183,13 @@ local ext_to_mimetype = {
 }
 
 -- Create an epub file (with possibly images)
-function EpubDownloadBackend:createEpub(epub_path, url, include_images, message)
-    logger.dbg("EpubDownloadBackend:createEpub(", epub_path, ",", url, ")")
+function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, message)
+    logger.dbg("EpubDownloadBackend:createEpub(", epub_path, ")")
     -- Use Trapper to display progress and ask questions through the UI.
     -- We need to have been Trapper.wrap()'ed for UI to be used, otherwise
     -- Trapper:info() and Trapper:confirm() will just use logger.
     local UI = require("ui/trapper")
 
-    UI:info(T(_("%1\n\nRetrieving article…"), message))
-    local html = self:loadPage(url)
-    logger.dbg("Successfully retrieved article html")
     -- We may need to build absolute urls for non-absolute links and images urls
     local base_url = socket_url.parse(url)
 

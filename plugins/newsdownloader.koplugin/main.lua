@@ -276,7 +276,7 @@ function NewsDownloader:processAtom(feeds, limit, download_full_article, include
         if download_full_article then
             self:downloadFeed(feed, feed_output_dir, include_images, article_message)
         else
-            self:createFromDescription(feed, feed.context, feed_output_dir)
+            self:createFromDescription(feed, feed.context, feed_output_dir, include_images, article_message)
         end
     end
 end
@@ -296,7 +296,7 @@ function NewsDownloader:processRSS(feeds, limit, download_full_article, include_
         if download_full_article then
             self:downloadFeed(feed, feed_output_dir, include_images, article_message)
         else
-            self:createFromDescription(feed, feed.description, feed_output_dir)
+            self:createFromDescription(feed, feed.description, feed_output_dir, include_images, article_message)
         end
     end
 end
@@ -322,39 +322,46 @@ local function getTitleWithDate(feed)
 end
 
 function NewsDownloader:downloadFeed(feed, feed_output_dir, include_images, message)
-    local link = getFeedLink(feed.link)
     local title_with_date = getTitleWithDate(feed)
-    local news_dl_path = ("%s%s%s"):format(feed_output_dir,
-                                           title_with_date,
-                                           file_extension)
+    local news_file_path = ("%s%s%s"):format(feed_output_dir,
+                                             title_with_date,
+                                             file_extension)
 
-    local file_mode = lfs.attributes(news_dl_path, "mode")
+    local file_mode = lfs.attributes(news_file_path, "mode")
     if file_mode == "file" then
-        logger.dbg("NewsDownloader:", news_dl_path, "already exists. Skipping")
+        logger.dbg("NewsDownloader:", news_file_path, "already exists. Skipping")
     else
-        logger.dbg("NewsDownloader: News file will be stored to :", news_dl_path)
+        logger.dbg("NewsDownloader: News file will be stored to :", news_file_path)
         local article_message = T(_("%1\n%2"), message, title_with_date)
-        DownloadBackend:download(link, news_dl_path, include_images, article_message)
+        local link = getFeedLink(feed.link)
+        local html = DownloadBackend:loadPage(link)
+        DownloadBackend:createEpub(news_file_path, html, link, include_images, article_message)
     end
 end
 
-function NewsDownloader:createFromDescription(feed, context, feed_output_dir)
+function NewsDownloader:createFromDescription(feed, context, feed_output_dir, include_images, message)
+    local title_with_date = getTitleWithDate(feed)
     local news_file_path = ("%s%s%s"):format(feed_output_dir,
-                                           getTitleWithDate(feed),
-                                           file_extension)
-    logger.dbg("NewsDownloader: News file will be created :", news_file_path)
-    local file = io.open(news_file_path, "w")
-    local footer = _("This is just description of the feed. To download full article go to News Downloader settings and change 'download_full_article' to 'true'")
+                                             title_with_date,
+                                             file_extension)
+    local file_mode = lfs.attributes(news_file_path, "mode")
+    if file_mode == "file" then
+        logger.dbg("NewsDownloader:", news_file_path, "already exists. Skipping")
+    else
+        logger.dbg("NewsDownloader: News file will be stored to :", news_file_path)
+        local article_message = T(_("%1\n%2"), message, title_with_date)
+        local footer = _("This is just a description of the feed. To download the full article instead, go to the News Downloader settings and change 'download_full_article' to 'true'.")
 
-    local html = string.format([[<!DOCTYPE html>
+        local html = string.format([[<!DOCTYPE html>
 <html>
 <head><meta charset='UTF-8'><title>%s</title></head>
 <body><header><h2>%s</h2></header><article>%s</article>
 <br><footer><small>%s</small></footer>
 </body>
 </html>]], feed.title, feed.title, context, footer)
-    file:write(html)
-    file:close()
+        local link = getFeedLink(feed.link)
+        DownloadBackend:createEpub(news_file_path, html, link, include_images, article_message)
+    end
 end
 
 function NewsDownloader:removeNewsButKeepFeedConfig()
