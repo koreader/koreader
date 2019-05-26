@@ -276,7 +276,7 @@ function NewsDownloader:processAtom(feeds, limit, download_full_article, include
         if download_full_article then
             self:downloadFeed(feed, feed_output_dir, include_images, article_message)
         else
-            self:createFromDescription(feed, feed.context, feed_output_dir, include_images, article_message)
+            self:createFromDescription(feed, feed.content[1], feed_output_dir, include_images, article_message)
         end
     end
 end
@@ -339,7 +339,7 @@ function NewsDownloader:downloadFeed(feed, feed_output_dir, include_images, mess
     end
 end
 
-function NewsDownloader:createFromDescription(feed, context, feed_output_dir, include_images, message)
+function NewsDownloader:createFromDescription(feed, content, feed_output_dir, include_images, message)
     local title_with_date = getTitleWithDate(feed)
     local news_file_path = ("%s%s%s"):format(feed_output_dir,
                                              title_with_date,
@@ -358,7 +358,7 @@ function NewsDownloader:createFromDescription(feed, context, feed_output_dir, in
 <body><header><h2>%s</h2></header><article>%s</article>
 <br><footer><small>%s</small></footer>
 </body>
-</html>]], feed.title, feed.title, context, footer)
+</html>]], feed.title, feed.title, content, footer)
         local link = getFeedLink(feed.link)
         DownloadBackend:createEpub(news_file_path, html, link, include_images, article_message)
     end
