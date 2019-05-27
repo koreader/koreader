@@ -201,7 +201,7 @@ describe("Readerrolling module", function()
             local ReaderView = require("apps/reader/modules/readerview")
             local saved_handler = ReaderView.onPageUpdate
             ReaderView.onPageUpdate = function(_self)
-                assert.are.same(6, _self.ui.document:getPageCount())
+                assert.are.same(7, _self.ui.document:getPageCount())
             end
             local test_book = "spec/front/unit/data/sample.txt"
             require("docsettings"):open(test_book):purge()
