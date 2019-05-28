@@ -125,6 +125,14 @@ function FileManagerShortcuts:onMenuHold(item)
             buttons = {
                 {
                     {
+                        text = _("Paste file"),
+                        enabled = (self._manager.ui.file_chooser and self._manager.ui.clipboard) and true or false,
+                        callback = function()
+                            UIManager:close(folder_shortcuts_dialog)
+                            self._manager.ui:pasteHere(item.folder)
+                        end
+                    },
+                    {
                         text = _("Edit"),
                         enabled = item.editable,
                         callback = function()
