@@ -678,11 +678,13 @@ function FileManager:pasteHere(file)
                 ok_callback = function()
                     info_file()
                     self:onRefresh()
+                    self.clipboard = nil
                 end,
             })
         else
             info_file()
             self:onRefresh()
+            self.clipboard = nil
         end
     end
 end
