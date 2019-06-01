@@ -434,7 +434,11 @@ function InputText:addChars(chars)
     if self.readonly or not self:isTextEditable(true) then
         return
     end
+
     self.is_text_edited = true
+    if #self.charlist == 0 then -- widget text is empty or a hint text is displayed
+        self.charpos = 1 -- move cursor to the first position
+    end
     table.insert(self.charlist, self.charpos, chars)
     self.charpos = self.charpos + #util.splitToChars(chars)
     self:initTextBox(table.concat(self.charlist), true)
