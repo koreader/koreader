@@ -527,6 +527,7 @@ local lang_to_keyboard_layout = {
     ja = "ja_keyboard",
     pl = "pl_keyboard",
     pt_BR = "pt_keyboard",
+    ko_KR = "ko_KR_keyboard",
 }
 
 function VirtualKeyboard:init()
@@ -545,6 +546,9 @@ function VirtualKeyboard:init()
     end
     if Device:hasKeys() then
         self.key_events.Close = { {"Back"}, doc = "close keyboard" }
+    end
+    if keyboard.wrapInputBox then
+        keyboard.wrapInputBox(self.inputbox)
     end
 end
 
