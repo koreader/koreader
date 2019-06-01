@@ -23,7 +23,8 @@ local PerceptionExpander = Widget:extend{
     line_color_intensity = 0.3,
     margin_shift = 0.03,
     settings = nil,
-    ALMOST_CENTER_OF_THE_SCREEN = 0.37
+    ALMOST_CENTER_OF_THE_SCREEN = 0.37,
+    last_screen_mode = nil
 }
 
 function PerceptionExpander:init()
@@ -54,7 +55,8 @@ function PerceptionExpander:createUI(readSettings)
     local line_height = screen_height * 0.9
     local line_top_position = screen_height * 0.05
 
-    if Screen:getScreenMode() == "landscape" then
+    self.last_screen_mode = Screen:getScreenMode()
+    if self.last_screen_mode == "landscape" then
         self.margin = (self.margin - self.margin_shift)
     end
 
@@ -196,6 +198,11 @@ function PerceptionExpander:onPageUpdate(pageno)
         return
     end
 
+    -- If this plugin did not apply screen orientation change, redraw plugin UI
+    if Screen:getScreenMode() ~= self.last_screen_mode then
+        self:createUI()
+    end
+
     if self.page_counter >= self.shift_each_pages and self.margin < self.ALMOST_CENTER_OF_THE_SCREEN then
         self.page_counter = 0
         self.margin = self.margin + self.margin_shift
@@ -225,6 +232,8 @@ function PerceptionExpander:saveSettings(fields)
     self.settings:saveSetting("shift_each_pages", self.shift_each_pages)
     self.settings:saveSetting("is_enabled", self.is_enabled)
     self.settings:flush()
+
+    self:createUI()
 end
 
 function PerceptionExpander:paintTo(bb, x, y)
