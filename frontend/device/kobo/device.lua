@@ -709,7 +709,7 @@ function Kobo:saveSettings()
 end
 
 function Kobo:powerOff()
-    os.execute("poweroff")
+    os.execute("poweroff -f")
 end
 
 function Kobo:reboot()
