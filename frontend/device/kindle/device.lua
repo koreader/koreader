@@ -345,7 +345,7 @@ local KindleBasic3 = Kindle:new{
     model = "KindleBasic3",
     isTouchDevice = yes,
     hasFrontlight = yes,
-    touch_dev = "/dev/input/event2", -- FIXME
+    touch_dev = "/dev/input/event2",
 }
 
 function Kindle2:init()
