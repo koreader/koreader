@@ -341,6 +341,13 @@ local KindlePaperWhite4 = Kindle:new{
     touch_dev = "/dev/input/event2",
 }
 
+local KindleBasic3 = Kindle:new{
+    model = "KindleBasic3",
+    isTouchDevice = yes,
+    hasFrontlight = yes,
+    touch_dev = "/dev/input/event2",
+}
+
 function Kindle2:init()
     -- Blacklist the C BB before the first BB require...
     self:blacklistCBB()
@@ -728,6 +735,21 @@ function KindlePaperWhite4:init()
     self.input.open("fake_events")
 end
 
+function KindleBasic3:init()
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
+    self.powerd = require("device/kindle/powerd"):new{
+        device = self,
+        fl_intensity_file = "/sys/class/backlight/bl/brightness",
+        batt_capacity_file = "/sys/class/power_supply/bd71827_bat/capacity",
+        is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
+    }
+
+    Kindle.init(self)
+
+    self.input.open(self.touch_dev)
+    self.input.open("fake_events")
+end
+
 function KindleTouch:exit()
     Generic.exit(self)
     if self.isSpecialOffers then
@@ -754,6 +776,7 @@ KindleOasis.exit = KindleTouch.exit
 KindleOasis2.exit = KindleTouch.exit
 KindleBasic2.exit = KindleTouch.exit
 KindlePaperWhite4.exit = KindleTouch.exit
+KindleBasic3.exit = KindleTouch.exit
 
 function Kindle3:exit()
     -- send double menu key press events to trigger screen refresh
@@ -802,7 +825,9 @@ local koa2_set = Set { "0LM", "0LN", "0LP", "0LQ", "0P1", "0P2", "0P6",
                   "0P7", "0P8", "0S1", "0S2", "0S3", "0S4", "0S7", "0SA" }
 local kt3_set = Set { "0DU", "0K9", "0KA" }
 local pw4_set = Set { "0PP", "0T1", "0T2", "0T3", "0T4", "0T5", "0T6",
-                  "0T7", "0TJ", "0TK", "0TL", "0TM", "0TN", "102", "103"}
+                  "0T7", "0TJ", "0TK", "0TL", "0TM", "0TN", "102", "103",
+                  "16Q", "16R", "16S", "16T", "16U", "16V" }
+local kt4_set = Set { "10L", "0WF", "0WG", "0WH", "0WJ", "0VB" }
 
 if k2_set[kindle_devcode] then
     return Kindle2
@@ -834,6 +859,8 @@ elseif kt3_set[kindle_devcode_v2] then
     return KindleBasic2
 elseif pw4_set[kindle_devcode_v2] then
     return KindlePaperWhite4
+elseif kt4_set[kindle_devcode_v2] then
+    return KindleBasic3
 end
 
 error("unknown Kindle model "..kindle_devcode.." ("..kindle_devcode_v2..")")
