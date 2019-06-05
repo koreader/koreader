@@ -32,14 +32,18 @@ local function isWifiUp()
         status = lipc_handle:get_int_property("com.lab126.wifid", "enable") or 0
         lipc_handle:close()
     else
-        -- NOTE: Pilfered from Cervantes, c.f., #4380
-        --       Possibly race-y, if we're extremely unlucky and lipc drops WiFi between our open and our read...
-        --       But then, if we're here, it's because we failed to acquire an lipc handle,
-        --       so it's likely we've failed to do that earlier when trying to toggle WiFi, too...
-        local file = io.open("/sys/class/net/wlan0/carrier", "rb")
-        if not file then return 0 end
-        status = tonumber(file:read("*all")) or 0
-        file:close()
+        local std_out = io.popen("lipc-get-prop -i com.lab126.wifid enable", "r")
+        if std_out then
+            local result = std_out:read("*all")
+            std_out:close()
+            if result then
+                return tonumber(result)
+            else
+                return 0
+            end
+        else
+            return 0
+        end
     end
     return status
 end
