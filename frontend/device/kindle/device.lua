@@ -13,6 +13,11 @@ local function kindleEnableWifi(toggle)
     if lipc_handle then
         lipc_handle:set_int_property("com.lab126.cmd", "wirelessEnable", toggle)
         lipc_handle:close()
+    else
+        -- No liblipclua on FW < 5.x ;)
+        -- Always kill 3G first...
+        os.execute("lipc-set-prop -i com.lab126.wan enable 0")
+        os.execute("lipc-set-prop -i com.lab126.wifid enable " .. toggle)
     end
 end
 
