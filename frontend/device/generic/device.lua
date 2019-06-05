@@ -312,10 +312,11 @@ function Device:retrieveNetworkInfo()
         end
         if os.execute("ip r | grep -q default") == 0 then
             -- NOTE: No -w flag available in the old busybox build used on Legacy Kindles...
+            local pingok = 1
             if self:isKindle() and self:hasKeyboard() then
-                local pingok = os.execute("ping -q -c 2 `ip r | grep default | cut -d ' ' -f 3` > /dev/null")
+                pingok = os.execute("ping -q -c 2 `ip r | grep default | cut -d ' ' -f 3` > /dev/null")
             else
-                local pingok = os.execute("ping -q -w 3 -c 2 `ip r | grep default | cut -d ' ' -f 3` > /dev/null")
+                pingok = os.execute("ping -q -w 3 -c 2 `ip r | grep default | cut -d ' ' -f 3` > /dev/null")
             end
             if pingok == 0 then
                 result = result .. "Gateway ping successful"
