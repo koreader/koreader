@@ -118,10 +118,10 @@ end
 
 function ReaderStatus:openFileBrowser()
     local FileManager = require("apps/filemanager/filemanager")
+    self.ui:onClose()
     if not FileManager.instance then
         self.ui:showFileManager()
     end
-    self.ui:onClose()
     self.document = nil
 end
 
