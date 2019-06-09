@@ -89,7 +89,9 @@ function NewsDownloader:addToMainMenu(menu_items)
                 text = _("Go to news folder"),
                 callback = function()
                     local FileManager = require("apps/filemanager/filemanager")
-                    self.ui:onClose()
+                    if self.ui.document then
+                        self.ui:onClose()
+                    end
                     if FileManager.instance then
                         FileManager.instance:reinit(news_download_dir_path)
                     else
