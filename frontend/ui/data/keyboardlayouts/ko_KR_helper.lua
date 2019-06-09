@@ -1,30 +1,30 @@
--- require('utf8')
+--[[--
+
+# Hangul-input-method Kit for Lua/KOReader
+
+## Input method implemented: 2-beolsik (for simplicity, can retrieve many articles for implementation)
+## Classes and their features
+
+ * HgSylbls (= Hangul Syllables)
+   - Determine if a character is in Hangul consonnant, vowel, initial, medial, or final character
+   - Combine initial, medial[, and final] character into a complete syllables
+   - Determine if a medial (or final) character can be a double one (can combine another medial (or final) one)
+ * HgFSM (= Hangul Finite State Machine)
+   - Process Hangul syllabus combination if the character that user inputs are valid one to be combined
+ * UIHandler
+   - To communicate with the actual UI text input box
+
+## References
+<https://ehclub.co.kr/2482>
+:: Hangul syllables combination formula, Hangul unicode composition, FSM reference
+<https://en.wikipedia.org/wiki/Hangul_consonant_and_vowel_tables>
+
+--]]
+
 local BaseUtil = require("ffi/util")
 local logger = require("logger")
 
---------
--- # Hangul-input-method Kit for Lua/KOReader
---------
--- ## Input method implemented: 2-beolsik (for simplicity, can retrieve many articles for implementation)
--- ## Classes and their features
---  * HgSylbls (= Hangul Syllables)
---    - Determine if a character is in Hangul consonnant, vowel, initial, medial, or final character
---    - Combine initial, medial[, and final] character into a complete syllables
---    - Determine if a medial (or final) character can be a double one (can combine another medial (or final) one)
---  * HgFSM (= Hangul Finite State Machine)
---    - Process Hangul syllabus combination if the character that user inputs are valid one to be combined
---  * UIHandler
---    - To communicate with the actual UI text input box
---
--- ## References
--- https://ehclub.co.kr/2482
--- :: Hangul syllables combination formula, Hangul unicode composition, FSM reference
--- https://en.wikipedia.org/wiki/Hangul_consonant_and_vowel_tables
---------
-
-----------------------
--- Hangul Syllables --
-----------------------
+-- Hangul Syllables
 
 local HgSylbls = {
     -- Hangul character ranges in Unicode

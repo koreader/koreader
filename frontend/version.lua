@@ -42,7 +42,7 @@ end
 --- Returns current version of KOReader.
 -- @treturn int version in the form of a 10 digit number such as `2015110982`
 -- @treturn string short git commit version hash such as `704d4238`
--- @see normalized_version
+-- @see getNormalizedVersion
 function Version:getNormalizedCurrentVersion()
     if not self.version or not self.commit then
         self.version, self.commit = self:getNormalizedVersion(self:getCurrentRevision())
