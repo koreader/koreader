@@ -480,13 +480,14 @@ end
 ---- @string path
 ---- @int limit
 ---- @treturn string
-function util.getSafeFilename(str, path, limit)
+function util.getSafeFilename(str, path, limit, limit_ext)
     local filename, suffix = util.splitFileNameSuffix(str)
     local replaceFunc = replaceAllInvalidChars
     local safe_filename
     -- VFAT supports a maximum of 255 UCS-2 characters, although it's probably treated as UTF-16 by Windows
     -- default to a slightly lower limit just in case
     limit = limit or 240
+    limit_ext = limit_ext or 10
 
     if path then
         local file_system = util.getFilesystemType(path)
@@ -496,8 +497,10 @@ function util.getSafeFilename(str, path, limit)
     end
 
     filename = filename:sub(1, limit)
+    suffix = suffix:sub(1, limit_ext)
     -- the limit might result in broken UTF-8, which we don't want in the result
     filename = util.fixUtf8(filename, "")
+    suffix = util.fixUtf8(suffix, "")
 
     if suffix and suffix ~= "" then
         safe_filename = replaceFunc(filename) .. "." .. replaceFunc(suffix)
