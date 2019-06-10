@@ -300,7 +300,7 @@ end
 function Wallabag:download(article)
     local skip_article = false
     local item_url = "/api/entries/" .. article.id .. "/export.epub"
-    local title = util.getSafeFilename(article.title, self.directory, 230)
+    local title = util.getSafeFilename(article.title, self.directory, 230, 0)
     local local_path = self.directory .. article_id_prefix .. article.id .. article_id_postfix .. title .. ".epub"
     logger.dbg("Wallabag: DOWNLOAD: id: ", article.id)
     logger.dbg("Wallabag: DOWNLOAD: title: ", article.title)
