@@ -496,11 +496,16 @@ function util.getSafeFilename(str, path, limit, limit_ext)
         end
     end
 
+    if suffix:len() > limit_ext then
+        -- probably not an actual file extension, or at least not one we'd be
+        -- dealing with, so strip the whole string
+        filename = str
+        suffix = nil
+    end
+
     filename = filename:sub(1, limit)
-    suffix = suffix:sub(1, limit_ext)
     -- the limit might result in broken UTF-8, which we don't want in the result
     filename = util.fixUtf8(filename, "")
-    suffix = util.fixUtf8(suffix, "")
 
     if suffix and suffix ~= "" then
         safe_filename = replaceFunc(filename) .. "." .. replaceFunc(suffix)
