@@ -755,6 +755,7 @@ function KindleBasic3:init()
 
     Kindle.init(self)
 
+    self.input.snow_protocol = true -- cf. https://github.com/koreader/koreader/issues/5070
     self.input.open(self.touch_dev)
     self.input.open("fake_events")
 end
