@@ -157,14 +157,16 @@ if Device:isAndroid() then
     local isAndroid, android = pcall(require, "android")
     if not isAndroid then return end
 
-    -- keep screen on
-    common_settings.keep_screen_on = {
-        text = _("Keep screen on"),
-        checked_func = function() return G_reader_settings:isTrue("enable_android_wakelock") end,
-        callback = function() require("ui/elements/screen_android"):toggleWakelock() end,
-    }
+    -- keep screen on toggle on devices which don't need wakelocks always enabled.
+    if not android.needsWakelocks() then
+        common_settings.keep_screen_on = {
+            text = _("Keep screen on"),
+            checked_func = function() return G_reader_settings:isTrue("enable_android_wakelock") end,
+            callback = function() require("ui/elements/screen_android"):toggleWakelock() end,
+        }
+    end
 
-    -- fullscreen
+    -- fullscreen toggle on devices with compatible fullscreen methods (apis 14-16)
     if Device.firmware_rev <= 16 then
         common_settings.fullscreen = {
             text = _("Fullscreen"),
