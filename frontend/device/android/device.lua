@@ -103,7 +103,7 @@ function Device:init()
     end
 
     -- check if we enabled support for wakelocks
-    if G_reader_settings:isTrue("enable_android_wakelock") then
+    if G_reader_settings:isTrue("enable_android_wakelock") or android.needsWakelocks() then
         android.setWakeLock(true)
     end
 
