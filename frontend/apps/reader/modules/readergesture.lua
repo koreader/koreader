@@ -86,6 +86,8 @@ local action_strings = {
     cycle_highlight_action = _("Cycle highlight action"),
     cycle_highlight_style = _("Cycle highlight style"),
     wallabag_download = _("Wallabag retrieval"),
+    load_next_profile = _("Load next profile"),
+    load_previous_profile = _("Load previous profile"),
 }
 
 local custom_multiswipes_path = DataStorage:getSettingsDir().."/multiswipes.lua"
@@ -491,6 +493,8 @@ function ReaderGesture:buildMenu(ges, default)
         {"cycle_highlight_action", not self.is_docless},
         {"cycle_highlight_style", not self.is_docless},
         {"wallabag_download", self.ui.wallabag ~= nil},
+        {"load_next_profile", self.ui.profiles ~= nil},
+        {"load_previous_profile", self.ui.profiles ~= nil},
     }
     local return_menu = {}
     -- add default action to the top of the submenu
@@ -1053,6 +1057,10 @@ function ReaderGesture:gestureAction(action, ges)
         self.ui:handleEvent(Event:new("CycleHighlightAction"))
     elseif action == "cycle_highlight_style" then
         self.ui:handleEvent(Event:new("CycleHighlightStyle"))
+    elseif action == "load_next_profile" then
+        self.ui:handleEvent(Event:new("LoadNextProfile"))
+    elseif action == "load_previous_profile" then
+        self.ui:handleEvent(Event:new("LoadPreviousProfile"))
     end
     return true
 end
