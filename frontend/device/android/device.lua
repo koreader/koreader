@@ -15,6 +15,31 @@ local function canUpdateApk()
     return (android.prop.flavor ~= "fdroid")
 end
 
+local function getCodename()
+    local api = android.app.activity.sdkVersion
+    local codename = ""
+
+    if api > 27 then
+        codename = "Pie"
+    elseif api == 27 or api == 26 then
+        codename = "Oreo"
+    elseif api == 25 or api == 24 then
+        codename = "Nougat"
+    elseif api == 23 then
+        codename = "Marshmallow"
+    elseif api == 22 or api == 21 then
+        codename = "Lollipop"
+    elseif api == 19 then
+        codename = "KitKat"
+    elseif api < 19 and api >= 16 then
+        codename = "Jelly Bean"
+    elseif api < 16 and api >= 14 then
+        codename = "Ice Cream Sandwich"
+    end
+
+    return codename
+end
+
 local Device = Generic:new{
     isAndroid = yes,
     model = android.prop.product,
@@ -140,34 +165,28 @@ function Device:retrieveNetworkInfo()
     end
 end
 
+function Device:info()
+    local is_eink, eink_platform = android.isEink()
+
+    local common_text = T(_("%1\n\nOS: Android %2, api %3\nBuild flavor: %4\n"),
+        android.prop.product, getCodename(), Device.firmware_rev, android.prop.flavor)
+
+    local eink_text = ""
+    if is_eink then
+        eink_text = T(_("\nE-ink display supported.\nPlatform: %1\n"), eink_platform)
+    end
+
+    local wakelocks_text = ""
+    if android.needsWakelocks() then
+        wakelocks_text = _("\nThis device needs CPU, screen and touchscreen always on.\nScreen timeout will be ignored while the app is in the foreground!\n")
+    end
+
+    return common_text..eink_text..wakelocks_text
+end
+
 function Device:exit()
     android.LOGI(string.format("Stopping %s main activity", android.prop.name));
     android.lib.ANativeActivity_finish(android.app.activity)
-end
-
-local function getCodename()
-    local api = Device.firmware_rev
-    local codename = nil
-
-    if api > 27 then
-        codename = "Pie"
-    elseif api == 27 or api == 26 then
-        codename = "Oreo"
-    elseif api == 25 or api == 24 then
-        codename = "Nougat"
-    elseif api == 23 then
-        codename = "Marshmallow"
-    elseif api == 22 or api == 21 then
-        codename = "Lollipop"
-    elseif api == 19 then
-        codename = "KitKat"
-    elseif api < 19 and api >= 16 then
-        codename = "Jelly Bean"
-    elseif api < 16 and api >= 14 then
-        codename = "Ice Cream Sandwich"
-    end
-
-    return codename or ""
 end
 
 android.LOGI(string.format("Android %s - %s (API %d) - flavor: %s",
