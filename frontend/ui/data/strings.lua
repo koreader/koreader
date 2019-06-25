@@ -40,6 +40,7 @@ S.FORCED_OCR = _("Forced OCR")
 S.HW_DITHERING = _("Dithering")
 S.INVERSE_READING_ORDER = _("Inverse Order")
 S.IMAGE_SCALING = _("Image Scaling")
+S.NIGHTMODE_IMAGES = _("Invert Images")
 
 S.ON = _("on")
 S.OFF = _("off")

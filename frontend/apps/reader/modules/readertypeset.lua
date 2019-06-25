@@ -96,6 +96,14 @@ function ReaderTypeset:onReadSettings(config)
         self.smooth_scaling = (global == nil or global == 0) and 0 or 1
     end
     self:toggleImageScaling(self.smooth_scaling)
+
+    -- default to automagic nightmode-friendly handling of images
+    self.nightmode_images = config:readSetting("nightmode_images")
+    if self.nightmode_images == nil then
+        local global = G_reader_settings:readSetting("copt_nightmode_images")
+        self.nightmode_images = (global == nil or global == 1) and 1 or 0
+    end
+    self:toggleNightmodeImages(self.nightmode_images)
 end
 
 function ReaderTypeset:onSaveSettings()
@@ -105,6 +113,7 @@ function ReaderTypeset:onSaveSettings()
     self.ui.doc_settings:saveSetting("embedded_fonts", self.embedded_fonts)
     self.ui.doc_settings:saveSetting("render_dpi", self.render_dpi)
     self.ui.doc_settings:saveSetting("smooth_scaling", self.smooth_scaling)
+    self.ui.doc_settings:saveSetting("nightmode_images", self.nightmode_images)
 end
 
 function ReaderTypeset:onToggleEmbeddedStyleSheet(toggle)
@@ -119,6 +128,11 @@ end
 
 function ReaderTypeset:onToggleImageScaling(toggle)
     self:toggleImageScaling(toggle)
+    return true
+end
+
+function ReaderTypeset:onToggleNightmodeImages(toggle)
+    self:toggleNightmodeImages(toggle)
     return true
 end
 
@@ -282,6 +296,17 @@ function ReaderTypeset:toggleImageScaling(toggle)
     else
         self.smooth_scaling = false
         self.ui.document:setImageScaling(false)
+    end
+    self.ui:handleEvent(Event:new("UpdatePos"))
+end
+
+function ReaderTypeset:toggleNightmodeImages(toggle)
+    if toggle and (toggle == true or toggle == 1) then
+        self.nightmode_images = true
+        self.ui.document:setNightmodeImages(true)
+    else
+        self.nightmode_images = false
+        self.ui.document:setNightmodeImages(false)
     end
     self.ui:handleEvent(Event:new("UpdatePos"))
 end
