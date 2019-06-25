@@ -196,7 +196,8 @@ function ConfigOption:init()
     for c = 1, #self.options do
         -- Ignore names of options that won't be shown
         local show_default = not self.options[c].advanced or show_advanced
-        if self.options[c].show ~= false and show_default then
+        local show = self.options[c].show_func and self.options[c].show_func() or self.options[c].show
+        if show ~= false and show_default then
             local name_font_face = self.options[c].name_font_face and self.options[c].name_font_face or "cfont"
             local name_font_size = self.options[c].name_font_size and self.options[c].name_font_size or default_name_font_size
             local text = self.options[c].name_text
@@ -225,7 +226,8 @@ function ConfigOption:init()
 
     for c = 1, #self.options do
         local show_default = not self.options[c].advanced or show_advanced
-        if self.options[c].show ~= false and show_default then
+        local show = self.options[c].show_func and self.options[c].show_func() or self.options[c].show
+        if show ~= false and show_default then
             local name_align = self.options[c].name_align_right and self.options[c].name_align_right or default_name_align_right
             local item_align = self.options[c].item_align_center and self.options[c].item_align_center or default_item_align_center
             local name_font_face = self.options[c].name_font_face and self.options[c].name_font_face or "cfont"
@@ -574,7 +576,7 @@ function ConfigOption:init()
             table.insert(self.config.layout, #self.config.layout,self:_itemGroupToLayoutLine(option_items_group))
             table.insert(horizontal_group, option_items_container)
             table.insert(vertical_group, horizontal_group)
-        end -- if self.options[c].show ~= false
+        end -- if show ~= false
     end -- for c = 1, #self.options
 
     table.insert(vertical_group, VerticalSpan:new{ width = default_option_vpadding })
