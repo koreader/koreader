@@ -201,10 +201,6 @@ function ConfigOption:init()
         if self.options[c].show_func then
             show = self.options[c].show_func()
         end
-        print("ConfigOption:init for", self.options[c].name, "final show:", show, "NM:", Screen.night_mode, "show_func:", self.options[c].show_func and self.options[c].show_func() or nil, "show:", self.options[c].show)
-        if self.options[c].show_func then
-           print("It has a show_func:", self.options[c].show_func())
-        end
         if show ~= false and show_default then
             local name_font_face = self.options[c].name_font_face and self.options[c].name_font_face or "cfont"
             local name_font_size = self.options[c].name_font_size and self.options[c].name_font_size or default_name_font_size
