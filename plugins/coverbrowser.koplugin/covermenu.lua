@@ -7,7 +7,6 @@ local Menu = require("ui/widget/menu")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
-local util = require("util")
 local _ = require("gettext")
 
 local BookInfoManager = require("bookinfomanager")
@@ -305,7 +304,7 @@ function CoverMenu:updateItems(select_number)
                                     -- Err, a summary table with no status entry? Should never happen...
                                     local summary = { status = status }
                                     -- Append the status entry to the existing summary...
-                                    util.tableMerge(docinfo.data.summary, summary)
+                                    require("util").tableMerge(docinfo.data.summary, summary)
                                 else
                                     -- No summary table at all, create a minimal one
                                     local summary = { status = status }
