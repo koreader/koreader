@@ -270,10 +270,11 @@ function CoverMenu:updateItems(select_number)
                 })
                 -- For simplicty's sake, hide that for never opened books
                 if DocSettings:hasSidecarFile(file) then
+                    local status
                     if self.cover_info_cache[file] then
                         local c_pages, c_percent_finished, c_status = unpack(self.cover_info_cache[file])
+                        status = c_status
                     end
-                    local status = c_status
                     table.insert(orig_buttons, {
                         { -- Mark the book as read/unread
                             text = status == "complete" and _("Mark as reading") or _("Mark as read"),
