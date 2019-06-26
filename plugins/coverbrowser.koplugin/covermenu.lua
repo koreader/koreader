@@ -270,26 +270,28 @@ function CoverMenu:updateItems(select_number)
                 })
                 -- For simplicty's sake, hide that for never opened books
                 if DocSettings:hasSidecarFile(file) then
-                    local docinfo = DocSettings:open(file)
-                    local status
-                    if docinfo.data.summary and docinfo.data.summary.status then
-                        status = docinfo.data.summary.status
+                    if self.cover_info_cache[file] then
+                        local c_pages, c_percent_finished, c_status = unpack(self.cover_info_cache[file])
                     end
+                    local status = c_status
                     table.insert(orig_buttons, {
                         { -- Mark the book as read/unread
                             text = status == "complete" and _("Mark as reading") or _("Mark as read"),
                             enabled = status ~= nil,
                             callback = function()
-                                local docinfo = DocSettings:open(file)
                                 local status
-                                if docinfo.data.summary and docinfo.data.summary.status then
-                                    status = docinfo.data.summary.status
-                                end
-
-                                docinfo.data.summary.status = status == "complete" and "reading" or "complete"
                                 if self.cover_info_cache[file] then
                                     local c_pages, c_percent_finished, c_status = unpack(self.cover_info_cache[file])
-                                    self.cover_info_cache[file] = {c_pages, c_percent_finished, docinfo.data.summary.status}
+                                    if c_status ~= nil then
+                                        status = c_status == "complete" and "reading" or "complete"
+                                    end
+                                end
+
+                                local docinfo = DocSettings:open(file)
+                                if docinfo.data.summary and docinfo.data.summary.status then
+                                    if status ~= nil then
+                                        docinfo.data.summary.status = status
+                                    end
                                 end
                                 docinfo:flush()
 
