@@ -287,6 +287,10 @@ function CoverMenu:updateItems(select_number)
                                 end
 
                                 docinfo.data.summary.status = status == "complete" and "reading" or "complete"
+                                if self.cover_info_cache[file] then
+                                    local c_pages, c_percent_finished, c_status = unpack(self.cover_info_cache[file])
+                                    self.cover_info_cache[file] = {c_pages, c_percent_finished, docinfo.data.summary.status}
+                                end
                                 docinfo:flush()
 
                                 UIManager:close(self.file_dialog)
