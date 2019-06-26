@@ -285,6 +285,7 @@ function CoverMenu:updateItems(select_number)
                                     local c_pages, c_percent_finished, c_status = unpack(self.cover_info_cache[file])
                                     if c_status ~= nil then
                                         status = c_status == "complete" and "reading" or "complete"
+                                        self.cover_info_cache[file] = {c_pages, c_percent_finished, status}
                                     end
                                 end
 
