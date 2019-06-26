@@ -268,7 +268,7 @@ function CoverMenu:updateItems(select_number)
                         end,
                     },
                 })
-                -- For simplicty's sake, hide that for never opened books
+                -- For simplicity's sake, hide that for never opened books
                 if DocSettings:hasSidecarFile(file) then
                     local status
                     if self.cover_info_cache[file] then
