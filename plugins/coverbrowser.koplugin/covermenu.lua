@@ -272,7 +272,7 @@ function CoverMenu:updateItems(select_number)
                 if DocSettings:hasSidecarFile(file) then
                     local status
                     if self.cover_info_cache[file] then
-                        local c_pages, c_percent_finished, c_status = unpack(self.cover_info_cache[file])
+                        local _, _, c_status = unpack(self.cover_info_cache[file])
                         status = c_status
                     end
                     table.insert(orig_buttons, {
@@ -280,19 +280,19 @@ function CoverMenu:updateItems(select_number)
                             text = status == "complete" and _("Mark as reading") or _("Mark as read"),
                             enabled = status ~= nil,
                             callback = function()
-                                local status
+                                local new_status
                                 if self.cover_info_cache[file] then
                                     local c_pages, c_percent_finished, c_status = unpack(self.cover_info_cache[file])
                                     if c_status ~= nil then
-                                        status = c_status == "complete" and "reading" or "complete"
-                                        self.cover_info_cache[file] = {c_pages, c_percent_finished, status}
+                                        new_status = c_status == "complete" and "reading" or "complete"
+                                        self.cover_info_cache[file] = {c_pages, c_percent_finished, new_status}
                                     end
                                 end
 
                                 local docinfo = DocSettings:open(file)
                                 if docinfo.data.summary and docinfo.data.summary.status then
-                                    if status ~= nil then
-                                        docinfo.data.summary.status = status
+                                    if new_status ~= nil then
+                                        docinfo.data.summary.status = new_status
                                     end
                                 end
                                 docinfo:flush()
