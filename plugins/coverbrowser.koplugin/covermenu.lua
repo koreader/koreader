@@ -1,4 +1,5 @@
 local DocumentRegistry = require("document/documentregistry")
+local DocSettings = require("docsettings")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local ImageViewer = require("ui/widget/imageviewer")
 local InfoMessage = require("ui/widget/infomessage")
@@ -262,11 +263,38 @@ function CoverMenu:updateItems(select_number)
                                 title = bookinfo.title,
                                 text = description,
                             }
-                            UIManager:show(textviewer)
                             UIManager:close(self.file_dialog)
+                            UIManager:show(textviewer)
                         end,
                     },
                 })
+                -- For simplicty's sake, hide that for never opened books
+                if DocSettings:hasSidecarFile(file) then
+                    local docinfo = DocSettings:open(file)
+                    local status
+                    if docinfo.data.summary and docinfo.data.summary.status then
+                        status = docinfo.data.summary.status
+                    end
+                    table.insert(orig_buttons, {
+                        { -- Mark the book as read/unread
+                            text = status == "complete" and _("Mark as reading") or _("Mark as read"),
+                            enabled = status ~= nil,
+                            callback = function()
+                                local docinfo = DocSettings:open(file)
+                                local status
+                                if docinfo.data.summary and docinfo.data.summary.status then
+                                    status = docinfo.data.summary.status
+                                end
+
+                                docinfo.data.summary.status = status == "complete" and "reading" or "complete"
+                                docinfo:flush()
+
+                                UIManager:close(self.file_dialog)
+                                self:updateItems()
+                            end,
+                        },
+                    })
+                end
                 table.insert(orig_buttons, {
                     { -- Allow user to ignore some offending cover image
                         text = bookinfo.ignore_cover and _("Unignore cover") or _("Ignore cover"),
@@ -391,8 +419,8 @@ function CoverMenu:onHistoryMenuHold(item)
                     title = bookinfo.title,
                     text = description,
                 }
-                UIManager:show(textviewer)
                 UIManager:close(self.histfile_dialog)
+                UIManager:show(textviewer)
             end,
         },
     })
