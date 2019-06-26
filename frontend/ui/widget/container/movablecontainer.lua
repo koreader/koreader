@@ -147,6 +147,9 @@ function MovableContainer:_moveBy(dx, dy, restrict_to_screen)
                 self._moved_offset_y = screen_h - self._orig_y - self.dimen.h
             end
         end
+        -- Ensure the offsets are integers, to avoid refresh area glitches
+        self._moved_offset_x = Math.round(self._moved_offset_x)
+        self._moved_offset_y = Math.round(self._moved_offset_y)
         -- if not restrict_to_screen, we don't need to check anything:
         -- we trust gestures' position and distances: if we started with our
         -- finger on widget, and moved our finger to screen border, a part
