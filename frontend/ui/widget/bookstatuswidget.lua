@@ -346,9 +346,8 @@ function BookStatusWidget:genBookInfoGroup()
     if self.thumbnail then
         -- Much like BookInfoManager, honor AR here
         local cbb_w, cbb_h = self.thumbnail:getWidth(), self.thumbnail:getHeight()
-        local scale_factor = 1
         if cbb_w > img_width or cbb_h > img_height then
-            scale_factor = math.min(img_width / cbb_w, img_height / cbb_h)
+            local scale_factor = math.min(img_width / cbb_w, img_height / cbb_h)
             cbb_w = math.min(math.floor(cbb_w * scale_factor)+1, img_width)
             cbb_h = math.min(math.floor(cbb_h * scale_factor)+1, img_height)
             self.thumbnail = RenderImage:scaleBlitBuffer(self.thumbnail, cbb_w, cbb_h, true)
