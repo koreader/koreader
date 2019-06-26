@@ -31,6 +31,7 @@ local _ = require("gettext")
 
 local Button = InputContainer:new{
     text = nil, -- mandatory
+    text_func = nil,
     icon = nil,
     preselect = false,
     callback = nil,
@@ -48,6 +49,11 @@ local Button = InputContainer:new{
 }
 
 function Button:init()
+    -- Prefer an optional text_func over text
+    if self.text_func and type(self.text_func) == "function" then
+        self.text = self.text_func()
+    end
+
     if self.text then
         self.label_widget = TextWidget:new{
             text = self.text,

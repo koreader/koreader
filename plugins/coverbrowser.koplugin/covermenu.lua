@@ -7,7 +7,7 @@ local Menu = require("ui/widget/menu")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
-local util  = require("util")
+local util = require("util")
 local _ = require("gettext")
 
 local BookInfoManager = require("bookinfomanager")
