@@ -57,12 +57,27 @@ local BookStatusWidget = InputContainer:new{
 
 function BookStatusWidget:init()
     if self.settings then
-        self.summary = self.settings:readSetting("summary") or {
+        -- What a blank, full summary table should look like
+        local new_summary = {
             rating = nil,
             note = nil,
             status = "",
             modified = "",
         }
+        local summary = self.settings:readSetting("summary")
+        -- Check if the summary table we get is a full one, or a minimal one from CoverMenu...
+        if summary then
+            if summary.modified then
+                -- Complete, use it as-is
+                self.summary = summary
+            else
+                -- Incomplete, fill it up
+                self.summary = new_summary
+                util.tableMerge(self.summary, summary)
+            end
+        else
+            self.summary = new_summary
+        end
     end
     self.total_pages = self.view.document:getPageCount()
     stats_book = self:getStats()
