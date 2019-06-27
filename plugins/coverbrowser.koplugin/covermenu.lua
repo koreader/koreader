@@ -225,6 +225,17 @@ function CoverMenu:updateItems(select_number)
                     UIManager:close(self.file_dialog)
                 end
 
+                -- Fudge the "Purge .sdr" button ([1][3]) callback to also trash the cover_info_cache
+                local orig_purge_callback = orig_buttons[1][3].callback
+                orig_buttons[1][3].callback = function()
+                    -- Wipe the cache
+                    if self.cover_info_cache[file] then
+                        self.cover_info_cache[file] = nil
+                    end
+                    -- And then purge the sidecar folder as expected
+                    orig_purge_callback()
+                end
+
                 -- Swap "Convert" ([4][2]) w/ "Book Info" ([4][3], the last item)
                 table.insert(orig_buttons[4], 2, table.remove(orig_buttons[4]))
 
