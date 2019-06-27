@@ -225,49 +225,10 @@ function CoverMenu:updateItems(select_number)
                     UIManager:close(self.file_dialog)
                 end
 
+                -- Swap "Convert" ([4][2]) w/ "Book Info" ([4][3], the last item)
+                table.insert(orig_buttons[4], 2, table.remove(orig_buttons[4]))
+
                 -- Add some new buttons to original buttons set
-                table.insert(orig_buttons, {
-                    { -- Allow user to view real size cover in ImageViewer
-                        text = _("View full size cover"),
-                        enabled = bookinfo.has_cover and true or false,
-                        callback = function()
-                            local document = DocumentRegistry:openDocument(file)
-                            if document then
-                                if document.loadDocument then -- needed for crengine
-                                    document:loadDocument(false) -- load only metadata
-                                end
-                                local cover_bb = document:getCoverPageImage()
-                                if cover_bb then
-                                    local imgviewer = ImageViewer:new{
-                                        image = cover_bb,
-                                        with_title_bar = false,
-                                        fullscreen = true,
-                                    }
-                                    UIManager:show(imgviewer)
-                                else
-                                    UIManager:show(InfoMessage:new{
-                                        text = _("No cover image available."),
-                                    })
-                                end
-                                UIManager:close(self.file_dialog)
-                                DocumentRegistry:closeDocument(file)
-                            end
-                        end,
-                    },
-                    { -- Allow user to directly view description in TextViewer
-                        text = bookinfo.description and _("View book description") or _("No book description"),
-                        enabled = bookinfo.description and true or false,
-                        callback = function()
-                            local description = require("util").htmlToPlainTextIfHtml(bookinfo.description)
-                            local textviewer = TextViewer:new{
-                                title = bookinfo.title,
-                                text = description,
-                            }
-                            UIManager:close(self.file_dialog)
-                            UIManager:show(textviewer)
-                        end,
-                    },
-                })
                 table.insert(orig_buttons, {
                     { -- Mark the book as read/unread
                         text_func = function()
@@ -319,6 +280,53 @@ function CoverMenu:updateItems(select_number)
 
                             UIManager:close(self.file_dialog)
                             self:updateItems()
+                        end,
+                    },
+                })
+
+                -- Move the "Convert" button (now [4][3], the last item) to the left of the "Mark as..." button [5][1] we've just added
+                table.insert(orig_buttons[5], 1, table.remove(orig_buttons[4]))
+
+                -- Keep on adding new buttons
+                table.insert(orig_buttons, {
+                    { -- Allow user to view real size cover in ImageViewer
+                        text = _("View full size cover"),
+                        enabled = bookinfo.has_cover and true or false,
+                        callback = function()
+                            local document = DocumentRegistry:openDocument(file)
+                            if document then
+                                if document.loadDocument then -- needed for crengine
+                                    document:loadDocument(false) -- load only metadata
+                                end
+                                local cover_bb = document:getCoverPageImage()
+                                if cover_bb then
+                                    local imgviewer = ImageViewer:new{
+                                        image = cover_bb,
+                                        with_title_bar = false,
+                                        fullscreen = true,
+                                    }
+                                    UIManager:show(imgviewer)
+                                else
+                                    UIManager:show(InfoMessage:new{
+                                        text = _("No cover image available."),
+                                    })
+                                end
+                                UIManager:close(self.file_dialog)
+                                DocumentRegistry:closeDocument(file)
+                            end
+                        end,
+                    },
+                    { -- Allow user to directly view description in TextViewer
+                        text = bookinfo.description and _("View book description") or _("No book description"),
+                        enabled = bookinfo.description and true or false,
+                        callback = function()
+                            local description = require("util").htmlToPlainTextIfHtml(bookinfo.description)
+                            local textviewer = TextViewer:new{
+                                title = bookinfo.title,
+                                text = description,
+                            }
+                            UIManager:close(self.file_dialog)
+                            UIManager:show(textviewer)
                         end,
                     },
                 })
