@@ -281,6 +281,7 @@ function CoverMenu:updateItems(select_number)
                             --       For our purposes, we assume this means reading or on hold, which is just fine.
                             -- NOTE: This also means we assume "on hold" means reading, meaning it'll be flipped to "finished",
                             --       which I'm personally okay with, too.
+                            --       c.f., BookStatusWidget:generateSwitchGroup for the three possible constant values.
                             return status == "complete" and _("Mark as reading") or _("Mark as read")
                         end,
                         enabled = true,
