@@ -236,9 +236,6 @@ function CoverMenu:updateItems(select_number)
                     orig_purge_callback()
                 end
 
-                -- Swap "Convert" ([4][2]) w/ "Book Info" ([4][3], the last item)
-                table.insert(orig_buttons[4], 2, table.remove(orig_buttons[4]))
-
                 -- Add some new buttons to original buttons set
                 table.insert(orig_buttons, {
                     { -- Mark the book as read/unread
@@ -295,8 +292,8 @@ function CoverMenu:updateItems(select_number)
                     },
                 })
 
-                -- Move the "Convert" button (now [4][3], the last item) to the left of the "Mark as..." button [5][1] we've just added
-                table.insert(orig_buttons[5], 1, table.remove(orig_buttons[4]))
+                -- Move the "Convert" button ([4][2]) to the left of the "Mark as..." button [5][1] we've just added
+                table.insert(orig_buttons[5], 1, table.remove(orig_buttons[4], 2))
 
                 -- Keep on adding new buttons
                 table.insert(orig_buttons, {
