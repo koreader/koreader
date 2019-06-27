@@ -370,6 +370,10 @@ function CoverMenu:updateItems(select_number)
                         text = _("Refresh cached book information"),
                         enabled = bookinfo and true or false,
                         callback = function()
+                            -- Wipe the cache
+                            if self.cover_info_cache[file] then
+                                self.cover_info_cache[file] = nil
+                            end
                             BookInfoManager:deleteBookInfo(file)
                             UIManager:close(self.file_dialog)
                             self:updateItems()
