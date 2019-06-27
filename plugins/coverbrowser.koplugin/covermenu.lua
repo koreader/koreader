@@ -292,6 +292,9 @@ function CoverMenu:updateItems(select_number)
                                 status = c_status == "complete" and "reading" or "complete"
                                 -- Update the cache, even if it had a nil status before
                                 self.cover_info_cache[file] = {c_pages, c_percent_finished, status}
+                            else
+                                -- We assumed earlier an empty status meant "reading", so, flip that to "complete"
+                                status = "complete"
                             end
 
                             -- In case the book doesn't have a sidecar file, this'll create it
