@@ -117,7 +117,22 @@ function UIManager:init()
                 self:suspend()
             end
         end
-        if not G_reader_settings:readSetting("ignore_power_sleepcover") then
+        -- Sleep Cover handling
+        if G_reader_settings:readSetting("ignore_power_sleepcover") then
+            -- NOTE: The hardware event itself will wake the kernel up if it's in suspend (:/).
+            --       Let the unexpected wakeup guard handle that.
+            self.event_handlers["SleepCoverClosed"] = nil
+            self.event_handlers["SleepCoverOpened"] = nil
+        elseif G_reader_settings:readSetting("ignore_open_sleepcover") then
+            -- Just ignore wakeup events, and do NOT set is_cover_closed,
+            -- so device/generic/device will let us use the power button to wake ;).
+            self.event_handlers["SleepCoverClosed"] = function()
+                self:suspend()
+            end
+            self.event_handlers["SleepCoverOpened"] = function()
+                Device.is_cover_closed = false
+            end
+        else
             self.event_handlers["SleepCoverClosed"] = function()
                 Device.is_cover_closed = true
                 self:suspend()
@@ -126,15 +141,6 @@ function UIManager:init()
                 Device.is_cover_closed = false
                 self:resume()
             end
-        else
-            -- Closing/opening the cover will still wake up the device, so we
-            -- need to put it back to sleep if we are in screen saver mode
-            self.event_handlers["SleepCoverClosed"] = function()
-                if Device.screen_saver_mode then
-                    self:suspend()
-                end
-            end
-            self.event_handlers["SleepCoverOpened"] = self.event_handlers["SleepCoverClosed"]
         end
         self.event_handlers["Light"] = function()
             Device:getPowerDevice():toggleFrontlight()

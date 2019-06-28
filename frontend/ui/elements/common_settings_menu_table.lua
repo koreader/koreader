@@ -107,13 +107,28 @@ if Device:setDateTime() then
 end
 
 if Device:isKobo() then
-    common_settings.sleepcover = {
-        text = _("Ignore sleepcover events"),
+    common_settings.ignore_sleepcover = {
+        text = _("Ignore all sleepcover events"),
         checked_func = function()
             return G_reader_settings:isTrue("ignore_power_sleepcover")
         end,
         callback = function()
             G_reader_settings:flipNilOrFalse("ignore_power_sleepcover")
+            G_reader_settings:flipFalse("ignore_open_sleepcover")
+            UIManager:show(InfoMessage:new{
+                text = _("This will take effect on next restart."),
+            })
+        end
+    }
+
+    common_settings.ignore_open_sleepcover = {
+        text = _("Ignore sleepcover wakeup events"),
+        checked_func = function()
+            return G_reader_settings:isTrue("ignore_open_sleepcover")
+        end,
+        callback = function()
+            G_reader_settings:flipNilOrFalse("ignore_open_sleepcover")
+            G_reader_settings:flipFalse("ignore_power_sleepcover")
             UIManager:show(InfoMessage:new{
                 text = _("This will take effect on next restart."),
             })
