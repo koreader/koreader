@@ -229,7 +229,7 @@ function CoverMenu:updateItems(select_number)
                 local orig_purge_callback = orig_buttons[1][3].callback
                 orig_buttons[1][3].callback = function()
                     -- Wipe the cache
-                    if self.cover_info_cache[file] then
+                    if self.cover_info_cache and self.cover_info_cache[file] then
                         self.cover_info_cache[file] = nil
                     end
                     -- And then purge the sidecar folder as expected
@@ -242,7 +242,7 @@ function CoverMenu:updateItems(select_number)
                         text_func = function()
                             -- If the book has a cache entry, it means it has a sidecar file, and it *may* have the info we need.
                             local status
-                            if self.cover_info_cache[file] then
+                            if self.cover_info_cache and self.cover_info_cache[file] then
                                 local _, _, c_status = unpack(self.cover_info_cache[file])
                                 status = c_status
                             end
@@ -256,7 +256,7 @@ function CoverMenu:updateItems(select_number)
                         enabled = true,
                         callback = function()
                             local status
-                            if self.cover_info_cache[file] then
+                            if self.cover_info_cache and self.cover_info_cache[file] then
                                 local c_pages, c_percent_finished, c_status = unpack(self.cover_info_cache[file])
                                 status = c_status == "complete" and "reading" or "complete"
                                 -- Update the cache, even if it had a nil status before
@@ -368,7 +368,7 @@ function CoverMenu:updateItems(select_number)
                         enabled = bookinfo and true or false,
                         callback = function()
                             -- Wipe the cache
-                            if self.cover_info_cache[file] then
+                            if self.cover_info_cache and self.cover_info_cache[file] then
                                 self.cover_info_cache[file] = nil
                             end
                             BookInfoManager:deleteBookInfo(file)
