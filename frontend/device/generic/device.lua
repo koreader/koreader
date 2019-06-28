@@ -314,9 +314,9 @@ function Device:retrieveNetworkInfo()
             -- NOTE: No -w flag available in the old busybox build used on Legacy Kindles...
             local pingok
             if self:isKindle() and self:hasKeyboard() then
-                pingok = os.execute("ping -q -c 2 `ip r | grep default | cut -d ' ' -f 3` > /dev/null")
+                pingok = os.execute("ping -q -c 2 `ip r | grep default | tail -n 1 | cut -d ' ' -f 3` > /dev/null")
             else
-                pingok = os.execute("ping -q -w 3 -c 2 `ip r | grep default | cut -d ' ' -f 3` > /dev/null")
+                pingok = os.execute("ping -q -w 3 -c 2 `ip r | grep default | tail -n 1 | cut -d ' ' -f 3` > /dev/null")
             end
             if pingok == 0 then
                 result = result .. "Gateway ping successful"

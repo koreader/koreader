@@ -104,9 +104,9 @@ function NetworkMgr:isConnected()
         -- `-c1` try only once; `-w2` wait 2 seconds
         -- NOTE: No -w flag available in the old busybox build used on Legacy Kindles...
         if Device:isKindle() and Device:hasKeyboard() then
-            return 0 == os.execute([[ping -c1 $(/sbin/route -n | awk '$4 == "UG" {print $2}')]])
+            return 0 == os.execute([[ping -c1 $(/sbin/route -n | awk '$4 == "UG" {print $2}' | tail -n 1)]])
         else
-            return 0 == os.execute([[ping -c1 -w2 $(/sbin/route -n | awk '$4 == "UG" {print $2}')]])
+            return 0 == os.execute([[ping -c1 -w2 $(/sbin/route -n | awk '$4 == "UG" {print $2}' | tail -n 1)]])
         end
     end
 end
