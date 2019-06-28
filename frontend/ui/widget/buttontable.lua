@@ -51,6 +51,7 @@ function ButtonTable:init()
             local btn_entry = row[j]
             local button = Button:new{
                 text = btn_entry.text,
+                text_func = btn_entry.text_func,
                 enabled = btn_entry.enabled,
                 callback = btn_entry.callback,
                 hold_callback = btn_entry.hold_callback,

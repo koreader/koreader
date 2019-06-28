@@ -184,6 +184,16 @@ function util.arrayAppend(t1, t2)
     end
 end
 
+-- Merge t2 into t1, overwriting existing elements if they already exist
+-- Probably not safe with nested tables (c.f., https://stackoverflow.com/q/1283388)
+---- @param t1 Lua table
+---- @param t2 Lua table
+function util.tableMerge(t1, t2)
+    for k, v in pairs(t2) do
+        t1[k] = v
+    end
+end
+
 --[[--
 Gets last index of string in character
 

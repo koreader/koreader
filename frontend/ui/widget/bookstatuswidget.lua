@@ -17,6 +17,7 @@ local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local ProgressWidget = require("ui/widget/progresswidget")
+local RenderImage = require("ui/renderimage")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
@@ -56,12 +57,27 @@ local BookStatusWidget = InputContainer:new{
 
 function BookStatusWidget:init()
     if self.settings then
-        self.summary = self.settings:readSetting("summary") or {
+        -- What a blank, full summary table should look like
+        local new_summary = {
             rating = nil,
             note = nil,
             status = "",
             modified = "",
         }
+        local summary = self.settings:readSetting("summary")
+        -- Check if the summary table we get is a full one, or a minimal one from CoverMenu...
+        if summary then
+            if summary.modified then
+                -- Complete, use it as-is
+                self.summary = summary
+            else
+                -- Incomplete, fill it up
+                self.summary = new_summary
+                util.tableMerge(self.summary, summary)
+            end
+        else
+            self.summary = new_summary
+        end
     end
     self.total_pages = self.view.document:getPageCount()
     stats_book = self:getStats()
@@ -343,10 +359,19 @@ function BookStatusWidget:genBookInfoGroup()
     }
     -- thumbnail
     if self.thumbnail then
+        -- Much like BookInfoManager, honor AR here
+        local cbb_w, cbb_h = self.thumbnail:getWidth(), self.thumbnail:getHeight()
+        if cbb_w > img_width or cbb_h > img_height then
+            local scale_factor = math.min(img_width / cbb_w, img_height / cbb_h)
+            cbb_w = math.min(math.floor(cbb_w * scale_factor)+1, img_width)
+            cbb_h = math.min(math.floor(cbb_h * scale_factor)+1, img_height)
+            self.thumbnail = RenderImage:scaleBlitBuffer(self.thumbnail, cbb_w, cbb_h, true)
+        end
+
         table.insert(book_info_group, ImageWidget:new{
             image = self.thumbnail,
-            width = img_width,
-            height = img_height,
+            width = cbb_w,
+            height = cbb_h,
         })
         -- dereference thumbnail since we let imagewidget manages its lifecycle
         self.thumbnail = nil

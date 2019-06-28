@@ -1,4 +1,5 @@
 local DocumentRegistry = require("document/documentregistry")
+local DocSettings = require("docsettings")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local ImageViewer = require("ui/widget/imageviewer")
 local InfoMessage = require("ui/widget/infomessage")
@@ -224,7 +225,77 @@ function CoverMenu:updateItems(select_number)
                     UIManager:close(self.file_dialog)
                 end
 
+                -- Fudge the "Purge .sdr" button ([1][3]) callback to also trash the cover_info_cache
+                local orig_purge_callback = orig_buttons[1][3].callback
+                orig_buttons[1][3].callback = function()
+                    -- Wipe the cache
+                    if self.cover_info_cache[file] then
+                        self.cover_info_cache[file] = nil
+                    end
+                    -- And then purge the sidecar folder as expected
+                    orig_purge_callback()
+                end
+
                 -- Add some new buttons to original buttons set
+                table.insert(orig_buttons, {
+                    { -- Mark the book as read/unread
+                        text_func = function()
+                            -- If the book has a cache entry, it means it has a sidecar file, and it *may* have the info we need.
+                            local status
+                            if self.cover_info_cache[file] then
+                                local _, _, c_status = unpack(self.cover_info_cache[file])
+                                status = c_status
+                            end
+                            -- NOTE: status may still be nil if the BookStatus widget was never opened in this book.
+                            --       For our purposes, we assume this means reading or on hold, which is just fine.
+                            -- NOTE: This also means we assume "on hold" means reading, meaning it'll be flipped to "finished",
+                            --       which I'm personally okay with, too.
+                            --       c.f., BookStatusWidget:generateSwitchGroup for the three possible constant values.
+                            return status == "complete" and _("Mark as reading") or _("Mark as read")
+                        end,
+                        enabled = true,
+                        callback = function()
+                            local status
+                            if self.cover_info_cache[file] then
+                                local c_pages, c_percent_finished, c_status = unpack(self.cover_info_cache[file])
+                                status = c_status == "complete" and "reading" or "complete"
+                                -- Update the cache, even if it had a nil status before
+                                self.cover_info_cache[file] = {c_pages, c_percent_finished, status}
+                            else
+                                -- We assumed earlier an empty status meant "reading", so, flip that to "complete"
+                                status = "complete"
+                            end
+
+                            -- In case the book doesn't have a sidecar file, this'll create it
+                            local docinfo = DocSettings:open(file)
+                            if docinfo.data.summary and docinfo.data.summary.status then
+                                -- Book already had the full BookStatus table in its sidecar, easy peasy!
+                                docinfo.data.summary.status = status
+                            else
+                                -- No BookStatus table, create a minimal one...
+                                if docinfo.data.summary then
+                                    -- Err, a summary table with no status entry? Should never happen...
+                                    local summary = { status = status }
+                                    -- Append the status entry to the existing summary...
+                                    require("util").tableMerge(docinfo.data.summary, summary)
+                                else
+                                    -- No summary table at all, create a minimal one
+                                    local summary = { status = status }
+                                    docinfo:saveSetting("summary", summary)
+                                end
+                            end
+                            docinfo:flush()
+
+                            UIManager:close(self.file_dialog)
+                            self:updateItems()
+                        end,
+                    },
+                })
+
+                -- Move the "Convert" button ([4][2]) to the left of the "Mark as..." button [5][1] we've just added
+                table.insert(orig_buttons[5], 1, table.remove(orig_buttons[4], 2))
+
+                -- Keep on adding new buttons
                 table.insert(orig_buttons, {
                     { -- Allow user to view real size cover in ImageViewer
                         text = _("View full size cover"),
@@ -262,8 +333,8 @@ function CoverMenu:updateItems(select_number)
                                 title = bookinfo.title,
                                 text = description,
                             }
-                            UIManager:show(textviewer)
                             UIManager:close(self.file_dialog)
+                            UIManager:show(textviewer)
                         end,
                     },
                 })
@@ -296,6 +367,10 @@ function CoverMenu:updateItems(select_number)
                         text = _("Refresh cached book information"),
                         enabled = bookinfo and true or false,
                         callback = function()
+                            -- Wipe the cache
+                            if self.cover_info_cache[file] then
+                                self.cover_info_cache[file] = nil
+                            end
                             BookInfoManager:deleteBookInfo(file)
                             UIManager:close(self.file_dialog)
                             self:updateItems()
@@ -391,8 +466,8 @@ function CoverMenu:onHistoryMenuHold(item)
                     title = bookinfo.title,
                     text = description,
                 }
-                UIManager:show(textviewer)
                 UIManager:close(self.histfile_dialog)
+                UIManager:show(textviewer)
             end,
         },
     })
