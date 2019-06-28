@@ -60,7 +60,8 @@ local order = {
         "time",
         "battery",
         "autosuspend",
-        "sleepcover",
+        "ignore_sleepcover",
+        "ignore_open_sleepcover",
         "mass_storage_settings",
     },
     navigation = {
