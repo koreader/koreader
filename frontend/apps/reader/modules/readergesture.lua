@@ -948,7 +948,7 @@ function ReaderGesture:gestureAction(action, ges)
         self:onShowFLOnOff()
     elseif action == "toggle_gsensor" then
         G_reader_settings:flipNilOrFalse("input_ignore_gsensor")
-        Device:toggleGSensor()
+        Device:toggleGSensor(not G_reader_settings:isTrue("input_ignore_gsensor"))
         self:onGSensorToggle()
     elseif action == "toggle_page_flipping" then
         if not self.ui.document.info.has_pages then

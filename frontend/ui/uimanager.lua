@@ -95,7 +95,7 @@ function UIManager:init()
         self.event_handlers["Suspend"] = function()
             -- Ignore the accelerometer (if that's not already the case) while we're alseep
             if G_reader_settings:nilOrFalse("input_ignore_gsensor") then
-                Device:toggleGSensor()
+                Device:toggleGSensor(false)
             end
             self:_beforeSuspend()
             Device:onPowerEvent("Suspend")
@@ -105,7 +105,7 @@ function UIManager:init()
             self:_afterResume()
             -- Stop ignoring the accelerometer (unless requested) when we wakeup
             if G_reader_settings:nilOrFalse("input_ignore_gsensor") then
-                Device:toggleGSensor()
+                Device:toggleGSensor(true)
             end
         end
         self.event_handlers["PowerPress"] = function()
