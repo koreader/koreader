@@ -703,7 +703,7 @@ function Input:toggleMiscEvNTX(toggle)
             self.handleMiscEv = self.handleMiscEvNTX
             self.isNTXAccelHooked = true
         end
-    else if toggle and toggle == false then
+    elseif toggle and toggle == false then
         -- Ignore Gyro events
         if self.isNTXAccelHooked then
             self.handleMiscEv = function() end
