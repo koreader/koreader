@@ -202,9 +202,9 @@ ${SUPPORTED_TARGETS}"
             ;;
         android)
             if [ -z "${NDK}" ]; then
-                if [ -n "${ANDROID_NDK}" ]; then
+                if [ -n "${ANDROID_NDK_HOME}" ]; then
                     # some distributions use `ANDROID_NDK` instead, fall back to it
-                    export NDK="${ANDROID_NDK}"
+                    export NDK="${ANDROID_NDK_HOME}"
                 else
                     export NDK="${CURDIR}/base/toolchain/android-ndk-r15c"
                 fi
