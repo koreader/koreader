@@ -8,6 +8,6 @@ return {
     end,
     callback = function()
         G_reader_settings:flipNilOrFalse("input_ignore_gsensor")
-        Device:toggleGSensor()
+        Device:toggleGSensor(not G_reader_settings:isTrue("input_ignore_gsensor"))
     end,
 }

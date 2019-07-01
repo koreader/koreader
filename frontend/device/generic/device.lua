@@ -283,7 +283,7 @@ function Device:setDateTime(year, month, day, hour, min, sec) end
 function Device:saveSettings() end
 
 -- Device specific method for toggling the GSensor
-function Device:toggleGSensor() end
+function Device:toggleGSensor(toggle) end
 
 --[[
 prepare for application shutdown

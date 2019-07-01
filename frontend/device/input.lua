@@ -696,14 +696,29 @@ function Input:handleMiscEvNTX(ev)
 end
 
 -- Allow toggling it at runtime
-function Input:toggleMiscEvNTX()
-    if self.isNTXAccelHooked then
-        self.handleMiscEv = function() end
+function Input:toggleMiscEvNTX(toggle)
+    if toggle and toggle == true then
+        -- Honor Gyro events
+        if not self.isNTXAccelHooked then
+            self.handleMiscEv = self.handleMiscEvNTX
+            self.isNTXAccelHooked = true
+        end
+    elseif toggle and toggle == false then
+        -- Ignore Gyro events
+        if self.isNTXAccelHooked then
+            self.handleMiscEv = function() end
+            self.isNTXAccelHooked = false
+        end
     else
-        self.handleMiscEv = self.handleMiscEvNTX
-    end
+        -- Toggle it
+        if self.isNTXAccelHooked then
+            self.handleMiscEv = function() end
+        else
+            self.handleMiscEv = self.handleMiscEvNTX
+        end
 
-    self.isNTXAccelHooked = not self.isNTXAccelHooked
+        self.isNTXAccelHooked = not self.isNTXAccelHooked
+    end
 end
 
 -- helpers for touch event data management:
