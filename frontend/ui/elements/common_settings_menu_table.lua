@@ -395,7 +395,15 @@ common_settings.document = {
                         G_reader_settings:saveSetting("end_document_action", "book_status_file_browser")
                     end,
                 },
-
+                {
+                    text = _("Delete file"),
+                    checked_func = function()
+                        return G_reader_settings:readSetting("end_document_action") == "delete_file"
+                    end,
+                    callback = function()
+                        G_reader_settings:saveSetting("end_document_action", "delete_file")
+                    end,
+                },
             }
         },
         {
