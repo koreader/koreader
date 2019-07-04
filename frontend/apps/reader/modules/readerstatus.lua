@@ -70,17 +70,17 @@ function ReaderStatus:onEndOfBook()
             },
             {
                 {
-                    text = _("Open next file"),
-                    enabled = collate,
+                    text = _("Delete file"),
                     callback = function()
-                        self:openNextFile(self.document.file)
+                        self:deleteFile(self.document.file, false)
                         UIManager:close(choose_action)
                     end,
                 },
                 {
-                    text = _("Delete file"),
+                    text = _("Open next file"),
+                    enabled = collate,
                     callback = function()
-                        self:deleteFile(self.document.file, false)
+                        self:openNextFile(self.document.file)
                         UIManager:close(choose_action)
                     end,
                 },
