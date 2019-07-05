@@ -2,6 +2,7 @@ local isAndroid, android = pcall(require, "android")
 local Device = require("device")
 local Geom = require("ui/geometry")
 local logger = require("logger")
+local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
 
@@ -9,8 +10,23 @@ if not isAndroid then return end
 
 local ScreenHelper = {}
 
--- toggle android status bar visibility
 function ScreenHelper:toggleFullscreen()
+    local api = Device.firmware_rev
+
+    if api < 19 and api >= 17 then
+        Device:toggleFullscreen()
+        local UIManager = require("ui/uimanager")
+        local InfoMessage = require("ui/widget/infomessage")
+        UIManager:show(InfoMessage:new{
+            text = _("This will take effect on next restart.")
+        })
+    elseif api < 17 then
+        self:toggleFullscreenLegacy()
+    end
+end
+
+-- toggle android status bar visibility -- Legacy function for Apis 14 - 16
+function ScreenHelper:toggleFullscreenLegacy()
     -- toggle android status bar visibility
     local is_fullscreen = android.isFullscreen()
     android.setFullscreen(not is_fullscreen)

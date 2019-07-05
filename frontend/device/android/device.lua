@@ -1,5 +1,6 @@
 local Generic = require("device/generic/device")
 local A, android = pcall(require, "android")  -- luacheck: ignore
+local Geom = require("ui/geometry")
 local ffi = require("ffi")
 local C = ffi.C
 local lfs = require("libs/libkoreader-lfs")
@@ -132,6 +133,11 @@ function Device:init()
         android.setWakeLock(true)
     end
 
+    -- check if we disable fullscreen support
+    if G_reader_settings:isTrue("disable_android_fullscreen") then
+        self:toggleFullscreen()
+    end
+
     Generic.init(self)
 end
 
@@ -162,6 +168,34 @@ function Device:retrieveNetworkInfo()
         return _("Not connected")
     else
         return T(_("Connected to %1\n IP address: %2\n gateway: %3"), ssid, ip, gw)
+    end
+end
+
+function Device:setViewport(x,y,w,h)
+    logger.info(string.format("Switching viewport to new geometry [x=%d,y=%d,w=%d,h=%d]",x, y, w, h))
+    local viewport = Geom:new{x=x, y=y, w=w, h=h}
+    self.screen:setViewport(viewport)
+end
+
+function Device:toggleFullscreen()
+    local api = android.app.activity.sdkVersion
+    if api >= 19 then
+        logger.dbg("ignoring fullscreen toggle, reason: always in immersive mode")
+    elseif api < 19 and api >= 17 then
+        local width = android.getScreenWidth()
+        local height = android.getScreenHeight()
+        local available_height = android.getScreenAvailableHeight()
+        local is_fullscreen = android.isFullscreen()
+        android.setFullscreen(not is_fullscreen)
+        G_reader_settings:saveSetting("disable_android_fullscreen", is_fullscreen)
+        is_fullscreen = android.isFullscreen()
+        if is_fullscreen then
+            self:setViewport(0, 0, width, height)
+        else
+            self:setViewport(0, 0, width, available_height)
+        end
+    else
+        logger.dbg("ignoring fullscreen toggle, reason: legacy api " .. api)
     end
 end
 
