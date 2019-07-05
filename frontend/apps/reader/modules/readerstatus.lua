@@ -4,6 +4,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
+local T = require("ffi/util").template
 
 local ReaderStatus = InputContainer:new {
     document = nil,
@@ -69,6 +70,13 @@ function ReaderStatus:onEndOfBook()
             },
             {
                 {
+                    text = _("Delete file"),
+                    callback = function()
+                        self:deleteFile(self.document.file, false)
+                        UIManager:close(choose_action)
+                    end,
+                },
+                {
                     text = _("Open next file"),
                     enabled = collate,
                     callback = function()
@@ -76,6 +84,8 @@ function ReaderStatus:onEndOfBook()
                         UIManager:close(choose_action)
                     end,
                 },
+            },
+            {
                 {
                     text = _("File browser"),
                     callback = function()
@@ -113,6 +123,8 @@ function ReaderStatus:onEndOfBook()
     elseif settings == "book_status_file_browser" then
         local before_show_callback = function() self:openFileBrowser() end
         self:onShowBookStatus(before_show_callback)
+    elseif settings == "delete_file" then
+        self:deleteFile(self.document.file, true)
     end
 end
 
@@ -139,6 +151,27 @@ function ReaderStatus:openNextFile(next_file)
             text = _("This is the last file in the current folder. No next file to open."),
         })
     end
+end
+
+function ReaderStatus:deleteFile(file, text_end_book)
+    local ConfirmBox = require("ui/widget/confirmbox")
+    local message_end_book = ""
+    if text_end_book then
+        message_end_book = "You've reached the end of the document.\n"
+    end
+    UIManager:show(ConfirmBox:new{
+        text = T(_("%1Are you sure that you want to delete this file?\n%2\nIf you delete a file, it is permanently lost."), message_end_book, file),
+        ok_text = _("Delete"),
+        ok_callback = function()
+            local FileManager = require("apps/filemanager/filemanager")
+            local filemanagerutil = require("apps/filemanager/filemanagerutil")
+            self:openFileBrowser()
+            FileManager:deleteFile(file)
+            filemanagerutil.removeFileFromHistoryIfWanted(file)
+            filemanagerutil.ensureLastFileExists()
+            FileManager.instance.file_chooser:refreshPath()
+        end,
+    })
 end
 
 function ReaderStatus:onShowBookStatus(before_show_callback)
