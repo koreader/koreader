@@ -40,6 +40,23 @@ local function getCodename()
     return codename
 end
 
+local EXTERNAL_DICTS_AVAILABILITY_CHECKED = false
+local EXTERNAL_DICTS = require("device/android/dictionaries")
+local external_dict_when_back_callback = nil
+
+local function getExternalDicts()
+    if not EXTERNAL_DICTS_AVAILABILITY_CHECKED then
+        EXTERNAL_DICTS_AVAILABILITY_CHECKED = true
+        for i, v in ipairs(EXTERNAL_DICTS) do
+            local package = v[4]
+            if android.isPackageEnabled(package) then
+                v[3] = true
+            end
+        end
+    end
+    return EXTERNAL_DICTS
+end
+
 local Device = Generic:new{
     isAndroid = yes,
     model = android.prop.product,
@@ -57,6 +74,22 @@ local Device = Generic:new{
         if not link or type(link) ~= "string" then return end
         return android.openLink(link) == 0
     end,
+    canExternalDictLookup = yes,
+    getExternalDictLookupList = getExternalDicts,
+    doExternalDictLookup = function (self, text, method, callback)
+        external_dict_when_back_callback = callback
+        local package, action = nil
+        for i, v in ipairs(getExternalDicts()) do
+            if v[1] == method then
+                package = v[4]
+                action = v[5]
+                break
+            end
+        end
+        android.dictLookup(text, package, action)
+    end,
+
+
     --[[
     Disable jit on some modules on android to make koreader on Android more stable.
 
@@ -86,6 +119,12 @@ function Device:init()
                 or ev.code == C.APP_CMD_WINDOW_REDRAW_NEEDED then
                 this.device.screen:_updateWindow()
             elseif ev.code == C.APP_CMD_RESUME then
+                EXTERNAL_DICTS_AVAILABILITY_CHECKED = false
+                if external_dict_when_back_callback then
+                    external_dict_when_back_callback()
+                    external_dict_when_back_callback = nil
+                end
+
                 local new_file = android.getIntent()
                 if new_file ~= nil and lfs.attributes(new_file, "mode") == "file" then
                     -- we cannot blit to a window here since we have no focus yet.
