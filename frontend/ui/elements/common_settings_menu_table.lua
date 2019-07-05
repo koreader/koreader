@@ -181,8 +181,8 @@ if Device:isAndroid() then
         }
     end
 
-    -- fullscreen toggle on devices with compatible fullscreen methods (apis 14-16)
-    if Device.firmware_rev <= 16 then
+    -- fullscreen toggle on devices with compatible fullscreen methods (apis 14-18)
+    if Device.firmware_rev < 19 then
         common_settings.fullscreen = {
             text = _("Fullscreen"),
             checked_func = function() return android.isFullscreen() end,
