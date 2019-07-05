@@ -12,7 +12,6 @@ if file ~= nil then
     A.LOGI("intent file path " .. file)
 end
 
--- (Disabled, since we hide navbar on start now no need for this hack)
 -- run koreader patch before koreader startup
 pcall(dofile, "/sdcard/koreader/patch.lua")
 
