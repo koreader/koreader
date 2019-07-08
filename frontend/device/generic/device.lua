@@ -71,6 +71,7 @@ local Device = {
 
     canOpenLink = no,
     openLink = no,
+    canExternalDictLookup = no,
 }
 
 function Device:new(o)

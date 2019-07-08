@@ -298,6 +298,56 @@ If you'd like to change the order in which dictionaries are queried (and their r
             }
         }
     }
+    if Device:canExternalDictLookup() then
+        local function genExternalDictItems()
+            local items_table = {}
+            for i, v in ipairs(Device:getExternalDictLookupList()) do
+                local setting = v[1]
+                local dict_name = v[2]
+                local is_enabled = v[3]
+                table.insert(items_table, {
+                    text = dict_name,
+                    checked_func = function()
+                        return setting == G_reader_settings:readSetting("external_dict_lookup_method")
+                    end,
+                    enabled_func = function()
+                        return is_enabled == true
+                    end,
+                    callback = function()
+                        G_reader_settings:saveSetting("external_dict_lookup_method", v[1])
+                    end,
+                })
+            end
+            return items_table
+        end
+        table.insert(menu_items.dictionary_settings.sub_item_table, 1, {
+            text = _("Use external dictionary"),
+            checked_func = function()
+                return G_reader_settings:isTrue("external_dict_lookup")
+            end,
+            callback = function()
+                G_reader_settings:flipNilOrFalse("external_dict_lookup")
+            end,
+        })
+        table.insert(menu_items.dictionary_settings.sub_item_table, 2, {
+            text_func = function()
+                local display_name = _("none")
+                local ext_id = G_reader_settings:readSetting("external_dict_lookup_method")
+                for i, v in ipairs(Device:getExternalDictLookupList()) do
+                    if v[1] == ext_id then
+                        display_name = v[2]
+                        break
+                    end
+                end
+                return T(_("Dictionary: %1"), display_name)
+            end,
+            enabled_func = function()
+                return G_reader_settings:isTrue("external_dict_lookup")
+            end,
+            sub_item_table = genExternalDictItems(),
+            separator = true,
+        })
+    end
 end
 
 function ReaderDictionary:onLookupWord(word, box, highlight, link)
@@ -708,6 +758,18 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, box, li
             time = os.time(),
             word = word,
         })
+    end
+
+    if Device:canExternalDictLookup() and G_reader_settings:isTrue("external_dict_lookup") then
+        Device:doExternalDictLookup(word, G_reader_settings:readSetting("external_dict_lookup_method"), function()
+            if self.highlight then
+                local clear_id = self.highlight:getClearId()
+                UIManager:scheduleIn(0.5, function()
+                    self.highlight:clear(clear_id)
+                end)
+            end
+        end)
+        return
     end
 
     if fuzzy_search then
