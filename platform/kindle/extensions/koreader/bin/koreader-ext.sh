@@ -4,9 +4,6 @@
 #
 ##
 
-# KOReader's working directory
-KOREADER_DIR="/mnt/us/koreader"
-
 # Load our helper functions...
 if [ -f "./bin/libkohelper.sh" ]; then
     # shellcheck source=/dev/null
