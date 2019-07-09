@@ -18,9 +18,9 @@ fi
 ## Check if we have an FBInk binary available somewhere...
 # Default to something that won't horribly blow up...
 FBINK_BIN="true"
-for my_dir in koreader linkss/bin linkfonts/bin libkh/bin usbnet/bin ; do
+for my_dir in koreader linkss/bin linkfonts/bin libkh/bin usbnet/bin; do
     my_fbink="/mnt/us/${my_dir}/fbink"
-    if [ -x "${my_fbink}" ] ; then
+    if [ -x "${my_fbink}" ]; then
         FBINK_BIN="${my_fbink}"
         # Got it!
         break
@@ -29,7 +29,7 @@ done
 
 has_fbink() {
     # Because the fallback is the "true" binary/shell built-in ;).
-    if [ "${FBINK_BIN}" != "true" ] ; then
+    if [ "${FBINK_BIN}" != "true" ]; then
         # Got it!
         return 0
     fi
@@ -63,7 +63,7 @@ eips_print_bottom_centered() {
 
     # NOTE: FBInk will handle the padding. FBInk's default font is square, not tall like eips,
     #       so we compensate by tweaking the baseline ;). This matches the baseline we use on Kobo, too.
-    if has_fbink ; then
+    if has_fbink; then
         ${FBINK_BIN} -qpm -y $((-4 - kh_eips_y_shift_up)) "${kh_eips_string}"
     else
         # Crappy fallback
