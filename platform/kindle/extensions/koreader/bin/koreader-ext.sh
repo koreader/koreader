@@ -4,13 +4,10 @@
 #
 ##
 
-# KOReader's working directory
-KOREADER_DIR="/mnt/us/koreader"
-
 # Load our helper functions...
-if [ -f "${KOREADER_DIR}/libkohelper.sh" ]; then
+if [ -f "./bin/libkohelper.sh" ]; then
     # shellcheck source=/dev/null
-    . "${KOREADER_DIR}/libkohelper.sh"
+    . "./bin/libkohelper.sh"
 else
     echo "Can't source helper functions, aborting!"
     exit 1

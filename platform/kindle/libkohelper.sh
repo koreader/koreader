@@ -15,7 +15,28 @@ else
 fi
 
 # Adapted from libkh[5]
-FBINK_BIN="/mnt/us/koreader/fbink"
+## Check if we have an FBInk binary available somewhere...
+# Default to something that won't horribly blow up...
+FBINK_BIN="true"
+for my_dir in libkh/bin koreader linkss/bin linkfonts/bin usbnet/bin; do
+    my_fbink="/mnt/us/${my_dir}/fbink"
+    if [ -x "${my_fbink}" ]; then
+        FBINK_BIN="${my_fbink}"
+        # Got it!
+        break
+    fi
+done
+
+has_fbink() {
+    # Because the fallback is the "true" binary/shell built-in ;).
+    if [ "${FBINK_BIN}" != "true" ]; then
+        # Got it!
+        return 0
+    fi
+
+    # If we got this far, we don't have fbink installed
+    return 1
+}
 
 # NOTE: Yeah, the name becomes a bit of a lie now that we're exclusively using FBInk ;p.
 eips_print_bottom_centered() {
@@ -36,11 +57,16 @@ eips_print_bottom_centered() {
     # Sleep a tiny bit to workaround the logic in the 'new' (K4+) eInk controllers that tries to bundle updates,
     # otherwise it may drop part of our messages because of other screen updates from KUAL...
     # Unless we really don't want to sleep, for special cases...
-    if [ ! -n "${EIPS_NO_SLEEP}" ]; then
+    if [ -z "${EIPS_NO_SLEEP}" ]; then
         usleep 150000 # 150ms
     fi
 
     # NOTE: FBInk will handle the padding. FBInk's default font is square, not tall like eips,
     #       so we compensate by tweaking the baseline ;). This matches the baseline we use on Kobo, too.
-    ${FBINK_BIN} -qpm -y $((-4 - kh_eips_y_shift_up)) "${kh_eips_string}"
+    if has_fbink; then
+        ${FBINK_BIN} -qpm -y $((-4 - kh_eips_y_shift_up)) "${kh_eips_string}"
+    else
+        # Crappy fallback
+        eips 0 0 "${kh_eips_string}" >/dev/null
+    fi
 }

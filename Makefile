@@ -177,6 +177,7 @@ kindleupdate: all
 	ln -sf ../$(KINDLE_DIR)/launchpad $(INSTALL_DIR)/
 	ln -sf ../../$(KINDLE_DIR)/koreader.sh $(INSTALL_DIR)/koreader
 	ln -sf ../../$(KINDLE_DIR)/libkohelper.sh $(INSTALL_DIR)/koreader
+	ln -sf ../../../../$(KINDLE_DIR)/libkohelper.sh $(INSTALL_DIR)/extensions/koreader/bin
 	ln -sf ../../$(COMMON_DIR)/spinning_zsync $(INSTALL_DIR)/koreader
 	# create new package
 	cd $(INSTALL_DIR) && pwd && \
@@ -366,7 +367,7 @@ debianupdate: all
 sony-prstuxupdate: all
 	# ensure that the binaries were built for ARM
 	file $(INSTALL_DIR)/koreader/luajit | grep ARM || exit 1
-	# remove old package if any	
+	# remove old package if any
 	rm -f koreader-sony-prstux-$(MACHINE)-$(VERSION).zip
 	# Sony PRSTUX launching scripts
 	cp $(SONY_PRSTUX_DIR)/*.sh $(INSTALL_DIR)/koreader
