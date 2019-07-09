@@ -347,6 +347,9 @@ local KindlePaperWhite4 = Kindle:new{
     isTouchDevice = yes,
     hasFrontlight = yes,
     display_dpi = 300,
+    -- NOTE: LTE devices once again have a mysterious extra SX9310 proximity sensor...
+    --       Except this time, we can't rely on by-path, because there's no entry for the TS :/.
+    --       Should be event2 on WiFi, event3 on LTE, we'll fix it in init.
     touch_dev = "/dev/input/event2",
 }
 
@@ -739,6 +742,16 @@ function KindlePaperWhite4:init()
     }
 
     Kindle.init(self)
+
+    -- So, look for a goodix TS input device (c.f., #5110)...
+    local std_out = io.popen("grep -e 'Handlers\\|Name=' /proc/bus/input/devices | grep -A1 'goodix-ts' | grep -o 'event[0-9]'", "r")
+    if std_out then
+        local goodix_dev = std_out:read()
+        std_out:close()
+        if goodix_dev then
+            self.touch_dev = "/dev/input/" .. goodix_dev
+        end
+    end
 
     self.input.open(self.touch_dev)
     self.input.open("fake_events")
