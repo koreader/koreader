@@ -732,6 +732,11 @@ function CreDocument:setPageMargins(left, top, right, bottom)
     self._document:setIntProperty("crengine.page.margin.bottom", bottom)
 end
 
+function CreDocument:setBlockRenderingFlags(flags)
+    logger.dbg("CreDocument: set block rendering flags", string.format("0x%x", flags))
+    self._document:setIntProperty("crengine.render.block.rendering.flags", flags)
+end
+
 function CreDocument:setImageScaling(toggle)
     logger.dbg("CreDocument: set smooth scaling", toggle)
     self._smooth_scaling = toggle

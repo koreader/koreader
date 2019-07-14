@@ -52,6 +52,24 @@ function ReaderTypeset:onReadSettings(config)
     end
     self.ui.document:setEmbeddedStyleSheet(self.embedded_css and 1 or 0)
 
+    -- Block rendering mode: stay with legacy rendering for books
+    -- previously opened so bookmarks and highlights stay valid.
+    -- For new books, use 'web' mode below in BLOCK_RENDERING_FLAGS
+    local block_rendering_default_mode = 3
+    self.block_rendering_mode = config:readSetting("copt_block_rendering_mode")
+    if not self.block_rendering_mode then
+        if config:readSetting("last_xpointer") then
+            -- We have a last_xpointer: this book was previously opened
+            self.block_rendering_mode = 0
+        else
+            self.block_rendering_mode = G_reader_settings:readSetting("copt_block_rendering_mode")
+                                            or block_rendering_default_mode
+        end
+        -- Let ConfigDialog know so it can update it on screen and have it saved on quit
+        self.ui.document.configurable.block_rendering_mode = self.block_rendering_mode
+    end
+    self:setBlockRenderingMode(self.block_rendering_mode)
+
     -- set render DPI
     self.render_dpi = config:readSetting("render_dpi") or
         G_reader_settings:readSetting("copt_render_dpi") or 96
@@ -136,6 +154,11 @@ function ReaderTypeset:onToggleNightmodeImages(toggle)
     return true
 end
 
+function ReaderTypeset:onSetBlockRenderingMode(mode)
+    self:setBlockRenderingMode(mode)
+    return true
+end
+
 -- June 2018: epub.css has been cleaned to be more conforming to HTML specs
 -- and to not include class name based styles (with conditional compatiblity
 -- styles for previously opened documents). It should be usable on all
@@ -191,10 +214,14 @@ function ReaderTypeset:genStyleSheetMenu()
             css_files[f] = "./data/"..f
         end
     end
-    -- Add the 2 main styles
+    -- Add the 3 main styles
     if css_files["epub.css"] then
         table.insert(style_table, getStyleMenuItem(_("HTML / EPUB (epub.css)"), css_files["epub.css"]))
         css_files["epub.css"] = nil
+    end
+    if css_files["html5.css"] then
+        table.insert(style_table, getStyleMenuItem(_("HTML5 (html5.css)"), css_files["html5.css"]))
+        css_files["html5.css"] = nil
     end
     if css_files["fb2.css"] then
         table.insert(style_table, getStyleMenuItem(_("FictionBook (fb2.css)"), css_files["fb2.css"], true))
@@ -286,6 +313,54 @@ function ReaderTypeset:toggleEmbeddedFonts(toggle)
         self.embedded_fonts = true
         self.ui.document:setEmbeddedFonts(1)
     end
+    self.ui:handleEvent(Event:new("UpdatePos"))
+end
+
+-- crengine enhanced block rendering feature/flags (see crengine/include/lvrend.h):
+--                                               legacy flat book web
+-- ENHANCED                           0x00000001          x    x   x
+-- ALLOW_PAGE_BREAK_WHEN_NO_CONTENT   0x00000002                   x
+--
+-- COLLAPSE_VERTICAL_MARGINS          0x00000010          x    x   x
+-- ALLOW_VERTICAL_NEGATIVE_MARGINS    0x00000020          x    x   x
+-- ALLOW_NEGATIVE_COLLAPSED_MARGINS   0x00000040                   x
+--
+-- ENSURE_MARGIN_AUTO_ALIGNMENT       0x00000100               x   x
+-- ALLOW_HORIZONTAL_NEGATIVE_MARGINS  0x00000200                   x
+-- ALLOW_HORIZONTAL_BLOCK_OVERFLOW    0x00000400                   x
+-- ALLOW_HORIZONTAL_PAGE_OVERFLOW     0x00000800                   x
+--
+-- USE_W3C_BOX_MODEL                  0x00001000          x    x   x
+-- ALLOW_STYLE_W_H_ABSOLUTE_UNITS     0x00002000                   x
+-- ENSURE_STYLE_WIDTH                 0x00004000               x   x
+-- ENSURE_STYLE_HEIGHT                0x00008000                   x
+--
+-- WRAP_FLOATS                        0x00010000          x    x   x
+-- PREPARE_FLOATBOXES                 0x00020000          x    x   x
+-- FLOAT_FLOATBOXES                   0x00040000               x   x
+-- DO_NOT_CLEAR_OWN_FLOATS            0x00100000               x   x
+-- ALLOW_EXACT_FLOATS_FOOTPRINTS      0x00200000               x   x
+
+local BLOCK_RENDERING_FLAGS = {
+    0x00000000, -- legacy block rendering
+    0x00030031, -- flat mode (with prepared floatBoxes, so inlined, to avoid display hash mismatch)
+    0x00375131, -- book mode (floating floatBoxes, limited widths support)
+    0x7FFFFFFF, -- web mode, all features/flags
+}
+
+function ReaderTypeset:setBlockRenderingMode(mode)
+    -- mode starts for now with 0 = legacy, so we may later be able
+    -- to remove it and then start with 1 = flat
+    -- (Ensure we don't crash if we added and removed some options)
+    if mode + 1 > #BLOCK_RENDERING_FLAGS then
+        mode = #BLOCK_RENDERING_FLAGS - 1
+    end
+    local flags = BLOCK_RENDERING_FLAGS[mode + 1]
+    if not flags then
+        return
+    end
+    self.block_rendering_mode = mode
+    self.ui.document:setBlockRenderingFlags(flags)
     self.ui:handleEvent(Event:new("UpdatePos"))
 end
 
