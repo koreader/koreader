@@ -95,6 +95,11 @@ function Wikipedia:getWikiServer(lang)
     return string.format(self.wiki_server, lang or self.default_lang)
 end
 
+-- Say who we are to Wikipedia (see https://meta.wikimedia.org/wiki/User-Agent_policy)
+local USER_AGENT = T("KOReader/%1 (https://koreader.rocks/) %2",
+    (lfs.attributes("git-rev", "mode") == "file" and io.open("git-rev", "r"):read() or "devel"),
+    require('socket.http').USERAGENT:gsub(" ", "/") )
+
 -- Codes that getUrlContent may get from requester.request()
 local TIMEOUT_CODE = "timeout" -- from socket.lua
 local MAXTIME_CODE = "maxtime reached" -- from sink_table_with_maxtime
@@ -139,6 +144,9 @@ local function getUrlContent(url, timeout, maxtime)
     local sink = {}
     request['url'] = url
     request['method'] = 'GET'
+    request['headers'] = {
+        ["User-Agent"] = USER_AGENT,
+    }
     -- 'timeout' delay works on socket, and is triggered when
     -- that time has passed trying to connect, or after connection
     -- when no data has been read for this time.
@@ -900,22 +908,22 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images)
     -- to look more alike wikipedia web pages (that the user can ignore
     -- with "Embedded Style" off)
     epub:add("OEBPS/stylesheet.css", [[
-/* make section headers looks left aligned and avoid some page breaks */
+/* Make section headers looks left aligned and avoid some page breaks */
 h1, h2 {
     page-break-before: always;
+    page-break-inside: avoid;
     page-break-after: avoid;
     text-align: left;
 }
 h3, h4, h5, h6 {
     page-break-before: auto;
+    page-break-inside: avoid;
     page-break-after: avoid;
     text-align: left;
 }
-/* avoid page breaks around our centered titles on first page */
+/* Styles for our centered titles on first page */
 h1.koreaderwikifrontpage, h5.koreaderwikifrontpage {
     page-break-before: avoid;
-    page-break-inside: avoid;
-    page-break-after: avoid;
     text-align: center;
     margin-top: 0em;
 }
@@ -929,6 +937,7 @@ hr.koreaderwikifrontpage {
     margin-right: 20%;
     margin-bottom: 1.2em;
 }
+
 /* So many links, make them look like normal text except for underline */
 a {
     display:inline;
@@ -940,7 +949,8 @@ a {
 a.newwikinonexistent {
     text-decoration: none;
 }
-/* don't waste left margin for notes and list of pages */
+
+/* Don't waste left margin for TOC, notes and other lists */
 ul, ol {
     margin-left: 0em;
 }
@@ -952,7 +962,8 @@ body {
 ol.references {
     list-style-type: inherit;
 }
-/* show a box around image thumbnails */
+
+/* Show a box around image thumbnails */
 div.thumb {
     border: dotted 1px black;
     margin:  0.5em 2.5em 0.5em 2.5em;
@@ -962,50 +973,101 @@ div.thumb {
     font-size: 90%;
     page-break-inside: avoid;
 }
-/* these are contained in div.thumb, avoid page break in between them */
-div.thumbcaption, div.magnify {
-    page-break-before: avoid;
+/* Allow main thumbnails to float */
+body > div > div.thumb {
+    float: right !important;
+    /* Change some of their styles when floating */
+    -cr-only-if: float-floatboxes;
+        clear: right;
+        margin:  0em 0em 0.2em 0.5em !important;
+        font-size: 80% !important;
+    /* Ensure a fixed width when not in "web" render mode */
+    -cr-only-if: float-floatboxes -allow-style-w-h-absolute-units;
+        width: 33% !important;
 }
-/* show a box around image in gallery list (li.gallery
- * is set up a bit differently than div.thumb - we try
- * to make them look the same */
+body > div > div.thumb img {
+    /* Make float's inner images 100% of their container's width when not in "web" mode */
+    -cr-only-if: float-floatboxes -allow-style-w-h-absolute-units;
+        width: 100% !important;
+        height: 100% !important;
+}
+
+/* Style gallery and the galleryboxes it contains */
+.gallery {
+    width: 100%;
+    margin-top: 1em;
+}
+/* galleryboxes about the same topic may be in multiple gallery containers,
+ * make the floating galleryboxes continuous */
+.gallery + .gallery {
+    clear: none;
+    margin-top: 0;
+}
+.gallery + * {
+    clear: both;
+}
+.gallerycaption {
+    font-weight: bold;
+    page-break-inside: avoid;
+    page-break-after: avoid;
+}
 li.gallerybox {
+    /* Style gallerybox just as main thumbs */
     list-style-type: none;
     border: dotted 1px black;
     margin:  0.5em 2.5em 0.5em 2.5em;
     padding: 0.5em 0.5em 0.2em 0.5em;
     padding-top: ]].. (include_images and "0.5em" or "0.15em") .. [[;
     text-align: center;
+    text-indent: 0;
     font-size: 90%;
+    page-break-inside: avoid;
+    /* Allow them to float (even if "display: inline-block" would be nicer) */
+    float: left;
+    -cr-only-if: float-floatboxes;
+        /* Remove our wide horizontal margins if floating */
+        margin:  0.5em 0.5em 0.5em 0.5em !important;
+    -cr-only-if: float-floatboxes -allow-style-w-h-absolute-units;
+        /* Set a fixed width when not in "web" mode */
+        width: 25% !important;
+}
+li.gallerybox p {
+    /* Reset indent as we have everything centered */
+    text-indent: 0;
 }
 li.gallerybox div.thumb {
+    /* Remove thumb styling, which we set on the gallerybox */
     border: solid 1px white;
     margin: 0;
     padding: 0;
-    page-break-after: avoid;
 }
-/* override this one often set in style="" with various values */
 li.gallerybox div.thumb div {
+    /* Override this one often set in style="" with various values */
     margin: 0 !important;
 }
-/* avoid page break between gallery image and text */
-div.gallerytext {
-    page-break-before: avoid;
-    page-break-inside: avoid;
+li.gallerybox * {
+    /* Have sub elements take the full container width when not in "web" mode */
+    -cr-only-if: float-floatboxes -allow-style-w-h-absolute-units;
+        width: 100% !important;
 }
-li.gallerybox div.gallerytext p {
-    text-align: center;
-    font-size: 90%;
+li.gallerybox div.thumb img {
+    /* Make float's inner images 100% of their container's width
+     * when not in "web" mode (same as previous, but with height */
+    -cr-only-if: float-floatboxes -allow-style-w-h-absolute-units;
+        width: 100% !important;
+        height: 100% !important;
 }
+
+table {
+    margin-top: 1em;
+    margin-bottom: 1em;
+    /* Wikipedia tables are often set as float, make them full width When not floating */
+    -cr-only-if: -float-floatboxes;
+        width: 100% !important;
+}
+
 .citation {
     font-style: italic;
-}
-/* make tables full-width - Wikipedia tables are often set as float
- * elements and have a fixed width, often in em (22em), which would
- * make them quite small with blank space on their right, as we don't
- * support float */
-table {
-    width: 100% !important;
 }
 /* hide some view/edit/discuss short links displayed as "v m d" */
 .nv-view, .nv-edit, .nv-talk {
