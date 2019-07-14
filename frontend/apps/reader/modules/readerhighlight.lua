@@ -601,6 +601,30 @@ function ReaderHighlight:lookup(selected_word, selected_link)
     end
 end
 
+local function prettifyCss(css_text)
+    -- This is not perfect, but enough to make some ugly CSS readable.
+    -- Get rid of \t so we can use it as a replacement/hiding char
+    css_text = css_text:gsub("\t", " ")
+    -- Wrap and indent declarations
+    css_text = css_text:gsub("%s*{%s*", " {\n    ")
+    css_text = css_text:gsub(";%s*}%s*", ";\n}\n")
+    css_text = css_text:gsub(";%s*([^}])", ";\n    %1")
+    css_text = css_text:gsub("%s*}%s*", "\n}\n")
+    -- Cleanup declarations
+    css_text = css_text:gsub("{[^}]*}", function(s)
+        s = s:gsub("%s*:%s*", ": ")
+        -- Temporarily hide/replace ',' in declaration so they
+        -- are not matched and made multi-lines by followup gsub
+        s = s:gsub("%s*,%s*", "\t")
+        return s
+    end)
+    -- Have each selector (separated by ',') on a new line
+    css_text = css_text:gsub("%s*,%s*", " ,\n")
+    -- Restore hidden ',' in declarations
+    css_text = css_text:gsub("\t", ", ")
+    return css_text
+end
+
 function ReaderHighlight:viewSelectionHTML(debug_view)
     if self.ui.document.info.has_pages then
         return
@@ -621,6 +645,15 @@ function ReaderHighlight:viewSelectionHTML(debug_view)
             if debug_view then
                 html = html:gsub("\xC2\xA0", "␣")  -- no break space: open box
                 html = html:gsub("\xC2\xAD", "⋅") -- soft hyphen: dot operator (smaller than middle dot ·)
+                -- Prettify inlined CSS (from <HEAD>, put in an internal
+                -- <body><stylesheet> element by crengine (the opening tag may
+                -- include some href=, or end with " ~X>" with some html_flags)
+                -- (We do that in debug_view mode only: as this may increase
+                -- the height of this section, we don't want to have to scroll
+                -- many pages to get to the HTML content on the initial view.)
+                html = html:gsub("(<stylesheet[^>]*>)%s*(.-)%s*(</stylesheet>)", function(pre, css_text, post)
+                    return pre .. "\n" .. prettifyCss(css_text) .. post
+                end)
             end
             local TextViewer = require("ui/widget/textviewer")
             local Font = require("ui/font")
@@ -644,18 +677,9 @@ function ReaderHighlight:viewSelectionHTML(debug_view)
                                         enabled = css_text and true or false,
                                         callback = function()
                                             UIManager:close(cssviewer)
-                                            -- This is not perfect, but enough to make
-                                            -- some ugly CSS readable
-                                            css_text = css_text:gsub("%s*{%s*", " {\n    ")
-                                            css_text = css_text:gsub(";%s*}%s*", ";\n}\n")
-                                            css_text = css_text:gsub(";%s*([^}])", ";\n    %1")
-                                            css_text = css_text:gsub("%s*}%s*", "\n}\n")
-                                            css_text = css_text:gsub("%s*,%s*", " ,\n")
-                                            -- The last one is wrong inside {}, eg. with
-                                            -- "font-family: Georgia, serif"
                                             UIManager:show(TextViewer:new{
                                                 title = css_files[i],
-                                                text = css_text,
+                                                text = prettifyCss(css_text),
                                                 text_face = Font:getFace("smallinfont"),
                                                 justified = false,
                                             })
