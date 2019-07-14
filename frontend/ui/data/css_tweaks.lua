@@ -48,9 +48,59 @@ local CssTweaks = {
 * { page-break-before: auto !important; page-break-after: auto !important; }
 /* put back epub.css page-breaks */
 DocFragment { page-break-before: always !important; }
-h1, h2, h3 { page-break-before: always !important; page-break-after: avoid !important; }
-h4, h5, h6 { page-break-after: avoid !important; }
+h1 { -cr-only-if: -epub-document; page-break-before: always !important; }
+h2, h3 { -cr-only-if: legacy -epub-document; page-break-before: always !important; }
+h1, h2, h3, h4, h5, h6 { page-break-after: avoid !important; }
             ]],
+            separator = true,
+        },
+        {
+            title = _("New page on headings"),
+            {
+                id = "h1_page-break-before_always";
+                title = _("New page on <H1>"),
+                css = [[h1 { page-break-before: always !important; }]],
+            },
+            {
+                id = "h2_page-break-before_always";
+                title = _("New page on <H2>"),
+                css = [[
+h2 { page-break-before: always !important; }
+h1 + h2 { page-break-before: avoid !important; }
+                ]],
+            },
+            {
+                id = "h3_page-break-before_always";
+                title = _("New page on <H3>"),
+                css = [[
+h3 { page-break-before: always !important; }
+h1 + h3, h2 + h3 { page-break-before: avoid !important; }
+                ]],
+            },
+            {
+                id = "h4_page-break-before_always";
+                title = _("New page on <H4>"),
+                css = [[
+h4 { page-break-before: always !important; }
+h1 + h4, h2 + h4, h3 + h4 { page-break-before: avoid !important; }
+                ]],
+            },
+            {
+                id = "h5_page-break-before_always";
+                title = _("New page on <H5>"),
+                css = [[
+h5 { page-break-before: always !important; }
+h1 + h5, h2 + h5, h3 + h5, h4 + h5 { page-break-before: avoid !important; }
+                ]],
+            },
+            {
+                id = "h6_page-break-before_always";
+                title = _("New page on <H6>"),
+                css = [[
+h6 { page-break-before: always !important; }
+h1 + h6, h2 + h6, h3 + h6, h4 + h6, h5 + h6 { page-break-before: avoid !important; }
+                ]],
+            },
         },
     },
     {
@@ -83,6 +133,13 @@ h4, h5, h6 { page-break-after: avoid !important; }
                 title = _("Justify all elements"),
                 description = _("Text justification is the default, but it may be overridden by publisher styles. This will re-enable it for all elements, which may lose centering in some of them."),
                 css = [[* { text-align: justify !important; }]],
+                separator = true,
+            },
+            {
+                id = "headings_align_center",
+                title = _("Center headings"),
+                css = [[h1, h2, h3, h4, h5, h6 { text-align: center !important; }]],
+                priority = 3, -- so it overrides the ones above
             },
         },
         {
@@ -520,6 +577,19 @@ This tweak toggles this behavior, and may show the <epub:case> content as plain 
 switch > case    { display: inline; }
 switch > default { display: none; }
             ]],
+        },
+        {
+            id = "pure_black_and_white";
+            title = _("Pure black and white"),
+            description = _([[Enforce black text and borders, and remove backgrounds.]]),
+            css = [[
+* {
+    color: black !important;
+    border-color: black !important;
+    background-color: transparent !important;
+    background-image: !important;
+}
+            ]], -- (This last empty background-image: works for cancelling any previous one
         },
     },
     -- No current need for workarounds
