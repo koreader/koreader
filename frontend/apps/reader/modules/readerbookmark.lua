@@ -586,4 +586,8 @@ function ReaderBookmark:getLatestBookmark()
     return latest_bookmark
 end
 
+function ReaderBookmark:hasBookmarks()
+    return self.bookmarks and #self.bookmarks > 0
+end
+
 return ReaderBookmark

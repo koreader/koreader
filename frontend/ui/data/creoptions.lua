@@ -195,6 +195,22 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
 - 'page' mode splits the text into pages, at the most acceptable places (page numbers and the number of pages may change when you change fonts, margins, styles, etc.).]]),
             },
             {
+                name = "block_rendering_mode",
+                name_text = S.BLOCK_RENDERING_MODE,
+                toggle = {S.LEGACY, S.FLAT, S.BOOK, S.WEB},
+                values = {0, 1, 2, 3},
+                default_value = 2,
+                args = {0, 1, 2, 3},
+                default_arg = 2,
+                event = "SetBlockRenderingMode",
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[
+- 'legacy' uses original CR3 block rendering code.
+- 'flat' ensures flat rendering with collapsing margins and accurate page breaks.
+- 'book' additionally allows floats, but limits style support to avoid blank spaces and overflows.
+- 'web' renders as web browsers do, allowing negative margins and possible page overflow.]]),
+            },
+            {
                 name = "render_dpi",
                 name_text = S.ZOOM_DPI,
                 toggle = {S.OFF, "48", "96¹’¹", "167", "212", "300"},

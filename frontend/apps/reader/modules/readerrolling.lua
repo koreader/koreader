@@ -221,13 +221,20 @@ end
 
 function ReaderRolling:onCheckDomStyleCoherence()
     if self.ui.document and self.ui.document:isBuiltDomStale() then
+        local has_bookmarks_warn_txt = ""
+        if self.ui.bookmark:hasBookmarks() then
+            has_bookmarks_warn_txt = _("\nNote that this change in styles may render your bookmarks or highlights no more valid.\nIf some of them do not show anymore, you can just revert the change you just made to have them shown again.\n\n")
+        end
         UIManager:show(ConfirmBox:new{
-            text = _("Styles have changed in such a way that fully reloading the document may be needed for a correct rendering.\nDo you want to reload the document?"),
+            text = T(_("Styles have changed in such a way that fully reloading the document may be needed for a correct rendering.\n%1Do you want to reload the document?"), has_bookmarks_warn_txt),
             ok_callback = function()
                 -- Allow for ConfirmBox to be closed before showing
                 -- "Opening file" InfoMessage
                 UIManager:scheduleIn(0.5, function ()
-                    self.ui:reloadDocument()
+                    -- And check we haven't quit reader in these 0.5s
+                    if self.ui.document then
+                        self.ui:reloadDocument()
+                    end
                 end)
             end,
         })
@@ -660,6 +667,10 @@ function ReaderRolling:onUpdatePos()
 end
 
 function ReaderRolling:updatePos()
+    if not self.ui.document then
+        -- document closed since we were scheduleIn'ed
+        return
+    end
     -- reread document height
     self.ui.document:_readMetadata()
     -- update self.current_pos if the height of document has been changed.
