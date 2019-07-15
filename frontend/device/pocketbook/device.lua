@@ -266,6 +266,16 @@ local PocketBook625 = PocketBook:new{
     emu_events_dev = "/var/dev/shm/emu_events",
 }
 
+-- PocketBook Touch
+local PocketBook622 = PocketBook:new{
+    model = "PBTouch",
+    isTouchDevice = yes,
+    hasKeys = yes,
+    hasFrontlight = no,
+    display_dpi = 166,
+    emu_events_dev = "/var/dev/shm/emu_events",
+}
+
 -- PocketBook Touch Lux
 local PocketBook623 = PocketBook:new{
     model = "PBTouchLux",
@@ -324,7 +334,9 @@ logger.info('SoftwareVersion: ', PocketBook:getSoftwareVersion())
 
 local codename = PocketBook:getDeviceModel()
 
-if codename == "PocketBook 623" then
+if codename == "PocketBook 622" then
+    return PocketBook622
+elseif codename == "PocketBook 623" then
     return PocketBook623
 elseif codename == "PocketBook 624" then
     return PocketBook624
