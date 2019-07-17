@@ -241,7 +241,10 @@ Do you want to create an empty database?
     else  -- first time convertion to sqlite database
         self.convert_to_db = true
         if not conn:exec("pragma table_info('book');") then
-            if #ReadHistory.hist > 0 then
+            local filename_first_history = ReadHistory.hist[1]["text"]
+            local quickstart_path = require("ui/quickstart").quickstart_filename
+            local __, quickstart_filename = util.splitFilePathName(quickstart_path)
+            if #ReadHistory.hist > 1 or (#ReadHistory.hist == 1 and filename_first_history ~= quickstart_filename) then
                 local info = InfoMessage:new{
                     text =_([[
 New version of statistics plugin detected.
