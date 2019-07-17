@@ -241,7 +241,7 @@ Do you want to create an empty database?
     else  -- first time convertion to sqlite database
         self.convert_to_db = true
         if not conn:exec("pragma table_info('book');") then
-            local filename_first_history, quickstart_filename, __
+            local filename_first_history, quickstart_filename, __ -- luacheck: ignore
             if #ReadHistory.hist == 1 then
                 filename_first_history = ReadHistory.hist[1]["text"]
                 local quickstart_path = require("ui/quickstart").quickstart_filename
