@@ -159,6 +159,7 @@ files["spec/unit/*"].globals = {
 -- 631 - Line is too long
 ignore = {
     "211/__*",
+    "231/__",
     "631",
     "dummy",
 }
