@@ -14,6 +14,7 @@ local logger = require("logger")
 local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
+local Math = require("optmath")
 
 local screensaver_provider = {
     ["jpg"] = true,
@@ -402,7 +403,7 @@ function Screensaver:expandSpecial(message, fallback)
         local totalpages = doc:getPageCount()
         ret = string.gsub(ret, "%%t", totalpages)
 
-        local percent = math.floor(((currentpage * 100) / totalpages) + 0.5)
+        local percent = Math.round((currentpage * 100) / totalpages)
         ret = string.gsub(ret, "%%p", percent)
 
         local props = doc:getProps()
