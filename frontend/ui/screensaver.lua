@@ -174,6 +174,7 @@ function Screensaver:setMessage()
     end
     self.input_dialog = InputDialog:new{
         title = "Screensaver message",
+        description = _("The message to be displayed by the screensaver. The following escape sequences may be used in the message:\n  %p percentage read\n  %c current page number\n  %t total number of pages\n  %T title"),
         input = screensaver_message,
         buttons = {
             {
@@ -384,10 +385,10 @@ end
 
 function Screensaver:expandSpecial(message, fallback)
     -- Expand special character sequences in given message. Use fallback string if there is no document instance
-    -- %p percentage read, with percent sign
+    -- %p percentage read
     -- %c current page
     -- %t total pages
-    -- %dt document title
+    -- %T document title
 
     local ret = message
 
@@ -402,10 +403,10 @@ function Screensaver:expandSpecial(message, fallback)
         ret = string.gsub(ret, "%%t", totalpages)
 
         local percent = math.floor(((currentpage * 100) / totalpages) + 0.5)
-        ret = string.gsub(ret, "%%p", percent .. "%%")
+        ret = string.gsub(ret, "%%p", percent)
 
         local props = doc:getProps()
-        ret = string.gsub(ret, "%%dt", props.title)
+        ret = string.gsub(ret, "%%T", props.title)
     else
         ret = fallback
     end
