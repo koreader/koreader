@@ -174,6 +174,7 @@ function Screensaver:setMessage()
     end
     self.input_dialog = InputDialog:new{
         title = "Screensaver message",
+        description = _("Enter the message to be displayed by the screensaver. The following escape sequences can be used:\n  %p percentage read\n  %c current page number\n  %t total number of pages\n  %T title"),
         input = screensaver_message,
         buttons = {
             {
@@ -349,9 +350,14 @@ function Screensaver:show(event, fallback_message)
         if screensaver_message == nil and prefix ~= "" then
             screensaver_message = G_reader_settings:readSetting("screensaver_message")
         end
+
+        local fallback = fallback_message or default_screensaver_message
         if screensaver_message == nil then
-            screensaver_message = fallback_message or default_screensaver_message
+            screensaver_message = fallback
+        else
+            screensaver_message = self:expandSpecial(screensaver_message, fallback)
         end
+
         widget = InfoMessage:new{
             text = screensaver_message,
             readonly = true,
@@ -375,6 +381,38 @@ function Screensaver:show(event, fallback_message)
         self.left_msg.dithered = true
         UIManager:show(self.left_msg, "full")
     end
+end
+
+function Screensaver:expandSpecial(message, fallback)
+    -- Expand special character sequences in given message. Use fallback string if there is no document instance
+    -- %p percentage read
+    -- %c current page
+    -- %t total pages
+    -- %T document title
+
+    local ret = message
+
+    local lastfile = G_reader_settings:readSetting("lastfile")
+    local doc = DocumentRegistry:openDocument(lastfile)
+    local instance = require("apps/reader/readerui"):_getRunningInstance()
+    if instance ~= nil then
+        local currentpage = instance.view.state.page
+        ret = string.gsub(ret, "%%c", currentpage)
+
+        local totalpages = doc:getPageCount()
+        ret = string.gsub(ret, "%%t", totalpages)
+
+        local percent = math.floor(((currentpage * 100) / totalpages) + 0.5)
+        ret = string.gsub(ret, "%%p", percent)
+
+        local props = doc:getProps()
+        ret = string.gsub(ret, "%%T", props.title)
+    else
+        ret = fallback
+    end
+    doc:close()
+
+    return ret
 end
 
 function Screensaver:close()
