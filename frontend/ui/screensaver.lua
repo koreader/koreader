@@ -174,7 +174,7 @@ function Screensaver:setMessage()
     end
     self.input_dialog = InputDialog:new{
         title = "Screensaver message",
-        description = _("The message to be displayed by the screensaver. The following escape sequences may be used in the message:\n  %p percentage read\n  %c current page number\n  %t total number of pages\n  %T title"),
+        description = _("Enter the message to be displayed by the screensaver. The following escape sequences can be used:\n  %p percentage read\n  %c current page number\n  %t total number of pages\n  %T title"),
         input = screensaver_message,
         buttons = {
             {
