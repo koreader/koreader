@@ -17,6 +17,7 @@ local HorizontalSpan = require("ui/widget/horizontalspan")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
+local Math = require("optmath")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local RenderText = require("ui/rendertext")
 local RightContainer = require("ui/widget/container/rightcontainer")
@@ -139,6 +140,9 @@ local MenuItem = InputContainer:new{
     shortcut_style = "square",
     _underline_container = nil,
     linesize = Size.line.medium,
+    single_line = false,
+    -- Align text & mandatory baselines (only when single_line=true)
+    align_baselines = false,
 }
 
 function MenuItem:init()
@@ -218,6 +222,22 @@ function MenuItem:init()
             bold = self.bold,
             fgcolor = self.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
         }
+        if self.align_baselines then
+            local name_baseline = item_name:getBaseline()
+            local mandatory_baseline = mandatory_widget:getBaseline()
+            local baselines_diff = Math.round(name_baseline - mandatory_baseline)
+            if baselines_diff > 0 then
+                mandatory_widget = VerticalGroup:new{
+                    VerticalSpan:new{width = baselines_diff},
+                    mandatory_widget,
+                }
+            elseif baselines_diff < 0 then
+                item_name = VerticalGroup:new{
+                    VerticalSpan:new{width = -baselines_diff},
+                    item_name,
+                }
+            end
+        end
     else
         while true do
             -- Free previously made widgets to avoid memory leaks
@@ -946,6 +966,7 @@ function Menu:updateItems(select_number)
                 menu = self,
                 linesize = self.linesize,
                 single_line = self.single_line,
+                align_baselines = self.align_baselines,
                 line_color = self.line_color,
             }
             table.insert(self.item_group, item_tmp)
