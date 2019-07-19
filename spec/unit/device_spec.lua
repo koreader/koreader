@@ -198,7 +198,7 @@ describe("device module", function()
             io.open = function(filename, mode)
                 if filename == "/proc/usid" then
                     return {
-                        read = function() return "XX13XX" end,
+                        read = function() return "B013XX" end,
                         close = function() end
                     }
                 else
@@ -219,7 +219,7 @@ describe("device module", function()
             io.open = function(filename, mode)
                 if filename == "/proc/usid" then
                     return {
-                        read = function() return "XX13XX" end,
+                        read = function() return "B013XX" end,
                         close = function() end
                     }
                 elseif filename == "/sys/class/backlight/max77696-bl/brightness" then
@@ -259,7 +259,7 @@ describe("device module", function()
                 if filename == "/proc/usid" then
                     return {
                         read = function()
-                            return "XXX0GCXXX"
+                            return "G0B0GCXXX"
                         end,
                         close = function() end
                     }

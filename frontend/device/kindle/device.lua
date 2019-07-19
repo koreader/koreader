@@ -824,8 +824,9 @@ local kindle_sn_fd = io.open("/proc/usid", "r")
 if not kindle_sn_fd then return end
 local kindle_sn = kindle_sn_fd:read()
 kindle_sn_fd:close()
-local kindle_devcode = string.sub(kindle_sn,3,4)
-local kindle_devcode_v2 = string.sub(kindle_sn,4,6)
+-- NOTE: Attempt to sanely differentiate v1 from v2,
+--       c.f., https://github.com/NiLuJe/FBInk/commit/8a1161734b3f5b4461247af461d26987f6f1632e
+local kindle_sn_lead = string.sub(kindle_sn,1,1)
 
 -- NOTE: Update me when new devices come out :)
 --       c.f., https://wiki.mobileread.com/wiki/Kindle_Serial_Numbers for identified variants
@@ -852,38 +853,47 @@ local pw4_set = Set { "0PP", "0T1", "0T2", "0T3", "0T4", "0T5", "0T6",
                   "16Q", "16R", "16S", "16T", "16U", "16V" }
 local kt4_set = Set { "10L", "0WF", "0WG", "0WH", "0WJ", "0VB" }
 
-if k2_set[kindle_devcode] then
-    return Kindle2
-elseif dx_set[kindle_devcode] then
-    return Kindle2
-elseif dxg_set[kindle_devcode] then
-    return KindleDXG
-elseif k3_set[kindle_devcode] then
-    return Kindle3
-elseif k4_set[kindle_devcode] then
-    return Kindle4
-elseif touch_set[kindle_devcode] then
-    return KindleTouch
-elseif pw_set[kindle_devcode] then
-    return KindlePaperWhite
-elseif pw2_set[kindle_devcode] then
-    return KindlePaperWhite2
-elseif kt2_set[kindle_devcode] then
-    return KindleBasic
-elseif kv_set[kindle_devcode] then
-    return KindleVoyage
-elseif pw3_set[kindle_devcode_v2] then
-    return KindlePaperWhite3
-elseif koa_set[kindle_devcode_v2] then
-    return KindleOasis
-elseif koa2_set[kindle_devcode_v2] then
-    return KindleOasis2
-elseif kt3_set[kindle_devcode_v2] then
-    return KindleBasic2
-elseif pw4_set[kindle_devcode_v2] then
-    return KindlePaperWhite4
-elseif kt4_set[kindle_devcode_v2] then
-    return KindleBasic3
+if kindle_sn_lead == "B" or kindle_sn_lead == "9" then
+    local kindle_devcode = string.sub(kindle_sn,3,4)
+
+    if k2_set[kindle_devcode] then
+        return Kindle2
+    elseif dx_set[kindle_devcode] then
+        return Kindle2
+    elseif dxg_set[kindle_devcode] then
+        return KindleDXG
+    elseif k3_set[kindle_devcode] then
+        return Kindle3
+    elseif k4_set[kindle_devcode] then
+        return Kindle4
+    elseif touch_set[kindle_devcode] then
+        return KindleTouch
+    elseif pw_set[kindle_devcode] then
+        return KindlePaperWhite
+    elseif pw2_set[kindle_devcode] then
+        return KindlePaperWhite2
+    elseif kt2_set[kindle_devcode] then
+        return KindleBasic
+    elseif kv_set[kindle_devcode] then
+        return KindleVoyage
+    end
+else
+    local kindle_devcode_v2 = string.sub(kindle_sn,4,6)
+
+    if pw3_set[kindle_devcode_v2] then
+        return KindlePaperWhite3
+    elseif koa_set[kindle_devcode_v2] then
+        return KindleOasis
+    elseif koa2_set[kindle_devcode_v2] then
+        return KindleOasis2
+    elseif kt3_set[kindle_devcode_v2] then
+        return KindleBasic2
+    elseif pw4_set[kindle_devcode_v2] then
+        return KindlePaperWhite4
+    elseif kt4_set[kindle_devcode_v2] then
+        return KindleBasic3
+    end
 end
 
-error("unknown Kindle model "..kindle_devcode.." ("..kindle_devcode_v2..")")
+local kindle_sn_prefix = string.sub(kindle_sn,1,6)
+error("unknown Kindle model: "..kindle_sn_prefix)
