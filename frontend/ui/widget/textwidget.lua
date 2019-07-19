@@ -79,6 +79,11 @@ function TextWidget:getSize()
     }
 end
 
+function TextWidget:getBaseline()
+    self:updateSize()
+    return self._baseline_h
+end
+
 function TextWidget:setText(text)
     self.text = text
     self:updateSize()
