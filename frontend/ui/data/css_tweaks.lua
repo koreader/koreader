@@ -21,10 +21,31 @@ local CssTweaks = {
             css = [[body { margin: 0 !important; }]],
         },
         {
-            id = "margin_all_0";
-            title = _("Ignore all publisher margins"),
-            priority = 2,
-            css = [[* { margin: 0 !important; }]],
+            title = _("Ignore margins and paddings"),
+            {
+                id = "margin_horizontal_all_0";
+                title = _("Ignore all horizontal margins"),
+                priority = 2,
+                css = [[* { margin-left: 0 !important; margin-right: 0 !important; }]],
+            },
+            {
+                id = "margin_vertical_all_0";
+                title = _("Ignore all vertical margins"),
+                priority = 2,
+                css = [[* { margin-top: 0 !important; margin-bottom: 0 !important; }]],
+            },
+            {
+                id = "padding_horizontal_all_0";
+                title = _("Ignore all horizontal paddings"),
+                priority = 2,
+                css = [[* { padding-left: 0 !important; padding-right: 0 !important; }]],
+            },
+            {
+                id = "padding_vertical_all_0";
+                title = _("Ignore all vertical paddings"),
+                priority = 2,
+                css = [[* { padding-top: 0 !important; padding-bottom: 0 !important; }]],
+            },
             separator = true,
         },
         {
