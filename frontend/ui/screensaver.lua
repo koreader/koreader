@@ -7,6 +7,7 @@ local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
 local InfoMessage = require("ui/widget/infomessage")
 local ImageWidget = require("ui/widget/imagewidget")
+local Math = require("optmath")
 local ScreenSaverWidget = require("ui/widget/screensaverwidget")
 local UIManager = require("ui/uimanager")
 local lfs = require("libs/libkoreader-lfs")
@@ -14,7 +15,6 @@ local logger = require("logger")
 local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
-local Math = require("optmath")
 
 local screensaver_provider = {
     ["jpg"] = true,
