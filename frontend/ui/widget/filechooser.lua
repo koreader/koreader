@@ -71,7 +71,7 @@ function FileChooser:init()
                                                     attr = attributes})
                             end
                         elseif attributes.mode == "file" then
-                            if self.file_filter == nil or self.file_filter(filename) then
+                            if self.file_filter == nil or self.file_filter(filename) or self.show_unsupported then
                                 local percent_finished = 0
                                 if self.collate == "percent_unopened_first" or self.collate == "percent_unopened_last" then
                                     if DocSettings:hasSidecarFile(filename) then
@@ -328,6 +328,11 @@ end
 
 function FileChooser:toggleHiddenFiles()
     self.show_hidden = not self.show_hidden
+    self:refreshPath()
+end
+
+function FileChooser:toggleUnsupportedFiles()
+    self.show_unsupported = not self.show_unsupported
     self:refreshPath()
 end
 

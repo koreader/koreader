@@ -129,6 +129,7 @@ function FileManager:init()
 
     local g_show_hidden = G_reader_settings:readSetting("show_hidden")
     local show_hidden = g_show_hidden == nil and DSHOWHIDDENFILES or g_show_hidden
+    local show_unsupported = G_reader_settings:readSetting("show_unsupported")
     local file_chooser = FileChooser:new{
         -- remember to adjust the height when new item is added to the group
         path = self.root_path,
@@ -143,6 +144,7 @@ function FileManager:init()
         is_borderless = true,
         has_close_button = true,
         perpage = G_reader_settings:readSetting("items_per_page"),
+        show_unsupported = show_unsupported,
         file_filter = function(filename)
             if DocumentRegistry:hasProvider(filename) then
                 return true
@@ -274,7 +276,7 @@ function FileManager:init()
             {
                 {
                     text = _("Open with…"),
-                    enabled = lfs.attributes(file, "mode") == "file"
+                    enabled = lfs.attributes(file, "mode") == "file" and DocumentRegistry:getProviders(file) ~= nil
                         and #(DocumentRegistry:getProviders(file)) > 1,
                     callback = function()
                         UIManager:close(self.file_dialog)
@@ -523,6 +525,11 @@ end
 function FileManager:toggleHiddenFiles()
     self.file_chooser:toggleHiddenFiles()
     G_reader_settings:saveSetting("show_hidden", self.file_chooser.show_hidden)
+end
+
+function FileManager:toggleUnsupportedFiles()
+    self.file_chooser:toggleUnsupportedFiles()
+    G_reader_settings:saveSetting("show_unsupported", self.file_chooser.show_unsupported)
 end
 
 function FileManager:setCollate(collate)

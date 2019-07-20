@@ -416,11 +416,16 @@ function ReaderUI:getLastDirFile()
     return last_dir, last_file
 end
 
-function ReaderUI:showFileManager()
+function ReaderUI:showFileManager(file)
     local FileManager = require("apps/filemanager/filemanager")
 
-    local last_dir, last_file = self:getLastDirFile()
-
+    local last_dir, last_file
+    if file then
+        last_dir, last_file = util.splitFilePathName(file)
+        last_dir = last_dir:match("(.*)/")
+    else
+        last_dir, last_file = self:getLastDirFile()
+    end
     if FileManager.instance then
         FileManager.instance:reinit(last_dir, last_file)
     else
@@ -430,7 +435,6 @@ end
 
 function ReaderUI:showReader(file, provider)
     logger.dbg("show reader ui")
-    require("readhistory"):addItem(file)
 
     if lfs.attributes(file, "mode") ~= "file" then
         UIManager:show(InfoMessage:new{
@@ -439,6 +443,13 @@ function ReaderUI:showReader(file, provider)
         return
     end
 
+    if not DocumentRegistry:hasProvider(file) then
+        UIManager:show(InfoMessage:new{
+            text = T(_("File '%1' is not supported."), file)
+        })
+        self:showFileManager(file)
+        return
+    end
     -- prevent crash due to incompatible bookmarks
     -- @TODO split bookmarks from metadata and do per-engine in conversion
     provider = provider or DocumentRegistry:getProvider(file)
@@ -516,7 +527,7 @@ function ReaderUI:doShowReader(file, provider)
             end
         end
     end
-
+    require("readhistory"):addItem(file)
     G_reader_settings:saveSetting("lastfile", file)
     local reader = ReaderUI:new{
         dimen = Screen:getSize(),

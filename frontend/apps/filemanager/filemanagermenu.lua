@@ -121,6 +121,11 @@ function FileManagerMenu:setUpdateItemTable()
         checked_func = function() return self.ui.file_chooser.show_hidden end,
         callback = function() self.ui:toggleHiddenFiles() end
     }
+    self.menu_items.show_unsupported_files = {
+        text = _("Show unsupported files"),
+        checked_func = function() return self.ui.file_chooser.show_unsupported end,
+        callback = function() self.ui:toggleUnsupportedFiles() end
+    }
     self.menu_items.items_per_page = {
         text = _("Items per page"),
         help_text = _([[This sets the number of items per page in:
