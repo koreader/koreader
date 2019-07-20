@@ -12,6 +12,7 @@ local order = {
     filemanager_settings = {
         "filemanager_display_mode",
         "show_hidden_files",
+        "show_unsupported_files",
         "items_per_page",
         "----------------------------",
         "sort_by",
