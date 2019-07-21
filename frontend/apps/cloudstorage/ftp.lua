@@ -26,7 +26,7 @@ function Ftp:downloadFile(item, address, user, pass, path, close)
         local file = io.open(path, "w")
         file:write(response)
         file:close()
-        if G_reader_settings:readSetting("show_unsupported") then
+        if G_reader_settings:isTrue("show_unsupported") then
             UIManager:show(InfoMessage:new{
                 text = T(_("File saved to:\n%1"), path),
             })
