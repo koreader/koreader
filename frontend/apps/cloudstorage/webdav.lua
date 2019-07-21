@@ -19,7 +19,7 @@ function WebDav:downloadFile(item, address, username, password, local_path, clos
     if code_response == 200 then
         if G_reader_settings:readSetting("show_unsupported") then
             UIManager:show(InfoMessage:new{
-                text = T(_("File saved to:\n%1"), path),
+                text = T(_("File saved to:\n%1"), local_path),
             })
         else
             UIManager:show(ConfirmBox:new{
