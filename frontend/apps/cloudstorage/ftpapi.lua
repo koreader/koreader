@@ -54,7 +54,8 @@ function FtpApi:listFolder(address_path, folder_path)
                     type = type,
                 })
             --show only file with supported formats
-            elseif extension  and DocumentRegistry:hasProvider(item) then
+            elseif extension  and (DocumentRegistry:hasProvider(item)
+                or G_reader_settings:isTrue("show_unsupported")) then
                 type = "file"
                 table.insert(ftp_file, {
                     text = file_name,

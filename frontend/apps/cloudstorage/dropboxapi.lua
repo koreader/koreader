@@ -107,7 +107,8 @@ function DropBoxApi:listFolder(path, token)
                 type = tag,
             })
         --show only file with supported formats
-        elseif tag == "file" and DocumentRegistry:hasProvider(text) then
+        elseif tag == "file" and (DocumentRegistry:hasProvider(text)
+            or G_reader_settings:isTrue("show_unsupported")) then
             table.insert(dropbox_file, {
                 text = text,
                 url = files.path_display,

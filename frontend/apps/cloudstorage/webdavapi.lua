@@ -114,7 +114,8 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
                         type = "folder",
                     })
                 end
-            elseif item:find("<d:resourcetype/>") and DocumentRegistry:hasProvider(item_name) then
+            elseif item:find("<d:resourcetype/>") and (DocumentRegistry:hasProvider(item_name)
+                or G_reader_settings:isTrue("show_unsupported")) then
                 table.insert(webdav_file, {
                     text = item_name,
                     url = util.urlDecode( item_path ),
