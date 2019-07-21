@@ -17,14 +17,20 @@ end
 function DropBox:downloadFile(item, password, path, close)
     local code_response = DropBoxApi:downloadFile(item.url, password, path)
     if code_response == 200 then
-        UIManager:show(ConfirmBox:new{
-            text = T(_("File saved to:\n %1\nWould you like to read the downloaded book now?"),
-                path),
-            ok_callback = function()
-                close()
-                ReaderUI:showReader(path)
-            end
-        })
+        if G_reader_settings:readSetting("show_unsupported") then
+            UIManager:show(InfoMessage:new{
+                text = T(_("File saved to:\n%1"), path),
+            })
+        else
+            UIManager:show(ConfirmBox:new{
+                text = T(_("File saved to:\n %1\nWould you like to read the downloaded book now?"),
+                    path),
+                ok_callback = function()
+                    close()
+                    ReaderUI:showReader(path)
+                end
+            })
+        end
     else
         UIManager:show(InfoMessage:new{
             text = T(_("Could not save file to:\n%1"), path),
