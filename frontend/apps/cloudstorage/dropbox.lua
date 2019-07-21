@@ -17,7 +17,7 @@ end
 function DropBox:downloadFile(item, password, path, close)
     local code_response = DropBoxApi:downloadFile(item.url, password, path)
     if code_response == 200 then
-        if G_reader_settings:readSetting("show_unsupported") then
+        if G_reader_settings:isTrue("show_unsupported") then
             UIManager:show(InfoMessage:new{
                 text = T(_("File saved to:\n%1"), path),
             })
