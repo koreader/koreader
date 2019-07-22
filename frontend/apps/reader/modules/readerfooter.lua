@@ -295,7 +295,11 @@ function ReaderFooter:resetLayout()
 end
 
 function ReaderFooter:getHeight()
-    return self.footer_content:getSize().h
+    if self.footer_content then
+        return self.footer_content:getSize().h
+    else
+        return 0
+    end
 end
 
 function ReaderFooter:disableFooter()
