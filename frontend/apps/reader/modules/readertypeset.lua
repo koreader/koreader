@@ -506,7 +506,7 @@ function ReaderTypeset:onSetPageMargins(margins, refresh_callback)
     if self.view.footer.has_no_mode or self.view.footer.reclaim_height then
         bottom = Screen:scaleBySize(margins[4])
     else
-        bottom = Screen:scaleBySize(margins[4] + DMINIBAR_HEIGHT)
+        bottom = Screen:scaleBySize(margins[4] + self.view.footer:getHeight())
     end
     self.ui.document:setPageMargins(left, top, right, bottom)
     self.ui:handleEvent(Event:new("UpdatePos"))
