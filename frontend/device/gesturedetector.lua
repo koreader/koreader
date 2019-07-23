@@ -50,12 +50,19 @@ local util = require("util")
 local GestureDetector = {
     -- must be initialized with the Input singleton class
     input = nil,
-    -- all the time parameters are in us
+    -- default values (all the time parameters are in us)
     DOUBLE_TAP_INTERVAL = 300 * 1000,
     TWO_FINGER_TAP_DURATION = 300 * 1000,
     HOLD_INTERVAL = 500 * 1000,
     PAN_DELAYED_INTERVAL = 500 * 1000,
     SWIPE_INTERVAL = 900 * 1000,
+    -- all the time parameters are in us
+    ges_double_tap_interval = G_reader_settings:readSetting("ges_double_tap_interval") or 300 * 1000,
+    ges_two_finger_tap_duration = G_reader_settings:readSetting("ges_two_finger_tap_duration") or 300 * 1000,
+    ges_hold_interval = G_reader_settings:readSetting("ges_hold_interval") or 500 * 1000,
+    ges_pan_delayed_interval = G_reader_settings:readSetting("ges_pan_delayed_interval") or 500 * 1000,
+    ges_swipe_interval = G_reader_settings:readSetting("ges_swipe_interval") or 900 * 1000,
+
     -- pinch/spread direction table
     DIRECTION_TABLE = {
         east = "horizontal",
@@ -141,7 +148,7 @@ function GestureDetector:isDoubleTap(tap1, tap2)
     return (
         math.abs(tap1.x - tap2.x) < self.DOUBLE_TAP_DISTANCE and
         math.abs(tap1.y - tap2.y) < self.DOUBLE_TAP_DISTANCE and
-        (tv_diff.sec == 0 and (tv_diff.usec) < self.DOUBLE_TAP_INTERVAL)
+        (tv_diff.sec == 0 and (tv_diff.usec) < self.ges_double_tap_interval)
     )
 end
 
@@ -160,8 +167,8 @@ function GestureDetector:isTwoFingerTap()
         x_diff1 < self.TWO_FINGER_TAP_REGION and
         y_diff0 < self.TWO_FINGER_TAP_REGION and
         y_diff1 < self.TWO_FINGER_TAP_REGION and
-        tv_diff0.sec == 0 and tv_diff0.usec < self.TWO_FINGER_TAP_DURATION and
-        tv_diff1.sec == 0 and tv_diff1.usec < self.TWO_FINGER_TAP_DURATION
+        tv_diff0.sec == 0 and tv_diff0.usec < self.ges_two_finger_tap_duration and
+        tv_diff1.sec == 0 and tv_diff1.usec < self.ges_two_finger_tap_duration
     )
 end
 
@@ -200,7 +207,7 @@ end
 function GestureDetector:isSwipe(slot)
     if not self.first_tevs[slot] or not self.last_tevs[slot] then return end
     local tv_diff = self.last_tevs[slot].timev - self.first_tevs[slot].timev
-    if (tv_diff.sec == 0) and (tv_diff.usec < self.SWIPE_INTERVAL) then
+    if (tv_diff.sec == 0) and (tv_diff.usec < self.ges_swipe_interval) then
         local x_diff = self.last_tevs[slot].x - self.first_tevs[slot].x
         local y_diff = self.last_tevs[slot].y - self.first_tevs[slot].y
         if x_diff ~= 0 or y_diff ~= 0 then
@@ -232,6 +239,20 @@ function GestureDetector:clearState(slot)
     self.last_tevs[slot] = nil
     self.multiswipe_directions = {}
     self.multiswipe_type = nil
+end
+
+function GestureDetector:setNewInterval(type, interval)
+    if type == "ges_double_tap_interval" then
+        self.ges_double_tap_interval = interval
+    elseif type == "ges_two_finger_tap_duration" then
+        self.ges_two_finger_tap_duration = interval
+    elseif type == "ges_hold_interval" then
+        self.ges_hold_interval = interval
+    elseif type == "ges_pan_delayed_interval" then
+        self.ges_pan_delayed_interval = interval
+    elseif type == "ges_swipe_interval" then
+        self.ges_swipe_interval = interval
+    end
 end
 
 function GestureDetector:clearStates()
@@ -348,7 +369,7 @@ function GestureDetector:handleDoubleTap(tev)
     -- deadline should be calculated by adding current tap time and the interval
     local deadline = cur_tap.timev + TimeVal:new{
         sec = 0,
-        usec = not self.input.disable_double_tap and self.DOUBLE_TAP_INTERVAL or 0,
+        usec = not self.input.disable_double_tap and self.ges_double_tap_interval or 0,
     }
     self.input:setTimeout(function()
         logger.dbg("in tap timer", self.last_taps[slot] ~= nil)
@@ -374,7 +395,7 @@ function GestureDetector:handleNonTap(tev)
         self.states[slot] = self.tapState
         logger.dbg("set up hold timer")
         local deadline = tev.timev + TimeVal:new{
-            sec = 0, usec = self.HOLD_INTERVAL
+            sec = 0, usec = self.ges_hold_interval
         }
         self.input:setTimeout(function()
             if self.states[slot] == self.tapState then
@@ -514,7 +535,7 @@ function GestureDetector:handlePan(tev)
 
         -- delayed pan, used where necessary to reduce potential activation of panning
         -- when swiping is intended (e.g., for the menu or for multiswipe)
-        if not ((tv_diff.sec == 0) and (tv_diff.usec < self.PAN_DELAYED_INTERVAL)) then
+        if not ((tv_diff.sec == 0) and (tv_diff.usec < self.ges_pan_delayed_interval)) then
             pan_ev.relative_delayed.x = tev.x - self.first_tevs[slot].x
             pan_ev.relative_delayed.y = tev.y - self.first_tevs[slot].y
             pan_ev.distance_delayed = pan_distance
