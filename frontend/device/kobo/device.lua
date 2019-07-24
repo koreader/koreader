@@ -401,24 +401,6 @@ function Kobo:initNetworkManager(NetworkMgr)
 
     function NetworkMgr:restoreWifiAsync()
         os.execute("./restore-wifi-async.sh")
-
-        -- Make sure we eventually send a NetworkConnected event, as a few things rely on it (KOSync, c.f. #5109).
-        local UIManager = require("ui/uimanager")
-        local function connectivityCheck(iter)
-            -- Give up after a while...
-            if iter > 4 then
-                return
-            end
-
-            if NetworkMgr:isWifiOn() and NetworkMgr:isConnected() then
-                local Event = require("ui/event")
-                UIManager:broadcastEvent(Event:new("NetworkConnected"))
-            else
-                UIManager:scheduleIn(5, connectivityCheck(iter + 1), end)
-            end
-        end
-
-        UIManager:scheduleIn(5, connectivityCheck(1), end)
     end
 
     -- NOTE: Cheap-ass way of checking if WiFi seems to be enabled...

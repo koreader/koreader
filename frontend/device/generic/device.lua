@@ -187,6 +187,7 @@ function Device:onPowerEvent(ev)
                 local network_manager = require("ui/network/manager")
                 if network_manager.wifi_was_on and G_reader_settings:isTrue("auto_restore_wifi") then
                     network_manager:restoreWifiAsync()
+                    network_manager:scheduleConnectivityCheck()
                 end
                 self:resume()
                 -- restore to previous rotation mode, if need be.

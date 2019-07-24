@@ -15,6 +15,25 @@ function NetworkMgr:readNWSettings()
     self.nw_settings = LuaSettings:open(DataStorage:getSettingsDir().."/network.lua")
 end
 
+-- Used after restoreWifiAsync() to make sure we eventually send a NetworkConnected event, as a few things rely on it (KOSync, c.f. #5109).
+function NetworkMgr:scheduleConnectivityCheck()
+    local function connectivityCheck(iter)
+        -- Give up after a while...
+        if iter > 4 then
+            return
+        end
+
+        if NetworkMgr:isWifiOn() and NetworkMgr:isConnected() then
+            local Event = require("ui/event")
+            UIManager:broadcastEvent(Event:new("NetworkConnected"))
+        else
+            UIManager:scheduleIn(5, connectivityCheck(iter + 1), end)
+        end
+    end
+
+    UIManager:scheduleIn(5, connectivityCheck(1), end)
+end
+
 function NetworkMgr:init()
     -- On Kobo, kill WiFi if NetworkMgr:isWifiOn() and NOT NetworkMgr:isConnected()
     -- (i.e., if the launcher left the WiFi in an inconsistent state: modules loaded, but no route to gateway).
@@ -26,6 +45,7 @@ function NetworkMgr:init()
     self.wifi_was_on = G_reader_settings:isTrue("wifi_was_on")
     if self.wifi_was_on and G_reader_settings:isTrue("auto_restore_wifi") then
         self:restoreWifiAsync()
+        self:scheduleConnectivityCheck()
     end
 end
 
