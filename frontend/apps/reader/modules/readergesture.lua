@@ -369,12 +369,11 @@ function ReaderGesture:addToMainMenu(menu_items)
                     local GestureDetector = require("device/gesturedetector")
                     local items = SpinWidget:new{
                         text = T(_([[
-Set double tap interval.
-Time interval is in miliseconds.
-Acceptable value from 100 (0,1 sec) to 2000 (2 sec).
+Set double tap interval in miliseconds.
+The interval value can range from 100 (0.1 seconds) to 2000 (2 seconds).
 Default value: %1]]), GestureDetector.DOUBLE_TAP_INTERVAL/1000),
                         width = Screen:getWidth() * 0.6,
-                        value = GestureDetector.ges_double_tap_interval/1000,
+                        value = GestureDetector:getInterval("ges_double_tap_interval")/1000,
                         value_min = 100,
                         value_max = 2000,
                         value_step = 100,
@@ -384,6 +383,7 @@ Default value: %1]]), GestureDetector.DOUBLE_TAP_INTERVAL/1000),
                         default_value = GestureDetector.DOUBLE_TAP_INTERVAL/1000,
                         callback = function(spin)
                             G_reader_settings:saveSetting("ges_double_tap_interval", spin.value*1000)
+                            GestureDetector:setNewInterval("ges_double_tap_interval", spin.value*1000)
                         end
                     }
                     UIManager:show(items)
@@ -396,12 +396,11 @@ Default value: %1]]), GestureDetector.DOUBLE_TAP_INTERVAL/1000),
                     local GestureDetector = require("device/gesturedetector")
                     local items = SpinWidget:new{
                         text = T(_([[
-Set two finger tap duration.
-Time duration is in miliseconds.
-Acceptable value from 100 (0,1 sec) to 2000 (2 sec).
+Set two finger tap duration in miliseconds.
+The duration value can range from 100 (0.1 seconds) to 2000 (2 seconds).
 Default value: %1]]), GestureDetector.TWO_FINGER_TAP_DURATION/1000),
                         width = Screen:getWidth() * 0.6,
-                        value = GestureDetector.ges_two_finger_tap_duration/1000,
+                        value = GestureDetector:getInterval("ges_two_finger_tap_duration")/1000,
                         value_min = 100,
                         value_max = 2000,
                         value_step = 100,
@@ -411,6 +410,7 @@ Default value: %1]]), GestureDetector.TWO_FINGER_TAP_DURATION/1000),
                         default_value = GestureDetector.TWO_FINGER_TAP_DURATION/1000,
                         callback = function(spin)
                             G_reader_settings:saveSetting("ges_two_finger_tap_duration", spin.value*1000)
+                            GestureDetector:setNewInterval("ges_two_finger_tap_duration", spin.value*1000)
                         end
                     }
                     UIManager:show(items)
@@ -423,12 +423,11 @@ Default value: %1]]), GestureDetector.TWO_FINGER_TAP_DURATION/1000),
                     local GestureDetector = require("device/gesturedetector")
                     local items = SpinWidget:new{
                         text = T(_([[
-Set hold interval.
-Time interval is in miliseconds.
-Acceptable value from 100 (0,1 sec) to 2000 (2 sec).
+Set hold interval in miliseconds.
+The interval value can range from 100 (0.1 seconds) to 2000 (2 seconds).
 Default value: %1]]), GestureDetector.HOLD_INTERVAL/1000),
                         width = Screen:getWidth() * 0.6,
-                        value = GestureDetector.ges_hold_interval/1000,
+                        value = GestureDetector:getInterval("ges_hold_interval")/1000,
                         value_min = 100,
                         value_max = 2000,
                         value_step = 100,
@@ -438,6 +437,7 @@ Default value: %1]]), GestureDetector.HOLD_INTERVAL/1000),
                         default_value = GestureDetector.HOLD_INTERVAL/1000,
                         callback = function(spin)
                             G_reader_settings:saveSetting("ges_hold_interval", spin.value*1000)
+                            GestureDetector:setNewInterval("ges_hold_interval", spin.value*1000)
                         end
                     }
                     UIManager:show(items)
@@ -450,12 +450,11 @@ Default value: %1]]), GestureDetector.HOLD_INTERVAL/1000),
                     local GestureDetector = require("device/gesturedetector")
                     local items = SpinWidget:new{
                         text = T(_([[
-Set pan delay interval.
-Time interval is in miliseconds.
-Acceptable value from 100 (0,1 sec) to 2000 (2 sec).
+Set pan delay interval in miliseconds.
+The interval value can range from 100 (0.1 seconds) to 2000 (2 seconds).
 Default value: %1]]), GestureDetector.PAN_DELAYED_INTERVAL/1000),
                         width = Screen:getWidth() * 0.6,
-                        value = GestureDetector.ges_pan_delayed_interval/1000,
+                        value = GestureDetector:getInterval("ges_pan_delayed_interval")/1000,
                         value_min = 100,
                         value_max = 2000,
                         value_step = 100,
@@ -465,6 +464,7 @@ Default value: %1]]), GestureDetector.PAN_DELAYED_INTERVAL/1000),
                         default_value = GestureDetector.PAN_DELAYED_INTERVAL/1000,
                         callback = function(spin)
                             G_reader_settings:saveSetting("ges_pan_delayed_interval", spin.value*1000)
+                            GestureDetector:setNewInterval("ges_pan_delayed_interval", spin.value*1000)
                         end
                     }
                     UIManager:show(items)
@@ -477,12 +477,11 @@ Default value: %1]]), GestureDetector.PAN_DELAYED_INTERVAL/1000),
                     local GestureDetector = require("device/gesturedetector")
                     local items = SpinWidget:new{
                         text = T(_([[
-Set swipe interval.
-Time interval is in miliseconds.
-Acceptable value from 100 (0,1 sec) to 2000 (2 sec).
+Set swipe interval in miliseconds.
+The interval value can range from 100 (0.1 seconds) to 2000 (2 seconds).
 Default value: %1]]), GestureDetector.SWIPE_INTERVAL/1000),
                         width = Screen:getWidth() * 0.6,
-                        value = GestureDetector.ges_swipe_interval/1000,
+                        value = GestureDetector:getInterval("ges_swipe_interval")/1000,
                         value_min = 100,
                         value_max = 2000,
                         value_step = 100,
@@ -492,6 +491,7 @@ Default value: %1]]), GestureDetector.SWIPE_INTERVAL/1000),
                         default_value = GestureDetector.SWIPE_INTERVAL/1000,
                         callback = function(spin)
                             G_reader_settings:saveSetting("ges_swipe_interval", spin.value*1000)
+                            GestureDetector:setNewInterval("ges_swipe_interval", spin.value*1000)
                         end
                     }
                     UIManager:show(items)
