@@ -26,15 +26,23 @@ function NetworkMgr:connectivityCheck(iter)
         local Event = require("ui/event")
         UIManager:broadcastEvent(Event:new("NetworkConnected"))
         logger.info("WiFi successfully restored!")
+        return true
+    else
+        return false
     end
 end
 
 function NetworkMgr:scheduleConnectivityCheck()
     UIManager:scheduleIn(5, function()
-        NetworkMgr:connectivityCheck(1)
-        if not (NetworkMgr:isWifiOn() and NetworkMgr:isConnected()) then
+        if not NetworkMgr:connectivityCheck(1) then
             UIManager:scheduleIn(5, function()
-                NetworkMgr:connectivityCheck(2)
+                if not NetworkMgr:connectivityCheck(2) then
+                    UIManager:scheduleIn(5, function()
+                        if not NetworkMgr:connectivityCheck(3) then
+                            UIManager:scheduleIn(5, NetworkMgr:connectivityCheck(4))
+                        end
+                    end)
+                end
             end)
         end
     end)
