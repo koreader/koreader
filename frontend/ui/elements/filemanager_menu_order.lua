@@ -71,7 +71,7 @@ local order = {
         "----------------------------",
         "screen_toggle_gsensor",
         "----------------------------",
-        "keep_screen_on",
+        "screen_timeout",
         "fullscreen",
     },
     taps_and_gestures = {

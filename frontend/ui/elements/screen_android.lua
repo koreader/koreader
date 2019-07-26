@@ -5,8 +5,41 @@ local logger = require("logger")
 local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
+local T = require("ffi/util").template
 
 if not isAndroid then return end
+
+-- custom timeouts (in milliseconds)
+local timeout_custom1 = 30 * 1000
+local timeout_custom2 = 60 * 1000
+local timeout_custom3 = 2 * 60 * 1000
+local timeout_custom4 = 5 * 60 * 1000
+local timeout_custom5 = 10 * 60 * 1000
+local timeout_custom6 = 15 * 60 * 1000
+local timeout_custom7 = 30 * 60 * 1000
+
+local timeout_system = 0    -- same as system (do nothing!)
+local timeout_disabled = -1 -- disable timeout using wakelocks
+
+local can_modify_timeout = not android.needsWakelocks()
+
+local function humanReadableTimeout(timeout)
+    local sec = timeout / 1000
+    if sec >= 120 then
+        return T(_("%1 minutes"), sec / 60)
+    else
+        return T(_("%1 seconds"), sec)
+    end
+end
+
+local function timeoutEquals(timeout)
+    return timeout == android.getScreenOffTimeout()
+end
+
+local function saveAndApplyTimeout(timeout)
+    G_reader_settings:saveSetting("android_screen_timeout", timeout)
+    android.setScreenOffTimeout(timeout)
+end
 
 local ScreenHelper = {}
 
@@ -58,11 +91,68 @@ function ScreenHelper:toggleFullscreenLegacy()
     end
 end
 
--- toggle android wakelock support
-function ScreenHelper:toggleWakelock()
-    local is_wakelock = G_reader_settings:isTrue("enable_android_wakelock")
-    android.setWakeLock(not is_wakelock)
-    G_reader_settings:saveSetting("enable_android_wakelock", not is_wakelock)
+-- timeout menu table
+function ScreenHelper:getTimeoutMenuTable()
+    return {
+        text = _("Screen Timeout"),
+        sub_item_table = {
+            {
+                text = _("Use system settings"),
+                enabled_func = function() return can_modify_timeout end,
+                checked_func = function() return timeoutEquals(timeout_system) end,
+                callback = function() saveAndApplyTimeout(timeout_system) end
+            },
+            {
+                text = humanReadableTimeout(timeout_custom1),
+                enabled_func = function() return can_modify_timeout end,
+                checked_func = function() return timeoutEquals(timeout_custom1) end,
+                callback = function() saveAndApplyTimeout(timeout_custom1) end
+            },
+            {
+                text = humanReadableTimeout(timeout_custom2),
+                enabled_func = function() return can_modify_timeout end,
+                checked_func = function() return timeoutEquals(timeout_custom2) end,
+                callback = function() saveAndApplyTimeout(timeout_custom2) end
+            },
+            {
+                text = humanReadableTimeout(timeout_custom3),
+                enabled_func = function() return can_modify_timeout end,
+                checked_func = function() return timeoutEquals(timeout_custom3) end,
+                callback = function() saveAndApplyTimeout(timeout_custom3) end
+            },
+            {
+                text = humanReadableTimeout(timeout_custom4),
+                enabled_func = function() return can_modify_timeout end,
+                checked_func = function() return timeoutEquals(timeout_custom4) end,
+                callback = function() saveAndApplyTimeout(timeout_custom4) end
+            },
+            {
+                text = humanReadableTimeout(timeout_custom5),
+                enabled_func = function() return can_modify_timeout end,
+                checked_func = function() return timeoutEquals(timeout_custom5) end,
+                callback = function() saveAndApplyTimeout(timeout_custom5) end
+            },
+            {
+                text = humanReadableTimeout(timeout_custom6),
+                enabled_func = function() return can_modify_timeout end,
+                checked_func = function() return timeoutEquals(timeout_custom6) end,
+                callback = function() saveAndApplyTimeout(timeout_custom6) end
+            },
+            {
+                text = humanReadableTimeout(timeout_custom7),
+                enabled_func = function() return can_modify_timeout end,
+                checked_func = function() return timeoutEquals(timeout_custom7) end,
+                callback = function() saveAndApplyTimeout(timeout_custom7) end
+            },
+            {
+                text = _("Keep screen on"),
+                enabled_func = function() return can_modify_timeout end,
+                checked_func = function() return timeoutEquals(timeout_disabled) end,
+                callback = function() saveAndApplyTimeout(timeout_disabled) end
+            },
+        }
+    }
 end
+
 
 return ScreenHelper
