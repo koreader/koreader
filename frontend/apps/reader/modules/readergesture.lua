@@ -369,7 +369,7 @@ function ReaderGesture:addToMainMenu(menu_items)
                     local GestureDetector = require("device/gesturedetector")
                     local items = SpinWidget:new{
                         text = T(_([[
-Set double tap interval in miliseconds.
+Set double tap interval in milliseconds.
 The interval value can range from 100 (0.1 seconds) to 2000 (2 seconds).
 Default value: %1]]), GestureDetector.DOUBLE_TAP_INTERVAL/1000),
                         width = Screen:getWidth() * 0.6,
@@ -396,7 +396,7 @@ Default value: %1]]), GestureDetector.DOUBLE_TAP_INTERVAL/1000),
                     local GestureDetector = require("device/gesturedetector")
                     local items = SpinWidget:new{
                         text = T(_([[
-Set two finger tap duration in miliseconds.
+Set two finger tap duration in milliseconds.
 The duration value can range from 100 (0.1 seconds) to 2000 (2 seconds).
 Default value: %1]]), GestureDetector.TWO_FINGER_TAP_DURATION/1000),
                         width = Screen:getWidth() * 0.6,
@@ -423,7 +423,7 @@ Default value: %1]]), GestureDetector.TWO_FINGER_TAP_DURATION/1000),
                     local GestureDetector = require("device/gesturedetector")
                     local items = SpinWidget:new{
                         text = T(_([[
-Set hold interval in miliseconds.
+Set hold interval in milliseconds.
 The interval value can range from 100 (0.1 seconds) to 2000 (2 seconds).
 Default value: %1]]), GestureDetector.HOLD_INTERVAL/1000),
                         width = Screen:getWidth() * 0.6,
@@ -450,7 +450,7 @@ Default value: %1]]), GestureDetector.HOLD_INTERVAL/1000),
                     local GestureDetector = require("device/gesturedetector")
                     local items = SpinWidget:new{
                         text = T(_([[
-Set pan delay interval in miliseconds.
+Set pan delay interval in milliseconds.
 The interval value can range from 100 (0.1 seconds) to 2000 (2 seconds).
 Default value: %1]]), GestureDetector.PAN_DELAYED_INTERVAL/1000),
                         width = Screen:getWidth() * 0.6,
@@ -477,7 +477,7 @@ Default value: %1]]), GestureDetector.PAN_DELAYED_INTERVAL/1000),
                     local GestureDetector = require("device/gesturedetector")
                     local items = SpinWidget:new{
                         text = T(_([[
-Set swipe interval in miliseconds.
+Set swipe interval in milliseconds.
 The interval value can range from 100 (0.1 seconds) to 2000 (2 seconds).
 Default value: %1]]), GestureDetector.SWIPE_INTERVAL/1000),
                         width = Screen:getWidth() * 0.6,
