@@ -13,7 +13,7 @@ local order = {
         "filemanager_display_mode",
         "show_hidden_files",
         "show_unsupported_files",
-        "items_per_page",
+        "items",
         "----------------------------",
         "sort_by",
         "reverse_sorting",

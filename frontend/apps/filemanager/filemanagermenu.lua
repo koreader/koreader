@@ -126,31 +126,62 @@ function FileManagerMenu:setUpdateItemTable()
         checked_func = function() return self.ui.file_chooser.show_unsupported end,
         callback = function() self.ui:toggleUnsupportedFiles() end
     }
-    self.menu_items.items_per_page = {
-        text = _("Items per page"),
-        help_text = _([[This sets the number of items per page in:
+    self.menu_items.items = {
+        text = _("Items"),
+        sub_item_table = {
+            {
+                text = _("Items per page"),
+                help_text = _([[This sets the number of items per page in:
 - File browser and history in 'classic' display mode
 - File and directory selection
 - Table of contents
 - Bookmarks list]]),
-        keep_menu_open = true,
-        callback = function()
-            local SpinWidget = require("ui/widget/spinwidget")
-            local curr_items = G_reader_settings:readSetting("items_per_page") or 14
-            local items = SpinWidget:new{
-                width = Screen:getWidth() * 0.6,
-                value = curr_items,
-                value_min = 6,
-                value_max = 24,
-                ok_text = _("Set items"),
-                title_text =  _("Items per page"),
-                callback = function(spin)
-                    G_reader_settings:saveSetting("items_per_page", spin.value)
-                    self.ui:onRefresh()
+                keep_menu_open = true,
+                callback = function()
+                    local SpinWidget = require("ui/widget/spinwidget")
+                    local curr_items = G_reader_settings:readSetting("items_per_page") or 14
+                    local items = SpinWidget:new{
+                        width = Screen:getWidth() * 0.6,
+                        value = curr_items,
+                        value_min = 6,
+                        value_max = 24,
+                        ok_text = _("Set items"),
+                        title_text =  _("Items per page"),
+                        callback = function(spin)
+                            G_reader_settings:saveSetting("items_per_page", spin.value)
+                            --after changing items per page we reset the font size of item and set it as default
+                            G_reader_settings:saveSetting("items_font_size", math.floor(24 - ((spin.value - 6)/ 18) * 10 ))
+                            self.ui:onRefresh()
+                        end
+                    }
+                    UIManager:show(items)
+                end
+            },
+            {
+                text = _("Font size"),
+                keep_menu_open = true,
+                callback = function()
+                    local SpinWidget = require("ui/widget/spinwidget")
+                    local curr_items = G_reader_settings:readSetting("items_per_page") or 14
+                    local default_font_size = math.floor(24 - ((curr_items - 6)/ 18) * 10 )
+                    local curr_font_size = G_reader_settings:readSetting("items_font_size") or default_font_size
+                    local items_font = SpinWidget:new{
+                        width = Screen:getWidth() * 0.6,
+                        value = curr_font_size,
+                        value_min = 10,
+                        value_max = 72,
+                        default_value = default_font_size,
+                        ok_text = _("Set size"),
+                        title_text =  _("Max font size for item"),
+                        callback = function(spin)
+                            G_reader_settings:saveSetting("items_font_size", spin.value)
+                            self.ui:onRefresh()
+                        end
+                    }
+                    UIManager:show(items_font)
                 end
             }
-            UIManager:show(items)
-        end
+        }
     }
     self.menu_items.sort_by = self.ui:getSortingMenuTable()
     self.menu_items.reverse_sorting = {
