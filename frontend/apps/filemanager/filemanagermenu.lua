@@ -172,7 +172,7 @@ function FileManagerMenu:setUpdateItemTable()
                         value_max = 72,
                         default_value = default_font_size,
                         ok_text = _("Set size"),
-                        title_text =  _("Max font size for item"),
+                        title_text =  _("Maximum font size for item"),
                         callback = function(spin)
                             G_reader_settings:saveSetting("items_font_size", spin.value)
                             self.ui:onRefresh()
