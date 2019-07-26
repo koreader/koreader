@@ -167,9 +167,14 @@ function Device:init()
         self.isTouchDevice = yes
     end
 
-    -- check if we enabled support for wakelocks
-    if G_reader_settings:isTrue("enable_android_wakelock") or android.needsWakelocks() then
-        android.setWakeLock(true)
+    -- check if we enabled support for custom timeouts (including wakelocks)
+    if android.needsWakelocks() then
+        android.setScreenOffTimeout(-1)
+    else
+        local timeout = G_reader_settings:readSetting("android_screen_timeout")
+        if timeout ~= nil and timeout ~= 0 then
+            android.setScreenOffTimeout(timeout)
+        end
     end
 
     -- check if we disable fullscreen support
