@@ -57,12 +57,12 @@ function ReaderRolling:init()
     self.key_events = {}
     if Device:hasKeys() then
         self.key_events.GotoNextView = {
-            { Input.group.PgFwd },
+            { {"RPgFwd", "LPgFwd", "Right" } },
             doc = "go to next view",
             event = "GotoViewRel", args = 1,
         }
         self.key_events.GotoPrevView = {
-            { Input.group.PgBack },
+            { { "RPgBack", "LPgBack", "Left" } },
             doc = "go to previous view",
             event = "GotoViewRel", args = -1,
         }
@@ -446,6 +446,9 @@ function ReaderRolling:onPan(_, ges)
         elseif ges.direction == "south" then
             self:_gotoPos(self.current_pos - ges[distance_type])
         end
+    --this is only use when mouse wheel is used
+    elseif ges.mousewheel_direction and self.view.view_mode == "page" then
+        UIManager:broadcastEvent(Event:new("GotoViewRel", -1 * ges.mousewheel_direction))
     end
     return true
 end
@@ -629,8 +632,11 @@ function ReaderRolling:onGotoViewRel(diff)
 end
 
 function ReaderRolling:onPanning(args, _)
-    if self.view.view_mode ~= "scroll" then return end
     local _, dy = unpack(args)
+    if self.view.view_mode ~= "scroll" then
+        UIManager:broadcastEvent(Event:new("GotoViewRel", dy))
+        return
+    end
     self:_gotoPos(self.current_pos + dy * self.panning_steps.normal)
     self.xpointer = self.ui.document:getXPointer()
     return true

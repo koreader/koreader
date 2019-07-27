@@ -43,13 +43,22 @@ function ReaderPaging:init()
     self.key_events = {}
     if Device:hasKeys() then
         self.key_events.GotoNextPage = {
-            {Input.group.PgFwd}, doc = "go to next page",
+            { {"RPgFwd", "LPgFwd", "Right" } }, doc = "go to next page",
             event = "GotoViewRel", args = 1,
         }
         self.key_events.GotoPrevPage = {
-            {Input.group.PgBack}, doc = "go to previous page",
+            { { "RPgBack", "LPgBack", "Left" } }, doc = "go to previous page",
             event = "GotoViewRel", args = -1,
         }
+        self.key_events.GotoNextPos = {
+            { {"Down" } }, doc = "go to next position",
+            event = "GotoPosRel", args = 1,
+        }
+        self.key_events.GotoPrevPos = {
+            { { "Up" } }, doc = "go to previous position",
+            event = "GotoPosRel", args = -1,
+        }
+
     end
     if Device:hasKeyboard() then
         self.key_events.GotoFirst = {
@@ -396,8 +405,13 @@ function ReaderPaging:onPan(_, ges)
         if self.ui.gesture and self.ui.gesture.multiswipes_enabled then
             relative_type = "relative_delayed"
         end
-        self:onPanningRel(self.last_pan_relative_y - ges[relative_type].y)
-        self.last_pan_relative_y = ges[relative_type].y
+        --this is only use when mouse wheel is used
+        if ges.mousewheel_direction and not self.view.page_scroll then
+            self:onGotoViewRel(-1 * ges.mousewheel_direction)
+        else
+            self:onPanningRel(self.last_pan_relative_y - ges[relative_type].y)
+            self.last_pan_relative_y = ges[relative_type].y
+        end
     end
     return true
 end
@@ -448,6 +462,16 @@ end
 function ReaderPaging:onGotoViewRel(diff)
     if self.view.page_scroll then
         self:onScrollPageRel(diff)
+    else
+        self:onGotoPageRel(diff)
+    end
+    self:setPagePosition(self:getTopPage(), self:getTopPosition())
+    return true
+end
+
+function ReaderPaging:onGotoPosRel(diff)
+    if self.view.page_scroll then
+        self:onPanningRel(100*diff)
     else
         self:onGotoPageRel(diff)
     end

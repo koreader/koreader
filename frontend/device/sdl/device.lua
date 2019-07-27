@@ -118,6 +118,7 @@ function Device:init()
                         },
                         pos = pos,
                         time = timev,
+                        mousewheel_direction = scrolled_y,
                     }
                     local fake_ges_release = {
                         ges = "pan_release",
@@ -130,7 +131,6 @@ function Device:init()
                     }
                     local fake_pan_ev = Event:new("Pan", nil, fake_ges)
                     local fake_release_ev = Event:new("Gesture", fake_ges_release)
-
                     if scrolled_y == down then
                         fake_ges.direction = "north"
                         UIManager:broadcastEvent(fake_pan_ev)
