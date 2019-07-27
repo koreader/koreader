@@ -149,8 +149,6 @@ function FileManagerMenu:setUpdateItemTable()
                         title_text =  _("Items per page"),
                         callback = function(spin)
                             G_reader_settings:saveSetting("items_per_page", spin.value)
-                            --after changing items per page we reset the font size of item and set it as default
-                            G_reader_settings:saveSetting("items_font_size", math.floor(24 - ((spin.value - 6)/ 18) * 10 ))
                             self.ui:onRefresh()
                         end
                     }
