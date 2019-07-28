@@ -40,6 +40,7 @@ function Wallabag:init()
     self.is_auto_delete = false
     self.is_sync_remote_delete = false
     self.filter_tag = ""
+    self.articles_per_sync = 30
 
     self.ui.menu:registerToMainMenu(self)
     self.wb_settings = self.readSettings()
@@ -63,6 +64,9 @@ function Wallabag:init()
     end
     if self.wb_settings.data.wallabag.filter_tag then
         self.filter_tag = self.wb_settings.data.wallabag.filter_tag
+    end
+    if self.wb_settings.data.wallabag.articles_per_sync ~= nil then
+        self.articles_per_sync = self.wb_settings.data.wallabag.articles_per_sync
     end
 
     -- workaround for dateparser only available if newsdownloader is active
@@ -130,6 +134,13 @@ function Wallabag:addToMainMenu(menu_items)
                         keep_menu_open = true,
                         callback = function()
                             self:editServerSettings()
+                        end,
+                    },
+                    {
+                        text = _("Configure Wallabag client"),
+                        keep_menu_open = true,
+                        callback = function()
+                            self:editClientSettings()
                         end,
                     },
                     {
@@ -293,7 +304,7 @@ function Wallabag:getArticleList()
     if self.filter_tag ~= "" then
         filtering = "&tags=" .. self.filter_tag
     end
-    local articles_url = "/api/entries.json?archive=0" .. filtering
+    local articles_url = "/api/entries.json?archive=0&perPage=" .. self.articles_per_sync .. filtering
     return self:callAPI( "GET", articles_url, nil, "", "" )
 end
 
@@ -685,7 +696,12 @@ Restart KOReader after editing the config file.]]), DataStorage:getSettingsDir()
                     text = _("Apply"),
                     callback = function()
                         local myfields = MultiInputDialog:getFields()
-                        self:saveSettings(myfields)
+                        self.server_url    = myfields[1]
+                        self.client_id     = myfields[2]
+                        self.client_secret = myfields[3]
+                        self.username      = myfields[4]
+                        self.password      = myfields[5]
+                        self:saveSettings()
                         self.settings_dialog:onClose()
                         UIManager:close(self.settings_dialog)
                     end
@@ -700,6 +716,46 @@ Restart KOReader after editing the config file.]]), DataStorage:getSettingsDir()
     self.settings_dialog:onShowKeyboard()
 end
 
+function Wallabag:editClientSettings()
+    self.client_settings_dialog = MultiInputDialog:new {
+        title = _("Wallabag client settings"),
+        fields = {
+            {
+                text = self.articles_per_sync,
+                description = _("Number of articles"),
+                input_type = "number",
+                hint = _("Number of articles to download per sync")
+            },
+        },
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    callback = function()
+                        self.client_settings_dialog:onClose()
+                        UIManager:close(self.client_settings_dialog)
+                    end
+                },
+                {
+                    text = _("Apply"),
+                    callback = function()
+                        local myfields = MultiInputDialog:getFields()
+                        self.articles_per_sync = math.max(1, tonumber(myfields[1]) or self.articles_per_sync)
+                        self:saveSettings(myfields)
+                        self.client_settings_dialog:onClose()
+                        UIManager:close(self.client_settings_dialog)
+                    end
+                },
+            },
+        },
+        width = Screen:getWidth() * 0.95,
+        height = Screen:getHeight() * 0.2,
+        input_type = "string",
+    }
+    UIManager:show(self.client_settings_dialog)
+    self.client_settings_dialog:onShowKeyboard()
+end
+
 function Wallabag:setDownloadDirectory(touchmenu_instance)
     require("ui/downloadmgr"):new{
        onConfirm = function(path)
@@ -711,15 +767,7 @@ function Wallabag:setDownloadDirectory(touchmenu_instance)
     }:chooseDir()
 end
 
-function Wallabag:saveSettings( fields )
-    if fields then
-        self.server_url    = fields[1]
-        self.client_id     = fields[2]
-        self.client_secret = fields[3]
-        self.username      = fields[4]
-        self.password      = fields[5]
-    end
-
+function Wallabag:saveSettings( )
     local tempsettings = {
         server_url            = self.server_url,
         client_id             = self.client_id,
@@ -731,7 +779,8 @@ function Wallabag:saveSettings( fields )
         is_delete_finished    = self.is_delete_finished,
         is_delete_read        = self.is_delete_read,
         is_auto_delete        = self.is_auto_delete,
-        is_sync_remote_delete = self.is_sync_remote_delete
+        is_sync_remote_delete = self.is_sync_remote_delete,
+        articles_per_sync     = self.articles_per_sync
     }
     self.wb_settings:saveSetting("wallabag", tempsettings)
     self.wb_settings:flush()
