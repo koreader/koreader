@@ -16,31 +16,23 @@ function NetworkMgr:readNWSettings()
 end
 
 -- Used after restoreWifiAsync() to make sure we eventually send a NetworkConnected event, as a few things rely on it (KOSync, c.f. #5109).
-function NetworkMgr:connectivityCheck()
+function NetworkMgr:connectivityCheck(iter)
+    -- Give up after a while...
+    if iter > 6 then
+        return
+    end
+
     if NetworkMgr:isWifiOn() and NetworkMgr:isConnected() then
         local Event = require("ui/event")
         UIManager:broadcastEvent(Event:new("NetworkConnected"))
         logger.info("WiFi successfully restored!")
-        return true
     else
-        return false
+        UIManager:scheduleIn(2, function() NetworkMgr:connectivityCheck(iter + 1) end)
     end
 end
 
 function NetworkMgr:scheduleConnectivityCheck()
-    UIManager:scheduleIn(3, function()
-        if not NetworkMgr:connectivityCheck() then
-            UIManager:scheduleIn(3, function()
-                if not NetworkMgr:connectivityCheck() then
-                    UIManager:scheduleIn(3, function()
-                        if not NetworkMgr:connectivityCheck() then
-                            UIManager:scheduleIn(3, NetworkMgr:connectivityCheck())
-                        end
-                    end)
-                end
-            end)
-        end
-    end)
+    UIManager:scheduleIn(2, function() NetworkMgr:connectivityCheck(1) end)
 end
 
 function NetworkMgr:init()
