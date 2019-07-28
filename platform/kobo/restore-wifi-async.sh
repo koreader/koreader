@@ -16,7 +16,7 @@ RestoreWifi() {
             return 1
         fi
         usleep 250000
-        wpac_timeout=$(( wpac_timeout + 1 ))
+        wpac_timeout=$((wpac_timeout + 1))
     done
 
     ./obtain-ip.sh
