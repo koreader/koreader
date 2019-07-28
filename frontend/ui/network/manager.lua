@@ -122,12 +122,23 @@ function NetworkMgr:isConnected()
     if Device:isAndroid() or Device:isCervantes() or Device:isPocketBook() then
         return self:isWifiOn()
     else
+        -- Pull the default gateway first, so we don't even try to ping anything if there isn't one...
+        local default_gw
+        local std_out = io.popen([[/sbin/route -n | awk '$4 == "UG" {print $2}' | tail -n 1]], "r")
+        if std_out then
+            default_gw = std_out:read("*all")
+            std_out:close()
+            if not default_gw or default_gw == "" then
+                return false
+            end
+        end
+
         -- `-c1` try only once; `-w2` wait 2 seconds
         -- NOTE: No -w flag available in the old busybox build used on Legacy Kindles...
         if Device:isKindle() and Device:hasKeyboard() then
-            return 0 == os.execute([[ping -c1 $(/sbin/route -n | awk '$4 == "UG" {print $2}' | tail -n 1)]])
+            return 0 == os.execute("ping -c1 " .. default_gw)
         else
-            return 0 == os.execute([[ping -c1 -w2 $(/sbin/route -n | awk '$4 == "UG" {print $2}' | tail -n 1)]])
+            return 0 == os.execute("ping -c1 -w2 " .. default_gw)
         end
     end
 end
