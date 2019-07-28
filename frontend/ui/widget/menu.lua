@@ -929,8 +929,8 @@ function Menu:updateItems(select_number)
     end
     --font size between 12 and 18 for better matching
     local infont_size = math.floor(18 - (self.perpage - 6) / 3)
-    --font size between 14 and 24 for better matching
-    local font_size = math.floor(24 - ((self.perpage - 6)/ 18) * 10 )
+    --default font size between 14 and 24 for better matching
+    local font_size = G_reader_settings:readSetting("items_font_size") or math.floor(24 - ((self.perpage - 6)/ 18) * 10 )
 
     for c = 1, math.min(self.perpage, #self.item_table) do
         -- calculate index in item_table
