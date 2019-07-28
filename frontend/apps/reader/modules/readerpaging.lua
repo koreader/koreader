@@ -405,7 +405,7 @@ function ReaderPaging:onPan(_, ges)
         if self.ui.gesture and self.ui.gesture.multiswipes_enabled then
             relative_type = "relative_delayed"
         end
-        --this is only use when mouse wheel is used
+        -- this is only used when mouse wheel is used
         if ges.mousewheel_direction and not self.view.page_scroll then
             self:onGotoViewRel(-1 * ges.mousewheel_direction)
         else
