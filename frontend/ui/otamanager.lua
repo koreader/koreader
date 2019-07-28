@@ -46,6 +46,32 @@ local ota_channels = {
     nightly = _("Development"),
 }
 
+local function showRestartMessage()
+    UIManager:show(ConfirmBox:new{
+        text = _("KOReader will be updated on next restart.\nWould you like to restart now?"),
+        ok_callback = function()
+            local savequit_caller = nil
+            local save_quit = function()
+                Device:saveSettings()
+                UIManager:quit()
+                UIManager._exit_code = 85
+            end
+
+            local FileManager = require("apps/filemanager/filemanager")
+            if FileManager.instance then
+                savequit_caller =  FileManager.instance.menu
+            end
+
+            local ReaderUI = require("apps/reader/readerui")
+            local readerui_instance = ReaderUI:_getRunningInstance()
+            if readerui_instance then
+                savequit_caller = readerui_instance.menu
+            end
+            savequit_caller:exitOrRestart(save_quit)
+        end,
+    })
+end
+
 -- Try to detect WARIO+ Kindle boards (i.MX6 & i.MX7)
 function OTAManager:_isKindleWarioOrMore()
     local cpu_hw = nil
@@ -251,9 +277,7 @@ function OTAManager:fetchAndProcessUpdate()
                     })
                     UIManager:scheduleIn(1, function()
                         if OTAManager:zsync() == 0 then
-                            UIManager:show(InfoMessage:new{
-                                text = _("KOReader will be updated on next restart."),
-                            })
+                            showRestartMessage()
                             -- Make it clear that zsync is done
                             if self.can_pretty_print then
                                 os.execute("./fbink -q -y -7 -pm ' '  ' '")
@@ -277,9 +301,7 @@ function OTAManager:fetchAndProcessUpdate()
                                     -- And then relaunch zsync in full download mode...
                                     UIManager:scheduleIn(1, function()
                                         if OTAManager:zsync(true) == 0 then
-                                            UIManager:show(InfoMessage:new{
-                                                text = _("KOReader will be updated on next restart."),
-                                            })
+                                            showRestartMessage()
                                             -- Make it clear that zsync is done
                                             if self.can_pretty_print then
                                                 os.execute("./fbink -q -y -7 -pm ' '  ' '")
