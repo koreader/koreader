@@ -49,6 +49,7 @@ local ota_channels = {
 local function showRestartMessage()
     UIManager:show(ConfirmBox:new{
         text = _("KOReader will be updated on next restart.\nWould you like to restart now?"),
+        ok_text = _("Restart"),
         ok_callback = function()
             local savequit_caller = nil
             local save_quit = function()
