@@ -39,6 +39,7 @@ function Wallabag:init()
     self.is_delete_read = false
     self.is_auto_delete = false
     self.is_sync_remote_delete = false
+    self.is_archiving_deleted = false
     self.filter_tag = ""
 
     self.ui.menu:registerToMainMenu(self)
@@ -60,6 +61,9 @@ function Wallabag:init()
     end
     if self.wb_settings.data.wallabag.is_sync_remote_delete ~= nil then
         self.is_sync_remote_delete = self.wb_settings.data.wallabag.is_sync_remote_delete
+    end
+    if self.wb_settings.data.wallabag.is_archiving_deleted ~= nil then
+        self.is_archiving_deleted = self.wb_settings.data.wallabag.is_archiving_deleted
     end
     if self.wb_settings.data.wallabag.filter_tag then
         self.filter_tag = self.wb_settings.data.wallabag.filter_tag
@@ -175,6 +179,14 @@ function Wallabag:addToMainMenu(menu_items)
                         checked_func = function() return self.is_delete_read end,
                         callback = function()
                             self.is_delete_read = not self.is_delete_read
+                            self:saveSettings()
+                        end,
+                    },
+                    {
+                        text = _("Mark as read instead of deleting"),
+                        checked_func = function() return self.is_archiving_deleted end,
+                        callback = function()
+                            self.is_archiving_deleted = not self.is_archiving_deleted
                             self:saveSettings()
                         end,
                     },
@@ -513,12 +525,12 @@ function Wallabag:processLocalFiles( mode )
                     local percent_finished = docinfo.data.percent_finished
                     if status == "complete" or status == "abandoned" then
                         if self.is_delete_finished then
-                            self:deleteArticle( entry_path )
+                            self:removeArticle( entry_path )
                             num_deleted = num_deleted + 1
                         end
                     elseif percent_finished == 1 then -- 100% read
                         if self.is_delete_read then
-                            self:deleteArticle( entry_path )
+                            self:removeArticle( entry_path )
                             num_deleted = num_deleted + 1
                         end
                     end
@@ -552,11 +564,27 @@ function Wallabag:addArticle(article_url)
     return self:callAPI("POST", "/api/entries.json", headers, body_JSON, "")
 end
 
-function Wallabag:deleteArticle( path )
-    logger.dbg("Wallabag: deleting article ", path )
+function Wallabag:removeArticle( path )
+    logger.dbg("Wallabag: removing article ", path )
     local id = self:getArticleID( path )
     if id then
-        self:callAPI( "DELETE", "/api/entries/" .. id .. ".json", nil, "", "" )
+        if self.is_archiving_deleted then
+            local body = {
+                archive = 1
+            }
+            local bodyJSON = JSON.encode(body)
+
+            local headers = {
+                ["Content-type"] = "application/json",
+                ["Accept"] = "application/json, */*",
+                ["Content-Length"] = tostring(#bodyJSON),
+                ["Authorization"] = "Bearer " .. self.access_token,
+            }
+
+            self:callAPI( "PATCH", "/api/entries/" .. id .. ".json", headers, bodyJSON, "" )
+        else
+            self:callAPI( "DELETE", "/api/entries/" .. id .. ".json", nil, "", "" )
+        end
         self:deleteLocalArticle( path )
     end
 end
@@ -730,6 +758,7 @@ function Wallabag:saveSettings( fields )
         filter_tag            = self.filter_tag,
         is_delete_finished    = self.is_delete_finished,
         is_delete_read        = self.is_delete_read,
+        is_archiving_deleted  = self.is_archiving_deleted,
         is_auto_delete        = self.is_auto_delete,
         is_sync_remote_delete = self.is_sync_remote_delete
     }
