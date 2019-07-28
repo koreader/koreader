@@ -8,7 +8,6 @@ local ReaderPanning = require("apps/reader/modules/readerpanning")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
-local Input = Device.input
 local Screen = Device.screen
 local T = require("ffi/util").template
 
