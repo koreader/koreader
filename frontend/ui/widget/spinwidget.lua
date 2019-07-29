@@ -35,7 +35,7 @@ local SpinWidget = InputContainer:new{
     cancel_text = _("Cancel"),
     -- set this to see extra default button
     default_value = nil,
-    defaults_text = _("Use default"),
+    default_text = _("Use default"),
 }
 
 function SpinWidget:init()
@@ -129,7 +129,7 @@ function SpinWidget:update()
     if self.default_value then
         table.insert(buttons,{
             {
-                text = self.defaults_text,
+                text = self.default_text,
                 callback = function()
                     value_widget.value = self.default_value
                     value_widget:update()
