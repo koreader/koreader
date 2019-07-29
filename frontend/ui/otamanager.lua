@@ -51,7 +51,7 @@ local function showRestartMessage()
         text = _("KOReader will be updated on next restart.\nWould you like to restart now?"),
         ok_text = _("Restart"),
         ok_callback = function()
-            local savequit_caller = nil
+            local savequit_caller
             local save_quit = function()
                 Device:saveSettings()
                 UIManager:quit()
