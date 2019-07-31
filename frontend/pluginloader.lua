@@ -3,7 +3,8 @@ local logger = require("logger")
 
 local DEFAULT_PLUGIN_PATH = "plugins"
 local OBSOLETE_PLUGINS = {
-    storagestat = true
+    storagestat = true,
+    kobolight = true,
 }
 
 local function sandboxPluginEventHandlers(plugin)
