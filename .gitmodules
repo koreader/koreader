@@ -6,7 +6,7 @@
 	url = https://github.com/koreader/android-luajit-launcher.git
 [submodule "platform/ubuntu-touch/ubuntu-touch-sdl"]
 	path = platform/ubuntu-touch/ubuntu-touch-sdl
-	url = https://github.com/Sturmflut/ubuntu-touch-sdl-template
+	url = https://github.com/koreader/ubuntu-touch-sdl-template
 [submodule "test"]
 	path = test
 	url = https://github.com/koreader/test-data.git
