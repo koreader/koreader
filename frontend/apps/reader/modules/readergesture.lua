@@ -61,6 +61,10 @@ local action_strings = {
     show_config_menu = _("Show bottom menu"),
     show_frontlight_dialog = _("Show frontlight dialog"),
     toggle_frontlight = _("Toggle frontlight"),
+    increase_frontlight = _("Increase frontlight brightness"),
+    decrease_frontlight = _("Decrease frontlight brightness"),
+    increase_frontlight_warmth = _("Increase frontlight warmth"),
+    decrease_frontlight_warmth = _("Decrease frontlight warmth"),
     toggle_gsensor = _("Toggle accelerometer"),
     toggle_rotation = _("Toggle rotation"),
 
@@ -157,6 +161,10 @@ function ReaderGesture:init()
         hold_top_right_corner = "ignore",
         hold_bottom_left_corner = "ignore",
         hold_bottom_right_corner = "ignore",
+        one_finger_swipe_left_edge_down = Device:hasFrontlight() and "decrease_frontlight" or "ignore",
+        one_finger_swipe_left_edge_up = Device:hasFrontlight() and "increase_frontlight" or "ignore",
+        one_finger_swipe_right_edge_down =  Device:hasNaturalLight() and "decrease_frontlight_warmth" or "ignore",
+        one_finger_swipe_right_edge_up = Device:hasNaturalLight() and "increase_frontlight_warmth" or "ignore",
         two_finger_tap_top_left_corner = "ignore",
         two_finger_tap_top_right_corner = "ignore",
         two_finger_tap_bottom_left_corner = "ignore",
@@ -357,6 +365,28 @@ function ReaderGesture:addToMainMenu(menu_items)
                 text = _("Short diagonal swipe"),
                 sub_item_table = self:buildMenu("short_diagonal_swipe", self.default_gesture["short_diagonal_swipe"]),
             },
+            {
+                text = _("One-finger swipe"),
+                sub_item_table = {
+                    {
+                        text_func = function() return actionTextFunc("one_finger_swipe_left_edge_down", _("Left edge down")) end,
+                        sub_item_table = self:buildMenu("one_finger_swipe_left_edge_down", self.default_gesture["one_finger_swipe_left_edge_down"]),
+                    },
+                    {
+                        text_func = function() return actionTextFunc("one_finger_swipe_left_edge_up", _("Left edge up")) end,
+                        sub_item_table = self:buildMenu("one_finger_swipe_left_edge_up", self.default_gesture["one_finger_swipe_left_edge_up"]),
+                    },
+                    {
+                        text_func = function() return actionTextFunc("one_finger_swipe_right_edge_down", _("Right edge down")) end,
+                        sub_item_table = self:buildMenu("one_finger_swipe_right_edge_down", self.default_gesture["one_finger_swipe_right_edge_down"]),
+                    },
+                    {
+                        text_func = function() return actionTextFunc("one_finger_swipe_right_edge_up", _("Right edge up")) end,
+                        sub_item_table = self:buildMenu("one_finger_swipe_right_edge_up", self.default_gesture["one_finger_swipe_right_edge_up"]),
+                    },
+                },
+            },
+
         },
     }
     menu_items.gesture_intervals = {
@@ -610,7 +640,12 @@ function ReaderGesture:buildMenu(ges, default)
         {"show_menu", true},
         {"show_config_menu", not self.is_docless, true},
         {"show_frontlight_dialog", Device:hasFrontlight()},
-        {"toggle_frontlight", Device:hasFrontlight(), true},
+        {"toggle_frontlight", Device:hasFrontlight()},
+        {"increase_frontlight", Device:hasFrontlight()},
+        {"decrease_frontlight", Device:hasFrontlight(), true},
+        {"increase_frontlight_warmth", Device:hasNaturalLight()},
+        {"decrease_frontlight_warmth", Device:hasNaturalLight(), true},
+
         {"toggle_gsensor", Device:canToggleGSensor()},
         {"toggle_rotation", not self.is_docless, true},
 
@@ -792,6 +827,15 @@ function ReaderGesture:setupGesture(ges, action)
         ratio_w = 1, ratio_h = 1,
     }
 
+    local zone_left_edge = {
+        ratio_x = 0, ratio_y = 1/8,
+        ratio_w = 1/8, ratio_h = 7/8,
+    }
+    local zone_right_edge = {
+        ratio_x = 7/8, ratio_y = 1/8,
+        ratio_w = 1/8, ratio_h = 7/8,
+    }
+
     -- legacy global variable DTAP_ZONE_FLIPPING may still be defined in default.persistent.lua
     local dtap_zone_top_left = DTAP_ZONE_FLIPPING and DTAP_ZONE_FLIPPING or DTAP_ZONE_TOP_LEFT
     local zone_top_left_corner = {
@@ -823,6 +867,9 @@ function ReaderGesture:setupGesture(ges, action)
 
     local overrides_tap_corner
     local overrides_hold_corner
+    local overrides_vertical_edge
+    local overrides_pan, overrides_pan_release
+    local overrides_swipe_pan, overrides_swipe_pan_release
     if self.is_docless then
         overrides_tap_corner = {
             "filemanager_tap",
@@ -837,6 +884,17 @@ function ReaderGesture:setupGesture(ges, action)
         }
         overrides_hold_corner = {
             "readerfooter_hold",
+        }
+        overrides_vertical_edge = {
+            "paging_swipe",
+            "rolling_swipe",
+        }
+        overrides_pan = {
+            "paging_swipe",
+            "rolling_swipe",
+        }
+        overrides_pan_release = {
+            "paging_pan_release",
         }
     end
 
@@ -881,6 +939,34 @@ function ReaderGesture:setupGesture(ges, action)
         ges_type = "hold"
         zone = zone_bottom_left_corner
         overrides = overrides_hold_corner
+    elseif ges == "one_finger_swipe_left_edge_down" then
+        ges_type = "swipe"
+        zone = zone_left_edge
+        direction = {south = true}
+        overrides = overrides_vertical_edge
+        overrides_swipe_pan = overrides_pan
+        overrides_swipe_pan_release = overrides_pan_release
+    elseif ges == "one_finger_swipe_left_edge_up" then
+        ges_type = "swipe"
+        zone = zone_left_edge
+        direction = {north = true}
+        overrides = overrides_vertical_edge
+        overrides_swipe_pan = overrides_pan
+        overrides_swipe_pan_release = overrides_pan_release
+    elseif ges == "one_finger_swipe_right_edge_down" then
+        ges_type = "swipe"
+        zone = zone_right_edge
+        direction = {south = true}
+        overrides = overrides_vertical_edge
+        overrides_swipe_pan = overrides_pan
+        overrides_swipe_pan_release = overrides_pan_release
+    elseif ges == "one_finger_swipe_right_edge_up" then
+        ges_type = "swipe"
+        zone = zone_right_edge
+        direction = {north = true}
+        overrides = overrides_vertical_edge
+        overrides_swipe_pan = overrides_pan
+        overrides_swipe_pan_release = overrides_pan_release
     elseif ges == "two_finger_tap_top_left_corner" then
         ges_type = "two_finger_tap"
         zone = zone_top_left_corner
@@ -939,6 +1025,13 @@ function ReaderGesture:setupGesture(ges, action)
     else return
     end
     self:registerGesture(ges, action, ges_type, zone, overrides, direction, distance)
+    -- make dummy zone to disable panning and panning_release when gesture is swipe
+    if ges_type == "swipe" and ges ~= "short_diagonal_swipe" then
+        local pan_gesture = ges.."_pan"
+        local pan_release_gesture = ges.."_pan_release"
+        self:registerGesture(pan_gesture, "", "pan", zone, overrides_swipe_pan, direction, distance)
+        self:registerGesture(pan_release_gesture, "", "pan_release", zone, overrides_swipe_pan_release, direction, distance)
+    end
 end
 
 function ReaderGesture:registerGesture(ges, action, ges_type, zone, overrides, direction, distance)
@@ -1080,6 +1173,34 @@ function ReaderGesture:gestureAction(action, ges)
             ReaderFrontLight:onShowFlDialog()
         else
             self.ui:handleEvent(Event:new("ShowFlDialog"))
+        end
+    elseif action == "increase_frontlight" then
+        if self.ges_mode == "gesture_fm" then
+            local ReaderFrontLight = require("apps/reader/modules/readerfrontlight")
+            ReaderFrontLight:onChangeFlIntensity(ges, 1)
+        else
+            self.ui:handleEvent(Event:new("ChangeFlIntensity", ges, 1))
+        end
+    elseif action == "decrease_frontlight" then
+        if self.ges_mode == "gesture_fm" then
+            local ReaderFrontLight = require("apps/reader/modules/readerfrontlight")
+            ReaderFrontLight:onChangeFlIntensity(ges, -1)
+        else
+            self.ui:handleEvent(Event:new("ChangeFlIntensity", ges, -1))
+        end
+    elseif action == "increase_frontlight_warmth" then
+        if self.ges_mode == "gesture_fm" then
+            local ReaderFrontLight = require("apps/reader/modules/readerfrontlight")
+            ReaderFrontLight:onChangeFlWarmth(ges, 1)
+        else
+            self.ui:handleEvent(Event:new("ChangeFlWarmth", ges, 1))
+        end
+    elseif action == "decrease_frontlight_warmth" then
+        if self.ges_mode == "gesture_fm" then
+            local ReaderFrontLight = require("apps/reader/modules/readerfrontlight")
+            ReaderFrontLight:onChangeFlWarmth(ges, -1)
+        else
+            self.ui:handleEvent(Event:new("ChangeFlWarmth", ges, -1))
         end
     elseif action == "toggle_bookmark" then
         self.ui:handleEvent(Event:new("ToggleBookmark"))

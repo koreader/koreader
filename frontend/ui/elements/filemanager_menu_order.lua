@@ -77,7 +77,6 @@ local order = {
     },
     taps_and_gestures = {
         "gesture_manager",
-        "frontlight_gesture_controller",
         "gesture_intervals",
         "----------------------------",
         "menu_activate",
