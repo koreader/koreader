@@ -562,7 +562,24 @@ function FileManager:goHome()
     if home_dir then
         self.file_chooser:changeToPath(home_dir)
     else
-        self:setHome()
+        -- Try some sane defaults, depending on platform
+        if Device:isKindle() then
+            home_dir = "/mnt/us"
+        elseif Device:isKobo() then
+            home_dir = "/mnt/onboard"
+        elseif Device:isPocketBook() then
+            home_dir = "/mnt/ext1"
+        elseif Device:isCervantes() then
+            home_dir = "/mnt/public"
+        elseif Device:isAndroid() then
+            home_dir = "/sdcard/koreader"
+        end
+
+        if home_dir then
+            self.file_chooser:changeToPath(home_dir)
+        else
+            self:setHome()
+        end
     end
     return true
 end
