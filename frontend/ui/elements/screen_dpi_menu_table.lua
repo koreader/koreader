@@ -35,6 +35,8 @@ local function spinWidgetSetDPI()
         callback = function(spin)
             G_reader_settings:saveSetting("custom_screen_dpi", spin.value)
             setDPI(spin.value)
+            local Event = require("ui/event")
+            UIManager:broadcastEvent(Event:new("UpdateTouchMenu"))
         end
     }
     UIManager:show(items)

@@ -553,6 +553,10 @@ function TouchMenu:_recalculatePageLayout()
     self.page_num = math.ceil(#self.item_table / self.perpage)
 end
 
+function TouchMenu:onUpdateTouchMenu()
+    self:updateItems()
+end
+
 function TouchMenu:updateItems()
     local old_dimen = self.dimen and self.dimen:copy()
     self:_recalculatePageLayout()
