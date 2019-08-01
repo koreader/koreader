@@ -175,6 +175,17 @@ if Device:isAndroid() then
     -- screen timeout options, disabled if device needs wakelocks.
     common_settings.screen_timeout = require("ui/elements/screen_android"):getTimeoutMenuTable()
 
+    -- volume key events
+    common_settings.android_volume_keys = {
+        text = _("Volume key page turning"),
+        checked_func = function() return not android.getVolumeKeysIgnored() end,
+        callback = function()
+            local is_ignored = android.getVolumeKeysIgnored()
+            android.setVolumeKeysIgnored(not is_ignored)
+            G_reader_settings:saveSetting("android_ignore_volume_keys", not is_ignored)
+        end,
+    }
+
     -- fullscreen toggle on devices with compatible fullscreen methods (apis 14-18)
     if Device.firmware_rev < 19 then
         common_settings.fullscreen = {
