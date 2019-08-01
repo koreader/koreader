@@ -205,7 +205,7 @@ function ReaderFrontLight:onShowWarmth(value)
     local powerd = Device:getPowerDevice()
     if powerd.fl_warmth ~= nil then
         UIManager:show(Notification:new{
-            text = T(_("Warmth is set to %1."), powerd.fl_warmth),
+            text = T(_("Warmth set to %1."), powerd.fl_warmth),
             timeout = 1.0,
         })
     end
