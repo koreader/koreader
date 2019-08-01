@@ -322,6 +322,23 @@ function Input:handleKeyBoardEv(ev)
         return keycode
     end
 
+    -- The hardware camera button is used in Android to toggle the touchscreen
+    if keycode == "Camera" and ev.value == EVENT_VALUE_KEY_RELEASE then
+        local isAndroid, android = pcall(require, "android")
+        if isAndroid then
+            -- toggle touchscreen behaviour
+            android.toggleTouchscreenIgnored()
+
+            -- show a toast with the new behaviour
+            if android.isTouchscreenIgnored() then
+                android.notification(_("Touchscreen disabled"))
+            else
+                android.notification(_("Touchscreen enabled"))
+            end
+        end
+        return
+    end
+
     if keycode == "Power" then
         -- Kobo generates Power keycode only, we need to decide whether it's
         -- power-on or power-off ourselves.
