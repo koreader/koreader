@@ -182,6 +182,11 @@ function Device:init()
         self:toggleFullscreen()
     end
 
+    -- check if we ignore volume keys and then they're forwarded to system services.
+    if G_reader_settings:isTrue("android_ignore_volume_keys") then
+        android.setVolumeKeysIgnored(true);
+    end
+
     Generic.init(self)
 end
 

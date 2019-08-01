@@ -68,6 +68,7 @@ local order = {
         "back_to_exit",
         "back_in_filemanager",
         "enable_back_history",
+        "android_volume_keys",
         "----------------------------",
         "invert_page_turn_buttons",
     },
