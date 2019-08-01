@@ -1,5 +1,6 @@
 local Blitbuffer = require("ffi/blitbuffer")
 local DataStorage = require("datastorage")
+local Device = require("device")
 local DocumentRegistry = require("document/documentregistry")
 local RenderImage = require("ui/renderimage")
 local SQ3 = require("lua-ljsqlite3/init")
@@ -138,8 +139,12 @@ end
 
 function BookInfoManager:createDB()
     local db_conn = SQ3.open(self.db_location)
-    -- Make it WAL
-    db_conn:exec("PRAGMA journal_mode=WAL;")
+    -- Make it WAL, if possible
+    if Device:canUseWAL() then
+        db_conn:exec("PRAGMA journal_mode=WAL;")
+    else
+        db_conn:exec("PRAGMA journal_mode=TRUNCATE;")
+    end
     -- Less error cases to check if we do it that way
     -- Create it (noop if already there)
     db_conn:exec(BOOKINFO_DB_SCHEMA)
