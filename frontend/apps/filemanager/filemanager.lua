@@ -560,6 +560,7 @@ end
 function FileManager:goHome()
     local home_dir = G_reader_settings:readSetting("home_dir")
     if home_dir then
+        -- Jump to the first page if we're already home
         if self.file_chooser.path and home_dir == self.file_chooser.path then
             self.file_chooser:onGotoPage(1)
         else
