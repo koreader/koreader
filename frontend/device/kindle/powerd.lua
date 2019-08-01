@@ -46,8 +46,17 @@ end
 function KindlePowerD:getCapacityHW()
     if self.lipc_handle ~= nil then
         return self.lipc_handle:get_int_property("com.lab126.powerd", "battLevel")
-    else
+    elseif self.batt_capacity_file then
         return self:read_int_file(self.batt_capacity_file)
+    else
+        local std_out = io.popen("gasgauge-info -c 2>/dev/null", "r")
+        if std_out then
+            local result = std_out:read("*all"):match("%d+")
+            std_out:close()
+            return result and tonumber(result) or 0
+        else
+            return 0
+        end
     end
 end
 
