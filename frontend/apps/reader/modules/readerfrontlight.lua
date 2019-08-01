@@ -174,9 +174,9 @@ function ReaderFrontLight:onShowOnOff()
     local powerd = Device:getPowerDevice()
     local new_text
     if powerd.is_fl_on then
-        new_text = _("Frontlight is on.")
+        new_text = _("Frontlight enabled.")
     else
-        new_text = _("Frontlight is off.")
+        new_text = _("Frontlight disabled.")
     end
     UIManager:show(Notification:new{
         text = new_text,
@@ -190,7 +190,7 @@ function ReaderFrontLight:onShowIntensity()
     local powerd = Device:getPowerDevice()
     local new_text
     if powerd:isFrontlightOff() then
-        new_text = _("Frontlight is off.")
+        new_text = _("Frontlight disabled.")
     else
         new_text = T(_("Frontlight intensity is set to %1."), powerd:frontlightIntensity())
     end
