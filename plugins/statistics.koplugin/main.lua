@@ -1,6 +1,7 @@
 local BookStatusWidget = require("ui/widget/bookstatuswidget")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
+local Device = require("device")
 local DocSettings = require("docsettings")
 local InfoMessage = require("ui/widget/infomessage")
 local KeyValuePage = require("ui/widget/keyvaluepage")
@@ -294,8 +295,12 @@ function ReaderStatistics:partialMd5(file)
 end
 
 function ReaderStatistics:createDB(conn)
-    -- Make it WAL
-    conn:exec("PRAGMA journal_mode=WAL;")
+    -- Make it WAL, if possible
+    if Device:canUseWAL() then
+        conn:exec("PRAGMA journal_mode=WAL;")
+    else
+        conn:exec("PRAGMA journal_mode=TRUNCATE;")
+    end
     local sql_stmt = [[
         CREATE TABLE IF NOT EXISTS book
             (

@@ -39,6 +39,7 @@ local Device = {
     hasBGRFrameBuffer = no,
     canToggleGSensor = no,
     canToggleMassStorage = no,
+    canUseWAL = yes, -- requires mmap'ed I/O on the target FS
 
     -- use these only as a last resort. We should abstract the functionality
     -- and have device dependent implementations in the corresponting

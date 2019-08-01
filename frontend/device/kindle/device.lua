@@ -237,6 +237,7 @@ local Kindle2 = Kindle:new{
     hasDPad = yes,
     canHWInvert = no,
     canUseCBB = no, -- 4bpp
+    canUseWAL = no, -- Kernel too old to support mmap'ed I/O on /mnt/us
 }
 
 local KindleDXG = Kindle:new{
@@ -246,6 +247,7 @@ local KindleDXG = Kindle:new{
     hasDPad = yes,
     canHWInvert = no,
     canUseCBB = no, -- 4bpp
+    canUseWAL = no, -- Kernel too old to support mmap'ed I/O on /mnt/us
 }
 
 local Kindle3 = Kindle:new{
