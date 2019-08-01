@@ -560,7 +560,11 @@ end
 function FileManager:goHome()
     local home_dir = G_reader_settings:readSetting("home_dir")
     if home_dir then
-        self.file_chooser:changeToPath(home_dir)
+        if self.file_chooser.path and home_dir == self.file_chooser.path then
+            self.file_chooser:onGotoPage(1)
+        else
+            self.file_chooser:changeToPath(home_dir)
+        end
     else
         -- Try some sane defaults, depending on platform
         if Device:isKindle() then
@@ -576,7 +580,11 @@ function FileManager:goHome()
         end
 
         if home_dir then
-            self.file_chooser:changeToPath(home_dir)
+            if self.file_chooser.path and home_dir == self.file_chooser.path then
+                self.file_chooser:onGotoPage(1)
+            else
+                self.file_chooser:changeToPath(home_dir)
+            end
         else
             self:setHome()
         end
