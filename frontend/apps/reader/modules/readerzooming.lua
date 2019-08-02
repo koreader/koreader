@@ -16,7 +16,7 @@ local ReaderZooming = InputContainer:new{
     zoom = 1.0,
     -- default to nil so we can trigger ZoomModeUpdate events on start up
     zoom_mode = nil,
-    DEFAULT_ZOOM_MODE = "page",
+    DEFAULT_ZOOM_MODE = "pagewidth",
     current_page = 1,
     rotation = 0
 }
