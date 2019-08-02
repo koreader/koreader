@@ -577,7 +577,7 @@ function FileManager:goHome()
         elseif Device:isCervantes() then
             home_dir = "/mnt/public"
         elseif Device:isAndroid() then
-            home_dir = "/sdcard/koreader"
+            home_dir = "/sdcard"
         end
 
         if home_dir then
