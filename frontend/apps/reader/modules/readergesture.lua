@@ -618,7 +618,7 @@ function ReaderGesture:buildMenu(ges, default)
         { "toc", not self.is_docless},
         {"bookmarks", not self.is_docless},
         {"reading_progress", ReaderGesture.getReaderProgress ~= nil},
-        {"book_statistics", ReaderGesture.getBookStats ~= nil},
+        {"book_statistics", not self.is_docless},
 
         {"book_status", not self.is_docless},
         {"book_info", not self.is_docless},
