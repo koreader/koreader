@@ -20,6 +20,28 @@ local function setDPI(_dpi)
     Device:setScreenDPI(_dpi)
 end
 
+local function spinWidgetSetDPI()
+    local SpinWidget = require("ui/widget/spinwidget")
+    local UIManager = require("ui/uimanager")
+    local items = SpinWidget:new{
+        width = Screen:getWidth() * 0.6,
+        value = custom() or dpi(),
+        value_min = 90,
+        value_max = 900,
+        value_step = 10,
+        value_hold_step = 50,
+        ok_text = _("Set DPI"),
+        title_text = _("Set custom screen DPI"),
+        callback = function(spin)
+            G_reader_settings:saveSetting("custom_screen_dpi", spin.value)
+            setDPI(spin.value)
+            local Event = require("ui/event")
+            UIManager:broadcastEvent(Event:new("UpdateTouchMenu"))
+        end
+    }
+    UIManager:show(items)
+end
+
 local dpi_auto = Screen.device.screen_dpi
 local dpi_small = 120
 local dpi_medium = 160
@@ -93,27 +115,28 @@ return {
         },
         {
             text_func = function()
-                return T(_("Custom DPI: %1 (hold to set)"), custom() or dpi_auto)
+                local custom_dpi = custom() or dpi_auto
+                if custom_dpi then
+                    return T(_("Custom DPI: %1 (hold to set)"), custom() or dpi_auto)
+                else
+                    return _("Custom DPI")
+                end
             end,
             checked_func = function()
                 if isAutoDPI() then return false end
                 local _dpi, _custom = dpi(), custom()
                 return _custom and _dpi == _custom
             end,
-            callback = function() setDPI(custom() or dpi_auto) end,
-            hold_input = {
-                title = _("Enter custom screen DPI"),
-                type = "number",
-                hint = "(90 - 900)",
-                callback = function(input)
-                    local _dpi = tonumber(input)
-                    _dpi = _dpi < 90 and 90 or _dpi
-                    _dpi = _dpi > 900 and 900 or _dpi
-                    G_reader_settings:saveSetting("custom_screen_dpi", _dpi)
-                    setDPI(_dpi)
-                end,
-                ok_text = _("Set custom DPI"),
-            },
+            callback = function()
+                if custom() then
+                    setDPI(custom() or dpi_auto)
+                else
+                    spinWidgetSetDPI()
+                end
+            end,
+            hold_callback = function()
+                spinWidgetSetDPI()
+            end,
         },
     }
 }
