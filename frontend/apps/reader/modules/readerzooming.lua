@@ -333,8 +333,25 @@ function ReaderZooming:genSetZoomModeCallBack(mode)
 end
 
 function ReaderZooming:setZoomMode(mode)
-    self.ui:handleEvent(Event:new("SetZoomMode", mode))
-    self.ui:handleEvent(Event:new("InitScrollPageStates"))
+    local function emitZoomEvents()
+        self.ui:handleEvent(Event:new("SetZoomMode", mode))
+        self.ui:handleEvent(Event:new("InitScrollPageStates"))
+    end
+
+    if mode == "page" and self.ui.view.page_scroll then
+        UIManager:show(ConfirmBox:new{
+            text = _([[
+Change zoom mode to fit page?
+
+In combination with continuous display (scroll mode), this can lead to unexpected shifts when turning pages.]]),
+            ok_text = _("Fit page"),
+            ok_callback = function()
+                emitZoomEvents()
+            end,
+        })
+    else
+        emitZoomEvents()
+    end
 end
 
 function ReaderZooming:addToMainMenu(menu_items)
