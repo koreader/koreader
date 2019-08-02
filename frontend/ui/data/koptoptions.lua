@@ -45,8 +45,8 @@ local KoptOptions = {
         options = {
             {
                 name = "page_scroll",
-                name_text = S.SCROLL_MODE,
-                toggle = {S.ON, S.OFF},
+                name_text = S.VIEW_MODE,
+                toggle = {S.VIEW_SCROLL, S.VIEW_PAGE},
                 values = {1, 0},
                 default_value = DSCROLL_MODE,
                 event = "SetScrollMode",
