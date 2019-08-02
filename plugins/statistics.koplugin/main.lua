@@ -145,6 +145,14 @@ function ReaderStatistics:init()
         return readingprogress
     end
 
+    ReaderGesture.getBookStats = function()
+        if self:isDocless() or not self.is_enabled then return end
+        local stats = KeyValuePage:new{
+            title = _("Statistics"),
+            kv_pairs = self:getCurrentStat(self.id_curr_book),
+        }
+        return stats
+    end
 end
 
 function ReaderStatistics:initData()
