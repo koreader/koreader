@@ -465,14 +465,16 @@ function TouchMenu:init()
         -- Add some span to balance up_button image included padding
         HorizontalSpan:new{width = Size.span.horizontal_default},
     }
+    local footer_width = self.width - self.padding*2
     local up_button = IconButton:new{
         icon_file = "resources/icons/appbar.chevron.up.png",
         show_parent = self.show_parent,
+        padding_left = footer_width*0.33*0.1,
+        padding_right = footer_width*0.33*0.1,
         callback = function()
             self:backToUpperMenu()
         end,
     }
-    local footer_width = self.width - self.padding*2
     local footer_height = up_button:getSize().h + Size.line.thick
     self.footer = HorizontalGroup:new{
         LeftContainer:new{
