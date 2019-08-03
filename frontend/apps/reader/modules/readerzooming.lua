@@ -318,6 +318,27 @@ function ReaderZooming:getRegionalZoomCenter(pageno, pos)
     return zoom/(1 + 3*margin/zoom/page_size.w)
 end
 
+-- helper method to emit warnings against less desirable combinations
+function ReaderZooming:checkScrollZoomMode(callback, mode, page_scroll, text, ok_text)
+    mode = mode or self.zoom_mode
+    if page_scroll == nil then page_scroll = self.ui.view.page_scroll end
+
+    text = text or _([[
+Change zoom mode to fit page?
+
+In combination with continuous display (scroll mode), this can lead to unexpected shifts when turning pages.]])
+    ok_text = ok_text or _("Fit page")
+    if mode == "page" and page_scroll then
+        UIManager:show(ConfirmBox:new{
+            text = text,
+            ok_text = ok_text,
+            ok_callback = callback,
+        })
+    else
+        callback()
+    end
+end
+
 function ReaderZooming:setZoom()
     if not self.dimen then
         self.dimen = self.ui.dimen
@@ -338,20 +359,7 @@ function ReaderZooming:setZoomMode(mode)
         self.ui:handleEvent(Event:new("InitScrollPageStates"))
     end
 
-    if mode == "page" and self.ui.view.page_scroll then
-        UIManager:show(ConfirmBox:new{
-            text = _([[
-Change zoom mode to fit page?
-
-In combination with continuous display (scroll mode), this can lead to unexpected shifts when turning pages.]]),
-            ok_text = _("Fit page"),
-            ok_callback = function()
-                emitZoomEvents()
-            end,
-        })
-    else
-        emitZoomEvents()
-    end
+    self:checkScrollZoomMode(emitZoomEvents, mode)
 end
 
 function ReaderZooming:addToMainMenu(menu_items)

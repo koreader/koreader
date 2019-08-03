@@ -736,9 +736,21 @@ function ReaderView:onSetFullScreen(full_screen)
 end
 
 function ReaderView:onSetScrollMode(page_scroll)
-    self.page_scroll = page_scroll
-    self:recalculate()
-    self.ui:handleEvent(Event:new("InitScrollPageStates"))
+    local function initScrollPageStates()
+        self.page_scroll = page_scroll
+        self:recalculate()
+        self.ui:handleEvent(Event:new("InitScrollPageStates"))
+    end
+
+    if self.ui.document.info.has_pages then
+        self.ui.zooming:checkScrollZoomMode(initScrollPageStates, nil, page_scroll, _([[
+Change view mode to continuous?
+
+In combination with zoom to fit page, this can lead to unexpected shifts when turning pages.]]),
+            _("Change mode"))
+    else
+        initScrollPageStates()
+    end
 end
 
 function ReaderView:onReadSettings(config)
