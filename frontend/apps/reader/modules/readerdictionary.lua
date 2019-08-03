@@ -673,41 +673,29 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
             end
         end
 
-        local results_str = nil
-        if Device:isAndroid() then
-            local A = require("android")
-            results_str = A.stdout(unpack(args))
-        else
-            local cmd = util.shell_escape(args)
-            -- cmd = "sleep 7 ; " .. cmd     -- uncomment to simulate long lookup time
+        local cmd = util.shell_escape(args)
+        -- cmd = "sleep 7 ; " .. cmd     -- uncomment to simulate long lookup time
 
-            if self.lookup_progress_msg then
-                -- Some sdcv lookups, when using fuzzy search with many dictionaries
-                -- and a really bad selected text, can take up to 10 seconds.
-                -- It is nice to be able to cancel it when noticing wrong text was selected.
-                -- As we have a lookup_progress_msg (that can be used to catch a tap
-                -- and trigger cancellation), and because sdcv starts outputing its
-                -- output only at the end when it has done its work, we can
-                -- use Trapper:dismissablePopen() to cancel it as long as we are waiting
-                -- for output.
-                -- We must ensure we will have some output to be readable (if no
-                -- definition found, sdcv will output some message on stderr, and
-                -- let stdout empty) by appending an "echo":
-                cmd = cmd .. "; echo"
-                local completed
-                completed, results_str = Trapper:dismissablePopen(cmd, self.lookup_progress_msg)
-                lookup_cancelled = not completed
-            else
-                -- Fuzzy search disabled, usual option for people who don't want
-                -- a "Looking up..." InfoMessage and usually fast: do a classic
-                -- blocking io.popen()
-                local std_out = io.popen(cmd, "r")
-                if std_out then
-                    results_str = std_out:read("*all")
-                    std_out:close()
-                end
-            end
-        end
+        -- Some sdcv lookups, when using fuzzy search with many dictionaries
+        -- and a really bad selected text, can take up to 10 seconds.
+        -- It is nice to be able to cancel it when noticing wrong text was
+        -- selected.
+        -- Because sdcv starts outputing its output only at the end when it has
+        -- done its work, we can use Trapper:dismissablePopen() to cancel it as
+        -- long as we are waiting for output.
+        -- When fuzzy search is enabled, we have a lookup_progress_msg that can
+        -- be used to catch a tap and trigger cancellation.
+        -- When fuzzy search is disabled, we provide false instead so an
+        -- invisible non-event-forwarding TrapWidget is used to catch a tap
+        -- and trigger cancellation (invisible so there's no need for repaint
+        -- and refresh with the usually fast non-fuzzy search lookups).
+        -- We must ensure we will have some output to be readable (if no
+        -- definition found, sdcv will output some message on stderr, and
+        -- let stdout empty) by appending an "echo":
+        cmd = cmd .. "; echo"
+        local completed, results_str = Trapper:dismissablePopen(cmd, self.lookup_progress_msg or false)
+        lookup_cancelled = not completed
+
         if results_str and results_str ~= "\n" then -- \n is when lookup was cancelled
             local ok, results = pcall(JSON.decode, results_str)
             if ok and results then
