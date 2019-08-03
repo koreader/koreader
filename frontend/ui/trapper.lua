@@ -314,8 +314,9 @@ Notes and limitations:
 3) We need a @{ui.widget.trapwidget|TrapWidget} or @{ui.widget.infomessage|InfoMessage},
    that, as a modal, will catch any @{ui.event|Tap event} happening during
    `cmd` execution. This can be an existing already displayed widget, or
-   provided as a string (a new TrapWidget will be created). If nil, an invisible
-   TrapWidget will be used instead.
+   provided as a string (a new TrapWidget will be created). If nil, true or false,
+   an invisible TrapWidget will be used instead (if nil or true, the event will be
+   resent; if false, the event will not be resent).
 
 If we really need to have more control, we would need to use `select()` via `ffi`
 or do low level non-blocking reading on the file descriptor.
@@ -324,7 +325,7 @@ collect indefinitely, the best option would be to compile any `timeout.c`
 and use it as a wrapper.
 
 @string cmd shell `cmd` to execute and get output from
-@param trap_widget_or_string already shown widget, string or nil
+@param trap_widget_or_string already shown widget, string, or nil, true or false
 @treturn boolean completed (`true` if not interrupted, `false` if dismissed)
 @treturn string output of command
 ]]
@@ -358,10 +359,15 @@ function Trapper:dismissablePopen(cmd, trap_widget_or_string)
             UIManager:show(trap_widget)
             UIManager:forceRePaint()
         else
-            -- Use an invisible TrapWidget that resend event
+            -- Use an invisible TrapWidget that resend event, but not if
+            -- trap_widget_or_string is false (rather than nil or true)
+            local resend_event = true
+            if trap_widget_or_string == false then
+                resend_event = false
+            end
             trap_widget = TrapWidget:new{
                 text = nil,
-                resend_event = true,
+                resend_event = resend_event,
             }
             UIManager:show(trap_widget)
             own_trap_widget_invisible = true
@@ -472,11 +478,12 @@ Notes and limitations:
 4) We need a @{ui.widget.trapwidget|TrapWidget} or @{ui.widget.infomessage|InfoMessage},
    that, as a modal, will catch any @{ui.event|Tap event} happening during
    `cmd` execution. This can be an existing already displayed widget, or
-   provided as a string (a new TrapWidget will be created). If nil, an invisible
-   TrapWidget will be used instead.
+   provided as a string (a new TrapWidget will be created). If nil, true or false,
+   an invisible TrapWidget will be used instead (if nil or true, the event will be
+   resent; if false, the event will not be resent).
 
 @function task lua function to execute and get return values from
-@param trap_widget_or_string already shown widget, string or nil
+@param trap_widget_or_string already shown widget, string, or nil, true or false
 @boolean task_returns_simple_string[opt=false] true if task returns a single string
 @treturn boolean completed (`true` if not interrupted, `false` if dismissed)
 @return ... return values of task
@@ -504,10 +511,15 @@ function Trapper:dismissableRunInSubprocess(task, trap_widget_or_string, task_re
             UIManager:show(trap_widget)
             UIManager:forceRePaint()
         else
-            -- Use an invisible TrapWidget that resend event
+            -- Use an invisible TrapWidget that resend event, but not if
+            -- trap_widget_or_string is false (rather than nil or true)
+            local resend_event = true
+            if trap_widget_or_string == false then
+                resend_event = false
+            end
             trap_widget = TrapWidget:new{
                 text = nil,
-                resend_event = true,
+                resend_event = resend_event,
             }
             UIManager:show(trap_widget)
             own_trap_widget_invisible = true

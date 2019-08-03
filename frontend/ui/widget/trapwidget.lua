@@ -115,16 +115,13 @@ function TrapWidget:_dismissAndResent(evtype, ev)
     self.dismiss_callback()
     UIManager:close(self)
     if self.resend_event and evtype and ev then
-        -- XXX There may be timing problems that could cause crashes, as we
+        -- There may be some timing issues that could cause crashes, as we
         -- use nextTick, if the dismiss_callback uses UIManager:scheduleIn()
         -- or has set up some widget that may catch that event while not being
         -- yet fully initialiazed.
-        -- It happened mostly when I had some bug somewhere, and it was a quite
+        -- (It happened mostly when I had some bug somewhere, and it was a quite
         -- reliable sign of a bug somewhere, but the stacktrace was unrelated
-        -- to the bug location.
-        -- Fix to avoid crashes: in GestureRange:match(), check that self.range()
-        -- does not return nil before using it:
-        --   if not range or not range:contains(gs.pos) then return false
+        -- to the bug location.)
         UIManager:nextTick(function() UIManager:handleInputEvent(Event:new(evtype, ev)) end)
     end
     return true
