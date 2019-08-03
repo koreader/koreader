@@ -255,7 +255,10 @@ function Wikipedia:loadPage(text, lang, page_type, plain)
             error(self.dismissed_error_code) -- "Interrupted by user"
         end
     else
-        local timeout, maxtime = 10, 60
+        -- Smaller timeout than when we have a trap_widget because we are
+        -- blocking without one (but 20s may be needed to fetch the main HTML
+        -- page of big articles when making an EPUB).
+        local timeout, maxtime = 20, 60
         success, content = getUrlContent(built_url, timeout, maxtime)
     end
     if not success then
