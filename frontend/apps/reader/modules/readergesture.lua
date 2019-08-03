@@ -38,6 +38,7 @@ local action_strings = {
     toc = _("Table of contents"),
     bookmarks = _("Bookmarks"),
     reading_progress = _("Reading progress"),
+    book_statistics = _("Book statistics"),
     book_status = _("Book status"),
     book_info = _("Book information"),
     book_description = _("Book description"),
@@ -617,6 +618,8 @@ function ReaderGesture:buildMenu(ges, default)
         { "toc", not self.is_docless},
         {"bookmarks", not self.is_docless},
         {"reading_progress", ReaderGesture.getReaderProgress ~= nil},
+        {"book_statistics", not self.is_docless},
+
         {"book_status", not self.is_docless},
         {"book_info", not self.is_docless},
         {"book_description", not self.is_docless},
@@ -1076,6 +1079,8 @@ function ReaderGesture:gestureAction(action, ges)
         return
     elseif action == "reading_progress" and ReaderGesture.getReaderProgress then
         UIManager:show(ReaderGesture.getReaderProgress())
+    elseif action == "book_statistics" and ReaderGesture.getBookStats then
+        UIManager:show(ReaderGesture.getBookStats())
     elseif action == "toc" then
         self.ui:handleEvent(Event:new("ShowToc"))
     elseif action == "night_mode" then
