@@ -250,7 +250,9 @@ function Button:onHoldSelectButton()
     elseif type(self.hold_input_func) == "function" then
         self:onInput(self.hold_input_func(), true)
     end
-    return true
+    if self.readonly ~= true then
+        return true
+    end
 end
 
 function Button:onHoldReleaseSelectButton()
