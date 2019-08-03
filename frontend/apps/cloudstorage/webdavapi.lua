@@ -102,6 +102,9 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
             --logger.dbg("WebDav catalog item=", item)
             -- <d:href> is the path and filename of the entry.
             local item_fullpath = item:match("<d:href>(.*)</d:href>")
+            if string.sub( item_fullpath, -1 ) == "/" then
+                item_fullpath = string.sub( item_fullpath, 1, -2 )
+            end
             local is_current_dir = self:isCurrentDirectory( item_fullpath, address, path )
             local item_name = util.urlDecode( FFIUtil.basename( item_fullpath ) )
             local item_path = path .. "/" .. item_name
