@@ -810,12 +810,15 @@ function Menu:init()
                 }
             }
         end
-        self.ges_events.Swipe = {
-            GestureRange:new{
-                ges = "swipe",
-                range = self.dimen,
+        -- delegate swipe gesture to GestureManager in filemanager
+        if self.is_file_manager ~= true then
+            self.ges_events.Swipe = {
+                GestureRange:new{
+                    ges = "swipe",
+                    range = self.dimen,
+                }
             }
-        }
+        end
         self.ges_events.Close = self.on_close_ges
     end
 
@@ -1225,14 +1228,8 @@ function Menu:onSwipe(arg, ges_ev)
         -- no use for now
         do end -- luacheck: ignore 541
     else -- diagonal swipe
-        if self.is_file_manager and G_reader_settings:readSetting("gesture_fm") and
-                G_reader_settings:readSetting("gesture_fm")["short_diagonal_swipe"] then
-            -- managed by gesture manager
-            do end -- luacheck: ignore 541
-        else
-            -- trigger full refresh
-            UIManager:setDirty(nil, "full")
-        end
+        -- trigger full refresh
+        UIManager:setDirty(nil, "full")
     end
 end
 

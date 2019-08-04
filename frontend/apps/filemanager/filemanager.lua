@@ -64,6 +64,21 @@ local FileManager = InputContainer:extend{
 }
 
 function FileManager:init()
+    if Device:isTouchDevice() then
+        self:registerTouchZones({
+            {
+                id = "filemanager_swipe",
+                ges = "swipe",
+                screen_zone = {
+                    ratio_x = 0, ratio_y = 0,
+                    ratio_w = Screen:getWidth(), ratio_h = Screen:getHeight(),
+                },
+                handler = function(ges)
+                    self:onSwipeFM(ges)
+                end,
+            },
+        })
+    end
     self.show_parent = self.show_parent or self
     local icon_size = Screen:scaleBySize(35)
     local home_button = IconButton:new{
@@ -408,6 +423,15 @@ end
 
 function FileManager:onShowPlusMenu()
     self:tapPlus()
+    return true
+end
+
+function FileManager:onSwipeFM(ges)
+    if ges.direction == "west" then
+        self.file_chooser:onNextPage()
+    elseif ges.direction == "east" then
+        self.file_chooser:onPrevPage()
+    end
     return true
 end
 
