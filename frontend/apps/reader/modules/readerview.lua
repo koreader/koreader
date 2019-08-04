@@ -9,6 +9,7 @@ local Device = require("device")
 local Geom = require("ui/geometry")
 local Event = require("ui/event")
 local ImageWidget = require("ui/widget/imagewidget")
+local InfoMessage = require("ui/widget/infomessage")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local ReaderDogear = require("apps/reader/modules/readerdogear")
 local ReaderFlipping = require("apps/reader/modules/readerflipping")
@@ -736,21 +737,16 @@ function ReaderView:onSetFullScreen(full_screen)
 end
 
 function ReaderView:onSetScrollMode(page_scroll)
-    local function initScrollPageStates()
-        self.page_scroll = page_scroll
-        self:recalculate()
-        self.ui:handleEvent(Event:new("InitScrollPageStates"))
+    if self.ui.document.info.has_pages and page_scroll and self.zoom_mode == "page" then
+        UIManager:show(InfoMessage:new{
+            text = _([[Continuous view (scroll mode) can lead to unexpected shifts when turning pages in combination with zooming to fit page.]]),
+            timeout = 5,
+        })
     end
 
-    if self.ui.document.info.has_pages then
-        self.ui.zooming:checkScrollZoomMode(initScrollPageStates, nil, page_scroll, _([[
-Change view mode to continuous?
-
-In combination with zoom to fit page, this can lead to unexpected shifts when turning pages.]]),
-            _("Change mode"))
-    else
-        initScrollPageStates()
-    end
+    self.page_scroll = page_scroll
+    self:recalculate()
+    self.ui:handleEvent(Event:new("InitScrollPageStates"))
 end
 
 function ReaderView:onReadSettings(config)
