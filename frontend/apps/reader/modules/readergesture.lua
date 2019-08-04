@@ -166,6 +166,10 @@ function ReaderGesture:init()
         one_finger_swipe_left_edge_up = Device:hasFrontlight() and "increase_frontlight" or "ignore",
         one_finger_swipe_right_edge_down =  Device:hasNaturalLight() and "decrease_frontlight_warmth" or "ignore",
         one_finger_swipe_right_edge_up = Device:hasNaturalLight() and "increase_frontlight_warmth" or "ignore",
+        one_finger_swipe_top_edge_right = "ignore",
+        one_finger_swipe_top_edge_left = "ignore",
+        one_finger_swipe_bottom_edge_right = "ignore",
+        one_finger_swipe_bottom_edge_left = "ignore",
         two_finger_tap_top_left_corner = "ignore",
         two_finger_tap_top_right_corner = "ignore",
         two_finger_tap_bottom_left_corner = "ignore",
@@ -385,9 +389,24 @@ function ReaderGesture:addToMainMenu(menu_items)
                         text_func = function() return actionTextFunc("one_finger_swipe_right_edge_up", _("Right edge up")) end,
                         sub_item_table = self:buildMenu("one_finger_swipe_right_edge_up", self.default_gesture["one_finger_swipe_right_edge_up"]),
                     },
+                    {
+                        text_func = function() return actionTextFunc("one_finger_swipe_top_edge_right", _("Top edge right")) end,
+                        sub_item_table = self:buildMenu("one_finger_swipe_top_edge_right", self.default_gesture["one_finger_swipe_top_edge_right"]),
+                    },
+                    {
+                        text_func = function() return actionTextFunc("one_finger_swipe_top_edge_left", _("Top edge left")) end,
+                        sub_item_table = self:buildMenu("one_finger_swipe_top_edge_left", self.default_gesture["one_finger_swipe_top_edge_left"]),
+                    },
+                    {
+                        text_func = function() return actionTextFunc("one_finger_swipe_bottom_edge_right", _("Bottom edge right")) end,
+                        sub_item_table = self:buildMenu("one_finger_swipe_bottom_edge_right", self.default_gesture["one_finger_swipe_bottom_edge_right"]),
+                    },
+                    {
+                        text_func = function() return actionTextFunc("one_finger_swipe_bottom_edge_left", _("Bottom edge left")) end,
+                        sub_item_table = self:buildMenu("one_finger_swipe_bottom_edge_left", self.default_gesture["one_finger_swipe_bottom_edge_left"]),
+                    },
                 },
             },
-
         },
     }
     menu_items.gesture_intervals = {
@@ -838,6 +857,14 @@ function ReaderGesture:setupGesture(ges, action)
         ratio_x = 7/8, ratio_y = 1/8,
         ratio_w = 1/8, ratio_h = 7/8,
     }
+    local zone_top_edge = {
+        ratio_x = 1/8, ratio_y = 0,
+        ratio_w = 7/8, ratio_h = 1/8,
+    }
+    local zone_bottom_edge = {
+        ratio_x = 1/8, ratio_y = 7/8,
+        ratio_w = 7/8, ratio_h = 1/8,
+    }
 
     -- legacy global variable DTAP_ZONE_FLIPPING may still be defined in default.persistent.lua
     local dtap_zone_top_left = DTAP_ZONE_FLIPPING and DTAP_ZONE_FLIPPING or DTAP_ZONE_TOP_LEFT
@@ -870,12 +897,15 @@ function ReaderGesture:setupGesture(ges, action)
 
     local overrides_tap_corner
     local overrides_hold_corner
-    local overrides_vertical_edge
+    local overrides_vertical_edge, overrides_horizontal_edge
     local overrides_pan, overrides_pan_release
     local overrides_swipe_pan, overrides_swipe_pan_release
     if self.is_docless then
         overrides_tap_corner = {
             "filemanager_tap",
+        }
+        overrides_horizontal_edge = {
+            "filemanager_swipe",
         }
     else
         overrides_tap_corner = {
@@ -970,6 +1000,34 @@ function ReaderGesture:setupGesture(ges, action)
         overrides = overrides_vertical_edge
         overrides_swipe_pan = overrides_pan
         overrides_swipe_pan_release = overrides_pan_release
+    elseif ges == "one_finger_swipe_top_edge_right" then
+        ges_type = "swipe"
+        zone = zone_top_edge
+        direction = {east = true}
+        overrides = overrides_horizontal_edge
+        overrides_swipe_pan = overrides_pan
+        overrides_swipe_pan_release = overrides_pan_release
+    elseif ges == "one_finger_swipe_top_edge_left" then
+        ges_type = "swipe"
+        zone = zone_top_edge
+        direction = {west = true}
+        overrides = overrides_horizontal_edge
+        overrides_swipe_pan = overrides_pan
+        overrides_swipe_pan_release = overrides_pan_release
+    elseif ges == "one_finger_swipe_bottom_edge_right" then
+        ges_type = "swipe"
+        zone = zone_bottom_edge
+        direction = {east = true}
+        overrides = overrides_horizontal_edge
+        overrides_swipe_pan = overrides_pan
+        overrides_swipe_pan_release = overrides_pan_release
+    elseif ges == "one_finger_swipe_bottom_edge_left" then
+        ges_type = "swipe"
+        zone = zone_bottom_edge
+        direction = {west = true}
+        overrides = overrides_horizontal_edge
+        overrides_swipe_pan = overrides_pan
+        overrides_swipe_pan_release = overrides_pan_release
     elseif ges == "two_finger_tap_top_left_corner" then
         ges_type = "two_finger_tap"
         zone = zone_top_left_corner
@@ -1017,6 +1075,7 @@ function ReaderGesture:setupGesture(ges, action)
         if self.is_docless then
             overrides = {
                 "filemanager_tap",
+                "filemanager_swipe"
             }
         else
             overrides = {
