@@ -56,7 +56,7 @@ Highlights for developers
   * extensible with plugin system
 * interfaced backends for documents parsing and rendering
   * high quality document backend libraries like MuPDF, DjvuLibre and CREngine
-  * interacting with frontend via LuaJIT FFI for best performance
+  * frontend interaction via LuaJIT FFI for best performance
 * in active development
   * with contributions from developers around the world
   * continuous integration with CircleCI
