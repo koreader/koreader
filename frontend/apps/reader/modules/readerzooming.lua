@@ -19,7 +19,13 @@ local ReaderZooming = InputContainer:new{
     zoom_mode = nil,
     DEFAULT_ZOOM_MODE = "pagewidth",
     current_page = 1,
-    rotation = 0
+    rotation = 0,
+    paged_modes = {
+        page = _("Zoom to fit page works best with page view."),
+        pageheight = _("Zoom to fit page height works best with page view."),
+        contentheight = _("Zoom to fit content height works best with page view."),
+        content = _("Zoom to fit content works best with page view."),
+    },
 }
 
 function ReaderZooming:init()
@@ -334,10 +340,12 @@ function ReaderZooming:genSetZoomModeCallBack(mode)
 end
 
 function ReaderZooming:setZoomMode(mode)
-    if mode == "page" and self.ui.view.page_scroll then
+    if self.ui.view.page_scroll and self.paged_modes[mode] then
         UIManager:show(InfoMessage:new{
-            text = _([[
-Zooming to fit page can lead to unexpected shifts when turning pages in combination with continuous display (scroll mode).]]),
+            text = T(_([[
+%1
+
+In combination with continuous view (scroll mode), this can cause unexpected vertical shifts when turning pages.]]), self.paged_modes[mode]),
             timeout = 5,
         })
     end
