@@ -71,14 +71,14 @@ function ReaderFrontLight:onChangeFlIntensity(ges, direction)
     local powerd = Device:getPowerDevice()
     local gestureScale
     if ges.direction == "south" or ges.direction == "north" then
-        gestureScale = Screen:getHeight() * 7/8 * 0.8
+        gestureScale = Screen:getHeight() * 0.8
     elseif ges.direction == "west" or ges.direction == "east" then
-        gestureScale = Screen:getWidth() * 7/8 * 0.8
+        gestureScale = Screen:getWidth() * 0.8
     else
         local width = Screen:getWidth()
         local height = Screen:getHeight()
         -- diagonal
-        gestureScale = math.sqrt(width * width + height * height) * 7/8 * 0.8
+        gestureScale = math.sqrt(width * width + height * height) * 0.8
     end
     if powerd.fl_intensity == nil then return false end
 
@@ -130,14 +130,14 @@ function ReaderFrontLight:onChangeFlWarmth(ges, direction)
 
     local gestureScale
     if ges.direction == "south" or ges.direction == "north" then
-        gestureScale = Screen:getHeight() * 7/8 * 0.8
+        gestureScale = Screen:getHeight() * 0.8
     elseif ges.direction == "west" or ges.direction == "east" then
-        gestureScale = Screen:getWidth() * 7/8 * 0.8
+        gestureScale = Screen:getWidth() * 0.8
     else
         local width = Screen:getWidth()
         local height = Screen:getHeight()
         -- diagonal
-        gestureScale = math.sqrt(width * width + height * height) * 7/8 * 0.8
+        gestureScale = math.sqrt(width * width + height * height) * 0.8
     end
 
     local steps_tbl = {}
