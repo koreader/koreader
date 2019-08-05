@@ -1,24 +1,31 @@
 local Cache = require("cache")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
-local GestureRange = require("ui/gesturerange")
-local UIManager = require("ui/uimanager")
 local Device = require("device")
-local Input = require("device").input
-local Screen = require("device").screen
-local Geom = require("ui/geometry")
 local Event = require("ui/event")
+local Geom = require("ui/geometry")
+local GestureRange = require("ui/gesturerange")
+local InfoMessage = require("ui/widget/infomessage")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local UIManager = require("ui/uimanager")
 local logger = require("logger")
-local T = require("ffi/util").template
 local _ = require("gettext")
+local Input = Device.input
+local Screen = Device.screen
+local T = require("ffi/util").template
 
 local ReaderZooming = InputContainer:new{
     zoom = 1.0,
     -- default to nil so we can trigger ZoomModeUpdate events on start up
     zoom_mode = nil,
-    DEFAULT_ZOOM_MODE = "page",
+    DEFAULT_ZOOM_MODE = "pagewidth",
     current_page = 1,
-    rotation = 0
+    rotation = 0,
+    paged_modes = {
+        page = _("Zoom to fit page works best with page view."),
+        pageheight = _("Zoom to fit page height works best with page view."),
+        contentheight = _("Zoom to fit content height works best with page view."),
+        content = _("Zoom to fit content works best with page view."),
+    },
 }
 
 function ReaderZooming:init()
@@ -333,6 +340,16 @@ function ReaderZooming:genSetZoomModeCallBack(mode)
 end
 
 function ReaderZooming:setZoomMode(mode)
+    if self.ui.view.page_scroll and self.paged_modes[mode] then
+        UIManager:show(InfoMessage:new{
+            text = T(_([[
+%1
+
+In combination with continuous view (scroll mode), this can cause unexpected vertical shifts when turning pages.]]), self.paged_modes[mode]),
+            timeout = 5,
+        })
+    end
+
     self.ui:handleEvent(Event:new("SetZoomMode", mode))
     self.ui:handleEvent(Event:new("InitScrollPageStates"))
 end

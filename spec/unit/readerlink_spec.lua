@@ -28,6 +28,7 @@ describe("ReaderLink module", function()
             document = DocumentRegistry:openDocument(sample_pdf),
         }
         readerui:handleEvent(Event:new("SetScrollMode", false))
+        readerui:handleEvent(Event:new("SetZoomMode", "page"))
         readerui.paging:onGotoPage(1)
         readerui.link:onTap(nil, {pos = {x = 363, y = 585}})
         UIManager:run()
@@ -40,6 +41,7 @@ describe("ReaderLink module", function()
             document = DocumentRegistry:openDocument(sample_pdf),
         }
         readerui:handleEvent(Event:new("SetScrollMode", true))
+        readerui:handleEvent(Event:new("SetZoomMode", "page"))
         readerui.paging:onGotoPage(1)
         assert.is.same(1, readerui.paging.current_page)
         readerui.link:onTap(nil, {pos = {x = 250, y = 534}})
@@ -67,6 +69,7 @@ describe("ReaderLink module", function()
             document = DocumentRegistry:openDocument(sample_pdf),
         }
         readerui:handleEvent(Event:new("SetScrollMode", false))
+        readerui:handleEvent(Event:new("SetZoomMode", "page"))
         readerui.paging:onGotoPage(1)
         readerui.link:onTap(nil, {pos = {x = 363, y = 585}})
         UIManager:run()
@@ -81,6 +84,7 @@ describe("ReaderLink module", function()
             document = DocumentRegistry:openDocument(sample_pdf),
         }
         readerui:handleEvent(Event:new("SetScrollMode", true))
+        readerui:handleEvent(Event:new("SetZoomMode", "page"))
         readerui.paging:onGotoPage(1)
         assert.is.same(1, readerui.paging.current_page)
         readerui.link:onTap(nil, {pos = {x = 250, y = 534}})
@@ -131,6 +135,7 @@ describe("ReaderLink module", function()
         local readerui = ReaderUI:new{
             document = DocumentRegistry:openDocument(sample_pdf),
         }
+        readerui:handleEvent(Event:new("SetZoomMode", "page"))
         assert.is.falsy(readerui.view.footer_visible)
         readerui.paging:onGotoPage(1)
         assert.is.same(1, readerui.paging.current_page)

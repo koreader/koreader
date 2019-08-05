@@ -106,6 +106,7 @@ describe("Readerview module", function()
             document = DocumentRegistry:openDocument(sample_pdf),
         }
         readerui:handleEvent(Event:new("SetScrollMode", true))
+        readerui:handleEvent(Event:new("SetZoomMode", "page"))
         readerui.zooming:setZoomMode("page")
         local view = readerui.view
         local ctx = view:getViewContext()
