@@ -845,25 +845,25 @@ function ReaderGesture:setupGesture(ges, action)
     local direction, distance
 
     local zone_fullscreen = {
-        ratio_x = 0.0, ratio_y = 0,
+        ratio_x = 0, ratio_y = 0,
         ratio_w = 1, ratio_h = 1,
     }
 
     local zone_left_edge = {
-        ratio_x = 0, ratio_y = 1/8,
-        ratio_w = 1/8, ratio_h = 7/8,
+        ratio_x = 0, ratio_y = 0,
+        ratio_w = 1/8, ratio_h = 1,
     }
     local zone_right_edge = {
-        ratio_x = 7/8, ratio_y = 1/8,
-        ratio_w = 1/8, ratio_h = 7/8,
+        ratio_x = 7/8, ratio_y = 0,
+        ratio_w = 1/8, ratio_h = 1,
     }
     local zone_top_edge = {
-        ratio_x = 1/8, ratio_y = 0,
-        ratio_w = 7/8, ratio_h = 1/8,
+        ratio_x = 0, ratio_y = 0,
+        ratio_w = 1, ratio_h = 1/8,
     }
     local zone_bottom_edge = {
-        ratio_x = 1/8, ratio_y = 7/8,
-        ratio_w = 7/8, ratio_h = 1/8,
+        ratio_x = 0, ratio_y = 7/8,
+        ratio_w = 1, ratio_h = 1/8,
     }
 
     -- legacy global variable DTAP_ZONE_FLIPPING may still be defined in default.persistent.lua
