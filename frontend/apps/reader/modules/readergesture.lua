@@ -203,8 +203,8 @@ function ReaderGesture:init()
 
         two_finger_swipe_east = self.ges_mode == "gesture_reader" and "toc" or "ignore",
         two_finger_swipe_west = self.ges_mode == "gesture_reader" and "bookmarks" or "folder_shortcuts",
-        two_finger_swipe_south = Device:hasFrontlight() and "increase_frontlight" or "ignore",
-        two_finger_swipe_north = Device:hasFrontlight() and "decrease_frontlight" or "ignore",
+        two_finger_swipe_south = Device:hasFrontlight() and "decrease_frontlight" or "ignore",
+        two_finger_swipe_north = Device:hasFrontlight() and "increase_frontlight" or "ignore",
         two_finger_swipe_northeast = "ignore",
         two_finger_swipe_northwest = "ignore",
         two_finger_swipe_southeast = "ignore",
