@@ -203,6 +203,8 @@ function ReaderGesture:init()
 
         two_finger_swipe_east = self.ges_mode == "gesture_reader" and "toc" or "ignore",
         two_finger_swipe_west = self.ges_mode == "gesture_reader" and "bookmarks" or "folder_shortcuts",
+        two_finger_swipe_south = Device:hasFrontlight() and "increase_frontlight" or "ignore",
+        two_finger_swipe_north = Device:hasFrontlight() and "decrease_frontlight" or "ignore",
         two_finger_swipe_northeast = "ignore",
         two_finger_swipe_northwest = "ignore",
         two_finger_swipe_southeast = "ignore",
@@ -588,6 +590,14 @@ Default value: %1]]), GestureDetector.SWIPE_INTERVAL/1000),
                 {
                     text_func = function() return twoFingerSwipeTextFunc("two_finger_swipe_west", "⬅") end,
                     sub_item_table = self:buildMenu("two_finger_swipe_west", self.default_gesture["two_finger_swipe_west"]),
+                },
+                {
+                    text_func = function() return twoFingerSwipeTextFunc("two_finger_swipe_south", "⬇") end,
+                    sub_item_table = self:buildMenu("two_finger_swipe_south", self.default_gesture["two_finger_swipe_south"]),
+                },
+                {
+                    text_func = function() return twoFingerSwipeTextFunc("two_finger_swipe_north", "⬆") end,
+                    sub_item_table = self:buildMenu("two_finger_swipe_north", self.default_gesture["two_finger_swipe_north"]),
                 },
                 {
                     text_func = function() return twoFingerSwipeTextFunc("two_finger_swipe_northeast", "⬈") end,
@@ -1048,6 +1058,14 @@ function ReaderGesture:setupGesture(ges, action)
         ges_type = "two_finger_swipe"
         zone = zone_fullscreen
         direction = {east = true}
+    elseif ges == "two_finger_swipe_south" then
+        ges_type = "two_finger_swipe"
+        zone = zone_fullscreen
+        direction = {south = true}
+    elseif ges == "two_finger_swipe_north" then
+        ges_type = "two_finger_swipe"
+        zone = zone_fullscreen
+        direction = {north = true}
     elseif ges == "two_finger_swipe_northwest" then
         ges_type = "two_finger_swipe"
         zone = zone_fullscreen
