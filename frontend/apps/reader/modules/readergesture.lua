@@ -85,6 +85,9 @@ local action_strings = {
     zoom_content = _("Zoom to fit content"),
     zoom_page = _("Zoom to fit page"),
 
+    increase_font = _("Increase font size"),
+    decrease_font = _("Decrease font size"),
+
     folder_up = _("Folder up"),
     show_plus_menu = _("Show plus menu"),
     folder_shortcuts = _("Folder shortcuts"),
@@ -209,6 +212,8 @@ function ReaderGesture:init()
         two_finger_swipe_northwest = "ignore",
         two_finger_swipe_southeast = "ignore",
         two_finger_swipe_southwest = "ignore",
+        spread_gesture = self.ges_mode == "gesture_reader" and "increase_font" or "ignore",
+        pinch_gesture = self.ges_mode == "gesture_reader" and "decrease_font" or "ignore",
     }
     local gm = G_reader_settings:readSetting(self.ges_mode)
     if gm == nil then G_reader_settings:saveSetting(self.ges_mode, {}) end
@@ -617,6 +622,19 @@ Default value: %1]]), GestureDetector.SWIPE_INTERVAL/1000),
                 },
             },
         })
+        table.insert(menu_items.gesture_manager.sub_item_table, {
+            text = _("Spread and pinch"),
+            sub_item_table = {
+                {
+                    text_func = function() return actionTextFunc("spread_gesture", _("Spread")) end,
+                    sub_item_table = self:buildMenu("spread_gesture", self.default_gesture["spread_gesture"]),
+                },
+                {
+                    text_func = function() return actionTextFunc("pinch_gesture", _("Pinch")) end,
+                    sub_item_table = self:buildMenu("pinch_gesture", self.default_gesture["pinch_gesture"]),
+                },
+            }
+        })
     end
 end
 
@@ -684,6 +702,9 @@ function ReaderGesture:buildMenu(ges, default)
         {"wifi_on", Device:hasWifiToggle()},
         {"wifi_off", Device:hasWifiToggle()},
         {"toggle_wifi", Device:hasWifiToggle(), true},
+
+        {"increase_font", not self.is_docless},
+        {"decrease_font", not self.is_docless, true},
 
         {"toggle_bookmark", not self.is_docless, true},
         {"toggle_page_flipping", not self.is_docless, true},
@@ -1101,7 +1122,12 @@ function ReaderGesture:setupGesture(ges, action)
                 "paging_swipe",
             }
         end
-
+    elseif ges == "spread_gesture" then
+        ges_type = "spread"
+        zone = zone_fullscreen
+    elseif ges == "pinch_gesture" then
+        ges_type = "pinch"
+        zone = zone_fullscreen
     else return
     end
     self:registerGesture(ges, action, ges_type, zone, overrides, direction, distance)
@@ -1370,6 +1396,10 @@ function ReaderGesture:gestureAction(action, ges)
                 timeout = 1,
             })
         end
+    elseif action == "increase_font" then
+        self.ui:handleEvent(Event:new("AdjustFontSize", ges, 1))
+    elseif action == "decrease_font" then
+        self.ui:handleEvent(Event:new("AdjustFontSize", ges, -1))
     elseif action == "suspend" then
         UIManager:suspend()
     elseif action == "exit" then

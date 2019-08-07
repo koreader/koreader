@@ -94,33 +94,6 @@ function ReaderFont:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
-function ReaderFont:onReaderReady()
-    self:setupTouchZones()
-end
-
-function ReaderFont:setupTouchZones()
-    if Device:isTouchDevice() then
-        self.ui:registerTouchZones({
-            {
-                id = "id_spread",
-                ges = "spread",
-                screen_zone = {
-                    ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
-                },
-                handler = function(ges) return self:onAdjustSpread(ges) end
-            },
-            {
-                id = "id_pinch",
-                ges = "pinch",
-                screen_zone = {
-                    ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
-                },
-                handler = function(ges) return self:onAdjustPinch(ges) end
-            },
-        })
-    end
-end
-
 function ReaderFont:onSetDimensions(dimen)
     self.dimen = dimen
 end
@@ -338,25 +311,31 @@ function ReaderFont:addToMainMenu(menu_items)
     }
 end
 
-function ReaderFont:onAdjustSpread(ges)
+-- direction +1 - increase font size
+-- direction -1 - decrease front size
+function ReaderFont:onAdjustFontSize(ges, direction)
+    if ges.distance == nil then
+        ges.distance = 1
+    end
+    if direction ~= -1 and direction ~= 1 then
+        -- set default value (increase frontlight)
+        direction = 1
+    end
     local step = math.ceil(2 * #self.steps * ges.distance / self.gestureScale)
     local delta_int = self.steps[step] or self.steps[#self.steps]
-    local info = Notification:new{text = _("Increasing font size…")}
-    UIManager:show(info)
-    UIManager:forceRePaint()
-    self:onChangeSize("increase", delta_int)
-    UIManager:close(info)
-    return true
-end
-
-function ReaderFont:onAdjustPinch(ges)
-    local step = math.ceil(2 * #self.steps * ges.distance / self.gestureScale)
-    local delta_int = self.steps[step] or self.steps[#self.steps]
-    local info = Notification:new{text = _("Decreasing font size…")}
-    UIManager:show(info)
-    UIManager:forceRePaint()
-    self:onChangeSize("decrease", delta_int)
-    UIManager:close(info)
+    if direction == 1 then
+        local info = Notification:new{text = _("Increasing font size…")}
+        UIManager:show(info)
+        UIManager:forceRePaint()
+        self:onChangeSize("increase", delta_int)
+        UIManager:close(info)
+    else
+        local info = Notification:new{text = _("Decreasing font size…")}
+        UIManager:show(info)
+        UIManager:forceRePaint()
+        self:onChangeSize("decrease", delta_int)
+        UIManager:close(info)
+    end
     return true
 end
 
