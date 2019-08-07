@@ -62,6 +62,11 @@ function ZSync:addToMainMenu(menu_items)
                     return self.filemq_server == nil
                 end,
                 callback = function()
+                    local NetworkMgr = require("ui/network/manager")
+                    if not NetworkMgr:isOnline() then
+                        NetworkMgr:promptWifiOn()
+                        return
+                    end
                     if not self.filemq_client then
                         self:subscribe()
                     else
