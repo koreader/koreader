@@ -123,7 +123,7 @@ function KOSync:addToMainMenu(menu_items)
                 enabled_func = function() return self.kosync_auto_sync end,
                 sub_item_table = {
                     {
-                        text = "Sync to latest record >>>>",
+                        text = _("Sync to latest record >>>>"),
                         enabled = false,
                     },
                     {
@@ -154,7 +154,7 @@ function KOSync:addToMainMenu(menu_items)
                         end,
                     },
                     {
-                        text = "Sync to a previous record <<<<",
+                        text = _("Sync to a previous record <<<<"),
                         enabled = false,
                     },
                     {
@@ -332,7 +332,7 @@ function KOSync:doRegister(username, password)
         })
     else
         UIManager:show(InfoMessage:new{
-            text = _(body and body.message or "Unknown server error"),
+            text = body and body.message or _("Unknown server error"),
         })
     end
 
@@ -367,7 +367,7 @@ function KOSync:doLogin(username, password)
         })
     else
         UIManager:show(InfoMessage:new{
-            text = _(body and body.message or "Unknown server error"),
+            text = body and body.message or _("Unknown server error"),
         })
     end
 
