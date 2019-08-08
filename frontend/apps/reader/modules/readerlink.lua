@@ -6,8 +6,6 @@ local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
-local Geom = require("ui/geometry")
-local GestureRange = require("ui/gesturerange")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LinkBox = require("ui/widget/linkbox")
@@ -26,7 +24,34 @@ local ReaderLink = InputContainer:new{
 
 function ReaderLink:init()
     if Device:isTouchDevice() then
-        self:initGesListener()
+        self.ui:registerTouchZones({
+            {
+                id = "tap_link",
+                ges = "tap",
+                screen_zone = {
+                    ratio_x = 0, ratio_y = 0,
+                    ratio_w = 1, ratio_h = 1,
+                },
+                overrides = {
+                    "tap_forward",
+                    "tap_backward",
+                },
+                handler = function(ges) return self:onTap(_, ges) end,
+            },
+            {
+                id = "swipe_link",
+                ges = "swipe",
+                screen_zone = {
+                    ratio_x = 0, ratio_y = 0,
+                    ratio_w = 1, ratio_h = 1,
+                },
+                overrides = {
+                    "paging_swipe",
+                    "rolling_swipe"
+                },
+                handler = function(ges) return self:onSwipe(_, ges) end,
+            },
+        })
     end
     self.ui:registerPostInitCallback(function()
         self.ui.menu:registerToMainMenu(self)
@@ -46,33 +71,6 @@ end
 function ReaderLink:onReadSettings(config)
     -- called when loading new document
     self.location_stack = {}
-end
-
-function ReaderLink:initGesListener()
-    if Device:isTouchDevice() then
-        self.ges_events = {
-            Tap = {
-                GestureRange:new{
-                    ges = "tap",
-                    range = Geom:new{
-                        x = 0, y = 0,
-                        w = Screen:getWidth(),
-                        h = Screen:getHeight()
-                    }
-                }
-            },
-            Swipe = {
-                GestureRange:new{
-                    ges = "swipe",
-                    range = Geom:new{
-                        x = 0, y = 0,
-                        w = Screen:getWidth(),
-                        h = Screen:getHeight(),
-                    }
-                }
-            },
-        }
-    end
 end
 
 local function isTapToFollowLinksOn()
@@ -372,13 +370,6 @@ function ReaderLink:showLinkBox(link, allow_footnote_popup)
         end
     elseif link and link.xpointer ~= "" then -- credocument
         return self:onGotoLink(link, false, allow_footnote_popup)
-    end
-end
-
-function ReaderLink:onSetDimensions(dimen)
-    -- update listening according to new screen dimen
-    if Device:isTouchDevice() then
-        self:initGesListener()
     end
 end
 

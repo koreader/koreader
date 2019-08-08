@@ -952,6 +952,15 @@ function ReaderGesture:setupGesture(ges, action)
         overrides_vertical_edge = {
             "paging_swipe",
             "rolling_swipe",
+            "readermenu_swipe",
+            "readerconfigmenu_swipe",
+        }
+        overrides_horizontal_edge = {
+            "swipe_link",
+            "paging_swipe",
+            "rolling_swipe",
+            "readermenu_swipe",
+            "readerconfigmenu_swipe",
         }
         overrides_pan = {
             "paging_swipe",
