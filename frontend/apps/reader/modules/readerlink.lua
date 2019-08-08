@@ -45,6 +45,10 @@ function ReaderLink:init()
                     ratio_x = 0, ratio_y = 0,
                     ratio_w = 1, ratio_h = 1,
                 },
+                overrides = {
+                    "paging_swipe",
+                    "rolling_swipe"
+                },
                 handler = function(ges) return self:onSwipe(_, ges) end,
             },
         })
