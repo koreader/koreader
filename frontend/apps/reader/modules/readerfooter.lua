@@ -1,5 +1,6 @@
 local Blitbuffer = require("ffi/blitbuffer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
+local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
 local Event = require("ui/event")
 local Font = require("ui/font")
@@ -7,6 +8,7 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
+local LeftContainer = require("ui/widget/container/leftcontainer")
 local ProgressWidget = require("ui/widget/progresswidget")
 local RightContainer = require("ui/widget/container/rightcontainer")
 local TextWidget = require("ui/widget/textwidget")
@@ -201,10 +203,23 @@ function ReaderFooter:init()
         padding = 0,
         padding_bottom = self.bottom_padding,
     }
-    self.footer_container = BottomContainer:new{
-        dimen = Geom:new{ w = 0, h = self.height*2 },
-        self.footer_content,
-    }
+
+    if self.settings.align == "left" then
+        self.footer_container = LeftContainer:new{
+            dimen = Geom:new{ w = 0, h = self.height },
+            self.footer_content,
+        }
+    elseif self.settings.align == "right" then
+        self.footer_container = RightContainer:new{
+            dimen = Geom:new{ w = 0, h = self.height },
+            self.footer_content,
+        }
+    else
+        self.footer_container = CenterContainer:new{
+            dimen = Geom:new{ w = 0, h = self.height },
+            self.footer_content,
+        }
+    end
     self.footer_positioner = BottomContainer:new{
         dimen = Geom:new{},
         self.footer_container,
@@ -272,11 +287,11 @@ function ReaderFooter:setupTouchZones()
 end
 
 -- call this method whenever the screen size changes
-function ReaderFooter:resetLayout()
+function ReaderFooter:resetLayout(force_reset)
     local new_screen_width = Screen:getWidth()
     local new_screen_height = Screen:getHeight()
     if new_screen_width == self._saved_screen_width
-        and new_screen_height == self._saved_screen_height then return end
+        and new_screen_height == self._saved_screen_height and force_reset == nil then return end
 
     if self.settings.disable_progress_bar then
         self.progress_bar.width = 0
@@ -492,6 +507,74 @@ function ReaderFooter:addToMainMenu(menu_items)
     if Device:isAndroid() then
         table.insert(sub_items, getMinibarOption("wifi_status"))
     end
+    table.insert(sub_items, {
+        text = _("Alignment"),
+        sub_item_table = {
+            {
+                text = _("Center"),
+                checked_func = function()
+                    return self.settings.align == "center" or self.settings.align == nil
+                end,
+                callback = function()
+                    self.settings.align = "center"
+                    self.footer_container = CenterContainer:new{
+                        dimen = Geom:new{ w = 0, h = self.height },
+                        self.footer_content,
+                    }
+                    self.footer_positioner = BottomContainer:new{
+                        dimen = Geom:new{},
+                        self.footer_container,
+                    }
+                    self[1] = self.footer_positioner
+                    self:resetLayout(true)
+                    self:updateFooter()
+                    UIManager:setDirty(nil, "ui")
+                end,
+            },
+            {
+                text = _("Left"),
+                checked_func = function()
+                    return self.settings.align == "left"
+                end,
+                callback = function()
+                    self.settings.align = "left"
+                    self.footer_container = LeftContainer:new{
+                        dimen = Geom:new{ w = 0, h = self.height },
+                        self.footer_content,
+                    }
+                    self.footer_positioner = BottomContainer:new{
+                        dimen = Geom:new{},
+                        self.footer_container,
+                    }
+                    self[1] = self.footer_positioner
+                    self:resetLayout(true)
+                    self:updateFooter()
+                    UIManager:setDirty(nil, "ui")
+                end,
+            },
+            {
+                text = _("Right"),
+                checked_func = function()
+                    return self.settings.align == "right"
+                end,
+                callback = function()
+                    self.settings.align = "right"
+                    self.footer_container = RightContainer:new{
+                        dimen = Geom:new{ w = 0, h = self.height },
+                        self.footer_content,
+                    }
+                    self.footer_positioner = BottomContainer:new{
+                        dimen = Geom:new{},
+                        self.footer_container,
+                    }
+                    self[1] = self.footer_positioner
+                    self:resetLayout(true)
+                    self:updateFooter()
+                    UIManager:setDirty(nil, "ui")
+                end,
+            },
+        }
+    })
 end
 
 -- this method will be updated at runtime based on user setting
