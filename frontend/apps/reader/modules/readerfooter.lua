@@ -203,7 +203,26 @@ function ReaderFooter:init()
         padding = 0,
         padding_bottom = self.bottom_padding,
     }
+    self:updateFooterContainer()
 
+    self.mode = G_reader_settings:readSetting("reader_footer_mode") or self.mode
+    if self.has_no_mode and self.settings.disable_progress_bar then
+        self.mode = MODE.off
+        self.view.footer_visible = false
+        self:resetLayout()
+    end
+    if self.settings.all_at_once then
+        self.view.footer_visible = (self.mode ~= MODE.off)
+        self:updateFooterTextGenerator()
+    else
+        self:applyFooterMode()
+    end
+    if self.settings.auto_refresh_time then
+        self:setupAutoRefreshTime()
+    end
+end
+
+function ReaderFooter:updateFooterContainer()
     if self.settings.align == "left" then
         self.footer_container = LeftContainer:new{
             dimen = Geom:new{ w = 0, h = self.height },
@@ -225,22 +244,6 @@ function ReaderFooter:init()
         self.footer_container,
     }
     self[1] = self.footer_positioner
-
-    self.mode = G_reader_settings:readSetting("reader_footer_mode") or self.mode
-    if self.has_no_mode and self.settings.disable_progress_bar then
-        self.mode = MODE.off
-        self.view.footer_visible = false
-        self:resetLayout()
-    end
-    if self.settings.all_at_once then
-        self.view.footer_visible = (self.mode ~= MODE.off)
-        self:updateFooterTextGenerator()
-    else
-        self:applyFooterMode()
-    end
-    if self.settings.auto_refresh_time then
-        self:setupAutoRefreshTime()
-    end
 end
 
 function ReaderFooter:setupAutoRefreshTime()
@@ -291,7 +294,7 @@ function ReaderFooter:resetLayout(force_reset)
     local new_screen_width = Screen:getWidth()
     local new_screen_height = Screen:getHeight()
     if new_screen_width == self._saved_screen_width
-        and new_screen_height == self._saved_screen_height and force_reset == nil then return end
+        and new_screen_height == self._saved_screen_height and not force_reset then return end
 
     if self.settings.disable_progress_bar then
         self.progress_bar.width = 0
@@ -517,15 +520,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
                 callback = function()
                     self.settings.align = "center"
-                    self.footer_container = CenterContainer:new{
-                        dimen = Geom:new{ w = 0, h = self.height },
-                        self.footer_content,
-                    }
-                    self.footer_positioner = BottomContainer:new{
-                        dimen = Geom:new{},
-                        self.footer_container,
-                    }
-                    self[1] = self.footer_positioner
+                    self:updateFooterContainer()
                     self:resetLayout(true)
                     self:updateFooter()
                     UIManager:setDirty(nil, "ui")
@@ -538,15 +533,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
                 callback = function()
                     self.settings.align = "left"
-                    self.footer_container = LeftContainer:new{
-                        dimen = Geom:new{ w = 0, h = self.height },
-                        self.footer_content,
-                    }
-                    self.footer_positioner = BottomContainer:new{
-                        dimen = Geom:new{},
-                        self.footer_container,
-                    }
-                    self[1] = self.footer_positioner
+                    self:updateFooterContainer()
                     self:resetLayout(true)
                     self:updateFooter()
                     UIManager:setDirty(nil, "ui")
@@ -559,15 +546,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
                 callback = function()
                     self.settings.align = "right"
-                    self.footer_container = RightContainer:new{
-                        dimen = Geom:new{ w = 0, h = self.height },
-                        self.footer_content,
-                    }
-                    self.footer_positioner = BottomContainer:new{
-                        dimen = Geom:new{},
-                        self.footer_container,
-                    }
-                    self[1] = self.footer_positioner
+                    self:updateFooterContainer()
                     self:resetLayout(true)
                     self:updateFooter()
                     UIManager:setDirty(nil, "ui")
