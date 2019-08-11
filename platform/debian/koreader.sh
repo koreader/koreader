@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 export LC_ALL="en_US.UTF-8"
 
 # writable storage: ${HOME}/.config/koreader.
@@ -15,7 +15,7 @@ else
 fi
 
 # working directory of koreader
-KOREADER_DIR="/usr/lib/koreader"
+KOREADER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/koreader"
 
 # we're always starting from our working directory
 cd "${KOREADER_DIR}" || exit
