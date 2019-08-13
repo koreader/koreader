@@ -688,8 +688,8 @@ function ReaderGesture:buildMenu(ges, default)
         {"suspend", true},
         {"exit", true},
         {"restart", not Device:isAndroid()},
-        {"poweroff", Device:isCervantes() or Device:isKobo() or Device:isSonyPRSTUX()},
-        {"reboot", Device:isCervantes() or Device:isKobo() or Device:isSonyPRSTUX()},
+        {"poweroff", Device:canPowerOff()},
+        {"reboot", Device:canReboot()},
 
         {"show_menu", true},
         {"show_config_menu", not self.is_docless, true},
