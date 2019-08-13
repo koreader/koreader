@@ -339,7 +339,7 @@ androidupdate: all
 	# in runtime luajit-launcher's libluajit.so will be loaded
 	-rm $(INSTALL_DIR)/koreader/libs/libluajit.so
 	# make android update apk
-	cd $(INSTALL_DIR)/koreader && 7z a -l -m0=lzma2 -mx=1 \
+	cd $(INSTALL_DIR)/koreader && 7z a -l -m0=lzma2 -mx=1 -mc=1M \
 		../../$(ANDROID_LAUNCHER_DIR)/assets/module/koreader-$(VERSION).7z * \
 		-x!resources/fonts -x!resources/icons/src -x!spec
 	$(MAKE) -C $(ANDROID_LAUNCHER_DIR) $(if $(KODEBUG), debug, release) ANDROID_APPNAME=KOReader ANDROID_VERSION=$(ANDROID_VERSION) ANDROID_NAME=$(ANDROID_NAME) ANDROID_FLAVOR=$(ANDROID_FLAVOR)
