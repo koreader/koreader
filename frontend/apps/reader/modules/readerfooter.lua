@@ -15,6 +15,7 @@ local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local util = require("util")
+local T = require("ffi/util").template
 local _ = require("gettext")
 local Screen = Device.screen
 
@@ -43,24 +44,30 @@ end
 local footerTextGeneratorMap = {
     empty = function() return "" end,
     frontlight = function()
-        if not Device:hasFrontlight() then return "L: NA" end
+        if not Device:hasFrontlight() then return "☼ NA" end
         local powerd = Device:getPowerDevice()
         if powerd:isFrontlightOn() then
             if Device:isCervantes() or Device:isKobo() then
-                return ("L: %d%%"):format(powerd:frontlightIntensity())
+                return ("☼ %d%%"):format(powerd:frontlightIntensity())
             else
-                return ("L: %d"):format(powerd:frontlightIntensity())
+                return ("☼ %d"):format(powerd:frontlightIntensity())
             end
         else
-            return "L: Off"
+            return "☼ Off"
         end
     end,
     battery = function()
         local powerd = Device:getPowerDevice()
-        return "B:" .. (powerd:isCharging() and "+" or "") .. powerd:getCapacity() .. "%"
+        return "⚡ " .. (powerd:isCharging() and "+" or "") .. powerd:getCapacity() .. "%"
     end,
-    time = function()
-        return os.date("%H:%M")
+    time = function(footer)
+        local clock
+        if footer and footer.settings.date_format == "12" then
+            clock = os.date("%I:%M%p")
+        else
+            clock = os.date("%H:%M")
+        end
+        return "🕒 " .. clock
     end,
     page_progress = function(footer)
         if footer.pageno then
@@ -72,10 +79,12 @@ local footerTextGeneratorMap = {
     pages_left = function(footer)
         local left = footer.ui.toc:getChapterPagesLeft(
             footer.pageno, footer.toc_level)
-        return "=> " .. (left and left or footer.pages - footer.pageno)
+        return "⇒ " .. (left and left or footer.pages - footer.pageno)
     end,
     percentage = function(footer)
-        return ("R:%1.f%%"):format(footer.progress_bar.percentage * 100)
+        local digits = footer.settings.progress_perc_format or "0"
+        local string_percentage = "◔ %." .. digits .. "f%%"
+        return string_percentage:format(footer.progress_bar.percentage * 100)
     end,
     book_time_to_read = function(footer)
         local current_page
@@ -84,13 +93,13 @@ local footerTextGeneratorMap = {
         else
             current_page = footer.view.document:getCurrentPage()
         end
-        return footer:getDataFromStatistics("TB: ", footer.pages - current_page)
+        return footer:getDataFromStatistics("⏳ ", footer.pages - current_page)
     end,
     chapter_time_to_read = function(footer)
         local left = footer.ui.toc:getChapterPagesLeft(
             footer.pageno, footer.toc_level)
         return footer:getDataFromStatistics(
-            "TC: ", (left and left or footer.pages - footer.pageno))
+            "⤻ ", (left and left or footer.pages - footer.pageno))
     end,
     mem_usage = function(footer)
         local statm = io.open("/proc/self/statm", "r")
@@ -100,16 +109,16 @@ local footerTextGeneratorMap = {
             local rss = infos:match("^%S+ (%S+) ")
             -- we got the nb of 4Kb-pages used, that we convert to Mb
             rss = math.floor(tonumber(rss) * 4096 / 1024 / 1024)
-            return ("M:%d"):format(rss)
+            return ("⌨ %d"):format(rss)
         end
         return ""
     end,
     wifi_status = function()
         local NetworkMgr = require("ui/network/manager")
         if NetworkMgr:isWifiOn() then
-            return "W:On"
+            return "⚟ On"
         else
-            return "W:Off"
+            return "⚟ Off"
         end
     end,
 }
@@ -363,17 +372,22 @@ local option_titles = {
     all_at_once = _("Show all at once"),
     reclaim_height = _("Reclaim bar height from bottom margin"),
     toc_markers = _("Show chapter markers"),
-    page_progress = _("Current page"),
-    time = _("Current time"),
-    pages_left = _("Pages left in chapter"),
-    battery = _("Battery status"),
-    percentage = _("Progress percentage"),
-    book_time_to_read = _("Book time to read"),
-    chapter_time_to_read = _("Chapter time to read"),
-    frontlight = _("Frontlight level"),
-    mem_usage = _("KOReader memory usage"),
-    wifi_status = _("Wi-Fi status"),
+    page_progress = _("Current page") .. " (/)",
+    time = _("Current time") .. " (🕒)",
+    pages_left = _("Pages left in chapter") .. " (⇒)",
+    battery = _("Battery status")  .. " (⚡)",
+    percentage = _("Progress percentage") .. " (◔)",
+    book_time_to_read = _("Book time to read") .. " (⏳)",
+    chapter_time_to_read = _("Chapter time to read") .. " (⤻)",
+    frontlight = _("Frontlight level") .. " (☼)",
+    mem_usage = _("KOReader memory usage") .. " (⌨)",
+    wifi_status = _("Wi-Fi status") ..  " (⚟)",
 }
+
+function ReaderFooter:progressPercentage(digits)
+    local string_percentage = "◔ %." .. digits .. "f%%"
+    return string_percentage:format(self.progress_bar.percentage * 100)
+end
 
 function ReaderFooter:addToMainMenu(menu_items)
     local sub_items = {}
@@ -511,46 +525,181 @@ function ReaderFooter:addToMainMenu(menu_items)
         table.insert(sub_items, getMinibarOption("wifi_status"))
     end
     table.insert(sub_items, {
-        text = _("Alignment"),
+        text = _("Settings"),
         sub_item_table = {
             {
-                text = _("Center"),
-                checked_func = function()
-                    return self.settings.align == "center" or self.settings.align == nil
-                end,
-                callback = function()
-                    self.settings.align = "center"
-                    self:updateFooterContainer()
-                    self:resetLayout(true)
-                    self:updateFooter()
-                    UIManager:setDirty(nil, "ui")
-                end,
+                text = _("Alignment"),
+                sub_item_table = {
+                    {
+                        text = _("Center"),
+                        checked_func = function()
+                            return self.settings.align == "center" or self.settings.align == nil
+                        end,
+                        callback = function()
+                            self.settings.align = "center"
+                            self:updateFooterContainer()
+                            self:resetLayout(true)
+                            self:updateFooter()
+                            UIManager:setDirty(nil, "ui")
+                        end,
+                    },
+                    {
+                        text = _("Left"),
+                        checked_func = function()
+                            return self.settings.align == "left"
+                        end,
+                        callback = function()
+                            self.settings.align = "left"
+                            self:updateFooterContainer()
+                            self:resetLayout(true)
+                            self:updateFooter()
+                            UIManager:setDirty(nil, "ui")
+                        end,
+                    },
+                    {
+                        text = _("Right"),
+                        checked_func = function()
+                            return self.settings.align == "right"
+                        end,
+                        callback = function()
+                            self.settings.align = "right"
+                            self:updateFooterContainer()
+                            self:resetLayout(true)
+                            self:updateFooter()
+                            UIManager:setDirty(nil, "ui")
+                        end,
+                    },
+                }
             },
             {
-                text = _("Left"),
-                checked_func = function()
-                    return self.settings.align == "left"
-                end,
-                callback = function()
-                    self.settings.align = "left"
-                    self:updateFooterContainer()
-                    self:resetLayout(true)
-                    self:updateFooter()
-                    UIManager:setDirty(nil, "ui")
-                end,
+                text = _("Text separator"),
+                sub_item_table = {
+                    {
+                        text = _("Vertical line") .. " (|)",
+                        checked_func = function()
+                            return self.settings.text_separator == "vertiacal_line" or self.settings.text_separator == nil
+                        end,
+                        callback = function()
+                            self.settings.text_separator = "vertiacal_line"
+                            self:updateFooter()
+                            UIManager:setDirty(nil, "ui")
+                        end,
+                    },
+                    {
+                        text = _("Dot") .. " (•)",
+                        checked_func = function()
+                            return self.settings.text_separator == "dot"
+                        end,
+                        callback = function()
+                            self.settings.text_separator = "dot"
+                            self:updateFooter()
+                            UIManager:setDirty(nil, "ui")
+                        end,
+                    },
+                    {
+                        text = _("Without separator"),
+                        checked_func = function()
+                            return self.settings.text_separator == "no_separator"
+                        end,
+                        callback = function()
+                            self.settings.text_separator = "no_separator"
+                            self:updateFooter()
+                            UIManager:setDirty(nil, "ui")
+                        end,
+                    },
+                },
             },
             {
-                text = _("Right"),
-                checked_func = function()
-                    return self.settings.align == "right"
-                end,
-                callback = function()
-                    self.settings.align = "right"
-                    self:updateFooterContainer()
-                    self:resetLayout(true)
-                    self:updateFooter()
-                    UIManager:setDirty(nil, "ui")
-                end,
+                text = _("Progress percentage format"),
+                sub_item_table = {
+                    {
+                        text = T(_("No decimal point (%1)"), self:progressPercentage(0)),
+                        checked_func = function()
+                            return self.settings.progress_perc_format == "0" or self.settings.progress_perc_format == nil
+                        end,
+                        callback = function()
+                            self.settings.progress_perc_format = "0"
+                            self:updateFooter()
+                            UIManager:setDirty(nil, "ui")
+                        end,
+                    },
+                    {
+                        text = T(_("1 digit after decimal point (%1)"), self:progressPercentage(1)),
+                        checked_func = function()
+                            return self.settings.progress_perc_format == "1"
+                        end,
+                        callback = function()
+                            self.settings.progress_perc_format = "1"
+                            self:updateFooter()
+                            UIManager:setDirty(nil, "ui")
+                        end,
+                    },
+                    {
+                        text = T(_("2 digits after decimal point (%1)"), self:progressPercentage(2)),
+                        checked_func = function()
+                            return self.settings.progress_perc_format == "2"
+                        end,
+                        callback = function()
+                            self.settings.progress_perc_format = "2"
+                            self:updateFooter()
+                            UIManager:setDirty(nil, "ui")
+                        end,
+                    },
+                },
+            },
+            {
+                text = _("Date format"),
+                sub_item_table = {
+                    {
+                        text = _("24-hour"),
+                        checked_func = function()
+                            return self.settings.date_format == "24" or self.settings.date_format == nil
+                        end,
+                        callback = function()
+                            self.settings.date_format = "24"
+                            self:updateFooter()
+                            UIManager:setDirty(nil, "ui")
+                        end,
+                    },
+                    {
+                        text = _("12-hour"),
+                        checked_func = function()
+                            return self.settings.date_format == "12"
+                        end,
+                        callback = function()
+                            self.settings.date_format = "12"
+                            self:updateFooter()
+                            UIManager:setDirty(nil, "ui")
+                        end,
+                    },
+                }
+            },
+            {
+                text = _("Time format"),
+                sub_item_table = {
+                    {
+                        text = _("Classic"),
+                        checked_func = function()
+                            return self.settings.time_format == "classic" or self.settings.time_format == nil
+                        end,
+                        callback = function()
+                            self.settings.time_format = "classic"
+                            self:updateFooter()
+                            UIManager:setDirty(nil, "ui")
+                        end,
+                    },
+                    {
+                        text = _("Modern"),
+                        checked_func = function()
+                            return self.settings.time_format == "modern"
+                        end,
+                        callback = function()
+                            self.settings.time_format = "modern"
+                            self:updateFooter()
+                            UIManager:setDirty(nil, "ui")
+                        end,
+                    },
+                }
             },
         }
     })
@@ -561,10 +710,16 @@ function ReaderFooter:genFooterText() end
 
 function ReaderFooter:genAllFooterText()
     local info = {}
+    local separator = "  "
+    if self.settings.text_separator == "vertiacal_line" or self.settings.text_separator == nil then
+        separator = " | "
+    elseif self.settings.text_separator == "dot" then
+        separator = " • "
+    end
     for _, gen in ipairs(self.footerTextGenerators) do
         table.insert(info, gen(self))
     end
-    return table.concat(info, " | ")
+    return table.concat(info, separator)
 end
 
 -- this method should never get called when footer is disabled
@@ -608,7 +763,11 @@ function ReaderFooter:getDataFromStatistics(title, pages)
     local sec = 'na'
     local average_time_per_page = self:getAvgTimePerPage()
     if average_time_per_page then
-        sec = util.secondsToClock(pages * average_time_per_page, true)
+        if self.settings.time_format == "modern" then
+            sec = util.secondsToHClock(pages * average_time_per_page, true)
+        else
+            sec = util.secondsToClock(pages * average_time_per_page, true)
+        end
     end
     return title .. sec
 end

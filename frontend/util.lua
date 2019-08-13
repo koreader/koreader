@@ -99,6 +99,53 @@ function util.secondsToClock(seconds, withoutSeconds)
     end
 end
 
+
+-- Converts seconds to a period of time string.
+
+---- @int seconds number of seconds
+---- @bool withoutSeconds if true 1h30', if false 1h30'10''
+---- @treturn string clock string in the form of 1h30' or 1h30'10''
+function util.secondsToHClock(seconds, withoutSeconds)
+    seconds = tonumber(seconds)
+    if seconds == 0 or seconds ~= seconds then
+        if withoutSeconds then
+            return "0'"
+        else
+            return "0'00''"
+        end
+    elseif seconds < 60 then
+        if withoutSeconds and seconds < 30 then
+            return "0'"
+        elseif withoutSeconds and seconds >= 30 then
+            return "1'"
+        else
+            return "0'" .. string.format("%02.f", seconds) .. "''"
+        end
+    else
+        local round = withoutSeconds and require("optmath").round or math.floor
+        local hours = string.format("%.f", math.floor(seconds / 3600))
+        local mins = string.format("%02.f", round(seconds / 60 - (hours * 60)))
+        if mins == "60" then
+            mins = string.format("%02.f", 0)
+            hours = string.format("%.f", hours + 1)
+        end
+        if withoutSeconds then
+            if hours == "0" then
+                mins = string.format("%.f", round(seconds / 60))
+                return mins .. "'"
+            end
+            return hours .. "h" .. mins .. "'"
+        end
+        local secs = string.format("%02.f", math.floor(seconds - hours * 3600 - mins * 60))
+        if hours == "0" then
+            mins = string.format("%.f", round(seconds / 60))
+            return mins .. "'" .. secs .. "''"
+        end
+        return hours .. "h" .. mins .. "'" .. secs .. "''"
+    end
+end
+
+
 --[[--
 Compares values in two different tables.
 
