@@ -41,8 +41,8 @@ local Cervantes = Generic:new{
     hasOTAUpdates = yes,
     hasKeys = yes,
     hasWifiManager = yes,
-    canPowerOff = yes,
     canReboot = yes,
+    canPowerOff = yes,
 
     -- do we support usb mass storage?
     canToggleMassStorage = function() return isMassStorageSupported() end,

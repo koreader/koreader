@@ -25,8 +25,8 @@ local Kobo = Generic:new{
     isTouchDevice = yes, -- all of them are
     hasOTAUpdates = yes,
     hasWifiManager = yes,
-    canPowerOff = yes,
     canReboot = yes,
+    canPowerOff = yes,
 
     -- most Kobos have X/Y switched for the touch screen
     touch_switch_xy = true,
