@@ -33,6 +33,31 @@ local MODE = {
     wifi_status = 10,
 }
 
+local symbol_prefix = {
+    letters = {
+        time = nil,
+        pages_left = "=>",
+        battery = "B:",
+        percentage = nil,
+        book_time_to_read = "TB:",
+        chapter_time_to_read = "TC:",
+        frontlight = "L:",
+        mem_usage = "M:",
+        wifi_status = "W:",
+    },
+    icons = {
+        time = "🕒",
+        pages_left = "⇒",
+        battery = "⚡",
+        percentage = "◔",
+        book_time_to_read = "⏳",
+        chapter_time_to_read = "⤻",
+        frontlight = "☼",
+        mem_usage = "⌨",
+        wifi_status = "⚟",
+    }
+}
+
 local MODE_NB = 0
 local MODE_INDEX = {}
 for k,v in pairs(MODE) do
@@ -40,88 +65,6 @@ for k,v in pairs(MODE) do
     MODE_NB = MODE_NB + 1
 end
 
--- functions that generates footer text for each mode
-local footerTextGeneratorMap = {
-    empty = function() return "" end,
-    frontlight = function()
-        if not Device:hasFrontlight() then return "☼ NA" end
-        local powerd = Device:getPowerDevice()
-        if powerd:isFrontlightOn() then
-            if Device:isCervantes() or Device:isKobo() then
-                return ("☼ %d%%"):format(powerd:frontlightIntensity())
-            else
-                return ("☼ %d"):format(powerd:frontlightIntensity())
-            end
-        else
-            return "☼ Off"
-        end
-    end,
-    battery = function()
-        local powerd = Device:getPowerDevice()
-        return "⚡ " .. (powerd:isCharging() and "+" or "") .. powerd:getCapacity() .. "%"
-    end,
-    time = function(footer)
-        local clock
-        if footer and footer.settings.date_format == "12" then
-            clock = os.date("%I:%M%p")
-        else
-            clock = os.date("%H:%M")
-        end
-        return "🕒 " .. clock
-    end,
-    page_progress = function(footer)
-        if footer.pageno then
-            return ("%d / %d"):format(footer.pageno, footer.pages)
-        else
-            return ("%d / %d"):format(footer.position, footer.doc_height)
-        end
-    end,
-    pages_left = function(footer)
-        local left = footer.ui.toc:getChapterPagesLeft(
-            footer.pageno, footer.toc_level)
-        return "⇒ " .. (left and left or footer.pages - footer.pageno)
-    end,
-    percentage = function(footer)
-        local digits = footer.settings.progress_perc_format or "0"
-        local string_percentage = "◔ %." .. digits .. "f%%"
-        return string_percentage:format(footer.progress_bar.percentage * 100)
-    end,
-    book_time_to_read = function(footer)
-        local current_page
-        if footer.view.document.info.has_pages then
-            current_page = footer.ui.paging.current_page
-        else
-            current_page = footer.view.document:getCurrentPage()
-        end
-        return footer:getDataFromStatistics("⏳ ", footer.pages - current_page)
-    end,
-    chapter_time_to_read = function(footer)
-        local left = footer.ui.toc:getChapterPagesLeft(
-            footer.pageno, footer.toc_level)
-        return footer:getDataFromStatistics(
-            "⤻ ", (left and left or footer.pages - footer.pageno))
-    end,
-    mem_usage = function(footer)
-        local statm = io.open("/proc/self/statm", "r")
-        if statm then
-            local infos = statm:read("*all")
-            statm:close()
-            local rss = infos:match("^%S+ (%S+) ")
-            -- we got the nb of 4Kb-pages used, that we convert to Mb
-            rss = math.floor(tonumber(rss) * 4096 / 1024 / 1024)
-            return ("⌨ %d"):format(rss)
-        end
-        return ""
-    end,
-    wifi_status = function()
-        local NetworkMgr = require("ui/network/manager")
-        if NetworkMgr:isWifiOn() then
-            return "⚟ On"
-        else
-            return "⚟ Off"
-        end
-    end,
-}
 
 local ReaderFooter = WidgetContainer:extend{
     mode = MODE.page_progress,
@@ -138,8 +81,6 @@ local ReaderFooter = WidgetContainer:extend{
     text_left_margin = Screen:scaleBySize(10),
     bottom_padding = Screen:scaleBySize(1),
     settings = {},
-    -- added to expose them to unit tests
-    textGeneratorMap = footerTextGeneratorMap,
 }
 
 function ReaderFooter:init()
@@ -160,6 +101,7 @@ function ReaderFooter:init()
         frontlight = false,
         mem_usage = false,
         wifi_status = false,
+        text_prefix = "icons"
     }
 
     if self.settings.disabled then
@@ -298,6 +240,131 @@ function ReaderFooter:setupTouchZones()
     })
 end
 
+-- function that generates footer text for each mode
+function ReaderFooter:footerTextGeneratorMap(option)
+    local ret_func = function() return "" end
+    if option == "empty" then
+        ret_func = function()
+            return ""
+        end
+    elseif option == "frontlight" then
+        ret_func = function(footer)
+            local symbol_type = footer.settings.text_prefix or "icons"
+            local prefix = symbol_prefix[symbol_type][option]
+            local powerd = Device:getPowerDevice()
+            if powerd:isFrontlightOn() then
+                if Device:isCervantes() or Device:isKobo() then
+                    return (prefix .. " %d%%"):format(powerd:frontlightIntensity())
+                else
+                    return (prefix .. " %d"):format(powerd:frontlightIntensity())
+                end
+            else
+                return T(_("%1 Off"), prefix)
+            end
+        end
+    elseif option == "battery" then
+        ret_func = function(footer)
+            local symbol_type = footer.settings.text_prefix or "icons"
+            local prefix = symbol_prefix[symbol_type][option]
+            local powerd = Device:getPowerDevice()
+            return prefix .. " " .. (powerd:isCharging() and "+" or "") .. powerd:getCapacity() .. "%"
+        end
+    elseif option == "time" then
+        ret_func = function(footer)
+            local symbol_type = footer.settings.text_prefix or "icons"
+            local prefix = symbol_prefix[symbol_type][option]
+            local clock
+            if self.settings.time_format == "12" then
+                clock = os.date("%I:%M%p")
+            else
+                clock = os.date("%H:%M")
+            end
+            if not prefix then
+                return clock
+            else
+                return prefix .. " " .. clock
+            end
+        end
+    elseif option == "page_progress" then
+        ret_func = function(footer)
+            if footer.pageno then
+                return ("%d / %d"):format(footer.pageno, footer.pages)
+            elseif footer.position then
+                return ("%d / %d"):format(footer.position, footer.doc_height)
+            end
+        end
+    elseif option == "pages_left" then
+        ret_func = function(footer)
+            local symbol_type = footer.settings.text_prefix or "icons"
+            local prefix = symbol_prefix[symbol_type][option]
+            local left = footer.ui.toc:getChapterPagesLeft(
+                footer.pageno, footer.toc_level)
+            return prefix .. " " .. (left and left or footer.pages - footer.pageno)
+        end
+    elseif option == "percentage" then
+        ret_func = function(footer)
+            local symbol_type = footer.settings.text_prefix or "icons"
+            local prefix = symbol_prefix[symbol_type][option]
+            local digits = footer.settings.progress_perc_format or "0"
+            local string_percentage
+            if not prefix then
+                string_percentage = "%." .. digits .. "f%%"
+            else
+                string_percentage = prefix .. " %." .. digits .. "f%%"
+            end
+            return string_percentage:format(footer.progress_bar.percentage * 100)
+        end
+    elseif option == "book_time_to_read" then
+        ret_func = function(footer)
+            local symbol_type = footer.settings.text_prefix or "icons"
+            local prefix = symbol_prefix[symbol_type][option]
+            local current_page
+            if footer.view.document.info.has_pages then
+                current_page = footer.ui.paging.current_page
+            else
+                current_page = footer.view.document:getCurrentPage()
+            end
+            return self:getDataFromStatistics(prefix .. " ", footer.pages - current_page)
+        end
+    elseif option == "chapter_time_to_read" then
+        ret_func = function(footer)
+            local symbol_type = footer.settings.text_prefix or "icons"
+            local prefix = symbol_prefix[symbol_type][option]
+            local left = footer.ui.toc:getChapterPagesLeft(
+                footer.pageno, footer.toc_level)
+            return self:getDataFromStatistics(
+                prefix .. " ", (left and left or footer.pages - footer.pageno))
+        end
+    elseif option == "mem_usage" then
+        ret_func = function(footer)
+            local symbol_type = footer.settings.text_prefix or "icons"
+            local prefix = symbol_prefix[symbol_type][option]
+            local statm = io.open("/proc/self/statm", "r")
+            if statm then
+                local infos = statm:read("*all")
+                statm:close()
+                local rss = infos:match("^%S+ (%S+) ")
+                -- we got the nb of 4Kb-pages used, that we convert to Mb
+                rss = math.floor(tonumber(rss) * 4096 / 1024 / 1024)
+                return (prefix .. " %d"):format(rss)
+            end
+            return ""
+        end
+    elseif option == "wifi_status" then
+        ret_func = function(footer)
+            local symbol_type = footer.settings.text_prefix or "icons"
+            local prefix = symbol_prefix[symbol_type][option]
+            local NetworkMgr = require("ui/network/manager")
+            if NetworkMgr:isWifiOn() then
+                return T(_("%1 On"), prefix)
+            else
+                return T(_("%1 Off"), prefix)
+            end
+        end
+    end
+    return ret_func
+end
+
 -- call this method whenever the screen size changes
 function ReaderFooter:resetLayout(force_reset)
     local new_screen_width = Screen:getWidth()
@@ -346,7 +413,7 @@ function ReaderFooter:updateFooterTextGenerator()
     for _, m in pairs(MODE_INDEX) do
         if self.settings[m] then
             table.insert(footerTextGenerators,
-                         footerTextGeneratorMap[m])
+                         self:footerTextGeneratorMap(m))
             if not self.settings.all_at_once then
                 -- if not show all at once, then one is enough
                 break
@@ -355,7 +422,7 @@ function ReaderFooter:updateFooterTextGenerator()
     end
     if #footerTextGenerators == 0 then
         -- all modes are disabled
-        self.genFooterText = footerTextGeneratorMap.empty
+        self.genFooterText = self:footerTextGeneratorMap("empty")
     elseif #footerTextGenerators == 1 then
         -- there is only one mode enabled, simplify the generator
         -- function to that one
@@ -368,25 +435,39 @@ function ReaderFooter:updateFooterTextGenerator()
     return true
 end
 
-local option_titles = {
-    all_at_once = _("Show all at once"),
-    reclaim_height = _("Reclaim bar height from bottom margin"),
-    toc_markers = _("Show chapter markers"),
-    page_progress = _("Current page") .. " (/)",
-    time = _("Current time") .. " (🕒)",
-    pages_left = _("Pages left in chapter") .. " (⇒)",
-    battery = _("Battery status")  .. " (⚡)",
-    percentage = _("Progress percentage") .. " (◔)",
-    book_time_to_read = _("Book time to read") .. " (⏳)",
-    chapter_time_to_read = _("Chapter time to read") .. " (⤻)",
-    frontlight = _("Frontlight level") .. " (☼)",
-    mem_usage = _("KOReader memory usage") .. " (⌨)",
-    wifi_status = _("Wi-Fi status") ..  " (⚟)",
-}
-
 function ReaderFooter:progressPercentage(digits)
-    local string_percentage = "◔ %." .. digits .. "f%%"
+    local symbol_type = self.settings.text_prefix or "icons"
+    local prefix = symbol_prefix[symbol_type].percentage
+
+    local string_percentage
+    if not prefix then
+        string_percentage = "%." .. digits .. "f%%"
+    else
+        string_percentage = prefix .. " %." .. digits .. "f%%"
+    end
     return string_percentage:format(self.progress_bar.percentage * 100)
+end
+
+function ReaderFooter:textOptionTitles(option)
+    local symbol = self.settings.text_prefix or "icons"
+    local option_titles = {
+        all_at_once = _("Show all at once"),
+        reclaim_height = _("Reclaim bar height from bottom margin"),
+        toc_markers = _("Show chapter markers"),
+        page_progress = T(_("Current page (%1)"), "/"),
+        time = symbol_prefix[symbol].time
+            and T(_("Current time (%1)"), symbol_prefix[symbol].time) or _("Current time"),
+        pages_left = T(_("Pages left in chapter (%1)"), symbol_prefix[symbol].pages_left),
+        battery = T(_("Battery status (%1)"), symbol_prefix[symbol].battery),
+        percentage = symbol_prefix[symbol].percentage
+            and T(_("Progress percentage (%1)"), symbol_prefix[symbol].percentage) or ("Progress percentage"),
+        book_time_to_read = T(_("Book time to read (%1)"),symbol_prefix[symbol].book_time_to_read),
+        chapter_time_to_read = T(_("Chapter time to read (%1)"), symbol_prefix[symbol].chapter_time_to_read),
+        frontlight = T(_("Frontlight level (%1)"), symbol_prefix[symbol].frontlight),
+        mem_usage = T(_("KOReader memory usage (%1)"), symbol_prefix[symbol].mem_usage),
+        wifi_status = T(_("Wi-Fi status (%1)"), symbol_prefix[symbol].wifi_status),
+    }
+    return option_titles[option]
 end
 
 function ReaderFooter:addToMainMenu(menu_items)
@@ -414,7 +495,9 @@ function ReaderFooter:addToMainMenu(menu_items)
 
     local getMinibarOption = function(option, callback)
         return {
-            text = option_titles[option],
+            text_func = function()
+                return self:textOptionTitles(option)
+            end,
             checked_func = function()
                 return self.settings[option] == true
             end,
@@ -439,7 +522,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 -- refresh margins position
                 if self.has_no_mode then
                     self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
-                    self.genFooterText = footerTextGeneratorMap.empty
+                    self.genFooterText = self.footerTextGeneratorMap("empty")
                     self.mode = MODE.off
                 elseif prev_has_no_mode then
                     self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
@@ -572,21 +655,48 @@ function ReaderFooter:addToMainMenu(menu_items)
                 }
             },
             {
-                text = _("Text separator"),
+                text = _("Text prefix"),
                 sub_item_table = {
                     {
-                        text = _("Vertical line") .. " (|)",
+                        text = _("Icons"),
                         checked_func = function()
-                            return self.settings.text_separator == "vertiacal_line" or self.settings.text_separator == nil
+                            return self.settings.text_prefix == "icons" or self.settings.text_prefix == nil
                         end,
                         callback = function()
-                            self.settings.text_separator = "vertiacal_line"
+                            self.settings.text_prefix = "icons"
                             self:updateFooter()
                             UIManager:setDirty(nil, "ui")
                         end,
                     },
                     {
-                        text = _("Dot") .. " (•)",
+                        text = _("Letters"),
+                        checked_func = function()
+                            return self.settings.text_prefix == "letters"
+                        end,
+                        callback = function()
+                            self.settings.text_prefix = "letters"
+                            self:updateFooter()
+                            UIManager:setDirty(nil, "ui")
+                        end,
+                    },
+                },
+            },
+            {
+                text = _("Text separator"),
+                sub_item_table = {
+                    {
+                        text = _("Vertical line") .. " (|)",
+                        checked_func = function()
+                            return self.settings.text_separator == "bar" or self.settings.text_separator == nil
+                        end,
+                        callback = function()
+                            self.settings.text_separator = "bar"
+                            self:updateFooter()
+                            UIManager:setDirty(nil, "ui")
+                        end,
+                    },
+                    {
+                        text = _("Bullet") .. " (•)",
                         checked_func = function()
                             return self.settings.text_separator == "dot"
                         end,
@@ -599,10 +709,10 @@ function ReaderFooter:addToMainMenu(menu_items)
                     {
                         text = _("Without separator"),
                         checked_func = function()
-                            return self.settings.text_separator == "no_separator"
+                            return self.settings.text_separator == "none"
                         end,
                         callback = function()
-                            self.settings.text_separator = "no_separator"
+                            self.settings.text_separator = "none"
                             self:updateFooter()
                             UIManager:setDirty(nil, "ui")
                         end,
@@ -615,10 +725,10 @@ function ReaderFooter:addToMainMenu(menu_items)
                     {
                         text = T(_("No decimal point (%1)"), self:progressPercentage(0)),
                         checked_func = function()
-                            return self.settings.progress_perc_format == "0" or self.settings.progress_perc_format == nil
+                            return self.settings.progress_pct_format == "0" or self.settings.progress_pct_format == nil
                         end,
                         callback = function()
-                            self.settings.progress_perc_format = "0"
+                            self.settings.progress_pct_format = "0"
                             self:updateFooter()
                             UIManager:setDirty(nil, "ui")
                         end,
@@ -626,10 +736,10 @@ function ReaderFooter:addToMainMenu(menu_items)
                     {
                         text = T(_("1 digit after decimal point (%1)"), self:progressPercentage(1)),
                         checked_func = function()
-                            return self.settings.progress_perc_format == "1"
+                            return self.settings.progress_pct_format == "1"
                         end,
                         callback = function()
-                            self.settings.progress_perc_format = "1"
+                            self.settings.progress_pct_format = "1"
                             self:updateFooter()
                             UIManager:setDirty(nil, "ui")
                         end,
@@ -637,10 +747,10 @@ function ReaderFooter:addToMainMenu(menu_items)
                     {
                         text = T(_("2 digits after decimal point (%1)"), self:progressPercentage(2)),
                         checked_func = function()
-                            return self.settings.progress_perc_format == "2"
+                            return self.settings.progress_pct_format == "2"
                         end,
                         callback = function()
-                            self.settings.progress_perc_format = "2"
+                            self.settings.progress_pct_format = "2"
                             self:updateFooter()
                             UIManager:setDirty(nil, "ui")
                         end,
@@ -648,15 +758,15 @@ function ReaderFooter:addToMainMenu(menu_items)
                 },
             },
             {
-                text = _("Date format"),
+                text = _("Time format"),
                 sub_item_table = {
                     {
                         text = _("24-hour"),
                         checked_func = function()
-                            return self.settings.date_format == "24" or self.settings.date_format == nil
+                            return self.settings.time_format == "24" or self.settings.time_format == nil
                         end,
                         callback = function()
-                            self.settings.date_format = "24"
+                            self.settings.time_format = "24"
                             self:updateFooter()
                             UIManager:setDirty(nil, "ui")
                         end,
@@ -664,10 +774,10 @@ function ReaderFooter:addToMainMenu(menu_items)
                     {
                         text = _("12-hour"),
                         checked_func = function()
-                            return self.settings.date_format == "12"
+                            return self.settings.time_format == "12"
                         end,
                         callback = function()
-                            self.settings.date_format = "12"
+                            self.settings.time_format = "12"
                             self:updateFooter()
                             UIManager:setDirty(nil, "ui")
                         end,
@@ -675,26 +785,26 @@ function ReaderFooter:addToMainMenu(menu_items)
                 }
             },
             {
-                text = _("Time format"),
+                text = _("Durations format"),
                 sub_item_table = {
                     {
-                        text = _("Classic"),
+                        text = _("Modern"),
                         checked_func = function()
-                            return self.settings.time_format == "classic" or self.settings.time_format == nil
+                            return self.settings.duration_format == "modern" or self.settings.duration_format == nil
                         end,
                         callback = function()
-                            self.settings.time_format = "classic"
+                            self.settings.duration_format = "modern"
                             self:updateFooter()
                             UIManager:setDirty(nil, "ui")
                         end,
                     },
                     {
-                        text = _("Modern"),
+                        text = _("Classic"),
                         checked_func = function()
-                            return self.settings.time_format == "modern"
+                            return self.settings.duration_format == "classic"
                         end,
                         callback = function()
-                            self.settings.time_format = "modern"
+                            self.settings.duration_format = "classic"
                             self:updateFooter()
                             UIManager:setDirty(nil, "ui")
                         end,
@@ -763,10 +873,10 @@ function ReaderFooter:getDataFromStatistics(title, pages)
     local sec = 'na'
     local average_time_per_page = self:getAvgTimePerPage()
     if average_time_per_page then
-        if self.settings.time_format == "modern" then
-            sec = util.secondsToHClock(pages * average_time_per_page, true)
-        else
+        if self.settings.duration_format == "classic" then
             sec = util.secondsToClock(pages * average_time_per_page, true)
+        else
+            sec = util.secondsToHClock(pages * average_time_per_page, true)
         end
     end
     return title .. sec
@@ -886,7 +996,7 @@ function ReaderFooter:applyFooterMode(mode)
     end
     -- We're not in all-at-once mode, disable text generation entirely when we're hidden
     if not self.view.footer_visible then
-        self.genFooterText = footerTextGeneratorMap.empty
+        self.genFooterText = self:footerTextGeneratorMap("empty")
         return
     end
 
@@ -895,7 +1005,7 @@ function ReaderFooter:applyFooterMode(mode)
         -- all modes disabled, only show progress bar
         mode_name = "empty"
     end
-    self.genFooterText = footerTextGeneratorMap[mode_name]
+    self.genFooterText = self:footerTextGeneratorMap(mode_name)
 end
 
 function ReaderFooter:onEnterFlippingMode()

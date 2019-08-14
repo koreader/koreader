@@ -419,19 +419,19 @@ describe("util module", function()
                             util.secondsToHClock(110, true))
             assert.is_equal("2'",
                             util.secondsToHClock(120, true))
-            assert.is_equal("1h00'",
+            assert.is_equal("1h00",
                             util.secondsToHClock(3600, true))
-            assert.is_equal("1h00'",
+            assert.is_equal("1h00",
                             util.secondsToHClock(3599, true))
-            assert.is_equal("1h00'",
+            assert.is_equal("1h00",
                             util.secondsToHClock(3570, true))
             assert.is_equal("59'",
                             util.secondsToHClock(3569, true))
-            assert.is_equal("10h01'",
+            assert.is_equal("10h01",
                             util.secondsToHClock(36060, true))
         end)
         it("should convert seconds to 0h00'00'' format", function()
-            assert.is_equal("0'00''",
+            assert.is_equal("0''",
                             util.secondsToHClock(0))
             assert.is_equal("1'00''",
                             util.secondsToHClock(60))
