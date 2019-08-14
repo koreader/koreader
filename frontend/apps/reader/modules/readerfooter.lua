@@ -698,10 +698,10 @@ function ReaderFooter:addToMainMenu(menu_items)
                     {
                         text = _("Bullet") .. " (•)",
                         checked_func = function()
-                            return self.settings.text_separator == "dot"
+                            return self.settings.text_separator == "bullet"
                         end,
                         callback = function()
-                            self.settings.text_separator = "dot"
+                            self.settings.text_separator = "bullet"
                             self:updateFooter()
                             UIManager:setDirty(nil, "ui")
                         end,
@@ -821,9 +821,9 @@ function ReaderFooter:genFooterText() end
 function ReaderFooter:genAllFooterText()
     local info = {}
     local separator = "  "
-    if self.settings.text_separator == "vertiacal_line" or self.settings.text_separator == nil then
+    if self.settings.text_separator == "bar" or self.settings.text_separator == nil then
         separator = " | "
-    elseif self.settings.text_separator == "dot" then
+    elseif self.settings.text_separator == "bullet" then
         separator = " • "
     end
     for _, gen in ipairs(self.footerTextGenerators) do
