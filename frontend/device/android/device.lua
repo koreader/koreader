@@ -172,7 +172,14 @@ function Device:init()
         android.setScreenOffTimeout(-1)
     else
         local timeout = G_reader_settings:readSetting("android_screen_timeout")
-        if timeout ~= nil and timeout ~= 0 then
+        if not timeout then return end
+        if timeout > 0 then
+            -- set a custom timeout if we already have write settings permission.
+            -- do not attempt to request permissions here.
+            if android.canWriteSettings() then
+                android.setScreenOffTimeout(timeout)
+            end
+        elseif timeout == -1 then
             android.setScreenOffTimeout(timeout)
         end
     end
