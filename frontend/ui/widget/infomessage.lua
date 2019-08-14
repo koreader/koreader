@@ -58,6 +58,7 @@ local InfoMessage = InputContainer:new{
     -- Whether the icon should be shown. If it is false, self.image will be ignored.
     show_icon = true,
     icon_file = nil, -- use this file instead of "resources/info-i.png"
+    alpha = false, -- does that icon have an alpha channel?
     dismiss_callback = function() end,
 }
 
@@ -91,11 +92,13 @@ function InfoMessage:init()
                 image = self.image,
                 width = self.image_width,
                 height = self.image_height,
+                alpha = self.alpha,
             }
         else
             image_widget = ImageWidget:new{
                 file = self.icon_file or "resources/info-i.png",
                 scale_for_dpi = true,
+                alpha = self.alpha,
             }
         end
     else
