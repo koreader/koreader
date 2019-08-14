@@ -18,7 +18,7 @@ local ReaderGesture = InputContainer:new{}
 
 local action_strings = {
     nothing = _("Nothing"),
-    ignore = _("Ignore"),
+    ignore = _("Pass through"),
 
     page_jmp_back_10 = _("Back 10 pages"),
     page_jmp_back_1 = _("Previous page"),
