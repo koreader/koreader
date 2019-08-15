@@ -208,7 +208,7 @@ function ReaderMenu:setUpdateItemTable()
             self:exitOrRestart(function() UIManager:restartKOReader() end)
         end,
     }
-    if Device:isAndroid() then
+    if not Device:canRestart() then
         self.menu_items.exit_menu = self.menu_items.exit
         self.menu_items.exit = nil
         self.menu_items.restart_koreader = nil

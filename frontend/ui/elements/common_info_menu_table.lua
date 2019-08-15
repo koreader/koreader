@@ -74,7 +74,7 @@ if Device:isCervantes() or Device:isKindle() or Device:isKobo() then
         end,
     }
 end
-if Device:isCervantes() or Device:isKobo() or Device:isSonyPRSTUX() then
+if Device:canReboot() then
     common_info.reboot = {
         text = _("Reboot the device"),
         keep_menu_open = true,
@@ -88,6 +88,8 @@ if Device:isCervantes() or Device:isKobo() or Device:isSonyPRSTUX() then
             })
         end
     }
+end
+if Device:canPowerOff() then
     common_info.poweroff = {
         text = _("Power off"),
         keep_menu_open = true,

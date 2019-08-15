@@ -53,6 +53,9 @@ local Device = {
     isSonyPRSTUX = no,
     isSDL = no,
     isEmulator = no,
+    canRestart = yes,
+    canReboot = no,
+    canPowerOff = no,
 
     -- some devices have part of their screen covered by the bezel
     viewport = nil,

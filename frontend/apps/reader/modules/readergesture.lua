@@ -58,6 +58,8 @@ local action_strings = {
     suspend = _("Suspend"),
     exit = _("Exit KOReader"),
     restart = _("Restart KOReader"),
+    reboot = _("Reboot the device"),
+    poweroff = _("Power off"),
     show_menu = _("Show menu"),
     show_config_menu = _("Show bottom menu"),
     show_frontlight_dialog = _("Show frontlight dialog"),
@@ -685,7 +687,9 @@ function ReaderGesture:buildMenu(ges, default)
         {"night_mode", true},
         {"suspend", true},
         {"exit", true},
-        {"restart", not Device:isAndroid()},
+        {"restart", Device:canRestart()},
+        {"reboot", Device:canReboot()},
+        {"poweroff", Device:canPowerOff()},
 
         {"show_menu", true},
         {"show_config_menu", not self.is_docless, true},
@@ -1415,6 +1419,22 @@ function ReaderGesture:gestureAction(action, ges)
         self.ui.menu:exitOrRestart()
     elseif action == "restart" then
         self.ui.menu:exitOrRestart(function() UIManager:restartKOReader() end)
+    elseif action == "reboot" then
+        UIManager:show(ConfirmBox:new{
+            text = _("Are you sure you want to reboot the device?"),
+            ok_text = _("Reboot"),
+            ok_callback = function()
+                UIManager:nextTick(UIManager.reboot_action)
+            end,
+        })
+    elseif action == "poweroff" then
+        UIManager:show(ConfirmBox:new{
+            text = _("Are you sure you want to power off the device?"),
+            ok_text = _("Power off"),
+            ok_callback = function()
+                UIManager:nextTick(UIManager.poweroff_action)
+            end,
+        })
     elseif action == "zoom_contentwidth" then
         self.ui:handleEvent(Event:new("SetZoomMode", "contentwidth"))
     elseif action == "zoom_contentheight" then

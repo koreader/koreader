@@ -12,6 +12,8 @@ local SonyPRSTUX = Generic:new{
     hasKeys = yes,
     hasOTAUpdates = yes,
     hasWifiManager = yes,
+    canReboot = yes,
+    canPowerOff = yes,
 }
 
 
