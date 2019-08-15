@@ -150,7 +150,7 @@ describe("Readerfooter module", function()
         local footer = readerui.view.footer
         footer:onPageUpdate(1)
         footer:updateFooter()
-        local timeinfo = footer:footerTextGeneratorMap("time")(footer)
+        local timeinfo = footer.textGeneratorMap.time(footer)
         local page_count = readerui.document:getPageCount()
         -- stats has not been initialized here, so we get na TB and TC
         assert.are.same('1 / '..page_count..' | '..timeinfo..' | ⇒ 0 | ⚡ 0% | ◔ 0% | ⏳ na | ⤻ na',
@@ -167,7 +167,7 @@ describe("Readerfooter module", function()
         }
         local footer = readerui.view.footer
         readerui.view.footer:updateFooter()
-        local timeinfo = readerui.view.footer:footerTextGeneratorMap("time")(footer)
+        local timeinfo = readerui.view.footer.textGeneratorMap.time(footer)
         assert.are.same('1 / 2 | '..timeinfo..' | ⇒ 1 | ⚡ 0% | ◔ 50% | ⏳ na | ⤻ na',
                         readerui.view.footer.footer_text.text)
     end)
@@ -185,7 +185,7 @@ describe("Readerfooter module", function()
         footer:addToMainMenu(fake_menu)
         footer:resetLayout()
         footer:updateFooter()
-        local timeinfo = footer:footerTextGeneratorMap("time")(footer)
+        local timeinfo = footer.textGeneratorMap.time(footer)
         assert.are.same('1 / 2 | '..timeinfo..' | ⇒ 1 | ⚡ 0% | ◔ 50% | ⏳ na | ⤻ na',
                         footer.footer_text.text)
 

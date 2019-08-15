@@ -46,7 +46,7 @@ local symbol_prefix = {
         wifi_status = "W:",
     },
     icons = {
-        time = "🕒",
+        time = "⌚",
         pages_left = "⇒",
         battery = "⚡",
         percentage = "◔",
@@ -65,6 +65,114 @@ for k,v in pairs(MODE) do
     MODE_NB = MODE_NB + 1
 end
 
+-- functions that generates footer text for each mode
+local footerTextGeneratorMap = {
+    empty = function() return "" end,
+    frontlight = function(footer)
+        local symbol_type = footer.settings.item_prefix or "icons"
+        local prefix = symbol_prefix[symbol_type].frontlight
+        local powerd = Device:getPowerDevice()
+        if powerd:isFrontlightOn() then
+            if Device:isCervantes() or Device:isKobo() then
+                return (prefix .. " %d%%"):format(powerd:frontlightIntensity())
+            else
+                return (prefix .. " %d"):format(powerd:frontlightIntensity())
+            end
+        else
+            return T(_("%1 Off"), prefix)
+        end
+    end,
+    battery = function(footer)
+        local symbol_type = footer.settings.item_prefix or "icons"
+        local prefix = symbol_prefix[symbol_type].battery
+        local powerd = Device:getPowerDevice()
+        return prefix .. " " .. (powerd:isCharging() and "+" or "") .. powerd:getCapacity() .. "%"
+    end,
+    time = function(footer)
+        local symbol_type = footer.settings.item_prefix or "icons"
+        local prefix = symbol_prefix[symbol_type].time
+        local clock
+        if footer.settings.time_format == "12" then
+            clock = os.date("%I:%M%p")
+        else
+            clock = os.date("%H:%M")
+        end
+        if not prefix then
+            return clock
+        else
+            return prefix .. " " .. clock
+        end
+    end,
+    page_progress = function(footer)
+        if footer.pageno then
+            return ("%d / %d"):format(footer.pageno, footer.pages)
+        elseif footer.position then
+            return ("%d / %d"):format(footer.position, footer.doc_height)
+        end
+    end,
+    pages_left = function(footer)
+        local symbol_type = footer.settings.item_prefix or "icons"
+        local prefix = symbol_prefix[symbol_type].pages_left
+        local left = footer.ui.toc:getChapterPagesLeft(
+            footer.pageno, footer.toc_level)
+        return prefix .. " " .. (left and left or footer.pages - footer.pageno)
+    end,
+    percentage = function(footer)
+        local symbol_type = footer.settings.item_prefix or "icons"
+        local prefix = symbol_prefix[symbol_type].percentage
+        local digits = footer.settings.progress_perc_format or "0"
+        local string_percentage
+        if not prefix then
+            string_percentage = "%." .. digits .. "f%%"
+        else
+            string_percentage = prefix .. " %." .. digits .. "f%%"
+        end
+        return string_percentage:format(footer.progress_bar.percentage * 100)
+    end,
+    book_time_to_read = function(footer)
+        local symbol_type = footer.settings.item_prefix or "icons"
+        local prefix = symbol_prefix[symbol_type].book_time_to_read
+        local current_page
+        if footer.view.document.info.has_pages then
+            current_page = footer.ui.paging.current_page
+        else
+            current_page = footer.view.document:getCurrentPage()
+        end
+        return footer:getDataFromStatistics(prefix .. " ", footer.pages - current_page)
+    end,
+    chapter_time_to_read = function(footer)
+        local symbol_type = footer.settings.item_prefix or "icons"
+        local prefix = symbol_prefix[symbol_type].chapter_time_to_read
+        local left = footer.ui.toc:getChapterPagesLeft(
+            footer.pageno, footer.toc_level)
+        return footer:getDataFromStatistics(
+            prefix .. " ", (left and left or footer.pages - footer.pageno))
+    end,
+    mem_usage = function(footer)
+        local symbol_type = footer.settings.item_prefix or "icons"
+        local prefix = symbol_prefix[symbol_type].mem_usage
+        local statm = io.open("/proc/self/statm", "r")
+        if statm then
+            local infos = statm:read("*all")
+            statm:close()
+            local rss = infos:match("^%S+ (%S+) ")
+            -- we got the nb of 4Kb-pages used, that we convert to Mb
+            rss = math.floor(tonumber(rss) * 4096 / 1024 / 1024)
+            return (prefix .. " %d"):format(rss)
+        end
+        return ""
+    end,
+    wifi_status = function(footer)
+        local symbol_type = footer.settings.item_prefix or "icons"
+        local prefix = symbol_prefix[symbol_type].wifi_status
+        local NetworkMgr = require("ui/network/manager")
+        if NetworkMgr:isWifiOn() then
+            return T(_("%1 On"), prefix)
+        else
+            return T(_("%1 Off"), prefix)
+        end
+    end,
+}
 
 local ReaderFooter = WidgetContainer:extend{
     mode = MODE.page_progress,
@@ -81,6 +189,8 @@ local ReaderFooter = WidgetContainer:extend{
     text_left_margin = Screen:scaleBySize(10),
     bottom_padding = Screen:scaleBySize(1),
     settings = {},
+    -- added to expose them to unit tests
+    textGeneratorMap = footerTextGeneratorMap,
 }
 
 function ReaderFooter:init()
@@ -101,7 +211,7 @@ function ReaderFooter:init()
         frontlight = false,
         mem_usage = false,
         wifi_status = false,
-        text_prefix = "icons"
+        item_prefix = "icons"
     }
 
     if self.settings.disabled then
@@ -240,131 +350,6 @@ function ReaderFooter:setupTouchZones()
     })
 end
 
--- function that generates footer text for each mode
-function ReaderFooter:footerTextGeneratorMap(option)
-    local ret_func = function() return "" end
-    if option == "empty" then
-        ret_func = function()
-            return ""
-        end
-    elseif option == "frontlight" then
-        ret_func = function(footer)
-            local symbol_type = footer.settings.text_prefix or "icons"
-            local prefix = symbol_prefix[symbol_type][option]
-            local powerd = Device:getPowerDevice()
-            if powerd:isFrontlightOn() then
-                if Device:isCervantes() or Device:isKobo() then
-                    return (prefix .. " %d%%"):format(powerd:frontlightIntensity())
-                else
-                    return (prefix .. " %d"):format(powerd:frontlightIntensity())
-                end
-            else
-                return T(_("%1 Off"), prefix)
-            end
-        end
-    elseif option == "battery" then
-        ret_func = function(footer)
-            local symbol_type = footer.settings.text_prefix or "icons"
-            local prefix = symbol_prefix[symbol_type][option]
-            local powerd = Device:getPowerDevice()
-            return prefix .. " " .. (powerd:isCharging() and "+" or "") .. powerd:getCapacity() .. "%"
-        end
-    elseif option == "time" then
-        ret_func = function(footer)
-            local symbol_type = footer.settings.text_prefix or "icons"
-            local prefix = symbol_prefix[symbol_type][option]
-            local clock
-            if self.settings.time_format == "12" then
-                clock = os.date("%I:%M%p")
-            else
-                clock = os.date("%H:%M")
-            end
-            if not prefix then
-                return clock
-            else
-                return prefix .. " " .. clock
-            end
-        end
-    elseif option == "page_progress" then
-        ret_func = function(footer)
-            if footer.pageno then
-                return ("%d / %d"):format(footer.pageno, footer.pages)
-            elseif footer.position then
-                return ("%d / %d"):format(footer.position, footer.doc_height)
-            end
-        end
-    elseif option == "pages_left" then
-        ret_func = function(footer)
-            local symbol_type = footer.settings.text_prefix or "icons"
-            local prefix = symbol_prefix[symbol_type][option]
-            local left = footer.ui.toc:getChapterPagesLeft(
-                footer.pageno, footer.toc_level)
-            return prefix .. " " .. (left and left or footer.pages - footer.pageno)
-        end
-    elseif option == "percentage" then
-        ret_func = function(footer)
-            local symbol_type = footer.settings.text_prefix or "icons"
-            local prefix = symbol_prefix[symbol_type][option]
-            local digits = footer.settings.progress_perc_format or "0"
-            local string_percentage
-            if not prefix then
-                string_percentage = "%." .. digits .. "f%%"
-            else
-                string_percentage = prefix .. " %." .. digits .. "f%%"
-            end
-            return string_percentage:format(footer.progress_bar.percentage * 100)
-        end
-    elseif option == "book_time_to_read" then
-        ret_func = function(footer)
-            local symbol_type = footer.settings.text_prefix or "icons"
-            local prefix = symbol_prefix[symbol_type][option]
-            local current_page
-            if footer.view.document.info.has_pages then
-                current_page = footer.ui.paging.current_page
-            else
-                current_page = footer.view.document:getCurrentPage()
-            end
-            return self:getDataFromStatistics(prefix .. " ", footer.pages - current_page)
-        end
-    elseif option == "chapter_time_to_read" then
-        ret_func = function(footer)
-            local symbol_type = footer.settings.text_prefix or "icons"
-            local prefix = symbol_prefix[symbol_type][option]
-            local left = footer.ui.toc:getChapterPagesLeft(
-                footer.pageno, footer.toc_level)
-            return self:getDataFromStatistics(
-                prefix .. " ", (left and left or footer.pages - footer.pageno))
-        end
-    elseif option == "mem_usage" then
-        ret_func = function(footer)
-            local symbol_type = footer.settings.text_prefix or "icons"
-            local prefix = symbol_prefix[symbol_type][option]
-            local statm = io.open("/proc/self/statm", "r")
-            if statm then
-                local infos = statm:read("*all")
-                statm:close()
-                local rss = infos:match("^%S+ (%S+) ")
-                -- we got the nb of 4Kb-pages used, that we convert to Mb
-                rss = math.floor(tonumber(rss) * 4096 / 1024 / 1024)
-                return (prefix .. " %d"):format(rss)
-            end
-            return ""
-        end
-    elseif option == "wifi_status" then
-        ret_func = function(footer)
-            local symbol_type = footer.settings.text_prefix or "icons"
-            local prefix = symbol_prefix[symbol_type][option]
-            local NetworkMgr = require("ui/network/manager")
-            if NetworkMgr:isWifiOn() then
-                return T(_("%1 On"), prefix)
-            else
-                return T(_("%1 Off"), prefix)
-            end
-        end
-    end
-    return ret_func
-end
-
 -- call this method whenever the screen size changes
 function ReaderFooter:resetLayout(force_reset)
     local new_screen_width = Screen:getWidth()
@@ -413,7 +398,7 @@ function ReaderFooter:updateFooterTextGenerator()
     for _, m in pairs(MODE_INDEX) do
         if self.settings[m] then
             table.insert(footerTextGenerators,
-                         self:footerTextGeneratorMap(m))
+                         footerTextGeneratorMap[m])
             if not self.settings.all_at_once then
                 -- if not show all at once, then one is enough
                 break
@@ -422,7 +407,7 @@ function ReaderFooter:updateFooterTextGenerator()
     end
     if #footerTextGenerators == 0 then
         -- all modes are disabled
-        self.genFooterText = self:footerTextGeneratorMap("empty")
+        self.genFooterText = footerTextGeneratorMap.empty
     elseif #footerTextGenerators == 1 then
         -- there is only one mode enabled, simplify the generator
         -- function to that one
@@ -436,7 +421,7 @@ function ReaderFooter:updateFooterTextGenerator()
 end
 
 function ReaderFooter:progressPercentage(digits)
-    local symbol_type = self.settings.text_prefix or "icons"
+    local symbol_type = self.settings.item_prefix or "icons"
     local prefix = symbol_prefix[symbol_type].percentage
 
     local string_percentage
@@ -449,7 +434,7 @@ function ReaderFooter:progressPercentage(digits)
 end
 
 function ReaderFooter:textOptionTitles(option)
-    local symbol = self.settings.text_prefix or "icons"
+    local symbol = self.settings.item_prefix or "icons"
     local option_titles = {
         all_at_once = _("Show all at once"),
         reclaim_height = _("Reclaim bar height from bottom margin"),
@@ -522,7 +507,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 -- refresh margins position
                 if self.has_no_mode then
                     self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
-                    self.genFooterText = self.footerTextGeneratorMap("empty")
+                    self.genFooterText = footerTextGeneratorMap.empty
                     self.mode = MODE.off
                 elseif prev_has_no_mode then
                     self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
@@ -552,60 +537,6 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end
             end,
         }
-    end
-
-    table.insert(sub_items,
-                 getMinibarOption("all_at_once", self.updateFooterTextGenerator))
-    table.insert(sub_items,
-                 getMinibarOption("reclaim_height"))
-    table.insert(sub_items, {
-        text = _("Progress bar"),
-        sub_item_table = {
-            {
-                text = _("Show progress bar"),
-                checked_func = function()
-                    return not self.settings.disable_progress_bar
-                end,
-                callback = function()
-                    self.settings.disable_progress_bar = not self.settings.disable_progress_bar
-                    self:updateFooter()
-                    UIManager:setDirty(nil, "ui")
-                end,
-            },
-            getMinibarOption("toc_markers", self.setTocMarkers),
-        }
-    })
-    table.insert(sub_items, {
-        text = _("Auto refresh time"),
-        checked_func = function()
-            return self.settings.auto_refresh_time == true
-        end,
-        -- only enable auto refresh when time is shown
-        enabled_func = function() return self.settings.time end,
-        callback = function()
-            self.settings.auto_refresh_time = not self.settings.auto_refresh_time
-            G_reader_settings:saveSetting("footer", self.settings)
-            if self.settings.auto_refresh_time then
-                self:setupAutoRefreshTime()
-            else
-                UIManager:unschedule(self.autoRefreshTime)
-                self.onCloseDocument = nil
-            end
-        end
-    })
-    table.insert(sub_items, getMinibarOption("page_progress"))
-    table.insert(sub_items, getMinibarOption("time"))
-    table.insert(sub_items, getMinibarOption("pages_left"))
-    table.insert(sub_items, getMinibarOption("battery"))
-    table.insert(sub_items, getMinibarOption("percentage"))
-    table.insert(sub_items, getMinibarOption("book_time_to_read"))
-    table.insert(sub_items, getMinibarOption("chapter_time_to_read"))
-    if Device:hasFrontlight() then
-        table.insert(sub_items, getMinibarOption("frontlight"))
-    end
-    table.insert(sub_items, getMinibarOption("mem_usage"))
-    if Device:isAndroid() then
-        table.insert(sub_items, getMinibarOption("wifi_status"))
     end
     table.insert(sub_items, {
         text = _("Settings"),
@@ -660,10 +591,10 @@ function ReaderFooter:addToMainMenu(menu_items)
                     {
                         text = _("Icons"),
                         checked_func = function()
-                            return self.settings.text_prefix == "icons" or self.settings.text_prefix == nil
+                            return self.settings.item_prefix == "icons" or self.settings.item_prefix == nil
                         end,
                         callback = function()
-                            self.settings.text_prefix = "icons"
+                            self.settings.item_prefix = "icons"
                             self:updateFooter()
                             UIManager:setDirty(nil, "ui")
                         end,
@@ -671,10 +602,10 @@ function ReaderFooter:addToMainMenu(menu_items)
                     {
                         text = _("Letters"),
                         checked_func = function()
-                            return self.settings.text_prefix == "letters"
+                            return self.settings.item_prefix == "letters"
                         end,
                         callback = function()
-                            self.settings.text_prefix = "letters"
+                            self.settings.item_prefix = "letters"
                             self:updateFooter()
                             UIManager:setDirty(nil, "ui")
                         end,
@@ -813,6 +744,59 @@ function ReaderFooter:addToMainMenu(menu_items)
             },
         }
     })
+    table.insert(sub_items,
+                 getMinibarOption("all_at_once", self.updateFooterTextGenerator))
+    table.insert(sub_items,
+                 getMinibarOption("reclaim_height"))
+    table.insert(sub_items, {
+        text = _("Progress bar"),
+        sub_item_table = {
+            {
+                text = _("Show progress bar"),
+                checked_func = function()
+                    return not self.settings.disable_progress_bar
+                end,
+                callback = function()
+                    self.settings.disable_progress_bar = not self.settings.disable_progress_bar
+                    self:updateFooter()
+                    UIManager:setDirty(nil, "ui")
+                end,
+            },
+            getMinibarOption("toc_markers", self.setTocMarkers),
+        }
+    })
+    table.insert(sub_items, {
+        text = _("Auto refresh time"),
+        checked_func = function()
+            return self.settings.auto_refresh_time == true
+        end,
+        -- only enable auto refresh when time is shown
+        enabled_func = function() return self.settings.time end,
+        callback = function()
+            self.settings.auto_refresh_time = not self.settings.auto_refresh_time
+            G_reader_settings:saveSetting("footer", self.settings)
+            if self.settings.auto_refresh_time then
+                self:setupAutoRefreshTime()
+            else
+                UIManager:unschedule(self.autoRefreshTime)
+                self.onCloseDocument = nil
+            end
+        end
+    })
+    table.insert(sub_items, getMinibarOption("page_progress"))
+    table.insert(sub_items, getMinibarOption("time"))
+    table.insert(sub_items, getMinibarOption("pages_left"))
+    table.insert(sub_items, getMinibarOption("battery"))
+    table.insert(sub_items, getMinibarOption("percentage"))
+    table.insert(sub_items, getMinibarOption("book_time_to_read"))
+    table.insert(sub_items, getMinibarOption("chapter_time_to_read"))
+    if Device:hasFrontlight() then
+        table.insert(sub_items, getMinibarOption("frontlight"))
+    end
+    table.insert(sub_items, getMinibarOption("mem_usage"))
+    if Device:isAndroid() then
+        table.insert(sub_items, getMinibarOption("wifi_status"))
+    end
 end
 
 -- this method will be updated at runtime based on user setting
@@ -996,7 +980,7 @@ function ReaderFooter:applyFooterMode(mode)
     end
     -- We're not in all-at-once mode, disable text generation entirely when we're hidden
     if not self.view.footer_visible then
-        self.genFooterText = self:footerTextGeneratorMap("empty")
+        self.genFooterText = footerTextGeneratorMap.empty
         return
     end
 
@@ -1005,7 +989,7 @@ function ReaderFooter:applyFooterMode(mode)
         -- all modes disabled, only show progress bar
         mode_name = "empty"
     end
-    self.genFooterText = self:footerTextGeneratorMap(mode_name)
+    self.genFooterText = footerTextGeneratorMap[mode_name]
 end
 
 function ReaderFooter:onEnterFlippingMode()
