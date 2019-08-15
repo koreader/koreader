@@ -198,7 +198,7 @@ describe("Readerfooter module", function()
         assert.are.same(timeinfo, footer.footer_text.text)
 
         -- disable time, page left should follow
-        tapFooterMenu(fake_menu, "Current time".." (🕒)")
+        tapFooterMenu(fake_menu, "Current time".." (⌚)")
         assert.are.same('⇒ 1', footer.footer_text.text)
 
         -- disable page left, battery should follow
