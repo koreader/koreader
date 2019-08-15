@@ -687,7 +687,7 @@ function ReaderGesture:buildMenu(ges, default)
         {"night_mode", true},
         {"suspend", true},
         {"exit", true},
-        {"restart", not Device:isAndroid()},
+        {"restart", Device:canRestart()},
         {"reboot", Device:canReboot()},
         {"poweroff", Device:canPowerOff()},
 

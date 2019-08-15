@@ -53,6 +53,7 @@ local Device = {
     isSonyPRSTUX = no,
     isSDL = no,
     isEmulator = no,
+    canRestart = yes,
     canReboot = no,
     canPowerOff = no,
 
