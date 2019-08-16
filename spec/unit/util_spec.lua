@@ -401,6 +401,51 @@ describe("util module", function()
         end)
     end)
 
+    describe("secondsToHClock()", function()
+        it("should convert seconds to 0'00'' format", function()
+            assert.is_equal("0'",
+                            util.secondsToHClock(0, true))
+            assert.is_equal("0'",
+                            util.secondsToHClock(29, true))
+            assert.is_equal("1'",
+                            util.secondsToHClock(60, true))
+        end)
+        it("should round seconds to minutes in 0h00' format", function()
+            assert.is_equal("1'",
+                            util.secondsToHClock(89, true))
+            assert.is_equal("2'",
+                            util.secondsToHClock(90, true))
+            assert.is_equal("2'",
+                            util.secondsToHClock(110, true))
+            assert.is_equal("2'",
+                            util.secondsToHClock(120, true))
+            assert.is_equal("1h00",
+                            util.secondsToHClock(3600, true))
+            assert.is_equal("1h00",
+                            util.secondsToHClock(3599, true))
+            assert.is_equal("1h00",
+                            util.secondsToHClock(3570, true))
+            assert.is_equal("59'",
+                            util.secondsToHClock(3569, true))
+            assert.is_equal("10h01",
+                            util.secondsToHClock(36060, true))
+        end)
+        it("should convert seconds to 0h00'00'' format", function()
+            assert.is_equal("0''",
+                            util.secondsToHClock(0))
+            assert.is_equal("1'00''",
+                            util.secondsToHClock(60))
+            assert.is_equal("1'29''",
+                            util.secondsToHClock(89))
+            assert.is_equal("1'30''",
+                            util.secondsToHClock(90))
+            assert.is_equal("1'50''",
+                            util.secondsToHClock(110))
+            assert.is_equal("2'00''",
+                            util.secondsToHClock(120))
+        end)
+    end)
+
     describe("urlEncode() and urlDecode", function()
         it("should encode string", function()
             assert.is_equal("Secret_Password123", util.urlEncode("Secret_Password123"))
