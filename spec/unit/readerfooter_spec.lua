@@ -29,13 +29,13 @@ describe("Readerfooter module", function()
                     end
                     if subitem.sub_item_table then
                         local status_bar_sub_item = subitem.sub_item_table
-                        for _, subitem in ipairs(status_bar_sub_item) do
-                            if subitem.text_func and subitem.text_func() == menu_title then
-                                subitem.callback()
+                        for _, sub_subitem in ipairs(status_bar_sub_item) do
+                            if sub_subitem.text_func and sub_subitem.text_func() == menu_title then
+                                sub_subitem.callback()
                                 return
                             end
-                            if subitem.text == menu_title then
-                                subitem.callback()
+                            if sub_subitem.text == menu_title then
+                                sub_subitem.callback()
                                 return
                             end
                         end
