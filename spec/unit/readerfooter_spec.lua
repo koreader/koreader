@@ -23,11 +23,22 @@ describe("Readerfooter module", function()
                         subitem.callback()
                         return
                     end
-                end
-                for _, subitem in ipairs(status_bar.sub_item_table) do
                     if subitem.text == menu_title then
                         subitem.callback()
                         return
+                    end
+                    if subitem.sub_item_table then
+                        local status_bar_sub_item = subitem.sub_item_table
+                        for _, subitem in ipairs(status_bar_sub_item) do
+                            if subitem.text_func and subitem.text_func() == menu_title then
+                                subitem.callback()
+                                return
+                            end
+                            if subitem.text == menu_title then
+                                subitem.callback()
+                                return
+                            end
+                        end
                     end
                 end
                 error('Menu item not found: "' .. menu_title .. '"!')
@@ -153,7 +164,7 @@ describe("Readerfooter module", function()
         local timeinfo = footer.textGeneratorMap.time(footer)
         local page_count = readerui.document:getPageCount()
         -- stats has not been initialized here, so we get na TB and TC
-        assert.are.same('1 / '..page_count..' | '..timeinfo..' | ⇒ 0 | ⚡ 0% | ◔ 0% | ⏳ na | ⤻ na',
+        assert.are.same('1 / '..page_count..' | '..timeinfo..' | ⇒ 0 | ⚡ 0% | ⤠ 0% | ⏳ na | ⤻ na',
                         footer.footer_text.text)
     end)
 
@@ -168,7 +179,7 @@ describe("Readerfooter module", function()
         local footer = readerui.view.footer
         readerui.view.footer:updateFooter()
         local timeinfo = readerui.view.footer.textGeneratorMap.time(footer)
-        assert.are.same('1 / 2 | '..timeinfo..' | ⇒ 1 | ⚡ 0% | ◔ 50% | ⏳ na | ⤻ na',
+        assert.are.same('1 / 2 | '..timeinfo..' | ⇒ 1 | ⚡ 0% | ⤠ 50% | ⏳ na | ⤻ na',
                         readerui.view.footer.footer_text.text)
     end)
 
@@ -186,7 +197,7 @@ describe("Readerfooter module", function()
         footer:resetLayout()
         footer:updateFooter()
         local timeinfo = footer.textGeneratorMap.time(footer)
-        assert.are.same('1 / 2 | '..timeinfo..' | ⇒ 1 | ⚡ 0% | ◔ 50% | ⏳ na | ⤻ na',
+        assert.are.same('1 / 2 | '..timeinfo..' | ⇒ 1 | ⚡ 0% | ⤠ 50% | ⏳ na | ⤻ na',
                         footer.footer_text.text)
 
         -- disable show all at once, page progress should be on the first
@@ -207,10 +218,10 @@ describe("Readerfooter module", function()
 
         -- disable battery, percentage should follow
         tapFooterMenu(fake_menu, "Battery status".." (⚡)")
-        assert.are.same('◔ 50%', footer.footer_text.text)
+        assert.are.same('⤠ 50%', footer.footer_text.text)
 
         -- disable percentage, book time to read should follow
-        tapFooterMenu(fake_menu, "Progress percentage".." (◔)")
+        tapFooterMenu(fake_menu, "Progress percentage".." (⤠)")
         assert.are.same('⏳ na', footer.footer_text.text)
 
         -- disable book time to read, chapter time to read should follow
@@ -507,8 +518,8 @@ describe("Readerfooter module", function()
         assert.are.same('1 / 2', footer.footer_text.text)
 
         -- add mode to footer text
-        tapFooterMenu(fake_menu, "Progress percentage".." (◔)")
-        assert.are.same('1 / 2 | ◔ 50%', footer.footer_text.text)
+        tapFooterMenu(fake_menu, "Progress percentage".." (⤠)")
+        assert.are.same('1 / 2 | ⤠ 50%', footer.footer_text.text)
     end)
 
     it("should initialize text mode in all_at_once mode", function()
@@ -552,21 +563,21 @@ describe("Readerfooter module", function()
         assert.is.same(true, footer.has_no_mode)
         assert.is.same(0, footer.text_width)
 
-        tapFooterMenu(fake_menu, "Progress percentage".." (◔)")
-        assert.are.same('◔ 0%', footer.footer_text.text)
+        tapFooterMenu(fake_menu, "Progress percentage".." (⤠)")
+        assert.are.same('⤠ 0%', footer.footer_text.text)
         assert.is.same(false, footer.has_no_mode)
         assert.is.same(footer.footer_text:getSize().w + footer.text_left_margin,
                        footer.text_width)
-        tapFooterMenu(fake_menu, "Progress percentage".." (◔)")
+        tapFooterMenu(fake_menu, "Progress percentage".." (⤠)")
         assert.is.same(true, footer.has_no_mode)
 
         -- test in all at once mode
-        tapFooterMenu(fake_menu, "Progress percentage".." (◔)")
+        tapFooterMenu(fake_menu, "Progress percentage".." (⤠)")
         tapFooterMenu(fake_menu, "Show all at once")
         assert.is.same(false, footer.has_no_mode)
-        tapFooterMenu(fake_menu, "Progress percentage".." (◔)")
+        tapFooterMenu(fake_menu, "Progress percentage".." (⤠)")
         assert.is.same(true, footer.has_no_mode)
-        tapFooterMenu(fake_menu, "Progress percentage".." (◔)")
+        tapFooterMenu(fake_menu, "Progress percentage".." (⤠)")
         assert.is.same(false, footer.has_no_mode)
     end)
 

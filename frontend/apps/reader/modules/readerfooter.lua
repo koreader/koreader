@@ -38,7 +38,7 @@ local symbol_prefix = {
         time = nil,
         pages_left = "=>",
         battery = "B:",
-        percentage = nil,
+        percentage = "R:",
         book_time_to_read = "TB:",
         chapter_time_to_read = "TC:",
         frontlight = "L:",
@@ -49,7 +49,7 @@ local symbol_prefix = {
         time = "⌚",
         pages_left = "⇒",
         battery = "⚡",
-        percentage = "◔",
+        percentage = "⤠",
         book_time_to_read = "⏳",
         chapter_time_to_read = "⤻",
         frontlight = "☼",
@@ -120,7 +120,7 @@ local footerTextGeneratorMap = {
     percentage = function(footer)
         local symbol_type = footer.settings.item_prefix or "icons"
         local prefix = symbol_prefix[symbol_type].percentage
-        local digits = footer.settings.progress_perc_format or "0"
+        local digits = footer.settings.progress_pct_format or "0"
         local string_percentage
         if not prefix then
             string_percentage = "%." .. digits .. "f%%"
@@ -541,8 +541,32 @@ function ReaderFooter:addToMainMenu(menu_items)
     table.insert(sub_items, {
         text = _("Settings"),
         sub_item_table = {
+            getMinibarOption("all_at_once", self.updateFooterTextGenerator),
+            getMinibarOption("reclaim_height"),
+            {
+                text = _("Auto refresh time"),
+                separator = true,
+                checked_func = function()
+                    return self.settings.auto_refresh_time == true
+                end,
+                -- only enable auto refresh when time is shown
+                enabled_func = function() return self.settings.time end,
+                callback = function()
+                    self.settings.auto_refresh_time = not self.settings.auto_refresh_time
+                    G_reader_settings:saveSetting("footer", self.settings)
+                    if self.settings.auto_refresh_time then
+                        self:setupAutoRefreshTime()
+                    else
+                        UIManager:unschedule(self.autoRefreshTime)
+                        self.onCloseDocument = nil
+                    end
+                end
+            },
             {
                 text = _("Alignment"),
+                enabled_func = function()
+                    return self.settings.disable_progress_bar
+                end,
                 sub_item_table = {
                     {
                         text = _("Center"),
@@ -586,7 +610,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 }
             },
             {
-                text = _("Text prefix"),
+                text = _("Prefix"),
                 sub_item_table = {
                     {
                         text = _("Icons"),
@@ -613,15 +637,15 @@ function ReaderFooter:addToMainMenu(menu_items)
                 },
             },
             {
-                text = _("Text separator"),
+                text = _("Separator"),
                 sub_item_table = {
                     {
                         text = _("Vertical line") .. " (|)",
                         checked_func = function()
-                            return self.settings.text_separator == "bar" or self.settings.text_separator == nil
+                            return self.settings.items_separator == "bar" or self.settings.items_separator == nil
                         end,
                         callback = function()
-                            self.settings.text_separator = "bar"
+                            self.settings.items_separator = "bar"
                             self:updateFooter()
                             UIManager:setDirty(nil, "ui")
                         end,
@@ -629,21 +653,21 @@ function ReaderFooter:addToMainMenu(menu_items)
                     {
                         text = _("Bullet") .. " (•)",
                         checked_func = function()
-                            return self.settings.text_separator == "bullet"
+                            return self.settings.items_separator == "bullet"
                         end,
                         callback = function()
-                            self.settings.text_separator = "bullet"
+                            self.settings.items_separator = "bullet"
                             self:updateFooter()
                             UIManager:setDirty(nil, "ui")
                         end,
                     },
                     {
-                        text = _("Without separator"),
+                        text = _("No separator"),
                         checked_func = function()
-                            return self.settings.text_separator == "none"
+                            return self.settings.items_separator == "none"
                         end,
                         callback = function()
-                            self.settings.text_separator = "none"
+                            self.settings.items_separator = "none"
                             self:updateFooter()
                             UIManager:setDirty(nil, "ui")
                         end,
@@ -744,12 +768,9 @@ function ReaderFooter:addToMainMenu(menu_items)
             },
         }
     })
-    table.insert(sub_items,
-                 getMinibarOption("all_at_once", self.updateFooterTextGenerator))
-    table.insert(sub_items,
-                 getMinibarOption("reclaim_height"))
     table.insert(sub_items, {
         text = _("Progress bar"),
+        separator = true,
         sub_item_table = {
             {
                 text = _("Show progress bar"),
@@ -764,24 +785,6 @@ function ReaderFooter:addToMainMenu(menu_items)
             },
             getMinibarOption("toc_markers", self.setTocMarkers),
         }
-    })
-    table.insert(sub_items, {
-        text = _("Auto refresh time"),
-        checked_func = function()
-            return self.settings.auto_refresh_time == true
-        end,
-        -- only enable auto refresh when time is shown
-        enabled_func = function() return self.settings.time end,
-        callback = function()
-            self.settings.auto_refresh_time = not self.settings.auto_refresh_time
-            G_reader_settings:saveSetting("footer", self.settings)
-            if self.settings.auto_refresh_time then
-                self:setupAutoRefreshTime()
-            else
-                UIManager:unschedule(self.autoRefreshTime)
-                self.onCloseDocument = nil
-            end
-        end
     })
     table.insert(sub_items, getMinibarOption("page_progress"))
     table.insert(sub_items, getMinibarOption("time"))
@@ -805,9 +808,9 @@ function ReaderFooter:genFooterText() end
 function ReaderFooter:genAllFooterText()
     local info = {}
     local separator = "  "
-    if self.settings.text_separator == "bar" or self.settings.text_separator == nil then
+    if self.settings.items_separator == "bar" or self.settings.items_separator == nil then
         separator = " | "
-    elseif self.settings.text_separator == "bullet" then
+    elseif self.settings.items_separator == "bullet" then
         separator = " • "
     end
     for _, gen in ipairs(self.footerTextGenerators) do

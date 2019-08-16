@@ -108,7 +108,7 @@ end
 ---- @treturn string clock string in the form of 1h30' or 1h30'10''
 function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
     seconds = tonumber(seconds)
-    if seconds == 0 or seconds ~= seconds then
+    if seconds == 0 then
         if withoutSeconds then
             if hmsFormat then
                 return T(_("%1m"), "0")
