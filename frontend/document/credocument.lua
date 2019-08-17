@@ -782,6 +782,11 @@ function CreDocument:setStatusLineProp(prop)
     self._document:setStringProperty("window.status.line", prop)
 end
 
+function CreDocument:setBackgroundImage(img_path) -- use nil to unset
+    logger.dbg("CreDocument: set background image", img_path)
+    self._document:setBackgroundImage(img_path)
+end
+
 function CreDocument:findText(pattern, origin, reverse, caseInsensitive)
     logger.dbg("CreDocument: find text", pattern, origin, reverse, caseInsensitive)
     return self._document:findText(
