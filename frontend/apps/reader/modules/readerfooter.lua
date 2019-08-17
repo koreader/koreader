@@ -565,7 +565,7 @@ function ReaderFooter:addToMainMenu(menu_items)
             {
                 text = _("Alignment"),
                 enabled_func = function()
-                    return self.settings.disable_progress_bar
+                    return not self.settings.disable_progress_bar == false
                 end,
                 sub_item_table = {
                     {
@@ -740,7 +740,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 }
             },
             {
-                text = _("Durations format"),
+                text = _("Duration format"),
                 sub_item_table = {
                     {
                         text = _("Modern"),
