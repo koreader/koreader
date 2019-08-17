@@ -705,6 +705,7 @@ function ReaderHighlight:viewSelectionHTML(debug_view)
                     table.insert(buttons_table, {button})
                 end
             end
+            local next_debug_text
             local next_debug_view = debug_view + 1
             if next_debug_view == 1 then
                 next_debug_text = _("Switch to debug view")
