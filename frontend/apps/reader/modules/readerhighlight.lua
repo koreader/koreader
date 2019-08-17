@@ -632,17 +632,22 @@ function ReaderHighlight:viewSelectionHTML(debug_view)
     if self.selected_text and self.selected_text.pos0 and self.selected_text.pos1 then
         -- For available flags, see the "#define WRITENODEEX_*" in crengine/src/lvtinydom.cpp
         local html_flags = 0x3030 -- valid and classic displayed HTML, with only block nodes indented
-        if debug_view then
+        if not debug_view then
+            debug_view = 0
+        end
+        if debug_view == 1 then
             -- Each node on a line, with markers and numbers of skipped chars and siblings shown,
             -- with possibly invalid HTML (text nodes not escaped)
             html_flags = 0x3353
-            -- html_flags = 0x3753 -- use this to additionally see rendering methods
+        elseif debug_view == 2 then
+            -- Additionally see rendering methods and unicode codepoint of each char
+            html_flags = 0x3757
         end
         local html, css_files = self.ui.document:getHTMLFromXPointers(self.selected_text.pos0,
                                     self.selected_text.pos1, html_flags, true)
         if html then
             -- Make some invisible chars visible
-            if debug_view then
+            if debug_view >= 1 then
                 html = html:gsub("\xC2\xA0", "␣")  -- no break space: open box
                 html = html:gsub("\xC2\xAD", "⋅") -- soft hyphen: dot operator (smaller than middle dot ·)
                 -- Prettify inlined CSS (from <HEAD>, put in an internal
@@ -700,11 +705,20 @@ function ReaderHighlight:viewSelectionHTML(debug_view)
                     table.insert(buttons_table, {button})
                 end
             end
+            local next_debug_view = debug_view + 1
+            if next_debug_view == 1 then
+                next_debug_text = _("Switch to debug view")
+            elseif next_debug_view == 2 then
+                next_debug_text = _("Switch to extended debug view")
+            else
+                next_debug_view = 0
+                next_debug_text = _("Switch to standard view")
+            end
             table.insert(buttons_table, {{
-                text = debug_view and _("Switch to standard view") or _("Switch to debug view"),
+                text = next_debug_text,
                 callback = function()
                     UIManager:close(textviewer)
-                    self:viewSelectionHTML(not debug_view)
+                    self:viewSelectionHTML(next_debug_view)
                 end,
             }})
             table.insert(buttons_table, {{
