@@ -565,7 +565,7 @@ function ReaderFooter:addToMainMenu(menu_items)
             {
                 text = _("Alignment"),
                 enabled_func = function()
-                    return self.settings.disable_progress_bar
+                    return self.settings.disable_progress_bar == true
                 end,
                 sub_item_table = {
                     {
@@ -613,7 +613,13 @@ function ReaderFooter:addToMainMenu(menu_items)
                 text = _("Prefix"),
                 sub_item_table = {
                     {
-                        text = _("Icons"),
+                        text_func = function()
+                            local sym_tbl = {}
+                            for _, letter in pairs(symbol_prefix.icons) do
+                                table.insert(sym_tbl, letter)
+                            end
+                            return T(_("Icons (%1)"), table.concat(sym_tbl, " "))
+                        end,
                         checked_func = function()
                             return self.settings.item_prefix == "icons" or self.settings.item_prefix == nil
                         end,
@@ -624,7 +630,13 @@ function ReaderFooter:addToMainMenu(menu_items)
                         end,
                     },
                     {
-                        text = _("Letters"),
+                        text_func = function()
+                            local sym_tbl = {}
+                            for _, letter in pairs(symbol_prefix.letters) do
+                                table.insert(sym_tbl, letter)
+                            end
+                            return T(_("Letters (%1)"), table.concat(sym_tbl, " "))
+                        end,
                         checked_func = function()
                             return self.settings.item_prefix == "letters"
                         end,
@@ -678,7 +690,9 @@ function ReaderFooter:addToMainMenu(menu_items)
                 text = _("Progress percentage format"),
                 sub_item_table = {
                     {
-                        text = T(_("No decimal point (%1)"), self:progressPercentage(0)),
+                        text_func = function()
+                            return T(_("No decimal point (%1)"), self:progressPercentage(0))
+                        end,
                         checked_func = function()
                             return self.settings.progress_pct_format == "0" or self.settings.progress_pct_format == nil
                         end,
@@ -689,7 +703,9 @@ function ReaderFooter:addToMainMenu(menu_items)
                         end,
                     },
                     {
-                        text = T(_("1 digit after decimal point (%1)"), self:progressPercentage(1)),
+                        text_func = function()
+                            return T(_("1 digit after decimal point (%1)"), self:progressPercentage(1))
+                        end,
                         checked_func = function()
                             return self.settings.progress_pct_format == "1"
                         end,
@@ -700,7 +716,9 @@ function ReaderFooter:addToMainMenu(menu_items)
                         end,
                     },
                     {
-                        text = T(_("2 digits after decimal point (%1)"), self:progressPercentage(2)),
+                        text_func = function()
+                            return T(_("2 digits after decimal point (%1)"), self:progressPercentage(2))
+                        end,
                         checked_func = function()
                             return self.settings.progress_pct_format == "2"
                         end,
@@ -716,7 +734,13 @@ function ReaderFooter:addToMainMenu(menu_items)
                 text = _("Time format"),
                 sub_item_table = {
                     {
-                        text = _("24-hour"),
+                        text_func = function()
+                            local footer = {}
+                            footer.settings = {}
+                            footer.settings.time_format = "24"
+                            footer.settings.item_prefix = self.settings.item_prefix or "icons"
+                            return T(_("24-hour (%1)"),footerTextGeneratorMap.time(footer))
+                        end,
                         checked_func = function()
                             return self.settings.time_format == "24" or self.settings.time_format == nil
                         end,
@@ -727,7 +751,13 @@ function ReaderFooter:addToMainMenu(menu_items)
                         end,
                     },
                     {
-                        text = _("12-hour"),
+                        text_func = function()
+                            local footer = {}
+                            footer.settings = {}
+                            footer.settings.time_format = "12"
+                            footer.settings.item_prefix = self.settings.item_prefix or "icons"
+                            return T(_("12-hour (%1)"),footerTextGeneratorMap.time(footer))
+                        end,
                         checked_func = function()
                             return self.settings.time_format == "12"
                         end,
@@ -740,10 +770,17 @@ function ReaderFooter:addToMainMenu(menu_items)
                 }
             },
             {
-                text = _("Durations format"),
+                text = _("Duration format"),
                 sub_item_table = {
                     {
-                        text = _("Modern"),
+                        text_func = function()
+                            local current_duration_format = self.settings.duration_format
+                            local return_text
+                            self.settings.duration_format = "modern"
+                            return_text = footerTextGeneratorMap.book_time_to_read(self)
+                            self.settings.duration_format = current_duration_format
+                            return T(_("Modern (%1)"), return_text)
+                        end,
                         checked_func = function()
                             return self.settings.duration_format == "modern" or self.settings.duration_format == nil
                         end,
@@ -754,7 +791,14 @@ function ReaderFooter:addToMainMenu(menu_items)
                         end,
                     },
                     {
-                        text = _("Classic"),
+                        text_func = function()
+                            local current_duration_format = self.settings.duration_format
+                            local return_text
+                            self.settings.duration_format = "classic"
+                            return_text = footerTextGeneratorMap.book_time_to_read(self)
+                            self.settings.duration_format = current_duration_format
+                            return T(_("Classic (%1)"), return_text)
+                        end,
                         checked_func = function()
                             return self.settings.duration_format == "classic"
                         end,
