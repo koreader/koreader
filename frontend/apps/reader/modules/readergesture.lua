@@ -252,6 +252,29 @@ function ReaderGesture:addToMainMenu(menu_items)
         local action_name = gesture_manager[gesture] ~= "nothing" and action_strings[gesture_manager[gesture]] or _("Available")
         return T(_("%1   (%2)"), gesture_name, action_name)
     end
+    local corner_tap_submenu = {
+        text = _("Tap corner"),
+        sub_item_table = {
+            {
+                text = _("Tap top left corner"),
+                enabled_func = function() return self.ges_mode == "gesture_reader" end,
+                sub_item_table = self:buildMenu("tap_top_left_corner", self.default_gesture["tap_top_left_corner"]),
+            },
+            {
+                text = _("Tap top right corner"),
+                sub_item_table = self:buildMenu("tap_top_right_corner", self.default_gesture["tap_top_right_corner"]),
+            },
+            {
+                text = _("Tap bottom left corner"),
+                sub_item_table = self:buildMenu("tap_left_bottom_corner", self.default_gesture["tap_left_bottom_corner"]),
+            },
+            {
+                text = _("Tap bottom right corner"),
+                sub_item_table = self:buildMenu("tap_right_bottom_corner", self.default_gesture["tap_right_bottom_corner"]),
+                separator = true,
+            },
+        }
+    }
     local corner_hold_submenu = {
         text = _("Hold corner"),
         sub_item_table = {
@@ -356,24 +379,7 @@ function ReaderGesture:addToMainMenu(menu_items)
             },
             -- NB If this changes from position 3, also update the position of this menu in multigesture recorder callback
             self:genMultiswipeSubmenu(),
-            {
-                text = _("Tap top left corner"),
-                enabled_func = function() return self.ges_mode == "gesture_reader" end,
-                sub_item_table = self:buildMenu("tap_top_left_corner", self.default_gesture["tap_top_left_corner"]),
-            },
-            {
-                text = _("Tap top right corner"),
-                sub_item_table = self:buildMenu("tap_top_right_corner", self.default_gesture["tap_top_right_corner"]),
-            },
-            {
-                text = _("Tap bottom left corner"),
-                sub_item_table = self:buildMenu("tap_left_bottom_corner", self.default_gesture["tap_left_bottom_corner"]),
-            },
-            {
-                text = _("Tap bottom right corner"),
-                sub_item_table = self:buildMenu("tap_right_bottom_corner", self.default_gesture["tap_right_bottom_corner"]),
-                separator = true,
-            },
+            corner_tap_submenu,
             corner_hold_submenu,
             {
                 text = _("Short diagonal swipe"),
