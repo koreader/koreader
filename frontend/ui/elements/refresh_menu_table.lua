@@ -1,30 +1,51 @@
+local Device = require("device")
 local UIManager = require("ui/uimanager")
-local util = require("ffi/util")
 local _ = require("gettext")
+local Screen = Device.screen
+local T = require("ffi/util").template
 
-local function custom_1() return G_reader_settings:readSetting("refresh_rate_1") or 12 end
-
-local function custom_2() return G_reader_settings:readSetting("refresh_rate_2") or 22 end
-
-local function custom_3() return G_reader_settings:readSetting("refresh_rate_3") or 99 end
-
-local function custom_input(name)
-    return {
-        title = _("Input page number for a full refresh"),
-        type = "number",
-        hint = "(1 - 99)",
-        callback = function(input)
-            local rate = tonumber(input)
-            G_reader_settings:saveSetting(name, rate)
-            UIManager:setRefreshRate(rate)
-        end,
-    }
+local function custom(refresh_rate_type)
+    local default_value
+    if refresh_rate_type == "refresh_rate_1" then
+        default_value = 12
+    elseif refresh_rate_type == "refresh_rate_2" then
+        default_value = 22
+    else
+        default_value = 99
+    end
+    return G_reader_settings:readSetting(refresh_rate_type) or default_value
 end
+
+local function spinWidgetSetRefresh(touchmenu_instance, refresh_rate_type)
+    local SpinWidget = require("ui/widget/spinwidget")
+    local items = SpinWidget:new{
+        width = Screen:getWidth() * 0.6,
+        value = custom(refresh_rate_type),
+        value_min = 0,
+        value_max = 200,
+        value_step = 1,
+        value_hold_step = 10,
+        ok_text = _("Set refresh"),
+        title_text = _("Set custom refresh rate"),
+        callback = function(spin)
+            G_reader_settings:saveSetting(refresh_rate_type, spin.value)
+            UIManager:setRefreshRate(spin.value)
+            touchmenu_instance:updateItems()
+        end
+    }
+    UIManager:show(items)
+end
+
 
 return {
     text = _("Full refresh rate"),
     separator = true,
     sub_item_table = {
+        {
+            text = _("Never refresh"),
+            checked_func = function() return UIManager:getRefreshRate() == 0 end,
+            callback = function() UIManager:setRefreshRate(0) end,
+        },
         {
             text = _("Every page"),
             checked_func = function() return UIManager:getRefreshRate() == 1 end,
@@ -37,36 +58,33 @@ return {
         },
         {
             text_func = function()
-                return util.template(
-                    _("Custom 1: %1 pages"),
-                    custom_1()
-                )
+                return T(_("Custom 1: %1 pages"), custom("refresh_rate_1"))
             end,
-            checked_func = function() return UIManager:getRefreshRate() == custom_1() end,
-            callback = function() UIManager:setRefreshRate(custom_1()) end,
-            hold_input = custom_input("refresh_rate_1")
+            checked_func = function() return UIManager:getRefreshRate() == custom("refresh_rate_1") end,
+            callback = function() UIManager:setRefreshRate(custom("refresh_rate_1")) end,
+            hold_callback = function(touchmenu_instance)
+                spinWidgetSetRefresh(touchmenu_instance, "refresh_rate_1")
+            end,
         },
         {
             text_func = function()
-                return util.template(
-                    _("Custom 2: %1 pages"),
-                    custom_2()
-                )
+                return T(_("Custom 2: %1 pages"), custom("refresh_rate_2"))
             end,
-            checked_func = function() return UIManager:getRefreshRate() == custom_2() end,
-            callback = function() UIManager:setRefreshRate(custom_2()) end,
-            hold_input = custom_input("refresh_rate_2")
+            checked_func = function() return UIManager:getRefreshRate() == custom("refresh_rate_2") end,
+            callback = function() UIManager:setRefreshRate(custom("refresh_rate_2")) end,
+            hold_callback = function(touchmenu_instance)
+                spinWidgetSetRefresh(touchmenu_instance, "refresh_rate_2")
+            end,
         },
         {
             text_func = function()
-                return util.template(
-                    _("Custom 3: %1 pages"),
-                    custom_3()
-                )
+                return T(_("Custom 3: %1 pages"), custom("refresh_rate_3"))
             end,
-            checked_func = function() return UIManager:getRefreshRate() == custom_3() end,
-            callback = function() UIManager:setRefreshRate(custom_3()) end,
-            hold_input = custom_input("refresh_rate_3")
+            checked_func = function() return UIManager:getRefreshRate() == custom("refresh_rate_3") end,
+            callback = function() UIManager:setRefreshRate(custom("refresh_rate_3")) end,
+            hold_callback = function(touchmenu_instance)
+                spinWidgetSetRefresh(touchmenu_instance, "refresh_rate_3")
+            end,
         },
         {
             text = _("Every chapter"),
