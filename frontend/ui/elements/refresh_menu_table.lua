@@ -4,23 +4,23 @@ local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
 
-local function custom(refresh_rate_type)
+local function custom(refresh_rate_num)
     local default_value
-    if refresh_rate_type == "refresh_rate_1" then
+    if refresh_rate_num == "refresh_rate_1" then
         default_value = 12
-    elseif refresh_rate_type == "refresh_rate_2" then
+    elseif refresh_rate_num == "refresh_rate_2" then
         default_value = 22
     else
         default_value = 99
     end
-    return G_reader_settings:readSetting(refresh_rate_type) or default_value
+    return G_reader_settings:readSetting(refresh_rate_num) or default_value
 end
 
-local function spinWidgetSetRefresh(touchmenu_instance, refresh_rate_type)
+local function spinWidgetSetRefresh(touchmenu_instance, refresh_rate_num)
     local SpinWidget = require("ui/widget/spinwidget")
     local items = SpinWidget:new{
         width = Screen:getWidth() * 0.6,
-        value = custom(refresh_rate_type),
+        value = custom(refresh_rate_num),
         value_min = 0,
         value_max = 200,
         value_step = 1,
@@ -28,7 +28,7 @@ local function spinWidgetSetRefresh(touchmenu_instance, refresh_rate_type)
         ok_text = _("Set refresh"),
         title_text = _("Set custom refresh rate"),
         callback = function(spin)
-            G_reader_settings:saveSetting(refresh_rate_type, spin.value)
+            G_reader_settings:saveSetting(refresh_rate_num, spin.value)
             UIManager:setRefreshRate(spin.value)
             touchmenu_instance:updateItems()
         end
@@ -42,7 +42,7 @@ return {
     separator = true,
     sub_item_table = {
         {
-            text = _("Never refresh"),
+            text = _("Never"),
             checked_func = function() return UIManager:getRefreshRate() == 0 end,
             callback = function() UIManager:setRefreshRate(0) end,
         },
