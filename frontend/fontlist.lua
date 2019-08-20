@@ -65,6 +65,8 @@ end
 local function getExternalFontDir()
     if CanvasContext.isAndroid() then
         return ANDROID_FONT_DIR
+    elseif CanvasContext.isDesktop() then
+        return require("frontend/ui/elements/font_settings"):getPath()
     else
         return os.getenv("EXT_FONT_DIR")
     end

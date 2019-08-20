@@ -37,6 +37,7 @@ The following key is required for a device object:
 function CanvasContext:init(device)
     self.screen = device.screen
     self.isAndroid = device.isAndroid
+    self.isDesktop = device.isDesktop
     self.isKindle = device.isKindle
     self.should_restrict_JIT = device.should_restrict_JIT
     self:setColorRenderingEnabled(device.screen.isColorEnabled())
