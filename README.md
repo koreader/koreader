@@ -39,7 +39,16 @@ Please check the [wiki][link-wiki] to discover more features and to help us docu
 
 ## Installation
 
-Installation instructions for each platform are available on the [wiki][link-wiki].
+Please follow the model specific steps for your device:
+
+[Android](https://github.com/koreader/koreader/wiki/Installation-on-Android-devices) •
+[Cervantes](https://github.com/koreader/koreader/wiki/Installation-on-BQ-devices) •
+[Kindle](https://github.com/koreader/koreader/wiki/Installation-on-Kindle-devices) •
+[Kobo](https://github.com/koreader/koreader/wiki/Installation-on-Kobo-devices) •
+[Linux](https://github.com/koreader/koreader/wiki/Installation-on-desktop-linux) •
+[Pocketbook](https://github.com/koreader/koreader/wiki/Installation-on-PocketBook-devices)
+
+
 
 ## Development
 
