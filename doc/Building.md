@@ -109,7 +109,7 @@ Once you have the emulator ready to rock you can [build for other platforms too]
 You may need to check out the [circleci config file][circleci-conf] to setup up
 a proper testing environment. 
 
-Briefly, you need to install `luarocks` and then install `busted` with `luarocks`. The "eng" language data file for tesseract-ocr is also need to test OCR functionality. Finally, make sure that `luajit` in your system is at least of version 2.0.2.
+Briefly, you need to install `luarocks` and then install `busted` and `ansicolors` with `luarocks`. The "eng" language data file for tesseract-ocr is also need to test OCR functionality. Finally, make sure that `luajit` in your system is at least of version 2.0.2.
 
 To automatically set up a number of primarily luarocks-related environment variables:
 
@@ -129,8 +129,6 @@ To run a specific unit test (for test development):
 ```
 ./kodev test front readerbookmark_spec.lua
 ```
-
-NOTE: Extra dependencies for tests: `busted` and `ansicolors` from luarocks.
 
 To run Lua static analysis:
 
