@@ -49,6 +49,9 @@ function ReaderFont:init()
     end
     -- build face_table for menu
     self.face_table = {}
+    if Device:isDesktop() then
+        table.insert(self.face_table, require("ui/elements/font_settings"):getMenuTable())
+    end
     local face_list = cre.getFontFaces()
     for k,v in ipairs(face_list) do
         table.insert(self.face_table, {

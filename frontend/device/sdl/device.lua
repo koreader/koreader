@@ -6,6 +6,42 @@ local logger = require("logger")
 local function yes() return true end
 local function no() return false end
 
+-- xdg-open is used on most linux systems
+local function hasXdgOpen()
+    local std_out = io.popen("xdg-open --version 2>/dev/null")
+    local version = nil
+    if std_out ~= nil then
+        version = std_out:read()
+        std_out:close()
+    end
+    return version ~= nil
+end
+
+-- open is the macOS counterpart
+local function hasMacOpen()
+    local std_out = io.popen("open")
+    local all = nil
+    if std_out ~= nil then
+        all = std_out:read()
+        std_out:close()
+    end
+    return all ~= nil
+end
+
+-- get the name of the binary used to open links
+local function getLinkOpener()
+    local enabled = false
+    local tool = nil
+    if jit.os == "Linux" and hasXdgOpen() then
+        enabled = true
+        tool = "xdg-open"
+    elseif jit.os == "OSX" and hasMacOpen() then
+        enabled = true
+        tool = "open"
+    end
+    return enabled, tool
+end
+
 local Device = Generic:new{
     model = "SDL",
     isSDL = yes,
@@ -17,10 +53,11 @@ local Device = Generic:new{
     needsScreenRefreshAfterResume = no,
     hasColorScreen = yes,
     hasEinkScreen = no,
-    canOpenLink = yes,
+    canOpenLink = getLinkOpener,
     openLink = function(self, link)
-        if not link or type(link) ~= "string" then return end
-        return os.execute("xdg-open '"..link.."'") == 0
+        local enabled, tool = getLinkOpener()
+        if not enabled or not tool or not link or type(link) ~= "string" then return end
+        return os.execute(tool.." '"..link.."'") == 0
     end,
 }
 
@@ -28,6 +65,7 @@ local AppImage = Device:new{
     model = "AppImage",
     hasMultitouch = no,
     hasOTAUpdates = yes,
+    isDesktop = yes,
 }
 
 local Emulator = Device:new{
@@ -37,10 +75,12 @@ local Emulator = Device:new{
     hasFrontlight = yes,
     hasWifiToggle = yes,
     hasWifiManager = yes,
+    isDesktop = yes,
 }
 
 local Linux = Device:new{
     model = "Linux",
+    isDesktop = yes,
 }
 
 local UbuntuTouch = Device:new{

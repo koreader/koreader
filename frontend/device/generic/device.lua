@@ -40,6 +40,9 @@ local Device = {
     canToggleGSensor = no,
     canToggleMassStorage = no,
     canUseWAL = yes, -- requires mmap'ed I/O on the target FS
+    canRestart = yes,
+    canReboot = no,
+    canPowerOff = no,
 
     -- use these only as a last resort. We should abstract the functionality
     -- and have device dependent implementations in the corresponting
@@ -53,9 +56,7 @@ local Device = {
     isSonyPRSTUX = no,
     isSDL = no,
     isEmulator = no,
-    canRestart = yes,
-    canReboot = no,
-    canPowerOff = no,
+    isDesktop = no,
 
     -- some devices have part of their screen covered by the bezel
     viewport = nil,

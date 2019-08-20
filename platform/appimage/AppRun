@@ -10,9 +10,6 @@ cd "${KOREADER_DIR}" || exit
 # export load library path
 export LD_LIBRARY_PATH=${KOREADER_DIR}/libs:$LD_LIBRARY_PATH
 
-# export external font directory
-export EXT_FONT_DIR="${HOME}/.fonts"
-
 RETURN_VALUE=85
 
 if [ $# -eq 0 ]; then
