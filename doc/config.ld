@@ -7,13 +7,13 @@ style = '!fixed'
 use_markdown_titles = true
 topics = {
     '../README.md',
-    './Collaborating with Git.md',
+    './Collaborating_with_Git.md',
     './DataStore.md',
-    './Development guide.md',
+    './Development_guide.md',
     './Events.md',
     './Hacking.md',
     './Porting.md',
-    './Unit tests.md',
+    './Unit_tests.md',
 }
 package = ''
 format = 'markdown'
