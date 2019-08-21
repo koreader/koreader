@@ -168,8 +168,8 @@ h1 + h6, h2 + h6, h3 + h6, h4 + h6, h5 + h6 { page-break-before: avoid !importan
             title = _("Widows and orphans"),
             {
                 title = _("About widow and orphan lines"),
-                info_text = _([[
-Widows and orphans are lines at the beginning or end of a paragraph, which are left dangling at the top or bottom of a page, separated from the rest of the paragraph.
+                info_text = _(
+[[Widows and orphans are lines at the beginning or end of a paragraph, which are left dangling at the top or bottom of a page, separated from the rest of the paragraph.
 The first line of a paragraph alone at the bottom of a page is called an orphan line.
 The last line of a paragraph alone at the top of a page is called a widow line.
 
@@ -202,8 +202,8 @@ DocFragment {
             {
                 id = "widows_avoid_orphans_allow";
                 title = _("Avoid widows but allow orphans"),
-                description = _([[
-Avoid widow lines, but allow orphan lines, allowing for some possible blank space at the bottom of pages.
+                description = _(
+[[Avoid widow lines, but allow orphan lines, allowing for some possible blank space at the bottom of pages.
 Allowing orphans avoids ambiguous blank space at the bottom of a page, which could otherwise be confused with real spacing between paragraphs.]]),
                 css = [[
 body { orphans: 1; widows: 2; }
@@ -274,8 +274,8 @@ h1, h2, h3, h4, h5, h6 { hyphens: none !important; }
         {
             id = "paragraph_web_browser_style";
             title = _("Generic web browser paragraph style"),
-            description = _([[
-Display paragraphs as browsers do, in full-block style without indentation or justification, discarding KOReader's book paragraph style.
+            description = _(
+[[Display paragraphs as browsers do, in full-block style without indentation or justification, discarding KOReader's book paragraph style.
 This might be needed with some documents that expect this style as the default, and only use CSS when it needs to diverge from this default.]]),
             priority = -1,
             css = [[
@@ -420,8 +420,8 @@ width: 100% !important;
             title = _("Alternative TOC hints"),
             {
                 title = _("About alternative TOC"),
-                info_text = _([[
-An alternative table of contents can be built with a long-press on the "Table of contents" menu item.
+                info_text = _(
+[[An alternative table of contents can be built with a long-press on the "Table of contents" menu item.
 
 The TOC will be built from document headings <H1> to <H6>. Some of these can be ignored with the tweaks available here.
 If the document contains no headings, or all are ignored, the alternative TOC will be built from document fragments and will point to the start of each individual HTML file in the EPUB.
@@ -470,8 +470,8 @@ After applying these tweaks, the alternative TOC needs to be rebuilt by long-pre
             {
                 id = "alt_toc_level_example";
                 title = _("Example of book specific TOC hints"),
-                description = _([[
-If headings or document fragments do not result in a usable TOC, you can inspect the HTML and look for elements that contain chapter titles. Then you can set hints to their class names.
+                description = _(
+[[If headings or document fragments do not result in a usable TOC, you can inspect the HTML and look for elements that contain chapter titles. Then you can set hints to their class names.
 This is just an example, that will need to be adapted into a user style tweak.]]),
                 css = [[
 .book_n    { -cr-hint: toc-level1; }
@@ -486,8 +486,8 @@ This is just an example, that will need to be adapted into a user style tweak.]]
             {
                 id = "footnote-inpage_epub";
                 title = _("In-page EPUB footnotes"),
-                description = _([[
-Show EPUB footnote text at the bottom of pages that contain links to them.
+                description = _(
+[[Show EPUB footnote text at the bottom of pages that contain links to them.
 This only works with footnotes that have specific attributes set by the publisher.]]),
                 css = [[
 *[type~="note"],
@@ -505,8 +505,8 @@ This only works with footnotes that have specific attributes set by the publishe
             {
                 id = "footnote-inpage_epub_smaller";
                 title = _("In-page EPUB footnotes (smaller)"),
-                description = _([[
-Show EPUB footnote text at the bottom of pages that contain links to them.
+                description = _(
+[[Show EPUB footnote text at the bottom of pages that contain links to them.
 This only works with footnotes that have specific attributes set by the publisher.]]),
                 css = [[
 *[type~="note"],
@@ -559,8 +559,8 @@ ol.references > li > .mw-cite-backlink { display: none; }
             {
                 id = "footnote-inpage_classic_classnames";
                 title = _("In-page classic classname footnotes"),
-                description = _([[
-Show footnotes with classic class names at the bottom of pages.
+                description = _(
+[[Show footnotes with classic class names at the bottom of pages.
 This tweak can be duplicated as a user style tweak when books contain footnotes wrapped with other class names.]]),
                 css = [[
 .footnote, .note, .note1, .ntb, .ntb-txt, .ntb-txt-j
@@ -573,8 +573,8 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
             {
                 id = "footnote-inpage_classic_classnames_smaller";
                 title = _("In-page classic classname footnotes (smaller)"),
-                description = _([[
-Show footnotes with classic classname at the bottom of pages.
+                description = _(
+[[Show footnotes with classic classname at the bottom of pages.
 This tweak can be duplicated as a user style tweak when books contain footnotes wrapped with other class names.]]),
                 css = [[
 .footnote, .note, .note1, .ntb, .ntb-txt, .ntb-txt-j
@@ -589,8 +589,8 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
         {
             id = "epub_switch_show_case";
             title = _("Toggle alternative EPUB content"),
-            description = _([[
-The EPUB3 format allows a
+            description = _(
+[[The EPUB3 format allows a
 <epub:switch> <epub:case> <epub:default>
 construct to provide alternative content to engines that support optional features.
 KOReader currently falls back to hiding all <epub:case> content and shows the <epub:default> content (usually an image).

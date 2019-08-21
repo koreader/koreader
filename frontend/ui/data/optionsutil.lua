@@ -78,8 +78,8 @@ function optionsutil.showValuesHMargins(configurable, option)
     local current = configurable[option.name]
     if not default then
         UIManager:show(InfoMessage:new{
-            text = T(_([[
-Current margins:
+            text = T(_(
+[[Current margins:
   left:  %1
   right: %2
 Default margins: not set]]),
@@ -87,8 +87,8 @@ Default margins: not set]]),
         })
     else
         UIManager:show(InfoMessage:new{
-            text = T(_([[
-Current margins:
+            text = T(_(
+[[Current margins:
   left:  %1
   right: %2
 Default margins:
