@@ -10,10 +10,11 @@ They may have the following optional attributes:
 ]]
 
 local _ = require("gettext")
+local C_ = _.pgettext
 
 local CssTweaks = {
     {
-        title = _("Pages"),
+        title = C_("Menu|StyleTweaks|", "Pages"),
         {
             id = "margin_body_0";
             title = _("Ignore publisher page margins"),

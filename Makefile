@@ -462,15 +462,15 @@ pocketbook-toolchain:
 # for gettext
 DOMAIN=koreader
 TEMPLATE_DIR=l10n/templates
-KOREADER_MISC_TOOL=../koreader-misc
-XGETTEXT_BIN=$(KOREADER_MISC_TOOL)/gettext/lua_xgettext.py
+XGETTEXT_BIN=xgettext
 
 pot:
 	mkdir -p $(TEMPLATE_DIR)
-	$(XGETTEXT_BIN) reader.lua `find frontend -iname "*.lua"` \
+	$(XGETTEXT_BIN) --from-code=utf-8 --keyword=C_:1c,2 \
+		reader.lua `find frontend -iname "*.lua"` \
 		`find plugins -iname "*.lua"` \
 		`find tools -iname "*.lua"` \
-		> $(TEMPLATE_DIR)/$(DOMAIN).pot
+		-o $(TEMPLATE_DIR)/$(DOMAIN).pot
 	# push source file to Transifex
 	$(MAKE) -i -C l10n bootstrap
 	$(MAKE) -C l10n push
