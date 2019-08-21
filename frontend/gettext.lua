@@ -101,7 +101,7 @@ function GetText_mt.__index.changeLang(new_lang)
 end
 
 function GetText_mt.__index.pgettext(msgctxt, msgstr)
-    return GetText.context[msgctxt] and GetText.msgctxt[context][msgstr] or msgstr
+    return GetText.context[msgctxt] and GetText.context[msgctxt][msgstr] or msgstr
 end
 
 setmetatable(GetText, GetText_mt)
