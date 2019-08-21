@@ -6,14 +6,6 @@ source "${CI_DIR}/common.sh"
 
 set +e
 
-cat >~/.transifexrc <<EOF
-[https://www.transifex.com]
-hostname = https://www.transifex.com
-password = ${TRANSIFEX_TOKEN}
-username = api
-EOF
-make pot
-
 if [ -z "${CIRCLE_PULL_REQUEST}" ] && [ "${CIRCLE_BRANCH}" = 'master' ]; then
     echo "CIRCLE_NODE_INDEX: ${CIRCLE_NODE_INDEX}"
     if [ "$CIRCLE_NODE_INDEX" = 1 ]; then
