@@ -19,6 +19,7 @@ PW3 Yes
 KOA Yes
 KT2 Yes
 KOA2 Yes
+PW4 Yes
 
 REQUIRES: koreader
 
