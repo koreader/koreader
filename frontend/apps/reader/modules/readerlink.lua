@@ -131,8 +131,8 @@ function ReaderLink:addToMainMenu(menu_items)
                     G_reader_settings:saveSetting("tap_ignore_external_links",
                         not isTapIgnoreExternalLinksEnabled())
                 end,
-                help_text = _([[
-Ignore taps on external links. Useful with Wikipedia EPUBs to make page turning easier.
+                help_text = _(
+[[Ignore taps on external links. Useful with Wikipedia EPUBs to make page turning easier.
 You can still follow them from the dictionary window or the selection menu after holding on them.]]),
                 separator = true,
             },
@@ -162,8 +162,8 @@ You can still follow them from the dictionary window or the selection menu after
                     G_reader_settings:saveSetting("swipe_ignore_external_links",
                         not isSwipeIgnoreExternalLinksEnabled())
                 end,
-                help_text = _([[
-Ignore external links near swipe. Useful with Wikipedia EPUBs to follow only footnotes with swipe.
+                help_text = _(
+[[Ignore external links near swipe. Useful with Wikipedia EPUBs to follow only footnotes with swipe.
 You can still follow external links from the dictionary window or the selection menu after holding on them.]]),
                 separator = true,
             },
@@ -174,8 +174,8 @@ You can still follow external links from the dictionary window or the selection 
                     G_reader_settings:saveSetting("swipe_to_jump_to_latest_bookmark",
                         not isSwipeToJumpToLatestBookmarkEnabled())
                 end,
-                help_text = _([[
-Swipe to the left to go the most recently bookmarked page.
+                help_text = _(
+[[Swipe to the left to go the most recently bookmarked page.
 This can be useful to quickly swipe back and forth between what you are reading and some reference page (for example notes, a map or a characters list).
 If any of the other Swipe to follow link options is enabled, this will work only when the current page contains no link.]]),
             },
@@ -208,8 +208,8 @@ If any of the other Swipe to follow link options is enabled, this will work only
                 G_reader_settings:saveSetting("footnote_link_in_popup",
                     not isFootnoteLinkInPopupEnabled())
             end,
-            help_text = _([[
-Show internal link target content in a footnote popup when it looks like it might be a footnote, instead of following the link.
+            help_text = _(
+[[Show internal link target content in a footnote popup when it looks like it might be a footnote, instead of following the link.
 
 Note that depending on the book quality, footnote detection may not always work correctly.
 The footnote content may be empty, truncated, or include other footnotes.
@@ -246,8 +246,8 @@ From the footnote popup, you can jump to the footnote location in the book by sw
                     precision = "%+d",
                     ok_text = _("Set font size"),
                     title_text =  _("Set footnote popup font size"),
-                    text = _([[
-The footnote popup font adjusts to the font size you've set for the document.
+                    text = _(
+[[The footnote popup font adjusts to the font size you've set for the document.
 You can specify here how much smaller or larger it should be relative to the document font size.
 A negative value will make it smaller, while a positive one will make it larger.
 The recommended value is -2.]]),
@@ -256,8 +256,8 @@ The recommended value is -2.]]),
                     end,
                 })
             end,
-            help_text = _([[
-The footnote popup font adjusts to the font size you've set for the document.
+            help_text = _(
+[[The footnote popup font adjusts to the font size you've set for the document.
 This allows you to specify how much smaller or larger it should be relative to the document font size.]]),
             separator = true,
         })
