@@ -11,7 +11,7 @@ if [ -z "${CIRCLE_PULL_REQUEST}" ] && [ "${CIRCLE_BRANCH}" = 'master' ]; then
     if [ "$CIRCLE_NODE_INDEX" = 1 ]; then
         echo -e "\\n${ANSI_GREEN}Pushing translation to Transifex."
 
-        cat > ~/.transifexrc <<EOF
+        cat >~/.transifexrc <<EOF
 [https://www.transifex.com]
 hostname = https://www.transifex.com
 password = ${TRANSIFEX_TOKEN}
