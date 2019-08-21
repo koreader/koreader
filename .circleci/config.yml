@@ -1,5 +1,4 @@
 version: 2
-context: koreader-vars
 jobs:
   build:
     docker:
@@ -63,6 +62,7 @@ jobs:
 
       # docs, coverage, and test timing (can we use two outputs at once?); master branch only
       - run:
+          context: koreader-vars
           name: docs-and-coverage
           command: .ci/after_success.sh
       # by storing the test results CircleCI automatically distributes tests based on execution time
