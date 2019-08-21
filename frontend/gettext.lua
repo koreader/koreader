@@ -75,13 +75,14 @@ function GetText_mt.__index.changeLang(new_lang)
         local line = po:read("*l")
         if line == nil or line == "" then
             if data.msgid and data.msgstr and data.msgstr ~= "" then
+                local unescaped_string = string.gsub(data.msgstr, "\\(.)", c_escape)
                 if data.msgctxt and data.msgctxt ~= "" then
                     if not GetText.context[data.msgctxt] then
                         GetText.context[data.msgctxt] = {}
                     end
-                    GetText.context[data.msgctxt][data.msgid] = string.gsub(data.msgstr, "\\(.)", c_escape)
+                    GetText.context[data.msgctxt][data.msgid] = unescaped_string
                 else
-                    GetText.translation[data.msgid] = string.gsub(data.msgstr, "\\(.)", c_escape)
+                    GetText.translation[data.msgid] = unescaped_string
                 end
             end
             -- stop at EOF:
