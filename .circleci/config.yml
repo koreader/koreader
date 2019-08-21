@@ -1,6 +1,6 @@
 workflows:
   version: 2
-  my-workflow:
+  my-workflow-lala:
     jobs:
       build:
         context: koreader-vars
