@@ -52,7 +52,8 @@ local CreOptions = {
                         optionsutil.enableIfEquals(configurable, "view_mode", 0) -- "page"
                 end,
                 name_text_hold_callback = optionsutil.showValues,
-                help_text = _([[In landscape mode, you can choose to display one or two pages of the book on the screen.
+                help_text = _(
+[[In landscape mode, you can choose to display one or two pages of the book on the screen.
 Note that this may not be ensured under some conditions: in scroll mode, when a very big font size is used, or on devices with a very low aspect ratio.]]),
             },
         }
