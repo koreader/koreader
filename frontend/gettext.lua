@@ -21,9 +21,9 @@ function GetText_mt.__call(gettext, ...)
     end
     if argc == 2 then
         -- gettext.dgettext
-        local context = select(1, ...)
+        local domain = select(1, ...)
         local string = select(2, ...)
-        return gettext.context[context] and gettext.context[context][string] or string
+        return gettext.domain[domain] and gettext.domain[domain][string] or string
     end
     --if argc == 3 then -- gettext.ngettext end
     --if argc == 4 then -- gettext.dngettext end
@@ -49,7 +49,7 @@ end
 -- we only implement a sane subset for now
 
 function GetText_mt.__index.changeLang(new_lang)
-    GetText.context = {}
+    GetText.domain = {}
     GetText.translation = {}
     GetText.current_lang = "C"
 
@@ -77,10 +77,10 @@ function GetText_mt.__index.changeLang(new_lang)
             if data.msgid and data.msgstr and data.msgstr ~= "" then
                 local unescaped_string = string.gsub(data.msgstr, "\\(.)", c_escape)
                 if data.msgctxt and data.msgctxt ~= "" then
-                    if not GetText.context[data.msgctxt] then
-                        GetText.context[data.msgctxt] = {}
+                    if not GetText.domain[data.msgctxt] then
+                        GetText.domain[data.msgctxt] = {}
                     end
-                    GetText.context[data.msgctxt][data.msgid] = unescaped_string
+                    GetText.domain[data.msgctxt][data.msgid] = unescaped_string
                 else
                     GetText.translation[data.msgid] = unescaped_string
                 end
