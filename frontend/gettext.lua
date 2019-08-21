@@ -12,8 +12,8 @@ local GetText_mt = {
     __index = {}
 }
 
-function GetText_mt.__call(gettext, string)
-    return gettext.translation[string] or string
+function GetText_mt.__call(gettext, msgstr)
+    return gettext.translation[msgstr] or msgstr
 end
 
 local function c_escape(what)
@@ -36,6 +36,7 @@ end
 -- we only implement a sane subset for now
 
 function GetText_mt.__index.changeLang(new_lang)
+    GetText.context = {}
     GetText.translation = {}
     GetText.current_lang = "C"
 
@@ -61,7 +62,15 @@ function GetText_mt.__index.changeLang(new_lang)
         local line = po:read("*l")
         if line == nil or line == "" then
             if data.msgid and data.msgstr and data.msgstr ~= "" then
-                GetText.translation[data.msgid] = string.gsub(data.msgstr, "\\(.)", c_escape)
+                local unescaped_string = string.gsub(data.msgstr, "\\(.)", c_escape)
+                if data.msgctxt and data.msgctxt ~= "" then
+                    if not GetText.context[data.msgctxt] then
+                        GetText.context[data.msgctxt] = {}
+                    end
+                    GetText.context[data.msgctxt][data.msgid] = unescaped_string
+                else
+                    GetText.translation[data.msgid] = unescaped_string
+                end
             end
             -- stop at EOF:
             if line == nil then break end
@@ -89,6 +98,10 @@ function GetText_mt.__index.changeLang(new_lang)
         end
     end
     GetText.current_lang = new_lang
+end
+
+function GetText_mt.__index.pgettext(msgctxt, msgstr)
+    return GetText.context[msgctxt] and GetText.context[msgctxt][msgstr] or msgstr
 end
 
 setmetatable(GetText, GetText_mt)
