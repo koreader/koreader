@@ -14,7 +14,7 @@ local C_ = _.pgettext
 
 local CssTweaks = {
     {
-        title = C_("StyleTweaksCategory", "Pages"),
+        title = C_("Style tweaks category", "Pages"),
         {
             id = "margin_body_0";
             title = _("Ignore publisher page margins"),
