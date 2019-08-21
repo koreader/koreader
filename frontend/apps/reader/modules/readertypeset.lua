@@ -513,8 +513,8 @@ function ReaderTypeset:onSetPageMargins(margins, refresh_callback)
     if refresh_callback then
         -- Show a toast on set, with the unscaled & scaled values
         UIManager:show(InfoMessage:new{
-            text = T(_([[
-    Margins set to:
+            text = T(_(
+[[    Margins set to:
 
     horizontal: %1 (%2px)
     top: %3 (%4px)

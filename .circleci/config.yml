@@ -70,3 +70,10 @@ jobs:
       # CircleCI doesn't make the test results available as artifacts (October 2017)
       - store_artifacts:
           path: koreader-emulator-x86_64-linux-gnu/koreader/junit-test-results.xml
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - build:
+          context: koreader-vars

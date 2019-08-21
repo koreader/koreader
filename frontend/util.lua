@@ -921,7 +921,7 @@ function util.unpackArchive(archive, extract_to)
         return false, T(_("Couldn't extract archive:\n\n%1\n\nUnrecognized filename extension."), archive)
     end
     if not ok then
-        return false, T(_("Extracting archive failed:\n\n%1", archive))
+        return false, T(_("Extracting archive failed:\n\n%1"), archive)
     end
     return true
 end

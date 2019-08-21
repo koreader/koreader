@@ -664,8 +664,8 @@ function Wallabag:setFilterTag(touchmenu_instance)
 end
 
 function Wallabag:editServerSettings()
-    local text_info = T(_([[
-Enter the details of your Wallabag server and account.
+    local text_info = T(_(
+[[Enter the details of your Wallabag server and account.
 
 Client ID and client secret are long strings so you might prefer to save the empty settings and edit the config file directly in your installation directory:
 %1/wallabag.lua

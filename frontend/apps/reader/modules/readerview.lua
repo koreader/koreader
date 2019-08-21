@@ -739,8 +739,8 @@ end
 function ReaderView:onSetScrollMode(page_scroll)
     if self.ui.document.info.has_pages and page_scroll and self.ui.zooming.paged_modes[self.zoom_mode] then
         UIManager:show(InfoMessage:new{
-            text = _([[
-Continuous view (scroll mode) works best with zoom to page width or zoom to content width.
+            text = _(
+[[Continuous view (scroll mode) works best with zoom to page width or zoom to content width.
 
 In combination with zoom to fit page, page height, content height or content, continuous view can cause unexpected shifts when turning pages.]]),
             timeout = 5,

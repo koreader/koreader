@@ -342,8 +342,8 @@ end
 function ReaderZooming:setZoomMode(mode)
     if self.ui.view.page_scroll and self.paged_modes[mode] then
         UIManager:show(InfoMessage:new{
-            text = T(_([[
-%1
+            text = T(_(
+[[%1
 
 In combination with continuous view (scroll mode), this can cause unexpected vertical shifts when turning pages.]]), self.paged_modes[mode]),
             timeout = 5,
