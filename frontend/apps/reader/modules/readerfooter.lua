@@ -942,7 +942,7 @@ end
 function ReaderFooter:_updateFooterText(force_repaint)
     local text = self:genFooterText()
     if text then
-        self.footer_text:setText(self:genFooterText())
+        self.footer_text:setText(text)
     end
     if self.settings.disable_progress_bar then
         if self.has_no_mode or not text then
