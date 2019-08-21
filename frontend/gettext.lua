@@ -12,21 +12,8 @@ local GetText_mt = {
     __index = {}
 }
 
-function GetText_mt.__call(gettext, ...)
-    local argc = select("#", ...)
-    if argc == 1 then
-        -- gettext.gettext
-        local string = select(1, ...)
-        return gettext.translation[string] or string
-    end
-    if argc == 2 then
-        -- gettext.dgettext
-        local context = select(1, ...)
-        local string = select(2, ...)
-        return gettext.context[context] and gettext.context[context][string] or string
-    end
-    --if argc == 3 then -- gettext.ngettext end
-    --if argc == 4 then -- gettext.dngettext end
+function GetText_mt.__call(gettext, msgstr)
+    return gettext.translation[msgstr] or msgstr
 end
 
 local function c_escape(what)
@@ -111,6 +98,10 @@ function GetText_mt.__index.changeLang(new_lang)
         end
     end
     GetText.current_lang = new_lang
+end
+
+function GetText_mt.__index.pgettext(msgctxt, msgstr)
+    return GetText.context[msgctxt] and gettext.msgctxt[context][msgstr] or msgstr
 end
 
 setmetatable(GetText, GetText_mt)
