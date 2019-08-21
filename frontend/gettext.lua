@@ -12,8 +12,21 @@ local GetText_mt = {
     __index = {}
 }
 
-function GetText_mt.__call(gettext, string)
-    return gettext.translation[string] or string
+function GetText_mt.__call(gettext, ...)
+    local argc = select("#", ...)
+    if argc == 1 then
+        -- gettext.gettext
+        local string = select(1, ...)
+        return gettext.translation[string] or string
+    end
+    if argc == 2 then
+        -- gettext.dgettext
+        local context = select(1, ...)
+        local string = select(2, ...)
+        return gettext.context[context] and gettext.context[context][string] or string
+    end
+    --if argc == 3 then -- gettext.ngettext end
+    --if argc == 4 then -- gettext.dngettext end
 end
 
 local function c_escape(what)
@@ -36,6 +49,7 @@ end
 -- we only implement a sane subset for now
 
 function GetText_mt.__index.changeLang(new_lang)
+    GetText.context = {}
     GetText.translation = {}
     GetText.current_lang = "C"
 
@@ -61,7 +75,14 @@ function GetText_mt.__index.changeLang(new_lang)
         local line = po:read("*l")
         if line == nil or line == "" then
             if data.msgid and data.msgstr and data.msgstr ~= "" then
-                GetText.translation[data.msgid] = string.gsub(data.msgstr, "\\(.)", c_escape)
+                if data.msgctxt and data.msgctxt ~= "" then
+                    if not GetText.context[data.msgctxt] then
+                        GetText.context[data.msgctxt] = {}
+                    end
+                    GetText.context[data.msgctxt][data.msgid] = string.gsub(data.msgstr, "\\(.)", c_escape)
+                else
+                    GetText.translation[data.msgid] = string.gsub(data.msgstr, "\\(.)", c_escape)
+                end
             end
             -- stop at EOF:
             if line == nil then break end
