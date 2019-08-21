@@ -13,13 +13,13 @@ K4 Yes
 Touch Yes
 PW Yes
 PW2 Yes
-KT Yes
 Voyage Yes
 PW3 Yes
 KOA Yes
 KT2 Yes
 KOA2 Yes
 PW4 Yes
+KT3 Yes
 
 REQUIRES: koreader
 
