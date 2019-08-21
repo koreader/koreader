@@ -1,7 +1,7 @@
 version: 2
+context: koreader-vars
 jobs:
   build:
-    context: koreader-vars
     docker:
       - image: koreader/koappimage:0.1.5
         environment:
