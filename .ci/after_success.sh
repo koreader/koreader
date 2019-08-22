@@ -6,7 +6,6 @@ source "${CI_DIR}/common.sh"
 
 set +e
 
-
 echo -e "\\n${ANSI_GREEN}Checking out koreader/doc for update."
 git clone git@github.com:koreader/doc.git koreader_doc
 
