@@ -298,9 +298,25 @@ function OPDSBrowser:fetchFeed(item_url, username, password, method)
         if xml ~= "" then
             return xml
         end
+    elseif code == 301 then
+        UIManager:show(InfoMessage:new{
+            text = T(_("The catalog has been permanently moved. Please update catalog URL to '%1'."), headers['Location']),
+        })
+    elseif code == 401 then
+        UIManager:show(InfoMessage:new{
+            text = T(_("Authentication required for catalog. Please add a username and password.")),
+        })
+    elseif code == 403 then
+        UIManager:show(InfoMessage:new{
+            text = T(_("Failed to authenticate. Please check your username and password.")),
+        })
+    elseif code == 404 then
+        UIManager:show(InfoMessage:new{
+            text = T(_("Catalog not found.")),
+        })
     else
         UIManager:show(InfoMessage:new{
-            text = T(_("Cannot get catalog. Server code response %1"), code),
+            text = T(_("Cannot get catalog. Server response code %1."), code),
         })
     end
 end
