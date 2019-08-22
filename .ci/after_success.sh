@@ -37,7 +37,7 @@ EOF
             echo -e "\\n${ANSI_GREEN}Pushing document update..."
             git -c user.name="KOReader build bot" -c user.email="non-reply@koreader.rocks" \
                 commit -a --amend -m 'Automated documentation build from travis-ci.'
-            git push -f --quiet origin gh-pages >/dev/null
+            git push -f --quiet "https://${DOCS_GITHUB_TOKEN}@github.com/koreader/doc.git" gh-pages >/dev/null
             echo -e "\\n${ANSI_GREEN}Documentation update pushed."
         } && popd || exit
 
