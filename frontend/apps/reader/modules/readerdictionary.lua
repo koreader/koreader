@@ -229,8 +229,8 @@ function ReaderDictionary:addToMainMenu(menu_items)
                 keep_menu_open = true,
                 callback = function()
                     UIManager:show(InfoMessage:new{
-                        text = T(_(
-[[If you'd like to change the order in which dictionaries are queried (and their results displayed), you can:
+                        text = T(_([[
+If you'd like to change the order in which dictionaries are queried (and their results displayed), you can:
 - move all dictionary directories out of %1.
 - move them back there, one by one, in the order you want them to be used.]]), self.data_dir)
                     })

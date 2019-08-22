@@ -346,8 +346,8 @@ function ReaderRolling:addToMainMenu(menu_items)
     -- FIXME: repeated code with page overlap menu for readerpaging
     -- needs to keep only one copy of the logic as for the DRY principle.
     -- The difference between the two menus is only the enabled func.
-    local overlap_lines_help_text = _(
-[[When page overlap is enabled, some lines from the previous page will be displayed on the next page.
+    local overlap_lines_help_text = _([[
+When page overlap is enabled, some lines from the previous page will be displayed on the next page.
 You can set how many lines are shown.]])
     local page_overlap_menu = {
         {
