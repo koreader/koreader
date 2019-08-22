@@ -572,8 +572,8 @@ function ReaderHighlight:onHoldPan(_, ges)
     UIManager:setDirty(self.dialog, "ui")
 end
 
-local info_message_ocr_text = _(
-[[No OCR results or no language data.
+local info_message_ocr_text = _([[
+No OCR results or no language data.
 
 KOReader has a build-in OCR engine for recognizing words in scanned PDF and DjVu documents. In order to use OCR in scanned pages, you need to install tesseract trained data for your document language.
 

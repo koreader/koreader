@@ -28,9 +28,9 @@ if [ "${tab_detected}" ]; then
     exit 1
 fi
 
-newline_split=$(grep -Pzo "(_|gettext)\((\[\[\\n)" --include \*.lua --exclude={dateparser.lua,xml.lua} --recursive {reader,setupkoenv,datastorage}.lua frontend plugins spec || true)
+newline_split=$(grep -Pzo "(_|gettext)\((\n|\s)+('|\"|\[\[)" --include \*.lua --exclude={dateparser.lua,xml.lua} --recursive {reader,setupkoenv,datastorage}.lua frontend plugins spec || true)
 if [ "${newline_split}" ]; then
-    echo -e "\\n${ANSI_RED}Warning: whitespace detected at the start of gettext() multiline string."
+    echo -e "\\n${ANSI_RED}Warning: whitespace detected between gettext() call and string."
     echo "${newline_split}"
     exit 1
 fi

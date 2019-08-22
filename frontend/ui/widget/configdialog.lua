@@ -1012,8 +1012,8 @@ function ConfigDialog:onMakeDefault(name, name_text, values, labels, position)
         return
     -- known table value, make it pretty
     elseif name == "h_page_margins" then
-        display_value = T(_(
-[[
+        display_value = T(_([[
+
   left:  %1
   right: %2
 ]]),
