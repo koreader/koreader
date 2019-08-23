@@ -1,5 +1,6 @@
 .DS_*
 ._*
+*.directory
 *.swp
 *.swo
 *.un~
