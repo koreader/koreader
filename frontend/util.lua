@@ -99,7 +99,6 @@ function util.secondsToClock(seconds, withoutSeconds)
     end
 end
 
-
 --- Converts seconds to a period of time string.
 ---- @int seconds number of seconds
 ---- @bool withoutSeconds if true 1h30', if false 1h30'10''
@@ -523,10 +522,10 @@ function util.pathExists(path)
 end
 
 --- As `mkdir -p`.
---- Unlike lfs.mkdir(), does not error if the directory already exists, and
---- creates intermediate directories as needed.
----- @string path the directory to create
----- @treturn bool true on success; nil, err_message on error
+-- Unlike [lfs.mkdir](https://keplerproject.github.io/luafilesystem/manual.html#mkdir)(),
+-- does not error if the directory already exists, and creates intermediate directories as needed.
+-- @string path the directory to create
+-- @treturn bool true on success; nil, err_message on error
 function util.makePath(path)
     path = path:gsub("/+$", "")
     if util.pathExists(path) then return true end
@@ -562,18 +561,17 @@ local function replaceSlashChar(str)
     end
 end
 
---- Replaces characters that are invalid filenames.
---
--- Replaces the characters <code>\/:*?"<>|</code> with an <code>_</code>
--- unless an optional path is provided.
--- These characters are problematic on Windows filesystems. On Linux only
--- <code>/</code> poses a problem.
--- If an optional path is provided, util.getFilesystemType() will be used
--- to determine whether stricter VFAT restrictions should be applied.
+--[[--
+Replaces characters that are invalid filenames.
+
+Replaces the characters `\/:*?"<>|` with an `_` unless an optional path is provided. These characters are problematic on Windows filesystems. On Linux only the `/` poses a problem.
+
+If an optional path is provided, @{util.getFilesystemType}() will be used to determine whether stricter VFAT restrictions should be applied.
+]]
 ---- @string str
 ---- @string path
 ---- @int limit
----- @treturn string
+---- @treturn string safe filename
 function util.getSafeFilename(str, path, limit, limit_ext)
     local filename, suffix = util.splitFileNameSuffix(str)
     local replaceFunc = replaceAllInvalidChars
@@ -682,12 +680,14 @@ function util.getMenuText(item)
     return text
 end
 
---- Replaces invalid UTF-8 characters with a replacement string.
---
--- Based on http://notebook.kulchenko.com/programming/fixing-malformed-utf8-in-lua
----- @string str the string to be checked for invalid characters
----- @string replacement the string to replace invalid characters with
----- @treturn string valid UTF-8
+--[[--
+Replaces invalid UTF-8 characters with a replacement string.
+
+Based on <http://notebook.kulchenko.com/programming/fixing-malformed-utf8-in-lua>.
+@string str the string to be checked for invalid characters
+@string replacement the string to replace invalid characters with
+@treturn string valid UTF-8
+]]
 function util.fixUtf8(str, replacement)
     local pos = 1
     local len = #str
@@ -753,12 +753,14 @@ local HTML_ENTITIES_TO_UTF8 = {
     {"&#x(%x+);", function(x) return util.unicodeCodepointToUtf8(tonumber(x,16)) end},
     {"&amp;", "&"}, -- must be last
 }
---- Replace HTML entities with their UTF8 equivalent in text
---
--- Supports only basic ones and those with numbers (no support
--- for named entities like &eacute;)
---- @int string text with HTML entities
---- @treturn string UTF8 text
+--[[--
+Replace HTML entities with their UTF8 equivalent in text.
+
+Supports only basic ones and those with numbers (no support for named entities like `&eacute;`).
+
+@int string text with HTML entities
+@treturn string UTF8 text
+]]
 function util.htmlEntitiesToUtf8(text)
     for _, t in ipairs(HTML_ENTITIES_TO_UTF8) do
         text = text:gsub(t[1], t[2])
@@ -766,12 +768,14 @@ function util.htmlEntitiesToUtf8(text)
     return text
 end
 
---- Convert simple HTML to plain text
--- This may fail on complex HTML (with styles, scripts, comments), but should
--- be fine enough with simple HTML as found in EPUB's <dc:description>.
---
---- @string text HTML text
---- @treturn string plain text
+--[[--
+Convert simple HTML to plain text.
+
+This may fail on complex HTML (with styles, scripts, comments), but should be fine enough with simple HTML as found in EPUB's `<dc:description>`.
+
+@string text HTML text
+@treturn string plain text
+]]
 function util.htmlToPlainText(text)
     -- Replace <br> and <p> with \n
     text = text:gsub("%s*<%s*br%s*/?>%s*", "\n") -- <br> and <br/>
