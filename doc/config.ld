@@ -21,4 +21,5 @@ sort_modules = true
 file = {
     '../frontend',
     '../base/ffi',
+    '../platform/android/luajit-launcher/assets',
 }

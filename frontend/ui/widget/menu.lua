@@ -879,7 +879,7 @@ function Menu:truncatePath(text)
 end
 
 function Menu:onCloseWidget()
-    -- FIXME:
+    --- @fixme
     -- we cannot refresh regionally using the dimen field
     -- because some menus without menu title use VerticalGroup to include
     -- a text widget which is not calculated into the dimen.
@@ -1037,7 +1037,7 @@ function Menu:switchItemTable(new_title, new_item_table, itemnumber, itemmatch)
 end
 
 function Menu:onScreenResize(dimen)
-    -- @TODO investigate: could this cause minor memory leaks?
+    --- @todo Investigate: could this cause minor memory leaks?
     self:init()
     return false
 end

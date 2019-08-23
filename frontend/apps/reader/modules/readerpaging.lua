@@ -182,7 +182,7 @@ function ReaderPaging:onReadSettings(config)
 end
 
 function ReaderPaging:onSaveSettings()
-    -- TODO: only save current_page page position
+    --- @todo only save current_page page position
     self.ui.doc_settings:saveSetting("page_positions", self.page_positions)
     self.ui.doc_settings:saveSetting("last_page", self:getTopPage())
     self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
@@ -203,7 +203,7 @@ function ReaderPaging:getLastPercent()
 end
 
 function ReaderPaging:addToMainMenu(menu_items)
-    -- FIXME: repeated code with page overlap menu for readerrolling
+    --- @fixme repeated code with page overlap menu for readerrolling
     -- needs to keep only one copy of the logic as for the DRY principle.
     -- The difference between the two menus is only the enabled func.
     local page_overlap_menu = {

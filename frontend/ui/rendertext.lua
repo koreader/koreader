@@ -37,7 +37,7 @@ local function utf8Chars(input_text)
         if string.len(input) < pos then return nil end
         local value = string.byte(input, pos)
         if band(value, 0x80) == 0 then
-            -- TODO: check valid ranges
+            --- @todo check valid ranges
             return pos+1, value, string.sub(input, pos, pos)
         elseif band(value, 0xC0) == 0x80 -- invalid, continuation
         or band(value, 0xF8) == 0xF8 -- 5-or-more byte sequence, illegal due to RFC3629
@@ -70,7 +70,7 @@ local function utf8Chars(input_text)
                     return pos+1, 0xFFFD, "\xFF\xFD"
                 end
             end
-            -- TODO: check for valid ranges here!
+            --- @todo check for valid ranges here!
             return pos+bytes_left+1, glyph, string.sub(input, pos, pos+bytes_left)
         end
     end

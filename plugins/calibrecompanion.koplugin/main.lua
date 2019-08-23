@@ -410,8 +410,8 @@ end
 
 function CalibreCompanion:getFreeSpace(arg)
     logger.dbg("FREE_SPACE", arg)
-    -- TODO: portable free space calculation?
-    -- assume we have 1GB of free space on device
+    --- @todo Portable free space calculation?
+    -- Assume we have 1GB of free space on device.
     local free_space = {
         free_space_on_device = 1024*1024*1024,
     }

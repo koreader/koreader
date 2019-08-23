@@ -451,7 +451,7 @@ function ReaderUI:showReader(file, provider)
         return
     end
     -- prevent crash due to incompatible bookmarks
-    -- @TODO split bookmarks from metadata and do per-engine in conversion
+    --- @todo Split bookmarks from metadata and do per-engine in conversion.
     provider = provider or DocumentRegistry:getProvider(file)
     if provider.provider then
         local doc_settings = DocSettings:open(file)

@@ -93,7 +93,7 @@ end
 -- @string docfile path to the document (e.g., `/foo/bar.pdf`)
 -- @treturn DocSettings object
 function DocSettings:open(docfile)
-    -- TODO(zijiehe): Remove history_path, use only sidecar.
+    --- @todo (zijiehe): Remove history_path, use only sidecar.
     local new = {}
     new.history_file = self:getHistoryPath(docfile)
 

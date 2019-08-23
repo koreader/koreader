@@ -43,7 +43,7 @@ function LuaSettings:open(file_path)
     return setmetatable(new, {__index = LuaSettings})
 end
 
--- TODO: DocSettings can return a LuaSettings to use following awesome features.
+--- @todo DocSettings can return a LuaSettings to use following awesome features.
 function LuaSettings:wrap(data)
     local new = {data = type(data) == "table" and data or {}}
     return setmetatable(new, {__index = LuaSettings})

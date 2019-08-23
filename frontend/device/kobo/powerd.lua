@@ -24,7 +24,7 @@ local KoboPowerD = BasePowerD:new{
     fl_was_on = nil,
 }
 
--- TODO: Remove KOBO_LIGHT_ON_START
+--- @todo Remove KOBO_LIGHT_ON_START
 function KoboPowerD:_syncKoboLightOnStart()
     local new_intensity = nil
     local is_frontlight_on = nil

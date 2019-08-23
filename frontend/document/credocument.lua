@@ -366,7 +366,7 @@ function CreDocument:drawCurrentView(target, x, y, rect, pos)
         -- to match the screen's BB type, allowing us to take shortcuts when blitting.
         self.buffer = Blitbuffer.new(rect.w, rect.h, self.render_color and Blitbuffer.TYPE_BBRGB32 or nil)
     end
-    -- TODO: self.buffer could be re-used when no page/layout/highlights
+    --- @todo self.buffer could be re-used when no page/layout/highlights
     -- change has been made, to avoid having crengine redraw the exact
     -- same buffer. And it could only change when some other methods
     -- from here are called
@@ -714,7 +714,7 @@ function CreDocument:setStyleSheet(new_css_file, appended_css_content )
 end
 
 function CreDocument:setEmbeddedStyleSheet(toggle)
-    -- FIXME: occasional segmentation fault when switching embedded style sheet
+    --- @fixme occasional segmentation fault when switching embedded style sheet
     logger.dbg("CreDocument: set embedded style sheet", toggle)
     self._document:setIntProperty("crengine.doc.embedded.styles.enabled", toggle)
 end
@@ -748,7 +748,7 @@ function CreDocument:setNightmodeImages(toggle)
 end
 
 function CreDocument:setFloatingPunctuation(enabled)
-    -- FIXME: occasional segmentation fault when toggling floating punctuation
+    --- @fixme occasional segmentation fault when toggling floating punctuation
     logger.dbg("CreDocument: set floating punctuation", enabled)
     self._document:setIntProperty("crengine.style.floating.punctuation.enabled", enabled)
 end

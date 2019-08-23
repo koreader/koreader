@@ -49,7 +49,7 @@ local function _serialize(what, outt, indent, max_lv, history)
         insert(outt, string.format("%q", what))
     elseif type(what) == "number" then
         if isUbuntuTouch then
-            -- FIXME: the `SDL_CreateRenderer` function in Ubuntu touch somehow
+            --- @fixme The `SDL_CreateRenderer` function in Ubuntu touch somehow
             -- use a strange locale that formats number like this: 1.10000000000000g+02
             -- which cannot be recognized by loadfile after the number is dumped.
             -- Here the workaround is to preserve enough precision in "%.13e" format.

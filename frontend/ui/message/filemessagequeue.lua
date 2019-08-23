@@ -16,10 +16,10 @@ function FileMessageQueue:init()
         self.filemq = self.client
         self.poller = czmq.zpoller_new(filemq.fmq_client_handle(self.client), nil)
     elseif self.server ~= nil then
-        -- TODO: currently fmq_server_recv API is not available
+        --- @todo currently fmq_server_recv API is not available
         --self.fmq_recv = filemq.fmq_server_recv
         self.filemq = self.server
-        -- TODO: currently fmq_server_handle API is not available
+        --- @todo currently fmq_server_handle API is not available
         --self.poller = czmq.zpoller_new(filemq.fmq_server_handle(self.server), nil)
     end
 end

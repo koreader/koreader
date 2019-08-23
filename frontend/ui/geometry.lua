@@ -166,7 +166,7 @@ Returns a new rectangle for the part that we and a given rectangle share
 @tparam Geom rect_b
 @treturn Geom
 ]]--
--- TODO: what happens if there is no rectangle shared? currently behaviour is undefined.
+--- @todo what happens if there is no rectangle shared? currently behaviour is undefined.
 function Geom:intersect(rect_b)
     -- make a copy of self
     local intersected = self:copy()

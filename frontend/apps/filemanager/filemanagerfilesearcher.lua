@@ -86,10 +86,10 @@ function FileSearcher:close()
     if self.search_value then
         UIManager:close(self.search_dialog)
         if string.len(self.search_value) > 0 then
-            self:readDir() -- TODO this probably doesn't need to be repeated once it's been done
-            self:setSearchResults() -- TODO doesn't have to be repeated if the search term is the same
+            self:readDir() --- @todo this probably doesn't need to be repeated once it's been done
+            self:setSearchResults() --- @todo doesn't have to be repeated if the search term is the same
             if #self.results > 0 then
-                self:showSearchResults() -- TODO something about no results
+                self:showSearchResults() --- @todo something about no results
             else
                 UIManager:show(
                     InfoMessage:new{

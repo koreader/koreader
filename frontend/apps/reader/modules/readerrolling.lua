@@ -159,7 +159,7 @@ function ReaderRolling:onReadSettings(config)
             self.ui.document:gotoXPointer(self.xpointer)
         end
     -- we read last_percent just for backward compatibility
-    -- FIXME: remove this branch with migration script
+    --- @fixme remove this branch with migration script
     elseif last_per then
         self.setupXpointer = function()
             self:_gotoPercent(last_per)
@@ -343,7 +343,7 @@ function ReaderRolling:getLastProgress()
 end
 
 function ReaderRolling:addToMainMenu(menu_items)
-    -- FIXME: repeated code with page overlap menu for readerpaging
+    --- @fixme repeated code with page overlap menu for readerpaging
     -- needs to keep only one copy of the logic as for the DRY principle.
     -- The difference between the two menus is only the enabled func.
     local overlap_lines_help_text = _([[
@@ -407,7 +407,7 @@ function ReaderRolling:getLastPercent()
     if self.view.view_mode == "page" then
         return self.current_page / self.old_page
     else
-        -- FIXME: the calculated percent is not accurate in "scroll" mode.
+        --- @fixme the calculated percent is not accurate in "scroll" mode.
         return self.ui.document:getPosFromXPointer(
             self.ui.document:getXPointer()) / self.ui.document.info.doc_height
     end

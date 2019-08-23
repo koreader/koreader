@@ -1,7 +1,7 @@
 local Device = require("device")
 
 local command
--- TODO(hzj-jie): Does pocketbook provide ntpdate?
+--- @todo (hzj-jie): Does pocketbook provide ntpdate?
 if Device:isKobo() then
     command = "ntpd -q -n -p pool.ntp.org"
 elseif Device:isCervantes() or Device:isKindle() or Device:isPocketBook() then

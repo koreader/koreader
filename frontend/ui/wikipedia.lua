@@ -1168,7 +1168,7 @@ table {
     -- external link for us, so let's remove this link.
     html = html:gsub("<a[^>]*>%s*(<%s*img [^>]*>)%s*</a>", "%1")
 
-    -- TODO: do something for <li class="gallerybox"...> so they are no more
+    --- @todo do something for <li class="gallerybox"...> so they are no more
     -- a <li> (crengine displays them one above the other) and can be displayed
     -- side by side
 

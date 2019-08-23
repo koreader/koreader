@@ -83,7 +83,7 @@ function SetDefaults:init()
     local menu_container = CenterContainer:new{
         dimen = Screen:getSize(),
     }
-    -- FIXME:
+    --- @fixme
     -- in this use case (an input dialog is closed and the menu container is
     -- opened immediately) we need to set the full screen dirty because
     -- otherwise only the input dialog part of the screen is refreshed.

@@ -24,7 +24,7 @@ function StreamMessageQueue:start()
     end
     local id_size = ffi.new("size_t[1]", 256)
     local buffer = ffi.new("uint8_t[?]", id_size[0])
-    -- @todo: check return of zmq_getsockopt
+    --- @todo: Check return of zmq_getsockopt()
     zmq.zmq_getsockopt(self.socket, C.ZMQ_IDENTITY, buffer, id_size)
     self.id = ffi.string(buffer, id_size[0])
     logger.dbg("id", #self.id, self.id)

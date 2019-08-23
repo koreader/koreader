@@ -10,7 +10,7 @@ local BottomContainer = WidgetContainer:new()
 
 function BottomContainer:paintTo(bb, x, y)
     local contentSize = self[1]:getSize()
-    -- FIXME
+    --- @fixme
     -- if contentSize.w > self.dimen.w or contentSize.h > self.dimen.h then
         -- throw error? paint to scrap buffer and blit partially?
         -- for now, we ignore this

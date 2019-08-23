@@ -497,7 +497,7 @@ function GestureDetector:handleSwipe(tev)
         logger.dbg("multiswipe", multiswipe_directions)
     end
 
-    -- TODO: dirty hack for some weird devices, replace it with better solution
+    --- @todo dirty hack for some weird devices, replace it with better solution
     if swipe_direction == "west" and DCHANGE_WEST_SWIPE_TO_EAST then
         swipe_direction = "east"
     elseif swipe_direction == "east" and DCHANGE_EAST_SWIPE_TO_WEST then

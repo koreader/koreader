@@ -184,7 +184,7 @@ function Trapper:info(text, fast_refresh)
         -- continue processing
     end
 
-    -- TODO We should try to flush any pending tap, so past
+    --- @todo We should try to flush any pending tap, so past
     -- events won't be considered action on the yet to be displayed
     -- widget
 
@@ -266,7 +266,7 @@ function Trapper:confirm(text, cancel_text, ok_text)
         return true -- always select "OK" in ConfirmBox if no UI
     end
 
-    -- TODO We should try to flush any pending tap, so past
+    --- @todo We should try to flush any pending tap, so past
     -- events won't be considered action on the yet to be displayed
     -- widget
 

@@ -182,7 +182,7 @@ function OPDSBrowser:editCalibreServer()
         title = _("Edit local calibre host and port"),
         fields = {
             {
-                -- TODO: get IP address of current device
+                --- @todo get IP address of current device
                 text = calibre.host or "192.168.1.1",
                 hint = _("calibre host"),
             },

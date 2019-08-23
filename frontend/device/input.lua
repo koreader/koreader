@@ -415,11 +415,11 @@ function Input:handleKeyBoardEv(ev)
         or keycode == "RPgBack"
         or keycode == "LPgFwd"
         or keycode == "RPgFwd" then
-            -- FIXME: Crappy event staggering!
+            --- @fixme Crappy event staggering!
             --        The Forma repeats every 80ms after a 400ms delay, and 500ms roughly corresponds to a flashing update,
             --        so stuff is usually in sync when you release the key.
             --        Obvious downside is that this ends up slower than just mashing the key.
-            -- FIXME: A better approach would be an onKeyRelease handler that flushes the Event queue...
+            --- @fixme A better approach would be an onKeyRelease handler that flushes the Event queue...
             self.repeat_count = self.repeat_count + 1
             if self.repeat_count == 1 then
                 return Event:new("KeyRepeat", key)
@@ -841,7 +841,7 @@ function Input:waitEvent(timeout_us)
             ev = nil
             break
         elseif ev == "application forced to quit" then
-            -- TODO: return an event that can be handled
+            --- @todo return an event that can be handled
             os.exit(0)
         end
         logger.warn("got error waiting for events:", ev)

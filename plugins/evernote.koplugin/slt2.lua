@@ -32,7 +32,7 @@ local function include_fold(template, start_tag, end_tag, fold_func, init_func)
             local filename = assert(loadstring('return '..string.sub(template, end1 + 1, start2 - 1)))()
             assert(filename)
             local fin = assert(io.open(filename))
-            -- TODO: detect cyclic inclusion?
+            --- @todo Detect cyclic inclusion?
             result = fold_func(result, include_fold(fin:read('*a'), start_tag, end_tag, fold_func, init_func), filename)
             fin:close()
         end

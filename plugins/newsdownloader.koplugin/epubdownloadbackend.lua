@@ -382,7 +382,7 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
 
     -- ----------------------------------------------------------------
     -- OEBPS/stylesheet.css
-    -- TODO: We told it we'd include a stylesheet.css, so it's probably best
+    --- @todo We told it we'd include a stylesheet.css, so it's probably best
     -- that we do. In theory, we could try to fetch any *.css files linked in
     -- the main html.
     epub:add("OEBPS/stylesheet.css", [[
@@ -400,7 +400,7 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
     -- Add our own first section for first page, with page name as title
     table.insert(toc_ncx_parts, string.format([[<navPoint id="navpoint-%s" playOrder="%s"><navLabel><text>%s</text></navLabel><content src="content.html"/>]], num, num, page_htmltitle))
     table.insert(toc_ncx_parts, np_end)
-    -- TODO: Not essential for most articles, but longer articles might benefit
+    --- @todo Not essential for most articles, but longer articles might benefit
     -- from parsing <h*> tags and constructing a proper TOC
     while cur_level > 0 do
         table.insert(toc_ncx_parts, np_end)

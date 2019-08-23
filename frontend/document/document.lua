@@ -331,7 +331,7 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
     if not Cache:willAccept(size.w * size.h + 64) then
         -- whole page won't fit into cache
         logger.dbg("rendering only part of the page")
-        -- TODO: figure out how to better segment the page
+        --- @todo figure out how to better segment the page
         if not rect then
             logger.warn("aborting, since we do not have a specification for that part")
             -- required part not given, so abort
@@ -380,7 +380,7 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
 end
 
 -- a hint for the cache engine to paint a full page to the cache
--- TODO: this should trigger a background operation
+--- @todo this should trigger a background operation
 function Document:hintPage(pageno, zoom, rotation, gamma, render_mode)
     logger.dbg("hinting page", pageno)
     self:renderPage(pageno, nil, zoom, rotation, gamma, render_mode)

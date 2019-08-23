@@ -346,7 +346,7 @@ function ReaderGesture:addToMainMenu(menu_items)
                                         end
 
                                         custom_multiswipes:addTableItem("multiswipes", recorded_multiswipe)
-                                        -- TODO implement some nicer method in TouchMenu than this ugly hack for updating the menu
+                                        --- @todo Implement some nicer method in TouchMenu than this ugly hack for updating the menu.
                                         touchmenu_instance.item_table[3] = self:genMultiswipeSubmenu()
                                         touchmenu_instance:updateItems()
                                         UIManager:close(multiswipe_recorder)
