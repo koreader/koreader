@@ -695,7 +695,7 @@ Do you want to extract book information for books in sub-directories too?]]
     ),
         -- @translators Extract book information only for books in this directory.
         _("Here only"),
-        -- @translators Extract book information for books in this directory as well as subdirectories.
+        -- @translators Extract book information for books in this directory as well as in subdirectories.
         _("Here and under"))
 
     local refresh_existing = Trapper:confirm(_([[
