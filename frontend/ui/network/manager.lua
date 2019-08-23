@@ -350,7 +350,7 @@ function NetworkMgr:showNetworkMenu(complete_callback)
         end
         -- NOTE: Fairly hackish workaround for #4387,
         --       rescan if the first scan appeared to yield an empty list.
-        -- FIXME: This *might* be an issue better handled in lj-wpaclient...
+        --- @fixme This *might* be an issue better handled in lj-wpaclient...
         if (table.getn(network_list) == 0) then
             network_list, err = self:getNetworkList()
             if network_list == nil then

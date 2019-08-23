@@ -665,11 +665,11 @@ function KindleOasis2:init()
         }
     }
 
-    -- FIXME: When starting KOReader with the device upside down ("D"), touch input is registered wrong
+    --- @fixme When starting KOReader with the device upside down ("D"), touch input is registered wrong
     --        (i.e., probably upside down).
     --        If it's started upright ("U"), everything's okay, and turning it upside down after that works just fine.
     --        See #2206 & #2209 for the original KOA implementation, which obviously doesn't quite cut it here...
-    --        See also https://www.mobileread.com/forums/showthread.php?t=298302&page=5
+    --        See also <https://www.mobileread.com/forums/showthread.php?t=298302&page=5>
     -- NOTE: It'd take some effort to actually start KOReader while in a LANDSCAPE orientation,
     --       since they're only exposed inside the stock reader, and not the Home/KUAL Booklets.
     local haslipc, lipc = pcall(require, "liblipclua")

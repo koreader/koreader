@@ -140,7 +140,7 @@ local KoboSnow = Kobo:new{
 }
 
 -- Kobo Aura H2O2, Rev2:
--- FIXME: Check if the Clara fix actually helps here... (#4015)
+--- @fixme Check if the Clara fix actually helps here... (#4015)
 local KoboSnowRev2 = Kobo:new{
     model = "Kobo_snow_r2",
     hasFrontlight = yes,
@@ -163,7 +163,7 @@ local KoboStar = Kobo:new{
 }
 
 -- Kobo Aura second edition, Rev 2:
--- FIXME: Confirm that this is accurate? If it is, and matches the Rev1, ditch the special casing.
+--- @fixme Confirm that this is accurate? If it is, and matches the Rev1, ditch the special casing.
 local KoboStarRev2 = Kobo:new{
     model = "Kobo_star_r2",
     hasFrontlight = yes,
@@ -452,7 +452,7 @@ function Kobo:initEventAdjustHooks()
     if self.touch_mirrored_x then
         self.input:registerEventAdjustHook(
             self.input.adjustTouchMirrorX,
-            -- FIXME: what if we change the screen portrait mode?
+            --- @fixme what if we change the screen portrait mode?
             self.screen:getWidth()
         )
     end

@@ -362,7 +362,7 @@ function InputText:initTextBox(text, char_added)
     }
     self[1] = self._frame
     self.dimen = self._frame:getSize()
-    -- FIXME: self.parent is not always in the widget stack (BookStatusWidget)
+    --- @fixme self.parent is not always in the widget stack (BookStatusWidget)
     UIManager:setDirty(self.parent, function()
         return "ui", self.dimen
     end)

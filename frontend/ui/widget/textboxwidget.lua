@@ -1101,7 +1101,7 @@ function TextBoxWidget:onHoldWord(callback, ges)
         local idx = char_start
         -- find which character the touch is holding
         while idx < char_end do
-            -- FIXME: this might break if kerning is enabled
+            --- @fixme This might break if kerning is enabled.
             char_probe_x = char_probe_x + self.char_width[self.charlist[idx]] + (self.idx_pad[idx] or 0)
             if char_probe_x > x then
                 -- ignore spaces

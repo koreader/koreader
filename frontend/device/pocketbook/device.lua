@@ -68,7 +68,7 @@ function PocketBook:blacklistCBB()
     local C = ffi.C
 
     -- As well as on those than can't do HW inversion, as otherwise NightMode would be ineffective.
-    -- FIXME: Either relax the HWInvert check, or actually enable HWInvert on PB if it's safe and it works,
+    --- @fixme Either relax the HWInvert check, or actually enable HWInvert on PB if it's safe and it works,
     --        as, currently, no PB device is marked as canHWInvert, so, the C BB is essentially *always* blacklisted.
     if not self:canUseCBB() or not self:canHWInvert() then
         logger.info("Blacklisting the C BB on this device")

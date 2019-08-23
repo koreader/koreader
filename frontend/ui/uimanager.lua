@@ -544,7 +544,7 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
         -- callback, will be issued after painting
         table.insert(self._refresh_func_stack, refreshtype)
         if dbg.is_on then
-            -- FIXME: We can't consume the return values of refreshtype by running it, because for a reason that is beyond me (scoping? gc?), that renders it useless later, meaning we then enqueue refreshes with bogus arguments...
+            --- @fixme We can't consume the return values of refreshtype by running it, because for a reason that is beyond me (scoping? gc?), that renders it useless later, meaning we then enqueue refreshes with bogus arguments...
             --        Thankfully, we can track them in _refresh()'s logging very soon after that...
             logger.dbg("setDirty via a func from widget", widget and (widget.name or widget.id or tostring(widget)) or "nil")
         end
@@ -1050,7 +1050,7 @@ function UIManager:handleInput()
     if self.looper then
         logger.info("handle input in turbo I/O looper")
         self.looper:add_callback(function()
-            -- FIXME: force close looper when there is unhandled error,
+            --- @fixme Force close looper when there is unhandled error,
             -- otherwise the looper will hang. Any better solution?
             xpcall(function() self:handleInput() end, function(err)
                 io.stderr:write(err .. "\n")

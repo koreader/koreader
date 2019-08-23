@@ -203,7 +203,7 @@ function ReaderPaging:getLastPercent()
 end
 
 function ReaderPaging:addToMainMenu(menu_items)
-    -- FIXME: repeated code with page overlap menu for readerrolling
+    --- @fixme repeated code with page overlap menu for readerrolling
     -- needs to keep only one copy of the logic as for the DRY principle.
     -- The difference between the two menus is only the enabled func.
     local page_overlap_menu = {

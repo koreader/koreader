@@ -714,7 +714,7 @@ function CreDocument:setStyleSheet(new_css_file, appended_css_content )
 end
 
 function CreDocument:setEmbeddedStyleSheet(toggle)
-    -- FIXME: occasional segmentation fault when switching embedded style sheet
+    --- @fixme occasional segmentation fault when switching embedded style sheet
     logger.dbg("CreDocument: set embedded style sheet", toggle)
     self._document:setIntProperty("crengine.doc.embedded.styles.enabled", toggle)
 end
@@ -748,7 +748,7 @@ function CreDocument:setNightmodeImages(toggle)
 end
 
 function CreDocument:setFloatingPunctuation(enabled)
-    -- FIXME: occasional segmentation fault when toggling floating punctuation
+    --- @fixme occasional segmentation fault when toggling floating punctuation
     logger.dbg("CreDocument: set floating punctuation", enabled)
     self._document:setIntProperty("crengine.style.floating.punctuation.enabled", enabled)
 end
