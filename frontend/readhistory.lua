@@ -46,7 +46,7 @@ end
 
 function ReadHistory:_indexing(start)
     assert(self ~= nil)
-    -- TODO(Hzj_jie): Use binary search to find an item when deleting it.
+    --- @todo (Hzj_jie): Use binary search to find an item when deleting it.
     for i = start, #self.hist, 1 do
         self.hist[i].index = i
     end
@@ -60,7 +60,7 @@ function ReadHistory:_sort()
         self:clearMissing()
     end
     table.sort(self.hist, fileFirstOrdering)
-    -- TODO(zijiehe): Use binary insert instead of a loop to deduplicate.
+    --- @todo (zijiehe): Use binary insert instead of a loop to deduplicate.
     for i = #self.hist, 2, -1 do
         if self.hist[i].file == self.hist[i - 1].file then
             table.remove(self.hist, i)
@@ -186,7 +186,7 @@ function ReadHistory:addItem(file)
     if file ~= nil and lfs.attributes(file, "mode") == "file" then
         local now = os.time()
         table.insert(self.hist, 1, buildEntry(now, file))
-        -- TODO(zijiehe): We do not need to sort if we can use binary insert and
+        --- @todo (zijiehe): We do not need to sort if we can use binary insert and
         -- binary search.
         -- util.execute("/bin/touch", "-a", file)
         -- This emulates `touch -a` in LuaFileSystem's API, since it may be absent (Android)

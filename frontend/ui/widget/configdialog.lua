@@ -187,7 +187,7 @@ function ConfigOption:init()
     local padding_small = Size.padding.small   -- internal padding for options names (left)
     local padding_button = Size.padding.button -- padding for underline below letters and icons
 
-    -- @TODO restore setting when there are more advanced settings
+    --- @todo Restore setting when there are more advanced settings.
     --local show_advanced = G_reader_settings:readSetting("show_advanced") or false
     local show_advanced = true
 

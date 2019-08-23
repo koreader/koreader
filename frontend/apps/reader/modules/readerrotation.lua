@@ -23,7 +23,7 @@ function ReaderRotation:init()
     end
 end
 
--- @TODO: reset rotation on new document, maybe on new page?
+--- @todo Reset rotation on new document, maybe on new page?
 
 function ReaderRotation:onRotate(rotate_by)
     self.current_rotation = (self.current_rotation + rotate_by) % 360

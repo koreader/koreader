@@ -184,7 +184,7 @@ function BackgroundRunner:_execute()
                     should_ignore = true
                 end
             elseif type(job.when) == "string" then
-                -- TODO(Hzj_jie): Implement "idle" mode
+                --- @todo (Hzj_jie): Implement "idle" mode
                 if job.when == "best-effort" then
                     should_execute = (round > 0)
                 elseif job.when == "idle" then

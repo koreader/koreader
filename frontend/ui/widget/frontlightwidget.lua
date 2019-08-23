@@ -411,7 +411,7 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
         })
 
     local text_auto_nl = TextBoxWidget:new{
-        -- @TODO implement padding_right (etc.) on TextBoxWidget and remove the two-space hack
+        --- @todo Implement padding_right (etc.) on TextBoxWidget and remove the two-space hack.
         text = _("Max. at:") .. "  ",
         face = self.larger_font_face,
         alignment = "right",
