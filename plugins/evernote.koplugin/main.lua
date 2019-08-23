@@ -166,11 +166,11 @@ function EvernoteExporter:addToMainMenu(menu_items)
                     self.config:purge()
                     UIManager:show(ConfirmBox:new{
                         text = _("History records have been purged.\nAll notes will be exported again next time.\nWould you like to remove the existing KOReaderClipping.txt file to avoid duplication?\nRecords will be appended to KOReaderClipping.txt instead of being overwritten."),
-                        ok_text = _("Yes, remove it"),
+                        ok_text = _("Remove file"),
                         ok_callback = function()
                             os.remove(self.text_clipping_file)
                         end,
-                        cancel_text = _("No, keep it"),
+                        cancel_text = _("Keep file"),
                     })
                 end
             }
@@ -409,20 +409,22 @@ function EvernoteExporter:exportClippings(clippings)
     local all_count = export_count + error_count
     if export_count > 0 and error_count == 0 then
         if all_count == 1 then
-            msg = _("Exported notes from book:") .. "\n" .. export_title
+            msg = T(_("Exported notes from the book:\n%1", export_title)
         else
             msg = T(
-                _("Exported notes from book:\n%1\nand %2 others."),
+                -- @translators %1 is the title of a book and %2 a number of 2 or higher. To track better handling of plurals please see https://github.com/koreader/koreader/issues/5249
+                _("Exported notes from the book:\n%1\nand %2 others."),
                 export_title,
                 all_count-1
             )
         end
     elseif error_count > 0 then
         if all_count == 1 then
-            msg = _("An error occurred while trying to export notes from book:") .. "\n" .. error_title
+            msg = T(_("An error occurred while trying to export notes from the book:\n%1"), error_title)
         else
             msg = T(
-                _("Multiple errors occurred while trying to export notes from book:\n%1\nand %2 others."),
+                -- @translators %1 is the title of a book and %2 a number of 2 or higher. To track better handling of plurals please see https://github.com/koreader/koreader/issues/5249
+                _("Multiple errors occurred while trying to export notes from the book:\n%1\nand %2 others."),
                 error_title,
                 error_count-1
             )

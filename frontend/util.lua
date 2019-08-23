@@ -153,6 +153,7 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
                 mins = string.format("%.f", round(seconds / 60))
                 return mins .. "'"
             end
+            -- @translators This is the 'h' for hour, like in 1h30.
             return T(_("%1h%2"), hours, mins)
         end
         local secs = string.format("%02.f", math.floor(seconds - hours * 3600 - mins * 60))

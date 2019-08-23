@@ -416,6 +416,7 @@ function ReaderTypeset:addToMainMenu(menu_items)
         sub_item_table = self:genStyleSheetMenu(),
     }
     menu_items.floating_punctuation = {
+        -- @translators See https://en.wikipedia.org/wiki/Hanging_punctuation
         text = _("Hanging punctuation"),
         checked_func = function() return self.floating_punctuation == 1 end,
         callback = function()

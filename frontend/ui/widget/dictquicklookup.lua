@@ -25,6 +25,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
+local C_ = _.pgettext
 local Screen = Device.screen
 local T = require("ffi/util").template
 
@@ -429,7 +430,14 @@ function DictQuickLookup:update()
                 {
                     -- if dictionary result, do the same search on wikipedia
                     -- if already wiki, get the full page for the current result
-                    text = self.is_wiki and _("Wikipedia full") or _("Wikipedia"),
+                    text_func = function()
+                        if self.is_wiki then
+                            -- @translators Full Wikipedia article.
+                            return C_("Button", "Wikipedia full")
+                        else
+                            return _("Wikipedia")
+                        end
+                    end,
                     callback = function()
                         UIManager:scheduleIn(0.1, function()
                             self:lookupWikipedia(self.is_wiki) -- will get_fullpage if is_wiki

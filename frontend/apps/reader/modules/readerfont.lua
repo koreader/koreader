@@ -11,6 +11,7 @@ local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local T = require("ffi/util").template
 local _ = require("gettext")
+local C_ = _.pgettext
 
 local ReaderFont = InputContainer:new{
     font_face = nil,
@@ -294,7 +295,7 @@ function ReaderFont:makeDefault(face, touchmenu_instance)
                 G_reader_settings:saveSetting("cre_font", face)
                 if touchmenu_instance then touchmenu_instance:updateItems() end
             end,
-            choice2_text = _("Fallback"),
+            choice2_text = C_("Font", "Fallback"),
             choice2_callback = function()
                 if self.ui.document:setFallbackFontFace(face) then
                     G_reader_settings:saveSetting("fallback_font", face)

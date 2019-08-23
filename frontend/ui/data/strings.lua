@@ -14,14 +14,17 @@ S.B_PAGE_MARGIN = _("Bottom Margin")
 S.SYNC_T_B_PAGE_MARGINS = _("Sync T/B Margins")
 S.LINE_SPACING = _("Line Spacing")
 S.COLUMNS = _("Columns")
-S.TEXT_ALIGN = _("Text Align")
+-- @translators Text alignment. Options given as icons: left, right, center, justify.
+S.TEXT_ALIGN = _("Alignment")
 S.FONTSIZE_FINE_TUNING = _("Fine Tuning")
 S.CONTRAST = _("Contrast")
+-- @translators Reflow text.
 S.REFLOW = _("Reflow")
 S.DEWATERMARK = _("Dewatermark")
 S.DOC_LANG = _("Document Language")
 S.VERTICAL_TEXT = _("Vertical Text")
 S.WORD_GAP = _("Word Gap")
+-- @translators The maximum size of a speckle to be ignored instead of being considered a character.
 S.DEFECT_SIZE = _("Reflow Speckle Ignore Size")
 S.RENDER_QUALITY = _("Render Quality")
 S.AUTO_STRAIGHTEN = _("Auto Straighten")
@@ -36,6 +39,7 @@ S.EMBEDDED_FONTS = _("Embedded Fonts")
 S.BLOCK_RENDERING_MODE = _("Render Mode")
 S.WRITING_DIR = _("Writing Direction")
 S.PROGRESS_BAR = _("Progress Bar")
+-- @translators If OCR is unclear, please see https://en.wikipedia.org/wiki/Optical_character_recognition
 S.FORCED_OCR = _("Forced OCR")
 S.HW_DITHERING = _("Dithering")
 S.INVERSE_READING_ORDER = _("Inverse Order")
@@ -73,9 +77,13 @@ S.REGULAR = _("regular")
 S.BOLD = _("bold")
 S.VIEW_SCROLL = _("continuous")
 S.VIEW_PAGE = _("page")
+-- @translators LTR is left to right, which is the regular European writing direction.
 S.LTR = _("LTR")
+-- @translators RTL is right to left, which is the regular writing direction in languages like Hebrew, Arabic, Persian and Urdu.
 S.RTL = _("RTL")
+-- @translators TBRTL is top-to-bottom-right-to-left, which is a traditional Chinese/Japanese writing direction.
 S.TBRTL = _("TBRTL")
+-- @translators TBLTR is top-to-bottom-left-to-right, which is a traditional Chinese/Japanese writing direction.
 S.TBLTR = _("TBLTR")
 S.FULL = _("full")
 S.MINI = _("mini")

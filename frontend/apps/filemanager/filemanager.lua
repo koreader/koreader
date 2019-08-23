@@ -39,6 +39,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("ffi/util")
 local _ = require("gettext")
+local C_ = _.pgettext
 local Screen = Device.screen
 local T = require("ffi/util").template
 
@@ -201,14 +202,14 @@ function FileManager:init()
         local buttons = {
             {
                 {
-                    text = _("Copy"),
+                    text = C_("File", "Copy"),
                     callback = function()
                         copyFile(file)
                         UIManager:close(self.file_dialog)
                     end,
                 },
                 {
-                    text = _("Paste"),
+                    text = C_("File", "Paste"),
                     enabled = fileManager.clipboard and true or false,
                     callback = function()
                         pasteHere(file)
@@ -641,6 +642,7 @@ function FileManager:openRandomFile(dir)
                 ReaderUI:showReader(random_file)
 
             end,
+            -- @translators Another file. This is a button on the open random file dialog. It presents a file with the choices Open/Another.
             choice2_text = _("Another"),
             choice2_callback = function()
                 self:openRandomFile(dir)

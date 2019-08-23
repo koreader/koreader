@@ -214,6 +214,7 @@ function FileChooser:genItemTableFromPath(path)
         if num_items == 1 then
             istr = _("1 item")
         else
+            -- @translators %1 is a placeholder for a plural number. So "%1 items" will automatically show up as "2 items", "3 items", etc.
             istr = ffiUtil.template(_("%1 items"), num_items)
         end
         local text

@@ -24,6 +24,7 @@ local _ = require("gettext")
 -- 20181217: 104 supported languages
 local AUTODETECT_LANGUAGE = "auto"
 local SUPPORTED_LANGUAGES = {
+    -- @translators Many of the names for languages can be conveniently found pre-translated in the relevant language of this Wikipedia article: https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes
     af = _("Afrikaans"),
     sq = _("Albanian"),
     am = _("Amharic"),
@@ -54,6 +55,7 @@ local SUPPORTED_LANGUAGES = {
     ka = _("Georgian"),
     de = _("German"),
     el = _("Greek"),
+    -- @translators Many of the names for languages can be conveniently found pre-translated in the relevant language of this Wikipedia article: https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes
     gu = _("Gujarati"),
     ht = _("Haitian Creole"),
     ha = _("Hausa"),
@@ -69,6 +71,7 @@ local SUPPORTED_LANGUAGES = {
     it = _("Italian"),
     ja = _("Japanese"),
     jw = _("Javanese"),
+    -- @translators Many of the names for languages can be conveniently found pre-translated in the relevant language of this Wikipedia article: https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes
     kn = _("Kannada"),
     kk = _("Kazakh"),
     km = _("Khmer"),
@@ -124,6 +127,7 @@ local SUPPORTED_LANGUAGES = {
     uz = _("Uzbek"),
     vi = _("Vietnamese"),
     cy = _("Welsh"),
+    -- @translators Many of the names for languages can be conveniently found pre-translated in the relevant language of this Wikipedia article: https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes
     xh = _("Xhosa"),
     yi = _("Yiddish"),
     yo = _("Yoruba"),

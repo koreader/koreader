@@ -43,6 +43,7 @@ function SystemStat:appendCounters()
              string.format("%.2f", os.difftime(os.time(), self.start_sec) / 60 / 60)})
     self:put({_("Counters"), ""})
     self:put({_("  wake-ups"), self.wakeup_count})
+    -- @translators The number of "sleeps", that is the number of times the device has entered standby. This could also be translated as rendition of a phrase like "entered sleep".
     self:put({_("  sleeps"), self.sleep_count})
     self:put({_("  charge cycles"), self.charge_count})
     self:put({_("  discharge cycles"), self.discharge_count})
@@ -112,10 +113,13 @@ function SystemStat:appendSystemInfo()
     local stat = systemInfo()
     if stat.cpu ~= nil then
         self:put({_("System information"), ""})
+        -- @translators Ticks is a highly technical term. See https://superuser.com/a/101202 The correct translation is likely to simply be "ticks".
         self:put({_("  Total ticks (million)"),
                  string.format("%.2f", stat.cpu.total / 1000000)})
+        -- @translators Ticks is a highly technical term. See https://superuser.com/a/101202 The correct translation is likely to simply be "ticks".
         self:put({_("  Idle ticks (million)"),
                  string.format("%.2f", stat.cpu.idle / 1000000)})
+        -- @translators Ticks is a highly technical term. See https://superuser.com/a/101202 The correct translation is likely to simply be "ticks".
         self:put({_("  Processor usage %"),
                  string.format("%.2f", (1 - stat.cpu.idle / stat.cpu.total) * 100)})
     end

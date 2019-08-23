@@ -209,6 +209,7 @@ function KOSync:addToMainMenu(menu_items)
                 keep_menu_open = true,
                 tap_input_func = function()
                     return {
+                        -- @translators Server address defined by user for progress sync.
                         title = _("Custom progress sync server address"),
                         input = self.kosync_custom_server or "https://",
                         type = "text",
