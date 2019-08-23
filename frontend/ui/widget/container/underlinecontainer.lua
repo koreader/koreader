@@ -12,7 +12,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local UnderlineContainer = WidgetContainer:new{
     linesize = Size.line.thick,
     padding = Size.padding.tiny,
-    -- TODO: shouldn't this default to black instead?
+    --- @todo shouldn't this default to black instead?
     color = Blitbuffer.COLOR_WHITE,
     vertical_align = "top",
 }

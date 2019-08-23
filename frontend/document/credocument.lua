@@ -366,7 +366,7 @@ function CreDocument:drawCurrentView(target, x, y, rect, pos)
         -- to match the screen's BB type, allowing us to take shortcuts when blitting.
         self.buffer = Blitbuffer.new(rect.w, rect.h, self.render_color and Blitbuffer.TYPE_BBRGB32 or nil)
     end
-    -- TODO: self.buffer could be re-used when no page/layout/highlights
+    --- @todo self.buffer could be re-used when no page/layout/highlights
     -- change has been made, to avoid having crengine redraw the exact
     -- same buffer. And it could only change when some other methods
     -- from here are called

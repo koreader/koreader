@@ -61,7 +61,7 @@ local Screen = Device.screen
 local band = bit.band
 
 local function obtainIP()
-    -- TODO: check for DHCP result
+    --- @todo check for DHCP result
     local info = InfoMessage:new{text = _("Obtaining IP address…")}
     UIManager:show(info)
     UIManager:forceRePaint()

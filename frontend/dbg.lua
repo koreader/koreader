@@ -52,7 +52,7 @@ function Dbg:turnOn()
         return check
     end
 
-    -- TODO: close ev.log fd for children
+    --- @todo close ev.log fd for children
     -- create or clear ev log file
     self.ev_log = io.open("ev.log", "w")
 end

@@ -266,7 +266,7 @@ function NetworkMgr:getInfoMenuTable()
     return {
         text = _("Network info"),
         keep_menu_open = true,
-        -- TODO: also show network info when device is authenticated to router but offline
+        --- @todo also show network info when device is authenticated to router but offline
         enabled_func = function() return self:isWifiOn() end,
         callback = function()
             if Device.retrieveNetworkInfo then

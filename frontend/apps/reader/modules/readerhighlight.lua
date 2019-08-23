@@ -436,7 +436,7 @@ function ReaderHighlight:onHold(arg, ges)
             self.view.highlight.temp[self.hold_pos.page] = boxes
         end
         UIManager:setDirty(self.dialog, "ui")
-        -- TODO: only mark word?
+        --- @todo only mark word?
         -- Unfortunately, CREngine does not return good coordinates
         -- UIManager:setDirty(self.dialog, "partial", self.selected_word.sbox)
         self.hold_start_tv = TimeVal.now()

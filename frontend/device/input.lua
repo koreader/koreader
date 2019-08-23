@@ -841,7 +841,7 @@ function Input:waitEvent(timeout_us)
             ev = nil
             break
         elseif ev == "application forced to quit" then
-            -- TODO: return an event that can be handled
+            --- @todo return an event that can be handled
             os.exit(0)
         end
         logger.warn("got error waiting for events:", ev)

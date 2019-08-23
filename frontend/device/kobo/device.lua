@@ -45,7 +45,7 @@ local Kobo = Generic:new{
     canHWInvert = yes,
 }
 
--- TODO: hasKeys for some devices?
+--- @todo hasKeys for some devices?
 
 -- Kobo Touch:
 local KoboTrilogy = Kobo:new{

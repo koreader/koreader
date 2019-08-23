@@ -84,7 +84,7 @@ function InfoMessage:init()
 
     local image_widget
     if self.show_icon then
-        -- TODO: remove self.image support, only used in filemanagersearch
+        --- @todo remove self.image support, only used in filemanagersearch
         -- this requires self.image's lifecycle to be managed by ImageWidget
         -- instead of caller, which is easy to introduce bugs
         if self.image then
