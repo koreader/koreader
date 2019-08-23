@@ -629,7 +629,7 @@ end
 function ReaderStatistics:getBookProperties()
     local props = self.view.document:getProps()
     if props.title == "No document" or props.title == "" then
-        -- FIXME: sometimes crengine returns "No document", try one more time
+        --- @fixme Sometimes crengine returns "No document", try one more time.
         props = self.view.document:getProps()
     end
     return props

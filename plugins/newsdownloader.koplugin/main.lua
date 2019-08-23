@@ -57,7 +57,7 @@ local function getFeedLink(possible_link)
     end
 end
 
--- TODO: implement as NetworkMgr:afterWifiAction with configuration options
+--- @todo Implement as NetworkMgr:afterWifiAction with configuration options.
 function NewsDownloader:afterWifiAction()
     if not wifi_enabled_before_action then
         NetworkMgr:promptWifiOff()

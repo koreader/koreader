@@ -44,7 +44,7 @@ function Send2Ebook:downloadFileAndRemove(connection_url, remote_path, local_dow
     end
 end
 
--- TODO: implement as NetworkMgr:afterWifiAction with configuration options
+--- @todo Implement as NetworkMgr:afterWifiAction with configuration options.
 function Send2Ebook:afterWifiAction()
     if not wifi_enabled_before_action then
         NetworkMgr:promptWifiOff()

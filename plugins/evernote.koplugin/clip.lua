@@ -248,7 +248,7 @@ function MyClipping:parseHighlight(highlights, book)
                 image.drawer = item.drawer
                 clipping.image = self:getImage(image)
             end
-            -- TODO: store chapter info when exporting highlights
+            --- @todo Store chapter info when exporting highlights.
             if clipping.text and clipping.text ~= "" or clipping.image then
                 table.insert(book, { clipping })
             end
