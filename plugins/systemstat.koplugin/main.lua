@@ -119,7 +119,6 @@ function SystemStat:appendSystemInfo()
         -- @translators Ticks is a highly technical term. See https://superuser.com/a/101202 The correct translation is likely to simply be "ticks".
         self:put({_("  Idle ticks (million)"),
                  string.format("%.2f", stat.cpu.idle / 1000000)})
-        -- @translators Ticks is a highly technical term. See https://superuser.com/a/101202 The correct translation is likely to simply be "ticks".
         self:put({_("  Processor usage %"),
                  string.format("%.2f", (1 - stat.cpu.idle / stat.cpu.total) * 100)})
     end
