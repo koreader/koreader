@@ -33,7 +33,7 @@ if [ "${untagged_todo}" ]; then
     echo -e "\\n${ANSI_RED}Warning: possible improperly tagged todo, fixme or warning detected."
     echo -e "\\n${ANSI_RED}         use --- followed by @todo, @fixme or @warning."
     echo "${untagged_todo}"
-    # only warn, don't enforce
+    exit 1
 fi
 
 echo -e "\n${ANSI_GREEN}Luacheck results"
