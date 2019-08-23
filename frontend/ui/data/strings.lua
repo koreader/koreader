@@ -24,7 +24,7 @@ S.DEWATERMARK = _("Dewatermark")
 S.DOC_LANG = _("Document Language")
 S.VERTICAL_TEXT = _("Vertical Text")
 S.WORD_GAP = _("Word Gap")
--- @translators The maximum size of a speckle to be ignored instead of being considered a character.
+-- @translators The maximum size of a dust or ink speckle to be ignored instead of being considered a character.
 S.DEFECT_SIZE = _("Reflow Speckle Ignore Size")
 S.RENDER_QUALITY = _("Render Quality")
 S.AUTO_STRAIGHTEN = _("Auto Straighten")
