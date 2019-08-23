@@ -30,7 +30,7 @@ function optionsutil.showValues(configurable, option, prefix)
         end
     end
     if not default then
-        default = "not set"
+        default = _("not set")
         if option.toggle and option.values then
             value_current = current
             current = arg_table[current]
