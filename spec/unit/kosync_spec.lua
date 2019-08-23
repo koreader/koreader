@@ -185,7 +185,7 @@ describe("KOSync modules #notest #nocov", function()
         body = {}
     }
 
-    -- TODO: Test kosync module
+    --- @todo Test kosync module
     local function mockKOSyncClient() --luacheck: ignore
         package.loaded["KOSyncClient"] = nil
         local c = require("KOSyncClient")

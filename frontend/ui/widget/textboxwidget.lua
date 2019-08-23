@@ -350,6 +350,7 @@ function TextBoxWidget:_getLinePads(vertical_string)
     return pads
 end
 
+---- Lays out text.
 function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
     local font_height = self.face.size
     if start_row_idx < 1 then start_row_idx = 1 end
@@ -374,8 +375,8 @@ function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
         elseif self.alignment == "right" then
             pen_x = (self.width - line.width)
         end
-            --@todo don't use kerning for monospaced fonts.    (houqp)
-            -- refert to cb25029dddc42693cc7aaefbe47e9bd3b7e1a750 in master tree
+            --- @todo don't use kerning for monospaced fonts.    (houqp)
+            --- refer to [cb25029dddc42693cc7aaefbe47e9bd3b7e1a750](https://github.com/koreader/koreader/commit/cb25029dddc42693cc7aaefbe47e9bd3b7e1a750) in master tree
         RenderText:renderUtf8Text(self._bb, pen_x, y, self.face, self:_getLineText(line), true, self.bold, self.fgcolor, nil, self:_getLinePads(line))
         y = y + self.line_height_px
     end

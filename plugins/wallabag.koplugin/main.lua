@@ -1,3 +1,7 @@
+--[[--
+@module koplugin.wallabag
+]]
+
 local DataStorage = require("datastorage")
 local DocSettings = require("docsettings")
 local Event = require("ui/event")
@@ -320,6 +324,9 @@ function Wallabag:getArticleList()
     return self:callAPI( "GET", articles_url, nil, "", "" )
 end
 
+--- Download Wallabag article.
+-- @string article
+-- @treturn int 1 failed, 2 skipped, 3 downloaded
 function Wallabag:download(article)
     local skip_article = false
     local item_url = "/api/entries/" .. article.id .. "/export.epub"
@@ -333,7 +340,7 @@ function Wallabag:download(article)
     if attr then
         -- File already exists, skip it. Preferably only skip if the date of local file is newer than server's.
         -- newsdownloader.koplugin has a date parser but it is available only if the plugin is activated.
-        -- TODO: find a better solution
+        --- @todo find a better solution
         if self.is_dateparser_available then
             local server_date = self.dateparser.parse(article.updated_at)
             if server_date < attr.modification then

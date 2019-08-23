@@ -1,3 +1,7 @@
+--[[--
+WPA client helper for Kobo.
+]]
+
 local InfoMessage = require("ui/widget/infomessage")
 local WpaClient = require('lj-wpaclient/wpaclient')
 local UIManager = require("ui/uimanager")
@@ -9,6 +13,7 @@ local CLIENT_INIT_ERR_MSG = _("Failed to initialize network control client: %1."
 
 local WpaSupplicant = {}
 
+--- Gets network list.
 function WpaSupplicant:getNetworkList()
     local wcli, err = WpaClient.new(self.wpa_supplicant.ctrl_interface)
     if wcli == nil then
@@ -25,12 +30,12 @@ function WpaSupplicant:getNetworkList()
         network.signal_quality = network:getSignalQuality()
         local saved_nw = saved_networks:readSetting(network.ssid)
         if saved_nw then
-            -- TODO: verify saved_nw.flags == network.flags? This will break if user changed the
+            --- @todo verify saved_nw.flags == network.flags? This will break if user changed the
             -- network setting from [WPA-PSK-TKIP+CCMP][WPS][ESS] to [WPA-PSK-TKIP+CCMP][ESS]
             network.password = saved_nw.password
             network.psk = saved_nw.psk
         end
-        -- TODO: also verify bssid if it is not set to any
+        --- @todo also verify bssid if it is not set to any
         if curr_network and curr_network.ssid == network.ssid then
             network.connected = true
             network.wpa_supplicant_id = curr_network.id
@@ -40,20 +45,21 @@ function WpaSupplicant:getNetworkList()
 end
 
 local function calculatePsk(ssid, pwd)
-    -- TODO: calculate PSK with native function instead of shelling out
+    --- @todo calculate PSK with native function instead of shelling out
     -- hostap's reference implementation is available at:
     --   * /wpa_supplicant/wpa_passphrase.c
     --   * /src/crypto/sha1-pbkdf2.c
-    -- see: http://docs.ros.org/diamondback/api/wpa_supplicant/html/sha1-pbkdf2_8c_source.html
+    -- see: <http://docs.ros.org/diamondback/api/wpa_supplicant/html/sha1-pbkdf2_8c_source.html>
     local fp = io.popen(("wpa_passphrase %q %q"):format(ssid, pwd))
     local out = fp:read("*a")
     fp:close()
     return string.match(out, 'psk=([a-f0-9]+)')
 end
 
+--- Authenticates network.
 function WpaSupplicant:authenticateNetwork(network)
-    -- TODO: support passwordless network
     local err, wcli, nw_id
+    --- @todo support passwordless network
     wcli, err = WpaClient.new(self.wpa_supplicant.ctrl_interface)
     if not wcli then
         return false, T(CLIENT_INIT_ERR_MSG, err)

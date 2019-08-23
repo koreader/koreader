@@ -1,3 +1,7 @@
+--[[--
+Checks for updates on the specified nightly build server.
+]]
+
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
@@ -334,8 +338,9 @@ function OTAManager:fetchAndProcessUpdate()
     end
 end
 
+---- Uses zsync and tar to prepare an update package.
 function OTAManager:_buildLocalPackage()
-    -- TODO: validate the installed package?
+    --- @todo Validate the installed package?
     local installed_package = self.installed_package
     if lfs.attributes(installed_package, "mode") == "file" then
         return 0

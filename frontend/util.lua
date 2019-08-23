@@ -100,8 +100,7 @@ function util.secondsToClock(seconds, withoutSeconds)
 end
 
 
--- Converts seconds to a period of time string.
-
+--- Converts seconds to a period of time string.
 ---- @int seconds number of seconds
 ---- @bool withoutSeconds if true 1h30', if false 1h30'10''
 ---- @bool hmsFormat, if true format 1h30m10s
@@ -187,7 +186,7 @@ end
 --[[--
 Compares values in two different tables.
 
-Source: <a href="https://stackoverflow.com/a/32660766/2470572">https://stackoverflow.com/a/32660766/2470572</a>
+Source: <https://stackoverflow.com/a/32660766/2470572>
 ]]
 ---- @param o1 Lua table
 ---- @param o2 Lua table
@@ -227,7 +226,7 @@ end
 --[[--
 Makes a deep copy of a table.
 
-Source: <a href="https://stackoverflow.com/a/16077650/2470572">https://stackoverflow.com/a/16077650/2470572</a>
+Source: <https://stackoverflow.com/a/16077650/2470572>
 ]]
 ---- @param o Lua table
 ---- @treturn Lua table
@@ -297,7 +296,7 @@ end
 
 --- Reverse the individual greater-than-single-byte characters
 -- @string string to reverse
--- Taken from https://github.com/blitmap/lua-utf8-simple#utf8reverses
+-- Taken from <https://github.com/blitmap/lua-utf8-simple#utf8reverses>
 function util.utf8Reverse(text)
     text = text:gsub('[%z\1-\127\194-\244][\128-\191]*', function (c) return #c > 1 and c:reverse() end)
     return text:reverse()

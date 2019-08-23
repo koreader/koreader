@@ -77,8 +77,8 @@ describe("Readerhighlight module", function()
             UIManager:quit()
             readerui.rolling:onGotoPage(page)
             UIManager:show(readerui)
-            -- HACK: Mock UIManager:run x and y for readerui.dimen
-            -- TODO: refactor readerview's dimen handling so we can get rid of
+            --- @fixme HACK: Mock UIManager:run x and y for readerui.dimen
+            --- @todo Refactor readerview's dimen handling so we can get rid of
             -- this workaround
             readerui:paintTo(Screen.bb, 0, 0)
         end)

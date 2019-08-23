@@ -28,11 +28,12 @@ if [ "${tab_detected}" ]; then
     exit 1
 fi
 
-newline_split=$(grep -Pzo "(_|gettext)\((\n|\s)+('|\"|\[\[)" --include \*.lua --exclude={dateparser.lua,xml.lua} --recursive {reader,setupkoenv,datastorage}.lua frontend plugins spec || true)
-if [ "${newline_split}" ]; then
-    echo -e "\\n${ANSI_RED}Warning: whitespace detected between gettext() call and string."
-    echo "${newline_split}"
-    exit 1
+untagged_todo=$(grep -Pin "[^\-]\-\-\s+@?(todo|fixme|warning)" --include \*.lua --exclude={dateparser.lua,xml.lua} --recursive {reader,setupkoenv,datastorage}.lua frontend plugins spec || true)
+if [ "${untagged_todo}" ]; then
+    echo -e "\\n${ANSI_RED}Warning: possible improperly tagged todo, fixme or warning detected."
+    echo -e "\\n${ANSI_RED}         use --- followed by @todo, @fixme or @warning."
+    echo "${untagged_todo}"
+    # only warn, don't enforce
 fi
 
 echo -e "\n${ANSI_GREEN}Luacheck results"

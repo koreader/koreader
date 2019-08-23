@@ -116,9 +116,6 @@ function ReaderZooming:init()
 end
 
 function ReaderZooming:onReadSettings(config)
-    -- @TODO config file from old code base uses globalzoom_mode
-    -- instead of zoom_mode, we need to handle this imcompatibility
-    -- 04.12 2012 (houqp)
     local zoom_mode = config:readSetting("zoom_mode") or
                     G_reader_settings:readSetting("zoom_mode") or
                     self.DEFAULT_ZOOM_MODE
