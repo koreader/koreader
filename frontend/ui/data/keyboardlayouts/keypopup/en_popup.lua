@@ -320,14 +320,14 @@ return {
         "Q",
         north = "[",
         northeast = "{",
-        -- todo render q̃ correctly on key (not a problem in textbox?)
+        --- @todo Render q̃ correctly on key (not a problem in textbox?)
         --east = {"q̃"}, -- Old/Middle French abbreviation of que
     },
     _q_ = {
         "q",
         north = "[",
         northeast = "{",
-        -- todo render q̃ correctly on key (not a problem in textbox?)
+        --- @todo Render q̃ correctly on key (not a problem in textbox?)
         --east = {"q̃"}, -- Old/Middle French abbreviation of que
     },
     _R_ = {
