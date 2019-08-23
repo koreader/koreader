@@ -409,7 +409,7 @@ function EvernoteExporter:exportClippings(clippings)
     local all_count = export_count + error_count
     if export_count > 0 and error_count == 0 then
         if all_count == 1 then
-            msg = T(_("Exported notes from the book:\n%1", export_title)
+            msg = T(_("Exported notes from the book:\n%1"), export_title)
         else
             msg = T(
                 -- @translators %1 is the title of a book and %2 a number of 2 or higher. To track better handling of plurals please see https://github.com/koreader/koreader/issues/5249
