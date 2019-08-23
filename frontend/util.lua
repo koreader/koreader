@@ -153,13 +153,14 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
                 mins = string.format("%.f", round(seconds / 60))
                 return mins .. "'"
             end
-            -- @translators This is the 'h' for hour, like in 1h30.
+            -- @translators This is the 'h' for hour, like in 1h30. This is a duration.
             return T(_("%1h%2"), hours, mins)
         end
         local secs = string.format("%02.f", math.floor(seconds - hours * 3600 - mins * 60))
         if hours == "0" then
             mins = string.format("%.f", round(seconds / 60))
             if hmsFormat then
+                -- @translators This is the 'm' for minute and the 's' for second, like in 1m30s. This is a duration.
                 return T(_("%1m%2s"), mins, secs)
             else
                 return mins .. "'" .. secs .. "''"
@@ -167,8 +168,10 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
         end
         if hmsFormat then
             if secs == "00" then
+                -- @translators This is the 'h' for hour and the 'm' for minute, like in 1h30m. This is a duration.
                 return T(_("%1h%2m"), hours, mins)
             else
+                -- @translators This is the 'h' for hour, the 'm' for minute and the 's' for second, like in 1h30m30s. This is a duration.
                 return T(_("%1h%2m%3s"), hours, mins, secs)
             end
 
