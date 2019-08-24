@@ -97,9 +97,6 @@ local function addTranslation(msgctxt, msgid, msgstr, n)
             if not GetText.context[msgctxt][msgid] then
                 GetText.context[msgctxt][msgid] = {}
             end
-            if not GetText.context[msgctxt][msgid][n] then
-                GetText.context[msgctxt][msgid][n] = {}
-            end
             GetText.context[msgctxt][msgid][n] = unescaped_string
         else
             GetText.context[msgctxt][msgid] = unescaped_string
