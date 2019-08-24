@@ -43,7 +43,7 @@ function SystemStat:appendCounters()
              string.format("%.2f", os.difftime(os.time(), self.start_sec) / 60 / 60)})
     self:put({_("Counters"), ""})
     self:put({_("  wake-ups"), self.wakeup_count})
-    -- @translators The number of "sleeps", that is the number of times the device has entered standby. This could also be translated as rendition of a phrase like "entered sleep".
+    -- @translators The number of "sleeps", that is the number of times the device has entered standby. This could also be translated as a rendition of a phrase like "entered sleep".
     self:put({_("  sleeps"), self.sleep_count})
     self:put({_("  charge cycles"), self.charge_count})
     self:put({_("  discharge cycles"), self.discharge_count})
