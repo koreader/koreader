@@ -2,6 +2,7 @@ local CanvasContext = require("document/canvascontext")
 
 local FontList = {
     fontdir = "./fonts",
+    fontlist = {},
 }
 
 --[[
@@ -94,14 +95,14 @@ local function _readList(target, dir)
 end
 
 function FontList:getFontList()
-    local fontlist = {}
-    _readList(fontlist, self.fontdir)
+    if #self.fontlist > 0 then return self.fontlist end
+    _readList(self.fontlist, self.fontdir)
     -- multiple paths should be joined with semicolon
     for dir in string.gmatch(getExternalFontDir() or "", "([^;]+)") do
-        _readList(fontlist, dir)
+        _readList(self.fontlist, dir)
     end
-    table.sort(fontlist)
-    return fontlist
+    table.sort(self.fontlist)
+    return self.fontlist
 end
 
 return FontList
