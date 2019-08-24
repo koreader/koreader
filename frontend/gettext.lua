@@ -52,8 +52,9 @@ end
 --- Generates a proper Lua function out of logical gettext math tests.
 local function getPluralFunc(pl_tests, nplurals, plural_default)
     -- something went wrong, abort, abort
-    if not (#pl_tests+1 == tonumber(nplurals)) then
+    if not (#pl_tests == tonumber(nplurals)) then
         logger.warn("GetText: using default plural function, declared and detected number of plurals don't match")
+        logger.warn("declared", nplurals, "detected", #pl_tests)
         return getDefaultPlural
     end
     -- the return function() stuff is a bit of loadstring trickery
@@ -164,7 +165,7 @@ function GetText_mt.__index.changeLang(new_lang)
                     local util = require("util")
                     headers = data.msgstr
                     local plural_forms = data.msgstr:match("Plural%-Forms: (.*);")
-                    local nplurals = plural_forms:match("nplurals=([0-9]+);") or 2
+                    local nplurals = plural_forms:match("nplurals=([0-9]+);") or 1
                     local plurals = plural_forms:match("%((.*)%)")
 
                     if plurals:find("[^n!=%%<>&:%(%)|?0-9 ]") then
