@@ -7,7 +7,6 @@ local GetText = {
     dirname = "l10n",
     textdomain = "koreader",
     plural_default = "n != 1",
-    getPlural = getDefaultPlural,
 }
 
 local GetText_mt = {
@@ -51,13 +50,16 @@ local function getDefaultPlural(n)
 end
 
 --- Generates a proper Lua function out of logical gettext math tests.
-local function getPluralFunc(pl_tests, plural_default)
+local function getPluralFunc(pl_tests, nplurals, plural_default)
+    -- something went wrong, abort, abort
+    if not (#pl_tests+1 == tonumber(nplurals)) then
+        logger.warn("GetText: using default plural function, declared and detected number of plurals don't match")
+        return getDefaultPlural
+    end
     -- the return function() stuff is a bit of loadstring trickery
     local plural_func_str = "return function(n) if "
 
     if #pl_tests > 1 then
-        local i
-
         for i = 1, #pl_tests do
             local pl_test = pl_tests[i]
             pl_test = logicalCtoLua(pl_test)
@@ -90,8 +92,7 @@ local function getPluralFunc(pl_tests, plural_default)
     return loadstring(plural_func_str)()
 end
 
-local function addTranslation(GetText, msgctxt, msgid, msgstr, n)
---print(msgid, msgstr)
+local function addTranslation(gettext, msgctxt, msgid, msgstr, n)
     -- translated string
     local unescaped_string = string.gsub(msgstr, "\\(.)", c_escape)
     if msgctxt and msgctxt ~= "" then
@@ -108,8 +109,6 @@ local function addTranslation(GetText, msgctxt, msgid, msgstr, n)
         end
     else
         if n then
-        print(n)
-        error()
             if not GetText.translation[msgid] then
                 GetText.translation[msgid] = {}
             end
@@ -153,20 +152,14 @@ function GetText_mt.__index.changeLang(new_lang)
         if line == nil or line == "" then
             if data.msgid and data.msgid_plural and data["msgstr[0]"] then
                 for k, v in pairs(data) do
-                    local n = k:match("msgstr%[([0-9]+)%]")
-                    print(k, v)
+                    local n = tonumber(k:match("msgstr%[([0-9]+)%]"))
                     local msgstr = v
+                    print(msgstr)
+                    --error()
                     if n and msgstr then
-                        print("JOEPIE")
-                        print(k)
-
                         addTranslation(GetText, data.msgctxt, data.msgid, msgstr, n)
                     end
                 end
-
-
-
-                --error()
             elseif data.msgid and data.msgstr and data.msgstr ~= "" then
                 -- header
                 if not headers and data.msgid == "" then
@@ -183,7 +176,7 @@ function GetText_mt.__index.changeLang(new_lang)
 
                     local pl_tests = util.splitToArray(plurals, " : ")
 
-                    GetText.getPlural = getPluralFunc(pl_tests, GetText.plural_default)
+                    GetText.getPlural = getPluralFunc(pl_tests, nplurals, GetText.plural_default)
                     if not GetText.getPlural then
                         GetText.getPlural = getDefaultPlural
                     end
