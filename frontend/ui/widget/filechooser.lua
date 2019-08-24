@@ -12,6 +12,7 @@ local ffiUtil = require("ffi/util")
 local T = ffiUtil.template
 local C = ffi.C
 local _ = require("gettext")
+local N_ = _.ngettext
 local Screen = Device.screen
 local util = require("util")
 local getFileNameSuffix = util.getFileNameSuffix
@@ -210,13 +211,7 @@ function FileChooser:genItemTableFromPath(path)
         local subdir_path = self.path.."/"..dir.name
         self.list(subdir_path, sub_dirs, dir_files)
         local num_items = #sub_dirs + #dir_files
-        local istr
-        if num_items == 1 then
-            istr = _("1 item")
-        else
-            -- @translators %1 is a placeholder for a plural number. So "%1 items" will automatically show up as "2 items", "3 items", etc.
-            istr = ffiUtil.template(_("%1 items"), num_items)
-        end
+        local istr = ffiUtil.template(N_("1 item", "%1 items", num_items), num_items)
         local text
         if dir.name == ".." then
             text = up_folder_arrow

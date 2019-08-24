@@ -12,6 +12,7 @@ local Device = require("device")
 local DEBUG = require("dbg")
 local T = require("ffi/util").template
 local _ = require("gettext")
+local N_ = _.ngettext
 local slt2 = require('slt2')
 local MyClipping = require("clip")
 local realpath = require("ffi/util").realpath
@@ -409,22 +410,20 @@ function EvernoteExporter:exportClippings(clippings)
     local all_count = export_count + error_count
     if export_count > 0 and error_count == 0 then
         if all_count == 1 then
-            msg = T(_("Exported notes from the book:\n%1"), export_title)
-        else
             msg = T(
-                -- @translators %1 is the title of a book and %2 a number of 2 or higher. To track better handling of plurals please see https://github.com/koreader/koreader/issues/5249
-                _("Exported notes from the book:\n%1\nand %2 others."),
+                N_("Exported notes from the book:\n%1",
+                   "Exported notes from the book:\n%1\nand %2 others.",
+                   all_count-1),
                 export_title,
                 all_count-1
             )
         end
     elseif error_count > 0 then
         if all_count == 1 then
-            msg = T(_("An error occurred while trying to export notes from the book:\n%1"), error_title)
-        else
             msg = T(
-                -- @translators %1 is the title of a book and %2 a number of 2 or higher. To track better handling of plurals please see https://github.com/koreader/koreader/issues/5249
-                _("Multiple errors occurred while trying to export notes from the book:\n%1\nand %2 others."),
+                N_("An error occurred while trying to export notes from the book:\n%1",
+                   "Multiple errors occurred while trying to export notes from the book:\n%1\nand %2 others.",
+                   error_count-1),
                 error_title,
                 error_count-1
             )

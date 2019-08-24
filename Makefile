@@ -466,7 +466,8 @@ XGETTEXT_BIN=xgettext
 
 pot:
 	mkdir -p $(TEMPLATE_DIR)
-	$(XGETTEXT_BIN) --from-code=utf-8 --keyword=C_:1c,2 \
+	$(XGETTEXT_BIN) --from-code=utf-8 \
+		--keyword=C_:1c,2 --keyword=N_:1,2 --keyword=NC_:1c,2,3 \
 		--add-comments=@translators \
 		reader.lua `find frontend -iname "*.lua"` \
 		`find plugins -iname "*.lua"` \

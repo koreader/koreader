@@ -28,6 +28,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
+local N_ = _.ngettext
 local Screen = Device.screen
 local T = require("ffi/util").template
 
@@ -381,7 +382,7 @@ function ListMenuItem:update()
                 end
             else
                 if pages then
-                    pages_str = T(_("%1 pages"), pages)
+                    pages_str = T(N_("1 page", "%1 pages", pages), pages)
                 end
             end
 
