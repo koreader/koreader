@@ -92,7 +92,7 @@ local function getPluralFunc(pl_tests, nplurals, plural_default)
     return loadstring(plural_func_str)()
 end
 
-local function addTranslation(gettext, msgctxt, msgid, msgstr, n)
+local function addTranslation(msgctxt, msgid, msgstr, n)
     -- translated string
     local unescaped_string = string.gsub(msgstr, "\\(.)", c_escape)
     if msgctxt and msgctxt ~= "" then
@@ -157,7 +157,7 @@ function GetText_mt.__index.changeLang(new_lang)
                     print(msgstr)
                     --error()
                     if n and msgstr then
-                        addTranslation(GetText, data.msgctxt, data.msgid, msgstr, n)
+                        addTranslation(data.msgctxt, data.msgid, msgstr, n)
                     end
                 end
             elseif data.msgid and data.msgstr and data.msgstr ~= "" then
@@ -182,7 +182,7 @@ function GetText_mt.__index.changeLang(new_lang)
                     end
                 end
 
-                addTranslation(GetText, data.msgctxt, data.msgid, data.msgstr)
+                addTranslation(data.msgctxt, data.msgid, data.msgstr)
             end
             -- stop at EOF:
             if line == nil then break end
