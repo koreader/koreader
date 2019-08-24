@@ -856,6 +856,7 @@ function ReaderView:getRenderModeMenuTable()
         }
     end
     return  {
+        -- @translators Selects which layers of the DjVu image should be rendered.  Valid  rendering  modes are color, black, mask, foreground, and background. See http://djvu.sourceforge.net/ and https://en.wikipedia.org/wiki/DjVu for more information about the format.
         text = _("DjVu render mode"),
         sub_item_table = {
             make_mode(_("COLOUR (works for both colour and b&w pages)"), 0),

@@ -692,7 +692,11 @@ This extraction may take time and use some battery power: you may wish to keep y
 
     local recursive = Trapper:confirm(_([[
 Do you want to extract book information for books in sub-directories too?]]
-    ), _("Here only"), _("Here and under"))
+    ),
+        -- @translators Extract book information only for books in this directory.
+        _("Here only"),
+        -- @translators Extract book information for books in this directory as well as in subdirectories.
+        _("Here and under"))
 
     local refresh_existing = Trapper:confirm(_([[
 Do you want to refresh metadata and covers that have already been extracted?]]

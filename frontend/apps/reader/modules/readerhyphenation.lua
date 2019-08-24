@@ -7,6 +7,7 @@ local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
+local C_ = _.pgettext
 local T = require("ffi/util").template
 
 local ReaderHyphenation = InputContainer:new{
@@ -126,7 +127,7 @@ function ReaderHyphenation:init()
                             G_reader_settings:delSetting("hyph_alg_fallback")
                             if touchmenu_instance then touchmenu_instance:updateItems() end
                         end,
-                        choice2_text = _("Fallback"),
+                        choice2_text = C_("Hyphenation", "Fallback"),
                         choice2_callback = function()
                             G_reader_settings:saveSetting("hyph_alg_fallback", v.filename)
                             G_reader_settings:delSetting("hyph_alg_default")

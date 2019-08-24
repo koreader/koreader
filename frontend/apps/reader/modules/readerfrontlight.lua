@@ -157,7 +157,7 @@ function ReaderFrontLight:onShowIntensity()
     if powerd:isFrontlightOff() then
         new_text = _("Frontlight disabled.")
     else
-        new_text = T(_("Frontlight intensity is set to %1."), powerd:frontlightIntensity())
+        new_text = T(_("Frontlight intensity set to %1."), powerd:frontlightIntensity())
     end
     UIManager:show(Notification:new{
         text = new_text,

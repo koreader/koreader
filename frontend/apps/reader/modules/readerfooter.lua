@@ -652,7 +652,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 text = _("Separator"),
                 sub_item_table = {
                     {
-                        text = _("Vertical line") .. " (|)",
+                        text = _("Vertical line (|)"),
                         checked_func = function()
                             return self.settings.items_separator == "bar" or self.settings.items_separator == nil
                         end,
@@ -663,7 +663,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         end,
                     },
                     {
-                        text = _("Bullet") .. " (•)",
+                        text = _("Bullet (•)"),
                         checked_func = function()
                             return self.settings.items_separator == "bullet"
                         end,

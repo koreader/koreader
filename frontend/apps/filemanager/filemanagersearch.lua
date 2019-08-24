@@ -79,7 +79,7 @@ function Search:getCalibre()
         logger.dbg("search Calibre database")
         self.metafile_1 = findcalibre("/mnt")
         if not self.metafile_1 then
-          self.error = _("SEARCH_LIBRARY_PATH should be defined in DEFAULTS.LUA.")
+            self.error = _("The SEARCH_LIBRARY_PATH variable must be defined in 'persistent.defaults.lua' in order to use the calibre file search functionality.")
         end
     else
         if string.sub(SEARCH_LIBRARY_PATH, string.len(SEARCH_LIBRARY_PATH)) ~= "/" then
@@ -189,6 +189,7 @@ function Search:ShowSearch()
                         end,
                     },
                     {
+                        -- @translators Search for books in calibre catalog.
                         text = _("Find books"),
                         enabled = true,
                         callback = function()
@@ -494,7 +495,7 @@ function Search:onMenuHold(item)
         item.info = item.info .. item.path
         local f = io.open(item.path, "r")
         if f == nil then
-            item.info = item.info .. "\n" .. _("File not found!")
+            item.info = item.info .. "\n" .. _("File not found.")
         else
             item.info = item.info .. "\n" .. _("Size:") .. " " .. string.format("%4.1fM", lfs.attributes(item.path, "size")/1024/1024)
             f:close()

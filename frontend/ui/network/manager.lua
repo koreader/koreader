@@ -339,7 +339,7 @@ function NetworkMgr:getMenuTable(common_settings)
 end
 
 function NetworkMgr:showNetworkMenu(complete_callback)
-    local info = InfoMessage:new{text = _("Scanning…")}
+    local info = InfoMessage:new{text = _("Scanning for networks…")}
     UIManager:show(info)
     UIManager:nextTick(function()
         local network_list, err = self:getNetworkList()
@@ -366,7 +366,7 @@ function NetworkMgr:showNetworkMenu(complete_callback)
 end
 
 function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback)
-    local info = InfoMessage:new{text = _("Scanning…")}
+    local info = InfoMessage:new{text = _("Scanning for networks…")}
     UIManager:show(info)
     UIManager:nextTick(function()
         local network_list, err = self:getNetworkList()
