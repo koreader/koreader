@@ -347,9 +347,10 @@ androidupdate: all
 	# in runtime luajit-launcher's libluajit.so will be loaded
 	-rm $(INSTALL_DIR)/koreader/libs/libluajit.so
 
-        # assets are compressed manually and stored inside the APK.
+	# assets are compressed manually and stored inside the APK.
 	cd $(INSTALL_DIR)/koreader && zip -r9 \
 		../../$(ANDROID_LAUNCHER_DIR)/assets/module/koreader-$(VERSION).zip * \
+		--exclude=*fonts/droid* \
 		--exclude=*resources/fonts* \
 		--exclude=*resources/icons/src* \
 		--exclude=*share/man* \
