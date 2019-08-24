@@ -1021,7 +1021,10 @@ function ReaderStatistics:getCurrentStat(id_book)
         -- adding 0.5 rounds to nearest integer with math.floor
         { _("Percentage completed"), math.floor(total_read_pages / self.data.pages * 100 + 0.5) .. "%" },
         { _("Average time per day"), util.secondsToClock(total_time_book/tonumber(total_days)), false },
-        { _("Estimated reading finished"), string.format("%s (%d day(s))", estimate_end_of_read_date, estimate_days_to_read) },
+        { _("Estimated reading finished"),
+            --- @todo Plurals for translations.
+            -- @translators Estimated reading finished date (%1), estimated remaining days to read (%2). Please see https://github.com/koreader/koreader/issues/5249 to track proper plural translation.
+            T(_("%1 (%2 day(s))"), estimate_end_of_read_date, estimate_days_to_read) },
     }
 end
 
