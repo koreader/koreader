@@ -73,7 +73,6 @@ local function getPluralFunc(pl_tests, nplurals, plural_default)
             end
             pl_test = pl_test:gsub("?", " then return")
 
-
             -- append to plural function
             plural_func_str = plural_func_str..pl_test
         end
@@ -154,8 +153,7 @@ function GetText_mt.__index.changeLang(new_lang)
                 for k, v in pairs(data) do
                     local n = tonumber(k:match("msgstr%[([0-9]+)%]"))
                     local msgstr = v
-                    print(msgstr)
-                    --error()
+
                     if n and msgstr then
                         addTranslation(data.msgctxt, data.msgid, msgstr, n)
                     end
