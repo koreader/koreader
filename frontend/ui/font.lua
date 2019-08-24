@@ -2,10 +2,10 @@
 Font module.
 ]]
 
-local Freetype = require("ffi/freetype")
-local logger = require("logger")
-local Screen = require("device").screen
 local FontList = require("fontlist")
+local Freetype = require("ffi/freetype")
+local Screen = require("device").screen
+local logger = require("logger")
 
 local Font = {
     fontmap = {
@@ -28,18 +28,18 @@ local Font = {
         pgfont = "noto/NotoSans-Regular.ttf",
 
         -- selectmenu: font for item shortcut
-        scfont = "droid/DroidSansMono.ttf",
+        scfont = "DroidSansMono.ttf",
 
         -- help page: font for displaying keys
-        hpkfont = "droid/DroidSansMono.ttf",
+        hpkfont = "DroidSansMono.ttf",
         -- font for displaying help messages
         hfont = "noto/NotoSans-Regular.ttf",
 
         -- font for displaying input content
         -- we have to use mono here for better distance controlling
-        infont = "droid/DroidSansMono.ttf",
+        infont = "DroidSansMono.ttf",
         -- small mono font for displaying code
-        smallinfont = "droid/DroidSansMono.ttf",
+        smallinfont = "DroidSansMono.ttf",
 
         -- font for info messages
         infofont = "noto/NotoSans-Regular.ttf",
@@ -106,10 +106,20 @@ function Font:getFace(font, size)
         if not realname then
             realname = font
         end
-        realname = FontList.fontdir.."/"..realname
-        local ok, face = pcall(Freetype.newFace, realname, size)
+        local builtin_font_location = FontList.fontdir.."/"..realname
+        local ok, face = pcall(Freetype.newFace, builtin_font_location, size)
+        -- Not all fonts are bundled on all platforms because they come with the system.
+        -- In that case, search through all font folders for the requested font.
+        if not ok and font ~= realname then
+            local fonts = FontList:getFontList()
+            for _k, _v in ipairs(fonts) do
+                if _v:find(realname) then
+                    ok, face = pcall(Freetype.newFace, _v, size)
+                end
+            end
+        end
         if not ok then
-            logger.warn("#! Font ", font, " (", realname, ") not supported: ", face)
+            logger.err("#! Font ", font, " (", realname, ") not supported: ", face)
             return nil
         end
         --- Freetype font face wrapper object
