@@ -10,6 +10,7 @@ local Translator = require("ui/translator")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
+local C_ = _.pgettext
 local T = require("ffi/util").template
 local Screen = Device.screen
 
@@ -800,7 +801,7 @@ function ReaderHighlight:onHoldRelease()
                 },
                 {
                     {
-                        text = "Copy",
+                        text = C_("Text", "Copy"),
                         enabled = Device:hasClipboard(),
                         callback = function()
                             Device.input.setClipboardText(self.selected_text.text)
