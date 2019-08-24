@@ -6,7 +6,10 @@ local _ = require("gettext")
 --[[ Font settings for desktop linux and mac ]]--
 
 local function getUserDir()
-    return os.getenv("HOME").."/.local/share/fonts"
+    local home = os.getenv("HOME")
+    if home then
+        return home.."/.local/share/fonts"
+    end
 end
 
 -- System fonts are common in linux
@@ -25,9 +28,10 @@ local function usesSystemFonts()
 end
 
 local function openFontDir()
+    if not Device:canOpenLink() then return end
     local user_dir = getUserDir()
     local openable = util.pathExists(user_dir)
-    if not openable then
+    if not openable and user_dir then
         logger.info("Font path not found, making one in ", user_dir)
         openable = util.makePath(user_dir)
     end
@@ -35,9 +39,7 @@ local function openFontDir()
         logger.warn("Unable to create the folder ", user_dir)
         return
     end
-    if Device:canOpenLink() then
-        Device:openLink(user_dir)
-    end
+    Device:openLink(user_dir)
 end
 
 local FontSettings = {}
