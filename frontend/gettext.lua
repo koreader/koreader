@@ -94,6 +94,9 @@ local function addTranslation(msgctxt, msgid, msgstr, n)
             GetText.context[msgctxt] = {}
         end
         if n then
+            if not GetText.context[msgctxt][msgid] then
+                GetText.context[msgctxt][msgid] = {}
+            end
             if not GetText.context[msgctxt][msgid][n] then
                 GetText.context[msgctxt][msgid][n] = {}
             end
@@ -214,6 +217,16 @@ function GetText_mt.__index.ngettext(msgid, msgid_plural, n)
         return GetText.translation[msgid] and GetText.translation[msgid][plural] or msgid
     else
         return GetText.translation[msgid] and GetText.translation[msgid][plural] or msgid_plural
+    end
+end
+
+function GetText_mt.__index.npgettext(msgctxt, msgid, msgid_plural, n)
+    local plural = GetText.getPlural(n)
+
+    if plural == 0 then
+        return GetText.context[msgctxt] and GetText.context[msgctxt][msgid] and GetText.context[msgctxt][msgid][plural] or msgid
+    else
+        return GetText.context[msgctxt] and GetText.context[msgctxt][msgid] and GetText.context[msgctxt][msgid][plural] or msgid_plural
     end
 end
 

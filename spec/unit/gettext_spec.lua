@@ -50,6 +50,22 @@ msgstr "Pagina's"
 msgctxt "Other pages"
 msgid "Pages"
 msgstr "Pages different context"
+
+#: frontend/ui/data/css_tweaks.lua:30
+msgctxt "Context 1"
+msgid "Page"
+msgid_plural "Pages"
+msgstr[0] "Pagina"
+msgstr[1] "Pagina's"
+msgstr[2] "Pagina's plural 2"
+
+#: frontend/ui/data/css_tweaks.lua:40
+msgctxt "Context 2"
+msgid "Page"
+msgid_plural "Pages"
+msgstr[0] "Pagina context 2 plural 0"
+msgstr[1] "Pagina's context 2 plural 1"
+msgstr[2] "Pagina's context 2 plural 2"
 ]]
 
 describe("GetText module", function()
@@ -116,6 +132,10 @@ describe("GetText module", function()
         it("pgettext should return input string", function()
             assert.is_equal("bla", GetText.pgettext("some context", "bla"))
         end)
+        it("npgettext should return input string", function()
+            assert.is_equal("bla", GetText.npgettext("some context", "bla", "blabla", 1))
+            assert.is_equal("blabla", GetText.npgettext("some context", "bla", "blabla", 2))
+        end)
     end)
 
     describe("language with standard plurals", function()
@@ -132,6 +152,12 @@ describe("GetText module", function()
             assert.is_equal("Pagina's", GetText.pgettext("Style tweaks category", "Pages"))
             assert.is_equal("Pages different context", GetText.pgettext("Other pages", "Pages"))
         end)
+        it("npgettext should translate plurals and distinguish context", function()
+            assert.is_equal("Pagina", GetText.npgettext("Context 1", "Page", "Pages", 1))
+            assert.is_equal("Pagina's", GetText.npgettext("Context 1", "Page", "Pages", 2))
+            assert.is_equal("Pagina context 2 plural 0", GetText.npgettext("Context 2", "Page", "Pages", 1))
+            assert.is_equal("Pagina's context 2 plural 1", GetText.npgettext("Context 2", "Page", "Pages", 2))
+        end)
     end)
 
     describe("language with complex plurals", function()
@@ -147,6 +173,14 @@ describe("GetText module", function()
         it("pgettext should distinguish context", function()
             assert.is_equal("Pagina's", GetText.pgettext("Style tweaks category", "Pages"))
             assert.is_equal("Pages different context", GetText.pgettext("Other pages", "Pages"))
+        end)
+        it("npgettext should translate plurals and distinguish context", function()
+            assert.is_equal("Pagina", GetText.npgettext("Context 1", "Page", "Pages", 1))
+            assert.is_equal("Pagina's", GetText.npgettext("Context 1", "Page", "Pages", 2))
+            assert.is_equal("Pagina's plural 2", GetText.npgettext("Context 1", "Page", "Pages", 5))
+            assert.is_equal("Pagina context 2 plural 0", GetText.npgettext("Context 2", "Page", "Pages", 1))
+            assert.is_equal("Pagina's context 2 plural 1", GetText.npgettext("Context 2", "Page", "Pages", 2))
+            assert.is_equal("Pagina's context 2 plural 2", GetText.npgettext("Context 2", "Page", "Pages", 5))
         end)
     end)
 end)
