@@ -122,7 +122,7 @@ function CalibreCompanion:addToMainMenu(menu_items)
             },
             {
                 text_func = function()
-                    local address = "automatic"
+                    local address = _("automatic")
                     if G_reader_settings:has("calibre_wireless_url") then
                         address = G_reader_settings:readSetting("calibre_wireless_url")
                         address = string.format("%s:%s", address["address"], address["port"])
