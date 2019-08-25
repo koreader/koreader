@@ -22,8 +22,14 @@ msgstr ""
 local test_plurals_nl = [[
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 ]]
+local test_plurals_none = [[
+"Plural-Forms: nplurals=1; plural=0;"
+]]
 local test_plurals_ru = [[
 "Plural-Forms: nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || (n%100>=11 && n%100<=14)? 2 : 3);\n"
+]]
+local test_plurals_simple = [[
+"Plural-Forms: nplurals=2; plural=(n > 2);\n"
 ]]
 
 local test_po_part2 = [[
@@ -80,7 +86,9 @@ describe("GetText module", function()
         local lfs = require("libs/libkoreader-lfs")
         lfs.mkdir(GetText.dirname)
         lfs.mkdir(GetText.dirname.."/nl_NL")
+        lfs.mkdir(GetText.dirname.."/none")
         lfs.mkdir(GetText.dirname.."/ru")
+        lfs.mkdir(GetText.dirname.."/simple")
 
         test_po_nl = GetText.dirname.."/nl_NL/koreader.po"
         local f = io.open(test_po_nl, "w")
@@ -88,17 +96,33 @@ describe("GetText module", function()
         f:close()
 
         -- same file, just different plural for testing
+        test_po_none = GetText.dirname.."/none/koreader.po"
+        f = io.open(test_po_none, "w")
+        f:write(test_po_part1, test_plurals_none, test_po_part2)
+        f:close()
+
+        -- same file, just different plural for testing
         test_po_ru = GetText.dirname.."/ru/koreader.po"
         f = io.open(test_po_ru, "w")
         f:write(test_po_part1, test_plurals_ru, test_po_part2)
+        f:close()
+
+        -- same file, just different plural for testing
+        test_po_simple = GetText.dirname.."/simple/koreader.po"
+        f = io.open(test_po_simple, "w")
+        f:write(test_po_part1, test_plurals_simple, test_po_part2)
         f:close()
     end)
 
     teardown(function()
         os.remove(test_po_nl)
+        os.remove(test_po_none)
         os.remove(test_po_ru)
+        os.remove(test_po_simple)
         os.remove(GetText.dirname.."/nl_NL")
+        os.remove(GetText.dirname.."/none")
         os.remove(GetText.dirname.."/ru")
+        os.remove(GetText.dirname.."/simple")
         os.remove(GetText.dirname)
     end)
 
@@ -157,6 +181,54 @@ describe("GetText module", function()
             assert.is_equal("Pagina's", GetText.npgettext("Context 1", "Page", "Pages", 2))
             assert.is_equal("Pagina context 2 plural 0", GetText.npgettext("Context 2", "Page", "Pages", 1))
             assert.is_equal("Pagina's context 2 plural 1", GetText.npgettext("Context 2", "Page", "Pages", 2))
+        end)
+    end)
+
+    describe("language with simple plurals n > 2", function()
+        GetText.changeLang("simple")
+        it("gettext should translate multiline string", function()
+            assert.is_equal("\nbericht", GetText("\nmessage"))
+        end)
+        it("ngettext should translate plurals", function()
+            assert.is_equal("1 ding", GetText.ngettext("1 item", "%1 items", 1))
+            assert.is_equal("1 ding", GetText.ngettext("1 item", "%1 items", 2))
+            assert.is_equal("%1 dingen", GetText.ngettext("1 item", "%1 items", 3))
+        end)
+        it("pgettext should distinguish context", function()
+            assert.is_equal("Pagina's", GetText.pgettext("Style tweaks category", "Pages"))
+            assert.is_equal("Pages different context", GetText.pgettext("Other pages", "Pages"))
+        end)
+        it("npgettext should translate plurals and distinguish context", function()
+            assert.is_equal("Pagina", GetText.npgettext("Context 1", "Page", "Pages", 1))
+            assert.is_equal("Pagina", GetText.npgettext("Context 1", "Page", "Pages", 2))
+            assert.is_equal("Pagina's", GetText.npgettext("Context 1", "Page", "Pages", 3))
+            assert.is_equal("Pagina context 2 plural 0", GetText.npgettext("Context 2", "Page", "Pages", 1))
+            assert.is_equal("Pagina context 2 plural 0", GetText.npgettext("Context 2", "Page", "Pages", 2))
+            assert.is_equal("Pagina's context 2 plural 1", GetText.npgettext("Context 2", "Page", "Pages", 3))
+        end)
+    end)
+
+    describe("language with no plurals", function()
+        GetText.changeLang("none")
+        it("gettext should translate multiline string", function()
+            assert.is_equal("\nbericht", GetText("\nmessage"))
+        end)
+        it("ngettext should translate plurals", function()
+            assert.is_equal("1 ding", GetText.ngettext("1 item", "%1 items", 1))
+            assert.is_equal("1 ding", GetText.ngettext("1 item", "%1 items", 2))
+            assert.is_equal("1 ding", GetText.ngettext("1 item", "%1 items", 3))
+        end)
+        it("pgettext should distinguish context", function()
+            assert.is_equal("Pagina's", GetText.pgettext("Style tweaks category", "Pages"))
+            assert.is_equal("Pages different context", GetText.pgettext("Other pages", "Pages"))
+        end)
+        it("npgettext should translate plurals and distinguish context", function()
+            assert.is_equal("Pagina", GetText.npgettext("Context 1", "Page", "Pages", 1))
+            assert.is_equal("Pagina", GetText.npgettext("Context 1", "Page", "Pages", 2))
+            assert.is_equal("Pagina", GetText.npgettext("Context 1", "Page", "Pages", 3))
+            assert.is_equal("Pagina context 2 plural 0", GetText.npgettext("Context 2", "Page", "Pages", 1))
+            assert.is_equal("Pagina context 2 plural 0", GetText.npgettext("Context 2", "Page", "Pages", 2))
+            assert.is_equal("Pagina context 2 plural 0", GetText.npgettext("Context 2", "Page", "Pages", 3))
         end)
     end)
 

@@ -114,9 +114,15 @@ local function getPluralFunc(pl_tests, nplurals, plural_default)
         if pl_test == plural_default then
             return getDefaultPlural
         end
-        pl_test = logicalCtoLua(pl_test)
-        plural_func_str = "return function(n) if "..pl_test.." then return 1 else return 0 end end"
+        -- language with no plural forms
+        if tonumber(pl_test) ~= nil then
+            plural_func_str = "return function(n) return "..pl_test.." end"
+        else
+            pl_test = logicalCtoLua(pl_test)
+            plural_func_str = "return function(n) if "..pl_test.." then return 1 else return 0 end end"
+        end
     end
+    logger.dbg("gettext: plural function", plural_func_str)
     return loadstring(plural_func_str)()
 end
 
@@ -195,6 +201,11 @@ function GetText_mt.__index.changeLang(new_lang)
                     local plural_forms = data.msgstr:match("Plural%-Forms: (.*);")
                     local nplurals = plural_forms:match("nplurals=([0-9]+);") or 2
                     local plurals = plural_forms:match("%((.*)%)")
+
+                    if not plurals then
+                        -- we might be dealing with a language without plurals
+                        plurals = plural_forms:match("plural=(0)")
+                    end
 
                     if plurals:find("[^n!=%%<>&:%(%)|?0-9 ]") then
                         -- we don't trust this input, go with default instead
