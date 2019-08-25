@@ -1,6 +1,6 @@
 --[[--
 An interface to get input events.
-]]
+--]]
 
 local DataStorage = require("datastorage")
 local DEBUG = require("dbg")
@@ -194,10 +194,11 @@ function Input:init()
 end
 
 --[[--
-wrapper for FFI input open
+Wrapper for FFI input open.
 
 Note that we adhere to the "." syntax here for compatibility.
-TODO: clean up separation FFI/this
+
+@todo Clean up separation FFI/this.
 --]]
 function Input.open(device, is_emu_events)
     input.open(device, is_emu_events and 1 or 0)
@@ -416,10 +417,12 @@ function Input:handleKeyBoardEv(ev)
         or keycode == "LPgFwd"
         or keycode == "RPgFwd" then
             --- @fixme Crappy event staggering!
-            --        The Forma repeats every 80ms after a 400ms delay, and 500ms roughly corresponds to a flashing update,
-            --        so stuff is usually in sync when you release the key.
-            --        Obvious downside is that this ends up slower than just mashing the key.
-            --- @fixme A better approach would be an onKeyRelease handler that flushes the Event queue...
+            --
+            -- The Forma repeats every 80ms after a 400ms delay, and 500ms roughly corresponds to a flashing update,
+            -- so stuff is usually in sync when you release the key.
+            -- Obvious downside is that this ends up slower than just mashing the key.
+            --
+            -- A better approach would be an onKeyRelease handler that flushes the Event queue...
             self.repeat_count = self.repeat_count + 1
             if self.repeat_count == 1 then
                 return Event:new("KeyRepeat", key)
@@ -667,7 +670,7 @@ function Input:handleOasisOrientationEv(ev)
     end
 end
 
--- Accelerometer on the Forma, c.f., drivers/hwmon/mma8x5x.c
+--- Accelerometer on the Forma, c.f., drivers/hwmon/mma8x5x.c
 function Input:handleMiscEvNTX(ev)
     local rotation_mode, screen_mode
     if ev.code == MSC_RAW then
@@ -712,7 +715,7 @@ function Input:handleMiscEvNTX(ev)
     end
 end
 
--- Allow toggling it at runtime
+--- Allow toggling the accelerometer at runtime.
 function Input:toggleMiscEvNTX(toggle)
     if toggle and toggle == true then
         -- Honor Gyro events
