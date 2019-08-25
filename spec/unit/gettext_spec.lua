@@ -77,6 +77,7 @@ msgstr[2] "Pagina's context 2 plural 2"
 describe("GetText module", function()
     local GetText
     local test_po_nl, test_po_ru
+    local test_po_none, test_po_simple
 
     setup(function()
         require("commonrequire")
