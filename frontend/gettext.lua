@@ -1,3 +1,24 @@
+--[[--
+A pure Lua implementation of a gettext subset.
+
+Example:
+    local _ = require("gettext")           -- @{gettext.gettext|gettext}()
+    local C_ = _.pgettext                  -- @{pgettext}()
+    local N_ = _.ngettext                  -- @{ngettext}()
+    local NC_ = _.npgettext                -- @{npgettext}()
+    local T = require("ffi/util").template -- @{ffi.util.template}()
+
+    -- The most common use case with regular @{gettext.gettext|gettext}().
+    local simple_string = _("item")
+
+    -- A more complex example. The correct plural form will be automatically
+    -- selected by @{ngettext}() based on the number.
+    local numbered_string = T(N_("1 item", "%1 items", num_items), num_items)
+
+It's required to pass along the number twice, because @{ngettext}() doesn't do anything with placeholders.
+See @{ffi.util.template}() for more information about the template function.
+--]]
+
 local isAndroid, android = pcall(require, "android")
 local logger = require("logger")
 
@@ -13,8 +34,21 @@ local GetText_mt = {
     __index = {}
 }
 
-function GetText_mt.__call(gettext, msgstr)
-    return gettext.translation[msgstr] or msgstr
+--[[--
+Returns a translation.
+
+@function gettext
+
+@string msgid
+
+@treturn string translation
+
+@usage
+    local _ = require("gettext")
+    local translation = _("A meaningful message.")
+--]]
+function GetText_mt.__call(gettext, msgid)
+    return gettext.translation[msgid] or msgid
 end
 
 local function c_escape(what)
@@ -207,6 +241,35 @@ end
 
 GetText_mt.__index.getPlural = getDefaultPlural
 
+--[[--
+Returns a plural form.
+
+Many languages have more forms than just singular and plural. This function
+abstracts the complexity away. The translation can contain as many
+pluralizations as it requires.
+
+See [gettext plural forms](https://www.gnu.org/software/gettext/manual/html_node/Plural-forms.html)
+and [translating plural forms](https://www.gnu.org/software/gettext/manual/html_node/Translating-plural-forms.html)
+for more information.
+
+It's required to pass along the number twice, because @{ngettext}() doesn't do anything with placeholders.
+See @{ffi.util.template}() for more information about the template function.
+
+@function ngettext
+
+@string msgid
+@string msgid_plural
+@int n
+
+@treturn string translation
+
+@usage
+    local _ = require("gettext")
+    local N_ = _.ngettext
+    local T = require("ffi/util").template
+
+    local items_string = T(N_("1 item", "%1 items", num_items), num_items)
+--]]
 function GetText_mt.__index.ngettext(msgid, msgid_plural, n)
     local plural = GetText.getPlural(n)
 
@@ -217,6 +280,29 @@ function GetText_mt.__index.ngettext(msgid, msgid_plural, n)
     end
 end
 
+--[[--
+Returns a context-disambiguated plural form.
+
+This is the logical combination between @{ngettext}() and @{pgettext}().
+Please refer there for more information.
+
+@function npgettext
+
+@string msgctxt
+@string msgid
+@string msgid_plural
+@int n
+
+@treturn string translation
+
+@usage
+    local _ = require("gettext")
+    local NC_ = _.npgettext
+    local T = require("ffi/util").template
+
+    local statistics_items_string = T(NC_("Statistics", "1 item", "%1 items", num_items), num_items)
+    local books_items_string = T(NC_("Books", "1 item", "%1 items", num_items), num_items)
+--]]
 function GetText_mt.__index.npgettext(msgctxt, msgid, msgid_plural, n)
     local plural = GetText.getPlural(n)
 
@@ -227,6 +313,32 @@ function GetText_mt.__index.npgettext(msgctxt, msgid, msgid_plural, n)
     end
 end
 
+--[[--
+Returns a context-disambiguated translation.
+
+The same string might occur multiple times, but require a different translation based on context.
+An example within KOReader is **Pages** meaning *page styles* (within the context of style tweaks)
+and **Pages** meaning *number of pages*.
+
+We generally don't apply context unless a conflict is known. This is only likely to occur with
+short strings, of which of course there are many.
+
+See [gettext contexts](https://www.gnu.org/software/gettext/manual/html_node/Contexts.html) for more information.
+
+@function pgettext
+
+@string msgctxt
+@string msgid
+
+@treturn string translation
+
+@usage
+    local _ = require("gettext")
+    local C_ = _.pgettext
+
+    local copy_file = C_("File", "Copy")
+    local copy_text = C_("Text", "Copy")
+--]]
 function GetText_mt.__index.pgettext(msgctxt, msgid)
     return GetText.context[msgctxt] and GetText.context[msgctxt][msgid] or msgid
 end
