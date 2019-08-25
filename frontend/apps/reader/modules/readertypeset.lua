@@ -515,13 +515,13 @@ function ReaderTypeset:onSetPageMargins(margins, refresh_callback)
         -- Show a toast on set, with the unscaled & scaled values
         UIManager:show(InfoMessage:new{
             text = T(_([[
-    Margins set to:
+Margins set to:
 
-    horizontal: %1 (%2px)
-    top: %3 (%4px)
-    bottom: %5 (%6px)
+  horizontal: %1 (%2px)
+  top: %3 (%4px)
+  bottom: %5 (%6px)
 
-    Tap to dismiss.]]),
+Tap to dismiss.]]),
             margins[1], left, margins[2], top, margins[4], bottom),
             dismiss_callback = refresh_callback,
         })
