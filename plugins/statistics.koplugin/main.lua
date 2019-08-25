@@ -20,6 +20,7 @@ local util = require("util")
 local _ = require("gettext")
 local joinPath = require("ffi/util").joinPath
 local Screen = require("device").screen
+local N_ = _.ngettext
 local T = require("ffi/util").template
 
 local statistics_dir = DataStorage:getDataDir() .. "/statistics/"
@@ -1022,9 +1023,7 @@ function ReaderStatistics:getCurrentStat(id_book)
         { _("Percentage completed"), math.floor(total_read_pages / self.data.pages * 100 + 0.5) .. "%" },
         { _("Average time per day"), util.secondsToClock(total_time_book/tonumber(total_days)), false },
         { _("Estimated reading finished"),
-            --- @todo Plurals for translations.
-            -- @translators Estimated reading finished date (%1), estimated remaining days to read (%2). Please see https://github.com/koreader/koreader/issues/5249 to track proper plural translation.
-            T(_("%1 (%2 day(s))"), estimate_end_of_read_date, estimate_days_to_read) },
+            T(N_("%1 (1 day)", "%1 (%2 days)", estimate_days_to_read), estimate_end_of_read_date, estimate_days_to_read) },
     }
 end
 
