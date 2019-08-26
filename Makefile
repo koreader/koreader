@@ -408,7 +408,7 @@ cervantesupdate: all
 			"koreader/resources/icons/src/*" "koreader/spec/*" \
 			$(ZIP_EXCLUDE)
 	# generate update package index file
-	zipinfo -1 koreader-cervantes-$(MACHINE)-$(VERSION).zip > \
+	zipinfo -1 koreader-cervantes$(KODEDUG_SUFFIX)-$(VERSION).zip > \
 		$(INSTALL_DIR)/koreader/ota/package.index
 	echo "koreader/ota/package.index" >> $(INSTALL_DIR)/koreader/ota/package.index
 	# update index file in zip package
