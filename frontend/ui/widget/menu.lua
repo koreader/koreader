@@ -57,7 +57,7 @@ function ItemShortCutIcon:init()
         background = Blitbuffer.COLOR_LIGHT_GRAY
     end
 
-    --@TODO calculate font size by icon size  01.05 2012 (houqp)
+    --- @todo Calculate font size by icon size  01.05 2012 (houqp).
     local sc_face
     if self.key:len() > 1 then
         sc_face = Font:getFace("ffont", 14)
@@ -673,7 +673,7 @@ function Menu:init()
             is_enter_default = true,
             callback = function()
                 for k, v in ipairs(self.item_table) do
-                    --TODO support utf8 lowercase
+                    --- @todo Support utf8 lowercase.
                     local filename = util.basename(v.path):lower()
                     local search_string = self.page_info_text.input_dialog:getInputText():lower()
                     local i, _ = filename:find(search_string)

@@ -228,7 +228,7 @@ Warning! this method won't update self.state, you need to do it
 in each state method!
 --]]
 function GestureDetector:switchState(state_new, tev, param)
-    --@TODO do we need to check whether state is valid?    (houqp)
+    --- @todo Do we need to check whether state is valid?    (houqp)
     return self[state_new](self, tev, param)
 end
 

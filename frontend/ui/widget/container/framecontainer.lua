@@ -62,14 +62,14 @@ function FrameContainer:paintTo(bb, x, y)
     local container_width = self.width or my_size.w
     local container_height = self.height or my_size.h
 
-    --@TODO get rid of margin here?  13.03 2013 (houqp)
+    --- @todo get rid of margin here?  13.03 2013 (houqp)
     if self.background then
         bb:paintRoundedRect(x, y,
                             container_width, container_height,
                             self.background, self.radius)
     end
     if self.inner_bordersize > 0 then
-        -- NOTE: This doesn't actually support radius, it'll always be a square.
+        --- @warning This doesn't actually support radius, it'll always be a square.
         bb:paintInnerBorder(x + self.margin, y + self.margin,
             container_width - self.margin * 2,
             container_height - self.margin * 2,
