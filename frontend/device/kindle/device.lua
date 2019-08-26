@@ -192,7 +192,7 @@ end
 function Kindle:usbPlugOut()
     -- NOTE: See usbPlugIn(), we don't have anything fancy to do here either.
 
-    --@TODO signal filemanager for file changes  13.06 2012 (houqp)
+    --- @todo signal filemanager for file changes  13.06 2012 (houqp)
     self.charging_mode = false
 end
 
@@ -211,7 +211,7 @@ function Kindle:ambientBrightnessLevel()
     return 4
 end
 
--- Make sure the C BB cannot be used on devices with a 4bpp fb
+--- Makes sure the C BB cannot be used on devices with a 4bpp fb.
 function Kindle:blacklistCBB()
     local ffi = require("ffi")
     local dummy = require("ffi/posix_h")

@@ -28,7 +28,7 @@ if [ "${tab_detected}" ]; then
     exit 1
 fi
 
-untagged_todo=$(grep -Pin "[^\-]\-\-\s+@?(todo|fixme|warning)" --include \*.lua --exclude={dateparser.lua,xml.lua} --recursive {reader,setupkoenv,datastorage}.lua frontend plugins spec || true)
+untagged_todo=$(grep -Pin "[^\-]\-\-(\s+)?@?(todo|fixme|warning)" --include \*.lua --exclude={dateparser.lua,xml.lua} --recursive {reader,setupkoenv,datastorage}.lua frontend plugins spec || true)
 if [ "${untagged_todo}" ]; then
     echo -e "\\n${ANSI_RED}Warning: possible improperly tagged todo, fixme or warning detected."
     echo -e "\\n${ANSI_RED}         use --- followed by @todo, @fixme or @warning."

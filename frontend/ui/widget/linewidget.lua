@@ -9,7 +9,7 @@ local LineWidget = Widget:new{
     style = "solid",
     background = Blitbuffer.COLOR_BLACK,
     dimen = nil,
-    --@TODO replay dirty hack here  13.03 2013 (houqp)
+    --- @todo Replay dirty hack here  13.03 2013 (houqp).
     empty_segments = nil,
 }
 

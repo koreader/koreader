@@ -642,7 +642,7 @@ function ReaderRolling:onPanning(args, _)
 end
 
 function ReaderRolling:onZoom()
-    --@TODO re-read doc_height info after font or lineheight changes  05.06 2012 (houqp)
+    --- @todo Re-read doc_height info after font or lineheight changes.  05.06 2012 (houqp)
     self:updatePos()
 end
 
