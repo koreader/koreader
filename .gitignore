@@ -1,5 +1,6 @@
 .DS_*
 ._*
+*.AppImage
 *.directory
 *.swp
 *.swo
@@ -9,7 +10,10 @@ cscope.*
 lua
 lua-*
 .reader.kpdfview.lua
+*.kdev4
+.kdev4/*
 .vimrc
+.vscode/*
 *.o
 tags
 test/*
