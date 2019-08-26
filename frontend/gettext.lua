@@ -196,7 +196,6 @@ function GetText_mt.__index.changeLang(new_lang)
             elseif data.msgid and data.msgstr and data.msgstr ~= "" then
                 -- header
                 if not headers and data.msgid == "" then
-                    local util = require("util")
                     headers = data.msgstr
                     local plural_forms = data.msgstr:match("Plural%-Forms: (.*);")
                     local nplurals = plural_forms:match("nplurals=([0-9]+);") or 2
@@ -212,7 +211,10 @@ function GetText_mt.__index.changeLang(new_lang)
                         plurals = GetText.plural_default
                     end
 
-                    local pl_tests = util.splitToArray(plurals, " : ")
+                    local pl_tests = {}
+                    for pl_test in plurals:gmatch("[^:]+") do
+                        table.insert(pl_tests, pl_test)
+                    end
 
                     GetText.getPlural = getPluralFunc(pl_tests, nplurals, GetText.plural_default)
                     if not GetText.getPlural then
