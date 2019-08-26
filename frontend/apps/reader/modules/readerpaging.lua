@@ -273,6 +273,10 @@ function ReaderPaging:getPagePosition(page)
 end
 
 function ReaderPaging:onTogglePageFlipping()
+    if self.bookmark_flipping_mode then
+        self:onToggleBookmarkFlipping()
+        return
+    end
     self.view.flipping_visible = not self.view.flipping_visible
     self.page_flipping_mode = self.view.flipping_visible
     self.flipping_page = self.current_page
@@ -290,7 +294,7 @@ function ReaderPaging:onTogglePageFlipping()
 end
 
 function ReaderPaging:onToggleBookmarkFlipping()
-     self.bookmark_flipping_mode = not self.bookmark_flipping_mode
+    self.bookmark_flipping_mode = not self.bookmark_flipping_mode
 
     if self.bookmark_flipping_mode then
         self.orig_flipping_mode = self.view.flipping_visible
