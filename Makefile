@@ -56,7 +56,7 @@ WIN32_DIR=$(PLATFORM_DIR)/win32
 
 # appimage setup
 APPIMAGETOOL=appimagetool-x86_64.AppImage
-APPIMAGETOOL_URL=https://github.com/AppImage/AppImageKit/releases/download/11/appimagetool-x86_64.AppImage
+APPIMAGETOOL_URL=https://github.com/AppImage/AppImageKit/releases/download/12/appimagetool-x86_64.AppImage
 
 # set to 1 if in Docker
 DOCKER:=$(shell grep -q docker /proc/1/cgroup 2>/dev/null && echo 1)
