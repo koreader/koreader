@@ -164,6 +164,8 @@ dist-clean: clean
 	$(MAKE) -C $(KOR_BASE) dist-clean
 	$(MAKE) -C doc clean
 
+KINDLE_PACKAGE:=koreader-$(DIST)$(KODEDUG_SUFFIX)-$(VERSION).zip
+KINDLE_PACKAGE_OTA:=koreader-$(DIST)$(KODEDUG_SUFFIX)-$(VERSION).targz
 ZIP_EXCLUDE=-x "*.swp" -x "*.swo" -x "*.orig" -x "*.un~"
 # Don't bundle launchpad on touch devices..
 ifeq ($(TARGET), kindle-legacy)
@@ -173,7 +175,7 @@ kindleupdate: all
 	# ensure that the binaries were built for ARM
 	file $(INSTALL_DIR)/koreader/luajit | grep ARM || exit 1
 	# remove old package if any
-	rm -f koreader-$(DIST)-$(MACHINE)-$(VERSION).zip
+	rm -f $(KINDLE_PACKAGE)
 	# Kindle launching scripts
 	ln -sf ../$(KINDLE_DIR)/extensions $(INSTALL_DIR)/
 	ln -sf ../$(KINDLE_DIR)/launchpad $(INSTALL_DIR)/
@@ -184,30 +186,32 @@ kindleupdate: all
 	# create new package
 	cd $(INSTALL_DIR) && pwd && \
 		zip -9 -r \
-			../koreader-$(DIST)$(KODEDUG_SUFFIX)-$(VERSION).zip \
+			../$(KINDLE_PACKAGE) \
 			extensions koreader $(KINDLE_LEGACY_LAUNCHER) \
 			-x "koreader/resources/fonts/*" "koreader/ota/*" \
 			"koreader/resources/icons/src/*" "koreader/spec/*" \
 			$(ZIP_EXCLUDE)
 	# generate kindleupdate package index file
-	zipinfo -1 koreader-$(DIST)$(KODEDUG_SUFFIX)-$(VERSION).zip > \
+	zipinfo -1 $(KINDLE_PACKAGE) > \
 		$(INSTALL_DIR)/koreader/ota/package.index
 	echo "koreader/ota/package.index" >> $(INSTALL_DIR)/koreader/ota/package.index
 	# update index file in zip package
-	cd $(INSTALL_DIR) && zip -u ../koreader-$(DIST)$(KODEDUG_SUFFIX)-$(VERSION).zip \
+	cd $(INSTALL_DIR) && zip -u ../$(KINDLE_PACKAGE) \
 		koreader/ota/package.index
 	# make gzip kindleupdate for zsync OTA update
 	# note that the targz file extension is intended to keep ISP from caching
 	# the file, see koreader#1644.
 	cd $(INSTALL_DIR) && \
-		tar -I"gzip --rsyncable" -cah --no-recursion -f ../koreader-$(DIST)$(KODEDUG_SUFFIX)-$(VERSION).targz \
+		tar -I"gzip --rsyncable" -cah --no-recursion -f ../$(KINDLE_PACKAGE_OTA) \
 		-T koreader/ota/package.index
 
+KOBO_PACKAGE:=koreader-kobo$(KODEDUG_SUFFIX)-$(VERSION).zip
+KOBO_PACKAGE_OTA:=koreader-kobo$(KODEDUG_SUFFIX)-$(VERSION).targz
 koboupdate: all
 	# ensure that the binaries were built for ARM
 	file $(INSTALL_DIR)/koreader/luajit | grep ARM || exit 1
 	# remove old package if any
-	rm -f koreader-kobo$(KODEDUG_SUFFIX)-$(VERSION).zip
+	rm -f $(KOBO_PACKAGE)
 	# Kobo launching scripts
 	cp $(KOBO_DIR)/koreader.png $(INSTALL_DIR)/koreader.png
 	cp $(KOBO_DIR)/fmon/README.txt $(INSTALL_DIR)/README_kobo.txt
@@ -216,27 +220,29 @@ koboupdate: all
 	# create new package
 	cd $(INSTALL_DIR) && \
 		zip -9 -r \
-			../koreader-kobo$(KODEDUG_SUFFIX)-$(VERSION).zip \
+			../$(KOBO_PACKAGE) \
 			koreader -x "koreader/resources/fonts/*" \
 			"koreader/resources/icons/src/*" "koreader/spec/*" \
 			$(ZIP_EXCLUDE)
 	# generate koboupdate package index file
-	zipinfo -1 koreader-kobo$(KODEDUG_SUFFIX)-$(VERSION).zip > \
+	zipinfo -1 $(KOBO_PACKAGE) > \
 		$(INSTALL_DIR)/koreader/ota/package.index
 	echo "koreader/ota/package.index" >> $(INSTALL_DIR)/koreader/ota/package.index
 	# update index file in zip package
-	cd $(INSTALL_DIR) && zip -u ../koreader-kobo$(KODEDUG_SUFFIX)-$(VERSION).zip \
+	cd $(INSTALL_DIR) && zip -u ../$(KOBO_PACKAGE) \
 		koreader/ota/package.index koreader.png README_kobo.txt
 	# make gzip koboupdate for zsync OTA update
 	cd $(INSTALL_DIR) && \
-		tar -I"gzip --rsyncable" -cah --no-recursion -f ../koreader-kobo$(KODEDUG_SUFFIX)-$(VERSION).targz \
+		tar -I"gzip --rsyncable" -cah --no-recursion -f ../$(KOBO_PACKAGE_OTA) \
 		-T koreader/ota/package.index
 
+PB_PACKAGE:=koreader-pocketbook$(KODEDUG_SUFFIX)-$(VERSION).zip
+PB_PACKAGE_OTA:=koreader-pocketbook$(KODEDUG_SUFFIX)-$(VERSION).targz
 pbupdate: all
 	# ensure that the binaries were built for ARM
 	file $(INSTALL_DIR)/koreader/luajit | grep ARM || exit 1
 	# remove old package if any
-	rm -f koreader-pocketbook$(KODEDUG_SUFFIX)-$(VERSION).zip
+	rm -f $(PB_PACKAGE)
 	# Pocketbook launching script
 	mkdir -p $(INSTALL_DIR)/applications
 	mkdir -p $(INSTALL_DIR)/system/bin
@@ -249,12 +255,12 @@ pbupdate: all
 	# create new package
 	cd $(INSTALL_DIR) && \
 		zip -9 -r \
-			../koreader-pocketbook$(KODEDUG_SUFFIX)-$(VERSION).zip \
+			../$(PB_PACKAGE) \
 			applications -x "applications/koreader/resources/fonts/*" \
 			"applications/koreader/resources/icons/src/*" "applications/koreader/spec/*" \
 			$(ZIP_EXCLUDE)
 	# generate koboupdate package index file
-	zipinfo -1 koreader-pocketbook$(KODEDUG_SUFFIX)-$(VERSION).zip > \
+	zipinfo -1 $(PB_PACKAGE) > \
 		$(INSTALL_DIR)/applications/koreader/ota/package.index
 	echo "applications/koreader/ota/package.index" >> \
 		$(INSTALL_DIR)/applications/koreader/ota/package.index
@@ -262,11 +268,11 @@ pbupdate: all
 	sed -i -e 's/^/..\//' \
 		$(INSTALL_DIR)/applications/koreader/ota/package.index
 	# update index file in zip package
-	cd $(INSTALL_DIR) && zip -ru ../koreader-pocketbook$(KODEDUG_SUFFIX)-$(VERSION).zip \
+	cd $(INSTALL_DIR) && zip -ru ../$(PB_PACKAGE) \
 		applications/koreader/ota/package.index system
 	# make gzip pbupdate for zsync OTA update
 	cd $(INSTALL_DIR)/applications && \
-		tar -I"gzip --rsyncable" -cah --no-recursion -f ../../koreader-pocketbook$(KODEDUG_SUFFIX)-$(VERSION).targz \
+		tar -I"gzip --rsyncable" -cah --no-recursion -f ../../$(PB_PACKAGE_OTA) \
 		-T koreader/ota/package.index
 
 utupdate: all
@@ -366,57 +372,61 @@ debianupdate: all
 		rm -rf resources/fonts resources/icons/src && \
 		rm -rf ev_replay.py
 
+SONY_PRSTUX_PACKAGE:=koreader-sony-prstux$(KODEDUG_SUFFIX)-$(VERSION).zip
+SONY_PRSTUX_PACKAGE_OTA:=koreader-sony-prstux$(KODEDUG_SUFFIX)-$(VERSION).targz
 sony-prstuxupdate: all
 	# ensure that the binaries were built for ARM
 	file $(INSTALL_DIR)/koreader/luajit | grep ARM || exit 1
 	# remove old package if any
-	rm -f koreader-sony-prstux$(KODEDUG_SUFFIX)-$(VERSION).zip
+	rm -f $(SONY_PRSTUX_PACKAGE)
 	# Sony PRSTUX launching scripts
 	cp $(SONY_PRSTUX_DIR)/*.sh $(INSTALL_DIR)/koreader
 	# create new package
 	cd $(INSTALL_DIR) && \
 	        zip -9 -r \
-	                ../koreader-sony-prstux$(KODEDUG_SUFFIX)-$(VERSION).zip \
+	                ../$(SONY_PRSTUX_PACKAGE) \
 	                koreader -x "koreader/resources/fonts/*" \
 	                "koreader/resources/icons/src/*" "koreader/spec/*" \
 	                $(ZIP_EXCLUDE)
 	# generate update package index file
-	zipinfo -1 koreader-sony-prstux$(KODEDUG_SUFFIX)-$(VERSION).zip > \
+	zipinfo -1 $(SONY_PRSTUX_PACKAGE) > \
 	        $(INSTALL_DIR)/koreader/ota/package.index
 	echo "koreader/ota/package.index" >> $(INSTALL_DIR)/koreader/ota/package.index
 	# update index file in zip package
-	cd $(INSTALL_DIR) && zip -u ../koreader-sony-prstux$(KODEDUG_SUFFIX)-$(VERSION).zip \
+	cd $(INSTALL_DIR) && zip -u ../$(SONY_PRSTUX_PACKAGE) \
 	        koreader/ota/package.index
 	# make gzip sonyprstux update for zsync OTA update
 	cd $(INSTALL_DIR) && \
-	        tar -I"gzip --rsyncable" -cah --no-recursion -f ../koreader-sony-prstux$(KODEDUG_SUFFIX)-$(VERSION).targz \
+	        tar -I"gzip --rsyncable" -cah --no-recursion -f ../$(SONY_PRSTUX_PACKAGE_OTA) \
 	        -T koreader/ota/package.index
 
+CERVANTES_PACKAGE:=koreader-cervantes$(KODEDUG_SUFFIX)-$(VERSION).zip
+CERVANTES_PACKAGE_OTA:=koreader-cervantes$(KODEDUG_SUFFIX)-$(VERSION).targz
 cervantesupdate: all
 	# ensure that the binaries were built for ARM
 	file $(INSTALL_DIR)/koreader/luajit | grep ARM || exit 1
 	# remove old package if any
-	rm -f koreader-cervantes$(KODEDUG_SUFFIX)-$(VERSION).zip
+	rm -f $(CERVANTES_PACKAGE)
 	# Cervantes launching scripts
 	cp $(CERVANTES_DIR)/*.sh $(INSTALL_DIR)/koreader
 	cp $(COMMON_DIR)/spinning_zsync $(INSTALL_DIR)/koreader
 	# create new package
 	cd $(INSTALL_DIR) && \
 		zip -9 -r \
-			../koreader-cervantes$(KODEDUG_SUFFIX)-$(VERSION).zip \
+			../$(CERVANTES_PACKAGE) \
 			koreader -x "koreader/resources/fonts/*" \
 			"koreader/resources/icons/src/*" "koreader/spec/*" \
 			$(ZIP_EXCLUDE)
 	# generate update package index file
-	zipinfo -1 koreader-cervantes$(KODEDUG_SUFFIX)-$(VERSION).zip > \
+	zipinfo -1 $(CERVANTES_PACKAGE) > \
 		$(INSTALL_DIR)/koreader/ota/package.index
 	echo "koreader/ota/package.index" >> $(INSTALL_DIR)/koreader/ota/package.index
 	# update index file in zip package
-	cd $(INSTALL_DIR) && zip -u ../koreader-cervantes$(KODEDUG_SUFFIX)-$(VERSION).zip \
+	cd $(INSTALL_DIR) && zip -u ../$(CERVANTES_PACKAGE) \
 	koreader/ota/package.index
 	# make gzip cervantes update for zsync OTA update
 	cd $(INSTALL_DIR) && \
-	tar -I"gzip --rsyncable" -cah --no-recursion -f ../koreader-cervantes$(KODEDUG_SUFFIX)-$(VERSION).targz \
+	tar -I"gzip --rsyncable" -cah --no-recursion -f ../$(CERVANTES_PACKAGE_OTA) \
 	-T koreader/ota/package.index
 
 update:
