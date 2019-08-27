@@ -236,11 +236,13 @@ koboupdate: all
 		tar -I"gzip --rsyncable" -cah --no-recursion -f ../$(KOBO_PACKAGE_OTA) \
 		-T koreader/ota/package.index
 
+PB_PACKAGE:=koreader-pocketbook$(KODEDUG_SUFFIX)-$(VERSION).zip
+PB_PACKAGE_OTA:=koreader-pocketbook$(KODEDUG_SUFFIX)-$(VERSION).targz
 pbupdate: all
 	# ensure that the binaries were built for ARM
 	file $(INSTALL_DIR)/koreader/luajit | grep ARM || exit 1
 	# remove old package if any
-	rm -f koreader-pocketbook$(KODEDUG_SUFFIX)-$(VERSION).zip
+	rm -f $(PB_PACKAGE)
 	# Pocketbook launching script
 	mkdir -p $(INSTALL_DIR)/applications
 	mkdir -p $(INSTALL_DIR)/system/bin
@@ -253,12 +255,12 @@ pbupdate: all
 	# create new package
 	cd $(INSTALL_DIR) && \
 		zip -9 -r \
-			../koreader-pocketbook$(KODEDUG_SUFFIX)-$(VERSION).zip \
+			../$(PB_PACKAGE) \
 			applications -x "applications/koreader/resources/fonts/*" \
 			"applications/koreader/resources/icons/src/*" "applications/koreader/spec/*" \
 			$(ZIP_EXCLUDE)
 	# generate koboupdate package index file
-	zipinfo -1 koreader-pocketbook$(KODEDUG_SUFFIX)-$(VERSION).zip > \
+	zipinfo -1 $(PB_PACKAGE) > \
 		$(INSTALL_DIR)/applications/koreader/ota/package.index
 	echo "applications/koreader/ota/package.index" >> \
 		$(INSTALL_DIR)/applications/koreader/ota/package.index
@@ -266,11 +268,11 @@ pbupdate: all
 	sed -i -e 's/^/..\//' \
 		$(INSTALL_DIR)/applications/koreader/ota/package.index
 	# update index file in zip package
-	cd $(INSTALL_DIR) && zip -ru ../koreader-pocketbook$(KODEDUG_SUFFIX)-$(VERSION).zip \
+	cd $(INSTALL_DIR) && zip -ru ../$(PB_PACKAGE) \
 		applications/koreader/ota/package.index system
 	# make gzip pbupdate for zsync OTA update
 	cd $(INSTALL_DIR)/applications && \
-		tar -I"gzip --rsyncable" -cah --no-recursion -f ../../koreader-pocketbook$(KODEDUG_SUFFIX)-$(VERSION).targz \
+		tar -I"gzip --rsyncable" -cah --no-recursion -f ../../$(PB_PACKAGE_OTA) \
 		-T koreader/ota/package.index
 
 utupdate: all
