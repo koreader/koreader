@@ -106,6 +106,7 @@ function KOSync:addToMainMenu(menu_items)
                             self._menu_to_update = menu
                             self:login()
                         end
+                    end
                 end,
             },
             {
