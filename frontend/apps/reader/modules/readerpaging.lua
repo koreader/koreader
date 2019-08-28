@@ -274,7 +274,7 @@ end
 
 function ReaderPaging:onTogglePageFlipping()
     if self.bookmark_flipping_mode then
-        self:onToggleBookmarkFlipping()
+        -- do nothing if we're in bookmark flipping mode
         return
     end
     self.view.flipping_visible = not self.view.flipping_visible
