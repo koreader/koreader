@@ -96,9 +96,17 @@ function KOSync:addToMainMenu(menu_items)
                 end,
                 keep_menu_open = true,
                 callback_func = function()
-                    return self.kosync_userkey and
-                        function() self:logout() end or
-                        function() self:login() end
+                    if self.kosync_userkey then
+                        return function(menu)
+                            self._menu_to_update = menu
+                            self:logout()
+                        end
+                    else
+                        return function(menu)
+                            self._menu_to_update = menu
+                            self:login()
+                        end
+                    end
                 end,
             },
             {
@@ -328,6 +336,7 @@ function KOSync:doRegister(username, password)
     elseif status then
         self.kosync_username = username
         self.kosync_userkey = userkey
+        self._menu_to_update:updateItems()
         UIManager:show(InfoMessage:new{
             text = _("Registered to KOReader server."),
         })
@@ -363,6 +372,7 @@ function KOSync:doLogin(username, password)
     elseif status then
         self.kosync_username = username
         self.kosync_userkey = userkey
+        self._menu_to_update:updateItems()
         UIManager:show(InfoMessage:new{
             text = _("Logged in to KOReader server."),
         })
@@ -378,6 +388,7 @@ end
 function KOSync:logout()
     self.kosync_userkey = nil
     self.kosync_auto_sync = true
+    self._menu_to_update:updateItems()
     self:saveSettings()
 end
 
