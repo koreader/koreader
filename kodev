@@ -9,15 +9,7 @@ fi
 
 # Default Android build to arm.
 ANDROID_ARCH="${ANDROID_ARCH:-arm}"
-if [ -z "${ANDROID_FULL_ARCH}" ]; then
-    if [ "${ANDROID_ARCH}" = "arm" ]; then
-        ANDROID_FULL_ARCH_APK="${ANDROID_FULL_ARCH_APK:-arm-linux-androideabi}"
-    elif [ "${ANDROID_ARCH}" = "x86" ]; then
-        ANDROID_FULL_ARCH_APK="${ANDROID_FULL_ARCH_APK:-i686-linux-android}"
-    else
-        ANDROID_FULL_ARCH_APK="${ANDROID_ARCH}"
-    fi
-fi
+
 # Default to Android 4.0+; required for NDK 15 but with a custom NDK the strict minimum is 9.
 NDKABI=${NDKABI:-14}
 export NDKABI
@@ -625,7 +617,7 @@ TARGET:
                 # uninstall existing package to make sure *everything* is gone from memory
                 # no assert_ret_zero; uninstall is allowed to fail if there's nothing to uninstall
                 adb uninstall "org.koreader.launcher"
-                adb install "koreader-android-${ANDROID_FULL_ARCH_APK}${KODEBUG_SUFFIX}-${VERSION}.apk"
+                adb install "koreader-android-${ANDROID_ARCH}${KODEBUG_SUFFIX}-${VERSION}.apk"
                 assert_ret_zero $?
                 # there's no adb run so we do this…
                 adb shell monkey -p org.koreader.launcher -c android.intent.category.LAUNCHER 1
