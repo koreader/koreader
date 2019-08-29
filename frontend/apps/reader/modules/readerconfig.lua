@@ -82,6 +82,7 @@ end
 function ReaderConfig:onShowConfigMenu()
     self.config_dialog = ConfigDialog:new{
         dimen = self.dimen:copy(),
+        document = self.document,
         ui = self.ui,
         configurable = self.configurable,
         config_options = self.options,

@@ -128,10 +128,12 @@ local KoptOptions = {
                 spacing = 15,
                 height = 60,
                 item_font_size = {24,28,32,34,36,38,42,46},
+                args = {0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.0},
                 values = {0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.0},
                 default_value = DKOPTREADER_CONFIG_FONT_SIZE,
                 event = "FontSizeUpdate",
-                enabled_func = function(configurable)
+                enabled_func = function(configurable, document)
+                    if document.is_reflowable then return true end
                     return optionsutil.enableIfEquals(configurable, "text_wrap", 1)
                 end,
             },
@@ -145,7 +147,8 @@ local KoptOptions = {
                 event = "FineTuningFontSize",
                 args = {-0.05, 0.05},
                 alternate = false,
-                enabled_func = function(configurable)
+                enabled_func = function(configurable, document)
+                    if document.is_reflowable then return true end
                     return optionsutil.enableIfEquals(configurable, "text_wrap", 1)
                 end,
                 name_text_hold_callback = function(configurable, __, prefix)

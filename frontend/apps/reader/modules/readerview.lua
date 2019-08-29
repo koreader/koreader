@@ -812,8 +812,8 @@ function ReaderView:onGammaUpdate(gamma)
     end
 end
 
-function ReaderView:onFontSizeUpdate()
-    self.ui:handleEvent(Event:new("ReZoom"))
+function ReaderView:onFontSizeUpdate(font_size)
+    self.ui:handleEvent(Event:new("ReZoom", font_size))
 end
 
 function ReaderView:onDefectSizeUpdate()

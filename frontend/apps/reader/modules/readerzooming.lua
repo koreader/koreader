@@ -211,7 +211,11 @@ function ReaderZooming:onPageUpdate(new_page_no)
     self:setZoom()
 end
 
-function ReaderZooming:onReZoom()
+function ReaderZooming:onReZoom(font_size)
+    if self.document.is_reflowable then
+        local kopt_font_size = self.document:getKoptFontSize(font_size)
+        self.document:layoutDocument(kopt_font_size)
+    end
     self:setZoom()
     self.ui:handleEvent(Event:new("InitScrollPageStates"))
     return true

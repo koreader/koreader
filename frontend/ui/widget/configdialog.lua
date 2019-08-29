@@ -254,7 +254,7 @@ function ConfigOption:init()
                 item_align = 0.5
             end
             if self.options[c].enabled_func then
-                enabled = self.options[c].enabled_func(self.config.configurable)
+                enabled = self.options[c].enabled_func(self.config.configurable, self.config.document)
             end
             local horizontal_group = HorizontalGroup:new{}
 
@@ -463,6 +463,7 @@ function ConfigOption:init()
                     option_item.event = self.options[c].event
                     option_item.current_item = d
                     option_item.config = self.config
+                    option_item.document = self.document
                     table.insert(option_items_group, option_item)
                 end
             end
@@ -621,6 +622,7 @@ function ConfigPanel:init()
     local panel = ConfigOption:new{
         options = self.index and config_options[self.index].options or default_option,
         config = self.config_dialog,
+        document = self.document,
     }
     self.dimen = panel:getSize()
     table.insert(self, panel)

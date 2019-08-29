@@ -9,13 +9,10 @@ local ffi = require("ffi")
 local C = ffi.C
 local pdf = nil
 
-
 local PdfDocument = Document:new{
     _document = false,
     is_pdf = true,
     dc_null = DrawContext.new(),
-    epub_font_size = G_reader_settings:readSetting("copt_font_size")
-            or DCREREADER_CONFIG_DEFAULT_FONT_SIZE or 22,
     koptinterface = nil,
     provider = "mupdf",
     provider_name = "MuPDF",
@@ -36,18 +33,48 @@ function PdfDocument:init()
     if not ok then
         error(self._document)  -- will contain error message
     end
+    self.epub_font_size = self:getKoptFontSize()
     -- no-op on PDF
-    self._document:layoutDocument(
-        CanvasContext:getWidth(),
-        CanvasContext:getHeight(),
-        CanvasContext:scaleBySize(self.epub_font_size))
+    self:layoutDocument()
     self.is_open = true
+    self.is_reflowable = self._document:isDocumentReflowable()
     self.info.has_pages = true
     self.info.configurable = true
     if self._document:needsPassword() then
         self.is_locked = true
     else
         self:_readMetadata()
+    end
+end
+
+function PdfDocument:layoutDocument(font_size)
+    if font_size then
+        self.epub_font_size = font_size
+    end
+    self._document:layoutDocument(
+        CanvasContext:getWidth(),
+        CanvasContext:getHeight(),
+        CanvasContext:scaleBySize(self.epub_font_size))
+end
+
+local default_font_size = 22
+-- the koptreader config goes from 0.1 to 3.0, but we want a regular font size
+function PdfDocument:getKoptFontSize(font_size)
+    if font_size then
+        return font_size * default_font_size
+    end
+
+    local docsettings = require("docsettings"):open(self.file)
+    local size = docsettings:readSetting("kopt_font_size")
+    docsettings:close()
+    if size then
+        return size * default_font_size
+    elseif G_reader_settings:readSetting("kopt_font_size") then
+        return G_reader_settings:readSetting("kopt_font_size") * default_font_size
+    elseif DKOPTREADER_CONFIG_FONT_SIZE then
+        return DKOPTREADER_CONFIG_FONT_SIZE * default_font_size
+    else
+        return default_font_size
     end
 end
 
@@ -104,7 +131,7 @@ function PdfDocument:getPageBlock(pageno, x, y)
 end
 
 function PdfDocument:getUsedBBox(pageno)
-    local hash = "pgubbox|"..self.file.."|"..pageno
+    local hash = "pgubbox|"..self.file.."|"..self.epub_font_size.."|"..pageno
     local cached = Cache:check(hash)
     if cached then
         return cached.ubbox
@@ -127,7 +154,7 @@ function PdfDocument:getUsedBBox(pageno)
 end
 
 function PdfDocument:getPageLinks(pageno)
-    local hash = "pglinks|"..self.file.."|"..pageno
+    local hash = "pgubbox|"..self.file.."|"..self.epub_font_size.."|"..pageno
     local cached = Cache:check(hash)
     if cached then
         return cached.links
