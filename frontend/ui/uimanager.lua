@@ -109,12 +109,19 @@ function UIManager:init()
             end
         end
         self.event_handlers["PowerPress"] = function()
+            -- Always schedule power off.
+            -- Press the power button for 2+ seconds to shutdown directly from suspend.
             UIManager:scheduleIn(2, self.poweroff_action)
         end
         self.event_handlers["PowerRelease"] = function()
             if not self._entered_poweroff_stage then
                 UIManager:unschedule(self.poweroff_action)
-                self:suspend()
+                -- resume if we were suspended
+                if Device.screen_saver_mode then
+                    self:resume()
+                else
+                    self:suspend()
+                end
             end
         end
         -- Sleep Cover handling
