@@ -3,7 +3,6 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
-local C_ = require("gettext").pgettext
 
 local ReaderSearch = InputContainer:new{
     direction = 0, -- 0 for search forward, 1 for search backward
@@ -41,15 +40,14 @@ function ReaderSearch:onShowFulltextSearchInput()
                     end,
                 },
                 {
-                    text = C_("Search", "Previous"),
-                    is_enter_default = true,
+                    text = "◁",
                     callback = function()
                         self:onShowSearchDialog(self.input_dialog:getInputText(), 1)
                         self:closeInputDialog()
                     end,
                 },
                 {
-                    text = C_("Search", "Next"),
+                    text = "▷",
                     is_enter_default = true,
                     callback = function()
                         self:onShowSearchDialog(self.input_dialog:getInputText(), 0)
@@ -145,19 +143,19 @@ function ReaderSearch:onShowSearchDialog(text, direction)
         buttons = {
             {
                 {
-                    text = "|<",
+                    text = "|◁",
                     callback = do_search(self.searchFromStart, text),
                 },
                 {
-                    text = "<",
+                    text = "◁",
                     callback = do_search(self.searchNext, text, 1),
                 },
                 {
-                    text = ">",
+                    text = "▷",
                     callback = do_search(self.searchNext, text, 0),
                 },
                 {
-                    text = ">|",
+                    text = "▷|",
                     callback = do_search(self.searchFromEnd, text),
                 },
             }
