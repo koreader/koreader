@@ -143,7 +143,7 @@ function ReaderSearch:onShowSearchDialog(text, direction)
         buttons = {
             {
                 {
-                    text = "|◁",
+                    text = "▕◁",
                     callback = do_search(self.searchFromStart, text),
                 },
                 {
@@ -155,7 +155,7 @@ function ReaderSearch:onShowSearchDialog(text, direction)
                     callback = do_search(self.searchNext, text, 0),
                 },
                 {
-                    text = "▷|",
+                    text = "▷▏",
                     callback = do_search(self.searchFromEnd, text),
                 },
             }
