@@ -357,14 +357,14 @@ function ReaderRolling:addToMainMenu(menu_items)
             self:setupTouchZones()
         end,
         hold_callback = function(touchmenu_instance)
-            self.inverse_reading_order = not self.inverse_reading_order
-            self:setupTouchZones()
             UIManager:show(ConfirmBox:new{
                 text = self.inverse_reading_order and _("Enable right to left reading by default?")
                     or _("Disable right to left reading by default?"),
                 ok_text = self.inverse_reading_order and _("Enable")
                     or _("Disable"),
                 ok_callback = function()
+                    self.inverse_reading_order = not self.inverse_reading_order
+                    self:setupTouchZones()
                     G_reader_settings:saveSetting("inverse_reading_order", self.inverse_reading_order)
                     if touchmenu_instance then touchmenu_instance:updateItems() end
                 end,
