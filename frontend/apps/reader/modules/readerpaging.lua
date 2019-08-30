@@ -253,8 +253,6 @@ function ReaderPaging:addToMainMenu(menu_items)
                 ok_text = self.inverse_reading_order and _("Enable")
                     or _("Disable"),
                 ok_callback = function()
-                    self.inverse_reading_order = not self.inverse_reading_order
-                    self:setupTapTouchZones()
                     G_reader_settings:saveSetting("inverse_reading_order", self.inverse_reading_order)
                     if touchmenu_instance then touchmenu_instance:updateItems() end
                 end,
