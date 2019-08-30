@@ -213,7 +213,7 @@ end
 
 function ReaderZooming:onReZoom(font_size)
     if self.document.is_reflowable then
-        local kopt_font_size = self.document:getKoptFontSize(font_size)
+        local kopt_font_size = self.document:convertKoptToReflowableFontSize(font_size)
         self.document:layoutDocument(kopt_font_size)
     end
     self:setZoom()

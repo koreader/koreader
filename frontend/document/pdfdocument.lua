@@ -33,7 +33,7 @@ function PdfDocument:init()
     if not ok then
         error(self._document)  -- will contain error message
     end
-    self.epub_font_size = self:getKoptFontSize()
+    self.epub_font_size = self:convertKoptToReflowableFontSize()
     -- no-op on PDF
     self:layoutDocument()
     self.is_open = true
@@ -59,7 +59,7 @@ end
 
 local default_font_size = 22
 -- the koptreader config goes from 0.1 to 3.0, but we want a regular font size
-function PdfDocument:getKoptFontSize(font_size)
+function PdfDocument:convertKoptToReflowableFontSize(font_size)
     if font_size then
         return font_size * default_font_size
     end
