@@ -33,7 +33,7 @@ function PdfDocument:init()
     if not ok then
         error(self._document)  -- will contain error message
     end
-    self.epub_font_size = self:convertKoptToReflowableFontSize()
+    self.reflowable_font_size = self:convertKoptToReflowableFontSize()
     -- no-op on PDF
     self:layoutDocument()
     self.is_open = true
@@ -49,12 +49,12 @@ end
 
 function PdfDocument:layoutDocument(font_size)
     if font_size then
-        self.epub_font_size = font_size
+        self.reflowable_font_size = font_size
     end
     self._document:layoutDocument(
         CanvasContext:getWidth(),
         CanvasContext:getHeight(),
-        CanvasContext:scaleBySize(self.epub_font_size))
+        CanvasContext:scaleBySize(self.reflowable_font_size))
 end
 
 local default_font_size = 22
@@ -131,7 +131,7 @@ function PdfDocument:getPageBlock(pageno, x, y)
 end
 
 function PdfDocument:getUsedBBox(pageno)
-    local hash = "pgubbox|"..self.file.."|"..self.epub_font_size.."|"..pageno
+    local hash = "pgubbox|"..self.file.."|"..self.reflowable_font_size.."|"..pageno
     local cached = Cache:check(hash)
     if cached then
         return cached.ubbox
@@ -154,7 +154,7 @@ function PdfDocument:getUsedBBox(pageno)
 end
 
 function PdfDocument:getPageLinks(pageno)
-    local hash = "pgubbox|"..self.file.."|"..self.epub_font_size.."|"..pageno
+    local hash = "pgubbox|"..self.file.."|"..self.reflowable_font_size.."|"..pageno
     local cached = Cache:check(hash)
     if cached then
         return cached.links
