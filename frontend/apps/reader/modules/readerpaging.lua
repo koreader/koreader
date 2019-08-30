@@ -239,8 +239,8 @@ function ReaderPaging:addToMainMenu(menu_items)
         end,
         sub_item_table = page_overlap_menu,
     }
-    menu_items.read_from_right_to_left = {
-        text = _("Read from right to left"),
+    menu_items.invert_page_turn_gestures = {
+        text = _("Invert page turn taps and swipes"),
         checked_func = function() return self.inverse_reading_order end,
         callback = function()
             self.inverse_reading_order = not self.inverse_reading_order
