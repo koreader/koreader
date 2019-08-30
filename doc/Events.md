@@ -3,7 +3,7 @@ Events
 
 ## Overview ##
 
-All widgets is a subclass of @{ui.widget.eventlistener}, therefore inherit
+All widgets are a subclass of @{ui.widget.eventlistener}, therefore they inherit
 the @{ui.widget.eventlistener:handleEvent|handleEvent} method. To send an event
 to a widget, you can simply invoke the handleEvent method like the following:
 
@@ -45,15 +45,15 @@ return self["on"..event.name](self, unpack(event.args))
 ```
 
 ## Event system
-Event system is used for widgets to communicate with each others.
+The @{ui.event|Event} system is used by widgets to communicate.
 
 Each event is an object that has two properties: `args` and `handler`. `handler` is the name of function that will be called on receive. `args` is a table that contains all the arguments needed to be passed to the event handler. When a widget receives a event, it will first check to see if `self[event.handler]` exists. If yes, the `self[event.handler]` function will be called and the return value of the handler will be returned to UIManager.
 
 Notice that if you don't want the event propagate after consumed in your handler, your handler must return `true`. Otherwise, the event will be passed to other widgets' handlers until one of the handlers returns `true`.
 
-`WidgetContainer` is a special kind of widget. When it receives an event, it will first propagate the event to all its children. If the event is still not consumed (handler returns `true`), then it will try to handle by itself.
+@{ui.widget.container.widgetcontainer|WidgetContainer} is a special kind of widget. When it receives an event, it will first propagate the event to all its children. If the event is still not consumed (i.e., its handler returns `true`), then it will try to handle the event by itself.
 
-When you call `UIManager:show` on an widget, this widget will be added to the top of `UIManager._window_stack`.
+When you call @{ui.uimanager.show|UIManager:show} on a widget, this widget will be added to the top of the `UIManager._window_stack`.
 Events are sent to the first widget in `UIManager._window_stack`. If it is not consumed, then UIManager will try to send it to all active widgets (`widget.is_always_active` equals `true`) in the `_window_stack`.
 
 ## Draw Page Code Path
