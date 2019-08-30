@@ -250,6 +250,7 @@ function ReaderUI:init()
         -- zooming controller
         self:registerModule("zooming", ReaderZooming:new{
             dialog = self.dialog,
+            document = self.document,
             view = self.view,
             ui = self
         })

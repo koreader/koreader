@@ -970,9 +970,12 @@ function ReaderPaging:_gotoPage(number, orig_mode)
         self.view.footer:updateFooter()
         return true
     end
-    if number > self.number_of_pages or number < 1 then
-        logger.warn("wrong page number: "..number.."!")
-        return false
+    if number > self.number_of_pages then
+        logger.warn("page number too high: "..number.."!")
+        number = self.number_of_pages
+    elseif number < 1 then
+        logger.warn("page number too low: "..number.."!")
+        number = 1
     end
     -- this is an event to allow other controllers to be aware of this change
     self.ui:handleEvent(Event:new("PageUpdate", number, orig_mode))

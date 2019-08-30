@@ -310,6 +310,7 @@ end
 function Document:getFullPageHash(pageno, zoom, rotation, gamma, render_mode, color)
     return "renderpg|"..self.file.."|"..self.mod_time.."|"..pageno.."|"
                     ..zoom.."|"..rotation.."|"..gamma.."|"..render_mode..(color and "|color" or "")
+                    ..(self.reflowable_font_size and "|"..self.reflowable_font_size or "")
 end
 
 function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
