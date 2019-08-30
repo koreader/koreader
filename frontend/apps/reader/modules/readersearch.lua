@@ -3,6 +3,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
+local C_ = require("gettext").pgettext
 
 local ReaderSearch = InputContainer:new{
     direction = 0, -- 0 for search forward, 1 for search backward
@@ -30,15 +31,37 @@ end
 function ReaderSearch:onShowFulltextSearchInput()
     self:onInput{
         title = _("Enter text to search for"),
-        ok_text = _("Search all text"),
         type = "text",
-        callback = function(input)
-            self:onShowSearchDialog(input)
-        end,
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    callback = function()
+                        self:closeInputDialog()
+                    end,
+                },
+                {
+                    text = C_("Search", "Previous"),
+                    is_enter_default = true,
+                    callback = function()
+                        self:onShowSearchDialog(self.input_dialog:getInputText(), 1)
+                        self:closeInputDialog()
+                    end,
+                },
+                {
+                    text = C_("Search", "Next"),
+                    is_enter_default = true,
+                    callback = function()
+                        self:onShowSearchDialog(self.input_dialog:getInputText(), 0)
+                        self:closeInputDialog()
+                    end,
+                },
+            },
+        },
     }
 end
 
-function ReaderSearch:onShowSearchDialog(text)
+function ReaderSearch:onShowSearchDialog(text, direction)
     local neglect_current_location = false
     local current_page
     local do_search = function(search_func, _text, param)
@@ -145,7 +168,7 @@ function ReaderSearch:onShowSearchDialog(text)
             UIManager:setDirty(self.dialog, "ui")
         end,
     }
-    do_search(self.searchFromCurrent, text, 0)()
+    do_search(self.searchFromCurrent, text, direction)()
     UIManager:show(self.search_dialog)
     --- @todo regional
     UIManager:setDirty(self.dialog, "partial")
