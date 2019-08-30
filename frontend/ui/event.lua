@@ -1,10 +1,12 @@
 --[[--
-Events are messages that are passed through the widget tree
+Events are messages that are passed through the widget tree.
 
 Events need a "name" attribute as minimal data.
 
-In order to see how event propagation works and how to make
+To see how event propagation works and how to make
 widgets event-aware see the implementation in @{ui.widget.container.widgetcontainer}.
+
+A detailed guide to events can be found in @{Events.md|the event programmer's guide}.
 ]]
 
 --[[--
@@ -15,7 +17,7 @@ widgets event-aware see the implementation in @{ui.widget.container.widgetcontai
 local Event = {}
 
 --[[--
-Create a new event.
+Creates a new event.
 
 @string name
 @tparam[opt] ... arguments for the event
