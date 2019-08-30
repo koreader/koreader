@@ -38,7 +38,7 @@ local ReaderRolling = InputContainer:new{
     old_doc_height = nil,
     old_page = nil,
     current_pos = 0,
-    inverse_reading_order = false,
+    inverse_reading_order = nil,
     -- only used for page view mode
     current_page= nil,
     xpointer = nil,
@@ -188,7 +188,12 @@ function ReaderRolling:onReadSettings(config)
     if self.show_overlap_enable == nil then
         self.show_overlap_enable = DSHOWOVERLAP
     end
-    self.inverse_reading_order = config:readSetting("inverse_reading_order") or false
+    self.inverse_reading_order = config:readSetting("inverse_reading_order")
+    if self.inverse_reading_order == nil and G_reader_settings:has("inverse_reading_order") then
+        self.inverse_reading_order = G_reader_settings:isTrue("inverse_reading_order")
+    else
+        self.inverse_reading_order = false
+    end
 
     -- This self.visible_pages may not be the current nb of visible pages
     -- as crengine may decide to not ensure that in some conditions.
@@ -343,6 +348,29 @@ function ReaderRolling:getLastProgress()
 end
 
 function ReaderRolling:addToMainMenu(menu_items)
+    --- @fixme Repeated code with ReaderPaging read from left to right.
+    menu_items.read_from_right_to_left = {
+        text = _("Read from right to left"),
+        checked_func = function() return self.inverse_reading_order end,
+        callback = function()
+            self.inverse_reading_order = not self.inverse_reading_order
+            self:setupTouchZones()
+        end,
+        hold_callback = function(touchmenu_instance)
+            self.inverse_reading_order = not self.inverse_reading_order
+            self:setupTouchZones()
+            UIManager:show(ConfirmBox:new{
+                text = self.inverse_reading_order and _("Enable right to left reading by default?")
+                    or _("Disable right to left reading by default?"),
+                ok_text = self.inverse_reading_order and _("Enable")
+                    or _("Disable"),
+                ok_callback = function()
+                    G_reader_settings:saveSetting("inverse_reading_order", self.inverse_reading_order)
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                end,
+            })
+        end,
+    }
     --- @fixme repeated code with page overlap menu for readerpaging
     -- needs to keep only one copy of the logic as for the DRY principle.
     -- The difference between the two menus is only the enabled func.

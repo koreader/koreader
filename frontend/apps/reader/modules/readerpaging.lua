@@ -1,13 +1,14 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
-local Geom = require("ui/geometry")
-local Input = require("device").input
+local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
-local Screen = Device.screen
 local Event = require("ui/event")
-local UIManager = require("ui/uimanager")
+local Geom = require("ui/geometry")
+local InputContainer = require("ui/widget/container/inputcontainer")
 local Math = require("optmath")
+local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
+local Input = Device.input
+local Screen = Device.screen
 
 
 local function copyPageState(page_state)
@@ -33,7 +34,7 @@ local ReaderPaging = InputContainer:new{
     show_overlap_enable = nil,
     overlap = Screen:scaleBySize(DOVERLAPPIXELS),
 
-    inverse_reading_order = false,
+    inverse_reading_order = nil,
     page_flipping_mode = false,
     bookmark_flipping_mode = false,
     flip_steps = {0,1,2,5,10,20,50,100}
@@ -178,7 +179,12 @@ function ReaderPaging:onReadSettings(config)
     end
     self.flipping_zoom_mode = config:readSetting("flipping_zoom_mode") or "page"
     self.flipping_scroll_mode = config:readSetting("flipping_scroll_mode") or false
-    self.inverse_reading_order = config:readSetting("inverse_reading_order") or false
+    self.inverse_reading_order = config:readSetting("inverse_reading_order")
+    if self.inverse_reading_order == nil and G_reader_settings:has("inverse_reading_order") then
+        self.inverse_reading_order = G_reader_settings:isTrue("inverse_reading_order")
+    else
+        self.inverse_reading_order = false
+    end
 end
 
 function ReaderPaging:onSaveSettings()
@@ -239,6 +245,20 @@ function ReaderPaging:addToMainMenu(menu_items)
         callback = function()
             self.inverse_reading_order = not self.inverse_reading_order
             self:setupTapTouchZones()
+        end,
+        hold_callback = function(touchmenu_instance)
+            self.inverse_reading_order = not self.inverse_reading_order
+            self:setupTapTouchZones()
+            UIManager:show(ConfirmBox:new{
+                text = self.inverse_reading_order and _("Enable right to left reading by default?")
+                    or _("Disable right to left reading by default?"),
+                ok_text = self.inverse_reading_order and _("Enable")
+                    or _("Disable"),
+                ok_callback = function()
+                    G_reader_settings:saveSetting("inverse_reading_order", self.inverse_reading_order)
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                end,
+            })
         end,
     }
 end
