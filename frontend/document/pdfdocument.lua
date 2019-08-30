@@ -33,11 +33,11 @@ function PdfDocument:init()
     if not ok then
         error(self._document)  -- will contain error message
     end
+    self.is_reflowable = self._document:isDocumentReflowable()
     self.reflowable_font_size = self:convertKoptToReflowableFontSize()
     -- no-op on PDF
     self:layoutDocument()
     self.is_open = true
-    self.is_reflowable = self._document:isDocumentReflowable()
     self.info.has_pages = true
     self.info.configurable = true
     if self._document:needsPassword() then
