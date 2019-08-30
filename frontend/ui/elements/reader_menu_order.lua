@@ -37,7 +37,6 @@ local order = {
         "highlight_options",
     },
     setting = {
-        "read_from_right_to_left",
         -- common settings
         -- those that don't exist will simply be skipped during menu gen
         "frontlight", -- if Device:hasFrontlight()
@@ -70,6 +69,7 @@ local order = {
         "enable_back_history",
         "android_volume_keys",
         "----------------------------",
+        "invert_page_turn_gestures",
         "invert_page_turn_buttons",
     },
     network = {
