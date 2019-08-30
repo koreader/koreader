@@ -351,6 +351,7 @@ androidupdate: all
 	cd $(INSTALL_DIR)/koreader && zip -r9 \
 		../../$(ANDROID_LAUNCHER_DIR)/assets/module/koreader-$(VERSION).zip * \
 		--exclude=*fonts/droid* \
+		--exclude=*fonts/noto* \
 		--exclude=*resources/fonts* \
 		--exclude=*resources/icons/src* \
 		--exclude=*share/man* \

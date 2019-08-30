@@ -74,13 +74,13 @@ local function getExternalFontDir()
 end
 
 local function _readList(target, dir)
-    -- lfs.dir non-exsitent directory will give error, weird!
+    -- lfs.dir non-existent directory will give an error, weird!
     local ok, iter, dir_obj = pcall(lfs.dir, dir)
     if not ok then return end
     for f in iter, dir_obj do
         if lfs.attributes(dir.."/"..f, "mode") == "directory" and f ~= "." and f ~= ".." then
             _readList(target, dir.."/"..f)
-        else
+        elseif lfs.attributes(dir.."/"..f, "mode") ~= nil then
             if string.sub(f, 1, 1) ~= "." then
                 local file_type = string.lower(string.match(f, ".+%.([^.]+)") or "")
                 if file_type == "ttf" or file_type == "ttc"
