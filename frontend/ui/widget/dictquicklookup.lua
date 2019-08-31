@@ -457,8 +457,9 @@ function DictQuickLookup:update()
                             UIManager:close(self)
                             self:lookupWikipedia()
                         else
+                            local link = self.selected_link.link or self.selected_link
+                            self.ui.link:onGotoLink(link)
                             self:onClose()
-                            self.ui.link:onGotoLink(self.selected_link)
                         end
                     end,
                 },
