@@ -861,7 +861,8 @@ function ReaderHighlight:onHoldRelease()
                     {
                         text = _("Follow Link"),
                         callback = function()
-                            self.ui.link:onGotoLink(self.selected_link)
+                            local link = self.selected_link.link or self.selected_link
+                            self.ui.link:onGotoLink(link)
                             self:onClose()
                         end,
                     },
