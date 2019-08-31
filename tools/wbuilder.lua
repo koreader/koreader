@@ -19,6 +19,8 @@ if lang_locale then
     _.changeLang(lang_locale)
 end
 local Device = require("device")
+local CanvasContext = require("document/canvascontext")
+CanvasContext:init(Device)
 local UIManager = require("ui/uimanager")
 local RenderText = require("ui/rendertext")
 local Font = require("ui/font")
