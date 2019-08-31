@@ -1048,10 +1048,12 @@ function KoptInterface:getPageBoxesFromPositions(doc, pageno, ppos0, ppos1)
         local spos0 = self:nativeToReflowPosTransform(doc, pageno, ppos0)
         local spos1 = self:nativeToReflowPosTransform(doc, pageno, ppos1)
         local page_boxes = self:getReflowedTextBoxes(doc, pageno)
+        if not page_boxes then return end
         local text_boxes = self:getTextFromBoxes(page_boxes, spos0, spos1)
         return text_boxes.boxes
     else
         local page_boxes = self:getTextBoxes(doc, pageno)
+        if not page_boxes then return end
         local text_boxes = self:getTextFromBoxes(page_boxes, ppos0, ppos1)
         return text_boxes.boxes
     end
