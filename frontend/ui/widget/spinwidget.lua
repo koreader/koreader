@@ -110,6 +110,10 @@ function SpinWidget:update()
             {
                 text = self.cancel_text,
                 callback = function()
+                    if self.cancel_callback then
+                        self.value = value_widget:getValue()
+                        self:cancel_callback(self)
+                    end
                     self:onClose()
                 end,
             },
