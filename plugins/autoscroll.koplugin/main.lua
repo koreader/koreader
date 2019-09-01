@@ -78,6 +78,11 @@ function AutoScroll:init()
     self:_start()
 end
 
+function AutoScroll:onCloseDocument()
+    logger.dbg("AutoScroll: onCloseDocument")
+    self:_deprecateLastTask()
+end
+
 function AutoScroll:onInputEvent()
     logger.dbg("AutoScroll: onInputEvent")
     self.last_action_sec = os.time()
