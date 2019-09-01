@@ -100,6 +100,15 @@ function AutoScroll:onResume()
     self:_start()
 end
 
+function AutoScroll:onTopWidget(widget)
+    logger.dbg("AutoScroll: onTopWidget", widget)
+    if widget ~= "ReaderUI" then
+        self:_deprecateLastTask()
+    else
+        self:_start()
+    end
+end
+
 function AutoScroll:addToMainMenu(menu_items)
     menu_items.autoscroll = {
         text_func = function() return self:_enabled() and T(_("Autoscroll (%1 s)"), self.autoscroll_sec)

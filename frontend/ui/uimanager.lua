@@ -308,6 +308,8 @@ function UIManager:show(widget, refreshtype, refreshregion, x, y, refreshdither)
     end
     -- and schedule it to be painted
     self:setDirty(widget, refreshtype, refreshregion, refreshdither)
+    -- Inform everyone who's the boss now.
+    self:broadcastEvent(Event:new("TopWidget", widget.name))
     -- tell the widget that it is shown now
     widget:handleEvent(Event:new("Show"))
     -- check if this widget disables double tap gesture
@@ -369,6 +371,8 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
         for i = 1, #self._window_stack do
             self:setDirty(self._window_stack[i].widget)
         end
+        -- Inform everyone who's the boss now.
+        self:broadcastEvent(Event:new("TopWidget", ((self._window_stack[#self._window_stack] or {}).widget or {}).name))
         self:_refresh(refreshtype, refreshregion, refreshdither)
     end
 end
