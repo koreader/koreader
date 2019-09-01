@@ -117,7 +117,7 @@ function AutoScroll:addToMainMenu(menu_items)
                 cancel_callback = function()
                     self.enabled = false
                     G_reader_settings:flipFalse("auto_scroll_enabled")
-                    self:deprecateLastTask()
+                    self:_deprecateLastTask()
                 end,
                 callback = function(autoscroll_spin)
                     self.auto_scroll_sec = autoscroll_spin.value
