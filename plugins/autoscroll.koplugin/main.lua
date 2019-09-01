@@ -33,13 +33,7 @@ function AutoScroll:_schedule(settings_id)
         return
     end
 
-    local delay
-
-    if PluginShare.pause_auto_scroll then
-        delay = self.auto_scroll_sec
-    else
-        delay = self.last_action_sec + self.auto_scroll_sec - os.time()
-    end
+    local delay = self.last_action_sec + self.auto_scroll_sec - os.time()
 
     if delay <= 0 then
         logger.dbg("AutoScroll: go to next page")
@@ -53,6 +47,7 @@ function AutoScroll:_schedule(settings_id)
 end
 
 function AutoScroll:_deprecateLastTask()
+    PluginShare.pause_auto_suspend = false
     self.settings_id = self.settings_id + 1
     logger.dbg("AutoScroll: deprecateLastTask ", self.settings_id)
 end
@@ -60,6 +55,7 @@ end
 function AutoScroll:_start()
     if self:_enabled() then
         logger.dbg("AutoScroll: start at ", os.time())
+        PluginShare.pause_auto_suspend = true
         self.last_action_sec = os.time()
         self:_schedule(self.settings_id)
 
