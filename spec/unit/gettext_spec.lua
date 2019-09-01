@@ -31,6 +31,9 @@ local test_plurals_ru = [[
 local test_plurals_simple = [[
 "Plural-Forms: nplurals=2; plural=(n > 2);\n"
 ]]
+local test_plurals_many = [[
+"Plural-Forms: nplurals=5; plural=(n > 3 ? 3 : n > 2 ? 2 : n > 1 ? 1 : 0);"
+]]
 
 local test_po_part2 = [[
 
@@ -46,6 +49,17 @@ msgid_plural "%1 items"
 msgstr[0] "1 ding"
 msgstr[1] "%1 dingen"
 msgstr[2] "%1 dingen 2"
+msgstr[3] ""
+msgstr[4] ""
+
+#: frontend/device/android/device.lua:359
+msgid "1 untranslated"
+msgid_plural "%1 untranslated"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+msgstr[3] ""
+msgstr[4] ""
 
 #: frontend/ui/data/css_tweaks.lua:17
 msgctxt "Style tweaks category"
@@ -64,6 +78,8 @@ msgid_plural "Pages"
 msgstr[0] "Pagina"
 msgstr[1] "Pagina's"
 msgstr[2] "Pagina's plural 2"
+msgstr[3] "Pagina's plural 3"
+msgstr[4] "Pagina's plural 4"
 
 #: frontend/ui/data/css_tweaks.lua:40
 msgctxt "Context 2"
@@ -72,6 +88,8 @@ msgid_plural "Pages"
 msgstr[0] "Pagina context 2 plural 0"
 msgstr[1] "Pagina's context 2 plural 1"
 msgstr[2] "Pagina's context 2 plural 2"
+msgstr[3] ""
+msgstr[4] ""
 ]]
 
 describe("GetText module", function()
@@ -90,6 +108,7 @@ describe("GetText module", function()
         lfs.mkdir(GetText.dirname.."/none")
         lfs.mkdir(GetText.dirname.."/ru")
         lfs.mkdir(GetText.dirname.."/simple")
+        lfs.mkdir(GetText.dirname.."/many")
 
         test_po_nl = GetText.dirname.."/nl_NL/koreader.po"
         local f = io.open(test_po_nl, "w")
@@ -113,6 +132,12 @@ describe("GetText module", function()
         f = io.open(test_po_simple, "w")
         f:write(test_po_part1, test_plurals_simple, test_po_part2)
         f:close()
+
+        -- same file, just different plural for testing
+        test_po_many = GetText.dirname.."/many/koreader.po"
+        f = io.open(test_po_many, "w")
+        f:write(test_po_part1, test_plurals_many, test_po_part2)
+        f:close()
     end)
 
     teardown(function()
@@ -120,10 +145,12 @@ describe("GetText module", function()
         os.remove(test_po_none)
         os.remove(test_po_ru)
         os.remove(test_po_simple)
+        os.remove(test_po_many)
         os.remove(GetText.dirname.."/nl_NL")
         os.remove(GetText.dirname.."/none")
         os.remove(GetText.dirname.."/ru")
         os.remove(GetText.dirname.."/simple")
+        os.remove(GetText.dirname.."/many")
         os.remove(GetText.dirname)
     end)
 
@@ -254,6 +281,44 @@ describe("GetText module", function()
             assert.is_equal("Pagina context 2 plural 0", GetText.npgettext("Context 2", "Page", "Pages", 1))
             assert.is_equal("Pagina's context 2 plural 1", GetText.npgettext("Context 2", "Page", "Pages", 2))
             assert.is_equal("Pagina's context 2 plural 2", GetText.npgettext("Context 2", "Page", "Pages", 5))
+        end)
+    end)
+
+    -- This one's mainly to test fallback stuff. Russian/Polish are hard
+    -- to follow, so there we focus on algorithm correctness.
+    describe("language with many plurals", function()
+        GetText.changeLang("many")
+        it("gettext should translate multiline string", function()
+            assert.is_equal("\nbericht", GetText("\nmessage"))
+        end)
+        it("ngettext should translate plurals", function()
+            assert.is_equal("1 ding", GetText.ngettext("1 item", "%1 items", 1))
+            assert.is_equal("%1 dingen", GetText.ngettext("1 item", "%1 items", 2))
+            assert.is_equal("%1 dingen 2", GetText.ngettext("1 item", "%1 items", 3))
+        end)
+        it("ngettext should fallback to default plural if not yet translated", function()
+            assert.is_equal("1 ding", GetText.ngettext("1 item", "%1 items", 1))
+            assert.is_equal("%1 dingen", GetText.ngettext("1 item", "%1 items", 2))
+            assert.is_equal("%1 dingen 2", GetText.ngettext("1 item", "%1 items", 3))
+            assert.is_equal("%1 items", GetText.ngettext("1 item", "%1 items", 4))
+            assert.is_equal("%1 items", GetText.ngettext("1 item", "%1 items", 5))
+            assert.is_equal("1 untranslated", GetText.ngettext("1 untranslated", "%1 untranslated", 1))
+            assert.is_equal("%1 untranslated", GetText.ngettext("1 untranslated", "%1 untranslated", 2))
+            assert.is_equal("%1 untranslated", GetText.ngettext("1 untranslated", "%1 untranslated", 3))
+            assert.is_equal("%1 untranslated", GetText.ngettext("1 untranslated", "%1 untranslated", 4))
+            assert.is_equal("%1 untranslated", GetText.ngettext("1 untranslated", "%1 untranslated", 5))
+        end)
+        it("pgettext should distinguish context", function()
+            assert.is_equal("Pagina's", GetText.pgettext("Style tweaks category", "Pages"))
+            assert.is_equal("Pages different context", GetText.pgettext("Other pages", "Pages"))
+        end)
+        it("npgettext should translate plurals and distinguish context", function()
+            assert.is_equal("Pagina", GetText.npgettext("Context 1", "Page", "Pages", 1))
+            assert.is_equal("Pagina's", GetText.npgettext("Context 1", "Page", "Pages", 2))
+            assert.is_equal("Pagina's plural 3", GetText.npgettext("Context 1", "Page", "Pages", 5))
+            assert.is_equal("Pagina context 2 plural 0", GetText.npgettext("Context 2", "Page", "Pages", 1))
+            assert.is_equal("Pagina's context 2 plural 1", GetText.npgettext("Context 2", "Page", "Pages", 2))
+            assert.is_equal("Pages", GetText.npgettext("Context 2", "Page", "Pages", 5))
         end)
     end)
 end)

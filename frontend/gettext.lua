@@ -137,18 +137,18 @@ local function addTranslation(msgctxt, msgid, msgstr, n)
             if not GetText.context[msgctxt][msgid] then
                 GetText.context[msgctxt][msgid] = {}
             end
-            GetText.context[msgctxt][msgid][n] = unescaped_string
+            GetText.context[msgctxt][msgid][n] = unescaped_string ~= "" and unescaped_string or nil
         else
-            GetText.context[msgctxt][msgid] = unescaped_string
+            GetText.context[msgctxt][msgid] = unescaped_string ~= "" and unescaped_string or nil
         end
     else
         if n then
             if not GetText.translation[msgid] then
                 GetText.translation[msgid] = {}
             end
-            GetText.translation[msgid][n] = unescaped_string
+            GetText.translation[msgid][n] = unescaped_string ~= "" and unescaped_string or nil
         else
-            GetText.translation[msgid] = unescaped_string
+            GetText.translation[msgid] = unescaped_string ~= "" and unescaped_string or nil
         end
     end
 end
