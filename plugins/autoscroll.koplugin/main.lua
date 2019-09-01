@@ -95,12 +95,6 @@ function AutoScroll:onResume()
     self:_start()
 end
 
---AutoScroll:init()
-
---~ local AutoScrollWidget = WidgetContainer:new{
-    --~ name = "AutoScroll",
---~ }
-
 function AutoScroll:addToMainMenu(menu_items)
     menu_items.autoscroll = {
         text = _("AutoScroll timeout"),
