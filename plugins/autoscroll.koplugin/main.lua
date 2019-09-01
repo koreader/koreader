@@ -118,7 +118,6 @@ function AutoScroll:addToMainMenu(menu_items)
                 ok_text = _("Set timeout"),
                 title_text = _("Timeout in seconds"),
                 callback = function(autoscroll_spin)
-                    local sec = tonumber(autoscroll_spin.value)
                     self.auto_scroll_sec = autoscroll_spin.value
                     G_reader_settings:saveSetting("auto_scroll_timeout_seconds", autoscroll_spin.value)
                     self:_deprecateLastTask()
