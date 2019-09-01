@@ -201,16 +201,33 @@ SettingsMigration:migrateSettings(G_reader_settings)
 
 local exit_code
 
+local function getPathFromURI(str)
+    local hexToChar = function(x)
+        return string.char(tonumber(x, 16))
+    end
+
+    local unescape = function(url)
+       return url:gsub("%%(%x%x)", hexToChar)
+    end
+
+    local prefix = "file://"
+    if str:sub(1, #prefix) ~= prefix then
+        return str
+    end
+    return unescape(str):sub(#prefix+1)
+end
+
 if ARGV[argidx] and ARGV[argidx] ~= "" then
     local file
-    if lfs.attributes(ARGV[argidx], "mode") == "file" then
-        file = ARGV[argidx]
+    local sanitized_path = getPathFromURI(ARGV[argidx])
+    if lfs.attributes(sanitized_path, "mode") == "file" then
+        file = sanitized_path
     elseif open_last and last_file then
         file = last_file
     end
     -- if file is given in command line argument or open last document is set
     -- true, the given file or the last file is opened in the reader
-    if file then
+    if file and file ~= "" then
         local ReaderUI = require("apps/reader/readerui")
         UIManager:nextTick(function()
             ReaderUI:showReader(file)
