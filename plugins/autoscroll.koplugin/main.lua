@@ -11,6 +11,7 @@ local AutoScroll = WidgetContainer:new{
     name = 'autoscroll',
     is_doc_only = true,
     autoscroll_sec = G_reader_settings:readSetting("autoscroll_timeout_seconds") or 0,
+    autoscroll_distance = G_reader_settings:readSetting("autoscroll_distance") or 1,
     enabled = G_reader_settings:isTrue("autoscroll_enabled"),
     settings_id = 0,
     last_action_sec = os.time(),
@@ -37,7 +38,7 @@ function AutoScroll:_schedule(settings_id)
 
     if delay <= 0 then
         logger.dbg("AutoScroll: go to next page")
-        self.ui:handleEvent(Event:new("GotoViewRel", 1))
+        self.ui:handleEvent(Event:new("GotoViewRel", self.autoscroll_distance))
         logger.dbg("AutoScroll: schedule at ", os.time() + self.autoscroll_sec)
         UIManager:scheduleIn(self.autoscroll_sec, function() self:_schedule(settings_id) end)
     else
@@ -114,6 +115,7 @@ function AutoScroll:addToMainMenu(menu_items)
                     self.enabled = false
                     G_reader_settings:flipFalse("autoscroll_enabled")
                     self:_deprecateLastTask()
+                    menu:updateItems()
                 end,
                 callback = function(autoscroll_spin)
                     self.autoscroll_sec = autoscroll_spin.value
@@ -122,10 +124,36 @@ function AutoScroll:addToMainMenu(menu_items)
                     G_reader_settings:flipTrue("autoscroll_enabled")
                     self:_deprecateLastTask()
                     self:_start()
+                    menu:updateItems()
                 end,
             }
             UIManager:show(autoscroll_spin)
-            menu:onClose()
+        end,
+        hold_callback = function(menu)
+            local Screen = Device.screen
+            local SpinWidget = require("ui/widget/spinwidget")
+            local curr_items = G_reader_settings:readSetting("autoscroll_timeout_seconds") or 30
+            local autoscroll_spin = SpinWidget:new {
+                width = Screen:getWidth() * 0.6,
+                value = curr_items,
+                value_min = -20,
+                value_max = 20,
+                precision = "%.2f",
+                value_step = .1,
+                value_hold_step = .5,
+                ok_text = _("Set distance"),
+                title_text = _("Scroll distance"),
+                callback = function(autoscroll_spin)
+                    self.autoscroll_distance = autoscroll_spin.value
+                    G_reader_settings:saveSetting("autoscroll_distance", autoscroll_spin.value)
+                    if self.enabled then
+                        self:_deprecateLastTask()
+                        self:_start()
+                    end
+                    menu:updateItems()
+                end,
+            }
+            UIManager:show(autoscroll_spin)
         end,
     }
 end
