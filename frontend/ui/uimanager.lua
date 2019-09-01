@@ -198,12 +198,19 @@ function UIManager:init()
         self.event_handlers["PowerRelease"] = function()
             if not self._entered_poweroff_stage then
                 UIManager:unschedule(self.poweroff_action)
-                self:_beforeSuspend()
-                Device:intoScreenSaver()
-                Device:suspend()
+                -- resume if we were suspended
+                if Device.screen_saver_mode then
+                    self:resume()
+                else
+                    self:suspend()
+                end
             end
         end
-        self.event_handlers["Suspend"] = self.event_handlers["PowerRelease"]
+        self.event_handlers["Suspend"] = function()
+            self:_beforeSuspend()
+            Device:intoScreenSaver()
+            Device:suspend()
+        end
         self.event_handlers["Resume"] = function()
             Device:resume()
             Device:outofScreenSaver()
@@ -230,7 +237,12 @@ function UIManager:init()
         self.event_handlers["PowerRelease"] = function()
             if not self._entered_poweroff_stage then
                 UIManager:unschedule(self.poweroff_action)
-                self:suspend()
+                -- resume if we were suspended
+                if Device.screen_saver_mode then
+                    self:resume()
+                else
+                    self:suspend()
+                end
             end
         end
         self.event_handlers["Charging"] = function()
