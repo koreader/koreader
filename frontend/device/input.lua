@@ -341,12 +341,20 @@ function Input:handleKeyBoardEv(ev)
     end
 
     if keycode == "Power" then
+        --- @fixme This hacky Kobo code is also used by Cervantes and Sony.
+        -- Input is **not** the place where this should turn into "Resume".
         -- Kobo generates Power keycode only, we need to decide whether it's
         -- power-on or power-off ourselves.
-        if ev.value == EVENT_VALUE_KEY_PRESS then
-            return "PowerPress"
-        elseif ev.value == EVENT_VALUE_KEY_RELEASE then
-            return "PowerRelease"
+        if self.device.screen_saver_mode then
+            if ev.value == EVENT_VALUE_KEY_RELEASE then
+                return "Resume"
+            end
+        else
+            if ev.value == EVENT_VALUE_KEY_PRESS then
+                return "PowerPress"
+            elseif ev.value == EVENT_VALUE_KEY_RELEASE then
+                return "PowerRelease"
+            end
         end
     end
 
