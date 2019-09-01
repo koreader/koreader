@@ -965,13 +965,28 @@ function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, events, 
             local value
             if direction == "-" then
                 value = self.configurable[name] or values[1]
-                value = value - 1
-                if value < 0 then
-                    value = 0
+                if type(value) == "table" then
+                    for i=1, #value do
+                        value[i] = value[i] - 1
+                        if value[i] < 0 then
+                            value[i] = 0
+                        end
+                    end
+                else
+                    value = value - 1
+                    if value < 0 then
+                        value = 0
+                    end
                 end
             else
                 value = self.configurable[name] or values[#values]
-                value = value + 1
+                if type(value) == "table" then
+                    for i=1, #value do
+                        value[i] = value[i] + 1
+                    end
+                else
+                    value = value + 1
+                end
             end
             self:onConfigChoice(name, value)
         end
