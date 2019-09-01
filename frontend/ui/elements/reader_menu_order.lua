@@ -18,7 +18,7 @@ local order = {
         "----------------------------",
         "go_to",
         "skim_to",
-        "autoscroll",
+        "autoturn",
         "----------------------------",
         "go_to_previous_location",
     },
