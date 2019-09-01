@@ -62,7 +62,9 @@ function AutoScroll:_start()
 
         local InfoMessage = require("ui/widget/infomessage")
         UIManager:show(InfoMessage:new{
-            text = T(_("Autoscroll is now active and will automatically turn the page every %1 seconds."), self.autoscroll_sec),
+            text = T(_("Autoscroll is now active and will automatically scroll the page by %1 every %2 seconds."),
+                self.autoscroll_distance,
+                self.autoscroll_sec),
             timeout = 3,
         })
     end
@@ -132,7 +134,7 @@ function AutoScroll:addToMainMenu(menu_items)
         hold_callback = function(menu)
             local Screen = Device.screen
             local SpinWidget = require("ui/widget/spinwidget")
-            local curr_items = G_reader_settings:readSetting("autoscroll_timeout_seconds") or 30
+            local curr_items = G_reader_settings:readSetting("autoscroll_distance") or 1
             local autoscroll_spin = SpinWidget:new {
                 width = Screen:getWidth() * 0.6,
                 value = curr_items,
