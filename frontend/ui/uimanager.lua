@@ -621,6 +621,11 @@ function UIManager:getRefreshRate(rate)
     return self.FULL_REFRESH_COUNT
 end
 
+--- Get top widget.
+function UIManager:getTopWidget()
+    return ((self._window_stack[#self._window_stack] or {}).widget or {}).name
+end
+
 --- Signals to quit.
 function UIManager:quit()
     if not self._running then return end
