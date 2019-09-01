@@ -64,6 +64,7 @@ Note that this may not be ensured under some conditions: in scroll mode, when a 
                 name = "h_page_margins",
                 name_text = S.H_PAGE_MARGINS,
                 buttonprogress = true,
+                fine_tune = true,
                 values = {
                     DCREREADER_CONFIG_H_MARGIN_SIZES_SMALL,
                     DCREREADER_CONFIG_H_MARGIN_SIZES_MEDIUM,
