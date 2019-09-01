@@ -166,7 +166,9 @@ function KoboPowerD:saveSettings()
         -- that if frontlight was toggled off, we save and restore the previous
         -- untoggled intensity and toggle state at next startup)
         local cur_intensity = self.fl_intensity
-        local cur_is_fl_on = self.is_fl_on
+        -- If we're shutting down straight from suspend then the frontlight won't
+        -- be turned on but we still want to save its state.
+        local cur_is_fl_on = self.is_fl_on or self.fl_was_on
         local cur_warmth = self.fl_warmth
         local cur_auto_warmth = self.auto_warmth
         local cur_max_warmth_hour = self.max_warmth_hour
