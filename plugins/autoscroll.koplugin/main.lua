@@ -10,14 +10,14 @@ local T = require("ffi/util").template
 local AutoScroll = WidgetContainer:new{
     name = 'autoscroll',
     is_doc_only = true,
-    auto_scroll_sec = G_reader_settings:readSetting("auto_scroll_timeout_seconds") or 0,
-    enabled = G_reader_settings:isTrue("auto_scroll_enabled"),
+    autoscroll_sec = G_reader_settings:readSetting("autoscroll_timeout_seconds") or 0,
+    enabled = G_reader_settings:isTrue("autoscroll_enabled"),
     settings_id = 0,
     last_action_sec = os.time(),
 }
 
 function AutoScroll:_enabled()
-    return self.enabled and self.auto_scroll_sec > 0
+    return self.enabled and self.autoscroll_sec > 0
 end
 
 function AutoScroll:_schedule(settings_id)
@@ -33,13 +33,13 @@ function AutoScroll:_schedule(settings_id)
         return
     end
 
-    local delay = self.last_action_sec + self.auto_scroll_sec - os.time()
+    local delay = self.last_action_sec + self.autoscroll_sec - os.time()
 
     if delay <= 0 then
         logger.dbg("AutoScroll: go to next page")
         self.ui:handleEvent(Event:new("GotoViewRel", 1))
-        logger.dbg("AutoScroll: schedule at ", os.time() + self.auto_scroll_sec)
-        UIManager:scheduleIn(self.auto_scroll_sec, function() self:_schedule(settings_id) end)
+        logger.dbg("AutoScroll: schedule at ", os.time() + self.autoscroll_sec)
+        UIManager:scheduleIn(self.autoscroll_sec, function() self:_schedule(settings_id) end)
     else
         logger.dbg("AutoScroll: schedule at ", os.time() + delay)
         UIManager:scheduleIn(delay, function() self:_schedule(settings_id) end)
@@ -61,7 +61,7 @@ function AutoScroll:_start()
 
         local InfoMessage = require("ui/widget/infomessage")
         UIManager:show(InfoMessage:new{
-            text = T(_("Autoscroll is now active and will automatically turn the page every %1 seconds."), self.auto_scroll_sec),
+            text = T(_("Autoscroll is now active and will automatically turn the page every %1 seconds."), self.autoscroll_sec),
             timeout = 3,
         })
     end
@@ -69,7 +69,7 @@ end
 
 function AutoScroll:init()
     UIManager.event_hook:registerWidget("InputEvent", self)
-    self.auto_scroll_sec = self.settings
+    self.autoscroll_sec = self.settings
     self.ui.menu:registerToMainMenu(self)
     self:_deprecateLastTask()
     self:_start()
@@ -94,13 +94,13 @@ end
 
 function AutoScroll:addToMainMenu(menu_items)
     menu_items.autoscroll = {
-        text_func = function() return self:_enabled() and T(_("Autoscroll (%1 s)"), self.auto_scroll_sec)
+        text_func = function() return self:_enabled() and T(_("Autoscroll (%1 s)"), self.autoscroll_sec)
             or _("Autoscroll") end,
         checked_func = function() return self:_enabled() end,
-        callback = function()
+        callback = function(menu)
             local Screen = Device.screen
             local SpinWidget = require("ui/widget/spinwidget")
-            local curr_items = G_reader_settings:readSetting("auto_scroll_timeout_seconds") or 30
+            local curr_items = G_reader_settings:readSetting("autoscroll_timeout_seconds") or 30
             local autoscroll_spin = SpinWidget:new {
                 width = Screen:getWidth() * 0.6,
                 value = curr_items,
@@ -112,19 +112,20 @@ function AutoScroll:addToMainMenu(menu_items)
                 title_text = _("Timeout in seconds"),
                 cancel_callback = function()
                     self.enabled = false
-                    G_reader_settings:flipFalse("auto_scroll_enabled")
+                    G_reader_settings:flipFalse("autoscroll_enabled")
                     self:_deprecateLastTask()
                 end,
                 callback = function(autoscroll_spin)
-                    self.auto_scroll_sec = autoscroll_spin.value
-                    G_reader_settings:saveSetting("auto_scroll_timeout_seconds", autoscroll_spin.value)
+                    self.autoscroll_sec = autoscroll_spin.value
+                    G_reader_settings:saveSetting("autoscroll_timeout_seconds", autoscroll_spin.value)
                     self.enabled = true
-                    G_reader_settings:flipTrue("auto_scroll_enabled")
+                    G_reader_settings:flipTrue("autoscroll_enabled")
                     self:_deprecateLastTask()
                     self:_start()
                 end,
             }
             UIManager:show(autoscroll_spin)
+            menu:onClose()
         end,
     }
 end
