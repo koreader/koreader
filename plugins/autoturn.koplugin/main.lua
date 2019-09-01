@@ -98,8 +98,8 @@ function AutoTurn:onInputEvent()
     self.last_action_sec = os.time()
 end
 
--- We do not want auto scroll procedure to waste battery during suspend. So let's unschedule it
--- when suspending and restart it after resume.
+-- We do not want autoturn to turn pages during the suspend process.
+-- Unschedule it and restart after resume.
 function AutoTurn:onSuspend()
     logger.dbg("AutoTurn: onSuspend")
     self:_deprecateLastTask()
@@ -112,8 +112,8 @@ end
 
 function AutoTurn:addToMainMenu(menu_items)
     menu_items.autoturn = {
-        text_func = function() return self:_enabled() and T(_("Autoscroll (%1 s)"), self.autoturn_sec)
-            or _("Autoscroll") end,
+        text_func = function() return self:_enabled() and T(_("Autoturn (%1 s)"), self.autoturn_sec)
+            or _("Autoturn") end,
         checked_func = function() return self:_enabled() end,
         callback = function(menu)
             local Screen = Device.screen
@@ -159,7 +159,7 @@ function AutoTurn:addToMainMenu(menu_items)
                 value_step = .1,
                 value_hold_step = .5,
                 ok_text = _("Set distance"),
-                title_text = _("Scroll distance"),
+                title_text = _("Scrolling distance"),
                 callback = function(autoturn_spin)
                     self.autoturn_distance = autoturn_spin.value
                     G_reader_settings:saveSetting("autoturn_distance", autoturn_spin.value)
