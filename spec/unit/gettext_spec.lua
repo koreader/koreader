@@ -96,6 +96,7 @@ describe("GetText module", function()
     local GetText
     local test_po_nl, test_po_ru
     local test_po_none, test_po_simple
+    local test_po_many
 
     setup(function()
         require("commonrequire")
