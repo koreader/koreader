@@ -62,11 +62,19 @@ function AutoScroll:_start()
         self.last_action_sec = os.time()
         self:_schedule(self.settings_id)
 
+        local text
+        if self.autoscroll_distance == 1 then
+            text = T(_("Autoscroll is now active and will automatically turn the page every %1 seconds."),
+                self.autoscroll_sec)
+        else
+            text = T(_("Autoscroll is now active and will automatically scroll %1 % of the page every %2 seconds."),
+                self.autoscroll_distance * 100,
+                self.autoscroll_sec)
+        end
+
         local InfoMessage = require("ui/widget/infomessage")
         UIManager:show(InfoMessage:new{
-            text = T(_("Autoscroll is now active and will automatically scroll the page by %1 every %2 seconds."),
-                self.autoscroll_distance,
-                self.autoscroll_sec),
+            text = text,
             timeout = 3,
         })
     end
