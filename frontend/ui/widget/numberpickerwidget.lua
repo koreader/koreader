@@ -1,3 +1,21 @@
+--[[--
+A customizable number picker.
+
+Example:
+    local NumberPickerWidget = require("ui/widget/numberpickerwidget")
+    local numberpicker = NumberPickerWidget:new{
+        -- for floating point (decimals), use something like "%.2f"
+        precision = "%02d",
+        value = 0,
+        value_min = 0,
+        value_max = 23,
+        value_step = 1,
+        value_hold_step = 4,
+        wrap = true,
+        update_callback = function() end,
+    }
+--]]
+
 local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
@@ -165,6 +183,9 @@ function NumberPickerWidget:paintWidget()
     }
 end
 
+--[[--
+Update.
+--]]
 function NumberPickerWidget:update()
     local widget_spinner = self:paintWidget()
     self.frame = FrameContainer:new{
@@ -187,6 +208,9 @@ function NumberPickerWidget:update()
     self.update_callback()
 end
 
+--[[--
+Change value.
+--]]
 function NumberPickerWidget:changeValue(value, step, max, min, wrap)
     if self.value_index then
         self.value_index = self.value_index + step
@@ -208,6 +232,9 @@ function NumberPickerWidget:changeValue(value, step, max, min, wrap)
     return value
 end
 
+--[[--
+Get days in month.
+--]]
 function NumberPickerWidget:getDaysInMonth(month, year)
     local days_in_month = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 }
     local days = days_in_month[month]
@@ -226,6 +253,9 @@ function NumberPickerWidget:getDaysInMonth(month, year)
     return days
 end
 
+--[[--
+Get value.
+--]]
 function NumberPickerWidget:getValue()
     return self.value
 end
