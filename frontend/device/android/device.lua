@@ -107,6 +107,15 @@ local Device = Generic:new{
     should_restrict_JIT = true,
 }
 
+local BooxNovaPro = Device:new{
+    model = "Onyx_Boox_NovaPro",
+    hasNaturalLight = yes,
+    frontlight_settings = {
+        frontlight_white = "/sys/class/backlight/white",
+        frontlight_red = "/sys/class/backlight/warm",
+    },
+}
+
 function Device:init()
     self.screen = require("ffi/framebuffer_android"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/android/powerd"):new{device = self}
@@ -121,6 +130,8 @@ function Device:init()
                 or ev.code == C.APP_CMD_INIT_WINDOW
                 or ev.code == C.APP_CMD_WINDOW_REDRAW_NEEDED then
                 this.device.screen:_updateWindow()
+            elseif ev.code == C.APP_CMD_PAUSE then
+                self.powerd:beforeSuspend()
             elseif ev.code == C.APP_CMD_RESUME then
                 EXTERNAL_DICTS_AVAILABILITY_CHECKED = false
                 if external_dict_when_back_callback then
@@ -143,6 +154,7 @@ function Device:init()
                         require("apps/reader/readerui"):doShowReader(new_file)
                     end)
                 end
+                self.powerd:afterResume()
             end
         end,
         hasClipboardText = function()
@@ -293,4 +305,12 @@ end
 android.LOGI(string.format("Android %s - %s (API %d) - flavor: %s",
     android.prop.version, getCodename(), Device.firmware_rev, android.prop.flavor))
 
-return Device
+-------------- device probe ------------
+
+local product = android.prop.product
+
+if product == "NovaPro" then
+    return BooxNovaPro
+else
+    return Device
+end
