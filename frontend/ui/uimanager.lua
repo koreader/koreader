@@ -369,8 +369,6 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
         for i = 1, #self._window_stack do
             self:setDirty(self._window_stack[i].widget)
         end
-        -- Inform everyone who's the boss now.
-        self:broadcastEvent(Event:new("TopWidget", ((self._window_stack[#self._window_stack] or {}).widget or {}).name))
         self:_refresh(refreshtype, refreshregion, refreshdither)
     end
 end
@@ -621,6 +619,11 @@ end
 --- Gets full refresh rate for e-ink screen.
 function UIManager:getRefreshRate(rate)
     return self.FULL_REFRESH_COUNT
+end
+
+--- Get top widget.
+function UIManager:getTopWidget()
+    return ((self._window_stack[#self._window_stack] or {}).widget or {}).name
 end
 
 --- Signals to quit.
