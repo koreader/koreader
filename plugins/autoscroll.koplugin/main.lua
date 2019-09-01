@@ -14,6 +14,7 @@ local AutoScroll = WidgetContainer:new{
     autoscroll_distance = G_reader_settings:readSetting("autoscroll_distance") or 1,
     enabled = G_reader_settings:isTrue("autoscroll_enabled"),
     settings_id = 0,
+    running = false,
     last_action_sec = os.time(),
 }
 
@@ -50,6 +51,7 @@ end
 function AutoScroll:_deprecateLastTask()
     PluginShare.pause_auto_suspend = false
     self.settings_id = self.settings_id + 1
+    self.running = false
     logger.dbg("AutoScroll: deprecateLastTask ", self.settings_id)
 end
 
@@ -58,6 +60,7 @@ function AutoScroll:_start()
         logger.dbg("AutoScroll: start at ", os.time())
         PluginShare.pause_auto_suspend = true
         self.last_action_sec = os.time()
+        self.running = true
         self:_schedule(self.settings_id)
 
         local InfoMessage = require("ui/widget/infomessage")
@@ -102,9 +105,9 @@ end
 
 function AutoScroll:onTopWidget(widget)
     logger.dbg("AutoScroll: onTopWidget", widget)
-    if widget ~= "ReaderUI" then
+    if widget ~= "ReaderUI" and self.running then
         self:_deprecateLastTask()
-    else
+    elseif widget == "ReaderUI" and self.running == false then
         self:_start()
     end
 end
