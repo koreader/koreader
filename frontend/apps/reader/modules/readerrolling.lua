@@ -645,6 +645,12 @@ function ReaderRolling:onGotoViewRel(diff)
     elseif self.view.view_mode == "page" then
         local page_count = self.ui.document:getVisiblePageCount()
         local old_page = self.current_page
+        -- we're in paged mode, so round up
+        if diff > 0 then
+            diff = math.ceil(diff)
+        else
+            diff = math.floor(diff)
+        end
         self:_gotoPage(self.current_page + diff*page_count)
         if diff > 0 and old_page == self.current_page then
             self.ui:handleEvent(Event:new("EndOfBook"))
