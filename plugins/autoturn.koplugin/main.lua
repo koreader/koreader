@@ -7,69 +7,69 @@ local logger = require("logger")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
-local AutoScroll = WidgetContainer:new{
-    name = 'autoscroll',
+local AutoTurn = WidgetContainer:new{
+    name = 'autoturn',
     is_doc_only = true,
-    autoscroll_sec = G_reader_settings:readSetting("autoscroll_timeout_seconds") or 0,
-    autoscroll_distance = G_reader_settings:readSetting("autoscroll_distance") or 1,
-    enabled = G_reader_settings:isTrue("autoscroll_enabled"),
+    autoturn_sec = G_reader_settings:readSetting("autoturn_timeout_seconds") or 0,
+    autoturn_distance = G_reader_settings:readSetting("autoturn_distance") or 1,
+    enabled = G_reader_settings:isTrue("autoturn_enabled"),
     settings_id = 0,
     last_action_sec = os.time(),
 }
 
-function AutoScroll:_enabled()
-    return self.enabled and self.autoscroll_sec > 0
+function AutoTurn:_enabled()
+    return self.enabled and self.autoturn_sec > 0
 end
 
-function AutoScroll:_schedule(settings_id)
+function AutoTurn:_schedule(settings_id)
     if not self:_enabled() then
-        logger.dbg("AutoScroll:_schedule is disabled")
+        logger.dbg("AutoTurn:_schedule is disabled")
         return
     end
     if self.settings_id ~= settings_id then
-        logger.dbg("AutoScroll:_schedule registered settings_id ",
+        logger.dbg("AutoTurn:_schedule registered settings_id ",
                    settings_id,
                    " does not equal to current one ",
                    self.settings_id)
         return
     end
 
-    local delay = self.last_action_sec + self.autoscroll_sec - os.time()
+    local delay = self.last_action_sec + self.autoturn_sec - os.time()
 
     if delay <= 0 then
         if UIManager:getTopWidget() == "ReaderUI"then
-            logger.dbg("AutoScroll: go to next page")
-            self.ui:handleEvent(Event:new("GotoViewRel", self.autoscroll_distance))
+            logger.dbg("AutoTurn: go to next page")
+            self.ui:handleEvent(Event:new("GotoViewRel", self.autoturn_distance))
         end
-        logger.dbg("AutoScroll: schedule at ", os.time() + self.autoscroll_sec)
-        UIManager:scheduleIn(self.autoscroll_sec, function() self:_schedule(settings_id) end)
+        logger.dbg("AutoTurn: schedule at ", os.time() + self.autoturn_sec)
+        UIManager:scheduleIn(self.autoturn_sec, function() self:_schedule(settings_id) end)
     else
-        logger.dbg("AutoScroll: schedule at ", os.time() + delay)
+        logger.dbg("AutoTurn: schedule at ", os.time() + delay)
         UIManager:scheduleIn(delay, function() self:_schedule(settings_id) end)
     end
 end
 
-function AutoScroll:_deprecateLastTask()
+function AutoTurn:_deprecateLastTask()
     PluginShare.pause_auto_suspend = false
     self.settings_id = self.settings_id + 1
-    logger.dbg("AutoScroll: deprecateLastTask ", self.settings_id)
+    logger.dbg("AutoTurn: deprecateLastTask ", self.settings_id)
 end
 
-function AutoScroll:_start()
+function AutoTurn:_start()
     if self:_enabled() then
-        logger.dbg("AutoScroll: start at ", os.time())
+        logger.dbg("AutoTurn: start at ", os.time())
         PluginShare.pause_auto_suspend = true
         self.last_action_sec = os.time()
         self:_schedule(self.settings_id)
 
         local text
-        if self.autoscroll_distance == 1 then
-            text = T(_("Autoscroll is now active and will automatically turn the page every %1 seconds."),
-                self.autoscroll_sec)
+        if self.autoturn_distance == 1 then
+            text = T(_("Autoturn is now active and will automatically turn the page every %1 seconds."),
+                self.autoturn_sec)
         else
-            text = T(_("Autoscroll is now active and will automatically scroll %1 % of the page every %2 seconds."),
-                self.autoscroll_distance * 100,
-                self.autoscroll_sec)
+            text = T(_("Autoturn is now active and will automatically scroll %1 % of the page every %2 seconds."),
+                self.autoturn_distance * 100,
+                self.autoturn_sec)
         end
 
         local InfoMessage = require("ui/widget/infomessage")
@@ -80,46 +80,46 @@ function AutoScroll:_start()
     end
 end
 
-function AutoScroll:init()
+function AutoTurn:init()
     UIManager.event_hook:registerWidget("InputEvent", self)
-    self.autoscroll_sec = self.settings
+    self.autoturn_sec = self.settings
     self.ui.menu:registerToMainMenu(self)
     self:_deprecateLastTask()
     self:_start()
 end
 
-function AutoScroll:onCloseDocument()
-    logger.dbg("AutoScroll: onCloseDocument")
+function AutoTurn:onCloseDocument()
+    logger.dbg("AutoTurn: onCloseDocument")
     self:_deprecateLastTask()
 end
 
-function AutoScroll:onInputEvent()
-    logger.dbg("AutoScroll: onInputEvent")
+function AutoTurn:onInputEvent()
+    logger.dbg("AutoTurn: onInputEvent")
     self.last_action_sec = os.time()
 end
 
 -- We do not want auto scroll procedure to waste battery during suspend. So let's unschedule it
 -- when suspending and restart it after resume.
-function AutoScroll:onSuspend()
-    logger.dbg("AutoScroll: onSuspend")
+function AutoTurn:onSuspend()
+    logger.dbg("AutoTurn: onSuspend")
     self:_deprecateLastTask()
 end
 
-function AutoScroll:onResume()
-    logger.dbg("AutoScroll: onResume")
+function AutoTurn:onResume()
+    logger.dbg("AutoTurn: onResume")
     self:_start()
 end
 
-function AutoScroll:addToMainMenu(menu_items)
-    menu_items.autoscroll = {
-        text_func = function() return self:_enabled() and T(_("Autoscroll (%1 s)"), self.autoscroll_sec)
+function AutoTurn:addToMainMenu(menu_items)
+    menu_items.autoturn = {
+        text_func = function() return self:_enabled() and T(_("Autoscroll (%1 s)"), self.autoturn_sec)
             or _("Autoscroll") end,
         checked_func = function() return self:_enabled() end,
         callback = function(menu)
             local Screen = Device.screen
             local SpinWidget = require("ui/widget/spinwidget")
-            local curr_items = G_reader_settings:readSetting("autoscroll_timeout_seconds") or 30
-            local autoscroll_spin = SpinWidget:new {
+            local curr_items = G_reader_settings:readSetting("autoturn_timeout_seconds") or 30
+            local autoturn_spin = SpinWidget:new {
                 width = Screen:getWidth() * 0.6,
                 value = curr_items,
                 value_min = 0,
@@ -130,27 +130,27 @@ function AutoScroll:addToMainMenu(menu_items)
                 title_text = _("Timeout in seconds"),
                 cancel_callback = function()
                     self.enabled = false
-                    G_reader_settings:flipFalse("autoscroll_enabled")
+                    G_reader_settings:flipFalse("autoturn_enabled")
                     self:_deprecateLastTask()
                     menu:updateItems()
                 end,
-                callback = function(autoscroll_spin)
-                    self.autoscroll_sec = autoscroll_spin.value
-                    G_reader_settings:saveSetting("autoscroll_timeout_seconds", autoscroll_spin.value)
+                callback = function(autoturn_spin)
+                    self.autoturn_sec = autoturn_spin.value
+                    G_reader_settings:saveSetting("autoturn_timeout_seconds", autoturn_spin.value)
                     self.enabled = true
-                    G_reader_settings:flipTrue("autoscroll_enabled")
+                    G_reader_settings:flipTrue("autoturn_enabled")
                     self:_deprecateLastTask()
                     self:_start()
                     menu:updateItems()
                 end,
             }
-            UIManager:show(autoscroll_spin)
+            UIManager:show(autoturn_spin)
         end,
         hold_callback = function(menu)
             local Screen = Device.screen
             local SpinWidget = require("ui/widget/spinwidget")
-            local curr_items = G_reader_settings:readSetting("autoscroll_distance") or 1
-            local autoscroll_spin = SpinWidget:new {
+            local curr_items = G_reader_settings:readSetting("autoturn_distance") or 1
+            local autoturn_spin = SpinWidget:new {
                 width = Screen:getWidth() * 0.6,
                 value = curr_items,
                 value_min = -20,
@@ -160,9 +160,9 @@ function AutoScroll:addToMainMenu(menu_items)
                 value_hold_step = .5,
                 ok_text = _("Set distance"),
                 title_text = _("Scroll distance"),
-                callback = function(autoscroll_spin)
-                    self.autoscroll_distance = autoscroll_spin.value
-                    G_reader_settings:saveSetting("autoscroll_distance", autoscroll_spin.value)
+                callback = function(autoturn_spin)
+                    self.autoturn_distance = autoturn_spin.value
+                    G_reader_settings:saveSetting("autoturn_distance", autoturn_spin.value)
                     if self.enabled then
                         self:_deprecateLastTask()
                         self:_start()
@@ -170,9 +170,9 @@ function AutoScroll:addToMainMenu(menu_items)
                     menu:updateItems()
                 end,
             }
-            UIManager:show(autoscroll_spin)
+            UIManager:show(autoturn_spin)
         end,
     }
 end
 
-return AutoScroll
+return AutoTurn
