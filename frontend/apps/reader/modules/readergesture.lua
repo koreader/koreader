@@ -256,20 +256,20 @@ function ReaderGesture:addToMainMenu(menu_items)
         text = _("Tap corner"),
         sub_item_table = {
             {
-                text = _("Tap top left corner"),
+                text_func = function() return actionTextFunc("tap_top_left_corner", _("Top left")) end,
                 enabled_func = function() return self.ges_mode == "gesture_reader" end,
                 sub_item_table = self:buildMenu("tap_top_left_corner", self.default_gesture["tap_top_left_corner"]),
             },
             {
-                text = _("Tap top right corner"),
+                text_func = function() return actionTextFunc("tap_top_right_corner", _("Top right")) end,
                 sub_item_table = self:buildMenu("tap_top_right_corner", self.default_gesture["tap_top_right_corner"]),
             },
             {
-                text = _("Tap bottom left corner"),
+                text_func = function() return actionTextFunc("tap_left_bottom_corner", _("Bottom left")) end,
                 sub_item_table = self:buildMenu("tap_left_bottom_corner", self.default_gesture["tap_left_bottom_corner"]),
             },
             {
-                text = _("Tap bottom right corner"),
+                text_func = function() return actionTextFunc("tap_right_bottom_corner", _("Bottom right")) end,
                 sub_item_table = self:buildMenu("tap_right_bottom_corner", self.default_gesture["tap_right_bottom_corner"]),
                 separator = true,
             },
