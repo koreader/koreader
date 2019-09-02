@@ -1062,7 +1062,6 @@ end
 -- Tweaked variant used with the fine_tune variant of buttonprogress (direction can only be "-" or "+")
 -- NOTE: This sets the defaults to the *current* value, as the -/+ buttons have no fixed value ;).
 function ConfigDialog:onMakeFineTuneDefault(name, name_text, values, labels, direction)
-    print("ConfigDialog:onMakeFineTuneDefault:", name, name_text, values, labels, direction)
     local display_value = self.configurable[name] or direction == "-" and labels[1] or labels[#labels]
 
     UIManager:show(ConfirmBox:new{
@@ -1074,9 +1073,6 @@ function ConfigDialog:onMakeFineTuneDefault(name, name_text, values, labels, dir
         ok_text = T(_("Set default")),
         ok_callback = function()
             name = self.config_options.prefix.."_"..name
-            print("name:", name)
-            print("configurable[name]", self.configurable[name])
-            print("display_value", display_value)
             G_reader_settings:saveSetting(name, display_value)
             self:update()
             UIManager:setDirty(self, function()
