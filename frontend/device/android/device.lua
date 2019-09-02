@@ -66,6 +66,7 @@ local Device = Generic:new{
     hasEinkScreen = function() return android.isEink() end,
     hasColorScreen = function() return not android.isEink() end,
     hasFrontlight = yes,
+    hasLightLevelFallback = yes,
     canRestart = no,
     firmware_rev = android.app.activity.sdkVersion,
     display_dpi = android.lib.AConfiguration_getDensity(android.app.config),

@@ -27,6 +27,7 @@ local Device = {
     hasWifiManager = no,
     isTouchDevice = no,
     hasFrontlight = no,
+    hasLightLevelFallback = no,
     hasNaturalLight = no, -- FL warmth implementation specific to NTX boards (Kobo, Cervantes)
     hasNaturalLightMixer = no, -- Same, but only found on newer boards
     needsTouchScreenProbe = no,
