@@ -210,9 +210,20 @@ function ToggleSwitch:onTapSelect(arg, gev)
 end
 
 function ToggleSwitch:onHoldSelect(arg, gev)
+    print("Called ToggleSwitch:onHoldSelect:", arg, gev)
+    print("name:", self.name)
+    print("name_text:", self.name_text)
+    print("val:", self.values or self.args)
+    print("toggle:", self.toggle)
     local position = self:calculatePosition(gev)
-    self.config:onMakeDefault(self.name, self.name_text,
-                    self.values or self.args, self.toggle, position)
+    print("pos:", position)
+    if self.name == "font_fine_tune" then
+        self.config:onMakeFineTuneDefault("font_size", _("Font Size"),
+                        self.values or self.args, self.toggle, position == 1 and "-" or "+")
+    else
+        self.config:onMakeDefault(self.name, self.name_text,
+                        self.values or self.args, self.toggle, position)
+    end
     return true
 end
 
