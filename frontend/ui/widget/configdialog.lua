@@ -1064,11 +1064,26 @@ end
 function ConfigDialog:onMakeFineTuneDefault(name, name_text, values, labels, direction)
     local display_value = self.configurable[name] or direction == "-" and labels[1] or labels[#labels]
 
+    local printable_value
+    -- known table value, make it pretty
+    if name == "h_page_margins" then
+            printable_value = T(_([[
+
+  left:  %1
+  right: %2
+]]),
+        display_value[1], display_value[2])
+    elseif type(display_value) == "table" then
+        printable_value = dump(display_value)
+    else
+        printable_value = display_value
+    end
+
     UIManager:show(ConfirmBox:new{
         text = T(
             _("Set default %1 to %2?"),
             (name_text or ""),
-            display_value
+            printable_value
         ),
         ok_text = T(_("Set default")),
         ok_callback = function()
