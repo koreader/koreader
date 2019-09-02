@@ -35,7 +35,7 @@ local FrontLightWidget = InputContainer:new{
 }
 
 function FrontLightWidget:init()
-    self.light_fallback = self.use_system_fl and G_reader_settings:readSetting("light_fallback") or false
+    self.light_fallback = self.use_system_fl and G_reader_settings:nilOrTrue("light_fallback")
     self.medium_font_face = Font:getFace("ffont")
     self.larger_font_face = Font:getFace("cfont")
     self.light_bar = {}
