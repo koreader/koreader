@@ -1311,7 +1311,7 @@ function ReaderGesture:gestureAction(action, ges)
         if lightFrontlight() then
             UIManager:show(Notification:new{
                 text = _("Frontlight controlled by system settings."),
-                timeout = 1.0,
+                timeout = 2.5,
             })
             return true
         end
@@ -1326,7 +1326,7 @@ function ReaderGesture:gestureAction(action, ges)
         if lightFrontlight() then
             UIManager:show(Notification:new{
                 text = _("Frontlight controlled by system settings."),
-                timeout = 1.0,
+                timeout = 2.5,
             })
             return true
         end
@@ -1357,7 +1357,7 @@ function ReaderGesture:gestureAction(action, ges)
         if lightFrontlight() then
             UIManager:show(Notification:new{
                 text = _("Frontlight controlled by system settings."),
-                timeout = 1.0,
+                timeout = 2.5,
             })
             return true
         end
@@ -1519,7 +1519,6 @@ function ReaderGesture:pageUpdate(page)
 end
 
 function ReaderGesture:onShowFLOnOff()
-    local Notification = require("ui/widget/notification")
     local powerd = Device:getPowerDevice()
     local new_text
     if powerd.is_fl_on then
@@ -1535,7 +1534,6 @@ function ReaderGesture:onShowFLOnOff()
 end
 
 function ReaderGesture:onGSensorToggle()
-    local Notification = require("ui/widget/notification")
     local new_text
     if G_reader_settings:isTrue("input_ignore_gsensor") then
         new_text = _("Accelerometer rotation events will now be ignored.")
