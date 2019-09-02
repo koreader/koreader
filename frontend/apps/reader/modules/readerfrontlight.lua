@@ -179,7 +179,9 @@ end
 
 function ReaderFrontLight:onShowFlDialog()
     local FrontLightWidget = require("ui/widget/frontlightwidget")
-    UIManager:show(FrontLightWidget:new{})
+    UIManager:show(FrontLightWidget:new{
+        use_system_fl = Device:hasLightLevelFallback() or false,
+    })
 end
 
 function ReaderFrontLight:close()
