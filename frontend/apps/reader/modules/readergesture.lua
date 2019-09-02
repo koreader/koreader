@@ -1198,7 +1198,7 @@ function ReaderGesture:registerGesture(ges, action, ges_type, zone, overrides, d
 end
 
 local function lightFrontlight()
-    return Device:hasLightLevelFallback() and G_reader_settings:readSetting("light_fallback") or false
+    return Device:hasLightLevelFallback() and G_reader_settings:nilOrTrue("light_fallback")
 end
 
 function ReaderGesture:gestureAction(action, ges)
