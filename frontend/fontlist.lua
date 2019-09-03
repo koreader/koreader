@@ -81,7 +81,7 @@ local function _readList(target, dir)
         local mode = lfs.attributes(dir.."/"..f, "mode")
         if mode == "directory" and f ~= "." and f ~= ".." then
             _readList(target, dir.."/"..f)
-        elseif mode == "file" or mode == "link"  then
+        elseif mode == "file" or mode == "link" then
             if string.sub(f, 1, 1) ~= "." then
                 local file_type = string.lower(string.match(f, ".+%.([^.]+)") or "")
                 if file_type == "ttf" or file_type == "ttc"
