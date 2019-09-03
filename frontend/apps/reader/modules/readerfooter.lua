@@ -568,7 +568,6 @@ function ReaderFooter:addToMainMenu(menu_items)
             getMinibarOption("reclaim_height"),
             {
                 text = _("Auto refresh time"),
-                separator = true,
                 checked_func = function()
                     return self.settings.auto_refresh_time == true
                 end,
@@ -584,6 +583,21 @@ function ReaderFooter:addToMainMenu(menu_items)
                         self.onCloseDocument = nil
                     end
                 end
+            },
+            {
+                text = _("Show footer separator"),
+                separator = true,
+                checked_func = function()
+                    return self.settings.bottom_horizontal_separator
+                end,
+                callback = function()
+                    self.settings.bottom_horizontal_separator = not self.settings.bottom_horizontal_separator
+                    self:updateFooterContainer()
+                    self:resetLayout(true)
+                    self:updateFooter()
+                    self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
+                    UIManager:setDirty(nil, "ui")
+                end,
             },
             {
                 text = _("Alignment"),
@@ -672,40 +686,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 },
             },
             {
-                text = _("Footer separator"),
-                sub_item_table = {
-                    {
-                        text = _("Show"),
-                        checked_func = function()
-                            return self.settings.bottom_horizontal_separator
-                        end,
-                        callback = function()
-                            self.settings.bottom_horizontal_separator = true
-                            self:updateFooterContainer()
-                            self:resetLayout(true)
-                            self:updateFooter()
-                            self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
-                            UIManager:setDirty(nil, "ui")
-                        end,
-                    },
-                    {
-                        text = _("Hide"),
-                        checked_func = function()
-                            return not self.settings.bottom_horizontal_separator
-                        end,
-                        callback = function()
-                            self.settings.bottom_horizontal_separator = false
-                            self:updateFooterContainer()
-                            self:resetLayout(true)
-                            self:updateFooter()
-                            self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
-                            UIManager:setDirty(nil, "ui")
-                        end,
-                    },
-                },
-            },
-            {
-                text = _("Items separator"),
+                text = _("Item separator"),
                 sub_item_table = {
                     {
                         text = _("Vertical line (|)"),
