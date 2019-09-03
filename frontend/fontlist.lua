@@ -78,9 +78,10 @@ local function _readList(target, dir)
     local ok, iter, dir_obj = pcall(lfs.dir, dir)
     if not ok then return end
     for f in iter, dir_obj do
-        if lfs.attributes(dir.."/"..f, "mode") == "directory" and f ~= "." and f ~= ".." then
+        local mode = lfs.attributes(dir.."/"..f, "mode")
+        if mode == "directory" and f ~= "." and f ~= ".." then
             _readList(target, dir.."/"..f)
-        elseif lfs.attributes(dir.."/"..f, "mode") == "file" then
+        elseif mode == "file" or mode == "link"  then
             if string.sub(f, 1, 1) ~= "." then
                 local file_type = string.lower(string.match(f, ".+%.([^.]+)") or "")
                 if file_type == "ttf" or file_type == "ttc"
