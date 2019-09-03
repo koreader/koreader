@@ -81,12 +81,15 @@ local Font = {
         [2] = "NotoSansCJKsc-Regular.otf",
         [3] = "freefont/FreeSans.ttf",
         [4] = "freefont/FreeSerif.ttf",
-        [5] = "DroidSansFallback.ttf", -- for some ancient pre-4.4 Androids
     },
 
     -- face table
     faces = {},
 }
+
+if is_android then
+    table.insert(Font.fallbacks, 3, "DroidSansFallback.ttf") -- for some ancient pre-4.4 Androids
+end
 
 --- Gets font face object.
 -- @string font
