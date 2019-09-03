@@ -133,7 +133,7 @@ function Font:getFace(font, size)
 
         -- Not all fonts are bundled on all platforms because they come with the system.
         -- In that case, search through all font folders for the requested font.
-        if not ok and font ~= realname then
+        if not ok then
             local fonts = FontList:getFontList()
             local escaped_realname = realname:gsub("[-]", "%%-")
 
