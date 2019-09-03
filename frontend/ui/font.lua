@@ -2,7 +2,7 @@
 Font module.
 ]]
 
-local is_android, android = pcall(require, "android")
+local is_android = pcall(require, "android")
 
 local FontList = require("fontlist")
 local Freetype = require("ffi/freetype")
