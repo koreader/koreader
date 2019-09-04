@@ -104,7 +104,7 @@ function ReadTimer:addToMainMenu(menu_items)
                                     end
                                 end
                                 UIManager:show(InfoMessage:new{
-                                    text = T(_("Timer set to: %1:%2.\nIt's %3%4 from now."),
+                                    text = T(_("Timer set to: %1:%2.\n\nThat's %3%4 from now."),
                                         string.format("%02d", time.hour), string.format("%02d", time.min),
                                         hr_str, min_str),
                                     timeout = 5,
