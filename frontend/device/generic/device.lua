@@ -27,6 +27,7 @@ local Device = {
     hasWifiManager = no,
     isTouchDevice = no,
     hasFrontlight = no,
+    hasLightLevelFallback = no,
     hasNaturalLight = no, -- FL warmth implementation specific to NTX boards (Kobo, Cervantes)
     hasNaturalLightMixer = no, -- Same, but only found on newer boards
     needsTouchScreenProbe = no,
@@ -291,6 +292,9 @@ function Device:saveSettings() end
 
 -- Device specific method for toggling the GSensor
 function Device:toggleGSensor(toggle) end
+
+-- Device specific method for set custom light levels
+function Device:setScreenBrightness(level) end
 
 --[[
 prepare for application shutdown

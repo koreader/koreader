@@ -8,6 +8,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local LuaData = require("luadata")
+local Notification = require("ui/widget/notification")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local T = require("ffi/util").template
@@ -1196,6 +1197,10 @@ function ReaderGesture:registerGesture(ges, action, ges_type, zone, overrides, d
     })
 end
 
+local function lightFrontlight()
+    return Device:hasLightLevelFallback() and G_reader_settings:nilOrTrue("light_fallback")
+end
+
 function ReaderGesture:gestureAction(action, ges)
     if action == "ignore" then
         return
@@ -1302,6 +1307,14 @@ function ReaderGesture:gestureAction(action, ges)
             self.ui:handleEvent(Event:new("ShowFlDialog"))
         end
     elseif action == "increase_frontlight" then
+        -- when using frontlight system settings
+        if lightFrontlight() then
+            UIManager:show(Notification:new{
+                text = _("Frontlight controlled by system settings."),
+                timeout = 2.5,
+            })
+            return true
+        end
         if self.ges_mode == "gesture_fm" then
             local ReaderFrontLight = require("apps/reader/modules/readerfrontlight")
             ReaderFrontLight:onChangeFlIntensity(ges, 1)
@@ -1309,6 +1322,14 @@ function ReaderGesture:gestureAction(action, ges)
             self.ui:handleEvent(Event:new("ChangeFlIntensity", ges, 1))
         end
     elseif action == "decrease_frontlight" then
+        -- when using frontlight system settings
+        if lightFrontlight() then
+            UIManager:show(Notification:new{
+                text = _("Frontlight controlled by system settings."),
+                timeout = 2.5,
+            })
+            return true
+        end
         if self.ges_mode == "gesture_fm" then
             local ReaderFrontLight = require("apps/reader/modules/readerfrontlight")
             ReaderFrontLight:onChangeFlIntensity(ges, -1)
@@ -1332,6 +1353,14 @@ function ReaderGesture:gestureAction(action, ges)
     elseif action == "toggle_bookmark" then
         self.ui:handleEvent(Event:new("ToggleBookmark"))
     elseif action == "toggle_frontlight" then
+        -- when using frontlight system settings
+        if lightFrontlight() then
+            UIManager:show(Notification:new{
+                text = _("Frontlight controlled by system settings."),
+                timeout = 2.5,
+            })
+            return true
+        end
         Device:getPowerDevice():toggleFrontlight()
         self:onShowFLOnOff()
     elseif action == "toggle_gsensor" then
@@ -1490,7 +1519,6 @@ function ReaderGesture:pageUpdate(page)
 end
 
 function ReaderGesture:onShowFLOnOff()
-    local Notification = require("ui/widget/notification")
     local powerd = Device:getPowerDevice()
     local new_text
     if powerd.is_fl_on then
@@ -1506,7 +1534,6 @@ function ReaderGesture:onShowFLOnOff()
 end
 
 function ReaderGesture:onGSensorToggle()
-    local Notification = require("ui/widget/notification")
     local new_text
     if G_reader_settings:isTrue("input_ignore_gsensor") then
         new_text = _("Accelerometer rotation events will now be ignored.")
