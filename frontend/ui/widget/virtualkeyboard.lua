@@ -517,21 +517,21 @@ local VirtualKeyboard = FocusManager:new{
     bordersize = Size.border.default,
     padding = Size.padding.small,
     key_padding = Size.padding.default,
-}
 
-local lang_to_keyboard_layout = {
-    el = "el_keyboard",
-    en = "en_keyboard",
-    es = "es_keyboard",
-    fr = "fr_keyboard",
-    ja = "ja_keyboard",
-    pt_BR = "pt_keyboard",
-    ko_KR = "ko_KR_keyboard",
+    lang_to_keyboard_layout = {
+        el = "el_keyboard",
+        en = "en_keyboard",
+        es = "es_keyboard",
+        fr = "fr_keyboard",
+        ja = "ja_keyboard",
+        pt_BR = "pt_keyboard",
+        ko_KR = "ko_KR_keyboard",
+    },
 }
 
 function VirtualKeyboard:init()
-    local lang = G_reader_settings:readSetting("language")
-    local keyboard_layout = lang_to_keyboard_layout[lang] or lang_to_keyboard_layout["en"]
+    local lang = self:getKeyboardLayout()
+    local keyboard_layout = self.lang_to_keyboard_layout[lang] or self.lang_to_keyboard_layout["en"]
     local keyboard = require("ui/data/keyboardlayouts/" .. keyboard_layout)
     self.KEYS = keyboard.keys
     self.shiftmode_keys = keyboard.shiftmode_keys
@@ -549,6 +549,10 @@ function VirtualKeyboard:init()
     if keyboard.wrapInputBox then
         keyboard.wrapInputBox(self.inputbox)
     end
+end
+
+function VirtualKeyboard:getKeyboardLayout()
+    return G_reader_settings:readSetting("keyboard_layout") or G_reader_settings:readSetting("language")
 end
 
 function VirtualKeyboard:onClose()
