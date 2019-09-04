@@ -73,7 +73,7 @@ fi
 # check if QBookApp was started before us, then
 # restart the application after leaving KOReader
 export STANDALONE="true"
-if pkill -0 QBookpp; then
+if pkill -0 QBookApp; then
     STANDALONE="false"
 fi
 
@@ -86,6 +86,7 @@ fi
 # any number lower than that will exit this script.
 RESTART_KOREADER=85
 ENTER_USBMS=86
+ENTER_QBOOKAPP=87
 RETURN_VALUE="${RESTART_KOREADER}"
 
 # Loop forever until KOReader requests a normal exit.
@@ -105,6 +106,19 @@ while [ "${RETURN_VALUE}" -ge "${RESTART_KOREADER}" ]; do
 
         safemode storage --force 2>/dev/null
         # waiting forever for home button events.
+
+    elif [ "${RETURN_VALUE}" -eq "${ENTER_QBOOKAPP}" ]; then
+        # iface is down and wpa killed. Start connman
+        [ -x /etc/init.d/connman ] && /etc/init.d/connman start
+
+        # (re)start the reading application in the background
+        restart.sh >/dev/null 2>&1
+        sleep 2
+
+        # loop while BQ app is running.
+        while pkill -0 QBookApp; do
+            sleep 10
+        done
     fi
 done
 

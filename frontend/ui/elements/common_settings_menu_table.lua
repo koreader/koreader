@@ -11,6 +11,19 @@ local T = require("ffi/util").template
 
 local common_settings = {}
 
+if Device:isCervantes() then
+    local util = require("util")
+    if util.pathExists("/usr/bin/restart.sh") then
+        common_settings.start_bq = {
+            text = T(_("Start %1 reader app"), "BQ"),
+            callback = function()
+                UIManager:quit()
+                UIManager._exit_code = 87
+            end,
+        }
+    end
+end
+
 if Device:hasFrontlight() then
     local ReaderFrontLight = require("apps/reader/modules/readerfrontlight")
     common_settings.frontlight = {
