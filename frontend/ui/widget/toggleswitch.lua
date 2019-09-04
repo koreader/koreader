@@ -211,8 +211,14 @@ end
 
 function ToggleSwitch:onHoldSelect(arg, gev)
     local position = self:calculatePosition(gev)
-    self.config:onMakeDefault(self.name, self.name_text,
-                    self.values or self.args, self.toggle, position)
+    if self.name == "font_fine_tune" then
+        --- @note Ugly hack for the only widget that uses a dual toggle for fine-tuning (others prefer a buttonprogress)
+        self.config:onMakeFineTuneDefault("font_size", _("Font Size"),
+                        self.values or self.args, self.toggle, position == 1 and "-" or "+")
+    else
+        self.config:onMakeDefault(self.name, self.name_text,
+                        self.values or self.args, self.toggle, position)
+    end
     return true
 end
 

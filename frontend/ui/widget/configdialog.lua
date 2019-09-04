@@ -1062,7 +1062,22 @@ end
 -- Tweaked variant used with the fine_tune variant of buttonprogress (direction can only be "-" or "+")
 -- NOTE: This sets the defaults to the *current* value, as the -/+ buttons have no fixed value ;).
 function ConfigDialog:onMakeFineTuneDefault(name, name_text, values, labels, direction)
-    local display_value = self.configurable[name] or direction == "-" and labels[1] or labels[#labels]
+    local current_value = self.configurable[name] or direction == "-" and labels[1] or labels[#labels]
+
+    local display_value
+    -- known table value, make it pretty
+    if name == "h_page_margins" then
+            display_value = T(_([[
+
+  left:  %1
+  right: %2
+]]),
+        current_value[1], current_value[2])
+    elseif type(current_value) == "table" then
+        display_value = dump(current_value)
+    else
+        display_value = current_value
+    end
 
     UIManager:show(ConfirmBox:new{
         text = T(
@@ -1073,7 +1088,7 @@ function ConfigDialog:onMakeFineTuneDefault(name, name_text, values, labels, dir
         ok_text = T(_("Set default")),
         ok_callback = function()
             name = self.config_options.prefix.."_"..name
-            G_reader_settings:saveSetting(name, self.configurable[name])
+            G_reader_settings:saveSetting(name, current_value)
             self:update()
             UIManager:setDirty(self, function()
                 return "ui", self.dialog_frame.dimen

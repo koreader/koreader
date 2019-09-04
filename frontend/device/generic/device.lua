@@ -293,6 +293,9 @@ function Device:saveSettings() end
 -- Device specific method for toggling the GSensor
 function Device:toggleGSensor(toggle) end
 
+-- Device specific method for set custom light levels
+function Device:setScreenBrightness(level) end
+
 --[[
 prepare for application shutdown
 --]]

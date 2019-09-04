@@ -139,6 +139,14 @@ function FrontLightWidget:setProgress(num, step, num_warmth)
             else
                 self.powerd:setIntensity(set_fl)
             end
+
+            if not self.light_fallback and self.fl_cur >= 0 then
+                G_reader_settings:saveSetting("fl_last_level", self.fl_cur * 10)
+            elseif self.light_fallback then
+                G_reader_settings:saveSetting("fl_last_level", nil)
+                Device:setScreenBrightness(-1)
+            end
+
             -- get back the real level (different from set_fl if untoggle)
             self.fl_cur = self.powerd:frontlightIntensity()
             -- and update our step_num with it for accurate progress bar
