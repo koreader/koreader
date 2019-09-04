@@ -161,7 +161,7 @@ function ReadTimer:addToMainMenu(menu_items)
                                     end
                                 end
                                 UIManager:show(InfoMessage:new{
-                                    text = T(_("Timer is set to %1%2."), hr_str, min_str),
+                                    text = T(_("Timer set for %1%2."), hr_str, min_str),
                                     timeout = 5,
                                 })
                                 remain_time = {hr, min}
