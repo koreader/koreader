@@ -172,6 +172,7 @@ local order = {
         "poweroff", -- if Device:isKobo()
         "reboot",   -- if Device:isKobo()
         "----------------------------",
+        "start_bq",
         "exit",
     }
 }
