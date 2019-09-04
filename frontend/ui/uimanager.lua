@@ -35,6 +35,8 @@ local UIManager = {
     _refresh_stack = {},
     _refresh_func_stack = {},
     _entered_poweroff_stage = false,
+    _wakeup_scheduled = false,
+    _wakeup_scheduled_ptm = nil,
     _exit_code = nil,
 
     event_hook = require("ui/hook_container"):new()
@@ -477,6 +479,147 @@ function UIManager:unschedule(action)
 end
 dbg:guard(UIManager, 'unschedule',
     function(self, action) assert(action ~= nil) end)
+
+--- @todo Stick this in base/ffi and reference here?
+local ffi = require("ffi")
+local C = ffi.C
+local bor = bit.bor
+-- for ioctl header definition:
+local dummy = require("ffi/posix_h")
+local rtc = require("ffi/rtc_h") -- luacheck: ignore
+function UIManager:setWakeupAlarm(seconds_from_now, enabled)
+    enabled = (enabled ~= nil) and enabled or true
+    logger.dbg("setWakeupAlarm for", seconds_from_now, "seconds from now")
+    local t = ffi.new("time_t[1]")
+    t[0] = C.time(nil)
+    t[0] = t[0] + seconds_from_now
+
+    local ptm = ffi.new("struct tm") -- luacheck: ignore
+    ptm = C.gmtime(t)
+    self._wakeup_scheduled_ptm = ptm
+
+    local wake = ffi.new("struct rtc_wkalrm")
+    wake.time.tm_sec = ptm.tm_sec
+    wake.time.tm_min = ptm.tm_min
+    wake.time.tm_hour = ptm.tm_hour
+    wake.time.tm_mday = ptm.tm_mday
+    wake.time.tm_mon = ptm.tm_mon
+    wake.time.tm_year = ptm.tm_year
+    -- wday, yday, and isdst fields are unused by Linux
+    wake.time.tm_wday = -1
+    wake.time.tm_yday = -1
+    wake.time.tm_isdst = -1
+
+    wake.enabled = enabled and 1 or 0
+
+    local err
+    local rtc0 = C.open("/dev/rtc0", bor(C.O_RDONLY, C.O_NONBLOCK))
+    if rtc0 == -1 then
+        err = ffi.string(C.strerror(ffi.errno()))
+        logger.dbg("setWakeupAlarm open /dev/rtc0", rtc0, err)
+    end
+    local re = C.ioctl(rtc0, C.RTC_WKALM_SET, wake)
+    if re == -1 then
+        err = ffi.string(C.strerror(ffi.errno()))
+        logger.dbg("setWakeupAlarm ioctl RTC_WKALM_SET", re, err)
+    end
+    re = C.close(rtc0)
+    if re == -1 then
+        err = ffi.string(C.strerror(ffi.errno()))
+        logger.dbg("setWakeupAlarm close /dev/rtc0", re, err)
+    end
+
+    if re == 0 then
+        if enabled then
+            self._wakeup_scheduled = true
+        else
+            self._wakeup_scheduled = false
+            self._wakeup_scheduled_ptm = nil
+        end
+        return true
+    else
+        return nil, re, err
+    end
+end
+
+function UIManager:unsetWakeupAlarm()
+    self:setWakeupAlarm(-1, false)
+    self._wakeup_scheduled = false
+    self._wakeup_scheduled_ptm = nil
+end
+
+--- Get wakealarm as set by us.
+function UIManager:getWakeupAlarm()
+    return self._wakeup_scheduled_ptm
+end
+
+--- Get RTC wakealarm from system.
+function UIManager:getWakeupAlarmSys()
+    local wake = ffi.new("struct rtc_wkalrm")
+
+    local err, re
+    local rtc0 = C.open("/dev/rtc0", C.O_RDONLY)
+    if rtc0 == -1 then
+        err = ffi.string(C.strerror(ffi.errno()))
+        logger.dbg("getWakeupAlarm open /dev/rtc0", rtc0, err)
+    end
+    re = C.ioctl(rtc0, C.RTC_WKALM_RD, wake)
+    if re == -1 then
+        err = ffi.string(C.strerror(ffi.errno()))
+        logger.dbg("getWakeupAlarm ioctl RTC_WKALM_RD", re, err)
+    end
+    re = C.close(rtc0)
+    if re == -1 then
+        err = ffi.string(C.strerror(ffi.errno()))
+        logger.dbg("getWakeupAlarm close /dev/rtc0", re, err)
+    end
+
+    if wake ~= -1 then
+        local t = ffi.new("time_t[1]")
+        t[0] = C.time(nil)
+        local tm = ffi.new("struct tm") -- luacheck: ignore
+        tm = C.gmtime(t)
+        tm.tm_sec = wake.time.tm_sec
+        tm.tm_min = wake.time.tm_min
+        tm.tm_hour = wake.time.tm_hour
+        tm.tm_mday = wake.time.tm_mday
+        tm.tm_mon = wake.time.tm_mon
+        tm.tm_year = wake.time.tm_year
+        return tm
+    end
+end
+
+function UIManager:getWakeupAlarmProximity()
+    local alarm = self:getWakeupAlarm()
+    local alarm_epoch
+    local alarm_sys = self:getWakeupAlarmSys()
+    local alarm_sys_epoch
+
+    -- this seems a bit roundabout
+    local current_time = ffi.new("time_t[1]")
+    current_time[0] = C.time(nil)
+    local current_time_epoch = C.mktime(C.gmtime(current_time))
+
+    if not (alarm and alarm_sys) then return end
+
+    alarm_epoch = C.mktime(alarm)
+    alarm_sys_epoch = C.mktime(alarm_sys)
+
+    -- If our stored alarm and the system alarm don't match, we didn't set it.
+    if not (alarm_epoch == alarm_sys_epoch) then return end
+
+    logger.dbg("getWakeupAlarmProximity", alarm_epoch, alarm_sys_epoch, current_time_epoch)
+
+    -- In principle alarm time and current time should match within a second,
+    -- but let's be absurdly generous and assume anything within 30 is a match.
+    local diff = current_time_epoch - alarm_epoch
+    if diff >= 0 and diff < 30 then return true end
+end
+
+function UIManager:isWakeupAlarmScheduled()
+    logger.dbg("isWakeupAlarmScheduled", self._wakeup_scheduled)
+    return self._wakeup_scheduled
+end
 
 --[[--
 Registers a widget to be repainted and enqueues a refresh.

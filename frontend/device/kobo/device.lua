@@ -535,6 +535,12 @@ end
 
 local unexpected_wakeup_count = 0
 local function check_unexpected_wakeup()
+    local UIManager = require("ui/uimanager")
+    if UIManager:isWakeupAlarmScheduled() and UIManager:getWakeupAlarmProximity() then
+        logger.dbg("Kobo suspend: scheduled wakeup")
+        UIManager:poweroff_action()
+        return
+    end
     logger.dbg("Kobo suspend: checking unexpected wakeup:",
                unexpected_wakeup_count)
     if unexpected_wakeup_count == 0 or unexpected_wakeup_count > 20 then
@@ -683,7 +689,7 @@ function Kobo:suspend()
     -- expected wakeup, which gets checked in check_unexpected_wakeup().
     unexpected_wakeup_count = unexpected_wakeup_count + 1
     -- assuming Kobo:resume() will be called in 15 seconds
-    logger.dbg("Kobo suspend: scheduing unexpected wakeup guard")
+    logger.dbg("Kobo suspend: scheduling unexpected wakeup guard")
     UIManager:scheduleIn(15, check_unexpected_wakeup)
 end
 
