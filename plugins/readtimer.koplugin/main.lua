@@ -2,8 +2,9 @@ local InfoMessage = require("ui/widget/infomessage")
 local TimeWidget = require("ui/widget/timewidget")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local T = require("ffi/util").template
 local _ = require("gettext")
+local N_ = _.ngettext
+local T = require("ffi/util").template
 
 local ReadTimer = WidgetContainer:new{
     name = "readtimer",
@@ -50,10 +51,6 @@ function ReadTimer:unschedule()
 end
 
 function ReadTimer:addToMainMenu(menu_items)
-    local hour_string = _("hour")
-    local hours_string = _("hours")
-    local minute_string = _("minute")
-    local minutes_string = _("minutes")
     menu_items.read_timer = {
         text_func = function()
             if self:scheduled() then
@@ -96,19 +93,18 @@ function ReadTimer:addToMainMenu(menu_items)
                                 local hr_str = ""
                                 local min_str = ""
                                 local hr = math.floor(seconds/3600)
-                                if hr == 1 then
-                                    hr_str = string.format("1 %s", hour_string)
-                                elseif hr > 1 then
-                                    hr_str = string.format("%d %s", hr, hours_string)
+                                if hr > 0 then
+                                    hr_str = T(N_("1 hour", "%1 hours", hr), hr)
                                 end
                                 local min = math.floor((seconds%3600)/60)
-                                if min == 1 then
-                                    min_str = string.format("1 %s", minute_string)
-                                elseif min > 1 then
-                                    min_str = string.format("%d %s", min, minutes_string)
+                                if min > 0 then
+                                    min_str = T(N_("1 minute", "%1 minutes", min), min)
+                                    if hr_str ~= "" then
+                                        hr_str = hr_str .. " "
+                                    end
                                 end
                                 UIManager:show(InfoMessage:new{
-                                    text = T(_("Timer set to: %1:%2\nIt's %3 %4 from now"),
+                                    text = T(_("Timer set to: %1:%2.\nIt's %3%4 from now."),
                                         string.format("%02d", time.hour), string.format("%02d", time.min),
                                         hr_str, min_str),
                                     timeout = 5,
@@ -154,19 +150,18 @@ function ReadTimer:addToMainMenu(menu_items)
                                 local hr_str = ""
                                 local min_str = ""
                                 local hr = time.hour
-                                if hr == 1 then
-                                    hr_str = string.format("1 %s", hour_string)
-                                elseif hr > 1 then
-                                    hr_str = string.format("%d %s", hr, hours_string)
+                                if hr > 0 then
+                                    hr_str = T(N_("1 hour", "%1 hours", hr), hr)
                                 end
                                 local min = time.min
-                                if min == 1 then
-                                    min_str = string.format("1 %s", minute_string)
-                                elseif min > 1 then
-                                    min_str = string.format("%d %s", min, minutes_string)
+                                if min > 0 then
+                                    min_str = T(N_("1 minute", "%1 minutes", min), min)
+                                    if hr_str ~= "" then
+                                        hr_str = hr_str .. " "
+                                    end
                                 end
                                 UIManager:show(InfoMessage:new{
-                                    text = T(_("Timer is set to %1 %2"), hr_str, min_str),
+                                    text = T(_("Timer is set to %1%2."), hr_str, min_str),
                                     timeout = 5,
                                 })
                                 remain_time = {hr, min}
