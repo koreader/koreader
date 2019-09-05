@@ -14,11 +14,30 @@ local function getProductId()
 end
 
 local function isConnected()
+    -- read carrier state from sysfs (for eth0)
     local file = io.open("/sys/class/net/eth0/carrier", "rb")
+
+    -- file exists while wifi module is loaded.
     if not file then return 0 end
-    local carrier = tonumber(file:read("*all")) or 0
+
+    -- 0 means not connected, 1 connected
+    local out = file:read("*all")
     file:close()
-    return carrier
+
+    -- strip NaN from file read (ie: line endings, error messages)
+    local carrier
+    if type(out) ~= "number" then
+        carrier = tonumber(out)
+    else
+        carrier = out
+    end
+
+    -- finally return if we're connected or not
+    if type(carrier) == "number" then
+        return carrier
+    else
+        return 0
+    end
 end
 
 local function isMassStorageSupported()
