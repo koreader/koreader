@@ -4,7 +4,50 @@ local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 
-local Language = {}
+local Language = {
+    language_names = {
+        C = "English",
+        en = "English",
+        ca = "Catalá",
+        cs_CZ = "Čeština",
+        de = "Deutsch",
+        es = "Español",
+        eu = "Euskara",
+        fr = "Français",
+        gl = "Galego",
+        it_IT = "Italiano",
+        hu = "Magyar",
+        nl_NL = "Nederlands",
+        nb_NO = "Norsk",
+        pl = "Polski",
+        pl_PL = "Polski2",
+        pt_PT = "Português",
+        pt_BR = "Português do Brasil",
+        sk = "Slovenčina",
+        sv = "Svenska",
+        vi = "Tiếng Việt",
+        tr = "Türkçe",
+        vi_VN = "Viet Nam",
+        ar_AA = "عربى",
+        bg_BG = "български",
+        bn = "বাঙালি",
+        el = "Ελληνικά",
+        fa = "فارسی",
+        ja = "日本語",
+        kk = "Қазақ",
+        ko_KR = "한글",
+        ru = "Русский язык",
+        uk = "Українська",
+        zh = "中文",
+        zh_CN = "简体中文",
+        zh_TW = "中文（台灣)",
+        ["zh_TW.Big5"] = "中文（台灣）（Big5）",
+    },
+}
+
+function Language:getLanguageName(lang_locale)
+    return self.language_names[lang_locale] or lang_locale
+end
 
 function Language:changeLanguage(lang_locale)
     _.changeLang(lang_locale)
@@ -15,9 +58,9 @@ function Language:changeLanguage(lang_locale)
     })
 end
 
-function Language:genLanguageSubItem(lang, lang_locale)
+function Language:genLanguageSubItem(lang_locale)
     return {
-        text = lang,
+        text = self:getLanguageName(lang_locale),
         checked_func = function()
             return G_reader_settings:readSetting("language") == lang_locale
         end,
@@ -34,41 +77,41 @@ function Language:getLangMenuTable()
             text = _("Language"),
             -- NOTE: language with no translation are commented out for now
             sub_item_table = {
-                self:genLanguageSubItem("English", "C"),
-                self:genLanguageSubItem("Catalá", "ca"),
-                self:genLanguageSubItem("Čeština", "cs_CZ"),
-                self:genLanguageSubItem("Deutsch", "de"),
-                self:genLanguageSubItem("Español", "es"),
-                self:genLanguageSubItem("Euskara", "eu"),
-                self:genLanguageSubItem("Français", "fr"),
-                self:genLanguageSubItem("Galego", "gl"),
-                self:genLanguageSubItem("Italiano", "it_IT"),
-                self:genLanguageSubItem("Magyar", "hu"),
-                self:genLanguageSubItem("Nederlands", "nl_NL"),
-                self:genLanguageSubItem("Norsk", "nb_NO"),
-                self:genLanguageSubItem("Polski", "pl"),
-                --self:genLanguageSubItem("Polski2", "pl_PL"),
-                self:genLanguageSubItem("Português", "pt_PT"),
-                self:genLanguageSubItem("Português do Brasil", "pt_BR"),
-                self:genLanguageSubItem("Slovenčina", "sk"),
-                self:genLanguageSubItem("Svenska", "sv"),
-                self:genLanguageSubItem("Tiếng Việt", "vi"),
-                self:genLanguageSubItem("Türkçe", "tr"),
-                --self:genLanguageSubItem("Viet Nam", "vi_VN"),
-                --self:genLanguageSubItem("عربى", "ar_AA"),
-                self:genLanguageSubItem("български", "bg_BG"),
-                --self:genLanguageSubItem("বাঙালি", "bn"),
-                self:genLanguageSubItem("Ελληνικά", "el"),
-                --self:genLanguageSubItem("فارسی", "fa"),
-                self:genLanguageSubItem("日本語", "ja"),
-                --self:genLanguageSubItem("Қазақ", "kk"),
-                self:genLanguageSubItem("한글", "ko_KR"),
-                self:genLanguageSubItem("Русский язык", "ru"),
-                self:genLanguageSubItem("Українська", "uk"),
-                --self:genLanguageSubItem("中文", "zh"),
-                self:genLanguageSubItem("简体中文", "zh_CN"),
-                self:genLanguageSubItem("中文（台灣)", "zh_TW"),
-                --self:genLanguageSubItem("中文（台灣）（Big5）", "zh_TW.Big5"),
+                self:genLanguageSubItem("C"),
+                self:genLanguageSubItem("ca"),
+                self:genLanguageSubItem("cs_CZ"),
+                self:genLanguageSubItem("de"),
+                self:genLanguageSubItem("es"),
+                self:genLanguageSubItem("eu"),
+                self:genLanguageSubItem("fr"),
+                self:genLanguageSubItem("gl"),
+                self:genLanguageSubItem("it_IT"),
+                self:genLanguageSubItem("hu"),
+                self:genLanguageSubItem("nl_NL"),
+                self:genLanguageSubItem("nb_NO"),
+                self:genLanguageSubItem("pl"),
+                --self:genLanguageSubItem("pl_PL"),
+                self:genLanguageSubItem("pt_PT"),
+                self:genLanguageSubItem("pt_BR"),
+                self:genLanguageSubItem("sk"),
+                self:genLanguageSubItem("sv"),
+                self:genLanguageSubItem("vi"),
+                self:genLanguageSubItem("tr"),
+                --self:genLanguageSubItem("vi_VN"),
+                --self:genLanguageSubItem(""ar_AA"),
+                self:genLanguageSubItem("bg_BG"),
+                --self:genLanguageSubItem("bn"),
+                self:genLanguageSubItem("el"),
+                --self:genLanguageSubItem("fa"),
+                self:genLanguageSubItem("ja"),
+                --self:genLanguageSubItem("kk"),
+                self:genLanguageSubItem("ko_KR"),
+                self:genLanguageSubItem("ru"),
+                self:genLanguageSubItem("uk"),
+                --self:genLanguageSubItem("zh"),
+                self:genLanguageSubItem("zh_CN"),
+                self:genLanguageSubItem("zh_TW"),
+                --self:genLanguageSubItem("zh_TW.Big5"),
             }
         }
     end
