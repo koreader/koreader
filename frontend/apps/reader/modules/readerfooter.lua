@@ -9,10 +9,14 @@ local Geom = require("ui/geometry")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local LeftContainer = require("ui/widget/container/leftcontainer")
+local LineWidget = require("ui/widget/linewidget")
 local ProgressWidget = require("ui/widget/progresswidget")
 local RightContainer = require("ui/widget/container/rightcontainer")
+local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local util = require("util")
 local T = require("ffi/util").template
@@ -257,13 +261,6 @@ function ReaderFooter:init()
         margin_span,
     }
 
-    self.footer_content = FrameContainer:new{
-        self.horizontal_group,
-        background = Blitbuffer.COLOR_WHITE,
-        bordersize = 0,
-        padding = 0,
-        padding_bottom = self.bottom_padding,
-    }
     self:updateFooterContainer()
 
     self.mode = G_reader_settings:readSetting("reader_footer_mode") or self.mode
@@ -287,22 +284,48 @@ function ReaderFooter:updateFooterContainer()
     if self.settings.align == "left" then
         self.footer_container = LeftContainer:new{
             dimen = Geom:new{ w = 0, h = self.height },
-            self.footer_content,
+            self.horizontal_group
         }
     elseif self.settings.align == "right" then
         self.footer_container = RightContainer:new{
             dimen = Geom:new{ w = 0, h = self.height },
-            self.footer_content,
+            self.horizontal_group
         }
     else
         self.footer_container = CenterContainer:new{
             dimen = Geom:new{ w = 0, h = self.height },
-            self.footer_content,
+            self.horizontal_group
         }
     end
+    local separator_line = LineWidget:new{
+        dimen = Geom:new{
+            w = Screen:getWidth() - 2 * self.horizontal_margin,
+            h = Size.line.medium,
+        }
+    }
+    local vertical_span = VerticalSpan:new{width = self.bottom_padding *2}
+
+    if not self.settings.bottom_horizontal_separator then
+        vertical_span.width = 0
+        separator_line.dimen.h = 0
+    end
+    self.vertical_frame = VerticalGroup:new{
+        separator_line,
+        vertical_span,
+        self.footer_container,
+    }
+
+    self.footer_content = FrameContainer:new{
+        self.vertical_frame,
+        background = Blitbuffer.COLOR_WHITE,
+        bordersize = 0,
+        padding = 0,
+        padding_bottom = self.bottom_padding,
+    }
+
     self.footer_positioner = BottomContainer:new{
         dimen = Geom:new{},
-        self.footer_container,
+        self.footer_content,
     }
     self[1] = self.footer_positioner
 end
@@ -545,7 +568,6 @@ function ReaderFooter:addToMainMenu(menu_items)
             getMinibarOption("reclaim_height"),
             {
                 text = _("Auto refresh time"),
-                separator = true,
                 checked_func = function()
                     return self.settings.auto_refresh_time == true
                 end,
@@ -561,6 +583,21 @@ function ReaderFooter:addToMainMenu(menu_items)
                         self.onCloseDocument = nil
                     end
                 end
+            },
+            {
+                text = _("Show footer separator"),
+                separator = true,
+                checked_func = function()
+                    return self.settings.bottom_horizontal_separator
+                end,
+                callback = function()
+                    self.settings.bottom_horizontal_separator = not self.settings.bottom_horizontal_separator
+                    self:updateFooterContainer()
+                    self:resetLayout(true)
+                    self:updateFooter()
+                    self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
+                    UIManager:setDirty(nil, "ui")
+                end,
             },
             {
                 text = _("Alignment"),
@@ -649,7 +686,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 },
             },
             {
-                text = _("Separator"),
+                text = _("Item separator"),
                 sub_item_table = {
                     {
                         text = _("Vertical line (|)"),
