@@ -390,35 +390,35 @@ function ReaderGesture:addToMainMenu(menu_items)
                 text = _("One-finger swipe"),
                 sub_item_table = {
                     {
-                        text_func = function() return actionTextFunc("one_finger_swipe_left_edge_down", _("Left edge down")) end,
+                        text_func = function() return actionTextFunc("one_finger_swipe_left_edge_down", "⇂") end,
                         sub_item_table = self:buildMenu("one_finger_swipe_left_edge_down", self.default_gesture["one_finger_swipe_left_edge_down"]),
                     },
                     {
-                        text_func = function() return actionTextFunc("one_finger_swipe_left_edge_up", _("Left edge up")) end,
+                        text_func = function() return actionTextFunc("one_finger_swipe_left_edge_up", "↾") end,
                         sub_item_table = self:buildMenu("one_finger_swipe_left_edge_up", self.default_gesture["one_finger_swipe_left_edge_up"]),
                     },
                     {
-                        text_func = function() return actionTextFunc("one_finger_swipe_right_edge_down", _("Right edge down")) end,
+                        text_func = function() return actionTextFunc("one_finger_swipe_right_edge_down", "⇃") end,
                         sub_item_table = self:buildMenu("one_finger_swipe_right_edge_down", self.default_gesture["one_finger_swipe_right_edge_down"]),
                     },
                     {
-                        text_func = function() return actionTextFunc("one_finger_swipe_right_edge_up", _("Right edge up")) end,
+                        text_func = function() return actionTextFunc("one_finger_swipe_right_edge_up", "↿") end,
                         sub_item_table = self:buildMenu("one_finger_swipe_right_edge_up", self.default_gesture["one_finger_swipe_right_edge_up"]),
                     },
                     {
-                        text_func = function() return actionTextFunc("one_finger_swipe_top_edge_right", _("Top edge right")) end,
+                        text_func = function() return actionTextFunc("one_finger_swipe_top_edge_right", "⇁") end,
                         sub_item_table = self:buildMenu("one_finger_swipe_top_edge_right", self.default_gesture["one_finger_swipe_top_edge_right"]),
                     },
                     {
-                        text_func = function() return actionTextFunc("one_finger_swipe_top_edge_left", _("Top edge left")) end,
+                        text_func = function() return actionTextFunc("one_finger_swipe_top_edge_left", "↽") end,
                         sub_item_table = self:buildMenu("one_finger_swipe_top_edge_left", self.default_gesture["one_finger_swipe_top_edge_left"]),
                     },
                     {
-                        text_func = function() return actionTextFunc("one_finger_swipe_bottom_edge_right", _("Bottom edge right")) end,
+                        text_func = function() return actionTextFunc("one_finger_swipe_bottom_edge_right", "⇀") end,
                         sub_item_table = self:buildMenu("one_finger_swipe_bottom_edge_right", self.default_gesture["one_finger_swipe_bottom_edge_right"]),
                     },
                     {
-                        text_func = function() return actionTextFunc("one_finger_swipe_bottom_edge_left", _("Bottom edge left")) end,
+                        text_func = function() return actionTextFunc("one_finger_swipe_bottom_edge_left", "↼") end,
                         sub_item_table = self:buildMenu("one_finger_swipe_bottom_edge_left", self.default_gesture["one_finger_swipe_bottom_edge_left"]),
                     },
                 },
