@@ -297,23 +297,25 @@ function ReaderFooter:updateFooterContainer()
             self.horizontal_group
         }
     end
-    local separator_line = LineWidget:new{
-        dimen = Geom:new{
-            w = Screen:getWidth() - 2 * self.horizontal_margin,
-            h = Size.line.medium,
-        }
-    }
-    local vertical_span = VerticalSpan:new{width = self.bottom_padding *2}
 
-    if not self.settings.bottom_horizontal_separator then
-        vertical_span.width = 0
-        separator_line.dimen.h = 0
+    if self.settings.bottom_horizontal_separator then
+        local separator_line = LineWidget:new{
+            dimen = Geom:new{
+                w = Screen:getWidth() - 2 * self.horizontal_margin,
+                h = Size.line.medium,
+            }
+        }
+        local vertical_span = VerticalSpan:new{width = self.bottom_padding *2}
+        self.vertical_frame = VerticalGroup:new{
+            separator_line,
+            vertical_span,
+            self.footer_container,
+        }
+    else
+        self.vertical_frame = VerticalGroup:new{
+            self.footer_container,
+        }
     end
-    self.vertical_frame = VerticalGroup:new{
-        separator_line,
-        vertical_span,
-        self.footer_container,
-    }
 
     self.footer_content = FrameContainer:new{
         self.vertical_frame,
