@@ -57,6 +57,7 @@ local order = {
         "status_bar",
     },
     device = {
+        "keyboard_layout",
         "time",
         "battery",
         "autosuspend",

@@ -210,6 +210,10 @@ if Device:isAndroid() then
 end
 
 if Device:isTouchDevice() then
+    common_settings.keyboard_layout = {
+        text = _("Keyboard layout"),
+        sub_item_table = require("ui/elements/menu_keyboard_layout"),
+    }
     common_settings.taps_and_gestures = {
         text = _("Taps and gestures"),
     }
