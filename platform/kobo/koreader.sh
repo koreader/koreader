@@ -196,15 +196,54 @@ if [ -e crash.log ]; then
     mv -f crash.log.new crash.log
 fi
 
+CRASH_COUNT=0
+# Because we *want* an initial fbdepth pass ;).
 RETURN_VALUE=85
-while [ $RETURN_VALUE -eq 85 ]; do
-    # Do an update check now, so we can actually update KOReader via the "Restart KOReader" menu entry ;).
-    ko_update_check
-    # Do the fb depth switch, unless it's been disabled
-    ko_do_fbdepth
+while [ $RETURN_VALUE -ne 0 ]; do
+    # 85 is what we return when asking for a KOReader restart
+    if [ $RETURN_VALUE -eq 85 ]; then
+        # Do an update check now, so we can actually update KOReader via the "Restart KOReader" menu entry ;).
+        ko_update_check
+        # Do or double-check the fb depth switch, or restore original bitdepth if requested
+        ko_do_fbdepth
+    fi
 
     ./reader.lua "${args}" >>crash.log 2>&1
     RETURN_VALUE=$?
+
+    # Did we crash?
+    if [ $RETURN_VALUE -ne 0 ] && [ $RETURN_VALUE -ne 85 ]; then
+        # Increment the crash counter
+        CRASH_COUNT=$((CRASH_COUNT + 1))
+        echo "!!!!" >>crash.log 2>&1
+        echo "Hu oh, something went awry... (Crash n°${CRASH_COUNT}: $(date +'%x @ %X'))" >>crash.log 2>&1
+        if [ $CRASH_COUNT -le 5 ]; then
+            echo "Attempting to restart KOReader . . ." >>crash.log 2>&1
+            echo "!!!!" >>crash.log 2>&1
+        fi
+
+        # Show a fancy bomb on screen
+        viewWidth=600
+        eval "$(./fbink -e | tr ';' '\n' | grep -e viewWidth | tr '\n' ';')"
+        # Given the (mostly) identical AR across all Kobos, a fraction of the *width* usually leaves us with something right above the center of the screen, so it doesn't clash with the boot progress bar ;)
+        bombHeight=$((viewWidth/2 + viewWidth/4))
+        bombMargin=$((viewWidth/30))
+        ./fbink -m -y -5 "Don't Panic! (Crash n°${CRASH_COUNT} -> ${RETURN_VALUE})"
+        # U+1F4A3, the hard way, because we can't use \u or \U escape sequences...
+        # shellcheck disable=SC2039
+        ./fbink -m -t regular=./fonts/freefont/FreeSerif.ttf,px=${bombHeight},top=${bombMargin} $'\xf0\x9f\x92\xa3'
+        # Cue a lemming's faceplant sound effect!
+
+        # But if we've crashed more than 5 consecutive times, exit, because we wouldn't want to be stuck in a loop...
+        if [ $CRASH_COUNT -gt 5 ]; then
+            echo "Too many consecutive crashes, aborting . . ." >>crash.log 2>&1
+            echo "!!!! ! !!!!" >>crash.log 2>&1
+            break
+        fi
+    else
+        # Reset the crash counter if that was a sane exit/restart
+        CRASH_COUNT=0
+    fi
 done
 
 # Restore original fb bitdepth if need be...
