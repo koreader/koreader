@@ -229,10 +229,12 @@ while [ $RETURN_VALUE -ne 0 ]; do
         bombHeight=$((viewWidth/2 + viewWidth/4))
         bombMargin=$((viewWidth/30))
         # With a little notice at the bottom of the screen (same line as KFMon), on a big gray screen of death ;).
-        ./fbink -q -c -B GRAY9 -m -y -5 "Don't Panic! (Crash n°${CRASH_COUNT} -> ${RETURN_VALUE})"
+        ./fbink -q -b -c -B GRAY9 -m -y -5 "Don't Panic! (Crash n°${CRASH_COUNT} -> ${RETURN_VALUE})"
         # U+1F4A3, the hard way, because we can't use \u or \U escape sequences...
         # shellcheck disable=SC2039
-        ./fbink -q -O -m -t regular=./fonts/freefont/FreeSerif.ttf,px=${bombHeight},top=${bombMargin} $'\xf0\x9f\x92\xa3'
+        ./fbink -q -b -O -m -t regular=./fonts/freefont/FreeSerif.ttf,px=${bombHeight},top=${bombMargin} $'\xf0\x9f\x92\xa3'
+        # So far, we hadn't triggered an actual screen refresh, do that now, to make sure everything is bundled in a single flashing refresh.
+        ./fbink -q -f -s top=0,left=0
         # Cue a lemming's faceplant sound effect!
 
         # But if we've crashed more than 5 consecutive times, exit, because we wouldn't want to be stuck in a loop...
