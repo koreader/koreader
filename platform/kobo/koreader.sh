@@ -197,6 +197,8 @@ if [ -e crash.log ]; then
 fi
 
 CRASH_COUNT=0
+CRASH_TS=0
+CRASH_PREV_TS=0
 # Because we *want* an initial fbdepth pass ;).
 RETURN_VALUE=85
 while [ $RETURN_VALUE -ne 0 ]; do
@@ -215,6 +217,7 @@ while [ $RETURN_VALUE -ne 0 ]; do
     if [ $RETURN_VALUE -ne 0 ] && [ $RETURN_VALUE -ne 85 ]; then
         # Increment the crash counter
         CRASH_COUNT=$((CRASH_COUNT + 1))
+        CRASH_TS=$(date +'%s')
         echo "!!!!" >>crash.log 2>&1
         echo "Hu oh, something went awry... (Crash n°${CRASH_COUNT}: $(date +'%x @ %X'))" >>crash.log 2>&1
         if [ $CRASH_COUNT -le 5 ]; then
@@ -237,10 +240,12 @@ while [ $RETURN_VALUE -ne 0 ]; do
         ./fbink -q -f -s top=0,left=0
         # Cue a lemming's faceplant sound effect!
 
-        # Pause a bit if it's the first crash, so that it actually has a chance of getting noticed ;).
-        if [ $CRASH_COUNT -eq 1 ]; then
+        # Pause a bit if it's the first crash in a while, so that it actually has a chance of getting noticed ;).
+        if [ $((CRASH_TS - CRASH_PREV_TS)) -ge 5 ]; then
             sleep 2
         fi
+        # Cycle the last crash timestamp
+        CRASH_PREV_TS=${CRASH_TS}
 
         # But if we've crashed more than 5 consecutive times, exit, because we wouldn't want to be stuck in a loop...
         if [ $CRASH_COUNT -gt 5 ]; then
