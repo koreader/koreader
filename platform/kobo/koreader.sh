@@ -218,6 +218,10 @@ while [ $RETURN_VALUE -ne 0 ]; do
         # Increment the crash counter
         CRASH_COUNT=$((CRASH_COUNT + 1))
         CRASH_TS=$(date +'%s')
+        # Reset it to a first crash if it's been a while since our last crash...
+        if [ $((CRASH_TS - CRASH_PREV_TS)) -ge 12 ]; then
+            CRASH_COUNT=1
+        fi
 
         # Show a fancy bomb on screen
         viewWidth=600
@@ -240,20 +244,20 @@ while [ $RETURN_VALUE -ne 0 ]; do
 
         echo "!!!!" >>crash.log 2>&1
         echo "Hu oh, something went awry... (Crash n°${CRASH_COUNT}: $(date +'%x @ %X'))" >>crash.log 2>&1
-        if [ $CRASH_COUNT -le 5 ]; then
+        if [ $CRASH_COUNT -lt 5 ]; then
             echo "Attempting to restart KOReader . . ." >>crash.log 2>&1
             echo "!!!!" >>crash.log 2>&1
         fi
 
         # Pause a bit if it's the first crash in a while, so that it actually has a chance of getting noticed ;).
-        if [ $((CRASH_TS - CRASH_PREV_TS)) -ge 5 ]; then
-            sleep 2
+        if [ ${CRASH_COUNT} -eq 1 ]; then
+            sleep 6
         fi
         # Cycle the last crash timestamp
         CRASH_PREV_TS=${CRASH_TS}
 
         # But if we've crashed more than 5 consecutive times, exit, because we wouldn't want to be stuck in a loop...
-        if [ $CRASH_COUNT -gt 5 ]; then
+        if [ $CRASH_COUNT -ge 5 ]; then
             echo "Too many consecutive crashes, aborting . . ." >>crash.log 2>&1
             echo "!!!! ! !!!!" >>crash.log 2>&1
             break
