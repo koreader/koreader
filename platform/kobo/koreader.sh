@@ -43,7 +43,7 @@ ko_update_check() {
             ./fbink -q -y -6 -pm "Update successful :)"
             ./fbink -q -y -5 -pm "KOReader will start momentarily . . ."
         else
-            # Huh ho...
+            # Uh oh...
             ./fbink -q -y -6 -pmh "Update failed :("
             ./fbink -q -y -5 -pm "KOReader may fail to function properly!"
         fi
@@ -155,7 +155,7 @@ case "${ORIG_FB_BPP}" in
     16) ;;
     32) ;;
     *)
-        # Hu oh? Don't do anything...
+        # Uh oh? Don't do anything...
         unset ORIG_FB_BPP
         ;;
 esac
@@ -256,7 +256,7 @@ while [ $RETURN_VALUE -ne 0 ]; do
         # Cue a lemming's faceplant sound effect!
 
         echo "!!!!" >>crash.log 2>&1
-        echo "Hu oh, something went awry... (Crash n°${CRASH_COUNT}: $(date +'%x @ %X'))" >>crash.log 2>&1
+        echo "Uh oh, something went awry... (Crash n°${CRASH_COUNT}: $(date +'%x @ %X'))" >>crash.log 2>&1
         if [ $CRASH_COUNT -lt 5 ] && [ "${ALWAYS_ABORT}" = "false" ]; then
             echo "Attempting to restart KOReader . . ." >>crash.log 2>&1
             echo "!!!!" >>crash.log 2>&1
