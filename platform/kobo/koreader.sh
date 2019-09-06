@@ -257,7 +257,8 @@ while [ $RETURN_VALUE -ne 0 ]; do
         if [ ${CRASH_COUNT} -eq 1 ]; then
             # NOTE: We don't actually care about what read read, we're just using it as a fancy sleep ;).
             #       i.e., we pause either until the 15s timeout, or until the user touches the screen.
-            read -t 15 < /dev/input/event1
+            # shellcheck disable=SC2039
+            read -r -t 15 </dev/input/event1
         fi
         # Cycle the last crash timestamp
         CRASH_PREV_TS=${CRASH_TS}
