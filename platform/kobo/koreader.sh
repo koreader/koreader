@@ -218,27 +218,31 @@ while [ $RETURN_VALUE -ne 0 ]; do
         # Increment the crash counter
         CRASH_COUNT=$((CRASH_COUNT + 1))
         CRASH_TS=$(date +'%s')
+
+        # Show a fancy bomb on screen
+        viewWidth=600
+        viewHeight=800
+        eval "$(./fbink -e | tr ';' '\n' | grep -e viewWidth -e viewHeight | tr '\n' ';')"
+        # Given the (mostly) identical AR across all Kobos, a fraction of the *width* usually leaves us with something right above the center of the screen, so it doesn't clash with the boot progress bar ;)
+        bombHeight=$((viewWidth/2 + viewWidth/4))
+        bombMargin=$((viewWidth/30))
+        # With a little notice at the top of the screen, on a big gray screen of death ;).
+        ./fbink -q -b -c -B GRAY9 -m -y 1 "Don't Panic! (Crash n°${CRASH_COUNT} -> ${RETURN_VALUE})"
+        # U+1F4A3, the hard way, because we can't use \u or \U escape sequences...
+        # shellcheck disable=SC2039
+        ./fbink -q -b -O -m -t regular=./fonts/freefont/FreeSerif.ttf,px=${bombHeight},top=${bombMargin} $'\xf0\x9f\x92\xa3'
+        # And then print the tail end of the log on the bottom of the screen...
+        tail -n 20 crash.log | ./fbink -q -b -O -t regular=./fonts/droid/DroidSansMono.ttf,top=$((viewHeight/2 + bombMargin)),size=6
+        # So far, we hadn't triggered an actual screen refresh, do that now, to make sure everything is bundled in a single flashing refresh.
+        ./fbink -q -f -s top=0,left=0
+        # Cue a lemming's faceplant sound effect!
+
         echo "!!!!" >>crash.log 2>&1
         echo "Hu oh, something went awry... (Crash n°${CRASH_COUNT}: $(date +'%x @ %X'))" >>crash.log 2>&1
         if [ $CRASH_COUNT -le 5 ]; then
             echo "Attempting to restart KOReader . . ." >>crash.log 2>&1
             echo "!!!!" >>crash.log 2>&1
         fi
-
-        # Show a fancy bomb on screen
-        viewWidth=600
-        eval "$(./fbink -e | tr ';' '\n' | grep -e viewWidth | tr '\n' ';')"
-        # Given the (mostly) identical AR across all Kobos, a fraction of the *width* usually leaves us with something right above the center of the screen, so it doesn't clash with the boot progress bar ;)
-        bombHeight=$((viewWidth/2 + viewWidth/4))
-        bombMargin=$((viewWidth/30))
-        # With a little notice at the bottom of the screen (same line as KFMon), on a big gray screen of death ;).
-        ./fbink -q -b -c -B GRAY9 -m -y -5 "Don't Panic! (Crash n°${CRASH_COUNT} -> ${RETURN_VALUE})"
-        # U+1F4A3, the hard way, because we can't use \u or \U escape sequences...
-        # shellcheck disable=SC2039
-        ./fbink -q -b -O -m -t regular=./fonts/freefont/FreeSerif.ttf,px=${bombHeight},top=${bombMargin} $'\xf0\x9f\x92\xa3'
-        # So far, we hadn't triggered an actual screen refresh, do that now, to make sure everything is bundled in a single flashing refresh.
-        ./fbink -q -f -s top=0,left=0
-        # Cue a lemming's faceplant sound effect!
 
         # Pause a bit if it's the first crash in a while, so that it actually has a chance of getting noticed ;).
         if [ $((CRASH_TS - CRASH_PREV_TS)) -ge 5 ]; then
