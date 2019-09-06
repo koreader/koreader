@@ -304,6 +304,22 @@ function FileManagerMenu:setUpdateItemTable()
             end,
         })
     end
+    --- @note Currently, only Kobo has a fancy crash display (#5328)
+    if Device:isKobo() then
+        table.insert(self.menu_items.developer_options.sub_item_table, {
+            text = _("Always abort on crash"),
+            checked_func = function()
+                return G_reader_settings:isTrue("dev_abort_on_crash")
+            end,
+            callback = function()
+                G_reader_settings:flipNilOrFalse("dev_abort_on_crash")
+                local InfoMessage = require("ui/widget/infomessage")
+                UIManager:show(InfoMessage:new{
+                    text = _("This will take effect on next restart."),
+                })
+            end,
+        })
+    end
     if not Device.should_restrict_JIT then
         table.insert(self.menu_items.developer_options.sub_item_table, {
             text = _("Disable C blitter"),

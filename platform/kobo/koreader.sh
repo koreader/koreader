@@ -223,6 +223,15 @@ while [ $RETURN_VALUE -ne 0 ]; do
             CRASH_COUNT=1
         fi
 
+        # Check if the user requested to always abort on crash
+        if grep -q '\["dev_abort_on_crash"\] = true' 'settings.reader.lua' 2>/dev/null; then
+            ALWAYS_ABORT="true"
+            # In which case, make sure we pause on *every* crash
+            CRASH_COUNT=1
+        else
+            ALWAYS_ABORT="false"
+        fi
+
         # Show a fancy bomb on screen
         viewWidth=600
         viewHeight=800
@@ -234,7 +243,7 @@ while [ $RETURN_VALUE -ne 0 ]; do
         ./fbink -q -b -c -B GRAY9 -m -y 1 "Don't Panic! (Crash n°${CRASH_COUNT} -> ${RETURN_VALUE})"
         if [ ${CRASH_COUNT} -eq 1 ]; then
             # Warn that we're waiting on a tap to continue...
-            ./fbink -q -b -O -m -y 2 "Tap the screen to continue!"
+            ./fbink -q -b -O -m -y 2 "Tap the screen to continue."
         fi
         # U+1F4A3, the hard way, because we can't use \u or \U escape sequences...
         # shellcheck disable=SC2039
@@ -248,7 +257,7 @@ while [ $RETURN_VALUE -ne 0 ]; do
 
         echo "!!!!" >>crash.log 2>&1
         echo "Hu oh, something went awry... (Crash n°${CRASH_COUNT}: $(date +'%x @ %X'))" >>crash.log 2>&1
-        if [ $CRASH_COUNT -lt 5 ]; then
+        if [ $CRASH_COUNT -lt 5 ] && [ "${ALWAYS_ABORT}" = "false" ]; then
             echo "Attempting to restart KOReader . . ." >>crash.log 2>&1
             echo "!!!!" >>crash.log 2>&1
         fi
@@ -264,8 +273,16 @@ while [ $RETURN_VALUE -ne 0 ]; do
         CRASH_PREV_TS=${CRASH_TS}
 
         # But if we've crashed more than 5 consecutive times, exit, because we wouldn't want to be stuck in a loop...
+        # NOTE: No need to check for ALWAYS_ABORT, CRASH_COUNT will always be 1 when it's true ;).
         if [ $CRASH_COUNT -ge 5 ]; then
             echo "Too many consecutive crashes, aborting . . ." >>crash.log 2>&1
+            echo "!!!! ! !!!!" >>crash.log 2>&1
+            break
+        fi
+
+        # If the user requested to always abort on crash, do so.
+        if [ "${ALWAYS_ABORT}" = "true" ]; then
+            echo "Aborting . . ." >>crash.log 2>&1
             echo "!!!! ! !!!!" >>crash.log 2>&1
             break
         fi
