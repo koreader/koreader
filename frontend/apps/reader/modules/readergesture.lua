@@ -598,35 +598,35 @@ Default value: %1]]), GestureDetector.SWIPE_INTERVAL/1000),
             text = _("Two-finger swipe"),
             sub_item_table = {
                 {
-                    text_func = function() return twoFingerSwipeTextFunc("two_finger_swipe_east", "➡") end,
+                    text_func = function() return twoFingerSwipeTextFunc("two_finger_swipe_east", "⇒") end,
                     sub_item_table = self:buildMenu("two_finger_swipe_east", self.default_gesture["two_finger_swipe_east"]),
                 },
                 {
-                    text_func = function() return twoFingerSwipeTextFunc("two_finger_swipe_west", "⬅") end,
+                    text_func = function() return twoFingerSwipeTextFunc("two_finger_swipe_west", "⇐") end,
                     sub_item_table = self:buildMenu("two_finger_swipe_west", self.default_gesture["two_finger_swipe_west"]),
                 },
                 {
-                    text_func = function() return twoFingerSwipeTextFunc("two_finger_swipe_south", "⬇") end,
+                    text_func = function() return twoFingerSwipeTextFunc("two_finger_swipe_south", "⇓") end,
                     sub_item_table = self:buildMenu("two_finger_swipe_south", self.default_gesture["two_finger_swipe_south"]),
                 },
                 {
-                    text_func = function() return twoFingerSwipeTextFunc("two_finger_swipe_north", "⬆") end,
+                    text_func = function() return twoFingerSwipeTextFunc("two_finger_swipe_north", "⇑") end,
                     sub_item_table = self:buildMenu("two_finger_swipe_north", self.default_gesture["two_finger_swipe_north"]),
                 },
                 {
-                    text_func = function() return twoFingerSwipeTextFunc("two_finger_swipe_northeast", "⬈") end,
+                    text_func = function() return twoFingerSwipeTextFunc("two_finger_swipe_northeast", "⇗") end,
                     sub_item_table = self:buildMenu("two_finger_swipe_northeast", self.default_gesture["two_finger_swipe_northeast"]),
                 },
                 {
-                    text_func = function() return twoFingerSwipeTextFunc("two_finger_swipe_northwest", "⬉") end,
+                    text_func = function() return twoFingerSwipeTextFunc("two_finger_swipe_northwest", "⇖") end,
                     sub_item_table = self:buildMenu("two_finger_swipe_northwest", self.default_gesture["two_finger_swipe_northwest"]),
                 },
                 {
-                    text_func = function() return twoFingerSwipeTextFunc("two_finger_swipe_southeast", "⬊") end,
+                    text_func = function() return twoFingerSwipeTextFunc("two_finger_swipe_southeast", "⇘") end,
                     sub_item_table = self:buildMenu("two_finger_swipe_southeast", self.default_gesture["two_finger_swipe_southeast"]),
                 },
                 {
-                    text_func = function() return twoFingerSwipeTextFunc("two_finger_swipe_southwest", "⬋") end,
+                    text_func = function() return twoFingerSwipeTextFunc("two_finger_swipe_southwest", "⇙") end,
                     sub_item_table = self:buildMenu("two_finger_swipe_southwest", self.default_gesture["two_finger_swipe_southwest"]),
                 },
             },
