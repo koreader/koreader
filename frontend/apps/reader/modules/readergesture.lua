@@ -1434,8 +1434,8 @@ function ReaderGesture:gestureAction(action, ges)
             local info_text
             local current_network = NetworkMgr:getCurrentNetwork()
             -- this method is only available for some implementations
-            if current_network then
-                info_text = T(_("Already connected to network %1."), NetworkMgr:getCurrentNetwork())
+            if current_network and current_network.ssid then
+                info_text = T(_("Already connected to network %1."), current_network.ssid)
             else
                 info_text = _("Already connected.")
             end
