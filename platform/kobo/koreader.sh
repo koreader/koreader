@@ -219,7 +219,7 @@ while [ $RETURN_VALUE -ne 0 ]; do
         CRASH_COUNT=$((CRASH_COUNT + 1))
         CRASH_TS=$(date +'%s')
         # Reset it to a first crash if it's been a while since our last crash...
-        if [ $((CRASH_TS - CRASH_PREV_TS)) -ge 12 ]; then
+        if [ $((CRASH_TS - CRASH_PREV_TS)) -ge 20 ]; then
             CRASH_COUNT=1
         fi
 
@@ -232,6 +232,10 @@ while [ $RETURN_VALUE -ne 0 ]; do
         bombMargin=$((viewWidth/30))
         # With a little notice at the top of the screen, on a big gray screen of death ;).
         ./fbink -q -b -c -B GRAY9 -m -y 1 "Don't Panic! (Crash n°${CRASH_COUNT} -> ${RETURN_VALUE})"
+        if [ ${CRASH_COUNT} -eq 1 ]; then
+            # Warn that we're waiting on a tap to continue...
+            ./fbink -q -b -O -m -y 2 "Tap the screen to continue!"
+        fi
         # U+1F4A3, the hard way, because we can't use \u or \U escape sequences...
         # shellcheck disable=SC2039
         ./fbink -q -b -O -m -t regular=./fonts/freefont/FreeSerif.ttf,px=${bombHeight},top=${bombMargin} $'\xf0\x9f\x92\xa3'
@@ -251,7 +255,9 @@ while [ $RETURN_VALUE -ne 0 ]; do
 
         # Pause a bit if it's the first crash in a while, so that it actually has a chance of getting noticed ;).
         if [ ${CRASH_COUNT} -eq 1 ]; then
-            sleep 6
+            # NOTE: We don't actually care about what read read, we're just using it as a fancy sleep ;).
+            #       i.e., we pause either until the 15s timeout, or until the user touches the screen.
+            read -t 15 < /dev/input/event1
         fi
         # Cycle the last crash timestamp
         CRASH_PREV_TS=${CRASH_TS}
