@@ -237,6 +237,11 @@ while [ $RETURN_VALUE -ne 0 ]; do
         ./fbink -q -f -s top=0,left=0
         # Cue a lemming's faceplant sound effect!
 
+        # Pause a bit if it's the first crash, so that it actually has a chance of getting noticed ;).
+        if [ $CRASH_COUNT -eq 1 ]; then
+            sleep 2
+        fi
+
         # But if we've crashed more than 5 consecutive times, exit, because we wouldn't want to be stuck in a loop...
         if [ $CRASH_COUNT -gt 5 ]; then
             echo "Too many consecutive crashes, aborting . . ." >>crash.log 2>&1
