@@ -108,7 +108,8 @@ while [ "${RETURN_VALUE}" -ge "${RESTART_KOREADER}" ]; do
         # waiting forever for home button events.
 
     elif [ "${RETURN_VALUE}" -eq "${ENTER_QBOOKAPP}" ]; then
-        # iface is down and wpa killed. Start connman
+        ./release-ip.sh
+        ./disable-wifi.sh
         [ -x /etc/init.d/connman ] && /etc/init.d/connman start
 
         # (re)start the reading application in the background
@@ -123,6 +124,8 @@ while [ "${RETURN_VALUE}" -ge "${RESTART_KOREADER}" ]; do
 done
 
 if [ "${STANDALONE}" != "true" ]; then
+    ./release-ip.sh
+    ./disable-wifi.sh
     [ -x /etc/init.d/connman ] && /etc/init.d/connman start
     restart.sh >/dev/null 2>&1
 fi
