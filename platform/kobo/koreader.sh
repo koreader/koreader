@@ -232,7 +232,8 @@ while [ $RETURN_VALUE -ne 0 ]; do
         # shellcheck disable=SC2039
         ./fbink -q -b -O -m -t regular=./fonts/freefont/FreeSerif.ttf,px=${bombHeight},top=${bombMargin} $'\xf0\x9f\x92\xa3'
         # And then print the tail end of the log on the bottom of the screen...
-        tail -n 20 crash.log | ./fbink -q -b -O -t regular=./fonts/droid/DroidSansMono.ttf,top=$((viewHeight/2 + bombMargin)),size=6
+        crashLog="$(tail -n 25 crash.log)"
+        ./fbink -q -b -O -t regular=./fonts/droid/DroidSansMono.ttf,top=$((viewHeight/2 + bombMargin)),left=$((bombMargin / 2)),right=$((bombMargin / 2)),size=6 "${crashLog}"
         # So far, we hadn't triggered an actual screen refresh, do that now, to make sure everything is bundled in a single flashing refresh.
         ./fbink -q -f -s top=0,left=0
         # Cue a lemming's faceplant sound effect!
