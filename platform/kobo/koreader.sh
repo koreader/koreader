@@ -232,7 +232,7 @@ while [ $RETURN_VALUE -ne 0 ]; do
         ./fbink -q -c -B GRAY9 -m -y -5 "Don't Panic! (Crash n°${CRASH_COUNT} -> ${RETURN_VALUE})"
         # U+1F4A3, the hard way, because we can't use \u or \U escape sequences...
         # shellcheck disable=SC2039
-        ./fbink -q -m -t regular=./fonts/freefont/FreeSerif.ttf,px=${bombHeight},top=${bombMargin} $'\xf0\x9f\x92\xa3' -O
+        ./fbink -q -O -m -t regular=./fonts/freefont/FreeSerif.ttf,px=${bombHeight},top=${bombMargin} $'\xf0\x9f\x92\xa3'
         # Cue a lemming's faceplant sound effect!
 
         # But if we've crashed more than 5 consecutive times, exit, because we wouldn't want to be stuck in a loop...
