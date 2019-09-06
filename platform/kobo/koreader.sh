@@ -228,10 +228,10 @@ while [ $RETURN_VALUE -ne 0 ]; do
         # Given the (mostly) identical AR across all Kobos, a fraction of the *width* usually leaves us with something right above the center of the screen, so it doesn't clash with the boot progress bar ;)
         bombHeight=$((viewWidth/2 + viewWidth/4))
         bombMargin=$((viewWidth/30))
-        ./fbink -m -y -5 "Don't Panic! (Crash n°${CRASH_COUNT} -> ${RETURN_VALUE})"
+        ./fbink -q -m -y -5 "Don't Panic! (Crash n°${CRASH_COUNT} -> ${RETURN_VALUE})"
         # U+1F4A3, the hard way, because we can't use \u or \U escape sequences...
         # shellcheck disable=SC2039
-        ./fbink -m -t regular=./fonts/freefont/FreeSerif.ttf,px=${bombHeight},top=${bombMargin} $'\xf0\x9f\x92\xa3'
+        ./fbink -q -m -t regular=./fonts/freefont/FreeSerif.ttf,px=${bombHeight},top=${bombMargin} $'\xf0\x9f\x92\xa3'
         # Cue a lemming's faceplant sound effect!
 
         # But if we've crashed more than 5 consecutive times, exit, because we wouldn't want to be stuck in a loop...
