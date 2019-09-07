@@ -43,7 +43,7 @@ ko_update_check() {
             ./fbink -q -y -6 -pm "Update successful :)"
             ./fbink -q -y -5 -pm "KOReader will start momentarily . . ."
         else
-            # Huh ho...
+            # Uh oh...
             ./fbink -q -y -6 -pmh "Update failed :("
             ./fbink -q -y -5 -pm "KOReader may fail to function properly!"
         fi
@@ -155,7 +155,7 @@ case "${ORIG_FB_BPP}" in
     16) ;;
     32) ;;
     *)
-        # Hu oh? Don't do anything...
+        # Uh oh? Don't do anything...
         unset ORIG_FB_BPP
         ;;
 esac
@@ -196,15 +196,103 @@ if [ -e crash.log ]; then
     mv -f crash.log.new crash.log
 fi
 
+CRASH_COUNT=0
+CRASH_TS=0
+CRASH_PREV_TS=0
+# Because we *want* an initial fbdepth pass ;).
 RETURN_VALUE=85
-while [ $RETURN_VALUE -eq 85 ]; do
-    # Do an update check now, so we can actually update KOReader via the "Restart KOReader" menu entry ;).
-    ko_update_check
-    # Do the fb depth switch, unless it's been disabled
-    ko_do_fbdepth
+while [ $RETURN_VALUE -ne 0 ]; do
+    # 85 is what we return when asking for a KOReader restart
+    if [ $RETURN_VALUE -eq 85 ]; then
+        # Do an update check now, so we can actually update KOReader via the "Restart KOReader" menu entry ;).
+        ko_update_check
+        # Do or double-check the fb depth switch, or restore original bitdepth if requested
+        ko_do_fbdepth
+    fi
 
     ./reader.lua "${args}" >>crash.log 2>&1
     RETURN_VALUE=$?
+
+    # Did we crash?
+    if [ $RETURN_VALUE -ne 0 ] && [ $RETURN_VALUE -ne 85 ]; then
+        # Increment the crash counter
+        CRASH_COUNT=$((CRASH_COUNT + 1))
+        CRASH_TS=$(date +'%s')
+        # Reset it to a first crash if it's been a while since our last crash...
+        if [ $((CRASH_TS - CRASH_PREV_TS)) -ge 20 ]; then
+            CRASH_COUNT=1
+        fi
+
+        # Check if the user requested to always abort on crash
+        if grep -q '\["dev_abort_on_crash"\] = true' 'settings.reader.lua' 2>/dev/null; then
+            ALWAYS_ABORT="true"
+            # In which case, make sure we pause on *every* crash
+            CRASH_COUNT=1
+        else
+            ALWAYS_ABORT="false"
+        fi
+
+        # Show a fancy bomb on screen
+        viewWidth=600
+        viewHeight=800
+        FONTH=16
+        eval "$(./fbink -e | tr ';' '\n' | grep -e viewWidth -e viewHeight -e FONTH | tr '\n' ';')"
+        # Compute margins & sizes relative to the screen's resolution, so we end up with a similar layout, no matter the device.
+        # Height @ ~56.7%, w/ a margin worth 1.5 lines
+        bombHeight=$((viewHeight/2 + viewHeight/15))
+        bombMargin=$((FONTH + FONTH/2))
+        # With a little notice at the top of the screen, on a big gray screen of death ;).
+        ./fbink -q -b -c -B GRAY9 -m -y 1 "Don't Panic! (Crash n°${CRASH_COUNT} -> ${RETURN_VALUE})"
+        if [ ${CRASH_COUNT} -eq 1 ]; then
+            # Warn that we're waiting on a tap to continue...
+            ./fbink -q -b -O -m -y 2 "Tap the screen to continue."
+        fi
+        # U+1F4A3, the hard way, because we can't use \u or \U escape sequences...
+        # shellcheck disable=SC2039
+        ./fbink -q -b -O -m -t regular=./fonts/freefont/FreeSerif.ttf,px=${bombHeight},top=${bombMargin} $'\xf0\x9f\x92\xa3'
+        # And then print the tail end of the log on the bottom of the screen...
+        crashLog="$(tail -n 25 crash.log | sed -e 's/\t/    /g')"
+        # The idea for the margins being to leave enough room for an fbink -Z bar, small horizontal margins, and a font size based on what 6pt looked like @ 265dpi
+        ./fbink -q -b -O -t regular=./fonts/droid/DroidSansMono.ttf,top=$((viewHeight/2 + FONTH * 2 + FONTH/2)),left=$((viewWidth/60)),right=$((viewWidth/60)),px=$((viewHeight/64)) "${crashLog}"
+        # So far, we hadn't triggered an actual screen refresh, do that now, to make sure everything is bundled in a single flashing refresh.
+        ./fbink -q -f -s top=0,left=0
+        # Cue a lemming's faceplant sound effect!
+
+        echo "!!!!" >>crash.log 2>&1
+        echo "Uh oh, something went awry... (Crash n°${CRASH_COUNT}: $(date +'%x @ %X'))" >>crash.log 2>&1
+        if [ $CRASH_COUNT -lt 5 ] && [ "${ALWAYS_ABORT}" = "false" ]; then
+            echo "Attempting to restart KOReader . . ." >>crash.log 2>&1
+            echo "!!!!" >>crash.log 2>&1
+        fi
+
+        # Pause a bit if it's the first crash in a while, so that it actually has a chance of getting noticed ;).
+        if [ ${CRASH_COUNT} -eq 1 ]; then
+            # NOTE: We don't actually care about what read read, we're just using it as a fancy sleep ;).
+            #       i.e., we pause either until the 15s timeout, or until the user touches the screen.
+            # shellcheck disable=SC2039
+            read -r -t 15 </dev/input/event1
+        fi
+        # Cycle the last crash timestamp
+        CRASH_PREV_TS=${CRASH_TS}
+
+        # But if we've crashed more than 5 consecutive times, exit, because we wouldn't want to be stuck in a loop...
+        # NOTE: No need to check for ALWAYS_ABORT, CRASH_COUNT will always be 1 when it's true ;).
+        if [ $CRASH_COUNT -ge 5 ]; then
+            echo "Too many consecutive crashes, aborting . . ." >>crash.log 2>&1
+            echo "!!!! ! !!!!" >>crash.log 2>&1
+            break
+        fi
+
+        # If the user requested to always abort on crash, do so.
+        if [ "${ALWAYS_ABORT}" = "true" ]; then
+            echo "Aborting . . ." >>crash.log 2>&1
+            echo "!!!! ! !!!!" >>crash.log 2>&1
+            break
+        fi
+    else
+        # Reset the crash counter if that was a sane exit/restart
+        CRASH_COUNT=0
+    fi
 done
 
 # Restore original fb bitdepth if need be...
