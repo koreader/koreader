@@ -154,7 +154,7 @@ function PdfDocument:getUsedBBox(pageno)
 end
 
 function PdfDocument:getPageLinks(pageno)
-    local hash = "pgubbox|"..self.file.."|"..self.reflowable_font_size.."|"..pageno
+    local hash = "pglinks|"..self.file.."|"..self.reflowable_font_size.."|"..pageno
     local cached = Cache:check(hash)
     if cached then
         return cached.links
