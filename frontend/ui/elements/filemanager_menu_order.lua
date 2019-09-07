@@ -38,6 +38,7 @@ local order = {
         -- end common settings
     },
     device = {
+        "keyboard_layout",
         "time",
         "battery",
         "autosuspend",
