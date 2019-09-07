@@ -235,10 +235,11 @@ while [ $RETURN_VALUE -ne 0 ]; do
         # Show a fancy bomb on screen
         viewWidth=600
         viewHeight=800
-        eval "$(./fbink -e | tr ';' '\n' | grep -e viewWidth -e viewHeight | tr '\n' ';')"
-        # Given the (mostly) identical AR across all Kobos, a fraction of the *width* usually leaves us with something right above the center of the screen, so it doesn't clash with the boot progress bar ;)
-        bombHeight=$((viewWidth/2 + viewWidth/4))
-        bombMargin=$((viewWidth/30))
+        FONTH=16
+        eval "$(./fbink -e | tr ';' '\n' | grep -e viewWidth -e viewHeight -e FONTH | tr '\n' ';')"
+        # Compute margins & sizes relative to the screen's resolution, so we end up with a similar layout, no matter the device.
+        bombHeight=$((viewHeight/2 + viewHeight/15))	# ~56.7%
+        bombMargin=$((FONTH + FONTH/2))			# 1.5 lines
         # With a little notice at the top of the screen, on a big gray screen of death ;).
         ./fbink -q -b -c -B GRAY9 -m -y 1 "Don't Panic! (Crash n°${CRASH_COUNT} -> ${RETURN_VALUE})"
         if [ ${CRASH_COUNT} -eq 1 ]; then
@@ -250,7 +251,7 @@ while [ $RETURN_VALUE -ne 0 ]; do
         ./fbink -q -b -O -m -t regular=./fonts/freefont/FreeSerif.ttf,px=${bombHeight},top=${bombMargin} $'\xf0\x9f\x92\xa3'
         # And then print the tail end of the log on the bottom of the screen...
         crashLog="$(tail -n 25 crash.log | sed -e 's/\t/    /g')"
-        ./fbink -q -b -O -t regular=./fonts/droid/DroidSansMono.ttf,top=$((viewHeight/2 + viewWidth/20)),left=$((bombMargin / 2)),right=$((bombMargin / 2)),size=6 "${crashLog}"
+        ./fbink -q -b -O -t regular=./fonts/droid/DroidSansMono.ttf,top=$((viewHeight/2 + FONTH*2)),left=$((viewWidth/60)),right=$((viewWidth/60)),px=$((viewHeight/64)) "${crashLog}"
         # So far, we hadn't triggered an actual screen refresh, do that now, to make sure everything is bundled in a single flashing refresh.
         ./fbink -q -f -s top=0,left=0
         # Cue a lemming's faceplant sound effect!
