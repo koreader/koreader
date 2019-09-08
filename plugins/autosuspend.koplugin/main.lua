@@ -20,8 +20,8 @@ local AutoSuspend = WidgetContainer:new{
     is_doc_only = false,
     autoshutdown_sec = G_reader_settings:readSetting("autoshutdown_timeout_seconds") or default_autoshutdown_timeout_seconds,
     settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/koboautosuspend.lua"),
-    settings_id = 0,
     last_action_sec = os.time(),
+    _current_task = nil,
 }
 
 function AutoSuspend:_readTimeoutSecFrom(settings)
@@ -53,16 +53,9 @@ function AutoSuspend:_enabledShutdown()
     return Device:isKobo() and self.autoshutdown_sec > 0
 end
 
-function AutoSuspend:_schedule(settings_id)
+function AutoSuspend:_schedule()
     if not self:_enabled() then
         logger.dbg("AutoSuspend:_schedule is disabled")
-        return
-    end
-    if self.settings_id ~= settings_id then
-        logger.dbg("AutoSuspend:_schedule registered settings_id ",
-                   settings_id,
-                   " does not equal to current one ",
-                   self.settings_id)
         return
     end
 
@@ -83,30 +76,34 @@ function AutoSuspend:_schedule(settings_id)
         logger.dbg("AutoSuspend: initiating shutdown")
         UIManager:poweroff_action()
     else
-        logger.dbg("AutoSuspend: schedule suspend at ", os.time() + delay_suspend)
-        UIManager:scheduleIn(delay_suspend, function() self:_schedule(settings_id) end)
-        logger.dbg("AutoSuspend: schedule shutdown at ", os.time() + delay_shutdown)
-        UIManager:scheduleIn(delay_shutdown, function() self:_schedule(settings_id) end)
+        if self:_enabled() then
+            logger.dbg("AutoSuspend: schedule suspend at ", os.time() + delay_suspend)
+            UIManager:scheduleIn(delay_suspend, self._schedule, self)
+        end
+        if self:_enabledShutdown() then
+            logger.dbg("AutoSuspend: schedule shutdown at ", os.time() + delay_shutdown)
+            UIManager:scheduleIn(delay_shutdown, self._schedule, self)
+        end
     end
 end
 
-function AutoSuspend:_deprecateLastTask()
-    self.settings_id = self.settings_id + 1
-    logger.dbg("AutoSuspend: deprecateLastTask ", self.settings_id)
+function AutoSuspend:_unschedule()
+    logger.dbg("AutoSuspend: unschedule")
+    UIManager:unschedule(self._schedule)
 end
 
 function AutoSuspend:_start()
-    if self:_enabled() then
+    if self:_enabled() or self:_enabledShutdown() then
         logger.dbg("AutoSuspend: start at ", os.time())
         self.last_action_sec = os.time()
-        self:_schedule(self.settings_id)
+        self:_schedule()
     end
 end
 
 function AutoSuspend:init()
     UIManager.event_hook:registerWidget("InputEvent", self)
     self.auto_suspend_sec = self:_readTimeoutSec()
-    self:_deprecateLastTask()
+    self:_unschedule()
     self:_start()
     -- self.ui is nil in the testsuite
     if not self.ui or not self.ui.menu then return end
@@ -122,7 +119,7 @@ function AutoSuspend:onSuspend()
     logger.dbg("AutoSuspend: onSuspend")
     -- We do not want auto suspend procedure to waste battery during suspend. So let's unschedule it
     -- when suspending and restart it after resume.
-    self:_deprecateLastTask()
+    self:_unschedule()
     if self:_enabledShutdown() then
         UIManager:setWakeupAlarm(self.autoshutdown_sec)
     end
@@ -160,7 +157,7 @@ function AutoSuspend:addToMainMenu(menu_items)
                         text = T(_("The system will automatically suspend after %1 minutes of inactivity."),
                             string.format("%.2f", autosuspend_timeout_seconds/60)),
                     })
-                    self:_deprecateLastTask()
+                    self:_unschedule()
                     self:_start()
                 end
             }
@@ -196,7 +193,7 @@ function AutoSuspend:addToMainMenu(menu_items)
                         text = T(_("The system will automatically shut down after %1 hours of inactivity."),
                             string.format("%.2f", autoshutdown_timeout_seconds/60/60)),
                     })
-                    self:_deprecateLastTask()
+                    self:_unschedule()
                     self:_start()
                 end
             }

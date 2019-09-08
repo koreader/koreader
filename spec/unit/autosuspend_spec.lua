@@ -23,7 +23,6 @@ describe("AutoSuspend", function()
             require("ui/uimanager").suspend:revert()
             G_reader_settings:delSetting("auto_suspend_timeout_seconds")
             require("mock_time"):uninstall()
-            package.unload("ui/uimanager")
         end)
 
         it("should be able to execute suspend when timing out", function()
@@ -34,21 +33,6 @@ describe("AutoSuspend", function()
             mock_time:increase(5)
             UIManager:handleInput()
             assert.stub(UIManager.suspend).was.called(0)
-            mock_time:increase(6)
-            UIManager:handleInput()
-            assert.stub(UIManager.suspend).was.called(1)
-            mock_time:uninstall()
-        end)
-
-        it("should be able to initialize several times", function()
-            local mock_time = require("mock_time")
-            -- AutoSuspend plugin set the last_action_sec each time it is initialized.
-            local widget_class = dofile("plugins/autosuspend.koplugin/main.lua")
-            local widget1 = widget_class:new() --luacheck: ignore
-            -- So if one more initialization happens, it won't sleep after another 5 seconds.
-            mock_time:increase(5)
-            local widget2 = widget_class:new() --luacheck: ignore
-            local UIManager = require("ui/uimanager")
             mock_time:increase(6)
             UIManager:handleInput()
             assert.stub(UIManager.suspend).was.called(1)
@@ -95,7 +79,6 @@ describe("AutoSuspend", function()
             require("ui/uimanager").poweroff_action:revert()
             G_reader_settings:delSetting("autoshutdown_timeout_seconds")
             require("mock_time"):uninstall()
-            package.unload("ui/uimanager")
         end)
 
         it("should be able to execute suspend when timing out", function()
@@ -106,21 +89,6 @@ describe("AutoSuspend", function()
             mock_time:increase(5)
             UIManager:handleInput()
             assert.stub(UIManager.poweroff_action).was.called(0)
-            mock_time:increase(6)
-            UIManager:handleInput()
-            assert.stub(UIManager.poweroff_action).was.called(1)
-            mock_time:uninstall()
-        end)
-
-        it("should be able to initialize several times", function()
-            local mock_time = require("mock_time")
-            -- AutoSuspend plugin set the last_action_sec each time it is initialized.
-            local widget_class = dofile("plugins/autosuspend.koplugin/main.lua")
-            local widget1 = widget_class:new() --luacheck: ignore
-            -- So if one more initialization happens, it won't sleep after another 5 seconds.
-            mock_time:increase(5)
-            local widget2 = widget_class:new() --luacheck: ignore
-            local UIManager = require("ui/uimanager")
             mock_time:increase(6)
             UIManager:handleInput()
             assert.stub(UIManager.poweroff_action).was.called(1)
