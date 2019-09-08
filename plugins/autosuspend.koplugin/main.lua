@@ -8,6 +8,7 @@ local DataStorage = require("datastorage")
 local LuaSettings = require("luasettings")
 local PluginShare = require("pluginshare")
 local UIManager = require("ui/uimanager")
+local WakeupMgr = require("device/wakeupmgr")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local _ = require("gettext")
@@ -121,7 +122,7 @@ function AutoSuspend:onSuspend()
     -- when suspending and restart it after resume.
     self:_unschedule()
     if self:_enabledShutdown() then
-        UIManager:setWakeupAlarm(self.autoshutdown_sec)
+        WakeupMgr:setWakeupAlarm(self.autoshutdown_sec)
     end
 end
 

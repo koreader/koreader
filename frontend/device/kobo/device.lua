@@ -1,6 +1,7 @@
 local Generic = require("device/generic/device")
 local TimeVal = require("ui/timeval")
 local Geom = require("ui/geometry")
+local WakeupMgr = require("device/wakeupmgr")
 local util = require("ffi/util")
 local _ = require("gettext")
 local logger = require("logger")
@@ -313,6 +314,7 @@ function Kobo:init()
             end,
         }
     }
+    self.wakeup_mgr = WakeupMgr:new()
 
     Generic.init(self)
 
@@ -535,10 +537,10 @@ end
 
 local unexpected_wakeup_count = 0
 local function check_unexpected_wakeup()
-    local UIManager = require("ui/uimanager")
-    if UIManager:isWakeupAlarmScheduled() and UIManager:getWakeupAlarmProximity() then
+    --~ if Kobo.wakeup_mgr:isWakeupAlarmScheduled() and Kobo.wakeup_mgr:validateWakeupAlarmByProximity() then
+    if Kobo.wakeup_mgr:wakeupAction() then
         logger.dbg("Kobo suspend: scheduled wakeup")
-        UIManager:poweroff_action()
+        --UIManager:poweroff_action()
         return
     end
     logger.dbg("Kobo suspend: checking unexpected wakeup:",

@@ -6,8 +6,12 @@ On embedded devices this can typically be easily manipulated by the user
 through `/sys/class/rtc/rtc0/wakealarm`. Some, like the Kobo Aura H2O,
 can only schedule wakeups through ioctl.
 
+See @{ffi.rtc} for implementation details.
+
 See also: <https://linux.die.net/man/4/rtc>.
 --]]
+
+local RTC = require("ffi/rtc")
 
 --[[--
 WakeupMgr base class.
@@ -40,15 +44,71 @@ end
 
 --[[--
 Add a task to the queue.
+
+@todo Group by type to avoid useless wakeups.
+For example, maintenance, sync, and shutdown.
+I'm not sure if the distinction between maintenance and sync makes sense
+but it's wifi on vs. off.
 --]]
-function WakeupMgr:addTask(task_epoch, task_function)
+function WakeupMgr:addTask(epoch, callback)
+    if not type(epoch) == "number" and not type(callback) == "function" then return end
+
+    local old_upcoming_task = (self._task_queue[1] or {}).epoch
+
     table.insert(self._task_queue, {
-        task_epoch = task_epoch,
-        task_function = task_function,
+        epoch = epoch,
+        callback = callback,
     })
     --- @todo Binary insert? This table should be so small that performance doesn't matter.
-    -- It might be useful to have available as a utility function regardless.
-    table.sort(self._task_queue)
+    -- It might be useful to have that available as a utility function regardless.
+    table.sort(self._task_queue, function(a, b) return a.epoch < b.epoch end)
+
+    local new_upcoming_task = self._task_queue[1].epoch
+
+    if not old_upcoming_task or (new_upcoming_task < old_upcoming_task) then
+        self:setWakeupAlarm(self._task_queue[1].epoch)
+    end
+end
+
+function WakeupMgr:wakeupAction()
+    if #self._task_queue > 0 then
+        local task = self._task_queue[1]
+        if self:validateWakeupAlarmByProximity(task.epoch) then
+            task.callback()
+            table.remove(self._task_queue, 1)
+            return true
+        else
+            return false
+        end
+    end
+end
+
+function WakeupMgr:setWakeupAlarm(seconds_from_now, enabled)
+    return RTC:setWakeupAlarm(seconds_from_now, enabled)
+end
+
+function WakeupMgr:unsetWakeupAlarm()
+    return RTC:unsetWakeupAlarm()
+end
+
+--- Get wakealarm as set by us.
+function WakeupMgr:getWakeupAlarm()
+    return RTC:getWakeupAlarm()
+end
+
+--- Get RTC wakealarm from system.
+function WakeupMgr:getWakeupAlarmSys()
+    return RTC:getWakeupAlarmSys()
+end
+
+function WakeupMgr:validateWakeupAlarmByProximity()
+    return RTC:validateWakeupAlarmByProximity()
+end
+
+function WakeupMgr:isWakeupAlarmScheduled()
+    local wakeup_scheduled = rtc:isWakeupAlarmScheduled()
+    logger.dbg("isWakeupAlarmScheduled", wakeup_scheduled)
+    return wakeup_scheduled
 end
 
 return WakeupMgr
