@@ -12,6 +12,7 @@ See also: <https://linux.die.net/man/4/rtc>.
 --]]
 
 local RTC = require("ffi/rtc")
+local logger = require("logger")
 
 --[[--
 WakeupMgr base class.
@@ -106,7 +107,7 @@ function WakeupMgr:validateWakeupAlarmByProximity()
 end
 
 function WakeupMgr:isWakeupAlarmScheduled()
-    local wakeup_scheduled = rtc:isWakeupAlarmScheduled()
+    local wakeup_scheduled = RTC:isWakeupAlarmScheduled()
     logger.dbg("isWakeupAlarmScheduled", wakeup_scheduled)
     return wakeup_scheduled
 end
