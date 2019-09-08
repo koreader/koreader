@@ -52,7 +52,7 @@ I'm not sure if the distinction between maintenance and sync makes sense
 but it's wifi on vs. off.
 --]]
 function WakeupMgr:addTask(epoch, callback)
-    if not type(epoch) == "number" or not type(callback) == "function" then return end
+    if not type(epoch) == "number" and not type(callback) == "function" then return end
 
     local old_upcoming_task = (self._task_queue[1] or {}).epoch
 
