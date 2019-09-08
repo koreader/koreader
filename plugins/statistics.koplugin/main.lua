@@ -1016,6 +1016,7 @@ function ReaderStatistics:getCurrentStat(id_book)
         { _("Total time"), util.secondsToClock(total_time_book, false) },
         { _("Total highlights"), tonumber(highlights) },
         { _("Total notes"), tonumber(notes) },
+        { _("Total read pages"), tonumber(total_read_pages) },
         { _("Total days"), tonumber(total_days) },
         { _("Average time per page"), util.secondsToClock(self.avg_time, false) },
         { _("Current page/Total pages"),  self.curr_page .. "/" .. self.data.pages },
