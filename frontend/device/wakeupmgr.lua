@@ -51,8 +51,10 @@ For example, maintenance, sync, and shutdown.
 I'm not sure if the distinction between maintenance and sync makes sense
 but it's wifi on vs. off.
 --]]
-function WakeupMgr:addTask(epoch, callback)
-    if not type(epoch) == "number" and not type(callback) == "function" then return end
+function WakeupMgr:addTask(seconds_from_now, callback)
+    if not type(seconds_from_now) == "number" and not type(callback) == "function" then return end
+
+    local epoch = RTC:secondsFromNowToEpoch(seconds_from_now)
 
     local old_upcoming_task = (self._task_queue[1] or {}).epoch
 
