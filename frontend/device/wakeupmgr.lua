@@ -52,7 +52,7 @@ I'm not sure if the distinction between maintenance and sync makes sense
 but it's wifi on vs. off.
 --]]
 function WakeupMgr:addTask(epoch, callback)
-    if not type(epoch) == "number" and not type(callback) == "function" then return end
+    if not type(epoch) == "number" or not type(callback) == "function" then return end
 
     local old_upcoming_task = (self._task_queue[1] or {}).epoch
 
@@ -71,12 +71,40 @@ function WakeupMgr:addTask(epoch, callback)
     end
 end
 
+--[[--
+Remove task from queue.
+
+This method removes a task by either index, scheduled time or callback.
+
+@int idx Task queue index. Mainly useful within this module.
+@int epoch The epoch for when this task is scheduled to wake up.
+Normally the preferred method for outside callers.
+@int callback A scheduled callback function. Store a reference for use
+with anonymous functions.
+--]]
+function WakeupMgr:removeTask(idx, epoch, callback)
+    if not type(idx) == "number"
+        and not type(epoch) == "number"
+        and not type(callback) == "function" then return end
+
+    if #self._task_queue < 1 then return end
+
+    for k, v in ipairs(self._task_queue) do
+        if k == idx or epoch == v.epoch or callback == v.callback then
+            table.remove(self._task_queue, k)
+            return true
+        end
+    end
+end
+
 function WakeupMgr:wakeupAction()
     if #self._task_queue > 0 then
         local task = self._task_queue[1]
         if self:validateWakeupAlarmByProximity(task.epoch) then
             task.callback()
-            table.remove(self._task_queue, 1)
+            --- @todo use self:removeTask
+            --table.remove(self._task_queue, 1)
+            self:removeTask(1)
             return true
         else
             return false
