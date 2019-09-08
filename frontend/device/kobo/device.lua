@@ -537,26 +537,34 @@ end
 
 local unexpected_wakeup_count = 0
 local function check_unexpected_wakeup()
-    --~ if Kobo.wakeup_mgr:isWakeupAlarmScheduled() and Kobo.wakeup_mgr:validateWakeupAlarmByProximity() then
-    if Kobo.wakeup_mgr:wakeupAction() then
-        logger.dbg("Kobo suspend: scheduled wakeup")
-        --UIManager:poweroff_action()
-        return
-    end
-    logger.dbg("Kobo suspend: checking unexpected wakeup:",
-               unexpected_wakeup_count)
-    if unexpected_wakeup_count == 0 or unexpected_wakeup_count > 20 then
-        -- Don't put device back to sleep under the following two cases:
-        --   1. a resume event triggered Kobo:resume() function
-        --   2. trying to put device back to sleep more than 20 times after unexpected wakeup
-        return
-    end
-
-    logger.err("Kobo suspend: putting device back to sleep, unexpected wakeups:",
-               unexpected_wakeup_count)
+    local UIManager = require("ui/uimanager")
     -- just in case other events like SleepCoverClosed also scheduled a suspend
-    require("ui/uimanager"):unschedule(Kobo.suspend)
-    Kobo.suspend()
+    UIManager:unschedule(Kobo.suspend)
+
+    if WakeupMgr:isWakeupAlarmScheduled() and WakeupMgr:validateWakeupAlarmByProximity() then
+        logger.dbg("Kobo suspend: scheduled wakeup.")
+        local res = WakeupMgr:wakeupAction()
+        if not res then
+            logger.err("Kobo suspend: wakeup action failed.")
+        end
+        logger.dbg("Kobo suspend: putting device back to sleep.")
+        -- Most wakeup actions are linear, but we need some leeway for the
+        -- poweroff action to send out close events to all requisite widgets.
+        UIManager:scheduleIn(30, Kobo.suspend)
+    else
+        logger.dbg("Kobo suspend: checking unexpected wakeup:",
+                   unexpected_wakeup_count)
+        if unexpected_wakeup_count == 0 or unexpected_wakeup_count > 20 then
+            -- Don't put device back to sleep under the following two cases:
+            --   1. a resume event triggered Kobo:resume() function
+            --   2. trying to put device back to sleep more than 20 times after unexpected wakeup
+            return
+        end
+
+        logger.err("Kobo suspend: putting device back to sleep. Unexpected wakeups:",
+                   unexpected_wakeup_count)
+        Kobo.suspend()
+    end
 end
 
 function Kobo:getUnexpectedWakeup() return unexpected_wakeup_count end

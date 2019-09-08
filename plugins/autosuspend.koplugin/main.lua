@@ -122,15 +122,12 @@ function AutoSuspend:onSuspend()
     -- when suspending and restart it after resume.
     self:_unschedule()
     if self:_enabledShutdown() then
-        WakeupMgr:setWakeupAlarm(self.autoshutdown_sec)
+        Device.wakeup_mgr:addTask(self.autoshutdown_sec, UIManager.poweroff_action)
     end
 end
 
 function AutoSuspend:onResume()
     logger.dbg("AutoSuspend: onResume")
-    if self:_enabledShutdown() then
-        UIManager:unsetWakeupAlarm()
-    end
     self:_start()
 end
 
@@ -157,6 +154,7 @@ function AutoSuspend:addToMainMenu(menu_items)
                     UIManager:show(InfoMessage:new{
                         text = T(_("The system will automatically suspend after %1 minutes of inactivity."),
                             string.format("%.2f", autosuspend_timeout_seconds/60)),
+                        timeout = 3,
                     })
                     self:_unschedule()
                     self:_start()
@@ -193,6 +191,7 @@ function AutoSuspend:addToMainMenu(menu_items)
                     UIManager:show(InfoMessage:new{
                         text = T(_("The system will automatically shut down after %1 hours of inactivity."),
                             string.format("%.2f", autoshutdown_timeout_seconds/60/60)),
+                        timeout = 3,
                     })
                     self:_unschedule()
                     self:_start()

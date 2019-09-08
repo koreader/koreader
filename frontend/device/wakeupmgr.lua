@@ -104,8 +104,6 @@ function WakeupMgr:wakeupAction()
         local task = self._task_queue[1]
         if self:validateWakeupAlarmByProximity(task.epoch) then
             task.callback()
-            --- @todo use self:removeTask
-            --table.remove(self._task_queue, 1)
             self:removeTask(1)
             return true
         else
