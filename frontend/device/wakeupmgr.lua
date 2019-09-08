@@ -112,8 +112,8 @@ function WakeupMgr:wakeupAction()
     end
 end
 
-function WakeupMgr:setWakeupAlarm(seconds_from_now, enabled)
-    return RTC:setWakeupAlarm(seconds_from_now, enabled)
+function WakeupMgr:setWakeupAlarm(epoch, enabled)
+    return RTC:setWakeupAlarm(epoch, enabled)
 end
 
 function WakeupMgr:unsetWakeupAlarm()

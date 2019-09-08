@@ -8,7 +8,6 @@ local DataStorage = require("datastorage")
 local LuaSettings = require("luasettings")
 local PluginShare = require("pluginshare")
 local UIManager = require("ui/uimanager")
-local WakeupMgr = require("device/wakeupmgr")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local _ = require("gettext")
@@ -22,7 +21,6 @@ local AutoSuspend = WidgetContainer:new{
     autoshutdown_sec = G_reader_settings:readSetting("autoshutdown_timeout_seconds") or default_autoshutdown_timeout_seconds,
     settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/koboautosuspend.lua"),
     last_action_sec = os.time(),
-    _current_task = nil,
 }
 
 function AutoSuspend:_readTimeoutSecFrom(settings)
@@ -51,7 +49,7 @@ function AutoSuspend:_enabled()
 end
 
 function AutoSuspend:_enabledShutdown()
-    return Device:isKobo() and self.autoshutdown_sec > 0
+    return Device:canPowerOff() and self.autoshutdown_sec > 0
 end
 
 function AutoSuspend:_schedule()
@@ -121,7 +119,7 @@ function AutoSuspend:onSuspend()
     -- We do not want auto suspend procedure to waste battery during suspend. So let's unschedule it
     -- when suspending and restart it after resume.
     self:_unschedule()
-    if self:_enabledShutdown() then
+    if self:_enabledShutdown() and Device.wakeup_mgr then
         Device.wakeup_mgr:addTask(self.autoshutdown_sec, UIManager.poweroff_action)
     end
 end
@@ -163,7 +161,7 @@ function AutoSuspend:addToMainMenu(menu_items)
             UIManager:show(autosuspend_spin)
         end,
     }
-    if not (Device:isKobo() or Device:isEmulator()) then return end
+    if not (Device:canPowerOff() or Device:isEmulator()) then return end
     menu_items.autoshutdown = {
         text = _("Autoshutdown timeout"),
         callback = function()
