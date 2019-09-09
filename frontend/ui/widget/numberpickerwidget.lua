@@ -22,6 +22,7 @@ local Device = require("device")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local Font = require("ui/font")
+local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local RenderText = require("ui/rendertext")
@@ -128,39 +129,61 @@ function NumberPickerWidget:paintWidget()
         value = string.format(self.precision, value)
     end
 
-    local input
+    local input_dialog
     local callback_input = nil
     if self.value_table == nil then
         callback_input =  function()
-            input = InputDialog:new{
+            input_dialog = InputDialog:new{
                 title = _("Enter number"),
+                input = self.value,
                 input_type = "number",
                 buttons = {
                     {
                         {
                             text = _("Cancel"),
                             callback = function()
-                                UIManager:close(input)
+                                UIManager:close(input_dialog)
                             end,
                         },
                         {
                             text = _("OK"),
                             is_enter_default = true,
                             callback = function()
-                                input:closeInputDialog()
-                                local input_value = tonumber(input:getInputText())
+                                input_dialog:closeInputDialog()
+                                local input_value = tonumber(input_dialog:getInputText())
                                 if input_value and input_value >= self.value_min and input_value <= self.value_max then
                                     self.value = input_value
                                     self:update()
+                                    UIManager:close(input_dialog)
+                                elseif input_value and input_value < self.value_min then
+                                    self.value = self.value_min
+                                    self:update()
+                                    UIManager:show(InfoMessage:new{
+                                        text = _("Invalid value. The minimum value has been set."),
+                                        timeout = 2,
+                                    })
+                                    UIManager:close(input_dialog)
+                                elseif input_value and input_value > self.value_max then
+                                    self.value = self.value_max
+                                    self:update()
+                                    UIManager:show(InfoMessage:new{
+                                        text = _("Invalid value. The maximum value has been set."),
+                                        timeout = 2,
+                                    })
+                                    UIManager:close(input_dialog)
+                                else
+                                    UIManager:show(InfoMessage:new{
+                                        text = _("Invalid value. Please enter a valid value."),
+                                        timeout = 12,
+                                    })
                                 end
-                                UIManager:close(input)
                             end,
                         },
                     },
                 },
             }
-            UIManager:show(input)
-            input:onShowKeyboard()
+            UIManager:show(input_dialog)
+            input_dialog:onShowKeyboard()
         end
     end
 
