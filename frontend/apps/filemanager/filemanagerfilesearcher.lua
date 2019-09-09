@@ -37,7 +37,7 @@ function FileSearcher:readDir()
             -- handle files in d
             for f in lfs.dir(d) do
                 local fullpath = d.."/"..f
-                local attributes = lfs.attributes(fullpath)
+                local attributes = lfs.attributes(fullpath) or {}
                 if attributes.mode == "directory" and f ~= "." and f~=".." then
                     table.insert(new_dirs, fullpath)
                     table.insert(self.files, {name = f, path = fullpath, attr = attributes})
