@@ -174,7 +174,7 @@ function NumberPickerWidget:paintWidget()
                                 else
                                     UIManager:show(InfoMessage:new{
                                         text = _("Invalid value. Please enter a valid value."),
-                                        timeout = 12,
+                                        timeout = 2
                                     })
                                 end
                             end,
