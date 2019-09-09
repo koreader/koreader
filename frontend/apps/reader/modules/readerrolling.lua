@@ -188,11 +188,10 @@ function ReaderRolling:onReadSettings(config)
     if self.show_overlap_enable == nil then
         self.show_overlap_enable = DSHOWOVERLAP
     end
+
     self.inverse_reading_order = config:readSetting("inverse_reading_order")
-    if self.inverse_reading_order == nil and G_reader_settings:has("inverse_reading_order") then
+    if self.inverse_reading_order == nil then
         self.inverse_reading_order = G_reader_settings:isTrue("inverse_reading_order")
-    else
-        self.inverse_reading_order = false
     end
 
     -- This self.visible_pages may not be the current nb of visible pages
