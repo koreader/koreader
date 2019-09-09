@@ -15,6 +15,13 @@ end
 -- run koreader patch before koreader startup
 pcall(dofile, "/sdcard/koreader/patch.lua")
 
+-- Set proper permission for binaries.
+--- @todo Take care of this on extraction instead.
+-- Cf. <https://github.com/koreader/koreader/issues/5347#issuecomment-529476693>.
+android.execute("chmod", "755", "./sdcv")
+android.execute("chmod", "755", "./tar")
+android.execute("chmod", "755", "./zsync")
+
 -- set TESSDATA_PREFIX env var
 C.setenv("TESSDATA_PREFIX", "/sdcard/koreader/data", 1)
 
