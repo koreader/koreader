@@ -180,7 +180,7 @@ function ReaderStatistics:initData()
     self.id_curr_book = self:getIdBookDB()
     self.total_read_pages, self.total_read_time = self:getPageTimeTotalStats(self.id_curr_book)
     if self.total_read_pages > 0 then
-        self.avg_time = math.ceil(self.total_read_time / self.total_read_pages)
+        self.avg_time = self.total_read_time / self.total_read_pages
     end
 end
 
@@ -1003,24 +1003,24 @@ function ReaderStatistics:getCurrentStat(id_book)
     self.data.pages = self.view.document:getPageCount()
     total_time_book = tonumber(total_time_book)
     total_read_pages = tonumber(total_read_pages)
-    local avg_time_per_page = total_time_book / total_read_pages
-    local time_to_read = (self.data.pages - self.view.state.page) * avg_time_per_page
+    local time_to_read = (self.data.pages - self.view.state.page) * self.avg_time
     local estimate_days_to_read = math.ceil(time_to_read/(total_time_book/tonumber(total_days)))
     local estimate_end_of_read_date = os.date("%Y-%m-%d", tonumber(os.time() + estimate_days_to_read * 86400))
+    local formatstr = "%.0f%%"
     return {
-        { _("Current period"), util.secondsToClock(current_period, false) },
-        { _("Current pages"), tonumber(current_pages) },
-        { _("Today period"), util.secondsToClock(today_period, false) },
-        { _("Today pages"), tonumber(today_pages) },
+        { _("Time spent reading this session"), util.secondsToClock(current_period, false) },
+        { _("Pages read this session"), tonumber(current_pages) },
+        { _("Time spent reading today"), util.secondsToClock(today_period, false) },
+        { _("Pages read today"), tonumber(today_pages) },
         { _("Time to read"), util.secondsToClock(time_to_read), false},
         { _("Total time"), util.secondsToClock(total_time_book, false) },
         { _("Total highlights"), tonumber(highlights) },
         { _("Total notes"), tonumber(notes) },
+        { _("Total pages read"), tonumber(total_read_pages) },
         { _("Total days"), tonumber(total_days) },
-        { _("Average time per page"), util.secondsToClock(avg_time_per_page, false) },
-        { _("Read pages/Total pages"), total_read_pages .. "/" .. self.data.pages },
-        -- adding 0.5 rounds to nearest integer with math.floor
-        { _("Percentage completed"), math.floor(total_read_pages / self.data.pages * 100 + 0.5) .. "%" },
+        { _("Average time per page"), util.secondsToClock(self.avg_time, false) },
+        { _("Current pages read/Total pages"),  self.curr_page .. "/" .. self.data.pages },
+        { _("Percentage completed"), formatstr:format(self.curr_page/self.data.pages * 100) },
         { _("Average time per day"), util.secondsToClock(total_time_book/tonumber(total_days)), false },
         { _("Estimated reading finished"),
             T(N_("%1 (1 day)", "%1 (%2 days)", estimate_days_to_read), estimate_end_of_read_date, estimate_days_to_read) },
@@ -1698,7 +1698,7 @@ function ReaderStatistics:onPageUpdate(pageno)
         mem_read_time = 0
     end
     if self.total_read_pages > 0 or mem_read_pages > 0 then
-        self.avg_time = math.ceil((self.total_read_time + mem_read_time) / (self.total_read_pages + mem_read_pages))
+        self.avg_time = (self.total_read_time + mem_read_time) / (self.total_read_pages + mem_read_pages)
     end
 end
 
