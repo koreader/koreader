@@ -66,6 +66,8 @@ describe("AutoSuspend", function()
             local Device = require("device")
             stub(Device, "isKobo")
             Device.isKobo.returns(true)
+            stub(Device, "canPowerOff")
+            Device.canPowerOff.returns(true)
             Device.input.waitEvent = function() end
             local UIManager = require("ui/uimanager")
             stub(UIManager, "poweroff_action")
