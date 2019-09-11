@@ -463,7 +463,6 @@ function ReaderFooter:textOptionTitles(option)
     local option_titles = {
         all_at_once = _("Show all at once"),
         reclaim_height = _("Reclaim bar height from bottom margin"),
-        toc_markers = _("Show chapter markers"),
         page_progress = T(_("Current page (%1)"), "/"),
         time = symbol_prefix[symbol].time
             and T(_("Current time (%1)"), symbol_prefix[symbol].time) or _("Current time"),
@@ -866,7 +865,21 @@ function ReaderFooter:addToMainMenu(menu_items)
                     UIManager:setDirty(nil, "ui")
                 end,
             },
-            getMinibarOption("toc_markers", self.setTocMarkers),
+            {
+                text = _("Show chapter markers"),
+                checked_func = function()
+                    return self.settings.toc_markers
+                end,
+                enabled_func = function()
+                    return not self.settings.disable_progress_bar
+                end,
+                callback = function()
+                    self.settings.toc_markers = not self.settings.toc_markers
+                    self:setTocMarkers()
+                    self:updateFooter()
+                    UIManager:setDirty(nil, "ui")
+                end,
+            },
         }
     })
     table.insert(sub_items, getMinibarOption("page_progress"))
