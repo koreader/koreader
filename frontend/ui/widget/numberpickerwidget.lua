@@ -158,7 +158,7 @@ function NumberPickerWidget:paintWidget()
                                     UIManager:close(input_dialog)
                                 elseif input_value and input_value < self.value_min then
                                     UIManager:show(InfoMessage:new{
-                                        text = T(_("This value should be %1 or more"), self.value_min),
+                                        text = T(_("This value should be %1 or more."), self.value_min),
                                         timeout = 2,
                                     })
                                 elseif input_value and input_value > self.value_max then
