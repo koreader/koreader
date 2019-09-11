@@ -209,7 +209,7 @@ bar=baz
             fd:close()
             os.remove(fn)
         end)
-        
+
         it("should crash on nil values in debug mode", function()
             local dbg = require("dbg")
             dbg:turnOn()
