@@ -31,6 +31,7 @@ local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local _ = require("gettext")
+local T = require("ffi/util").template
 local Screen = Device.screen
 
 local NumberPickerWidget = InputContainer:new{
@@ -156,21 +157,15 @@ function NumberPickerWidget:paintWidget()
                                     self:update()
                                     UIManager:close(input_dialog)
                                 elseif input_value and input_value < self.value_min then
-                                    self.value = self.value_min
-                                    self:update()
                                     UIManager:show(InfoMessage:new{
-                                        text = _("Invalid value. The minimum value has been set."),
+                                        text = T(_("This value should be %1 or more"), self.value_min),
                                         timeout = 2,
                                     })
-                                    UIManager:close(input_dialog)
                                 elseif input_value and input_value > self.value_max then
-                                    self.value = self.value_max
-                                    self:update()
                                     UIManager:show(InfoMessage:new{
-                                        text = _("Invalid value. The maximum value has been set."),
+                                        text = T(_("This value should be %1 or less"), self.value_max),
                                         timeout = 2,
                                     })
-                                    UIManager:close(input_dialog)
                                 else
                                     UIManager:show(InfoMessage:new{
                                         text = _("Invalid value. Please enter a valid value."),
