@@ -166,9 +166,9 @@ ko_do_fbdepth() {
     if grep -q '\["dev_startup_no_fbdepth"\] = true' 'settings.reader.lua' 2>/dev/null; then
         # Swap back to the original bitdepth (in case this was a restart)
         if [ -n "${ORIG_FB_BPP}" ]; then
-            # Unless we're a Forma, don't even bother to swap rotation if the fb is @ 16bpp, because RGB565 is terrible anyways,
+            # Unless we're a Forma/Libra, don't even bother to swap rotation if the fb is @ 16bpp, because RGB565 is terrible anyways,
             # so there's no faster codepath to achieve, and running in Portrait @ 16bpp might actually be broken on some setups...
-            if [ "${ORIG_FB_BPP}" -eq "16" ] && [ "${PRODUCT}" != "frost" ]; then
+            if [ "${ORIG_FB_BPP}" -eq "16" ] && [ "${PRODUCT}" != "frost" ] && [ "${PRODUCT}" != "storm" ]; then
                 echo "Making sure we're using the original fb bitdepth @ ${ORIG_FB_BPP}bpp & rotation @ ${ORIG_FB_ROTA}" >>crash.log 2>&1
                 ./fbdepth -d "${ORIG_FB_BPP}" -r "${ORIG_FB_ROTA}" >>crash.log 2>&1
             else
