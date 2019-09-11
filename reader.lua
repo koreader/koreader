@@ -52,14 +52,11 @@ else
     end
 end
 
-local Device = require("device")
-local dpi_override = G_reader_settings:readSetting("screen_dpi")
-if dpi_override ~= nil then
-    Device:setScreenDPI(dpi_override)
-end
-
-local CanvasContext = require("document/canvascontext")
-CanvasContext:init(Device)
+-- should check DEBUG option in arg and turn on DEBUG before loading other
+-- modules, otherwise DEBUG in some modules may not be printed.
+local dbg = require("dbg")
+if G_reader_settings:isTrue("debug") then dbg:turnOn() end
+if G_reader_settings:isTrue("debug") and G_reader_settings:isTrue("debug_verbose") then dbg:setVerbose(true) end
 
 -- option parsing:
 local longopts = {
@@ -85,12 +82,6 @@ local function showusage()
     print("This software is licensed under the AGPLv3.")
     print("See http://github.com/koreader/koreader for more info.")
 end
-
--- should check DEBUG option in arg and turn on DEBUG before loading other
--- modules, otherwise DEBUG in some modules may not be printed.
-local dbg = require("dbg")
-if G_reader_settings:isTrue("debug") then dbg:turnOn() end
-if G_reader_settings:isTrue("debug") and G_reader_settings:isTrue("debug_verbose") then dbg:setVerbose(true) end
 
 local Profiler = nil
 local ARGV = arg
@@ -120,6 +111,15 @@ while argidx <= #ARGV do
         break
     end
 end
+
+local Device = require("device")
+local dpi_override = G_reader_settings:readSetting("screen_dpi")
+if dpi_override ~= nil then
+    Device:setScreenDPI(dpi_override)
+end
+
+local CanvasContext = require("document/canvascontext")
+CanvasContext:init(Device)
 
 local ConfirmBox = require("ui/widget/confirmbox")
 local QuickStart = require("ui/quickstart")
