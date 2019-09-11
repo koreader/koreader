@@ -183,5 +183,60 @@ FrontLightLevel=15
                           fd:read("*a"))
             fd:close()
         end)
+
+        it("should not crash on nil values for regular users", function()
+            local fn = os.tmpname()
+            local fd = io.open(fn, "w")
+            fd:write([[
+[PowerOptions]
+foo=bar
+[OtherThing]
+bar=baz
+]])
+            fd:close()
+
+            NickelConf._set_kobo_conf_path(fn)
+            NickelConf.frontLightLevel.set()
+            NickelConf.frontLightState.set()
+
+            fd = io.open(fn, "r")
+            assert.Equals([[
+[PowerOptions]
+foo=bar
+[OtherThing]
+bar=baz
+]], fd:read("*a"))
+            fd:close()
+            os.remove(fn)
+        end)
+
+        it("should crash on nil values in debug mode", function()
+            local dbg = require("dbg")
+            dbg:turnOn()
+            NickelConf = package.reload("device/kobo/nickel_conf")
+            local fn = os.tmpname()
+            local fd = io.open(fn, "w")
+            fd:write([[
+[PowerOptions]
+foo=bar
+[OtherThing]
+bar=baz
+]])
+            fd:close()
+
+            NickelConf._set_kobo_conf_path(fn)
+            assert.has_error(function() NickelConf.frontLightLevel.set() end)
+            assert.has_error(function() NickelConf.frontLightState.set() end)
+
+            fd = io.open(fn, "r")
+            assert.Equals([[
+[PowerOptions]
+foo=bar
+[OtherThing]
+bar=baz
+]], fd:read("*a"))
+            fd:close()
+            os.remove(fn)
+        end)
     end)
 end)
