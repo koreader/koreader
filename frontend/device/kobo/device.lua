@@ -233,6 +233,28 @@ local KoboFrost = Kobo:new{
     },
 }
 
+-- Kobo Libra:
+-- NOTE: Assume the same quirks as the Forma apply.
+local KoboStorm = Kobo:new{
+    model = "Kobo_storm",
+    hasFrontlight = yes,
+    hasKeys = yes,
+    canToggleGSensor = yes,
+    touch_snow_protocol = true,
+    misc_ntx_gsensor_protocol = true,
+    display_dpi = 300,
+    hasNaturalLight = yes,
+    frontlight_settings = {
+        frontlight_white = "/sys/class/backlight/mxc_msp430.0/brightness",
+        frontlight_mixer = "/sys/class/backlight/tlc5947_bl/color",
+        -- Warmth goes from 0 to 10 on the device's side (our own internal scale is still normalized to [0...100])
+        -- NOTE: Those three extra keys are *MANDATORY* if frontlight_mixer is set!
+        nl_min = 0,
+        nl_max = 10,
+        nl_inverted = true,
+    },
+}
+
 -- This function will update itself after the first touch event
 local probeEvEpochTime
 probeEvEpochTime = function(self, ev)
@@ -777,6 +799,8 @@ elseif codename == "nova" then
     return KoboNova
 elseif codename == "frost" then
     return KoboFrost
+elseif codename == "storm" then
+    return KoboStorm
 else
     error("unrecognized Kobo model "..codename)
 end
