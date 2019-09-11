@@ -163,7 +163,7 @@ function NumberPickerWidget:paintWidget()
                                     })
                                 elseif input_value and input_value > self.value_max then
                                     UIManager:show(InfoMessage:new{
-                                        text = T(_("This value should be %1 or less"), self.value_max),
+                                        text = T(_("This value should be %1 or less."), self.value_max),
                                         timeout = 2,
                                     })
                                 else
