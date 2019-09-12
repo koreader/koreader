@@ -255,7 +255,7 @@ function Screensaver:show(event, fallback_message)
         screensaver_type = "cover"
     end
     if screensaver_type == "cover" then
-        local lastfile = lastfile or G_reader_settings:readSetting("lastfile")
+        lastfile = lastfile ~= nil and lastfile or G_reader_settings:readSetting("lastfile")
         local exclude = false -- consider it not excluded if there's no docsetting
         if DocSettings:hasSidecarFile(lastfile) then
             local doc_settings = DocSettings:open(lastfile)
@@ -289,7 +289,6 @@ function Screensaver:show(event, fallback_message)
         end
     end
     if screensaver_type == "bookstatus" then
-        local lastfile = G_reader_settings:readSetting("lastfile")
         if lfs.attributes(lastfile, "mode") == "file" then
             local doc = DocumentRegistry:openDocument(lastfile)
             local doc_settings = DocSettings:open(lastfile)
