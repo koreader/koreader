@@ -747,9 +747,7 @@ function UIManager:_checkTasks()
             -- task is pending to be executed right now. do it.
             -- NOTE: be careful that task.action() might modify
             -- _task_queue here. So need to avoid race condition
-            if task.args then
-                task.action(unpack(task.args))
-            end
+            task.action(unpack(task.args or {}))
         else
             -- queue is sorted in ascendant order, safe to assume all items
             -- are future tasks for now
