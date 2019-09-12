@@ -386,7 +386,7 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
 end
 
 -- schedule an execution task, task queue is in ascendant order
-function UIManager:schedule(time, action, context)
+function UIManager:schedule(time, action, ...)
     local p, s, e = 1, 1, #self._task_queue
     if e ~= 0 then
         local us = time[1] * MILLION + time[2]
@@ -419,7 +419,7 @@ function UIManager:schedule(time, action, context)
     table.insert(self._task_queue, p, {
         time = time,
         action = action,
-        context = context,
+        args = {...},
     })
     self._task_queue_dirty = true
 end
@@ -430,7 +430,7 @@ dbg:guard(UIManager, 'schedule',
     end)
 
 --- Schedules task in a certain amount of seconds (fractions allowed) from now.
-function UIManager:scheduleIn(seconds, action, context)
+function UIManager:scheduleIn(seconds, action, ...)
     local when = { util.gettime() }
     local s = math.floor(seconds)
     local usecs = (seconds - s) * MILLION
@@ -440,7 +440,7 @@ function UIManager:scheduleIn(seconds, action, context)
         when[1] = when[1] + 1
         when[2] = when[2] - MILLION
     end
-    self:schedule(when, action, context)
+    self:schedule(when, action, ...)
 end
 dbg:guard(UIManager, 'scheduleIn',
     function(self, seconds, action)
@@ -747,7 +747,7 @@ function UIManager:_checkTasks()
             -- task is pending to be executed right now. do it.
             -- NOTE: be careful that task.action() might modify
             -- _task_queue here. So need to avoid race condition
-            task.action(task.context)
+            task.action(unpack(task.args))
         else
             -- queue is sorted in ascendant order, safe to assume all items
             -- are future tasks for now
