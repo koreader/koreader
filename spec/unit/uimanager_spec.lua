@@ -22,9 +22,9 @@ describe("UIManager spec", function()
             { time = future2, action = noop },
         }
         UIManager:_checkTasks()
-        assert.are.same(#UIManager._task_queue, 2)
-        assert.are.same(UIManager._task_queue[1].time, future)
-        assert.are.same(UIManager._task_queue[2].time, future2)
+        assert.are.same(2, #UIManager._task_queue, 2)
+        assert.are.same(future, UIManager._task_queue[1].time)
+        assert.are.same(future2, UIManager._task_queue[2].time)
     end)
 
     it("should calcualte wait_until properly in checkTasks routine", function()
@@ -39,7 +39,7 @@ describe("UIManager spec", function()
             { time = {future[1] + 5, future[2]}, action = noop },
         }
         wait_until, now = UIManager:_checkTasks()
-        assert.are.same(wait_until, future)
+        assert.are.same(future, wait_until)
     end)
 
     it("should return nil wait_until properly in checkTasks routine", function()
@@ -51,7 +51,7 @@ describe("UIManager spec", function()
             { time = now, action = noop },
         }
         wait_until, now = UIManager:_checkTasks()
-        assert.are.same(wait_until, nil)
+        assert.are.same(nil, wait_until)
     end)
 
     it("should insert new task properly in empty task queue", function()
@@ -61,7 +61,7 @@ describe("UIManager spec", function()
         assert.are.same(0, #UIManager._task_queue)
         UIManager:scheduleIn(50, 'foo')
         assert.are.same(1, #UIManager._task_queue)
-        assert.are.same(UIManager._task_queue[1].action, 'foo')
+        assert.are.same('foo', UIManager._task_queue[1].action)
     end)
 
     it("should insert new task properly in single task queue", function()
@@ -74,7 +74,7 @@ describe("UIManager spec", function()
         assert.are.same(1, #UIManager._task_queue)
         UIManager:scheduleIn(150, 'quz')
         assert.are.same(2, #UIManager._task_queue)
-        assert.are.same(UIManager._task_queue[1].action, 'quz')
+        assert.are.same('quz', UIManager._task_queue[1].action)
 
         UIManager:quit()
         UIManager._task_queue = {
@@ -83,10 +83,10 @@ describe("UIManager spec", function()
         assert.are.same(1, #UIManager._task_queue)
         UIManager:scheduleIn(150, 'foo')
         assert.are.same(2, #UIManager._task_queue)
-        assert.are.same(UIManager._task_queue[2].action, 'foo')
+        assert.are.same('foo', UIManager._task_queue[2].action)
         UIManager:scheduleIn(155, 'bar')
         assert.are.same(3, #UIManager._task_queue)
-        assert.are.same(UIManager._task_queue[3].action, 'bar')
+        assert.are.same('bar', UIManager._task_queue[3].action)
     end)
 
     it("should insert new task in ascendant order", function()
@@ -151,7 +151,7 @@ describe("UIManager spec", function()
             { time = now, action = task_to_remove },
         }
         UIManager:_checkTasks()
-        assert.are.same(run_count, 2)
+        assert.are.same(2, run_count)
     end)
 
     it("should clear _task_queue_dirty bit before looping", function()
@@ -181,8 +181,8 @@ describe("UIManager spec", function()
                 end
             })
 
-            assert.equals(UIManager._window_stack[1].widget.x_prefix_test_number, 2)
-            assert.equals(UIManager._window_stack[2].widget.x_prefix_test_number, 1)
+            assert.equals(2, UIManager._window_stack[1].widget.x_prefix_test_number)
+            assert.equals(1, UIManager._window_stack[2].widget.x_prefix_test_number)
         end)
         it("should insert second modal widget on top of first modal widget", function()
             UIManager:show({
@@ -193,9 +193,9 @@ describe("UIManager spec", function()
                 end
             })
 
-            assert.equals(UIManager._window_stack[1].widget.x_prefix_test_number, 2)
-            assert.equals(UIManager._window_stack[2].widget.x_prefix_test_number, 1)
-            assert.equals(UIManager._window_stack[3].widget.x_prefix_test_number, 3)
+            assert.equals(2, UIManager._window_stack[1].widget.x_prefix_test_number)
+            assert.equals(1, UIManager._window_stack[2].widget.x_prefix_test_number)
+            assert.equals(3, UIManager._window_stack[3].widget.x_prefix_test_number)
         end)
     end)
 
@@ -306,9 +306,9 @@ describe("UIManager spec", function()
         }
 
         UIManager:sendEvent("foo")
-        assert.is.same(call_signals[1], 1)
-        assert.is.same(call_signals[2], 1)
-        assert.is.same(call_signals[3], 1)
+        assert.is.same(1, call_signals[1])
+        assert.is.same(1, call_signals[2])
+        assert.is.same(1, call_signals[3])
     end)
 
     it("should handle stack change when broadcasting events", function()
@@ -350,7 +350,7 @@ describe("UIManager spec", function()
             },
         }
         UIManager:broadcastEvent("foo")
-        assert.is.same(#UIManager._window_stack, 0)
+        assert.is.same(0, #UIManager._window_stack)
     end)
 
     it("should handle stack change when closing widgets", function()
