@@ -57,6 +57,19 @@ return {
         end
     },
     {
+        text = _("Use document cover as screensaver"),
+        checked_func = function()
+            if screensaverType() == "document_cover" then
+                return true
+            else
+                return false
+            end
+        end,
+        callback = function()
+            G_reader_settings:saveSetting("screensaver_type", "document_cover")
+        end
+    },
+    {
         text = _("Use image as screensaver"),
         checked_func = function()
             if screensaverType() == "image_file" then
@@ -124,6 +137,13 @@ return {
                 keep_menu_open = true,
                 callback = function()
                     Screensaver:chooseFile()
+                end,
+            },
+            {
+                text = _("Document cover"),
+                keep_menu_open = true,
+                callback = function()
+                    Screensaver:chooseFile(true)
                 end,
             },
             {

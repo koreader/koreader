@@ -93,11 +93,12 @@ function Screensaver:chooseFolder()
     UIManager:show(self.choose_dialog)
 end
 
-function Screensaver:chooseFile()
+function Screensaver:chooseFile(document_cover)
+    local text = document_cover and _("Choose document cover") or _("Choose screensaver image")
     local buttons = {}
     table.insert(buttons, {
         {
-            text = _("Choose screensaver image"),
+            text = text,
             callback = function()
                 UIManager:close(self.choose_dialog)
                 local util = require("util")
@@ -107,18 +108,28 @@ function Screensaver:chooseFile()
                     select_file = true,
                     file_filter = function(filename)
                         local suffix = util.getFileNameSuffix(filename)
-                        if screensaver_provider[suffix] then
+                        if document_cover and DocumentRegistry:hasProvider(filename) then
+                            return true
+                        elseif screensaver_provider[suffix] then
                             return true
                         end
                     end,
                     detailed_file_info = true,
                     path = self.root_path,
                     onConfirm = function(file_path)
-                        G_reader_settings:saveSetting("screensaver_image", file_path)
-                        UIManager:show(InfoMessage:new{
-                            text = T(_("Screensaver image set to:\n%1"), file_path),
-                            timeout = 3,
-                        })
+                        if document_cover then
+                            G_reader_settings:saveSetting("screensaver_document_cover", file_path)
+                            UIManager:show(InfoMessage:new{
+                                text = T(_("Screensaver document cover set to:\n%1"), file_path),
+                                timeout = 3,
+                            })
+                        else
+                            G_reader_settings:saveSetting("screensaver_image", file_path)
+                            UIManager:show(InfoMessage:new{
+                                text = T(_("Screensaver image set to:\n%1"), file_path),
+                                timeout = 3,
+                            })
+                        end
                     end
                 }
                 UIManager:show(path_chooser)
@@ -134,11 +145,14 @@ function Screensaver:chooseFile()
         }
     })
     local screensaver_image = G_reader_settings:readSetting("screensaver_image")
+    local screensaver_document_cover = G_reader_settings:readSetting("screensaver_document_cover")
     if screensaver_image == nil then
         screensaver_image = DataStorage:getDataDir() .. "/resources/koreader.png"
     end
+    local title = document_cover and T(_("Current screensaver document cover:\n %1"), screensaver_document_cover)
+        or T(_("Current screensaver image:\n %1"), screensaver_image)
     self.choose_dialog = ButtonDialogTitle:new{
-        title = T(_("Current screensaver image:\n %1"), screensaver_image),
+        title = title,
         buttons = buttons
     }
     UIManager:show(self.choose_dialog)
@@ -234,8 +248,14 @@ function Screensaver:show(event, fallback_message)
     elseif self:noBackground() then
         background = nil
     end
+    local lastfile = G_reader_settings:readSetting("lastfile")
+    if screensaver_type == "document_cover" then
+        -- Set lastfile to the document of which we want to show the cover.
+        lastfile = G_reader_settings:readSetting("screensaver_document_cover")
+        screensaver_type = "cover"
+    end
     if screensaver_type == "cover" then
-        local lastfile = G_reader_settings:readSetting("lastfile")
+        local lastfile = lastfile or G_reader_settings:readSetting("lastfile")
         local exclude = false -- consider it not excluded if there's no docsetting
         if DocSettings:hasSidecarFile(lastfile) then
             local doc_settings = DocSettings:open(lastfile)
