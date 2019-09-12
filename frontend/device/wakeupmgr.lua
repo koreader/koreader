@@ -105,7 +105,10 @@ function WakeupMgr:wakeupAction()
         if self:validateWakeupAlarmByProximity(task.epoch) then
             task.callback()
             self:removeTask(1)
-            self:setWakeupAlarm((self._task_queue[1] or {}).epoch)
+            if self._task_queue[1] then
+                -- Set next scheduled wakeup, if any.
+                self:setWakeupAlarm(self._task_queue[1].epoch)
+            end
             return true
         else
             return false
