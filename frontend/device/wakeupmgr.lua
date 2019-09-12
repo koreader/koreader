@@ -21,7 +21,7 @@ WakeupMgr base class.
 --]]
 local WakeupMgr = {
     dev_rtc = "/dev/rtc0", -- RTC device
-    _task_queue = {},
+    _task_queue = {},      -- Table with epoch at which to schedule the task and the function to be scheduled.
 }
 
 --[[--
@@ -99,6 +99,16 @@ function WakeupMgr:removeTask(idx, epoch, callback)
     end
 end
 
+--[[--
+Execute wakeup action.
+
+This method should be called by the device resume logic in case of a scheduled wakeup.
+
+It checks if the wakeup was scheduled by us using @{validateWakeupAlarmByProximity},
+executes the task, and schedules the next wakeup if any.
+
+@treturn bool
+--]]
 function WakeupMgr:wakeupAction()
     if #self._task_queue > 0 then
         local task = self._task_queue[1]
@@ -116,28 +126,58 @@ function WakeupMgr:wakeupAction()
     end
 end
 
+--[[--
+Set wakeup alarm.
+
+Simple wrapper for @{ffi.rtc.setWakeupAlarm}.
+--]]
 function WakeupMgr:setWakeupAlarm(epoch, enabled)
     return RTC:setWakeupAlarm(epoch, enabled)
 end
 
+--[[--
+Unset wakeup alarm.
+
+Simple wrapper for @{ffi.rtc.unsetWakeupAlarm}.
+--]]
 function WakeupMgr:unsetWakeupAlarm()
     return RTC:unsetWakeupAlarm()
 end
 
---- Get wakealarm as set by us.
+--[[--
+Get wakealarm as set by us.
+
+Simple wrapper for @{ffi.rtc.getWakeupAlarm}.
+--]]
 function WakeupMgr:getWakeupAlarm()
     return RTC:getWakeupAlarm()
 end
 
---- Get RTC wakealarm from system.
+--[[--
+Get RTC wakealarm from system.
+
+Simple wrapper for @{ffi.rtc.getWakeupAlarm}.
+--]]
 function WakeupMgr:getWakeupAlarmSys()
     return RTC:getWakeupAlarmSys()
 end
 
+--[[--
+Validate wakeup alarm.
+
+Checks if we set the alarm.
+
+Simple wrapper for @{ffi.rtc.validateWakeupAlarmByProximity}.
+--]]
 function WakeupMgr:validateWakeupAlarmByProximity()
     return RTC:validateWakeupAlarmByProximity()
 end
 
+--[[--
+Check if a wakeup is scheduled.
+
+Simple wrapper for @{ffi.rtc.isWakeupAlarmScheduled}.
+--]]
 function WakeupMgr:isWakeupAlarmScheduled()
     local wakeup_scheduled = RTC:isWakeupAlarmScheduled()
     logger.dbg("isWakeupAlarmScheduled", wakeup_scheduled)
