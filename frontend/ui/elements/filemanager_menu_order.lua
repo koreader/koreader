@@ -42,6 +42,7 @@ local order = {
         "time",
         "battery",
         "autosuspend",
+        "autoshutdown",
         "ignore_sleepcover",
         "ignore_open_sleepcover",
         "mass_storage_settings",
