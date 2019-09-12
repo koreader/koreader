@@ -1,10 +1,10 @@
 local Generic = require("device/generic/device")
-local TimeVal = require("ui/timeval")
 local Geom = require("ui/geometry")
+local TimeVal = require("ui/timeval")
 local WakeupMgr = require("device/wakeupmgr")
+local logger = require("logger")
 local util = require("ffi/util")
 local _ = require("gettext")
-local logger = require("logger")
 
 local function yes() return true end
 local function no() return false end
