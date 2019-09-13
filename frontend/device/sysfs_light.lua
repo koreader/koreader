@@ -54,7 +54,7 @@ dbg:guard(SysfsLight, 'setWarmth',
                      "Wrong warmth value given!")
           end)
 
-function SysfsLight:_brightness_to_raw(brightness, warmth, exponent, gain, offest)
+function SysfsLight:_brightness_to_raw(brightness, warmth, exponent, gain, offset)
     -- On Nickel, the values for white/red/green are roughly linearly dependent
     -- on the 4th root of brightness and warmth.
     return gain * math.pow(brightness * warmth, exponent) + offset
