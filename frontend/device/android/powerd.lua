@@ -61,7 +61,14 @@ function AndroidPowerD:frontlightIntensityHW()
 end
 
 function AndroidPowerD:isFrontlightOnHW()
-    return self.hw_intensity > 0
+    if self.device:hanNaturalLight() then
+        local white = self.fl:_get_light_value(self.fl.frontlight_white) or 0
+        local green = self.fl:_get_light_value(self.fl.frontlight_green) or 0
+        local red = self.fl:_get_light_value(self.fl.frontlight_red) or 0
+        return (white + green + red) > 0
+    else
+        return self.hw_intensity > 0
+    end
 end
 
 function AndroidPowerD:setIntensityHW(intensity)

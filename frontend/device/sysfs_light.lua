@@ -22,6 +22,8 @@ local SysfsLight = {
     red_offset = 0,
     green_offset = -65,
     exponent = 0.25,
+    bl_power_on = 31,
+    bl_power_off = 0,
 }
 
 function SysfsLight:new(o)
@@ -117,15 +119,54 @@ dbg:guard(SysfsLight, 'setNaturalBrightness',
                      "Wrong warmth value given!")
           end)
 
+function SysfsLight:_get_bl_power(sysfs_directory)
+    local bl_power = self:_read_value(sysfs_directory .. "/bl_power")
+    if self.bl_power_on ~= nil and bl_power == self.bl_power_on then
+        return true
+    elseif self.bl_power_off ~= nil and bl_power == self.bl_power_off then
+        return false
+    else
+        return nil
+    end
+end
+
+function SysfsLight:_set_bl_power(sysfs_directory, is_on)
+    if not sysfs_directory then return end
+    local bl_power_directory = sysfs_directory .. "/bl_power"
+    if is_on and self.bl_power_on ~= nil then
+        return self:_write_value(bl_power_directory, self.bl_power_on)
+    elseif not is_on and self.bl_power_off ~= nil then
+        return self:_write_value(bl_power_directory, self.bl_power_off)
+    else
+        return false
+    end
+end
+
+function SysfsLight:_get_light_value(sysfs_directory)
+    if not sysfs_directory then return end
+    local brightness = self:_read_value(sysfs_directory .. "/brightness")
+    local is_on = self:_get_bl_power(sysfs_directory)
+    return brightness, is_on
+end
+
 function SysfsLight:_set_light_value(sysfs_directory, value)
     if not sysfs_directory then return end
-    -- bl_power is '31' when the light is turned on, '0' otherwise.
-    if (value > 0) then
-        self:_write_value(sysfs_directory .. "/bl_power", 31)
-    else
-        self:_write_value(sysfs_directory .. "/bl_power", 0)
-    end
+    self:_set_bl_power(sysfs_directory, value > 0)
     self:_write_value(sysfs_directory .. "/brightness", value)
+end
+
+function SysfsLight:_read_value(filename, value)
+    local f = io.open(filename, "r")
+    if not f then
+        logger.err("Could not open file: ", filename)
+        return
+    end
+    local ret = f:read("n")
+    io.close(f)
+    if ret == nil then
+        logger.err("Read error.")
+    end
+    return ret
 end
 
 function SysfsLight:_write_value(file, value)

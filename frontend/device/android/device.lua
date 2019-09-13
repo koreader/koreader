@@ -113,6 +113,8 @@ local BooxNovaPro = Device:new{
     frontlight_settings = {
         frontlight_white = "/sys/class/backlight/white",
         frontlight_red = "/sys/class/backlight/warm",
+        bl_power_off = nil,
+        bl_power_on = nil,
     },
 }
 
