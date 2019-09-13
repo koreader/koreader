@@ -166,14 +166,26 @@ function FrontLightWidget:setProgress(num, step, num_warmth)
                     else
                         self:setProgress(i * step, step)
                     end
-                end
+                end,
+                pan_callback = function()
+                    if i * step == self.fl_cur then return end
+                    if i == step_min then
+                        self:setProgress(self.fl_min, step)
+                    else
+                        self:setProgress(i * step, step)
+                    end
+                end,
             })
         end
     end
 
     for i = step_num + 1, step_min + self.steps -1 do
         table.insert(fl_group, self.fl_prog_button:new{
-            callback = function() self:setProgress(i * step, step) end
+            callback = function() self:setProgress(i * step, step) end,
+            pan_callback = function()
+                if i * step == self.fl_cur then return end
+                self:setProgress(i * step, step)
+            end,
         })
     end
     local text_br = TextBoxWidget:new{
