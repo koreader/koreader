@@ -153,8 +153,7 @@ end
 
 function AndroidPowerD:afterResume()
     if self.fl == nil then return end
-    -- Don't bother if the light was already off on suspend
-    if not self.fl_was_on then return end
+    self:_decideFrontlightState()
     -- Update AutoWarmth state
     if self.fl_warmth ~= nil and self.auto_warmth then
         self:calculateAutoWarmth()

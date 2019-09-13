@@ -110,6 +110,7 @@ local Device = Generic:new{
 local BooxNovaPro = Device:new{
     model = "Onyx_Boox_NovaPro",
     hasNaturalLight = yes,
+    hasLightLevelFallback = no,
     frontlight_settings = {
         frontlight_white = "/sys/class/backlight/white",
         frontlight_red = "/sys/class/backlight/warm",
