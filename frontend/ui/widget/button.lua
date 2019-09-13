@@ -109,6 +109,13 @@ function Button:init()
                 },
                 doc = "Hold Button",
             },
+            PanSelectButton = {
+                GestureRange:new{
+                    ges = "pan",
+                    range = self.dimen,
+                },
+                doc = "Hold Button",
+            },
             -- Safe-guard for when used inside a MovableContainer
             HoldReleaseSelectButton = {
                 GestureRange:new{
@@ -249,6 +256,19 @@ function Button:onHoldSelectButton()
         self:onInput(self.hold_input, true)
     elseif type(self.hold_input_func) == "function" then
         self:onInput(self.hold_input_func(), true)
+    end
+    if self.readonly ~= true then
+        return true
+    end
+end
+
+function Button:onPanSelectButton()
+    if self.enabled and self.pan_callback then
+        self.pan_callback()
+    elseif self.pan_input then
+        self:onInput(self.pan_input, true)
+    elseif type(self.pan_input_func) == "function" then
+        self:onInput(self.pan_input_func(), true)
     end
     if self.readonly ~= true then
         return true
