@@ -248,6 +248,7 @@ Note that your selected font size is not affected by this setting.]]),
                 },
                 default_pos = 7,
                 default_value = DCREREADER_CONFIG_LINE_SPACE_PERCENT_MEDIUM,
+                more_options = true,
                 event = "SetLineSpace",
                 args = {
                     DCREREADER_CONFIG_LINE_SPACE_PERCENT_X_TINY,

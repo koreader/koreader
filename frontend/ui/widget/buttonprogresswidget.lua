@@ -22,6 +22,7 @@ local ButtonProgressWidget = InputContainer:new{
     default_position = nil,
     thin_grey_style = false, -- default to black
     fine_tune = false, -- no -/+ buttons on the extremities by default
+    more_options = false, -- no "⋮" button
 }
 
 function ButtonProgressWidget:init()
@@ -49,6 +50,9 @@ function ButtonProgressWidget:update()
     local buttons_count = self.num_buttons
     if self.fine_tune then
        buttons_count = buttons_count + 2
+    end
+    if self.more_options then
+        buttons_count = buttons_count + 1
     end
     local button_width = math.floor(self.width / buttons_count) - 2*button_padding - 2*button_margin - 2*button_bordersize
 
@@ -162,6 +166,35 @@ function ButtonProgressWidget:update()
             no_focus = true,
             hold_callback = function()
                 self.hold_callback("+")
+            end,
+        }
+        if self.thin_grey_style then
+            button.frame.color = Blitbuffer.COLOR_DARK_GRAY
+        end
+        table.insert(self.buttonprogress_content, button)
+    end
+    -- More option button on the right
+    if self.more_options then
+        local margin = button_margin * 6
+        local extra_border_size = 0
+        local button = Button:new{
+            text = "⋮",
+            radius = 0,
+            margin = margin,
+            padding = button_padding,
+            bordersize = button_bordersize + extra_border_size,
+            enabled = true,
+            width = button_width - 2*extra_border_size,
+            preselect = false,
+            text_font_face = self.font_face,
+            text_font_size = self.font_size,
+            callback = function()
+                self.callback("⋮")
+                self:update()
+            end,
+            no_focus = true,
+            hold_callback = function()
+                self.hold_callback("⋮")
             end,
         }
         if self.thin_grey_style then
