@@ -54,6 +54,12 @@ dbg:guard(SysfsLight, 'setWarmth',
                      "Wrong warmth value given!")
           end)
 
+function SysfsLight:_brightness_to_raw(brightness, warmth, exponent, gain, offest)
+    -- On Nickel, the values for white/red/green are roughly linearly dependent
+    -- on the 4th root of brightness and warmth.
+    return gain * math.pow(brightness * warmth, exponent) + offset
+end
+
 function SysfsLight:setNaturalBrightness(brightness, warmth)
     local set_brightness = true
     local set_warmth = true
@@ -86,21 +92,19 @@ function SysfsLight:setNaturalBrightness(brightness, warmth)
         local green = 0
         local white = 0
         if brightness > 0 then
-            -- On Nickel, the values for white/red/green are roughly linearly dependent
-            -- on the 4th root of brightness and warmth.
-            white = math.min(self.white_gain * math.pow(brightness, self.exponent) *
-                             math.pow(100 - warmth, self.exponent) + self.white_offset, 255)
+            white = self:_brightness_to_raw(brightness, 100 - warmth,
+                                            self.exponent, self.white_gain, self.white_offset)
         end
         if warmth > 0 then
-            red = math.min(self.red_gain * math.pow(brightness, self.exponent) *
-                           math.pow(warmth, self.exponent) + self.red_offset, 255)
-            green = math.min(self.green_gain * math.pow(brightness, self.exponent) *
-                             math.pow(warmth, self.exponent) + self.green_offset, 255)
+            red = self:_brightness_to_raw(brightness, warmth,
+                                          self.exponent, self.red_gain, self.red_offset)
+            green = self:_brightness_to_raw(brightness, warmth,
+                                            self.exponent, self.green_gain, self.green_offset)
         end
 
-        white = math.max(white, 0)
-        red = math.max(red, 0)
-        green = math.max(green, 0)
+        white = math.min(math.max(white, 0), 255)
+        red = math.min(math.max(red, 0), 255)
+        green = math.min(math.max(green, 0), 255)
 
         self:_set_light_value(self.frontlight_white, math.floor(white))
         self:_set_light_value(self.frontlight_green, math.floor(green))
