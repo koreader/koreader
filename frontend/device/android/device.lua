@@ -132,8 +132,6 @@ function Device:init()
                 or ev.code == C.APP_CMD_INIT_WINDOW
                 or ev.code == C.APP_CMD_WINDOW_REDRAW_NEEDED then
                 this.device.screen:_updateWindow()
-            elseif ev.code == C.APP_CMD_PAUSE then
-                self.powerd:beforeSuspend()
             elseif ev.code == C.APP_CMD_RESUME then
                 EXTERNAL_DICTS_AVAILABILITY_CHECKED = false
                 if external_dict_when_back_callback then

@@ -61,7 +61,7 @@ function AndroidPowerD:frontlightIntensityHW()
 end
 
 function AndroidPowerD:isFrontlightOnHW()
-    if self.device:hanNaturalLight() then
+    if self.device:hasNaturalLight() then
         local white = self.fl:_get_light_value(self.fl.frontlight_white) or 0
         local green = self.fl:_get_light_value(self.fl.frontlight_green) or 0
         local red = self.fl:_get_light_value(self.fl.frontlight_red) or 0
@@ -149,12 +149,6 @@ end
 
 function AndroidPowerD:isChargingHW()
     return android.isCharging()
-end
-
-function AndroidPowerD:beforeSuspend()
-    if self.fl == nil then return end
-    self.fl_was_on = self.is_fl_on
-    self:turnOffFrontlight()
 end
 
 function AndroidPowerD:afterResume()
