@@ -34,8 +34,8 @@ local SpinWidget = InputContainer:new{
     ok_text = _("OK"),
     cancel_text = _("Cancel"),
     -- extra button on bottom
-    custom_text = nil,
-    callback_custom = nil,
+    extra_text = nil,
+    extra_callback = nil,
     -- set this to see extra default button
     default_value = nil,
     default_text = _("Use default"),
@@ -144,14 +144,14 @@ function SpinWidget:update()
             },
         })
     end
-        if self.custom_text then
+        if self.extra_text then
             table.insert(buttons,{
                 {
-                    text = self.custom_text,
+                    text = self.extra_text,
                     callback = function()
-                        if self.callback_custom then
+                        if self.extra_callback then
                             self.value = value_widget:getValue()
-                            self.callback_custom(self)
+                            self.extra_callback(self)
                         end
                         self:onClose()
                     end,

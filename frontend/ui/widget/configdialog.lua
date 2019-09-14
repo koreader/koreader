@@ -556,7 +556,7 @@ function ConfigOption:init()
                                 self.options[c].event, self.options[c].args, self.options[c].events, arg, self.options[c].delay_repaint)
                         elseif arg == "⋮" then
                             self.config:onConfigMoreChoose(self.options[c].values, self.options[c].name,
-                                self.options[c].event, arg, self.options[c].name_text, self.options[c].delay_repaint)
+                                self.options[c].event, arg, self.options[c].name_text, self.options[c].delay_repaint, self.options[c].more_options_param)
                         else
                             self.config:onConfigChoose(self.options[c].values, self.options[c].name,
                                 self.options[c].event, self.options[c].args, self.options[c].events, arg, self.options[c].delay_repaint)
@@ -578,6 +578,7 @@ function ConfigOption:init()
                     enabled = enabled,
                     fine_tune = self.options[c].fine_tune,
                     more_options = self.options[c].more_options,
+                    more_options_param = self.options[c].more_options_param,
                 }
                 switch:setPosition(current_item, default_item)
                 table.insert(option_items_group, switch)
@@ -1029,7 +1030,10 @@ end
 
 -- Tweaked variant used with the more options variant of buttonprogress and fine tune with numpicker
 -- events are not supported
-function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, delay_repaint)
+function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, delay_repaint, more_options_param)
+    if not more_options_param then
+        more_options_param = {}
+    end
     UIManager:tickAfterNext(function()
         -- Repainting may be delayed depending on options
         local refresh_dialog_func = function()
@@ -1059,7 +1063,9 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, d
             self.skip_paint = true
         end
         local value_hold_step = 0
-        if #values >1 then
+        if more_options_param.value_hold_step then
+            value_hold_step = more_options_param.value_hold_step
+        elseif #values >1 then
             value_hold_step = values[2] - values[1]
         end
         if values and event then
@@ -1068,12 +1074,13 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, d
             local items = SpinWidget:new{
                 width = Screen:getWidth() * 0.6,
                 value = curr_items,
-                value_min = values[1],
+                value_min = more_options_param.value_min or values[1],
+                value_step = more_options_param.value_step or 1,
                 value_hold_step = value_hold_step,
-                value_max = values[#values],
+                value_max = more_options_param.value_max or values[#values],
                 ok_text = _("Apply"),
-                custom_text = _("Set default"),
-                callback_custom = function(spin)
+                extra_text = _("Set default"),
+                extra_callback = function(spin)
                     UIManager:show(ConfirmBox:new{
                         text = T(_("Set default %1 to %2?"), (name_text or ""), spin.value),
                         ok_text = T(_("Set default")),
@@ -1089,7 +1096,6 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, d
 
                 end,
                 title_text =  name_text or _("Set value"),
-
                 callback = function(spin)
                     self:onConfigChoice(name, spin.value)
                     if event then
