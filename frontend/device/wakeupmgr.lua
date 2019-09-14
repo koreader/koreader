@@ -55,6 +55,7 @@ function WakeupMgr:addTask(seconds_from_now, callback)
     if not type(seconds_from_now) == "number" and not type(callback) == "function" then return end
 
     local epoch = RTC:secondsFromNowToEpoch(seconds_from_now)
+    logger.info("WakeupMgr: scheduling wakeup for:", seconds_from_now, epoch)
 
     local old_upcoming_task = (self._task_queue[1] or {}).epoch
 
