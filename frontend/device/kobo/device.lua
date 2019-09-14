@@ -564,12 +564,12 @@ local function check_unexpected_wakeup()
     UIManager:unschedule(Kobo.suspend)
 
     if WakeupMgr:isWakeupAlarmScheduled() and WakeupMgr:validateWakeupAlarmByProximity() then
-        logger.dbg("Kobo suspend: scheduled wakeup.")
+        logger.info("Kobo suspend: scheduled wakeup.")
         local res = WakeupMgr:wakeupAction()
         if not res then
             logger.err("Kobo suspend: wakeup action failed.")
         end
-        logger.dbg("Kobo suspend: putting device back to sleep.")
+        logger.info("Kobo suspend: putting device back to sleep.")
         -- Most wakeup actions are linear, but we need some leeway for the
         -- poweroff action to send out close events to all requisite widgets.
         UIManager:scheduleIn(30, Kobo.suspend)
