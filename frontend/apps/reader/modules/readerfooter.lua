@@ -236,20 +236,20 @@ function ReaderFooter:init()
 
     self.footer_text = TextWidget:new{
         text = '',
-        face = Font:getFace(self.text_font_face, self.text_font_size),
+        face = Font:getFace(self.text_font_face, DMINIBAR_FONT_SIZE),
     }
     -- all width related values will be initialized in self:resetLayout()
     self.text_width = 0
     self.progress_bar = ProgressWidget:new{
         width = nil,
-        height = self.bar_height,
+        height = Screen:scaleBySize(DMINIBAR_HEIGHT),
         percentage = self.progress_percentage,
         tick_width = DMINIBAR_TOC_MARKER_WIDTH,
         ticks = nil, -- ticks will be populated in self:updateFooterText
         last = nil, -- last will be initialized in self:updateFooterText
     }
     self.text_container = RightContainer:new{
-        dimen = Geom:new{ w = 0, h = self.height },
+        dimen = Geom:new{ w = 0, h = Screen:scaleBySize(DMINIBAR_CONTAINER_HEIGHT)},
         self.footer_text,
     }
 
@@ -283,17 +283,17 @@ end
 function ReaderFooter:updateFooterContainer()
     if self.settings.align == "left" then
         self.footer_container = LeftContainer:new{
-            dimen = Geom:new{ w = 0, h = self.height },
+            dimen = Geom:new{ w = 0, h = Screen:scaleBySize(DMINIBAR_CONTAINER_HEIGHT)},
             self.horizontal_group
         }
     elseif self.settings.align == "right" then
         self.footer_container = RightContainer:new{
-            dimen = Geom:new{ w = 0, h = self.height },
+            dimen = Geom:new{ w = 0, h = Screen:scaleBySize(DMINIBAR_CONTAINER_HEIGHT)},
             self.horizontal_group
         }
     else
         self.footer_container = CenterContainer:new{
-            dimen = Geom:new{ w = 0, h = self.height },
+            dimen = Geom:new{ w = 0, h = Screen:scaleBySize(DMINIBAR_CONTAINER_HEIGHT)},
             self.horizontal_group
         }
     end
