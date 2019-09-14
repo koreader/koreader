@@ -18,7 +18,7 @@ local default_autoshutdown_timeout_seconds = 3*24*60*60
 local AutoSuspend = WidgetContainer:new{
     name = "autosuspend",
     is_doc_only = false,
-    autoshutdown_sec = G_reader_settings:readSetting("autoshutdown_timeout_seconds") or default_autoshutdown_timeout_seconds,
+    autoshutdown_timeout_seconds = G_reader_settings:readSetting("autoshutdown_timeout_seconds") or default_autoshutdown_timeout_seconds,
     settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/koboautosuspend.lua"),
     last_action_sec = os.time(),
 }
@@ -49,7 +49,7 @@ function AutoSuspend:_enabled()
 end
 
 function AutoSuspend:_enabledShutdown()
-    return Device:canPowerOff() and self.autoshutdown_sec > 0
+    return Device:canPowerOff() and self.autoshutdown_timeout_seconds > 0
 end
 
 function AutoSuspend:_schedule()
@@ -62,10 +62,10 @@ function AutoSuspend:_schedule()
 
     if PluginShare.pause_auto_suspend then
         delay_suspend = self.auto_suspend_sec
-        delay_shutdown = self.autoshutdown_sec
+        delay_shutdown = self.autoshutdown_timeout_seconds
     else
         delay_suspend = self.last_action_sec + self.auto_suspend_sec - os.time()
-        delay_shutdown = self.last_action_sec + self.autoshutdown_sec - os.time()
+        delay_shutdown = self.last_action_sec + self.autoshutdown_timeout_seconds - os.time()
     end
 
     if delay_suspend <= 0 then
@@ -120,7 +120,7 @@ function AutoSuspend:onSuspend()
     -- when suspending and restart it after resume.
     self:_unschedule()
     if self:_enabledShutdown() and Device.wakeup_mgr then
-        Device.wakeup_mgr:addTask(self.autoshutdown_sec, UIManager.poweroff_action)
+        Device.wakeup_mgr:addTask(self.autoshutdown_timeout_seconds, UIManager.poweroff_action)
     end
 end
 
@@ -168,7 +168,7 @@ function AutoSuspend:addToMainMenu(menu_items)
             local InfoMessage = require("ui/widget/infomessage")
             local Screen = Device.screen
             local SpinWidget = require("ui/widget/spinwidget")
-            local curr_items = G_reader_settings:readSetting("autoshutdown_timeout_seconds") or default_autoshutdown_timeout_seconds
+            local curr_items = self.autoshutdown_timeout_seconds
             local autosuspend_spin = SpinWidget:new {
                 width = Screen:getWidth() * 0.6,
                 value = curr_items / 60 / 60,
