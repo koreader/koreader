@@ -170,8 +170,8 @@ Checks if we set the alarm.
 
 Simple wrapper for @{ffi.rtc.validateWakeupAlarmByProximity}.
 --]]
-function WakeupMgr:validateWakeupAlarmByProximity()
-    return RTC:validateWakeupAlarmByProximity()
+function WakeupMgr:validateWakeupAlarmByProximity(task_alarm_epoch, proximity)
+    return RTC:validateWakeupAlarmByProximity(task_alarm_epoch, proximity)
 end
 
 --[[--
