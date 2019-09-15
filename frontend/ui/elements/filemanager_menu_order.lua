@@ -67,6 +67,7 @@ local order = {
     },
     screen = {
         "screensaver",
+        "screenshot",
         "----------------------------",
         "screen_dpi",
         "screen_eink_opt",

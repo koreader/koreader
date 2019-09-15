@@ -194,6 +194,13 @@ function FileManagerMenu:setUpdateItemTable()
             sub_item_table = require("ui/elements/screensaver_menu"),
         }
     end
+    self.menu_items.screenshot = {
+        text = _("Screenshot directory"),
+        callback = function()
+            local Screenshoter = require("ui/widget/screenshoter")
+            Screenshoter:chooseFolder()
+        end,
+    }
     -- insert common settings
     for id, common_setting in pairs(dofile("frontend/ui/elements/common_settings_menu_table.lua")) do
         self.menu_items[id] = common_setting
