@@ -185,6 +185,7 @@ function VirtualKey:onUnfocus()
 end
 
 function VirtualKey:onTapSelect(skip_flash)
+    Device:performHapticFeedback("KEYBOARD_TAP")
     -- just in case it's not flipped to false on hold release where it's supposed to
     self.keyboard.ignore_first_hold_release = false
     if self.flash_keyboard and not skip_flash and not self.skiptap then
@@ -203,6 +204,7 @@ function VirtualKey:onTapSelect(skip_flash)
 end
 
 function VirtualKey:onHoldSelect()
+    Device:performHapticFeedback("LONG_PRESS")
     if self.flash_keyboard and not self.skiphold then
         self[1].inner_bordersize = self.focused_bordersize
         self:update_keyboard(false, true)
@@ -222,6 +224,7 @@ function VirtualKey:onHoldSelect()
 end
 
 function VirtualKey:onSwipeKey(arg, ges)
+    Device:performHapticFeedback("KEYBOARD_TAP")
     if self.flash_keyboard and not self.skipswipe then
         self[1].inner_bordersize = self.focused_bordersize
         self:update_keyboard(false, true)
@@ -238,6 +241,7 @@ function VirtualKey:onSwipeKey(arg, ges)
 end
 
 function VirtualKey:onHoldReleaseKey()
+    Device:performHapticFeedback("LONG_PRESS")
     if self.keyboard.ignore_first_hold_release then
         self.keyboard.ignore_first_hold_release = false
         return true
@@ -246,6 +250,7 @@ function VirtualKey:onHoldReleaseKey()
 end
 
 function VirtualKey:onPanReleaseKey()
+    Device:performHapticFeedback("LONG_PRESS")
     if self.keyboard.ignore_first_hold_release then
         self.keyboard.ignore_first_hold_release = false
         return true

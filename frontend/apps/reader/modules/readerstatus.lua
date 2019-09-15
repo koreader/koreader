@@ -1,5 +1,6 @@
 local BookStatusWidget = require("ui/widget/bookstatuswidget")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
+local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
@@ -38,6 +39,7 @@ function ReaderStatus:addToMainMenu(menu_items)
 end
 
 function ReaderStatus:onEndOfBook()
+    Device:performHapticFeedback("CONTEXT_CLICK")
     local settings = G_reader_settings:readSetting("end_document_action")
     local choose_action
     local collate = true
