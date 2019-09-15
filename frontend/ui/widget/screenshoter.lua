@@ -67,7 +67,7 @@ function Screenshoter:chooseFolder()
                     onConfirm = function(path)
                         G_reader_settings:saveSetting("screenshot_dir", path .. "/")
                         UIManager:show(InfoMessage:new{
-                            text = T(_("Screenshoot directory set to:\n%1"), path),
+                            text = T(_("Screenshot directory set to:\n%1"), path),
                             timeout = 3,
                         })
                     end,
