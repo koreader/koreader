@@ -28,6 +28,8 @@ function AndroidPowerD:init()
         -- Does this device's NaturalLight use a custom scale?
         self.fl_warmth_min = self.device.frontlight_settings["nl_min"] or self.fl_warmth_min
         self.fl_warmth_max = self.device.frontlight_settings["nl_max"] or self.fl_warmth_max
+        self.fl_min = self.device.frontlight_settings["fl_min"] or self.fl_min
+        self.fl_max = self.device.frontlight_settings["fl_max"] or self.fl_max
         self.fl = SysfsLight:new(self.device.frontlight_settings)
         self.fl_warmth = 0
         --- @todo Sync sysfs backlight?
@@ -61,7 +63,11 @@ function AndroidPowerD:frontlightIntensityHW()
 end
 
 function AndroidPowerD:isFrontlightOnHW()
-    if self.device:hasNaturalLight() then
+    if self.device:hasNaturalLightMixer() then
+        local white = self.fl:_get_light_value(self.fl.frontlight_white) or 0
+        local mixer = self.fl:_get_light_value(self.fl.frontlight_mixer) or 0
+        return (white + mixer) > 0
+    elseif self.device:hasNaturalLight() then
         local white = self.fl:_get_light_value(self.fl.frontlight_white) or 0
         local green = self.fl:_get_light_value(self.fl.frontlight_green) or 0
         local red = self.fl:_get_light_value(self.fl.frontlight_red) or 0

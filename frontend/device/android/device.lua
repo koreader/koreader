@@ -112,8 +112,11 @@ local BooxNovaPro = Device:new{
     hasNaturalLight = yes,
     hasLightLevelFallback = no,
     frontlight_settings = {
-        frontlight_white = "/sys/class/backlight/white",
-        frontlight_red = "/sys/class/backlight/warm",
+        frontlight_white = "/sys/class/backlight/white/brightness",
+        frontlight_mixer = "/sys/class/backlight/warm/brightness",
+        nl_min = 0, nl_max = 1,
+        fl_warmth_min = 0, fl_warmth_max = 250,
+        fl_min = 0, fl_max = 250,
         bl_power_off = nil,
         bl_power_on = nil,
     },
@@ -212,6 +215,10 @@ function Device:init()
     local last_value = G_reader_settings:readSetting("fl_last_level")
     if type(last_value) == "number" and last_value >= 0 then
         Device:setScreenBrightness(last_value)
+    end
+
+    if self:hasNaturalLight() and self.frontlight_settings and self.frontlight_settings.frontlight_mixer then
+        self.hasNaturalLightMixer = yes
     end
 
     Generic.init(self)
