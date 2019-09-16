@@ -123,7 +123,9 @@ end
 function Button:setText(text, width)
     self.text = text
     self.width = width
+    local dimem = self[1].dimen
     self:init()
+    self[1].dimen = dimem
 end
 
 function Button:setIcon(icon)
