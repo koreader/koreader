@@ -178,13 +178,6 @@ function ReaderMenu:setUpdateItemTable()
         table.remove(self.menu_items.screensaver.sub_item_table, 9)
         table.insert(self.menu_items.screensaver.sub_item_table, ss_book_settings)
     end
-    self.menu_items.screenshot = {
-        text = _("Screenshot directory"),
-        callback = function()
-            local Screenshoter = require("ui/widget/screenshoter")
-            Screenshoter:chooseFolder()
-        end,
-    }
 
     local PluginLoader = require("pluginloader")
     self.menu_items.plugin_management = {

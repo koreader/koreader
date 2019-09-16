@@ -473,4 +473,12 @@ common_settings.document = {
 }
 common_settings.language = Language:getLangMenuTable()
 
+common_settings.screenshot = {
+    text = _("Screenshot directory"),
+    callback = function()
+        local Screenshoter = require("ui/widget/screenshoter")
+        Screenshoter:chooseFolder()
+    end,
+}
+
 return common_settings
