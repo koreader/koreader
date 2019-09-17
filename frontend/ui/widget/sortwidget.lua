@@ -216,7 +216,7 @@ function SortWidget:init()
         width = self.width_widget * 13 / 100,
         callback = function()
             if self.marked > 0 then
-                self:swipeItem(-1)
+                self:moveItem(-1)
             else
                 self:goToPage(1)
             end
@@ -231,7 +231,7 @@ function SortWidget:init()
         width = self.width_widget * 13 / 100,
         callback = function()
             if self.marked > 0 then
-                self:swipeItem(1)
+                self:moveItem(1)
             else
                 self:goToPage(self.pages)
             end
@@ -364,7 +364,7 @@ function SortWidget:nextPage()
     if new_page > self.show_page then
         self.show_page = new_page
         if self.marked > 0 then
-            self:swipeItem(self.items_per_page * (self.show_page - 1) + 1 - self.marked)
+            self:moveItem(self.items_per_page * (self.show_page - 1) + 1 - self.marked)
         end
         self:_populateItems()
     end
@@ -375,7 +375,7 @@ function SortWidget:prevPage()
     if new_page < self.show_page then
         self.show_page = new_page
         if self.marked > 0 then
-            self:swipeItem(self.items_per_page * (self.show_page - 1) + 1 - self.marked)
+            self:moveItem(self.items_per_page * (self.show_page - 1) + 1 - self.marked)
         end
         self:_populateItems()
     end
@@ -386,11 +386,11 @@ function SortWidget:goToPage(page)
     self:_populateItems()
 end
 
-function SortWidget:swipeItem(diff)
-    local swipe_to = self.marked + diff
-    if swipe_to > 0 and swipe_to <= #self.item_table then
-        self.show_page = math.ceil(swipe_to/self.items_per_page)
-        self:swipeItems(self.marked, swipe_to)
+function SortWidget:moveItem(diff)
+    local move_to = self.marked + diff
+    if move_to > 0 and move_to <= #self.item_table then
+        self.show_page = math.ceil(move_to/self.items_per_page)
+        self:moveItemTo(self.marked, move_to)
         self:_populateItems()
     end
 end
@@ -409,7 +409,7 @@ function SortWidget:_populateItems()
     for idx = idx_offset + 1, page_last do
         table.insert(self.main_content, VerticalSpan:new{ width = self.item_margin })
         local invert_status = false
-        if (idx) == self.marked then
+        if idx == self.marked then
             invert_status = true
         end
         table.insert(
@@ -445,7 +445,7 @@ function SortWidget:_populateItems()
     end)
 end
 
-function SortWidget:swipeItems(pos1, pos2)
+function SortWidget:moveItemTo(pos1, pos2)
     if pos1 > 0 or pos2 <= #self.item_table then
         local entry = self.item_table[pos1]
         self.marked = pos2

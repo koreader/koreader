@@ -221,8 +221,11 @@ function ReaderFooter:init()
         local mode_name
         for i = 0, #mode_tbl do
             mode_name = mode_tbl[i]
-            if not ((mode_name == "wifi_status" and not Device:isAndroid())
-                or (mode_name == "frontlight" and not Device:hasFrontlight())) then
+            if mode_name == "wifi_status" and not Device:isAndroid() then
+                do end -- luacheck: ignore 541
+            elseif mode_name == "frontlight" and not Device:hasFrontlight() then
+                do end -- luacheck: ignore 541
+            else
                 self.mode_index[self.mode_nb] = mode_name
                 self.mode_nb = self.mode_nb + 1
             end
