@@ -36,6 +36,10 @@ function EvernoteExporter:init()
     self.evernote_username = settings.username or ""
     self.evernote_token = settings.token
     self.notebook_guid = settings.notebook
+    self.joplin_IP = settings.joplin_IP or "localhost"
+    self.joplin_port = settings.joplin_port or 41184
+    self.joplin_token = settings.joplin_token -- or your token
+    self.joplin_notebook_guid = settings.joplin_notebook_guid or nil
     self.html_export = settings.html_export or false
     if self.html_export then
         self.txt_export = false
@@ -288,6 +292,11 @@ function EvernoteExporter:saveSettings()
         notebook = self.notebook_guid,
         html_export = self.html_export,
         txt_export = self.txt_export,
+        joplin_IP = self.joplin_IP,
+        joplin_port = self.joplin_port,
+        joplin_token = self.joplin_token,
+        joplin_notebook_guid = self.joplin_notebook_guid,
+        joplin_export = self.joplin_export
     }
     G_reader_settings:saveSetting("evernote", settings)
 end
