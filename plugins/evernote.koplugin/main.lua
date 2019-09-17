@@ -10,6 +10,7 @@ local Screen = require("device").screen
 local util = require("ffi/util")
 local Device = require("device")
 local DEBUG = require("dbg")
+local JoplinClient = require("JoplinClient")
 local T = require("ffi/util").template
 local _ = require("gettext")
 local N_ = _.ngettext
@@ -41,10 +42,16 @@ function EvernoteExporter:init()
     self.joplin_token = settings.joplin_token -- or your token
     self.joplin_notebook_guid = settings.joplin_notebook_guid or nil
     self.html_export = settings.html_export or false
+    self.joplin_export = settings.joplin_export or false
+    self.txt_export = settings.txt_export or false
+    --TODO is this if block necessarry? nowhere in the code they are assigned both true
+    --do they check against external modifications to ettings file?
+
     if self.html_export then
         self.txt_export = false
-    else
-        self.txt_export = settings.txt_export or false
+        self.joplin_export = false
+    elseif self.txt_export then 
+        self.joplin_export = false
     end
 
     self.parser = MyClipping:new{
@@ -152,7 +159,10 @@ function EvernoteExporter:addToMainMenu(menu_items)
                 checked_func = function() return self.html_export end,
                 callback = function()
                     self.html_export = not self.html_export
-                    if self.html_export then self.txt_export = false end
+                    if self.html_export then
+                        self.txt_export = false 
+                        self.joplin_export = false 
+                    end
                     self:saveSettings()
                 end
             },
@@ -161,7 +171,10 @@ function EvernoteExporter:addToMainMenu(menu_items)
                 checked_func = function() return self.txt_export end,
                 callback = function()
                     self.txt_export = not self.txt_export
-                    if self.txt_export then self.html_export = false end
+                    if self.txt_export then
+                        self.html_export = false 
+                        self.joplin_export = false 
+                    end
                     self:saveSettings()
                 end
             },
@@ -367,7 +380,7 @@ end
 function EvernoteExporter:exportClippings(clippings)
     local client = nil
     local exported_stamp
-    if not self.html_export and not self.txt_export then
+    if not (self.html_export or self.txt_export or self.joplin_export) then 
         client = require("EvernoteClient"):new{
             domain = self.evernote_domain,
             authToken = self.evernote_token,
@@ -377,6 +390,19 @@ function EvernoteExporter:exportClippings(clippings)
         exported_stamp= "html"
     elseif self.txt_export then
         exported_stamp = "txt"
+    elseif self.joplin_export then
+        exported_stamp = "joplin"
+        joplin_client = JoplinClient:new{
+            server_ip = self.joplin_IP,
+            server_port = self.joplin_port,
+            auth_token = self.joplin_token
+        }
+        --TODO also check if user deleted our notebook, in that case note
+        -- will endup in random folder in Joplin
+        if not self.joplin_notebook_guid then
+            self.joplin_notebook_guid = joplin_client:createNotebook(self.notebook_name) 
+            self:saveSettings()
+        end
     else
         assert("an exported_stamp is expected for a new export type")
     end
@@ -395,6 +421,8 @@ function EvernoteExporter:exportClippings(clippings)
                 ok, err = pcall(self.exportBooknotesToHTML, self, title, booknotes)
             elseif self.txt_export then
                 ok, err = pcall(self.exportBooknotesToTXT, self, title, booknotes)
+            elseif self.joplin_export then
+                ok, err = pcall(self.exportBooknotesToJoplin, self, joplin_client, title, booknotes)
             else
                 ok, err = pcall(self.exportBooknotesToEvernote, self, client, title, booknotes)
             end
