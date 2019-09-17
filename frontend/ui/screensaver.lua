@@ -87,7 +87,7 @@ function Screensaver:chooseFolder()
         screensaver_dir = DataStorage:getDataDir() .. "/screenshots/"
     end
     self.choose_dialog = ButtonDialogTitle:new{
-        title = T(_("Current screensaver image directory:\n %1"), screensaver_dir),
+        title = T(_("Current screensaver image directory:\n%1"), screensaver_dir),
         buttons = buttons
     }
     UIManager:show(self.choose_dialog)
@@ -149,8 +149,8 @@ function Screensaver:chooseFile(document_cover)
     if screensaver_image == nil then
         screensaver_image = DataStorage:getDataDir() .. "/resources/koreader.png"
     end
-    local title = document_cover and T(_("Current screensaver document cover:\n %1"), screensaver_document_cover)
-        or T(_("Current screensaver image:\n %1"), screensaver_image)
+    local title = document_cover and T(_("Current screensaver document cover:\n%1"), screensaver_document_cover)
+        or T(_("Current screensaver image:\n%1"), screensaver_image)
     self.choose_dialog = ButtonDialogTitle:new{
         title = title,
         buttons = buttons

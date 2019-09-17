@@ -23,7 +23,7 @@ function DropBox:downloadFile(item, password, path, close)
             })
         else
             UIManager:show(ConfirmBox:new{
-                text = T(_("File saved to:\n %1\nWould you like to read the downloaded book now?"),
+                text = T(_("File saved to:\n%1\nWould you like to read the downloaded book now?"),
                     path),
                 ok_callback = function()
                     close()
@@ -50,7 +50,7 @@ function DropBox:config(item, callback)
         "7. Under the 'Generated access token' section, then enter code in Dropbox token field."
     local hint_top = _("Your Dropbox name")
     local text_top = ""
-    local hint_bottom = _("Dropbox token\n\n\n\n ")
+    local hint_bottom = _("Dropbox token\n\n\n\n")
     local text_bottom = ""
     local title
     local text_button_right = _("Add")
