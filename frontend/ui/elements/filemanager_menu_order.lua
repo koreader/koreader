@@ -46,6 +46,7 @@ local order = {
         "ignore_sleepcover",
         "ignore_open_sleepcover",
         "mass_storage_settings",
+        "screenshot",
     },
     navigation = {
         "back_to_exit",
@@ -67,7 +68,6 @@ local order = {
     },
     screen = {
         "screensaver",
-        "screenshot",
         "----------------------------",
         "screen_dpi",
         "screen_eink_opt",
