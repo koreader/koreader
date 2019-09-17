@@ -63,6 +63,7 @@ local Size = {
     },
     item = {
         height_default = Screen:scaleBySize(30),
+        height_big = Screen:scaleBySize(40),
         height_large = Screen:scaleBySize(50),
     },
     span = {

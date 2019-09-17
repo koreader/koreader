@@ -222,6 +222,10 @@ function Button:onTapSelectButton()
             -- And we also often have to delay the callback to both see the flash and/or avoid tearing artefacts w/ fast refreshes...
             UIManager:tickAfterNext(function()
                 self.callback()
+                if not self[1] or not self[1].invert or not self[1].dimen then
+                    -- widget no more there (destroyed, re-init'ed by setText(), or not inverted: nothing to invert back
+                    return
+                end
                 self[1].invert = false
                 UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
                 if self.text then
