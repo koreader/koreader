@@ -516,4 +516,24 @@ function EvernoteExporter:exportBooknotesToTXT(title, booknotes)
     end
 end
 
+function EvernoteExporter:exportBooknotesToJoplin(client, title, booknotes)
+    local note_guid = client:findNoteByTitle(title, self.joplin_notebook_guid)
+    local note = ""
+    for _, chapter in ipairs(booknotes) do
+        if chapter.title then
+            note = note .. "\n\t*" .. chapter.title .. "*\n\n * * *"
+        end
+
+        for _, clipping in ipairs(chapter) do
+            -- TODO do something to prettify epoch time, write it
+            note = note .. clipping.text .. "\n * * *\n"
+        end
+    end
+    if note_guid then
+        client:updateNote(note_guid, note)
+    else 
+        client:createNote(title, note, self.joplin_notebook_guid)
+    end
+end
+
 return EvernoteExporter
