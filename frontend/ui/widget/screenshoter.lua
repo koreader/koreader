@@ -1,6 +1,8 @@
+local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local GestureRange = require("ui/gesturerange")
+local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
@@ -12,8 +14,6 @@ local Screenshoter = InputContainer:new{
 }
 
 function Screenshoter:init()
-    local screenshots_dir = DataStorage:getDataDir() .. "/screenshots/"
-    self.screenshot_fn_fmt = screenshots_dir .. self.prefix .. "_%Y-%b-%d_%H%M%S.png"
     local diagonal = math.sqrt(
         math.pow(Screen:getWidth(), 2) +
         math.pow(Screen:getHeight(), 2)
@@ -37,6 +37,8 @@ function Screenshoter:init()
 end
 
 function Screenshoter:onScreenshot(filename)
+    local screenshots_dir = G_reader_settings:readSetting("screenshot_dir") or DataStorage:getDataDir() .. "/screenshots/"
+    self.screenshot_fn_fmt = screenshots_dir .. self.prefix .. "_%Y-%b-%d_%H%M%S.png"
     local screenshot_name = filename or os.date(self.screenshot_fn_fmt)
     Screen:shot(screenshot_name)
     local widget = ConfirmBox:new{
@@ -52,6 +54,41 @@ function Screenshoter:onScreenshot(filename)
     -- trigger full refresh
     UIManager:setDirty(nil, "full")
     return true
+end
+
+function Screenshoter:chooseFolder()
+    local buttons = {}
+    table.insert(buttons, {
+        {
+            text = _("Choose screenshot directory"),
+            callback = function()
+                UIManager:close(self.choose_dialog)
+                require("ui/downloadmgr"):new{
+                    onConfirm = function(path)
+                        G_reader_settings:saveSetting("screenshot_dir", path .. "/")
+                        UIManager:show(InfoMessage:new{
+                            text = T(_("Screenshot directory set to:\n%1"), path),
+                            timeout = 3,
+                        })
+                    end,
+                }:chooseDir()
+            end,
+        }
+    })
+    table.insert(buttons, {
+        {
+            text = _("Close"),
+            callback = function()
+                UIManager:close(self.choose_dialog)
+            end,
+        }
+    })
+    local screenshot_dir = G_reader_settings:readSetting("screenshot_dir") or DataStorage:getDataDir() .. "/screenshots/"
+    self.choose_dialog = ButtonDialogTitle:new{
+        title = T(_("Current screenshot directory:\n%1"), screenshot_dir),
+        buttons = buttons
+    }
+    UIManager:show(self.choose_dialog)
 end
 
 function Screenshoter:onTapDiagonal()
