@@ -85,7 +85,7 @@ function Screenshoter:chooseFolder()
     })
     local screenshot_dir = G_reader_settings:readSetting("screenshot_dir") or DataStorage:getDataDir() .. "/screenshots/"
     self.choose_dialog = ButtonDialogTitle:new{
-        title = T(_("Current screenshot directory:\n %1"), screenshot_dir),
+        title = T(_("Current screenshot directory:\n%1"), screenshot_dir),
         buttons = buttons
     }
     UIManager:show(self.choose_dialog)
