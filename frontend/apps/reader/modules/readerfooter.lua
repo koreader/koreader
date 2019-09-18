@@ -408,7 +408,9 @@ function ReaderFooter:resetLayout(force_reset)
         self.progress_bar.width = math.floor(
             new_screen_width - self.text_width - self.horizontal_margin*2)
     end
-    self.separator_line.dimen.w = new_screen_width - 2 * self.horizontal_margin
+    if self.separator_line then
+        self.separator_line.dimen.w = new_screen_width - 2 * self.horizontal_margin
+    end
     self.horizontal_group:resetLayout()
     self.footer_positioner.dimen.w = new_screen_width
     self.footer_positioner.dimen.h = new_screen_height
@@ -1060,7 +1062,9 @@ function ReaderFooter:_updateFooterText(force_repaint)
         self.progress_bar.width = math.floor(
             self._saved_screen_width - self.text_width - self.horizontal_margin*2)
     end
-    self.separator_line.dimen.w = self._saved_screen_width - 2 * self.horizontal_margin
+    if self.separator_line then
+        self.separator_line.dimen.w = self._saved_screen_width - 2 * self.horizontal_margin
+    end
     self.text_container.dimen.w = self.text_width
     self.horizontal_group:resetLayout()
     -- NOTE: This is essentially preventing us from truly using "fast" for panning,
