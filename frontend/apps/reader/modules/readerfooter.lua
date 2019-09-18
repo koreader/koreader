@@ -319,15 +319,15 @@ function ReaderFooter:updateFooterContainer()
     end
 
     if self.settings.bottom_horizontal_separator then
-        local separator_line = LineWidget:new{
+        self.separator_line = LineWidget:new{
             dimen = Geom:new{
-                w = Screen:getWidth() - 2 * self.horizontal_margin,
+                w = 0,
                 h = Size.line.medium,
             }
         }
         local vertical_span = VerticalSpan:new{width = self.bottom_padding *2}
         self.vertical_frame = VerticalGroup:new{
-            separator_line,
+            self.separator_line,
             vertical_span,
             self.footer_container,
         }
@@ -408,6 +408,7 @@ function ReaderFooter:resetLayout(force_reset)
         self.progress_bar.width = math.floor(
             new_screen_width - self.text_width - self.horizontal_margin*2)
     end
+    self.separator_line.dimen.w = new_screen_width - 2 * self.horizontal_margin
     self.horizontal_group:resetLayout()
     self.footer_positioner.dimen.w = new_screen_width
     self.footer_positioner.dimen.h = new_screen_height
@@ -1059,6 +1060,7 @@ function ReaderFooter:_updateFooterText(force_repaint)
         self.progress_bar.width = math.floor(
             self._saved_screen_width - self.text_width - self.horizontal_margin*2)
     end
+    self.separator_line.dimen.w = self._saved_screen_width - 2 * self.horizontal_margin
     self.text_container.dimen.w = self.text_width
     self.horizontal_group:resetLayout()
     -- NOTE: This is essentially preventing us from truly using "fast" for panning,
