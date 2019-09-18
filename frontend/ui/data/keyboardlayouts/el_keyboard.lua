@@ -153,8 +153,7 @@ return {
             { _V_el,  _v_el,  "<",    com,    _V_,    _v_,    "Ñ",    "ñ",    "Ώ",    "ώ",    "Ý",    "ý", },
             { _B_el,  _b_el,  ">",    prd,    _B_,    _b_,    "Ћ",    "ћ",    "Ó",    "ó",    "†",    "‡", },
             { _N_el,  _n_el,  "‘",    "↑",    _N_,    _n_,    "Њ",    "њ",    "Ú",    "ú",    "–",    "—", },
-            { _M_el,  _m_el,  "’",    "↓",    _M_,    _m_,    "Ї",    "ї",    "Ç",    "ç",    "
-",    "¨", },
+            { _M_el,  _m_el,  "’",    "↓",    _M_,    _m_,    "Ї",    "ї",    "Ç",    "ç",    "…",    "¨", },
             { label = "Backspace",
               icon = "resources/icons/appbar.clear.reflect.horizontal.png",
               width = 1.5
