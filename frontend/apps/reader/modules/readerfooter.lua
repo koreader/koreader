@@ -1226,4 +1226,8 @@ function ReaderFooter:onFrontlightStateChanged()
     end
 end
 
+function ReaderFooter:onChangeScreenMode()
+    self:updateFooterContainer()
+end
+
 return ReaderFooter
