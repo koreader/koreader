@@ -1228,6 +1228,7 @@ end
 
 function ReaderFooter:onChangeScreenMode()
     self:updateFooterContainer()
+    self:resetLayout(true)
 end
 
 return ReaderFooter
