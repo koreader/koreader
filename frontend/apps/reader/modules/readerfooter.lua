@@ -273,14 +273,6 @@ function ReaderFooter:init()
         self.footer_text,
     }
 
-    local margin_span = HorizontalSpan:new{ width = self.horizontal_margin }
-    self.horizontal_group = HorizontalGroup:new{
-        margin_span,
-        self.progress_bar,
-        self.text_container,
-        margin_span,
-    }
-
     self:updateFooterContainer()
 
     self.mode = G_reader_settings:readSetting("reader_footer_mode") or self.mode
@@ -301,6 +293,37 @@ function ReaderFooter:init()
 end
 
 function ReaderFooter:updateFooterContainer()
+    local margin_span = HorizontalSpan:new{ width = self.horizontal_margin }
+    self.vertical_frame = VerticalGroup:new{}
+    if self.settings.bottom_horizontal_separator then
+        self.separator_line = LineWidget:new{
+            dimen = Geom:new{
+                w = 0,
+                h = Size.line.medium,
+            }
+        }
+        local vertical_span = VerticalSpan:new{width = self.bottom_padding *2}
+        table.insert(self.vertical_frame, self.separator_line)
+        table.insert(self.vertical_frame, vertical_span)
+    end
+    if self.settings.progress_bar_separate_line and not self.settings.disable_progress_bar then
+        self.horizontal_group = HorizontalGroup:new{
+            margin_span,
+            self.text_container,
+            margin_span,
+        }
+        local vertical_span = VerticalSpan:new{width = self.bottom_padding *2}
+        table.insert(self.vertical_frame, self.progress_bar)
+        table.insert(self.vertical_frame, vertical_span)
+    else
+        self.horizontal_group = HorizontalGroup:new{
+            margin_span,
+            self.progress_bar,
+            self.text_container,
+            margin_span,
+        }
+    end
+
     if self.settings.align == "left" then
         self.footer_container = LeftContainer:new{
             dimen = Geom:new{ w = 0, h = self.height },
@@ -318,24 +341,7 @@ function ReaderFooter:updateFooterContainer()
         }
     end
 
-    if self.settings.bottom_horizontal_separator then
-        self.separator_line = LineWidget:new{
-            dimen = Geom:new{
-                w = 0,
-                h = Size.line.medium,
-            }
-        }
-        local vertical_span = VerticalSpan:new{width = self.bottom_padding *2}
-        self.vertical_frame = VerticalGroup:new{
-            self.separator_line,
-            vertical_span,
-            self.footer_container,
-        }
-    else
-        self.vertical_frame = VerticalGroup:new{
-            self.footer_container,
-        }
-    end
+    table.insert(self.vertical_frame, self.footer_container)
 
     self.footer_content = FrameContainer:new{
         self.vertical_frame,
@@ -404,6 +410,8 @@ function ReaderFooter:resetLayout(force_reset)
 
     if self.settings.disable_progress_bar then
         self.progress_bar.width = 0
+    elseif self.settings.progress_bar_separate_line then
+        self.progress_bar.width = math.floor(new_screen_width - self.horizontal_margin*2)
     else
         self.progress_bar.width = math.floor(
             new_screen_width - self.text_width - self.horizontal_margin*2)
@@ -653,7 +661,7 @@ function ReaderFooter:addToMainMenu(menu_items)
             {
                 text = _("Alignment"),
                 enabled_func = function()
-                    return self.settings.disable_progress_bar == true
+                    return self.settings.disable_progress_bar or self.settings.progress_bar_separate_line
                 end,
                 sub_item_table = {
                     {
@@ -911,7 +919,12 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
                 callback = function()
                     self.settings.disable_progress_bar = not self.settings.disable_progress_bar
+                    self:updateFooterContainer()
+                    self:resetLayout(true)
                     self:updateFooter()
+                    if self.settings.progress_bar_separate_line then
+                        self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
+                    end
                     UIManager:setDirty(nil, "ui")
                 end,
             },
@@ -927,6 +940,23 @@ function ReaderFooter:addToMainMenu(menu_items)
                     self.settings.toc_markers = not self.settings.toc_markers
                     self:setTocMarkers()
                     self:updateFooter()
+                    UIManager:setDirty(nil, "ui")
+                end,
+            },
+            {
+                text = _("Progress bar on separate line"),
+                checked_func = function()
+                    return self.settings.progress_bar_separate_line
+                end,
+                enabled_func = function()
+                    return not self.settings.disable_progress_bar
+                end,
+                callback = function()
+                    self.settings.progress_bar_separate_line = not self.settings.progress_bar_separate_line
+                    self:updateFooterContainer()
+                    self:resetLayout(true)
+                    self:updateFooter()
+                    self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
                     UIManager:setDirty(nil, "ui")
                 end,
             },
@@ -1053,6 +1083,9 @@ function ReaderFooter:_updateFooterText(force_repaint)
             self.text_width = self.footer_text:getSize().w
         end
         self.progress_bar.width = 0
+    elseif self.settings.progress_bar_separate_line then
+        self.progress_bar.width = math.floor(self._saved_screen_width - self.horizontal_margin*2)
+        self.text_width = self.footer_text:getSize().w
     else
         if self.has_no_mode or not text then
             self.text_width = 0
