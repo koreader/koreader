@@ -70,7 +70,10 @@ function EvernoteExporter:isDocless()
 end
 
 function EvernoteExporter:readyToExport()
-    return self.evernote_token ~= nil or self.html_export ~= false or self.txt_export ~= false
+    return self.evernote_token ~= nil or 
+            self.html_export ~= false or 
+            self.txt_export ~= false or
+            self.joplin_export ~= false
 end
 
 function EvernoteExporter:migrateClippings()
@@ -121,6 +124,113 @@ function EvernoteExporter:addToMainMenu(menu_items)
                         }
                     } or nil
                 end,
+            },
+            {
+                text = _("Export to Joplin ") ,
+                checked_func = function() return self.joplin_export end,
+                sub_item_table ={
+                    {
+                        text = _("Set Joplin IP and Port"), 
+                        keep_menu_open = true,
+                        callback = function()
+                            local MultiInputDialog = require("ui/widget/multiinputdialog")
+                            local url_dialog
+                            url_dialog = MultiInputDialog:new{
+                                title = _("Set Joplin IP and port number"),
+                                fields = {
+                                    {
+                                        text = self.joplin_IP,
+                                        input_type = "string"
+                                    },
+                                    {
+                                        text = self.joplin_port,
+                                        input_type = "number"
+                                    }
+                                },
+                                buttons = {
+                                    {
+                                        {
+                                            text = _("Cancel"),
+                                            callback = function()
+                                                UIManager:close(url_dialog)
+                                            end
+                                        },
+                                        {
+                                            text = _("OK"),
+                                            callback = function()
+                                                local fields = url_dialog:getFields()
+                                                local ip = fields[1]
+                                                local port = tonumber(fields[2])
+                                                if ip ~= "" then 
+                                                    --TODO better checks for ip and port
+                                                    if port and port < 65355 then 
+                                                        self.joplin_IP = ip
+                                                    end
+                                                    self.joplin_port = port
+                                                    self:saveSettings()
+                                                end
+                                                UIManager:close(url_dialog)
+                                            end
+                                        }
+                                    }
+                                }
+                            }
+                            UIManager:show(url_dialog)
+                            url_dialog:onShowKeyboard()
+                        end
+                    },
+                    {
+                        text = "Set authorization token",
+                        keep_menu_open = true,
+                        callback = function()
+                            local MultiInputDialog = require("ui/widget/multiinputdialog")
+                            local auth_dialog
+                            auth_dialog = MultiInputDialog:new{
+                                title = _("Set authorization token from Joplin\n->WebClipper Settings"),
+                                fields = {
+                                    {
+                                        text = self.joplin_token,
+                                        input_type = "string"
+                                    }
+                                },
+                                buttons = {
+                                    {
+                                        {
+                                            text = _("Cancel"),
+                                            callback = function()
+                                                UIManager:close(auth_dialog)
+                                            end
+                                        },
+                                        {
+                                            text = _("OK"),
+                                            callback = function()
+                                                local auth_field = auth_dialog:getFields()
+                                                --TODO do a check on auth string
+                                                self.joplin_token = auth_field[1] -- "41fb4a57758bbdfea75fcde1b7999469fc568ad9e6efc821683180278458d0d2e6c4a1ec2f85bfe73a3edfec096d963964e92308a4a394f017795928a7569288"
+                                                self:saveSettings()
+                                                UIManager:close(auth_dialog)
+                                            end
+                                        }
+                                    }
+                                }
+                            }
+                            UIManager:show(auth_dialog)
+                            auth_dialog:onShowKeyboard()
+                        end
+                    },
+                    {
+                        text = _("Export to Joplin"),
+                        checked_func = function() return self.joplin_export end,
+                        callback = function()
+                            self.joplin_export = not self.joplin_export
+                            if self.joplin_export then
+                                self.html_export = false
+                                self.txt_export = false
+                            end
+                            self:saveSettings()
+                        end
+                    }
+                }
             },
             {
                 text = _("Export all notes in this book"),
@@ -545,6 +655,10 @@ function EvernoteExporter:exportBooknotesToTXT(title, booknotes)
 end
 
 function EvernoteExporter:exportBooknotesToJoplin(client, title, booknotes)
+    if not client:ping() then
+        error("Cannot reach Joplin server")
+    end
+
     local note_guid = client:findNoteByTitle(title, self.joplin_notebook_guid)
     local note = ""
     for _, chapter in ipairs(booknotes) do
@@ -557,11 +671,19 @@ function EvernoteExporter:exportBooknotesToJoplin(client, title, booknotes)
             note = note .. clipping.text .. "\n * * *\n"
         end
     end
+
+    local ok
+
     if note_guid then
-        client:updateNote(note_guid, note)
+        ok = client:updateNote(note_guid, note)
     else 
-        client:createNote(title, note, self.joplin_notebook_guid)
+        ok = client:createNote(title, note, self.joplin_notebook_guid)
     end
+
+    if not ok then
+        error("Server didn't respond to update or create post query, token error?")
+    end
+
 end
 
 return EvernoteExporter
