@@ -126,7 +126,7 @@ function EvernoteExporter:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Export to Joplin ") ,
+                text = _("Joplin") ,
                 checked_func = function() return self.joplin_export end,
                 sub_item_table ={
                     {
@@ -180,7 +180,7 @@ function EvernoteExporter:addToMainMenu(menu_items)
                         end
                     },
                     {
-                        text = "Set authorization token",
+                        text = _("Set authorization token"),
                         keep_menu_open = true,
                         callback = function()
                             local MultiInputDialog = require("ui/widget/multiinputdialog")
@@ -206,7 +206,7 @@ function EvernoteExporter:addToMainMenu(menu_items)
                                             callback = function()
                                                 local auth_field = auth_dialog:getFields()
                                                 --TODO do a check on auth string
-                                                self.joplin_token = auth_field[1] -- "41fb4a57758bbdfea75fcde1b7999469fc568ad9e6efc821683180278458d0d2e6c4a1ec2f85bfe73a3edfec096d963964e92308a4a394f017795928a7569288"
+                                                self.joplin_token = auth_field[1]
                                                 self:saveSettings()
                                                 UIManager:close(auth_dialog)
                                             end
@@ -672,16 +672,10 @@ function EvernoteExporter:exportBooknotesToJoplin(client, title, booknotes)
         end
     end
 
-    local ok
-
     if note_guid then
-        ok = client:updateNote(note_guid, note)
+        client:updateNote(note_guid, note)
     else 
-        ok = client:createNote(title, note, self.joplin_notebook_guid)
-    end
-
-    if not ok then
-        error("Server didn't respond to update or create post query, token error?")
+        client:createNote(title, note, self.joplin_notebook_guid)
     end
 
 end
