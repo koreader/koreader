@@ -83,6 +83,7 @@ local order = {
         "gesture_intervals",
         "----------------------------",
         "menu_activate",
+        "ignore_hold_corners",
         "screen_disable_double_tab",
     },
     tools = {
