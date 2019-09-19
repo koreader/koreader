@@ -178,8 +178,7 @@ common_settings.ignore_hold_corners = {
         return G_reader_settings:isTrue("ignore_hold_corners")
     end,
     callback = function()
-        G_reader_settings:flipNilOrFalse("ignore_hold_corners")
-        UIManager:broadcastEvent(Event:new("IgnoreHoldCorners", G_reader_settings:isTrue("ignore_hold_corners")))
+        UIManager:broadcastEvent(Event:new("IgnoreHoldCorners"))
     end,
 }
 

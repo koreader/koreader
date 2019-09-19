@@ -1369,8 +1369,7 @@ function ReaderGesture:gestureAction(action, ges)
         Device:getPowerDevice():toggleFrontlight()
         self:onShowFLOnOff()
     elseif action == "toggle_hold_corners" then
-        G_reader_settings:flipNilOrFalse("ignore_hold_corners")
-        self:onIgnoreHoldCorners(G_reader_settings:isTrue("ignore_hold_corners"))
+        self:onIgnoreHoldCorners()
     elseif action == "toggle_gsensor" then
         G_reader_settings:flipNilOrFalse("input_ignore_gsensor")
         Device:toggleGSensor(not G_reader_settings:isTrue("input_ignore_gsensor"))
@@ -1527,7 +1526,12 @@ function ReaderGesture:pageUpdate(page)
 end
 
 function ReaderGesture:onIgnoreHoldCorners(ignore_hold_corners)
-    self.ignore_hold_corners = ignore_hold_corners
+    if ignore_hold_corners == nil then
+        G_reader_settings:flipNilOrFalse("ignore_hold_corners")
+    else
+        G_reader_settings:saveSetting("ignore_hold_corners", ignore_hold_corners)
+    end
+    self.ignore_hold_corners = G_reader_settings:isTrue("ignore_hold_corners")
     return true
 end
 
