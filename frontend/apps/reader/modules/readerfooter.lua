@@ -651,9 +651,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
                 callback = function()
                     self.settings.bottom_horizontal_separator = not self.settings.bottom_horizontal_separator
-                    self:updateFooterContainer()
-                    self:resetLayout(true)
-                    self:updateFooter()
+                    self:refreshFooter()
                     self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
                     UIManager:setDirty(nil, "ui")
                 end,
@@ -671,9 +669,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         end,
                         callback = function()
                             self.settings.align = "center"
-                            self:updateFooterContainer()
-                            self:resetLayout(true)
-                            self:updateFooter()
+                            self:refreshFooter()
                             UIManager:setDirty(nil, "ui")
                         end,
                     },
@@ -684,9 +680,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         end,
                         callback = function()
                             self.settings.align = "left"
-                            self:updateFooterContainer()
-                            self:resetLayout(true)
-                            self:updateFooter()
+                            self:refreshFooter()
                             UIManager:setDirty(nil, "ui")
                         end,
                     },
@@ -697,9 +691,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         end,
                         callback = function()
                             self.settings.align = "right"
-                            self:updateFooterContainer()
-                            self:resetLayout(true)
-                            self:updateFooter()
+                            self:refreshFooter()
                             UIManager:setDirty(nil, "ui")
                         end,
                     },
@@ -919,9 +911,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
                 callback = function()
                     self.settings.disable_progress_bar = not self.settings.disable_progress_bar
-                    self:updateFooterContainer()
-                    self:resetLayout(true)
-                    self:updateFooter()
+                    self:refreshFooter()
                     if self.settings.progress_bar_separate_line then
                         self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
                     end
@@ -953,9 +943,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
                 callback = function()
                     self.settings.progress_bar_separate_line = not self.settings.progress_bar_separate_line
-                    self:updateFooterContainer()
-                    self:resetLayout(true)
-                    self:updateFooter()
+                    self:refreshFooter()
                     self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
                     UIManager:setDirty(nil, "ui")
                 end,
@@ -1243,6 +1231,12 @@ function ReaderFooter:setVisible(visible)
     else
         self:applyFooterMode(self.mode_list.off)
     end
+end
+
+function ReaderFooter:refreshFooter()
+    self:updateFooterContainer()
+    self:resetLayout(true)
+    self:updateFooter()
 end
 
 function ReaderFooter:onResume()
