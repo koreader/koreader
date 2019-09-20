@@ -2,6 +2,7 @@
 -- This also supports the natural light, which consists of additional
 -- red and green light LEDs.
 
+local util = require("util")
 local logger = require("logger")
 local dbg = require("dbg")
 
@@ -74,18 +75,19 @@ function SysfsLight:setNaturalBrightness(brightness, warmth)
 
     -- Newer devices use a mixer instead of writting values per color.
     if self.frontlight_mixer then
-        -- Honor the device's scale, which may not be [0...100] (f.g., it's [0...10] on the Forma) ;).
-        warmth = math.floor(warmth / self.nl_max)
         if set_brightness then
+            brightness = util.clamp(brightness, 0, 255)
             self:_write_value(self.frontlight_white, brightness)
         end
         -- And it may be inverted... (cold is nl_max, warm is nl_min)
         if set_warmth then
+            -- Honor the device's scale, which may not be [0...100] (f.g., it's [0...10] on the Forma) ;).
+            warmth = math.floor(warmth / self.nl_max)
             if self.nl_inverted then
-                self:_write_value(self.frontlight_mixer, self.nl_max - warmth)
-            else
-                self:_write_value(self.frontlight_mixer, warmth)
+                warmth = self.nl_max - warmth
             end
+            warmth = util.clamp(warmth, 0, 255)
+            self:_write_value(self.frontlight_mixer, warmth)
         end
     else
         local red = 0
@@ -102,9 +104,9 @@ function SysfsLight:setNaturalBrightness(brightness, warmth)
                                             self.exponent, self.green_gain, self.green_offset)
         end
 
-        white = math.min(math.max(white, 0), 255)
-        red = math.min(math.max(red, 0), 255)
-        green = math.min(math.max(green, 0), 255)
+        white = util.clamp(white, 0, 255)
+        red = util.clamp(red, 0, 255)
+        green = util.clamp(green, 0, 255)
 
         self:_set_light_value(self.frontlight_white, math.floor(white))
         self:_set_light_value(self.frontlight_green, math.floor(green))

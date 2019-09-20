@@ -949,4 +949,13 @@ function util.stringEndsWith(str, ending)
    return ending == "" or str:sub(-#ending) == ending
 end
 
+-- Clamps value between min and max
+-- @param value number: number to clamp
+-- @param min number: minimum value
+-- @param max number: maximum value
+-- @return number: min if it is larger than value or max if it is smaller than value else value
+function util.clamp(value, min, max)
+    return math.min(math.max(value, min), max)
+end
+
 return util
