@@ -126,14 +126,14 @@ function KoboPowerD:init()
                 end
             end
             -- Does this device's NaturalLight use a custom scale?
-            self.fl_warmth_min = self.device.frontlight_settings["nl_min"] or self.fl_warmth_min
-            self.fl_warmth_max = self.device.frontlight_settings["nl_max"] or self.fl_warmth_max
+            self.fl_warmth_min = self.device.frontlight_settings.nl_min or self.fl_warmth_min
+            self.fl_warmth_max = self.device.frontlight_settings.nl_max or self.fl_warmth_max
             -- If this device has a mixer, we can use the ioctl for brightness control, as it's much lower latency.
             if self.device:hasNaturalLightMixer() then
                 local kobolight = require("ffi/kobolight")
                 local ok, light = pcall(kobolight.open)
                 if ok then
-                    self.device.frontlight_settings["frontlight_ioctl"] = light
+                    self.device.frontlight_settings.frontlight_ioctl = light
                 end
             end
             self.fl = SysfsLight:new(self.device.frontlight_settings)
