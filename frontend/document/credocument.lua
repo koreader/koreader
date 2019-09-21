@@ -435,6 +435,10 @@ function CreDocument:getPageFromXPointer(xp)
     return self._document:getPageFromXPointer(xp)
 end
 
+function CreDocument:getPageOffsetX(page)
+    return self._document:getPageOffsetX(page)
+end
+
 function CreDocument:getScreenPositionFromXPointer(xp)
     -- We do not ensure xp is in the current page: we may return
     -- a negative screen_y, which could be useful in some contexts
@@ -806,6 +810,10 @@ function CreDocument:enableInternalHistory(toggle)
     self._document:setIntProperty("crengine.highlight.bookmarks", toggle and 2 or 0)
 end
 
+function CreDocument:setCallback(func)
+    return self._document:setCallback(func)
+end
+
 function CreDocument:isBuiltDomStale()
     return self._document:isBuiltDomStale()
 end
@@ -820,6 +828,10 @@ end
 
 function CreDocument:getCacheFilePath()
     return self._document:getCacheFilePath()
+end
+
+function CreDocument:getStatistics()
+    return self._document:getStatistics()
 end
 
 function CreDocument:canHaveAlternativeToc()
