@@ -126,8 +126,16 @@ function KoboPowerD:init()
                 end
             end
             -- Does this device's NaturalLight use a custom scale?
-            self.fl_warmth_min = self.device.frontlight_settings["nl_min"] or self.fl_warmth_min
-            self.fl_warmth_max = self.device.frontlight_settings["nl_max"] or self.fl_warmth_max
+            self.fl_warmth_min = self.device.frontlight_settings.nl_min or self.fl_warmth_min
+            self.fl_warmth_max = self.device.frontlight_settings.nl_max or self.fl_warmth_max
+            -- If this device has a mixer, we can use the ioctl for brightness control, as it's much lower latency.
+            if self.device:hasNaturalLightMixer() then
+                local kobolight = require("ffi/kobolight")
+                local ok, light = pcall(kobolight.open)
+                if ok then
+                    self.device.frontlight_settings.frontlight_ioctl = light
+                end
+            end
             self.fl = SysfsLight:new(self.device.frontlight_settings)
             self.fl_warmth = 0
             self:_syncKoboLightOnStart()
@@ -314,7 +322,7 @@ function KoboPowerD:turnOffFrontlightHW()
         for i = 1,5 do
             self:_setIntensity(math.floor(self.fl_intensity - ((self.fl_intensity / 5) * i)))
             -- NOTE: We generally don't need to sleep when using sysfs as a backend...
-            if not self.device:hasNaturalLight() then
+            if self.device:hasNaturalLight() and not self.device:hasNaturalLightMixer() then
                 if (i < 5) then
                     util.usleep(35 * 1000)
                 end
@@ -351,7 +359,7 @@ function KoboPowerD:turnOnFrontlightHW()
     util.runInSubProcess(function()
         for i = 1,5 do
             self:_setIntensity(math.ceil(self.fl_min + ((self.fl_intensity / 5) * i)))
-            if not self.device:hasNaturalLight() then
+            if self.device:hasNaturalLight() and not self.device:hasNaturalLightMixer() then
                 if (i < 5) then
                     util.usleep(35 * 1000)
                 end
