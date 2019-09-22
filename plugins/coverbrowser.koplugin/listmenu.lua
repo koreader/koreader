@@ -463,7 +463,9 @@ function ListMenuItem:update()
                 -- append "et al." to the 2nd if there are more
                 if authors and authors:find("\n") then
                     authors = util.splitToArray(authors, "\n")
-                    if #authors > 2 then
+                    if #authors > 1 and bookinfo.series and BookInfoManager:getSetting("series_in_separate_line") then
+                        authors = { T(_("%1 et al."), authors[1]) }
+                    elseif #authors > 2 then
                         authors = { authors[1], T(_("%1 et al."), authors[2]) }
                     end
                     authors = table.concat(authors, "\n")
@@ -471,21 +473,27 @@ function ListMenuItem:update()
             end
             -- add Series metadata if requested
             if bookinfo.series then
+                -- Shorten calibre series decimal number (#4.0 => #4)
+                bookinfo.series = bookinfo.series:gsub("(#%d+)%.0$", "%1")
                 if BookInfoManager:getSetting("append_series_to_title") then
-                    -- Shorten calibre series decimal number (#4.0 => #4)
-                    bookinfo.series = bookinfo.series:gsub("(#%d+)%.0$", "%1")
                     if title then
                         title = title .. " - " .. bookinfo.series
                     else
                         title = bookinfo.series
                     end
                 end
-                if BookInfoManager:getSetting("append_series_to_authors") then
-                    bookinfo.series = bookinfo.series:gsub("(#%d+)%.0$", "%1")
-                    if authors then
-                        authors = authors .. " - " .. bookinfo.series
-                    else
+                if not authors then
+                    if BookInfoManager:getSetting("append_series_to_authors")
+                        or BookInfoManager:getSetting("series_in_separate_line")
+                    then
                         authors = bookinfo.series
+                    end
+                else
+                    if BookInfoManager:getSetting("append_series_to_authors") then
+                        authors = authors .. " - " .. bookinfo.series
+                    end
+                    if BookInfoManager:getSetting("series_in_separate_line") then
+                        authors = bookinfo.series .. "\n" .. authors
                     end
                 end
             end

@@ -342,6 +342,18 @@ function CoverBrowser:addToMainMenu(menu_items)
                             self:refreshFileManagerInstance()
                         end,
                     },
+                    {
+                        text = _("Show series metadata in separate line"),
+                        checked_func = function() return BookInfoManager:getSetting("series_in_separate_line") end,
+                        callback = function()
+                            if BookInfoManager:getSetting("series_in_separate_line") then
+                                BookInfoManager:saveSetting("series_in_separate_line", false)
+                            else
+                                BookInfoManager:saveSetting("series_in_separate_line", true)
+                            end
+                            self:refreshFileManagerInstance()
+                        end,
+                    }
                     -- generic_items will be inserted here
                 },
             },
