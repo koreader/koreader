@@ -27,6 +27,8 @@ local SpinWidget = InputContainer:new{
     text = nil,
     width = Screen:getWidth() * 0.95,
     height = Screen:getHeight(),
+    value_table = nil,
+    value_index = nil,
     value = 1,
     value_max = 20,
     value_min = 0,
@@ -73,6 +75,8 @@ function SpinWidget:update()
         show_parent = self,
         width = self.screen_width * 0.2,
         value = self.value,
+        value_table = self.value_table,
+        value_index = self.value_index,
         value_min = self.value_min,
         value_max = self.value_max,
         value_step = self.value_step,
@@ -136,7 +140,7 @@ function SpinWidget:update()
                 text = self.ok_text,
                 callback = function()
                     if self.callback then
-                        self.value = value_widget:getValue()
+                        self.value, self.value_index = value_widget:getValue()
                         self:callback(self)
                     end
                     self:onClose()
@@ -162,7 +166,7 @@ function SpinWidget:update()
                     text = self.extra_text,
                     callback = function()
                         if self.extra_callback then
-                            self.value = value_widget:getValue()
+                            self.value, self.value_index = value_widget:getValue()
                             self.extra_callback(self)
                         end
                         self:onClose()

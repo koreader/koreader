@@ -42,16 +42,21 @@ function optionsutil.showValues(configurable, option, prefix)
         current = arg_table[current]
     end
     if option.labels and option.values then
-        for i=1,#option.labels do
-            if default == option.values[i] then
-                default = option.labels[i]
-                break
+        if option.more_options_param and option.more_options_param.value_table then
+            current = option.more_options_param.value_table[current + 1]
+            default = option.more_options_param.value_table[default + 1]
+        else
+            for i=1,#option.labels do
+                if default == option.values[i] then
+                    default = option.labels[i]
+                    break
+                end
             end
-        end
-        for i=1,#option.labels do
-            if current == option.values[i] then
-                current = option.labels[i]
-                break
+            for i=1,#option.labels do
+                if current == option.values[i] then
+                    current = option.labels[i]
+                    break
+                end
             end
         end
     end
