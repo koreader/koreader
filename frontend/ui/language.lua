@@ -16,6 +16,7 @@ local Language = {
         fr = "Français",
         gl = "Galego",
         it_IT = "Italiano",
+        he = "Hebrew",
         hu = "Magyar",
         nl_NL = "Nederlands",
         nb_NO = "Norsk",
