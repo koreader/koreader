@@ -34,6 +34,9 @@ local Kobo = Generic:new{
     -- most Kobos have also mirrored X coordinates
     touch_mirrored_x = true,
     -- enforce portrait mode on Kobos
+    --- @note: In practice, the check that is used for in ffi/framebuffer is no longer relevant,
+    ---        since, in almost every case, we enforce a hardware Portrait rotation via fbdepth on startup by default ;).
+    ---        We still want to keep it in case an unfortunate soul on an older device disables the bitdepth switch...
     isAlwaysPortrait = yes,
     -- we don't need an extra refreshFull on resume, thank you very much.
     needsScreenRefreshAfterResume = no,
