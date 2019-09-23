@@ -10,6 +10,7 @@ local SetDefaults = require("apps/filemanager/filemanagersetdefaults")
 local UIManager = require("ui/uimanager")
 local Screen = Device.screen
 local dbg = require("dbg")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util  = require("util")
 local _ = require("gettext")
@@ -324,7 +325,6 @@ function FileManagerMenu:setUpdateItemTable()
         table.insert(self.menu_items.developer_options.sub_item_table, {
             text = _("Disable C blitter"),
             enabled_func = function()
-                local lfs = require("libs/libkoreader-lfs")
                 return lfs.attributes("libs/libblitbuffer.so", "mode") == "file"
             end,
             checked_func = function()
@@ -439,19 +439,19 @@ function FileManagerMenu:setUpdateItemTable()
     self.menu_items.exit_menu = {
         text = _("Exit"),
         hold_callback = function()
-            self:exitOrRestart()
+            SetDefaults:saveBeforeExit(function() self:exitOrRestart() end)
         end,
     }
     self.menu_items.exit = {
         text = _("Exit"),
         callback = function()
-            self:exitOrRestart()
+            SetDefaults:saveBeforeExit(function() self:exitOrRestart() end)
         end,
     }
     self.menu_items.restart_koreader = {
         text = _("Restart KOReader"),
         callback = function()
-            self:exitOrRestart(function() UIManager:restartKOReader() end)
+            SetDefaults:saveBeforeExit(function() self:exitOrRestart(function() UIManager:restartKOReader() end) end)
         end,
     }
     if not Device:canRestart() then
@@ -487,30 +487,10 @@ dbg:guard(FileManagerMenu, 'setUpdateItemTable',
     end)
 
 function FileManagerMenu:exitOrRestart(callback)
-    if SetDefaults.settings_changed then
-        UIManager:show(ConfirmBox:new{
-            text = _("You have unsaved default settings. Save them now?\nTap \"Cancel\" to return to KOReader."),
-            ok_text = _("Save"),
-            ok_callback = function()
-              SetDefaults.settings_changed = false
-              SetDefaults:saveSettings()
-              self:exitOrRestart(callback)
-            end,
-            cancel_text = _("Don't save"),
-            cancel_callback = function()
-                SetDefaults.settings_changed = false
-                self:exitOrRestart(callback)
-            end,
-            other_buttons = {{
-              text = _("Cancel"),
-            }}
-        })
-    else
-        UIManager:close(self.menu_container)
-        self.ui:onClose()
-        if callback then
-            callback()
-        end
+    UIManager:close(self.menu_container)
+    self.ui:onClose()
+    if callback then
+        callback()
     end
 end
 

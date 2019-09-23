@@ -356,4 +356,28 @@ function SetDefaults:saveSettings()
     self.settings_changed = false
 end
 
+function SetDefaults:saveBeforeExit(callback)
+    if self.settings_changed then
+        UIManager:show(ConfirmBox:new{
+            text = _("You have unsaved default settings. Save them now?\nTap \"Cancel\" to return to KOReader."),
+            ok_text = _("Save"),
+            ok_callback = function()
+              self.settings_changed = false
+              self:saveSettings()
+              callback()
+            end,
+            cancel_text = _("Don't save"),
+            cancel_callback = function()
+                self.settings_changed = false
+                callback()
+            end,
+            other_buttons = {{
+              text = _("Cancel"),
+            }}
+        })
+    else
+        callback()
+    end
+end
+
 return SetDefaults

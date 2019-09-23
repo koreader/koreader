@@ -8,6 +8,7 @@ local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local NetworkMgr = require("ui/network/manager")
+local SetDefaults = require("apps/filemanager/filemanagersetdefaults")
 local UIManager = require("ui/uimanager")
 local Version = require("version")
 local lfs = require("libs/libkoreader-lfs")
@@ -72,7 +73,9 @@ local function showRestartMessage()
             if readerui_instance then
                 savequit_caller = readerui_instance.menu
             end
-            savequit_caller:exitOrRestart(save_quit)
+            SetDefaults:saveBeforeExit(function()
+                savequit_caller:exitOrRestart(save_quit)
+            end)
         end,
     })
 end
