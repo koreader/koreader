@@ -1073,7 +1073,16 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, d
             local curr_items = self.configurable[name]
             local value_index = nil
             if more_options_param.value_table then
-                value_index = curr_items + 1
+                if more_options_param.args_table then
+                    for k,v in pairs(more_options_param.args_table) do
+                        if v == curr_items then
+                            value_index = k
+                            break
+                        end
+                    end
+                else
+                    value_index = curr_items
+                end
             end
             local items = SpinWidget:new{
                 width = Screen:getWidth() * 0.6,
@@ -1093,7 +1102,11 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, d
                         ok_callback = function()
                             name = self.config_options.prefix.."_"..name
                             if more_options_param.value_table then
-                                G_reader_settings:saveSetting(name, spin.value_index - 1)
+                                if more_options_param.args_table then
+                                    G_reader_settings:saveSetting(name, more_options_param.args_table[spin.value_index])
+                                else
+                                    G_reader_settings:saveSetting(name, spin.value_index)
+                                end
                             else
                                 G_reader_settings:saveSetting(name, spin.value)
                             end
@@ -1108,14 +1121,22 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, d
                 title_text =  name_text or _("Set value"),
                 callback = function(spin)
                     if more_options_param.value_table then
-                        self:onConfigChoice(name, spin.value_index - 1)
+                        if more_options_param.args_table then
+                            self:onConfigChoice(name, more_options_param.args_table[spin.value_index])
+                        else
+                            self:onConfigChoice(name, spin.value_index)
+                        end
                     else
                         self:onConfigChoice(name, spin.value)
                     end
                     if event then
                         args = args or {}
                         if more_options_param.value_table then
-                            self:onConfigEvent(event, spin.value_index - 1, refresh_callback)
+                            if more_options_param.args_table then
+                                self:onConfigEvent(event, more_options_param.args_table[spin.value_index], refresh_callback)
+                            else
+                                self:onConfigEvent(event, spin.value_index, refresh_callback)
+                            end
                         else
                             self:onConfigEvent(event, spin.value, refresh_callback)
                         end

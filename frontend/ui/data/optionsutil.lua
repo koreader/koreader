@@ -43,13 +43,33 @@ function optionsutil.showValues(configurable, option, prefix)
     end
     if option.labels and option.values then
         if option.more_options_param and option.more_options_param.value_table then
-            current = option.more_options_param.value_table[current + 1]
-            default = option.more_options_param.value_table[default + 1]
+            if option.more_options_param.args_table then
+                for k,v in pairs(option.more_options_param.args_table) do
+                    if v == current then
+                        current = k
+                        break
+                    end
+                end
+            end
+            current = option.more_options_param.value_table[current]
+            if default ~=  _("not set") then
+                if option.more_options_param.args_table then
+                    for k,v in pairs(option.more_options_param.args_table) do
+                        if v == default then
+                            default = k
+                            break
+                        end
+                    end
+                end
+                default = option.more_options_param.value_table[default]
+            end
         else
-            for i=1,#option.labels do
-                if default == option.values[i] then
-                    default = option.labels[i]
-                    break
+            if default ~=  _("not set") then
+                for i=1,#option.labels do
+                    if default == option.values[i] then
+                        default = option.labels[i]
+                        break
+                    end
                 end
             end
             for i=1,#option.labels do
