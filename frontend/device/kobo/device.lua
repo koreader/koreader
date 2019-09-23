@@ -248,9 +248,10 @@ local KoboStorm = Kobo:new{
     misc_ntx_gsensor_protocol = true,
     display_dpi = 300,
     hasNaturalLight = yes,
+    --- @fixme: Someone needs to look into NL handling on this device, as apparently this doesn't work :?
     frontlight_settings = {
         frontlight_white = "/sys/class/backlight/mxc_msp430.0/brightness",
-        frontlight_mixer = "/sys/class/backlight/tlc5947_bl/color",
+        frontlight_mixer = "/sys/class/backlight/lm3630a_led/color",
         -- Warmth goes from 0 to 10 on the device's side (our own internal scale is still normalized to [0...100])
         -- NOTE: Those three extra keys are *MANDATORY* if frontlight_mixer is set!
         nl_min = 0,
