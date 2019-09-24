@@ -52,7 +52,7 @@ function FrontLightWidget:init()
     self.fl_max = self.powerd.fl_max
     self.fl_cur = self.powerd:frontlightIntensity()
     local steps_fl = self.fl_max - self.fl_min + 1
-    self.one_step = math.ceil(steps_fl / 100)
+    self.one_step = math.ceil(steps_fl / 25)
     self.steps = math.ceil(steps_fl / self.one_step)
     if (self.steps - 1) * self.one_step < self.fl_max - self.fl_min then
         self.steps = self.steps + 1
