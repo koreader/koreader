@@ -321,7 +321,8 @@ function KoboPowerD:turnOffFrontlightHW()
     util.runInSubProcess(function()
         for i = 1,5 do
             self:_setIntensity(math.floor(self.fl_intensity - ((self.fl_intensity / 5) * i)))
-            -- Newer devices appear to block slightly longer on FL ioctls/syfs, so only sleep on older devices...
+            --- @note: Newer devices appear to block slightly longer on FL ioctls/sysfs, so only sleep on older devices,
+            ---        otherwise we get a jump and not a ramp ;).
             if not self.device:hasNaturalLight() then
                 if (i < 5) then
                     util.usleep(35 * 1000)
@@ -359,7 +360,8 @@ function KoboPowerD:turnOnFrontlightHW()
     util.runInSubProcess(function()
         for i = 1,5 do
             self:_setIntensity(math.ceil(self.fl_min + ((self.fl_intensity / 5) * i)))
-            -- Newer devices appear to block slightly longer on FL ioctls/sysfs, so only sleep on older devices...
+            --- @note: Newer devices appear to block slightly longer on FL ioctls/sysfs, so only sleep on older devices,
+            ---        otherwise we get a jump and not a ramp ;).
             if not self.device:hasNaturalLight() then
                 if (i < 5) then
                     util.usleep(35 * 1000)
