@@ -73,7 +73,15 @@ function ToggleSwitch:init()
         w = item_width,
         h = item_height,
     }
+    local diff_one_step = item_width - (frame_inner_width / self.n_pos - 2*item_border_size)
+    local diff = 0
     for i = 1, #self.toggle do
+        diff = diff + diff_one_step
+        if diff >= 1 then
+            -- One pixel narrower to better align the entire widget
+            center_dimen.w = item_width - math.floor(diff)
+            diff = diff - math.floor(diff)
+        end
         local text = self.toggle[i]
         local face = Font:getFace(self.font_face, self.font_size)
         local txt_width = RenderText:sizeUtf8Text(0, Screen:getWidth(), face, text, true, true).x
