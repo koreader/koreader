@@ -1578,7 +1578,7 @@ function ReaderGesture:onToggleReadingOrder()
         self:setupGesture(gesture, action)
     end
     UIManager:show(Notification:new{
-        text = self.inverse_reading_order and _("RTL page turning.") or _("LTR page turning."),
+        text = document_module.inverse_reading_order and _("RTL page turning.") or _("LTR page turning."),
         timeout = 2.5,
     })
     return true
