@@ -240,14 +240,6 @@ function ReaderGesture:initGesture()
     G_reader_settings:saveSetting(self.ges_mode, gesture_manager)
 end
 
-function ReaderGesture:onReSetupGesture()
-    local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
-    for gesture, action in pairs(gesture_manager) do
-        self:setupGesture(gesture, action)
-    end
-    return true
-end
-
 function ReaderGesture:genMultiswipeSubmenu()
     return {
         text = _("Multiswipe"),
@@ -1368,7 +1360,7 @@ function ReaderGesture:gestureAction(action, ges)
     elseif action == "toggle_bookmark" then
         self.ui:handleEvent(Event:new("ToggleBookmark"))
     elseif action == "toggle_inverse_reading_order" then
-        self.ui:handleEvent(Event:new("ToggleReadingOrder"))
+        self:onToggleReadingOrder()
     elseif action == "toggle_frontlight" then
         -- when using frontlight system settings
         if lightFrontlight() then
@@ -1572,6 +1564,22 @@ function ReaderGesture:onGSensorToggle()
     UIManager:show(Notification:new{
         text = new_text,
         timeout = 1.0,
+    })
+    return true
+end
+
+function ReaderGesture:onToggleReadingOrder()
+    local document_module = self.ui.document.info.has_pages and self.ui.paging or self.ui.rolling
+    document_module.inverse_reading_order = not document_module.inverse_reading_order
+    document_module:setupTouchZones()
+    -- Needed to reset the touch zone overrides
+    local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
+    for gesture, action in pairs(gesture_manager) do
+        self:setupGesture(gesture, action)
+    end
+    UIManager:show(Notification:new{
+        text = self.inverse_reading_order and _("RTL page turning.") or _("LTR page turning."),
+        timeout = 2.5,
     })
     return true
 end

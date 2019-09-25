@@ -4,7 +4,7 @@ local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Math = require("optmath")
-local Notification = require("ui/widget/notification")
+local ReaderGesture = require("apps/reader/modules/readergesture")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
@@ -242,7 +242,7 @@ function ReaderPaging:addToMainMenu(menu_items)
         text = _("Invert page turn taps and swipes"),
         checked_func = function() return self.inverse_reading_order end,
         callback = function()
-            self:onToggleReadingOrder()
+            ReaderGesture:onToggleReadingOrder()
         end,
         hold_callback = function(touchmenu_instance)
             UIManager:show(ConfirmBox:new{
@@ -1016,18 +1016,6 @@ function ReaderPaging:onGotoPrevChapter()
         self.ui.link:addCurrentLocationToStack()
         self:onGotoPage(new_page)
     end
-    return true
-end
-
-function ReaderPaging:onToggleReadingOrder()
-    self.inverse_reading_order = not self.inverse_reading_order
-    self:setupTapTouchZones()
-    -- Needed to reset the touch zone overrides
-    self.ui:handleEvent(Event:new("ReSetupGesture"))
-    UIManager:show(Notification:new{
-        text = self.inverse_reading_order and _("RTL page turning.") or _("LTR page turning."),
-        timeout = 2.5,
-    })
     return true
 end
 
