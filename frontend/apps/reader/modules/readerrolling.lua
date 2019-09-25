@@ -751,6 +751,7 @@ function ReaderRolling:onChangeViewMode()
     self.old_doc_height = self.ui.document.info.doc_height
     self.old_page = self.ui.document.info.number_of_pages
     self.ui:handleEvent(Event:new("UpdateToc"))
+    self.view.footer:setTocMarkers(true)
     if self.xpointer then
         self:_gotoXPointer(self.xpointer)
         -- Ensure a whole screen refresh is always enqueued

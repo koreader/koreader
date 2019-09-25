@@ -911,6 +911,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
                 callback = function()
                     self.settings.disable_progress_bar = not self.settings.disable_progress_bar
+                    self:setTocMarkers()
                     self:refreshFooter()
                     if self.settings.progress_bar_separate_line then
                         self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
@@ -983,10 +984,11 @@ function ReaderFooter:genAllFooterText()
     return table.concat(info, separator)
 end
 
--- this method should never get called when footer is disabled
 function ReaderFooter:setTocMarkers(reset)
+    if self.settings.disable_progress_bar then return end
     if reset then
         self.progress_bar.ticks = nil
+        self.pages = self.view.document:getPageCount()
     end
     if self.settings.toc_markers then
         if self.progress_bar.ticks ~= nil then return end
