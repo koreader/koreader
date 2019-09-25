@@ -78,7 +78,7 @@ function ToggleSwitch:init()
         local real_item_width = item_width
         item_width_to_add = item_width_to_add + item_width_adjust
         if item_width_to_add >= 1 then
-            -- One pixel narrower to better align the entire widget
+            -- One pixel wider to better align the entire widget
             real_item_width = item_width + math.floor(item_width_to_add)
             item_width_to_add = item_width_to_add - math.floor(item_width_to_add)
         end
