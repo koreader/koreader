@@ -1026,6 +1026,7 @@ function ReaderPaging:onToggleReadingOrder()
         text = self.inverse_reading_order and _("RTL page turning.") or _("LTR page turning."),
         timeout = 2.5,
     })
+    return true
 end
 
 return ReaderPaging
