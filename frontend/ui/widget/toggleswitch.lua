@@ -65,6 +65,8 @@ function ToggleSwitch:init()
     local item_padding = Size.padding.default -- only used to check if text truncate needed
     local item_border_size = Size.border.thin
     local frame_inner_width = self.width - 2*self.toggle_frame.padding - 2* self.toggle_frame.bordersize
+    -- We'll need to adjust items width and distribute the accumulated fractional part to some
+    -- of them for proper visual alignment
     local item_width_real = frame_inner_width / self.n_pos - 2*item_border_size
     local item_width = math.floor(item_width_real)
     local item_width_adjust = item_width_real - item_width
