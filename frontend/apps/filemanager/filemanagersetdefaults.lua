@@ -70,11 +70,11 @@ function SetDefaults:init()
         load_defaults()
     end
 
-    local i = 1
+    local idx = 1
     for n, v in util.orderedPairs(defaults) do
-        self.defaults_name[i] = n
-        self.defaults_value[i] = v
-        i = i + 1
+        self.defaults_name[idx] = n
+        self.defaults_value[idx] = v
+        idx = idx + 1
     end
 
     local menu_container = CenterContainer:new{
@@ -357,11 +357,9 @@ end
 
 function SetDefaults:saveBeforeExit(callback)
     local canRestart = Device:canRestart()
-    local saveMessage = ""
+    local saveMessage = "Save and quit"
     if canRestart then
         saveMessage = "Save and restart"
-    else
-        saveMessage = "Save and quit"
     end
     if self.settings_changed then
         UIManager:show(ConfirmBox:new{
