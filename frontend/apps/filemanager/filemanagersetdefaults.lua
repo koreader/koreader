@@ -1,6 +1,7 @@
 local CenterContainer = require("ui/widget/container/centercontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
+local Device = require("device")
 local Font = require("ui/font")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -10,6 +11,7 @@ local MultiInputDialog = require("ui/widget/multiinputdialog")
 local UIManager = require("ui/uimanager")
 local dump = require("dump")
 local isAndroid, android = pcall(require, "android")
+local logger = require("logger")
 local util = require("ffi/util")
 local _ = require("gettext")
 local Screen = require("device").screen
@@ -34,7 +36,6 @@ local SetDefaults = InputContainer:new{
     defaults_value = {},
     results = {},
     defaults_menu = {},
-    initialized = false,
     changed = {},
     settings_changed = false,
 }
@@ -56,28 +57,24 @@ end
 function SetDefaults:init()
     self.results = {}
 
-    if not self.initialized then
-        local defaults = {}
-        local load_defaults = loadfile(defaults_path)
+    local defaults = {}
+    local load_defaults = loadfile(defaults_path)
+    setfenv(load_defaults, defaults)
+    load_defaults()
+
+    local file = io.open(persistent_defaults_path, "r")
+    if file ~= nil then
+        file:close()
+        load_defaults = loadfile(persistent_defaults_path)
         setfenv(load_defaults, defaults)
         load_defaults()
+    end
 
-        local file = io.open(persistent_defaults_path, "r")
-        if file ~= nil then
-            file:close()
-            load_defaults = loadfile(persistent_defaults_path)
-            setfenv(load_defaults, defaults)
-            load_defaults()
-        end
-
-        local i = 1
-        for n, v in util.orderedPairs(defaults) do
-            self.defaults_name[i] = n
-            self.defaults_value[i] = v
-            i = i + 1
-        end
-
-        self.initialized = true
+    local i = 1
+    for n, v in util.orderedPairs(defaults) do
+        self.defaults_name[i] = n
+        self.defaults_value[i] = v
+        i = i + 1
     end
 
     local menu_container = CenterContainer:new{
@@ -99,8 +96,15 @@ function SetDefaults:init()
         show_parent = menu_container,
         _manager = self,
     }
+    function self.defaults_menu:onMenuSelect(item)
+        logger.warn("SetDefaults.onMenuSelect", item.text)
+        item.callback()
+    end
+
     table.insert(menu_container, self.defaults_menu)
     self.defaults_menu.close_callback = function()
+        logger.warn("Defaults menu close callback")
+        self:saveBeforeExit()
         UIManager:close(menu_container)
     end
 
@@ -109,7 +113,8 @@ function SetDefaults:init()
         enabled = true,
         callback = function()
             self:close()
-            UIManager:show(menu_container)
+            logger.warn("Defaults cancel button")
+            --UIManager:show(menu_container)
         end,
     }
 
@@ -136,7 +141,7 @@ function SetDefaults:init()
                                     self.results[i].text = self:build_setting(i)
                                     self:close()
                                     self.defaults_menu:switchItemTable("Defaults", self.results, i)
-                                    UIManager:show(menu_container)
+                                    --UIManager:show(menu_container)
                                 end
                             },
                             {
@@ -150,7 +155,7 @@ function SetDefaults:init()
                                     self.results[i].text = self:build_setting(i)
                                     self.defaults_menu:switchItemTable("Defaults", self.results, i)
                                     self:close()
-                                    UIManager:show(menu_container)
+                                    --UIManager:show(menu_container)
                                 end
                             },
                         },
@@ -158,6 +163,7 @@ function SetDefaults:init()
                     input_type = setting_type,
                     width = Screen:getWidth() * 0.95,
                 }
+                logger.warn("SetDefaults boolean dialog")
                 UIManager:show(self.set_dialog)
                 self.set_dialog:onShowKeyboard()
             end
@@ -203,7 +209,7 @@ function SetDefaults:init()
 
                                     self:close()
                                     self.defaults_menu:switchItemTable("Defaults", self.results, i)
-                                    UIManager:show(menu_container)
+                                    --UIManager:show(menu_container)
                                 end,
                             },
                         },
@@ -211,6 +217,7 @@ function SetDefaults:init()
                     width = Screen:getWidth() * 0.95,
                     height = Screen:getHeight() * 0.2,
                 }
+                logger.warn("SetDefaults table dialog")
                 UIManager:show(self.set_dialog)
                 self.set_dialog:onShowKeyboard()
             end
@@ -242,7 +249,7 @@ function SetDefaults:init()
                                     end
                                     self:close()
                                     self.defaults_menu:switchItemTable("Defaults", self.results, i)
-                                    UIManager:show(menu_container)
+                                    --UIManager:show(menu_container)
                                 end,
                             },
                         },
@@ -250,6 +257,7 @@ function SetDefaults:init()
                     input_type = setting_type,
                     width = Screen:getWidth() * 0.95,
                 }
+                logger.warn("SetDefaults string dialog")
                 UIManager:show(self.set_dialog)
                 self.set_dialog:onShowKeyboard()
             end
@@ -357,26 +365,31 @@ function SetDefaults:saveSettings()
 end
 
 function SetDefaults:saveBeforeExit(callback)
+    local canRestart = Device:canRestart()
+    local saveMessage = ""
+    if canRestart then
+        saveMessage = "Save and restart"
+    else
+        saveMessage = "Save and quit"
+    end
     if self.settings_changed then
         UIManager:show(ConfirmBox:new{
-            text = _("You have unsaved default settings. Save them now?\nTap \"Cancel\" to return to KOReader."),
-            ok_text = _("Save"),
+            text = _("KOReader needs to restart in order to apply all default settings."),
+            ok_text = _(saveMessage),
             ok_callback = function()
-              self.settings_changed = false
-              self:saveSettings()
-              callback()
-            end,
-            cancel_text = _("Don't save"),
-            cancel_callback = function()
                 self.settings_changed = false
-                callback()
+                self:saveSettings()
+                --self.ui:onClose()
+                if canRestart then
+                    UIManager:restartKOReader()
+                end
             end,
-            other_buttons = {{
-              text = _("Cancel"),
-            }}
+            cancel_text = _("Discard changes"),
+            cancel_callback = function()
+                logger.info("discard defaults")
+                self.settings_changed = false
+            end,
         })
-    else
-        callback()
     end
 end
 

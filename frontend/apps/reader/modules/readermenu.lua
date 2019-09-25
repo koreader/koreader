@@ -194,21 +194,15 @@ function ReaderMenu:setUpdateItemTable()
 
     self.menu_items.exit_menu = {
         text = _("Exit"),
-        hold_callback = function()
-            SetDefaults:saveBeforeExit(function() self:exitOrRestart() end)
-        end,
+        hold_callback = function() self:exitOrRestart() end,
     }
     self.menu_items.exit = {
         text = _("Exit"),
-        callback = function()
-            SetDefaults:saveBeforeExit(function() self:exitOrRestart() end)
-        end,
+        callback = function() self:exitOrRestart() end,
     }
     self.menu_items.restart_koreader = {
         text = _("Restart KOReader"),
-        callback = function()
-            SetDefaults:saveBeforeExit(function() self:exitOrRestart(function() UIManager:restartKOReader() end) end)
-        end,
+        callback = function() self:exitOrRestart(function() UIManager:restartKOReader() end) end,
     }
     if not Device:canRestart() then
         self.menu_items.exit_menu = self.menu_items.exit

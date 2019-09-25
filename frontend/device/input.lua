@@ -385,9 +385,7 @@ function Input:handleKeyBoardEv(ev)
         if readerui_instance then
             savequit_caller = readerui_instance.menu
         end
-        require("apps/filemanager/filemanagersetdefaults"):saveBeforeExit(function()
-            savequit_caller:exitOrRestart(save_quit)
-        end)
+        savequit_caller:exitOrRestart(save_quit)
     end
 
     -- handle modifier keys

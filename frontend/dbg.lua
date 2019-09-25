@@ -31,7 +31,7 @@ end
 function Dbg:turnOn()
     if self.is_on == true then return end
     self.is_on = true
-    logger:setLevel(logger.levels.dbg)
+    logger:setLevel(logger.levels.info)
 
     Dbg_mt.__call = function(dbg, ...) LvDEBUG(math.huge, ...) end
     Dbg.guard = function(_, mod, method, pre_guard, post_guard)
@@ -60,7 +60,7 @@ end
 function Dbg:turnOff()
     if self.is_on == false then return end
     self.is_on = false
-    logger:setLevel(logger.levels.info)
+    logger:setLevel(logger.levels.warn)
     function Dbg_mt.__call() end
     function Dbg.guard() end
     Dbg.dassert = function(check)
