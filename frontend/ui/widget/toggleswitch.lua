@@ -65,7 +65,11 @@ function ToggleSwitch:init()
     local item_padding = Size.padding.default -- only used to check if text truncate needed
     local item_border_size = Size.border.thin
     local frame_inner_width = self.width - 2*self.toggle_frame.padding - 2* self.toggle_frame.bordersize
-    local item_width = math.ceil(frame_inner_width / self.n_pos - 2*item_border_size)
+    -- We'll need to adjust items width and distribute the accumulated fractional part to some
+    -- of them for proper visual alignment
+    local item_width_real = frame_inner_width / self.n_pos - 2*item_border_size
+    local item_width = math.ceil(item_width_real)
+    local item_width_adjust = item_width - item_width_real
     local item_height = self.height / self.row_count
     -- Note: the height provided by ConfigDialog might be smaller than needed,
     -- it gets too thin if we account for padding & border
@@ -73,14 +77,14 @@ function ToggleSwitch:init()
         w = item_width,
         h = item_height,
     }
-    local diff_one_step = item_width - (frame_inner_width / self.n_pos - 2*item_border_size)
-    local diff = 0
+    --local diff_one_step = item_width - (frame_inner_width / self.n_pos - 2*item_border_size)
+    local item_width_to_add = 0
     for i = 1, #self.toggle do
-        diff = diff + diff_one_step
-        if diff >= 1 then
+        item_width_to_add = item_width_to_add + item_width_adjust
+        if item_width_to_add >= 1 then
             -- One pixel narrower to better align the entire widget
-            center_dimen.w = item_width - math.floor(diff)
-            diff = diff - math.floor(diff)
+            center_dimen.w = item_width - math.floor(item_width_to_add)
+            item_width_to_add = item_width_to_add - math.floor(item_width_to_add)
         end
         local text = self.toggle[i]
         local face = Font:getFace(self.font_face, self.font_size)
