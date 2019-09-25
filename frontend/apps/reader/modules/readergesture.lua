@@ -80,6 +80,7 @@ local action_strings = {
     toggle_bookmark = _("Toggle bookmark"),
     toggle_page_flipping = _("Toggle page flipping"),
     toggle_reflow = _("Toggle reflow"),
+    toggle_inverse_reading_order = _("Toggle page turn direction"),
 
     zoom_contentwidth = _("Zoom to fit content width"),
     zoom_contentheight = _("Zoom to fit content height"),
@@ -723,6 +724,7 @@ function ReaderGesture:buildMenu(ges, default)
         {"toggle_bookmark", not self.is_docless, true},
         {"toggle_page_flipping", not self.is_docless, true},
         {"toggle_reflow", not self.is_docless, true},
+        {"toggle_inverse_reading_order", not self.is_docless, true},
         {"zoom_contentwidth", not self.is_docless},
         {"zoom_contentheight", not self.is_docless},
         {"zoom_pagewidth", not self.is_docless},
@@ -1357,6 +1359,8 @@ function ReaderGesture:gestureAction(action, ges)
         end
     elseif action == "toggle_bookmark" then
         self.ui:handleEvent(Event:new("ToggleBookmark"))
+    elseif action == "toggle_inverse_reading_order" then
+        self.ui:handleEvent(Event:new("ToggleReadingOrder"))
     elseif action == "toggle_frontlight" then
         -- when using frontlight system settings
         if lightFrontlight() then

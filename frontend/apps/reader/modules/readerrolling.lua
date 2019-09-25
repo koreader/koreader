@@ -3,6 +3,7 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local Notification = require("ui/widget/notification")
 local ProgressWidget = require("ui/widget/progresswidget")
 local ReaderPanning = require("apps/reader/modules/readerpanning")
 local TimeVal = require("ui/timeval")
@@ -367,8 +368,7 @@ function ReaderRolling:addToMainMenu(menu_items)
         text = _("Invert page turn taps and swipes"),
         checked_func = function() return self.inverse_reading_order end,
         callback = function()
-            self.inverse_reading_order = not self.inverse_reading_order
-            self:setupTouchZones()
+            self:onToggleReadingOrder()
         end,
         hold_callback = function(touchmenu_instance)
             UIManager:show(ConfirmBox:new{
@@ -1026,6 +1026,15 @@ function ReaderRolling:showEngineProgress(percent)
         -- some progress callback for will generate a full
         -- screen refresh.
     end
+end
+
+function ReaderRolling:onToggleReadingOrder()
+    self.inverse_reading_order = not self.inverse_reading_order
+    self:setupTouchZones()
+    UIManager:show(Notification:new{
+        text = _((self.inverse_reading_order and "RTL" or "LTR") .. " page direction."),
+        timeout = 2.5,
+    })
 end
 
 return ReaderRolling
