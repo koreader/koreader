@@ -1031,6 +1031,8 @@ end
 function ReaderRolling:onToggleReadingOrder()
     self.inverse_reading_order = not self.inverse_reading_order
     self:setupTouchZones()
+    -- Needed to reset the touch zone overrides
+    self.ui:handleEvent(Event:new("ReSetupGesture"))
     UIManager:show(Notification:new{
         text = self.inverse_reading_order and _("RTL page turning.") or _("LTR page turning."),
         timeout = 2.5,

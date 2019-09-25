@@ -240,6 +240,13 @@ function ReaderGesture:initGesture()
     G_reader_settings:saveSetting(self.ges_mode, gesture_manager)
 end
 
+function ReaderGesture:onReSetupGesture()
+    local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
+    for gesture, action in pairs(gesture_manager) do
+        self:setupGesture(gesture, action)
+    end
+end
+
 function ReaderGesture:genMultiswipeSubmenu()
     return {
         text = _("Multiswipe"),
