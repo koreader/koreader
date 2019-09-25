@@ -245,6 +245,7 @@ function ReaderGesture:onReSetupGesture()
     for gesture, action in pairs(gesture_manager) do
         self:setupGesture(gesture, action)
     end
+    return true
 end
 
 function ReaderGesture:genMultiswipeSubmenu()
