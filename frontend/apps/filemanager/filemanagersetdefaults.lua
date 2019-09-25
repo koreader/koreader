@@ -356,20 +356,18 @@ function SetDefaults:saveSettings()
 end
 
 function SetDefaults:saveBeforeExit(callback)
-    local canRestart = Device:canRestart()
-    local saveMessage = "Save and quit"
-    if canRestart then
-        saveMessage = "Save and restart"
+    local save_text = _("Save and quit")
+    if Device:canRestart() then
+        save_text = _("Save and restart")
     end
     if self.settings_changed then
         UIManager:show(ConfirmBox:new{
-            text = _("KOReader needs to restart in order to apply all default settings."),
-            ok_text = _(saveMessage),
+            text = _("KOReader needs to be restarted to apply the new default settings."),
+            ok_text = save_text,
             ok_callback = function()
                 self.settings_changed = false
                 self:saveSettings()
-                --self.ui:onClose()
-                if canRestart then
+                if Device:canRestart() then
                     UIManager:restartKOReader()
                 else
                     UIManager:quit()
