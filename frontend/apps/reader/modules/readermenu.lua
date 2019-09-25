@@ -7,7 +7,6 @@ local Screensaver = require("ui/screensaver")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local dbg = require("dbg")
-local lfs = require("libs/libkoreader-lfs")
 local util  = require("util")
 local Screen = Device.screen
 local _ = require("gettext")
@@ -193,15 +192,21 @@ function ReaderMenu:setUpdateItemTable()
 
     self.menu_items.exit_menu = {
         text = _("Exit"),
-        hold_callback = function() self:exitOrRestart() end,
+        hold_callback = function()
+            self:exitOrRestart()
+        end,
     }
     self.menu_items.exit = {
         text = _("Exit"),
-        callback = function() self:exitOrRestart() end,
+        callback = function()
+            self:exitOrRestart()
+        end,
     }
     self.menu_items.restart_koreader = {
         text = _("Restart KOReader"),
-        callback = function() self:exitOrRestart(function() UIManager:restartKOReader() end) end,
+        callback = function()
+            self:exitOrRestart(function() UIManager:restartKOReader() end)
+        end,
     }
     if not Device:canRestart() then
         self.menu_items.exit_menu = self.menu_items.exit

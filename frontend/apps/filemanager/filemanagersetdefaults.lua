@@ -96,14 +96,14 @@ function SetDefaults:init()
         show_parent = menu_container,
         _manager = self,
     }
+    -- Prevent menu from closing when editing a value
     function self.defaults_menu:onMenuSelect(item)
-        logger.warn("SetDefaults.onMenuSelect", item.text)
         item.callback()
     end
 
     table.insert(menu_container, self.defaults_menu)
     self.defaults_menu.close_callback = function()
-        logger.warn("Defaults menu close callback")
+        logger.dbg("Closing defaults menu")
         self:saveBeforeExit()
         UIManager:close(menu_container)
     end
@@ -113,8 +113,6 @@ function SetDefaults:init()
         enabled = true,
         callback = function()
             self:close()
-            logger.warn("Defaults cancel button")
-            --UIManager:show(menu_container)
         end,
     }
 
@@ -141,7 +139,6 @@ function SetDefaults:init()
                                     self.results[i].text = self:build_setting(i)
                                     self:close()
                                     self.defaults_menu:switchItemTable("Defaults", self.results, i)
-                                    --UIManager:show(menu_container)
                                 end
                             },
                             {
@@ -155,7 +152,6 @@ function SetDefaults:init()
                                     self.results[i].text = self:build_setting(i)
                                     self.defaults_menu:switchItemTable("Defaults", self.results, i)
                                     self:close()
-                                    --UIManager:show(menu_container)
                                 end
                             },
                         },
@@ -163,7 +159,6 @@ function SetDefaults:init()
                     input_type = setting_type,
                     width = Screen:getWidth() * 0.95,
                 }
-                logger.warn("SetDefaults boolean dialog")
                 UIManager:show(self.set_dialog)
                 self.set_dialog:onShowKeyboard()
             end
@@ -209,7 +204,6 @@ function SetDefaults:init()
 
                                     self:close()
                                     self.defaults_menu:switchItemTable("Defaults", self.results, i)
-                                    --UIManager:show(menu_container)
                                 end,
                             },
                         },
@@ -217,7 +211,6 @@ function SetDefaults:init()
                     width = Screen:getWidth() * 0.95,
                     height = Screen:getHeight() * 0.2,
                 }
-                logger.warn("SetDefaults table dialog")
                 UIManager:show(self.set_dialog)
                 self.set_dialog:onShowKeyboard()
             end
@@ -249,7 +242,6 @@ function SetDefaults:init()
                                     end
                                     self:close()
                                     self.defaults_menu:switchItemTable("Defaults", self.results, i)
-                                    --UIManager:show(menu_container)
                                 end,
                             },
                         },
@@ -257,7 +249,6 @@ function SetDefaults:init()
                     input_type = setting_type,
                     width = Screen:getWidth() * 0.95,
                 }
-                logger.warn("SetDefaults string dialog")
                 UIManager:show(self.set_dialog)
                 self.set_dialog:onShowKeyboard()
             end

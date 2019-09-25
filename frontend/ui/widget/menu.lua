@@ -1086,7 +1086,6 @@ end
 override this function to process the item selected in a different manner
 ]]--
 function Menu:onMenuSelect(item)
-    logger.warn("Menu.onMenuSelect", item.text)
     if item.sub_item_table == nil then
         if self.close_callback then
             self.close_callback()
@@ -1106,7 +1105,6 @@ end
     override this function to handle the choice
 --]]
 function Menu:onMenuChoice(item)
-    logger.warn("Menu:onMenuChoice", item.text)
     if item.callback then
         item.callback()
     end
