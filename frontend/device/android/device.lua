@@ -169,19 +169,16 @@ function Device:init()
         self.isTouchDevice = yes
     end
 
-    -- check if we enabled support for custom timeouts (including wakelocks)
+    -- check if the activity has a custom timeout
     if android.needsWakelocks() then
-        android.setScreenOffTimeout(-1)
+        android.setScreenOffTimeout(C.ATIMEOUT_WAKELOCK)
     else
         local timeout = G_reader_settings:readSetting("android_screen_timeout")
-        if timeout and timeout > 0 then
-            -- set a custom timeout if we already have write settings permission.
-            -- do not attempt to request permissions here.
-            if android.canWriteSettings() then
+        if timeout then
+            if timeout > C.ATIMEOUT_SYSTEM
+            or timeout == C.ATIMEOUT_WAKELOCK then
                 android.setScreenOffTimeout(timeout)
             end
-        elseif timeout and timeout == -1 then
-            android.setScreenOffTimeout(timeout)
         end
     end
 
