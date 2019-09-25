@@ -1032,7 +1032,7 @@ function ReaderRolling:onToggleReadingOrder()
     self.inverse_reading_order = not self.inverse_reading_order
     self:setupTouchZones()
     UIManager:show(Notification:new{
-        text = _((self.inverse_reading_order and "RTL" or "LTR") .. " page direction."),
+        text = self.inverse_reading_order and _("RTL page turning.") or _("LTR page turning."),
         timeout = 2.5,
     })
 end
