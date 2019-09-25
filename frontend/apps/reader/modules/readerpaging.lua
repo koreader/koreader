@@ -4,7 +4,6 @@ local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Math = require("optmath")
-local ReaderGesture = require("apps/reader/modules/readergesture")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
@@ -242,7 +241,7 @@ function ReaderPaging:addToMainMenu(menu_items)
         text = _("Invert page turn taps and swipes"),
         checked_func = function() return self.inverse_reading_order end,
         callback = function()
-            ReaderGesture:onToggleReadingOrder()
+            self.ui:handleEvent(Event:new("ToggleReadingOrder"))
         end,
         hold_callback = function(touchmenu_instance)
             UIManager:show(ConfirmBox:new{
