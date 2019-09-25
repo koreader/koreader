@@ -241,8 +241,7 @@ function ReaderPaging:addToMainMenu(menu_items)
         text = _("Invert page turn taps and swipes"),
         checked_func = function() return self.inverse_reading_order end,
         callback = function()
-            self.inverse_reading_order = not self.inverse_reading_order
-            self:setupTapTouchZones()
+            self.ui:handleEvent(Event:new("ToggleReadingOrder"))
         end,
         hold_callback = function(touchmenu_instance)
             UIManager:show(ConfirmBox:new{
