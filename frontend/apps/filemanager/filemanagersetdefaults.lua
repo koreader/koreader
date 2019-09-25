@@ -382,11 +382,15 @@ function SetDefaults:saveBeforeExit(callback)
                 --self.ui:onClose()
                 if canRestart then
                     UIManager:restartKOReader()
+                else
+                    UIManager:quit()
                 end
             end,
             cancel_text = _("Discard changes"),
             cancel_callback = function()
                 logger.info("discard defaults")
+                pcall(dofile, defaults_path)
+                pcall(dofile, persistent_defaults_path)
                 self.settings_changed = false
             end,
         })
