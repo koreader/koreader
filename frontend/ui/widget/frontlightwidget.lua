@@ -156,7 +156,7 @@ function FrontLightWidget:setProgress(num, step, num_warmth)
 
     self.fl_group = ProgressWidget:new{
         width = self.screen_width * 0.9,
-        height = Size.item.height_medium,
+        height = Size.item.height_big,
         percentage = self.fl_cur / self.fl_max,
         ticks = ticks,
         tick_width = Screen:scaleBySize(0.5),
