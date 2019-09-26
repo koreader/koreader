@@ -159,6 +159,7 @@ function FrontLightWidget:setProgress(num, step, num_warmth)
         height = Screen:scaleBySize(30),
         percentage = self.fl_cur / self.fl_max,
         ticks = ticks,
+        tick_width = Screen:scaleBySize(0.5),
         last = self.fl_max,
     }
     local text_br = TextBoxWidget:new{
