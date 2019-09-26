@@ -645,27 +645,28 @@ function FrontLightWidget:onTapProgress(arg, ges_ev)
         local current_time = TimeVal:now()
 
         local last_time_f = self.last_time_fl or TimeVal:new{}
-        -- Always set the frontlight intensity.
+        -- Set the frontlight intensity.
         if current_time - last_time_f > TimeVal:new{usec = 1000000 / self.fl_rate} then
             self:setFrontLightIntensity(num)
         else
             UIManager:scheduleIn(0.5, self.setFrontLightIntensity, self, num)
         end
 
-        -- But limit the widget update frequency on E Ink.
-        if Screen.low_pan_rate then
-            local last_time = self.last_time or TimeVal:new{}
+        -- Update the widget.
+        local last_time = self.last_time or TimeVal:new{}
 
-            if current_time - last_time > TimeVal:new{usec = 1000000 / self.refresh_rate} then
-                self.last_time = current_time
-            else
-                -- Schedule a final update after we stop panning.
-                UIManager:scheduleIn(0.5, self.update, self)
-                return true
+        if current_time - last_time > TimeVal:new{usec = 1000000 / self.refresh_rate} then
+            self.last_time = current_time
+            if not Device:hasNaturalLight() then
+                -- Only do nice realtime updates on older devices.
+                -- Mk 7 Kobos are oddly slow at the FL ioctl.
+                self:update()
             end
+        else
+            -- Schedule a final update after we stop panning.
+            UIManager:scheduleIn(0.5, self.update, self)
+            return true
         end
-
-        self:update()
     elseif not ges_ev.pos:intersectWith(self.light_frame.dimen) and ges_ev.ges == "tap" then
         -- close if tap outside
         self:onClose()
