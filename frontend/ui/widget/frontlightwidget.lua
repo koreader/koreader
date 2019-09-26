@@ -149,10 +149,16 @@ function FrontLightWidget:setProgress(num, step, num_warmth)
         if self.fl_cur == self.fl_min then enable_button_minus = false end
     end
 
+    local ticks = {}
+    for i = 1, self.steps-2 do
+        table.insert(ticks, i*self.one_step)
+    end
+
     self.fl_group = ProgressWidget:new{
         width = self.screen_width * 0.9,
         height = Screen:scaleBySize(30),
         percentage = self.fl_cur / self.fl_max,
+        ticks = ticks,
         last = self.fl_max,
     }
     local text_br = TextBoxWidget:new{
