@@ -69,6 +69,7 @@ local action_strings = {
     decrease_frontlight = _("Decrease frontlight brightness"),
     increase_frontlight_warmth = _("Increase frontlight warmth"),
     decrease_frontlight_warmth = _("Decrease frontlight warmth"),
+    toggle_hold_corners = _("Toggle hold corners"),
     toggle_gsensor = _("Toggle accelerometer"),
     toggle_rotation = _("Toggle rotation"),
 
@@ -79,6 +80,7 @@ local action_strings = {
     toggle_bookmark = _("Toggle bookmark"),
     toggle_page_flipping = _("Toggle page flipping"),
     toggle_reflow = _("Toggle reflow"),
+    toggle_inverse_reading_order = _("Toggle page turn direction"),
 
     zoom_contentwidth = _("Zoom to fit content width"),
     zoom_contentheight = _("Zoom to fit content height"),
@@ -156,6 +158,7 @@ These advanced gestures consist of either straight swipes or diagonal swipes. To
 
 function ReaderGesture:init()
     if not Device:isTouchDevice() then return end
+    self.ignore_hold_corners = G_reader_settings:readSetting("ignore_hold_corners")
     self.multiswipes_enabled = G_reader_settings:readSetting("multiswipes_enabled")
     self.is_docless = self.ui == nil or self.ui.document == nil
     self.ges_mode = self.is_docless and "gesture_fm" or "gesture_reader"
@@ -707,6 +710,7 @@ function ReaderGesture:buildMenu(ges, default)
         {"increase_frontlight_warmth", Device:hasNaturalLight()},
         {"decrease_frontlight_warmth", Device:hasNaturalLight(), true},
 
+        {"toggle_hold_corners", true},
         {"toggle_gsensor", Device:canToggleGSensor()},
         {"toggle_rotation", not self.is_docless, true},
 
@@ -720,6 +724,7 @@ function ReaderGesture:buildMenu(ges, default)
         {"toggle_bookmark", not self.is_docless, true},
         {"toggle_page_flipping", not self.is_docless, true},
         {"toggle_reflow", not self.is_docless, true},
+        {"toggle_inverse_reading_order", not self.is_docless, true},
         {"zoom_contentwidth", not self.is_docless},
         {"zoom_contentheight", not self.is_docless},
         {"zoom_pagewidth", not self.is_docless},
@@ -1185,6 +1190,7 @@ function ReaderGesture:registerGesture(ges, action, ges_type, zone, overrides, d
                                 self.multiswipes_enabled = false
                             end,
                         })
+                        return
                     else
                         return self:multiswipeAction(gest.multiswipe_directions, gest)
                     end
@@ -1202,7 +1208,8 @@ local function lightFrontlight()
 end
 
 function ReaderGesture:gestureAction(action, ges)
-    if action == "ignore" then
+    if action == "ignore"
+       or (ges.ges == "hold" and self.ignore_hold_corners) then
         return
     elseif action == "reading_progress" and ReaderGesture.getReaderProgress then
         UIManager:show(ReaderGesture.getReaderProgress())
@@ -1352,6 +1359,8 @@ function ReaderGesture:gestureAction(action, ges)
         end
     elseif action == "toggle_bookmark" then
         self.ui:handleEvent(Event:new("ToggleBookmark"))
+    elseif action == "toggle_inverse_reading_order" then
+        self:onToggleReadingOrder()
     elseif action == "toggle_frontlight" then
         -- when using frontlight system settings
         if lightFrontlight() then
@@ -1363,6 +1372,8 @@ function ReaderGesture:gestureAction(action, ges)
         end
         Device:getPowerDevice():toggleFrontlight()
         self:onShowFLOnOff()
+    elseif action == "toggle_hold_corners" then
+        self:onIgnoreHoldCorners()
     elseif action == "toggle_gsensor" then
         G_reader_settings:flipNilOrFalse("input_ignore_gsensor")
         Device:toggleGSensor(not G_reader_settings:isTrue("input_ignore_gsensor"))
@@ -1518,6 +1529,16 @@ function ReaderGesture:pageUpdate(page)
 
 end
 
+function ReaderGesture:onIgnoreHoldCorners(ignore_hold_corners)
+    if ignore_hold_corners == nil then
+        G_reader_settings:flipNilOrFalse("ignore_hold_corners")
+    else
+        G_reader_settings:saveSetting("ignore_hold_corners", ignore_hold_corners)
+    end
+    self.ignore_hold_corners = G_reader_settings:isTrue("ignore_hold_corners")
+    return true
+end
+
 function ReaderGesture:onShowFLOnOff()
     local powerd = Device:getPowerDevice()
     local new_text
@@ -1543,6 +1564,22 @@ function ReaderGesture:onGSensorToggle()
     UIManager:show(Notification:new{
         text = new_text,
         timeout = 1.0,
+    })
+    return true
+end
+
+function ReaderGesture:onToggleReadingOrder()
+    local document_module = self.ui.document.info.has_pages and self.ui.paging or self.ui.rolling
+    document_module.inverse_reading_order = not document_module.inverse_reading_order
+    document_module:setupTouchZones()
+    -- Needed to reset the touch zone overrides
+    local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
+    for gesture, action in pairs(gesture_manager) do
+        self:setupGesture(gesture, action)
+    end
+    UIManager:show(Notification:new{
+        text = document_module.inverse_reading_order and _("RTL page turning.") or _("LTR page turning."),
+        timeout = 2.5,
     })
     return true
 end

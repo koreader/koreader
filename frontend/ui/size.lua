@@ -41,6 +41,7 @@ local Size = {
         tiny = Screen:scaleBySize(1),
         small = Screen:scaleBySize(2),
         title = Screen:scaleBySize(2),
+        fine_tune = Screen:scaleBySize(3),
         button = 0,
     },
     padding = {
@@ -63,7 +64,7 @@ local Size = {
     },
     item = {
         height_default = Screen:scaleBySize(30),
-        height_medium = Screen:scaleBySize(40),
+        height_big = Screen:scaleBySize(40),
         height_large = Screen:scaleBySize(50),
     },
     span = {

@@ -126,8 +126,16 @@ function KoboPowerD:init()
                 end
             end
             -- Does this device's NaturalLight use a custom scale?
-            self.fl_warmth_min = self.device.frontlight_settings["nl_min"] or self.fl_warmth_min
-            self.fl_warmth_max = self.device.frontlight_settings["nl_max"] or self.fl_warmth_max
+            self.fl_warmth_min = self.device.frontlight_settings.nl_min or self.fl_warmth_min
+            self.fl_warmth_max = self.device.frontlight_settings.nl_max or self.fl_warmth_max
+            -- If this device has a mixer, we can use the ioctl for brightness control, as it's much lower latency.
+            if self.device:hasNaturalLightMixer() then
+                local kobolight = require("ffi/kobolight")
+                local ok, light = pcall(kobolight.open)
+                if ok then
+                    self.device.frontlight_settings.frontlight_ioctl = light
+                end
+            end
             self.fl = SysfsLight:new(self.device.frontlight_settings)
             self.fl_warmth = 0
             self:_syncKoboLightOnStart()
@@ -224,11 +232,7 @@ end
 
 function KoboPowerD:setIntensityHW(intensity)
     if self.fl == nil then return end
-    if self.fl_warmth == nil then
-        self.fl:setBrightness(intensity)
-    else
-        self.fl:setNaturalBrightness(intensity, self.fl_warmth)
-    end
+    self.fl:setBrightness(intensity)
     self.hw_intensity = intensity
     -- Now that we have set intensity, we need to let BasePowerD
     -- know about possibly changed frontlight state (if we came
@@ -313,7 +317,8 @@ function KoboPowerD:turnOffFrontlightHW()
     util.runInSubProcess(function()
         for i = 1,5 do
             self:_setIntensity(math.floor(self.fl_intensity - ((self.fl_intensity / 5) * i)))
-            -- NOTE: We generally don't need to sleep when using sysfs as a backend...
+            --- @note: Newer devices appear to block slightly longer on FL ioctls/sysfs, so only sleep on older devices,
+            ---        otherwise we get a jump and not a ramp ;).
             if not self.device:hasNaturalLight() then
                 if (i < 5) then
                     util.usleep(35 * 1000)
@@ -351,6 +356,8 @@ function KoboPowerD:turnOnFrontlightHW()
     util.runInSubProcess(function()
         for i = 1,5 do
             self:_setIntensity(math.ceil(self.fl_min + ((self.fl_intensity / 5) * i)))
+            --- @note: Newer devices appear to block slightly longer on FL ioctls/sysfs, so only sleep on older devices,
+            ---        otherwise we get a jump and not a ramp ;).
             if not self.device:hasNaturalLight() then
                 if (i < 5) then
                     util.usleep(35 * 1000)

@@ -62,13 +62,6 @@ local symbol_prefix = {
     }
 }
 
-local MODE_NB = 0
-local MODE_INDEX = {}
-for k,v in pairs(MODE) do
-    MODE_INDEX[v] = k
-    MODE_NB = MODE_NB + 1
-end
-
 -- functions that generates footer text for each mode
 local footerTextGeneratorMap = {
     empty = function() return "" end,
@@ -218,6 +211,33 @@ function ReaderFooter:init()
         item_prefix = "icons"
     }
 
+    if not self.settings.order then
+        self.mode_nb = 0
+        self.mode_index = {}
+        local mode_tbl = {}
+        for k,v in pairs(MODE) do
+            mode_tbl[v] = k
+        end
+        local mode_name
+        for i = 0, #mode_tbl do
+            mode_name = mode_tbl[i]
+            if mode_name == "wifi_status" and not Device:isAndroid() then
+                do end -- luacheck: ignore 541
+            elseif mode_name == "frontlight" and not Device:hasFrontlight() then
+                do end -- luacheck: ignore 541
+            else
+                self.mode_index[self.mode_nb] = mode_name
+                self.mode_nb = self.mode_nb + 1
+            end
+        end
+    else
+        self.mode_index = self.settings.order
+        self.mode_nb = #self.mode_index
+    end
+    self.mode_list = {}
+    for i = 0, #self.mode_index do
+        self.mode_list[self.mode_index[i]] = i
+    end
     if self.settings.disabled then
         -- footer featuren disabled completely, stop initialization now
         self:disableFooter()
@@ -227,7 +247,7 @@ function ReaderFooter:init()
     self.pageno = self.view.state.page
     self.has_no_mode = true
     self.reclaim_height = self.settings.reclaim_height or false
-    for _, m in ipairs(MODE_INDEX) do
+    for _, m in ipairs(self.mode_index) do
         if self.settings[m] then
             self.has_no_mode = false
             break
@@ -253,24 +273,16 @@ function ReaderFooter:init()
         self.footer_text,
     }
 
-    local margin_span = HorizontalSpan:new{ width = self.horizontal_margin }
-    self.horizontal_group = HorizontalGroup:new{
-        margin_span,
-        self.progress_bar,
-        self.text_container,
-        margin_span,
-    }
-
     self:updateFooterContainer()
 
     self.mode = G_reader_settings:readSetting("reader_footer_mode") or self.mode
     if self.has_no_mode and self.settings.disable_progress_bar then
-        self.mode = MODE.off
+        self.mode = self.mode_list.off
         self.view.footer_visible = false
         self:resetLayout()
     end
     if self.settings.all_at_once then
-        self.view.footer_visible = (self.mode ~= MODE.off)
+        self.view.footer_visible = (self.mode ~= self.mode_list.off)
         self:updateFooterTextGenerator()
     else
         self:applyFooterMode()
@@ -281,6 +293,37 @@ function ReaderFooter:init()
 end
 
 function ReaderFooter:updateFooterContainer()
+    local margin_span = HorizontalSpan:new{ width = self.horizontal_margin }
+    self.vertical_frame = VerticalGroup:new{}
+    if self.settings.bottom_horizontal_separator then
+        self.separator_line = LineWidget:new{
+            dimen = Geom:new{
+                w = 0,
+                h = Size.line.medium,
+            }
+        }
+        local vertical_span = VerticalSpan:new{width = self.bottom_padding *2}
+        table.insert(self.vertical_frame, self.separator_line)
+        table.insert(self.vertical_frame, vertical_span)
+    end
+    if self.settings.progress_bar_separate_line and not self.settings.disable_progress_bar then
+        self.horizontal_group = HorizontalGroup:new{
+            margin_span,
+            self.text_container,
+            margin_span,
+        }
+        local vertical_span = VerticalSpan:new{width = self.bottom_padding *2}
+        table.insert(self.vertical_frame, self.progress_bar)
+        table.insert(self.vertical_frame, vertical_span)
+    else
+        self.horizontal_group = HorizontalGroup:new{
+            margin_span,
+            self.progress_bar,
+            self.text_container,
+            margin_span,
+        }
+    end
+
     if self.settings.align == "left" then
         self.footer_container = LeftContainer:new{
             dimen = Geom:new{ w = 0, h = self.height },
@@ -298,24 +341,7 @@ function ReaderFooter:updateFooterContainer()
         }
     end
 
-    if self.settings.bottom_horizontal_separator then
-        local separator_line = LineWidget:new{
-            dimen = Geom:new{
-                w = Screen:getWidth() - 2 * self.horizontal_margin,
-                h = Size.line.medium,
-            }
-        }
-        local vertical_span = VerticalSpan:new{width = self.bottom_padding *2}
-        self.vertical_frame = VerticalGroup:new{
-            separator_line,
-            vertical_span,
-            self.footer_container,
-        }
-    else
-        self.vertical_frame = VerticalGroup:new{
-            self.footer_container,
-        }
-    end
+    table.insert(self.vertical_frame, self.footer_container)
 
     self.footer_content = FrameContainer:new{
         self.vertical_frame,
@@ -384,9 +410,14 @@ function ReaderFooter:resetLayout(force_reset)
 
     if self.settings.disable_progress_bar then
         self.progress_bar.width = 0
+    elseif self.settings.progress_bar_separate_line then
+        self.progress_bar.width = math.floor(new_screen_width - self.horizontal_margin*2)
     else
         self.progress_bar.width = math.floor(
             new_screen_width - self.text_width - self.horizontal_margin*2)
+    end
+    if self.separator_line then
+        self.separator_line.dimen.w = new_screen_width - 2 * self.horizontal_margin
     end
     self.horizontal_group:resetLayout()
     self.footer_positioner.dimen.w = new_screen_width
@@ -414,18 +445,19 @@ function ReaderFooter:disableFooter()
     self.onPosUpdate = function() end
     self.onUpdatePos = function() end
     self.onSetStatusLine = function() end
-    self.mode = MODE.off
+    self.mode = self.mode_list.off
     self.view.footer_visible = false
 end
 
 function ReaderFooter:updateFooterTextGenerator()
     local footerTextGenerators = {}
-    for _, m in pairs(MODE_INDEX) do
+    for i, m in pairs(self.mode_index) do
         if self.settings[m] then
             table.insert(footerTextGenerators,
                          footerTextGeneratorMap[m])
             if not self.settings.all_at_once then
                 -- if not show all at once, then one is enough
+                self.mode = i
                 break
             end
         end
@@ -520,7 +552,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 local prev_has_no_mode = self.has_no_mode
                 local prev_reclaim_height = self.reclaim_height
                 self.has_no_mode = true
-                for mode_num, m in pairs(MODE_INDEX) do
+                for mode_num, m in pairs(self.mode_index) do
                     if self.settings[m] then
                         first_enabled_mode_num = mode_num
                         self.has_no_mode = false
@@ -532,7 +564,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 if self.has_no_mode then
                     self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
                     self.genFooterText = footerTextGeneratorMap.empty
-                    self.mode = MODE.off
+                    self.mode = self.mode_list.off
                 elseif prev_has_no_mode then
                     self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
                     G_reader_settings:saveSetting("reader_footer_mode", first_enabled_mode_num)
@@ -544,7 +576,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                     should_update = callback(self)
                 elseif self.settings.all_at_once then
                     should_update = self:updateFooterTextGenerator()
-                elseif (MODE[option] == self.mode and self.settings[option] == false)
+                elseif (self.mode_list[option] == self.mode and self.settings[option] == false)
                         or (prev_has_no_mode ~= self.has_no_mode) then
                     -- current mode got disabled, redraw footer with other
                     -- enabled modes. if all modes are disabled, then only show
@@ -565,6 +597,32 @@ function ReaderFooter:addToMainMenu(menu_items)
     table.insert(sub_items, {
         text = _("Settings"),
         sub_item_table = {
+            {
+                text = _("Sort items"),
+                callback = function()
+                    local item_table = {}
+                    for i=1, #self.mode_index do
+                        table.insert(item_table, {text = self:textOptionTitles(self.mode_index[i]), label = self.mode_index[i]})
+                    end
+                    local SortWidget = require("ui/widget/sortwidget")
+                    local sort_item
+                    sort_item = SortWidget:new{
+                        title = _("Sort footer items"),
+                        item_table = item_table,
+                        callback = function()
+                            for i=1, #sort_item.item_table do
+                                self.mode_index[i] = sort_item.item_table[i].label
+                            end
+                            self.settings.order = self.mode_index
+                            G_reader_settings:saveSetting("footer", self.settings)
+                            self:updateFooterTextGenerator()
+                            self:updateFooter()
+                            UIManager:setDirty(nil, "ui")
+                        end
+                    }
+                    UIManager:show(sort_item)
+                end,
+            },
             getMinibarOption("all_at_once", self.updateFooterTextGenerator),
             getMinibarOption("reclaim_height"),
             {
@@ -593,9 +651,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
                 callback = function()
                     self.settings.bottom_horizontal_separator = not self.settings.bottom_horizontal_separator
-                    self:updateFooterContainer()
-                    self:resetLayout(true)
-                    self:updateFooter()
+                    self:refreshFooter()
                     self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
                     UIManager:setDirty(nil, "ui")
                 end,
@@ -603,7 +659,7 @@ function ReaderFooter:addToMainMenu(menu_items)
             {
                 text = _("Alignment"),
                 enabled_func = function()
-                    return self.settings.disable_progress_bar == true
+                    return self.settings.disable_progress_bar or self.settings.progress_bar_separate_line
                 end,
                 sub_item_table = {
                     {
@@ -613,9 +669,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         end,
                         callback = function()
                             self.settings.align = "center"
-                            self:updateFooterContainer()
-                            self:resetLayout(true)
-                            self:updateFooter()
+                            self:refreshFooter()
                             UIManager:setDirty(nil, "ui")
                         end,
                     },
@@ -626,9 +680,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         end,
                         callback = function()
                             self.settings.align = "left"
-                            self:updateFooterContainer()
-                            self:resetLayout(true)
-                            self:updateFooter()
+                            self:refreshFooter()
                             UIManager:setDirty(nil, "ui")
                         end,
                     },
@@ -639,9 +691,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         end,
                         callback = function()
                             self.settings.align = "right"
-                            self:updateFooterContainer()
-                            self:resetLayout(true)
-                            self:updateFooter()
+                            self:refreshFooter()
                             UIManager:setDirty(nil, "ui")
                         end,
                     },
@@ -861,7 +911,11 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
                 callback = function()
                     self.settings.disable_progress_bar = not self.settings.disable_progress_bar
-                    self:updateFooter()
+                    self:setTocMarkers()
+                    self:refreshFooter()
+                    if self.settings.progress_bar_separate_line then
+                        self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
+                    end
                     UIManager:setDirty(nil, "ui")
                 end,
             },
@@ -877,6 +931,21 @@ function ReaderFooter:addToMainMenu(menu_items)
                     self.settings.toc_markers = not self.settings.toc_markers
                     self:setTocMarkers()
                     self:updateFooter()
+                    UIManager:setDirty(nil, "ui")
+                end,
+            },
+            {
+                text = _("Progress bar on separate line"),
+                checked_func = function()
+                    return self.settings.progress_bar_separate_line
+                end,
+                enabled_func = function()
+                    return not self.settings.disable_progress_bar
+                end,
+                callback = function()
+                    self.settings.progress_bar_separate_line = not self.settings.progress_bar_separate_line
+                    self:refreshFooter()
+                    self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
                     UIManager:setDirty(nil, "ui")
                 end,
             },
@@ -915,10 +984,11 @@ function ReaderFooter:genAllFooterText()
     return table.concat(info, separator)
 end
 
--- this method should never get called when footer is disabled
 function ReaderFooter:setTocMarkers(reset)
+    if self.settings.disable_progress_bar then return end
     if reset then
         self.progress_bar.ticks = nil
+        self.pages = self.view.document:getPageCount()
     end
     if self.settings.toc_markers then
         if self.progress_bar.ticks ~= nil then return end
@@ -1003,6 +1073,9 @@ function ReaderFooter:_updateFooterText(force_repaint)
             self.text_width = self.footer_text:getSize().w
         end
         self.progress_bar.width = 0
+    elseif self.settings.progress_bar_separate_line then
+        self.progress_bar.width = math.floor(self._saved_screen_width - self.horizontal_margin*2)
+        self.text_width = self.footer_text:getSize().w
     else
         if self.has_no_mode or not text then
             self.text_width = 0
@@ -1011,6 +1084,9 @@ function ReaderFooter:_updateFooterText(force_repaint)
         end
         self.progress_bar.width = math.floor(
             self._saved_screen_width - self.text_width - self.horizontal_margin*2)
+    end
+    if self.separator_line then
+        self.separator_line.dimen.w = self._saved_screen_width - 2 * self.horizontal_margin
     end
     self.text_container.dimen.w = self.text_width
     self.horizontal_group:resetLayout()
@@ -1071,7 +1147,7 @@ function ReaderFooter:applyFooterMode(mode)
     -- 9 for memory usage
     -- 10 for wifi status
     if mode ~= nil then self.mode = mode end
-    self.view.footer_visible = (self.mode ~= MODE.off)
+    self.view.footer_visible = (self.mode ~= self.mode_list.off)
 
     -- If all-at-once is enabled, just hide, but the text will keep being processed...
     if self.settings.all_at_once then
@@ -1083,7 +1159,7 @@ function ReaderFooter:applyFooterMode(mode)
         return
     end
 
-    local mode_name = MODE_INDEX[self.mode]
+    local mode_name = self.mode_index[self.mode]
     if not self.settings[mode_name] or self.has_no_mode then
         -- all modes disabled, only show progress bar
         mode_name = "empty"
@@ -1093,7 +1169,7 @@ end
 
 function ReaderFooter:onEnterFlippingMode()
     self.orig_mode = self.mode
-    self:applyFooterMode(MODE.page_progress)
+    self:applyFooterMode(self.mode_list.page_progress)
 end
 
 function ReaderFooter:onExitFlippingMode()
@@ -1115,19 +1191,19 @@ function ReaderFooter:onTapFooter(ges)
     else
         if self.settings.all_at_once or self.has_no_mode then
             if self.mode >= 1 then
-                self.mode = MODE.off
+                self.mode = self.mode_list.off
             else
-                self.mode = MODE.page_progress
+                self.mode = self.mode_list.page_progress
             end
         else
-            self.mode = (self.mode + 1) % MODE_NB
-            for i, m in ipairs(MODE_INDEX) do
-                if self.mode == MODE.off then break end
+            self.mode = (self.mode + 1) % self.mode_nb
+            for i, m in ipairs(self.mode_index) do
+                if self.mode == self.mode_list.off then break end
                 if self.mode == i then
                     if self.settings[m] then
                         break
                     else
-                        self.mode = (self.mode + 1) % MODE_NB
+                        self.mode = (self.mode + 1) % self.mode_nb
                     end
                 end
             end
@@ -1140,7 +1216,7 @@ function ReaderFooter:onTapFooter(ges)
 end
 
 function ReaderFooter:onHoldFooter()
-    if self.mode == MODE.off then return end
+    if self.mode == self.mode_list.off then return end
     self.ui:handleEvent(Event:new("ShowSkimtoDialog"))
     return true
 end
@@ -1150,13 +1226,19 @@ function ReaderFooter:setVisible(visible)
         -- If it was off, just do as if we tap'ed on it (so we don't
         -- duplicate onTapFooter() code - not if flipping_visible as in
         -- this case, a ges.pos argument to onTapFooter(ges) is required)
-        if self.mode == MODE.off and not self.view.flipping_visible then
+        if self.mode == self.mode_list.off and not self.view.flipping_visible then
             self:onTapFooter()
         end
-        self.view.footer_visible = (self.mode ~= MODE.off)
+        self.view.footer_visible = (self.mode ~= self.mode_list.off)
     else
-        self:applyFooterMode(MODE.off)
+        self:applyFooterMode(self.mode_list.off)
     end
+end
+
+function ReaderFooter:refreshFooter()
+    self:updateFooterContainer()
+    self:resetLayout(true)
+    self:updateFooter()
 end
 
 function ReaderFooter:onResume()
@@ -1177,6 +1259,11 @@ function ReaderFooter:onFrontlightStateChanged()
     if self.settings.frontlight then
         self:updateFooter(true)
     end
+end
+
+function ReaderFooter:onChangeScreenMode()
+    self:updateFooterContainer()
+    self:resetLayout(true)
 end
 
 return ReaderFooter

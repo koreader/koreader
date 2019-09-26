@@ -10,6 +10,7 @@ local SysfsLight = {
     frontlight_red = nil,
     frontlight_green = nil,
     frontlight_mixer = nil,
+    frontlight_ioctl = nil,
     nl_min = nil,
     nl_max = nil,
     nl_inverted = nil,
@@ -69,7 +70,12 @@ function SysfsLight:setNaturalBrightness(brightness, warmth)
         -- Honor the device's scale, which may not be [0...100] (f.g., it's [0...10] on the Forma) ;).
         warmth = math.floor(warmth / self.nl_max)
         if set_brightness then
-            self:_write_value(self.frontlight_white, brightness)
+            -- Prefer the ioctl, as it's much lower latency.
+            if self.frontlight_ioctl then
+                self.frontlight_ioctl:setBrightness(brightness)
+            else
+                self:_write_value(self.frontlight_white, brightness)
+            end
         end
         -- And it may be inverted... (cold is nl_max, warm is nl_min)
         if set_warmth then

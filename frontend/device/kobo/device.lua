@@ -34,6 +34,9 @@ local Kobo = Generic:new{
     -- most Kobos have also mirrored X coordinates
     touch_mirrored_x = true,
     -- enforce portrait mode on Kobos
+    --- @note: In practice, the check that is used for in ffi/framebuffer is no longer relevant,
+    ---        since, in almost every case, we enforce a hardware Portrait rotation via fbdepth on startup by default ;).
+    ---        We still want to keep it in case an unfortunate soul on an older device disables the bitdepth switch...
     isAlwaysPortrait = yes,
     -- we don't need an extra refreshFull on resume, thank you very much.
     needsScreenRefreshAfterResume = no,
@@ -247,7 +250,7 @@ local KoboStorm = Kobo:new{
     hasNaturalLight = yes,
     frontlight_settings = {
         frontlight_white = "/sys/class/backlight/mxc_msp430.0/brightness",
-        frontlight_mixer = "/sys/class/backlight/tlc5947_bl/color",
+        frontlight_mixer = "/sys/class/backlight/lm3630a_led/color",
         -- Warmth goes from 0 to 10 on the device's side (our own internal scale is still normalized to [0...100])
         -- NOTE: Those three extra keys are *MANDATORY* if frontlight_mixer is set!
         nl_min = 0,
@@ -564,12 +567,12 @@ local function check_unexpected_wakeup()
     UIManager:unschedule(Kobo.suspend)
 
     if WakeupMgr:isWakeupAlarmScheduled() and WakeupMgr:validateWakeupAlarmByProximity() then
-        logger.dbg("Kobo suspend: scheduled wakeup.")
+        logger.info("Kobo suspend: scheduled wakeup.")
         local res = WakeupMgr:wakeupAction()
         if not res then
             logger.err("Kobo suspend: wakeup action failed.")
         end
-        logger.dbg("Kobo suspend: putting device back to sleep.")
+        logger.info("Kobo suspend: putting device back to sleep.")
         -- Most wakeup actions are linear, but we need some leeway for the
         -- poweroff action to send out close events to all requisite widgets.
         UIManager:scheduleIn(30, Kobo.suspend)

@@ -10,8 +10,9 @@ local Font = require("ui/font")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LineWidget = require("ui/widget/linewidget")
-local OverlapGroup = require("ui/widget/overlapgroup")
 local NumberPickerWidget = require("ui/widget/numberpickerwidget")
+local OverlapGroup = require("ui/widget/overlapgroup")
+local RenderText = require("ui/rendertext")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
@@ -26,6 +27,8 @@ local SpinWidget = InputContainer:new{
     text = nil,
     width = Screen:getWidth() * 0.95,
     height = Screen:getHeight(),
+    value_table = nil,
+    value_index = nil,
     value = 1,
     value_max = 20,
     value_min = 0,
@@ -33,6 +36,9 @@ local SpinWidget = InputContainer:new{
     value_hold_step = 4,
     ok_text = _("OK"),
     cancel_text = _("Cancel"),
+    -- extra button on bottom
+    extra_text = nil,
+    extra_callback = nil,
     -- set this to see extra default button
     default_value = nil,
     default_text = _("Use default"),
@@ -69,6 +75,8 @@ function SpinWidget:update()
         show_parent = self,
         width = self.screen_width * 0.2,
         value = self.value,
+        value_table = self.value_table,
+        value_index = self.value_index,
         value_min = self.value_min,
         value_max = self.value_max,
         value_step = self.value_step,
@@ -80,12 +88,23 @@ function SpinWidget:update()
         value_widget,
     }
 
+    local close_button = CloseButton:new{ window = self, padding_top = Size.margin.title, }
+    local btn_width = close_button:getSize().w + Size.padding.default * 2
+    local title_txt_width = RenderText:sizeUtf8Text(
+        0, self.width, self.title_face, self.title_text).x
+    local show_title_txt
+    if self.width < (title_txt_width + btn_width) then
+        show_title_txt = RenderText:truncateTextByWidth(
+            self.title_text, self.title_face, self.width - btn_width)
+    else
+        show_title_txt = self.title_text
+    end
     local value_title = FrameContainer:new{
         padding = Size.padding.default,
         margin = Size.margin.title,
         bordersize = 0,
         TextWidget:new{
-            text = self.title_text,
+            text = show_title_txt,
             face = self.title_face,
             bold = true,
             width = self.width,
@@ -103,7 +122,7 @@ function SpinWidget:update()
             h = value_title:getSize().h
         },
         value_title,
-        CloseButton:new{ window = self, padding_top = Size.margin.title, },
+        close_button,
     }
     local buttons = {
         {
@@ -121,7 +140,7 @@ function SpinWidget:update()
                 text = self.ok_text,
                 callback = function()
                     if self.callback then
-                        self.value = value_widget:getValue()
+                        self.value, self.value_index = value_widget:getValue()
                         self:callback(self)
                     end
                     self:onClose()
@@ -140,6 +159,20 @@ function SpinWidget:update()
                 end,
             },
         })
+    end
+        if self.extra_text then
+            table.insert(buttons,{
+                {
+                    text = self.extra_text,
+                    callback = function()
+                        if self.extra_callback then
+                            self.value, self.value_index = value_widget:getValue()
+                            self.extra_callback(self)
+                        end
+                        self:onClose()
+                    end,
+                },
+            })
     end
 
     local ok_cancel_buttons = ButtonTable:new{

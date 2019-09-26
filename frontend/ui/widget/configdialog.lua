@@ -554,6 +554,9 @@ function ConfigOption:init()
                         if arg == "-" or arg == "+" then
                             self.config:onConfigFineTuneChoose(self.options[c].values, self.options[c].name,
                                 self.options[c].event, self.options[c].args, self.options[c].events, arg, self.options[c].delay_repaint)
+                        elseif arg == "⋮" then
+                            self.config:onConfigMoreChoose(self.options[c].values, self.options[c].name,
+                                self.options[c].event, arg, self.options[c].name_text, self.options[c].delay_repaint, self.options[c].more_options_param)
                         else
                             self.config:onConfigChoose(self.options[c].values, self.options[c].name,
                                 self.options[c].event, self.options[c].args, self.options[c].events, arg, self.options[c].delay_repaint)
@@ -566,7 +569,7 @@ function ConfigOption:init()
                         if arg == "-" or arg == "+" then
                             self.config:onMakeFineTuneDefault(self.options[c].name, self.options[c].name_text, self.options[c].values,
                                 self.options[c].labels or self.options[c].args, arg)
-                        else
+                        elseif arg ~= "⋮" then
                             self.config:onMakeDefault(self.options[c].name, self.options[c].name_text, self.options[c].values,
                                 self.options[c].labels or self.options[c].args, arg)
                         end
@@ -574,6 +577,8 @@ function ConfigOption:init()
                     show_parrent = self.config,
                     enabled = enabled,
                     fine_tune = self.options[c].fine_tune,
+                    more_options = self.options[c].more_options,
+                    more_options_param = self.options[c].more_options_param,
                 }
                 switch:setPosition(current_item, default_item)
                 table.insert(option_items_group, switch)
@@ -1017,6 +1022,130 @@ function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, events, 
         -- toggles may have their state (enabled/disabled) modified
         -- after this toggle update.
         self:update()
+        if not delay_repaint then -- immediate refresh
+            refresh_dialog_func()
+        end
+    end)
+end
+
+-- Tweaked variant used with the more options variant of buttonprogress and fine tune with numpicker
+-- events are not supported
+function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, delay_repaint, more_options_param)
+    if not more_options_param then
+        more_options_param = {}
+    end
+    UIManager:tickAfterNext(function()
+        -- Repainting may be delayed depending on options
+        local refresh_dialog_func = function()
+            self.skip_paint = nil
+            if self.config_options.needs_redraw_on_change then
+                -- Some Kopt document event handlers just save their setting,
+                -- and need a full repaint for kopt to load these settings,
+                -- notice the change, and redraw the document
+                UIManager:setDirty("all", "partial")
+            else
+                -- CreDocument event handlers do their own refresh:
+                -- we can just redraw our frame
+                UIManager:setDirty(self, function()
+                    return "ui", self.dialog_frame.dimen
+                end)
+            end
+        end
+        local refresh_callback = nil
+        if type(delay_repaint) == "number" then -- timeout
+            UIManager:scheduleIn(delay_repaint, refresh_dialog_func)
+            self.skip_paint = true
+        elseif delay_repaint then -- anything but nil or false: provide a callback
+            -- This needs the config option to have an "event" key
+            -- The event handler is responsible for calling this callback when
+            -- it considers it appropriate
+            refresh_callback = refresh_dialog_func
+            self.skip_paint = true
+        end
+        local value_hold_step = 0
+        if more_options_param.value_hold_step then
+            value_hold_step = more_options_param.value_hold_step
+        elseif #values >1 then
+            value_hold_step = values[2] - values[1]
+        end
+        if values and event then
+            local SpinWidget = require("ui/widget/spinwidget")
+            local curr_items = self.configurable[name]
+            local value_index = nil
+            if more_options_param.value_table then
+                if more_options_param.args_table then
+                    for k,v in pairs(more_options_param.args_table) do
+                        if v == curr_items then
+                            value_index = k
+                            break
+                        end
+                    end
+                else
+                    value_index = curr_items
+                end
+            end
+            local items = SpinWidget:new{
+                width = Screen:getWidth() * 0.6,
+                value = curr_items,
+                value_index = value_index,
+                value_table = more_options_param.value_table,
+                value_min = more_options_param.value_min or values[1],
+                value_step = more_options_param.value_step or 1,
+                value_hold_step = value_hold_step,
+                value_max = more_options_param.value_max or values[#values],
+                ok_text = _("Apply"),
+                extra_text = _("Set default"),
+                extra_callback = function(spin)
+                    UIManager:show(ConfirmBox:new{
+                        text = T(_("Set default %1 to %2?"), (name_text or ""), spin.value),
+                        ok_text = T(_("Set default")),
+                        ok_callback = function()
+                            name = self.config_options.prefix.."_"..name
+                            if more_options_param.value_table then
+                                if more_options_param.args_table then
+                                    G_reader_settings:saveSetting(name, more_options_param.args_table[spin.value_index])
+                                else
+                                    G_reader_settings:saveSetting(name, spin.value_index)
+                                end
+                            else
+                                G_reader_settings:saveSetting(name, spin.value)
+                            end
+                            self:update()
+                            UIManager:setDirty(self, function()
+                                return "ui", self.dialog_frame.dimen
+                            end)
+                        end,
+                    })
+
+                end,
+                title_text =  name_text or _("Set value"),
+                callback = function(spin)
+                    if more_options_param.value_table then
+                        if more_options_param.args_table then
+                            self:onConfigChoice(name, more_options_param.args_table[spin.value_index])
+                        else
+                            self:onConfigChoice(name, spin.value_index)
+                        end
+                    else
+                        self:onConfigChoice(name, spin.value)
+                    end
+                    if event then
+                        args = args or {}
+                        if more_options_param.value_table then
+                            if more_options_param.args_table then
+                                self:onConfigEvent(event, more_options_param.args_table[spin.value_index], refresh_callback)
+                            else
+                                self:onConfigEvent(event, spin.value_index, refresh_callback)
+                            end
+                        else
+                            self:onConfigEvent(event, spin.value, refresh_callback)
+                        end
+                        self:update()
+                    end
+                end
+            }
+            UIManager:show(items)
+        end
         if not delay_repaint then -- immediate refresh
             refresh_dialog_func()
         end

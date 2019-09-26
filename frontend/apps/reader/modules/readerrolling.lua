@@ -1,11 +1,13 @@
-local bit = require("bit")
 local Blitbuffer = require("ffi/blitbuffer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local Event = require("ui/event")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local ProgressWidget = require("ui/widget/progresswidget")
 local ReaderPanning = require("apps/reader/modules/readerpanning")
+local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
+local bit = require("bit")
 local logger = require("logger")
 local _ = require("gettext")
 local Screen = Device.screen
@@ -203,6 +205,19 @@ function ReaderRolling:onReadSettings(config)
     self.visible_pages = config:readSetting("visible_pages") or
         G_reader_settings:readSetting("copt_visible_pages") or 1
     self.ui.document:setVisiblePageCount(self.visible_pages)
+
+    -- Set a callback to allow showing load and rendering progress
+    -- (this callback will be cleaned up by cre.cpp closeDocument(),
+    -- no need to handle it in :onCloseDocument() here.)
+    self.ui.document:setCallback(function(...)
+        -- Catch and log any error happening in handleCallback(),
+        -- as otherwise it would just silently abort (but beware
+        -- having errors, this may flood crash.log)
+        local ok, err = xpcall(self.handleEngineCallback, debug.traceback, self, ...)
+        if not ok then
+            logger.warn("cre callback() error:", err)
+        end
+    end)
 end
 
 -- in scroll mode percent_finished must be save before close document
@@ -352,8 +367,7 @@ function ReaderRolling:addToMainMenu(menu_items)
         text = _("Invert page turn taps and swipes"),
         checked_func = function() return self.inverse_reading_order end,
         callback = function()
-            self.inverse_reading_order = not self.inverse_reading_order
-            self:setupTouchZones()
+            self.ui:handleEvent(Event:new("ToggleReadingOrder"))
         end,
         hold_callback = function(touchmenu_instance)
             UIManager:show(ConfirmBox:new{
@@ -582,7 +596,7 @@ function ReaderRolling:onGotoXPointer(xp, marker_xp)
             -- This is a bit tricky with how the middle margin is sized
             -- by crengine (see LVDocView::updateLayout() in lvdocview.cpp)
             screen_x = Screen:getWidth() / 2
-            local page2_x = self.ui.document._document:getPageOffsetX(self.ui.document:getCurrentPage()+1)
+            local page2_x = self.ui.document:getPageOffsetX(self.ui.document:getCurrentPage()+1)
             marker_w = page2_x + marker_w - screen_x
         else
             screen_x = 0
@@ -736,6 +750,7 @@ function ReaderRolling:onChangeViewMode()
     self.old_doc_height = self.ui.document.info.doc_height
     self.old_page = self.ui.document.info.number_of_pages
     self.ui:handleEvent(Event:new("UpdateToc"))
+    self.view.footer:setTocMarkers(true)
     if self.xpointer then
         self:_gotoXPointer(self.xpointer)
         -- Ensure a whole screen refresh is always enqueued
@@ -919,6 +934,97 @@ function ReaderRolling:updateBatteryState()
         if state then
             self.ui.document:setBatteryState(state)
         end
+    end
+end
+
+function ReaderRolling:handleEngineCallback(ev, ...)
+    local args = {...}
+    -- logger.info("handleCallback: got", ev, args and #args > 0 and args[1] or nil)
+    if ev == "OnLoadFileStart" then -- Start of book loading
+        self:showEngineProgress(0) -- Start initial delay countdown
+    elseif ev == "OnLoadFileProgress" then
+        -- Initial load from file (step 1/2) or from cache (step 1/1)
+        self:showEngineProgress(args[1]/100/2)
+    elseif ev == "OnNodeStylesUpdateStart" then -- Start of re-rendering
+        self:showEngineProgress(0) -- Start initial delay countdown
+    elseif ev == "OnNodeStylesUpdateProgress" then
+        -- Update node styles (step 1/2 on re-rendering)
+        self:showEngineProgress(args[1]/100/2)
+    elseif ev == "OnFormatStart" then -- Start of step 2/2
+        self:showEngineProgress(1/2) -- 50%, in case of no OnFormatProgress
+    elseif ev == "OnFormatProgress" then
+        -- Paragraph formatting and page splitting (step 2/2 after load
+        -- from file, step 2/2 on re-rendering)
+        self:showEngineProgress(1/2 + args[1]/100/2)
+    elseif ev == "OnSaveCacheFileStart" then -- Start of cache file save
+        self:showEngineProgress(1) -- Start initial delay countdown, fully filled
+    elseif ev == "OnSaveCacheFileProgress" then
+        -- Cache file save (when closing book after initial load from
+        -- file or re-rendering)
+        self:showEngineProgress(1 - args[1]/100) -- unfill progress
+    elseif ev == "OnDocumentReady" or ev == "OnSaveCacheFileEnd" then
+        self:showEngineProgress() -- cleanup
+    elseif ev == "OnLoadFileError" then
+        logger.warn("Cre error loading file:", args[1])
+    end
+    -- ignore other events
+end
+
+local ENGINE_PROGRESS_INITIAL_DELAY = TimeVal:new{ sec = 2 }
+local ENGINE_PROGRESS_UPDATE_DELAY = TimeVal:new{ usec = 500000 }
+
+function ReaderRolling:showEngineProgress(percent)
+    if G_reader_settings:isFalse("cre_show_progress") then
+        -- This may slow things down too much with SDL over SSH,
+        -- so allow disabling it.
+        return
+    end
+    if percent then
+        local now = TimeVal:now()
+        if self.engine_progress_update_not_before and now < self.engine_progress_update_not_before then
+            return
+        end
+        if not self.engine_progress_update_not_before then
+            -- Start showing the progress widget only if load or re-rendering
+            -- have not yet finished after 2 seconds
+            self.engine_progress_update_not_before = now + ENGINE_PROGRESS_INITIAL_DELAY
+            return
+        end
+        -- Widget size and position: best to anchor it at top left,
+        -- so it does not override the footer or a bookmark dogear
+        local x = 0
+        local y = 0
+        local w = Screen:getWidth() / 3
+        local h = Screen:scaleBySize(5)
+        if self.engine_progress_widget then
+            self.engine_progress_widget:setPercentage(percent)
+        else
+            self.engine_progress_widget = ProgressWidget:new{
+                width = w,
+                height = h,
+                percentage = percent,
+                margin_h = 0,
+                margin_v = 0,
+                radius = 0,
+                -- Show a tick at 50% (below is loading, after is rendering)
+                tick_width = Screen:scaleBySize(1),
+                ticks = {1,2},
+                last = 2,
+            }
+        end
+        -- Paint directly to the screen and force a regional refresh
+        -- as UIManager won't get a change to run until loading/rendering
+        -- is finished.
+        self.engine_progress_widget:paintTo(Screen.bb, x, y)
+        Screen["refreshFast"](Screen, x, y, w, h)
+        self.engine_progress_update_not_before = now + ENGINE_PROGRESS_UPDATE_DELAY
+    else
+        -- Done: cleanup
+        self.engine_progress_widget = nil
+        self.engine_progress_update_not_before = nil
+        -- No need for any paint/refresh: any action we got
+        -- some progress callback for will generate a full
+        -- screen refresh.
     end
 end
 

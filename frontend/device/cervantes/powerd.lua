@@ -71,6 +71,14 @@ function CervantesPowerD:init()
                     self.device.frontlight_settings[key] = val
                 end
             end
+            -- If this device has a mixer, we can use the ioctl for brightness control, as it's much lower latency.
+            if self.device:hasNaturalLightMixer() then
+                local kobolight = require("ffi/kobolight")
+                local ok, light = pcall(kobolight.open)
+                if ok then
+                    self.device.frontlight_settings.frontlight_ioctl = light
+                end
+            end
             self.fl = SysfsLight:new(self.device.frontlight_settings)
             self.fl_warmth = 0
             self:_syncLightOnStart()
@@ -123,11 +131,7 @@ end
 
 function CervantesPowerD:setIntensityHW(intensity)
     if self.fl == nil then return end
-    if self.fl_warmth == nil then
-        self.fl:setBrightness(intensity)
-    else
-        self.fl:setNaturalBrightness(intensity, self.fl_warmth)
-    end
+    self.fl:setBrightness(intensity)
     self.hw_intensity = intensity
     -- Now that we have set intensity, we need to let BasePowerD
     -- know about possibly changed frontlight state (if we came

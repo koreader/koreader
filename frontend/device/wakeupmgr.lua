@@ -55,6 +55,7 @@ function WakeupMgr:addTask(seconds_from_now, callback)
     if not type(seconds_from_now) == "number" and not type(callback) == "function" then return end
 
     local epoch = RTC:secondsFromNowToEpoch(seconds_from_now)
+    logger.info("WakeupMgr: scheduling wakeup for:", seconds_from_now, epoch)
 
     local old_upcoming_task = (self._task_queue[1] or {}).epoch
 
@@ -169,8 +170,8 @@ Checks if we set the alarm.
 
 Simple wrapper for @{ffi.rtc.validateWakeupAlarmByProximity}.
 --]]
-function WakeupMgr:validateWakeupAlarmByProximity()
-    return RTC:validateWakeupAlarmByProximity()
+function WakeupMgr:validateWakeupAlarmByProximity(task_alarm_epoch, proximity)
+    return RTC:validateWakeupAlarmByProximity(task_alarm_epoch, proximity)
 end
 
 --[[--

@@ -32,7 +32,7 @@ function Ftp:downloadFile(item, address, user, pass, path, close)
             })
         else
             UIManager:show(ConfirmBox:new{
-                text = T(_("File saved to:\n %1\nWould you like to read the downloaded book now?"),
+                text = T(_("File saved to:\n%1\nWould you like to read the downloaded book now?"),
                     path),
                 ok_callback = function()
                     close()

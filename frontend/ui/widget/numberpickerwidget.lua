@@ -45,6 +45,7 @@ local NumberPickerWidget = InputContainer:new{
     value_step = 1,
     value_hold_step = 4,
     value_table = nil,
+    value_index = nil,
     wrap = true,
     update_callback = function() end,
     -- in case we need calculate number of days in a given month and year
@@ -59,10 +60,8 @@ function NumberPickerWidget:init()
         self.width = self.screen_width * 0.2
     end
     if self.value_table then
-        self.value_index = 1
+        self.value_index = self.value_index or 1
         self.value = self.value_table[self.value_index]
-        self.step = 1
-        self.value_hold_step = 1
     end
     self:update()
 end
@@ -275,7 +274,7 @@ end
 Get value.
 --]]
 function NumberPickerWidget:getValue()
-    return self.value
+    return self.value, self.value_index
 end
 
 return NumberPickerWidget

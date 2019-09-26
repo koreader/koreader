@@ -3,6 +3,7 @@ local Button = require("ui/widget/button")
 local Device = require("device")
 local Geom = require("ui/geometry")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
+local HorizontalSpan = require("ui/widget/horizontalspan")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Size = require("ui/size")
@@ -22,6 +23,7 @@ local ButtonProgressWidget = InputContainer:new{
     default_position = nil,
     thin_grey_style = false, -- default to black
     fine_tune = false, -- no -/+ buttons on the extremities by default
+    more_options = false, -- no "⋮" button
 }
 
 function ButtonProgressWidget:init()
@@ -34,7 +36,15 @@ function ButtonProgressWidget:init()
         dim = not self.enabled,
     }
 
+
     self.buttonprogress_content = HorizontalGroup:new{}
+    self.horizontal_span_width = 0
+    if self.fine_tune or self.more_options then
+        self.horizontal_span = HorizontalSpan:new{
+            width = Size.margin.fine_tune
+        }
+        self.horizontal_span_width = self.horizontal_span.width
+    end
     self:update()
     self.buttonprogress_frame[1] = self.buttonprogress_content
     self[1] = self.buttonprogress_frame
@@ -47,14 +57,24 @@ function ButtonProgressWidget:update()
     local button_padding = Size.padding.button
     local button_bordersize = self.thin_grey_style and Size.border.thin or Size.border.button
     local buttons_count = self.num_buttons
+    local span_count = 0
     if self.fine_tune then
-       buttons_count = buttons_count + 2
+        buttons_count = buttons_count + 2
+        span_count = 2
     end
-    local button_width = math.floor(self.width / buttons_count) - 2*button_padding - 2*button_margin - 2*button_bordersize
+    if self.more_options then
+        buttons_count = buttons_count + 1
+        span_count = span_count + 1
+    end
+    local button_width_real = (self.width - span_count * self.horizontal_span_width) / buttons_count - 2*button_padding - 2*button_margin - 2*button_bordersize
+    local button_width = math.floor(button_width_real)
+    local button_width_adjust = button_width_real - button_width
+    local button_width_to_add = 0
 
     -- Minus button on the left
     if self.fine_tune then
-        local margin = button_margin * 2
+        button_width_to_add = button_width_to_add + button_width_adjust
+        local margin = button_margin
         local extra_border_size = 0
         local button = Button:new{
             text = "-",
@@ -80,10 +100,18 @@ function ButtonProgressWidget:update()
             button.frame.color = Blitbuffer.COLOR_DARK_GRAY
         end
         table.insert(self.buttonprogress_content, button)
+        table.insert(self.buttonprogress_content, self.horizontal_span)
     end
 
     -- Actual progress bar
     for i = 1, self.num_buttons do
+        button_width_to_add = button_width_to_add + button_width_adjust
+        local real_button_width = button_width
+        if button_width_to_add >= 1 then
+            -- One pixel wider to better align the entire widget
+            real_button_width = button_width + math.floor(button_width_to_add)
+            button_width_to_add = button_width_to_add - math.floor(button_width_to_add)
+        end
         local highlighted = i <= self.position
         local is_default = i == self.default_position
         local margin = button_margin
@@ -102,7 +130,7 @@ function ButtonProgressWidget:update()
             padding = button_padding,
             bordersize = button_bordersize + extra_border_size,
             enabled = true,
-            width = button_width - 2*extra_border_size,
+            width = real_button_width - 2*extra_border_size,
             preselect = highlighted,
             text_font_face = self.font_face,
             text_font_size = self.font_size,
@@ -142,7 +170,14 @@ function ButtonProgressWidget:update()
 
     -- Plus button on the right
     if self.fine_tune then
-        local margin = button_margin * 2
+        button_width_to_add = button_width_to_add + button_width_adjust
+        local real_button_width = button_width
+        if button_width_to_add >= 1 then
+            -- One pixel wider to better align the entire widget
+            real_button_width = button_width + math.floor(button_width_to_add)
+            button_width_to_add = button_width_to_add - math.floor(button_width_to_add)
+        end
+        local margin = button_margin
         local extra_border_size = 0
         local button = Button:new{
             text = "+",
@@ -151,7 +186,7 @@ function ButtonProgressWidget:update()
             padding = button_padding,
             bordersize = button_bordersize + extra_border_size,
             enabled = true,
-            width = button_width - 2*extra_border_size,
+            width = real_button_width - 2*extra_border_size,
             preselect = false,
             text_font_face = self.font_face,
             text_font_size = self.font_size,
@@ -167,6 +202,43 @@ function ButtonProgressWidget:update()
         if self.thin_grey_style then
             button.frame.color = Blitbuffer.COLOR_DARK_GRAY
         end
+        table.insert(self.buttonprogress_content, self.horizontal_span)
+        table.insert(self.buttonprogress_content, button)
+    end
+    -- More option button on the right
+    if self.more_options then
+        button_width_to_add = button_width_to_add + button_width_adjust
+        local real_button_width = button_width
+        if button_width_to_add >= 1 then
+            -- One pixel wider to better align the entire widget
+            real_button_width = button_width + math.floor(button_width_to_add)
+        end
+        local margin = button_margin
+        local extra_border_size = 0
+        local button = Button:new{
+            text = "⋮",
+            radius = 0,
+            margin = margin,
+            padding = button_padding,
+            bordersize = button_bordersize + extra_border_size,
+            enabled = true,
+            width = real_button_width - 2*extra_border_size,
+            preselect = false,
+            text_font_face = self.font_face,
+            text_font_size = self.font_size,
+            callback = function()
+                self.callback("⋮")
+                self:update()
+            end,
+            no_focus = true,
+            hold_callback = function()
+                self.hold_callback("⋮")
+            end,
+        }
+        if self.thin_grey_style then
+            button.frame.color = Blitbuffer.COLOR_DARK_GRAY
+        end
+        table.insert(self.buttonprogress_content, self.horizontal_span)
         table.insert(self.buttonprogress_content, button)
     end
 

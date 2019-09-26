@@ -248,6 +248,13 @@ Note that your selected font size is not affected by this setting.]]),
                 },
                 default_pos = 7,
                 default_value = DCREREADER_CONFIG_LINE_SPACE_PERCENT_MEDIUM,
+                more_options = true,
+                more_options_param = {
+                  value_min = 70,
+                  value_max = 130,
+                  value_step = 1,
+                  value_hold_step = 5,
+                },
                 event = "SetLineSpace",
                 args = {
                     DCREREADER_CONFIG_LINE_SPACE_PERCENT_X_TINY,
@@ -328,6 +335,19 @@ Note that your selected font size is not affected by this setting.]]),
                 -- gamma values for these indexes are:
                 labels = {0.8, 1.0, 1.45, 1.90, 2.50, 4.0, 8.0, 15.0},
                 name_text_hold_callback = optionsutil.showValues,
+                more_options = true,
+                more_options_param = {
+                    -- values table taken from  crengine/crengine/Tools/GammaGen/gammagen.cpp
+                    value_table = { 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9,
+                                    0.95, 0.98, 1, 1.02, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.35, 1.4, 1.45,
+                                    1.5, 1.6, 1.7, 1.8, 1.9, 2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9,
+                                    3, 3.5, 4, 4.5, 5, 5.5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+                    args_table = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+                                   13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
+                                   26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 29, 40,
+                                   41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56 };
+                    value_step = 1,
+                },
             },
             {
                 name = "font_hinting",
