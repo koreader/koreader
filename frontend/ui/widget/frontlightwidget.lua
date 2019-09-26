@@ -139,7 +139,11 @@ function FrontLightWidget:setProgress(num, step, num_warmth)
         num_warmth = num_warmth or self.powerd.fl_warmth
     end
     if num then
-        self:setFrontLightIntensity(num)
+        --- @note Don't set the same value twice, to play nice with the update() sent by the swipe handler on the FL bar
+        --        Except for fl_min, as that's how setFrontLightIntensity detects a toggle...
+        if num == self.fl_min or num ~= self.fl_cur then
+            self:setFrontLightIntensity(num)
+        end
 
         if self.fl_cur == self.fl_max then enable_button_plus = false end
         if self.fl_cur == self.fl_min then enable_button_minus = false end
@@ -300,7 +304,10 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
     local button_color = Blitbuffer.COLOR_WHITE
 
     if self[1] then
-        self.powerd:setWarmth(num_warmth)
+        --- @note Don't set the same value twice, to play nice with the update() sent by the swipe handler on the FL bar
+        if num_warmth ~= self.powerd.fl_warmth then
+            self.powerd:setWarmth(num_warmth)
+        end
     end
 
     if self.powerd.auto_warmth then
@@ -651,7 +658,7 @@ function FrontLightWidget:onTapProgress(arg, ges_ev)
                 self.last_time = current_time
             else
                 -- Schedule a final update after we stop panning.
-                UIManager:scheduleIn(0.5, self.update, self)
+                UIManager:scheduleIn(0.075, self.update, self)
                 return true
             end
         end
