@@ -131,11 +131,7 @@ end
 
 function CervantesPowerD:setIntensityHW(intensity)
     if self.fl == nil then return end
-    if self.fl_warmth == nil then
-        self.fl:setBrightness(intensity)
-    else
-        self.fl:setNaturalBrightness(intensity, self.fl_warmth)
-    end
+    self.fl:setBrightness(intensity)
     self.hw_intensity = intensity
     -- Now that we have set intensity, we need to let BasePowerD
     -- know about possibly changed frontlight state (if we came
