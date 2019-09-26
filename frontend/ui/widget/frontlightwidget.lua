@@ -34,10 +34,8 @@ local FrontLightWidget = InputContainer:new{
     -- This should stay active during natural light configuration
     is_always_active = true,
     use_system_fl = false,
-    fl_rate = Device:hasNaturalLight() and 20 or 60,  -- FL update rate, Kobo Mk 7 is slow.
-    last_time_fl = TimeVal:new{},                     -- Tracks last update time to prevent FL queuing on slow devices.
-    refresh_rate = Screen.low_pan_rate and 3 or 30,   -- Widget update rate.
-    last_time = TimeVal:new{},                        -- Tracks last update time to prevent update spamming.
+    rate = Screen.low_pan_rate and 3 or 30,     -- Widget update rate.
+    last_time = TimeVal:new{},                  -- Tracks last update time to prevent update spamming.
 }
 
 function FrontLightWidget:init()
@@ -495,6 +493,9 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
 end
 
 function FrontLightWidget:setFrontLightIntensity(num)
+    -- Avoid any unnecessary ioctls, mainly for slowpoke devices like Mk 7 Kobos.
+    if self.fl_cur == num then return end
+
     self.fl_cur = num
     local set_fl = math.min(self.fl_cur, self.fl_max)
     -- Don't touch frontlight on first call (no self[1] means not yet out of update()),
@@ -635,28 +636,21 @@ end
 function FrontLightWidget:onTapProgress(arg, ges_ev)
     if ges_ev.pos:intersectWith(self.fl_group.dimen) then
         -- Unschedule any pending updates.
-        UIManager:unschedule(self.setFrontLightIntensity)
         UIManager:unschedule(self.update)
 
         local width = self.fl_group.dimen.w
         local pos = ges_ev.pos.x - self.fl_group.dimen.x
         local perc = pos / width
         local num = Math.round(perc * self.fl_max)
-        local current_time = TimeVal:now()
 
-        local last_time_f = self.last_time_fl or TimeVal:new{}
         -- Always set the frontlight intensity.
-        if current_time - last_time_f > TimeVal:new{usec = 1000000 / self.fl_rate} then
-            self:setFrontLightIntensity(num)
-        else
-            UIManager:scheduleIn(0.5, self.setFrontLightIntensity, self, num)
-        end
+        self:setFrontLightIntensity(num)
 
         -- But limit the widget update frequency on E Ink.
         if Screen.low_pan_rate then
+            local current_time = TimeVal:now()
             local last_time = self.last_time or TimeVal:new{}
-
-            if current_time - last_time > TimeVal:new{usec = 1000000 / self.refresh_rate} then
+            if current_time - last_time > TimeVal:new{usec = 1000000 / self.rate} then
                 self.last_time = current_time
             else
                 -- Schedule a final update after we stop panning.
