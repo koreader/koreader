@@ -212,7 +212,6 @@ function ButtonProgressWidget:update()
         if button_width_to_add >= 1 then
             -- One pixel wider to better align the entire widget
             real_button_width = button_width + math.floor(button_width_to_add)
-            button_width_to_add = button_width_to_add - math.floor(button_width_to_add)
         end
         local margin = button_margin
         local extra_border_size = 0
