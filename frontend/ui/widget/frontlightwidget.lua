@@ -12,18 +12,20 @@ local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LineWidget = require("ui/widget/linewidget")
+local Math = require("optmath")
 local NaturalLight = require("ui/widget/naturallightwidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
+local ProgressWidget = require("ui/widget/progresswidget")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
+local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local Screen = Device.screen
-
 
 local FrontLightWidget = InputContainer:new{
     title_face = Font:getFace("x_smalltfont"),
@@ -32,6 +34,8 @@ local FrontLightWidget = InputContainer:new{
     -- This should stay active during natural light configuration
     is_always_active = true,
     use_system_fl = false,
+    rate = Screen.low_pan_rate and 3 or 30,     -- Widget update rate.
+    last_time = TimeVal:new{},                  -- Tracks last update time to prevent update spamming.
 }
 
 function FrontLightWidget:init()
@@ -89,9 +93,19 @@ function FrontLightWidget:init()
     end
     if Device:isTouchDevice() then
         self.ges_events = {
-            TapCloseFL = {
+            TapProgress = {
                 GestureRange:new{
                     ges = "tap",
+                    range = Geom:new{
+                        x = 0, y = 0,
+                        w = self.screen_width,
+                        h = self.screen_height,
+                    }
+                },
+            },
+            PanProgress = {
+                GestureRange:new{
+                    ges = "pan",
                     range = Geom:new{
                         x = 0, y = 0,
                         w = self.screen_width,
@@ -117,65 +131,37 @@ function FrontLightWidget:setProgress(num, step, num_warmth)
     local padding_span = VerticalSpan:new{ width = self.span }
     local button_group_down = HorizontalGroup:new{ align = "center" }
     local button_group_up = HorizontalGroup:new{ align = "center" }
-    local fl_group = HorizontalGroup:new{ align = "center" }
     local vertical_group = VerticalGroup:new{ align = "center" }
     self.fl_prog_button.enabled = not self.light_fallback
-    local set_fl
     local enable_button_plus = true
     local enable_button_minus = true
-    local step_num = math.floor(num / step)
-    local step_min = math.floor(self.fl_min / step)
     if self.natural_light then
         num_warmth = num_warmth or self.powerd.fl_warmth
     end
     if num then
-        self.fl_cur = num
-        set_fl = math.min(self.fl_cur, self.fl_max)
-        -- don't touch frontlight on first call (no self[1] means not yet out of update()),
-        -- so that we don't untoggle light
-        if self[1] then
-            if set_fl == self.fl_min then -- fl_min (which is always 0) means toggle
-                self.powerd:toggleFrontlight()
-            else
-                self.powerd:setIntensity(set_fl)
-            end
-
-            if not self.light_fallback and self.fl_cur >= 0 then
-                G_reader_settings:saveSetting("fl_last_level", self.fl_cur * 10)
-            elseif self.light_fallback then
-                G_reader_settings:saveSetting("fl_last_level", nil)
-                Device:setScreenBrightness(-1)
-            end
-
-            -- get back the real level (different from set_fl if untoggle)
-            self.fl_cur = self.powerd:frontlightIntensity()
-            -- and update our step_num with it for accurate progress bar
-            step_num = math.floor(self.fl_cur / step)
+        --- @note Don't set the same value twice, to play nice with the update() sent by the swipe handler on the FL bar
+        --        Except for fl_min, as that's how setFrontLightIntensity detects a toggle...
+        if num == self.fl_min or num ~= self.fl_cur then
+            self:setFrontLightIntensity(num)
         end
 
         if self.fl_cur == self.fl_max then enable_button_plus = false end
         if self.fl_cur == self.fl_min then enable_button_minus = false end
-
-        for i = step_min, step_num do
-            table.insert(fl_group, self.fl_prog_button:new{
-                text= "",
-                preselect = true,
-                callback = function()
-                    if i == step_min then
-                        self:setProgress(self.fl_min, step)
-                    else
-                        self:setProgress(i * step, step)
-                    end
-                end
-            })
-        end
     end
 
-    for i = step_num + 1, step_min + self.steps -1 do
-        table.insert(fl_group, self.fl_prog_button:new{
-            callback = function() self:setProgress(i * step, step) end
-        })
+    local ticks = {}
+    for i = 1, self.steps-2 do
+        table.insert(ticks, i*self.one_step)
     end
+
+    self.fl_group = ProgressWidget:new{
+        width = self.screen_width * 0.9,
+        height = Size.item.height_big,
+        percentage = self.fl_cur / self.fl_max,
+        ticks = ticks,
+        tick_width = Screen:scaleBySize(0.5),
+        last = self.fl_max,
+    }
     local text_br = TextBoxWidget:new{
         text = _("Brightness"),
         face = self.medium_font_face,
@@ -277,7 +263,7 @@ function FrontLightWidget:setProgress(num, step, num_warmth)
     table.insert(vertical_group, padding_span)
     table.insert(vertical_group, button_group_up)
     table.insert(vertical_group, padding_span)
-    table.insert(vertical_group, fl_group)
+    table.insert(vertical_group, self.fl_group)
     table.insert(vertical_group, padding_span)
     table.insert(vertical_group, button_group_down)
     table.insert(vertical_group, padding_span)
@@ -308,7 +294,9 @@ function FrontLightWidget:setProgress(num, step, num_warmth)
     -- Reset container height to what it actually contains
     self.fl_container.dimen.h = vertical_group:getSize().h
 
-    UIManager:setDirty(self, "ui")
+    UIManager:setDirty(self, function()
+        return "ui", self.light_frame.dimen
+    end)
     return true
 end
 
@@ -325,7 +313,10 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
     local button_color = Blitbuffer.COLOR_WHITE
 
     if self[1] then
-        self.powerd:setWarmth(num_warmth)
+        --- @note Don't set the same value twice, to play nice with the update() sent by the swipe handler on the FL bar
+        if num_warmth ~= self.powerd.fl_warmth then
+            self.powerd:setWarmth(num_warmth)
+        end
     end
 
     if self.powerd.auto_warmth then
@@ -517,6 +508,30 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
     table.insert(vertical_group, auto_nl_group)
 end
 
+function FrontLightWidget:setFrontLightIntensity(num)
+    self.fl_cur = num
+    local set_fl = math.min(self.fl_cur, self.fl_max)
+    -- Don't touch frontlight on first call (no self[1] means not yet out of update()),
+    -- so that we don't untoggle light.
+    if self[1] then
+        if set_fl == self.fl_min then -- fl_min (which is always 0) means toggle
+            self.powerd:toggleFrontlight()
+        else
+            self.powerd:setIntensity(set_fl)
+        end
+
+        if not self.light_fallback and self.fl_cur >= 0 then
+            G_reader_settings:saveSetting("fl_last_level", self.fl_cur * 10)
+        elseif self.light_fallback then
+            G_reader_settings:saveSetting("fl_last_level", nil)
+            Device:setScreenBrightness(-1)
+        end
+
+        -- get back the real level (different from set_fl if untoggle)
+        self.fl_cur = self.powerd:frontlightIntensity()
+    end
+end
+
 function FrontLightWidget:update()
     -- header
     self.light_title = FrameContainer:new{
@@ -604,16 +619,6 @@ function FrontLightWidget:onAnyKeyPressed()
     return true
 end
 
-function FrontLightWidget:onTapCloseFL(arg, ges_ev)
-    -- Do not close when natural light configuration is open
-    if not self.nl_configure_open then
-        if ges_ev.pos:notIntersectWith(self.light_frame.dimen) then
-            self:onClose()
-        end
-    end
-    return true
-end
-
 function FrontLightWidget:onClose()
     UIManager:close(self)
     return true
@@ -640,5 +645,42 @@ function FrontLightWidget:naturalLightConfigClose()
     self[1].align="center"
     UIManager:setDirty(self, "ui")
 end
+
+function FrontLightWidget:onTapProgress(arg, ges_ev)
+    if ges_ev.pos:intersectWith(self.fl_group.dimen) then
+        -- Unschedule any pending updates.
+        UIManager:unschedule(self.update)
+
+        local width = self.fl_group.dimen.w
+        local pos = ges_ev.pos.x - self.fl_group.dimen.x
+        local perc = pos / width
+        local num = Math.round(perc * self.fl_max)
+
+        -- Always set the frontlight intensity.
+        self:setFrontLightIntensity(num)
+
+        -- But limit the widget update frequency on E Ink.
+        if Screen.low_pan_rate then
+            local current_time = TimeVal:now()
+            local last_time = self.last_time or TimeVal:new{}
+            if current_time - last_time > TimeVal:new{usec = 1000000 / self.rate} then
+                self.last_time = current_time
+            else
+                -- Schedule a final update after we stop panning.
+                UIManager:scheduleIn(0.075, self.update, self)
+                return true
+            end
+        end
+
+        self:update()
+    elseif not ges_ev.pos:intersectWith(self.light_frame.dimen) and ges_ev.ges == "tap" then
+        -- close if tap outside
+        self:onClose()
+    end
+    -- otherwise, do nothing (it's easy missing taping a button)
+    return true
+end
+
+FrontLightWidget.onPanProgress = FrontLightWidget.onTapProgress
 
 return FrontLightWidget

@@ -97,7 +97,7 @@ function SkimToWidget:init()
 
     self.progress_bar = ProgressWidget:new{
         width = self.screen_width * 0.9,
-        height = Screen:scaleBySize(30),
+        height = Size.item.height_big,
         percentage = self.curr_page / self.page_count,
         ticks = self.ticks_candidates,
         tick_width = Size.line.medium,
