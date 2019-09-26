@@ -9,6 +9,7 @@ local dump = require("dump")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local purgeDir = require("ffi/util").purgeDir
+local util = require("util")
 
 local DocSettings = {}
 
@@ -150,10 +151,28 @@ function DocSettings:open(docfile)
         new.data = stored
         new.candidates = candidates
     else
-        new.data = {}
+        new.data = DocSettings:getDirectoryDefaults(docfile)
     end
 
     return setmetatable(new, {__index = DocSettings})
+end
+
+function DocSettings:getDirectoryDefaults(docfile)
+    local data = {}
+    if G_reader_settings:readSetting("directory_defaults_enabled") then
+        local defaults = G_reader_settings:readSetting("directory_defaults")
+        local base = G_reader_settings:readSetting("directory_defaults_base")
+        local directory = docfile and docfile ~= '' and docfile:match("(.*)/")
+        while directory:sub(1, #base) == base do
+            if defaults[directory] then
+                data = util.tableDeepCopy(defaults[directory])
+                break
+            else
+                directory = directory:match("(.*)/")
+            end
+        end
+    end
+    return data
 end
 
 --- Reads a setting.
