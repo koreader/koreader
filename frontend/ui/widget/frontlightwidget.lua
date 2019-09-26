@@ -493,9 +493,6 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
 end
 
 function FrontLightWidget:setFrontLightIntensity(num)
-    -- Avoid any unnecessary ioctls, mainly for slowpoke devices like Mk 7 Kobos.
-    if self.fl_cur == num then return end
-
     self.fl_cur = num
     local set_fl = math.min(self.fl_cur, self.fl_max)
     -- Don't touch frontlight on first call (no self[1] means not yet out of update()),
