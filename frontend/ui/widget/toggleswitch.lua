@@ -157,7 +157,7 @@ function ToggleSwitch:setPosition(position)
     self:update()
 end
 
-function ToggleSwitch:togglePosition(position)
+function ToggleSwitch:togglePosition(position, update)
     if self.n_pos == 2 and self.alternate ~= false then
         self.position = (self.position+1)%self.n_pos
         self.position = self.position == 0 and self.n_pos or self.position
@@ -166,7 +166,9 @@ function ToggleSwitch:togglePosition(position)
     else
         self.position = position
     end
-    self:update()
+    if update then
+        self:update()
+    end
 end
 
 function ToggleSwitch:circlePosition()
@@ -193,7 +195,11 @@ function ToggleSwitch:onTapSelect(arg, gev)
     end
     if gev then
         local position = self:calculatePosition(gev)
-        self:togglePosition(position)
+        if self.args[position] ~= "⋮" then
+            self:togglePosition(position, true)
+        else
+            self:togglePosition(position, false)
+        end
     else
         self:circlePosition()
     end
@@ -211,16 +217,22 @@ function ToggleSwitch:onTapSelect(arg, gev)
         self.config:onConfigEvents(self.events, self.position)
     end
     --]]
-    self.config:onConfigChoose(self.values, self.name,
-                    self.event, self.args, self.events, self.position, self.delay_repaint)
-    UIManager:setDirty(self.config, function()
-        return "ui", self.dimen
-    end)
+    self.callback(self.position)
+    if self.args[self.position] ~= "⋮" then
+        self.config:onConfigChoose(self.values, self.name,
+            self.event, self.args, self.events, self.position, self.delay_repaint)
+        UIManager:setDirty(self.config, function()
+            return "ui", self.dimen
+        end)
+    end
     return true
 end
 
 function ToggleSwitch:onHoldSelect(arg, gev)
     local position = self:calculatePosition(gev)
+    if self.args[position] == "⋮" then
+        return true
+    end
     if self.name == "font_fine_tune" then
         --- @note Ugly hack for the only widget that uses a dual toggle for fine-tuning (others prefer a buttonprogress)
         self.config:onMakeFineTuneDefault("font_size", _("Font Size"),
