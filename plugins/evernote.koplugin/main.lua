@@ -38,14 +38,14 @@ function EvernoteExporter:init()
     self.evernote_token = settings.token
     self.notebook_guid = settings.notebook
     self.joplin_IP = settings.joplin_IP or "localhost"
-    self.joplin_port = settings.joplin_port or 41184
+    self.joplin_port = settings.joplin_port or 41185
     self.joplin_token = settings.joplin_token -- or your token
     self.joplin_notebook_guid = settings.joplin_notebook_guid or nil
     self.html_export = settings.html_export or false
     self.joplin_export = settings.joplin_export or false
     self.txt_export = settings.txt_export or false
     --TODO is this if block necessarry? nowhere in the code they are assigned both true
-    --do they check against external modifications to ettings file?
+    --do they check against external modifications to settings file?
 
     if self.html_export then
         self.txt_export = false
@@ -186,7 +186,7 @@ function EvernoteExporter:addToMainMenu(menu_items)
                             local MultiInputDialog = require("ui/widget/multiinputdialog")
                             local auth_dialog
                             auth_dialog = MultiInputDialog:new{
-                                title = _("Set authorization token from Joplin\n->WebClipper Settings"),
+                                title = _("Set authorization token for Joplin"),
                                 fields = {
                                     {
                                         text = self.joplin_token,
@@ -228,6 +228,20 @@ function EvernoteExporter:addToMainMenu(menu_items)
                                 self.txt_export = false
                             end
                             self:saveSettings()
+                        end
+                    },
+                    {
+                        text = _("Help"),
+                        keep_menu_open = true,
+                        callback = function()
+                            UIManager:show(InfoMessage:new{
+                                text = T(_([[You can manually enter your auth token by editing %1/settings.reader.lua.
+
+To use Joplin you must enable port forwarding via socat or similar program.
+
+For more info visit github.com/koreader/wiki/Evernote-export. ]])
+                            ,DataStorage:getDataDir())
+                            })
                         end
                     }
                 }
