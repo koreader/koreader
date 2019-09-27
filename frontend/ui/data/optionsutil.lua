@@ -25,7 +25,7 @@ function optionsutil.showValues(configurable, option, prefix)
     end
     local arg_table = {}
     if option.toggle and option.values then
-        for i=1,#option.toggle do
+        for i=1,#option.values do
             arg_table[option.values[i]] = option.toggle[i]
         end
     end
@@ -34,12 +34,15 @@ function optionsutil.showValues(configurable, option, prefix)
         if option.toggle and option.values then
             value_current = current
             current = arg_table[current]
+            if not current then current = value_current end
         end
     elseif option.toggle and option.values then
         value_current = current
         value_default = default
         default = arg_table[default]
         current = arg_table[current]
+        if not default then default = value_default end
+        if not current then current = value_current end
     end
     if option.labels and option.values then
         if option.more_options_param and option.more_options_param.value_table then

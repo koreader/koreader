@@ -512,6 +512,11 @@ function ConfigOption:init()
                 local row_count = self.options[c].row_count or 1
                 local toggle_height = Screen:scaleBySize(self.options[c].height
                                                          or 30 * row_count)
+                if self.options[c].more_options then
+                    table.insert(self.options[c].toggle, "⋮")
+                    table.insert(self.options[c].args, "⋮")
+                    self.options[c].more_options = false
+                end
                 local switch = ToggleSwitch:new{
                     width = math.min(max_toggle_width, toggle_width),
                     height = toggle_height,
@@ -529,6 +534,12 @@ function ConfigOption:init()
                     config = self.config,
                     enabled = enabled,
                     row_count = row_count,
+                    callback = function(arg)
+                        if self.options[c].args[arg] == "⋮" then
+                            self.config:onConfigMoreChoose(self.options[c].values, self.options[c].name,
+                                self.options[c].event, arg, self.options[c].name_text, self.options[c].delay_repaint, self.options[c].more_options_param)
+                        end
+                    end
                 }
                 local position = current_item
                 switch:setPosition(position)
@@ -1065,10 +1076,19 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, d
         local value_hold_step = 0
         if more_options_param.value_hold_step then
             value_hold_step = more_options_param.value_hold_step
-        elseif #values >1 then
+        elseif values and #values >1 then
             value_hold_step = values[2] - values[1]
         end
         if values and event then
+            if more_options_param.name then
+                name = more_options_param.name
+            end
+            if more_options_param.name_text then
+                name_text = more_options_param.name_text
+            end
+            if more_options_param.event then
+                event = more_options_param.event
+            end
             local SpinWidget = require("ui/widget/spinwidget")
             local curr_items = self.configurable[name]
             local value_index = nil
@@ -1093,6 +1113,7 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, d
                 value_step = more_options_param.value_step or 1,
                 value_hold_step = value_hold_step,
                 value_max = more_options_param.value_max or values[#values],
+                precision = more_options_param.precision or "%02d",
                 ok_text = _("Apply"),
                 extra_text = _("Set default"),
                 extra_callback = function(spin)
