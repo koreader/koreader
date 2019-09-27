@@ -383,8 +383,7 @@ function ReaderUI:init()
     end
 
     -- Allow others to change settings based on external factors
-    UIManager:broadcastEvent(Event:new("DocSettingsLoad", self.doc_settings, self.document.file))
-    self.docsettingtweak:handleEvent(Event:new("DocSettingsLoad", self.doc_settings, self.document.file))
+    self:handleEvent(Event:new("DocSettingsLoad", self.doc_settings, self.document.file))
 
     -- we only read settings after all the widgets are initialized
     self:handleEvent(Event:new("ReadSettings", self.doc_settings))
