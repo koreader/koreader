@@ -231,14 +231,32 @@ function BookInfoManager:loadSettings()
 
     -- translate old append_series_to_authors and append_series_to_title to new series_mode
     if not self.settings["series_mode"] then -- initialize from old settings
+        logger.info("BookInfoManager: initialize series_mode")
         if self.settings["append_series_to_authors"] then
             self.settings["series_mode"] = "append_series_to_authors"
         elseif self.settings["append_series_to_title"] then
             self.settings["series_mode"] = "append_series_to_title"
         end
+        self.settings["append_series_to_authors"] = nil
+        self.settings["append_series_to_title"] = nil
+        -- persist changes
+        local query = [[
+            DELETE FROM config
+            WHERE key='append_series_to_authors'
+                OR key='append_series_to_title'
+            ]]
+        local stmt = self.db_conn:prepare(query)
+        stmt:step() -- commited
+        logger.dbg("BookInfoManager: append_series_ reset")
+        if self.settings["series_mode"] then
+            query = "INSERT INTO config (key, value) VALUES ('series_mode', ?)"
+            stmt = self.db_conn:prepare(query)
+            stmt:bind(self.settings["series_mode"])
+            stmt:step()
+            logger.dbg("BookInfoManager: series_mode written")
+        end
+        stmt:clearbind():reset() -- cleanup
     end
-    self.settings["append_series_to_authors"] = nil
-    self.settings["append_series_to_title"] = nil
 end
 
 function BookInfoManager:getSetting(key)
