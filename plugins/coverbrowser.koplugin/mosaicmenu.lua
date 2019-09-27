@@ -503,10 +503,11 @@ function MosaicMenuItem:update()
                 self._has_cover_image = true
             else
                 -- add Series metadata if requested
+                local series_mode = BookInfoManager:getSetting("series_mode")
                 if bookinfo.series then
                     -- Shorten calibre series decimal number (#4.0 => #4)
                     bookinfo.series = bookinfo.series:gsub("(#%d+)%.0$", "%1")
-                    if BookInfoManager:getSetting("append_series_to_title") then
+                    if series_mode == "append_series_to_title" then
                         if bookinfo.title then
                             bookinfo.title = bookinfo.title .. " - " .. bookinfo.series
                         else
@@ -514,16 +515,13 @@ function MosaicMenuItem:update()
                         end
                     end
                     if not bookinfo.authors then
-                        if BookInfoManager:getSetting("append_series_to_authors")
-                            or BookInfoManager:getSetting("series_in_separate_line")
-                        then
+                        if series_mode == "append_series_to_authors" or series_mode == "series_in_separate_line" then
                             bookinfo.authors = bookinfo.series
                         end
                     else
-                        if BookInfoManager:getSetting("append_series_to_authors") then
+                        if series_mode == "append_series_to_authors" then
                             bookinfo.authors = bookinfo.authors .. " - " .. bookinfo.series
-                        end
-                        if BookInfoManager:getSetting("series_in_separate_line") then
+                        elseif series_mode == "series_in_separate_line" then
                             bookinfo.authors = bookinfo.authors .. "\n \n" .. bookinfo.series
                         end
                     end

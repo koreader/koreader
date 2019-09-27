@@ -451,6 +451,8 @@ function ListMenuItem:update()
             local fontsize_authors = 18
             local wtitle, wauthors
             local title, authors
+            local series_mode = BookInfoManager:getSetting("series_mode")
+
             -- whether to use or not title and authors
             if self.do_filename_only or bookinfo.ignore_meta then
                 title = filename_without_suffix -- made out above
@@ -463,7 +465,7 @@ function ListMenuItem:update()
                 -- append "et al." to the 2nd if there are more
                 if authors and authors:find("\n") then
                     authors = util.splitToArray(authors, "\n")
-                    if #authors > 1 and bookinfo.series and BookInfoManager:getSetting("series_in_separate_line") then
+                    if #authors > 1 and bookinfo.series and series_mode == "series_in_separate_line" then
                         authors = { T(_("%1 et al."), authors[1]) }
                     elseif #authors > 2 then
                         authors = { authors[1], T(_("%1 et al."), authors[2]) }
@@ -475,7 +477,7 @@ function ListMenuItem:update()
             if bookinfo.series then
                 -- Shorten calibre series decimal number (#4.0 => #4)
                 bookinfo.series = bookinfo.series:gsub("(#%d+)%.0$", "%1")
-                if BookInfoManager:getSetting("append_series_to_title") then
+                if series_mode == "append_series_to_title" then
                     if title then
                         title = title .. " - " .. bookinfo.series
                     else
@@ -483,16 +485,13 @@ function ListMenuItem:update()
                     end
                 end
                 if not authors then
-                    if BookInfoManager:getSetting("append_series_to_authors")
-                        or BookInfoManager:getSetting("series_in_separate_line")
-                    then
+                    if series_mode == "append_series_to_authors" or series_mode == "series_in_separate_line" then
                         authors = bookinfo.series
                     end
                 else
-                    if BookInfoManager:getSetting("append_series_to_authors") then
+                    if series_mode == "append_series_to_authors" then
                         authors = authors .. " - " .. bookinfo.series
-                    end
-                    if BookInfoManager:getSetting("series_in_separate_line") then
+                    elseif series_mode == "series_in_separate_line" then
                         authors = bookinfo.series .. "\n" .. authors
                     end
                 end

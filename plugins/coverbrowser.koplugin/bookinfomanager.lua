@@ -228,6 +228,17 @@ function BookInfoManager:loadSettings()
     for i, key in ipairs(keys) do
         self.settings[key] = values[i]
     end
+
+    -- translate old append_series_to_authors and append_series_to_title to new series_mode
+    if not self.settings["series_mode"] then -- initialize from old settings
+        if self.settings["append_series_to_authors"] then
+            self.settings["series_mode"] = "append_series_to_authors"
+        elseif self.settings["append_series_to_title"] then
+            self.settings["series_mode"] = "append_series_to_title"
+        end
+    end
+    self.settings["append_series_to_authors"] = nil
+    self.settings["append_series_to_title"] = nil
 end
 
 function BookInfoManager:getSetting(key)

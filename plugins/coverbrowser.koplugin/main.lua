@@ -39,6 +39,7 @@ local DISPLAY_MODES = {
 local init_done = false
 local filemanager_display_mode = false -- not initialized yet
 local history_display_mode = false -- not initialized yet
+local series_mode = nil -- defaults to not display series
 
 local CoverBrowser = InputContainer:new{
     name = "coverbrowser",
@@ -73,6 +74,8 @@ function CoverBrowser:init()
 
     self:setupFileManagerDisplayMode(BookInfoManager:getSetting("filemanager_display_mode"))
     self:setupHistoryDisplayMode(BookInfoManager:getSetting("history_display_mode"))
+    series_mode = BookInfoManager:getSetting("series_mode")
+
     init_done = true
     BookInfoManager:closeDbConnection() -- will be re-opened if needed
 end
@@ -320,37 +323,40 @@ function CoverBrowser:addToMainMenu(menu_items)
                     },
                     {
                         text = _("Append series metadata to authors"),
-                        checked_func = function() return BookInfoManager:getSetting("append_series_to_authors") end,
+                        checked_func = function() return series_mode == "append_series_to_authors" end,
                         callback = function()
-                            if BookInfoManager:getSetting("append_series_to_authors") then
-                                BookInfoManager:saveSetting("append_series_to_authors", false)
+                            if series_mode == "append_series_to_authors" then
+                                series_mode = nil
                             else
-                                BookInfoManager:saveSetting("append_series_to_authors", true)
+                                series_mode = "append_series_to_authors"
                             end
+                            BookInfoManager:saveSetting("series_mode", series_mode)
                             self:refreshFileManagerInstance()
                         end,
                     },
                     {
                         text = _("Append series metadata to title"),
-                        checked_func = function() return BookInfoManager:getSetting("append_series_to_title") end,
+                        checked_func = function() return series_mode == "append_series_to_title" end,
                         callback = function()
-                            if BookInfoManager:getSetting("append_series_to_title") then
-                                BookInfoManager:saveSetting("append_series_to_title", false)
+                            if series_mode == "append_series_to_title" then
+                                series_mode = nil
                             else
-                                BookInfoManager:saveSetting("append_series_to_title", true)
+                                series_mode = "append_series_to_title"
                             end
+                            BookInfoManager:saveSetting("series_mode", series_mode)
                             self:refreshFileManagerInstance()
                         end,
                     },
                     {
                         text = _("Show series metadata in separate line"),
-                        checked_func = function() return BookInfoManager:getSetting("series_in_separate_line") end,
+                        checked_func = function() return series_mode == "series_in_separate_line" end,
                         callback = function()
-                            if BookInfoManager:getSetting("series_in_separate_line") then
-                                BookInfoManager:saveSetting("series_in_separate_line", false)
+                            if series_mode == "series_in_separate_line" then
+                                series_mode = nil
                             else
-                                BookInfoManager:saveSetting("series_in_separate_line", true)
+                                series_mode = "series_in_separate_line"
                             end
+                            BookInfoManager:saveSetting("series_mode", series_mode)
                             self:refreshFileManagerInstance()
                         end,
                     }
