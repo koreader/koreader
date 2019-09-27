@@ -37,7 +37,7 @@ function JoplinClient:_makeRequest(url, method, request_body)
 
     local response = json.decode(sink[1])
 
-    if response["error"] then
+    if response.error then
         error(response["error"])
     end
 
@@ -60,7 +60,7 @@ function JoplinClient:ping()
     end
 end
 
---@return if successful returns id of found note
+-- If successful returns id of found note.
 function JoplinClient:findNoteByTitle(title, notebook_id)
     local url =  "http://"..self.server_ip..":"..self.server_port.."/notes?".."token="..self.auth_token.."&fields=id,title,parent_id"
 
@@ -78,7 +78,7 @@ function JoplinClient:findNoteByTitle(title, notebook_id)
 
 end
 
---@return if successful returns id of found notebook (folder)
+-- If successful returns id of found notebook (folder).
 function JoplinClient:findNotebookByTitle(title)
     local url =  "http://"..self.server_ip..":"..self.server_port.."/folders?".."token="..self.auth_token.."&".."query="..title
 
@@ -93,7 +93,7 @@ function JoplinClient:findNotebookByTitle(title)
     return false
 end
 
---@return if successful returns id of created notebook (folder)
+-- If successful returns id of created notebook (folder).
 function JoplinClient:createNotebook(title, created_time)
     local request_body = {["title"] = title,
         ["created_time"] = created_time
@@ -106,7 +106,7 @@ function JoplinClient:createNotebook(title, created_time)
 end
 
 
---@return if successful returns id of created note
+-- If successful returns id of created note.
 function JoplinClient:createNote(title, note, parent_id, created_time)
     local request_body = {["title"] = title,
             ["body"] = note, 
@@ -119,7 +119,7 @@ function JoplinClient:createNote(title, note, parent_id, created_time)
     return response["id"]
 end
 
---@return if successful returns true
+-- If successful returns id of updated note.
 function JoplinClient:updateNote(note_id, note, title, parent_id)
     local request_body = {
         ["body"] = note

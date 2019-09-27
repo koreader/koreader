@@ -44,8 +44,8 @@ function EvernoteExporter:init()
     self.html_export = settings.html_export or false
     self.joplin_export = settings.joplin_export or false
     self.txt_export = settings.txt_export or false
-    --TODO is this if block necessarry? nowhere in the code they are assigned both true
-    --do they check against external modifications to settings file?
+    ---@todo Is this if block necessarry? Nowhere in the code they are assigned both true.
+    --Do they check against external modifications to settings file?
 
     if self.html_export then
         self.txt_export = false
@@ -162,7 +162,7 @@ function EvernoteExporter:addToMainMenu(menu_items)
                                                 local ip = fields[1]
                                                 local port = tonumber(fields[2])
                                                 if ip ~= "" then 
-                                                    --TODO better checks for ip and port
+                                                    ---@todo Do better checks for ip and port.
                                                     if port and port < 65355 then 
                                                         self.joplin_IP = ip
                                                     end
@@ -205,7 +205,6 @@ function EvernoteExporter:addToMainMenu(menu_items)
                                             text = _("OK"),
                                             callback = function()
                                                 local auth_field = auth_dialog:getFields()
-                                                --TODO do a check on auth string
                                                 self.joplin_token = auth_field[1]
                                                 self:saveSettings()
                                                 UIManager:close(auth_dialog)
@@ -239,7 +238,7 @@ function EvernoteExporter:addToMainMenu(menu_items)
 
 To use Joplin you must enable port forwarding via socat or similar program.
 
-For more info visit github.com/koreader/wiki/Evernote-export. ]])
+For more info visit https://github.com/koreader/koreader/wiki/Evernote-export.]])
                             ,DataStorage:getDataDir())
                             })
                         end
@@ -521,8 +520,8 @@ function EvernoteExporter:exportClippings(clippings)
             server_port = self.joplin_port,
             auth_token = self.joplin_token
         }
-        --TODO also check if user deleted our notebook, in that case note
-        -- will endup in random folder in Joplin
+        ---@todo Check if user deleted our notebook, in that case note
+        -- will end up in random folder in Joplin.
         if not self.joplin_notebook_guid then
             self.joplin_notebook_guid = joplin_client:createNotebook(self.notebook_name) 
             self:saveSettings()
@@ -681,7 +680,7 @@ function EvernoteExporter:exportBooknotesToJoplin(client, title, booknotes)
         end
 
         for _, clipping in ipairs(chapter) do
-            -- TODO do something to prettify epoch time, write it
+            ---@todo Do something to prettify epoch time, write it.
             note = note .. clipping.text .. "\n * * *\n"
         end
     end
