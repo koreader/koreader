@@ -230,13 +230,18 @@ function BookInfoManager:loadSettings()
     end
 
     -- translate old append_series_to_authors and append_series_to_title to new series_mode
-    if not self.settings["series_mode"] then -- initialize from old settings
-        logger.info("BookInfoManager: initialize series_mode")
-        if self.settings["append_series_to_authors"] then
-            self.settings["series_mode"] = "append_series_to_authors"
-        elseif self.settings["append_series_to_title"] then
-            self.settings["series_mode"] = "append_series_to_title"
-        end
+    local series_settings_translated
+    if self.settings["append_series_to_authors"] then
+        logger.info("BookInfoManager: initialize series_mode to append_series_to_authors")
+        self.settings["series_mode"] = "append_series_to_authors"
+        series_settings_translated = true
+    elseif self.settings["append_series_to_title"] then
+        logger.info("BookInfoManager: initialize series_mode to append_series_to_title")
+        self.settings["series_mode"] = "append_series_to_title"
+        series_settings_translated = true
+    end
+    -- write translated settings to database
+    if series_settings_translated then
         self.settings["append_series_to_authors"] = nil
         self.settings["append_series_to_title"] = nil
         -- persist changes

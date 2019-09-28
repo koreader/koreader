@@ -131,29 +131,6 @@ function FileManagerMenu:setUpdateItemTable()
         text = _("Items"),
         sub_item_table = {
             {
-                text = _("Files per page"),
-                help_text = _([[This sets the number of files and directories
-                per page in non-'classic' display modes.]]),
-                keep_menu_open = true,
-                callback = function()
-                    local SpinWidget = require("ui/widget/spinwidget")
-                    local curr_items = G_reader_settings:readSetting("files_per_page") or 10
-                    local items = SpinWidget:new{
-                        width = Screen:getWidth() * 0.6,
-                        value = curr_items,
-                        value_min = 4,
-                        value_max = 20,
-                        ok_text = _("Set files"),
-                        title_text =  _("Files per page"),
-                        callback = function(spin)
-                            G_reader_settings:saveSetting("files_per_page", spin.value)
-                            self.ui:onRefresh()
-                        end
-                    }
-                    UIManager:show(items)
-                end
-            },
-            {
                 text = _("Items per page"),
                 help_text = _([[This sets the number of items per page in:
 - File browser and history in 'classic' display mode
