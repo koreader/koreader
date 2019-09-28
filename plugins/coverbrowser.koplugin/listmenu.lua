@@ -753,7 +753,7 @@ function ListMenu:_recalculateDimen()
     local available_height = self.dimen.h - self.others_height
 
     -- menu item height based on number of items per page
-    self.perpage = G_reader_settings:readSetting("items_per_page") or 8
+    self.perpage = G_reader_settings:readSetting("files_per_page") or 10
     local item_height_min = math.floor(available_height / self.perpage)
     self.page_num = math.ceil(#self.item_table / self.perpage)
     -- fix current page if out of range

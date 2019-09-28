@@ -269,6 +269,50 @@ function CoverBrowser:addToMainMenu(menu_items)
                 },
                 separator = true,
             },
+            {
+                text = _("Series display mode"),
+                sub_item_table = {
+                    {
+                        text = _("Append series metadata to authors"),
+                        checked_func = function() return series_mode == "append_series_to_authors" end,
+                        callback = function()
+                            if series_mode == "append_series_to_authors" then
+                                series_mode = nil
+                            else
+                                series_mode = "append_series_to_authors"
+                            end
+                            BookInfoManager:saveSetting("series_mode", series_mode)
+                            self:refreshFileManagerInstance()
+                        end,
+                    },
+                    {
+                        text = _("Append series metadata to title"),
+                        checked_func = function() return series_mode == "append_series_to_title" end,
+                        callback = function()
+                            if series_mode == "append_series_to_title" then
+                                series_mode = nil
+                            else
+                                series_mode = "append_series_to_title"
+                            end
+                            BookInfoManager:saveSetting("series_mode", series_mode)
+                            self:refreshFileManagerInstance()
+                        end,
+                    },
+                    {
+                        text = _("Show series metadata in separate line"),
+                        checked_func = function() return series_mode == "series_in_separate_line" end,
+                        callback = function()
+                            if series_mode == "series_in_separate_line" then
+                                series_mode = nil
+                            else
+                                series_mode = "series_in_separate_line"
+                            end
+                            BookInfoManager:saveSetting("series_mode", series_mode)
+                            self:refreshFileManagerInstance()
+                        end,
+                    }
+                }
+            },
             -- Misc settings
             {
                 text = _("Other settings"),
@@ -321,45 +365,6 @@ function CoverBrowser:addToMainMenu(menu_items)
                             self:refreshFileManagerInstance()
                         end,
                     },
-                    {
-                        text = _("Append series metadata to authors"),
-                        checked_func = function() return series_mode == "append_series_to_authors" end,
-                        callback = function()
-                            if series_mode == "append_series_to_authors" then
-                                series_mode = nil
-                            else
-                                series_mode = "append_series_to_authors"
-                            end
-                            BookInfoManager:saveSetting("series_mode", series_mode)
-                            self:refreshFileManagerInstance()
-                        end,
-                    },
-                    {
-                        text = _("Append series metadata to title"),
-                        checked_func = function() return series_mode == "append_series_to_title" end,
-                        callback = function()
-                            if series_mode == "append_series_to_title" then
-                                series_mode = nil
-                            else
-                                series_mode = "append_series_to_title"
-                            end
-                            BookInfoManager:saveSetting("series_mode", series_mode)
-                            self:refreshFileManagerInstance()
-                        end,
-                    },
-                    {
-                        text = _("Show series metadata in separate line"),
-                        checked_func = function() return series_mode == "series_in_separate_line" end,
-                        callback = function()
-                            if series_mode == "series_in_separate_line" then
-                                series_mode = nil
-                            else
-                                series_mode = "series_in_separate_line"
-                            end
-                            BookInfoManager:saveSetting("series_mode", series_mode)
-                            self:refreshFileManagerInstance()
-                        end,
-                    }
                     -- generic_items will be inserted here
                 },
             },
