@@ -50,7 +50,7 @@ function EvernoteExporter:init()
     if self.html_export then
         self.txt_export = false
         self.joplin_export = false
-    elseif self.txt_export then 
+    elseif self.txt_export then
         self.joplin_export = false
     end
 
@@ -70,8 +70,8 @@ function EvernoteExporter:isDocless()
 end
 
 function EvernoteExporter:readyToExport()
-    return self.evernote_token ~= nil or 
-            self.html_export ~= false or 
+    return self.evernote_token ~= nil or
+            self.html_export ~= false or
             self.txt_export ~= false or
             self.joplin_export ~= false
 end
@@ -130,7 +130,7 @@ function EvernoteExporter:addToMainMenu(menu_items)
                 checked_func = function() return self.joplin_export end,
                 sub_item_table ={
                     {
-                        text = _("Set Joplin IP and Port"), 
+                        text = _("Set Joplin IP and Port"),
                         keep_menu_open = true,
                         callback = function()
                             local MultiInputDialog = require("ui/widget/multiinputdialog")
@@ -161,12 +161,11 @@ function EvernoteExporter:addToMainMenu(menu_items)
                                                 local fields = url_dialog:getFields()
                                                 local ip = fields[1]
                                                 local port = tonumber(fields[2])
-                                                if ip ~= "" then 
-                                                    ---@todo Do better checks for ip and port.
-                                                    if port and port < 65355 then 
+                                                if ip ~= "" then
+                                                    if port and port < 65355 then
                                                         self.joplin_IP = ip
+                                                        self.joplin_port = port
                                                     end
-                                                    self.joplin_port = port
                                                     self:saveSettings()
                                                 end
                                                 UIManager:close(url_dialog)
@@ -283,8 +282,8 @@ For more info visit https://github.com/koreader/koreader/wiki/Evernote-export.]]
                 callback = function()
                     self.html_export = not self.html_export
                     if self.html_export then
-                        self.txt_export = false 
-                        self.joplin_export = false 
+                        self.txt_export = false
+                        self.joplin_export = false
                     end
                     self:saveSettings()
                 end
@@ -295,8 +294,8 @@ For more info visit https://github.com/koreader/koreader/wiki/Evernote-export.]]
                 callback = function()
                     self.txt_export = not self.txt_export
                     if self.txt_export then
-                        self.html_export = false 
-                        self.joplin_export = false 
+                        self.html_export = false
+                        self.joplin_export = false
                     end
                     self:saveSettings()
                 end
@@ -503,7 +502,7 @@ end
 function EvernoteExporter:exportClippings(clippings)
     local client = nil
     local exported_stamp
-    if not (self.html_export or self.txt_export or self.joplin_export) then 
+    if not (self.html_export or self.txt_export or self.joplin_export) then
         client = require("EvernoteClient"):new{
             domain = self.evernote_domain,
             authToken = self.evernote_token,
@@ -523,7 +522,7 @@ function EvernoteExporter:exportClippings(clippings)
         ---@todo Check if user deleted our notebook, in that case note
         -- will end up in random folder in Joplin.
         if not self.joplin_notebook_guid then
-            self.joplin_notebook_guid = joplin_client:createNotebook(self.notebook_name) 
+            self.joplin_notebook_guid = joplin_client:createNotebook(self.notebook_name)
             self:saveSettings()
         end
     else
@@ -680,14 +679,14 @@ function EvernoteExporter:exportBooknotesToJoplin(client, title, booknotes)
         end
 
         for _, clipping in ipairs(chapter) do
-            ---@todo Do something to prettify epoch time, write it.
+            note = note .. os.date("%Y-%m-%d %H:%M:%S \n", clipping.time)
             note = note .. clipping.text .. "\n * * *\n"
         end
     end
 
     if note_guid then
         client:updateNote(note_guid, note)
-    else 
+    else
         client:createNote(title, note, self.joplin_notebook_guid)
     end
 
