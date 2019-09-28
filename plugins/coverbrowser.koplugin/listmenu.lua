@@ -752,10 +752,9 @@ function ListMenu:_recalculateDimen()
     end
     local available_height = self.dimen.h - self.others_height
 
-    -- 64 hardcoded for now, gives 10 items both in filemanager
-    -- and history on kobo glo hd
-    local item_height_min = Screen:scaleBySize(64)
-    self.perpage = math.floor(available_height / item_height_min)
+    -- menu item height based on number of items per page
+    self.perpage = G_reader_settings:readSetting("items_per_page") or 8
+    local item_height_min = math.floor(available_height / self.perpage)
     self.page_num = math.ceil(#self.item_table / self.perpage)
     -- fix current page if out of range
     if self.page_num > 0 and self.page > self.page_num then self.page = self.page_num end
