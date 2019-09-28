@@ -502,6 +502,7 @@ end
 function EvernoteExporter:exportClippings(clippings)
     local client = nil
     local exported_stamp
+    local joplin_client = nil
     if not (self.html_export or self.txt_export or self.joplin_export) then
         client = require("EvernoteClient"):new{
             domain = self.evernote_domain,
