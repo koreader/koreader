@@ -230,37 +230,15 @@ function BookInfoManager:loadSettings()
     end
 
     -- translate old append_series_to_authors and append_series_to_title to new series_mode
-    local series_settings_translated
     if self.settings["append_series_to_authors"] then
         logger.info("BookInfoManager: initialize series_mode to append_series_to_authors")
-        self.settings["series_mode"] = "append_series_to_authors"
-        series_settings_translated = true
+        self:saveSetting("append_series_to_authors", nil, false)
+        self:saveSetting("append_series_to_title", nil, false)
+        self:saveSetting("series_mode", "append_series_to_authors")
     elseif self.settings["append_series_to_title"] then
         logger.info("BookInfoManager: initialize series_mode to append_series_to_title")
-        self.settings["series_mode"] = "append_series_to_title"
-        series_settings_translated = true
-    end
-    -- write translated settings to database
-    if series_settings_translated then
-        self.settings["append_series_to_authors"] = nil
-        self.settings["append_series_to_title"] = nil
-        -- persist changes
-        local query = [[
-            DELETE FROM config
-            WHERE key='append_series_to_authors'
-                OR key='append_series_to_title'
-            ]]
-        local stmt = self.db_conn:prepare(query)
-        stmt:step() -- commited
-        logger.dbg("BookInfoManager: append_series_ reset")
-        if self.settings["series_mode"] then
-            query = "INSERT INTO config (key, value) VALUES ('series_mode', ?)"
-            stmt = self.db_conn:prepare(query)
-            stmt:bind(self.settings["series_mode"])
-            stmt:step()
-            logger.dbg("BookInfoManager: series_mode written")
-        end
-        stmt:clearbind():reset() -- cleanup
+        self:saveSetting("append_series_to_title", nil, false)
+        self:saveSetting("series_mode", "append_series_to_title")
     end
 end
 
@@ -271,7 +249,8 @@ function BookInfoManager:getSetting(key)
     return self.settings[key]
 end
 
-function BookInfoManager:saveSetting(key, value)
+function BookInfoManager:saveSetting(key, value, reload)
+    reload = reload or true
     if not value or value == false or value == "" then
         if lfs.attributes(self.db_location, "mode") ~= "file" then
             -- If no db created, no need to save (and create db) an empty value
@@ -290,7 +269,9 @@ function BookInfoManager:saveSetting(key, value)
     stmt:step() -- commited
     stmt:clearbind():reset() -- cleanup
     -- Reload settings, so we may get (or not if it failed) what we just saved
-    self:loadSettings()
+    if reload then
+        self:loadSettings()
+    end
 end
 
 -- Bookinfo management
