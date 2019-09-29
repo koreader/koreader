@@ -1,6 +1,6 @@
 local json = require("json")
-local http = require('socket.http')
-local ltn12 = require('ltn12')
+local http = require("socket.http")
+local ltn12 = require("ltn12")
 
 local JoplinClient =  {
     server_ip = "localhost",

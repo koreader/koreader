@@ -233,9 +233,13 @@ function EvernoteExporter:addToMainMenu(menu_items)
                         keep_menu_open = true,
                         callback = function()
                             UIManager:show(InfoMessage:new{
-                                text = T(_([[You can manually enter your auth token by editing %1/settings.reader.lua.
+                                text = T(_([[You can manually enter your auth token by saving empty field, editing evernote.joplin_token field in %1/settings.reader.lua and restarting KOReader.
 
-To use Joplin you must enable port forwarding via socat or similar program.
+To use Joplin you must enable port forwarding from your computers local IP:port this plugin uses to localhost:port that Joplin is listening via socat or similar program. For example:
+
+For Windows: netsh interface portproxy add listeningaddress:0.0.0.0 listeningport:41185 connectaddress:localhost connectport:41184
+
+For Linux: $socat tcp-listen:41185,reuseaddr,fork tcp:localhost:41184
 
 For more info visit https://github.com/koreader/koreader/wiki/Evernote-export.]])
                             ,DataStorage:getDataDir())
@@ -502,7 +506,7 @@ end
 function EvernoteExporter:exportClippings(clippings)
     local client = nil
     local exported_stamp
-    local joplin_client = nil
+    local joplin_client
     if not (self.html_export or self.txt_export or self.joplin_export) then
         client = require("EvernoteClient"):new{
             domain = self.evernote_domain,
