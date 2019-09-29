@@ -10,6 +10,7 @@ local Screen = require("device").screen
 local util = require("ffi/util")
 local Device = require("device")
 local DEBUG = require("dbg")
+local JoplinClient = require("JoplinClient")
 local T = require("ffi/util").template
 local _ = require("gettext")
 local N_ = _.ngettext
@@ -36,11 +37,21 @@ function EvernoteExporter:init()
     self.evernote_username = settings.username or ""
     self.evernote_token = settings.token
     self.notebook_guid = settings.notebook
+    self.joplin_IP = settings.joplin_IP or "localhost"
+    self.joplin_port = settings.joplin_port or 41185
+    self.joplin_token = settings.joplin_token -- or your token
+    self.joplin_notebook_guid = settings.joplin_notebook_guid or nil
     self.html_export = settings.html_export or false
+    self.joplin_export = settings.joplin_export or false
+    self.txt_export = settings.txt_export or false
+    --- @todo Is this if block necessarry? Nowhere in the code they are assigned both true.
+    -- Do they check against external modifications to settings file?
+
     if self.html_export then
         self.txt_export = false
-    else
-        self.txt_export = settings.txt_export or false
+        self.joplin_export = false
+    elseif self.txt_export then
+        self.joplin_export = false
     end
 
     self.parser = MyClipping:new{
@@ -59,7 +70,10 @@ function EvernoteExporter:isDocless()
 end
 
 function EvernoteExporter:readyToExport()
-    return self.evernote_token ~= nil or self.html_export ~= false or self.txt_export ~= false
+    return self.evernote_token ~= nil or
+            self.html_export ~= false or
+            self.txt_export ~= false or
+            self.joplin_export ~= false
 end
 
 function EvernoteExporter:migrateClippings()
@@ -112,6 +126,129 @@ function EvernoteExporter:addToMainMenu(menu_items)
                 end,
             },
             {
+                text = _("Joplin") ,
+                checked_func = function() return self.joplin_export end,
+                sub_item_table ={
+                    {
+                        text = _("Set Joplin IP and Port"),
+                        keep_menu_open = true,
+                        callback = function()
+                            local MultiInputDialog = require("ui/widget/multiinputdialog")
+                            local url_dialog
+                            url_dialog = MultiInputDialog:new{
+                                title = _("Set Joplin IP and port number"),
+                                fields = {
+                                    {
+                                        text = self.joplin_IP,
+                                        input_type = "string"
+                                    },
+                                    {
+                                        text = self.joplin_port,
+                                        input_type = "number"
+                                    }
+                                },
+                                buttons = {
+                                    {
+                                        {
+                                            text = _("Cancel"),
+                                            callback = function()
+                                                UIManager:close(url_dialog)
+                                            end
+                                        },
+                                        {
+                                            text = _("OK"),
+                                            callback = function()
+                                                local fields = url_dialog:getFields()
+                                                local ip = fields[1]
+                                                local port = tonumber(fields[2])
+                                                if ip ~= "" then
+                                                    if port and port < 65355 then
+                                                        self.joplin_IP = ip
+                                                        self.joplin_port = port
+                                                    end
+                                                    self:saveSettings()
+                                                end
+                                                UIManager:close(url_dialog)
+                                            end
+                                        }
+                                    }
+                                }
+                            }
+                            UIManager:show(url_dialog)
+                            url_dialog:onShowKeyboard()
+                        end
+                    },
+                    {
+                        text = _("Set authorization token"),
+                        keep_menu_open = true,
+                        callback = function()
+                            local MultiInputDialog = require("ui/widget/multiinputdialog")
+                            local auth_dialog
+                            auth_dialog = MultiInputDialog:new{
+                                title = _("Set authorization token for Joplin"),
+                                fields = {
+                                    {
+                                        text = self.joplin_token,
+                                        input_type = "string"
+                                    }
+                                },
+                                buttons = {
+                                    {
+                                        {
+                                            text = _("Cancel"),
+                                            callback = function()
+                                                UIManager:close(auth_dialog)
+                                            end
+                                        },
+                                        {
+                                            text = _("Set token"),
+                                            callback = function()
+                                                local auth_field = auth_dialog:getFields()
+                                                self.joplin_token = auth_field[1]
+                                                self:saveSettings()
+                                                UIManager:close(auth_dialog)
+                                            end
+                                        }
+                                    }
+                                }
+                            }
+                            UIManager:show(auth_dialog)
+                            auth_dialog:onShowKeyboard()
+                        end
+                    },
+                    {
+                        text = _("Export to Joplin"),
+                        checked_func = function() return self.joplin_export end,
+                        callback = function()
+                            self.joplin_export = not self.joplin_export
+                            if self.joplin_export then
+                                self.html_export = false
+                                self.txt_export = false
+                            end
+                            self:saveSettings()
+                        end
+                    },
+                    {
+                        text = _("Help"),
+                        keep_menu_open = true,
+                        callback = function()
+                            UIManager:show(InfoMessage:new{
+                                text = T(_([[You can enter your auth token on your computer by saving an empty token. Then quit KOReader, edit the evernote.joplin_token field in %1/settings.reader.lua after creating a backup, and restart KOReader once you're done.
+
+To export to Joplin, you must forward the IP and port used by this plugin to the localhost:port on which Joplin is listening. This can be done with socat or a similar program. For example:
+
+For Windows: netsh interface portproxy add listeningaddress:0.0.0.0 listeningport:41185 connectaddress:localhost connectport:41184
+
+For Linux: $socat tcp-listen:41185,reuseaddr,fork tcp:localhost:41184
+
+For more information, please visit https://github.com/koreader/koreader/wiki/Evernote-export.]])
+                            ,DataStorage:getDataDir())
+                            })
+                        end
+                    }
+                }
+            },
+            {
                 text = _("Export all notes in this book"),
                 enabled_func = function()
                     return not self:isDocless() and self:readyToExport() and not self.txt_export
@@ -148,7 +285,10 @@ function EvernoteExporter:addToMainMenu(menu_items)
                 checked_func = function() return self.html_export end,
                 callback = function()
                     self.html_export = not self.html_export
-                    if self.html_export then self.txt_export = false end
+                    if self.html_export then
+                        self.txt_export = false
+                        self.joplin_export = false
+                    end
                     self:saveSettings()
                 end
             },
@@ -157,7 +297,10 @@ function EvernoteExporter:addToMainMenu(menu_items)
                 checked_func = function() return self.txt_export end,
                 callback = function()
                     self.txt_export = not self.txt_export
-                    if self.txt_export then self.html_export = false end
+                    if self.txt_export then
+                        self.html_export = false
+                        self.joplin_export = false
+                    end
                     self:saveSettings()
                 end
             },
@@ -288,6 +431,11 @@ function EvernoteExporter:saveSettings()
         notebook = self.notebook_guid,
         html_export = self.html_export,
         txt_export = self.txt_export,
+        joplin_IP = self.joplin_IP,
+        joplin_port = self.joplin_port,
+        joplin_token = self.joplin_token,
+        joplin_notebook_guid = self.joplin_notebook_guid,
+        joplin_export = self.joplin_export
     }
     G_reader_settings:saveSetting("evernote", settings)
 end
@@ -358,7 +506,8 @@ end
 function EvernoteExporter:exportClippings(clippings)
     local client = nil
     local exported_stamp
-    if not self.html_export and not self.txt_export then
+    local joplin_client
+    if not (self.html_export or self.txt_export or self.joplin_export) then
         client = require("EvernoteClient"):new{
             domain = self.evernote_domain,
             authToken = self.evernote_token,
@@ -368,6 +517,19 @@ function EvernoteExporter:exportClippings(clippings)
         exported_stamp= "html"
     elseif self.txt_export then
         exported_stamp = "txt"
+    elseif self.joplin_export then
+        exported_stamp = "joplin"
+        joplin_client = JoplinClient:new{
+            server_ip = self.joplin_IP,
+            server_port = self.joplin_port,
+            auth_token = self.joplin_token
+        }
+        ---@todo Check if user deleted our notebook, in that case note
+        -- will end up in random folder in Joplin.
+        if not self.joplin_notebook_guid then
+            self.joplin_notebook_guid = joplin_client:createNotebook(self.notebook_name)
+            self:saveSettings()
+        end
     else
         assert("an exported_stamp is expected for a new export type")
     end
@@ -386,6 +548,8 @@ function EvernoteExporter:exportClippings(clippings)
                 ok, err = pcall(self.exportBooknotesToHTML, self, title, booknotes)
             elseif self.txt_export then
                 ok, err = pcall(self.exportBooknotesToTXT, self, title, booknotes)
+            elseif self.joplin_export then
+                ok, err = pcall(self.exportBooknotesToJoplin, self, joplin_client, title, booknotes)
             else
                 ok, err = pcall(self.exportBooknotesToEvernote, self, client, title, booknotes)
             end
@@ -505,6 +669,32 @@ function EvernoteExporter:exportBooknotesToTXT(title, booknotes)
         file:write("\n")
         file:close()
     end
+end
+
+function EvernoteExporter:exportBooknotesToJoplin(client, title, booknotes)
+    if not client:ping() then
+        error("Cannot reach Joplin server")
+    end
+
+    local note_guid = client:findNoteByTitle(title, self.joplin_notebook_guid)
+    local note = ""
+    for _, chapter in ipairs(booknotes) do
+        if chapter.title then
+            note = note .. "\n\t*" .. chapter.title .. "*\n\n * * *"
+        end
+
+        for _, clipping in ipairs(chapter) do
+            note = note .. os.date("%Y-%m-%d %H:%M:%S \n", clipping.time)
+            note = note .. clipping.text .. "\n * * *\n"
+        end
+    end
+
+    if note_guid then
+        client:updateNote(note_guid, note)
+    else
+        client:createNote(title, note, self.joplin_notebook_guid)
+    end
+
 end
 
 return EvernoteExporter
