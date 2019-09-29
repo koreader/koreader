@@ -44,7 +44,7 @@ function EvernoteExporter:init()
     self.html_export = settings.html_export or false
     self.joplin_export = settings.joplin_export or false
     self.txt_export = settings.txt_export or false
-    ---@todo Is this if block necessarry? Nowhere in the code they are assigned both true.
+    --- @todo Is this if block necessarry? Nowhere in the code they are assigned both true.
     --Do they check against external modifications to settings file?
 
     if self.html_export then
