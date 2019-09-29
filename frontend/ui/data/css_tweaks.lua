@@ -169,12 +169,12 @@ h1 + h6, h2 + h6, h3 + h6, h4 + h6, h5 + h6 { page-break-before: avoid !importan
             {
                 title = _("About text direction"),
                 info_text = _([[
-Documents in languages like arabic or hebrew are to be rendered Right-To-Left. This does not only affects text layout, but also list items bullets and numbers (put on the right) and table layout (cells laid from right to left).
+Languages like Arabic or Hebrew use right-to-left writing systems (Right-To-Left or RTL). This doesn't only affect text layout, but also list item bullets and numbers, which have to be put on the right side of the page, as well as tables, where the cells are laid out from right to left.
 
-Usually, the publisher has set the appropriate tags to force such rendering - but if he hasn't, or if you're reading plain text documents, you may want to manually enable it with these tweaks.
-Note that in the absence of such specifications KOReader will try to detect the language of each paragraph and set the approppriate rendering per paragraph.
+Usually, the publisher will have set the appropriate tags to enable RTL rendering. But if these are missing, or if you're reading plain text documents, you may want to manually enable RTL with these tweaks.
+Note that in the absence of such specifications, KOReader will try to detect the language of each paragraph to set the appropriate rendering per paragraph.
 
-You may also want to enable, in top menu → Gear → Navigation →, Invert page turn taps and swipes.]]),
+You may also want to enable, in the top menu → Gear → Navigation →, Invert page turn taps and swipes.]]),
                 separator = true,
             },
             {
