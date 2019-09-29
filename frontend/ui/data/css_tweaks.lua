@@ -161,7 +161,48 @@ h1 + h6, h2 + h6, h3 + h6, h4 + h6, h5 + h6 { page-break-before: avoid !importan
                 id = "headings_align_center",
                 title = _("Center headings"),
                 css = [[h1, h2, h3, h4, h5, h6 { text-align: center !important; }]],
-                priority = 3, -- so it overrides the ones above
+                priority = 4, -- so it overrides the ones above
+            },
+        },
+        {
+            title = _("Text direction"),
+            {
+                title = _("About text direction"),
+                info_text = _([[
+Documents in languages like arabic or hebrew are to be rendered Right-To-Left. This does not only affects text layout, but also list items bullets and numbers (put on the right) and table layout (cells laid from right to left).
+
+Usually, the publisher has set the appropriate tags to force such rendering - but if he hasn't, or if you're reading plain text documents, you may want to manually enable it with these tweaks.
+Note that in the absence of such specifications KOReader will try to detect the language of each paragraph and set the approppriate rendering per paragraph.
+
+You may also want to enable, in top menu → Gear → Navigation →, Invert page turn taps and swipes.]]),
+                separator = true,
+            },
+            {
+                id = "dir_html_rtl",
+                title = _("Set document direction to RTL (Right-to-Left)"),
+                css = [[body { direction: rtl !important; }]],
+                priority = 2, -- so it overrides the LTR one below
+            },
+            {
+                id = "text_align_most_right",
+                title = _("Right align most text"),
+                description = _("Enforce right alignment of text in common text elements."),
+                -- Includes H1..H6 as this is probably most useful for RTL readers
+                css = [[body, p, li, h1, h2, h3, h4, h5, h6 { text-align: right !important; }]],
+                priority = 3, -- so it overrides the ones from Text alignment
+            },
+            {
+                id = "text_align_all_right",
+                title = _("Right align all elements"),
+                description = _("Enforce right alignment of text in all elements."),
+                css = [[* { text-align: right !important; }]],
+                priority = 3, -- so it overrides the ones from Text alignment
+                separator = true,
+            },
+            {
+                id = "dir_html_ltr",
+                title = _("Set document direction to LTR (Left-to-Right)"),
+                css = [[body { direction: ltr !important; }]],
             },
         },
         {
@@ -280,7 +321,7 @@ This might be needed with some documents that expect this style as the default, 
             priority = -1,
             css = [[
 p {
-    text-align: left;
+    text-align: start;
     text-indent: 0;
     margin-top: 1em;
     margin-bottom: 1em;
