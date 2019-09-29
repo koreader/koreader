@@ -179,7 +179,7 @@ You may also want to enable, in the top menu → Gear → Navigation →, Invert
             },
             {
                 id = "body_direction_rtl",
-                title = _("Set document direction to RTL (Right-to-Left)"),
+                title = _("Document direction RTL"),
                 css = [[body { direction: rtl !important; }]],
                 priority = 2, -- so it overrides the LTR one below
             },
@@ -201,7 +201,7 @@ You may also want to enable, in the top menu → Gear → Navigation →, Invert
             },
             {
                 id = "body_direction_ltr",
-                title = _("Set document direction to LTR (Left-to-Right)"),
+                title = _("Document direction LTR"),
                 css = [[body { direction: ltr !important; }]],
             },
         },
