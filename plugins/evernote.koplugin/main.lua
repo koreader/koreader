@@ -233,7 +233,7 @@ function EvernoteExporter:addToMainMenu(menu_items)
                         keep_menu_open = true,
                         callback = function()
                             UIManager:show(InfoMessage:new{
-                                text = T(_([[You can manually enter your auth token by saving empty field, editing evernote.joplin_token field in %1/settings.reader.lua and restarting KOReader.
+                                text = T(_([[You can enter your auth token on your computer by saving an empty token. Then quit KOReader, edit the evernote.joplin_token field in %1/settings.reader.lua after creating a backup, and restart KOReader once you're done.
 
 To export to Joplin, you must forward the IP and port used by this plugin to the localhost:port on which Joplin is listening. This can be done with socat or a similar program. For example:
 
