@@ -655,6 +655,31 @@ local ext_to_mimetype = {
     woff = "application/font-woff",
 }
 
+-- Display from these Wikipedia should be RTL
+-- The API looks like it does not give any info about the LTR/RTL
+-- direction of the content it returns...
+-- (list made by quickly and manually checking links from:
+-- https://meta.wikimedia.org/wiki/List_of_Wikipedias )
+local rtl_wiki_code = {
+    fa  = "Persian",
+    ar  = "Arabic",
+    he  = "Hebrew",
+    ur  = "Urdu",
+    azb = "South Azerbaijani",
+    pnb = "Western Punjabi",
+    ckb = "Sorani",
+    arz = "Egyptian Arabic",
+    yi  = "Yiddish",
+    sd  = "Sindhi",
+    mzn = "Mazandarani",
+    ps  = "Pashto",
+    glk = "Gilaki",
+    lrc = "Northern Luri",
+    ug  = "Uyghur",
+    dv  = "Divehi",
+    arc = "Aramaic",
+    ks  = "Kashmiri",
+}
 
 -- Create an epub file (with possibly images)
 function Wikipedia:createEpub(epub_path, page, lang, with_images)
@@ -916,19 +941,19 @@ h1, h2 {
     page-break-before: always;
     page-break-inside: avoid;
     page-break-after: avoid;
-    text-align: left;
+    text-align: start;
 }
 h3, h4, h5, h6 {
     page-break-before: auto;
     page-break-inside: avoid;
     page-break-after: avoid;
-    text-align: left;
+    text-align: start;
 }
 /* Styles for our centered titles on first page */
 h1.koreaderwikifrontpage, h5.koreaderwikifrontpage {
     page-break-before: avoid;
     text-align: center;
-    margin-top: 0em;
+    margin-top: 0;
 }
 p.koreaderwikifrontpage {
     font-style: italic;
@@ -955,7 +980,10 @@ a.newwikinonexistent {
 
 /* Don't waste left margin for TOC, notes and other lists */
 ul, ol {
-    margin-left: 0em;
+    margin-left: 0;
+}
+ul:dir(rtl), ol:dir(rtl) {
+    margin-right: 0;
 }
 /* OL in Wikipedia pages may inherit their style-type from a wrapping div,
  * ensure they fallback to decimal with inheritance */
@@ -982,11 +1010,17 @@ body > div > div.thumb {
     /* Change some of their styles when floating */
     -cr-only-if: float-floatboxes;
         clear: right;
-        margin:  0em 0em 0.2em 0.5em !important;
+        margin:  0 0 0.2em 0.5em !important;
         font-size: 80% !important;
     /* Ensure a fixed width when not in "web" render mode */
     -cr-only-if: float-floatboxes -allow-style-w-h-absolute-units;
         width: 33% !important;
+}
+body > div:dir(rtl) > div.thumb { /* invert if RTL */
+    float: left !important;
+    -cr-only-if: float-floatboxes;
+        clear: left;
+        margin:  0 0.5em 0.2em 0 !important;
 }
 body > div > div.thumb img {
     /* Make float's inner images 100% of their container's width when not in "web" mode */
@@ -1033,6 +1067,9 @@ li.gallerybox {
     -cr-only-if: float-floatboxes -allow-style-w-h-absolute-units;
         /* Set a fixed width when not in "web" mode */
         width: 25% !important;
+}
+li:dir(rtl).gallerybox {
+    float: right;
 }
 li.gallerybox p {
     /* Reset indent as we have everything centered */
@@ -1259,8 +1296,13 @@ table {
     local saved_on = T(_("Saved on %1"), os.date("%b %d, %Y %H:%M:%S"))
     local online_version_htmllink = string.format([[<a href="%s/wiki/%s">%s</a>]], wiki_base_url, page:gsub(" ", "_"), _("online version"))
     local see_online_version = T(_("See %1 for up-to-date content"), online_version_htmllink)
+    -- Set dir= attribute on the HTML tag for RTL languages
+    local html_dir = ""
+    if rtl_wiki_code[lang:lower()] then
+        html_dir = ' dir="rtl"'
+    end
     epub:add("OEBPS/content.html", string.format([[
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html xmlns="http://www.w3.org/1999/xhtml"%s>
 <head>
   <title>%s</title>
   <link type="text/css" rel="stylesheet" href="stylesheet.css"/>
@@ -1273,7 +1315,7 @@ table {
 %s
 </body>
 </html>
-]], page_cleaned, page_htmltitle, lang:upper(), saved_on, see_online_version, html))
+]], html_dir, page_cleaned, page_htmltitle, lang:upper(), saved_on, see_online_version, html))
 
     -- Force a GC to free the memory we used till now (the second call may
     -- help reclaim more memory).
