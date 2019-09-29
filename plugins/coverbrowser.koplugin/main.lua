@@ -350,7 +350,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                         keep_menu_open = true,
                         callback = function()
                             local SpinWidget = require("ui/widget/spinwidget")
-                            local curr_items = G_reader_settings:readSetting("files_per_page") or 10
+                            local curr_items = BookInfoManager:getSetting("files_per_page") or 10
                             local items = SpinWidget:new{
                                 width = Screen:getWidth() * 0.6,
                                 value = curr_items,
@@ -359,7 +359,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                                 ok_text = _("Set files"),
                                 title_text =  _("Files per page"),
                                 callback = function(spin)
-                                    G_reader_settings:saveSetting("files_per_page", spin.value)
+                                    BookInfoManager:saveSetting("files_per_page", spin.value)
                                     self.ui:onRefresh()
                                 end
                             }
