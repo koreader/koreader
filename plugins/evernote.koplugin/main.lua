@@ -235,7 +235,7 @@ function EvernoteExporter:addToMainMenu(menu_items)
                             UIManager:show(InfoMessage:new{
                                 text = T(_([[You can manually enter your auth token by saving empty field, editing evernote.joplin_token field in %1/settings.reader.lua and restarting KOReader.
 
-To use Joplin you must enable port forwarding from your computers local IP:port this plugin uses to localhost:port that Joplin is listening via socat or similar program. For example:
+To export to Joplin, you must forward the IP and port used by this plugin to the localhost:port on which Joplin is listening. This can be done with socat or a similar program. For example:
 
 For Windows: netsh interface portproxy add listeningaddress:0.0.0.0 listeningport:41185 connectaddress:localhost connectport:41184
 
