@@ -299,31 +299,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                         end,
                     },
                     {
-                        text = _("Show number of pages read instead of progress %"),
-                        checked_func = function() return BookInfoManager:getSetting("show_pages_read_as_progress") end,
-                        callback = function()
-                            if BookInfoManager:getSetting("show_pages_read_as_progress") then
-                                BookInfoManager:saveSetting("show_pages_read_as_progress", false)
-                            else
-                                BookInfoManager:saveSetting("show_pages_read_as_progress", true)
-                            end
-                            self:refreshFileManagerInstance()
-                        end,
-                    },
-                    {
-                        text = _("Show number of pages left to read"),
-                        checked_func = function() return BookInfoManager:getSetting("show_pages_left_in_progress") end,
-                        callback = function()
-                            if BookInfoManager:getSetting("show_pages_left_in_progress") then
-                                BookInfoManager:saveSetting("show_pages_left_in_progress", false)
-                            else
-                                BookInfoManager:saveSetting("show_pages_left_in_progress", true)
-                            end
-                            self:refreshFileManagerInstance()
-                        end,
-                    },
-                    {
-                        text = _("Series display mode"),
+                        text = _("Series "),
                         sub_item_table = {
                             {
                                 text = _("Append series metadata to authors"),
@@ -363,11 +339,12 @@ function CoverBrowser:addToMainMenu(menu_items)
                                     BookInfoManager:saveSetting("series_mode", series_mode)
                                     self:refreshFileManagerInstance()
                                 end,
-                            }
-                        }
+                            },
+                        },
+                        separator = true
                     },
                     {
-                        text = _("Files per page"),
+                        text = _("(Detailed list) Files per page"),
                         help_text = _([[This sets the number of files and directories
                         per page in non-'classic' display modes.]]),
                         keep_menu_open = true,
@@ -387,6 +364,30 @@ function CoverBrowser:addToMainMenu(menu_items)
                                 end
                             }
                             UIManager:show(items)
+                        end,
+                    },
+                    {
+                        text = _("Show number of pages read instead of progress %"),
+                        checked_func = function() return BookInfoManager:getSetting("show_pages_read_as_progress") end,
+                        callback = function()
+                            if BookInfoManager:getSetting("show_pages_read_as_progress") then
+                                BookInfoManager:saveSetting("show_pages_read_as_progress", false)
+                            else
+                                BookInfoManager:saveSetting("show_pages_read_as_progress", true)
+                            end
+                            self:refreshFileManagerInstance()
+                        end,
+                    },
+                    {
+                        text = _("Show number of pages left to read"),
+                        checked_func = function() return BookInfoManager:getSetting("show_pages_left_in_progress") end,
+                        callback = function()
+                            if BookInfoManager:getSetting("show_pages_left_in_progress") then
+                                BookInfoManager:saveSetting("show_pages_left_in_progress", false)
+                            else
+                                BookInfoManager:saveSetting("show_pages_left_in_progress", true)
+                            end
+                            self:refreshFileManagerInstance()
                         end,
                         separator = true
                     },
