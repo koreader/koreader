@@ -178,7 +178,7 @@ You may also want to enable, in top menu → Gear → Navigation →, Invert pag
                 separator = true,
             },
             {
-                id = "dir_html_rtl",
+                id = "body_direction_rtl",
                 title = _("Set document direction to RTL (Right-to-Left)"),
                 css = [[body { direction: rtl !important; }]],
                 priority = 2, -- so it overrides the LTR one below
@@ -200,7 +200,7 @@ You may also want to enable, in top menu → Gear → Navigation →, Invert pag
                 separator = true,
             },
             {
-                id = "dir_html_ltr",
+                id = "body_direction_ltr",
                 title = _("Set document direction to LTR (Left-to-Right)"),
                 css = [[body { direction: ltr !important; }]],
             },
