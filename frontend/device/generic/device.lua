@@ -1,3 +1,9 @@
+--[[--
+Generic device abstraction.
+
+This module defines stubs for common methods.
+--]]
+
 local logger = require("logger")
 local _ = require("gettext")
 
@@ -25,6 +31,7 @@ local Device = {
     hasDPad = no,
     hasWifiToggle = yes,
     hasWifiManager = no,
+    isHapticFeedbackEnabled = no,
     isTouchDevice = no,
     hasFrontlight = no,
     hasLightLevelFallback = no,
@@ -289,6 +296,13 @@ function Device:setDateTime(year, month, day, hour, min, sec) end
 
 -- Device specific method if any setting needs being saved
 function Device:saveSettings() end
+
+--[[--
+Device specific method for performing haptic feedback.
+
+@string type Type of haptic feedback. See <https://developer.android.com/reference/android/view/HapticFeedbackConstants.html>.
+--]]
+function Device:performHapticFeedback(type) end
 
 -- Device specific method for toggling the GSensor
 function Device:toggleGSensor(toggle) end
