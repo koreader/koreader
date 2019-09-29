@@ -201,7 +201,7 @@ function EvernoteExporter:addToMainMenu(menu_items)
                                             end
                                         },
                                         {
-                                            text = _("OK"),
+                                            text = _("Set token"),
                                             callback = function()
                                                 local auth_field = auth_dialog:getFields()
                                                 self.joplin_token = auth_field[1]
