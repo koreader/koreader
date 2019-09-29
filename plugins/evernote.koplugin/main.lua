@@ -241,7 +241,7 @@ For Windows: netsh interface portproxy add listeningaddress:0.0.0.0 listeningpor
 
 For Linux: $socat tcp-listen:41185,reuseaddr,fork tcp:localhost:41184
 
-For more info visit https://github.com/koreader/koreader/wiki/Evernote-export.]])
+For more information, please visit https://github.com/koreader/koreader/wiki/Evernote-export.]])
                             ,DataStorage:getDataDir())
                             })
                         end
