@@ -329,9 +329,18 @@ end
 -- @treturn int 1 failed, 2 skipped, 3 downloaded
 function Wallabag:download(article)
     local skip_article = false
-    local item_url = "/api/entries/" .. article.id .. "/export.epub"
     local title = util.getSafeFilename(article.title, self.directory, 230, 0)
-    local local_path = self.directory .. article_id_prefix .. article.id .. article_id_postfix .. title .. ".epub"
+    local file_ext = ".epub"
+    local item_url = "/api/entries/" .. article.id .. "/export.epub"
+
+    -- If the article links to a pdf file, we will download it directly
+    ---- @todo use hasProvider to skip all supported mimetypes
+    if article.mimetype == "application/pdf" then
+        file_ext = ".pdf"
+        item_url = article.url
+    end
+
+    local local_path = self.directory .. article_id_prefix .. article.id .. article_id_postfix .. title .. file_ext
     logger.dbg("Wallabag: DOWNLOAD: id: ", article.id)
     logger.dbg("Wallabag: DOWNLOAD: title: ", article.title)
     logger.dbg("Wallabag: DOWNLOAD: filename: ", local_path)
@@ -364,31 +373,47 @@ function Wallabag:download(article)
 end
 
 -- method: (mandatory) GET, POST, DELETE, PATCH, etc...
--- apiurl: (mandatory) excluding the server path
+-- apiurl: (mandatory) API call excluding the server path, or full URL to a file
 -- headers: defaults to auth if given nil value, provide all headers necessary if in use
 -- body: empty string if not needed
 -- filepath: downloads the file if provided, returns JSON otherwise
+---- @todo separate call to internal API from the download on external server
 function Wallabag:callAPI( method, apiurl, headers, body, filepath )
     local request, sink = {}, {}
-    local parsed = url.parse(self.server_url)
-    request["url"] = self.server_url .. apiurl
+    local parsed
+
+    -- Is it an API call, or a regular file direct download?
+    if apiurl:sub(1, 1) == "/" then
+        -- API call to our server, has the form "/random/api/call"
+        parsed = url.parse(self.server_url)
+        request["url"] = self.server_url .. apiurl
+        if headers == nil then
+            headers = { ["Authorization"] = "Bearer " .. self.access_token, }
+        end
+    else
+        -- regular url link to a foreign server
+        local file_url = apiurl
+        parsed = url.parse(file_url)
+        request["url"] = file_url
+        if headers == nil then
+            headers = {} -- no need for a token here
+        end
+    end
+
     request["method"] = method
     if filepath ~= "" then
         request["sink"] = ltn12.sink.file(io.open(filepath, "w"))
     else
         request["sink"] = ltn12.sink.table(sink)
     end
-    if headers == nil then
-        headers = { ["Authorization"] = "Bearer " .. self.access_token, }
-    end
     request["headers"] = headers
     if body ~= "" then
         request["source"] = ltn12.source.string(body)
     end
-    logger.dbg("Wallabag: URL     ", self.server_url .. apiurl)
+    logger.dbg("Wallabag: URL     ", request["url"])
     logger.dbg("Wallabag: method  ", method)
 
-    http.TIMEOUT, https.TIMEOUT = 10, 10
+    http.TIMEOUT, https.TIMEOUT = 30, 30
     local httpRequest = parsed.scheme == "http" and http.request or https.request
     local code, resp_headers = socket.skip(1, httpRequest(request))
     -- raise error message when network is unavailable
