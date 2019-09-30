@@ -268,6 +268,15 @@ function ReaderFooter:init()
         ticks = nil, -- ticks will be populated in self:updateFooterText
         last = nil, -- last will be initialized in self:updateFooterText
     }
+    self.bottom_progress = LineWidget:new{
+        progress_background = Blitbuffer.COLOR_DIM_GRAY,
+        progress_percentage = self.progress_percentage,
+        background = Blitbuffer.COLOR_GRAY,
+        dimen = Geom:new{
+            w = nil,
+            h = Size.line.progress,
+        }
+    }
     self.text_container = RightContainer:new{
         dimen = Geom:new{ w = 0, h = self.height },
         self.footer_text,
@@ -343,6 +352,9 @@ function ReaderFooter:updateFooterContainer()
 
     table.insert(self.vertical_frame, self.footer_container)
 
+    if self.settings.progress_bar_bottom and not self.settings.disable_progress_bar then
+        table.insert(self.vertical_frame, self.bottom_progress)
+    end
     self.footer_content = FrameContainer:new{
         self.vertical_frame,
         background = Blitbuffer.COLOR_WHITE,
@@ -408,7 +420,7 @@ function ReaderFooter:resetLayout(force_reset)
     if new_screen_width == self._saved_screen_width
         and new_screen_height == self._saved_screen_height and not force_reset then return end
 
-    if self.settings.disable_progress_bar then
+    if self.settings.disable_progress_bar or self.settings.progress_bar_bottom then
         self.progress_bar.width = 0
     elseif self.settings.progress_bar_separate_line then
         self.progress_bar.width = math.floor(new_screen_width - self.horizontal_margin*2)
@@ -418,6 +430,9 @@ function ReaderFooter:resetLayout(force_reset)
     end
     if self.separator_line then
         self.separator_line.dimen.w = new_screen_width - 2 * self.horizontal_margin
+    end
+    if self.settings.progress_bar_bottom then
+        self.bottom_progress.dimen.w = new_screen_width - 2 * self.horizontal_margin
     end
     self.horizontal_group:resetLayout()
     self.footer_positioner.dimen.w = new_screen_width
@@ -659,7 +674,7 @@ function ReaderFooter:addToMainMenu(menu_items)
             {
                 text = _("Alignment"),
                 enabled_func = function()
-                    return self.settings.disable_progress_bar or self.settings.progress_bar_separate_line
+                    return self.settings.disable_progress_bar or self.settings.progress_bar_separate_line or self.settings.progress_bar_bottom
                 end,
                 sub_item_table = {
                     {
@@ -913,7 +928,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                     self.settings.disable_progress_bar = not self.settings.disable_progress_bar
                     self:setTocMarkers()
                     self:refreshFooter()
-                    if self.settings.progress_bar_separate_line then
+                    if self.settings.progress_bar_separate_line or self.settings.progress_bar_bottom then
                         self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
                     end
                     UIManager:setDirty(nil, "ui")
@@ -925,7 +940,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                     return self.settings.toc_markers
                 end,
                 enabled_func = function()
-                    return not self.settings.disable_progress_bar
+                    return not self.settings.disable_progress_bar and not self.settings.progress_bar_bottom
                 end,
                 callback = function()
                     self.settings.toc_markers = not self.settings.toc_markers
@@ -933,6 +948,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                     self:updateFooter()
                     UIManager:setDirty(nil, "ui")
                 end,
+                separator = true,
             },
             {
                 text = _("Progress bar on separate line"),
@@ -944,6 +960,27 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
                 callback = function()
                     self.settings.progress_bar_separate_line = not self.settings.progress_bar_separate_line
+                    if self.settings.progress_bar_separate_line then
+                        self.settings.progress_bar_bottom = nil
+                    end
+                    self:refreshFooter()
+                    self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
+                    UIManager:setDirty(nil, "ui")
+                end,
+            },
+            {
+                text = _("Progress bar on bottom"),
+                checked_func = function()
+                    return self.settings.progress_bar_bottom
+                end,
+                enabled_func = function()
+                    return not self.settings.disable_progress_bar
+                end,
+                callback = function()
+                    self.settings.progress_bar_bottom = not self.settings.progress_bar_bottom
+                    if self.settings.progress_bar_bottom then
+                        self.settings.progress_bar_separate_line = nil
+                    end
                     self:refreshFooter()
                     self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
                     UIManager:setDirty(nil, "ui")
@@ -1046,12 +1083,14 @@ end
 function ReaderFooter:updateFooterPage(force_repaint)
     if type(self.pageno) ~= "number" then return end
     self.progress_bar.percentage = self.pageno / self.pages
+    self.bottom_progress.progress_percentage = self.progress_bar.percentage
     self:updateFooterText(force_repaint)
 end
 
 function ReaderFooter:updateFooterPos(force_repaint)
     if type(self.position) ~= "number" then return end
     self.progress_bar.percentage = self.position / self.doc_height
+    self.bottom_progress.progress_percentage = self.progress_bar.percentage
     self:updateFooterText(force_repaint)
 end
 
@@ -1066,7 +1105,7 @@ function ReaderFooter:_updateFooterText(force_repaint)
     if text then
         self.footer_text:setText(text)
     end
-    if self.settings.disable_progress_bar then
+    if self.settings.disable_progress_bar or self.settings.progress_bar_bottom then
         if self.has_no_mode or not text then
             self.text_width = 0
         else
@@ -1087,6 +1126,9 @@ function ReaderFooter:_updateFooterText(force_repaint)
     end
     if self.separator_line then
         self.separator_line.dimen.w = self._saved_screen_width - 2 * self.horizontal_margin
+    end
+    if self.settings.progress_bar_bottom then
+        self.bottom_progress.dimen.w = self._saved_screen_width - 2 * self.horizontal_margin
     end
     self.text_container.dimen.w = self.text_width
     self.horizontal_group:resetLayout()
