@@ -1266,4 +1266,9 @@ function ReaderFooter:onChangeScreenMode()
     self:resetLayout(true)
 end
 
+function ReaderFooter:onScreenResize()
+    self:updateFooterContainer()
+    self:resetLayout(true)
+end
+
 return ReaderFooter
