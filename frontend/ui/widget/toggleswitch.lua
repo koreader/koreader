@@ -195,7 +195,7 @@ function ToggleSwitch:onTapSelect(arg, gev)
     end
     if gev then
         local position = self:calculatePosition(gev)
-        if self.args[position] ~= "⋮" then
+        if self.toggle[position] ~= "⋮" then
             self:togglePosition(position, true)
         else
             self:togglePosition(position, false)
@@ -218,7 +218,7 @@ function ToggleSwitch:onTapSelect(arg, gev)
     end
     --]]
     self.callback(self.position)
-    if self.args[self.position] ~= "⋮" then
+    if self.toggle[self.position] ~= "⋮" then
         self.config:onConfigChoose(self.values, self.name,
             self.event, self.args, self.events, self.position, self.delay_repaint)
         UIManager:setDirty(self.config, function()
@@ -230,7 +230,7 @@ end
 
 function ToggleSwitch:onHoldSelect(arg, gev)
     local position = self:calculatePosition(gev)
-    if self.args[position] == "⋮" then
+    if self.toggle[position] == "⋮" then
         return true
     end
     if self.name == "font_fine_tune" then
