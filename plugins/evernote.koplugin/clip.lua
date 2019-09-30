@@ -226,7 +226,7 @@ function MyClipping:getImage(image)
     end
 end
 
-function MyClipping:parseHighlight(highlights, book)
+function MyClipping:parseHighlight(highlights, bookmarks, book)
     --DEBUG("book", book.file)
     for page, items in pairs(highlights) do
         for _, item in ipairs(items) do
@@ -235,6 +235,12 @@ function MyClipping:parseHighlight(highlights, book)
             clipping.sort = "highlight"
             clipping.time = self:getTime(item.datetime or "")
             clipping.text = self:getText(item.text)
+            for _, bookmark in pairs(bookmarks) do
+                if bookmark.datetime == item.datetime and bookmark.text then
+                    local tmp = string.gsub(bookmark.text, "Page %d+ ", "")
+                    clipping.text = string.gsub(tmp, " @ %d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d", "")
+                end
+            end
             if item.text == "" and item.pos0 and item.pos1 and
                     item.pos0.x and item.pos0.y and
                     item.pos1.x and item.pos1.y then
@@ -281,7 +287,7 @@ function MyClipping:parseHistoryFile(clippings, history_file, doc_file)
             title = title,
             author = author,
         }
-        self:parseHighlight(stored.highlight, clippings[title])
+        self:parseHighlight(stored.highlight, stored.bookmarks, clippings[title])
     end
 end
 
@@ -312,7 +318,7 @@ function MyClipping:parseCurrentDoc(view)
         title = title,
         author = author,
     }
-    self:parseHighlight(view.highlight.saved, clippings[title])
+    self:parseHighlight(view.highlight.saved, view.ui.bookmark.bookmarks, clippings[title])
 
     return clippings
 end
