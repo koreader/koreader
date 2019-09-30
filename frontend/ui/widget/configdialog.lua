@@ -535,7 +535,7 @@ function ConfigOption:init()
                     enabled = enabled,
                     row_count = row_count,
                     callback = function(arg)
-                        if self.options[c].args[arg] == "⋮" then
+                        if self.options[c].toggle[arg] == "⋮" then
                             self.config:onConfigMoreChoose(self.options[c].values, self.options[c].name,
                                 self.options[c].event, arg, self.options[c].name_text, self.options[c].delay_repaint, self.options[c].more_options_param)
                         end
