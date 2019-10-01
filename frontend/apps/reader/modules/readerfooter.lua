@@ -432,7 +432,7 @@ function ReaderFooter:resetLayout(force_reset)
         self.separator_line.dimen.w = new_screen_width - 2 * self.horizontal_margin
     end
     if self.settings.progress_bar_bottom then
-        self.bottom_progress.dimen.w = new_screen_width - 2 * self.horizontal_margin
+        self.bottom_progress.dimen.w = new_screen_width
     end
     self.horizontal_group:resetLayout()
     self.footer_positioner.dimen.w = new_screen_width
@@ -1128,7 +1128,7 @@ function ReaderFooter:_updateFooterText(force_repaint)
         self.separator_line.dimen.w = self._saved_screen_width - 2 * self.horizontal_margin
     end
     if self.settings.progress_bar_bottom then
-        self.bottom_progress.dimen.w = self._saved_screen_width - 2 * self.horizontal_margin
+        self.bottom_progress.dimen.w = self._saved_screen_width
     end
     self.text_container.dimen.w = self.text_width
     self.horizontal_group:resetLayout()
