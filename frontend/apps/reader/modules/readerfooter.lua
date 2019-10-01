@@ -969,7 +969,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Progress bar on the bottom"),
+                text = _("Bottom progress bar"),
                 checked_func = function()
                     return self.settings.progress_bar_bottom
                 end,
