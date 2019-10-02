@@ -108,7 +108,7 @@ function Wallabag:addToMainMenu(menu_items)
                         NetworkMgr:promptWifiOn()
                         return
                     end
-                    local num_deleted = self:processLocalFiles( "manual" )
+                    local num_deleted = self:processLocalFiles("manual")
                     UIManager:show(InfoMessage:new{
                         text = T(_("Articles processed.\nDeleted: %1"), num_deleted)
                     })
@@ -125,9 +125,9 @@ function Wallabag:addToMainMenu(menu_items)
                         self.ui:onClose()
                     end
                     if FileManager.instance then
-                        FileManager.instance:reinit( self.directory )
+                        FileManager.instance:reinit(self.directory)
                     else
-                        FileManager:showFiles( self.directory )
+                        FileManager:showFiles(self.directory)
                     end
                 end,
             },
@@ -275,7 +275,7 @@ function Wallabag:getBearerToken()
         })
         return false
     end
-    if string.sub( self.directory, -1 ) ~= "/" then
+    if string.sub(self.directory, -1) ~= "/" then
         self.directory = self.directory .. "/"
     end
 
@@ -302,7 +302,7 @@ function Wallabag:getBearerToken()
         ["Accept"] = "application/json, */*",
         ["Content-Length"] = tostring(#bodyJSON),
         }
-    local result = self:callAPI( "POST", login_url, headers, bodyJSON, "" )
+    local result = self:callAPI("POST", login_url, headers, bodyJSON, "")
 
     if result then
         self.access_token = result.access_token
@@ -321,7 +321,7 @@ function Wallabag:getArticleList()
         filtering = "&tags=" .. self.filter_tag
     end
     local articles_url = "/api/entries.json?archive=0&perPage=" .. self.articles_per_sync .. filtering
-    return self:callAPI( "GET", articles_url, nil, "", "" )
+    return self:callAPI("GET", articles_url, nil, "", "")
 end
 
 --- Download Wallabag article.
@@ -363,7 +363,7 @@ function Wallabag:download(article)
     end
 
     if skip_article == false then
-        if self:callAPI( "GET", item_url, nil, "", local_path) then
+        if self:callAPI("GET", item_url, nil, "", local_path) then
             return downloaded
         else
             return failed
@@ -378,7 +378,7 @@ end
 -- body: empty string if not needed
 -- filepath: downloads the file if provided, returns JSON otherwise
 ---- @todo separate call to internal API from the download on external server
-function Wallabag:callAPI( method, apiurl, headers, body, filepath )
+function Wallabag:callAPI(method, apiurl, headers, body, filepath)
     local request, sink = {}, {}
     local parsed
 
@@ -386,7 +386,7 @@ function Wallabag:callAPI( method, apiurl, headers, body, filepath )
     if apiurl:sub(1, 1) == "/" then
         -- API call to our server, has the form "/random/api/call"
         parsed = url.parse(self.server_url)
-        request["url"] = self.server_url .. apiurl
+        request.url = self.server_url .. apiurl
         if headers == nil then
             headers = { ["Authorization"] = "Bearer " .. self.access_token, }
         end
@@ -394,23 +394,23 @@ function Wallabag:callAPI( method, apiurl, headers, body, filepath )
         -- regular url link to a foreign server
         local file_url = apiurl
         parsed = url.parse(file_url)
-        request["url"] = file_url
+        request.url = file_url
         if headers == nil then
             headers = {} -- no need for a token here
         end
     end
 
-    request["method"] = method
+    request.method = method
     if filepath ~= "" then
-        request["sink"] = ltn12.sink.file(io.open(filepath, "w"))
+        request.sink = ltn12.sink.file(io.open(filepath, "w"))
     else
-        request["sink"] = ltn12.sink.table(sink)
+        request.sink = ltn12.sink.table(sink)
     end
-    request["headers"] = headers
+    request.headers = headers
     if body ~= "" then
-        request["source"] = ltn12.source.string(body)
+        request.source = ltn12.source.string(body)
     end
-    logger.dbg("Wallabag: URL     ", request["url"])
+    logger.dbg("Wallabag: URL     ", request.url)
     logger.dbg("Wallabag: method  ", method)
 
     http.TIMEOUT, https.TIMEOUT = 30, 30
@@ -488,7 +488,7 @@ function Wallabag:synchronize()
             UIManager:close(info)
             for _, article in ipairs(articles._embedded.items) do
                 logger.dbg("Wallabag: processing article ID: ", article.id)
-                remote_article_ids[ tostring( article.id ) ] = true
+                remote_article_ids[ tostring(article.id) ] = true
                 local res = self:download(article)
                 if res == downloaded then
                     downloaded_count = downloaded_count + 1
@@ -497,22 +497,22 @@ function Wallabag:synchronize()
                 end
             end
             -- synchronize remote deletions
-            deleted_count = deleted_count + self:processRemoteDeletes( remote_article_ids )
+            deleted_count = deleted_count + self:processRemoteDeletes(remote_article_ids)
 
             local msg
             if failed_count ~= 0 then
                 msg = _("Processing finished.\n\nArticles downloaded: %1\nDeleted: %2\nFailed: %3")
-                info = InfoMessage:new{ text = T( msg, downloaded_count, deleted_count, failed_count ) }
+                info = InfoMessage:new{ text = T(msg, downloaded_count, deleted_count, failed_count) }
             else
                 msg = _("Processing finished.\n\nArticles downloaded: %1\nDeleted: %2")
-                info = InfoMessage:new{ text = T( msg, downloaded_count, deleted_count ) }
+                info = InfoMessage:new{ text = T(msg, downloaded_count, deleted_count) }
             end
             UIManager:show(info)
         end -- articles
     end -- access_token
 end
 
-function Wallabag:processRemoteDeletes( remote_article_ids )
+function Wallabag:processRemoteDeletes(remote_article_ids)
     if not self.is_sync_remote_delete then
         logger.dbg("Wallabag: Processing of remote file deletions disabled.")
         return 0
@@ -527,10 +527,10 @@ function Wallabag:processRemoteDeletes( remote_article_ids )
     for entry in lfs.dir(self.directory) do
         if entry ~= "." and entry ~= ".." then
             local entry_path = self.directory .. "/" .. entry
-            local id = self:getArticleID( entry_path )
+            local id = self:getArticleID(entry_path)
             if not remote_article_ids[ id ] then
-                logger.dbg("Wallabag: Deleting local file (deleted on server): ", entry_path )
-                self:deleteLocalArticle( entry_path )
+                logger.dbg("Wallabag: Deleting local file (deleted on server): ", entry_path)
+                self:deleteLocalArticle(entry_path)
                 deleted_count = deleted_count + 1
             end
         end
@@ -538,7 +538,7 @@ function Wallabag:processRemoteDeletes( remote_article_ids )
     return deleted_count
 end
 
-function Wallabag:processLocalFiles( mode )
+function Wallabag:processLocalFiles(mode)
     if mode then
         if self.is_auto_delete == false and mode ~= "manual" then
             logger.dbg("Wallabag: Automatic processing of local files disabled.")
@@ -568,12 +568,12 @@ function Wallabag:processLocalFiles( mode )
                     local percent_finished = docinfo.data.percent_finished
                     if status == "complete" or status == "abandoned" then
                         if self.is_delete_finished then
-                            self:removeArticle( entry_path )
+                            self:removeArticle(entry_path)
                             num_deleted = num_deleted + 1
                         end
                     elseif percent_finished == 1 then -- 100% read
                         if self.is_delete_read then
-                            self:removeArticle( entry_path )
+                            self:removeArticle(entry_path)
                             num_deleted = num_deleted + 1
                         end
                     end
@@ -607,9 +607,9 @@ function Wallabag:addArticle(article_url)
     return self:callAPI("POST", "/api/entries.json", headers, body_JSON, "")
 end
 
-function Wallabag:removeArticle( path )
-    logger.dbg("Wallabag: removing article ", path )
-    local id = self:getArticleID( path )
+function Wallabag:removeArticle(path)
+    logger.dbg("Wallabag: removing article ", path)
+    local id = self:getArticleID(path)
     if id then
         if self.is_archiving_deleted then
             local body = {
@@ -624,44 +624,44 @@ function Wallabag:removeArticle( path )
                 ["Authorization"] = "Bearer " .. self.access_token,
             }
 
-            self:callAPI( "PATCH", "/api/entries/" .. id .. ".json", headers, bodyJSON, "" )
+            self:callAPI("PATCH", "/api/entries/" .. id .. ".json", headers, bodyJSON, "")
         else
-            self:callAPI( "DELETE", "/api/entries/" .. id .. ".json", nil, "", "" )
+            self:callAPI("DELETE", "/api/entries/" .. id .. ".json", nil, "", "")
         end
-        self:deleteLocalArticle( path )
+        self:deleteLocalArticle(path)
     end
 end
 
-function Wallabag:deleteLocalArticle( path )
+function Wallabag:deleteLocalArticle(path)
     local entry_mode = lfs.attributes(path, "mode")
     if entry_mode == "file" then
         os.remove(path)
-        local sdr_dir = DocSettings:getSidecarDir( path )
-        FFIUtil.purgeDir( sdr_dir )
-        filemanagerutil.removeFileFromHistoryIfWanted( path )
+        local sdr_dir = DocSettings:getSidecarDir(path)
+        FFIUtil.purgeDir(sdr_dir)
+        filemanagerutil.removeFileFromHistoryIfWanted(path)
    end
 end
 
-function Wallabag:getArticleID( path )
+function Wallabag:getArticleID(path)
     -- extract the Wallabag ID from the file name
     local offset = self.directory:len() + 2 -- skip / and advance to the next char
     local prefix_len = article_id_prefix:len()
-    if path:sub( offset , offset + prefix_len - 1 ) ~= article_id_prefix then
-        logger.warn("Wallabag: getArticleID: no match! ", path:sub( offset , offset + prefix_len - 1 ) )
+    if path:sub(offset , offset + prefix_len - 1) ~= article_id_prefix then
+        logger.warn("Wallabag: getArticleID: no match! ", path:sub(offset , offset + prefix_len - 1))
         return
     end
-    local endpos = path:find( article_id_postfix, offset + prefix_len )
+    local endpos = path:find(article_id_postfix, offset + prefix_len)
     if endpos == nil then
-        logger.warn("Wallabag: getArticleID: no match! " )
+        logger.warn("Wallabag: getArticleID: no match! ")
         return
     end
-    local id = path:sub( offset + prefix_len, endpos - 1 )
+    local id = path:sub(offset + prefix_len, endpos - 1)
     return id
 end
 
 function Wallabag:refreshCurrentDirIfNeeded()
     if FileManager.instance then
-        FileManager.instance:onRefresh( )
+        FileManager.instance:onRefresh()
     end
 end
 
@@ -827,7 +827,7 @@ function Wallabag:setDownloadDirectory(touchmenu_instance)
     }:chooseDir()
 end
 
-function Wallabag:saveSettings( )
+function Wallabag:saveSettings()
     local tempsettings = {
         server_url            = self.server_url,
         client_id             = self.client_id,
