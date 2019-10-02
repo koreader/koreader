@@ -701,6 +701,12 @@ function UIManager:sendEvent(event)
                 checked_widgets[widget] = true
                 if widget.widget:handleEvent(event) then return end
             end
+            if widget.widget.modal then
+                -- By default modal widgets are always on top but if there is more than one modal 
+                -- widget, only last one will be top_widget.
+                checked_widgets[widget] = true
+                if widget.widget:handleEvent(event) then return end
+            end
         end
     end
 end
