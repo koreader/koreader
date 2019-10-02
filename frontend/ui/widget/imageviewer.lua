@@ -81,7 +81,7 @@ local ImageViewer = InputContainer:new{
     _image_wg = nil,
     _images_list = nil,
     _images_list_disposable = nil,
-    
+
     -- buttons state
     _show_buttons = false,
 }
@@ -340,7 +340,7 @@ function ImageViewer:update()
     -- if no buttons are shown, use the full screen
     local max_image_h = img_container_h
     local max_image_w = self.width
-    
+
     -- Otherwise, add paddings
     if not self._show_buttons then
         max_image_h = img_container_h - self.image_padding*2
