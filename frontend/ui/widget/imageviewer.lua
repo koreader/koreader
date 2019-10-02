@@ -216,7 +216,7 @@ function ImageViewer:update()
             button_table,
         }
         button_table_size = button_table:getSize().h
-    end						   
+    end
 
     -- height available to our image
     local img_container_h = self.height - button_table_size
