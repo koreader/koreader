@@ -390,7 +390,9 @@ function ImageViewer:update()
     if progress_container then
         table.insert(frame_elements, progress_container)
     end
-    table.insert(frame_elements, button_container)
+    if self._show_buttons then
+        table.insert(frame_elements, button_container)
+    end
 
     self.main_frame = FrameContainer:new{
         radius = not self.fullscreen and 8 or nil,
@@ -455,6 +457,7 @@ function ImageViewer:onTap(_, ges)
     if self.caption_tap_area and ges.pos:intersectWith(self.caption_tap_area.dimen) then
         self.caption_visible = not self.caption_visible
         self:update()
+        return true
     end
     if self._images_list then
         -- If it's a list of image (e.g. animated gifs), tap each size to navigate
