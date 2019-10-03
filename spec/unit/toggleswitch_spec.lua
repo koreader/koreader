@@ -1,0 +1,28 @@
+describe("ToggleSwitch module", function()
+    local ToggleSwitch
+    setup(function()
+        require("commonrequire")
+        ToggleSwitch = require("ui/widget/toggleswitch")
+    end)
+
+    it("should toggle without error", function()
+        local config = {
+            onConfigChoose = function() end,
+        }
+
+        local switch = ToggleSwitch:new{
+            event = "ChangeSpec",
+            default_value = 2,
+            args = args,
+            default_arg = "reading",
+            toggle = { "Finished", "Reading", "On hold" },
+            values = { 1, 2, 3 },
+            name = "spec_status",
+            alternate = false,
+            enabled = true,
+            config = config,
+        }
+        switch:togglePosition(1, true)
+        switch:onTapSelect(3)
+    end)
+end)
