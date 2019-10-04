@@ -217,7 +217,9 @@ function ToggleSwitch:onTapSelect(arg, gev)
         self.config:onConfigEvents(self.events, self.position)
     end
     --]]
-    self.callback(self.position)
+    if self.callback then
+        self.callback(self.position)
+    end
     if self.toggle[self.position] ~= "⋮" then
         self.config:onConfigChoose(self.values, self.name,
             self.event, self.args, self.events, self.position, self.delay_repaint)
