@@ -694,10 +694,12 @@ function UIManager:sendEvent(event)
                     if active_widget:handleEvent(event) then return end
                 end
             end
-            if widget.widget.is_always_active then
+            if widget.widget.is_always_active or widget.widget.modal then
                 -- active widgets will handle this event
                 -- Note: is_always_active widgets currently are widgets that want to show a keyboard
                 -- and readerconfig
+                -- By default modal widgets are always on top but if there is more than one modal
+                -- widget, only last one will be top_widget. e.g. keyboard and confirmbox.
                 checked_widgets[widget] = true
                 if widget.widget:handleEvent(event) then return end
             end
