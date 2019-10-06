@@ -61,7 +61,6 @@ local Size = {
         thin = Screen:scaleBySize(0.5),
         medium = Screen:scaleBySize(1),
         thick = Screen:scaleBySize(1.5),
-        progress = Screen:scaleBySize(3),
     },
     item = {
         height_default = Screen:scaleBySize(30),

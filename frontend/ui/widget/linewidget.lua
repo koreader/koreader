@@ -9,8 +9,6 @@ local LineWidget = Widget:new{
     style = "solid",
     background = Blitbuffer.COLOR_BLACK,
     dimen = nil,
-    progress_background = nil,
-    progress_percentage = nil,
     --- @todo Replay dirty hack here  13.03 2013 (houqp).
     empty_segments = nil,
 }
@@ -33,12 +31,7 @@ function LineWidget:paintTo(bb, x, y)
                          self.dimen.h,
                          self.background)
         else
-            if self.progress_percentage then
-                bb:paintRect(x, y, self.dimen.w * self.progress_percentage, self.dimen.h, self.progress_background)
-                bb:paintRect(x + self.dimen.w * self.progress_percentage, y, self.dimen.w - self.dimen.w * self.progress_percentage, self.dimen.h, self.background)
-            else
-                bb:paintRect(x, y, self.dimen.w, self.dimen.h, self.background)
-            end
+            bb:paintRect(x, y, self.dimen.w, self.dimen.h, self.background)
         end
     end
 end
