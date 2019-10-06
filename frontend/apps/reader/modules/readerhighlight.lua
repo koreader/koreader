@@ -167,7 +167,7 @@ function ReaderHighlight:onClearHighlight()
 end
 
 function ReaderHighlight:onTap(_, ges)
-    if not self:clear() then
+    if not self:clear() and ges then
         if self.ui.document.info.has_pages then
             return self:onTapPageSavedHighlight(ges)
         else
