@@ -181,7 +181,7 @@ DCREREADER_PROGRESS_BAR = 1
 DMINIBAR_TOC_MARKER_WIDTH = 2   -- Looses usefulness > 3
 DMINIBAR_CONTAINER_HEIGHT = 14  -- Larger means more padding at the bottom, at the risk of eating into the last line
 DMINIBAR_FONT_SIZE = 14
--- no more needed
+-- no longer needed
 --DMINIBAR_HEIGHT = 7             -- Should be smaller than DMINIBAR_CONTAINER_HEIGHT
 
 -- change this to any numerical value if you want to automatically save settings when turning pages
