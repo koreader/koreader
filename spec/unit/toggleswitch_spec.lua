@@ -13,7 +13,6 @@ describe("ToggleSwitch module", function()
         local switch = ToggleSwitch:new{
             event = "ChangeSpec",
             default_value = 2,
-            default_arg = "reading",
             toggle = { "Finished", "Reading", "On hold" },
             values = { 1, 2, 3 },
             name = "spec_status",
