@@ -5,7 +5,7 @@ describe("ToggleSwitch module", function()
         ToggleSwitch = require("ui/widget/toggleswitch")
     end)
 
-    it("should toggle without error", function()
+    it("should toggle without args", function()
         local config = {
             onConfigChoose = function() end,
         }
@@ -13,7 +13,6 @@ describe("ToggleSwitch module", function()
         local switch = ToggleSwitch:new{
             event = "ChangeSpec",
             default_value = 2,
-            args = args,
             default_arg = "reading",
             toggle = { "Finished", "Reading", "On hold" },
             values = { 1, 2, 3 },
