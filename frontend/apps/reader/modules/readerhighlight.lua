@@ -338,6 +338,14 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
                     UIManager:close(self.edit_highlight_dialog)
                 end,
             },
+            {
+                text = _("…"),
+                callback = function()
+                    self.selected_text = self.view.highlight.saved[page][index]
+                    self:onShowHighlightMenu()
+                    UIManager:close(self.edit_highlight_dialog)
+                end,
+            },
         }
     }
 
@@ -388,6 +396,102 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
     }
     UIManager:show(self.edit_highlight_dialog)
     return true
+end
+
+function ReaderHighlight:onShowHighlightMenu()
+    local highlight_buttons = {
+        {
+            {
+                text = _("Highlight"),
+                callback = function()
+                    self:saveHighlight()
+                    self:onClose()
+                end,
+                enabled = self.hold_pos ~= nil,
+            },
+            {
+                text = _("Add Note"),
+                callback = function()
+                    self:addNote()
+                    self:onClose()
+                end,
+                enabled = self.hold_pos ~= nil,
+            },
+        },
+        {
+            {
+                text = C_("Text", "Copy"),
+                enabled = Device:hasClipboard(),
+                callback = function()
+                    Device.input.setClipboardText(self.selected_text.text)
+                end,
+            },
+            {
+                text = _("View HTML"),
+                enabled = not self.ui.document.info.has_pages,
+                callback = function()
+                    self:viewSelectionHTML()
+                end,
+            },
+        },
+        {
+            {
+                text = _("Wikipedia"),
+                callback = function()
+                    UIManager:scheduleIn(0.1, function()
+                        self:lookupWikipedia()
+                        -- We don't call self:onClose(), we need the highlight
+                        -- to still be there, as we may Highlight it from the
+                        -- dict lookup widget
+                    end)
+                end,
+            },
+            {
+                text = _("Dictionary"),
+                callback = function()
+                    self:onHighlightDictLookup()
+                    -- We don't call self:onClose(), same reason as above
+                end,
+            },
+        },
+        {
+            {
+                text = _("Translate"),
+                callback = function()
+                    self:translate(self.selected_text)
+                    -- We don't call self:onClose(), so one can still see
+                    -- the highlighted text when moving the translated
+                    -- text window, and also if NetworkMgr:promptWifiOn()
+                    -- is needed, so the user can just tap again on this
+                    -- button and does not need to select the text again.
+                end,
+            },
+            {
+                text = _("Search"),
+                callback = function()
+                    self:onHighlightSearch()
+                    UIManager:close(self.highlight_dialog)
+                end,
+            },
+        },
+    }
+    if self.selected_link ~= nil then
+        table.insert(highlight_buttons, { -- for now, a single button in an added row
+            {
+                text = _("Follow Link"),
+                callback = function()
+                    local link = self.selected_link.link or self.selected_link
+                    self.ui.link:onGotoLink(link)
+                    self:onClose()
+                end,
+            },
+        })
+    end
+    self.highlight_dialog = ButtonDialog:new{
+        buttons = highlight_buttons,
+        tap_close_callback = function() self:handleEvent(Event:new("Tap")) end,
+    }
+    UIManager:show(self.highlight_dialog)
 end
 
 function ReaderHighlight:onHold(arg, ges)
@@ -782,97 +886,7 @@ function ReaderHighlight:onHoldRelease()
     if self.selected_text then
         local default_highlight_action = G_reader_settings:readSetting("default_highlight_action")
         if not default_highlight_action then
-            local highlight_buttons = {
-                {
-                    {
-                        text = _("Highlight"),
-                        callback = function()
-                            self:saveHighlight()
-                            self:onClose()
-                        end,
-                    },
-                    {
-                        text = _("Add Note"),
-                        callback = function()
-                            self:addNote()
-                            self:onClose()
-                        end,
-                    },
-                },
-                {
-                    {
-                        text = C_("Text", "Copy"),
-                        enabled = Device:hasClipboard(),
-                        callback = function()
-                            Device.input.setClipboardText(self.selected_text.text)
-                        end,
-                    },
-                    {
-                        text = _("View HTML"),
-                        enabled = not self.ui.document.info.has_pages,
-                        callback = function()
-                            self:viewSelectionHTML()
-                        end,
-                    },
-                },
-                {
-                    {
-                        text = _("Wikipedia"),
-                        callback = function()
-                            UIManager:scheduleIn(0.1, function()
-                                self:lookupWikipedia()
-                                -- We don't call self:onClose(), we need the highlight
-                                -- to still be there, as we may Highlight it from the
-                                -- dict lookup widget
-                            end)
-                        end,
-                    },
-                    {
-                        text = _("Dictionary"),
-                        callback = function()
-                            self:onHighlightDictLookup()
-                            -- We don't call self:onClose(), same reason as above
-                        end,
-                    },
-                },
-                {
-                    {
-                        text = _("Translate"),
-                        callback = function()
-                            self:translate(self.selected_text)
-                            -- We don't call self:onClose(), so one can still see
-                            -- the highlighted text when moving the translated
-                            -- text window, and also if NetworkMgr:promptWifiOn()
-                            -- is needed, so the user can just tap again on this
-                            -- button and does not need to select the text again.
-                        end,
-                    },
-                    {
-                        text = _("Search"),
-                        callback = function()
-                            self:onHighlightSearch()
-                            UIManager:close(self.highlight_dialog)
-                        end,
-                    },
-                },
-            }
-            if self.selected_link ~= nil then
-                table.insert(highlight_buttons, { -- for now, a single button in an added row
-                    {
-                        text = _("Follow Link"),
-                        callback = function()
-                            local link = self.selected_link.link or self.selected_link
-                            self.ui.link:onGotoLink(link)
-                            self:onClose()
-                        end,
-                    },
-                })
-            end
-            self.highlight_dialog = ButtonDialog:new{
-                buttons = highlight_buttons,
-                tap_close_callback = function() self:handleEvent(Event:new("Tap")) end,
-            }
-            UIManager:show(self.highlight_dialog)
+            self:onShowHighlightMenu()
         elseif default_highlight_action == "highlight" then
             self:saveHighlight()
             self:onClose()
