@@ -1502,4 +1502,9 @@ function ReaderFooter:onSetPageHorizMargins(h_margins)
     end
 end
 
+function ReaderFooter:onScreenResize()
+    self:updateFooterContainer()
+    self:resetLayout(true)
+end
+
 return ReaderFooter

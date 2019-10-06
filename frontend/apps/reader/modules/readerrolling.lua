@@ -604,18 +604,41 @@ function ReaderRolling:onGotoXPointer(xp, marker_xp)
 
         self.mark_func = function()
             self.mark_func = nil
+            local delayed_unmark = type(marker_setting) == "number"
+            if delayed_unmark then -- we'll have to remove the marker
+                -- We remember the original content that was where we are going
+                -- to draw the marker.
+                -- It's usually some white margin, so we could just draw a white
+                -- rectangle to unmark it; but it might not always be just white
+                -- margin: when we're in dual page mode and crengine has drawn a
+                -- vertical pages separator - or if we have had crengine draw
+                -- some backgroud texture with credocument:setBackgroundImage().
+                if self.mark_orig_content_bb then
+                    -- be sure we don't leak memory if a previous one is still
+                    -- hanging around
+                    self.mark_orig_content_bb:free()
+                    self.mark_orig_content_bb = nil
+                end
+                self.mark_orig_content_bb = Blitbuffer.new(marker_w, marker_h, Screen.bb:getType())
+                self.mark_orig_content_bb:blitFrom(Screen.bb, 0, 0, screen_x, screen_y, marker_w, marker_h)
+            end
+            -- Paint directly to the screen and force a regional refresh
             Screen.bb:paintRect(screen_x, screen_y, marker_w, marker_h, Blitbuffer.COLOR_BLACK)
             Screen["refreshFast"](Screen, screen_x, screen_y, marker_w, marker_h)
-            if type(marker_setting) == "number" then -- hide it
+            if delayed_unmark then
                 self.unmark_func = function()
                     self.unmark_func = nil
                     -- UIManager:setDirty(self.view.dialog, "ui", Geom:new({x=0, y=screen_y, w=marker_w, h=marker_h}))
                     -- No need to use setDirty (which would ask crengine to
                     -- re-render the page, which may take a few seconds on big
-                    -- documents): we drew our black marker in the margin, we
-                    -- can just draw a white one to make it disappear
-                    Screen.bb:paintRect(screen_x, screen_y, marker_w, marker_h, Blitbuffer.COLOR_WHITE)
-                    Screen["refreshUI"](Screen, screen_x, screen_y, marker_w, marker_h)
+                    -- documents). We just restore what was there by painting
+                    -- it directly to screen and triggering a regional refresh.
+                    if self.mark_orig_content_bb then
+                        Screen.bb:blitFrom(self.mark_orig_content_bb, screen_x, screen_y, 0, 0, marker_w, marker_h)
+                        Screen["refreshUI"](Screen, screen_x, screen_y, marker_w, marker_h)
+                        self.mark_orig_content_bb:free()
+                        self.mark_orig_content_bb = nil
+                    end
                 end
                 UIManager:scheduleIn(marker_setting, self.unmark_func)
             end
