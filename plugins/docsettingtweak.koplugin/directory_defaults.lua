@@ -1,9 +1,11 @@
 return {--do NOT change this line
 
  --HELP:
- -- you can override default settings for documents per directory in this file
- -- the directories must be under the home folder.
- -- you can find settings to change in the metadata.lua in the .sdr folder.
+ -- You can override default settings for documents per directory in this file.
+ -- The directories must be under the home folder.
+ -- You can find settings to change in the metadata.lua in the .sdr folder.
+ -- The path must start with "/" (absolute path).
+ -- The path may not end with a "/" it must end with the folder name.
 
  -- syntax:
 
@@ -17,13 +19,16 @@ return {--do NOT change this line
     ["/mnt/us/documents/hebrew"] = {
         ["inverse_reading_order"] = true
     },
-    ["/mnt/us/documents/smalltext"] = {
+    ["/mnt/onboard/smalltext"] = {
+        ["font_size"] = 34,
+        ["line_space_percent"] = 130,
+    },
+    ["/sdcard/Books/smalltext"] = {
         ["font_size"] = 34,
         ["line_space_percent"] = 130,
     },
 --]]
 
- -- remember to put coma at the end of each line!
  -- comment out line ("--" at line start) to disable
 
 

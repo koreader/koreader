@@ -19,7 +19,15 @@ local directory_defaults = nil
 local initialized = false
 
 function DocSettingTweak:init()
-    DocSettingTweak:lazyInitialization()
+    if not initialized then
+        -- Make sure our settings file exists
+        if not lfs.attributes(directory_defaults_path, "mode") then
+            FFIUtil.copyFile(FFIUtil.joinPath(self.path, directory_defaults_name),
+                         directory_defaults_path)
+        end
+        initialized = true
+    end
+    DocSettingTweak:loadDefaults()
     self.ui.menu:registerToMainMenu(self)
 end
 
@@ -32,17 +40,6 @@ function DocSettingTweak:addToMainMenu(menu_items)
         text = _("Tweak document settings"),
         callback = function() DocSettingTweak:editDirectoryDefaults() end,
     }
-end
-
-function DocSettingTweak:lazyInitialization()
-    if not initialized then
-        if not lfs.attributes(directory_defaults_path, "mode") then
-            FFIUtil.copyFile(FFIUtil.joinPath(self.path, directory_defaults_name),
-                         directory_defaults_path)
-        end
-        initialized = true
-    end
-    DocSettingTweak:loadDefaults()
 end
 
 function DocSettingTweak:editDirectoryDefaults()
@@ -87,10 +84,15 @@ function DocSettingTweak:editDirectoryDefaults()
     config_editor:onShowKeyboard()
 end
 
-function DocSettingTweak:onDocSettingsLoad(doc_settings, docfile)
+function DocSettingTweak:onDocSettingsLoad(doc_settings, document)
+    -- check that the documents settings are empty & and that we have defaults to customize
     if next(doc_settings.data) == nil and directory_defaults.data ~= nil then
         local base = G_reader_settings:readSetting("home_dir") or filemanagerutil.getDefaultDir()
-        local directory = docfile and docfile ~= "" and FFIUtil.dirname(docfile)
+        if document.file == nil or document.file == "" then
+            return
+        end
+        local directory = FFIUtil.dirname(document.file)
+        -- check if folder matches our defaults to override
         while directory:sub(1, #base) == base do
             if directory_defaults:has(directory) then
                 doc_settings.data = util.tableDeepCopy(directory_defaults:readSetting(directory))
@@ -100,7 +102,6 @@ function DocSettingTweak:onDocSettingsLoad(doc_settings, docfile)
             end
         end
     end
-    return true
 end
 
 return DocSettingTweak
