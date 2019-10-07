@@ -5,7 +5,7 @@ return {--do NOT change this line
  -- The directories must be under the home folder.
  -- You can find settings to change in the metadata.lua in the .sdr folder.
  -- The path must start with "/" (absolute path).
- -- The path may not end with a "/" it must end with the folder name.
+ -- The path must not end with a "/" it must end with the folder name.
 
  -- syntax:
 

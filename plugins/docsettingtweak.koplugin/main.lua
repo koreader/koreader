@@ -22,7 +22,7 @@ function DocSettingTweak:init()
     if not initialized then
         -- Make sure our settings file exists
         if not lfs.attributes(directory_defaults_path, "mode") then
-            FFIUtil.copyFile(FFIUtil.joinPath(self.path, directory_defaults_name),
+            FFIUtil.copyFile(FFIUtil.joinPath(self.path, directory_defaults_name) .. ".template",
                          directory_defaults_path)
         end
         initialized = true
