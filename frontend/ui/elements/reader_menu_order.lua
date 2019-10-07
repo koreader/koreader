@@ -128,6 +128,7 @@ local order = {
         "battery_statistics",
         "synchronize_time",
         "keep_alive",
+        "doc_setting_tweak",
         "terminal",
     },
     search = {
