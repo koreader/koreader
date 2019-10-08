@@ -70,6 +70,7 @@ local Device = Generic:new{
     canRestart = no,
     firmware_rev = android.app.activity.sdkVersion,
     display_dpi = android.lib.AConfiguration_getDensity(android.app.config),
+    isHapticFeedbackEnabled = yes,
     hasClipboard = yes,
     hasOTAUpdates = canUpdateApk,
     canOpenLink = yes,
@@ -169,19 +170,17 @@ function Device:init()
         self.isTouchDevice = yes
     end
 
-    -- check if we enabled support for custom timeouts (including wakelocks)
+    -- check if we use custom timeouts
     if android.needsWakelocks() then
-        android.setScreenOffTimeout(-1)
+        android.timeout.set(C.AKEEP_SCREEN_ON_ENABLED)
     else
         local timeout = G_reader_settings:readSetting("android_screen_timeout")
-        if timeout and timeout > 0 then
-            -- set a custom timeout if we already have write settings permission.
-            -- do not attempt to request permissions here.
-            if android.canWriteSettings() then
-                android.setScreenOffTimeout(timeout)
+        if timeout then
+            if timeout == C.AKEEP_SCREEN_ON_ENABLED
+            or (timeout > C.AKEEP_SCREEN_ON_DISABLED
+                and android.settings.canWrite()) then
+                android.timeout.set(timeout)
             end
-        elseif timeout and timeout == -1 then
-            android.setScreenOffTimeout(timeout)
         end
     end
 
@@ -223,6 +222,10 @@ function Device:initNetworkManager(NetworkMgr)
     NetworkMgr.isWifiOn = function()
         return android.isWifiEnabled()
     end
+end
+
+function Device:performHapticFeedback(type)
+    android.hapticFeedback(C["AHAPTIC_"..type])
 end
 
 function Device:retrieveNetworkInfo()
