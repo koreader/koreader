@@ -382,6 +382,9 @@ function ReaderUI:init()
         })
     end
 
+    -- Allow others to change settings based on external factors
+    -- Must be called after plugins are loaded & before setting are read.
+    self:handleEvent(Event:new("DocSettingsLoad", self.doc_settings, self.document))
     -- we only read settings after all the widgets are initialized
     self:handleEvent(Event:new("ReadSettings", self.doc_settings))
 
