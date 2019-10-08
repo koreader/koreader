@@ -54,6 +54,8 @@ local ImageViewer = InputContainer:new{
     caption = nil,
     caption_visible = true, -- caption visible by default
     caption_tap_area = nil,
+    -- Start with buttons hidden (tap on screen will toggle their visibility)
+    buttons_visible = false,
 
     width = nil,
     height = nil,
@@ -81,6 +83,7 @@ local ImageViewer = InputContainer:new{
     _image_wg = nil,
     _images_list = nil,
     _images_list_disposable = nil,
+
 }
 
 function ImageViewer:init()
@@ -165,52 +168,57 @@ function ImageViewer:update()
         self.width = Screen:getWidth() - Screen:scaleBySize(40)
     end
 
-    local buttons = {
-        {
+    local button_table_size = 0
+    local button_container
+    if self.buttons_visible then
+        local buttons = {
             {
-                text = self._scale_to_fit and _("Original size") or _("Scale"),
-                callback = function()
-                    self.scale_factor = self._scale_to_fit and 1 or 0
-                    self._scale_to_fit = not self._scale_to_fit
-                    -- Reset center ratio (may have been modified if some panning was done)
-                    self._center_x_ratio = 0.5
-                    self._center_y_ratio = 0.5
-                    self:update()
-                end,
+                {
+                    text = self._scale_to_fit and _("Original size") or _("Scale"),
+                    callback = function()
+                        self.scale_factor = self._scale_to_fit and 1 or 0
+                        self._scale_to_fit = not self._scale_to_fit
+                        -- Reset center ratio (may have been modified if some panning was done)
+                        self._center_x_ratio = 0.5
+                        self._center_y_ratio = 0.5
+                        self:update()
+                    end,
+                },
+                {
+                    text = self.rotated and _("No rotation") or _("Rotate"),
+                    callback = function()
+                        self.rotated = not self.rotated and true or false
+                        self:update()
+                    end,
+                },
+                {
+                    text = _("Close"),
+                    callback = function()
+                        UIManager:close(self)
+                    end,
+                },
             },
-            {
-                text = self.rotated and _("No rotation") or _("Rotate"),
-                callback = function()
-                    self.rotated = not self.rotated and true or false
-                    self:update()
-                end,
+        }
+        local button_table = ButtonTable:new{
+            width = self.width - 2*self.button_padding,
+            button_font_face = "cfont",
+            button_font_size = 20,
+            buttons = buttons,
+            zero_sep = true,
+            show_parent = self,
+        }
+        button_container = CenterContainer:new{
+            dimen = Geom:new{
+                w = self.width,
+                h = button_table:getSize().h,
             },
-            {
-                text = _("Close"),
-                callback = function()
-                    UIManager:close(self)
-                end,
-            },
-        },
-    }
-    local button_table = ButtonTable:new{
-        width = self.width - 2*self.button_padding,
-        button_font_face = "cfont",
-        button_font_size = 20,
-        buttons = buttons,
-        zero_sep = true,
-        show_parent = self,
-    }
-    local button_container = CenterContainer:new{
-        dimen = Geom:new{
-            w = self.width,
-            h = button_table:getSize().h,
-        },
-        button_table,
-    }
+            button_table,
+        }
+        button_table_size = button_table:getSize().h
+    end
 
     -- height available to our image
-    local img_container_h = self.height - button_table:getSize().h
+    local img_container_h = self.height - button_table_size
 
     local title_bar, title_sep
     if self.with_title_bar then
@@ -328,8 +336,14 @@ function ImageViewer:update()
         img_container_h = img_container_h - progress_container:getSize().h
     end
 
-    local max_image_h = img_container_h - self.image_padding*2
-    local max_image_w = self.width - self.image_padding*2
+    -- If no buttons and no title are shown, use the full screen
+    local max_image_h = img_container_h
+    local max_image_w = self.width
+    -- Otherwise, add paddings around image
+    if self.buttons_visible or self.with_title_bar then
+        max_image_h = img_container_h - self.image_padding*2
+        max_image_w = self.width - self.image_padding*2
+    end
 
     local rotation_angle = 0
     if self.rotated then
@@ -374,7 +388,9 @@ function ImageViewer:update()
     if progress_container then
         table.insert(frame_elements, progress_container)
     end
-    table.insert(frame_elements, button_container)
+    if self.buttons_visible then
+        table.insert(frame_elements, button_container)
+    end
 
     self.main_frame = FrameContainer:new{
         radius = not self.fullscreen and 8 or nil,
@@ -439,13 +455,26 @@ function ImageViewer:onTap(_, ges)
     if self.caption_tap_area and ges.pos:intersectWith(self.caption_tap_area.dimen) then
         self.caption_visible = not self.caption_visible
         self:update()
+        return true
     end
     if self._images_list then
-        if ges.pos.x < Screen:getWidth()/2 and self._images_list_cur > 1 then
-            self:switchToImageNum(self._images_list_cur - 1)
-        elseif ges.pos.x > Screen:getWidth()/2 and self._images_list_cur < self._images_list_nb then
-            self:switchToImageNum(self._images_list_cur + 1)
+        -- If it's a list of image (e.g. animated gifs), tap left/right 1/3 of screen to navigate
+        if ges.pos.x < Screen:getWidth()/3 then
+            if self._images_list_cur > 1 then
+                self:switchToImageNum(self._images_list_cur - 1)
+            end
+        elseif ges.pos.x > Screen:getWidth()*2/3 then
+            if self._images_list_cur < self._images_list_nb then
+                self:switchToImageNum(self._images_list_cur + 1)
+            end
+        else -- toggle buttons when tap on middle 1/3 of screen width
+            self.buttons_visible = not self.buttons_visible
+            self:update()
         end
+    else
+        -- No image list: tap on any part of screen toggles buttons visibility
+        self.buttons_visible = not self.buttons_visible
+        self:update()
     end
     return true
 end
@@ -479,6 +508,11 @@ function ImageViewer:onSwipe(_, ges)
             -- allow for zooming with vertical swipe on screen sides
             local dec = ges.distance / Screen:getHeight()
             self:onZoomOut(dec)
+        elseif self.scale_factor == 0 then
+            -- When scaled to fit (on initial launch, or after one has tapped
+            -- "Scale"), as we are then sure that there is no use for panning,
+            -- allow swipe south to close the widget.
+            self:onClose()
         else
             self:panBy(0, -distance)
         end
