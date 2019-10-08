@@ -54,6 +54,8 @@ local ImageViewer = InputContainer:new{
     caption = nil,
     caption_visible = true, -- caption visible by default
     caption_tap_area = nil,
+    -- Start with buttons hidden (tap on screen will toggle their visibility)
+    buttons_visible = false,
 
     width = nil,
     height = nil,
@@ -82,8 +84,6 @@ local ImageViewer = InputContainer:new{
     _images_list = nil,
     _images_list_disposable = nil,
 
-    -- buttons state
-    _show_buttons = false,
 }
 
 function ImageViewer:init()
@@ -134,7 +134,6 @@ function ImageViewer:init()
         -- also swap disposable status
         self._images_list_disposable = self.image_disposable
         self.image_disposable = self._images_list.image_disposable
-        self._show_buttons = true
     end
     self:update()
 end
@@ -171,7 +170,7 @@ function ImageViewer:update()
 
     local button_table_size = 0
     local button_container
-    if self._show_buttons then
+    if self.buttons_visible then
         local buttons = {
             {
                 {
@@ -337,12 +336,11 @@ function ImageViewer:update()
         img_container_h = img_container_h - progress_container:getSize().h
     end
 
-    -- if no buttons are shown, use the full screen
+    -- If no buttons and no title are shown, use the full screen
     local max_image_h = img_container_h
     local max_image_w = self.width
-
-    -- Otherwise, add paddings
-    if not self._show_buttons then
+    -- Otherwise, add paddings around image
+    if self.buttons_visible or self.with_title_bar then
         max_image_h = img_container_h - self.image_padding*2
         max_image_w = self.width - self.image_padding*2
     end
@@ -390,7 +388,7 @@ function ImageViewer:update()
     if progress_container then
         table.insert(frame_elements, progress_container)
     end
-    if self._show_buttons then
+    if self.buttons_visible then
         table.insert(frame_elements, button_container)
     end
 
@@ -460,21 +458,23 @@ function ImageViewer:onTap(_, ges)
         return true
     end
     if self._images_list then
-        -- If it's a list of image (e.g. animated gifs), tap each size to navigate
-        if ges.pos.x < Screen:getWidth()/2 and self._images_list_cur > 1 then
-            self:switchToImageNum(self._images_list_cur - 1)
-        elseif ges.pos.x > Screen:getWidth()/2 and self._images_list_cur < self._images_list_nb then
-            self:switchToImageNum(self._images_list_cur + 1)
+        -- If it's a list of image (e.g. animated gifs), tap left/right 1/3 of screen to navigate
+        if ges.pos.x < Screen:getWidth()/3 then
+            if self._images_list_cur > 1 then
+                self:switchToImageNum(self._images_list_cur - 1)
+            end
+        elseif ges.pos.x > Screen:getWidth()*2/3 then
+            if self._images_list_cur < self._images_list_nb then
+                self:switchToImageNum(self._images_list_cur + 1)
+            end
+        else -- toggle buttons when tap on middle 1/3 of screen width
+            self.buttons_visible = not self.buttons_visible
+            self:update()
         end
     else
-        -- Otherwise, tapping the bottom will toggle the image,
-        -- and tapping the rest will close the widget
-        if ges.pos.y > Screen:getHeight() * 3/4 then
-            self._show_buttons = not self._show_buttons
-            self:update()
-        else
-            self:onClose()
-        end
+        -- No image list: tap on any part of screen toggles buttons visibility
+        self.buttons_visible = not self.buttons_visible
+        self:update()
     end
     return true
 end
@@ -508,6 +508,11 @@ function ImageViewer:onSwipe(_, ges)
             -- allow for zooming with vertical swipe on screen sides
             local dec = ges.distance / Screen:getHeight()
             self:onZoomOut(dec)
+        elseif self.scale_factor == 0 then
+            -- When scaled to fit (on initial launch, or after one has tapped
+            -- "Scale"), as we are then sure that there is no use for panning,
+            -- allow swipe south to close the widget.
+            self:onClose()
         else
             self:panBy(0, -distance)
         end
