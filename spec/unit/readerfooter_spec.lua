@@ -596,7 +596,7 @@ describe("Readerfooter module", function()
 
         assert.falsy(footer.has_no_mode)
         assert.truthy(readerui.view.footer_visible)
-        assert.is.same(15, footer:getHeight())
+        assert.is.same(17, footer:getHeight())
     end)
 
     it("should return correct footer height when all modes are disabled", function()
@@ -614,7 +614,7 @@ describe("Readerfooter module", function()
 
         assert.truthy(footer.has_no_mode)
         assert.truthy(readerui.view.footer_visible)
-        assert.is.same(15, footer:getHeight())
+        assert.is.same(17, footer:getHeight())
     end)
 
     it("should disable footer when all modes + progressbar are disabled", function()

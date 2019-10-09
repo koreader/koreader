@@ -314,13 +314,7 @@ function ReaderFooter:updateFooterContainer()
         table.insert(self.vertical_frame, self.separator_line)
         table.insert(self.vertical_frame, vertical_span)
     end
-    if self.settings.progress_bar_position == "above" and not self.settings.disable_progress_bar then
-        self.horizontal_group = HorizontalGroup:new{
-            margin_span,
-            self.text_container,
-            margin_span,
-        }
-    elseif self.settings.progress_bar_position == "below" and not self.settings.disable_progress_bar then
+    if self.settings.progress_bar_position and not self.settings.disable_progress_bar then
         self.horizontal_group = HorizontalGroup:new{
             margin_span,
             self.text_container,
@@ -698,7 +692,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         end,
                         callback = function()
                             self.settings.align = "center"
-                            self:refreshFooter(true, false)
+                            self:refreshFooter(true)
                         end,
                     },
                     {
@@ -708,7 +702,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         end,
                         callback = function()
                             self.settings.align = "left"
-                            self:refreshFooter(true, false)
+                            self:refreshFooter(true)
                         end,
                     },
                     {
@@ -718,7 +712,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         end,
                         callback = function()
                             self.settings.align = "right"
-                            self:refreshFooter(true, false)
+                            self:refreshFooter(true)
                         end,
                     },
                 }
@@ -941,7 +935,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                     if self.settings.progress_bar_position == "above" then
                         self:refreshFooter(true, true)
                     else
-                        self:refreshFooter(true, false)
+                        self:refreshFooter(true)
                     end
                 end,
             },
@@ -1090,7 +1084,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         text = _("no margins (0)")
                     end
                     if self.settings.progress_margin and not self.ui.document.info.has_pages then
-                        text = T(_("same as book margins (%1)"), math.floor((self.book_margin_left + self.book_margin_right)/2))
+                        text = T(_("same as book margins (%1)"), self.book_margins_footer_width)
                     end
                     return T(_("Margins: %1"), text)
                 end,
@@ -1108,7 +1102,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         callback = function()
                             self.settings.progress_margin_width = Screen:scaleBySize(0)
                             self.settings.progress_margin = false
-                            self:refreshFooter(true, false)
+                            self:refreshFooter(true)
                         end,
                     },
                     {
@@ -1122,7 +1116,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         callback = function()
                             self.settings.progress_margin_width = Screen:scaleBySize(10)
                             self.settings.progress_margin = false
-                            self:refreshFooter(true, false)
+                            self:refreshFooter(true)
                         end,
                     },
                     {
@@ -1130,7 +1124,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                             if self.ui.document.info.has_pages then
                                 return _("Same as book margins")
                             end
-                            return T(_("Same as book margins (%1)"), math.floor((self.book_margin_left + self.book_margin_right)/2))
+                            return T(_("Same as book margins (%1)"), self.book_margins_footer_width)
                         end,
                         checked_func = function()
                             return self.settings.progress_margin and not self.ui.document.info.has_pages
@@ -1140,8 +1134,8 @@ function ReaderFooter:addToMainMenu(menu_items)
                         end,
                         callback = function()
                             self.settings.progress_margin = true
-                            self.settings.progress_margin_width = Screen:scaleBySize(math.floor((self.book_margin_left + self.book_margin_right)/2))
-                            self:refreshFooter(true, false)
+                            self.settings.progress_margin_width = Screen:scaleBySize(self.book_margins_footer_width)
+                            self:refreshFooter(true)
                         end
                     },
                 },
@@ -1353,8 +1347,7 @@ function ReaderFooter:onReadSettings(config)
         local h_margins = config:readSetting("copt_h_page_margins") or
             G_reader_settings:readSetting("copt_h_page_margins") or
             DCREREADER_CONFIG_H_MARGIN_SIZES_MEDIUM
-        self.book_margin_left = h_margins[1]
-        self.book_margin_right = h_margins[2]
+        self.book_margins_footer_width = math.floor((h_margins[1] + h_margins[2])/2)
     end
 end
 
@@ -1498,11 +1491,10 @@ function ReaderFooter:onChangeScreenMode()
 end
 
 function ReaderFooter:onSetPageHorizMargins(h_margins)
-    self.book_margin_left = h_margins[1]
-    self.book_margin_right = h_margins[2]
+    self.book_margins_footer_width = math.floor((h_margins[1] + h_margins[2])/2)
     if self.settings.progress_margin then
-        self.settings.progress_margin_width = Screen:scaleBySize(math.floor((h_margins[1] + h_margins[2])/2))
-        self:refreshFooter(true, false)
+        self.settings.progress_margin_width = Screen:scaleBySize(self.book_margins_footer_width)
+        self:refreshFooter(true)
     end
 end
 
