@@ -997,7 +997,9 @@ local ENGINE_PROGRESS_INITIAL_DELAY = TimeVal:new{ sec = 2 }
 local ENGINE_PROGRESS_UPDATE_DELAY = TimeVal:new{ usec = 500000 }
 
 function ReaderRolling:showEngineProgress(percent)
-    if G_reader_settings:isFalse("cre_show_progress") then
+    if G_reader_settings and G_reader_settings:isFalse("cre_show_progress") then
+        -- (G_reader_settings might not be available when this is called
+        -- in the context of unit tests.)
         -- This may slow things down too much with SDL over SSH,
         -- so allow disabling it.
         return
