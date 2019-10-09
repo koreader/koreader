@@ -95,7 +95,7 @@ end
 function ProgressWidget:updateStyle(thick, height)
     if thick then
         if height then
-            self.height = height
+            self.height = Screen:scaleBySize(height)
         end
         self.margin_h = Screen:scaleBySize(3)
         self.margin_v = Screen:scaleBySize(1)
@@ -104,7 +104,7 @@ function ProgressWidget:updateStyle(thick, height)
         self.bgcolor = Blitbuffer.COLOR_WHITE
     else
         if height then
-            self.height = height
+            self.height = Screen:scaleBySize(height)
         end
         self.margin_h = 0
         self.margin_v = 0
