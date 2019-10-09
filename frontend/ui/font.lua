@@ -115,25 +115,6 @@ function Font:getFace(font, size)
         local builtin_font_location = FontList.fontdir.."/"..realname
         local ok, face = pcall(Freetype.newFace, builtin_font_location, size)
 
-        -- We don't ship Droid and Noto on Android because they're system fonts.
-        -- This cuts package size in half, but 4.4 and older systems
-        -- might not ship Noto.
-        if not ok and is_android and realname:match("^Noto") then
-            local system_font_location = "/system/fonts"
-            logger.dbg("Font:", realname, "not found. Trying system location.")
-
-            ok, face = pcall(Freetype.newFace, system_font_location.."/"..realname, size)
-
-            -- Relevant Noto font not found on this device, fall back to Droid
-            if not ok then
-                if realname:match("Bold") then
-                    realname = "DroidSans-Bold.ttf"
-                else
-                    realname = "DroidSans.ttf"
-                end
-            end
-        end
-
         -- Not all fonts are bundled on all platforms because they come with the system.
         -- In that case, search through all font folders for the requested font.
         if not ok then
