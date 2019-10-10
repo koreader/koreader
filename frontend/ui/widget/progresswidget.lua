@@ -92,4 +92,27 @@ function ProgressWidget:setPercentage(percentage)
     self.percentage = percentage
 end
 
+function ProgressWidget:updateStyle(thick, height)
+    if thick then
+        if height then
+            self.height = Screen:scaleBySize(height)
+        end
+        self.margin_h = Screen:scaleBySize(3)
+        self.margin_v = Screen:scaleBySize(1)
+        self.bordersize = Screen:scaleBySize(1)
+        self.radius = Screen:scaleBySize(2)
+        self.bgcolor = Blitbuffer.COLOR_WHITE
+    else
+        if height then
+            self.height = Screen:scaleBySize(height)
+        end
+        self.margin_h = 0
+        self.margin_v = 0
+        self.bordersize = 0
+        self.radius = 0
+        self.bgcolor = Blitbuffer.COLOR_GRAY
+        self.ticks = nil
+    end
+end
+
 return ProgressWidget

@@ -61,6 +61,8 @@ local symbol_prefix = {
         wifi_status = "⚟",
     }
 }
+local PROGRESS_BAR_STYLE_THICK_DEFAULT_HEIGHT = 7
+local PROGRESS_BAR_STYLE_THIN_DEFAULT_HEIGHT = 3
 
 -- functions that generates footer text for each mode
 local footerTextGeneratorMap = {
@@ -180,7 +182,6 @@ local ReaderFooter = WidgetContainer:extend{
     footer_text = nil,
     text_font_face = "ffont",
     text_font_size = DMINIBAR_FONT_SIZE,
-    bar_height = Screen:scaleBySize(DMINIBAR_HEIGHT),
     height = Screen:scaleBySize(DMINIBAR_CONTAINER_HEIGHT),
     horizontal_margin = Screen:scaleBySize(10),
     text_left_margin = Screen:scaleBySize(10),
@@ -234,6 +235,10 @@ function ReaderFooter:init()
         self.mode_index = self.settings.order
         self.mode_nb = #self.mode_index
     end
+    -- default margin (like self.horizontal_margin)
+    if not self.settings.progress_margin_width  then
+        self.settings.progress_margin_width = Screen:scaleBySize(10)
+    end
     self.mode_list = {}
     for i = 0, #self.mode_index do
         self.mode_list[self.mode_index[i]] = i
@@ -262,19 +267,22 @@ function ReaderFooter:init()
     self.text_width = 0
     self.progress_bar = ProgressWidget:new{
         width = nil,
-        height = self.bar_height,
+        height = nil,
         percentage = self.progress_percentage,
         tick_width = DMINIBAR_TOC_MARKER_WIDTH,
         ticks = nil, -- ticks will be populated in self:updateFooterText
         last = nil, -- last will be initialized in self:updateFooterText
     }
+
+    if self.settings.progress_style_thin then
+        self.progress_bar:updateStyle(false, nil)
+    end
+
     self.text_container = RightContainer:new{
         dimen = Geom:new{ w = 0, h = self.height },
         self.footer_text,
     }
-
     self:updateFooterContainer()
-
     self.mode = G_reader_settings:readSetting("reader_footer_mode") or self.mode
     if self.has_no_mode and self.settings.disable_progress_bar then
         self.mode = self.mode_list.off
@@ -306,15 +314,12 @@ function ReaderFooter:updateFooterContainer()
         table.insert(self.vertical_frame, self.separator_line)
         table.insert(self.vertical_frame, vertical_span)
     end
-    if self.settings.progress_bar_separate_line and not self.settings.disable_progress_bar then
+    if self.settings.progress_bar_position and not self.settings.disable_progress_bar then
         self.horizontal_group = HorizontalGroup:new{
             margin_span,
             self.text_container,
             margin_span,
         }
-        local vertical_span = VerticalSpan:new{width = self.bottom_padding *2}
-        table.insert(self.vertical_frame, self.progress_bar)
-        table.insert(self.vertical_frame, vertical_span)
     else
         self.horizontal_group = HorizontalGroup:new{
             margin_span,
@@ -341,8 +346,19 @@ function ReaderFooter:updateFooterContainer()
         }
     end
 
-    table.insert(self.vertical_frame, self.footer_container)
+    local vertical_span = VerticalSpan:new{width = self.bottom_padding *2}
 
+    if self.settings.progress_bar_position == "above" and not self.settings.disable_progress_bar then
+        table.insert(self.vertical_frame, self.progress_bar)
+        table.insert(self.vertical_frame, vertical_span)
+        table.insert(self.vertical_frame, self.footer_container)
+    elseif self.settings.progress_bar_position == "below" and not self.settings.disable_progress_bar then
+        table.insert(self.vertical_frame, self.footer_container)
+        table.insert(self.vertical_frame, vertical_span)
+        table.insert(self.vertical_frame, self.progress_bar)
+    else
+        table.insert(self.vertical_frame, self.footer_container)
+    end
     self.footer_content = FrameContainer:new{
         self.vertical_frame,
         background = Blitbuffer.COLOR_WHITE,
@@ -410,15 +426,23 @@ function ReaderFooter:resetLayout(force_reset)
 
     if self.settings.disable_progress_bar then
         self.progress_bar.width = 0
-    elseif self.settings.progress_bar_separate_line then
-        self.progress_bar.width = math.floor(new_screen_width - self.horizontal_margin*2)
+    elseif self.settings.progress_bar_position then
+        self.progress_bar.width = math.floor(new_screen_width - 2 * self.settings.progress_margin_width)
     else
         self.progress_bar.width = math.floor(
-            new_screen_width - self.text_width - self.horizontal_margin*2)
+            new_screen_width - self.text_width - self.settings.progress_margin_width*2)
     end
     if self.separator_line then
         self.separator_line.dimen.w = new_screen_width - 2 * self.horizontal_margin
     end
+    local bar_height
+    if self.settings.progress_style_thin then
+        bar_height = self.settings.progress_style_thin_height or PROGRESS_BAR_STYLE_THIN_DEFAULT_HEIGHT
+    else
+        bar_height = self.settings.progress_style_thick_height or PROGRESS_BAR_STYLE_THICK_DEFAULT_HEIGHT
+    end
+    self.progress_bar.height = Screen:scaleBySize(bar_height)
+
     self.horizontal_group:resetLayout()
     self.footer_positioner.dimen.w = new_screen_width
     self.footer_positioner.dimen.h = new_screen_height
@@ -651,15 +675,13 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
                 callback = function()
                     self.settings.bottom_horizontal_separator = not self.settings.bottom_horizontal_separator
-                    self:refreshFooter()
-                    self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
-                    UIManager:setDirty(nil, "ui")
+                    self:refreshFooter(true, true)
                 end,
             },
             {
                 text = _("Alignment"),
                 enabled_func = function()
-                    return self.settings.disable_progress_bar or self.settings.progress_bar_separate_line
+                    return self.settings.disable_progress_bar or self.settings.progress_bar_position ~= nil
                 end,
                 sub_item_table = {
                     {
@@ -669,8 +691,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         end,
                         callback = function()
                             self.settings.align = "center"
-                            self:refreshFooter()
-                            UIManager:setDirty(nil, "ui")
+                            self:refreshFooter(true)
                         end,
                     },
                     {
@@ -680,8 +701,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         end,
                         callback = function()
                             self.settings.align = "left"
-                            self:refreshFooter()
-                            UIManager:setDirty(nil, "ui")
+                            self:refreshFooter(true)
                         end,
                     },
                     {
@@ -691,8 +711,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         end,
                         callback = function()
                             self.settings.align = "right"
-                            self:refreshFooter()
-                            UIManager:setDirty(nil, "ui")
+                            self:refreshFooter(true)
                         end,
                     },
                 }
@@ -912,42 +931,218 @@ function ReaderFooter:addToMainMenu(menu_items)
                 callback = function()
                     self.settings.disable_progress_bar = not self.settings.disable_progress_bar
                     self:setTocMarkers()
-                    self:refreshFooter()
-                    if self.settings.progress_bar_separate_line then
-                        self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
+                    if self.settings.progress_bar_position == "above" then
+                        self:refreshFooter(true, true)
+                    else
+                        self:refreshFooter(true)
                     end
-                    UIManager:setDirty(nil, "ui")
                 end,
             },
             {
-                text = _("Show chapter markers"),
-                checked_func = function()
-                    return self.settings.toc_markers
+                text_func = function()
+                    local text = _("alongside items")
+                    if self.settings.progress_bar_position == "above" then
+                        text = _("above items")
+                    elseif self.settings.progress_bar_position == "below" then
+                        text = _("below items")
+                    end
+                    return T(_("Position: %1"), text)
                 end,
                 enabled_func = function()
                     return not self.settings.disable_progress_bar
                 end,
-                callback = function()
-                    self.settings.toc_markers = not self.settings.toc_markers
-                    self:setTocMarkers()
-                    self:updateFooter()
-                    UIManager:setDirty(nil, "ui")
-                end,
+                sub_item_table = {
+                    {
+                        text = _("Above items"),
+                        checked_func = function()
+                            return self.settings.progress_bar_position == "above"
+                        end,
+                        callback = function()
+                            self.settings.progress_bar_position = "above"
+                            self:refreshFooter(true, true)
+                        end,
+                    },
+                    {
+                        text = _("Below items"),
+                        checked_func = function()
+                            return self.settings.progress_bar_position == "below"
+                        end,
+                        callback = function()
+                            self.settings.progress_bar_position = "below"
+                            self:refreshFooter(true, true)
+                        end,
+                    },
+                    {
+                        text = _("Alongside items"),
+                        checked_func = function()
+                            return not self.settings.progress_bar_position
+                        end,
+                        callback = function()
+                            if self.settings.progress_margin then
+                                self.settings.progress_margin = false
+                                self.settings.progress_margin_width = Screen:scaleBySize(10)
+                            end
+                            self.settings.progress_bar_position = nil
+                            self:refreshFooter(true, true)
+                        end
+                    },
+                },
             },
             {
-                text = _("Progress bar on separate line"),
-                checked_func = function()
-                    return self.settings.progress_bar_separate_line
+                text_func = function()
+                    if self.settings.progress_style_thin then
+                        return _("Style: thin")
+                    else
+                        return _("Style: thick")
+                    end
                 end,
                 enabled_func = function()
                     return not self.settings.disable_progress_bar
                 end,
-                callback = function()
-                    self.settings.progress_bar_separate_line = not self.settings.progress_bar_separate_line
-                    self:refreshFooter()
-                    self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
-                    UIManager:setDirty(nil, "ui")
+                sub_item_table = {
+                    {
+                        text = _("Thick"),
+                        checked_func = function()
+                            return not self.settings.progress_style_thin
+                        end,
+                        callback = function()
+                            self.settings.progress_style_thin = nil
+                            local bar_height = self.settings.progress_style_thick_height or PROGRESS_BAR_STYLE_THICK_DEFAULT_HEIGHT
+                            self.progress_bar:updateStyle(true, bar_height)
+                            self:setTocMarkers()
+                            self:refreshFooter(true, true)
+                        end,
+                    },
+                    {
+                        text = _("Thin"),
+                        checked_func = function()
+                            return self.settings.progress_style_thin
+                        end,
+                        callback = function()
+                            self.settings.progress_style_thin = true
+                            local bar_height = self.settings.progress_style_thin_height or PROGRESS_BAR_STYLE_THIN_DEFAULT_HEIGHT
+                            self.progress_bar:updateStyle(false, bar_height)
+                            self:refreshFooter(true, true)
+                        end,
+                    },
+                    {
+                        text = _("Set size"),
+                        callback = function()
+                            local value, value_min, value_max, default_value
+                            if self.settings.progress_style_thin then
+                                default_value = PROGRESS_BAR_STYLE_THIN_DEFAULT_HEIGHT
+                                value = self.settings.progress_style_thin_height or default_value
+                                value_min = 1
+                                value_max = 4
+                            else
+                                default_value = PROGRESS_BAR_STYLE_THICK_DEFAULT_HEIGHT
+                                value = self.settings.progress_style_thick_height or default_value
+                                value_min = 5
+                                value_max = 14
+                            end
+                            local SpinWidget = require("ui/widget/spinwidget")
+                            local items = SpinWidget:new{
+                                width = Screen:getWidth() * 0.6,
+                                value = value,
+                                value_min = value_min,
+                                value_step = 1,
+                                value_hold_step = 2,
+                                value_max = value_max,
+                                default_value = default_value,
+                                title_text =  _("Progress bar size"),
+                                callback = function(spin)
+                                    if self.settings.progress_style_thin then
+                                        self.settings.progress_style_thin_height = spin.value
+                                    else
+                                        self.settings.progress_style_thick_height = spin.value
+                                    end
+                                    self:refreshFooter(true, true)
+                                end
+                            }
+                            UIManager:show(items)
+                        end,
+                        separator = true,
+                        keep_menu_open = true,
+                    },
+                    {
+                        text = _("Show chapter markers"),
+                        checked_func = function()
+                            return self.settings.toc_markers
+                        end,
+                        enabled_func = function()
+                            return not self.settings.progress_style_thin
+                        end,
+                        callback = function()
+                            self.settings.toc_markers = not self.settings.toc_markers
+                            self:setTocMarkers()
+                            self:updateFooter()
+                            UIManager:setDirty(nil, "ui")
+                        end
+                    },
+                },
+            },
+            {
+                text_func = function()
+                    local text = _("static margins (10)")
+                    if self.settings.progress_margin_width == Screen:scaleBySize(0) then
+                        text = _("no margins (0)")
+                    end
+                    if self.settings.progress_margin and not self.ui.document.info.has_pages then
+                        text = T(_("same as book margins (%1)"), self.book_margins_footer_width)
+                    end
+                    return T(_("Margins: %1"), text)
                 end,
+                enabled_func = function()
+                    return not self.settings.disable_progress_bar
+                end,
+                separator = true,
+                sub_item_table = {
+                    {
+                        text = _("No margins (0)"),
+                        checked_func = function()
+                            return self.settings.progress_margin_width == Screen:scaleBySize(0)
+                                and not self.settings.progress_margin
+                        end,
+                        callback = function()
+                            self.settings.progress_margin_width = Screen:scaleBySize(0)
+                            self.settings.progress_margin = false
+                            self:refreshFooter(true)
+                        end,
+                    },
+                    {
+                        text = _("Static margins (10)"),
+                        checked_func = function()
+                            return self.settings.progress_margin_width == Screen:scaleBySize(10)
+                                and not self.settings.progress_margin
+                                -- if same as book margins is selected in document with pages (pdf) we enforce static margins
+                                or (self.ui.document.info.has_pages and self.settings.progress_margin)
+                        end,
+                        callback = function()
+                            self.settings.progress_margin_width = Screen:scaleBySize(10)
+                            self.settings.progress_margin = false
+                            self:refreshFooter(true)
+                        end,
+                    },
+                    {
+                        text_func = function()
+                            if self.ui.document.info.has_pages then
+                                return _("Same as book margins")
+                            end
+                            return T(_("Same as book margins (%1)"), self.book_margins_footer_width)
+                        end,
+                        checked_func = function()
+                            return self.settings.progress_margin and not self.ui.document.info.has_pages
+                        end,
+                        enabled_func = function()
+                            return not self.ui.document.info.has_pages and self.settings.progress_bar_position ~= nil
+                        end,
+                        callback = function()
+                            self.settings.progress_margin = true
+                            self.settings.progress_margin_width = Screen:scaleBySize(self.book_margins_footer_width)
+                            self:refreshFooter(true)
+                        end
+                    },
+                },
             },
         }
     })
@@ -985,7 +1180,7 @@ function ReaderFooter:genAllFooterText()
 end
 
 function ReaderFooter:setTocMarkers(reset)
-    if self.settings.disable_progress_bar then return end
+    if self.settings.disable_progress_bar or self.settings.progress_style_thin then return end
     if reset then
         self.progress_bar.ticks = nil
         self.pages = self.view.document:getPageCount()
@@ -1073,8 +1268,8 @@ function ReaderFooter:_updateFooterText(force_repaint)
             self.text_width = self.footer_text:getSize().w
         end
         self.progress_bar.width = 0
-    elseif self.settings.progress_bar_separate_line then
-        self.progress_bar.width = math.floor(self._saved_screen_width - self.horizontal_margin*2)
+    elseif self.settings.progress_bar_position then
+        self.progress_bar.width = math.floor(self._saved_screen_width - 2 * self.settings.progress_margin_width)
         self.text_width = self.footer_text:getSize().w
     else
         if self.has_no_mode or not text then
@@ -1083,8 +1278,16 @@ function ReaderFooter:_updateFooterText(force_repaint)
             self.text_width = self.footer_text:getSize().w + self.text_left_margin
         end
         self.progress_bar.width = math.floor(
-            self._saved_screen_width - self.text_width - self.horizontal_margin*2)
+            self._saved_screen_width - self.text_width - self.settings.progress_margin_width*2)
     end
+    local bar_height
+    if self.settings.progress_style_thin then
+        bar_height = self.settings.progress_style_thin_height or PROGRESS_BAR_STYLE_THIN_DEFAULT_HEIGHT
+    else
+        bar_height = self.settings.progress_style_thick_height or PROGRESS_BAR_STYLE_THICK_DEFAULT_HEIGHT
+    end
+    self.progress_bar.height = Screen:scaleBySize(bar_height)
+
     if self.separator_line then
         self.separator_line.dimen.w = self._saved_screen_width - 2 * self.horizontal_margin
     end
@@ -1127,10 +1330,29 @@ ReaderFooter.onUpdatePos = ReaderFooter.updateFooter
 function ReaderFooter:onReaderReady()
     self.ui.menu:registerToMainMenu(self)
     self:setupTouchZones()
-    self:resetLayout()  -- set widget dimen
+    -- if same as book margins is selected in document with pages (pdf) we enforce static margins
+    if self.ui.document.info.has_pages and self.settings.progress_margin then
+        self.settings.progress_margin_width = Screen:scaleBySize(10)
+        self:updateFooterContainer()
+    -- set progress bar margins for current book
+    elseif self.settings.progress_margin then
+        local margins = self.ui.document:getPageMargins()
+        self.settings.progress_margin_width = math.floor((margins.left + margins.right)/2)
+        self:updateFooterContainer()
+    end
+    self:resetLayout(self.settings.progress_margin_width)  -- set widget dimen
     self:setTocMarkers()
     self.updateFooterText = self._updateFooterText
     self:updateFooter()
+end
+
+function ReaderFooter:onReadSettings(config)
+    if not self.ui.document.info.has_pages then
+        local h_margins = config:readSetting("copt_h_page_margins") or
+            G_reader_settings:readSetting("copt_h_page_margins") or
+            DCREREADER_CONFIG_H_MARGIN_SIZES_MEDIUM
+        self.book_margins_footer_width = math.floor((h_margins[1] + h_margins[2])/2)
+    end
 end
 
 function ReaderFooter:applyFooterMode(mode)
@@ -1235,10 +1457,16 @@ function ReaderFooter:setVisible(visible)
     end
 end
 
-function ReaderFooter:refreshFooter()
+function ReaderFooter:refreshFooter(refresh, signal)
     self:updateFooterContainer()
     self:resetLayout(true)
     self:updateFooter()
+    if signal then
+        self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
+    end
+    if refresh then
+        UIManager:setDirty(nil, "ui")
+    end
 end
 
 function ReaderFooter:onResume()
@@ -1264,6 +1492,14 @@ end
 function ReaderFooter:onChangeScreenMode()
     self:updateFooterContainer()
     self:resetLayout(true)
+end
+
+function ReaderFooter:onSetPageHorizMargins(h_margins)
+    self.book_margins_footer_width = math.floor((h_margins[1] + h_margins[2])/2)
+    if self.settings.progress_margin then
+        self.settings.progress_margin_width = Screen:scaleBySize(self.book_margins_footer_width)
+        self:refreshFooter(true)
+    end
 end
 
 function ReaderFooter:onScreenResize()

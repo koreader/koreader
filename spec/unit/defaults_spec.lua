@@ -8,7 +8,7 @@ describe("defaults module", function()
 
     it("should load all defaults from defaults.lua", function()
         Defaults:init()
-        assert.is_same(113, #Defaults.defaults_name)
+        assert.is_same(112, #Defaults.defaults_name)
         assert.is_same("DFULL_SCREEN", Defaults.defaults_name[57])
     end)
 
@@ -20,13 +20,13 @@ describe("defaults module", function()
         Defaults.changed[21] = true
         Defaults.changed[48] = true
         Defaults.changed[57] = true
-        Defaults.changed[92] = true
-        Defaults.changed[108] = true
+        Defaults.changed[91] = true
+        Defaults.changed[107] = true
         Defaults:saveSettings()
-        assert.is_same(113, #Defaults.defaults_name)
+        assert.is_same(112, #Defaults.defaults_name)
         assert.is_same("DFULL_SCREEN", Defaults.defaults_name[57])
-        assert.is_same("SEARCH_LIBRARY_PATH", Defaults.defaults_name[108])
-        assert.is_same("DTAP_ZONE_BACKWARD", Defaults.defaults_name[92])
+        assert.is_same("SEARCH_LIBRARY_PATH", Defaults.defaults_name[107])
+        assert.is_same("DTAP_ZONE_BACKWARD", Defaults.defaults_name[91])
         assert.is_same("DCREREADER_CONFIG_WORD_GAP_LARGE", Defaults.defaults_name[48])
         assert.is_same("DCREREADER_CONFIG_H_MARGIN_SIZES_XXX_LARGE", Defaults.defaults_name[21])
         local fd = io.open(persistent_filename, "r")
@@ -53,8 +53,8 @@ DFULL_SCREEN = 1
         Defaults:init()
         Defaults.changed[57] = true
         Defaults.defaults_value[57] = 2
-        Defaults.changed[92] = true
-        Defaults.defaults_value[92] = {
+        Defaults.changed[91] = true
+        Defaults.defaults_value[91] = {
             y = 10,
             x = 10.125,
             h = 20.25,

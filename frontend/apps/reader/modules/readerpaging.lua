@@ -758,7 +758,7 @@ function ReaderPaging:onScrollPanRel(diff)
 end
 
 function ReaderPaging:calculateOverlap()
-    local footer_height = (self.view.footer_visible and 1 or 0) * self.view.footer.bar_height
+    local footer_height = (self.view.footer_visible and 1 or 0) * self.view.footer.height
     return self.overlap + footer_height
 end
 
