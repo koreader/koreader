@@ -45,6 +45,7 @@ function Wallabag:init()
     self.is_sync_remote_delete = false
     self.is_archiving_deleted = false
     self.filter_tag = ""
+    self.ignore_tags = ""
     self.articles_per_sync = 30
 
     self.ui.menu:registerToMainMenu(self)
@@ -72,6 +73,9 @@ function Wallabag:init()
     end
     if self.wb_settings.data.wallabag.filter_tag then
         self.filter_tag = self.wb_settings.data.wallabag.filter_tag
+    end
+    if self.wb_settings.data.wallabag.ignore_tags then
+        self.ignore_tags = self.wb_settings.data.wallabag.ignore_tags
     end
     if self.wb_settings.data.wallabag.articles_per_sync ~= nil then
         self.articles_per_sync = self.wb_settings.data.wallabag.articles_per_sync
@@ -179,6 +183,21 @@ function Wallabag:addToMainMenu(menu_items)
                         keep_menu_open = true,
                         callback = function(touchmenu_instance)
                             self:setFilterTag(touchmenu_instance)
+                        end,
+                    },
+                    {
+                        text_func = function()
+                            local tags
+                            if not self.ignore_tags or self.ignore_tags == "" then
+                                tags = _("None")
+                            else
+                                tags = self.ignore_tags
+                            end
+                            return T(_("Ignore tags: %1"), tags)
+                        end,
+                        keep_menu_open = true,
+                        callback = function(touchmenu_instance)
+                            self:setIgnoreTags(touchmenu_instance)
                         end,
                     },
                     {
@@ -315,13 +334,86 @@ function Wallabag:getBearerToken()
     end
 end
 
+--- Get a JSON formatted list of articles from the server.
+-- The list should have self.article_per_sync item, or less if an error occured.
+-- If filter_tag is set, only articles containing this tag are queried.
+-- If ignore_tags is defined, articles containing either of the tags are skipped.
 function Wallabag:getArticleList()
     local filtering = ""
     if self.filter_tag ~= "" then
         filtering = "&tags=" .. self.filter_tag
     end
-    local articles_url = "/api/entries.json?archive=0&perPage=" .. self.articles_per_sync .. filtering
-    return self:callAPI("GET", articles_url, nil, "", "")
+
+    local article_list = {}
+    local page = 1
+    -- query the server for articles until we hit our target number
+    while #article_list < self.articles_per_sync do
+        -- get the JSON containing the article list
+        local articles_url = "/api/entries.json?archive=0"
+                          .. "&page=" .. page
+                          .. "&perPage=" .. self.articles_per_sync
+                          .. filtering
+        local articles_json = self:callAPI("GET", articles_url, nil, "", "")
+
+        if not articles_json then
+            -- we may have hit the last page, there are no more articles
+            logger.dbg("Wallabag: couldn't get page #", page)
+            break -- exit while loop
+        end
+
+        -- We're only interested in the actual articles in the JSON
+        -- build an array of those so it's easier to manipulate later
+        local new_article_list = {}
+        for _, article in ipairs(articles_json._embedded.items) do
+            table.insert(new_article_list, article)
+        end
+
+        -- Apply the filters
+        new_article_list = self:filterIgnoredTags(new_article_list)
+
+        -- Append the filtered list to the final article list
+        local num_articles_left = self.articles_per_sync - #article_list
+        local num_articles_to_append = math.min(#new_article_list, num_articles_left)
+        for i=0, num_articles_to_append, 1 do
+            table.insert(article_list, new_article_list[i])
+        end
+
+        page = page + 1
+    end
+
+    return article_list
+end
+
+--- Remove all the articles from the list containing one of the ignored tags.
+-- article_list: array containing a json formatted list of articles
+-- returns: same array, but without any articles that contain an ignored tag.
+function Wallabag:filterIgnoredTags(article_list)
+    -- decode all tags to ignore
+    local ignoring = {}
+    if self.ignore_tags ~= "" then
+        for tag in util.gsplit(self.ignore_tags, "[, ]+", false) do
+            ignoring[tag] = true
+        end
+    end
+
+    -- rebuild a list without the ignored articles
+    local filtered_list = {}
+    for _, article in ipairs(article_list) do
+        local skip_article = false
+        for _, tag in ipairs(article.tags) do
+            if ignoring[tag.label] then
+                skip_article = true
+                logger.dbg("Wallabag: ignoring tag", tag.label, "in article",
+                           article.id, ":", article.title)
+                break -- no need to look for other tags
+            end
+        end
+        if not skip_article then
+            table.insert(filtered_list, article)
+        end
+    end
+
+    return filtered_list
 end
 
 --- Download Wallabag article.
@@ -480,13 +572,13 @@ function Wallabag:synchronize()
     if self.access_token ~= "" then
         local articles = self:getArticleList()
         if articles then
-            logger.dbg("Wallabag: number of articles: ", articles.total)
+            logger.dbg("Wallabag: number of articles: ", #articles)
 
             info = InfoMessage:new{ text = _("Downloading articles…") }
             UIManager:show(info)
             UIManager:forceRePaint()
             UIManager:close(info)
-            for _, article in ipairs(articles._embedded.items) do
+            for _, article in ipairs(articles) do
                 logger.dbg("Wallabag: processing article ID: ", article.id)
                 remote_article_ids[ tostring(article.id) ] = true
                 local res = self:download(article)
@@ -695,6 +787,37 @@ function Wallabag:setFilterTag(touchmenu_instance)
     self.tag_dialog:onShowKeyboard()
 end
 
+function Wallabag:setIgnoreTags(touchmenu_instance)
+   self.ignore_tags_dialog = InputDialog:new {
+        title =  _("Tags to ignore"),
+        description = _("Set a comma-separated list of tags to ignore"),
+        input = self.ignore_tags,
+        input_type = "string",
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    callback = function()
+                        UIManager:close(self.ignore_tags_dialog)
+                    end,
+                },
+                {
+                    text = _("Set tags"),
+                    is_enter_default = true,
+                    callback = function()
+                        self.ignore_tags = self.ignore_tags_dialog:getInputText()
+                        self:saveSettings()
+                        touchmenu_instance:updateItems()
+                        UIManager:close(self.ignore_tags_dialog)
+                    end,
+                }
+            }
+        },
+    }
+    UIManager:show(self.ignore_tags_dialog)
+    self.ignore_tags_dialog:onShowKeyboard()
+end
+
 function Wallabag:editServerSettings()
     local text_info = T(_([[
 Enter the details of your Wallabag server and account.
@@ -836,6 +959,7 @@ function Wallabag:saveSettings()
         password              = self.password,
         directory             = self.directory,
         filter_tag            = self.filter_tag,
+        ignore_tags           = self.ignore_tags,
         is_delete_finished    = self.is_delete_finished,
         is_delete_read        = self.is_delete_read,
         is_archiving_deleted  = self.is_archiving_deleted,
