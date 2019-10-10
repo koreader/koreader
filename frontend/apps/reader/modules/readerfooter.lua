@@ -357,7 +357,6 @@ function ReaderFooter:updateFooterContainer()
         table.insert(self.vertical_frame, vertical_span)
         table.insert(self.vertical_frame, self.progress_bar)
     else
-        table.insert(self.vertical_frame, vertical_span)
         table.insert(self.vertical_frame, self.footer_container)
     end
     self.footer_content = FrameContainer:new{
@@ -431,7 +430,7 @@ function ReaderFooter:resetLayout(force_reset)
         self.progress_bar.width = math.floor(new_screen_width - 2 * self.settings.progress_margin_width)
     else
         self.progress_bar.width = math.floor(
-            new_screen_width - self.text_width - self.horizontal_margin*2)
+            new_screen_width - self.text_width - self.settings.progress_margin_width*2)
     end
     if self.separator_line then
         self.separator_line.dimen.w = new_screen_width - 2 * self.horizontal_margin
@@ -979,6 +978,10 @@ function ReaderFooter:addToMainMenu(menu_items)
                             return not self.settings.progress_bar_position
                         end,
                         callback = function()
+                            if self.settings.progress_margin then
+                                self.settings.progress_margin = false
+                                self.settings.progress_margin_width = Screen:scaleBySize(10)
+                            end
                             self.settings.progress_bar_position = nil
                             self:refreshFooter(true, true)
                         end
@@ -1024,7 +1027,6 @@ function ReaderFooter:addToMainMenu(menu_items)
                     },
                     {
                         text = _("Set size"),
-                        separator = true,
                         callback = function()
                             local value, value_min, value_max, default_value
                             if self.settings.progress_style_thin then
@@ -1058,7 +1060,9 @@ function ReaderFooter:addToMainMenu(menu_items)
                                 end
                             }
                             UIManager:show(items)
-                        end
+                        end,
+                        separator = true,
+                        keep_menu_open = true,
                     },
                     {
                         text = _("Show chapter markers"),
@@ -1089,7 +1093,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                     return T(_("Margins: %1"), text)
                 end,
                 enabled_func = function()
-                    return not self.settings.disable_progress_bar and self.settings.progress_bar_position ~= nil
+                    return not self.settings.disable_progress_bar
                 end,
                 separator = true,
                 sub_item_table = {
@@ -1130,7 +1134,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                             return self.settings.progress_margin and not self.ui.document.info.has_pages
                         end,
                         enabled_func = function()
-                            return not self.ui.document.info.has_pages
+                            return not self.ui.document.info.has_pages and self.settings.progress_bar_position ~= nil
                         end,
                         callback = function()
                             self.settings.progress_margin = true
@@ -1274,7 +1278,7 @@ function ReaderFooter:_updateFooterText(force_repaint)
             self.text_width = self.footer_text:getSize().w + self.text_left_margin
         end
         self.progress_bar.width = math.floor(
-            self._saved_screen_width - self.text_width - self.horizontal_margin*2)
+            self._saved_screen_width - self.text_width - self.settings.progress_margin_width*2)
     end
     local bar_height
     if self.settings.progress_style_thin then
