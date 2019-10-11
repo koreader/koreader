@@ -232,7 +232,13 @@ end
 
 function KoboPowerD:setIntensityHW(intensity)
     if self.fl == nil then return end
-    self.fl:setBrightness(intensity)
+    if self.fl_warmth == nil or self.device:hasNaturalLightMixer() then
+        -- We either don't have NL, or we have a mixer: we only want to set the intensity (c.f., #5429)
+        self.fl:setBrightness(intensity)
+    else
+        -- Not having a mixer sucks, we always have to set intensity combined w/ warmth (#5465)
+        self.fl:setNaturalBrightness(intensity, self.fl_warmth)
+    end
     self.hw_intensity = intensity
     -- Now that we have set intensity, we need to let BasePowerD
     -- know about possibly changed frontlight state (if we came
