@@ -313,6 +313,13 @@ function BookInfoManager:getBookInfo(filepath, get_cover)
         else
             bookinfo[col] = row[num] -- as is
         end
+        -- recalculate thumbnail if size changed
+        if col == "cover_sizetag" then
+            if row[num] and row[num] ~= get_cover.sizetag then
+                logger.debug("size difference", filepath, get_cover.sizetag, row[num])
+                return nil
+            end
+        end
         -- specific processing for cover columns
         if col == "cover_w" then
             if not get_cover then

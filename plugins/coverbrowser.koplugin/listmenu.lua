@@ -192,7 +192,7 @@ function ListMenuItem:update()
     local max_img_w = dimen.h - 2*border_size -- width = height, squared
     local max_img_h = dimen.h - 2*border_size
     local cover_specs = {
-        sizetag = "s",
+        sizetag = "s"..max_img_h,
         max_cover_w = max_img_w,
         max_cover_h = max_img_h,
     }
@@ -243,7 +243,7 @@ function ListMenuItem:update()
         end
         -- File
 
-        local bookinfo = BookInfoManager:getBookInfo(self.filepath, self.do_cover_image)
+        local bookinfo = BookInfoManager:getBookInfo(self.filepath, self.menu.cover_specs)
         if bookinfo and self.do_cover_image and not bookinfo.ignore_cover then
             if not bookinfo.cover_fetched then
                 -- cover was not fetched previously, do as if not found

@@ -440,7 +440,7 @@ function MosaicMenuItem:update()
             self.been_opened = true
         end
 
-        local bookinfo = BookInfoManager:getBookInfo(self.filepath, self.do_cover_image)
+        local bookinfo = BookInfoManager:getBookInfo(self.filepath, self.menu.cover_specs)
         if bookinfo and self.do_cover_image and not bookinfo.ignore_cover then
             if bookinfo.cover_fetched then
                 if bookinfo.has_cover and bookinfo.cover_sizetag ~= "M" then
