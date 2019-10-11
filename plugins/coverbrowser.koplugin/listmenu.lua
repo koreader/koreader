@@ -243,9 +243,19 @@ function ListMenuItem:update()
         end
         -- File
 
-        local bookinfo = BookInfoManager:getBookInfo(self.filepath, self.menu.cover_specs)
+        local bookinfo = BookInfoManager:getBookInfo(self.filepath, self.do_cover_image)
         if bookinfo and self.do_cover_image and not bookinfo.ignore_cover then
-            if not bookinfo.cover_fetched then
+            if bookinfo.cover_fetched then
+                -- trigger recalculation of thumbnail if size changed
+                if bookinfo.has_cover and bookinfo.cover_sizetag ~= "M" and bookinfo.cover_sizetag ~= cover_specs.sizetag then
+                    logger.dbg("ListMenuItem: thumbnail size changed from "
+                        .. (bookinfo.cover_sizetag or "nil") .. " to " .. (cover_specs.sizetag or "nil"))
+                    if bookinfo.cover_bb then
+                        bookinfo.cover_bb:free()
+                    end
+                    bookinfo = nil
+                end
+            else
                 -- cover was not fetched previously, do as if not found
                 -- to force a new extraction
                 bookinfo = nil
