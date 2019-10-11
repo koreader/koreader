@@ -260,6 +260,7 @@ while [ $RETURN_VALUE -ne 0 ]; do
 
         echo "!!!!" >>crash.log 2>&1
         echo "Uh oh, something went awry... (Crash n°${CRASH_COUNT}: $(date +'%x @ %X'))" >>crash.log 2>&1
+        echo "Running FW $(cut -f3 -d',' /mnt/onboard/.kobo/version) on Linux $(uname -r) ($(uname -v))" >>crash.log 2>&1
         if [ $CRASH_COUNT -lt 5 ] && [ "${ALWAYS_ABORT}" = "false" ]; then
             echo "Attempting to restart KOReader . . ." >>crash.log 2>&1
             echo "!!!!" >>crash.log 2>&1
