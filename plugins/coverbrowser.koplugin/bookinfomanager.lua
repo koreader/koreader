@@ -314,8 +314,8 @@ function BookInfoManager:getBookInfo(filepath, get_cover)
             bookinfo[col] = row[num] -- as is
         end
         -- recalculate thumbnail if size changed
-        if col == "cover_sizetag" then
-            if row[num] and row[num] ~= get_cover.sizetag then
+        if col == "cover_sizetag" and get_cover then
+            if row[num] and row[num] ~= get_cover.sizetag and row[num] ~= "M" then
                 logger.dbg("size difference", filepath, get_cover.sizetag, row[num])
                 return nil
             end
