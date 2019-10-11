@@ -316,13 +316,13 @@ function ReaderFont:addToMainMenu(menu_items)
 end
 
 -- direction +1 - increase font size
--- direction -1 - decrease front size
+-- direction -1 - decrease font size
 function ReaderFont:onAdjustFontSize(ges, direction)
     if ges.distance == nil then
         ges.distance = 1
     end
     if direction ~= -1 and direction ~= 1 then
-        -- set default value (increase frontlight)
+        -- set default value (increase font size)
         direction = 1
     end
     local step = math.ceil(2 * #self.steps * ges.distance / self.gestureScale)
