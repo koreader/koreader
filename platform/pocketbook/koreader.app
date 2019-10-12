@@ -27,7 +27,7 @@ export TESSDATA_PREFIX="data"
 export STARDICT_DATA_DIR="data/dict"
 
 # export external font directory
-export EXT_FONT_DIR="/mnt/ext1/fonts"
+export EXT_FONT_DIR="/mnt/ext1/system/fonts"
 
 # shellcheck disable=2000
 if [ "$(echo "$@" | wc -c)" -eq 1 ]; then
