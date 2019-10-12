@@ -398,16 +398,25 @@ function ListMenuItem:update()
 
             -- Build the right widget
 
-            local wfileinfo = TextWidget:new{
-                text = fileinfo_str,
-                face = Font:getFace("cfont", 14),
-                fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
-            }
-            local wpageinfo = TextWidget:new{
-                text = pages_str,
-                face = Font:getFace("cfont", 14),
-                fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
-            }
+            local fontsize_info = 16
+            local wfileinfo
+            local wpageinfo
+            -- Build file and page info texts with decreasing font size
+            -- till it fits in the space available
+            repeat
+                wfileinfo = TextWidget:new{
+                    text = fileinfo_str,
+                    face = Font:getFace("cfont", fontsize_info),
+                    fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
+                }
+                wpageinfo = TextWidget:new{
+                    text = pages_str,
+                    face = Font:getFace("cfont", fontsize_info),
+                    fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
+                }
+                local height = wfileinfo:getSize().h + wpageinfo:getSize().h + Screen:scaleBySize(2)
+                fontsize_info = fontsize_info - 1
+            until height < dimen.h -- now it fits
 
             local wright_width = math.max(wfileinfo:getSize().w, wpageinfo:getSize().w)
             local wright_right_padding = Screen:scaleBySize(10)
@@ -429,11 +438,10 @@ function ListMenuItem:update()
             }
 
             -- Create or replace corner_mark if needed
-            local wright_bottom_pad_available = math.ceil( (dimen.h - wright[1]:getSize().h) *2/3 )
-            -- We should normally use 1/2 because of CenterContainer, but there's
-            -- some space inside the text widget that we can use for a larger marker
-            if wright_bottom_pad_available ~= corner_mark_size then
-                corner_mark_size = wright_bottom_pad_available
+            local mark_size = math.floor(dimen.h / 6)
+            -- Just fits under the page info text, which in turn adapts to the ListMenuItem height.
+            if mark_size ~= corner_mark_size then
+                corner_mark_size = mark_size
                 if corner_mark then
                     corner_mark:free()
                 end
@@ -457,8 +465,8 @@ function ListMenuItem:update()
 
             local fontname_title = "cfont"
             local fontname_authors = "cfont"
-            local fontsize_title = 20
-            local fontsize_authors = 18
+            local fontsize_title = 24
+            local fontsize_authors = 22
             local wtitle, wauthors
             local title, authors
             local series_mode = BookInfoManager:getSetting("series_mode")
@@ -762,16 +770,14 @@ function ListMenu:_recalculateDimen()
     end
     local available_height = self.dimen.h - self.others_height
 
-    -- menu item height based on number of items per page
     self.perpage = BookInfoManager:getSetting("files_per_page") or 10
-    local item_height_min = math.floor(available_height / self.perpage)
     self.page_num = math.ceil(#self.item_table / self.perpage)
     -- fix current page if out of range
     if self.page_num > 0 and self.page > self.page_num then self.page = self.page_num end
 
-    local height_remaining = available_height - self.perpage * item_height_min
-    height_remaining = height_remaining - (self.perpage+1) -- N+1 LineWidget separators
-    self.item_height = item_height_min + math.floor(height_remaining / self.perpage)
+    -- menu item height based on number of items per page
+    -- add space for the separator
+    self.item_height = math.floor(available_height / self.perpage) - 1
     self.item_width = self.dimen.w
     self.item_dimen = Geom:new{
         w = self.item_width,

@@ -345,8 +345,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                     },
                     {
                         text = _("(Detailed list) Files per page"),
-                        help_text = _([[This sets the number of files and directories
-                        per page in non-'classic' display modes.]]),
+                        help_text = _([[This sets the number of files and directories per page in non-'classic' display modes.]]),
                         keep_menu_open = true,
                         callback = function()
                             local SpinWidget = require("ui/widget/spinwidget")
