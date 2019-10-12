@@ -50,7 +50,7 @@ Please follow the model specific steps for your device:
 
 
 
-## Development
+#a# Development
 
 [Setting a build environment](doc/Building.md) •
 [Collaborating with Git](doc/Collaborating_with_Git.md) •
@@ -64,10 +64,10 @@ KOReader is developed and supported by volunteers all around the world. There ar
 
 - [fix bugs][link-issues-bugs] and [implement new features][link-issues-features]
 - [translate the program into your language][link-translations-transifex] or improve an existing translation
-- document lesser known features on the [wiki][link-wiki]
+- document lesser-known features on the [wiki][link-wiki]
 - help others with your knowledge on the [forum][link-forum]
 
-At this moment we don't support any form of money donation, but you can create a [bounty][link-bountysource] for the specific bug or feature request you want and motivate others to do the work.
+At this moment we don't support any form of monetary donation, but you can create a [bounty][link-bountysource] for the specific bug or feature request you want and motivate others to do the work.
 
 Also if you have and old Pocketbook device you don't want, we might find it useful to tinker a bit with that platform. Please contact us through the forum or GitHub.
 
