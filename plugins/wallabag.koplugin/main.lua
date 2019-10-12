@@ -187,13 +187,10 @@ function Wallabag:addToMainMenu(menu_items)
                     },
                     {
                         text_func = function()
-                            local tags
-                            if not self.ignore_tags then
-                                tags = ""
-                            else
-                                tags = self.ignore_tags
+                            if not self.ignore_tags or self.ignore_tags == "" then
+                                return _("Ignore tags")
                             end
-                            return T(_("Ignore tags (%1)"), tags)
+                            return T(_("Ignore tags (%1)"), self.ignore_tags)
                         end,
                         keep_menu_open = true,
                         callback = function(touchmenu_instance)
