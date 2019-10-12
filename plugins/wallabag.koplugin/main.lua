@@ -188,12 +188,12 @@ function Wallabag:addToMainMenu(menu_items)
                     {
                         text_func = function()
                             local tags
-                            if not self.ignore_tags or self.ignore_tags == "" then
-                                tags = _("None")
+                            if not self.ignore_tags then
+                                tags = ""
                             else
                                 tags = self.ignore_tags
                             end
-                            return T(_("Ignore tags: %1"), tags)
+                            return T(_("Ignore tags (%1)"), tags)
                         end,
                         keep_menu_open = true,
                         callback = function(touchmenu_instance)
@@ -372,10 +372,12 @@ function Wallabag:getArticleList()
         new_article_list = self:filterIgnoredTags(new_article_list)
 
         -- Append the filtered list to the final article list
-        local num_articles_left = self.articles_per_sync - #article_list
-        local num_articles_to_append = math.min(#new_article_list, num_articles_left)
-        for i=0, num_articles_to_append, 1 do
-            table.insert(article_list, new_article_list[i])
+        for i, article in ipairs(new_article_list) do
+            if #article_list == self.articles_per_sync then
+                logger.dbg("Wallabag: hit the article target", self.articles_per_sync)
+                break
+            end
+            table.insert(article_list, article)
         end
 
         page = page + 1
@@ -391,7 +393,7 @@ function Wallabag:filterIgnoredTags(article_list)
     -- decode all tags to ignore
     local ignoring = {}
     if self.ignore_tags ~= "" then
-        for tag in util.gsplit(self.ignore_tags, "[, ]+", false) do
+        for tag in util.gsplit(self.ignore_tags, "[,]+", false) do
             ignoring[tag] = true
         end
     end
@@ -790,7 +792,7 @@ end
 function Wallabag:setIgnoreTags(touchmenu_instance)
    self.ignore_tags_dialog = InputDialog:new {
         title =  _("Tags to ignore"),
-        description = _("Set a comma-separated list of tags to ignore"),
+        description = _("Enter a comma-separated list of tags to ignore."),
         input = self.ignore_tags,
         input_type = "string",
         buttons = {
