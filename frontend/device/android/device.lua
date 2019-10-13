@@ -69,6 +69,7 @@ local Device = Generic:new{
     hasLightLevelFallback = yes,
     canRestart = no,
     firmware_rev = android.app.activity.sdkVersion,
+    external_storage = android.getExternalStoragePath,
     display_dpi = android.lib.AConfiguration_getDensity(android.app.config),
     isHapticFeedbackEnabled = yes,
     hasClipboard = yes,
