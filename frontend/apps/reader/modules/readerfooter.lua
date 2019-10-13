@@ -288,10 +288,17 @@ function ReaderFooter:init()
         self.mode = self.mode_list.off
         self.view.footer_visible = false
         self:resetLayout()
+        self.footer_container.dimen.h = 0
+        self.footer_text.height = 0
+
     end
     if self.settings.all_at_once then
         self.view.footer_visible = (self.mode ~= self.mode_list.off)
         self:updateFooterTextGenerator()
+        if self.settings.progress_bar_position and self.has_no_mode then
+            self.footer_container.dimen.h = 0
+            self.footer_text.height = 0
+        end
     else
         self:applyFooterMode()
     end
@@ -586,10 +593,18 @@ function ReaderFooter:addToMainMenu(menu_items)
                 self.reclaim_height = self.settings.reclaim_height or false
                 -- refresh margins position
                 if self.has_no_mode then
+                    self.footer_container.dimen.h = 0
+                    self.footer_text.height = 0
                     self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
                     self.genFooterText = footerTextGeneratorMap.empty
                     self.mode = self.mode_list.off
                 elseif prev_has_no_mode then
+                    self.footer_container.dimen.h = self.height
+                    self.footer_text.height = self.height
+                    if self.settings.all_at_once then
+                        self.mode = self.mode_list.page_progress
+                        self:applyFooterMode()
+                    end
                     self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
                     G_reader_settings:saveSetting("reader_footer_mode", first_enabled_mode_num)
                 elseif self.reclaim_height ~= prev_reclaim_height then
@@ -612,8 +627,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                     self:applyFooterMode()
                 end
                 if should_update then
-                    self:updateFooter()
-                    UIManager:setDirty(nil, "ui")
+                    self:refreshFooter(true, true)
                 end
             end,
         }
@@ -930,12 +944,14 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
                 callback = function()
                     self.settings.disable_progress_bar = not self.settings.disable_progress_bar
-                    self:setTocMarkers()
-                    if self.settings.progress_bar_position == "above" then
-                        self:refreshFooter(true, true)
-                    else
-                        self:refreshFooter(true)
+                    if not self.settings.disable_progress_bar then
+                        self.footer_container.dimen.h = self.height
+                        self.footer_text.height = self.height
+                        self:setTocMarkers()
+                        self.mode = self.mode_list.page_progress
+                        self:applyFooterMode()
                     end
+                    self:refreshFooter(true, true)
                 end,
             },
             {
@@ -1264,11 +1280,17 @@ function ReaderFooter:_updateFooterText(force_repaint)
     if self.settings.disable_progress_bar then
         if self.has_no_mode or not text then
             self.text_width = 0
+            self.footer_container.dimen.h = 0
+            self.footer_text.height = 0
         else
             self.text_width = self.footer_text:getSize().w
         end
         self.progress_bar.width = 0
     elseif self.settings.progress_bar_position then
+        if text == "" then
+            self.footer_container.dimen.h = 0
+            self.footer_text.height = 0
+        end
         self.progress_bar.width = math.floor(self._saved_screen_width - 2 * self.settings.progress_margin_width)
         self.text_width = self.footer_text:getSize().w
     else

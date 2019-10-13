@@ -504,7 +504,7 @@ function ReaderTypeset:onSetPageMargins(margins, refresh_callback)
     local top = Screen:scaleBySize(margins[2])
     local right = Screen:scaleBySize(margins[3])
     local bottom
-    if self.view.footer.has_no_mode or self.view.footer.reclaim_height then
+    if self.view.footer.reclaim_height then
         bottom = Screen:scaleBySize(margins[4])
     else
         bottom = Screen:scaleBySize(margins[4]) + self.view.footer:getHeight()
