@@ -12,8 +12,11 @@ if file ~= nil then
     android.LOGI("intent file path " .. file)
 end
 
+-- path to primary external storage partition
+local path = android.getExternalStoragePath()
+
 -- run koreader patch before koreader startup
-pcall(dofile, "/sdcard/koreader/patch.lua")
+pcall(dofile, path.."/koreader/patch.lua")
 
 -- Set proper permission for binaries.
 --- @todo Take care of this on extraction instead.
@@ -23,14 +26,14 @@ android.execute("chmod", "755", "./tar")
 android.execute("chmod", "755", "./zsync")
 
 -- set TESSDATA_PREFIX env var
-C.setenv("TESSDATA_PREFIX", "/sdcard/koreader/data", 1)
+C.setenv("TESSDATA_PREFIX", path.."/koreader/data", 1)
 
 -- create fake command-line arguments
 -- luacheck: ignore 121
 if android.isDebuggable() then
-    arg = {"-d", file or "/sdcard"}
+    arg = {"-d", file or path}
 else
-    arg = {file or "/sdcard"}
+    arg = {file or path}
 end
 
 dofile(android.dir.."/reader.lua")

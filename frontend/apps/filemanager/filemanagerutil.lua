@@ -10,7 +10,7 @@ local filemanagerutil = {}
 
 function filemanagerutil.getDefaultDir()
     if Device:isAndroid() then
-        return "/sdcard"
+        return Device.external_storage
     elseif Device:isCervantes() then
         return "/mnt/public"
     elseif Device:isKindle() then

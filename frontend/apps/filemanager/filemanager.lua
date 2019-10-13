@@ -603,7 +603,7 @@ function FileManager:goHome()
         elseif Device:isCervantes() then
             home_dir = "/mnt/public"
         elseif Device:isAndroid() then
-            home_dir = "/sdcard"
+            home_dir = Device.external_storage()
         end
 
         if home_dir then

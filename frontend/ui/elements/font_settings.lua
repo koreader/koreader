@@ -3,7 +3,7 @@ local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 
---[[ Font settings for desktop linux and mac ]]--
+--[[ Font settings for desktop linux, mac and android ]]--
 
 local function getUserDir()
     local home = os.getenv("HOME")
@@ -52,6 +52,20 @@ function FontSettings:getPath()
         end
     end
     return getUserDir()
+end
+
+function FontSettings:getAndroidPath()
+    local A, android = pcall(require, "android")
+    if not A then return end
+    local system_path = "/system/fonts"
+    local user_path = android.getExternalStoragePath()
+    if user_path == "Unknown" then
+        -- unable to identify external storage. Use defaults
+        return system_path..";".."/sdcard/koreader/fonts"
+    else
+        -- use the external storage identified by the app
+        return system_path..";"..user_path.."/koreader/fonts"
+    end
 end
 
 function FontSettings:getMenuTable()
