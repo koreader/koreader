@@ -270,6 +270,9 @@ describe("Readerfooter module", function()
         assert.is.same(1, footer.mode)
         footer:onTapFooter()
         assert.is.same(0, footer.mode)
+        -- Make it visible again to make the following tests behave...
+        footer:onTapFooter()
+        assert.is.same(1, footer.mode)
     end)
 
     it("should pick up screen resize in resetLayout", function()
