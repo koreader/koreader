@@ -281,8 +281,12 @@ describe("Readerfooter module", function()
             document = DocumentRegistry:openDocument(sample_pdf),
         }
         local footer = readerui.view.footer
+        -- I smell a rat...
+        print("footer.settings.all_at_once", footer.settings.all_at_once)
+        print("footer.mode", footer.mode)
+        print("readerui.view.footer_visible", readerui.view.footer_visible)
         local horizontal_margin = Screen:scaleBySize(10)*2
-        footer:updateFooter(true) -- force a repaint because gremlins
+        footer:updateFooter()
         assert.is.same(352, footer.text_width)
         assert.is.same(600, footer.progress_bar.width
                             + footer.text_width
