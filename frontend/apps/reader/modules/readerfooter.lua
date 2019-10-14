@@ -479,8 +479,8 @@ function ReaderFooter:disableFooter()
     self.onReaderReady = function() end
     self.resetLayout = function() end
     self.onCloseDocument = nil
-    self.onPageUpdate = function() end
-    self.onPosUpdate = function() end
+    self.updateFooterPage = function() end
+    self.updateFooterPos = function() end
     self.onUpdatePos = function() end
     self.onSetStatusLine = function() end
     self.mode = self.mode_list.off
