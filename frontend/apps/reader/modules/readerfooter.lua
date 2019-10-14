@@ -192,6 +192,7 @@ local ReaderFooter = WidgetContainer:extend{
 }
 
 function ReaderFooter:init()
+    print("ReaderFooter:init")
     self.settings = G_reader_settings:readSetting("footer") or {
         -- enable progress bar by default
         -- disable_progress_bar = true,
@@ -244,7 +245,7 @@ function ReaderFooter:init()
         self.mode_list[self.mode_index[i]] = i
     end
     if self.settings.disabled then
-        -- footer featuren disabled completely, stop initialization now
+        -- footer feature is completely disabled, stop initialization now
         self:disableFooter()
         return
     end
@@ -308,6 +309,7 @@ function ReaderFooter:init()
 end
 
 function ReaderFooter:updateFooterContainer()
+    print("ReaderFooter:updateFooterContainer")
     local margin_span = HorizontalSpan:new{ width = self.horizontal_margin }
     self.vertical_frame = VerticalGroup:new{}
     if self.settings.bottom_horizontal_separator then
@@ -382,6 +384,7 @@ function ReaderFooter:updateFooterContainer()
 end
 
 function ReaderFooter:setupAutoRefreshTime()
+    print("ReaderFooter:setupAutoRefreshTime")
     if not self.autoRefreshTime then
         self.autoRefreshTime = function()
             self:updateFooter(true)
@@ -395,6 +398,7 @@ function ReaderFooter:setupAutoRefreshTime()
 end
 
 function ReaderFooter:setupTouchZones()
+    print("ReaderFooter:setupTouchZones")
     if not Device:isTouchDevice() then return end
     local footer_screen_zone = {
         ratio_x = DTAP_ZONE_MINIBAR.x, ratio_y = DTAP_ZONE_MINIBAR.y,
@@ -426,6 +430,7 @@ end
 
 -- call this method whenever the screen size changes
 function ReaderFooter:resetLayout(force_reset)
+    print("ReaderFooter:resetLayout", force_reset)
     local new_screen_width = Screen:getWidth()
     local new_screen_height = Screen:getHeight()
     if new_screen_width == self._saved_screen_width
@@ -461,6 +466,7 @@ function ReaderFooter:resetLayout(force_reset)
 end
 
 function ReaderFooter:getHeight()
+    print("ReaderFooter:getHeight")
     if self.footer_content then
         return self.footer_content:getSize().h
     else
@@ -469,6 +475,7 @@ function ReaderFooter:getHeight()
 end
 
 function ReaderFooter:disableFooter()
+    print("ReaderFooter:disableFooter")
     self.onReaderReady = function() end
     self.resetLayout = function() end
     self.onCloseDocument = nil
@@ -481,6 +488,7 @@ function ReaderFooter:disableFooter()
 end
 
 function ReaderFooter:updateFooterTextGenerator()
+    print("ReaderFooter:updateFooterTextGenerator")
     local footerTextGenerators = {}
     for i, m in pairs(self.mode_index) do
         if self.settings[m] then
@@ -509,6 +517,7 @@ function ReaderFooter:updateFooterTextGenerator()
 end
 
 function ReaderFooter:progressPercentage(digits)
+    print("ReaderFooter:progressPercentage", digits)
     local symbol_type = self.settings.item_prefix or "icons"
     local prefix = symbol_prefix[symbol_type].percentage
 
@@ -522,6 +531,7 @@ function ReaderFooter:progressPercentage(digits)
 end
 
 function ReaderFooter:textOptionTitles(option)
+    print("ReaderFooter:textOptionTitles")
     local symbol = self.settings.item_prefix or "icons"
     local option_titles = {
         all_at_once = _("Show all at once"),
@@ -543,6 +553,7 @@ function ReaderFooter:textOptionTitles(option)
 end
 
 function ReaderFooter:addToMainMenu(menu_items)
+    print("ReaderFooter:addToMainMenu")
     local sub_items = {}
     menu_items.status_bar = {
         text = _("Status bar"),
@@ -1182,6 +1193,7 @@ end
 function ReaderFooter:genFooterText() end
 
 function ReaderFooter:genAllFooterText()
+    print("ReaderFooter:genAllFooterText")
     local info = {}
     local separator = "  "
     if self.settings.items_separator == "bar" or self.settings.items_separator == nil then
@@ -1196,6 +1208,7 @@ function ReaderFooter:genAllFooterText()
 end
 
 function ReaderFooter:setTocMarkers(reset)
+    print("ReaderFooter:setTocMarkers", reset)
     if self.settings.disable_progress_bar or self.settings.progress_style_thin then return end
     if reset then
         self.progress_bar.ticks = nil
@@ -1234,6 +1247,7 @@ function ReaderFooter:getAvgTimePerPage()
 end
 
 function ReaderFooter:getDataFromStatistics(title, pages)
+    print("ReaderFooter:getDataFromStatistics")
     local sec = 'na'
     local average_time_per_page = self:getAvgTimePerPage()
     if average_time_per_page then
@@ -1247,6 +1261,7 @@ function ReaderFooter:getDataFromStatistics(title, pages)
 end
 
 function ReaderFooter:updateFooter(force_repaint)
+    print("ReaderFooter:updateFooter", force_repaint)
     if self.pageno then
         self:updateFooterPage(force_repaint)
     else
@@ -1255,12 +1270,14 @@ function ReaderFooter:updateFooter(force_repaint)
 end
 
 function ReaderFooter:updateFooterPage(force_repaint)
+    print("ReaderFooter:updateFooterPage", force_repaint)
     if type(self.pageno) ~= "number" then return end
     self.progress_bar.percentage = self.pageno / self.pages
     self:updateFooterText(force_repaint)
 end
 
 function ReaderFooter:updateFooterPos(force_repaint)
+    print("ReaderFooter:updateFooterPos", force_repaint)
     if type(self.position) ~= "number" then return end
     self.progress_bar.percentage = self.position / self.doc_height
     self:updateFooterText(force_repaint)
@@ -1273,6 +1290,12 @@ end
 
 -- only call this function after document is fully loaded
 function ReaderFooter:_updateFooterText(force_repaint)
+    print("ReaderFooter:_updateFooterText", force_repaint)
+    -- footer is invisible, and we don't need a repaint, go away.
+    if not force_repaint and not self.view.footer_visible then
+        print("Not visible, early abort", force_repaint)
+        return
+    end
     local text = self:genFooterText()
     if text then
         self.footer_text:setText(text)
@@ -1328,6 +1351,7 @@ function ReaderFooter:_updateFooterText(force_repaint)
 end
 
 function ReaderFooter:onPageUpdate(pageno)
+    print("ReaderFooter:onPageUpdate", pageno)
     self.pageno = pageno
     self.pages = self.view.document:getPageCount()
     self.ui.doc_settings:saveSetting("doc_pages", self.pages) -- for Book information
@@ -1335,6 +1359,7 @@ function ReaderFooter:onPageUpdate(pageno)
 end
 
 function ReaderFooter:onPosUpdate(pos, pageno)
+    print("ReaderFooter:onPosUpdate", pos, pageno)
     self.position = pos
     self.doc_height = self.view.document.info.doc_height
     if pageno then
@@ -1350,6 +1375,7 @@ end
 ReaderFooter.onUpdatePos = ReaderFooter.updateFooter
 
 function ReaderFooter:onReaderReady()
+    print("ReaderFooter:onReaderReady")
     self.ui.menu:registerToMainMenu(self)
     self:setupTouchZones()
     -- if same as book margins is selected in document with pages (pdf) we enforce static margins
@@ -1369,6 +1395,7 @@ function ReaderFooter:onReaderReady()
 end
 
 function ReaderFooter:onReadSettings(config)
+    print("ReaderFooter:onReadSettings")
     if not self.ui.document.info.has_pages then
         local h_margins = config:readSetting("copt_h_page_margins") or
             G_reader_settings:readSetting("copt_h_page_margins") or
@@ -1378,6 +1405,7 @@ function ReaderFooter:onReadSettings(config)
 end
 
 function ReaderFooter:applyFooterMode(mode)
+    print("ReaderFooter:applyFooterMode", mode)
     -- three modes switcher for reader footer
     -- 0 for footer off
     -- 1 for footer page info
@@ -1392,6 +1420,7 @@ function ReaderFooter:applyFooterMode(mode)
     -- 10 for wifi status
     if mode ~= nil then self.mode = mode end
     self.view.footer_visible = (self.mode ~= self.mode_list.off)
+    print("self.mode is", self.mode)
 
     -- If all-at-once is enabled, just hide, but the text will keep being processed...
     if self.settings.all_at_once then
@@ -1412,15 +1441,18 @@ function ReaderFooter:applyFooterMode(mode)
 end
 
 function ReaderFooter:onEnterFlippingMode()
+    print("ReaderFooter:onEnterFlippingMode")
     self.orig_mode = self.mode
     self:applyFooterMode(self.mode_list.page_progress)
 end
 
 function ReaderFooter:onExitFlippingMode()
+    print("ReaderFooter:onExitFlippingMode")
     self:applyFooterMode(self.orig_mode)
 end
 
 function ReaderFooter:onTapFooter(ges)
+    print("ReaderFooter:onTapFooter")
     if self.has_no_mode then
         return
     end
@@ -1460,12 +1492,14 @@ function ReaderFooter:onTapFooter(ges)
 end
 
 function ReaderFooter:onHoldFooter()
+    print("ReaderFooter:onHoldFooter")
     if self.mode == self.mode_list.off then return end
     self.ui:handleEvent(Event:new("ShowSkimtoDialog"))
     return true
 end
 
 function ReaderFooter:setVisible(visible)
+    print("ReaderFooter:setVisible", visible)
     if visible then
         -- If it was off, just do as if we tap'ed on it (so we don't
         -- duplicate onTapFooter() code - not if flipping_visible as in
@@ -1480,6 +1514,7 @@ function ReaderFooter:setVisible(visible)
 end
 
 function ReaderFooter:refreshFooter(refresh, signal)
+    print("ReaderFooter:refreshFooter", refresh, signal)
     self:updateFooterContainer()
     self:resetLayout(true)
     self:updateFooter()
@@ -1492,6 +1527,7 @@ function ReaderFooter:refreshFooter(refresh, signal)
 end
 
 function ReaderFooter:onResume()
+    print("ReaderFooter:onResume")
     self:updateFooter()
     if self.settings.auto_refresh_time then
         self:setupAutoRefreshTime()
@@ -1499,6 +1535,7 @@ function ReaderFooter:onResume()
 end
 
 function ReaderFooter:onSuspend()
+    print("ReaderFooter:onSuspend")
     if self.settings.auto_refresh_time then
         UIManager:unschedule(self.autoRefreshTime)
         self.onCloseDocument = nil
@@ -1506,17 +1543,20 @@ function ReaderFooter:onSuspend()
 end
 
 function ReaderFooter:onFrontlightStateChanged()
+    print("ReaderFooter:onFrontlightStateChanged")
     if self.settings.frontlight then
         self:updateFooter(true)
     end
 end
 
 function ReaderFooter:onChangeScreenMode()
+    print("ReaderFooter:onChangeScreenMode")
     self:updateFooterContainer()
     self:resetLayout(true)
 end
 
 function ReaderFooter:onSetPageHorizMargins(h_margins)
+    print("ReaderFooter:onSetPageHorizMargins")
     self.book_margins_footer_width = math.floor((h_margins[1] + h_margins[2])/2)
     if self.settings.progress_margin then
         self.settings.progress_margin_width = Screen:scaleBySize(self.book_margins_footer_width)
@@ -1525,6 +1565,7 @@ function ReaderFooter:onSetPageHorizMargins(h_margins)
 end
 
 function ReaderFooter:onScreenResize()
+    print("ReaderFooter:onScreenResize")
     self:updateFooterContainer()
     self:resetLayout(true)
 end
