@@ -1293,15 +1293,18 @@ function ReaderFooter:_updateFooterText(force_repaint)
     print("ReaderFooter:_updateFooterText", force_repaint)
     -- footer is invisible, and we don't need a repaint, go away.
     if not force_repaint and not self.view.footer_visible then
-        print("Not visible, early abort", force_repaint)
-        return
+        print("Not visible, early abort")
+        --return
     end
     local text = self:genFooterText()
     if text then
+        print("Has text")
         self.footer_text:setText(text)
     end
     if self.settings.disable_progress_bar then
-        if self.has_no_mode or not text then
+        print("No bar")
+        if self.has_no_mode or not text or text == "" then
+            print("No mode or no text")
             self.text_width = 0
             self.footer_container.dimen.h = 0
             self.footer_text.height = 0
@@ -1310,14 +1313,18 @@ function ReaderFooter:_updateFooterText(force_repaint)
         end
         self.progress_bar.width = 0
     elseif self.settings.progress_bar_position then
+        print("Bar on its own")
         if text == "" then
+            print("Empty text")
             self.footer_container.dimen.h = 0
             self.footer_text.height = 0
         end
         self.progress_bar.width = math.floor(self._saved_screen_width - 2 * self.settings.progress_margin_width)
         self.text_width = self.footer_text:getSize().w
     else
-        if self.has_no_mode or not text then
+        print("Bar w/ footer")
+        if self.has_no_mode or not text or text == "" then
+            print("No mode or no text")
             self.text_width = 0
         else
             self.text_width = self.footer_text:getSize().w + self.text_left_margin
@@ -1327,13 +1334,16 @@ function ReaderFooter:_updateFooterText(force_repaint)
     end
     local bar_height
     if self.settings.progress_style_thin then
+        print("Thin bar")
         bar_height = self.settings.progress_style_thin_height or PROGRESS_BAR_STYLE_THIN_DEFAULT_HEIGHT
     else
+        print("Thick bar")
         bar_height = self.settings.progress_style_thick_height or PROGRESS_BAR_STYLE_THICK_DEFAULT_HEIGHT
     end
     self.progress_bar.height = Screen:scaleBySize(bar_height)
 
     if self.separator_line then
+        print("With separator")
         self.separator_line.dimen.w = self._saved_screen_width - 2 * self.horizontal_margin
     end
     self.text_container.dimen.w = self.text_width
@@ -1343,6 +1353,7 @@ function ReaderFooter:_updateFooterText(force_repaint)
     -- NOTE: That's assuming using "fast" for pans was a good idea, which, it turned out, not so much ;).
     -- NOTE: We skip repaints on page turns/pos update, as that's redundant (and slow).
     if force_repaint then
+        print("Repaint!")
         -- NOTE: We need to repaint everything when toggling the progress bar, for some reason.
         UIManager:setDirty(self.view.dialog, function()
             return "ui", self.footer_content.dimen
