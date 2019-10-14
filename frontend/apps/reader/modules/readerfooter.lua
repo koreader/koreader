@@ -1274,7 +1274,7 @@ end
 -- only call this function after document is fully loaded
 function ReaderFooter:_updateFooterText(force_repaint)
     -- footer is invisible, and we don't need a repaint, go away.
-    if not force_repaint and not self.view.footer_visible then
+    if not self.view.footer_visible and not force_repaint then
         return
     end
     local text = self:genFooterText()
