@@ -282,7 +282,7 @@ describe("Readerfooter module", function()
         }
         local footer = readerui.view.footer
         local horizontal_margin = Screen:scaleBySize(10)*2
-        footer:updateFooter(true)
+        footer:updateFooter(true) -- force a repaint because gremlins
         assert.is.same(352, footer.text_width)
         assert.is.same(600, footer.progress_bar.width
                             + footer.text_width
@@ -309,11 +309,12 @@ describe("Readerfooter module", function()
             document = DocumentRegistry:openDocument(sample_epub),
         }
         local footer = readerui.view.footer
-        footer:updateFooter(true)
+        footer:updateFooter(true) -- force a repaint because gremlins
         footer:onPageUpdate(1)
         assert.are.same(220, footer.progress_bar.width)
         assert.are.same(360, footer.text_width)
 
+        footer:updateFooter(true) -- force a repaint because gremlins
         footer:onPageUpdate(100)
         assert.are.same(188, footer.progress_bar.width)
         assert.are.same(392, footer.text_width)
