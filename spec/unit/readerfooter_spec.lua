@@ -309,12 +309,10 @@ describe("Readerfooter module", function()
             document = DocumentRegistry:openDocument(sample_epub),
         }
         local footer = readerui.view.footer
-        footer:updateFooter(true) -- force a repaint because gremlins
         footer:onPageUpdate(1)
         assert.are.same(220, footer.progress_bar.width)
         assert.are.same(360, footer.text_width)
 
-        footer:updateFooter(true) -- force a repaint because gremlins
         footer:onPageUpdate(100)
         assert.are.same(188, footer.progress_bar.width)
         assert.are.same(392, footer.text_width)

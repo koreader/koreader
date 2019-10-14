@@ -1273,8 +1273,11 @@ end
 
 -- only call this function after document is fully loaded
 function ReaderFooter:_updateFooterText(force_repaint)
+    print("ReaderFooter:_updateFooterText", force_repaint)
     -- footer is invisible, and we don't need a repaint, go away.
     if not self.view.footer_visible and not force_repaint then
+        print("Invisible, early abort")
+        print("text:", self.footer_text, "text width:", self.text_width, "bar width:", self.progress_bar.width)
         return
     end
     local text = self:genFooterText()
@@ -1329,6 +1332,7 @@ function ReaderFooter:_updateFooterText(force_repaint)
             return "ui", self.footer_content.dimen
         end)
     end
+    print("text:", self.footer_text, "text width:", self.text_width, "bar width:", self.progress_bar.width)
 end
 
 function ReaderFooter:onPageUpdate(pageno)
