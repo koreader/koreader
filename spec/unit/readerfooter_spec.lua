@@ -230,6 +230,7 @@ describe("Readerfooter module", function()
 
         -- disable chapter time to read, text should be empty
         tapFooterMenu(fake_menu, "Chapter time to read".." (⤻)")
+        footer:updateFooter(true) -- Force a repaint because gremlins.
         assert.are.same('', footer.footer_text.text)
 
         -- reenable chapter time to read, text should be chapter time to read
