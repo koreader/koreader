@@ -1486,12 +1486,9 @@ end
 function ReaderFooter:refreshFooter(refresh, signal)
     self:updateFooterContainer()
     self:resetLayout(true)
-    self:updateFooter()
+    self:updateFooter(refresh)
     if signal then
         self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
-    end
-    if refresh then
-        UIManager:setDirty(nil, "ui")
     end
 end
 
