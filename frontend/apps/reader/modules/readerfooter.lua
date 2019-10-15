@@ -587,7 +587,7 @@ function ReaderFooter:addToMainMenu(menu_items)
             callback = function()
                 self.settings[option] = not self.settings[option]
                 G_reader_settings:saveSetting("footer", self.settings)
-                -- We only need to send a SetPageBottomMargin when we truly affect the margin
+                -- We only need to send a SetPageBottomMargin event when we truly affect the margin
                 local should_signal = false
                 -- only case that we don't need a UI update is enable/disable
                 -- non-current mode when all_at_once is disabled.
@@ -1518,8 +1518,11 @@ function ReaderFooter:refreshFooter(refresh, signal)
     print("ReaderFooter:refreshFooter", refresh, signal)
     self:updateFooterContainer()
     self:resetLayout(true)
-    -- If we signal, the event we send will trigger a full repaint anyway, so skip this one.
-    self:updateFooter(refresh and not signal)
+    -- If we signal, the event we send will trigger a full repaint anyway, so we should theoretically be able to skip this one.
+    -- (i.e., pass refresh and not signal)
+    -- In practice, we need it anyway in some corner-cases (mainly, when going from visible to invisible),
+    -- to make sure the layout changes get computed instead of being skipped by tripping the !force_repaint early abort check
+    self:updateFooter(refresh)
     if signal then
         self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
     end
