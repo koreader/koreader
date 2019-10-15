@@ -44,6 +44,9 @@ local BookInfoManager = require("bookinfomanager")
 local corner_mark_size = -1
 local corner_mark
 
+local scale_by_size
+local font_scale_factor
+
 -- ItemShortCutIcon (for keyboard navigation) is private to menu.lua and can't be accessed,
 -- so we need to redefine it
 local ItemShortCutIcon = WidgetContainer:new{
@@ -185,6 +188,14 @@ function ListMenuItem:update()
         h = self.height - 2 * self.underline_h
     }
 
+    local function _fontSize(nominal)
+--        return math.ceil(nominal * font_scale_factor * scale_by_size
+        -- dimen.h * scaleBySize, font_size / scaleBySize cancel each other out
+        local font_size = math.ceil(nominal * dimen.h / 64)
+        logger.warn("font size", nominal, dimen.h, font_size)
+        return font_size
+    end
+
     -- We'll draw a border around cover images, it may not be
     -- needed with some covers, but it's nicer when cover is
     -- a pure white background (like rendered text page)
@@ -210,12 +221,12 @@ function ListMenuItem:update()
         -- nb items on the right, directory name on the left
         local wright = TextWidget:new{
             text = self.mandatory,
-            face = Font:getFace("infont", 15),
+            face = Font:getFace("infont", math.min(20, _fontSize(15))),
         }
         local wleft_width = dimen.w - wright:getSize().w
         local wleft = TextBoxWidget:new{
             text = self.text,
-            face = Font:getFace("cfont", 20),
+            face = Font:getFace("cfont", _fontSize(20)),
             width = wleft_width,
             alignment = "left",
             bold = true,
@@ -398,7 +409,7 @@ function ListMenuItem:update()
 
             -- Build the right widget
 
-            local fontsize_info = 16
+            local fontsize_info = math.min(20, _fontSize(14))
             local wfileinfo
             local wpageinfo
             -- Build file and page info texts with decreasing font size
@@ -417,6 +428,8 @@ function ListMenuItem:update()
                 local height = wfileinfo:getSize().h + wpageinfo:getSize().h + Screen:scaleBySize(2)
                 fontsize_info = fontsize_info - 1
             until height < dimen.h -- now it fits
+
+            logger.warn("info font size", wfileinfo.face.size)
 
             local wright_width = math.max(wfileinfo:getSize().w, wpageinfo:getSize().w)
             local wright_right_padding = Screen:scaleBySize(10)
@@ -465,8 +478,8 @@ function ListMenuItem:update()
 
             local fontname_title = "cfont"
             local fontname_authors = "cfont"
-            local fontsize_title = 24
-            local fontsize_authors = 22
+            local fontsize_title = _fontSize(20)
+            local fontsize_authors = _fontSize(18)
             local wtitle, wauthors
             local title, authors
             local series_mode = BookInfoManager:getSetting("series_mode")
@@ -562,6 +575,10 @@ function ListMenuItem:update()
                 end
             end
 
+            logger.warn(title, wtitle:getSize().h, wtitle.face.size)
+            if wauthors then
+                logger.warn("authors", wauthors:getSize().h, wauthors.face.size)
+            end
             local wmain = LeftContainer:new{
                 dimen = dimen,
                 VerticalGroup:new{
@@ -768,16 +785,16 @@ function ListMenu:_recalculateDimen()
         self.itemnum_orig = self.path_items[self.path]
         self.focused_path_orig = self.focused_path
     end
-    local available_height = self.dimen.h - self.others_height
+    local available_height = self.dimen.h - self.others_height - Size.line.thin
 
-    self.perpage = BookInfoManager:getSetting("files_per_page") or 10
+    self.perpage = BookInfoManager:getSetting("files_per_page") or math.floor(available_height / Screen:scaleBySize(64))
     self.page_num = math.ceil(#self.item_table / self.perpage)
     -- fix current page if out of range
     if self.page_num > 0 and self.page > self.page_num then self.page = self.page_num end
 
     -- menu item height based on number of items per page
     -- add space for the separator
-    self.item_height = math.floor(available_height / self.perpage) - 1
+    self.item_height = math.floor(available_height / self.perpage) - Size.line.thin
     self.item_width = self.dimen.w
     self.item_dimen = Geom:new{
         w = self.item_width,
