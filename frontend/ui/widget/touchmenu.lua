@@ -614,10 +614,8 @@ function TouchMenu:updateItems()
     -- NOTE: We use a slightly ugly hack to detect a brand new menu vs. a tab switch,
     --       in order to optionally flash on initial menu popup...
     -- NOTE: Also avoid repainting what's underneath us on initial popup.
-    -- NOTE: And avoid repainting what's underneath us if we haven't changed height.
+    -- NOTE: And we also avoid repainting what's underneath us if we haven't changed height.
     local is_same = old_dimen and old_dimen.h == self.dimen.h
-    print("TouchMenu:updateItems is_same", is_same)
-    print("TouchMenu:updateItems setDirty", (self.is_fresh or is_same) and self.show_parent or "all")
     UIManager:setDirty((self.is_fresh or is_same) and self.show_parent or "all", function()
         local refresh_dimen =
             old_dimen and old_dimen:combine(self.dimen)
