@@ -829,6 +829,7 @@ function ConfigDialog:updateConfigPanel(index)
 end
 
 function ConfigDialog:update()
+    print("ConfigDialog:update")
     self.layout = {}
     self.config_menubar = MenuBar:new{
         config_dialog = self,
@@ -853,6 +854,12 @@ function ConfigDialog:update()
         dimen = Screen:getSize(),
         self.dialog_frame,
     }
+
+    print("self.selected.y:", self.selected.y)
+    print("self.selected.x:", self.selected.x)
+    print("config_panel.dimen.h", self.config_panel.dimen.h)
+    print("total h", self.config_menubar.dimen.h + self.config_panel.dimen.h)
+    print("dimen", self.dialog_frame.dimen)
 end
 
 function ConfigDialog:onCloseWidget()
@@ -865,11 +872,18 @@ end
 function ConfigDialog:onShowConfigPanel(index)
     self.panel_index = index
     local old_dimen = self.dialog_frame.dimen and self.dialog_frame.dimen:copy()
+    print("old_dimen", old_dimen)
+    local old_panel_h = self.config_panel.dimen and self.config_panel.dimen.h
+    print("old_panel_h", old_panel_h)
     self:update()
+    print("new dimen", self.dialog_frame.dimen)
     -- NOTE: Keep that one as UI to avoid delay when both this and the topmenu are shown.
     --       Plus, this is also called for each tab anyway, so that wouldn't have been great.
     -- NOTE: And we also only need to repaint what's behind us when switch to a smaller height...
-    local keep_bg = old_dimen and self.dialog_frame.dimen.h >= old_dimen.h
+    --       This is trickier than in touchmenu, because dimen appear to fluctuate before/after painting...
+    local keep_bg = old_panel_h and self.config_panel.dimen and self.config_panel.dimen.h >= old_panel_h
+    print("is_fresh", self.is_fresh)
+    print("keep_bg", keep_bg)
     UIManager:setDirty((self.is_fresh or keep_bg) and self or "all", function()
         local refresh_dimen =
             old_dimen and old_dimen:combine(self.dialog_frame.dimen)
