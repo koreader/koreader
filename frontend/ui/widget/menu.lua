@@ -344,10 +344,18 @@ function MenuItem:init()
         end
         -- add ellipsis when text was truncated
         if flag_add_ellipsis then
+            local text_last_line
+            -- when lines is more than 1 we see only for last visible line
+            if num_lines > 1 then
+                local offset_prev = item_name.vertical_string_list[num_lines - 1].offset - 1
+                text_last_line = table.concat(item_name.charlist, '', offset_prev, offset)
+            else
+                text_last_line = self.text
+            end
+            local text_size = RenderText:sizeUtf8Text(0, self.content_width,
+                Font:getFace(self.font, self.font_size), text_last_line, true, self.bold).x
             local ellipsis_size = RenderText:sizeUtf8Text(0, self.content_width,
                 Font:getFace(self.font, self.font_size), "…", true, self.bold).x
-            local text_size = RenderText:sizeUtf8Text(0, self.content_width,
-                Font:getFace(self.font, self.font_size), self.text, true, self.bold).x
 
             local text_size_increase = text_size
             local max_offset = #item_name_orig.charlist
