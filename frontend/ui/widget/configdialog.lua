@@ -865,10 +865,15 @@ end
 function ConfigDialog:onShowConfigPanel(index)
     self.panel_index = index
     local old_dimen = self.dialog_frame.dimen and self.dialog_frame.dimen:copy()
+    local old_layout_h = self.layout and #self.layout
     self:update()
     -- NOTE: Keep that one as UI to avoid delay when both this and the topmenu are shown.
     --       Plus, this is also called for each tab anyway, so that wouldn't have been great.
-    UIManager:setDirty(self.is_fresh and self or "all", function()
+    -- NOTE: And we also only need to repaint what's behind us when switching to a smaller dialog...
+    --       This is trickier than in touchmenu, because dimen appear to fluctuate before/after painting...
+    --       So we've settled instead for the amount of lines in the panel, as line-height is constant.
+    local keep_bg = old_layout_h and #self.layout >= old_layout_h
+    UIManager:setDirty((self.is_fresh or keep_bg) and self or "all", function()
         local refresh_dimen =
             old_dimen and old_dimen:combine(self.dialog_frame.dimen)
             or self.dialog_frame.dimen

@@ -244,7 +244,7 @@ function ReaderFooter:init()
         self.mode_list[self.mode_index[i]] = i
     end
     if self.settings.disabled then
-        -- footer featuren disabled completely, stop initialization now
+        -- footer feature is completely disabled, stop initialization now
         self:disableFooter()
         return
     end
@@ -472,8 +472,8 @@ function ReaderFooter:disableFooter()
     self.onReaderReady = function() end
     self.resetLayout = function() end
     self.onCloseDocument = nil
-    self.onPageUpdate = function() end
-    self.onPosUpdate = function() end
+    self.updateFooterPage = function() end
+    self.updateFooterPos = function() end
     self.onUpdatePos = function() end
     self.onSetStatusLine = function() end
     self.mode = self.mode_list.off
@@ -576,6 +576,8 @@ function ReaderFooter:addToMainMenu(menu_items)
             callback = function()
                 self.settings[option] = not self.settings[option]
                 G_reader_settings:saveSetting("footer", self.settings)
+                -- We only need to send a SetPageBottomMargin event when we truly affect the margin
+                local should_signal = false
                 -- only case that we don't need a UI update is enable/disable
                 -- non-current mode when all_at_once is disabled.
                 local should_update = false
@@ -595,7 +597,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 if self.has_no_mode then
                     self.footer_container.dimen.h = 0
                     self.footer_text.height = 0
-                    self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
+                    should_signal = true
                     self.genFooterText = footerTextGeneratorMap.empty
                     self.mode = self.mode_list.off
                 elseif prev_has_no_mode then
@@ -605,10 +607,10 @@ function ReaderFooter:addToMainMenu(menu_items)
                         self.mode = self.mode_list.page_progress
                         self:applyFooterMode()
                     end
-                    self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
+                    should_signal = true
                     G_reader_settings:saveSetting("reader_footer_mode", first_enabled_mode_num)
                 elseif self.reclaim_height ~= prev_reclaim_height then
-                    self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
+                    should_signal = true
                     should_update = true
                 end
                 if callback then
@@ -622,12 +624,18 @@ function ReaderFooter:addToMainMenu(menu_items)
                     -- progress bar
                     if not self.has_no_mode then
                         self.mode = first_enabled_mode_num
+                    else
+                        -- If we've just disabled our last mode, first_enabled_mode_num is nil
+                        -- If the progress bar is enabled,
+                        -- fake an innocuous mode so that we switch to showing the progress bar alone, instead of nothing,
+                        -- This is exactly what the "Show progress bar" toggle does.
+                        self.mode = self.settings.disable_progress_bar and self.mode_list.off or self.mode_list.page_progress
                     end
                     should_update = true
                     self:applyFooterMode()
                 end
-                if should_update then
-                    self:refreshFooter(true, true)
+                if should_update or should_signal then
+                    self:refreshFooter(should_update, should_signal)
                 end
             end,
         }
@@ -1246,39 +1254,43 @@ function ReaderFooter:getDataFromStatistics(title, pages)
     return title .. sec
 end
 
-function ReaderFooter:updateFooter(force_repaint)
+function ReaderFooter:updateFooter(force_repaint, force_recompute)
     if self.pageno then
-        self:updateFooterPage(force_repaint)
+        self:updateFooterPage(force_repaint, force_recompute)
     else
-        self:updateFooterPos(force_repaint)
+        self:updateFooterPos(force_repaint, force_recompute)
     end
 end
 
-function ReaderFooter:updateFooterPage(force_repaint)
+function ReaderFooter:updateFooterPage(force_repaint, force_recompute)
     if type(self.pageno) ~= "number" then return end
     self.progress_bar.percentage = self.pageno / self.pages
-    self:updateFooterText(force_repaint)
+    self:updateFooterText(force_repaint, force_recompute)
 end
 
-function ReaderFooter:updateFooterPos(force_repaint)
+function ReaderFooter:updateFooterPos(force_repaint, force_recompute)
     if type(self.position) ~= "number" then return end
     self.progress_bar.percentage = self.position / self.doc_height
-    self:updateFooterText(force_repaint)
+    self:updateFooterText(force_repaint, force_recompute)
 end
 
 -- updateFooterText will start as a noop. After onReaderReady event is
 -- received, it will initialized as _updateFooterText below
-function ReaderFooter:updateFooterText(force_repaint)
+function ReaderFooter:updateFooterText(force_repaint, force_recompute)
 end
 
 -- only call this function after document is fully loaded
-function ReaderFooter:_updateFooterText(force_repaint)
+function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
+    -- footer is invisible, we need neither a repaint nor a recompute, go away.
+    if not self.view.footer_visible and not force_repaint and not force_recompute then
+        return
+    end
     local text = self:genFooterText()
     if text then
         self.footer_text:setText(text)
     end
     if self.settings.disable_progress_bar then
-        if self.has_no_mode or not text then
+        if self.has_no_mode or not text or text == "" then
             self.text_width = 0
             self.footer_container.dimen.h = 0
             self.footer_text.height = 0
@@ -1294,7 +1306,7 @@ function ReaderFooter:_updateFooterText(force_repaint)
         self.progress_bar.width = math.floor(self._saved_screen_width - 2 * self.settings.progress_margin_width)
         self.text_width = self.footer_text:getSize().w
     else
-        if self.has_no_mode or not text then
+        if self.has_no_mode or not text or text == "" then
             self.text_width = 0
         else
             self.text_width = self.footer_text:getSize().w + self.text_left_margin
@@ -1482,12 +1494,11 @@ end
 function ReaderFooter:refreshFooter(refresh, signal)
     self:updateFooterContainer()
     self:resetLayout(true)
-    self:updateFooter()
+    -- If we signal, the event we send will trigger a full repaint anyway, so we should be able to skip this one.
+    -- We *do* need to ensure we at least re-compute the footer layout, though, especially when going from visible to invisible...
+    self:updateFooter(refresh and not signal, refresh and signal)
     if signal then
         self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
-    end
-    if refresh then
-        UIManager:setDirty(nil, "ui")
     end
 end
 
