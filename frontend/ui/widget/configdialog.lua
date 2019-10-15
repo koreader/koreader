@@ -868,7 +868,9 @@ function ConfigDialog:onShowConfigPanel(index)
     self:update()
     -- NOTE: Keep that one as UI to avoid delay when both this and the topmenu are shown.
     --       Plus, this is also called for each tab anyway, so that wouldn't have been great.
-    UIManager:setDirty(self.is_fresh and self or "all", function()
+    -- NOTE: And we also only need to repaint what's behind us when switch to a smaller height...
+    local keep_bg = old_dimen and self.dialog_frame.dimen.h >= old_dimen.h
+    UIManager:setDirty((self.is_fresh or keep_bg) and self or "all", function()
         local refresh_dimen =
             old_dimen and old_dimen:combine(self.dialog_frame.dimen)
             or self.dialog_frame.dimen
