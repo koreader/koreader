@@ -1488,7 +1488,7 @@ end
 function ReaderFooter:refreshFooter(refresh, signal)
     self:updateFooterContainer()
     self:resetLayout(true)
-    -- If we signal, the event we send will trigger a full repaint anyway, so we should theoretically be able to skip this one.
+    -- If we signal, the event we send will trigger a full repaint anyway, so we should be able to skip this one.
     -- We *do* need to ensure we at least re-compute the footer layout, though, especially when going from visible to invisible...
     self:updateFooter(refresh and not signal, refresh and signal)
     if signal then
