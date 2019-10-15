@@ -1263,39 +1263,39 @@ function ReaderFooter:getDataFromStatistics(title, pages)
     return title .. sec
 end
 
-function ReaderFooter:updateFooter(force_repaint)
-    print("ReaderFooter:updateFooter", force_repaint)
+function ReaderFooter:updateFooter(force_repaint, force_recompute)
+    print("ReaderFooter:updateFooter", force_repaint, force_recompute)
     if self.pageno then
-        self:updateFooterPage(force_repaint)
+        self:updateFooterPage(force_repaint, force_recompute)
     else
-        self:updateFooterPos(force_repaint)
+        self:updateFooterPos(force_repaint, force_recompute)
     end
 end
 
-function ReaderFooter:updateFooterPage(force_repaint)
-    print("ReaderFooter:updateFooterPage", force_repaint)
+function ReaderFooter:updateFooterPage(force_repaint, force_recompute)
+    print("ReaderFooter:updateFooterPage", force_repaint, force_recompute)
     if type(self.pageno) ~= "number" then return end
     self.progress_bar.percentage = self.pageno / self.pages
-    self:updateFooterText(force_repaint)
+    self:updateFooterText(force_repaint, force_recompute)
 end
 
-function ReaderFooter:updateFooterPos(force_repaint)
-    print("ReaderFooter:updateFooterPos", force_repaint)
+function ReaderFooter:updateFooterPos(force_repaint, force_recompute)
+    print("ReaderFooter:updateFooterPos", force_repaint, force_recompute)
     if type(self.position) ~= "number" then return end
     self.progress_bar.percentage = self.position / self.doc_height
-    self:updateFooterText(force_repaint)
+    self:updateFooterText(force_repaint, force_recompute)
 end
 
 -- updateFooterText will start as a noop. After onReaderReady event is
 -- received, it will initialized as _updateFooterText below
-function ReaderFooter:updateFooterText(force_repaint)
+function ReaderFooter:updateFooterText(force_repaint, force_recompute)
 end
 
 -- only call this function after document is fully loaded
-function ReaderFooter:_updateFooterText(force_repaint)
-    print("ReaderFooter:_updateFooterText", force_repaint)
-    -- footer is invisible, and we don't need a repaint, go away.
-    if not self.view.footer_visible and not force_repaint then
+function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
+    print("ReaderFooter:_updateFooterText", force_repaint, force_recompute)
+    -- footer is invisible, and we don't need a repaint nor a recompute, go away.
+    if not self.view.footer_visible and not force_repaint and not force_recompute then
         return
     end
     local text = self:genFooterText()
@@ -1519,10 +1519,8 @@ function ReaderFooter:refreshFooter(refresh, signal)
     self:updateFooterContainer()
     self:resetLayout(true)
     -- If we signal, the event we send will trigger a full repaint anyway, so we should theoretically be able to skip this one.
-    -- (i.e., pass refresh and not signal)
-    -- In practice, we need it anyway in some corner-cases (mainly, when going from visible to invisible),
-    -- to make sure the layout changes get computed instead of being skipped by tripping the !force_repaint early abort check
-    self:updateFooter(refresh)
+    -- We *do* need to ensure we at least re-compute the footer layout, though, especially when going from visible to invisible...
+    self:updateFooter(refresh and not signal, refresh and signal)
     if signal then
         self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
     end
