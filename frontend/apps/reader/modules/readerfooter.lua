@@ -631,9 +631,10 @@ function ReaderFooter:addToMainMenu(menu_items)
                         self.mode = first_enabled_mode_num
                     else
                         -- If we've just disabled our last mode, first_enabled_mode_num is nil
-                        -- Fake an innocuous mode so that we switch to showing the progress bar alone, instead of nothing,
-                        -- if the progress bar is enabled.
-                        self.mode = self.settings.disable_progress_bar and 0 or 1
+                        -- If the progress bar is enabled,
+                        -- fake an innocuous mode so that we switch to showing the progress bar alone, instead of nothing,
+                        -- This is exactly what the "Show progress bar" toggle does.
+                        self.mode = self.settings.disable_progress_bar and self.mode_list.off or self.mode_list.page_progress
                     end
                     should_update = true
                     self:applyFooterMode()
