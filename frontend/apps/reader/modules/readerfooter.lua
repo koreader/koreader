@@ -583,7 +583,6 @@ function ReaderFooter:addToMainMenu(menu_items)
                 local should_update = false
                 local first_enabled_mode_num
                 local prev_has_no_mode = self.has_no_mode
-                 print("prev_has_no_mode", prev_has_no_mode)
                 local prev_reclaim_height = self.reclaim_height
                 self.has_no_mode = true
                 for mode_num, m in pairs(self.mode_index) do
@@ -593,8 +592,6 @@ function ReaderFooter:addToMainMenu(menu_items)
                         break
                     end
                 end
-                print("has_no_mode", self.has_no_mode)
-                print("first_enabled_mode_num", first_enabled_mode_num)
                 self.reclaim_height = self.settings.reclaim_height or false
                 -- refresh margins position
                 if self.has_no_mode then
@@ -616,7 +613,6 @@ function ReaderFooter:addToMainMenu(menu_items)
                     should_signal = true
                     should_update = true
                 end
-                print("mode", self.mode)
                 if callback then
                     should_update = callback(self)
                 elseif self.settings.all_at_once then
@@ -626,7 +622,6 @@ function ReaderFooter:addToMainMenu(menu_items)
                     -- current mode got disabled, redraw footer with other
                     -- enabled modes. if all modes are disabled, then only show
                     -- progress bar
-                    print("meep")
                     if not self.has_no_mode then
                         self.mode = first_enabled_mode_num
                     else
@@ -1407,7 +1402,6 @@ function ReaderFooter:applyFooterMode(mode)
     -- 8 for front light level
     -- 9 for memory usage
     -- 10 for wifi status
-    print("ReaderFooter:applyFooterMode", mode, self.mode)
     if mode ~= nil then self.mode = mode end
     self.view.footer_visible = (self.mode ~= self.mode_list.off)
 
