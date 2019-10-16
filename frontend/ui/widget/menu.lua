@@ -347,8 +347,8 @@ function MenuItem:init()
             local text_last_line
             -- when lines is more than 1 we see only for last visible line
             if num_lines > 1 then
-                local offset_prev = item_name.vertical_string_list[num_lines - 1].offset - 1
-                text_last_line = table.concat(item_name.charlist, '', offset_prev, offset)
+                local offset_prev = item_name_orig.vertical_string_list[num_lines - 1].offset
+                text_last_line = table.concat(item_name_orig.charlist, '', offset_prev, offset)
             else
                 text_last_line = self.text
             end
