@@ -402,7 +402,8 @@ function FileChooser:showSetProviderButtons(file, filemanager_instance, reader_u
             provider = provider.provider
             table.insert(radio_buttons, {
                 {
-                    text = provider.provider_name,
+                    -- @translators %1 is the provider name, in this case Cool Reader Engine
+                    text = T(_("%1 ~Unsupported"), provider.provider_name),
                     checked = DocumentRegistry:getProvider(file) == provider,
                     provider = provider,
                 },
@@ -427,7 +428,7 @@ function FileChooser:showSetProviderButtons(file, filemanager_instance, reader_u
             end,
         },
         {
-            text = _("Reset Default"),
+            text = _("Reset default"),
             enabled = filetype_provider[filename_suffix] ~= nil,
             callback = function()
                 filetype_provider[filename_suffix] = nil
