@@ -303,6 +303,10 @@ function MenuItem:init()
             end
             -- remove last line and try again to fit
             offset = item_name.vertical_string_list[num_lines].offset - 1
+            -- remove ending '\n' (new line) to prevent infinity loop
+            if item_name.charlist[offset] == '\n' then
+                offset = offset - 1
+            end
             self.text = table.concat(item_name.charlist, '', 1, offset)
         end
 
@@ -360,7 +364,8 @@ function MenuItem:init()
             local text_size_increase = text_size
             local max_offset = #item_name_orig.charlist
             -- try to add chars to better align
-            while item_name.width > text_size_increase + ellipsis_size and offset < max_offset do
+            while item_name.width > text_size_increase + ellipsis_size and offset < max_offset
+                and item_name_orig.charlist[offset] ~= '\n' do
                 text_size_increase = text_size_increase + item_name_orig:getCharWidth(offset + 1)
                 if text_size_increase + ellipsis_size < item_name.width then
                     -- add one char to text
@@ -377,6 +382,10 @@ function MenuItem:init()
                 -- when finally after manipulation we have all original text we don't need to add ellipsis
                 self.text = table.concat(item_name_orig.charlist, '', 1, offset)
             else
+                -- remove ending '\n' (new line) to prevent increase number of lines
+                if item_name_orig.charlist[offset] == '\n' then
+                    offset = offset - 1
+                end
                 -- add ellipsis to show that text was truncated
                 self.text = table.concat(item_name_orig.charlist, '', 1, offset) .. "…"
             end
