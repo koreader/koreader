@@ -395,17 +395,27 @@ function FileChooser:showSetProviderButtons(file, filemanager_instance, reader_u
     local buttons = {}
     local radio_buttons = {}
     local providers = DocumentRegistry:getProviders(file)
-
-    for ___, provider in ipairs(providers) do
-        -- we have no need for extension, mimetype, weights, etc. here
-        provider = provider.provider
+    if providers ~= nil then
+        for ___, provider in ipairs(providers) do
+            -- we have no need for extension, mimetype, weights, etc. here
+            provider = provider.provider
+            table.insert(radio_buttons, {
+                {
+                    text = provider.provider_name,
+                    checked = DocumentRegistry:getProvider(file) == provider,
+                    provider = provider,
+                },
+            })
+        end
+    else
+        local provider = DocumentRegistry:getProvider(file)
         table.insert(radio_buttons, {
             {
-                text = provider.provider_name,
-                checked = DocumentRegistry:getProvider(file) == provider,
+                text = provider.provider_name .. _(" ~Unsupported"),
+                checked = true,
                 provider = provider,
             },
-        })
+         })
     end
 
     table.insert(buttons, {

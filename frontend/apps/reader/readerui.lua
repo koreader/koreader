@@ -447,7 +447,7 @@ function ReaderUI:showReader(file, provider)
         return
     end
 
-    if not DocumentRegistry:hasProvider(file) then
+    if not DocumentRegistry:hasProvider(file) and provider == nil then
         UIManager:show(InfoMessage:new{
             text = T(_("File '%1' is not supported."), file)
         })
