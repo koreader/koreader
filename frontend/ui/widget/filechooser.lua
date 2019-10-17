@@ -394,6 +394,7 @@ function FileChooser:showSetProviderButtons(file, filemanager_instance, reader_u
 
     local buttons = {}
     local radio_buttons = {}
+    local filetype_provider = G_reader_settings:readSetting("provider") or {}
     local providers = DocumentRegistry:getProviders(file)
     if providers ~= nil then
         for ___, provider in ipairs(providers) do
@@ -422,6 +423,15 @@ function FileChooser:showSetProviderButtons(file, filemanager_instance, reader_u
         {
             text = _("Cancel"),
             callback = function()
+                UIManager:close(self.set_provider_dialog)
+            end,
+        },
+        {
+            text = _("Reset Default"),
+            enabled = filetype_provider[filename_suffix] ~= nil,
+            callback = function()
+                filetype_provider[filename_suffix] = nil
+                G_reader_settings:saveSetting("provider", filetype_provider)
                 UIManager:close(self.set_provider_dialog)
             end,
         },
