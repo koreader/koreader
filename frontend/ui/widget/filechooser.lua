@@ -402,7 +402,7 @@ function FileChooser:showSetProviderButtons(file, filemanager_instance, reader_u
             provider = provider.provider
             table.insert(radio_buttons, {
                 {
-                    -- @translators %1 is the provider name, in this case Cool Reader Engine
+                    -- @translators %1 is the provider name, such as Cool Reader Engine or MuPDF.
                     text = T(_("%1 ~Unsupported"), provider.provider_name),
                     checked = DocumentRegistry:getProvider(file) == provider,
                     provider = provider,
