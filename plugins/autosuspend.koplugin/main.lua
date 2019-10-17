@@ -126,6 +126,9 @@ end
 
 function AutoSuspend:onResume()
     logger.dbg("AutoSuspend: onResume")
+    if self:_enabledShutdown() and Device.wakeup_mgr then
+        Device.wakeup_mgr:removeTask(nil, nil, UIManager.poweroff_action)
+    end
     self:_start()
 end
 
