@@ -168,19 +168,21 @@ function ReaderMenu:setUpdateItemTable()
                     self.ui.doc_settings:saveSetting("exclude_screensaver", true)
                 end
                 self.ui:saveSettings()
-            end
+            end,
+            added_by_readermenu_flag = true,
         }
-
+        local screensaver_sub_item_table = require("ui/elements/screensaver_menu")
+        -- Before inserting this new item, remove any previously added one
+        for i = #screensaver_sub_item_table, 1, -1 do
+            if screensaver_sub_item_table[i].added_by_readermenu_flag then
+                table.remove(screensaver_sub_item_table, i)
+            end
+        end
+        table.insert(screensaver_sub_item_table, ss_book_settings)
         self.menu_items.screensaver = {
             text = _("Screensaver"),
-            sub_item_table = require("ui/elements/screensaver_menu"),
+            sub_item_table = screensaver_sub_item_table,
         }
-        local table_len = #self.menu_items.screensaver.sub_item_table
-        --- @todo Make this less prone to being messed up by screensaver menu changes, for example with MenuSorter.
-        if self.menu_items.screensaver.sub_item_table[table_len].text == ss_book_settings.text then
-            table.remove(self.menu_items.screensaver.sub_item_table, table_len)
-        end
-        table.insert(self.menu_items.screensaver.sub_item_table, ss_book_settings)
     end
 
     local PluginLoader = require("pluginloader")
@@ -352,11 +354,14 @@ end
 
 function ReaderMenu:onCloseDocument()
     if Device:supportsScreensaver() then
-        --- @todo Make this less prone to being messed up by screensaver menu changes, for example with MenuSorter.
         -- Remove the item we added (which cleans up references to document
         -- and doc_settings embedded in functions)
         local screensaver_sub_item_table = require("ui/elements/screensaver_menu")
-        table.remove(screensaver_sub_item_table, #screensaver_sub_item_table)
+        for i = #screensaver_sub_item_table, 1, -1 do
+            if screensaver_sub_item_table[i].added_by_readermenu_flag then
+                table.remove(screensaver_sub_item_table, i)
+            end
+        end
     end
 end
 
