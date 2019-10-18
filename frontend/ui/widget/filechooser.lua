@@ -428,15 +428,6 @@ function FileChooser:showSetProviderButtons(file, filemanager_instance, reader_u
             end,
         },
         {
-            text = _("Reset default"),
-            enabled = filetype_provider[filename_suffix] ~= nil,
-            callback = function()
-                filetype_provider[filename_suffix] = nil
-                G_reader_settings:saveSetting("provider", filetype_provider)
-                UIManager:close(self.set_provider_dialog)
-            end,
-        },
-        {
             text = _("Open"),
             is_enter_default = true,
             callback = function()
@@ -479,6 +470,19 @@ function FileChooser:showSetProviderButtons(file, filemanager_instance, reader_u
             end,
         },
     })
+
+    if filetype_provider[filename_suffix] ~= nil then
+        table.insert(buttons, {
+           {
+               text = _("Reset default"),
+                callback = function()
+                    filetype_provider[filename_suffix] = nil
+                    G_reader_settings:saveSetting("provider", filetype_provider)
+                    UIManager:close(self.set_provider_dialog)
+                end,
+            },
+        })
+    end
 
     self.set_provider_dialog = OpenWithDialog:new{
         title = T(_("Open %1 with:"), filename_pure),
