@@ -67,7 +67,7 @@ KOReader is developed and supported by volunteers all around the world. There ar
 - document lesser-known features on the [wiki][link-wiki]
 - help others with your knowledge on the [forum][link-forum]
 
-At this moment we don't support any form of money donation, but you can create a [bounty][link-bountysource] for the specific bug or feature request you want and motivate others to do the work.
+At this moment we don't support any form of monetary donation, but you can create a [bounty][link-bountysource] for the specific bug or feature request you want and motivate others to do the work.
 
 Also if you have and old Pocketbook device you don't want, we might find it useful to tinker a bit with that platform. Please contact us through the forum or GitHub.
 
