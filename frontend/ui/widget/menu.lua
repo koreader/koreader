@@ -129,8 +129,6 @@ local MenuItem = InputContainer:new{
     text = nil,
     show_parent = nil,
     detail = nil,
-    face = Font:getFace("cfont", 30),
-    info_face = Font:getFace("infont", 15),
     font = "cfont",
     font_size = 24,
     infont = "infont",
@@ -176,6 +174,25 @@ function MenuItem:init()
         }
     end
 
+    -- State button and indentation for tree expand/collapse (for TOC)
+    local state_button_width = self.state_size.w or 0
+    local state_button = self.state or HorizontalSpan:new{
+        width = state_button_width,
+    }
+    local state_indent = self.state and self.state.indent or ""
+    local state_container = LeftContainer:new{
+        dimen = Geom:new{w = self.content_width/2, h = self.dimen.h},
+        HorizontalGroup:new{
+            TextWidget:new{
+                text = state_indent,
+                face = Font:getFace(self.font, self.font_size),
+            },
+            state_button,
+        }
+    }
+
+    -- "mandatory" is the text on the right: file size, page number...
+    -- Padding before mandatory
     local text_mandatory_padding = 0
     local text_ellipsis_mandatory_padding = 0
     if self.mandatory then
@@ -185,44 +202,39 @@ function MenuItem:init()
     end
     local mandatory = self.mandatory and ""..self.mandatory or ""
 
-    local state_button_width = self.state_size.w or 0
-    local state_button = self.state or HorizontalSpan:new{
-        width = state_button_width,
-    }
-    local state_indent = self.state and self.state.indent or ""
+    -- Font for main text (may have its size decreased to make text fit)
+    self.face = Font:getFace(self.font, self.font_size)
+    -- Font for "mandatory" on the right
+    self.info_face = Font:getFace(self.infont, self.infont_size)
+
     local item_name
     local mandatory_widget
 
     if self.single_line then  -- items only in single line
-        self.info_face = Font:getFace(self.infont, self.infont_size)
-        self.face = Font:getFace(self.font, self.font_size)
-
-        local mandatory_w = RenderText:sizeUtf8Text(0, self.dimen.w, self.info_face, ""..mandatory, true, self.bold).x
-
-        local my_text = self.text and ""..self.text or ""
-        local w = RenderText:sizeUtf8Text(0, self.dimen.w, self.face, my_text, true, self.bold).x
-        if w + mandatory_w + state_button_width + text_mandatory_padding >= self.content_width then
-            local indicator = "\226\128\166 " -- an ellipsis
-            local indicator_w = RenderText:sizeUtf8Text(0, self.dimen.w, self.face,
-                indicator, true, self.bold).x
-            self.text = RenderText:getSubTextByWidth(my_text, self.face,
-                self.content_width - indicator_w - mandatory_w - state_button_width - text_ellipsis_mandatory_padding,
-                true, self.bold) .. indicator
-        end
-
-        item_name = TextWidget:new{
-            text = self.text,
-            face = self.face,
-            bold = self.bold,
-            fgcolor = self.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
-        }
         mandatory_widget = TextWidget:new{
             text = mandatory,
             face = self.info_face,
             bold = self.bold,
             fgcolor = self.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
         }
-        if self.align_baselines then
+        local mandatory_w = mandatory_widget:getWidth()
+        -- No font size change: text will be truncated if it overflows
+        -- (we give it a little more room if truncated for better visual
+        -- feeling - which might make it no more truncated, but well...)
+        local text_max_width_base = self.content_width - state_button_width - mandatory_w
+        local text_max_width = text_max_width_base - text_mandatory_padding
+        local text_max_width_if_ellipsis = text_max_width_base - text_ellipsis_mandatory_padding
+        item_name = TextWidget:new{
+            text = self.text,
+            face = self.face,
+            bold = self.bold,
+            fgcolor = self.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
+        }
+        local w = item_name:getWidth()
+        if w > text_max_width then
+            item_name:setMaxWidth(text_max_width_if_ellipsis)
+        end
+        if self.align_baselines then -- Align baselines of text and mandatory
             local name_baseline = item_name:getBaseline()
             local mandatory_baseline = mandatory_widget:getBaseline()
             local baselines_diff = Math.round(name_baseline - mandatory_baseline)
@@ -313,16 +325,6 @@ function MenuItem:init()
         self.face = Font:getFace(self.font, self.font_size)
     end
 
-    local state_container = LeftContainer:new{
-        dimen = Geom:new{w = self.content_width/2, h = self.dimen.h},
-        HorizontalGroup:new{
-            HorizontalSpan:new{
-                width = RenderText:sizeUtf8Text(0, self.dimen.w, self.face,
-                    state_indent, true, self.bold).x,
-            },
-            state_button,
-        }
-    }
     local text_container = LeftContainer:new{
         dimen = Geom:new{w = self.content_width, h = self.dimen.h},
         HorizontalGroup:new{
@@ -579,7 +581,9 @@ function Menu:init()
     if self.show_path then
         self.path_text = TextWidget:new{
             face = Font:getFace("xx_smallinfofont"),
-            text = self:truncatePath(self.path),
+            text = self.path,
+            max_width = self.dimen.w - 2*Size.padding.small,
+            truncate_left = true,
         }
         path_text_container = CenterContainer:new{
             dimen = Geom:new{
@@ -865,19 +869,6 @@ function Menu:init()
     end
 end
 
-function Menu:truncatePath(text)
-    local screen_width = Screen:getWidth()
-    local face = Font:getFace("xx_smallinfofont")
-    -- we want to truncate text on the left, so work with the reverse of text (which is fine as we don't use kerning)
-    local reversed_text = require("util").utf8Reverse(text)
-    local txt_width = RenderText:sizeUtf8Text(0, screen_width, face, reversed_text, false, false).x
-    if  screen_width - 2 * Size.padding.small < txt_width then
-        reversed_text = RenderText:truncateTextByWidth(reversed_text, face, screen_width - 2 * Size.padding.small, false, false)
-        text = require("util").utf8Reverse(reversed_text)
-    end
-    return text
-end
-
 function Menu:onCloseWidget()
     --- @fixme
     -- we cannot refresh regionally using the dimen field
@@ -984,7 +975,7 @@ function Menu:updateItems(select_number)
 
     self:updatePageInfo(select_number)
     if self.show_path then
-        self.path_text.text = self:truncatePath(self.path)
+        self.path_text:setText(self.path)
     end
 
     UIManager:setDirty(self.show_parent, function()

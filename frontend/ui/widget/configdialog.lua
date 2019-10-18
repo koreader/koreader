@@ -18,7 +18,6 @@ local IconButton = require("ui/widget/iconbutton")
 local ImageWidget = require("ui/widget/imagewidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LineWidget = require("ui/widget/linewidget")
-local RenderText = require("ui/rendertext")
 local RightContainer = require("ui/widget/container/rightcontainer")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
@@ -208,7 +207,11 @@ function ConfigOption:init()
             local face = Font:getFace(name_font_face, name_font_size)
             local txt_width = 0
             if text ~= nil then
-                txt_width = RenderText:sizeUtf8Text(0, Screen:getWidth(), face, text).x
+                local tmp = TextWidget:new{
+                    text = text,
+                    face = face,
+                }
+                txt_width = tmp:getWidth()
             end
             max_option_name_width = math.max(max_option_name_width, txt_width)
         end
@@ -265,16 +268,12 @@ function ConfigOption:init()
                 local name_text_max_width = name_widget_width - default_option_hpadding - 2*padding_small
                 local text = self.options[c].name_text
                 local face = Font:getFace(name_font_face, name_font_size)
-                local width_name_text = RenderText:sizeUtf8Text(0, Screen:getWidth(), face, text).x
-                if width_name_text > name_text_max_width then
-                    text = RenderText:truncateTextByWidth(text, face, name_text_max_width)
-                end
-
                 local option_name_container = RightContainer:new{
                     dimen = Geom:new{ w = name_widget_width, h = option_height},
                 }
                 local option_name = Button:new{
                     text = text,
+                    max_width = name_text_max_width,
                     bordersize = 0,
                     face = face,
                     enabled = enabled,
@@ -436,13 +435,10 @@ function ConfigOption:init()
                     else
                         local text = self.options[c].item_text[d]
                         local face = Font:getFace(item_font_face, item_font_size)
-                        local width_item_text = RenderText:sizeUtf8Text(0, Screen:getWidth(), face, text).x
-                        if max_item_text_width < width_item_text then
-                            text = RenderText:truncateTextByWidth(text, face, max_item_text_width)
-                        end
                         option_item = OptionTextItem:new{
                             TextWidget:new{
                                 text = text,
+                                max_width = max_item_text_width,
                                 face = face,
                                 fgcolor = enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
                             },

@@ -25,7 +25,6 @@ local Font = require("ui/font")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
-local RenderText = require("ui/rendertext")
 local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -120,12 +119,7 @@ function NumberPickerWidget:paintWidget()
         width = self.screen_height * 0.01
     }
     local value = self.value
-    if self.value_table then
-        local text_width = RenderText:sizeUtf8Text(0, self.width, self.spinner_face, self.value, true, true).x
-        if self.width < text_width then
-            value = RenderText:truncateTextByWidth(self.value, self.spinner_face, self.width,true, true)
-        end
-    else
+    if not self.value_table then
         value = string.format(self.precision, value)
     end
 
@@ -185,9 +179,10 @@ function NumberPickerWidget:paintWidget()
         text = value,
         bordersize = 0,
         padding = 0,
-        text_font_face = self.spinner_face_font,
-        text_font_size = self.spinner_face_size,
+        text_font_face = self.spinner_face.font,
+        text_font_size = self.spinner_face.orig_size,
         width = self.width,
+        max_width = self.width,
         callback = callback_input,
     }
     return VerticalGroup:new{

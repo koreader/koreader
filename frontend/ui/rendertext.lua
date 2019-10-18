@@ -263,8 +263,7 @@ function RenderText:renderUtf8Text(dest_bb, x, baseline, face, text, kerning, bo
     return pen_x
 end
 
-local ellipsis, space = "…", " "
-local ellipsis_width, space_width
+local ellipsis = "…"
 --- Returns a substring of a given text that meets the maximum width (in pixels)
 -- restriction with ellipses (…) at the end if required.
 --
@@ -273,23 +272,13 @@ local ellipsis_width, space_width
 -- @int width maximum width in pixels
 -- @bool[opt=false] kerning whether the text should be measured with kerning
 -- @bool[opt=false] bold whether the text should be measured as bold
--- @bool[opt=false] prepend_space whether a space should be prepended to the text
 -- @treturn string
 -- @see getSubTextByWidth
-function RenderText:truncateTextByWidth(text, face, max_width, kerning, bold, prepend_space)
-    if not ellipsis_width then
-        ellipsis_width = self:sizeUtf8Text(0, max_width, face, ellipsis).x
-    end
-    if not space_width then
-        space_width = self:sizeUtf8Text(0, max_width, face, space).x
-    end
-    local new_txt_width = max_width - ellipsis_width - space_width
+function RenderText:truncateTextByWidth(text, face, max_width, kerning, bold)
+    local ellipsis_width = self:sizeUtf8Text(0, max_width, face, ellipsis, false, bold).x
+    local new_txt_width = max_width - ellipsis_width
     local sub_txt = self:getSubTextByWidth(text, face, new_txt_width, kerning, bold)
-    if prepend_space then
-        return space.. sub_txt .. ellipsis
-    else
-        return sub_txt .. ellipsis .. space
-    end
+    return sub_txt .. ellipsis
 end
 
 return RenderText

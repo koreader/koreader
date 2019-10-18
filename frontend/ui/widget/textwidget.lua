@@ -19,39 +19,76 @@ local RenderText = require("ui/rendertext")
 local Size = require("ui/size")
 local Widget = require("ui/widget/widget")
 local Screen = require("device").screen
+local util = require("util")
 
 local TextWidget = Widget:new{
     text = nil,
     face = nil,
-    bold = nil,
+    bold = false, -- synthetized/fake bold (use a bold face for nicer bold)
     fgcolor = Blitbuffer.COLOR_BLACK,
-    padding = Size.padding.small, -- should padding be function of face.size ?
+    padding = Size.padding.small, -- vertical padding (should it be function of face.size ?)
+                                  -- (no horizontal padding is added)
     max_width = nil,
-    _bb = nil,
+    truncate_with_ellipsis = true, -- when truncation at max_width needed, add "…"
+    truncate_left = false, -- truncate on the right by default
+
+    _updated = nil,
+    _text_to_draw = nil,
     _length = 0,
     _height = 0,
     _baseline_h = 0,
     _maxlength = 1200,
 }
 
---function TextWidget:_render()
-    --local h = self.face.size * 1.3
-    --self._bb = Blitbuffer.new(self._maxlength, h)
-    --self._bb:fill(Blitbuffer.COLOR_WHITE)
-    --self._length = RenderText:renderUtf8Text(self._bb, 0, h*0.8, self.face, self.text, true, self.bold)
---end
-
 function TextWidget:updateSize()
-    local tsize = RenderText:sizeUtf8Text(0, self.max_width and self.max_width or Screen:getWidth(), self.face, self.text, true, self.bold)
-    if tsize.x == 0 then
-        self._length = 0
-    else
-        -- As text length includes last glyph pen "advance" (for positionning
-        -- next char), it's best to use math.floor() instead of math.ceil()
-        -- to get rid of a fraction of it in case this text is to be
-        -- horizontally centered
+    if self._updated then
+        return
+    end
+    self._updated = true
+
+    -- In case we draw truncated text, keep original self.text
+    -- so caller can fetch it again
+    self._text_to_draw = self.text
+
+    -- Note: we use kerning=true in all RenderText calls
+    --- @todo Don't use kerning for monospaced fonts. (houqp)
+
+    -- Compute width:
+    -- We never need to draw/size more than one screen width, so limit computation
+    -- to that width in case we are given some huge string
+    local tsize = RenderText:sizeUtf8Text(0, Screen:getWidth(), self.face, self._text_to_draw, true, self.bold)
+    -- As text length includes last glyph pen "advance" (for positionning
+    -- next char), it's best to use math.floor() instead of math.ceil()
+    -- to get rid of a fraction of it in case this text is to be
+    -- horizontally centered
+    self._length = math.floor(tsize.x)
+
+    -- Ensure max_width, and truncate text if needed
+    if self.max_width and self._length > self.max_width then
+        if self.truncate_left then
+            -- We want to truncate text on the left, so work with the reverse of text.
+            -- We don't use kerning in this measurement as it might be different
+            -- on the reversed text. The final text will use kerning, and might get
+            -- a smaller width than the one found out here.
+            -- Also, not sure if this is correct when diacritics/clustered glyphs
+            -- happen at truncation point. But it will do for now.
+            local reversed_text = util.utf8Reverse(self._text_to_draw)
+            if self.truncate_with_ellipsis then
+                reversed_text = RenderText:truncateTextByWidth(reversed_text, self.face, self.max_width, false, self.bold)
+            else
+                reversed_text = RenderText:getSubTextByWidth(reversed_text, self.face, self.max_width, false, self.bold)
+            end
+            self._text_to_draw = util.utf8Reverse(reversed_text)
+        elseif self.truncate_with_ellipsis then
+            self._text_to_draw = RenderText:truncateTextByWidth(self._text_to_draw, self.face, self.max_width, true, self.bold)
+        end
+        -- Get the adjusted width when limiting to max_width (it might be
+        -- smaller than max_width when dropping the truncated glyph).
+        tsize = RenderText:sizeUtf8Text(0, self.max_width, self.face, self._text_to_draw, true, self.bold)
         self._length = math.floor(tsize.x)
     end
+
+    -- Compute height:
     -- Used to be:
     --   self._height = math.ceil(self.face.size * 1.5)
     --   self._baseline_h = self._height*0.7
@@ -68,15 +105,16 @@ function TextWidget:updateSize()
 end
 
 function TextWidget:getSize()
-    --if not self._bb then
-        --self:_render()
-    --end
-    --return { w = self._length, h = self._bb:getHeight() }
     self:updateSize()
     return Geom:new{
         w = self._length,
         h = self._height,
     }
+end
+
+function TextWidget:getWidth()
+    self:updateSize()
+    return self._length
 end
 
 function TextWidget:getBaseline()
@@ -86,27 +124,18 @@ end
 
 function TextWidget:setText(text)
     self.text = text
-    self:updateSize()
+    self._updated = false
+end
+
+function TextWidget:setMaxWidth(max_width)
+    self.max_width = max_width
+    self._updated = false
 end
 
 function TextWidget:paintTo(bb, x, y)
-    --if not self._bb then
-        --self:_render()
-    --end
-    --bb:blitFrom(self._bb, x, y, 0, 0, self._length, self._bb:getHeight())
-    --- @todo Don't use kerning for monospaced fonts.    (houqp)
-    if self.max_width and RenderText:sizeUtf8Text(0, Screen:getWidth(), self.face, self.text, true, self.bold).x > self.max_width then
-        self.text = RenderText:truncateTextByWidth(self.text, self.face, self.max_width, true)
-    end
-    RenderText:renderUtf8Text(bb, x, y+self._baseline_h, self.face, self.text, true, self.bold,
-                self.fgcolor, self.max_width and self.max_width or self.width)
-end
-
-function TextWidget:free()
-    if self._bb then
-        self._bb:free()
-        self._bb = nil
-    end
+    self:updateSize()
+    RenderText:renderUtf8Text(bb, x, y+self._baseline_h, self.face, self._text_to_draw, true, self.bold,
+                self.fgcolor, self._length)
 end
 
 return TextWidget

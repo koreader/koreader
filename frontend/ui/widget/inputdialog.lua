@@ -108,7 +108,6 @@ local LineWidget = require("ui/widget/linewidget")
 local MovableContainer = require("ui/widget/container/movablecontainer")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local Notification = require("ui/widget/notification")
-local RenderText = require("ui/rendertext")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
@@ -211,15 +210,6 @@ function InputDialog:init()
     end
 
     -- Title & description
-    local title_width = RenderText:sizeUtf8Text(0, self.width,
-            self.title_face, self.title, true).x
-    if title_width > self.width then
-        local indicator = "  >> "
-        local indicator_w = RenderText:sizeUtf8Text(0, self.width,
-                self.title_face, indicator, true).x
-        self.title = RenderText:getSubTextByWidth(self.title, self.title_face,
-                self.width - indicator_w, true) .. indicator
-    end
     self.title_widget = FrameContainer:new{
         padding = self.title_padding,
         margin = self.title_margin,
@@ -227,7 +217,7 @@ function InputDialog:init()
         TextWidget:new{
             text = self.title,
             face = self.title_face,
-            width = self.width,
+            max_width = self.width,
         }
     }
     self.title_bar = LineWidget:new{

@@ -14,7 +14,6 @@ local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
-local RenderText = require("ui/rendertext")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
@@ -27,10 +26,6 @@ local ToggleLabel = TextWidget:new{
     bgcolor = Blitbuffer.COLOR_WHITE,
     fgcolor = Blitbuffer.COLOR_BLACK,
 }
-
-function ToggleLabel:paintTo(bb, x, y)
-    RenderText:renderUtf8Text(bb, x, y+self._baseline_h, self.face, self.text, true, self.bold, self.fgcolor)
-end
 
 local ToggleSwitch = InputContainer:new{
     width = Screen:scaleBySize(216),
@@ -84,13 +79,10 @@ function ToggleSwitch:init()
         end
         local text = self.toggle[i]
         local face = Font:getFace(self.font_face, self.font_size)
-        local txt_width = RenderText:sizeUtf8Text(0, Screen:getWidth(), face, text, true, true).x
-        if  txt_width > real_item_width - item_padding then
-            text = RenderText:truncateTextByWidth(text, face, real_item_width - item_padding, true, true)
-        end
         local label = ToggleLabel:new{
             text = text,
             face = face,
+            max_width = real_item_width - item_padding,
         }
         local content = CenterContainer:new{
             dimen = Geom:new{

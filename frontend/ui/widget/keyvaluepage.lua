@@ -34,7 +34,6 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
-local RenderText = require("ui/rendertext")
 local Size = require("ui/size")
 local TextViewer = require("ui/widget/textviewer")
 local TextWidget = require("ui/widget/textwidget")
@@ -57,20 +56,12 @@ local KeyValueTitle = VerticalGroup:new{
 function KeyValueTitle:init()
     self.close_button = CloseButton:new{ window = self }
     local btn_width = self.close_button:getSize().w
-    local title_txt_width = RenderText:sizeUtf8Text(
-                                0, self.width, self.tface, self.title).x
-    local show_title_txt
-    if self.width < (title_txt_width + btn_width) then
-        show_title_txt = RenderText:truncateTextByWidth(
-                            self.title, self.tface, self.width-btn_width)
-    else
-        show_title_txt = self.title
-    end
     -- title and close button
     table.insert(self, OverlapGroup:new{
         dimen = { w = self.width },
         TextWidget:new{
-            text = show_title_txt,
+            text = self.title,
+            max_width = self.width - btn_width,
             face = self.tface,
         },
         self.close_button,
@@ -154,25 +145,54 @@ function KeyValueItem:init()
 
     local frame_padding = Size.padding.default
     local frame_internal_width = self.width - frame_padding * 2
+    -- Default widths (and position of value widget) if each text fits in 1/2 screen width
     local key_w = frame_internal_width / 2
     local value_w = frame_internal_width / 2
-    local key_w_rendered = RenderText:sizeUtf8Text(0, frame_internal_width, self.tface, self.key).x
-    local value_w_rendered = RenderText:sizeUtf8Text(0, frame_internal_width, self.cface, tvalue).x
-    local space_w_rendered = RenderText:sizeUtf8Text(0, frame_internal_width, self.cface, " ").x
+
+    local key_widget = TextWidget:new{
+        text = self.key,
+        max_width = frame_internal_width,
+        face = self.tface,
+    }
+    local value_widget = TextWidget:new{
+        text = tvalue,
+        max_width = frame_internal_width,
+        face = self.cface,
+    }
+    local key_w_rendered = key_widget:getWidth()
+    local value_w_rendered = value_widget:getWidth()
+
+    -- As both key_widget and value_width will be in a HorizontalGroup,
+    -- and key is always left aligned, we can just tweak the key width
+    -- to position the value_widget
+    local value_prepend_space = false
+    local value_align_right = false
+    local fit_right_align = true -- by default, really right align
+
     if key_w_rendered > key_w or value_w_rendered > value_w then
-        -- truncate key or value so they fit in one row
+        -- One (or both) does not fit in 1/2 width
         if key_w_rendered + value_w_rendered > frame_internal_width then
+            -- Both do not fit: one has to be truncated so they fit
             if key_w_rendered >= value_w_rendered then
+                -- Rare case: key larger than value.
+                -- We should have kept our keys small, smaller than 1/2 width.
+                -- If it is larger than value, it's that value is kinda small,
+                -- so keep the whole value, and truncate the key
                 key_w = frame_internal_width - value_w_rendered
-                self.show_key = RenderText:truncateTextByWidth(self.key, self.tface, frame_internal_width - value_w_rendered)
-                self.show_value = tvalue
             else
-                key_w = key_w_rendered + space_w_rendered
-                self.show_value = RenderText:truncateTextByWidth(tvalue, self.cface, frame_internal_width - key_w_rendered,
-                    false, false, true)
-                self.show_key = self.key
+                -- Usual case: value larger than key.
+                -- Keep our small key, fit the value in the remaining width,
+                -- prepend some space to separate them
+                key_w = key_w_rendered
+                value_prepend_space = true
             end
-            -- allow for displaying the non-truncated texts with Hold
+            value_align_right = true -- so the ellipsis touches the screen right border
+            if self.value_overflow_align ~= "right" and self.value_align ~= "right" then
+                -- Don't adjust the ellipsis to the screen right border,
+                -- so the left of text is aligned with other truncated texts
+                fit_right_align = false
+            end
+            -- Allow for displaying the non-truncated texts with Hold
             if Device:isTouchDevice() then
                 self.ges_events.Hold = {
                     GestureRange:new{
@@ -181,23 +201,42 @@ function KeyValueItem:init()
                     }
                 }
             end
-        -- misalign to fit all info
         else
+            -- Both can fit: break the 1/2 widths
             if self.value_overflow_align == "right" or self.value_align == "right" then
                 key_w = frame_internal_width - value_w_rendered
+                value_align_right = true
             else
-                key_w = key_w_rendered + space_w_rendered
+                key_w = key_w_rendered
+                value_prepend_space = true
             end
-            self.show_key = self.key
-            self.show_value = tvalue
         end
+        -- In all the above case, we set the right key_w to include any
+        -- needed in-between padding: value_w is what's left.
+        value_w = frame_internal_width - key_w
     else
         if self.value_align == "right" then
             key_w = frame_internal_width - value_w_rendered
+            value_w = value_w_rendered
+            value_align_right = true
         end
-        self.show_key = self.key
-        self.show_value = tvalue
     end
+
+    -- Adjust widgets' max widths and text as needed
+    if value_prepend_space then
+        value_widget:setText(" "..tvalue)
+    end
+    value_widget:setMaxWidth(value_w)
+    if fit_right_align and value_align_right and value_widget:getWidth() < value_w then
+        -- Because of truncation at glyph boundaries, value_widget
+        -- may be a tad smaller than the specified value_w:
+        -- add some padding to key_w so value is pushed to the screen right border
+        key_w = key_w + ( value_w - value_widget:getWidth() )
+    end
+    key_widget:setMaxWidth(key_w)
+
+    -- For debugging positionning:
+    -- value_widget = FrameContainer:new{ padding=0, margin=0, bordersize=1, value_widget }
 
     self[1] = FrameContainer:new{
         padding = frame_padding,
@@ -209,20 +248,14 @@ function KeyValueItem:init()
                     w = key_w,
                     h = self.height
                 },
-                TextWidget:new{
-                    text = self.show_key,
-                    face = self.tface,
-                }
+                key_widget,
             },
             LeftContainer:new{
                 dimen = {
                     w = value_w,
                     h = self.height
                 },
-                TextWidget:new{
-                    text = self.show_value,
-                    face = self.cface,
-                }
+                value_widget,
             }
         }
     }

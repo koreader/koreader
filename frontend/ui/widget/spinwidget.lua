@@ -12,7 +12,6 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local NumberPickerWidget = require("ui/widget/numberpickerwidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
-local RenderText = require("ui/rendertext")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
@@ -90,24 +89,16 @@ function SpinWidget:update()
 
     local close_button = CloseButton:new{ window = self, padding_top = Size.margin.title, }
     local btn_width = close_button:getSize().w + Size.padding.default * 2
-    local title_txt_width = RenderText:sizeUtf8Text(
-        0, self.width, self.title_face, self.title_text).x
-    local show_title_txt
-    if self.width < (title_txt_width + btn_width) then
-        show_title_txt = RenderText:truncateTextByWidth(
-            self.title_text, self.title_face, self.width - btn_width)
-    else
-        show_title_txt = self.title_text
-    end
+
     local value_title = FrameContainer:new{
         padding = Size.padding.default,
         margin = Size.margin.title,
         bordersize = 0,
         TextWidget:new{
-            text = show_title_txt,
+            text = self.title_text,
+            max_width = self.width - btn_width,
             face = self.title_face,
             bold = true,
-            width = self.width,
         },
     }
     local value_line = LineWidget:new{
