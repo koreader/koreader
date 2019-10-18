@@ -176,7 +176,6 @@ function Screensaver:excluded()
     if DocSettings:hasSidecarFile(lastfile) then
         local doc_settings = DocSettings:open(lastfile)
         exclude_ss = doc_settings:readSetting("exclude_screensaver")
-        doc_settings:close()
     end
     return exclude_ss or false
 end
@@ -260,7 +259,6 @@ function Screensaver:show(event, fallback_message)
         if DocSettings:hasSidecarFile(lastfile) then
             local doc_settings = DocSettings:open(lastfile)
             exclude = doc_settings:readSetting("exclude_screensaver")
-            doc_settings:close()
         end
         if exclude ~= true then
             if lfs.attributes(lastfile, "mode") == "file" then
@@ -306,7 +304,6 @@ function Screensaver:show(event, fallback_message)
                 screensaver_type = "message"
             end
             doc:close()
-            doc_settings:close()
         else
             screensaver_type = "message"
         end
