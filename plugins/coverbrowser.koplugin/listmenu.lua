@@ -563,7 +563,7 @@ function ListMenuItem:update()
                 if height < dimen.h then -- we fit !
                     break
                 else
-                    logger.dbg("recalculate title/author")
+                    logger.dbg(title, "recalculate title/author with", fontsize_title - 1)
                 end
                 -- If we don't fit, decrease both font sizes
                 fontsize_title = fontsize_title - 1
