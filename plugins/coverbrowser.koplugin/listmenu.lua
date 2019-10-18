@@ -258,8 +258,6 @@ function ListMenuItem:update()
             if bookinfo.cover_fetched then
                 -- trigger recalculation of thumbnail if size changed
                 if bookinfo.has_cover and bookinfo.cover_sizetag ~= "M" and bookinfo.cover_sizetag ~= cover_specs.sizetag then
-                    logger.dbg("ListMenuItem: thumbnail size changed from "
-                        .. (bookinfo.cover_sizetag or "nil") .. " to " .. (cover_specs.sizetag or "nil"))
                     if bookinfo.cover_bb then
                         bookinfo.cover_bb:free()
                     end
@@ -420,7 +418,6 @@ function ListMenuItem:update()
                 face = Font:getFace("cfont", fontsize_info),
                 fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
             }
-            logger.dbg("info font size", wfileinfo.face.size)
 
             local wright_width = math.max(wfileinfo:getSize().w, wpageinfo:getSize().w)
             local wright_right_padding = Screen:scaleBySize(10)
@@ -493,7 +490,7 @@ function ListMenuItem:update()
                         authors = { authors[1], T(_("%1 et al."), authors[2]) }
                     end
                     authors = table.concat(authors, "\n")
-                    -- Needs to fit 3 lines instead of 2
+                    -- as we'll fit 3 lines instead of 2, we can avoid some loops by starting from a lower font size
                     fontsize_title = _fontSize(17)
                     fontsize_authors = _fontSize(15)
                 end
@@ -518,7 +515,7 @@ function ListMenuItem:update()
                         authors = authors .. " - " .. bookinfo.series
                     elseif series_mode == "series_in_separate_line" then
                         authors = bookinfo.series .. "\n" .. authors
-                        -- Needs to fit 3 lines instead of 2
+                        -- as we'll fit 3 lines instead of 2, we can avoid some loops by starting from a lower font size
                         fontsize_title = _fontSize(17)
                         fontsize_authors = _fontSize(15)
                     end
@@ -574,10 +571,6 @@ function ListMenuItem:update()
                 end
             end
 
-            logger.dbg(title, wtitle:getSize().h, wtitle.face.size)
-            if wauthors then
-                logger.dbg("authors", wauthors:getSize().h, wauthors.face.size)
-            end
             local wmain = LeftContainer:new{
                 dimen = dimen,
                 VerticalGroup:new{
