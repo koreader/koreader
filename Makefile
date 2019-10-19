@@ -504,8 +504,7 @@ pot:
 	$(MAKE) -C l10n push
 
 po:
-	$(MAKE) -i -C l10n bootstrap
-	$(MAKE) -C l10n pull
+	git submodule update --remote l10n
 
 
 static-check:
