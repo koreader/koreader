@@ -31,9 +31,6 @@ luacov.stats.out
 trace-out.txt
 koreader-*
 
-l10n/*
-!l10n/Makefile
-!l10n/README.md
 i18n
 
 /.cproject
