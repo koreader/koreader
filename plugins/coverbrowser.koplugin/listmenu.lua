@@ -641,18 +641,18 @@ function ListMenuItem:update()
                 hint = " " .. _("(deleted)")
             end
             local text_widget
-            local fontsize_deleted = _fontSize(18)
+            local fontsize_no_bookinfo = _fontSize(18)
             repeat
-                logger.warn("create with font ", fontsize_deleted)
+                logger.warn("create with font ", fontsize_no_bookinfo)
                 text_widget = TextBoxWidget:new{
                     text = self.text .. hint,
-                    face = Font:getFace("cfont", fontsize_deleted),
+                    face = Font:getFace("cfont", fontsize_no_bookinfo),
                     width = dimen.w - 2 * Screen:scaleBySize(10),
                     alignment = "left",
                     fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
                 }
                 -- reduce font size for next loop, in case text widget is too large to fit into ListMenuItem
-                fontsize_deleted = fontsize_deleted - 1
+                fontsize_no_bookinfo = fontsize_no_bookinfo - 1
             until text_widget:getSize().h <= dimen.h
             widget = LeftContainer:new{
                 dimen = dimen,
