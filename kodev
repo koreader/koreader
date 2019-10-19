@@ -388,6 +388,7 @@ ${SUPPORTED_RELEASE_TARGETS}"
         shift 1
     done
 
+    check_submodules
     if [ "${ignore_translation}" -eq 0 ]; then
         if command -v tx>/dev/null; then
             make po || {
