@@ -640,17 +640,25 @@ function ListMenuItem:update()
             if self.file_deleted then -- unless file was deleted (can happen with History)
                 hint = " " .. _("(deleted)")
             end
+            local text_widget
+            local fontsize_deleted = _fontSize(18)
+            repeat
+                logger.warn("create with font ", fontsize_deleted)
+                text_widget = TextBoxWidget:new{
+                    text = self.text .. hint,
+                    face = Font:getFace("cfont", fontsize_deleted),
+                    width = dimen.w - 2 * Screen:scaleBySize(10),
+                    alignment = "left",
+                    fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
+                }
+                -- reduce font size for next loop, in case text widget is too large to fit into ListMenuItem
+                fontsize_deleted = fontsize_deleted - 1
+            until text_widget:getSize().h <= dimen.h
             widget = LeftContainer:new{
                 dimen = dimen,
                 HorizontalGroup:new{
                     HorizontalSpan:new{ width = Screen:scaleBySize(10) },
-                    TextBoxWidget:new{
-                        text = self.text .. hint,
-                        face = Font:getFace("cfont", _fontSize(18)),
-                        width = dimen.w - 2 * Screen:scaleBySize(10),
-                        alignment = "left",
-                        fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
-                    }
+                    text_widget
                 },
             }
         end
