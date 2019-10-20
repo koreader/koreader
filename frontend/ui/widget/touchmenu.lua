@@ -602,11 +602,16 @@ function TouchMenu:updateItems()
     self.page_info_right_chev:showHide(self.page_num > 1)
     self.page_info_left_chev:enableDisable(self.page > 1)
     self.page_info_right_chev:enableDisable(self.page < self.page_num)
-    local time_info_txt = os.date("%H:%M").." @ "
-    if Device:getPowerDevice():isCharging() then
-        time_info_txt = time_info_txt.."+"
+
+    local time_info_txt = os.date("%H:%M").." - "
+    local twelve_hr = G_reader_settings:isTrue("twelve_hour_time")
+    if twelve_hr then
+      time_info_txt = os.date("%I:%M %p").." - "
     end
     time_info_txt = time_info_txt..Device:getPowerDevice():getCapacity().."%"
+    if Device:getPowerDevice():isCharging() then
+        time_info_txt = time_info_txt .. " ⚡"
+    end
     self.time_info:setText(time_info_txt)
 
     -- recalculate dimen based on new layout
