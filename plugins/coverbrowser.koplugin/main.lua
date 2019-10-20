@@ -1,5 +1,6 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
+local InputDialog = require("ui/widget/inputdialog")
 local logger = require("logger")
 local _ = require("gettext")
 local BookInfoManager = require("bookinfomanager")
@@ -132,15 +133,43 @@ function CoverBrowser:addToMainMenu(menu_items)
             separator = true,
         },
         {
-            text = _("Shorten home directory to Home"),
+            text = _("Shorten home directory"),
             checked_func = function() return G_reader_settings:readSetting("home_dir_display_name") end,
             callback = function()
                 if G_reader_settings:readSetting("home_dir_display_name") then
-                    G_reader_settings:delSetting("home_dir_display_name")
-                    if FileManager.instance then FileManager.instance:reinit() end
+                  G_reader_settings:delSetting("home_dir_display_name")
+                  if FileManager.instance then FileManager.instance:reinit() end
                 else
-                    G_reader_settings:saveSetting("home_dir_display_name", _("Home"))
-                    if FileManager.instance then FileManager.instance:reinit() end
+                  local home_path_dialog
+                  home_path_dialog = InputDialog:new{
+                    title = _("Home directory name"),
+                    input = "",
+                    input_hint = _("Home"),
+                    input_type = "string",
+                    description = _("Displays in the File Browser when in the home folder instead of the full path"),
+                    buttons = {
+                      {
+                        {
+                          text = _("Cancel"),
+                          callback = function()
+                            UIManager:close(home_path_dialog)
+                            G_reader_settings:delSetting("home_dir_display_name")
+                          end,
+                          },
+                        {
+                          text = _("Save"),
+                          is_enter_default = true,
+                          callback = function()
+                            G_reader_settings:saveSetting("home_dir_display_name", home_path_dialog:getInputText())
+                            if FileManager.instance then FileManager.instance:reinit() end
+                            UIManager:close(home_path_dialog)
+                          end,
+                        }
+                      }
+                    }
+                  }
+                  UIManager:show(home_path_dialog)
+                  home_path_dialog:onShowKeyboard()
                 end
             end,
         },
