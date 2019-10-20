@@ -56,7 +56,7 @@ if Device:setDateTime() then
         text = _("Time and date"),
         sub_item_table = {
           {
-            text = _("12 Hour time"),
+            text = _("12 hour clock"),
             keep_menu_open = true,
             checked_func = function()
                 return G_reader_settings:isTrue("twelve_hour_time")
