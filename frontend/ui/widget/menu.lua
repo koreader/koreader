@@ -899,6 +899,9 @@ function Menu:updatePageInfo(select_number)
         end
         -- update page information
         self.page_info_text:setText(util.template(_("page %1 of %2"), self.page, self.page_num))
+        if self.page == self.page_num then
+          self.page_info_text:setText("");
+        end
         self.page_info_left_chev:showHide(self.page_num > 1)
         self.page_info_right_chev:showHide(self.page_num > 1)
         self.page_info_first_chev:showHide(self.page_num > 2)
