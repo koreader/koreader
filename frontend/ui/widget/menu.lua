@@ -1002,7 +1002,7 @@ end
 --]]
 function Menu:switchItemTable(new_title, new_item_table, itemnumber, itemmatch)
     if self.menu_title and new_title then
-        self.menu_title.text = new_title
+        self.menu_title:setText(new_title)
     end
 
     if itemnumber == nil then
