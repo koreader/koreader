@@ -40,7 +40,7 @@ function ReaderMenu:init()
             icon = "resources/icons/appbar.magnify.browse.png",
         },
         filemanager = {
-            icon = "resources/icons/appbar.home.png",
+            icon = "resources/icons/appbar.cabinet.files.png",
             remember = false,
             callback = function()
                 self:onTapCloseMenu()
