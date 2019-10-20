@@ -3,15 +3,20 @@ Widget for taking user input.
 
 Example:
 
-    local UIManager = require("ui/uimanager")
-    local _ = require("gettext")
+    local InputDialog = require("ui/widget/inputdialog")
+    local @{ui.uimanager|UIManager} = require("ui/uimanager")
+    local @{logger} = require("logger")
+    local @{gettext|_} = require("gettext")
+
     local sample_input
     sample_input = InputDialog:new{
         title = _("Dialog title"),
         input = "default value",
-        input_hint = "hint text",
+        -- A placeholder text shown in the text box.
+        input_hint = _("Hint text"),
         input_type = "string",
-        description = "Some more description",
+        -- A description shown above the input.
+        description = _("Some more description."),
         -- text_type = "password",
         buttons = {
             {
@@ -27,8 +32,8 @@ Example:
                     -- triggered after user press the enter key from keyboard
                     is_enter_default = true,
                     callback = function()
-                        print('Got user input as raw text:', sample_input:getInputText())
-                        print('Got user input as value:', sample_input:getInputValue())
+                        logger.dbg("Got user input as raw text:", sample_input:getInputText())
+                        logger.dbg("Got user input as value:", sample_input:getInputValue())
                     end,
                 },
             }
@@ -38,7 +43,7 @@ Example:
     sample_input:onShowKeyboard()
 
 To get a full screen text editor, use:
-    fullscreen = true, -- no need to provide any height and width
+    fullscreen = true, -- No need to provide any height and width.
     condensed = true,
     allow_newline = true,
     cursor_at_end = false,
@@ -48,20 +53,24 @@ To get a full screen text editor, use:
 
 To add |Save|Close| buttons, use:
     save_callback = function(content, closing)
-        ...deal with the edited content...
+        -- ...Deal with the edited content...
         if closing then
-            UIManager:nextTick( stuff to do when InputDialog closed if any )
+            UIManager:nextTick(
+                -- Stuff to do when InputDialog is closed, if anything.
+            )
         end
         return nil -- sucess, default notification shown
         return true, success_notif_text
         return false, error_infomsg_text
     end
+
 To additionally add a Reset button and have |Reset|Save|Close|, use:
     reset_callback = function()
         return original_content -- success
         return original_content, success_notif_text
         return nil, error_infomsg_text
     end
+
 If you don't need more buttons than these, use these options for consistency
 between dialogs, and don't provide any buttons.
 Text used on these buttons and their messages and notifications can be
