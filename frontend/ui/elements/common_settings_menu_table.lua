@@ -56,7 +56,7 @@ if Device:setDateTime() then
         text = _("Time and date"),
         sub_item_table = {
           {
-            text = _("12 hour clock"),
+            text = _("12-hour clock"),
             -- does the menu need to be kept open?
             keep_menu_open = true,
             checked_func = function()
