@@ -222,7 +222,7 @@ function ReaderFooter:init()
         local mode_name
         for i = 0, #mode_tbl do
             mode_name = mode_tbl[i]
-            if mode_name == "wifi_status" and not Device:isAndroid() then
+            if mode_name == "wifi_status" and not Device:hasWifiManager() then
                 do end -- luacheck: ignore 541
             elseif mode_name == "frontlight" and not Device:hasFrontlight() then
                 do end -- luacheck: ignore 541
@@ -1181,7 +1181,7 @@ function ReaderFooter:addToMainMenu(menu_items)
         table.insert(sub_items, getMinibarOption("frontlight"))
     end
     table.insert(sub_items, getMinibarOption("mem_usage"))
-    if Device:isAndroid() then
+    if Device:hasWifiManager() then
         table.insert(sub_items, getMinibarOption("wifi_status"))
     end
 end
