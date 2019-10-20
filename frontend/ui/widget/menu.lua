@@ -902,7 +902,7 @@ function Menu:updatePageInfo(select_number)
         if self.page_num > 1 then
             self.page_info_text:setText(util.template(_("Page %1 of %2"), self.page, self.page_num))
         else
-          self.page_info_text:setText("");
+            self.page_info_text:setText("");
         end
         self.page_info_left_chev:showHide(self.page_num > 1)
         self.page_info_right_chev:showHide(self.page_num > 1)
