@@ -595,9 +595,9 @@ function TouchMenu:updateItems()
     table.insert(self.item_group, self.footer)
     -- @translators %1 is the current page. %2 is the total number of pages. In some languages a good translation might need to reverse this order, for instance: "Total %2, page %1".
     if self.page_num > 1 then
-      self.page_info_text.text = util.template(_("Page %1 of %2"), self.page, self.page_num)
+      self.page_info_text:setText(util.template(_("Page %1 of %2"), self.page, self.page_num))
     else
-      self.page_info_text:setText("");
+      self.page_info_text:setText("")
     end
     self.page_info_left_chev:showHide(self.page_num > 1)
     self.page_info_right_chev:showHide(self.page_num > 1)
