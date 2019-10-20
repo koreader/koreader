@@ -139,7 +139,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                     G_reader_settings:delSetting("home_dir_display_name")
                     if FileManager.instance then FileManager.instance:reinit() end
                 else
-                    G_reader_settings:saveSetting("home_dir_display_name", "Home")
+                    G_reader_settings:saveSetting("home_dir_display_name", _("Home"))
                     if FileManager.instance then FileManager.instance:reinit() end
                 end
             end,
