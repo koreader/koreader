@@ -469,7 +469,8 @@ function NetworkSetting:init()
                 UIManager:close(self, 'ui', self.dimen)
             end
             UIManager:show(InfoMessage:new{
-                text = T(_("Connected to network %1"), connected_item.info.ssid)
+                text = T(_("Connected to network %1"), connected_item.info.ssid),
+                timeout = 3,
             })
             if self.connect_callback then
                 self.connect_callback()
