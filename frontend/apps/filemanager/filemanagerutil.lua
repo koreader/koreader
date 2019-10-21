@@ -33,7 +33,7 @@ function filemanagerutil.abbreviate(path)
         local len = home_dir:len()
         local start = path:sub(1, len)
         if start == home_dir then
-            return path:sub(len+1)
+            return path:sub(len+2)
         end
     end
     return path
