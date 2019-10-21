@@ -607,11 +607,11 @@ function TouchMenu:updateItems()
 
     local time_info_txt
     if G_reader_settings:isTrue("twelve_hour_clock") then
-        time_info_txt = os.date("%I:%M %p").." – "
+        time_info_txt = os.date("%I:%M %p")
     else
-        time_info_txt = os.date("%H:%M").." – "
+        time_info_txt = os.date("%H:%M")
     end
-    time_info_txt = time_info_txt..Device:getPowerDevice():getCapacity().."%"
+    time_info_txt = " – " .. time_info_txt..Device:getPowerDevice():getCapacity().."%"
     if Device:getPowerDevice():isCharging() then
         time_info_txt = time_info_txt .. " ⚡"
     end
