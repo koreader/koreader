@@ -9,26 +9,27 @@ platform. Feel free to open issues in our issue tracker if you need further help
 
 ## Output Module
 
-KOReader uses framebuffer to control EInk devices, so the output module here is
+KOReader uses the Linux framebuffer to control eInk devices, so the output module here is
 [base/ffi/framebuffer_einkfb.lua](https://github.com/koreader/koreader-base/blob/master/ffi/framebuffer_einkfb.lua).
 
 Following are the framebuffers that `framebuffer_einkfb.lua` currently supports:
 
-  * 4BPP inverted framebuffer
-  * 16 scale 8BPP inverted framebuffer
-  * 16 scale 8BPP framebuffer
+  * 4BPP framebuffer (palette is always inverted)
+  * 16c 8BPP framebuffer (inverted grayscale palette)
+  * 16c 8BPP framebuffer
 
-For 4BPP framebuffer, it means every pixel is represented with 4 bits, so we
-have 2 pixels in 1 byte. So the color depth is 16. The inverted part means all
-the bits are flipped in the framebuffer. For example, two pixels `[0x00, 0xf0]`
-will be stored as `0xff0f` in framebuffer.
+For 4BPP framebuffers, it means every pixel is represented with 4 bits, so we
+have 2 pixels in 1 byte. That also effectively limits the palette to 16 colors.
+The inverted part means all the bits are flipped (`^ 0xFF`) in the framebuffer.
+For example, two pixels `[0x00, 0xF0]` will be stored as `0xFF0F` in framebuffer.
 
-For 16 scale 8BPP framebuffer, it means each pixel is instead stored in 1 byte,
-but the color depth is still 16 (4bits). Since 1 byte has 8 bits, so to fill
-up the remaining space, the most significant 4 bits is a copy of the least
-significant one. For example, pixel with grey scale 15 will be represented as
-`0xffff`. If it's a inverted 16 scale 8BPP framebuffer, then all the bits are
-flipped in the same way as 4BPP inverted framebuffer does.
+For 8BPP framebuffers, it means each pixel is instead stored in 1 byte.
+The effective color palette of the display is still limited to 16 shades of gray:
+it will do a decimating quantization pass on its own on refresh.
+So, while a black pixel will indeed be `0x00`, any color value < `0x11`
+(the next effective shade of gray in the palette) will be displayed as pure black, too.
+If the palette is expected to be inverted, then all the bits are
+flipped in the same way as done on a 4BPP framebuffer.
 
 If your device's framebuffer does not fit into any of the categories above,
 then you need to add a new transformation function in `framebuffer_einkfb.lua`.
