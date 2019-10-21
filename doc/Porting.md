@@ -31,19 +31,7 @@ So, while a black pixel will indeed be `0x00`, any color value < `0x11`
 If the palette is expected to be inverted, then all the bits are
 flipped in the same way as done on a 4BPP framebuffer.
 
-If your device's framebuffer does not fit into any of the categories above,
-then you need to add a new transformation function in `framebuffer_einkfb.lua`.
-
-The `framebuffer_einkfb.lua` module works in following ways for non 4BPP framebuffers:
-
-  * a shadow buffer is created and structured as 4BPP inverted framebuffer.
-  * all updates on screen bitmap are temporally written into the shadow buffer.
-  * each time we want to reflect the updated bitmap on screen, we translate the shadow buffer into a format that the real framebuffer understands and write into the mapped memory region. (varies on devices)
-  * call ioctl system call to refresh EInk screen. (varies on devices)
-
-KOReader will handle the 4BPP shadow buffer for you, all you need to do is to
-teach `framebuffer_einkfb.lua` how to control the EInk screen and translate the 4BPP inverted
-bitmap into the format that your framebuffer understands.
+The actual framebuffer content is then refreshed (i.e., displayed) via device-specific ioctls.
 
 ## Input Module
 
