@@ -63,7 +63,7 @@ if Device:setDateTime() then
             end,
             callback = function()
                 local twelve_hr = G_reader_settings:isTrue("twelve_hour_clock")
-                if twelve_hr then
+                if G_reader_settings:isTrue("twelve_hour_clock") then
                     G_reader_settings:flipFalse("twelve_hour_clock")
                 else
                     G_reader_settings:flipTrue("twelve_hour_clock")
