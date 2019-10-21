@@ -6,6 +6,7 @@ menu_items and a separate menu order.
 local DataStorage = require("datastorage")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local next = next
 local _ = require("gettext")
 
 local separator_id = "----------------------------"
@@ -122,7 +123,18 @@ function MenuSorter:sort(item_table, order)
                     local sub_menu_content = menu_table[sub_menu]
                     sub_menu_position.text = sub_menu_content.text
                     sub_menu_position.hold_callback = sub_menu_content.hold_callback
-                    sub_menu_position.sub_item_table = sub_menu_content
+                    -- Prevent double reference, mainly to empty the table for the next() check.
+                    sub_menu_content.id = nil
+                    sub_menu_content.text = nil
+                    sub_menu_content.hold_callback = nil
+                    -- Attach submenu if there's legitimate content left after the above cleanup.
+                    if next(sub_menu_content) then
+                        sub_menu_position.sub_item_table = sub_menu_content
+                    else
+                        -- We somehow ended up with an empty submenu, best to disable it.
+                        -- Cf. <https://github.com/koreader/koreader/issues/5461>.
+                        sub_menu_position.enabled = false
+                    end
                     -- remove reference from top level output
                     menu_table[sub_menu] = nil
                     -- remove reference from input so it won't show up as orphaned
