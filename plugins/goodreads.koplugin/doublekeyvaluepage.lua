@@ -17,7 +17,6 @@ local LeftContainer = require("ui/widget/container/topcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local LuaSettings = require("luasettings")
 local OverlapGroup = require("ui/widget/overlapgroup")
-local RenderText = require("ui/rendertext")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
@@ -39,20 +38,12 @@ local DoubleKeyValueTitle = VerticalGroup:new{
 function DoubleKeyValueTitle:init()
     self.close_button = CloseButton:new{ window = self }
     local btn_width = self.close_button:getSize().w
-    local title_txt_width = RenderText:sizeUtf8Text(
-                                0, self.width, self.tface, self.title).x
-    local show_title_txt
-    if self.width < (title_txt_width + btn_width) then
-        show_title_txt = RenderText:truncateTextByWidth(
-                            self.title, self.tface, self.width - btn_width)
-    else
-        show_title_txt = self.title
-    end
     -- title and close button
     table.insert(self, OverlapGroup:new{
         dimen = { w = self.width },
         TextWidget:new{
-            text = show_title_txt,
+            text = self.title,
+            max_width = self.width - btn_width,
             face = self.tface,
         },
         self.close_button,
@@ -114,7 +105,6 @@ local DoubleKeyValueItem = InputContainer:new{
 
 function DoubleKeyValueItem:init()
     self.dimen = Geom:new{align = "left", w = self.width, h = self.height}
-    local padding = Screen:scaleBySize(20)
     if self.callback and Device:isTouchDevice() then
         self.ges_events.Tap = {
             GestureRange:new{
@@ -123,18 +113,8 @@ function DoubleKeyValueItem:init()
             }
         }
     end
-    local key_w = RenderText:sizeUtf8Text(0, self.width, self.cface_down, self.key).x
-    local value_w = RenderText:sizeUtf8Text(0, self.width, self.cface_up, self.value).x
-    if key_w > self.width - 2*padding then
-        self.show_key = RenderText:truncateTextByWidth(self.key, self.cface_down, self.width - 2*padding)
-    else
-        self.show_key = self.key
-    end
-    if value_w > self.width - 2*padding then
-        self.show_value = RenderText:truncateTextByWidth(self.value, self.cface_up, self.width - 2*padding)
-    else
-        self.show_value = self.value
-    end
+    local padding = Screen:scaleBySize(20)
+    local max_width = self.width - 2*padding
     local h = self.dimen.h / 2
     local w = self.dimen.w
     self[1] = FrameContainer:new{
@@ -147,7 +127,8 @@ function DoubleKeyValueItem:init()
                 padding = 0,
                 dimen = Geom:new{ h = h, w = w },
                 TextWidget:new{
-                    text = self.show_value,
+                    text = self.value,
+                    max_width = max_width,
                     face = self.cface_up,
                 }
             },
@@ -155,7 +136,8 @@ function DoubleKeyValueItem:init()
                 padding = 0,
                 dimen = Geom:new{ h = h, w = w },
                 TextWidget:new{
-                    text = self.show_key,
+                    text = self.key,
+                    max_width = max_width,
                     face = self.cface_down,
                 }
             }

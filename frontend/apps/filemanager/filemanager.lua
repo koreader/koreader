@@ -50,10 +50,6 @@ local function restoreScreenMode()
     end
 end
 
-local function truncatePath(text)
-    return FileChooser:truncatePath(text)
-end
-
 local FileManager = InputContainer:extend{
     title = _("KOReader"),
     root_path = lfs.currentdir(),
@@ -110,7 +106,9 @@ function FileManager:init()
 
     self.path_text = TextWidget:new{
         face = Font:getFace("xx_smallinfofont"),
-        text = truncatePath(filemanagerutil.abbreviate(self.root_path)),
+        text = filemanagerutil.abbreviate(self.root_path),
+        max_width = Screen:getWidth() - 2*Size.padding.small,
+        truncate_left = true,
     }
 
     self.banner = FrameContainer:new{
@@ -177,7 +175,7 @@ function FileManager:init()
     self.focused_file = nil -- use it only once
 
     function file_chooser:onPathChanged(path)  -- luacheck: ignore
-        FileManager.instance.path_text:setText(truncatePath(filemanagerutil.abbreviate(path)))
+        FileManager.instance.path_text:setText(filemanagerutil.abbreviate(path))
         UIManager:setDirty(FileManager.instance, function()
             return "ui", FileManager.instance.path_text.dimen, FileManager.instance.dithered
         end)

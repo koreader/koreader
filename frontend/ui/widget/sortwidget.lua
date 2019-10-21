@@ -12,7 +12,6 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
-local RenderText = require("ui/rendertext")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
@@ -33,20 +32,12 @@ local SortTitleWidget = VerticalGroup:new{
 function SortTitleWidget:init()
     self.close_button = CloseButton:new{ window = self }
     local btn_width = self.close_button:getSize().w
-    local title_txt_width = RenderText:sizeUtf8Text(
-                                0, self.width, self.tface, self.title).x
-    local show_title_txt
-    if self.width < (title_txt_width + btn_width) then
-        show_title_txt = RenderText:truncateTextByWidth(
-                            self.title, self.tface, self.width-btn_width)
-    else
-        show_title_txt = self.title
-    end
     -- title and close button
     table.insert(self, OverlapGroup:new{
         dimen = { w = self.width },
         TextWidget:new{
-            text = show_title_txt,
+            text = self.title,
+            max_width = self.width - btn_width,
             face = self.tface,
         },
         self.close_button,
@@ -124,10 +115,6 @@ function SortItemWidget:init()
 
     local frame_padding = Size.padding.default
     local frame_internal_width = self.width - frame_padding * 2
-    local text_rendered = RenderText:sizeUtf8Text(0, self.width, self.tface, self.text).x
-    if text_rendered > frame_internal_width then
-        self.text = RenderText:truncateTextByWidth(self.text, self.tface, frame_internal_width)
-    end
 
     self[1] = FrameContainer:new{
         padding = 0,
@@ -139,6 +126,7 @@ function SortItemWidget:init()
             },
             TextWidget:new{
                 text = self.text,
+                max_width = frame_internal_width,
                 face = self.tface,
             }
         },

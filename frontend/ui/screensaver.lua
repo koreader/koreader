@@ -459,7 +459,6 @@ function Screensaver:addOverlayMessage(widget, text)
     local Font = require("ui/font")
     local FrameContainer = require("ui/widget/container/framecontainer")
     local OverlapGroup = require("ui/widget/overlapgroup")
-    local RenderText = require("ui/rendertext")
     local RightContainer = require("ui/widget/container/rightcontainer")
     local Size = require("ui/size")
     local TextBoxWidget = require("ui/widget/textboxwidget")
@@ -468,15 +467,13 @@ function Screensaver:addOverlayMessage(widget, text)
     local face = Font:getFace("infofont")
     local screen_w, screen_h = Screen:getWidth(), Screen:getHeight()
 
-    local textw
+    local textw = TextWidget:new{
+        text = text,
+        face = face,
+    }
     -- Don't make our message reach full screen width
-    local tsize = RenderText:sizeUtf8Text(0, screen_w, face, text)
-    if tsize.x < screen_w * 0.9 then
-        textw = TextWidget:new{
-            text = text,
-            face = face,
-        }
-    else -- if text too wide, use TextBoxWidget for multi lines display
+    if textw:getWidth() > screen_w * 0.9 then
+        -- Text too wide: use TextBoxWidget for multi lines display
         textw = TextBoxWidget:new{
             text = text,
             face = face,

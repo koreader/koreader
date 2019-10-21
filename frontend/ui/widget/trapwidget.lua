@@ -18,7 +18,6 @@ local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
-local RenderText = require("ui/rendertext")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
@@ -59,16 +58,14 @@ function TrapWidget:init()
         }
     end
     if self.text then
-        local textw
+        local textw = TextWidget:new{
+            text = self.text,
+            face = self.face,
+        }
         -- Don't make our message reach full screen width, so
         -- it looks like popping from bottom left corner
-        local tsize = RenderText:sizeUtf8Text(0, Screen:getWidth(), self.face, self.text)
-        if tsize.x < Screen:getWidth() * 0.9 then
-            textw = TextWidget:new{
-                text = self.text,
-                face = self.face,
-            }
-        else -- if text too wide, use TextBoxWidget for multi lines display
+        if textw:getWidth() > Screen:getWidth() * 0.9 then
+            -- Text too wide: use TextBoxWidget for multi lines display
             textw = TextBoxWidget:new{
                 text = self.text,
                 face = self.face,
