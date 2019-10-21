@@ -43,7 +43,7 @@ For 4bpp framebuffers, it means every pixel is represented with 4 bits, so we
 have 2 pixels in 1 byte. That also effectively limits the palette to 16 colors.
 The inverted part means that every pixel's color value is flipped (`^ 0xFF`).
 For example, two pixels `0x00` and `0xF0` will be flipped to `0xFF` and `0x0F`,
-before being packed to accomodate the framebuffer's pixel format.
+before being packed to accomodate the framebuffer's pixel format (here, [into a single byte](https://github.com/NiLuJe/FBInk/blob/4f0230b17c480cdc75dd5497fddf33937781c812/fbink.c#L106-L133)).
 
 For 8bpp framebuffers, it means each pixel is instead stored in 1 byte, making addressing much simpler.
 The effective color palette of the display is still limited to 16 shades of gray:
