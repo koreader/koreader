@@ -33,7 +33,7 @@ Install the `libstdc++-static`, `SDL` and `SDL-devel` packages using DNF:
 sudo dnf install libstdc++-static SDL SDL-devel
 ```
 
-### MacOS
+### macOS
 
 Install the prerequisites using [Homebrew](https://brew.sh/):
 
@@ -43,12 +43,14 @@ sdl2 lua@5.1 luarocks gettext pkg-config wget md5sha1sum
 echo 'export PATH="/usr/local/opt/gettext/bin:$PATH"' >> "$HOME"/.bash_profile
 ```
 
-If you run into a gettext error while building glib, try `brew link --force gettext` to override the built-in Mac OS BSD gettext with GNU GetText.
+If you run into a gettext error while building glib, try `brew link --force gettext` to override the built-in macOS BSD gettext with GNU gettext.
 
-*Note:* in Mojave (10.14) you need to set a minimum deployment version higher than 10.04. Otherwise you'll get the error `ld: library not found for -lgcc_s.10.4`.
+*Note:* With current XCode versions, you *will* need to set a minimum deployment version higher than `10.04`. Otherwise, you'll hit various linking errors related to missing unwinding libraries/symbols.
+On Mojave, `10.09` has been known to behave with XCode 10, And `10.14` with XCode 11. When in doubt, go with your current macOS version.
 ```
 export MACOSX_DEPLOYMENT_TARGET=10.09
 ```
+*Note:* On Catalina (10.15), you will currently *NOT* want to be deploying for 10.15, as [XCode is currently broken in that configuration](https://forums.developer.apple.com/thread/121887)! (i.e., deploy for `10.14` instead).
 
 
 ## Getting the source
@@ -107,7 +109,7 @@ Once you have the emulator ready to rock you can [build for other platforms too]
 ## Testing
 
 You may need to check out the [circleci config file][circleci-conf] to setup up
-a proper testing environment. 
+a proper testing environment.
 
 Briefly, you need to install `luarocks` and then install `busted` and `ansicolors` with `luarocks`. The "eng" language data file for tesseract-ocr is also need to test OCR functionality. Finally, make sure that `luajit` in your system is at least of version 2.0.2.
 
