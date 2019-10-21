@@ -202,8 +202,12 @@ function GetText_mt.__index.changeLang(new_lang)
                     local plurals = plural_forms:match("%((.*)%)")
 
                     if not plurals then
-                        -- we might be dealing with a language without plurals
-                        plurals = plural_forms:match("plural=(0)")
+                        -- Some languages (e.g., Arabic) may not use parentheses.
+                        -- However, the following more inclusive match is more likely
+                        -- to accidentally include junk and seldom relevant.
+                        -- We might also be dealing with a language without plurals.
+                        -- That would look like `plural=0`.
+                        plurals = plural_forms:match("plural=(.*)")
                     end
 
                     if plurals:find("[^n!=%%<>&:%(%)|?0-9 ]") then
