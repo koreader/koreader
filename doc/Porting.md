@@ -31,22 +31,22 @@ KOReader uses the Linux framebuffer to control eInk devices, so the output modul
 
 Following are the framebuffers that `framebuffer_einkfb.lua` currently supports:
 
-  * 4BPP framebuffer (palette is always inverted)
-  * 16c 8BPP framebuffer (inverted grayscale palette)
-  * 16c 8BPP framebuffer
+  * 4bpp framebuffer (palette is always inverted)
+  * 16c 8bpp framebuffer (inverted grayscale palette)
+  * 16c 8bpp framebuffer
 
-For 4BPP framebuffers, it means every pixel is represented with 4 bits, so we
+For 4bpp framebuffers, it means every pixel is represented with 4 bits, so we
 have 2 pixels in 1 byte. That also effectively limits the palette to 16 colors.
 The inverted part means all the bits are flipped (`^ 0xFF`) in the framebuffer.
 For example, two pixels `[0x00, 0xF0]` will be stored as `[0xFF, 0x0F]` in framebuffer.
 
-For 8BPP framebuffers, it means each pixel is instead stored in 1 byte, making addressing much simpler.
+For 8bpp framebuffers, it means each pixel is instead stored in 1 byte, making addressing much simpler.
 The effective color palette of the display is still limited to 16 shades of gray:
 it will do a decimating quantization pass on its own on refresh.
 So, while a black pixel will indeed be `0x00`, any color value < `0x11`
 (the next effective shade of gray in the palette) will be displayed as pure black, too.
 If the palette is expected to be inverted, then all the bits are
-flipped in the same way as done on a 4BPP framebuffer.
+flipped in the same way as done on a 4bpp framebuffer.
 
 The actual framebuffer content is then refreshed (i.e., displayed) via device-specific ioctls.
 
