@@ -59,14 +59,10 @@ if Device:setDateTime() then
             text = _("12-hour clock"),
             keep_menu_open = true,
             checked_func = function()
-                return G_reader_settings:isTrue("twelve_hour_clock")
+                return G_reader_settings:nilOrTrue("twelve_hour_clock")
             end,
             callback = function()
-                if G_reader_settings:isTrue("twelve_hour_clock") then
-                    G_reader_settings:flipFalse("twelve_hour_clock")
-                else
-                    G_reader_settings:flipTrue("twelve_hour_clock")
-                end
+                G_reader_settings:flipNilOrTrue("twelve_hour_clock")
             end,
             },
             {

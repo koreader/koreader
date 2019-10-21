@@ -25,7 +25,7 @@ end
 
 function filemanagerutil.abbreviate(path)
     if not path then return "" end
-    if G_reader_settings:isTrue("shorten_home_dir") then
+    if G_reader_settings:nilOrTrue("shorten_home_dir") then
         local home_dir = G_reader_settings:readSetting("home_dir") or filemanagerutil.getDefaultDir()
         if path == home_dir then
             return _("Home")

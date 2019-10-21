@@ -605,7 +605,7 @@ function TouchMenu:updateItems()
     self.page_info_right_chev:enableDisable(self.page < self.page_num)
 
     local time_info_txt
-    if G_reader_settings:isTrue("twelve_hour_clock") then
+    if G_reader_settings:nilOrTrue("twelve_hour_clock") then
         time_info_txt = os.date("%I:%M %p")
     else
         time_info_txt = os.date("%H:%M")
