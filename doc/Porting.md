@@ -64,9 +64,9 @@ Note that on most devices, a [C version](https://github.com/koreader/koreader-ba
 
 ## Input Module
 
-We have a `input.c` module in [koreader-base][kb-framework] that reads input
-events from Linux's input system and pass to Lua frontend. Basically, you don't
-need to change on that module because it should support most of the events.
+We have an `input.c` module in [koreader-base][kb-framework] that reads input
+events from Linux's input system and pass it on to the Lua frontend.
+Basically, you don't need to change that module because it should support most of the events.
 
 For this part, the file you have to hack on is [`koreader/frontend/ui/input.lua`](https://github.com/koreader/koreader/blob/master/frontend/ui/input.lua).
 
@@ -74,10 +74,11 @@ Firstly, you need to tell which input device to open on KOReader start. All the
 input devices are opened in `Input:init()` function.
 
 Next, you might need to define `Input:eventAdjustHook()` function in
-`Input:init()` method. We use this hook function to translates events into a
-format that KOReader understands. You can look at the KindleTouch initialization code for real example.
+`Input:init()` method. We use this hook function to translate events into a
+format that KOReader understands. You can look at the KindleTouch initialization code for a real-world example.
 
-For Kobo devices (Mini, Touch, Glo and Aura HD) the function `Input:eventAdjustHook()` was skipped and the functions `Input:init()` and `Input:handleTypeBTouchEv` were changed to allow the single touch protocol. For Kobo Aura with multitouch support an extra function `Input:handlePhoenixTouchEv` was added.
+For some Kobo devices (Mini, Touch, Glo and Aura HD) the function `Input:eventAdjustHook()` was skipped and the functions `Input:init()` and `Input:handleTypeBTouchEv` were changed to accomodate for the single touch protocol.
+For the Kobo Aura with multitouch support, an extra function `Input:handlePhoenixTouchEv` was added.
 
 Linux supports two kinds of Multi-touch protocols:
 
