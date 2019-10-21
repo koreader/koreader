@@ -81,7 +81,7 @@ Next, you might need to define `Input:eventAdjustHook()` function in
 format that KOReader understands. You can look at the KindleTouch initialization code for a real-world example.
 
 For some Kobo devices (Mini, Touch, Glo and Aura HD) the function `Input:eventAdjustHook()` was skipped and the functions `Input:init()` and `Input:handleTypeBTouchEv()` were changed to accomodate for the single touch protocol.
-For the Kobo Aura with multitouch support, an extra function `Input:handlePhoenixTouchEv()` was added.
+For the Kobo Aura (and others with the same kernel quirks) with multitouch support, an extra function `Input:handlePhoenixTouchEv()` was added.
 
 Linux supports two kinds of Multi-touch protocols:
 
