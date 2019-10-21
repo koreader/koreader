@@ -596,9 +596,9 @@ function TouchMenu:updateItems()
     -- @translators %1 is the current page. %2 is the total number of pages. In some languages a good translation might need to reverse this order, for instance: "Total %2, page %1".
     -- Don't show page x of x if there is only one page.
     if self.page_num > 1 then
-      self.page_info_text:setText(util.template(_("Page %1 of %2"), self.page, self.page_num))
+        self.page_info_text:setText(util.template(_("Page %1 of %2"), self.page, self.page_num))
     else
-      self.page_info_text:setText("")
+        self.page_info_text:setText("")
     end
     self.page_info_left_chev:showHide(self.page_num > 1)
     self.page_info_right_chev:showHide(self.page_num > 1)
@@ -608,7 +608,7 @@ function TouchMenu:updateItems()
     local time_info_txt = os.date("%H:%M").." – "
     local twelve_hr = G_reader_settings:isTrue("twelve_hour_clock")
     if twelve_hr then
-      time_info_txt = os.date("%I:%M %p").." – "
+        time_info_txt = os.date("%I:%M %p").." – "
     end
     time_info_txt = time_info_txt..Device:getPowerDevice():getCapacity().."%"
     if Device:getPowerDevice():isCharging() then
