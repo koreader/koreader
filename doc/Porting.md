@@ -19,7 +19,7 @@ For 8bpp, we assume the grayscale palette is NOT inverted, although support for 
 At 32bpp, we generally assume the pixel format is BGRA, and we honor Alpha, despite it being effectively ignored by the display (see Kobos).
 At 16bpp, we assume the pixel format is RGB565.
 
-For obvious performance reasons, we prefer 8bpp, and we will attempt to enforce that on devices which are not natively running at that depth (i.e., Kobos).
+For obvious performance reasons, we prefer 8bpp, and we will attempt to enforce that on devices which are not natively running at that depth (i.e., [on Kobos](https://github.com/koreader/koreader/blob/d1cd5e7ad4283611c57007b2c2d3dd5f7dab7057/platform/kobo/koreader.sh#L138-L186)).
 As explained below, the same considerations should be kept in mind regarding the effective 16c palette of eInk screens.
 When we're in control of the data, we attempt to always use "perfect" in-palette colors (c.f., the [COLOR constants](https://github.com/koreader/koreader-base/blob/a1fc4e43b7cce7a76b13224e145f9bada343d8ea/ffi/blitbuffer.lua#L1881-L1889) in the BlitBuffer module).
 Otherwise, when there'd be signficiant gain in doing so (i.e., when displaying mainly image content), we attempt to make use of dithering,
