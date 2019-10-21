@@ -5,6 +5,8 @@ This module contains miscellaneous helper functions for FileManager
 local Device = require("device")
 local DocSettings = require("docsettings")
 local util = require("ffi/util")
+local _ = require("gettext")
+local util = require("util")
 
 local filemanagerutil = {}
 
@@ -24,13 +26,16 @@ end
 
 function filemanagerutil.abbreviate(path)
     if not path then return "" end
-    local home_dir_name = G_reader_settings:readSetting("home_dir_display_name")
-    if home_dir_name ~= nil then
+    if G_reader_settings:isTrue("shorten_home_dir") then
         local home_dir = G_reader_settings:readSetting("home_dir") or filemanagerutil.getDefaultDir()
+        if path == home_dir then
+            return home_dir:sub(util.lastIndexOf(home_dir, "/")+1)
+            --return _("Home")
+        end
         local len = home_dir:len()
         local start = path:sub(1, len)
         if start == home_dir then
-            return home_dir_name .. path:sub(len+1)
+            return path:sub(len+1)
         end
     end
     return path

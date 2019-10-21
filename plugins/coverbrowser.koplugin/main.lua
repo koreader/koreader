@@ -136,41 +136,12 @@ function CoverBrowser:addToMainMenu(menu_items)
             text = _("Shorten home directory"),
             checked_func = function() return G_reader_settings:readSetting("home_dir_display_name") end,
             callback = function()
-                if G_reader_settings:readSetting("home_dir_display_name") then
-                  G_reader_settings:delSetting("home_dir_display_name")
-                  if FileManager.instance then FileManager.instance:reinit() end
+                if G_reader_settings:isTrue("shorten_home_dir") then
+                    G_reader_settings:flipFalse("shorten_home_dir")
                 else
-                  local home_path_dialog
-                  home_path_dialog = InputDialog:new{
-                    title = _("Home directory name"),
-                    input = "",
-                    input_hint = _("Home"),
-                    input_type = "string",
-                    description = _("Displays in the File Browser when in the home folder instead of the full path"),
-                    buttons = {
-                      {
-                        {
-                          text = _("Cancel"),
-                          callback = function()
-                            UIManager:close(home_path_dialog)
-                            G_reader_settings:delSetting("home_dir_display_name")
-                          end,
-                          },
-                        {
-                          text = _("Save"),
-                          is_enter_default = true,
-                          callback = function()
-                            G_reader_settings:saveSetting("home_dir_display_name", home_path_dialog:getInputText())
-                            if FileManager.instance then FileManager.instance:reinit() end
-                            UIManager:close(home_path_dialog)
-                          end,
-                        }
-                      }
-                    }
-                  }
-                  UIManager:show(home_path_dialog)
-                  home_path_dialog:onShowKeyboard()
+                    G_reader_settings:flipTrue("shorten_home_dir")
                 end
+                if FileManager.instance then FileManager.instance:reinit() end
             end,
         },
         {
