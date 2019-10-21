@@ -611,7 +611,7 @@ function TouchMenu:updateItems()
     else
         time_info_txt = os.date("%H:%M")
     end
-    time_info_txt = " – " .. time_info_txt..Device:getPowerDevice():getCapacity().."%"
+    time_info_txt = time_info_txt .. " – " .. Device:getPowerDevice():getCapacity().."%"
     if Device:getPowerDevice():isCharging() then
         time_info_txt = time_info_txt .. " ⚡"
     end
