@@ -898,7 +898,6 @@ function Menu:updatePageInfo(select_number)
             self.selected = { x = 1, y = select_number }
         end
         -- update page information
-        -- don't show page x of x if there is only one page
         if self.page_num > 1 then
             self.page_info_text:setText(util.template(_("Page %1 of %2"), self.page, self.page_num))
         else
