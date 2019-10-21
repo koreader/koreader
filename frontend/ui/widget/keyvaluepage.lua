@@ -498,7 +498,7 @@ function KeyValuePage:_populateItems()
         table.insert(self.main_content,
                      VerticalSpan:new{ width = self.item_margin })
     end
-    self.page_info_text:setText(T(_("page %1 of %2"), self.show_page, self.pages))
+    self.page_info_text:setText(T(_("Page %1 of %2"), self.show_page, self.pages))
     self.page_info_left_chev:showHide(self.pages > 1)
     self.page_info_right_chev:showHide(self.pages > 1)
     self.page_info_first_chev:showHide(self.pages > 2)

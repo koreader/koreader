@@ -132,16 +132,13 @@ function CoverBrowser:addToMainMenu(menu_items)
             separator = true,
         },
         {
-            text = _("Shorten home directory to ~"),
-            checked_func = function() return G_reader_settings:readSetting("home_dir_display_name") end,
+            text = _("Shorten home directory"),
+            checked_func = function()
+                return G_reader_settings:nilOrTrue("shorten_home_dir")
+            end,
             callback = function()
-                if G_reader_settings:readSetting("home_dir_display_name") then
-                    G_reader_settings:delSetting("home_dir_display_name")
-                    if FileManager.instance then FileManager.instance:reinit() end
-                else
-                    G_reader_settings:saveSetting("home_dir_display_name", "~")
-                    if FileManager.instance then FileManager.instance:reinit() end
-                end
+                G_reader_settings:flipNilOrTrue("shorten_home_dir")
+                if FileManager.instance then FileManager.instance:reinit() end
             end,
         },
         {

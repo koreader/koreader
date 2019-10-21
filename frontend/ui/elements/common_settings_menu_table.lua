@@ -55,6 +55,16 @@ if Device:setDateTime() then
     common_settings.time = {
         text = _("Time and date"),
         sub_item_table = {
+          {
+            text = _("12-hour clock"),
+            keep_menu_open = true,
+            checked_func = function()
+                return G_reader_settings:nilOrTrue("twelve_hour_clock")
+            end,
+            callback = function()
+                G_reader_settings:flipNilOrTrue("twelve_hour_clock")
+            end,
+            },
             {
                 text = _("Set time"),
                 keep_menu_open = true,

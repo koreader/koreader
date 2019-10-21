@@ -593,17 +593,27 @@ function TouchMenu:updateItems()
 
     table.insert(self.item_group, self.footer_top_margin)
     table.insert(self.item_group, self.footer)
-    -- @translators %1 is the current page. %2 is the total number of pages. In some languages a good translation might need to reverse this order, for instance: "Total %2, page %1".
-    self.page_info_text.text = util.template(_("Page %1 of %2"), self.page, self.page_num)
+    if self.page_num > 1 then
+        -- @translators %1 is the current page. %2 is the total number of pages. In some languages a good translation might need to reverse this order, for instance: "Total %2, page %1".
+        self.page_info_text:setText(util.template(_("Page %1 of %2"), self.page, self.page_num))
+    else
+        self.page_info_text:setText("")
+    end
     self.page_info_left_chev:showHide(self.page_num > 1)
     self.page_info_right_chev:showHide(self.page_num > 1)
     self.page_info_left_chev:enableDisable(self.page > 1)
     self.page_info_right_chev:enableDisable(self.page < self.page_num)
-    local time_info_txt = os.date("%H:%M").." @ "
-    if Device:getPowerDevice():isCharging() then
-        time_info_txt = time_info_txt.."+"
+
+    local time_info_txt
+    if G_reader_settings:nilOrTrue("twelve_hour_clock") then
+        time_info_txt = os.date("%I:%M %p")
+    else
+        time_info_txt = os.date("%H:%M")
     end
-    time_info_txt = time_info_txt..Device:getPowerDevice():getCapacity().."%"
+    time_info_txt = time_info_txt .. " – " .. Device:getPowerDevice():getCapacity() .. "%"
+    if Device:getPowerDevice():isCharging() then
+        time_info_txt = time_info_txt .. " ⚡"
+    end
     self.time_info:setText(time_info_txt)
 
     -- recalculate dimen based on new layout

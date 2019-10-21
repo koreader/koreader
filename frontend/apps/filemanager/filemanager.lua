@@ -55,7 +55,7 @@ local function truncatePath(text)
 end
 
 local FileManager = InputContainer:extend{
-    title = _("KOReader File Browser"),
+    title = _("KOReader"),
     root_path = lfs.currentdir(),
     onExit = function() end,
 
