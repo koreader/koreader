@@ -6,7 +6,6 @@ local Device = require("device")
 local DocSettings = require("docsettings")
 local util = require("ffi/util")
 local _ = require("gettext")
-local m_util = require("util")
 
 local filemanagerutil = {}
 
@@ -29,7 +28,7 @@ function filemanagerutil.abbreviate(path)
     if G_reader_settings:isTrue("shorten_home_dir") then
         local home_dir = G_reader_settings:readSetting("home_dir") or filemanagerutil.getDefaultDir()
         if path == home_dir then
-            return home_dir:sub(m_util.lastIndexOf(home_dir, "/")+1)
+            return _("Home")
         end
         local len = home_dir:len()
         local start = path:sub(1, len)
