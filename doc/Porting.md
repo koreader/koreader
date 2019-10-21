@@ -33,7 +33,6 @@ Following are the framebuffers that `framebuffer_einkfb.lua` currently supports:
 
   * 4bpp framebuffer (palette is always inverted)
   * 16c 8bpp framebuffer (inverted grayscale palette)
-  * 16c 8bpp framebuffer
 
 For 4bpp framebuffers, it means every pixel is represented with 4 bits, so we have 2 pixels in 1 byte.  
 That also effectively limits the palette to 16 colors.  
@@ -44,6 +43,7 @@ For 8bpp framebuffers, it means each pixel is instead stored in 1 byte, making a
 The effective color palette of the display is still limited to 16 shades of gray: it will do a decimating quantization pass on its own on refresh.  
 So, while a black pixel will indeed be `0x00`, any color value < `0x11` (the next effective shade of gray in the [palette](https://github.com/NiLuJe/FBInk/blob/4f0230b17c480cdc75dd5497fddf33937781c812/fbink_internal.h#L327-L334)) will be displayed as pure black, too.  
 If the palette is expected to be inverted, then all the bits are flipped in the same way as done on a 4bpp framebuffer.
+In practice, we [always need to invert the palette](https://github.com/koreader/koreader-base/blob/a1fc4e43b7cce7a76b13224e145f9bada343d8ea/ffi/framebuffer_linux.lua#L242-L245).
 
 The actual framebuffer content is then refreshed (i.e., displayed) via device-specific ioctls.
 
