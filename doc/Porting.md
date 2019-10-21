@@ -21,9 +21,9 @@ At 16bpp, we assume the pixel format is RGB565.
 For obvious performance reasons, we prefer 8bpp, and we will attempt to enforce that on devices which are not natively running at that depth (i.e., [on Kobos](https://github.com/koreader/koreader/blob/d1cd5e7ad4283611c57007b2c2d3dd5f7dab7057/platform/kobo/koreader.sh#L138-L186)).  
 As explained below, the same considerations should be kept in mind regarding the effective 16c palette of eInk screens.  
 When we're in control of the data, we attempt to always use "perfect" in-palette colors (c.f., the [COLOR constants](https://github.com/koreader/koreader-base/blob/a1fc4e43b7cce7a76b13224e145f9bada343d8ea/ffi/blitbuffer.lua#L1881-L1889) in the BlitBuffer module).  
-Otherwise, when there'd be signficiant gain in doing so (i.e., when displaying mainly image content), we attempt to make use of dithering, ideally offloaded to the hardware when supported.
+Otherwise, when there'd be signficiant gain in doing so (i.e., when displaying mainly image content), we attempt to make use of [dithering](https://github.com/koreader/koreader-base/blob/a1fc4e43b7cce7a76b13224e145f9bada343d8ea/ffi/blitbuffer.lua#L227-L271), ideally [offloaded to the hardware](https://github.com/koreader/koreader-base/blob/a1fc4e43b7cce7a76b13224e145f9bada343d8ea/ffi/framebuffer_mxcfb.lua#L412-L423) when supported.
 
-The actual framebuffer content is then refreshed (i.e., displayed) via device-specific ioctls, making the best effort in using device-specific capabilities, whether that be optimized waveform modes, hardware dithering or hardware inversion.
+The actual framebuffer content is then refreshed (i.e., displayed) via device-specific ioctls, making the best effort in using device-specific capabilities, whether that be [optimized waveform modes](https://github.com/koreader/koreader-base/blob/a1fc4e43b7cce7a76b13224e145f9bada343d8ea/ffi/framebuffer_mxcfb.lua#L643-L655), hardware dithering or [hardware inversion](https://github.com/koreader/koreader-base/blob/a1fc4e43b7cce7a76b13224e145f9bada343d8ea/ffi/framebuffer_mxcfb.lua#L253-L256).
 
 ### Legacy einkfb eInk devices
 
