@@ -77,7 +77,7 @@ Linux supports two kinds of Multi-touch protocols:
 
  * <http://www.kernel.org/doc/Documentation/input/multi-touch-protocol.txt>
 
-Currently, KOReader supports gesture detection of protocol B, so if your device sends out protocol A, you need to make a variant of function `Input:handleTouchEv()` (like `Input:handleTypeBTouchEv` and `Input:handlePhoenixTouchEv`) and simulate protocol B.  
+Currently, KOReader supports gesture detection of protocol B, so if your device sends out protocol A, you need to make a variant of function `Input:handleTouchEv()` (like `Input:handleTypeBTouchEv()` and `Input:handlePhoenixTouchEv()`) and simulate protocol B.  
 You are also welcome to send a PR that adds protocol A support to KOReader.
 
 More information on Linux's input system:
