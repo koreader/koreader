@@ -59,7 +59,7 @@ If you need a bit of guidance, you can also take a look at [FBInk](https://githu
 
 ## Input Module
 
-We have an `input.c` module in [koreader-base][kb-framework] that reads input events from Linux's input system and passes it on to the Lua frontend.  
+We have an [`input.c`](https://github.com/koreader/koreader-base/blob/master/input/input.c) module in [koreader-base][kb-framework] that reads input events from Linux's input system and passes it on to the Lua frontend.  
 Basically, you don't need to change that module because it should support most of the events.
 
 For this part, the file you have to hack on is [`koreader/frontend/ui/input.lua`](https://github.com/koreader/koreader/blob/master/frontend/ui/input.lua).
