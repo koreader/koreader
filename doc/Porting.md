@@ -14,7 +14,7 @@ Feel free to open issues in our issue tracker if you need further help on this t
 KOReader uses the Linux framebuffer to control eInk devices, so the output module for mxcfb (i.e., those based on Freescale/NXP hardware) devices is [`base/ffi/framebuffer_mxcfb.lua`](https://github.com/koreader/koreader-base/blob/master/ffi/framebuffer_mxcfb.lua).
 
 Most common bitdepths are supported, although no devices should actually be using anything other than 8bpp, 16bpp and 32bpp.  
-For 8bpp, we assume the grayscale palette is NOT inverted, although support for an inverted palette can be implemented (see the Kindle 4).  
+For 8bpp, we assume the grayscale palette is NOT inverted.  
 At 32bpp, we generally assume the pixel format is BGRA, and we honor Alpha, despite it being effectively ignored by the display (see Kobos).  
 At 16bpp, we assume the pixel format is RGB565.
 
