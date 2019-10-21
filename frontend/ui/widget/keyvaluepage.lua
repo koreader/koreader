@@ -235,7 +235,7 @@ function KeyValueItem:init()
     end
     key_widget:setMaxWidth(key_w)
 
-    -- For debugging positionning:
+    -- For debugging positioning:
     -- value_widget = FrameContainer:new{ padding=0, margin=0, bordersize=1, value_widget }
 
     self[1] = FrameContainer:new{
