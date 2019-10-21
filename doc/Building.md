@@ -50,7 +50,7 @@ On Mojave, `10.09` has been known to behave with XCode 10, And `10.14` with XCod
 ```
 export MACOSX_DEPLOYMENT_TARGET=10.09
 ```
-*Note:* On Catalina (10.15), you will currently *NOT* want to be deploying for 10.15, as [XCode is currently broken in that configuration](https://forums.developer.apple.com/thread/121887)! (i.e., deploy for `10.14` instead).
+*Note:* On Catalina (10.15), you will currently *NOT* want to deploy for `10.15`, as [XCode is currently broken in that configuration](https://forums.developer.apple.com/thread/121887)! (i.e., deploy for `10.14` instead).
 
 
 ## Getting the source
