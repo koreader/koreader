@@ -41,8 +41,9 @@ Following are the framebuffers that `framebuffer_einkfb.lua` currently supports:
 
 For 4bpp framebuffers, it means every pixel is represented with 4 bits, so we
 have 2 pixels in 1 byte. That also effectively limits the palette to 16 colors.
-The inverted part means all the bits are flipped (`^ 0xFF`) in the framebuffer.
-For example, two pixels `[0x00, 0xF0]` will be stored as `[0xFF, 0x0F]` in framebuffer.
+The inverted part means that every pixel's color value is flipped (`^ 0xFF`).
+For example, two pixels `0x00` and `0xF0` will be flipped to `0xFF` and `0x0F`,
+before being packed to accomodate the framebuffer's pixel format.
 
 For 8bpp framebuffers, it means each pixel is instead stored in 1 byte, making addressing much simpler.
 The effective color palette of the display is still limited to 16 shades of gray:
