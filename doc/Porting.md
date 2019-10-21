@@ -20,6 +20,10 @@ At 32bpp, we generally assume the pixel format is BGRA, and we honor Alpha, desp
 At 16bpp, we assume the pixel format is RGB565.
 
 For obvious performance reasons, we prefer 8bpp, and we will attempt to enforce that on devices which are not natively running at that depth (i.e., Kobos).
+As explained below, the same considerations should be kept in mind regarding the effective 16c palette of eInk screens.
+When we're in control of the data, we attempt to always use "perfect" in-palette colors (c.f., the COLOR constants in the BlitBuffer module).
+Otherwise, when there'd be signficiant gain in doing so (i.e., when displaying mainly image content), we attempt to make use of dithering,
+ideally offloaded to the hardware when supported.
 
 The actual framebuffer content is then refreshed (i.e., displayed) via device-specific ioctls, making the best effort in using device-specific capabilities,
 whether that be optimized waveform modes, hardware dithering or hardware inversion.
