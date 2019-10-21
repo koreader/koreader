@@ -61,6 +61,8 @@ The magic happens in [base/ffi/blitbuffer.lua](https://github.com/koreader/korea
 with some help from the [LinuxFB](https://github.com/koreader/koreader-base/blob/master/ffi/framebuffer_linux.lua) frontend to the output modules.
 
 Note that on most devices, a [C version](https://github.com/koreader/koreader-base/blob/master/blitbuffer.c) is used instead for more consistent performance.
+Which version is more easily readable to a newcomer is up for debate, so, don't hesitate to cross-reference ;).
+Feature-parity should be complete, with the exception of 4bpp support in the C version.
 
 ## Input Module
 
