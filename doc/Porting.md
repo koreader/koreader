@@ -11,7 +11,7 @@ Feel free to open issues in our issue tracker if you need further help on this t
 
 ### Current mxcfb eInk devices
 
-KOReader uses the Linux framebuffer to control eInk devices, so the output module for mxcfb (i.e., those based on Freescale/NXP hardware) devices is [base/ffi/framebuffer_mxcfb.lua](https://github.com/koreader/koreader-base/blob/master/ffi/framebuffer_mxcfb.lua).
+KOReader uses the Linux framebuffer to control eInk devices, so the output module for mxcfb (i.e., those based on Freescale/NXP hardware) devices is [`base/ffi/framebuffer_mxcfb.lua`](https://github.com/koreader/koreader-base/blob/master/ffi/framebuffer_mxcfb.lua).
 
 Most common bitdepths are supported, although no devices should actually be using anything other than 8bpp, 16bpp and 32bpp.  
 For 8bpp, we assume the grayscale palette is NOT inverted, although support for an inverted palette can be implemented (see the Kindle 4).  
@@ -27,7 +27,7 @@ The actual framebuffer content is then refreshed (i.e., displayed) via device-sp
 
 ### Legacy einkfb eInk devices
 
-KOReader uses the Linux framebuffer to control eInk devices, so the output module for legacy einkfb devices is [base/ffi/framebuffer_einkfb.lua](https://github.com/koreader/koreader-base/blob/master/ffi/framebuffer_einkfb.lua).
+KOReader uses the Linux framebuffer to control eInk devices, so the output module for legacy einkfb devices is [`base/ffi/framebuffer_einkfb.lua`](https://github.com/koreader/koreader-base/blob/master/ffi/framebuffer_einkfb.lua).
 
 Following are the framebuffers that `framebuffer_einkfb.lua` currently supports:
 
@@ -50,7 +50,7 @@ The actual framebuffer content is then refreshed (i.e., displayed) via device-sp
 ## Blitter Module
 
 All the intermediary buffers are handled in a pixel format that matches the output module in use as closely as possible.  
-The magic happens in [base/ffi/blitbuffer.lua](https://github.com/koreader/koreader-base/blob/master/ffi/blitbuffer.lua), with some help from the [LinuxFB](https://github.com/koreader/koreader-base/blob/master/ffi/framebuffer_linux.lua) frontend to the output modules.
+The magic happens in [`base/ffi/blitbuffer.lua`](https://github.com/koreader/koreader-base/blob/master/ffi/blitbuffer.lua), with some help from the [LinuxFB](https://github.com/koreader/koreader-base/blob/master/ffi/framebuffer_linux.lua) frontend to the output modules.
 
 Note that on most devices, a [C version](https://github.com/koreader/koreader-base/blob/master/blitbuffer.c) is used instead for more consistent performance.  
 Which version is more easily readable to a newcomer is up for debate, so, don't hesitate to cross-reference ;).  
