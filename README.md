@@ -49,7 +49,6 @@ Please follow the model specific steps for your device:
 [Pocketbook](https://github.com/koreader/koreader/wiki/Installation-on-PocketBook-devices)
 
 
-
 ## Development
 
 [Setting a build environment](doc/Building.md) •
