@@ -280,6 +280,11 @@ function MenuItem:init()
         local mandatory_w = RenderText:sizeUtf8Text(0, self.dimen.w, self.info_face, "" .. mandatory, true, self.bold).x
         local max_item_height = self.dimen.h - 2 * self.linesize
         local flag_fit = false
+        local flag_add_ellipsis = false
+        local num_lines, offset
+        local item_name_orig = nil
+        -- first: try to decrease number of lines in TextBoxWidget
+        -- this loop ends only when text fits or we have only one line of text
         while true do
             -- Free previously made widgets to avoid memory leaks
             if item_name then
@@ -293,34 +298,125 @@ function MenuItem:init()
                 bold = self.bold,
                 fgcolor = self.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
             }
+            if not item_name_orig then
+                -- remember original item_name
+                item_name_orig = item_name
+                offset = #item_name.charlist
+            end
             local height = item_name:getSize().h
-            if height < max_item_height or flag_fit then -- we fit !
+            if height < max_item_height then -- we fit !
+                flag_fit = true
                 break
             end
-            -- Don't go too low, and then decrease lines
-            if self.font_size <= 12 then
-                local line_height = height / #item_name.vertical_string_list -- should be an integer
-                local lines = math.floor(max_item_height / line_height)
-                local offset
-                if item_name.vertical_string_list[lines + 1] then
-                    offset = item_name.vertical_string_list[lines + 1].offset - 2
-                else -- shouldn't happen, but just in case
-                    offset = #item_name.charlist
+            flag_add_ellipsis = true
+            num_lines = item_name:getAllLineCount()
+            if num_lines == 1 then   -- widget doesn't fit and we have only one line of text
+                break
+            end
+            -- remove last line and try again to fit
+            offset = item_name.vertical_string_list[num_lines].offset - 1
+            -- remove ending "\n" (new line) to prevent infinity loop
+            if item_name.charlist[offset] == "\n" then
+                offset = offset - 1
+            end
+            self.text = table.concat(item_name.charlist, "", 1, offset)
+        end
+
+        -- second: decrease font size (we have now only one line)
+        while true and not flag_fit do
+            -- Free previously made widgets to avoid memory leaks
+            if item_name then
+                item_name:free()
+            end
+            self.font_size = self.font_size - 1
+            item_name = TextBoxWidget:new{
+                text = self.text,
+                face = Font:getFace(self.font, self.font_size),
+                width = self.content_width - mandatory_w - state_button_width - text_mandatory_padding,
+                alignment = "left",
+                bold = self.bold,
+                fgcolor = self.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
+            }
+            local height = item_name:getSize().h
+            if height < max_item_height then -- we fit !
+                offset = #item_name.charlist
+                break
+            end
+
+            -- if text is too height with that really small font we don't show text at all
+            -- this shouldn't happen
+            if self.font_size <= 8 then
+                item_name = TextBoxWidget:new{
+                    text = "…",
+                    face = Font:getFace(self.font, self.font_size),
+                    width = self.content_width - mandatory_w - state_button_width - text_mandatory_padding,
+                    alignment = "left",
+                    bold = self.bold,
+                    fgcolor = self.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
+                }
+                flag_add_ellipsis = false
+                break
+            end
+        end
+        -- add ellipsis when text was truncated
+        if flag_add_ellipsis then
+            local text_last_line
+            -- when lines is more than 1 we see only for last visible line
+            if num_lines > 1 then
+                local offset_prev = item_name_orig.vertical_string_list[num_lines - 1].offset
+                text_last_line = table.concat(item_name_orig.charlist, "", offset_prev, offset)
+            else
+                text_last_line = self.text
+            end
+            local text_size = RenderText:sizeUtf8Text(0, self.content_width,
+                Font:getFace(self.font, self.font_size), text_last_line, true, self.bold).x
+            local ellipsis_size = RenderText:sizeUtf8Text(0, self.content_width,
+                Font:getFace(self.font, self.font_size), "…", true, self.bold).x
+
+            local text_size_increase = text_size
+            local max_offset = #item_name_orig.charlist
+            -- try to add chars to better align
+            while item_name.width > text_size_increase + ellipsis_size and offset < max_offset
+                and item_name_orig.charlist[offset] ~= "\n" do
+                text_size_increase = text_size_increase + item_name_orig:getCharWidth(offset + 1)
+                if text_size_increase + ellipsis_size < item_name.width then
+                    -- add one char to text
+                    offset = offset + 1
                 end
-                local ellipsis_size = RenderText:sizeUtf8Text(0, self.content_width,
-                    Font:getFace(self.font, self.font_size), "…", true, self.bold).x
-                local removed_char_width= 0
-                while removed_char_width < ellipsis_size  do
-                    -- the width of each char has already been calculated by TextBoxWidget
-                    removed_char_width = removed_char_width + item_name:getCharWidth(offset)
+            end
+            -- remove chars when text is too long
+            while item_name.width <= text_size + ellipsis_size do
+                text_size = text_size - item_name:getCharWidth(offset)
+                -- remove one char from text
+                offset = offset - 1
+            end
+            if offset == max_offset then
+                -- when finally after manipulation we have all original text we don't need to add ellipsis
+                self.text = table.concat(item_name_orig.charlist, "", 1, offset)
+            else
+                -- remove ending '\n' (new line) to prevent increase number of lines
+                if item_name_orig.charlist[offset] == "\n" then
                     offset = offset - 1
                 end
-                self.text = table.concat(item_name.charlist, '', 1, offset) .. "…"
-                flag_fit = true
-            else
-                -- If we don't fit, decrease font size
-                self.font_size = self.font_size - 2
+                -- add ellipsis to show that text was truncated
+                self.text = table.concat(item_name_orig.charlist, "", 1, offset) .. "…"
             end
+
+            if item_name then
+                item_name:free()
+            end
+            if item_name_orig then
+                item_name_orig:free()
+            end
+            --final item_name that fits
+            item_name = TextBoxWidget:new {
+                text = self.text,
+                face = Font:getFace(self.font, self.font_size),
+                width = self.content_width - mandatory_w - state_button_width - text_mandatory_padding,
+                alignment = "left",
+                bold = self.bold,
+                fgcolor = self.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
+            }
         end
         self.face = Font:getFace(self.font, self.font_size)
     end
