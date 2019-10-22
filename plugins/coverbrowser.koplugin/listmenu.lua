@@ -643,7 +643,6 @@ function ListMenuItem:update()
             local text_widget
             local fontsize_no_bookinfo = _fontSize(18)
             repeat
-                logger.warn("create with font ", fontsize_no_bookinfo)
                 text_widget = TextBoxWidget:new{
                     text = self.text .. hint,
                     face = Font:getFace("cfont", fontsize_no_bookinfo),
