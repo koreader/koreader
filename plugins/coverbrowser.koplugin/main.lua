@@ -3,6 +3,7 @@ local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
 local BookInfoManager = require("bookinfomanager")
+local Screen = require("device").screen
 
 --[[
     This plugin provides additional display modes to file browsers (File Manager
@@ -39,6 +40,7 @@ local DISPLAY_MODES = {
 local init_done = false
 local filemanager_display_mode = false -- not initialized yet
 local history_display_mode = false -- not initialized yet
+local series_mode = nil -- defaults to not display series
 
 local CoverBrowser = InputContainer:new{
     name = "coverbrowser",
@@ -73,6 +75,8 @@ function CoverBrowser:init()
 
     self:setupFileManagerDisplayMode(BookInfoManager:getSetting("filemanager_display_mode"))
     self:setupHistoryDisplayMode(BookInfoManager:getSetting("history_display_mode"))
+    series_mode = BookInfoManager:getSetting("series_mode")
+
     init_done = true
     BookInfoManager:closeDbConnection() -- will be re-opened if needed
 end
@@ -292,6 +296,73 @@ function CoverBrowser:addToMainMenu(menu_items)
                         end,
                     },
                     {
+                        text = _("Series "),
+                        sub_item_table = {
+                            {
+                                text = _("Append series metadata to authors"),
+                                checked_func = function() return series_mode == "append_series_to_authors" end,
+                                callback = function()
+                                    if series_mode == "append_series_to_authors" then
+                                        series_mode = nil
+                                    else
+                                        series_mode = "append_series_to_authors"
+                                    end
+                                    BookInfoManager:saveSetting("series_mode", series_mode)
+                                    self:refreshFileManagerInstance()
+                                end,
+                            },
+                            {
+                                text = _("Append series metadata to title"),
+                                checked_func = function() return series_mode == "append_series_to_title" end,
+                                callback = function()
+                                    if series_mode == "append_series_to_title" then
+                                        series_mode = nil
+                                    else
+                                        series_mode = "append_series_to_title"
+                                    end
+                                    BookInfoManager:saveSetting("series_mode", series_mode)
+                                    self:refreshFileManagerInstance()
+                                end,
+                            },
+                            {
+                                text = _("Show series metadata in separate line"),
+                                checked_func = function() return series_mode == "series_in_separate_line" end,
+                                callback = function()
+                                    if series_mode == "series_in_separate_line" then
+                                        series_mode = nil
+                                    else
+                                        series_mode = "series_in_separate_line"
+                                    end
+                                    BookInfoManager:saveSetting("series_mode", series_mode)
+                                    self:refreshFileManagerInstance()
+                                end,
+                            },
+                        },
+                        separator = true
+                    },
+                    {
+                        text = _("(Detailed list) Files per page"),
+                        help_text = _([[This sets the number of files and directories per page in non-'classic' display modes.]]),
+                        keep_menu_open = true,
+                        callback = function()
+                            local SpinWidget = require("ui/widget/spinwidget")
+                            local curr_items = BookInfoManager:getSetting("files_per_page") or 10
+                            local items = SpinWidget:new{
+                                width = Screen:getWidth() * 0.6,
+                                value = curr_items,
+                                value_min = 4,
+                                value_max = 20,
+                                ok_text = _("Set files"),
+                                title_text =  _("Files per page"),
+                                callback = function(spin)
+                                    BookInfoManager:saveSetting("files_per_page", spin.value)
+                                    self.ui:onRefresh()
+                                end
+                            }
+                            UIManager:show(items)
+                        end,
+                    },
+                    {
                         text = _("Show number of pages read instead of progress %"),
                         checked_func = function() return BookInfoManager:getSetting("show_pages_read_as_progress") end,
                         callback = function()
@@ -314,30 +385,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                             end
                             self:refreshFileManagerInstance()
                         end,
-                    },
-                    {
-                        text = _("Append series metadata to authors"),
-                        checked_func = function() return BookInfoManager:getSetting("append_series_to_authors") end,
-                        callback = function()
-                            if BookInfoManager:getSetting("append_series_to_authors") then
-                                BookInfoManager:saveSetting("append_series_to_authors", false)
-                            else
-                                BookInfoManager:saveSetting("append_series_to_authors", true)
-                            end
-                            self:refreshFileManagerInstance()
-                        end,
-                    },
-                    {
-                        text = _("Append series metadata to title"),
-                        checked_func = function() return BookInfoManager:getSetting("append_series_to_title") end,
-                        callback = function()
-                            if BookInfoManager:getSetting("append_series_to_title") then
-                                BookInfoManager:saveSetting("append_series_to_title", false)
-                            else
-                                BookInfoManager:saveSetting("append_series_to_title", true)
-                            end
-                            self:refreshFileManagerInstance()
-                        end,
+                        separator = true
                     },
                     -- generic_items will be inserted here
                 },

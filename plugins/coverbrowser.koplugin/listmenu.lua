@@ -44,6 +44,9 @@ local BookInfoManager = require("bookinfomanager")
 local corner_mark_size = -1
 local corner_mark
 
+local scale_by_size = Screen:scaleBySize(1000000) / 1000000
+local max_fontsize_fileinfo
+
 -- ItemShortCutIcon (for keyboard navigation) is private to menu.lua and can't be accessed,
 -- so we need to redefine it
 local ItemShortCutIcon = WidgetContainer:new{
@@ -185,6 +188,13 @@ function ListMenuItem:update()
         h = self.height - 2 * self.underline_h
     }
 
+    local function _fontSize(nominal)
+        -- nominal font size is based on 64px ListMenuItem height
+        -- keep ratio of font size to item height
+        local font_size = nominal * dimen.h / 64 / scale_by_size
+        return math.floor(font_size)
+    end
+
     -- We'll draw a border around cover images, it may not be
     -- needed with some covers, but it's nicer when cover is
     -- a pure white background (like rendered text page)
@@ -192,7 +202,7 @@ function ListMenuItem:update()
     local max_img_w = dimen.h - 2*border_size -- width = height, squared
     local max_img_h = dimen.h - 2*border_size
     local cover_specs = {
-        sizetag = "s",
+        sizetag = "s"..max_img_h,
         max_cover_w = max_img_w,
         max_cover_h = max_img_h,
     }
@@ -210,12 +220,12 @@ function ListMenuItem:update()
         -- nb items on the right, directory name on the left
         local wright = TextWidget:new{
             text = self.mandatory,
-            face = Font:getFace("infont", 15),
+            face = Font:getFace("infont", math.min(max_fontsize_fileinfo, _fontSize(15))),
         }
         local wleft_width = dimen.w - wright:getSize().w
         local wleft = TextBoxWidget:new{
             text = self.text,
-            face = Font:getFace("cfont", 20),
+            face = Font:getFace("cfont", _fontSize(20)),
             width = wleft_width,
             alignment = "left",
             bold = true,
@@ -245,7 +255,15 @@ function ListMenuItem:update()
 
         local bookinfo = BookInfoManager:getBookInfo(self.filepath, self.do_cover_image)
         if bookinfo and self.do_cover_image and not bookinfo.ignore_cover then
-            if not bookinfo.cover_fetched then
+            if bookinfo.cover_fetched then
+                -- trigger recalculation of thumbnail if size changed
+                if bookinfo.has_cover and bookinfo.cover_sizetag ~= "M" and bookinfo.cover_sizetag ~= cover_specs.sizetag then
+                    if bookinfo.cover_bb then
+                        bookinfo.cover_bb:free()
+                    end
+                    bookinfo = nil
+                end
+            else
                 -- cover was not fetched previously, do as if not found
                 -- to force a new extraction
                 bookinfo = nil
@@ -388,14 +406,16 @@ function ListMenuItem:update()
 
             -- Build the right widget
 
+            local fontsize_info = math.min(max_fontsize_fileinfo, _fontSize(14))
+
             local wfileinfo = TextWidget:new{
                 text = fileinfo_str,
-                face = Font:getFace("cfont", 14),
+                face = Font:getFace("cfont", fontsize_info),
                 fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
             }
             local wpageinfo = TextWidget:new{
                 text = pages_str,
-                face = Font:getFace("cfont", 14),
+                face = Font:getFace("cfont", fontsize_info),
                 fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
             }
 
@@ -419,11 +439,10 @@ function ListMenuItem:update()
             }
 
             -- Create or replace corner_mark if needed
-            local wright_bottom_pad_available = math.ceil( (dimen.h - wright[1]:getSize().h) *2/3 )
-            -- We should normally use 1/2 because of CenterContainer, but there's
-            -- some space inside the text widget that we can use for a larger marker
-            if wright_bottom_pad_available ~= corner_mark_size then
-                corner_mark_size = wright_bottom_pad_available
+            local mark_size = math.floor(dimen.h / 6)
+            -- Just fits under the page info text, which in turn adapts to the ListMenuItem height.
+            if mark_size ~= corner_mark_size then
+                corner_mark_size = mark_size
                 if corner_mark then
                     corner_mark:free()
                 end
@@ -447,10 +466,12 @@ function ListMenuItem:update()
 
             local fontname_title = "cfont"
             local fontname_authors = "cfont"
-            local fontsize_title = 20
-            local fontsize_authors = 18
+            local fontsize_title = _fontSize(20)
+            local fontsize_authors = _fontSize(18)
             local wtitle, wauthors
             local title, authors
+            local series_mode = BookInfoManager:getSetting("series_mode")
+
             -- whether to use or not title and authors
             if self.do_filename_only or bookinfo.ignore_meta then
                 title = filename_without_suffix -- made out above
@@ -463,29 +484,40 @@ function ListMenuItem:update()
                 -- append "et al." to the 2nd if there are more
                 if authors and authors:find("\n") then
                     authors = util.splitToArray(authors, "\n")
-                    if #authors > 2 then
+                    if #authors > 1 and bookinfo.series and series_mode == "series_in_separate_line" then
+                        authors = { T(_("%1 et al."), authors[1]) }
+                    elseif #authors > 2 then
                         authors = { authors[1], T(_("%1 et al."), authors[2]) }
                     end
                     authors = table.concat(authors, "\n")
+                    -- as we'll fit 3 lines instead of 2, we can avoid some loops by starting from a lower font size
+                    fontsize_title = _fontSize(17)
+                    fontsize_authors = _fontSize(15)
                 end
             end
             -- add Series metadata if requested
             if bookinfo.series then
-                if BookInfoManager:getSetting("append_series_to_title") then
-                    -- Shorten calibre series decimal number (#4.0 => #4)
-                    bookinfo.series = bookinfo.series:gsub("(#%d+)%.0$", "%1")
+                -- Shorten calibre series decimal number (#4.0 => #4)
+                bookinfo.series = bookinfo.series:gsub("(#%d+)%.0$", "%1")
+                if series_mode == "append_series_to_title" then
                     if title then
                         title = title .. " - " .. bookinfo.series
                     else
                         title = bookinfo.series
                     end
                 end
-                if BookInfoManager:getSetting("append_series_to_authors") then
-                    bookinfo.series = bookinfo.series:gsub("(#%d+)%.0$", "%1")
-                    if authors then
-                        authors = authors .. " - " .. bookinfo.series
-                    else
+                if not authors then
+                    if series_mode == "append_series_to_authors" or series_mode == "series_in_separate_line" then
                         authors = bookinfo.series
+                    end
+                else
+                    if series_mode == "append_series_to_authors" then
+                        authors = authors .. " - " .. bookinfo.series
+                    elseif series_mode == "series_in_separate_line" then
+                        authors = bookinfo.series .. "\n" .. authors
+                        -- as we'll fit 3 lines instead of 2, we can avoid some loops by starting from a lower font size
+                        fontsize_title = _fontSize(17)
+                        fontsize_authors = _fontSize(15)
                     end
                 end
             end
@@ -527,6 +559,8 @@ function ListMenuItem:update()
                 end
                 if height < dimen.h then -- we fit !
                     break
+                else
+                    logger.dbg(title, "recalculate title/author with", fontsize_title - 1)
                 end
                 -- If we don't fit, decrease both font sizes
                 fontsize_title = fontsize_title - 1
@@ -606,17 +640,24 @@ function ListMenuItem:update()
             if self.file_deleted then -- unless file was deleted (can happen with History)
                 hint = " " .. _("(deleted)")
             end
+            local text_widget
+            local fontsize_no_bookinfo = _fontSize(18)
+            repeat
+                text_widget = TextBoxWidget:new{
+                    text = self.text .. hint,
+                    face = Font:getFace("cfont", fontsize_no_bookinfo),
+                    width = dimen.w - 2 * Screen:scaleBySize(10),
+                    alignment = "left",
+                    fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
+                }
+                -- reduce font size for next loop, in case text widget is too large to fit into ListMenuItem
+                fontsize_no_bookinfo = fontsize_no_bookinfo - 1
+            until text_widget:getSize().h <= dimen.h
             widget = LeftContainer:new{
                 dimen = dimen,
                 HorizontalGroup:new{
                     HorizontalSpan:new{ width = Screen:scaleBySize(10) },
-                    TextBoxWidget:new{
-                        text = self.text .. hint,
-                        face = Font:getFace("cfont", 18),
-                        width = dimen.w - 2 * Screen:scaleBySize(10),
-                        alignment = "left",
-                        fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
-                    }
+                    text_widget
                 },
             }
         end
@@ -743,24 +784,26 @@ function ListMenu:_recalculateDimen()
         self.itemnum_orig = self.path_items[self.path]
         self.focused_path_orig = self.focused_path
     end
-    local available_height = self.dimen.h - self.others_height
+    local available_height = self.dimen.h - self.others_height - Size.line.thin
 
-    -- 64 hardcoded for now, gives 10 items both in filemanager
+    -- default is 64px per ListMenuItem, gives 10 items both in filemanager
     -- and history on kobo glo hd
-    local item_height_min = Screen:scaleBySize(64)
-    self.perpage = math.floor(available_height / item_height_min)
+    self.perpage = BookInfoManager:getSetting("files_per_page") or math.floor(available_height / scale_by_size / 64)
     self.page_num = math.ceil(#self.item_table / self.perpage)
     -- fix current page if out of range
     if self.page_num > 0 and self.page > self.page_num then self.page = self.page_num end
 
-    local height_remaining = available_height - self.perpage * item_height_min
-    height_remaining = height_remaining - (self.perpage+1) -- N+1 LineWidget separators
-    self.item_height = item_height_min + math.floor(height_remaining / self.perpage)
+    -- menu item height based on number of items per page
+    -- add space for the separator
+    self.item_height = math.floor(available_height / self.perpage) - Size.line.thin
     self.item_width = self.dimen.w
     self.item_dimen = Geom:new{
         w = self.item_width,
         h = self.item_height
     }
+
+    -- upper limit for file info font to leave enough space for title and author
+    max_fontsize_fileinfo = available_height / scale_by_size / 32
 
     if self.page_recalc_needed then
         -- self.page has probably been set to a wrong value, we recalculate

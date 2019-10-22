@@ -503,22 +503,26 @@ function MosaicMenuItem:update()
                 self._has_cover_image = true
             else
                 -- add Series metadata if requested
+                local series_mode = BookInfoManager:getSetting("series_mode")
                 if bookinfo.series then
-                    if BookInfoManager:getSetting("append_series_to_title") then
-                        -- Shorten calibre series decimal number (#4.0 => #4)
-                        bookinfo.series = bookinfo.series:gsub("(#%d+)%.0$", "%1")
+                    -- Shorten calibre series decimal number (#4.0 => #4)
+                    bookinfo.series = bookinfo.series:gsub("(#%d+)%.0$", "%1")
+                    if series_mode == "append_series_to_title" then
                         if bookinfo.title then
                             bookinfo.title = bookinfo.title .. " - " .. bookinfo.series
                         else
                             bookinfo.title = bookinfo.series
                         end
                     end
-                    if BookInfoManager:getSetting("append_series_to_authors") then
-                        bookinfo.series = bookinfo.series:gsub("(#%d+)%.0$", "%1")
-                        if bookinfo.authors then
-                            bookinfo.authors = bookinfo.authors .. " - " .. bookinfo.series
-                        else
+                    if not bookinfo.authors then
+                        if series_mode == "append_series_to_authors" or series_mode == "series_in_separate_line" then
                             bookinfo.authors = bookinfo.series
+                        end
+                    else
+                        if series_mode == "append_series_to_authors" then
+                            bookinfo.authors = bookinfo.authors .. " - " .. bookinfo.series
+                        elseif series_mode == "series_in_separate_line" then
+                            bookinfo.authors = bookinfo.authors .. "\n \n" .. bookinfo.series
                         end
                     end
                 end
