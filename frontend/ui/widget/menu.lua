@@ -303,11 +303,11 @@ function MenuItem:init()
             end
             -- remove last line and try again to fit
             offset = item_name.vertical_string_list[num_lines].offset - 1
-            -- remove ending '\n' (new line) to prevent infinity loop
-            if item_name.charlist[offset] == '\n' then
+            -- remove ending "\n" (new line) to prevent infinity loop
+            if item_name.charlist[offset] == "\n" then
                 offset = offset - 1
             end
-            self.text = table.concat(item_name.charlist, '', 1, offset)
+            self.text = table.concat(item_name.charlist, "", 1, offset)
         end
 
         -- second: decrease font size (we have now only one line)
@@ -317,7 +317,7 @@ function MenuItem:init()
                 item_name:free()
             end
             self.font_size = self.font_size - 1
-            item_name = TextBoxWidget:new {
+            item_name = TextBoxWidget:new{
                 text = self.text,
                 face = Font:getFace(self.font, self.font_size),
                 width = self.content_width - mandatory_w - state_button_width - text_mandatory_padding,
@@ -334,7 +334,7 @@ function MenuItem:init()
             -- if text is too height with that really small font we don't show text at all
             -- this shouldn't happen
             if self.font_size <= 8 then
-                item_name = TextBoxWidget:new {
+                item_name = TextBoxWidget:new{
                     text = "…",
                     face = Font:getFace(self.font, self.font_size),
                     width = self.content_width - mandatory_w - state_button_width - text_mandatory_padding,
@@ -352,7 +352,7 @@ function MenuItem:init()
             -- when lines is more than 1 we see only for last visible line
             if num_lines > 1 then
                 local offset_prev = item_name_orig.vertical_string_list[num_lines - 1].offset
-                text_last_line = table.concat(item_name_orig.charlist, '', offset_prev, offset)
+                text_last_line = table.concat(item_name_orig.charlist, "", offset_prev, offset)
             else
                 text_last_line = self.text
             end
@@ -365,7 +365,7 @@ function MenuItem:init()
             local max_offset = #item_name_orig.charlist
             -- try to add chars to better align
             while item_name.width > text_size_increase + ellipsis_size and offset < max_offset
-                and item_name_orig.charlist[offset] ~= '\n' do
+                and item_name_orig.charlist[offset] ~= "\n" do
                 text_size_increase = text_size_increase + item_name_orig:getCharWidth(offset + 1)
                 if text_size_increase + ellipsis_size < item_name.width then
                     -- add one char to text
@@ -380,14 +380,14 @@ function MenuItem:init()
             end
             if offset == max_offset then
                 -- when finally after manipulation we have all original text we don't need to add ellipsis
-                self.text = table.concat(item_name_orig.charlist, '', 1, offset)
+                self.text = table.concat(item_name_orig.charlist, "", 1, offset)
             else
                 -- remove ending '\n' (new line) to prevent increase number of lines
-                if item_name_orig.charlist[offset] == '\n' then
+                if item_name_orig.charlist[offset] == "\n" then
                     offset = offset - 1
                 end
                 -- add ellipsis to show that text was truncated
-                self.text = table.concat(item_name_orig.charlist, '', 1, offset) .. "…"
+                self.text = table.concat(item_name_orig.charlist, "", 1, offset) .. "…"
             end
 
             if item_name then
