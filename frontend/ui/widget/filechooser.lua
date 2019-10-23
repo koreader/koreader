@@ -417,7 +417,7 @@ function FileChooser:showSetProviderButtons(file, filemanager_instance, reader_u
                 checked = true,
                 provider = provider,
             },
-         })
+        })
     end
 
     table.insert(buttons, {
