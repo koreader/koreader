@@ -3,6 +3,7 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local ProgressWidget = require("ui/widget/progresswidget")
 local ReaderPanning = require("apps/reader/modules/readerpanning")
 local TimeVal = require("ui/timeval")
@@ -371,13 +372,16 @@ function ReaderRolling:addToMainMenu(menu_items)
         end,
         hold_callback = function(touchmenu_instance)
             local inverse_reading_order = G_reader_settings:isTrue("inverse_reading_order")
-            UIManager:show(ConfirmBox:new{
-                text = inverse_reading_order and _("Disable right to left reading by default?")
-                    or _("Enable right to left reading by default?"),
-                ok_text = inverse_reading_order and _("Disable")
-                    or _("Enable"),
-                ok_callback = function()
-                    G_reader_settings:saveSetting("inverse_reading_order", not inverse_reading_order)
+            UIManager:show(MultiConfirmBox:new{
+                text = _("Enable right to left reading by default?"),
+                choice1_text = _("Disable"),
+                choice1_callback = function()
+                     G_reader_settings:saveSetting("inverse_reading_order", false)
+                     if touchmenu_instance then touchmenu_instance:updateItems() end
+                end,
+                choice2_text = _("Enable"),
+                choice2_callback = function()
+                    G_reader_settings:saveSetting("inverse_reading_order", true)
                     if touchmenu_instance then touchmenu_instance:updateItems() end
                 end,
             })
