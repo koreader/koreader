@@ -9,6 +9,7 @@ local InputDialog = require("ui/widget/inputdialog")
 local JSON = require("json")
 local KeyValuePage = require("ui/widget/keyvaluepage")
 local LuaData = require("luadata")
+local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local NetworkMgr = require("ui/network/manager")
 local Trapper = require("ui/trapper")
 local UIManager = require("ui/uimanager")
@@ -249,7 +250,7 @@ If you'd like to change the order in which dictionaries are queried (and their r
                     self.disable_fuzzy_search = not self.disable_fuzzy_search
                 end,
                 hold_callback = function()
-                    self:makeDisableFuzzyDefault(self.disable_fuzzy_search)
+                    self:toggleFuzzyDefault()
                 end,
                 separator = true,
             },
@@ -950,21 +951,23 @@ function ReaderDictionary:onSaveSettings()
     self.ui.doc_settings:saveSetting("disable_fuzzy_search", self.disable_fuzzy_search)
 end
 
-function ReaderDictionary:makeDisableFuzzyDefault(disable_fuzzy_search)
-    logger.dbg("disable fuzzy search", self.disable_fuzzy_search)
-    UIManager:show(ConfirmBox:new{
+function ReaderDictionary:toggleFuzzyDefault()
+    local disable_fuzzy_search = G_reader_settings:isTrue("disable_fuzzy_search")
+    UIManager:show(MultiConfirmBox:new{
         text = T(
             disable_fuzzy_search
-            and _("Disable fuzzy search by default?")
-            or _("Enable fuzzy search by default?")
+            and _("Enable fuzzy search by default?")
+            or _("Disable fuzzy search by default?")
         ),
-        ok_text = T(
-            disable_fuzzy_search
-            and _("Disable")
-            or _("Enable")
-        ),
-        ok_callback = function()
-            G_reader_settings:saveSetting("disable_fuzzy_search", disable_fuzzy_search)
+        choice1_text = _("Disable"),
+        choice1_enabled = not disable_fuzzy_search,
+        choice1_callback = function()
+            G_reader_settings:saveSetting("disable_fuzzy_search", true)
+        end,
+        choice2_text = _("Enable"),
+        choice2_enabled = disable_fuzzy_search,
+        choice2_callback = function()
+            G_reader_settings:saveSetting("disable_fuzzy_search", false)
         end,
     })
 end
