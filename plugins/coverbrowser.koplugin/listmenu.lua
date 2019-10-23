@@ -202,7 +202,7 @@ function ListMenuItem:update()
     local max_img_w = dimen.h - 2*border_size -- width = height, squared
     local max_img_h = dimen.h - 2*border_size
     local cover_specs = {
-        sizetag = "s"..max_img_h,
+        sizetag = self.menu.cover_sizetag,
         max_cover_w = max_img_w,
         max_cover_h = max_img_h,
     }
@@ -786,9 +786,25 @@ function ListMenu:_recalculateDimen()
     end
     local available_height = self.dimen.h - self.others_height - Size.line.thin
 
-    -- default is 64px per ListMenuItem, gives 10 items both in filemanager
-    -- and history on kobo glo hd
-    self.perpage = BookInfoManager:getSetting("files_per_page") or math.floor(available_height / scale_by_size / 64)
+    -- (perpage used to be static and computed from a base of 64px per ListMenuItem,
+    -- which gave 10 items both in filemanager and history on kobo glo hd - now that
+    -- we can change the nb of items, let's start with a default of 10 - as it must
+    -- be known as the initial value by the menu selection widget, but there is not
+    -- enough information there to compute it as we could here).
+    -- local default_per_page = math.floor(available_height / scale_by_size / 64)
+    self.perpage = BookInfoManager:getSetting("files_per_page") or 10
+    self.cover_sizetag = "s" .. self.perpage
+    if Screen:getWidth() > Screen:getHeight() then -- landscape mode
+        -- When in landscape mode (only possible with History), adjust
+        -- perpage so items get a chance to have about the same height
+        -- as when in portrait mode.
+        -- This computation is not strictly correct, as "others_height" would
+        -- have a different value in portrait mode. But let's go with that.
+        local portrait_available_height = Screen:getWidth() - self.others_height - Size.line.thin
+        local portrait_item_height = math.floor(portrait_available_height / self.perpage) - Size.line.thin
+        self.perpage = Math.round(available_height / portrait_item_height)
+    end
+
     self.page_num = math.ceil(#self.item_table / self.perpage)
     -- fix current page if out of range
     if self.page_num > 0 and self.page > self.page_num then self.page = self.page_num end
