@@ -246,8 +246,8 @@ function ReaderPaging:addToMainMenu(menu_items)
         hold_callback = function(touchmenu_instance)
             local inverse_reading_order = G_reader_settings:isTrue("inverse_reading_order")
             UIManager:show(MultiConfirmBox:new{
-                text = inverse_reading_order and _("The default for newly opened books is Right To Left page turning. Would you like to change it?")
-                or _("The default for newly opened books is Left To Right page turning. Would you like to change it?"),
+                text = inverse_reading_order and _("The default for newly opened books is Right To Left page turning.\nWould you like to change it?")
+                or _("The default for newly opened books is Left To Right page turning.\nWould you like to change it?"),
                 choice1_text = _("Left-To-Right"),
                 choice1_enabled = inverse_reading_order,
                 choice1_callback = function()
