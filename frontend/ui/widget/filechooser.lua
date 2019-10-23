@@ -394,15 +394,27 @@ function FileChooser:showSetProviderButtons(file, filemanager_instance, reader_u
 
     local buttons = {}
     local radio_buttons = {}
+    local filetype_provider = G_reader_settings:readSetting("provider") or {}
     local providers = DocumentRegistry:getProviders(file)
-
-    for ___, provider in ipairs(providers) do
-        -- we have no need for extension, mimetype, weights, etc. here
-        provider = provider.provider
+    if providers ~= nil then
+        for ___, provider in ipairs(providers) do
+            -- we have no need for extension, mimetype, weights, etc. here
+            provider = provider.provider
+            table.insert(radio_buttons, {
+                {
+                    text = provider.provider_name,
+                    checked = DocumentRegistry:getProvider(file) == provider,
+                    provider = provider,
+                },
+            })
+        end
+    else
+        local provider = DocumentRegistry:getProvider(file)
         table.insert(radio_buttons, {
             {
-                text = provider.provider_name,
-                checked = DocumentRegistry:getProvider(file) == provider,
+                -- @translators %1 is the provider name, such as Cool Reader Engine or MuPDF.
+                text = T(_("%1 ~Unsupported"), provider.provider_name),
+                checked = true,
                 provider = provider,
             },
         })
@@ -458,6 +470,19 @@ function FileChooser:showSetProviderButtons(file, filemanager_instance, reader_u
             end,
         },
     })
+
+    if filetype_provider[filename_suffix] ~= nil then
+        table.insert(buttons, {
+           {
+               text = _("Reset default"),
+                callback = function()
+                    filetype_provider[filename_suffix] = nil
+                    G_reader_settings:saveSetting("provider", filetype_provider)
+                    UIManager:close(self.set_provider_dialog)
+                end,
+            },
+        })
+    end
 
     self.set_provider_dialog = OpenWithDialog:new{
         title = T(_("Open %1 with:"), filename_pure),

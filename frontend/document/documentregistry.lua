@@ -56,8 +56,16 @@ end
 function DocumentRegistry:hasProvider(file)
     local filename_suffix = string.lower(util.getFileNameSuffix(file))
 
-    if self.filetype_provider[filename_suffix] then
+    local filetype_provider = G_reader_settings:readSetting("provider") or {}
+    if self.filetype_provider[filename_suffix] or filetype_provider[filename_suffix] then
         return true
+    end
+    local DocSettings = require("docsettings")
+    if DocSettings:hasSidecarFile(file) then
+        local doc_settings_provider = DocSettings:open(file):readSetting("provider")
+        if doc_settings_provider then
+            return true
+        end
     end
     return false
 end
@@ -96,6 +104,12 @@ function DocumentRegistry:getProvider(file)
 
         -- highest weighted provider
         return providers[1].provider
+    else
+        for _, provider in ipairs(self.providers) do
+            if provider.extension == "txt" then
+                return provider.provider
+            end
+        end
     end
 end
 
