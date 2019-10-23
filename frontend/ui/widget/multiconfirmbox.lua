@@ -48,6 +48,8 @@ local MultiConfirmBox = InputContainer:new{
     choice1_callback = function() end,
     choice2_callback = function() end,
     cancel_callback = function() end,
+    choice1_enabled = true,
+    choice2_enabled = true,
     margin = Size.margin.default,
     padding = Size.padding.default,
     dismissable = true, -- set to false if any button callback is required
@@ -102,6 +104,7 @@ function MultiConfirmBox:init()
                 },
                 {
                     text = self.choice1_text,
+                    enabled = self.choice1_enabled,
                     callback = function()
                         self.choice1_callback()
                         UIManager:close(self)
@@ -109,6 +112,7 @@ function MultiConfirmBox:init()
                 },
                 {
                     text = self.choice2_text,
+                    enabled = self.choice2_enabled,
                     callback = function()
                         self.choice2_callback()
                         UIManager:close(self)
