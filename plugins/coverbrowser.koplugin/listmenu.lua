@@ -194,6 +194,9 @@ function ListMenuItem:update()
         local font_size = nominal * dimen.h / 64 / scale_by_size
         return math.floor(font_size)
     end
+    -- Will speed up a bit if we don't do all font sizes when
+    -- looking for one that make text fit
+    local fontsize_dec_step = math.ceil(_fontSize(100) / 100)
 
     -- We'll draw a border around cover images, it may not be
     -- needed with some covers, but it's nicer when cover is
@@ -559,12 +562,11 @@ function ListMenuItem:update()
                 end
                 if height < dimen.h then -- we fit !
                     break
-                else
-                    logger.dbg(title, "recalculate title/author with", fontsize_title - 1)
                 end
                 -- If we don't fit, decrease both font sizes
-                fontsize_title = fontsize_title - 1
-                fontsize_authors = fontsize_authors - 1
+                fontsize_title = fontsize_title - fontsize_dec_step
+                fontsize_authors = fontsize_authors - fontsize_dec_step
+                logger.dbg(title, "recalculate title/author with", fontsize_title)
                 -- Don't go too low, and get out of this loop
                 if fontsize_title < 3 or fontsize_authors < 3 then
                     break
@@ -651,7 +653,7 @@ function ListMenuItem:update()
                     fgcolor = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
                 }
                 -- reduce font size for next loop, in case text widget is too large to fit into ListMenuItem
-                fontsize_no_bookinfo = fontsize_no_bookinfo - 1
+                fontsize_no_bookinfo = fontsize_no_bookinfo - fontsize_dec_step
             until text_widget:getSize().h <= dimen.h
             widget = LeftContainer:new{
                 dimen = dimen,
