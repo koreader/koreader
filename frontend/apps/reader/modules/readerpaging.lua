@@ -244,7 +244,6 @@ function ReaderPaging:addToMainMenu(menu_items)
             self.ui:handleEvent(Event:new("ToggleReadingOrder"))
         end,
         hold_callback = function(touchmenu_instance)
-            local inverse_reading_order = G_reader_settings:isTrue("inverse_reading_order")
             UIManager:show(MultiConfirmBox:new{
                 text = _("Enable right to left reading by default?"),
                 choice1_text = _("Disable"),
