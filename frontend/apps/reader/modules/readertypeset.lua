@@ -430,16 +430,18 @@ end
 
 function ReaderTypeset:makeDefaultFloatingPunctuation()
     local floating_punctuation = G_reader_settings:isTrue("floating_punctuation")
-    local toggler = floating_punctuation and _("Disable") or _("Enable")
     UIManager:show(MultiConfirmBox:new{
-        text = T(
-            _("%1 hanging punctuation by default?"),
-            toggler
-        ),
-        choice1_text = _("Disable"),
+        text = floating_punctuation and _("Would you like to enable or disable hanging punctuation by default?\n\nThe current default (★) is enabled.")
+        or _("Would you like to enable or disable hanging punctuation by default?\n\nThe current default (★) is disabled."),
+        choice1_text_func =  function()
+            return floating_punctuation and _("Disable") or _("Disable (★)")
+        end,
         choice1_enabled = floating_punctuation,
         choice1_callback = function()
             G_reader_settings:saveSetting("floating_punctuation", false)
+        end,
+        choice2_text_func = function()
+            return floating_punctuation and _("Enable (★)") or _("Enable")
         end,
         choice2_text = _("Enable"),
         choice2_enabled = not floating_punctuation,

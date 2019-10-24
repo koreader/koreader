@@ -956,15 +956,19 @@ function ReaderDictionary:toggleFuzzyDefault()
     UIManager:show(MultiConfirmBox:new{
         text = T(
             disable_fuzzy_search
-            and _("Enable fuzzy search by default?")
-            or _("Disable fuzzy search by default?")
+            and _("Would you like to enable or disable fuzzy search by default?\n\nThe current default (★) is disabled.")
+            or _("Would you like to enable or disable fuzzy search by default?\n\nThe current default (★) is enabled.")
         ),
-        choice1_text = _("Disable"),
+        choice1_text_func =  function()
+            return disable_fuzzy_search and _("Disable (★)") or _("Disable")
+        end,
         choice1_enabled = not disable_fuzzy_search,
         choice1_callback = function()
             G_reader_settings:saveSetting("disable_fuzzy_search", true)
         end,
-        choice2_text = _("Enable"),
+        choice2_text_func = function()
+            return disable_fuzzy_search and _("Enable") or _("Enable (★)")
+        end,
         choice2_enabled = disable_fuzzy_search,
         choice2_callback = function()
             G_reader_settings:saveSetting("disable_fuzzy_search", false)

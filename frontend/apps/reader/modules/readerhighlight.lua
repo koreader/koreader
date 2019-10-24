@@ -1182,14 +1182,18 @@ end
 function ReaderHighlight:toggleDefault()
     local highlight_disabled = G_reader_settings:isTrue("highlight_disabled")
     UIManager:show(MultiConfirmBox:new{
-        text = highlight_disabled and _("Enable highlighting by default.")
-        or _("Disable highlighting by default."),
-        choice1_text = _("Disable"),
+        text = highlight_disabled and _("Would you like to enable or disable highlighting by default?\n\nThe current default (★) is disabled.")
+        or _("Would you like to enable or disable highlighting by default?\n\nThe current default (★) is enabled."),
+        choice1_text_func =  function()
+            return highlight_disabled and _("Disable (★)") or _("Disable")
+        end,
         choice1_enabled = not highlight_disabled,
         choice1_callback = function()
             G_reader_settings:saveSetting("highlight_disabled", true)
         end,
-        choice2_text = _("Enable"),
+        choice2_text_func = function()
+            return highlight_disabled and _("Enable") or _("Enable (★)")
+        end,
         choice2_enabled = highlight_disabled,
         choice2_callback = function()
             G_reader_settings:saveSetting("highlight_disabled", false)

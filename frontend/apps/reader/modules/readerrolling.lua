@@ -373,15 +373,19 @@ function ReaderRolling:addToMainMenu(menu_items)
         hold_callback = function(touchmenu_instance)
             local inverse_reading_order = G_reader_settings:isTrue("inverse_reading_order")
             UIManager:show(MultiConfirmBox:new{
-                text = inverse_reading_order and _("The default for newly opened books is Right To Left page turning.\nWould you like to change it?")
-                or _("The default for newly opened books is Left To Right page turning.\nWould you like to change it?"),
-                choice1_text = _("Left-To-Right"),
+                text = inverse_reading_order and _("The default (★) for newly opened books is right-to-left (RTL) page turning.\n\nWould you like to change it?")
+                or _("The default (★) for newly opened books is left-to-right (LTR) page turning.\n\nWould you like to change it?"),
+                choice1_text_func = function()
+                    return inverse_reading_order and _("LTR") or _("LTR (★)")
+                end,
                 choice1_enabled = inverse_reading_order,
                 choice1_callback = function()
                      G_reader_settings:saveSetting("inverse_reading_order", false)
                      if touchmenu_instance then touchmenu_instance:updateItems() end
                 end,
-                choice2_text = _("Right-To-Left"),
+                choice2_text_func = function()
+                    return inverse_reading_order and _("RTL (★)") or _("RTL")
+                end,
                 choice2_enabled = not inverse_reading_order,
                 choice2_callback = function()
                     G_reader_settings:saveSetting("inverse_reading_order", true)
