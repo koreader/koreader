@@ -24,6 +24,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local PluginLoader = require("pluginloader")
+local ReadCollection = require("readcollection")
 local ReaderDeviceStatus = require("apps/reader/modules/readerdevicestatus")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local ReaderGesture = require("apps/reader/modules/readergesture")
@@ -294,8 +295,7 @@ function FileManager:init()
             table.insert(buttons, {
                 {
                     text = _("Open with…"),
-                    enabled = DocumentRegistry:getProviders(file) ~= nil
-                        and #(DocumentRegistry:getProviders(file)) > 1,
+                    enabled = DocumentRegistry:getProviders(file) == nil or #(DocumentRegistry:getProviders(file)) > 1,
                     callback = function()
                         UIManager:close(self.file_dialog)
                         self:showSetProviderButtons(file, FileManager.instance, ReaderUI)
@@ -321,7 +321,7 @@ function FileManager:init()
                 },
                 {
                     text_func = function()
-                        if require("readcollection"):checkItemExist(file, "favorites") then
+                        if ReadCollection:checkItemExist(file, "favorites") then
                             return _("Remove from favorites")
                         else
                             return _("Add to favorites")
@@ -329,10 +329,10 @@ function FileManager:init()
                     end,
                     enabled = DocumentRegistry:getProviders(file) ~= nil,
                     callback = function()
-                        if require("readcollection"):checkItemExist(file, "favorites") then
-                            require("readcollection"):removeItem(file, "favorites")
+                        if ReadCollection:checkItemExist(file, "favorites") then
+                            ReadCollection:removeItem(file, "favorites")
                         else
-                            require("readcollection"):addItem(file, "favorites")
+                            ReadCollection:addItem(file, "favorites")
                         end
                         UIManager:close(self.file_dialog)
                     end,
@@ -720,11 +720,11 @@ function FileManager:pasteHere(file)
                 self:moveFile(DocSettings:getSidecarDir(orig), dest) -- dest is always a directory
             end
             if self:moveFile(orig, dest) then
-                --update history and collections
+                -- Update history and collections.
                 local dest_file = string.format("%s/%s", dest, util.basename(orig))
                 require("readhistory"):updateItemByPath(orig, dest_file)
-                require("readcollection"):updateItemByPath(orig, dest_file)
-                --update last open file
+                ReadCollection:updateItemByPath(orig, dest_file)
+                -- Update last open file.
                 if G_reader_settings:readSetting("lastfile") == orig then
                     G_reader_settings:saveSetting("lastfile", dest_file)
                 end
@@ -816,8 +816,7 @@ function FileManager:deleteFile(file)
             end
             doc_settings:purge()
         end
-        --remove from collections
-        require("readcollection"):removeItemByPath(file, is_dir)
+        ReadCollection:removeItemByPath(file, is_dir)
         UIManager:show(InfoMessage:new{
             text = util.template(_("Deleted %1"), file),
             timeout = 2,
@@ -833,8 +832,7 @@ function FileManager:renameFile(file)
     if util.basename(file) ~= self.rename_dialog:getInputText() then
         local dest = util.joinPath(util.dirname(file), self.rename_dialog:getInputText())
         if self:moveFile(file, dest) then
-            -- update collections
-            require("readcollection"):updateItemByPath(file, dest)
+            ReadCollection:updateItemByPath(file, dest)
             if lfs.attributes(dest, "mode") == "file" then
                 local doc = require("docsettings")
                 local move_history = true;

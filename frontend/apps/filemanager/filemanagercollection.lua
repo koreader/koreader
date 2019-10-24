@@ -2,6 +2,7 @@ local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
+local ReadCollection = require("readcollection")
 local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
 local _ = require("gettext")
@@ -15,7 +16,6 @@ function FileManagerCollection:init()
 end
 
 function FileManagerCollection:addToMainMenu(menu_items)
-    -- insert table to main tab of filemanager menu
     menu_items.collections = {
         text = self.coll_menu_title,
         callback = function()
@@ -25,13 +25,13 @@ function FileManagerCollection:addToMainMenu(menu_items)
 end
 
 function FileManagerCollection:updateItemTable()
-    -- try to stay on current page
+    -- Try to stay on current page.
     local select_number = nil
     if self.coll_menu.page and self.coll_menu.perpage then
         select_number = (self.coll_menu.page - 1) * self.coll_menu.perpage + 1
     end
     self.coll_menu:switchItemTable(self.coll_menu_title,
-        require("readcollection"):prepareList(self.coll_menu.collection), select_number)
+        ReadCollection:prepareList(self.coll_menu.collection), select_number)
 end
 
 function FileManagerCollection:onMenuHold(item)
@@ -59,7 +59,7 @@ function FileManagerCollection:onMenuHold(item)
                                     order = i
                                 })
                             end
-                            require("readcollection"):writeCollection(new_order_table, self._manager.coll_menu.collection)
+                            ReadCollection:writeCollection(new_order_table, self._manager.coll_menu.collection)
                             self._manager:updateItemTable()
                         end
                     }
@@ -70,7 +70,7 @@ function FileManagerCollection:onMenuHold(item)
             {
                 text = _("Remove from collection"),
                 callback = function()
-                    require("readcollection"):removeItem(item.file, self._manager.coll_menu.collection)
+                    ReadCollection:removeItem(item.file, self._manager.coll_menu.collection)
                     self._manager:updateItemTable()
                     UIManager:close(collfile_dialog)
                 end,
