@@ -1,10 +1,10 @@
 local ButtonDialog = require("ui/widget/buttondialog")
-local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
-local Notification = require("ui/widget/notification")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local MultiConfirmBox = require("ui/widget/multiconfirmbox")
+local Notification = require("ui/widget/notification")
 local TimeVal = require("ui/timeval")
 local Translator = require("ui/translator")
 local UIManager = require("ui/uimanager")
@@ -116,7 +116,7 @@ function ReaderHighlight:genHighlightDrawerMenu()
                 self.view.highlight.disabled = not self.view.highlight.disabled
             end,
             hold_callback = function(touchmenu_instance)
-                self:makeDefault(not self.view.highlight.disabled)
+                self:toggleDefault()
             end,
             separator = true,
         },
@@ -1179,17 +1179,20 @@ function ReaderHighlight:onClose()
     self:clear()
 end
 
-function ReaderHighlight:makeDefault(highlight_disabled)
-    local new_text
-    if highlight_disabled then
-        new_text = _("Disable highlight by default.")
-    else
-        new_text = _("Enable highlight by default.")
-    end
-    UIManager:show(ConfirmBox:new{
-        text = new_text,
-        ok_callback = function()
-            G_reader_settings:saveSetting("highlight_disabled", highlight_disabled)
+function ReaderHighlight:toggleDefault()
+    local highlight_disabled = G_reader_settings:isTrue("highlight_disabled")
+    UIManager:show(MultiConfirmBox:new{
+        text = highlight_disabled and _("Enable highlighting by default.")
+        or _("Disable highlighting by default."),
+        choice1_text = _("Disable"),
+        choice1_enabled = not highlight_disabled,
+        choice1_callback = function()
+            G_reader_settings:saveSetting("highlight_disabled", true)
+        end,
+        choice2_text = _("Enable"),
+        choice2_enabled = highlight_disabled,
+        choice2_callback = function()
+            G_reader_settings:saveSetting("highlight_disabled", false)
         end,
     })
 end
