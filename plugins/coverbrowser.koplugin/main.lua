@@ -23,6 +23,9 @@ local _FileChooser_onCloseWidget_orig = FileChooser.onCloseWidget
 local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
 local _FileManagerHistory_updateItemTable_orig = FileManagerHistory.updateItemTable
 
+local FileManagerCollection = require("apps/filemanager/filemanagercollection")
+local _FileManagerCollection_updateItemTable_orig = FileManagerCollection.updateItemTable
+
 local FileManager = require("apps/filemanager/filemanager")
 local _FileManager_tapPlus_orig = FileManager.tapPlus
 
@@ -41,6 +44,7 @@ local init_done = false
 local filemanager_display_mode = false -- not initialized yet
 local history_display_mode = false -- not initialized yet
 local series_mode = nil -- defaults to not display series
+local collection_display_mode = false -- not initialized yet
 
 local CoverBrowser = InputContainer:new{
     name = "coverbrowser",
@@ -75,6 +79,7 @@ function CoverBrowser:init()
 
     self:setupFileManagerDisplayMode(BookInfoManager:getSetting("filemanager_display_mode"))
     self:setupHistoryDisplayMode(BookInfoManager:getSetting("history_display_mode"))
+    self:setupCollectionDisplayMode(BookInfoManager:getSetting("collection_display_mode"))
     series_mode = BookInfoManager:getSetting("series_mode")
 
     init_done = true
@@ -261,6 +266,54 @@ function CoverBrowser:addToMainMenu(menu_items)
                         checked_func = function() return history_display_mode == "list_image_filename" end,
                         callback = function()
                            self:setupHistoryDisplayMode("list_image_filename")
+                        end,
+                        separator = true,
+                    },
+                },
+            },
+            {
+                text = _("Collection display mode"),
+                sub_item_table = {
+                    {
+                        text = _("Classic (filename only)"),
+                        checked_func = function() return not collection_display_mode end,
+                        callback = function()
+                            self:setupCollectionDisplayMode("")
+                        end,
+                    },
+                    {
+                        text = _("Mosaic with cover images"),
+                        checked_func = function() return collection_display_mode == "mosaic_image" end,
+                        callback = function()
+                            self:setupCollectionDisplayMode("mosaic_image")
+                        end,
+                    },
+                    {
+                        text = _("Mosaic with text covers"),
+                        checked_func = function() return collection_display_mode == "mosaic_text" end,
+                        callback = function()
+                            self:setupCollectionDisplayMode("mosaic_text")
+                        end,
+                    },
+                    {
+                        text = _("Detailed list with cover images and metadata"),
+                        checked_func = function() return collection_display_mode == "list_image_meta" end,
+                        callback = function()
+                            self:setupCollectionDisplayMode("list_image_meta")
+                        end,
+                    },
+                    {
+                        text = _("Detailed list with metadata, no images"),
+                        checked_func = function() return collection_display_mode == "list_only_meta" end,
+                        callback = function()
+                            self:setupCollectionDisplayMode("list_only_meta")
+                        end,
+                    },
+                    {
+                        text = _("Detailed list with cover images and filenames"),
+                        checked_func = function() return collection_display_mode == "list_image_filename" end,
+                        callback = function()
+                            self:setupCollectionDisplayMode("list_image_filename")
                         end,
                         separator = true,
                     },
@@ -660,6 +713,83 @@ function CoverBrowser:setupHistoryDisplayMode(display_mode)
         FileManagerHistory.updateItemTable = _FileManagerHistory_updateItemTable
         -- And let it know which display_mode we should use
         FileManagerHistory.display_mode = display_mode
+    end
+end
+
+local function _FileManagerCollections_updateItemTable(self)
+    -- 'self' here is the single FileManagerCollections instance
+    -- FileManagerCollections has just created a new instance of Menu as 'coll_menu'
+    -- at each display of Collection/Favorites. Soon after instantiation, this method
+    -- is called. The first time it is called, we replace some methods.
+    local display_mode = self.display_mode
+    local coll_menu = self.coll_menu
+
+    if not coll_menu._coverbrowser_overridden then
+        coll_menu._coverbrowser_overridden = true
+
+        -- In both mosaic and list modes, replace original methods with those from
+        -- our generic CoverMenu
+        local CoverMenu = require("covermenu")
+        coll_menu.updateItems = CoverMenu.updateItems
+        coll_menu.onCloseWidget = CoverMenu.onCloseWidget
+
+        if display_mode == "mosaic_image" or display_mode == "mosaic_text" then -- mosaic mode
+            -- Replace some other original methods with those from our MosaicMenu
+            local MosaicMenu = require("mosaicmenu")
+            coll_menu._recalculateDimen = MosaicMenu._recalculateDimen
+            coll_menu._updateItemsBuildUI = MosaicMenu._updateItemsBuildUI
+            -- Set MosaicMenu behaviour:
+            coll_menu._do_cover_images = display_mode ~= "mosaic_text"
+            -- no need for do_hint_opened with Collections
+
+        elseif display_mode == "list_image_meta" or display_mode == "list_only_meta" or
+            display_mode == "list_image_filename" then -- list modes
+            -- Replace some other original methods with those from our ListMenu
+            local ListMenu = require("listmenu")
+            coll_menu._recalculateDimen = ListMenu._recalculateDimen
+            coll_menu._updateItemsBuildUI = ListMenu._updateItemsBuildUI
+            -- Set ListMenu behaviour:
+            coll_menu._do_cover_images = display_mode ~= "list_only_meta"
+            coll_menu._do_filename_only = display_mode == "list_image_filename"
+            -- no need for do_hint_opened with Collections
+
+        end
+        coll_menu._do_hint_opened = BookInfoManager:getSetting("history_hint_opened")
+    end
+
+    -- And do now what the original does
+    _FileManagerCollection_updateItemTable_orig(self)
+end
+
+
+function CoverBrowser:setupCollectionDisplayMode(display_mode)
+    if not DISPLAY_MODES[display_mode] then
+        display_mode = nil -- unknow mode, fallback to classic
+    end
+    if init_done and display_mode == collection_display_mode then -- no change
+        return
+    end
+    if init_done then -- save new mode in db
+        BookInfoManager:saveSetting("collection_display_mode", display_mode)
+    end
+    -- remember current mode in module variable
+    collection_display_mode = display_mode
+    logger.dbg("CoverBrowser: setting Collection display mode to:", display_mode or "classic")
+
+    if not init_done and not display_mode then
+        return -- starting in classic mode, nothing to patch
+    end
+
+    -- We only need to replace one FileManagerHistory method
+    if not display_mode then -- classic mode
+        -- Put back original methods
+        FileManagerCollection.updateItemTable = _FileManagerCollection_updateItemTable_orig
+        FileManagerCollection.display_mode = nil
+    else
+        -- Replace original method with the one defined above
+        FileManagerCollection.updateItemTable = _FileManagerCollections_updateItemTable
+        -- And let it know which display_mode we should use
+        FileManagerCollection.display_mode = display_mode
     end
 end
 

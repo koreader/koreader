@@ -149,6 +149,7 @@ local order = {
     filemanager = {},
     main = {
         "history",
+        "collections",
         "open_previous_document",
         "----------------------------",
         "book_status",

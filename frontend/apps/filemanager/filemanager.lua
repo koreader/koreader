@@ -9,6 +9,7 @@ local DocumentRegistry = require("document/documentregistry")
 local Event = require("ui/event")
 local FileChooser = require("ui/widget/filechooser")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
+local FileManagerCollection = require("apps/filemanager/filemanagercollection")
 local FileManagerConverter = require("apps/filemanager/filemanagerconverter")
 local FileManagerFileSearcher = require("apps/filemanager/filemanagerfilesearcher")
 local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
@@ -288,11 +289,13 @@ function FileManager:init()
             },
             -- a little hack to get visual functionality grouping
             {},
-            {
+        }
+        if lfs.attributes(file, "mode") == "file" then
+            table.insert(buttons, {
                 {
                     text = _("Open with…"),
-                    enabled = lfs.attributes(file, "mode") == "file" and (DocumentRegistry:getProviders(file) == nil
-                        or #(DocumentRegistry:getProviders(file)) > 1),
+                    enabled = DocumentRegistry:getProviders(file) ~= nil
+                        and #(DocumentRegistry:getProviders(file)) > 1,
                     callback = function()
                         UIManager:close(self.file_dialog)
                         self:showSetProviderButtons(file, FileManager.instance, ReaderUI)
@@ -300,13 +303,14 @@ function FileManager:init()
                 },
                 {
                     text = _("Convert"),
-                    enabled = lfs.attributes(file, "mode") == "file"
-                        and FileManagerConverter:isSupported(file),
+                    enabled = FileManagerConverter:isSupported(file),
                     callback = function()
                         UIManager:close(self.file_dialog)
                         FileManagerConverter:showConvertButtons(file, self)
                     end,
                 },
+            })
+            table.insert(buttons, {
                 {
                     text = _("Book information"),
                     enabled = FileManagerBookInfo:isSupported(file),
@@ -315,8 +319,26 @@ function FileManager:init()
                         UIManager:close(self.file_dialog)
                     end,
                 },
-            },
-        }
+                {
+                    text_func = function()
+                        if require("readcollection"):checkItemExist(file, "favorites") then
+                            return _("Remove from favorites")
+                        else
+                            return _("Add to favorites")
+                        end
+                    end,
+                    enabled = DocumentRegistry:getProviders(file) ~= nil,
+                    callback = function()
+                        if require("readcollection"):checkItemExist(file, "favorites") then
+                            require("readcollection"):removeItem(file, "favorites")
+                        else
+                            require("readcollection"):addItem(file, "favorites")
+                        end
+                        UIManager:close(self.file_dialog)
+                    end,
+                },
+            })
+        end
         if lfs.attributes(file, "mode") == "directory" then
             local realpath = util.realpath(file)
             table.insert(buttons, {
@@ -359,6 +381,9 @@ function FileManager:init()
     self.active_widgets = { Screenshoter:new{ prefix = 'FileManager' } }
     table.insert(self, self.menu)
     table.insert(self, FileManagerHistory:new{
+        ui = self,
+    })
+    table.insert(self, FileManagerCollection:new{
         ui = self,
     })
     table.insert(self, FileManagerFileSearcher:new{ ui = self })
@@ -695,9 +720,10 @@ function FileManager:pasteHere(file)
                 self:moveFile(DocSettings:getSidecarDir(orig), dest) -- dest is always a directory
             end
             if self:moveFile(orig, dest) then
-                --update history
+                --update history and collections
                 local dest_file = string.format("%s/%s", dest, util.basename(orig))
                 require("readhistory"):updateItemByPath(orig, dest_file)
+                require("readcollection"):updateItemByPath(orig, dest_file)
                 --update last open file
                 if G_reader_settings:readSetting("lastfile") == orig then
                     G_reader_settings:saveSetting("lastfile", dest_file)
@@ -764,7 +790,7 @@ function FileManager:createFolder(curr_folder, new_folder)
 end
 
 function FileManager:deleteFile(file)
-    local ok, err
+    local ok, err, is_dir
     local file_abs_path = util.realpath(file)
     if file_abs_path == nil then
         UIManager:show(InfoMessage:new{
@@ -778,6 +804,7 @@ function FileManager:deleteFile(file)
         ok, err = os.remove(file_abs_path)
     else
         ok, err = util.purgeDir(file_abs_path)
+        is_dir = true
     end
     if ok and not err then
         if is_doc then
@@ -789,6 +816,8 @@ function FileManager:deleteFile(file)
             end
             doc_settings:purge()
         end
+        --remove from collections
+        require("readcollection"):removeItemByPath(file, is_dir)
         UIManager:show(InfoMessage:new{
             text = util.template(_("Deleted %1"), file),
             timeout = 2,
@@ -804,6 +833,8 @@ function FileManager:renameFile(file)
     if util.basename(file) ~= self.rename_dialog:getInputText() then
         local dest = util.joinPath(util.dirname(file), self.rename_dialog:getInputText())
         if self:moveFile(file, dest) then
+            -- update collections
+            require("readcollection"):updateItemByPath(file, dest)
             if lfs.attributes(dest, "mode") == "file" then
                 local doc = require("docsettings")
                 local move_history = true;
