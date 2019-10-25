@@ -443,7 +443,6 @@ function ReaderTypeset:makeDefaultFloatingPunctuation()
         choice2_text_func = function()
             return floating_punctuation and _("Enable (★)") or _("Enable")
         end,
-        choice2_text = _("Enable"),
         choice2_enabled = not floating_punctuation,
         choice2_callback = function()
             G_reader_settings:saveSetting("floating_punctuation", true)
