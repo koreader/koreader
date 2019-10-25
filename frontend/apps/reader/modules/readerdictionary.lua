@@ -956,8 +956,18 @@ function ReaderDictionary:toggleFuzzyDefault()
     UIManager:show(MultiConfirmBox:new{
         text = T(
             disable_fuzzy_search
-            and _("Would you like to enable or disable fuzzy search by default?\n\nThe current default (★) is disabled.")
-            or _("Would you like to enable or disable fuzzy search by default?\n\nThe current default (★) is enabled.")
+            and _([[
+Would you like to enable or disable fuzzy search by default?
+
+Fuzzy search can match epuisante, épuisante and épuisantes to épuisant, even if only the latter has an entry in the dictionary. It can be disabled to improve performance, but it might be worthwhile to look into disabling unneeded dictionaries before disabling fuzzy search.
+
+The current default (★) is disabled.]])
+            or _([[
+Would you like to enable or disable fuzzy search by default?
+
+Fuzzy search can match epuisante, épuisante and épuisantes to épuisant, even if only the latter has an entry in the dictionary. It can be disabled to improve performance, but it might be worthwhile to look into disabling unneeded dictionaries before disabling fuzzy search.
+
+The current default (★) is enabled.]])
         ),
         choice1_text_func =  function()
             return disable_fuzzy_search and _("Disable (★)") or _("Disable")
