@@ -3,6 +3,7 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local ProgressWidget = require("ui/widget/progresswidget")
 local ReaderPanning = require("apps/reader/modules/readerpanning")
 local TimeVal = require("ui/timeval")
@@ -370,13 +371,24 @@ function ReaderRolling:addToMainMenu(menu_items)
             self.ui:handleEvent(Event:new("ToggleReadingOrder"))
         end,
         hold_callback = function(touchmenu_instance)
-            UIManager:show(ConfirmBox:new{
-                text = self.inverse_reading_order and _("Enable right to left reading by default?")
-                    or _("Disable right to left reading by default?"),
-                ok_text = self.inverse_reading_order and _("Enable")
-                    or _("Disable"),
-                ok_callback = function()
-                    G_reader_settings:saveSetting("inverse_reading_order", self.inverse_reading_order)
+            local inverse_reading_order = G_reader_settings:isTrue("inverse_reading_order")
+            UIManager:show(MultiConfirmBox:new{
+                text = inverse_reading_order and _("The default (★) for newly opened books is right-to-left (RTL) page turning.\n\nWould you like to change it?")
+                or _("The default (★) for newly opened books is left-to-right (LTR) page turning.\n\nWould you like to change it?"),
+                choice1_text_func = function()
+                    return inverse_reading_order and _("LTR") or _("LTR (★)")
+                end,
+                choice1_enabled = inverse_reading_order,
+                choice1_callback = function()
+                     G_reader_settings:saveSetting("inverse_reading_order", false)
+                     if touchmenu_instance then touchmenu_instance:updateItems() end
+                end,
+                choice2_text_func = function()
+                    return inverse_reading_order and _("RTL (★)") or _("RTL")
+                end,
+                choice2_enabled = not inverse_reading_order,
+                choice2_callback = function()
+                    G_reader_settings:saveSetting("inverse_reading_order", true)
                     if touchmenu_instance then touchmenu_instance:updateItems() end
                 end,
             })

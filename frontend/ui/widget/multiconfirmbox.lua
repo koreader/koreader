@@ -43,11 +43,15 @@ local MultiConfirmBox = InputContainer:new{
     text = _("no text"),
     face = Font:getFace("infofont"),
     choice1_text = _("Choice 1"),
+    choice1_text_func = nil,
     choice2_text = _("Choice 2"),
+    choice2_text_func = nil,
     cancel_text = _("Cancel"),
     choice1_callback = function() end,
     choice2_callback = function() end,
     cancel_callback = function() end,
+    choice1_enabled = true,
+    choice2_enabled = true,
     margin = Size.margin.default,
     padding = Size.padding.default,
     dismissable = true, -- set to false if any button callback is required
@@ -102,6 +106,8 @@ function MultiConfirmBox:init()
                 },
                 {
                     text = self.choice1_text,
+                    text_func = self.choice1_text_func,
+                    enabled = self.choice1_enabled,
                     callback = function()
                         self.choice1_callback()
                         UIManager:close(self)
@@ -109,6 +115,8 @@ function MultiConfirmBox:init()
                 },
                 {
                     text = self.choice2_text,
+                    text_func = self.choice2_text_func,
+                    enabled = self.choice2_enabled,
                     callback = function()
                         self.choice2_callback()
                         UIManager:close(self)

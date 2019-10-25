@@ -2,6 +2,7 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local UIManager = require("ui/uimanager")
 local Math = require("optmath")
 local lfs = require("libs/libkoreader-lfs")
@@ -428,14 +429,24 @@ function ReaderTypeset:addToMainMenu(menu_items)
 end
 
 function ReaderTypeset:makeDefaultFloatingPunctuation()
-    local toggler = self.floating_punctuation == 1 and _("On") or _("Off")
-    UIManager:show(ConfirmBox:new{
-        text = T(
-            _("Set default hanging punctuation to %1?"),
-            toggler
-        ),
-        ok_callback = function()
-            G_reader_settings:saveSetting("floating_punctuation", self.floating_punctuation)
+    local floating_punctuation = G_reader_settings:isTrue("floating_punctuation")
+    UIManager:show(MultiConfirmBox:new{
+        text = floating_punctuation and _("Would you like to enable or disable hanging punctuation by default?\n\nThe current default (★) is enabled.")
+        or _("Would you like to enable or disable hanging punctuation by default?\n\nThe current default (★) is disabled."),
+        choice1_text_func =  function()
+            return floating_punctuation and _("Disable") or _("Disable (★)")
+        end,
+        choice1_enabled = floating_punctuation,
+        choice1_callback = function()
+            G_reader_settings:saveSetting("floating_punctuation", false)
+        end,
+        choice2_text_func = function()
+            return floating_punctuation and _("Enable (★)") or _("Enable")
+        end,
+        choice2_text = _("Enable"),
+        choice2_enabled = not floating_punctuation,
+        choice2_callback = function()
+            G_reader_settings:saveSetting("floating_punctuation", true)
         end,
     })
 end
