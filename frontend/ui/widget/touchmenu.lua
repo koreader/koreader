@@ -607,8 +607,9 @@ function TouchMenu:updateItems()
     else
         time_info_txt = os.date("%H:%M")
     end
-    time_info_txt = time_info_txt .. " – " .. Device:getPowerDevice():getCapacity() .. "%"
-    if Device:getPowerDevice():isCharging() then
+    local powerd = Device:getPowerDevice()
+    time_info_txt = time_info_txt .. " ⌁ ⏻ " .. powerd:getCapacity() .. "%"
+    if powerd:isCharging() then
         time_info_txt = time_info_txt .. " ⚡"
     end
     self.time_info:setText(time_info_txt)

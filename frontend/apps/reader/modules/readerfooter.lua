@@ -52,7 +52,7 @@ local symbol_prefix = {
     icons = {
         time = "⌚",
         pages_left = "⇒",
-        battery = "⚡",
+        battery = "⏻",
         percentage = "⤠",
         book_time_to_read = "⏳",
         chapter_time_to_read = "⤻",
@@ -85,7 +85,7 @@ local footerTextGeneratorMap = {
         local symbol_type = footer.settings.item_prefix or "icons"
         local prefix = symbol_prefix[symbol_type].battery
         local powerd = Device:getPowerDevice()
-        return prefix .. " " .. (powerd:isCharging() and "+" or "") .. powerd:getCapacity() .. "%"
+        return prefix .. " " .. powerd:getCapacity() .. "%" .. (powerd:isCharging() and " ⚡" or "")
     end,
     time = function(footer)
         local symbol_type = footer.settings.item_prefix or "icons"
