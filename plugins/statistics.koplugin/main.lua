@@ -174,7 +174,9 @@ function ReaderStatistics:initData()
     self.data.series = book_properties.series
 
     self.data.pages = self.view.document:getPageCount()
-    self.data.md5 = self:partialMd5(self.document.file)
+    if not self.data.md5 then
+        self.data.md5 = self:partialMd5(self.document.file)
+    end
     self.curr_total_time = 0
     self.curr_total_pages = 0
     self.id_curr_book = self:getIdBookDB()
