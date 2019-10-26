@@ -287,7 +287,7 @@ describe("Readerfooter module", function()
         local horizontal_margin = Screen:scaleBySize(10)*2
         footer:updateFooter()
         assert.is.same(356, footer.text_width)
-        assert.is.same(604, footer.progress_bar.width
+        assert.is.same(600, footer.progress_bar.width
                             + footer.text_width
                             + horizontal_margin)
         assert.is.same(228, footer.progress_bar.width)
