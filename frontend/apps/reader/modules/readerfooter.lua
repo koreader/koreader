@@ -58,7 +58,7 @@ local symbol_prefix = {
         chapter_time_to_read = "⤻",
         frontlight = "☼",
         mem_usage = "",
-        wifi_status = "⚟",
+        wifi_status = "直",
     }
 }
 local PROGRESS_BAR_STYLE_THICK_DEFAULT_HEIGHT = 7
