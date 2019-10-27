@@ -52,13 +52,13 @@ local symbol_prefix = {
     icons = {
         time = "⌚",
         pages_left = "⇒",
-        battery = "⚡",
+        battery = "",
         percentage = "⤠",
         book_time_to_read = "⏳",
         chapter_time_to_read = "⤻",
         frontlight = "☼",
-        mem_usage = "≡",
-        wifi_status = "⚟",
+        mem_usage = "",
+        wifi_status = "直",
     }
 }
 local PROGRESS_BAR_STYLE_THICK_DEFAULT_HEIGHT = 7
@@ -85,7 +85,38 @@ local footerTextGeneratorMap = {
         local symbol_type = footer.settings.item_prefix or "icons"
         local prefix = symbol_prefix[symbol_type].battery
         local powerd = Device:getPowerDevice()
-        return prefix .. " " .. (powerd:isCharging() and "+" or "") .. powerd:getCapacity() .. "%"
+        local batt_lvl = powerd:getCapacity()
+        -- If we're using icons, use fancy variable icons
+        if symbol_type == "icons" then
+            if powerd:isCharging() then
+                prefix = ""
+            else
+                if batt_lvl >= 100 then
+                    prefix = ""
+                elseif batt_lvl >= 90 then
+                    prefix = ""
+                elseif batt_lvl >= 80 then
+                    prefix = ""
+                elseif batt_lvl >= 70 then
+                    prefix = ""
+                elseif batt_lvl >= 60 then
+                    prefix = ""
+                elseif batt_lvl >= 50 then
+                    prefix = ""
+                elseif batt_lvl >= 40 then
+                    prefix = ""
+                elseif batt_lvl >= 30 then
+                    prefix = ""
+                elseif batt_lvl >= 20 then
+                    prefix = ""
+                elseif batt_lvl >= 10 then
+                    prefix = ""
+                else
+                    prefix = ""
+                end
+            end
+        end
+        return prefix .. (symbol_type == "icons" and "" or " ") .. batt_lvl .. "%"
     end,
     time = function(footer)
         local symbol_type = footer.settings.item_prefix or "icons"
