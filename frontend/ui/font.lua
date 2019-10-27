@@ -79,9 +79,9 @@ local Font = {
     fallbacks = {
         [1] = "NotoSans-Regular.ttf",
         [2] = "NotoSansCJKsc-Regular.otf",
-        [3] = "freefont/FreeSans.ttf",
-        [4] = "freefont/FreeSerif.ttf",
-        [5] = "nerdfonts/symbols.ttf",
+        [3] = "nerdfonts/symbols.ttf",
+        [4] = "freefont/FreeSans.ttf",
+        [5] = "freefont/FreeSerif.ttf",
     },
 
     -- face table
