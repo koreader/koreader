@@ -92,6 +92,7 @@ function TimeWidget:update()
         min_widget,
     }
 
+    local closebutton = CloseButton:new{ window = self, padding_top = Size.margin.title, }
     local time_title = FrameContainer:new{
         padding = Size.padding.default,
         margin = Size.margin.title,
@@ -100,7 +101,7 @@ function TimeWidget:update()
             text = self.title_text,
             face = self.title_face,
             bold = true,
-            width = self.screen_width * 0.95,
+            max_width = self.screen_width * 0.95 - closebutton:getSize().w,
         },
     }
     local time_line = LineWidget:new{
@@ -115,7 +116,7 @@ function TimeWidget:update()
             h = time_title:getSize().h
         },
         time_title,
-        CloseButton:new{ window = self, padding_top = Size.margin.title, },
+        closebutton,
     }
     local buttons = {
         {
