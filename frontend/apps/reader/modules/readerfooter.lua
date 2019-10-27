@@ -116,7 +116,7 @@ local footerTextGeneratorMap = {
                 end
             end
         end
-        return prefix .. " " .. batt_lvl .. "%"
+        return prefix .. (symbol_type == "icons" and "" or " ") .. batt_lvl .. "%"
     end,
     time = function(footer)
         local symbol_type = footer.settings.item_prefix or "icons"

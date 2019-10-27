@@ -609,32 +609,32 @@ function TouchMenu:updateItems()
     end
     local powerd = Device:getPowerDevice()
     local batt_lvl = powerd:getCapacity()
-    time_info_txt = time_info_txt .. " ⌁ "
+    time_info_txt = time_info_txt .. " ⌁"
     if powerd:isCharging() then
-        time_info_txt = time_info_txt .. " "
+        time_info_txt = time_info_txt .. ""
     else
         if batt_lvl >= 100 then
-            time_info_txt = time_info_txt .. " "
+            time_info_txt = time_info_txt .. ""
         elseif batt_lvl >= 90 then
-            time_info_txt = time_info_txt .. " "
+            time_info_txt = time_info_txt .. ""
         elseif batt_lvl >= 80 then
-            time_info_txt = time_info_txt .. " "
+            time_info_txt = time_info_txt .. ""
         elseif batt_lvl >= 70 then
-            time_info_txt = time_info_txt .. " "
+            time_info_txt = time_info_txt .. ""
         elseif batt_lvl >= 60 then
-            time_info_txt = time_info_txt .. " "
+            time_info_txt = time_info_txt .. ""
         elseif batt_lvl >= 50 then
-            time_info_txt = time_info_txt .. " "
+            time_info_txt = time_info_txt .. ""
         elseif batt_lvl >= 40 then
-            time_info_txt = time_info_txt .. " "
+            time_info_txt = time_info_txt .. ""
         elseif batt_lvl >= 30 then
-            time_info_txt = time_info_txt .. " "
+            time_info_txt = time_info_txt .. ""
         elseif batt_lvl >= 20 then
-            time_info_txt = time_info_txt .. " "
+            time_info_txt = time_info_txt .. ""
         elseif batt_lvl >= 10 then
-            time_info_txt = time_info_txt .. " "
+            time_info_txt = time_info_txt .. ""
         else
-            time_info_txt = time_info_txt .. " "
+            time_info_txt = time_info_txt .. ""
         end
     end
      time_info_txt = time_info_txt .. batt_lvl .. "%"
