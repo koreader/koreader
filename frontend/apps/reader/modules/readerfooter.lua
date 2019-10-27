@@ -57,7 +57,7 @@ local symbol_prefix = {
         book_time_to_read = "⏳",
         chapter_time_to_read = "⤻",
         frontlight = "☼",
-        mem_usage = "≡",
+        mem_usage = "",
         wifi_status = "⚟",
     }
 }
