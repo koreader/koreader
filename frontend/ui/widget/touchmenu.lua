@@ -608,10 +608,36 @@ function TouchMenu:updateItems()
         time_info_txt = os.date("%H:%M")
     end
     local powerd = Device:getPowerDevice()
-    time_info_txt = time_info_txt .. " ⌁ ⏻ " .. powerd:getCapacity() .. "%"
+    local batt_cap = powerd:getCapacity()
+    time_info_txt = time_info_txt .. " ⌁ "
     if powerd:isCharging() then
-        time_info_txt = time_info_txt .. " ⚡"
+        time_info_txt = time_info_txt .. " "
+    else
+        if batt_cap >= 100 then
+            time_info_txt = time_info_txt .. " "
+        elseif batt_cap >= 90 then
+            time_info_txt = time_info_txt .. " "
+        elseif batt_cap >= 80 then
+            time_info_txt = time_info_txt .. " "
+        elseif batt_cap >= 70 then
+            time_info_txt = time_info_txt .. " "
+        elseif batt_cap >= 60 then
+            time_info_txt = time_info_txt .. " "
+        elseif batt_cap >= 50 then
+            time_info_txt = time_info_txt .. " "
+        elseif batt_cap >= 40 then
+            time_info_txt = time_info_txt .. " "
+        elseif batt_cap >= 30 then
+            time_info_txt = time_info_txt .. " "
+        elseif batt_cap >= 20 then
+            time_info_txt = time_info_txt .. " "
+        elseif batt_cap >= 10 then
+            time_info_txt = time_info_txt .. " "
+        else
+            time_info_txt = time_info_txt .. " "
+        end
     end
+     time_info_txt = time_info_txt .. batt_cap .. "%"
     self.time_info:setText(time_info_txt)
 
     -- recalculate dimen based on new layout

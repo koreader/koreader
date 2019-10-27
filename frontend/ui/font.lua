@@ -81,6 +81,7 @@ local Font = {
         [2] = "NotoSansCJKsc-Regular.otf",
         [3] = "freefont/FreeSans.ttf",
         [4] = "freefont/FreeSerif.ttf",
+        [5] = "nerdfonts/symbols.ttf",
     },
 
     -- face table
