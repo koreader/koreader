@@ -290,7 +290,7 @@ describe("Readerfooter module", function()
         assert.is.same(600, footer.progress_bar.width
                             + footer.text_width
                             + horizontal_margin)
-        assert.is.same(228, footer.progress_bar.width)
+        assert.is.same(229, footer.progress_bar.width)
 
         local old_screen_getwidth = Screen.getWidth
         Screen.getWidth = function() return 900 end
@@ -299,7 +299,7 @@ describe("Readerfooter module", function()
         assert.is.same(900, footer.progress_bar.width
                             + footer.text_width
                             + horizontal_margin)
-        assert.is.same(528, footer.progress_bar.width)
+        assert.is.same(529, footer.progress_bar.width)
         Screen.getWidth = old_screen_getwidth
     end)
 
