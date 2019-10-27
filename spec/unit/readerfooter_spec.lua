@@ -217,7 +217,7 @@ describe("Readerfooter module", function()
         assert.are.same('0%', footer.footer_text.text)
 
         -- disable battery, percentage should follow
-        tapFooterMenu(fake_menu, "Battery status".." ()")
+        tapFooterMenu(fake_menu, "Battery status".." ()")
         assert.are.same('⤠ 50%', footer.footer_text.text)
 
         -- disable percentage, book time to read should follow
