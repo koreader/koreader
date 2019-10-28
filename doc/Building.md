@@ -43,8 +43,6 @@ sdl2 lua@5.1 luarocks gettext pkg-config wget md5sha1sum
 echo 'export PATH="/usr/local/opt/gettext/bin:$PATH"' >> "$HOME"/.bash_profile
 ```
 
-If you run into a gettext error while building glib, try `brew link --force gettext` to override the built-in macOS BSD gettext with GNU gettext.
-
 *Note:* With current XCode versions, you *will* need to set a minimum deployment version higher than `10.04`. Otherwise, you'll hit various linking errors related to missing unwinding libraries/symbols.
 On Mojave, `10.09` has been known to behave with XCode 10, And `10.14` with XCode 11. When in doubt, go with your current macOS version.
 ```
@@ -76,6 +74,8 @@ To run KOReader on your development machine:
 ```
 ./kodev run
 ```
+
+*Note:* On non-Linux hosts, you might want to pass `--no-build` to prevent re-running the buildsystem, as incremental builds are probably not behaving properly.
 
 
 You can specify the size and DPI of the emulator's screen using
