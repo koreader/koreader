@@ -75,7 +75,7 @@ To run KOReader on your development machine:
 ./kodev run
 ```
 
-*Note:* On non-Linux hosts, you might want to pass `--no-build` to prevent re-running the buildsystem, as incremental builds are probably not behaving properly. Might also need to send a ^C if the very first startup hangs.
+*Note:* On non-Linux hosts, you might want to pass `--no-build` to prevent re-running the buildsystem, as incremental builds are probably not behaving properly.
 
 
 You can specify the size and DPI of the emulator's screen using

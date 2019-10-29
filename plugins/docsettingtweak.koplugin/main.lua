@@ -98,7 +98,13 @@ function DocSettingTweak:onDocSettingsLoad(doc_settings, document)
                 doc_settings.data = util.tableDeepCopy(directory_defaults:readSetting(directory))
                 break
             else
-                directory = FFIUtil.dirname(directory)
+                next_directory = FFIUtil.dirname(directory)
+                if directory == next_directory then
+                    -- Can't go further back, abort.
+                    break
+                else
+                    directory = next_directory
+                end
             end
         end
     end
