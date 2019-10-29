@@ -98,12 +98,11 @@ function DocSettingTweak:onDocSettingsLoad(doc_settings, document)
                 doc_settings.data = util.tableDeepCopy(directory_defaults:readSetting(directory))
                 break
             else
-                next_directory = FFIUtil.dirname(directory)
-                if directory == next_directory then
-                    -- Can't go further back, abort.
+                if directory == "/" or directory == "." then
+                    -- have reached the filesystem root, abort
                     break
                 else
-                    directory = next_directory
+                    directory = FFIUtil.dirname(directory)
                 end
             end
         end
