@@ -1,6 +1,6 @@
 # Setting up a build environment for KOReader
 
-These instructions are intended to build the emulator in Linux and MacOS. Windows users are suggested to develop in a [Linux VM](https://www.howtogeek.com/howto/11287/how-to-run-ubuntu-in-windows-7-with-vmware-player/) or using the [Windows Subsystem for Linux](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux).
+These instructions are intended to build the emulator in Linux and macOS. Windows users are suggested to develop in a [Linux VM](https://www.howtogeek.com/howto/11287/how-to-run-ubuntu-in-windows-7-with-vmware-player/) or using the [Windows Subsystem for Linux](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux).
 
 If you only want to work with Lua frontend stuff, you can grab the AppImage and
 run it with `--appimage-extract`.
@@ -43,8 +43,6 @@ sdl2 lua@5.1 luarocks gettext pkg-config wget md5sha1sum
 echo 'export PATH="/usr/local/opt/gettext/bin:$PATH"' >> "$HOME"/.bash_profile
 ```
 
-If you run into a gettext error while building glib, try `brew link --force gettext` to override the built-in macOS BSD gettext with GNU gettext.
-
 *Note:* With current XCode versions, you *will* need to set a minimum deployment version higher than `10.04`. Otherwise, you'll hit various linking errors related to missing unwinding libraries/symbols.
 On Mojave, `10.09` has been known to behave with XCode 10, And `10.14` with XCode 11. When in doubt, go with your current macOS version.
 ```
@@ -65,7 +63,7 @@ Building the emulator
 
 ## Building and running the emulator
 
-To build an emulator on your Linux or MacOS machine:
+To build an emulator on your Linux or macOS machine:
 
 ```
 ./kodev build
@@ -76,6 +74,8 @@ To run KOReader on your development machine:
 ```
 ./kodev run
 ```
+
+*Note:* On macOS and possibly other non-Linux hosts, you might want to pass `--no-build` to prevent re-running the buildsystem, as incremental builds may not behave properly.
 
 
 You can specify the size and DPI of the emulator's screen using
