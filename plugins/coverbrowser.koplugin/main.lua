@@ -346,6 +346,9 @@ function CoverBrowser:addToMainMenu(menu_items)
                         keep_menu_open = true,
                         callback = function()
                             local SpinWidget = require("ui/widget/spinwidget")
+                            -- "files_per_page" should have been saved with an adequate value
+                            -- the first time Detailed list was shown. Fallback to a start
+                            -- value of 10 if it hasn't.
                             local curr_items = BookInfoManager:getSetting("files_per_page") or 10
                             local items = SpinWidget:new{
                                 width = Screen:getWidth() * 0.6,

@@ -788,13 +788,20 @@ function ListMenu:_recalculateDimen()
     end
     local available_height = self.dimen.h - self.others_height - Size.line.thin
 
-    -- (perpage used to be static and computed from a base of 64px per ListMenuItem,
-    -- which gave 10 items both in filemanager and history on kobo glo hd - now that
-    -- we can change the nb of items, let's start with a default of 10 - as it must
-    -- be known as the initial value by the menu selection widget, but there is not
-    -- enough information there to compute it as we could here).
-    -- local default_per_page = math.floor(available_height / scale_by_size / 64)
-    self.perpage = BookInfoManager:getSetting("files_per_page") or 10
+    -- (Note: we can't assign directly to self.perpage and expect it to
+    -- be 'nil' if it was not defined, as we'll find instead the value
+    -- defined in the Menu class (14) because of inheritance.)
+    local files_per_page = BookInfoManager:getSetting("files_per_page")
+    if files_per_page then
+        self.perpage = files_per_page
+    else
+        -- perpage used to be static and computed from a base of 64px per ListMenuItem,
+        -- which gave 10 items both in filemanager and history on kobo glo hd.
+        -- Now that we can change the nb of items, let's start with a similar default
+        -- and save it so it's known as the initial value by the menu selection widget.
+        self.perpage = math.floor(available_height / scale_by_size / 64)
+        BookInfoManager:saveSetting("files_per_page", self.perpage)
+    end
     self.cover_sizetag = "s" .. self.perpage
     if Screen:getWidth() > Screen:getHeight() then -- landscape mode
         -- When in landscape mode (only possible with History), adjust
