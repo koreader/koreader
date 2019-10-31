@@ -59,7 +59,8 @@ function ButtonTable:init()
                 max_width = (self.width - sizer_space)/column_cnt - 2*self.sep_width - 2*self.padding,
                 bordersize = 0,
                 margin = 0,
-                padding = 0,
+                padding = Size.padding.buttontable, -- a bit taller than standalone buttons, for easier tap
+                padding_h = 0, -- allow text to take more of the horizontal space
                 text_font_face = self.button_font_face,
                 text_font_size = self.button_font_size,
                 show_parent = self.show_parent,

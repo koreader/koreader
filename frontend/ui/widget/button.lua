@@ -41,6 +41,8 @@ local Button = InputContainer:new{
     background = Blitbuffer.COLOR_WHITE,
     radius = Size.radius.button,
     padding = Size.padding.button,
+    padding_h = nil,
+    padding_v = nil,
     width = nil,
     max_width = nil,
     text_font_face = "cfont",
@@ -54,10 +56,17 @@ function Button:init()
         self.text = self.text_func()
     end
 
+    if not self.padding_h then
+        self.padding_h = self.padding
+    end
+    if not self.padding_v then
+        self.padding_v = self.padding
+    end
+
     if self.text then
         self.label_widget = TextWidget:new{
             text = self.text,
-            max_width = self.max_width and self.max_width - 2*self.padding - 2*self.margin - 2*self.bordersize or nil,
+            max_width = self.max_width and self.max_width - 2*self.padding_h - 2*self.margin - 2*self.bordersize or nil,
             fgcolor = self.enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
             bold = self.text_font_bold,
             face = Font:getFace(self.text_font_face, self.text_font_size)
@@ -79,7 +88,10 @@ function Button:init()
         bordersize = self.bordersize,
         background = self.background,
         radius = self.radius,
-        padding = self.padding,
+        padding_top = self.padding_v,
+        padding_bottom = self.padding_v,
+        padding_left = self.padding_h,
+        padding_right = self.padding_h,
         CenterContainer:new{
             dimen = Geom:new{
                 w = self.width,
