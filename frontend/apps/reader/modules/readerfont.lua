@@ -127,7 +127,7 @@ function ReaderFont:onReadSettings(config)
     self.ui.document:setFontHinting(self.font_hinting)
 
     self.font_kerning = config:readSetting("font_kerning")
-            or G_reader_settings:readSetting("copt_font_kerning") or 1 -- freetype (default in cre.cpp)
+            or G_reader_settings:readSetting("copt_font_kerning") or 3 -- harfbuzz (slower, but needed for proper arabic)
     self.ui.document:setFontKerning(self.font_kerning)
 
     self.space_condensing = config:readSetting("space_condensing")

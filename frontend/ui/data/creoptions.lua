@@ -385,7 +385,7 @@ Note that your selected font size is not affected by this setting.]]),
                 name_text = S.FONT_KERNING,
                 toggle = {S.OFF, S.FAST, S.GOOD, S.BEST},
                 values = {0, 1, 2, 3},
-                default_value = 1,
+                default_value = 3,
                 args = {0, 1, 2, 3},
                 event = "SetFontKerning",
                 name_text_hold_callback = optionsutil.showValues,
@@ -394,7 +394,7 @@ Note that your selected font size is not affected by this setting.]]),
 - off: no kerning.
 - fast: use FreeType's kerning implementation (no ligatures).
 - good: use HarfBuzz's light kerning implementation (faster than full but no ligatures and limited support for non-western scripts)
-- best: use HarfBuzz's full kerning implementation (slower, but may support ligatures with some fonts).
+- best: use HarfBuzz's full kerning implementation (slower, but may support ligatures with some fonts; also needed to properly display joined arabic glyphs and some other scripts).
 
 (Font Hinting may need to be adjusted for the best result with either kerning implementation.)]]),
             },
