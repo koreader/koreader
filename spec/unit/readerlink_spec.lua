@@ -18,7 +18,7 @@ describe("ReaderLink module", function()
             document = DocumentRegistry:openDocument(sample_epub),
         }
         readerui.rolling:onGotoPage(4)
-        readerui.link:onTap(nil, {pos = {x = 340, y = 110}})
+        readerui.link:onTap(nil, {pos = {x = 320, y = 120}})
         assert.is.same(36, readerui.rolling.current_page)
     end)
 
@@ -57,7 +57,7 @@ describe("ReaderLink module", function()
             document = DocumentRegistry:openDocument(sample_epub),
         }
         readerui.rolling:onGotoPage(4)
-        readerui.link:onTap(nil, {pos = {x = 340, y = 110}})
+        readerui.link:onTap(nil, {pos = {x = 320, y = 120}})
         assert.is.same(36, readerui.rolling.current_page)
         readerui.link:onGoBackLink()
         assert.is.same(4, readerui.rolling.current_page)
