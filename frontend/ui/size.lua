@@ -50,6 +50,7 @@ local Size = {
         small = Screen:scaleBySize(2),
         large = Screen:scaleBySize(10),
         button = Screen:scaleBySize(2),
+        buttontable = Screen:scaleBySize(4),
         fullscreen = Screen:scaleBySize(15),
     },
     radius = {
