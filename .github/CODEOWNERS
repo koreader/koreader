@@ -1,0 +1,9 @@
+# See <https://help.github.com/en/github/creating-cloning-and-archiving-repositories/about-code-owners>.
+
+/docs/ @Frenzie @NiLuJe
+
+/frontend/device/cervantes/    @pazos
+/frontend/device/kobo/         @Frenzie @NiLuJe @pazos @poire-z
+
+kodev @Frenzie
+Makefile @Frenzie
