@@ -317,8 +317,8 @@ describe("Readerfooter module", function()
         assert.are.same(359, footer.text_width)
 
         footer:onPageUpdate(100)
-        assert.are.same(189, footer.progress_bar.width)
-        assert.are.same(391, footer.text_width)
+        assert.are.same(197, footer.progress_bar.width)
+        assert.are.same(383, footer.text_width)
     end)
 
     it("should support chapter markers", function()
