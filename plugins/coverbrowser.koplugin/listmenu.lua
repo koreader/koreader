@@ -793,14 +793,14 @@ function ListMenu:_recalculateDimen()
     -- defined in the Menu class (14) because of inheritance.)
     local files_per_page = BookInfoManager:getSetting("files_per_page")
     if files_per_page then
-        self.perpage = files_per_page
+        self.perpage = tonumber(files_per_page)
     else
         -- perpage used to be static and computed from a base of 64px per ListMenuItem,
         -- which gave 10 items both in filemanager and history on kobo glo hd.
         -- Now that we can change the nb of items, let's start with a similar default
         -- and save it so it's known as the initial value by the menu selection widget.
         self.perpage = math.floor(available_height / scale_by_size / 64)
-        BookInfoManager:saveSetting("files_per_page", self.perpage)
+        BookInfoManager:saveSetting("files_per_page", tostring(self.perpage))
     end
     self.cover_sizetag = "s" .. self.perpage
     if Screen:getWidth() > Screen:getHeight() then -- landscape mode
