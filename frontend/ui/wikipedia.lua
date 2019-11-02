@@ -421,7 +421,7 @@ local function image_load_bb_func(image, highres)
         -- We use an invisible widget that will resend the dismiss event,
         -- so that image loading in TextBoxWdiget is unobtrusive and
         -- interruptible
-        trap_widget = false
+        trap_widget = nil
         source = image.source
     else
         -- We need to let the user know image loading is happening,
