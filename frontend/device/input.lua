@@ -324,7 +324,8 @@ function Input:handleKeyBoardEv(ev)
     end
 
     -- The hardware camera button is used in Android to toggle the touchscreen
-    if keycode == "Camera" and ev.value == EVENT_VALUE_KEY_RELEASE then
+    if keycode == "Camera" and ev.value == EVENT_VALUE_KEY_RELEASE
+        and G_reader_settings:isTrue("camera_key_toggles_touchscreen") then
         local isAndroid, android = pcall(require, "android")
         if isAndroid then
             -- toggle touchscreen behaviour

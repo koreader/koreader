@@ -220,6 +220,13 @@ if Device:isAndroid() then
         end,
     }
 
+    -- camera key events
+    common_settings.android_camera_key = {
+        text = _("Camera key toggles touchscreen support"),
+        checked_func = function() return G_reader_settings:isTrue("camera_key_toggles_touchscreen") end,
+        callback = function() G_reader_settings:flipNilOrFalse("camera_key_toggles_touchscreen") end,
+    }
+
     -- fullscreen toggle on devices with compatible fullscreen methods (apis 14-18)
     if Device.firmware_rev < 19 then
         common_settings.fullscreen = {

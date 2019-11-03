@@ -53,6 +53,7 @@ local order = {
         "back_in_filemanager",
         "enable_back_history",
         "android_volume_keys",
+        "android_camera_key",
         "----------------------------",
         "invert_page_turn_buttons",
     },
