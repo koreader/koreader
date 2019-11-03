@@ -6,6 +6,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local Menu = require("ui/widget/menu")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local _ = require("gettext")
 
@@ -204,8 +205,9 @@ function CoverMenu:updateItems(select_number)
                 self.onFileHold_orig(self, file)
 
                 local bookinfo = BookInfoManager:getBookInfo(file)
-                if not bookinfo then
+                if not bookinfo or lfs.attributes(file, "mode") == "directory" then
                     -- If no bookinfo (yet) about this file, let the original dialog be
+                    -- or if directory is hold, let the original dialog be.
                     return true
                 end
 
