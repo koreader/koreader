@@ -272,7 +272,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                 },
             },
             {
-                text = _("Collection display mode"),
+                text = _("Favorites display mode"),
                 sub_item_table = {
                     {
                         text = _("Classic (filename only)"),
@@ -325,40 +325,45 @@ function CoverBrowser:addToMainMenu(menu_items)
                 text = _("Other settings"),
                 sub_item_table = {
                     {
-                        text = _("Show hint for books with description"),
-                        checked_func = function() return not BookInfoManager:getSetting("no_hint_description") end,
-                        callback = function()
-                            if BookInfoManager:getSetting("no_hint_description") then
-                                BookInfoManager:saveSetting("no_hint_description", false)
-                            else
-                                BookInfoManager:saveSetting("no_hint_description", true)
-                            end
-                            self:refreshFileManagerInstance()
-                        end,
-                    },
-                    {
-                        text = _("Show hint for opened books in history"),
-                        checked_func = function() return BookInfoManager:getSetting("history_hint_opened") end,
-                        callback = function()
-                            if BookInfoManager:getSetting("history_hint_opened") then
-                                BookInfoManager:saveSetting("history_hint_opened", false)
-                            else
-                                BookInfoManager:saveSetting("history_hint_opened", true)
-                            end
-                            self:refreshFileManagerInstance()
-                        end,
-                    },
-                    {
-                        text = _("Show hint for opened books in collections"),
-                        checked_func = function() return BookInfoManager:getSetting("collections_hint_opened") end,
-                        callback = function()
-                            if BookInfoManager:getSetting("collections_hint_opened") then
-                                BookInfoManager:saveSetting("collections_hint_opened", false)
-                            else
-                                BookInfoManager:saveSetting("collections_hint_opened", true)
-                            end
-                            self:refreshFileManagerInstance()
-                        end,
+                        text = _("Display hints"),
+                        sub_item_table = {
+                            {
+                                text = _("Show hint for books with description"),
+                                checked_func = function() return not BookInfoManager:getSetting("no_hint_description") end,
+                                callback = function()
+                                    if BookInfoManager:getSetting("no_hint_description") then
+                                        BookInfoManager:saveSetting("no_hint_description", false)
+                                    else
+                                        BookInfoManager:saveSetting("no_hint_description", true)
+                                    end
+                                    self:refreshFileManagerInstance()
+                                end,
+                            },
+                            {
+                                text = _("Show hint for opened books in history"),
+                                checked_func = function() return BookInfoManager:getSetting("history_hint_opened") end,
+                                callback = function()
+                                    if BookInfoManager:getSetting("history_hint_opened") then
+                                        BookInfoManager:saveSetting("history_hint_opened", false)
+                                    else
+                                        BookInfoManager:saveSetting("history_hint_opened", true)
+                                    end
+                                    self:refreshFileManagerInstance()
+                                end,
+                            },
+                            {
+                                text = _("Show hint for opened books in favorites"),
+                                checked_func = function() return BookInfoManager:getSetting("collections_hint_opened") end,
+                                callback = function()
+                                    if BookInfoManager:getSetting("collections_hint_opened") then
+                                        BookInfoManager:saveSetting("collections_hint_opened", false)
+                                    else
+                                        BookInfoManager:saveSetting("collections_hint_opened", true)
+                                    end
+                                    self:refreshFileManagerInstance()
+                                end,
+                            }
+                        }
                     },
                     {
                         text = _("Series "),
