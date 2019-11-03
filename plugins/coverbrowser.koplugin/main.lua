@@ -43,8 +43,8 @@ local DISPLAY_MODES = {
 local init_done = false
 local filemanager_display_mode = false -- not initialized yet
 local history_display_mode = false -- not initialized yet
-local series_mode = nil -- defaults to not display series
 local collection_display_mode = false -- not initialized yet
+local series_mode = nil -- defaults to not display series
 
 local CoverBrowser = InputContainer:new{
     name = "coverbrowser",
@@ -344,6 +344,18 @@ function CoverBrowser:addToMainMenu(menu_items)
                                 BookInfoManager:saveSetting("history_hint_opened", false)
                             else
                                 BookInfoManager:saveSetting("history_hint_opened", true)
+                            end
+                            self:refreshFileManagerInstance()
+                        end,
+                    },
+                    {
+                        text = _("Show hint for opened books in collections"),
+                        checked_func = function() return BookInfoManager:getSetting("collections_hint_opened") end,
+                        callback = function()
+                            if BookInfoManager:getSetting("collections_hint_opened") then
+                                BookInfoManager:saveSetting("collections_hint_opened", false)
+                            else
+                                BookInfoManager:saveSetting("collections_hint_opened", true)
                             end
                             self:refreshFileManagerInstance()
                         end,
@@ -732,6 +744,9 @@ local function _FileManagerCollections_updateItemTable(self)
         local CoverMenu = require("covermenu")
         coll_menu.updateItems = CoverMenu.updateItems
         coll_menu.onCloseWidget = CoverMenu.onCloseWidget
+        -- Also replace original onMenuHold (it will use original method, so remember it)
+        coll_menu.onMenuHold_orig = coll_menu.onMenuHold
+        coll_menu.onMenuHold = CoverMenu.onCollectionsMenuHold
 
         if display_mode == "mosaic_image" or display_mode == "mosaic_text" then -- mosaic mode
             -- Replace some other original methods with those from our MosaicMenu
@@ -740,7 +755,6 @@ local function _FileManagerCollections_updateItemTable(self)
             coll_menu._updateItemsBuildUI = MosaicMenu._updateItemsBuildUI
             -- Set MosaicMenu behaviour:
             coll_menu._do_cover_images = display_mode ~= "mosaic_text"
-            -- no need for do_hint_opened with Collections
 
         elseif display_mode == "list_image_meta" or display_mode == "list_only_meta" or
             display_mode == "list_image_filename" then -- list modes
@@ -751,10 +765,9 @@ local function _FileManagerCollections_updateItemTable(self)
             -- Set ListMenu behaviour:
             coll_menu._do_cover_images = display_mode ~= "list_only_meta"
             coll_menu._do_filename_only = display_mode == "list_image_filename"
-            -- no need for do_hint_opened with Collections
 
         end
-        coll_menu._do_hint_opened = BookInfoManager:getSetting("history_hint_opened")
+        coll_menu._do_hint_opened = BookInfoManager:getSetting("collections_hint_opened")
     end
 
     -- And do now what the original does
@@ -780,7 +793,7 @@ function CoverBrowser:setupCollectionDisplayMode(display_mode)
         return -- starting in classic mode, nothing to patch
     end
 
-    -- We only need to replace one FileManagerHistory method
+    -- We only need to replace one FileManagerCollection method
     if not display_mode then -- classic mode
         -- Put back original methods
         FileManagerCollection.updateItemTable = _FileManagerCollection_updateItemTable_orig

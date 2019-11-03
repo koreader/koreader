@@ -302,26 +302,18 @@ function FileManager:init()
                     end,
                 },
                 {
-                    text = _("Convert"),
-                    enabled = FileManagerConverter:isSupported(file),
-                    callback = function()
-                        UIManager:close(self.file_dialog)
-                        FileManagerConverter:showConvertButtons(file, self)
-                    end,
-                },
-            })
-            table.insert(buttons, {
-                {
                     text = _("Book information"),
                     enabled = FileManagerBookInfo:isSupported(file),
                     callback = function()
                         FileManagerBookInfo:show(file)
                         UIManager:close(self.file_dialog)
                     end,
-                },
+                }
+            })
+            table.insert(buttons, {
                 {
                     text_func = function()
-                        if ReadCollection:checkItemExist(file, "favorites") then
+                        if ReadCollection:checkItemExist(file) then
                             return _("Remove from favorites")
                         else
                             return _("Add to favorites")
@@ -329,15 +321,27 @@ function FileManager:init()
                     end,
                     enabled = DocumentRegistry:getProviders(file) ~= nil,
                     callback = function()
-                        if ReadCollection:checkItemExist(file, "favorites") then
-                            ReadCollection:removeItem(file, "favorites")
+                        if ReadCollection:checkItemExist(file) then
+                            ReadCollection:removeItem(file)
                         else
-                            ReadCollection:addItem(file, "favorites")
+                            ReadCollection:addItem(file)
                         end
                         UIManager:close(self.file_dialog)
                     end,
                 },
             })
+            if FileManagerConverter:isSupported(file) then
+                table.insert(buttons, {
+                    {
+                        text = _("Convert"),
+                        enabled = true,
+                        callback = function()
+                            UIManager:close(self.file_dialog)
+                            FileManagerConverter:showConvertButtons(file, self)
+                        end,
+                    }
+                })
+            end
         end
         if lfs.attributes(file, "mode") == "directory" then
             local realpath = util.realpath(file)

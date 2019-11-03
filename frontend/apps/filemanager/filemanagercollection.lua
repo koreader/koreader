@@ -35,13 +35,13 @@ function FileManagerCollection:updateItemTable()
 end
 
 function FileManagerCollection:onMenuHold(item)
-    local collfile_dialog = nil
+    self.collfile_dialog = nil
     local buttons = {
         {
             {
                 text = _("Sort"),
                 callback = function()
-                    UIManager:close(collfile_dialog)
+                    UIManager:close(self.collfile_dialog)
                     local item_table = {}
                     for i=1, #self._manager.coll_menu.item_table do
                         table.insert(item_table, {text = self._manager.coll_menu.item_table[i].text, label = self._manager.coll_menu.item_table[i].file})
@@ -49,7 +49,7 @@ function FileManagerCollection:onMenuHold(item)
                     local SortWidget = require("ui/widget/sortwidget")
                     local sort_item
                     sort_item = SortWidget:new{
-                        title = _("Sort favorites book"),
+                        title = _("Sort favorites"),
                         item_table = item_table,
                         callback = function()
                             local new_order_table = {}
@@ -72,7 +72,7 @@ function FileManagerCollection:onMenuHold(item)
                 callback = function()
                     ReadCollection:removeItem(item.file, self._manager.coll_menu.collection)
                     self._manager:updateItemTable()
-                    UIManager:close(collfile_dialog)
+                    UIManager:close(self.collfile_dialog)
                 end,
             },
         },
@@ -82,17 +82,17 @@ function FileManagerCollection:onMenuHold(item)
                 enabled = FileManagerBookInfo:isSupported(item.file),
                 callback = function()
                     FileManagerBookInfo:show(item.file)
-                    UIManager:close(collfile_dialog)
+                    UIManager:close(self.collfile_dialog)
                 end,
             },
         },
     }
-    collfile_dialog = ButtonDialogTitle:new{
+    self.collfile_dialog = ButtonDialogTitle:new{
         title = item.text:match("([^/]+)$"),
         title_align = "center",
         buttons = buttons,
     }
-    UIManager:show(collfile_dialog)
+    UIManager:show(self.collfile_dialog)
     return true
 end
 

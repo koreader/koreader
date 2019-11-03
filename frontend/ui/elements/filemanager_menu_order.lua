@@ -128,8 +128,9 @@ local order = {
     },
     main = {
         "history",
-        "collections",
         "open_last_document",
+        "----------------------------",
+        "collections",
         "----------------------------",
         "system_statistics",
         "mass_storage_actions",

@@ -3,15 +3,17 @@ local LuaSettings = require("luasettings")
 local getFriendlySize = require("util").getFriendlySize
 local lfs = require("libs/libkoreader-lfs")
 local realpath = require("ffi/util").realpath
-local util = require("frontend/util")
+local util = require("util")
 
+local DEFAULT_COLLECTION_NAME = "favorites"
 local collection_file = DataStorage:getSettingsDir() .. "/collection.lua"
 
 local ReadCollection = {}
 
-function ReadCollection:read(collections)
-    local collection_handle = LuaSettings:open(collection_file)
-    local coll = collection_handle:readSetting(collections) or {}
+function ReadCollection:read(collection_name)
+    if not collection_name then collection_name = DEFAULT_COLLECTION_NAME end
+    local collections = LuaSettings:open(collection_file)
+    local coll = collections:readSetting(collection_name) or {}
     local coll_max_item = 0
 
     for _, v in pairs(coll) do
@@ -31,8 +33,8 @@ function ReadCollection:readAllCollection()
     end
 end
 
-function ReadCollection:prepareList(collection)
-    local data = self:read(collection)
+function ReadCollection:prepareList(collection_name)
+    local data = self:read(collection_name)
     local list = {}
     for _, v in pairs(data) do
         local file_exists = lfs.attributes(v.file, "mode") == "file"
@@ -113,25 +115,26 @@ function ReadCollection:updateItemByPath(old_path, new_path)
     end
 end
 
-function ReadCollection:removeItem(item, collection)
-    local coll = self:read(collection)
+function ReadCollection:removeItem(item, collection_name)
+    local coll = self:read(collection_name)
     for k, v in pairs(coll) do
         if v.file == item then
             table.remove(coll, k)
             break
         end
     end
-    self:writeCollection(coll, collection)
+    self:writeCollection(coll, collection_name)
 end
 
-function ReadCollection:writeCollection(coll_items, coll)
+function ReadCollection:writeCollection(coll_items, collection_name)
+    if not collection_name then collection_name = DEFAULT_COLLECTION_NAME end
     local collection = LuaSettings:open(collection_file)
-    collection:saveSetting(coll, coll_items)
+    collection:saveSetting(collection_name, coll_items)
     collection:flush()
 end
 
-function ReadCollection:addItem(file, collection)
-    local coll, coll_max_item = self:read(collection)
+function ReadCollection:addItem(file, collection_name)
+    local coll, coll_max_item = self:read(collection_name)
     coll_max_item = coll_max_item + 1
     local collection_item =
     {
@@ -139,11 +142,11 @@ function ReadCollection:addItem(file, collection)
         order = coll_max_item
     }
     table.insert(coll, collection_item)
-    self:writeCollection(coll, collection)
+    self:writeCollection(coll, collection_name)
 end
 
-function ReadCollection:checkItemExist(item, collection)
-    local coll = self:read(collection)
+function ReadCollection:checkItemExist(item, collection_name)
+    local coll = self:read(collection_name)
     for _, v in pairs(coll) do
         if v.file == item then
             return true
