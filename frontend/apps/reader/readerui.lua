@@ -654,8 +654,11 @@ function ReaderUI:notifyCloseDocument()
     end
 end
 
-function ReaderUI:onClose()
+function ReaderUI:onClose(full_refresh)
     logger.dbg("closing reader")
+    if full_refresh == nil then
+        full_refresh = true
+    end
     -- if self.dialog is us, we'll have our onFlushSettings() called
     -- by UIManager:close() below, so avoid double save
     if self.dialog ~= self then
@@ -665,7 +668,7 @@ function ReaderUI:onClose()
         logger.dbg("closing document")
         self:notifyCloseDocument()
     end
-    UIManager:close(self.dialog, "full")
+    UIManager:close(self.dialog, full_refresh and "full")
     -- serialize last used items for later launch
     Cache:serialize()
     if _running_instance == self then
@@ -715,7 +718,7 @@ function ReaderUI:reloadDocument(after_close_callback)
     self:handleEvent(Event:new("CloseReaderMenu"))
     self:handleEvent(Event:new("CloseConfigMenu"))
     self.highlight:onClose() -- close highlight dialog if any
-    self:onClose()
+    self:onClose(false)
     if after_close_callback then
         -- allow caller to do stuff between close an re-open
         after_close_callback(file, provider)
@@ -728,7 +731,7 @@ function ReaderUI:switchDocument(new_file)
     self:handleEvent(Event:new("CloseReaderMenu"))
     self:handleEvent(Event:new("CloseConfigMenu"))
     self.highlight:onClose() -- close highlight dialog if any
-    self:onClose()
+    self:onClose(false)
     self:showReader(new_file)
 end
 
