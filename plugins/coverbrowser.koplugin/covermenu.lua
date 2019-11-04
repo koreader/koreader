@@ -205,9 +205,8 @@ function CoverMenu:updateItems(select_number)
                 self.onFileHold_orig(self, file)
 
                 local bookinfo = BookInfoManager:getBookInfo(file)
-                if not bookinfo or lfs.attributes(file, "mode") == "directory" then
-                    -- If no bookinfo (yet) about this file, let the original dialog be
-                    -- or if directory is hold, let the original dialog be.
+                if not bookinfo or bookinfo._is_directory then
+                    -- If no bookinfo (yet) about this file, or it's a directory, let the original dialog be
                     return true
                 end
 
