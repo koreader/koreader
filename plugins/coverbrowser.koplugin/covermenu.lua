@@ -6,7 +6,6 @@ local InfoMessage = require("ui/widget/infomessage")
 local Menu = require("ui/widget/menu")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
-local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local _ = require("gettext")
 
