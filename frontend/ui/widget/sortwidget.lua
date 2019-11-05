@@ -406,7 +406,7 @@ function SortWidget:_populateItems()
                 height = self.item_height,
                 width = self.item_width,
                 text = self.item_table[idx].text,
-                lable = self.item_table[idx].label,
+                label = self.item_table[idx].label,
                 invert = invert_status,
                 index = idx,
                 show_parent = self,

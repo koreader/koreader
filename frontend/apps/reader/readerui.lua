@@ -11,6 +11,7 @@ local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
 local Event = require("ui/event")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
+local FileManagerCollection = require("apps/filemanager/filemanagercollection")
 local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
 local FileManagerFileSearcher = require("apps/filemanager/filemanagerfilesearcher")
 local FileManagerShortcuts = require("apps/filemanager/filemanagershortcuts")
@@ -348,6 +349,11 @@ function ReaderUI:init()
     })
     -- history view
     self:registerModule("history", FileManagerHistory:new{
+        dialog = self.dialog,
+        ui = self,
+    })
+    -- collections/favorites view
+    self:registerModule("collections", FileManagerCollection:new{
         dialog = self.dialog,
         ui = self,
     })

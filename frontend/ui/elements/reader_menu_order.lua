@@ -151,6 +151,8 @@ local order = {
         "history",
         "open_previous_document",
         "----------------------------",
+        "collections",
+        "----------------------------",
         "book_status",
         "book_info",
         "----------------------------",

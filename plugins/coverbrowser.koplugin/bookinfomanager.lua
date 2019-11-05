@@ -267,7 +267,8 @@ function BookInfoManager:getBookInfo(filepath, get_cover)
     -- files with unknown book extension. If not a supported extension,
     -- returns a bookinfo like-object enough for a correct display and
     -- to not trigger extraction, so we don't clutter DB with such files.
-    if not DocumentRegistry:hasProvider(filepath) then
+    local is_directory = lfs.attributes(filepath, "mode") == "directory"
+    if is_directory or not DocumentRegistry:hasProvider(filepath) then
         return {
             directory = directory,
             filename = filename,
@@ -277,6 +278,8 @@ function BookInfoManager:getBookInfo(filepath, get_cover)
             has_cover = nil,
             ignore_meta = "Y",
             ignore_cover = "Y",
+            -- for CoverMenu to *not* extend the onHold dialog:
+            _is_directory = is_directory,
             -- for ListMenu to show the filename *with* suffix:
             _no_provider = true
         }

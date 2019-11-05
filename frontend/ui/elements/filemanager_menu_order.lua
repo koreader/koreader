@@ -130,6 +130,8 @@ local order = {
         "history",
         "open_last_document",
         "----------------------------",
+        "collections",
+        "----------------------------",
         "system_statistics",
         "mass_storage_actions",
         "----------------------------",
