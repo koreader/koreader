@@ -377,7 +377,6 @@ function VirtualKeyPopup:init()
                 virtual_key.onHoldReleaseKey = function()
                     virtual_key:onTapSelect(true)
                     UIManager:close(self)
-                    return true
                 end
                 virtual_key.onPanReleaseKey = virtual_key.onHoldReleaseKey
 
