@@ -325,6 +325,7 @@ end
 function EvernoteExporter:login()
     if not NetworkMgr:isOnline() then
         NetworkMgr:promptWifiOn()
+        return
     end
     self.login_dialog = LoginDialog:new{
         title = self.login_title,
