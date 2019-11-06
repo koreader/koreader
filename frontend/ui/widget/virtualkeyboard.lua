@@ -377,6 +377,7 @@ function VirtualKeyPopup:init()
                 virtual_key.onHoldReleaseKey = function()
                     virtual_key:onTapSelect(true)
                     UIManager:close(self)
+                    return true
                 end
                 virtual_key.onPanReleaseKey = virtual_key.onHoldReleaseKey
 
@@ -531,6 +532,7 @@ local VirtualKeyboard = FocusManager:new{
         he = "he_keyboard",
         ja = "ja_keyboard",
         pt_BR = "pt_keyboard",
+        ar_AA = "ar_AA_keyboard",
         ko_KR = "ko_KR_keyboard",
     },
 }
