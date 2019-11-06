@@ -60,7 +60,7 @@ local alef = ar_popup.alef
 local baa = ar_popup.baa
 local jeem = ar_popup.jeem
 local daal = ar_popup.daal
-local h-aa = ar_popup.h-aa
+local haa2 = ar_popup.haa2
 local waw = ar_popup.waw
 local zay = ar_popup.zay
 local ha = ar_popup.ha
@@ -80,11 +80,11 @@ local sheen = ar_popup.sheen
 local taa = ar_popup.taa
 local thaa = ar_popup.thaa
 local thaal = ar_popup.thaal
-local d-ad = ar_popup.d-ad
-local th-aa = ar_popup.th-aa
+local dhad = ar_popup.dhad
+local thaa = ar_popup.thaa
 local ghayn = ar_popup.ghayn
 local khaa = ar_popup.khaa
-local alef-maqsoura = ar_popup.alef-maqsoura
+local alefmaqsoura = ar_popup.alefmaqsoura
 
 return {
     shiftmode_keys = {["Shift"] = true},
@@ -94,7 +94,7 @@ return {
     keys = {
         -- first row
         {  --  1           2       3       4       5       6           7       8       9       10      11      12
-            { _Q_,        _q_,    "„",    "0",    "׳",    d-ad        "?",    "!",    "Å",    "å",    "1",    "ª", },
+            { _Q_,        _q_,    "„",    "0",    "׳",    dhad        "?",    "!",    "Å",    "å",    "1",    "ª", },
             { _W_,        _w_,    "!",    "1",    "֘֘֙֙ ",    saad,        "(",    "1",    "Ä",    "ä",    "2",    "º", },
             { _E_,        _e_,    _at,    "2",    "֘ ",    thaa,      ")",    "2",    "Ö",    "ö",    "3",    "¡", },
             { _R_,        _r_,    "#",    "3",    "֗",    qaf,      "~",    "3",    "ß",    "ß",    "4",    "¿", },
@@ -129,14 +129,14 @@ return {
             },
             { _Z_,        _z_,    "&",    "7",    "׃",    thaal,     ":",    "7",    "Á",    "á",    "Ű",    "ű", },
             { _X_,        _x_,    "*",    "8",    "׀",    hamza,    ";",    "8",    "Ø",    "ø",    "Ã",    "ã", },
-            { _C_,        _c_,    "£",    "9",    "ׄ ",    waw-hamza,      "'",    "9",    "Í",    "í",    "Þ",    "þ", },
+            { _C_,        _c_,    "£",    "9",    "ׄ ",    wawhamza,      "'",    "9",    "Í",    "í",    "Þ",    "þ", },
             { _V_,        _v_,    "<",    com,    "ׅ ",    raa,       "Ө",    "ө",    "Ñ",    "ñ",    "Ý",    "ý", },
             { _B_,        _b_,    ">",    prd,    "־",    laa,       "Һ",    "һ",    "Ó",    "ó",    "†",    "‡", },
-            { _N_,        _n_,    "‘",    "↑",    "ֿ ",    alef-maqsoura,      "Б",    "б",    "Ú",    "ú",    "–",    "—", },
-            { _M_,        _m_,    "’",    "↓",    "ֽ ",    taa-marbouta,   "Ю",    "ю",    "Ç",    "ç",    "…",    "¨", },
+            { _N_,        _n_,    "‘",    "↑",    "ֿ ",    alefmaqsoura,      "Б",    "б",    "Ú",    "ú",    "–",    "—", },
+            { _M_,        _m_,    "’",    "↓",    "ֽ ",    taamarbouta,   "Ю",    "ю",    "Ç",    "ç",    "…",    "¨", },
             { ",",        ",",    "’",    "↓",    "ֽ ",    waw,   "Ю",    "ю",    "Ç",    "ç",    "…",    "¨", },
             { ".",        ".",    "’",    "↓",    "ֽ ",    zay,   "Ю",    "ю",    "Ç",    "ç",    "…",    "¨", },
-            { "/",        "/",    "’",    "↓",    "ֽ ",    th-aa,   "Ю",    "ю",    "Ç",    "ç",    "…",    "¨", },
+            { "/",        "/",    "’",    "↓",    "ֽ ",    thaa,   "Ю",    "ю",    "Ç",    "ç",    "…",    "¨", },
             { label = "مَسح",
               icon = "resources/icons/appbar.clear.reflect.horizontal.png",
               width = 1.5

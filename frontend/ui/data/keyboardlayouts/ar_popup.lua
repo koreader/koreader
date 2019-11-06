@@ -18,7 +18,7 @@ return {
     daal = {
         "د",
     },
-    h-aa = {
+    h_aa = {
         "ه",
         north = "هـ",
     },
@@ -92,32 +92,31 @@ return {
     thaal = {
          "ذ",
     },
-    
-    d-ad = {
+    dhad = {
        "ض",
     },
-    th-aa = {
+    th_aa = {
        "ظ",
     },
     ghayn = {
        "غ",
-    }, 
+    },
     khaa = {
        "خ",
     },
-    alef-maqsoura = {
+    alefmaqsoura = {
         "ى",
-    },   
+    },
     hamza = {
         "ء",
     },
-    waw-hamza = {
+    wawhamza = {
          "ؤ",
     },
     laa = {
           "ﻻ",
     },
-   taa-marbouta = {
+   taamarbouta = {
           "ة",
     },
 }
