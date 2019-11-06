@@ -46,7 +46,7 @@ return {
     },
     lam = {
         "ل",
-	north = "ﻻ",
+        north = "ﻻ",
         northeast = "ﻷ",
         northwest = "ﻹ",
         east = "ﻵ",
@@ -94,31 +94,31 @@ return {
     },
     
     d-ad = {
-	"ض",
+       "ض",
     },
     th-aa = {
-	"ظ",
+       "ظ",
     },
     ghayn = {
-	"غ",
+       "غ",
     }, 
     khaa = {
-	"خ",
+       "خ",
     },
     alef-maqsoura = {
-	"ى",
+        "ى",
     },   
     hamza = {
-	"ء",
+        "ء",
     },
     waw-hamza = {
-	"ؤ",
+         "ؤ",
     },
     laa = {
-	"ﻻ",
+          "ﻻ",
     },
    taa-marbouta = {
-	"ة",
+          "ة",
     },
 }
 
