@@ -58,7 +58,10 @@ function VirtualKey:init()
         self.skiptap = true
     elseif self.label == "Backspace" then
         self.callback = function () self.keyboard:delChar() end
-        self.hold_callback = function () self.keyboard:delToStartOfLine() end
+        self.hold_callback = function ()
+            self.ignore_key_release = true -- don't have delChar called on release
+            self.keyboard:delToStartOfLine()
+        end
         --self.skiphold = true
     elseif self.label =="←" then
         self.callback = function() self.keyboard:leftChar() end
@@ -241,21 +244,31 @@ function VirtualKey:onSwipeKey(arg, ges)
 end
 
 function VirtualKey:onHoldReleaseKey()
+    if self.ignore_key_release then
+        self.ignore_key_release = nil
+        return true
+    end
     Device:performHapticFeedback("LONG_PRESS")
     if self.keyboard.ignore_first_hold_release then
         self.keyboard.ignore_first_hold_release = false
         return true
     end
     self:onTapSelect()
+    return true
 end
 
 function VirtualKey:onPanReleaseKey()
+    if self.ignore_key_release then
+        self.ignore_key_release = nil
+        return true
+    end
     Device:performHapticFeedback("LONG_PRESS")
     if self.keyboard.ignore_first_hold_release then
         self.keyboard.ignore_first_hold_release = false
         return true
     end
     self:onTapSelect()
+    return true
 end
 
 function VirtualKey:invert(invert, hold)
@@ -377,6 +390,7 @@ function VirtualKeyPopup:init()
                 virtual_key.onHoldReleaseKey = function()
                     virtual_key:onTapSelect(true)
                     UIManager:close(self)
+                    return true
                 end
                 virtual_key.onPanReleaseKey = virtual_key.onHoldReleaseKey
 
