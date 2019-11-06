@@ -250,6 +250,7 @@ end
 function KOSync:login()
     if not NetworkMgr:isOnline() then
         NetworkMgr:promptWifiOn()
+        return
     end
     self.login_dialog = LoginDialog:new{
         title = self.title,
