@@ -88,7 +88,7 @@ local alefmaqsoura = ar_popup.alefmaqsoura
 
 return {
     shiftmode_keys = {["Shift"] = true},
-    symbolmode_keys = {["Sym"] = true, ["ABC"] = true},
+    symbolmode_keys = {["Sym"] = true, ["ABC"] = true, ["رمز"]=true},
     utf8mode_keys = {["IM"] = true},
     umlautmode_keys = {["Äéß"] = true},
     keys = {
@@ -123,7 +123,7 @@ return {
         },
         -- third row
         {  --  1           2       3       4       5       6          7       8       9       10      11      12
-            { label = "بَدِّل",
+            { label = "Shift",
               icon = "resources/icons/appbar.arrow.shift.png",
               width = 1.5
             },
@@ -137,7 +137,7 @@ return {
             { ",",        ",",    "’",    "↓",    "ֽ ",    waw,   "Ю",    "ю",    "Ç",    "ç",    "…",    "¨", },
             { ".",        ".",    "’",    "↓",    "ֽ ",    zay,   "Ю",    "ю",    "Ç",    "ç",    "…",    "¨", },
             { "/",        "/",    "’",    "↓",    "ֽ ",    thaa,   "Ю",    "ю",    "Ç",    "ç",    "…",    "¨", },
-            { label = "مَسح",
+            { label = "Backspace",
               icon = "resources/icons/appbar.clear.reflect.horizontal.png",
               width = 1.5
             },
@@ -145,7 +145,7 @@ return {
         -- fourth row
         {
             { "Sym",     "Sym",  "ABC",  "ABC",  "Sym",  "رمز",    "رمز",  "رمز",  "Sym",  "Sym",  "ABC",  "ABC",
-              width = 1.5},
+              width = 1},
             { label = "IM",
               icon = "resources/icons/appbar.globe.wire.png",
             },
