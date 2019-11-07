@@ -298,6 +298,9 @@ function OPDSBrowser:fetchFeed(item_url, username, password, method)
         if xml ~= "" then
             return xml
         end
+    elseif method == "HEAD" then
+        -- Don't show error messages when we check headers only.
+        return
     elseif code == 301 then
         UIManager:show(InfoMessage:new{
             text = T(_("The catalog has been permanently moved. Please update catalog URL to '%1'."), headers['Location']),
@@ -401,6 +404,11 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
     end
 
     if not feed.entry then
+        if #hrefs == 0 then
+            UIManager:show(InfoMessage:new{
+                text = _("Catalog not found."),
+            })
+        end
         return item_table
     end
 
