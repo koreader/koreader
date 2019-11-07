@@ -11,7 +11,7 @@ return {
         "ب",
         north = "ݒ",
     },
-    geem = {
+    jeem = {
         "ج",
         north = "ج",
     },
@@ -116,8 +116,35 @@ return {
     laa = {
           "ﻻ",
     },
-   taamarbouta = {
+    taamarbouta = {
           "ة",
+    },
+   diacritic_fat_ha = {
+          "َ",
+    },
+   diacritic_damma = {
+          "ُ",
+    },
+   diacritic_kasra = {
+          "ِ",
+    },
+   diacritic_sukoon = {
+          "ْ",
+    },
+   diacritic_shadda = {
+          "ّ",
+    },
+   diacritic_tanween_fath = {
+          "ً",
+    },
+   diacritic_tanween_damm = {
+          "ٌ",
+    },
+   diacritic_tanween_kasr = {
+          "ٍ",
+    },
+   arabic_comma = {
+          "،",
     },
 }
 

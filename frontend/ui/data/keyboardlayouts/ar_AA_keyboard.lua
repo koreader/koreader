@@ -57,7 +57,7 @@ local _y_ = en_popup._y_
 local _Z_ = en_popup._Z_
 local _z_ = en_popup._z_
 local alef = ar_popup.alef
-local baa = ar_popup.baa
+local ba = ar_popup.ba
 local jeem = ar_popup.jeem
 local daal = ar_popup.daal
 local haa2 = ar_popup.haa2
@@ -84,7 +84,21 @@ local dhad = ar_popup.dhad
 local thaa = ar_popup.thaa
 local ghayn = ar_popup.ghayn
 local khaa = ar_popup.khaa
+local hamza = ar_popup.hamza
+local wawhamza = ar_popup.wawhamza
+local laa = ar_popup.laa
 local alefmaqsoura = ar_popup.alefmaqsoura
+local taamarbouta = ar_popup.taamarbouta
+local diacritic_fat_ha = ar_popup.diacritic_fat_ha
+local diacritic_damma = ar_popup.diacritic_damma
+local diacritic_kasra = ar_popup.diacritic_kasra
+local diacritic_sukoon = ar_popup.diacritic_sukoon
+local diacritic_shadda = ar_popup.diacritic_shadda
+local diacritic_tanween_fath = ar_popup.diacritic_tanween_fath
+local diacritic_tanween_damm = ar_popup.diacritic_tanween_damm
+local diacritic_tanween_kasr = ar_popup.diacritic_tanween_kasr
+local arabic_comma = ar_popup.arabic_comma
+
 
 return {
     shiftmode_keys = {["Shift"] = true},
@@ -97,26 +111,26 @@ return {
             { _Q_,        _q_,    "„",    "0",    "׳",    dhad,        "?",    "!",    "Å",    "å",    "1",    "ª", },
             { _W_,        _w_,    "!",    "1",    "֘֘֙֙ ",    saad,        "(",    "1",    "Ä",    "ä",    "2",    "º", },
             { _E_,        _e_,    _at,    "2",    "֘ ",    thaa,      ")",    "2",    "Ö",    "ö",    "3",    "¡", },
-            { _R_,        _r_,    "#",    "3",    "֗",    qaf,      "~",    "3",    "ß",    "ß",    "4",    "¿", },
+            { _R_,        _r_,    "#",    "3",    "֗",     qaf,      "~",    "3",    "ß",    "ß",    "4",    "¿", },
             { _T_,        _t_,    "+",    _eq,    "֖ ",    fah,        "Ә",    "ә",    "À",    "à",    "5",    "¼", },
             { _Y_,        _y_,    "€",    "(",    "֕ ",    ghayn,        "І",    "і",    "Â",    "â",    "6",    "½", },
             { _U_,        _u_,    "‰",    ")",    "֔ ",    ayin,         "Ң",    "ң",    "Æ",    "æ",    "7",    "¾", },
             { _I_,        _i_,    "|",   "\\",    "֓ ",    ha,  "Ғ",    "ғ",    "Ü",    "ü",    "8",    "©", },
             { _O_,        _o_,    "?",    "/",    "֒ ",    khaa,       "Х",    "х",    "È",    "è",    "9",    "®", },
             { _P_,        _p_,    "~",    "`",    "֑ ",    ha, "Ъ",    "ъ",    "É",    "é",    "0",    "™", },
-            { "[",        "[",    "",    "",    "֑",    jeem, "",    "",    "",    "",    "0",    "™", },
+            { "[",        "[",    "",     "",     "֑",     jeem, "",    "",    "",    "",    "0",    "™", },
             { "]",        "]",    "’",    "↓",    "ֽ ",    daal,   "Ю",    "ю",    "Ç",    "ç",    "…",    "¨", },
         },
         -- second row
         {  --  1           2       3       4       5       6          7       8       9       10      11      12
-            { _A_,        _a_,    "…",    _at,    "ּ ",    sheeb,      "*",    "0",    "Ê",    "ê",    "Ş",    "ş", },
+            { _A_,        _a_,    "…",    _at,    "ּ ",    sheen,      "*",    "0",    "Ê",    "ê",    "Ş",    "ş", },
             { _S_,        _s_,    "$",    "4",    "ֻ ",    seen,     "+",    "4",    "Ë",    "ë",    "İ",    "ı", },
             { _D_,        _d_,    "%",    "5",    "ִ ",    yaa,    "-",    "5",    "Î",    "î",    "Ğ",    "ğ", },
-            { _F_,        _f_,    "^",    "6",    "ֹ",    baa,      _eq,    "6",    "Ï",    "ï",    "Ć",    "ć", },
+            { _F_,        _f_,    "^",    "6",    "ֹ",     ba,      _eq,    "6",    "Ï",    "ï",    "Ć",    "ć", },
             { _G_,        _g_,    ":",    ";",    "ְ ",    lam,      "Ү",    "ү",    "Ô",    "ô",    "Č",    "č", },
             { _H_,        _h_,    '"',    "'",    "ֵ ",    alef,        "Ұ",    "ұ",    "Œ",    "œ",    "Đ",    "đ", },
             { _J_,        _j_,    "{",    "[",    "ֶ ",    taa,       "Қ",    "қ",    "Ù",    "ù",    "Š",    "š", },
-            { _K_,        _k_,    "}",    "]",    "ַ ",   nun,      "Ж",    "ж",    "Û",    "û",    "Ž",    "ž", },
+            { _K_,        _k_,    "}",    "]",    "ַ ",    nun,      "Ж",    "ж",    "Û",    "û",    "Ž",    "ž", },
             { _L_,        _l_,    "_",    "-",    "ָ ",    meem,       "Э",    "э",    "Ÿ",    "ÿ",    "Ő",    "ő", },
             { ";",        _l_,    "_",    "-",    "ָ ",    kaf,       "Э",    "э",    "Ÿ",    "ÿ",    "Ő",    "ő", },
             { "'",        _l_,    "_",    "-",    "ָ ",    tah,       "Э",    "э",    "Ÿ",    "ÿ",    "Ő",    "ő", },
@@ -153,9 +167,9 @@ return {
             { label = "space",
               " ",        " ",    " ",    " ",    " ",    " ",      " ",    " ",    " ",    " ",    " ",    " ",
               width = 3.0},
-            { com,        com,    "“",    "←",    com,    taf,      "Ё",    "ё",    "Ũ",   "ũ",    com,    com, },
-            { prd,        prd,    "”",    "→",    prd,    "ץ",      prd,    prd,    "Ĩ",   "ĩ",    prd,    prd, },
-            { label = "أدخل",
+            { com,        com,    "“",    "←",    com,    arabic_comma,      "Ё",    "ё",    "Ũ",   "ũ",    com,    com, },
+            { prd,        prd,    "”",    "→",    prd,    prd,      prd,    prd,    "Ĩ",   "ĩ",    prd,    prd, },
+            { label = "Enter",
               "\n",       "\n",   "\n",   "\n",   "\n",   "\n",    "\n",   "\n",   "\n",   "\n",   "\n",   "\n",
               icon = "resources/icons/appbar.arrow.enter.png",
               width = 1.5,
