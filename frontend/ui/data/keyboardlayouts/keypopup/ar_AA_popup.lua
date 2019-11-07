@@ -18,7 +18,7 @@ return {
     daal = {
         "د",
     },
-    h_aa = {
+    h_aa = { -- الهاء
         "ه",
         north = "هـ",
     },
@@ -29,7 +29,7 @@ return {
         "ز",
         north = "ژ",
     },
-    ha = {
+    ha = { -- الحاء
         "ح",
     },
     tah = {
@@ -142,6 +142,19 @@ return {
     },
    diacritic_tanween_kasr = {
           "ٍ",
+    },
+   diacritics = {
+          "َ",
+         north = "ٌ",
+         northeast = "ً",
+         northwest = "ٍ",
+         east = "ُ",
+         west = "ِ",
+    },
+   diacritics_shadda_sukoon_madd = {
+         "ّ",
+         north="ْ",
+         east="~",
     },
    arabic_comma = {
           "،",

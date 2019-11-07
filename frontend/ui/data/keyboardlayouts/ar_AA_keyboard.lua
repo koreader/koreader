@@ -60,7 +60,7 @@ local alef = ar_popup.alef
 local ba = ar_popup.ba
 local jeem = ar_popup.jeem
 local daal = ar_popup.daal
-local haa2 = ar_popup.haa2
+local h_aa = ar_popup.h_aa
 local waw = ar_popup.waw
 local zay = ar_popup.zay
 local ha = ar_popup.ha
@@ -81,7 +81,6 @@ local taa = ar_popup.taa
 local thaa = ar_popup.thaa
 local thaal = ar_popup.thaal
 local dhad = ar_popup.dhad
-local thaa = ar_popup.thaa
 local ghayn = ar_popup.ghayn
 local khaa = ar_popup.khaa
 local hamza = ar_popup.hamza
@@ -89,14 +88,14 @@ local wawhamza = ar_popup.wawhamza
 local laa = ar_popup.laa
 local alefmaqsoura = ar_popup.alefmaqsoura
 local taamarbouta = ar_popup.taamarbouta
-local diacritic_fat_ha = ar_popup.diacritic_fat_ha
-local diacritic_damma = ar_popup.diacritic_damma
-local diacritic_kasra = ar_popup.diacritic_kasra
-local diacritic_sukoon = ar_popup.diacritic_sukoon
-local diacritic_shadda = ar_popup.diacritic_shadda
-local diacritic_tanween_fath = ar_popup.diacritic_tanween_fath
-local diacritic_tanween_damm = ar_popup.diacritic_tanween_damm
-local diacritic_tanween_kasr = ar_popup.diacritic_tanween_kasr
+--local diacritic_fat_ha = ar_popup.diacritic_fat_ha
+--local diacritic_damma = ar_popup.diacritic_damma
+--local diacritic_kasra = ar_popup.diacritic_kasra
+--local diacritic_sukoon = ar_popup.diacritic_sukoon
+--local diacritic_shadda = ar_popup.diacritic_shadda
+--local diacritic_tanween_fath = ar_popup.diacritic_tanween_fath
+--local diacritic_tanween_damm = ar_popup.diacritic_tanween_damm
+--local diacritic_tanween_kasr = ar_popup.diacritic_tanween_kasr
 local arabic_comma = ar_popup.arabic_comma
 
 
@@ -117,7 +116,7 @@ return {
             { _U_,        _u_,    "‰",    ")",    "֔ ",    ayin,         "Ң",    "ң",    "Æ",    "æ",    "7",    "¾", },
             { _I_,        _i_,    "|",   "\\",    "֓ ",    ha,  "Ғ",    "ғ",    "Ü",    "ü",    "8",    "©", },
             { _O_,        _o_,    "?",    "/",    "֒ ",    khaa,       "Х",    "х",    "È",    "è",    "9",    "®", },
-            { _P_,        _p_,    "~",    "`",    "֑ ",    ha, "Ъ",    "ъ",    "É",    "é",    "0",    "™", },
+            { _P_,        _p_,    "~",    "`",    "֑ ",    h_aa, "Ъ",    "ъ",    "É",    "é",    "0",    "™", },
             { "[",        "[",    "",     "",     "֑",     jeem, "",    "",    "",    "",    "0",    "™", },
             { "]",        "]",    "’",    "↓",    "ֽ ",    daal,   "Ю",    "ю",    "Ç",    "ç",    "…",    "¨", },
         },
@@ -174,6 +173,8 @@ return {
               icon = "resources/icons/appbar.arrow.enter.png",
               width = 1.5,
             },
-        },
+            --{ label = "َ ُ ِ",
+		--diacritics, },
     },
+}
 }
