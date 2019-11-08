@@ -174,7 +174,7 @@ return {
               width = 1.5,
             },
             --{ label = "َ ُ ِ",
-		--diacritics, },
+            --diacritics, },
     },
 }
 }
