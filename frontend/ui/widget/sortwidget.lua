@@ -426,7 +426,6 @@ function SortWidget:_populateItems()
     self.footer_right:enableDisable(self.show_page < self.pages)
     self.footer_first_up:enableDisable(self.show_page > 1 or self.marked > 0)
     self.footer_last_down:enableDisable(self.show_page < self.pages or (self.marked > 0 and self.marked < #self.item_table))
-    self.footer_first_up:enableDisable(self.marked > 1)
 
     UIManager:setDirty(self, function()
         return "ui", self.dimen
