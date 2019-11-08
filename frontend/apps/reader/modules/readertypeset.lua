@@ -436,14 +436,12 @@ function ReaderTypeset:makeDefaultFloatingPunctuation()
         choice1_text_func =  function()
             return floating_punctuation and _("Disable") or _("Disable (★)")
         end,
-        choice1_enabled = floating_punctuation,
         choice1_callback = function()
             G_reader_settings:saveSetting("floating_punctuation", false)
         end,
         choice2_text_func = function()
             return floating_punctuation and _("Enable (★)") or _("Enable")
         end,
-        choice2_enabled = not floating_punctuation,
         choice2_callback = function()
             G_reader_settings:saveSetting("floating_punctuation", true)
         end,
