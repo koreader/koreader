@@ -1032,7 +1032,7 @@ function ReaderRolling:showEngineProgress(percent)
         local x = 0
         local y = 0
         local w = Screen:getWidth() / 3
-        local h = Screen:scaleBySize(5)
+        local h = Screen:scaleBySize(15)
         if self.engine_progress_widget then
             self.engine_progress_widget:setPercentage(percent)
         else
