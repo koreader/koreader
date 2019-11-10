@@ -1031,7 +1031,7 @@ function ReaderRolling:showEngineProgress(percent)
         -- Widget size and position: best to anchor it at top left,
         -- so it does not override the footer or a bookmark dogear
         local x = 0
-        local y = 3
+        local y = Size.margin.small
         local w = Screen:getWidth() / 3
         local h = Size.line.progress
         if self.engine_progress_widget then
