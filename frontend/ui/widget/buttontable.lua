@@ -73,7 +73,7 @@ function ButtonTable:init()
                 background = Blitbuffer.COLOR_DARK_GRAY,
                 dimen = Geom:new{
                     w = self.sep_width,
-                    h = button_dim.h,
+                    h = button_dim.h/3*2,
                 }
             }
             buttons_layout_line[j] = button
