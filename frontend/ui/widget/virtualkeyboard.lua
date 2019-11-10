@@ -34,7 +34,7 @@ local VirtualKey = InputContainer:new{
 
     keyboard = nil,
     callback = nil,
-    -- This is to inhibit the key's own refresh (useful to avoid conflicts on Layout changing keys)
+    -- This is to inhibit the key's own refresh (useful to avoid conflicts on Layer changing keys)
     skiptap = nil,
     skiphold = nil,
 
@@ -48,16 +48,16 @@ local VirtualKey = InputContainer:new{
 
 function VirtualKey:init()
     if self.keyboard.symbolmode_keys[self.label] ~= nil then
-        self.callback = function () self.keyboard:setLayout("Sym") end
+        self.callback = function () self.keyboard:setLayer("Sym") end
         self.skiptap = true
     elseif self.keyboard.shiftmode_keys[self.label] ~= nil then
-        self.callback = function () self.keyboard:setLayout("Shift") end
+        self.callback = function () self.keyboard:setLayer("Shift") end
         self.skiptap = true
     elseif self.keyboard.utf8mode_keys[self.label] ~= nil then
-        self.callback = function () self.keyboard:setKeyboardLocale() end
+        self.callback = function () self.keyboard:setKeyboardLayout() end
         self.skiptap = true
     elseif self.keyboard.umlautmode_keys[self.label] ~= nil then
-        self.callback = function () self.keyboard:setLayout("Äéß") end
+        self.callback = function () self.keyboard:setLayer("Äéß") end
         self.skiptap = true
     elseif self.label == "Backspace" then
         self.callback = function () self.keyboard:delChar() end
@@ -551,9 +551,9 @@ local VirtualKeyboard = FocusManager:new{
     symbolmode_keys = {},
     utf8mode_keys = {},
     umlautmode_keys = {},
-    min_layout = 2,
-    max_layout = 12,
-    keyboard_layout = 2,
+    min_layer = 2,
+    max_layer = 8,
+    keyboard_layer = 2,
     shiftmode = false,
     symbolmode = false,
     umlautmode = false,
@@ -565,7 +565,7 @@ local VirtualKeyboard = FocusManager:new{
     padding = Size.padding.small,
     key_padding = Size.padding.default,
 
-    lang_to_keyboard_locale = {
+    lang_to_keyboard_layout = {
         el = "el_keyboard",
         en = "en_keyboard",
         es = "es_keyboard",
@@ -578,15 +578,16 @@ local VirtualKeyboard = FocusManager:new{
 }
 
 function VirtualKeyboard:init()
-    local keyboard_locale = self:getKeyboardLocale()
-    local keyboard = require("ui/data/keyboardlayouts/" .. keyboard_locale)
+    local lang = self:getKeyboardLayout()
+    local keyboard_layout = self.lang_to_keyboard_layout[lang] or self.lang_to_keyboard_layout["en"]
+    local keyboard = require("ui/data/keyboardlayouts/" .. keyboard_layout)
     self.KEYS = keyboard.keys
     self.shiftmode_keys = keyboard.shiftmode_keys
     self.symbolmode_keys = keyboard.symbolmode_keys
     self.utf8mode_keys = keyboard.utf8mode_keys
     self.umlautmode_keys = keyboard.umlautmode_keys
     self.height = Screen:scaleBySize(64 * #self.KEYS)
-    self:initLayout(self.keyboard_layout)
+    self:initLayer(self.keyboard_layer)
     if Device:hasDPad() then
         self.key_events.PressKey = { {"Press"}, doc = "select key" }
     end
@@ -598,20 +599,19 @@ function VirtualKeyboard:init()
     end
 end
 
-function VirtualKeyboard:getKeyboardLocale()
-    local lang = G_reader_settings:readSetting("keyboard_layout") or G_reader_settings:readSetting("language")
-    return self.lang_to_keyboard_locale[lang] or self.lang_to_keyboard_locale["en"]
+function VirtualKeyboard:getKeyboardLayout()
+    return G_reader_settings:readSetting("keyboard_layout") or G_reader_settings:readSetting("language")
 end
 
-function VirtualKeyboard:setKeyboardLocale()
+function VirtualKeyboard:setKeyboardLayout()
 --[[--
     local radio_buttons = {}
-    for k, _ in orderedPairs(self.lang_to_keyboard_locale) do
+    for k, _ in orderedPairs(self.lang_to_keyboard_layout) do
         table.insert(radio_buttons, {
             {
             text = Language:getLanguageName(k),
             checked_func = function()
-                return VirtualKeyboard:getKeyboardLocale() == k
+                return VirtualKeyboard:getKeyboardLayout() == k
             end,
             callback = function()
                 G_reader_settings:saveSetting("keyboard_layout", k)
@@ -662,25 +662,25 @@ function VirtualKeyboard:onCloseWidget()
     return true
 end
 
-function VirtualKeyboard:initLayout(layout)
-    local function VKLayout(b1, b2, b3)
+function VirtualKeyboard:initLayer(layer)
+    local function VKLayer(b1, b2, b3)
         local function boolnum(bool)
             return bool and 1 or 0
         end
         return 2 - boolnum(b1) + 2 * boolnum(b2) + 4 * boolnum(b3)
     end
 
-    if layout then
-        -- to be sure layout is selected properly
-        layout = math.max(layout, self.min_layout)
-        layout = math.min(layout, self.max_layout)
-        self.keyboard_layout = layout
-        -- fill the layout modes
-        self.shiftmode  = (layout == 1 or layout == 3 or layout == 5 or layout == 7 or layout == 9 or layout == 11)
-        self.symbolmode = (layout == 3 or layout == 4 or layout == 7 or layout == 8 or layout == 11 or layout == 12)
-        self.umlautmode   = (layout == 5 or layout == 6 or layout == 7 or layout == 8)
-    else -- or, without input parameter, restore layout from current layout modes
-        self.keyboard_layout = VKLayout(self.shiftmode, self.symbolmode, self.umlautmode)
+    if layer then
+        -- to be sure layer is selected properly
+        layer = math.max(layer, self.min_layer)
+        layer = math.min(layer, self.max_layer)
+        self.keyboard_layer = layer
+        -- fill the layer modes
+        self.shiftmode  = (layer == 1 or layer == 3 or layer == 5 or layer == 7 or layer == 9 or layer == 11)
+        self.symbolmode = (layer == 3 or layer == 4 or layer == 7 or layer == 8 or layer == 11 or layer == 12)
+        self.umlautmode   = (layer == 5 or layer == 6 or layer == 7 or layer == 8)
+    else -- or, without input parameter, restore layer from current layer modes
+        self.keyboard_layer = VKLayer(self.shiftmode, self.symbolmode, self.umlautmode)
     end
     self:addKeys()
 end
@@ -697,7 +697,7 @@ function VirtualKeyboard:addKeys()
         local layout_horizontal = {}
         for j = 1, #self.KEYS[i] do
             local key
-            local key_chars = self.KEYS[i][j][self.keyboard_layout]
+            local key_chars = self.KEYS[i][j][self.keyboard_layer]
             if type(key_chars) == "table" then
                 key = key_chars[1]
             else
@@ -755,7 +755,7 @@ function VirtualKeyboard:addKeys()
     self.dimen = keyboard_frame:getSize()
 end
 
-function VirtualKeyboard:setLayout(key)
+function VirtualKeyboard:setLayer(key)
     if key == "Shift" then
         self.shiftmode = not self.shiftmode
     elseif key == "Sym" or key == "ABC" then
@@ -763,7 +763,7 @@ function VirtualKeyboard:setLayout(key)
     elseif key == "Äéß" then
         self.umlautmode = not self.umlautmode
     end
-    self:initLayout()
+    self:initLayer()
     self:_refresh(true)
 end
 
