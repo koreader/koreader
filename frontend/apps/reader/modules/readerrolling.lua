@@ -6,6 +6,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local ProgressWidget = require("ui/widget/progresswidget")
 local ReaderPanning = require("apps/reader/modules/readerpanning")
+local Size = require("ui/size")
 local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local bit = require("bit")
@@ -1032,7 +1033,7 @@ function ReaderRolling:showEngineProgress(percent)
         local x = 0
         local y = 3
         local w = Screen:getWidth() / 3
-        local h = Screen:scaleBySize(7)
+        local h = Size.line.progress
         if self.engine_progress_widget then
             self.engine_progress_widget:setPercentage(percent)
         else
