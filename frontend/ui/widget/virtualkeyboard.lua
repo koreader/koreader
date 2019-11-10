@@ -605,20 +605,20 @@ end
 
 function VirtualKeyboard:setKeyboardLocale()
 --[[--
-	local radio_buttons = {}
-	for k, _ in orderedPairs(self.lang_to_keyboard_locale) do
-		table.insert(radio_buttons, {
-		    {
-		    text = Language:getLanguageName(k),
-		    checked_func = function()
-		        return VirtualKeyboard:getKeyboardLocale() == k
-		    end,
-		    callback = function()
-		        G_reader_settings:saveSetting("keyboard_layout", k)
-		    end,
-		    },
-		})
-	end
+    local radio_buttons = {}
+    for k, _ in orderedPairs(self.lang_to_keyboard_locale) do
+        table.insert(radio_buttons, {
+            {
+            text = Language:getLanguageName(k),
+            checked_func = function()
+                return VirtualKeyboard:getKeyboardLocale() == k
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("keyboard_layout", k)
+            end,
+            },
+        })
+    end
     radio_button_table = RadioButtonTable:new{
         radio_buttons = radio_buttons,
         focused = true,
