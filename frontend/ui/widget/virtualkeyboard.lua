@@ -12,6 +12,8 @@ local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local ImageWidget = require("ui/widget/imagewidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local Language = require("ui/language")
+local RadioButtonTable = require("ui/widget/radiobuttontable")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
@@ -19,6 +21,7 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
+local orderedPairs = require("ffi/util").orderedPairs
 local util = require("util")
 local Screen = Device.screen
 
@@ -51,7 +54,7 @@ function VirtualKey:init()
         self.callback = function () self.keyboard:setLayout("Shift") end
         self.skiptap = true
     elseif self.keyboard.utf8mode_keys[self.label] ~= nil then
-        self.callback = function () self.keyboard:setLayout("IM") end
+        self.callback = function () self.keyboard:setKeyboardLocale() end
         self.skiptap = true
     elseif self.keyboard.umlautmode_keys[self.label] ~= nil then
         self.callback = function () self.keyboard:setLayout("Äéß") end
@@ -553,7 +556,6 @@ local VirtualKeyboard = FocusManager:new{
     keyboard_layout = 2,
     shiftmode = false,
     symbolmode = false,
-    utf8mode = false,
     umlautmode = false,
     layout = {},
 
@@ -563,7 +565,7 @@ local VirtualKeyboard = FocusManager:new{
     padding = Size.padding.small,
     key_padding = Size.padding.default,
 
-    lang_to_keyboard_layout = {
+    lang_to_keyboard_locale = {
         el = "el_keyboard",
         en = "en_keyboard",
         es = "es_keyboard",
@@ -576,9 +578,8 @@ local VirtualKeyboard = FocusManager:new{
 }
 
 function VirtualKeyboard:init()
-    local lang = self:getKeyboardLayout()
-    local keyboard_layout = self.lang_to_keyboard_layout[lang] or self.lang_to_keyboard_layout["en"]
-    local keyboard = require("ui/data/keyboardlayouts/" .. keyboard_layout)
+    local keyboard_locale = self:getKeyboardLocale()
+    local keyboard = require("ui/data/keyboardlayouts/" .. keyboard_locale)
     self.KEYS = keyboard.keys
     self.shiftmode_keys = keyboard.shiftmode_keys
     self.symbolmode_keys = keyboard.symbolmode_keys
@@ -597,8 +598,36 @@ function VirtualKeyboard:init()
     end
 end
 
-function VirtualKeyboard:getKeyboardLayout()
-    return G_reader_settings:readSetting("keyboard_layout") or G_reader_settings:readSetting("language")
+function VirtualKeyboard:getKeyboardLocale()
+    local lang = G_reader_settings:readSetting("keyboard_layout") or G_reader_settings:readSetting("language")
+    return self.lang_to_keyboard_locale[lang] or self.lang_to_keyboard_locale["en"]
+end
+
+function VirtualKeyboard:setKeyboardLocale()
+--[[--
+	local radio_buttons = {}
+	for k, _ in orderedPairs(self.lang_to_keyboard_locale) do
+		table.insert(radio_buttons, {
+		    text = Language:getLanguageName(k),
+		    checked_func = function()
+		        return VirtualKeyboard:getKeyboardLocale() == k
+		    end,
+		    callback = function()
+		        G_reader_settings:saveSetting("keyboard_layout", k)
+		    end,
+		})
+	end
+    radio_button_table = RadioButtonTable:new{
+        radio_buttons = radio_buttons,
+        focused = true,
+        scroll = false,
+        parent = self,
+        face = self.face,
+    }
+    UIManager:show(radio_button_table)
+--]]--
+    self:init()
+    self:_refresh(true)
 end
 
 function VirtualKeyboard:onClose()
@@ -632,11 +661,11 @@ function VirtualKeyboard:onCloseWidget()
 end
 
 function VirtualKeyboard:initLayout(layout)
-    local function VKLayout(b1, b2, b3, b4)
+    local function VKLayout(b1, b2, b3)
         local function boolnum(bool)
             return bool and 1 or 0
         end
-        return 2 - boolnum(b1) + 2 * boolnum(b2) + 4 * boolnum(b3) + 8 * boolnum(b4)
+        return 2 - boolnum(b1) + 2 * boolnum(b2) + 4 * boolnum(b3)
     end
 
     if layout then
@@ -647,10 +676,9 @@ function VirtualKeyboard:initLayout(layout)
         -- fill the layout modes
         self.shiftmode  = (layout == 1 or layout == 3 or layout == 5 or layout == 7 or layout == 9 or layout == 11)
         self.symbolmode = (layout == 3 or layout == 4 or layout == 7 or layout == 8 or layout == 11 or layout == 12)
-        self.utf8mode   = (layout == 5 or layout == 6 or layout == 7 or layout == 8)
-        self.umlautmode = (layout == 9 or layout == 10 or layout == 11 or layout == 12)
+        self.umlautmode   = (layout == 5 or layout == 6 or layout == 7 or layout == 8)
     else -- or, without input parameter, restore layout from current layout modes
-        self.keyboard_layout = VKLayout(self.shiftmode, self.symbolmode, self.utf8mode, self.umlautmode)
+        self.keyboard_layout = VKLayout(self.shiftmode, self.symbolmode, self.umlautmode)
     end
     self:addKeys()
 end
@@ -732,10 +760,6 @@ function VirtualKeyboard:setLayout(key)
         self.symbolmode = not self.symbolmode
     elseif key == "Äéß" then
         self.umlautmode = not self.umlautmode
-        if self.umlautmode then self.utf8mode = false end
-    elseif key == "IM" then
-        self.utf8mode = not self.utf8mode
-        if self.utf8mode then self.umlautmode = false end
     end
     self:initLayout()
     self:_refresh(true)
