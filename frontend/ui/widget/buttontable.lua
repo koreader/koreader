@@ -70,7 +70,7 @@ function ButtonTable:init()
             end
             local button_dim = button:getSize()
             local vertical_sep = LineWidget:new{
-                background = Blitbuffer.COLOR_DARK_GRAY,
+                background = Blitbuffer.COLOR_GRAY,
                 dimen = Geom:new{
                     w = self.sep_width,
                     h = button_dim.h,
@@ -108,7 +108,7 @@ function ButtonTable:addHorizontalSep(vspan_before, add_line, vspan_after, black
     end
     if add_line then
         table.insert(self.container, LineWidget:new{
-            background = black_line and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
+            background = black_line and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_GRAY,
             dimen = Geom:new{
                 w = self.width,
                 h = self.sep_width,
