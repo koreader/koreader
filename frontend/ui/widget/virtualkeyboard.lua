@@ -81,7 +81,14 @@ function VirtualKey:init()
             }
         end
         self.swipe_callback = function(ges)
-            self.keyboard:addChar(self.key_chars[ges.direction])
+            local key_string = self.key_chars[ges.direction]
+            local key_function = self.key_chars[ges.direction.."_func"]
+
+            if not key_function and key_string then
+                self.keyboard:addChar(key_string)
+            elseif key_function then
+                key_function()
+            end
         end
     end
 
@@ -321,21 +328,34 @@ function VirtualKeyPopup:init()
             key_chars[2],
             key_chars[3],
             key_chars[4],
+            -- _func equivalent for unnamed extra keys
+            key_chars[5],
+            key_chars[6],
+            key_chars[7],
         },
         top_key_chars = {
             key_chars.northwest,
             key_chars.north,
             key_chars.northeast,
+            key_chars.northwest_func,
+            key_chars.north_func,
+            key_chars.northeast_func,
         },
         middle_key_chars = {
             key_chars.west,
             key_char_orig,
             key_chars.east,
+            key_chars.west_func,
+            key_char_orig_func,
+            key_chars.east_func,
         },
         bottom_key_chars = {
             key_chars.southwest,
             key_chars.south,
             key_chars.southeast,
+            key_chars.southwest_func,
+            key_chars.south_func,
+            key_chars.southeast_func,
         },
     }
     if util.tableSize(rows.extra_key_chars) == 0 then rows.extra_key_chars = nil end
@@ -368,6 +388,7 @@ function VirtualKeyPopup:init()
 
         for i = 1,3 do
             local v = chars[i]
+            local v_func = chars[i+3]
 
             if v then
                 columns[i] = true
@@ -384,6 +405,10 @@ function VirtualKeyPopup:init()
                     width = parent_key.width,
                     height = parent_key.height,
                 }
+                -- Support any function as a callback.
+                if v_func then
+                    virtual_key.callback = v_func
+                end
                 -- don't open another popup on hold
                 virtual_key.hold_callback = nil
                 -- close popup on hold release
