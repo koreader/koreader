@@ -12,6 +12,7 @@ local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local ImageWidget = require("ui/widget/imagewidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local KeyboardLayoutDialog = require("ui/widget/keyboardlayoutdialog")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
@@ -51,7 +52,13 @@ function VirtualKey:init()
         self.callback = function () self.keyboard:setLayer("Shift") end
         self.skiptap = true
     elseif self.keyboard.utf8mode_keys[self.label] ~= nil then
-        self.callback = function () self.keyboard:setKeyboardLayout(self.keyboard:getKeyboardLayout()) end
+        self.callback = function ()
+            --self.keyboard:setKeyboardLayout(self.keyboard:getKeyboardLayout())
+            self.keyboard_layout_dialog = KeyboardLayoutDialog:new{
+                title = T(_("Keyboard Layout")),
+            }
+            UIManager:show(self.keyboard_layout_dialog)
+        end
         self.hold_callback = function()
             local current = self.keyboard:getKeyboardLayout()
             self.key_chars = {
@@ -624,31 +631,6 @@ end
 function VirtualKeyboard:getKeyboardLayout()
     return G_reader_settings:readSetting("keyboard_layout") or G_reader_settings:readSetting("language")
 end
-
---[[--
-    local radio_buttons = {}
-    for k, _ in orderedPairs(self.lang_to_keyboard_layout) do
-        table.insert(radio_buttons, {
-            {
-            text = Language:getLanguageName(k),
-            checked_func = function()
-                return VirtualKeyboard:getKeyboardLayout() == k
-            end,
-            callback = function()
-                VirtualKeyboard:setKeyboardLayout(k)
-            end,
-            },
-        })
-    end
-    radio_button_table = RadioButtonTable:new{
-        radio_buttons = radio_buttons,
-        focused = true,
-        scroll = false,
-        parent = self,
-        face = self.face,
-    }
-    UIManager:show(radio_button_table)
---]]--
 
 function VirtualKeyboard:setKeyboardLayout(layout)
     G_reader_settings:saveSetting("keyboard_layout", layout)
