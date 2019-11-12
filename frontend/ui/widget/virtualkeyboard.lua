@@ -54,7 +54,28 @@ function VirtualKey:init()
         self.callback = function () self.keyboard:setLayer("Shift") end
         self.skiptap = true
     elseif self.keyboard.utf8mode_keys[self.label] ~= nil then
-        self.callback = function () self.keyboard:setKeyboardLayout() end
+        self.callback = function () self.keyboard:setKeyboardLayout(self.keyboard:getKeyboardLayout()) end
+        self.hold_callback = function()
+            local current = self.keyboard:getKeyboardLayout()
+            self.key_chars = {
+                current,
+                west = "EN",
+                west_func = function()  self.keyboard:setKeyboardLayout("en") end,
+                northwest = "EL",
+                northwest_func = function()  self.keyboard:setKeyboardLayout("el") end,
+                north = "ES",
+                north_func = function()  self.keyboard:setKeyboardLayout("es") end,
+                northeast = "FR",
+                northeast_func = function()  self.keyboard:setKeyboardLayout("fr") end,
+                east = "HE",
+                east_func = function() self.keyboard:setKeyboardLayout("he") logger.warn(self) end,
+            }
+
+            VirtualKeyPopup:new{
+                parent_key = self,
+            }
+
+        end
         self.skiptap = true
     elseif self.keyboard.umlautmode_keys[self.label] ~= nil then
         self.callback = function () self.keyboard:setLayer("Äéß") end
@@ -607,7 +628,6 @@ function VirtualKeyboard:getKeyboardLayout()
     return G_reader_settings:readSetting("keyboard_layout") or G_reader_settings:readSetting("language")
 end
 
-function VirtualKeyboard:setKeyboardLayout()
 --[[--
     local radio_buttons = {}
     for k, _ in orderedPairs(self.lang_to_keyboard_layout) do
@@ -618,7 +638,7 @@ function VirtualKeyboard:setKeyboardLayout()
                 return VirtualKeyboard:getKeyboardLayout() == k
             end,
             callback = function()
-                G_reader_settings:saveSetting("keyboard_layout", k)
+                VirtualKeyboard:setKeyboardLayout(k)
             end,
             },
         })
@@ -632,6 +652,9 @@ function VirtualKeyboard:setKeyboardLayout()
     }
     UIManager:show(radio_button_table)
 --]]--
+
+function VirtualKeyboard:setKeyboardLayout(layout)
+    G_reader_settings:saveSetting("keyboard_layout", layout)
     self:init()
     self:_refresh(true)
 end
