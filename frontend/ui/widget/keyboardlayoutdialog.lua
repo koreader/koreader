@@ -4,13 +4,11 @@ This widget displays an keyboard layout dialog.
 
 local Blitbuffer = require("ffi/blitbuffer")
 local CenterContainer = require("ui/widget/container/centercontainer")
-local CheckButton = require("ui/widget/checkbutton")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local InputDialog = require("ui/widget/inputdialog")
 local Language = require("ui/language")
-local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local RadioButtonTable = require("ui/widget/radiobuttontable")
 local Size = require("ui/size")
@@ -24,9 +22,9 @@ local orderedPairs = require("ffi/util").orderedPairs
 local KeyboardLayoutDialog = InputDialog:extend{}
 
 function KeyboardLayoutDialog:init()
-    -- init title in base class
     InputDialog.init(self)
     self.face = Font:getFace("cfont", 22)
+    self.title = _("Keyboard Layout")
 
     local buttons = {}
     local radio_buttons = {}
@@ -60,14 +58,6 @@ function KeyboardLayoutDialog:init()
             end,
         },
     })
-    
-    radio_button_table = RadioButtonTable:new{
-        radio_buttons = radio_buttons,
-        focused = true,
-        scroll = false,
-        parent = self,
-        face = self.face,
-    }
 
     self.radio_button_table = RadioButtonTable:new{
         radio_buttons = self.radio_buttons,
@@ -110,20 +100,6 @@ function KeyboardLayoutDialog:init()
                         h = Size.line.medium,
                     }
                 },
-            },
-            CenterContainer:new{
-                dimen = Geom:new{
-                    w = self.title_bar:getSize().w,
-                    h = self._always_file_toggle:getSize().h,
-                },
-                self._always_file_toggle,
-            },
-            CenterContainer:new{
-                dimen = Geom:new{
-                    w = self.title_bar:getSize().w,
-                    h = self._always_global_toggle:getSize().h,
-                },
-                self._always_global_toggle,
             },
             VerticalSpan:new{
                 width = Size.span.vertical_large*2,
