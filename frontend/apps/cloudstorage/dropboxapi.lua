@@ -90,7 +90,9 @@ function DropBoxApi:downloadFile(path, token, local_path)
     return code_return
 end
 
-function DropBoxApi:listFolder(path, token)
+-- folder_mode - set to true when we want to see only folder.
+-- We see also extra folder "Long-press to select current directory" at the beginning.
+function DropBoxApi:listFolder(path, token, folder_mode)
     local dropbox_list = {}
     local dropbox_file = {}
     local tag, text
@@ -101,6 +103,7 @@ function DropBoxApi:listFolder(path, token)
         tag = files[".tag"]
         if tag == "folder" then
             text = text .. "/"
+            if folder_mode then tag = "folder_long_press" end
             table.insert(dropbox_list, {
                 text = text,
                 url = files.path_display,
@@ -108,7 +111,7 @@ function DropBoxApi:listFolder(path, token)
             })
         --show only file with supported formats
         elseif tag == "file" and (DocumentRegistry:hasProvider(text)
-            or G_reader_settings:isTrue("show_unsupported")) then
+            or G_reader_settings:isTrue("show_unsupported")) and not folder_mode then
             table.insert(dropbox_file, {
                 text = text,
                 url = files.path_display,
@@ -123,6 +126,14 @@ function DropBoxApi:listFolder(path, token)
     table.sort(dropbox_file, function(v1,v2)
         return v1.text < v2.text
     end)
+    -- Add special folder.
+    if folder_mode then
+        table.insert(dropbox_list, 1, {
+            text = _("Long-press to select current directory"),
+            url = path,
+            type = "folder_long_press",
+        })
+    end
     for _, files in ipairs(dropbox_file) do
         table.insert(dropbox_list, {
             text = files.text,
@@ -131,6 +142,25 @@ function DropBoxApi:listFolder(path, token)
         })
     end
     return dropbox_list
+end
+
+function DropBoxApi:showFiles(path, token)
+    local dropbox_files = {}
+    local tag, text
+    local ls_dropbox = self:fetchListFolders(path, token)
+    if ls_dropbox == nil or ls_dropbox.entries == nil then return false end
+    for _, files in ipairs(ls_dropbox.entries) do
+        text = files.name
+        tag = files[".tag"]
+        if tag == "file" and (DocumentRegistry:hasProvider(text) or G_reader_settings:isTrue("show_unsupported")) then
+            table.insert(dropbox_files, {
+                text = text,
+                url = files.path_display,
+                size = files.size,
+            })
+        end
+    end
+    return dropbox_files
 end
 
 return DropBoxApi
