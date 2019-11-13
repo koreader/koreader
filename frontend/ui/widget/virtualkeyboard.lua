@@ -60,7 +60,7 @@ function VirtualKey:init()
         self.hold_callback = function()
             local current = self.keyboard:getKeyboardLayout()
             self.key_chars = {
-                current,
+                self,
                 west = "EN",
                 west_func = function()  self.keyboard:setKeyboardLayout("en") end,
                 northwest = "EL",
@@ -76,7 +76,6 @@ function VirtualKey:init()
             VirtualKeyPopup:new{
                 parent_key = self,
             }
-
         end
         self.skiptap = true
     elseif self.keyboard.umlautmode_keys[self.label] ~= nil then
@@ -428,9 +427,13 @@ function VirtualKeyPopup:init()
                     h_key_padding[i].width = h_key_padding[2].width
                 end
 
+                local key = v.key or v
+                local label = v.label or key
+                local icon = v.icon
                 local virtual_key = VirtualKey:new{
-                    key = v,
-                    label = v,
+                    key = key,
+                    label = label,
+                    icon = icon,
                     keyboard = parent_key.keyboard,
                     key_chars = key_chars,
                     width = parent_key.width,
