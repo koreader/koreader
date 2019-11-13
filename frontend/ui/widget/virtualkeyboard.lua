@@ -53,8 +53,9 @@ function VirtualKey:init()
         self.skiptap = true
     elseif self.keyboard.utf8mode_keys[self.label] ~= nil then
         self.callback = function ()
-            --self.keyboard:setKeyboardLayout(self.keyboard:getKeyboardLayout())
-            self.keyboard_layout_dialog = KeyboardLayoutDialog:new{}
+            self.keyboard_layout_dialog = KeyboardLayoutDialog:new{
+                parent = self,
+            }
             UIManager:show(self.keyboard_layout_dialog)
         end
         self.hold_callback = function()

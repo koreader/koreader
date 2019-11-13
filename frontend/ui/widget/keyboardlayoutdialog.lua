@@ -3,15 +3,17 @@ This widget displays an keyboard layout dialog.
 ]]
 
 local Blitbuffer = require("ffi/blitbuffer")
+local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
-local InputDialog = require("ui/widget/inputdialog")
+local InputContainer = require("ui/widget/container/inputcontainer")
 local Language = require("ui/language")
 local LineWidget = require("ui/widget/linewidget")
 local RadioButtonTable = require("ui/widget/radiobuttontable")
 local Size = require("ui/size")
+local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
@@ -19,24 +21,50 @@ local _ = require("gettext")
 local Screen = require("device").screen
 local orderedPairs = require("ffi/util").orderedPairs
 
-local KeyboardLayoutDialog = InputDialog:extend{}
+local KeyboardLayoutDialog = InputContainer:new{
+    is_always_active = true,
+    title = _("Keyboard Layout"),
+    modal = true,
+    width = Screen:getWidth() * 0.8,
+    face = Font:getFace("cfont", 22),
+
+    title_face = Font:getFace("x_smalltfont"),
+
+    title_padding = Size.padding.default,
+    title_margin = Size.margin.title,
+    button_padding = Size.padding.default,
+    border_size = Size.border.window,
+
+}
+
 
 function KeyboardLayoutDialog:init()
-    InputDialog.init(self)
-    self.face = Font:getFace("cfont", 22)
-    self.title = _("Keyboard Layout")
+    -- Title & description
+    self.title_widget = FrameContainer:new{
+        padding = self.title_padding,
+        margin = self.title_margin,
+        bordersize = 0,
+        TextWidget:new{
+            text = self.title,
+            face = self.title_face,
+            max_width = self.width,
+        }
+    }
+    self.title_bar = LineWidget:new{
+        dimen = Geom:new{
+            w = self.width,
+            h = Size.line.thick,
+        }
+    }
 
     local buttons = {}
     local radio_buttons = {}
-
-    for k, _ in orderedPairs(self.lang_to_keyboard_layout) do
+    for k, _ in orderedPairs(self.parent.keyboard.lang_to_keyboard_layout) do
         table.insert(radio_buttons, {
             {
             text = Language:getLanguageName(k),
-            checked_func = function()
-                return self.keyboard:getKeyboardLayout() == k
-            end,
-            layout = k,
+            checked = self.parent.keyboard:getKeyboardLayout() == k,
+            provider = k,
             },
         })
     end
@@ -45,27 +73,44 @@ function KeyboardLayoutDialog:init()
         {
             text = _("Cancel"),
             callback = function()
-                UIManager:close(self.keyboard_layout_dialog)
+                UIManager:close(self.parent.keyboard_layout_dialog)
             end,
         },
         {
             text = _("Chose language"),
             is_enter_default = true,
             callback = function()
-                local layout = self.keyboard_layout_dialog.radio_button_table.checked_button.layout
-                self.keyboard:setKeyboardLayout(layout)
-                UIManager:close(self.keyboard_layout_dialog)
+                local provider = self.parent.keyboard_layout_dialog.radio_button_table.checked_button.provider
+                self.parent.keyboard:setKeyboardLayout(provider)
+                UIManager:close(self.parent.keyboard_layout_dialog)
             end,
         },
     })
 
     self.radio_button_table = RadioButtonTable:new{
-        radio_buttons = self.radio_buttons,
+        radio_buttons = radio_buttons,
         width = self.width * 0.9,
         focused = true,
         scroll = false,
         parent = self,
         face = self.face,
+    }
+
+    -- Buttons Table
+    self.button_table = ButtonTable:new{
+        width = self.width - 2*self.button_padding,
+        button_font_face = "cfont",
+        button_font_size = 20,
+        buttons = buttons,
+        zero_sep = true,
+        show_parent = self,
+    }
+    local buttons_container = CenterContainer:new{
+        dimen = Geom:new{
+            w = self.width,
+            h = self.button_table:getSize().h,
+        },
+        self.button_table,
     }
 
     self.dialog_frame = FrameContainer:new{
@@ -115,8 +160,6 @@ function KeyboardLayoutDialog:init()
         }
     }
 
-    self._input_widget = self.radio_button_table
-
     self[1] = CenterContainer:new{
         dimen = Geom:new{
             w = Screen:getWidth(),
@@ -124,6 +167,13 @@ function KeyboardLayoutDialog:init()
         },
         self.dialog_frame,
     }
+end
+
+
+function KeyboardLayoutDialog:onShow()
+    UIManager:setDirty(self, function()
+        return "ui", self.dialog_frame.dimen
+    end)
 end
 
 function KeyboardLayoutDialog:onCloseWidget()
