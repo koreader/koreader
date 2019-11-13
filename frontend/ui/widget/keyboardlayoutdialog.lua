@@ -105,13 +105,6 @@ function KeyboardLayoutDialog:init()
         zero_sep = true,
         show_parent = self,
     }
-    local buttons_container = CenterContainer:new{
-        dimen = Geom:new{
-            w = self.width,
-            h = self.button_table:getSize().h,
-        },
-        self.button_table,
-    }
 
     self.dialog_frame = FrameContainer:new{
         radius = Size.radius.window,

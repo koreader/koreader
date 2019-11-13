@@ -59,7 +59,6 @@ function VirtualKey:init()
             UIManager:show(self.keyboard_layout_dialog)
         end
         self.hold_callback = function()
-            local current = self.keyboard:getKeyboardLayout()
             self.key_chars = {
                 self,
                 west = "EN",
