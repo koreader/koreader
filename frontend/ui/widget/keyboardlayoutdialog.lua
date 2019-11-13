@@ -77,7 +77,7 @@ function KeyboardLayoutDialog:init()
             end,
         },
         {
-            text = _("Chose language"),
+            text = _("Chose Language"),
             is_enter_default = true,
             callback = function()
                 local provider = self.parent.keyboard_layout_dialog.radio_button_table.checked_button.provider
@@ -113,7 +113,7 @@ function KeyboardLayoutDialog:init()
         margin = 0,
         background = Blitbuffer.COLOR_WHITE,
         VerticalGroup:new{
-            align = "left",
+            align = "center",
             self.title_widget,
             self.title_bar,
             VerticalSpan:new{
