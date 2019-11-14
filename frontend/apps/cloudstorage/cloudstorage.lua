@@ -464,14 +464,14 @@ function CloudStorage:downloadListFiles(item)
     end
 
     local response, go_on
-    local procceded_file = 0
+    local proccessed_files = 0
     local success_files = 0
     local unsuccess_files = 0
     for _, file in ipairs(remote_files) do
         if file.download then
-            procceded_file = procceded_file + 1
+            proccessed_files = proccessed_files + 1
             print(file.url)
-            local text = string.format("Downloading file (%d/%d):\n%s", procceded_file, files_to_download, file.text)
+            local text = string.format("Downloading file (%d/%d):\n%s", proccessed_files, files_to_download, file.text)
             go_on = UI:info(text)
             if not go_on then
                 break
