@@ -410,7 +410,7 @@ function CloudStorage:synchronizeCloud(item)
             if downloaded_files == 0 and failed_files == 0 then
                 text = _("No files to download from dropbox.")
             elseif downloaded_files > 0 and failed_files == 0 then
-                text = T(_("Successfuly downloaded %1 files from dropbox to local disk."), downloaded_files)
+                text = T(_("Successfuly downloaded %1 files from Dropbox to local storage."), downloaded_files)
             else
                 text = T(_("Successfuly downloaded %1 files from dropbox to local disk.\nFailed downloaded %2 files."),
                     downloaded_files, failed_files)
