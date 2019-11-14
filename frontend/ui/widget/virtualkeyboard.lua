@@ -53,7 +53,7 @@ function VirtualKey:init()
         self.callback = function () self.keyboard:setLayer("Shift") end
         self.skiptap = true
     elseif self.keyboard.utf8mode_keys[self.label] ~= nil then
-        self.key_chars = self:genkeyboardLayoutPopup()
+        self.key_chars = self:genkeyboardLayoutKeyChars()
         self.callback = function ()
             if util.tableSize(self.key_chars) > 1 then
                 self.popup = VirtualKeyPopup:new{
@@ -190,7 +190,7 @@ function VirtualKey:init()
     self.flash_keyboard = G_reader_settings:readSetting("flash_keyboard") ~= false
 end
 
-function VirtualKey:genkeyboardLayoutPopup()
+function VirtualKey:genkeyboardLayoutKeyChars()
     local positions = {
         "north",
         "northwest",
