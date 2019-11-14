@@ -20,6 +20,7 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
+local orderedPairs = require("ffi/util").orderedPairs
 local util = require("util")
 local Screen = Device.screen
 
@@ -44,11 +45,6 @@ local VirtualKey = InputContainer:new{
     face = Font:getFace("infont"),
 }
 
-function VirtualKey:keyboardLayoutCallback(layout)
-    UIManager:close(self.popup)
-    self.keyboard:setKeyboardLayout(layout)
-end
-
 function VirtualKey:init()
     if self.keyboard.symbolmode_keys[self.label] ~= nil then
         self.callback = function () self.keyboard:setLayer("Sym") end
@@ -64,23 +60,12 @@ function VirtualKey:init()
             UIManager:show(self.keyboard_layout_dialog)
         end
         self.hold_callback = function()
-            self.key_chars = {
-                self,
-                west = "EN",
-                west_func = function(parent) self:keyboardLayoutCallback("en") end,
-                northwest = "EL",
-                northwest_func = function(parent) self:keyboardLayoutCallback("el") end,
-                north = "ES",
-                north_func = function(parent) self:keyboardLayoutCallback("es") end,
-                northeast = "FR",
-                northeast_func = function(parent) self:keyboardLayoutCallback("fr") end,
-                east = "HE",
-                east_func = function(parent) self:keyboardLayoutCallback("he") end,
-            }
-
-            self .popup = VirtualKeyPopup:new{
-                parent_key = self,
-            }
+            self.key_chars = self:genkeyboardLayoutPopup(self)
+            if util.tableSize(self.key_chars) > 1 then
+                self.popup = VirtualKeyPopup:new{
+                    parent_key = self,
+                }
+            end
         end
         self.skiptap = true
     elseif self.keyboard.umlautmode_keys[self.label] ~= nil then
@@ -197,6 +182,33 @@ function VirtualKey:init()
         self[1].background = Blitbuffer.COLOR_LIGHT_GRAY
     end
     self.flash_keyboard = G_reader_settings:readSetting("flash_keyboard") ~= false
+end
+
+function VirtualKey:genkeyboardLayoutPopup(parent)
+    local positions = {
+        "north",
+        "northwest",
+        "northeast",
+        "west",
+        "east",
+    }
+    local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts") or {}
+    local key_chars = {
+        parent,
+    }
+    local index = 1
+    for k, v in orderedPairs(keyboard_layouts) do
+        if v == true and G_reader_settings:readSetting("keyboard_layout") ~= k then
+            key_chars[positions[index]] = k
+            key_chars[positions[index] .. "_func"] = function()
+                UIManager:close(self.popup)
+                self.keyboard:setKeyboardLayout(k)
+            end
+            if index >= 5 then break end
+            index = index + 1
+        end
+    end
+    return key_chars
 end
 
 function VirtualKey:update_keyboard(want_flash, want_fast)
