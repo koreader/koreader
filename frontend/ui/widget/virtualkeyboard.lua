@@ -53,18 +53,24 @@ function VirtualKey:init()
         self.callback = function () self.keyboard:setLayer("Shift") end
         self.skiptap = true
     elseif self.keyboard.utf8mode_keys[self.label] ~= nil then
+        self.key_chars = self:genkeyboardLayoutPopup()
         self.callback = function ()
+            if util.tableSize(self.key_chars) > 1 then
+                self.popup = VirtualKeyPopup:new{
+                    parent_key = self,
+                }
+            end
+        end
+        self.hold_callback = function()
             self.keyboard_layout_dialog = KeyboardLayoutDialog:new{
                 parent = self,
             }
             UIManager:show(self.keyboard_layout_dialog)
         end
-        self.hold_callback = function()
-            self.key_chars = self:genkeyboardLayoutPopup()
-            if util.tableSize(self.key_chars) > 1 then
-                self.popup = VirtualKeyPopup:new{
-                    parent_key = self,
-                }
+        self.swipe_callback = function(ges)
+            local key_function = self.key_chars[ges.direction.."_func"]
+            if key_function then
+                key_function()
             end
         end
         self.skiptap = true
@@ -195,6 +201,12 @@ function VirtualKey:genkeyboardLayoutPopup()
     local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts") or {}
     local key_chars = {
         { icon = "resources/icons/appbar.globe.wire.png",
+          func = function ()
+              self.keyboard_layout_dialog = KeyboardLayoutDialog:new{
+                  parent = self,
+              }
+              UIManager:show(self.keyboard_layout_dialog)
+          end,
         },
     }
     local index = 1
@@ -369,7 +381,6 @@ function VirtualKeyPopup:init()
     local parent_key = self.parent_key
     local key_chars = parent_key.key_chars
     local key_char_orig = key_chars[1]
-    local key_char_orig_func = parent_key.callback
 
     local rows = {
         extra_key_chars = {
@@ -394,7 +405,7 @@ function VirtualKeyPopup:init()
             key_char_orig,
             key_chars.east,
             key_chars.west_func,
-            key_char_orig_func,
+            key_char_orig.func,
             key_chars.east_func,
         },
         bottom_key_chars = {
@@ -745,7 +756,7 @@ function VirtualKeyboard:addKeys()
                 width = key_width,
                 height = key_height,
             }
-            if not key_chars then
+            if not virtual_key.key_chars then
                 virtual_key.swipe_callback = nil
             end
             table.insert(horizontal_group, virtual_key)
