@@ -445,9 +445,9 @@ function VirtualKeyPopup:init()
                     h_key_padding[i].width = h_key_padding[2].width
                 end
 
-                local key = v.key or v
-                local label = v.label or key
-                local icon = v.icon
+                local key = type(v) == "table" and v.key or v
+                local label = type(v) == "table" and v.label or key
+                local icon = type(v) == "table" and v.icon
                 local virtual_key = VirtualKey:new{
                     key = key,
                     label = label,

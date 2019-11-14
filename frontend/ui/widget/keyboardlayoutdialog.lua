@@ -1,5 +1,5 @@
 --[[--
-This widget displays an keyboard layout dialog.
+This widget displays a keyboard layout dialog.
 ]]
 
 local Blitbuffer = require("ffi/blitbuffer")
@@ -27,14 +27,11 @@ local KeyboardLayoutDialog = InputContainer:new{
     modal = true,
     width = Screen:getWidth() * 0.8,
     face = Font:getFace("cfont", 22),
-
     title_face = Font:getFace("x_smalltfont"),
-
     title_padding = Size.padding.default,
     title_margin = Size.margin.title,
     button_padding = Size.padding.default,
     border_size = Size.border.window,
-
 }
 
 
@@ -77,7 +74,7 @@ function KeyboardLayoutDialog:init()
             end,
         },
         {
-            text = _("Chose Language"),
+            text = _("Switch to layout"),
             is_enter_default = true,
             callback = function()
                 local provider = self.parent.keyboard_layout_dialog.radio_button_table.checked_button.provider
@@ -125,19 +122,6 @@ function KeyboardLayoutDialog:init()
                     h = self.radio_button_table:getSize().h,
                 },
                 self.radio_button_table,
-            },
-            CenterContainer:new{
-                dimen = Geom:new{
-                    w = self.title_bar:getSize().w,
-                    h = Size.span.vertical_large*2,
-                },
-                LineWidget:new{
-                    background = Blitbuffer.COLOR_DARK_GRAY,
-                    dimen = Geom:new{
-                        w = self.width * 0.9,
-                        h = Size.line.medium,
-                    }
-                },
             },
             VerticalSpan:new{
                 width = Size.span.vertical_large*2,
