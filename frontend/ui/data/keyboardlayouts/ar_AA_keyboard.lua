@@ -165,7 +165,7 @@ return {
               width = 3.0},
             { com,        arabic_comma,    "“",    "←",    com,    arabic_comma,      "Ё",    "ё",    "Ũ",   "ũ",    com,    com, },
             { prd,        prd,    "”",    "→",    prd,    prd,      prd,    prd,    "Ĩ",   "ĩ",    prd,    prd, },
-            { label = diacritics,        diacritics,    diacritics,    diacritics,    diacritics,    diacritics,      diacritics,    diacritics,    diacritics,   diacritics,    diacritics,    diacritics, },
+            { label =  "َ ُ ِ",        diacritics,    diacritics,    diacritics,    diacritics,    diacritics,      diacritics,    diacritics,    diacritics,   diacritics,    diacritics,    diacritics, },
 --            { label = "s", diacritics, },
             { label = "Enter",
               "\n",       "\n",   "\n",   "\n",   "\n",   "\n",    "\n",   "\n",   "\n",   "\n",   "\n",   "\n",
