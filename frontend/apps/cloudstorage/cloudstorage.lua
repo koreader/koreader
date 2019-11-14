@@ -412,7 +412,7 @@ function CloudStorage:synchronizeCloud(item)
             elseif downloaded_files > 0 and failed_files == 0 then
                 text = T(_("Successfuly downloaded %1 files from Dropbox to local storage."), downloaded_files)
             else
-                text = T(_("Successfuly downloaded %1 files from dropbox to local disk.\nFailed downloaded %2 files."),
+                text = T(_("Successfuly downloaded %1 files from Dropbox to local storage.\nFailed downloaded %2 files."),
                     downloaded_files, failed_files)
             end
             UIManager:show(InfoMessage:new{
