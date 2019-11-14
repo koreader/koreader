@@ -214,7 +214,7 @@ function VirtualKey:genkeyboardLayoutKeyChars()
         if v == true and G_reader_settings:readSetting("keyboard_layout") ~= k then
             key_chars[positions[index]] = string.upper(k)
             key_chars[positions[index] .. "_func"] = function()
-                UIManager:close(self.popup)
+                UIManager:tickAfterNext(function() UIManager:close(self.popup) end)
                 self.keyboard:setKeyboardLayout(k)
             end
             if index >= 5 then break end
