@@ -123,7 +123,7 @@ return {
         },
         -- second row
         {  --  1           2       3       4       5       6          7       8       9       10      11      12
-            { "",        sheen,    "…",    "4",    "ּ ",    _A_,      "*",    "0",    "Ê",    "ê",    "Ş",    "ş", },
+            { "",        sheen,    "…",    "4",    "ּ ",    nil,      "*",    "0",    "Ê",    "ê",    "Ş",    "ş", },
             { "",        seen,    "$",    "5",    "ֻ ",    _S_,     "+",    "4",    "Ë",    "ë",    "İ",    "ı", },
             { "",        yaa,    "%",    "6",    "ִ ",    _D_,    "-",    "5",    "Î",    "î",    "Ğ",    "ğ", },
             { "",        ba,    "^",    ";",    "ֹ",     _F_,      _eq,    "6",    "Ï",    "ï",    "Ć",    "ć", },
@@ -165,8 +165,8 @@ return {
               width = 3.0},
             { com,        arabic_comma,    "“",    "←",    com,    arabic_comma,      "Ё",    "ё",    "Ũ",   "ũ",    com,    com, },
             { prd,        prd,    "”",    "→",    prd,    prd,      prd,    prd,    "Ĩ",   "ĩ",    prd,    prd, },
+            -- @fixme Diacritics should only be needed in the first layout, but one repeat of 'diacritics' won't work. Kindly see https://github.com/koreader/koreader/pull/5569#issuecomment-554114059 for details.
             { label =  "َ ُ ِ",        diacritics,    diacritics,    diacritics,    diacritics,    diacritics,      diacritics,    diacritics,    diacritics,   diacritics,    diacritics,    diacritics, },
---            { label = "s", diacritics, },
             { label = "Enter",
               "\n",       "\n",   "\n",   "\n",   "\n",   "\n",    "\n",   "\n",   "\n",   "\n",   "\n",   "\n",
               icon = "resources/icons/appbar.arrow.enter.png",
