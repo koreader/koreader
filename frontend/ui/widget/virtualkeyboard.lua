@@ -581,7 +581,7 @@ local VirtualKeyboard = FocusManager:new{
     symbolmode_keys = {},
     utf8mode_keys = {},
     umlautmode_keys = {},
-    min_layer = 2,
+    min_layer = 1,
     max_layer = 8,
     keyboard_layer = 2,
     shiftmode = false,
@@ -634,8 +634,10 @@ function VirtualKeyboard:getKeyboardLayout()
 end
 
 function VirtualKeyboard:setKeyboardLayout(layout)
+    local keyboard_layer = self.keyboard_layer
     G_reader_settings:saveSetting("keyboard_layout", layout)
     self:init()
+    self:initLayer(keyboard_layer)
     self:_refresh(true)
 end
 
