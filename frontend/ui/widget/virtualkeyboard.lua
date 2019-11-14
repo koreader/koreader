@@ -44,6 +44,11 @@ local VirtualKey = InputContainer:new{
     face = Font:getFace("infont"),
 }
 
+function VirtualKey:keyboardLayoutCallback(layout)
+    UIManager:close(self.popup)
+    self.keyboard:setKeyboardLayout(layout)
+end
+
 function VirtualKey:init()
     if self.keyboard.symbolmode_keys[self.label] ~= nil then
         self.callback = function () self.keyboard:setLayer("Sym") end
@@ -62,18 +67,18 @@ function VirtualKey:init()
             self.key_chars = {
                 self,
                 west = "EN",
-                west_func = function()  self.keyboard:setKeyboardLayout("en") end,
+                west_func = function(parent) self:keyboardLayoutCallback("en") end,
                 northwest = "EL",
-                northwest_func = function()  self.keyboard:setKeyboardLayout("el") end,
+                northwest_func = function(parent) self:keyboardLayoutCallback("el") end,
                 north = "ES",
-                north_func = function()  self.keyboard:setKeyboardLayout("es") end,
+                north_func = function(parent) self:keyboardLayoutCallback("es") end,
                 northeast = "FR",
-                northeast_func = function()  self.keyboard:setKeyboardLayout("fr") end,
+                northeast_func = function(parent) self:keyboardLayoutCallback("fr") end,
                 east = "HE",
-                east_func = function() self.keyboard:setKeyboardLayout("he") logger.warn(self) end,
+                east_func = function(parent) self:keyboardLayoutCallback("he") end,
             }
 
-            VirtualKeyPopup:new{
+            self .popup = VirtualKeyPopup:new{
                 parent_key = self,
             }
         end
