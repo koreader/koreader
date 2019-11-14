@@ -422,7 +422,7 @@ function CloudStorage:synchronizeCloud(item)
         else
             Trapper:reset() -- close any last widget not cleaned if error
             UIManager:show(InfoMessage:new{
-                text = _("No files to download from dropbox.\nCheck your configuration and connection."),
+                text = _("No files to download from Dropbox.\nPlease check your configuration and connection."),
                 timeout = 3,
             })
         end
