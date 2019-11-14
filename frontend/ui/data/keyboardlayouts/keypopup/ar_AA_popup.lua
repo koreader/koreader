@@ -143,18 +143,17 @@ return {
    diacritic_tanween_kasr = {
           "ٍ",
     },
+--
    diacritics = {
-          "َ",
+         label = "َ ُ ِ",
          north = "ٌ",
          northeast = "ً",
          northwest = "ٍ",
-         east = "ُ",
-         west = "ِ",
-    },
-   diacritics_shadda_sukoon_madd = {
-         "ّ",
-         north="ْ",
-         east="~",
+         east = "َ",
+         west = "ُ",
+         south="ِ",
+         southeast="ْ",
+         southwest="ٍ",
     },
    arabic_comma = {
           "،",
