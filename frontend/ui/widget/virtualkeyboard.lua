@@ -55,17 +55,42 @@ function VirtualKey:init()
     elseif self.keyboard.utf8mode_keys[self.label] ~= nil then
         self.key_chars = self:genkeyboardLayoutKeyChars()
         self.callback = function ()
-            if util.tableSize(self.key_chars) > 1 then
-                self.popup = VirtualKeyPopup:new{
-                    parent_key = self,
-                }
+            local current = G_reader_settings:readSetting("keyboard_layout")
+            local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts")
+            local enabled = false
+            local next_layout = nil
+            for k, v in orderedPairs(keyboard_layouts) do
+                if enabled and v == true then
+                    next_layout = k
+                    break
+                end
+                if k == current then
+                    enabled = true
+                end
+            end
+            if not next_layout then
+                for k, v in orderedPairs(keyboard_layouts) do
+                    if enabled and v == true then
+                        next_layout = k
+                        break
+                    end
+                end
+            end
+            if next_layout then
+                self.keyboard:setKeyboardLayout(next_layout)
             end
         end
         self.hold_callback = function()
-            self.keyboard_layout_dialog = KeyboardLayoutDialog:new{
-                parent = self,
-            }
-            UIManager:show(self.keyboard_layout_dialog)
+            if util.tableSize(self.key_chars) > 3 then
+                self.popup = VirtualKeyPopup:new{
+                    parent_key = self,
+                }
+            else
+                self.keyboard_layout_dialog = KeyboardLayoutDialog:new{
+                    parent = self,
+                }
+                UIManager:show(self.keyboard_layout_dialog)
+            end
         end
         self.swipe_callback = function(ges)
             local key_function = self.key_chars[ges.direction.."_func"]
@@ -192,32 +217,32 @@ end
 
 function VirtualKey:genkeyboardLayoutKeyChars()
     local positions = {
+        "northeast",
         "north",
         "northwest",
-        "northeast",
         "west",
-        "east",
     }
     local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts") or {}
     local key_chars = {
         { icon = "resources/icons/appbar.globe.wire.png",
-          func = function ()
-              self.keyboard_layout_dialog = KeyboardLayoutDialog:new{
-                  parent = self,
-              }
-              UIManager:show(self.keyboard_layout_dialog)
-          end,
         },
+        east = { icon = "resources/icons/appbar.globe.wire.png", },
+        east_func = function ()
+            self.keyboard_layout_dialog = KeyboardLayoutDialog:new{
+                parent = self,
+            }
+            UIManager:show(self.keyboard_layout_dialog)
+        end,
     }
     local index = 1
     for k, v in orderedPairs(keyboard_layouts) do
-        if v == true and G_reader_settings:readSetting("keyboard_layout") ~= k then
+        if v == true then
             key_chars[positions[index]] = string.upper(k)
             key_chars[positions[index] .. "_func"] = function()
                 UIManager:tickAfterNext(function() UIManager:close(self.popup) end)
                 self.keyboard:setKeyboardLayout(k)
             end
-            if index >= 5 then break end
+            if index >= 4 then break end
             index = index + 1
         end
     end
@@ -381,6 +406,7 @@ function VirtualKeyPopup:init()
     local parent_key = self.parent_key
     local key_chars = parent_key.key_chars
     local key_char_orig = key_chars[1]
+    local key_char_orig_func = parent_key.callback
 
     local rows = {
         extra_key_chars = {
@@ -405,7 +431,7 @@ function VirtualKeyPopup:init()
             key_char_orig,
             key_chars.east,
             key_chars.west_func,
-            key_char_orig.func,
+            key_char_orig_func,
             key_chars.east_func,
         },
         bottom_key_chars = {
@@ -663,10 +689,8 @@ function VirtualKeyboard:getKeyboardLayout()
 end
 
 function VirtualKeyboard:setKeyboardLayout(layout)
-    local keyboard_layer = self.keyboard_layer
     G_reader_settings:saveSetting("keyboard_layout", layout)
     self:init()
-    self:initLayer(keyboard_layer)
     self:_refresh(true)
 end
 
