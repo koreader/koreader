@@ -199,7 +199,7 @@ function VirtualKey:genkeyboardLayoutPopup(parent)
     local index = 1
     for k, v in orderedPairs(keyboard_layouts) do
         if v == true and G_reader_settings:readSetting("keyboard_layout") ~= k then
-            key_chars[positions[index]] = k
+            key_chars[positions[index]] = string.upper(k)
             key_chars[positions[index] .. "_func"] = function()
                 UIManager:close(self.popup)
                 self.keyboard:setKeyboardLayout(k)
