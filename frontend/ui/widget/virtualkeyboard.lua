@@ -60,7 +60,7 @@ function VirtualKey:init()
             UIManager:show(self.keyboard_layout_dialog)
         end
         self.hold_callback = function()
-            self.key_chars = self:genkeyboardLayoutPopup(self)
+            self.key_chars = self:genkeyboardLayoutPopup()
             if util.tableSize(self.key_chars) > 1 then
                 self.popup = VirtualKeyPopup:new{
                     parent_key = self,
@@ -184,7 +184,7 @@ function VirtualKey:init()
     self.flash_keyboard = G_reader_settings:readSetting("flash_keyboard") ~= false
 end
 
-function VirtualKey:genkeyboardLayoutPopup(parent)
+function VirtualKey:genkeyboardLayoutPopup()
     local positions = {
         "north",
         "northwest",
@@ -194,7 +194,8 @@ function VirtualKey:genkeyboardLayoutPopup(parent)
     }
     local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts") or {}
     local key_chars = {
-        parent,
+        { icon = "resources/icons/appbar.globe.wire.png",
+        },
     }
     local index = 1
     for k, v in orderedPairs(keyboard_layouts) do
