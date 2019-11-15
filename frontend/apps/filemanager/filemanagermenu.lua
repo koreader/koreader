@@ -179,6 +179,16 @@ function FileManagerMenu:setUpdateItemTable()
                     }
                     UIManager:show(items_font)
                 end
+            },
+            {
+                text = _("Reduce font size to show more text"),
+                keep_menu_open = true,
+                checked_func = function()
+                    return G_reader_settings:isTrue("items_multilines_show_more_text")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrFalse("items_multilines_show_more_text")
+                end
             }
         }
     }

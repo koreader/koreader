@@ -43,6 +43,8 @@ local TextBoxWidget = InputContainer:new{
     fgcolor = Blitbuffer.COLOR_BLACK,
     width = Screen:scaleBySize(400), -- in pixels
     height = nil, -- nil value indicates unscrollable text widget
+    height_adjust = false, -- if true, reduce height to a multiple of line_height (for nicer centering)
+    height_overflow_show_ellipsis = false, -- if height overflow, append ellipsis to last shown line
     top_line_num = nil, -- original virtual_line_num to scroll to
     charpos = nil, -- idx of char to draw the cursor on its left (can exceed #charlist by 1)
 
@@ -131,6 +133,15 @@ function TextBoxWidget:init()
         self.text_height = self.lines_per_page * self.line_height_px
         self.virtual_line_num = 1
     else
+        if self.height_overflow_show_ellipsis and #self.vertical_string_list > self.lines_per_page then
+            self.line_with_ellipsis = self.lines_per_page
+        end
+        if self.height_adjust then
+            self.height = self.text_height
+            if #self.vertical_string_list < self.lines_per_page then
+                self.height = #self.vertical_string_list * self.line_height_px
+            end
+        end
         -- Show the previous displayed area in case of re-init (focus/unfocus)
         -- InputText may have re-created us, while providing the previous charlist,
         -- charpos and top_line_num.
@@ -448,7 +459,8 @@ function TextBoxWidget:_shapeLine(line)
     -- Get glyphs, shaped and possibly substituted by Harfbuzz and re-ordered by FriBiDi.
     -- We'll add to 'line' this table of glyphs, with some additional
     -- computed x and advance keys
-    local xshaping = self._xtext:shapeLine(line.offset, line.end_offset)
+    local xshaping = self._xtext:shapeLine(line.offset, line.end_offset,
+                                            line.idx_to_substitute_with_ellipsis)
     -- logger.dbg(xshaping)
     -- We get an array of tables looking like this:
     --     [1] = {
@@ -594,6 +606,23 @@ function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
     if self.use_xtext then
         for i = start_row_idx, end_row_idx do
             local line = self.vertical_string_list[i]
+            if self.line_with_ellipsis and i == self.line_with_ellipsis and not line.ellipsis_added then
+                -- Requested to add an ellipsis on this line
+                local ellipsis_width = RenderText:getEllipsisWidth(self.face)
+                    -- no bold: xtext does synthetized bold with normal metrics
+                if line.width + ellipsis_width > line.targeted_width then
+                    -- The ellipsis would overflow: we need to re-makeLine()
+                    -- this line with a smaller targeted_width
+                    line = self._xtext:makeLine(line.offset, line.targeted_width - ellipsis_width)
+                    self.vertical_string_list[i] = line -- replace the former one
+                end
+                if line.end_offset and line.end_offset < #self._xtext then
+                    -- We'll have shapeLine add the ellipsis to the returned glyphs
+                    line.end_offset = line.end_offset + 1
+                    line.idx_to_substitute_with_ellipsis = line.end_offset
+                end
+                line.ellipsis_added = true -- No need to redo it next time
+            end
             self:_shapeLine(line)
             if line.xglyphs then -- non-empty line
                 for __, xglyph in ipairs(line.xglyphs) do
@@ -628,7 +657,19 @@ function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
         end
         -- Note: we use kerning=true in all RenderText calls
         -- (But kerning should probably not be used with monospaced fonts.)
-        RenderText:renderUtf8Text(self._bb, pen_x, y, self.face, self:_getLineText(line), true, self.bold, self.fgcolor, nil, self:_getLinePads(line))
+        local line_text = self:_getLineText(line)
+        if self.line_with_ellipsis and i == self.line_with_ellipsis then
+            -- Requested to add an ellipsis on this line
+            local ellipsis_width = RenderText:getEllipsisWidth(self.face, self.bold)
+            if line.width + ellipsis_width > self.width then
+                -- We could try to find the last break point (space, CJK) to
+                -- truncate there and add the ellipsis, but well...
+                line_text = RenderText:truncateTextByWidth(line_text, self.face, self.width, true, self.bold)
+            else
+                line_text = line_text .. "…"
+            end
+        end
+        RenderText:renderUtf8Text(self._bb, pen_x, y, self.face, line_text, true, self.bold, self.fgcolor, nil, self:_getLinePads(line))
         y = y + self.line_height_px
     end
 
@@ -811,6 +852,25 @@ function TextBoxWidget:getVisibleHeightRatios()
     local low = (self.virtual_line_num - 1) / #self.vertical_string_list
     local high = (self.virtual_line_num - 1 + self.lines_per_page) / #self.vertical_string_list
     return low, high
+end
+
+-- Helper function to be used before intanstiating a TextBoxWidget instance
+function TextBoxWidget:getFontSizeToFitHeight(height_px, nb_lines, line_height_em)
+    -- Get a font size that would fit nb_lines in height_px.
+    -- A font with the returned size should then be provided
+    -- to TextBoxWidget:new() (as well as the line_height_em given
+    -- here, as the line_height= property, if not the default).
+    if not nb_lines then
+        nb_lines = 1 -- default to 1 line
+    end
+    if not line_height_em then
+        line_height_em = self.line_height -- (TextBoxWidget default above: 0.3)
+    end
+    -- We do the revert of what's done in :init():
+    --   self.line_height_px = Math.round( (1 + self.line_height) * self.face.size )
+    local font_size = height_px / nb_lines / (1 + line_height_em)
+    font_size = font_size * 1000000 / Screen:scaleBySize(1000000) -- invert scaleBySize
+    return math.floor(font_size)
 end
 
 function TextBoxWidget:getCharPos()
