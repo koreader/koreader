@@ -79,9 +79,10 @@ local Font = {
     fallbacks = {
         [1] = "NotoSans-Regular.ttf",
         [2] = "NotoSansCJKsc-Regular.otf",
-        [3] = "nerdfonts/symbols.ttf",
-        [4] = "freefont/FreeSans.ttf",
-        [5] = "freefont/FreeSerif.ttf",
+        [3] = "NotoSansArabicUI-Regular.ttf",
+        [4] = "nerdfonts/symbols.ttf",
+        [5] = "freefont/FreeSans.ttf",
+        [6] = "freefont/FreeSerif.ttf",
     },
 
     -- face table
@@ -90,6 +91,49 @@ local Font = {
 
 if is_android then
     table.insert(Font.fallbacks, 3, "DroidSansFallback.ttf") -- for some ancient pre-4.4 Androids
+end
+
+-- Synthetized bold strength can be tuned:
+-- local bold_strength_factor = 1   -- really too bold
+-- local bold_strength_factor = 1/2 -- bold enough
+local bold_strength_factor = 3/8 -- as crengine, lighter
+
+-- Callback to be used by libkoreader-xtext.so to get Freetype
+-- instantiated fallback fonts when needed for shaping text
+local _getFallbackFont = function(face_obj, num)
+    if not num or num == 0 then -- return the main font
+        if not face_obj.embolden_half_strength then
+            -- cache this value in case we use bold, to avoid recomputation
+            face_obj.embolden_half_strength = face_obj.ftface:getEmboldenHalfStrength(bold_strength_factor)
+        end
+        return face_obj
+    end
+    if not face_obj.fallbacks then
+        face_obj.fallbacks = {}
+    end
+    if face_obj.fallbacks[num] ~= nil then
+        return face_obj.fallbacks[num]
+    end
+    local next_num = #face_obj.fallbacks + 1
+    local cur_num = 0
+    for index, fontname in pairs(Font.fallbacks) do
+        if fontname ~= face_obj.realname then -- Skip base one if among fallbacks
+            local fb_face = Font:getFace(fontname, face_obj.orig_size)
+            if fb_face ~= nil then -- valid font
+                cur_num = cur_num + 1
+                if cur_num == next_num then
+                    face_obj.fallbacks[next_num] = fb_face
+                    if not fb_face.embolden_half_strength then
+                        fb_face.embolden_half_strength = fb_face.ftface:getEmboldenHalfStrength(bold_strength_factor)
+                    end
+                    return fb_face
+                end
+            end
+        end
+    end
+    -- no more fallback font
+    face_obj.fallbacks[next_num] = false
+    return false
 end
 
 --- Gets font face object.
@@ -144,12 +188,34 @@ function Font:getFace(font, size)
         -- @field hash hash key for this font face
         face_obj = {
             orig_font = font,
+            realname = realname,
             size = size,
             orig_size = orig_size,
             ftface = face,
-            hash = hash
+            hash = hash,
         }
         self.faces[hash] = face_obj
+
+        -- Callback to be used by libkoreader-xtext.so to get Freetype
+        -- instantiated fallback fonts when needed for shaping text
+        face_obj.getFallbackFont = function(num)
+            return _getFallbackFont(face_obj, num)
+        end
+        -- Font features, to be given by libkoreader-xtext.so to HarfBuzz.
+        -- (Could be tweaked by font if needed. Note that NotoSans does not
+        -- have common ligatures, like for "fi" or "fl", so we won't see
+        -- them in the UI.)
+        -- Use HB defaults, and be sure to enable kerning and ligatures
+        -- (which might be part of HB defaults, or not, not sure).
+        face_obj.hb_features = { "+kern", "+liga" }
+        -- If we'd wanted to disable all features that might be enabled
+        -- by HarfBuzz (see harfbuzz/src/hb-ot-shape.cc, quite unclear
+        -- what's enabled or not by default):
+        -- face_obj.hb_features = {
+        --      "-kern", "-mark", "-mkmk", "-curs", "-locl", "-liga",
+        --      "-rlig", "-clig", "-ccmp", "-calt", "-rclt", "-rvrn",
+        --      "-ltra", "-ltrm", "-rtla", "-rtlm", "-frac", "-numr",
+        --      "-dnom", "-rand", "-trak", "-vert", }
     end
     return face_obj
 end

@@ -133,6 +133,7 @@ read_globals = {
     "cre",
     "lfs",
     "lipc",
+    "xtext",
 }
 
 exclude_files = {
