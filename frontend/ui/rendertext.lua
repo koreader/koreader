@@ -172,7 +172,7 @@ function RenderText:sizeUtf8Text(x, width, face, text, kerning, bold)
     local pen_y_bottom = 0
     local prevcharcode = 0
     for _, charcode, uchar in utf8Chars(text) do
-        if pen_x < (width - x) then
+        if not width or pen_x < (width - x) then
             local glyph = self:getGlyph(face, charcode, bold)
             if kerning and (prevcharcode ~= 0) then
                 pen_x = pen_x + (face.ftface):getKerning(prevcharcode, charcode)
@@ -264,6 +264,11 @@ function RenderText:renderUtf8Text(dest_bb, x, baseline, face, text, kerning, bo
 end
 
 local ellipsis = "…"
+
+function RenderText:getEllipsisWidth(face, bold)
+    return self:sizeUtf8Text(0, false, face, ellipsis, false, bold).x
+end
+
 --- Returns a substring of a given text that meets the maximum width (in pixels)
 -- restriction with ellipses (…) at the end if required.
 --
@@ -275,10 +280,36 @@ local ellipsis = "…"
 -- @treturn string
 -- @see getSubTextByWidth
 function RenderText:truncateTextByWidth(text, face, max_width, kerning, bold)
-    local ellipsis_width = self:sizeUtf8Text(0, max_width, face, ellipsis, false, bold).x
+    local ellipsis_width = self:getEllipsisWidth(face, bold)
     local new_txt_width = max_width - ellipsis_width
     local sub_txt = self:getSubTextByWidth(text, face, new_txt_width, kerning, bold)
     return sub_txt .. ellipsis
+end
+
+--- Returns a rendered glyph by glyph index
+-- xtext/Harfbuzz, after shaping, gives glyph indexes in the font, which
+-- is usually different from the unicode codepoint of the original char)
+--
+-- @tparam ui.font.FontFaceObj face font face for the text
+-- @int glyph index
+-- @bool[opt=false] bold whether the glyph should be artificially boldened
+-- @treturn glyph
+function RenderText:getGlyphByIndex(face, glyphindex, bold)
+    local hash = "xglyph|"..face.hash.."|"..glyphindex.."|"..(bold and 1 or 0)
+    local glyph = GlyphCache:check(hash)
+    if glyph then
+        -- cache hit
+        return glyph[1]
+    end
+    local rendered_glyph = face.ftface:renderGlyphByIndex(glyphindex, bold and face.embolden_half_strength)
+    if not rendered_glyph then
+        logger.warn("error rendering glyph (glyphindex=", glyphindex, ") for face", face)
+        return
+    end
+    glyph = CacheItem:new{rendered_glyph}
+    glyph.size = glyph[1].bb:getWidth() * glyph[1].bb:getHeight() / 2 + 32
+    GlyphCache:insert(hash, glyph)
+    return rendered_glyph
 end
 
 return RenderText
