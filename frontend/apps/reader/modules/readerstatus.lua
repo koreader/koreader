@@ -89,6 +89,19 @@ function ReaderStatus:onEndOfBook()
             },
             {
                 {
+                    text_func = function()
+                        if self.settings.data.summary and self.settings.data.summary.status == "complete" then
+                            return _("Mark as reading")
+                        else
+                            return _("Mark as read")
+                        end
+                    end,
+                    callback = function()
+                        self:onMarkBook()
+                        UIManager:close(choose_action)
+                    end,
+                },
+                {
                     text = _("File browser"),
                     callback = function()
                         self:openFileBrowser()
@@ -122,6 +135,12 @@ function ReaderStatus:onEndOfBook()
         end
     elseif settings == "file_browser" then
         self:openFileBrowser()
+    elseif settings == "mark_read" then
+        self:onMarkBook(true)
+        UIManager:show(InfoMessage:new{
+            text = _("You've reached the end of the document.\nCurrent book mark as read."),
+            timeout = 3
+        })
     elseif settings == "book_status_file_browser" then
         local before_show_callback = function() self:openFileBrowser() end
         self:onShowBookStatus(before_show_callback)
@@ -190,6 +209,27 @@ function ReaderStatus:onShowBookStatus(before_show_callback)
     status_page.dithered = true
     UIManager:show(status_page, "full")
     return true
+end
+
+-- If mark_read is true then we change status only from reading/abandoned to read (complete).
+-- Otherwise we change status from reading/abandoned to read or from read to reading.
+function ReaderStatus:onMarkBook(mark_read)
+    if self.settings.data.summary and self.settings.data.summary.status then
+        local current_status = self.settings.data.summary.status
+        if current_status == "complete" then
+            if mark_read then
+                -- Keep mark as read.
+                self.settings.data.summary.status = "complete"
+            else
+                -- Change current status from read (complete) to reading
+                self.settings.data.summary.status = "reading"
+            end
+        else
+            self.settings.data.summary.status = "complete"
+        end
+    else
+        self.settings.data.summary = {status = "complete"}
+    end
 end
 
 function ReaderStatus:onReadSettings(config)
