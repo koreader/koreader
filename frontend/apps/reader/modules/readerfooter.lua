@@ -52,13 +52,13 @@ local symbol_prefix = {
     icons = {
         time = "⌚",
         pages_left = "⇒",
-        battery = "",
+        battery = "",
         percentage = "⤠",
         book_time_to_read = "⏳",
         chapter_time_to_read = "⤻",
         frontlight = "☼",
-        mem_usage = "",
-        wifi_status = "直",
+        mem_usage = "",
+        wifi_status = "",
     }
 }
 local PROGRESS_BAR_STYLE_THICK_DEFAULT_HEIGHT = 7
@@ -89,30 +89,30 @@ local footerTextGeneratorMap = {
         -- If we're using icons, use fancy variable icons
         if symbol_type == "icons" then
             if powerd:isCharging() then
-                prefix = ""
+                prefix = ""
             else
                 if batt_lvl >= 100 then
-                    prefix = ""
+                    prefix = ""
                 elseif batt_lvl >= 90 then
-                    prefix = ""
+                    prefix = ""
                 elseif batt_lvl >= 80 then
-                    prefix = ""
+                    prefix = ""
                 elseif batt_lvl >= 70 then
-                    prefix = ""
+                    prefix = ""
                 elseif batt_lvl >= 60 then
-                    prefix = ""
+                    prefix = ""
                 elseif batt_lvl >= 50 then
-                    prefix = ""
+                    prefix = ""
                 elseif batt_lvl >= 40 then
-                    prefix = ""
+                    prefix = ""
                 elseif batt_lvl >= 30 then
-                    prefix = ""
+                    prefix = ""
                 elseif batt_lvl >= 20 then
-                    prefix = ""
+                    prefix = ""
                 elseif batt_lvl >= 10 then
-                    prefix = ""
+                    prefix = ""
                 else
-                    prefix = ""
+                    prefix = ""
                 end
             end
             return prefix .. batt_lvl .. "%"
