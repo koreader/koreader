@@ -823,7 +823,7 @@ function TextBoxWidget:getCharPosAtXY(x, y)
     if x > self.vertical_string_list[ln].width then -- no need to loop thru chars
         local pos = self.vertical_string_list[ln].end_offset
         if not pos then -- empty line
-            pos = self.vertical_string_list[ln].offset
+            return self.vertical_string_list[ln].offset
         end
         return pos + 1 -- after last char
     end
@@ -883,6 +883,12 @@ function TextBoxWidget:moveCursorToCharPos(charpos)
         self.virtual_line_num = self.virtual_line_num + scroll_lines
         -- needs to deal with possible overflow ?
         y = y - scroll_lines * self.line_height_px
+    end
+    -- We can also get x ouside current view, when a line takes the full width
+    -- (which happens when text is justified): move the cursor a bit to the left
+    -- (it will be drawn over the right of the last glyph, which should be ok.)
+    if x > self.width - self.cursor_line.dimen.w then
+        x = self.width - self.cursor_line.dimen.w
     end
     if not self._bb then
         return -- no bb yet to render the cursor too
