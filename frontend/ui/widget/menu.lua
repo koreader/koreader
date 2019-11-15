@@ -19,7 +19,6 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local Math = require("optmath")
 local OverlapGroup = require("ui/widget/overlapgroup")
-local RenderText = require("ui/rendertext")
 local RightContainer = require("ui/widget/container/rightcontainer")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
@@ -174,6 +173,32 @@ function MenuItem:init()
         }
     end
 
+    local max_item_height = self.dimen.h - 2 * self.linesize
+
+    -- We want to show at least one line, so cap the provided font sizes
+    local max_font_size = TextBoxWidget:getFontSizeToFitHeight(max_item_height, 1)
+    if self.font_size > max_font_size then
+        self.font_size = max_font_size
+    end
+    if self.infont_size > max_font_size then
+        self.infont_size = max_font_size
+    end
+    local multilines_show_more_text = G_reader_settings:isTrue("items_multilines_show_more_text")
+    if not self.single_line and not multilines_show_more_text then
+        -- For non single line menus (File browser, Bookmarks), if the
+        -- user provided font size is large and would not allow showing
+        -- more than one line in our item height, just switch to single
+        -- line mode. This allows, when truncating, to take the full
+        -- width and cut inside a word to add the ellipsis - while in
+        -- multilines modes, with TextBoxWidget, words are wrapped to
+        -- follow line breaking rules, and the ellipsis might be placed
+        -- way earlier than the full width.
+        local min_font_size_2_lines = TextBoxWidget:getFontSizeToFitHeight(max_item_height, 2)
+        if self.font_size > min_font_size_2_lines then
+            self.single_line = true
+        end
+    end
+
     -- State button and indentation for tree expand/collapse (for TOC)
     local state_button_width = self.state_size.w or 0
     local state_button = self.state or HorizontalSpan:new{
@@ -191,6 +216,11 @@ function MenuItem:init()
         }
     }
 
+    -- Font for main text (may have its size decreased to make text fit)
+    self.face = Font:getFace(self.font, self.font_size)
+    -- Font for "mandatory" on the right
+    self.info_face = Font:getFace(self.infont, self.infont_size)
+
     -- "mandatory" is the text on the right: file size, page number...
     -- Padding before mandatory
     local text_mandatory_padding = 0
@@ -201,37 +231,36 @@ function MenuItem:init()
         text_ellipsis_mandatory_padding = Size.span.horizontal_small
     end
     local mandatory = self.mandatory and ""..self.mandatory or ""
+    local mandatory_widget = TextWidget:new{
+        text = mandatory,
+        face = self.info_face,
+        bold = self.bold,
+        fgcolor = self.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
+    }
+    local mandatory_w = mandatory_widget:getWidth()
 
-    -- Font for main text (may have its size decreased to make text fit)
-    self.face = Font:getFace(self.font, self.font_size)
-    -- Font for "mandatory" on the right
-    self.info_face = Font:getFace(self.infont, self.infont_size)
-
+    local available_width = self.content_width - state_button_width - text_mandatory_padding - mandatory_w
     local item_name
-    local mandatory_widget
+
+    -- Whether we show text on a single or multiple lines, we don't want it shortened
+    -- because of some \n that would push the following text on another line that would
+    -- overflow and not be displayed, or show a tofu char when displayed by TextWidget:
+    -- get rid of any \n (which could be found in highlighted text in bookmarks).
+    local text = self.text:gsub("\n", " ")
 
     if self.single_line then  -- items only in single line
-        mandatory_widget = TextWidget:new{
-            text = mandatory,
-            face = self.info_face,
-            bold = self.bold,
-            fgcolor = self.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
-        }
-        local mandatory_w = mandatory_widget:getWidth()
         -- No font size change: text will be truncated if it overflows
-        -- (we give it a little more room if truncated for better visual
-        -- feeling - which might make it no more truncated, but well...)
-        local text_max_width_base = self.content_width - state_button_width - mandatory_w
-        local text_max_width = text_max_width_base - text_mandatory_padding
-        local text_max_width_if_ellipsis = text_max_width_base - text_ellipsis_mandatory_padding
         item_name = TextWidget:new{
-            text = self.text,
+            text = text,
             face = self.face,
             bold = self.bold,
             fgcolor = self.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
         }
         local w = item_name:getWidth()
-        if w > text_max_width then
+        if w > available_width then
+            -- We give it a little more room if truncated for better visual
+            -- feeling (which might make it no more truncated, but well...)
+            local text_max_width_if_ellipsis = available_width + text_mandatory_padding - text_ellipsis_mandatory_padding
             item_name:setMaxWidth(text_max_width_if_ellipsis)
         end
         if self.align_baselines then -- Align baselines of text and mandatory
@@ -250,175 +279,79 @@ function MenuItem:init()
                 }
             end
         end
+
+    elseif multilines_show_more_text then
+        -- Multi-lines, with font size decrease if needed to show more of the text.
+        -- It would be costly/slow with use_xtext if we were to try all
+        -- font sizes from self.font_size to min_font_size (12).
+        -- So, we try to optimize the search of the best font size.
+        logger.dbg("multilines_show_more_text menu item font sizing start")
+        local function make_item_name(font_size)
+            if item_name then
+                item_name:free()
+            end
+            logger.dbg("multilines_show_more_text trying font size", font_size)
+            item_name = TextBoxWidget:new {
+                text = text,
+                face = Font:getFace(self.font, font_size),
+                width = available_width,
+                alignment = "left",
+                bold = self.bold,
+                fgcolor = self.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
+            }
+            -- return true if we fit
+            return item_name:getSize().h <= max_item_height
+        end
+        local min_font_size = 12
+        -- First, try with specified font size: short text might fit
+        if not make_item_name(self.font_size) then
+            -- It doesn't, try with min font size: very long text might not fit
+            if not make_item_name(min_font_size) then
+                -- Does not fit with min font size: keep widget with min_font_size, but
+                -- impose a max height to show only the first lines up to where it fits
+                item_name:free()
+                item_name.height = max_item_height
+                item_name.height_adjust = true
+                item_name.height_overflow_show_ellipsis = true
+                item_name:init()
+            else
+                -- Text fits with min font size: try to find some larger
+                -- font size in between that make text fit, with some
+                -- binary search to limit the number of checks.
+                local bad_font_size = self.font_size
+                local good_font_size = min_font_size
+                local item_name_is_good = true
+                while true do
+                    local test_font_size = math.floor((good_font_size + bad_font_size) / 2)
+                    if test_font_size == good_font_size then -- +1 would be bad_font_size
+                        if not item_name_is_good then
+                            make_item_name(good_font_size)
+                        end
+                        break
+                    end
+                    if make_item_name(test_font_size) then
+                        good_font_size = test_font_size
+                        item_name_is_good = true
+                    else
+                        bad_font_size = test_font_size
+                        item_name_is_good = false
+                    end
+                end
+            end
+        end
     else
-        while true do
-            -- Free previously made widgets to avoid memory leaks
-            if mandatory_widget then
-                mandatory_widget:free()
-            end
-            mandatory_widget = TextWidget:new {
-                text = mandatory,
-                face = Font:getFace(self.infont, self.infont_size),
-                bold = self.bold,
-                fgcolor = self.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
-            }
-            local height = mandatory_widget:getSize().h
-
-
-            if height < self.dimen.h - 2 * self.linesize then -- we fit !
-                break
-            end
-            -- Don't go too low
-            if self.infont_size < 12 then
-                break;
-            else
-                -- If we don't fit, decrease font size
-                self.infont_size = self.infont_size - 1
-            end
-        end
-        self.info_face = Font:getFace(self.infont, self.infont_size)
-        local mandatory_w = RenderText:sizeUtf8Text(0, self.dimen.w, self.info_face, "" .. mandatory, true, self.bold).x
-        local max_item_height = self.dimen.h - 2 * self.linesize
-        local flag_fit = false
-        local flag_add_ellipsis = false
-        local num_lines, offset
-        local item_name_orig = nil
-        -- first: try to decrease number of lines in TextBoxWidget
-        -- this loop ends only when text fits or we have only one line of text
-        while true do
-            -- Free previously made widgets to avoid memory leaks
-            if item_name then
-                item_name:free()
-            end
-            item_name = TextBoxWidget:new {
-                text = self.text,
-                face = Font:getFace(self.font, self.font_size),
-                width = self.content_width - mandatory_w - state_button_width - text_mandatory_padding,
-                alignment = "left",
-                bold = self.bold,
-                fgcolor = self.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
-            }
-            if not item_name_orig then
-                -- remember original item_name
-                item_name_orig = item_name
-                offset = #item_name.charlist
-            end
-            local height = item_name:getSize().h
-            if height < max_item_height then -- we fit !
-                flag_fit = true
-                break
-            end
-            flag_add_ellipsis = true
-            num_lines = item_name:getAllLineCount()
-            if num_lines == 1 then   -- widget doesn't fit and we have only one line of text
-                break
-            end
-            -- remove last line and try again to fit
-            offset = item_name.vertical_string_list[num_lines].offset - 1
-            -- remove ending "\n" (new line) to prevent infinity loop
-            if item_name.charlist[offset] == "\n" then
-                offset = offset - 1
-            end
-            self.text = table.concat(item_name.charlist, "", 1, offset)
-        end
-
-        -- second: decrease font size (we have now only one line)
-        while true and not flag_fit do
-            -- Free previously made widgets to avoid memory leaks
-            if item_name then
-                item_name:free()
-            end
-            self.font_size = self.font_size - 1
-            item_name = TextBoxWidget:new{
-                text = self.text,
-                face = Font:getFace(self.font, self.font_size),
-                width = self.content_width - mandatory_w - state_button_width - text_mandatory_padding,
-                alignment = "left",
-                bold = self.bold,
-                fgcolor = self.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
-            }
-            local height = item_name:getSize().h
-            if height < max_item_height then -- we fit !
-                offset = #item_name.charlist
-                break
-            end
-
-            -- if text is too height with that really small font we don't show text at all
-            -- this shouldn't happen
-            if self.font_size <= 8 then
-                item_name = TextBoxWidget:new{
-                    text = "…",
-                    face = Font:getFace(self.font, self.font_size),
-                    width = self.content_width - mandatory_w - state_button_width - text_mandatory_padding,
-                    alignment = "left",
-                    bold = self.bold,
-                    fgcolor = self.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
-                }
-                flag_add_ellipsis = false
-                break
-            end
-        end
-        -- add ellipsis when text was truncated
-        if flag_add_ellipsis then
-            local text_last_line
-            -- when lines is more than 1 we see only for last visible line
-            if num_lines > 1 then
-                local offset_prev = item_name_orig.vertical_string_list[num_lines - 1].offset
-                text_last_line = table.concat(item_name_orig.charlist, "", offset_prev, offset)
-            else
-                text_last_line = self.text
-            end
-            local text_size = RenderText:sizeUtf8Text(0, self.content_width,
-                Font:getFace(self.font, self.font_size), text_last_line, true, self.bold).x
-            local ellipsis_size = RenderText:sizeUtf8Text(0, self.content_width,
-                Font:getFace(self.font, self.font_size), "…", true, self.bold).x
-
-            local text_size_increase = text_size
-            local max_offset = #item_name_orig.charlist
-            -- try to add chars to better align
-            while item_name.width > text_size_increase + ellipsis_size and offset < max_offset
-                and item_name_orig.charlist[offset] ~= "\n" do
-                text_size_increase = text_size_increase + item_name_orig:getCharWidth(offset + 1)
-                if text_size_increase + ellipsis_size < item_name.width then
-                    -- add one char to text
-                    offset = offset + 1
-                end
-            end
-            -- remove chars when text is too long
-            while item_name.width <= text_size + ellipsis_size do
-                text_size = text_size - item_name:getCharWidth(offset)
-                -- remove one char from text
-                offset = offset - 1
-            end
-            if offset == max_offset then
-                -- when finally after manipulation we have all original text we don't need to add ellipsis
-                self.text = table.concat(item_name_orig.charlist, "", 1, offset)
-            else
-                -- remove ending '\n' (new line) to prevent increase number of lines
-                if item_name_orig.charlist[offset] == "\n" then
-                    offset = offset - 1
-                end
-                -- add ellipsis to show that text was truncated
-                self.text = table.concat(item_name_orig.charlist, "", 1, offset) .. "…"
-            end
-
-            if item_name then
-                item_name:free()
-            end
-            if item_name_orig then
-                item_name_orig:free()
-            end
-            --final item_name that fits
-            item_name = TextBoxWidget:new {
-                text = self.text,
-                face = Font:getFace(self.font, self.font_size),
-                width = self.content_width - mandatory_w - state_button_width - text_mandatory_padding,
-                alignment = "left",
-                bold = self.bold,
-                fgcolor = self.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
-            }
-        end
-        self.face = Font:getFace(self.font, self.font_size)
+        -- Multi-lines, with fixed user provided font size
+        item_name = TextBoxWidget:new {
+            text = text,
+            face = self.face,
+            width = available_width,
+            height = max_item_height,
+            height_adjust = true,
+            height_overflow_show_ellipsis = true,
+            alignment = "left",
+            bold = self.bold,
+            fgcolor = self.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
+        }
     end
 
     local text_container = LeftContainer:new{
