@@ -19,6 +19,7 @@ local RenderText = require("ui/rendertext")
 local Size = require("ui/size")
 local Widget = require("ui/widget/widget")
 local Screen = require("device").screen
+local dbg = require("dbg")
 local util = require("util")
 
 local TextWidget = Widget:new{
@@ -32,12 +33,23 @@ local TextWidget = Widget:new{
     truncate_with_ellipsis = true, -- when truncation at max_width needed, add "…"
     truncate_left = false, -- truncate on the right by default
 
+    -- for internal use
     _updated = nil,
     _text_to_draw = nil,
     _length = 0,
     _height = 0,
     _baseline_h = 0,
     _maxlength = 1200,
+
+    -- Additional properties only used when using xtext
+    use_xtext = G_reader_settings:nilOrTrue("use_xtext"),
+    lang = nil, -- use this language (string) instead of the UI language
+    para_direction_rtl = nil, -- use true/false to override the default direction for the UI language
+    auto_para_direction = false, -- detect direction of each paragraph in text
+                                 -- (para_direction_rtl or UI language is then only
+                                 -- used as a weak hint about direction)
+    _xtext = nil, -- for internal use
+    _xshaping = nil,
 }
 
 function TextWidget:updateSize()
@@ -46,14 +58,44 @@ function TextWidget:updateSize()
     end
     self._updated = true
 
+    -- Compute height:
+    -- Used to be:
+    --   self._height = math.ceil(self.face.size * 1.5)
+    --   self._baseline_h = self._height*0.7
+    -- But better compute baseline alignment from freetype font metrics
+    -- to get better vertical centering of text in box
+    -- (Freetype doc on this at https://www.freetype.org/freetype2/docs/tutorial/step2.html)
+    local face_height, face_ascender = self.face.ftface:getHeightAndAscender()
+    self._height = math.ceil(face_height) + 2*self.padding
+    self._baseline_h = Math.round(face_ascender) + self.padding
+    -- With our UI fonts, this usually gives 0.72 to 0.74, so text is aligned
+    -- a bit lower than before with the hardcoded 0.7
+
+    if self.text and type(self.text) ~= "string" then
+        self.text = tostring(self.text)
+    end
+    self._is_empty = false
+    if not self.text or #self.text == 0 then
+        self._is_empty = true
+        self._length = 0
+        return
+    end
+
+    -- Compute width:
+    if self.use_xtext then
+        self:_measureWithXText()
+        return
+    end
+
+    -- Only when not self.use_xtext:
+
+    -- Note: we use kerning=true in all RenderText calls
+    -- (But kerning should probably not be used with monospaced fonts.)
+
     -- In case we draw truncated text, keep original self.text
     -- so caller can fetch it again
     self._text_to_draw = self.text
 
-    -- Note: we use kerning=true in all RenderText calls
-    --- @todo Don't use kerning for monospaced fonts. (houqp)
-
-    -- Compute width:
     -- We never need to draw/size more than one screen width, so limit computation
     -- to that width in case we are given some huge string
     local tsize = RenderText:sizeUtf8Text(0, Screen:getWidth(), self.face, self._text_to_draw, true, self.bold)
@@ -87,21 +129,63 @@ function TextWidget:updateSize()
         tsize = RenderText:sizeUtf8Text(0, self.max_width, self.face, self._text_to_draw, true, self.bold)
         self._length = math.floor(tsize.x)
     end
+end
+dbg:guard(TextWidget, "updateSize",
+    function(self)
+        assert(type(self.text) == "string",
+            "Wrong text type (expected string)")
+    end)
 
-    -- Compute height:
-    -- Used to be:
-    --   self._height = math.ceil(self.face.size * 1.5)
-    --   self._baseline_h = self._height*0.7
-    -- But better compute baseline alignment from freetype font metrics
-    -- to get better vertical centering of text in box
-    -- (Freetype doc on this at https://www.freetype.org/freetype2/docs/tutorial/step2.html)
-    local face_height, face_ascender = self.face.ftface:getHeightAndAscender()
-    self._height = math.ceil(face_height) + 2*self.padding
-    self._baseline_h = Math.round(face_ascender) + self.padding
-    -- With our UI fonts, this usually gives 0.72 to 0.74, so text is aligned
-    -- a bit lower than before with the hardcoded 0.7
-    -- require("logger").warn("1.5*face.size:", self.face.size * 1.5, "face_height:", face_height, "self._height:", self._height)
-    -- require("logger").warn("self._height ratio:", 1.0*self._baseline_h/self._height)
+function TextWidget:_measureWithXText()
+    if not self._xtext_loaded then
+        require("libs/libkoreader-xtext")
+        TextWidget._xtext_loaded = true
+    end
+    self._xtext = xtext.new(self.text, self.face, self.auto_para_direction,
+                                            self.para_direction_rtl, self.lang)
+    self._xtext:measure()
+    self._length = self._xtext:getWidth()
+    self._xshaping = nil
+
+    -- Segment of self._xtext to shape and draw: all of it if no max_width
+    self._shape_start = 1
+    self._shape_end = #self._xtext
+    self._shape_idx_to_substitute_with_ellipsis = nil
+
+    -- Ensure max_width: find a segment that fit
+    if self.max_width and self._length > self.max_width then
+        local line_start = 1
+        local reserved_width = 0
+        if self.truncate_with_ellipsis then
+            -- Get the width of an ellipsis from FreeType. It might then be
+            -- larger than the shaped glyph we'll get from xtext/HarfBuzz,
+            -- but we should be fine by the diff. Hoping both FreeType and
+            -- xtext will use the same fallback font if not found in the
+            -- specified font.
+            -- (If needed, have a callback in the font table that will create
+            -- a TextWidget, with use_xtext, to have it compute the width of
+            -- the ellipsis, and then cache this width in the font table.)
+            reserved_width = RenderText:getEllipsisWidth(self.face)
+                -- no bold: xtext does synthetized bold with normal metrics
+        end
+        local max_width = self.max_width - reserved_width
+        if self.truncate_left then
+            line_start = self._xtext:getSegmentFromEnd(max_width)
+        end
+        local line = self._xtext:makeLine(line_start, max_width, true) -- no_line_breaking_rules=true
+        self._shape_start = line.offset
+        self._shape_end = line.end_offset
+        self._length = line.width + reserved_width -- might end up being smaller than max_width
+        if self.truncate_with_ellipsis then
+            if self.truncate_left and self._shape_start > 1 then
+                self._shape_start = self._shape_start - 1
+                self._shape_idx_to_substitute_with_ellipsis = self._shape_start
+            elseif self._shape_end < #self._xtext then
+                self._shape_end = self._shape_end + 1
+                self._shape_idx_to_substitute_with_ellipsis = self._shape_end
+            end
+        end
+    end
 end
 
 function TextWidget:getSize()
@@ -123,9 +207,16 @@ function TextWidget:getBaseline()
 end
 
 function TextWidget:setText(text)
-    self.text = text
-    self._updated = false
+    if text ~= self.text then
+        self.text = text
+        self._updated = false
+    end
 end
+dbg:guard(TextWidget, "setText",
+    function(self, text)
+        assert(type(text) == "string",
+            "Wrong text type (expected string)")
+    end)
 
 function TextWidget:setMaxWidth(max_width)
     self.max_width = max_width
@@ -134,8 +225,57 @@ end
 
 function TextWidget:paintTo(bb, x, y)
     self:updateSize()
-    RenderText:renderUtf8Text(bb, x, y+self._baseline_h, self.face, self._text_to_draw, true, self.bold,
-                self.fgcolor, self._length)
+    if self._is_empty then
+        return
+    end
+
+    if not self.use_xtext then
+        RenderText:renderUtf8Text(bb, x, y+self._baseline_h, self.face, self._text_to_draw,
+                                true, self.bold, self.fgcolor, self._length)
+        return
+    end
+
+    -- Draw shaped glyphs with the help of xtext
+    if not self._xshaping then
+        self._xshaping = self._xtext:shapeLine(self._shape_start, self._shape_end,
+                                            self._shape_idx_to_substitute_with_ellipsis)
+    end
+
+    -- Don't draw outside of BlitBuffer or max_width
+    local text_width = bb:getWidth() - x
+    if self.max_width and self.max_width < text_width then
+        text_width = self.max_width
+    end
+    local pen_x = 0
+    local baseline = self._baseline_h
+    for i, xglyph in ipairs(self._xshaping) do
+        if pen_x >= text_width then
+            break
+        end
+        local face = self.face.getFallbackFont(xglyph.font_num) -- callback (not a method)
+        local glyph = RenderText:getGlyphByIndex(face, xglyph.glyph, self.bold)
+        bb:colorblitFrom(
+            glyph.bb,
+            x + pen_x + glyph.l + xglyph.x_offset,
+            y + baseline - glyph.t + xglyph.y_offset,
+            0, 0,
+            glyph.bb:getWidth(), glyph.bb:getHeight(),
+            self.fgcolor)
+        pen_x = pen_x + xglyph.x_advance -- use Harfbuzz advance
+    end
+end
+
+function TextWidget:free()
+    -- Allow not waiting until Lua gc() to cleanup C XText malloc'ed stuff
+    if self._xtext then
+        self._xtext:free()
+    end
+end
+
+function TextWidget:onCloseWidget()
+    -- Free _xtext when UIManager closes this widget (as it won't
+    -- be painted anymore).
+    self:free()
 end
 
 return TextWidget
