@@ -446,6 +446,15 @@ common_settings.document = {
                     end,
                 },
                 {
+                    text = _("Mark book as read"),
+                    checked_func = function()
+                        return G_reader_settings:readSetting("end_document_action") == "mark_read"
+                    end,
+                    callback = function()
+                        G_reader_settings:saveSetting("end_document_action", "mark_read")
+                    end,
+                },
+                {
                     text = _("Book status and return to file browser"),
                     checked_func = function()
                         return G_reader_settings:readSetting("end_document_action") == "book_status_file_browser"
