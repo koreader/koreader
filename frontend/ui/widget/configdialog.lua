@@ -265,7 +265,10 @@ function ConfigOption:init()
             if self.options[c].name_text then
                 -- the horizontal padding on the left will be ensured by the RightContainer
                 local name_widget_width = math.floor(name_align * Screen:getWidth())
-                local name_text_max_width = name_widget_width - default_option_hpadding - 2*padding_small
+                -- We don't remove default_option_hpadding from name_text_max_width
+                -- to give more to text and avoid truncation: as it is right aligned,
+                -- the text can grow on the left, padding_small is enough.
+                local name_text_max_width = name_widget_width - 2*padding_small
                 local text = self.options[c].name_text
                 local face = Font:getFace(name_font_face, name_font_size)
                 local option_name_container = RightContainer:new{
