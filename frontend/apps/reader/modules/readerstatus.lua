@@ -56,8 +56,15 @@ function ReaderStatus:onEndOfBook()
         local buttons = {
             {
                 {
-                    text = _("Cancel"),
+                    text_func = function()
+                        if self.settings.data.summary and self.settings.data.summary.status == "complete" then
+                            return _("Mark as reading")
+                        else
+                            return _("Mark as read")
+                        end
+                    end,
                     callback = function()
+                        self:onMarkBook()
                         UIManager:close(choose_action)
                     end,
                 },
@@ -89,15 +96,8 @@ function ReaderStatus:onEndOfBook()
             },
             {
                 {
-                    text_func = function()
-                        if self.settings.data.summary and self.settings.data.summary.status == "complete" then
-                            return _("Mark as reading")
-                        else
-                            return _("Mark as read")
-                        end
-                    end,
+                    text = _("Cancel"),
                     callback = function()
-                        self:onMarkBook()
                         UIManager:close(choose_action)
                     end,
                 },
