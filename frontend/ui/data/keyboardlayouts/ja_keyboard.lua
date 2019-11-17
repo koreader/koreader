@@ -1,4 +1,6 @@
 return {
+    min_layer = 1,
+    max_layer = 12,
     shiftmode_keys = {["Shift"] = true},
     symbolmode_keys = {["記号"] = true, ["かな"] = true},
     utf8mode_keys = {["゛"] = true},

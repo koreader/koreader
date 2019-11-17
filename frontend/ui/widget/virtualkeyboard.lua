@@ -636,8 +636,6 @@ local VirtualKeyboard = FocusManager:new{
     symbolmode_keys = {},
     utf8mode_keys = {},
     umlautmode_keys = {},
-    min_layer = 1,
-    max_layer = 8,
     keyboard_layer = 2,
     shiftmode = false,
     symbolmode = false,
@@ -672,6 +670,8 @@ function VirtualKeyboard:init()
     self.utf8mode_keys = keyboard.utf8mode_keys
     self.umlautmode_keys = keyboard.umlautmode_keys
     self.height = Screen:scaleBySize(64 * #self.KEYS)
+    self.min_layer = keyboard.min_layer
+    self.max_layer = keyboard.max_layer
     self:initLayer(self.keyboard_layer)
     if Device:hasDPad() then
         self.key_events.PressKey = { {"Press"}, doc = "select key" }

@@ -111,6 +111,8 @@ local _Z_el = el_popup._Z_el
 local _z_el = el_popup._z_el
 
 return {
+    min_layer = 1,
+    max_layer = 12,
     shiftmode_keys = {["Shift"] = true},
     symbolmode_keys = {["Sym"] = true, ["ABC"] = true},
     utf8mode_keys = {["IM"] = true},

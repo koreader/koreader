@@ -29,6 +29,8 @@ local shin = he_popup.shin
 local taf = he_popup.taf
 
 return {
+    min_layer = 1,
+    max_layer = 4,
     shiftmode_keys = {["Shift"] = true},
     symbolmode_keys = {["Sym"] = true, ["אבג"] = true},
     utf8mode_keys = {["IM"] = true},

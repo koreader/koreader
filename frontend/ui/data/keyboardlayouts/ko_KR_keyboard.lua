@@ -146,6 +146,8 @@ local _z_ = en_popup._z_
 
 -- Based on English keyboard layout, but modifications are made for Korean layout
 return {
+    min_layer = 1,
+    max_layer = 12,
     shiftmode_keys = {["Shift"] = true},
     symbolmode_keys = {["Sym"] = true, ["ABC"] = true},
     utf8mode_keys = {["IM"] = true},
