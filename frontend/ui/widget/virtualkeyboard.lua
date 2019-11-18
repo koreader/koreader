@@ -56,7 +56,7 @@ function VirtualKey:init()
         self.key_chars = self:genkeyboardLayoutKeyChars()
         self.callback = function ()
             local current = G_reader_settings:readSetting("keyboard_layout")
-            local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts")
+            local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts") or {}
             local enabled = false
             local next_layout = nil
             for k, v in orderedPairs(keyboard_layouts) do
