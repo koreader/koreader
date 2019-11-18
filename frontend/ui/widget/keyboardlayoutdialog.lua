@@ -23,7 +23,7 @@ local orderedPairs = require("ffi/util").orderedPairs
 
 local KeyboardLayoutDialog = InputContainer:new{
     is_always_active = true,
-    title = _("Keyboard Layout"),
+    title = _("Keyboard layout"),
     modal = true,
     width = Screen:getWidth() * 0.8,
     face = Font:getFace("cfont", 22),

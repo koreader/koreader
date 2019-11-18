@@ -408,11 +408,11 @@ function CloudStorage:synchronizeCloud(item)
             if not failed_files then failed_files = 0 end
             local text
             if downloaded_files == 0 and failed_files == 0 then
-                text = _("No files to download from dropbox.")
+                text = _("No files to download from Dropbox.")
             elseif downloaded_files > 0 and failed_files == 0 then
-                text = T(_("Successfuly downloaded %1 files from Dropbox to local storage."), downloaded_files)
+                text = T(_("Successfully downloaded %1 files from Dropbox to local storage."), downloaded_files)
             else
-                text = T(_("Successfuly downloaded %1 files from Dropbox to local storage.\nFailed downloaded %2 files."),
+                text = T(_("Successfully downloaded %1 files from Dropbox to local storage.\nFailed to download %2 files."),
                     downloaded_files, failed_files)
             end
             UIManager:show(InfoMessage:new{
@@ -498,7 +498,7 @@ function CloudStorage:synchronizeSettings(item)
         buttons = {
             {
                 {
-                    text = _("Choose dropbox folder"),
+                    text = _("Choose Dropbox folder"),
                     callback = function()
                         UIManager:close(syn_dialog)
                         require("ui/cloudmgr"):new{
