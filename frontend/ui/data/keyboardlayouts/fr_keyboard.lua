@@ -11,8 +11,8 @@ keys[1][2][2], keys[3][2][2] = keys[3][2][2], keys[1][2][2] -- w <> z
 
 -- Insert an additional key at the end of 2nd row for M
 table.insert(keys[2],
-           --  1           2       3       4       5       6       7       8       9       10      11      12
-            { "M",        "m",    "§",    "+",    "Д",    "д",    "Э",    "э",    "Œ",    "œ",    "Ő",    "ő", }
+           --  1       2       3       4       5       6       7       8
+            { "M",    "m",    "§",    "+",    "Œ",    "œ",    "Ő",    "ő", }
 )
 -- And swap the english M on the 3rd row to ','
 keys[3][8][1] = ","
