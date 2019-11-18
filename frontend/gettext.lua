@@ -197,9 +197,9 @@ function GetText_mt.__index.changeLang(new_lang)
                 -- header
                 if not headers and data.msgid == "" then
                     headers = data.msgstr
-                    local plural_forms = data.msgstr:match("Plural%-Forms: (.*);")
+                    local plural_forms = data.msgstr:match("Plural%-Forms: (.*)")
                     local nplurals = plural_forms:match("nplurals=([0-9]+);") or 2
-                    local plurals = plural_forms:match("%((.*)%)")
+                    local plurals = plural_forms:match("plural=%((.*)%);")
 
                     if not plurals then
                         -- Some languages (e.g., Arabic) may not use parentheses.
@@ -207,7 +207,7 @@ function GetText_mt.__index.changeLang(new_lang)
                         -- to accidentally include junk and seldom relevant.
                         -- We might also be dealing with a language without plurals.
                         -- That would look like `plural=0`.
-                        plurals = plural_forms:match("plural=(.*)")
+                        plurals = plural_forms:match("plural=(.*);")
                     end
 
                     if plurals:find("[^n!=%%<>&:%(%)|?0-9 ]") then
