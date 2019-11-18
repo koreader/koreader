@@ -100,7 +100,10 @@ function setup_env() {
     fi
     files=$(find . -maxdepth 1 -name 'koreader-emulator-*' | ${SETUP_ENV_GREP_COMMAND})/koreader
     assert_ret_zero $? "Emulator not found. Please build it first."
-    export EMU_DIR=${files[0]}
+    EMU_DIR=${files[0]}
+    export EMU_DIR
+    LD_LIBRARY_PATH=$(realpath "${EMU_DIR}")/libs:${LD_LIBRARY_PATH}
+    export LD_LIBRARY_PATH
 }
 
 function kodev-fetch-thirdparty() {
