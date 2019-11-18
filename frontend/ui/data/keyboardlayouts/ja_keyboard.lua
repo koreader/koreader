@@ -1,7 +1,7 @@
 return {
     min_layer = 1,
     max_layer = 12,
-    shiftmode_keys = {["Shift"] = true},
+    shiftmode_keys = {[""] = true},
     symbolmode_keys = {["記号"] = true, ["かな"] = true},
     utf8mode_keys = {["゛"] = true},
     umlautmode_keys = {["゜"] = true},
@@ -88,8 +88,7 @@ return {
         },
         -- sixth row
         {
-            { label = "Shift",
-              icon = "resources/icons/appbar.arrow.shift.png",
+            { label = "",
               width = 1.5
             },
             { "記号",     "記号",  "かな",  "かな",  "記号",  "記号",  "かな",  "かな",  "記号",  "記号",  "かな",  "かな",

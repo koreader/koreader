@@ -31,7 +31,7 @@ local taf = he_popup.taf
 return {
     min_layer = 1,
     max_layer = 4,
-    shiftmode_keys = {["Shift"] = true},
+    shiftmode_keys = {[""] = true},
     symbolmode_keys = {["Sym"] = true, ["אבג"] = true},
     utf8mode_keys = {["🌐"] = true},
     keys = {
@@ -62,8 +62,7 @@ return {
         },
         -- third row
         {  --  1           2       3       4
-            { label = "Shift",
-              icon = "resources/icons/appbar.arrow.shift.png",
+            { label = "",
               width = 1.5
             },
             { "׃",    zayin,     "&",    "7", },
