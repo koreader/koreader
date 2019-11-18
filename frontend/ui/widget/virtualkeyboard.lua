@@ -224,9 +224,9 @@ function VirtualKey:genkeyboardLayoutKeyChars()
     }
     local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts") or {}
     local key_chars = {
-        { icon = "resources/icons/appbar.globe.wire.png",
+        { label = "🌐",
         },
-        east = { icon = "resources/icons/appbar.globe.wire.png", },
+        east = { label = "🌐", },
         east_func = function ()
             self.keyboard_layout_dialog = KeyboardLayoutDialog:new{
                 parent = self,
