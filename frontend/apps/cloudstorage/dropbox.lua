@@ -10,8 +10,12 @@ local _ = require("gettext")
 
 local DropBox = {}
 
-function DropBox:run(url, password)
-    return DropBoxApi:listFolder(url, password)
+function DropBox:run(url, password, choose_folder_mode)
+    return DropBoxApi:listFolder(url, password, choose_folder_mode)
+end
+
+function DropBox:showFiles(url, password)
+    return DropBoxApi:showFiles(url, password)
 end
 
 function DropBox:downloadFile(item, password, path, close)
@@ -36,6 +40,15 @@ function DropBox:downloadFile(item, password, path, close)
             text = T(_("Could not save file to:\n%1"), path),
             timeout = 3,
         })
+    end
+end
+
+function DropBox:downloadFileNoUI(url, password, path)
+    local code_response = DropBoxApi:downloadFile(url, password, path)
+    if code_response == 200 then
+        return true
+    else
+        return false
     end
 end
 
