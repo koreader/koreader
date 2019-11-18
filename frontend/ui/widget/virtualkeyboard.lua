@@ -237,7 +237,7 @@ function VirtualKey:genkeyboardLayoutKeyChars()
     local index = 1
     for k, v in orderedPairs(keyboard_layouts) do
         if v == true then
-            key_chars[positions[index]] = string.upper(k)
+            key_chars[positions[index]] = string.sub(k, 1, 2)
             key_chars[positions[index] .. "_func"] = function()
                 UIManager:tickAfterNext(function() UIManager:close(self.popup) end)
                 self.keyboard:setKeyboardLayout(k)
