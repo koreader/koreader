@@ -33,7 +33,7 @@ return {
     max_layer = 4,
     shiftmode_keys = {["Shift"] = true},
     symbolmode_keys = {["Sym"] = true, ["אבג"] = true},
-    utf8mode_keys = {["IM"] = true},
+    utf8mode_keys = {["🌐"] = true},
     keys = {
         -- first row
         {  --  1           2       3       4
@@ -82,9 +82,7 @@ return {
         {
             { "Sym",  "Sym",    "אבג",  "אבג",
               width = 1.5},
-            { label = "IM",
-              icon = "resources/icons/appbar.globe.wire.png",
-            },
+            { label = "🌐", },
             { " ",        " ",    " ",    " ",
               width = 3.0},
             { com,    taf,      "“",    "←", },

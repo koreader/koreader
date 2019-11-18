@@ -150,7 +150,7 @@ return {
     max_layer = 12,
     shiftmode_keys = {["Shift"] = true},
     symbolmode_keys = {["Sym"] = true, ["ABC"] = true},
-    utf8mode_keys = {["IM"] = true},
+    utf8mode_keys = {["🌐"] = true},
     umlautmode_keys = {["Äéß"] = false},  -- Disabled 'umlaut' keys
     keys = {
         -- [shift, unshift, symbol-shift, symbol-unshift]
@@ -205,8 +205,7 @@ return {
         {
             { "Sym",     "Sym",  "ABC",  "ABC",  "Sym",  "Sym",  "ABC",  "ABC",  "Sym",  "Sym",  "ABC",  "ABC",
               width = 1.5},
-            { label = "IM",
-              icon = "resources/icons/appbar.globe.wire.png",
+            { label = "🌐",
               width = 2,
             },
             -- { "Äéß",     "Äéß",  "Äéß",  "Äéß",  "Äéß",  "Äéß",  "Äéß",  "Äéß",  "Äéß",  "Äéß",  "Äéß",  "Äéß", },
