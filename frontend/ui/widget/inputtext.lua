@@ -372,13 +372,13 @@ function InputText:initTextBox(text, char_added)
 end
 
 function InputText:initKeyboard()
-    local keyboard_layout = 2
+    local keyboard_layer = 2
     if self.input_type == "number" then
-        keyboard_layout = 4
+        keyboard_layer = 4
     end
     self.key_events = nil
     self.keyboard = Keyboard:new{
-        keyboard_layout = keyboard_layout,
+        keyboard_layer = keyboard_layer,
         inputbox = self,
         width = Screen:getWidth(),
     }
