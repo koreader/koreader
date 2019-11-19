@@ -210,21 +210,43 @@ function CloudStorage:downloadFile(item)
     local cs_settings = self:readSettings()
     local download_dir = cs_settings:readSetting("download_dir") or lastdir
     local path = download_dir .. '/' .. item.text
-    if lfs.attributes(path) then
-        UIManager:show(ConfirmBox:new{
-            text = _("File already exists. Would you like to overwrite it?"),
-            ok_callback = function()
-                self:cloudFile(item, path)
-            end
-        })
-    else
-        self:cloudFile(item, path)
-    end
+    self:cloudFile(item, path)
 end
 
 function CloudStorage:cloudFile(item, path)
-    local path_dir = path
     local download_text = _("Downloading. This might take a moment.")
+    local function dropboxDownloadFile(item, password, path_dir, callback_close)
+        UIManager:scheduleIn(1, function()
+            DropBox:downloadFile(item, password, path_dir, callback_close)
+        end)
+        UIManager:show(InfoMessage:new{
+            text = download_text,
+            timeout = 1,
+        })
+    end
+
+    local function ftpDownloadFile(item, address, username, password, path_dir, callback_close)
+        UIManager:scheduleIn(1, function()
+            Ftp:downloadFile(item, address, username, password, path_dir, callback_close)
+        end)
+        UIManager:show(InfoMessage:new{
+            text = download_text,
+            timeout = 1,
+        })
+    end
+
+    local function webdavDownloadFile(item, address, username, password, path_dir, callback_close)
+        UIManager:scheduleIn(1, function()
+            WebDav:downloadFile(item, address, username, password, path_dir, callback_close)
+        end)
+        UIManager:show(InfoMessage:new{
+            text = download_text,
+            timeout = 1,
+        })
+    end
+
+    local path_dir = path
+    local overwrite_text = _("File already exists. Would you like to overwrite it?")
     local buttons = {
         {
             {
@@ -234,38 +256,47 @@ function CloudStorage:cloudFile(item, path)
                         local callback_close = function()
                             self:onClose()
                         end
-                        UIManager:scheduleIn(1, function()
-                            DropBox:downloadFile(item, self.password, path_dir, callback_close)
-                        end)
                         UIManager:close(self.download_dialog)
-                        UIManager:show(InfoMessage:new{
-                            text = download_text,
-                            timeout = 1,
-                        })
+                        if lfs.attributes(path) then
+                            UIManager:show(ConfirmBox:new{
+                                text = overwrite_text,
+                                ok_callback = function()
+                                    dropboxDownloadFile(item, self.password, path_dir, callback_close)
+                                end
+                            })
+                        else
+                            dropboxDownloadFile(item, self.password, path_dir, callback_close)
+                        end
                     elseif self.type == "ftp" then
                         local callback_close = function()
                             self:onClose()
                         end
-                        UIManager:scheduleIn(1, function()
-                            Ftp:downloadFile(item, self.address, self.username, self.password, path_dir, callback_close)
-                        end)
                         UIManager:close(self.download_dialog)
-                        UIManager:show(InfoMessage:new{
-                            text = download_text,
-                            timeout = 1,
-                        })
+                        if lfs.attributes(path) then
+                            UIManager:show(ConfirmBox:new{
+                                text = overwrite_text,
+                                ok_callback = function()
+                                    ftpDownloadFile(item, self.address, self.username, self.password, path_dir, callback_close)
+                                end
+                            })
+                        else
+                            ftpDownloadFile(item, self.address, self.username, self.password, path_dir, callback_close)
+                        end
                     elseif self.type == "webdav" then
                         local callback_close = function()
                             self:onClose()
                         end
-                        UIManager:scheduleIn(1, function()
-                            WebDav:downloadFile(item, self.address, self.username, self.password, path_dir, callback_close)
-                        end)
                         UIManager:close(self.download_dialog)
-                        UIManager:show(InfoMessage:new{
-                            text = download_text,
-                            timeout = 1,
-                        })
+                        if lfs.attributes(path) then
+                            UIManager:show(ConfirmBox:new{
+                                text = overwrite_text,
+                                ok_callback = function()
+                                    webdavDownloadFile(item, self.address, self.username, self.password, path_dir, callback_close)
+                                end
+                            })
+                        else
+                            webdavDownloadFile(item, self.address, self.username, self.password, path_dir, callback_close)
+                        end
                     end
                 end,
             },
