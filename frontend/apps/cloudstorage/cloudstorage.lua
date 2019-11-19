@@ -215,9 +215,9 @@ end
 
 function CloudStorage:cloudFile(item, path)
     local download_text = _("Downloading. This might take a moment.")
-    local function dropboxDownloadFile(item, password, path_dir, callback_close)
+    local function dropboxDownloadFile(unit_item, password, path_dir, callback_close)
         UIManager:scheduleIn(1, function()
-            DropBox:downloadFile(item, password, path_dir, callback_close)
+            DropBox:downloadFile(unit_item, password, path_dir, callback_close)
         end)
         UIManager:show(InfoMessage:new{
             text = download_text,
@@ -225,9 +225,9 @@ function CloudStorage:cloudFile(item, path)
         })
     end
 
-    local function ftpDownloadFile(item, address, username, password, path_dir, callback_close)
+    local function ftpDownloadFile(unit_item, address, username, password, path_dir, callback_close)
         UIManager:scheduleIn(1, function()
-            Ftp:downloadFile(item, address, username, password, path_dir, callback_close)
+            Ftp:downloadFile(unit_item, address, username, password, path_dir, callback_close)
         end)
         UIManager:show(InfoMessage:new{
             text = download_text,
@@ -235,9 +235,9 @@ function CloudStorage:cloudFile(item, path)
         })
     end
 
-    local function webdavDownloadFile(item, address, username, password, path_dir, callback_close)
+    local function webdavDownloadFile(unit_item, address, username, password, path_dir, callback_close)
         UIManager:scheduleIn(1, function()
-            WebDav:downloadFile(item, address, username, password, path_dir, callback_close)
+            WebDav:downloadFile(unit_item, address, username, password, path_dir, callback_close)
         end)
         UIManager:show(InfoMessage:new{
             text = download_text,
