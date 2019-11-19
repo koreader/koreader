@@ -81,9 +81,6 @@ function RadioButton:init()
 end
 
 function RadioButton:update()
-    if self[1] then
-        self[1]:free()
-    end
     self.frame = FrameContainer:new{
         margin = self.margin,
         bordersize = self.bordersize,
