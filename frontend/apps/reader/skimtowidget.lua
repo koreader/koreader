@@ -185,7 +185,7 @@ function SkimToWidget:init()
         end,
     }
     self.current_page_text = Button:new{
-        text = self.curr_page,
+        text = tostring(self.curr_page),
         bordersize = 0,
         margin = self.button_margin,
         radius = 0,
