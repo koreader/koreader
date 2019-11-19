@@ -1,9 +1,11 @@
-local DropBoxApi = require("apps/cloudstorage/dropboxapi")
 local ConfirmBox = require("ui/widget/confirmbox")
+local DocumentRegistry = require("document/documentregistry")
+local DropBoxApi = require("apps/cloudstorage/dropboxapi")
 local InfoMessage = require("ui/widget/infomessage")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local UIManager = require("ui/uimanager")
 local ReaderUI = require("apps/reader/readerui")
+local util = require("util")
 local Screen = require("device").screen
 local T = require("ffi/util").template
 local _ = require("gettext")
@@ -21,7 +23,8 @@ end
 function DropBox:downloadFile(item, password, path, close)
     local code_response = DropBoxApi:downloadFile(item.url, password, path)
     if code_response == 200 then
-        if G_reader_settings:isTrue("show_unsupported") then
+        local __, filename = util.splitFilePathName(path)
+        if G_reader_settings:isTrue("show_unsupported") and not DocumentRegistry:hasProvider(filename) then
             UIManager:show(InfoMessage:new{
                 text = T(_("File saved to:\n%1"), path),
             })
