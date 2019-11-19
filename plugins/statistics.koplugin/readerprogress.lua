@@ -40,6 +40,8 @@ local dayOfWeekTranslation = {
 }
 
 function ReaderProgress:init()
+    self.current_pages = tostring(self.current_pages)
+    self.today_pages = tostring(self.today_pages)
     self.small_font_face = Font:getFace("smallffont")
     self.medium_font_face = Font:getFace("ffont")
     self.large_font_face = Font:getFace("largeffont")
@@ -456,7 +458,7 @@ function ReaderProgress:genSummaryWeek(width)
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextWidget:new{
-                text = total_pages,
+                text = tostring(total_pages),
                 face = self.medium_font_face,
             },
         },
@@ -470,7 +472,7 @@ function ReaderProgress:genSummaryWeek(width)
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextWidget:new{
-                text = math.floor(total_pages / 7),
+                text = tostring(math.floor(total_pages / 7)),
                 face = self.medium_font_face,
             }
         },
