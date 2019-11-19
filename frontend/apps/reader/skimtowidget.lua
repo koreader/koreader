@@ -365,7 +365,7 @@ function SkimToWidget:update()
         self.curr_page = self.page_count
     end
     self.progress_bar.percentage = self.curr_page / self.page_count
-    self.current_page_text:setText(self.curr_page, self.current_page_text.width)
+    self.current_page_text:setText(tostring(self.curr_page), self.current_page_text.width)
 end
 
 function SkimToWidget:addOriginToLocationStack(add_current)
