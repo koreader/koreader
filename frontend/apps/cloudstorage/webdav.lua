@@ -1,9 +1,11 @@
 local ConfirmBox = require("ui/widget/confirmbox")
+local DocumentRegistry = require("document/documentregistry")
 local InfoMessage = require("ui/widget/infomessage")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local UIManager = require("ui/uimanager")
 local ReaderUI = require("apps/reader/readerui")
 local WebDavApi = require("apps/cloudstorage/webdavapi")
+local util = require("util")
 local _ = require("gettext")
 local Screen = require("device").screen
 local T = require("ffi/util").template
@@ -17,7 +19,8 @@ end
 function WebDav:downloadFile(item, address, username, password, local_path, close)
     local code_response = WebDavApi:downloadFile(address .. WebDavApi:urlEncode( item.url ), username, password, local_path)
     if code_response == 200 then
-        if G_reader_settings:isTrue("show_unsupported") then
+        local __, filename = util.splitFilePathName(local_path)
+        if G_reader_settings:isTrue("show_unsupported") and not DocumentRegistry:hasProvider(filename) then
             UIManager:show(InfoMessage:new{
                 text = T(_("File saved to:\n%1"), local_path),
             })
