@@ -305,8 +305,8 @@ function ReaderView:drawPageSurround(bb, x, y)
     if self.dimen.h > self.visible_area.h then
         bb:paintRect(x, y, self.dimen.w, self.state.offset.y, self.outer_page_color)
         local bottom_margin = y + self.visible_area.h + self.state.offset.y
-        bb:paintRect(x, bottom_margin, self.dimen.w, self.dimen.h - bottom_margin,
-            self.outer_page_color)
+        bb:paintRect(x, bottom_margin, self.dimen.w, self.state.offset.y +
+            self.ui.view.footer:getHeight(), self.outer_page_color)
     end
     if self.dimen.w > self.visible_area.w then
         bb:paintRect(x, y, self.state.offset.x, self.dimen.h, self.outer_page_color)
