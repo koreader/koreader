@@ -101,6 +101,8 @@ local arabic_comma = ar_popup.arabic_comma
 
 
 return {
+    min_layer = 1,
+    max_layer = 12,
     shiftmode_keys = {["Shift"] = false},
     symbolmode_keys = {["Sym"] = true, ["حرف"] = true, ["رمز"]=true},
     utf8mode_keys = {["IM"] = true},
