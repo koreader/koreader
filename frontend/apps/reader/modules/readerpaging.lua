@@ -766,11 +766,6 @@ function ReaderPaging:onScrollPanRel(diff)
     return true
 end
 
-function ReaderPaging:calculateOverlap()
-    local footer_height = (self.view.footer_visible and 1 or 0) * self.view.footer.height
-    return self.overlap + footer_height
-end
-
 function ReaderPaging:onScrollPageRel(page_diff)
     if page_diff == 0 then return true end
     if page_diff > 0 then
@@ -786,7 +781,7 @@ function ReaderPaging:onScrollPageRel(page_diff)
 
         local blank_area = Geom:new{}
         blank_area:setSizeTo(self.view.dimen)
-        local overlap = self:calculateOverlap()
+        local overlap = self.overlap
         local offset = Geom:new{
             x = 0,
             y = last_visible_area.h - overlap
@@ -796,7 +791,7 @@ function ReaderPaging:onScrollPageRel(page_diff)
         -- page up, first page should be moved to bottom
         local blank_area = Geom:new{}
         blank_area:setSizeTo(self.view.dimen)
-        local overlap = self:calculateOverlap()
+        local overlap = self.overlap
         local first_page_state = table.remove(self.view.page_states, 1)
         local offset = Geom:new{
             x = 0,
@@ -912,7 +907,7 @@ function ReaderPaging:onGotoPageRel(diff)
     else
         -- not end of page yet, goto next view
         -- adjust panning step according to overlap
-        local overlap = self:calculateOverlap()
+        local overlap = self.overlap
         if x_pan_off > overlap then
             -- moving to next view, move view
             x_pan_off = x_pan_off - overlap
