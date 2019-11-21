@@ -145,7 +145,7 @@ return {
     },
 --
    diacritics = {
-         label = "َ ُ ِ",
+         "َ ُ ِ",
          north = "ٌ",
          northeast = "ً",
          northwest = "ٍ",
