@@ -167,7 +167,7 @@ return {
               width = 3.0},
             { com,        arabic_comma,    "“",    "←", },
             { prd,        prd,    "”",    "→", },
-            -- @fixme Diacritics should only be needed in the first layout, but one repeat of 'diacritics' won't work. Kindly see https://github.com/koreader/koreader/pull/5569#issuecomment-554114059 for details.
+            --- @fixme Diacritics should only be needed in the first layout, but one repeat of 'diacritics' won't work. Kindly see https://github.com/koreader/koreader/pull/5569#issuecomment-554114059 for details.
             { label =  "َ ُ ِ",        diacritics,    diacritics,    diacritics, },
             { label = "Enter",
               "\n",       "\n",   "\n",   "\n",
