@@ -164,7 +164,7 @@ describe("Readerfooter module", function()
         local timeinfo = footer.textGeneratorMap.time(footer)
         local page_count = readerui.document:getPageCount()
         -- stats has not been initialized here, so we get na TB and TC
-        assert.are.same('1 / '..page_count..' | '..timeinfo..' | ⇒ 0 | 0% | ⤠ 0% | ⏳ na | ⤻ na',
+        assert.are.same('1 / '..page_count..' | '..timeinfo..' | ⇒ 0 | 0% | ⤠ 0% | ⏳ na | ⤻ na',
                         footer.footer_text.text)
     end)
 
@@ -179,7 +179,7 @@ describe("Readerfooter module", function()
         local footer = readerui.view.footer
         readerui.view.footer:updateFooter()
         local timeinfo = readerui.view.footer.textGeneratorMap.time(footer)
-        assert.are.same('1 / 2 | '..timeinfo..' | ⇒ 1 | 0% | ⤠ 50% | ⏳ na | ⤻ na',
+        assert.are.same('1 / 2 | '..timeinfo..' | ⇒ 1 | 0% | ⤠ 50% | ⏳ na | ⤻ na',
                         readerui.view.footer.footer_text.text)
     end)
 
@@ -197,7 +197,7 @@ describe("Readerfooter module", function()
         footer:resetLayout()
         footer:updateFooter()
         local timeinfo = footer.textGeneratorMap.time(footer)
-        assert.are.same('1 / 2 | '..timeinfo..' | ⇒ 1 | 0% | ⤠ 50% | ⏳ na | ⤻ na',
+        assert.are.same('1 / 2 | '..timeinfo..' | ⇒ 1 | 0% | ⤠ 50% | ⏳ na | ⤻ na',
                         footer.footer_text.text)
 
         -- disable show all at once, page progress should be on the first
@@ -214,10 +214,10 @@ describe("Readerfooter module", function()
 
         -- disable page left, battery should follow
         tapFooterMenu(fake_menu, "Pages left in chapter".." (⇒)")
-        assert.are.same('0%', footer.footer_text.text)
+        assert.are.same('0%', footer.footer_text.text)
 
         -- disable battery, percentage should follow
-        tapFooterMenu(fake_menu, "Battery status".." ()")
+        tapFooterMenu(fake_menu, "Battery status".." ()")
         assert.are.same('⤠ 50%', footer.footer_text.text)
 
         -- disable percentage, book time to read should follow
@@ -286,20 +286,20 @@ describe("Readerfooter module", function()
         local footer = readerui.view.footer
         local horizontal_margin = Screen:scaleBySize(10)*2
         footer:updateFooter()
-        assert.is.same(351, footer.text_width)
+        assert.is.same(354, footer.text_width)
         assert.is.same(600, footer.progress_bar.width
                             + footer.text_width
                             + horizontal_margin)
-        assert.is.same(229, footer.progress_bar.width)
+        assert.is.same(226, footer.progress_bar.width)
 
         local old_screen_getwidth = Screen.getWidth
         Screen.getWidth = function() return 900 end
         footer:resetLayout()
-        assert.is.same(351, footer.text_width)
+        assert.is.same(354, footer.text_width)
         assert.is.same(900, footer.progress_bar.width
                             + footer.text_width
                             + horizontal_margin)
-        assert.is.same(529, footer.progress_bar.width)
+        assert.is.same(526, footer.progress_bar.width)
         Screen.getWidth = old_screen_getwidth
     end)
 
@@ -313,12 +313,12 @@ describe("Readerfooter module", function()
         }
         local footer = readerui.view.footer
         footer:onPageUpdate(1)
-        assert.are.same(221, footer.progress_bar.width)
-        assert.are.same(359, footer.text_width)
+        assert.are.same(218, footer.progress_bar.width)
+        assert.are.same(362, footer.text_width)
 
         footer:onPageUpdate(100)
-        assert.are.same(197, footer.progress_bar.width)
-        assert.are.same(383, footer.text_width)
+        assert.are.same(194, footer.progress_bar.width)
+        assert.are.same(386, footer.text_width)
     end)
 
     it("should support chapter markers", function()

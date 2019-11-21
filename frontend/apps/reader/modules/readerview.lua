@@ -304,8 +304,9 @@ end
 function ReaderView:drawPageSurround(bb, x, y)
     if self.dimen.h > self.visible_area.h then
         bb:paintRect(x, y, self.dimen.w, self.state.offset.y, self.outer_page_color)
-        bb:paintRect(x, y + self.dimen.h - self.state.offset.y - 1,
-            self.dimen.w, self.state.offset.y + 1, self.outer_page_color)
+        local bottom_margin = y + self.visible_area.h + self.state.offset.y
+        bb:paintRect(x, bottom_margin, self.dimen.w, self.state.offset.y +
+            self.ui.view.footer:getHeight(), self.outer_page_color)
     end
     if self.dimen.w > self.visible_area.w then
         bb:paintRect(x, y, self.state.offset.x, self.dimen.h, self.outer_page_color)
@@ -573,6 +574,9 @@ function ReaderView:recalculate()
             self.state.rotation)
         -- reset our size
         self.visible_area:setSizeTo(self.dimen)
+        if self.ui.view.footer_visible then
+            self.visible_area.h = self.visible_area.h - self.ui.view.footer:getHeight()
+        end
         if self.ui.document.configurable.writing_direction == 0 then
             -- starts from left top of page_area
             self.visible_area.x = self.page_area.x
@@ -594,7 +598,11 @@ function ReaderView:recalculate()
     end
     self.state.offset = Geom:new{x = 0, y = 0}
     if self.dimen.h > self.visible_area.h then
-        self.state.offset.y = (self.dimen.h - self.visible_area.h) / 2
+        if self.ui.view.footer_visible then
+            self.state.offset.y = (self.dimen.h - (self.visible_area.h + self.ui.view.footer:getHeight())) / 2
+        else
+            self.state.offset.y = (self.dimen.h - self.visible_area.h) / 2
+        end
     end
     if self.dimen.w > self.visible_area.w then
         self.state.offset.x = (self.dimen.w - self.visible_area.w) / 2

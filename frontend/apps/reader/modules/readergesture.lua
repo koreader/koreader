@@ -48,6 +48,7 @@ local action_strings = {
     history = _("History"),
     open_previous_document = _("Open previous document"),
     filemanager = _("File browser"),
+    favorites = _("Favorites"),
 
     dictionary_lookup = _("Dictionary lookup"),
     wikipedia_lookup = _("Wikipedia lookup"),
@@ -200,6 +201,7 @@ function ReaderGesture:init()
         multiswipe_north_south_north = self.ges_mode == "gesture_reader" and "prev_chapter" or "nothing",
         multiswipe_south_north_south = self.ges_mode == "gesture_reader" and "next_chapter" or "nothing",
         multiswipe_west_east_west = "open_previous_document",
+        multiswipe_east_west_east = "favorites",
         multiswipe_east_north_west = self.ges_mode == "gesture_reader" and "zoom_contentwidth" or "nothing",
         multiswipe_south_east_north = self.ges_mode == "gesture_reader" and "zoom_contentheight" or "nothing",
         multiswipe_east_north_west_east = self.ges_mode == "gesture_reader" and "zoom_pagewidth" or "nothing",
@@ -686,6 +688,7 @@ function ReaderGesture:buildMenu(ges, default)
 
         {"history", true},
         {"open_previous_document", true, true},
+        {"favorites", true},
         {"filemanager", not self.is_docless, true},
 
         {"dictionary_lookup", true},
@@ -1232,6 +1235,8 @@ function ReaderGesture:gestureAction(action, ges)
         self.ui:handleEvent(Event:new("ShowBookmark"))
     elseif action == "history" then
         self.ui:handleEvent(Event:new("ShowHist"))
+    elseif action == "favorites" then
+        self.ui:handleEvent(Event:new("ShowColl", "favorites"))
     elseif action == "book_info" then
         self.ui:handleEvent(Event:new("ShowBookInfo"))
     elseif action == "book_description" then

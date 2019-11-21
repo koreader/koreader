@@ -84,7 +84,7 @@ function OPDSParser:parse(text)
         return s:gsub( "%p", {["&"] = "&amp;", ["<"] = "&lt;", [">"] = "&gt;" } )
     end )
     local xlex = luxl.new(text, #text)
-    return self:createFlatXTable(xlex)
+    return assert(self:createFlatXTable(xlex))
 end
 
 return OPDSParser

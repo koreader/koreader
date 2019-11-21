@@ -19,7 +19,7 @@ function PicDocument:init()
     local ok
     ok, self._document = pcall(pic.openDocument, self.file)
     if not ok then
-        error("Failed to open image")
+        error("Failed to open image:" .. self._document)
     end
 
     self.info.has_pages = true

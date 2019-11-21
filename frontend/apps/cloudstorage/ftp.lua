@@ -1,4 +1,5 @@
 local ConfirmBox = require("ui/widget/confirmbox")
+local DocumentRegistry = require("document/documentregistry")
 local FtpApi = require("apps/cloudstorage/ftpapi")
 local InfoMessage = require("ui/widget/infomessage")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
@@ -26,7 +27,8 @@ function Ftp:downloadFile(item, address, user, pass, path, close)
         local file = io.open(path, "w")
         file:write(response)
         file:close()
-        if G_reader_settings:isTrue("show_unsupported") then
+        local __, filename = util.splitFilePathName(path)
+        if G_reader_settings:isTrue("show_unsupported") and not DocumentRegistry:hasProvider(filename) then
             UIManager:show(InfoMessage:new{
                 text = T(_("File saved to:\n%1"), path),
             })

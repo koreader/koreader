@@ -6,6 +6,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local ProgressWidget = require("ui/widget/progresswidget")
 local ReaderPanning = require("apps/reader/modules/readerpanning")
+local Size = require("ui/size")
 local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local bit = require("bit")
@@ -378,7 +379,6 @@ function ReaderRolling:addToMainMenu(menu_items)
                 choice1_text_func = function()
                     return inverse_reading_order and _("LTR") or _("LTR (★)")
                 end,
-                choice1_enabled = inverse_reading_order,
                 choice1_callback = function()
                      G_reader_settings:saveSetting("inverse_reading_order", false)
                      if touchmenu_instance then touchmenu_instance:updateItems() end
@@ -386,7 +386,6 @@ function ReaderRolling:addToMainMenu(menu_items)
                 choice2_text_func = function()
                     return inverse_reading_order and _("RTL (★)") or _("RTL")
                 end,
-                choice2_enabled = not inverse_reading_order,
                 choice2_callback = function()
                     G_reader_settings:saveSetting("inverse_reading_order", true)
                     if touchmenu_instance then touchmenu_instance:updateItems() end
@@ -1030,9 +1029,9 @@ function ReaderRolling:showEngineProgress(percent)
         -- Widget size and position: best to anchor it at top left,
         -- so it does not override the footer or a bookmark dogear
         local x = 0
-        local y = 0
+        local y = Size.margin.small
         local w = Screen:getWidth() / 3
-        local h = Screen:scaleBySize(5)
+        local h = Size.line.progress
         if self.engine_progress_widget then
             self.engine_progress_widget:setPercentage(percent)
         else

@@ -137,7 +137,7 @@ end
 
 function BookStatusWidget:getStatDays()
     if stats_book.days then
-        return stats_book.days
+        return tostring(stats_book.days)
     else
         return _("N/A")
     end

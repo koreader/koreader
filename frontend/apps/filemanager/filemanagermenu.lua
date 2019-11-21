@@ -179,6 +179,16 @@ function FileManagerMenu:setUpdateItemTable()
                     }
                     UIManager:show(items_font)
                 end
+            },
+            {
+                text = _("Reduce font size to show more text"),
+                keep_menu_open = true,
+                checked_func = function()
+                    return G_reader_settings:isTrue("items_multilines_show_more_text")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrFalse("items_multilines_show_more_text")
+                end
             }
         }
     }
@@ -376,6 +386,20 @@ function FileManagerMenu:setUpdateItemTable()
             end,
         })
     end
+    table.insert(self.menu_items.developer_options.sub_item_table, {
+        text = _("Disable enhanced UI text shaping (xtext)"),
+        checked_func = function()
+            return G_reader_settings:isFalse("use_xtext")
+        end,
+        callback = function()
+            G_reader_settings:flipNilOrTrue("use_xtext")
+            local InfoMessage = require("ui/widget/infomessage")
+            UIManager:show(InfoMessage:new{
+                text = _("This will take effect on next restart."),
+            })
+        end,
+    })
+
     self.menu_items.cloud_storage = {
         text = _("Cloud storage"),
         callback = function()
