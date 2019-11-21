@@ -158,9 +158,7 @@ return {
         {
             { "Shift",     "رمز",  "حرف",  "حرف",
               width = 1},
-            { label = "IM",
-              icon = "resources/icons/appbar.globe.wire.png",
-            },
+            { label = "🌐", },
             { "Sym",     "Sym",  "Sym",  "Sym", },
             { label = "space",
               " ",        " ",    " ",    " ",
