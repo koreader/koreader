@@ -69,6 +69,7 @@ function Usage:remainingHours()
 end
 
 function Usage:chargingHours()
+    if self:percentagePerHour() == 0 then return "n/a" end
     local curr = State:new()
     return math.abs(curr.percentage - 100) / self:percentagePerHour()
 end
@@ -136,10 +137,10 @@ function BatteryStat:onFlushSettings()
 end
 
 function BatteryStat:accumulate()
-    if self.was_suspending then
+    if self.was_suspending and not self.was_charging then
         -- Suspending to awake.
         self.sleeping:append(self.awake_state)
-    else
+    elseif not self.was_suspending and not self.was_charging then
         -- Awake to suspending, time between self.awake_state and now should belong to awake.
         self.awake:append(self.awake_state)
     end
@@ -169,7 +170,7 @@ end
 
 function BatteryStat:onCharging()
     if not self.was_charging then
-        self:reset(true, false)
+        self:reset(true, true)
         self:accumulate()
     end
     self.was_charging = true
@@ -229,6 +230,7 @@ function BatteryStat:reset(withCharging, withDischarging)
     if withDischarging then
         self.discharging = Usage:new()
     end
+    self.awake_state = State:new()
 end
 
 function BatteryStat:resetAll()
