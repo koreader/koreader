@@ -748,7 +748,7 @@ function util.unicodeCodepointToUtf8(c)
         )
     elseif c < 0x10000 then
         if c >= 0xD800 and c <= 0xDFFF then
-            return string.char(0xEF, 0xBF, 0xBD) -- Surrogates -> U+FFFD REPLACEMENT CHARACTER
+            return '�' -- Surrogates -> U+FFFD REPLACEMENT CHARACTER
         end
         return string.char(
                 bor(0xE0, rshift(c, 12)),
@@ -763,7 +763,7 @@ function util.unicodeCodepointToUtf8(c)
                 bor(0x80, band(c, 0x3F))
         )
     else
-        return string.char(0xEF, 0xBF, 0xBD) -- Invalid -> U+FFFD REPLACEMENT CHARACTER
+        return '�' -- Invalid -> U+FFFD REPLACEMENT CHARACTER
     end
 end
 
