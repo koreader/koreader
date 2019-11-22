@@ -7,6 +7,7 @@ local dbg = require("dbg")
 local _ = require("gettext")
 local T = BaseUtil.template
 
+local lshift = bit.lshift
 local rshift = bit.rshift
 local band = bit.band
 local bor = bit.bor
@@ -652,12 +653,12 @@ function util.getFriendlySize(size)
     size = tonumber(size)
     if not size or type(size) ~= "number" then return end
     local s
-    if size > 1024*1024*1024 then
-        s = string.format("%4.1f GB", size/1024/1024/1024)
-    elseif size > 1024*1024 then
-        s = string.format("%4.1f MB", size/1024/1024)
+    if size > 1073741824 then
+        s = string.format("%4.1f GB", rshift(rshift(rshift(size, 10), 10), 10))
+    elseif size > 1048576 then
+        s = string.format("%4.1f MB", rshift(rshift(size, 10), 10))
     elseif size > 1024 then
-        s = string.format("%4.1f KB", size/1024)
+        s = string.format("%4.1f KB", rshift(size, 10))
     else
         s = string.format("%d B", size)
     end
