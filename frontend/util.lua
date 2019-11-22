@@ -14,13 +14,13 @@ local bor = bit.bor
 
 local util = {}
 
---- Strips all punctuation and spaces from a string.
+--- Strips all punctuation marks and spaces from a string.
 ---- @string text the string to be stripped
 ---- @treturn string stripped text
-function util.stripePunctuations(text)
+function util.stripPunctuation(text)
     if not text then return end
-    -- strip ASCII punctuation characters around text
-    -- and strip any generic punctuation (U+2000 - U+206F) in the text
+    -- strip ASCII punctuation marks around text
+    -- and strip any generic punctuation marks (U+2000 - U+206F) in the text
     return text:gsub("\226[\128-\131][\128-\191]", ''):gsub("^%p+", ''):gsub("%p+$", '')
 end
 
