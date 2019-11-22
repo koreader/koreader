@@ -571,7 +571,7 @@ local function replaceSlashChar(str)
 end
 
 --[[--
-Replaces characters that are invalid filenames.
+Replaces characters that are invalid in filenames.
 
 Replaces the characters `\/:*?"<>|` with an `_` unless an optional path is provided. These characters are problematic on Windows filesystems. On Linux only the `/` poses a problem.
 
@@ -684,7 +684,7 @@ function util.getMenuText(item)
         text = item.text
     end
     if item.sub_item_table ~= nil or item.sub_item_table_func then
-        text = text .. " \226\150\184"
+        text = text .. " ▸"
     end
     return text
 end
