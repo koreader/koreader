@@ -27,7 +27,7 @@ function State:toString()
 end
 
 local Usage = {}
-local INDENTATION = "   " --three spaces
+local INDENTATION = "   " -- Three spaces.
 
 function Usage:new(o)
     o = o or {}
