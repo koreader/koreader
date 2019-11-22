@@ -287,7 +287,7 @@ function util.tableMerge(t1, t2)
 end
 
 --[[--
-Gets last index of string in character
+Gets last index of character in string (i.e., strrchr)
 
 Returns the index within this string of the last occurrence of the specified character
 or -1 if the character does not occur.
