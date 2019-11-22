@@ -738,6 +738,7 @@ end
 --- Convert a Unicode codepoint (number) to UTF-8 char
 --- c.f., <https://stackoverflow.com/a/4609989>
 ---     & <https://stackoverflow.com/a/38492214>
+--- See utf8charcode in ffi/util for a decoder.
 --
 --- @int c Unicode codepoint
 --- @treturn string UTF-8 char
