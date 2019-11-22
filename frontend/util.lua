@@ -380,13 +380,13 @@ function util.hasCJKChar(str)
     return string.match(str, "[\228-\234][\128-\191].") ~= nil
 end
 
---- Split texts into a list of words, spaces and punctuation.
+--- Split texts into a list of words, spaces and punctuation marks.
 ---- @string text text to split
----- @treturn table list of words, spaces and punctuation
+---- @treturn table list of words, spaces and punctuation marks
 function util.splitToWords(text)
     local wlist = {}
     for word in util.gsplit(text, "[%s%p]+", true) do
-        -- if space splitted word contains CJK characters
+        -- if space split word contains CJK characters
         if util.hasCJKChar(word) then
             -- split with CJK characters
             for char in util.gsplit(word, "[\228-\234\192-\255][\128-\191]+", true) do
