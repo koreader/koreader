@@ -692,6 +692,8 @@ end
 Replaces invalid UTF-8 characters with a replacement string.
 
 Based on <http://notebook.kulchenko.com/programming/fixing-malformed-utf8-in-lua>.
+c.f.,    FixUTF8 @ <https://github.com/pkulchenko/ZeroBraneStudio/blob/master/src/util.lua>.
+
 @string str the string to be checked for invalid characters
 @string replacement the string to replace invalid characters with
 @treturn string valid UTF-8
@@ -700,15 +702,15 @@ function util.fixUtf8(str, replacement)
     local pos = 1
     local len = #str
     while pos <= len do
-        if     pos == str:find("[%z\1-\127]", pos) then pos = pos + 1
-        elseif pos == str:find("[\194-\223][\128-\191]", pos) then pos = pos + 2
-        elseif pos == str:find(       "\224[\160-\191][\128-\191]", pos)
-            or pos == str:find("[\225-\236][\128-\191][\128-\191]", pos)
-            or pos == str:find(       "\237[\128-\159][\128-\191]", pos)
-            or pos == str:find("[\238-\239][\128-\191][\128-\191]", pos) then pos = pos + 3
-        elseif pos == str:find(       "\240[\144-\191][\128-\191][\128-\191]", pos)
-            or pos == str:find("[\241-\243][\128-\191][\128-\191][\128-\191]", pos)
-            or pos == str:find(       "\244[\128-\143][\128-\191][\128-\191]", pos) then pos = pos + 4
+        if     str:find("^[%z\1-\127]", pos) then pos = pos + 1
+        elseif str:find("^[\194-\223][\128-\191]", pos) then pos = pos + 2
+        elseif str:find(       "^\224[\160-\191][\128-\191]", pos)
+            or str:find("^[\225-\236][\128-\191][\128-\191]", pos)
+            or str:find(       "^\237[\128-\159][\128-\191]", pos)
+            or str:find("^[\238-\239][\128-\191][\128-\191]", pos) then pos = pos + 3
+        elseif str:find(       "^\240[\144-\191][\128-\191][\128-\191]", pos)
+            or str:find("^[\241-\243][\128-\191][\128-\191][\128-\191]", pos)
+            or str:find(       "^\244[\128-\143][\128-\191][\128-\191]", pos) then pos = pos + 4
         else
             str = str:sub(1, pos - 1) .. replacement .. str:sub(pos + 1)
             pos = pos + #replacement
