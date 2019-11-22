@@ -653,10 +653,10 @@ function util.getFriendlySize(size)
     size = tonumber(size)
     if not size or type(size) ~= "number" then return end
     local s
-    if size > 1073741824 then
-        s = string.format("%4.1f GB", rshift(size / 1024, 10) / 1024)
-    elseif size > 1048576 then
-        s = string.format("%4.1f MB", rshift(size, 10) / 1024)
+    if size > 1024*1024*1024 then
+        s = string.format("%4.1f GB", size / 1024 / 1024 / 1024)
+    elseif size > 1024*1024 then
+        s = string.format("%4.1f MB", size / 1024 / 1024)
     elseif size > 1024 then
         s = string.format("%4.1f KB", size / 1024)
     else
