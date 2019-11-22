@@ -461,20 +461,20 @@ function util.isSplittable(c, next_c, prev_c)
             return true
         end
     elseif c == " " then
-        -- we only split on a space (so punctuation sticks to prev word)
+        -- we only split on a space (so a punctuation mark sticks to prev word)
         -- if next_c or prev_c is provided, we can make a better decision
         if next_c and non_splittable_space_tailers:find(next_c, 1, true) then
-            -- this space is followed by some punctuation that is better kept with us
+            -- this space is followed by some punctuation mark that is better kept with us
             return false
         elseif prev_c and non_splittable_space_leaders:find(prev_c, 1, true) then
-            -- this space is lead by some punctuation that is better kept with us
+            -- this space is lead by some punctuation mark that is better kept with us
             return false
         else
             -- we can split on this space
             return true
         end
     end
-    -- otherwise, non splittable
+    -- otherwise, not splittable
     return false
 end
 
