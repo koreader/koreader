@@ -349,7 +349,7 @@ function util.splitToChars(text)
                     hi_surrogate_uchar = uchar -- will be added if not followed by low surrogate
                 elseif hi_surrogate and charcode and charcode >= 0xDC00 and charcode <= 0xDFFF then
                     -- low surrogate following a high surrogate, good, let's make them a single char
-                    charcode = (hi_surrogate - 0xD800) * 0x400 + (charcode - 0xDC00) + 0x10000
+                    charcode = lshift((hi_surrogate - 0xD800), 10) + (charcode - 0xDC00) + 0x10000
                     table.insert(tab, util.unicodeCodepointToUtf8(charcode))
                     hi_surrogate = nil
                 else
