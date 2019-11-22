@@ -304,4 +304,9 @@ function BatteryStatWidget:onNotCharging()
     BatteryStat:onNotCharging()
 end
 
+-- Test only
+function BatteryStatWidget:stat()
+    return BatteryStat
+end
+
 return BatteryStatWidget
