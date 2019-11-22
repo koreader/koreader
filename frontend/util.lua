@@ -782,12 +782,12 @@ local HTML_ENTITIES_TO_UTF8 = {
     {"&amp;", "&"}, -- must be last
 }
 --[[--
-Replace HTML entities with their UTF8 equivalent in text.
+Replace HTML entities with their UTF-8 encoded equivalent in text.
 
 Supports only basic ones and those with numbers (no support for named entities like `&eacute;`).
 
 @int string text with HTML entities
-@treturn string UTF8 text
+@treturn string UTF-8 text
 ]]
 function util.htmlEntitiesToUtf8(text)
     for _, t in ipairs(HTML_ENTITIES_TO_UTF8) do
@@ -837,7 +837,7 @@ function util.htmlToPlainTextIfHtml(text)
         is_html = true
     else
         -- no <tag> found
-        -- but we may meet some text badly twicely encoded html containing "&lt;br&gt;"
+        -- but we may meet some text badly/twice encoded html containing "&lt;br&gt;"
         local nb_encoded_tags
         _, nb_encoded_tags = text:gsub("&lt;%a+&gt;", "")
         if nb_encoded_tags > 0 then
