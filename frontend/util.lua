@@ -400,11 +400,11 @@ function util.splitToWords(text)
 end
 
 -- We don't want to split on a space if it is followed by some
--- specific punctuation : e.g. "word :" or "word )"
--- (In french, there is a space before a colon, and it better
+-- specific punctuation marks : e.g. "word :" or "word )"
+-- (In French, there is a non-breaking space before a colon, and it better
 -- not be wrapped there.)
 local non_splittable_space_tailers = ":;,.!?)]}$%=-+*/|<>»”"
--- Same if a space has some specific other punctuation before it
+-- Same if a space has some specific other punctuation mark before it
 local non_splittable_space_leaders = "([{$=-+*/|<>«“"
 
 
