@@ -317,7 +317,7 @@ describe("Readerfooter module", function()
         assert.are.same(362, footer.text_width)
 
         footer:onPageUpdate(100)
-        assert.are.same(194, footer.progress_bar.width)
+        assert.are.same(186, footer.progress_bar.width)
         assert.are.same(386, footer.text_width)
     end)
 
