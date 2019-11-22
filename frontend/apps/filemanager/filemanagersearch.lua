@@ -9,7 +9,8 @@ local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local util = require("ffi/util")
+local FFIUtil = require("ffi/util")
+local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
@@ -255,7 +256,7 @@ function Search:find(option)
             s=string.sub(s, n, string.len(s)-j)
         end
 
-        s=string.gsub(s, "\\u([a-f0-9][a-f0-9][a-f0-9][a-f0-9])", function(w) return util.unichar(tonumber(w, 16)) end)
+        s=string.gsub(s, "\\u([a-f0-9][a-f0-9][a-f0-9][a-f0-9])", function(w) return util.unicodeCodepointToUtf8(tonumber(w, 16)) end)
 
         return s
     end
@@ -606,7 +607,7 @@ function Search:browse(option, run, chosen)
     if run == 1 then
         self.results = {}
         if option == "series" then
-            for v,n in util.orderedPairs(self.browse_series) do
+            for v,n in FFIUtil.orderedPairs(self.browse_series) do
                 dummy = v
                 if not SEARCH_CASESENSITIVE then dummy = string.upper(dummy) end
                 if string.find(dummy, upsearch, nil, true) then
@@ -619,7 +620,7 @@ function Search:browse(option, run, chosen)
                 end
            end
         else
-            for v,n in util.orderedPairs(self.browse_tags) do
+            for v,n in FFIUtil.orderedPairs(self.browse_tags) do
                 dummy = v
                 if not SEARCH_CASESENSITIVE then dummy = string.upper(dummy) end
                 if string.find(dummy, upsearch, nil, true) then
