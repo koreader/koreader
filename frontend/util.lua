@@ -7,6 +7,10 @@ local dbg = require("dbg")
 local _ = require("gettext")
 local T = BaseUtil.template
 
+local rshift = bit.rshift
+local band = bit.band
+local bor = bit.bor
+
 local util = {}
 
 --- Strips all punctuation and spaces from a string.
@@ -728,21 +732,38 @@ function util.splitToArray(str, splitter, capture_empty_entity)
     return result
 end
 
---- Convert a Unicode codepoint (number) to UTF8 char
+--- Convert a Unicode codepoint (number) to UTF-8 char
+--- c.f., <https://stackoverflow.com/a/4609989>
+---     & <https://stackoverflow.com/a/38492214>
 --
 --- @int c Unicode codepoint
---- @treturn string UTF8 char
+--- @treturn string UTF-8 char
 function util.unicodeCodepointToUtf8(c)
-    if c < 128 then
+    if c < 0x80 then
         return string.char(c)
-    elseif c < 2048 then
-        return string.char(192 + c/64, 128 + c%64)
-    elseif c < 55296 or 57343 < c and c < 65536 then
-        return string.char(224 + c/4096, 128 + c/64%64, 128 + c%64)
-    elseif c < 1114112 then
-        return string.char(240 + c/262144, 128 + c/4096%64, 128 + c/64%64, 128 + c%64)
+    elseif c < 0x800 then
+        return string.char(
+                bor(0xC0, rshift(c, 6)),
+                bor(0x80, band(c, 0x3F))
+        )
+    elseif c < 0x10000 then
+        if c >= 0xD800 and c <= 0xDFFF then
+            return string.char(0xEF, 0xBF, 0xBD) -- Surrogates -> U+FFFD REPLACEMENT CHARACTER
+        end
+        return string.char(
+                bor(0xE0, rshift(c, 12)),
+                bor(0x80, band(rshift(c, 6), 0x3F)),
+                bor(0x80, band(c, 0x3F))
+        )
+    elseif c < 0x110000 then
+        return string.char(
+                bor(0xF0, rshift(c, 18)),
+                bor(0x80, band(rshift(c, 12), 0x3F)),
+                bor(0x80, band(rshift(c, 6), 0x3F)),
+                bor(0x80, band(c, 0x3F))
+        )
     else
-        return util.unicodeCodepointToUtf8(65533) -- U+FFFD REPLACEMENT CHARACTER
+        return string.char(0xEF, 0xBF, 0xBD) -- Invalid -> U+FFFD REPLACEMENT CHARACTER
     end
 end
 
@@ -754,7 +775,7 @@ local HTML_ENTITIES_TO_UTF8 = {
     {"&apos;", "'"},
     {"&nbsp;", "\xC2\xA0"},
     {"&#(%d+);", function(x) return util.unicodeCodepointToUtf8(tonumber(x)) end},
-    {"&#x(%x+);", function(x) return util.unicodeCodepointToUtf8(tonumber(x,16)) end},
+    {"&#x(%x+);", function(x) return util.unicodeCodepointToUtf8(tonumber(x, 16)) end},
     {"&amp;", "&"}, -- must be last
 }
 --[[--
