@@ -567,7 +567,7 @@ function ReaderDictionary:cleanSelection(text)
     -- with plain ascii quote (for french words like "aujourd’hui")
     text = text:gsub("\xE2\x80\x99", "'") -- U+2019 (right single quotation mark)
     -- Strip punctuation characters around selection
-    text = util.stripePunctuations(text)
+    text = util.stripPunctuation(text)
     -- Strip some common english grammatical construct
     text = text:gsub("'s$", '') -- english possessive
     -- Strip some common french grammatical constructs

@@ -7,19 +7,20 @@ local dbg = require("dbg")
 local _ = require("gettext")
 local T = BaseUtil.template
 
+local lshift = bit.lshift
 local rshift = bit.rshift
 local band = bit.band
 local bor = bit.bor
 
 local util = {}
 
---- Strips all punctuation and spaces from a string.
+--- Strips all punctuation marks and spaces from a string.
 ---- @string text the string to be stripped
 ---- @treturn string stripped text
-function util.stripePunctuations(text)
+function util.stripPunctuation(text)
     if not text then return end
-    -- strip ASCII punctuation characters around text
-    -- and strip any generic punctuation (U+2000 - U+206F) in the text
+    -- strip ASCII punctuation marks around text
+    -- and strip any generic punctuation marks (U+2000 - U+206F) in the text
     return text:gsub("\226[\128-\131][\128-\191]", ''):gsub("^%p+", ''):gsub("%p+$", '')
 end
 
@@ -286,7 +287,7 @@ function util.tableMerge(t1, t2)
 end
 
 --[[--
-Gets last index of string in character
+Gets last index of character in string (i.e., strrchr)
 
 Returns the index within this string of the last occurrence of the specified character
 or -1 if the character does not occur.
@@ -348,7 +349,7 @@ function util.splitToChars(text)
                     hi_surrogate_uchar = uchar -- will be added if not followed by low surrogate
                 elseif hi_surrogate and charcode and charcode >= 0xDC00 and charcode <= 0xDFFF then
                     -- low surrogate following a high surrogate, good, let's make them a single char
-                    charcode = (hi_surrogate - 0xD800) * 0x400 + (charcode - 0xDC00) + 0x10000
+                    charcode = lshift((hi_surrogate - 0xD800), 10) + (charcode - 0xDC00) + 0x10000
                     table.insert(tab, util.unicodeCodepointToUtf8(charcode))
                     hi_surrogate = nil
                 else
@@ -379,13 +380,13 @@ function util.hasCJKChar(str)
     return string.match(str, "[\228-\234][\128-\191].") ~= nil
 end
 
---- Split texts into a list of words, spaces and punctuation.
+--- Split texts into a list of words, spaces and punctuation marks.
 ---- @string text text to split
----- @treturn table list of words, spaces and punctuation
+---- @treturn table list of words, spaces and punctuation marks
 function util.splitToWords(text)
     local wlist = {}
     for word in util.gsplit(text, "[%s%p]+", true) do
-        -- if space splitted word contains CJK characters
+        -- if space split word contains CJK characters
         if util.hasCJKChar(word) then
             -- split with CJK characters
             for char in util.gsplit(word, "[\228-\234\192-\255][\128-\191]+", true) do
@@ -399,11 +400,11 @@ function util.splitToWords(text)
 end
 
 -- We don't want to split on a space if it is followed by some
--- specific punctuation : e.g. "word :" or "word )"
--- (In french, there is a space before a colon, and it better
+-- specific punctuation marks : e.g. "word :" or "word )"
+-- (In French, there is a non-breaking space before a colon, and it better
 -- not be wrapped there.)
 local non_splittable_space_tailers = ":;,.!?)]}$%=-+*/|<>»”"
--- Same if a space has some specific other punctuation before it
+-- Same if a space has some specific other punctuation mark before it
 local non_splittable_space_leaders = "([{$=-+*/|<>«“"
 
 
@@ -460,20 +461,20 @@ function util.isSplittable(c, next_c, prev_c)
             return true
         end
     elseif c == " " then
-        -- we only split on a space (so punctuation sticks to prev word)
+        -- we only split on a space (so a punctuation mark sticks to prev word)
         -- if next_c or prev_c is provided, we can make a better decision
         if next_c and non_splittable_space_tailers:find(next_c, 1, true) then
-            -- this space is followed by some punctuation that is better kept with us
+            -- this space is followed by some punctuation mark that is better kept with us
             return false
         elseif prev_c and non_splittable_space_leaders:find(prev_c, 1, true) then
-            -- this space is lead by some punctuation that is better kept with us
+            -- this space is lead by some punctuation mark that is better kept with us
             return false
         else
             -- we can split on this space
             return true
         end
     end
-    -- otherwise, non splittable
+    -- otherwise, not splittable
     return false
 end
 
@@ -570,7 +571,7 @@ local function replaceSlashChar(str)
 end
 
 --[[--
-Replaces characters that are invalid filenames.
+Replaces characters that are invalid in filenames.
 
 Replaces the characters `\/:*?"<>|` with an `_` unless an optional path is provided. These characters are problematic on Windows filesystems. On Linux only the `/` poses a problem.
 
@@ -683,7 +684,7 @@ function util.getMenuText(item)
         text = item.text
     end
     if item.sub_item_table ~= nil or item.sub_item_table_func then
-        text = text .. " \226\150\184"
+        text = text .. " ▸"
     end
     return text
 end
@@ -692,6 +693,8 @@ end
 Replaces invalid UTF-8 characters with a replacement string.
 
 Based on <http://notebook.kulchenko.com/programming/fixing-malformed-utf8-in-lua>.
+c.f.,    FixUTF8 @ <https://github.com/pkulchenko/ZeroBraneStudio/blob/master/src/util.lua>.
+
 @string str the string to be checked for invalid characters
 @string replacement the string to replace invalid characters with
 @treturn string valid UTF-8
@@ -700,15 +703,15 @@ function util.fixUtf8(str, replacement)
     local pos = 1
     local len = #str
     while pos <= len do
-        if     pos == str:find("[%z\1-\127]", pos) then pos = pos + 1
-        elseif pos == str:find("[\194-\223][\128-\191]", pos) then pos = pos + 2
-        elseif pos == str:find(       "\224[\160-\191][\128-\191]", pos)
-            or pos == str:find("[\225-\236][\128-\191][\128-\191]", pos)
-            or pos == str:find(       "\237[\128-\159][\128-\191]", pos)
-            or pos == str:find("[\238-\239][\128-\191][\128-\191]", pos) then pos = pos + 3
-        elseif pos == str:find(       "\240[\144-\191][\128-\191][\128-\191]", pos)
-            or pos == str:find("[\241-\243][\128-\191][\128-\191][\128-\191]", pos)
-            or pos == str:find(       "\244[\128-\143][\128-\191][\128-\191]", pos) then pos = pos + 4
+        if     str:find("^[%z\1-\127]", pos) then pos = pos + 1
+        elseif str:find("^[\194-\223][\128-\191]", pos) then pos = pos + 2
+        elseif str:find(       "^\224[\160-\191][\128-\191]", pos)
+            or str:find("^[\225-\236][\128-\191][\128-\191]", pos)
+            or str:find(       "^\237[\128-\159][\128-\191]", pos)
+            or str:find("^[\238-\239][\128-\191][\128-\191]", pos) then pos = pos + 3
+        elseif str:find(       "^\240[\144-\191][\128-\191][\128-\191]", pos)
+            or str:find("^[\241-\243][\128-\191][\128-\191][\128-\191]", pos)
+            or str:find(       "^\244[\128-\143][\128-\191][\128-\191]", pos) then pos = pos + 4
         else
             str = str:sub(1, pos - 1) .. replacement .. str:sub(pos + 1)
             pos = pos + #replacement
@@ -735,6 +738,7 @@ end
 --- Convert a Unicode codepoint (number) to UTF-8 char
 --- c.f., <https://stackoverflow.com/a/4609989>
 ---     & <https://stackoverflow.com/a/38492214>
+--- See utf8charcode in ffi/util for a decoder.
 --
 --- @int c Unicode codepoint
 --- @treturn string UTF-8 char
@@ -779,12 +783,12 @@ local HTML_ENTITIES_TO_UTF8 = {
     {"&amp;", "&"}, -- must be last
 }
 --[[--
-Replace HTML entities with their UTF8 equivalent in text.
+Replace HTML entities with their UTF-8 encoded equivalent in text.
 
 Supports only basic ones and those with numbers (no support for named entities like `&eacute;`).
 
 @int string text with HTML entities
-@treturn string UTF8 text
+@treturn string UTF-8 text
 ]]
 function util.htmlEntitiesToUtf8(text)
     for _, t in ipairs(HTML_ENTITIES_TO_UTF8) do
@@ -834,7 +838,7 @@ function util.htmlToPlainTextIfHtml(text)
         is_html = true
     else
         -- no <tag> found
-        -- but we may meet some text badly twicely encoded html containing "&lt;br&gt;"
+        -- but we may meet some text badly/twice encoded html containing "&lt;br&gt;"
         local nb_encoded_tags
         _, nb_encoded_tags = text:gsub("&lt;%a+&gt;", "")
         if nb_encoded_tags > 0 then
