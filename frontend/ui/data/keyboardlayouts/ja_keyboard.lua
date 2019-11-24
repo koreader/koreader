@@ -104,9 +104,9 @@ return {
               width = 1.5,
               bold = true
             },
-            { label = "⌫",
+            { label = "",
               width = 1.5,
-              bold = true
+              bold = false
             },
         },
     },

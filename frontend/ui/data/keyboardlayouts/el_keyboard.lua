@@ -103,9 +103,9 @@ return {
             { _B_el,  _b_el,  ">",    prd,    "Ó",    "ó",    "†",    "‡", },
             { _N_el,  _n_el,  "‘",    "↑",    "Ú",    "ú",    "–",    "—", },
             { _M_el,  _m_el,  "’",    "↓",    "Ç",    "ç",    "…",    "¨", },
-            { label = "⌫",
+            { label = "",
               width = 1.5,
-              bold = true
+              bold = false
             },
         },
         -- fourth row

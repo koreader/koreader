@@ -72,9 +72,9 @@ return {
             { "־",    nun,       ">",    prd, },
             { "ֿ ",    mem,      "‘",    "↑",  },
             { "ֽ ",    tzadik,   "’",    "↓",  },
-            { label = "⌫",
+            { label = "",
               width = 1.5,
-              bold = true
+              bold = false
             },
         },
         -- fourth row

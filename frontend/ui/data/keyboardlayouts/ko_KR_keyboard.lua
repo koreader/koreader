@@ -138,9 +138,9 @@ return {
             { "ㅠ",    "ㅠ",    "&",    prd, },
             { "ㅜ",    "ㅜ",    "『",    "↑", },
             { "ㅡ",    "ㅡ",    "』",    "↓", },
-            { label = "⌫",
+            { label = "",
               width = 1.5,
-              bold = true
+              bold = false
             },
         },
         -- fourth row
