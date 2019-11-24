@@ -261,7 +261,7 @@ function Screensaver:show(event, fallback_message)
             exclude = doc_settings:readSetting("exclude_screensaver")
         end
         if exclude ~= true then
-            if lfs.attributes(lastfile, "mode") == "file" then
+            if lastfile and lfs.attributes(lastfile, "mode") == "file" then
                 local doc = DocumentRegistry:openDocument(lastfile)
                 if doc.loadDocument then -- CreDocument
                     doc:loadDocument(false) -- load only metadata
@@ -287,7 +287,7 @@ function Screensaver:show(event, fallback_message)
         end
     end
     if screensaver_type == "bookstatus" then
-        if lfs.attributes(lastfile, "mode") == "file" then
+        if lastfile and lfs.attributes(lastfile, "mode") == "file" then
             local doc = DocumentRegistry:openDocument(lastfile)
             local doc_settings = DocSettings:open(lastfile)
             local instance = require("apps/reader/readerui"):_getRunningInstance()
@@ -410,9 +410,9 @@ function Screensaver:expandSpecial(message, fallback)
     local ret = message
 
     local lastfile = G_reader_settings:readSetting("lastfile")
-    local doc = DocumentRegistry:openDocument(lastfile)
     local instance = require("apps/reader/readerui"):_getRunningInstance()
-    if instance ~= nil then
+    if lastfile and lfs.attributes(lastfile, "mode") == "file" and instance ~= nil then
+        local doc = DocumentRegistry:openDocument(lastfile)
         local currentpage = instance.view.state.page
         ret = string.gsub(ret, "%%c", currentpage)
 
@@ -424,10 +424,10 @@ function Screensaver:expandSpecial(message, fallback)
 
         local props = doc:getProps()
         ret = string.gsub(ret, "%%T", props.title)
+        doc:close()
     else
         ret = fallback
     end
-    doc:close()
 
     return ret
 end
