@@ -12,6 +12,7 @@ local HorizontalSpan = require("ui/widget/horizontalspan")
 local ImageWidget = require("ui/widget/imagewidget")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local LeftContainer = require("ui/widget/container/leftcontainer")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
@@ -749,7 +750,14 @@ function MosaicMenu:_updateItemsBuildUI()
         if idx % self.nb_cols == 1 then -- new row
             table.insert(self.item_group, VerticalSpan:new{ width = self.item_margin })
             cur_row = HorizontalGroup:new{}
-            table.insert(self.item_group, cur_row)
+            -- Have items on the possibly non-fully filled last row aligned to the left
+            table.insert(self.item_group, LeftContainer:new{
+                dimen = Geom:new{
+                    w = self.dimen.w - 2*self.item_margin,
+                    h = self.item_height
+                },
+                cur_row
+            })
             table.insert(cur_row, HorizontalSpan:new({ width = self.item_margin }))
         end
 
