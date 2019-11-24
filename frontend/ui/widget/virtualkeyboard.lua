@@ -103,7 +103,7 @@ function VirtualKey:init()
     elseif self.keyboard.umlautmode_keys[self.label] ~= nil then
         self.callback = function () self.keyboard:setLayer("Äéß") end
         self.skiptap = true
-    elseif self.label == "⌫" then
+    elseif self.label == "" then
         self.callback = function () self.keyboard:delChar() end
         self.hold_callback = function ()
             self.ignore_key_release = true -- don't have delChar called on release
