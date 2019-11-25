@@ -99,14 +99,14 @@ return {
             { label = "空白",
               " ",    " ",    " ",    " ",
               width = 5.5},
-            { label = "Enter",
+            { label = "⮠",
               "\n",   "\n",   "\n",   "\n",
-              icon = "resources/icons/appbar.arrow.enter.png",
               width = 1.5,
+              bold = true
             },
-            { label = "Backspace",
-              icon = "resources/icons/appbar.clear.reflect.horizontal.png",
-              width = 1.5
+            { label = "",
+              width = 1.5,
+              bold = false
             },
         },
     },

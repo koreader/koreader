@@ -30,6 +30,7 @@ local VirtualKey = InputContainer:new{
     key = nil,
     icon = nil,
     label = nil,
+    bold = nil,
 
     keyboard = nil,
     callback = nil,
@@ -102,7 +103,7 @@ function VirtualKey:init()
     elseif self.keyboard.umlautmode_keys[self.label] ~= nil then
         self.callback = function () self.keyboard:setLayer("Äéß") end
         self.skiptap = true
-    elseif self.label == "Backspace" then
+    elseif self.label == "" then
         self.callback = function () self.keyboard:delChar() end
         self.hold_callback = function ()
             self.ignore_key_release = true -- don't have delChar called on release
@@ -153,6 +154,7 @@ function VirtualKey:init()
         label_widget = TextWidget:new{
             text = self.label,
             face = self.face,
+            bold = self.bold or false,
         }
     end
     self[1] = FrameContainer:new{
@@ -485,10 +487,12 @@ function VirtualKeyPopup:init()
                 local key = type(v) == "table" and v.key or v
                 local label = type(v) == "table" and v.label or key
                 local icon = type(v) == "table" and v.icon
+                local bold = type(v) == "table" and v.bold
                 local virtual_key = VirtualKey:new{
                     key = key,
                     label = label,
                     icon = icon,
+                    bold = bold,
                     keyboard = parent_key.keyboard,
                     key_chars = key_chars,
                     width = parent_key.width,
@@ -777,6 +781,7 @@ function VirtualKeyboard:addKeys()
                 key_chars = key_chars,
                 icon = self.KEYS[i][j].icon,
                 label = label,
+                bold = self.KEYS[i][j].bold,
                 keyboard = self,
                 width = key_width,
                 height = key_height,

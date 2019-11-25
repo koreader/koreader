@@ -101,9 +101,9 @@ return {
             { _B_,    _b_,    ">",    prd,    "Ó",    "ó",    "†",    "‡", },
             { _N_,    _n_,    "‘",    "↑",    "Ú",    "ú",    "–",    "—", },
             { _M_,    _m_,    "’",    "↓",    "Ç",    "ç",    "…",    "¨", },
-            { label = "Backspace",
-              icon = "resources/icons/appbar.clear.reflect.horizontal.png",
-              width = 1.5
+            { label = "",
+              width = 1.5,
+              bold = false
             },
         },
         -- fourth row
@@ -117,10 +117,10 @@ return {
               width = 3.0},
             { com,    com,    "“",    "←",    "Ũ",   "ũ",    com,    com, },
             { prd,    prd,    "”",    "→",    "Ĩ",   "ĩ",    prd,    prd, },
-            { label = "Enter",
+            { label = "⮠",
               "\n",   "\n",   "\n",   "\n",   "\n",   "\n",   "\n",   "\n",
-              icon = "resources/icons/appbar.arrow.enter.png",
               width = 1.5,
+              bold = true
             },
         },
     },
