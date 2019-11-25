@@ -288,6 +288,15 @@ function InputDialog:init()
         self.button_table,
     }
 
+    -- Remember provided text_height if any (to restore it on keyboard height change)
+    if self.orig_text_height == nil then
+        if self.text_height then
+            self.orig_text_height = self.text_height
+        else
+            self.orig_text_height = false
+        end
+    end
+
     -- InputText
     if not self.text_height or self.fullscreen then
         -- We need to find the best height to avoid screen overflow
@@ -306,7 +315,7 @@ function InputDialog:init()
         if not self.keyboard_hidden then
             keyboard_height = input_widget:getKeyboardDimen().h
         end
-        input_widget:free()
+        input_widget:onCloseWidget() -- free() textboxwidget and keyboard
         -- Find out available height
         local available_height = Screen:getHeight()
                                     - 2*self.border_size
@@ -469,6 +478,21 @@ function InputDialog:onShowKeyboard(ignore_first_hold_release)
     if not self.readonly and not self.keyboard_hidden then
         self._input_widget:onShowKeyboard(ignore_first_hold_release)
     end
+end
+
+function InputDialog:onKeyboardHeightChanged()
+    self.input = self:getInputText() -- re-init with up-to-date text
+    self:onClose() -- will close keyboard and save view position
+    self._input_widget:onCloseWidget() -- proper cleanup of InputText and its keyboard
+    self:free()
+    -- Restore original text_height (or reset it if none to force recomputing it)
+    self.text_height = self.orig_text_height or nil
+    self:init()
+    if not self.keyboard_hidden then
+        self:onShowKeyboard()
+    end
+    -- Our position on screen has probably changed, so have the full screen refreshed
+    UIManager:setDirty("all", "flashui")
 end
 
 function InputDialog:onClose()
