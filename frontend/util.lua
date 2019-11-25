@@ -156,7 +156,11 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
         if withoutSeconds then
             if hours == "0" then
                 mins = string.format("%.f", round(seconds / 60))
-                return mins .. "'"
+                if hmsFormat then
+                    return T(_("%1m"), mins)
+                else
+                    return mins .. "'"
+                end
             end
             -- @translators This is the 'h' for hour, like in 1h30. This is a duration.
             return T(_("%1h%2"), hours, mins)
