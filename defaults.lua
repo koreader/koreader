@@ -172,10 +172,10 @@ DCREREADER_CONFIG_WORD_GAP_SMALL = 50
 DCREREADER_CONFIG_WORD_GAP_MEDIUM = 75
 DCREREADER_CONFIG_WORD_GAP_LARGE = 100
 
--- crereader progress bar
+-- crereader progress bar (no longer needed)
 -- 0 for top "full" progress bar
 -- 1 for bottom "mini" progress bar
-DCREREADER_PROGRESS_BAR = 1
+--DCREREADER_PROGRESS_BAR = 1
 
 -- configure "mini" progress bar
 DMINIBAR_TOC_MARKER_WIDTH = 2   -- Looses usefulness > 3
