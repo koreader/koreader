@@ -61,10 +61,10 @@ function FontSettings:getAndroidPath()
     local user_path = android.getExternalStoragePath()
     if user_path == "Unknown" then
         -- unable to identify external storage. Use defaults
-        return system_path..";".."/sdcard/koreader/fonts"
+        return system_path..";".."/sdcard/fonts;/sdcard/koreader/fonts"
     else
         -- use the external storage identified by the app
-        return system_path..";"..user_path.."/koreader/fonts"
+        return system_path..";"..user_path.."/fonts;"..user_path.."/koreader/fonts"
     end
 end
 
