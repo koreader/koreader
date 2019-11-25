@@ -406,6 +406,13 @@ function InputText:onCloseKeyboard()
     UIManager:close(self.keyboard)
 end
 
+function InputText:onCloseWidget()
+    if self.keyboard then
+        self.keyboard:free()
+    end
+    self:free()
+end
+
 function InputText:getTextHeight()
     return self.text_widget:getTextHeight()
 end

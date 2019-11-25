@@ -147,7 +147,7 @@ function VirtualKey:init()
             file = self.icon,
             scale_factor = 0, -- keep icon aspect ratio
             height = icon_height,
-            width = icon_height * 100, -- to fit height when ensuring a/r
+            width = self.width - 2*self.bordersize,
         }
     else
         label_widget = TextWidget:new{
@@ -392,6 +392,7 @@ function VirtualKeyPopup:onClose()
 end
 
 function VirtualKeyPopup:onCloseWidget()
+    self:free()
     UIManager:setDirty(nil, function()
         return "ui", self[1][1].dimen
     end)
@@ -694,9 +695,18 @@ function VirtualKeyboard:getKeyboardLayout()
 end
 
 function VirtualKeyboard:setKeyboardLayout(layout)
+    local prev_keyboard_height = self.dimen and self.dimen.h
     G_reader_settings:saveSetting("keyboard_layout", layout)
     self:init()
-    self:_refresh(true)
+    if prev_keyboard_height and self.dimen.h ~= prev_keyboard_height then
+        self:_refresh(true, true)
+        -- Keyboard height change: notify parent (InputDialog)
+        if self.inputbox and self.inputbox.parent and self.inputbox.parent.onKeyboardHeightChanged then
+            self.inputbox.parent:onKeyboardHeightChanged()
+        end
+    else
+        self:_refresh(true)
+    end
 end
 
 function VirtualKeyboard:onClose()
@@ -709,10 +719,14 @@ function VirtualKeyboard:onPressKey()
     return true
 end
 
-function VirtualKeyboard:_refresh(want_flash)
+function VirtualKeyboard:_refresh(want_flash, fullscreen)
     local refresh_type = "ui"
     if want_flash then
         refresh_type = "flashui"
+    end
+    if fullscreen then
+        UIManager:setDirty("all", refresh_type)
+        return
     end
     UIManager:setDirty(self, function()
         return refresh_type, self[1][1].dimen
@@ -753,6 +767,7 @@ function VirtualKeyboard:initLayer(layer)
 end
 
 function VirtualKeyboard:addKeys()
+    self:free() -- free previous keys' TextWidgets
     self.layout = {}
     local base_key_width = math.floor((self.width - (#self.KEYS[1] + 1)*self.key_padding - 2*self.padding)/#self.KEYS[1])
     local base_key_height = math.floor((self.height - (#self.KEYS + 1)*self.key_padding - 2*self.padding)/#self.KEYS)
