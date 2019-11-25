@@ -751,9 +751,10 @@ function MosaicMenu:_updateItemsBuildUI()
             table.insert(self.item_group, VerticalSpan:new{ width = self.item_margin })
             cur_row = HorizontalGroup:new{}
             -- Have items on the possibly non-fully filled last row aligned to the left
-            table.insert(self.item_group, LeftContainer:new{
+            local container = self._do_center_partial_rows and CenterContainer or LeftContainer
+            table.insert(self.item_group, container:new{
                 dimen = Geom:new{
-                    w = self.dimen.w - 2*self.item_margin,
+                    w = self.dimen.w,
                     h = self.item_height
                 },
                 cur_row

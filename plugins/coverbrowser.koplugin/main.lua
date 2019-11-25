@@ -602,6 +602,7 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
         FileChooser._do_cover_images = nil
         FileChooser._do_filename_only = nil
         FileChooser._do_hint_opened = nil
+        FileChooser._do_center_partial_rows = nil
         self:refreshFileManagerInstance(true)
         return
     end
@@ -620,6 +621,8 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
         -- Set MosaicMenu behaviour:
         FileChooser._do_cover_images = display_mode ~= "mosaic_text"
         FileChooser._do_hint_opened = true -- dogear at bottom
+        -- Don't have "../" centered in empty directories
+        FileChooser._do_center_partial_rows = false
         -- One could override default 3x3 grid here (put that as settings ?)
         -- FileChooser.nb_cols_portrait = 4
         -- FileChooser.nb_rows_portrait = 4
@@ -637,6 +640,7 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
         FileChooser._do_filename_only = display_mode == "list_image_filename"
         FileChooser._do_hint_opened = true -- dogear at bottom
     end
+
 
     -- Replace this FileManager method with the one from CoverMenu
     -- (but first, make the original method saved here as local available
@@ -684,7 +688,7 @@ local function _FileManagerHistory_updateItemTable(self)
             hist_menu._updateItemsBuildUI = MosaicMenu._updateItemsBuildUI
             -- Set MosaicMenu behaviour:
             hist_menu._do_cover_images = display_mode ~= "mosaic_text"
-            -- no need for do_hint_opened with History
+            hist_menu._do_center_partial_rows = true -- nicer looking when few elements
 
         elseif display_mode == "list_image_meta" or display_mode == "list_only_meta" or
                                  display_mode == "list_image_filename" then -- list modes
@@ -695,7 +699,6 @@ local function _FileManagerHistory_updateItemTable(self)
             -- Set ListMenu behaviour:
             hist_menu._do_cover_images = display_mode ~= "list_only_meta"
             hist_menu._do_filename_only = display_mode == "list_image_filename"
-            -- no need for do_hint_opened with History
 
         end
         hist_menu._do_hint_opened = BookInfoManager:getSetting("history_hint_opened")
@@ -763,6 +766,7 @@ local function _FileManagerCollections_updateItemTable(self)
             coll_menu._updateItemsBuildUI = MosaicMenu._updateItemsBuildUI
             -- Set MosaicMenu behaviour:
             coll_menu._do_cover_images = display_mode ~= "mosaic_text"
+            coll_menu._do_center_partial_rows = true -- nicer looking when few elements
 
         elseif display_mode == "list_image_meta" or display_mode == "list_only_meta" or
             display_mode == "list_image_filename" then -- list modes
