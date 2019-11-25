@@ -80,17 +80,17 @@ local function shorten(number)
 end
 
 function Usage:dump(kv_pairs)
-    table.insert(kv_pairs, {string.format("%s%s",INDENTATION, _("Consumed %")), shorten(self.percentage)})
-    table.insert(kv_pairs, {string.format("%s%s",INDENTATION, _("Total time")), util.secondsToHClock(self.time, true, true)})
-    table.insert(kv_pairs, {string.format("%s%s",INDENTATION, _("% per hour")), shorten(self:percentagePerHour())})
+    table.insert(kv_pairs, {INDENTATION .. _("Consumed %"), shorten(self.percentage)})
+    table.insert(kv_pairs, {INDENTATION .. _("Total time"), util.secondsToHClock(self.time, true, true)})
+    table.insert(kv_pairs, {INDENTATION .. _("% per hour"), shorten(self:percentagePerHour())})
 end
 
 function Usage:dumpRemaining(kv_pairs)
-    table.insert(kv_pairs, {string.format("%s%s",INDENTATION, _("Estimated remaining hours")), shorten(self:remainingHours())})
+    table.insert(kv_pairs, {INDENTATION .. _("Estimated remaining hours"), shorten(self:remainingHours())})
 end
 
 function Usage:dumpCharging(kv_pairs)
-    table.insert(kv_pairs, {string.format("%s%s",INDENTATION, _("Estimated hours for charging")), shorten(self:chargingHours())})
+    table.insert(kv_pairs, {INDENTATION .. _("Estimated hours for charging"), shorten(self:chargingHours())})
 end
 
 local BatteryStat = {
