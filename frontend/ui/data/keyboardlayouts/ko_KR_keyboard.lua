@@ -26,9 +26,21 @@ local wrapInputBox = function(inputbox)
     if inputbox._wrapped == nil then
         inputbox._wrapped = true
 
-        -- helper function
+        -- helper functions
+        local copied_names = {}
+        local function restore_func_references(obj)
+            for __, name in ipairs(copied_names) do
+                local orig_name = "_" .. name
+                if obj[orig_name] then
+                    obj[name] = obj[orig_name]
+                    obj[orig_name] = nil
+                end
+            end
+        end
+
         local function copy_func_reference(obj, name)
             obj["_" .. name] = obj[name]
+            table.insert(copied_names, name)
         end
 
         -- override original implementations with helper object
@@ -82,6 +94,11 @@ local wrapInputBox = function(inputbox)
         wrap_touch_event_func_with_hghelper_reset(inputbox, "onTapTextBox")
         wrap_touch_event_func_with_hghelper_reset(inputbox, "onHoldTextBox")
         wrap_touch_event_func_with_hghelper_reset(inputbox, "onSwipeTextBox")
+
+        return function() -- return unwrap function
+            restore_func_references(inputbox)
+            inputbox._wrapped = nil
+        end
     end
 end
 

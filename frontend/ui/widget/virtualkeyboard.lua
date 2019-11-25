@@ -662,6 +662,10 @@ local VirtualKeyboard = FocusManager:new{
 }
 
 function VirtualKeyboard:init()
+    if self.uwrap_func then
+        self.uwrap_func()
+        self.uwrap_func = nil
+    end
     local lang = self:getKeyboardLayout()
     local keyboard_layout = self.lang_to_keyboard_layout[lang] or self.lang_to_keyboard_layout["en"]
     local keyboard = require("ui/data/keyboardlayouts/" .. keyboard_layout)
@@ -681,7 +685,7 @@ function VirtualKeyboard:init()
         self.key_events.Close = { {"Back"}, doc = "close keyboard" }
     end
     if keyboard.wrapInputBox then
-        keyboard.wrapInputBox(self.inputbox)
+        self.uwrap_func = keyboard.wrapInputBox(self.inputbox) or self.uwrap_func
     end
 end
 
