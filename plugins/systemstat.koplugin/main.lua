@@ -24,8 +24,6 @@ function SystemStat:init()
         self.storage_filter = "' /mnt/us$'"
     elseif Device:isSDL() then
         self.storage_filter = "/dev/sd"
-    elseif Device:isAndroid() then
-        self.storage_filter = Device.external_storage()
     end
 end
 
