@@ -430,6 +430,22 @@ describe("util module", function()
             assert.is_equal("10h01",
                             util.secondsToHClock(36060, true))
         end)
+        it("should round seconds to minutes in 0h00m format", function()
+            assert.is_equal("1m",
+                util.secondsToHClock(89, true, true))
+            assert.is_equal("2m",
+                util.secondsToHClock(90, true, true))
+            assert.is_equal("2m",
+                util.secondsToHClock(110, true, true))
+            assert.is_equal("1h00",
+                util.secondsToHClock(3600, true, true))
+            assert.is_equal("1h00",
+                util.secondsToHClock(3599, true, true))
+            assert.is_equal("59m",
+                util.secondsToHClock(3569, true, true))
+            assert.is_equal("10h01",
+                util.secondsToHClock(36060, true, true))
+        end)
         it("should convert seconds to 0h00'00'' format", function()
             assert.is_equal("0''",
                             util.secondsToHClock(0))
