@@ -40,10 +40,10 @@ describe("BatteryState plugin tests #nocov", function()
         assert.is_false(widget.was_suspending)
         MockTime:increase(1)
         widget:accumulate()
-        -- awake & charging time should be reset.
-        assert.are.equal(1, widget.awake.time)
+        -- Awake charging & discharging time should be reset.
+        assert.are.equal(0, widget.awake.time)
         assert.are.equal(0, widget.sleeping.time)
-        assert.are.equal(1, widget.discharging.time)
+        assert.are.equal(0, widget.discharging.time)
         assert.are.equal(1, widget.charging.time)
 
         widget:onNotCharging()
@@ -62,10 +62,10 @@ describe("BatteryState plugin tests #nocov", function()
         assert.is_false(widget.was_suspending)
         MockTime:increase(1)
         widget:accumulate()
-        -- awake & charging time should be reset.
-        assert.are.equal(1, widget.awake.time)
+        -- Awake charging & discharging time should be reset.
+        assert.are.equal(0, widget.awake.time)
         assert.are.equal(0, widget.sleeping.time)
-        assert.are.equal(1, widget.discharging.time)
+        assert.are.equal(0, widget.discharging.time)
         assert.are.equal(1, widget.charging.time)
     end)
 
@@ -129,10 +129,10 @@ describe("BatteryState plugin tests #nocov", function()
         assert.is_false(widget.was_suspending)
         MockTime:increase(1)
         widget:accumulate()
-        -- awake & charging time should be reset.
-        assert.are.equal(1, widget.awake.time)
+        -- Awake charging & discharging time should be reset.
+        assert.are.equal(0, widget.awake.time)
         assert.are.equal(0, widget.sleeping.time)
-        assert.are.equal(1, widget.discharging.time)
+        assert.are.equal(0, widget.discharging.time)
         assert.are.equal(1, widget.charging.time)
 
         widget:onCharging()
@@ -140,9 +140,9 @@ describe("BatteryState plugin tests #nocov", function()
         assert.is_false(widget.was_suspending)
         MockTime:increase(1)
         widget:accumulate()
-        assert.are.equal(2, widget.awake.time)
+        assert.are.equal(0, widget.awake.time)
         assert.are.equal(0, widget.sleeping.time)
-        assert.are.equal(1, widget.discharging.time)
+        assert.are.equal(0, widget.discharging.time)
         assert.are.equal(2, widget.charging.time)
     end)
 
