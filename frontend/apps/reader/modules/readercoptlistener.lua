@@ -16,9 +16,7 @@ function ReaderCoptListener:onReadSettings(config)
         end)
     end
 
-    local status_line = config:readSetting("copt_status_line") or
-             G_reader_settings:readSetting("copt_status_line") or
-             DCREREADER_PROGRESS_BAR
+    local status_line = config:readSetting("copt_status_line") or G_reader_settings:readSetting("copt_status_line") or 1
     self.ui:handleEvent(Event:new("SetStatusLine", status_line, true))
 end
 
