@@ -13,12 +13,13 @@ local Input = Device.input
 local Screen = Device.screen
 
 local MILLION = 1000000
+local DEFAULT_FULL_REFRESH_COUNT = 6
 
 -- there is only one instance of this
 local UIManager = {
     -- trigger a full refresh when counter reaches FULL_REFRESH_COUNT
     FULL_REFRESH_COUNT =
-        G_reader_settings:readSetting("full_refresh_count") or DRCOUNTMAX,
+        G_reader_settings:readSetting("full_refresh_count") or DEFAULT_FULL_REFRESH_COUNT,
     refresh_count = 0,
 
     -- How long to wait between ZMQ wakeups: 50ms.
