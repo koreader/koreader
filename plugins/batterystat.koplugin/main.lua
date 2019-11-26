@@ -94,7 +94,7 @@ function Usage:dumpCharging(kv_pairs)
 end
 
 local BatteryStat = {
-    settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/batterstat.lua"),
+    settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/battery_stats.lua"),
     kv_page = nil,
 }
 
