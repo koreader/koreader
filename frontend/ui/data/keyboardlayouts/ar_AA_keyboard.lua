@@ -4,58 +4,6 @@ local com = en_popup.com -- comma (,)
 local prd = en_popup.prd -- period (.)
 local _at = en_popup._at
 local _eq = en_popup._eq -- equals sign (=)
-local _A_ = en_popup._A_
-local _a_ = en_popup._a_
-local _B_ = en_popup._B_
-local _b_ = en_popup._b_
-local _C_ = en_popup._C_
-local _c_ = en_popup._c_
-local _D_ = en_popup._D_
-local _d_ = en_popup._d_
-local _E_ = en_popup._E_
-local _e_ = en_popup._e_
-local _F_ = en_popup._F_
-local _f_ = en_popup._f_
-local _G_ = en_popup._G_
-local _g_ = en_popup._g_
-local _H_ = en_popup._H_
-local _h_ = en_popup._h_
-local _I_ = en_popup._I_
-local _i_ = en_popup._i_
-local _J_ = en_popup._J_
-local _j_ = en_popup._j_
-local _K_ = en_popup._K_
-local _k_ = en_popup._k_
-local _L_ = en_popup._L_
-local _l_ = en_popup._l_
-local _M_ = en_popup._M_
-local _m_ = en_popup._m_
-local _N_ = en_popup._N_
-local _n_ = en_popup._n_
-local _O_ = en_popup._O_
-local _o_ = en_popup._o_
-local _P_ = en_popup._P_
-local _p_ = en_popup._p_
-local _Q_ = en_popup._Q_
-local _q_ = en_popup._q_
-local _R_ = en_popup._R_
-local _r_ = en_popup._r_
-local _S_ = en_popup._S_
-local _s_ = en_popup._s_
-local _T_ = en_popup._T_
-local _t_ = en_popup._t_
-local _U_ = en_popup._U_
-local _u_ = en_popup._u_
-local _V_ = en_popup._V_
-local _v_ = en_popup._v_
-local _W_ = en_popup._W_
-local _w_ = en_popup._w_
-local _X_ = en_popup._X_
-local _x_ = en_popup._x_
-local _Y_ = en_popup._Y_
-local _y_ = en_popup._y_
-local _Z_ = en_popup._Z_
-local _z_ = en_popup._z_
 local alef = ar_popup.alef
 local ba = ar_popup.ba
 local jeem = ar_popup.jeem
@@ -89,66 +37,66 @@ local laa = ar_popup.laa
 local alefmaqsoura = ar_popup.alefmaqsoura
 local taamarbouta = ar_popup.taamarbouta
 local diacritics = ar_popup.diacritics
---local diacritic_fat_ha = ar_popup.diacritic_fat_ha
---local diacritic_damma = ar_popup.diacritic_damma
---local diacritic_kasra = ar_popup.diacritic_kasra
---local diacritic_sukoon = ar_popup.diacritic_sukoon
---local diacritic_shadda = ar_popup.diacritic_shadda
---local diacritic_tanween_fath = ar_popup.diacritic_tanween_fath
---local diacritic_tanween_damm = ar_popup.diacritic_tanween_damm
---local diacritic_tanween_kasr = ar_popup.diacritic_tanween_kasr
+local diacritic_fat_ha = ar_popup.diacritic_fat_ha
+local diacritic_damma = ar_popup.diacritic_damma
+local diacritic_kasra = ar_popup.diacritic_kasra
+local diacritic_sukoon = ar_popup.diacritic_sukoon
+local diacritic_shadda = ar_popup.diacritic_shadda
+local diacritic_tanween_fath = ar_popup.diacritic_tanween_fath
+local diacritic_tanween_damm = ar_popup.diacritic_tanween_damm
+local diacritic_tanween_kasr = ar_popup.diacritic_tanween_kasr
 local arabic_comma = ar_popup.arabic_comma
 
 
 return {
     min_layer = 1,
     max_layer = 4,
-    shiftmode_keys = {["Shift"] = true, ["حرف"] = true, ["رمز"]=true},
-    symbolmode_keys = {["Sym"] = true},
+    shiftmode_keys = {["بدّل"] = true},
+    symbolmode_keys = {["رمز"] = true,["حرف"]=true},
     utf8mode_keys = {["🌐"] = true},
     umlautmode_keys = {["Äéß"] = false},
     keys = {
         -- first row
         {  --  1        2       3       4
-            { _Q_,    dhad,    "׳",    "0", },
-            { _W_,    saad,    "֘֘֙֙ ",    "1", },
-            { _E_,    thaa,    "֘ ",    "2", },
-            { _R_,     qaf,     "֗",    "3", },
-            { _T_,     fah,     "֖ ",    _eq, },
-            { _Y_,   ghayn,    "֕ ",    "(", },
-            { _U_,    ayin,    "֔ ",    ")", },
-            { _I_,    h_aa,    "֓ ",    "ـ", },
-            { _O_,    khaa,    "֒ ",    "ّ",  },
-            { _P_,      ha,    "֑ ",    "ٌ",  },
-            { "[",    jeem,    "֑",     "ً",  },
-            { "]",    daal,    "ֽ ",    "~", },
+            { diacritic_fat_ha,    dhad,    "׳",    "0", },
+            { diacritic_tanween_fath,    saad,    "",    "1", },
+            { diacritic_damma,    thaa,    "֘ ",    "2", },
+            { diacritic_tanween_damm,     qaf,     "֗",    "3", },
+            { "ﻹ",     fah,     "֖ ",    _eq, },
+            { "إ",   ghayn,    "֕ ",    "(", },
+            { "`",    ayin,    "֔ ",    ")", },
+            { "÷",    h_aa,    "֓ ",    "ـ", },
+            { "×",    khaa,    "֒ ",    "ّ",  },
+            { "؛",      ha,    "֑ ",    "ٌ",  },
+            { "<",    jeem,    "֑",     "ً",  },
+            { ">",    daal,    "ֽ ",    "~", },
         },
         -- second row
         {  --  1         2       3       4
-            { "",     sheen,    "ּ ",    "4", },
-            { _S_,     seen,     "ֻ ",   "5", },
-            { _D_,      yaa,     "ִ ",   "6", },
-            { _F_,       ba,     "ֹ",    ";", },
-            { _G_,      lam,     "ְ ",   "'", },
-            { _H_,     alef,     "ֵ ",  "\\", },
-            { _J_,      taa,     "ֶ ",    "ّ", },
-            { _K_,      nun,     "ַ ",    "ْ", },
-            { _L_,     meem,     "ָ ",    "ِ", },
-            { ";",      kaf,     "ָ ",    "ُ", },
-            { "'",      tah,     "ָ ",    "َ", },
+            { diacritic_kasra,     sheen,    "ּ ",    "4", },
+            { diacritic_tanween_kasr,     seen,     "ֻ ",   "5", },
+            { "]",      yaa,     "ִ ",   "6", },
+            { "[",       ba,     "ֹ",    ";", },
+            { "ﻷ",      lam,     "ְ ",   "'", },
+            { "أ",     alef,     "ֵ ",  "\\", },
+            { "ـ",      taa,     "ֶ ",    "ّ", },
+            { "،",      nun,     "ַ ",    "ْ", },
+            { "/",     meem,     "ָ ",    "ِ", },
+            { ":",      kaf,     "ָ ",    "ُ", },
+            { "\"",      tah,     "ָ ",    "َ", },
         },
         -- third row
         {  --  1              2            3       4
-            { _Z_,          thaal,        "׃",    "7", },
-            { hamza,        hamza,        "׀",    "8", },
-            { wawhamza,     wawhamza,     "ׄ ",    "9", },
-            { raa,          raa,          "ׅ ",    com, },
-            { laa,          laa,          "־",    prd, },
-            { alefmaqsoura, alefmaqsoura, "ֿ ",    "[", },
-            { taamarbouta,  taamarbouta,  "ֽ ",    "]", },
-            { waw,          waw,          "ֽ ",    "↑", },
-            { zay,          zay,          "ֽ ",    "↓", },
-            { thaa,         thaa,         "ֽ ",    _at, },
+            { diacritic_shadda,          thaal,        "׃",    "7", },
+            { diacritic_sukoon,        hamza,        "׀",    "8", },
+            { "}",     wawhamza,     "ׄ ",    "9", },
+            { "{",          raa,          "ׅ ",    com, },
+            { "ﻵ",          laa,          "־",    prd, },
+            { "آ", alefmaqsoura, "ֿ ",    "[", },
+            { "'",  taamarbouta,  "ֽ ",    "]", },
+            {  arabic_comma,          waw,          "ֽ ",    "↑", },
+            { ".",          zay,          "ֽ ",    "↓", },
+            { "؟",         thaa,         "ֽ ",    _at, },
             { label = "Backspace",
               icon = "resources/icons/appbar.clear.reflect.horizontal.png",
               width = 1.5
@@ -156,16 +104,18 @@ return {
         },
         -- fourth row
         {
-            { "Shift",     "رمز",  "حرف",  "حرف",
-              width = 1},
+            { "بدّل",     "بدّل",  "بدّل",  "بدّل",
+              width = 1.5},
             { label = "🌐", },
-            { "Sym",     "Sym",  "Sym",  "Sym", },
-            { label = "space",
+            { "رمز",     "رمز",  "حرف",  "حرف", 
+              width = 1.25},
+            { label = "مسافة",
               " ",        " ",    " ",    " ",
               width = 3.0},
             { com,    arabic_comma, "“",    "←", },
             { prd,    prd,          "”",    "→", },
-            { "",     diacritics,    "",     "", },
+            { label = "حركات", diacritics, diacritics,    diacritics,  diacritics,  
+              width = 1.25},
             { label = "Enter",
               "\n",       "\n",   "\n",   "\n",
               icon = "resources/icons/appbar.arrow.enter.png",

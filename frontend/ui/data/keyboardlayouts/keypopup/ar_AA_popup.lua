@@ -145,10 +145,10 @@ return {
     },
 --
    diacritics = {
-         "َ ُ ِ",
+         "ّ",
          north = "ٌ",
          northeast = "ً",
-         northwest = "ٍ",
+         northwest = "ّ",
          east = "َ",
          west = "ُ",
          south="ِ",
