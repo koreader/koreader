@@ -96,7 +96,7 @@ return {
             { "'",                       taamarbouta,  "'",    "]", },
             {  arabic_comma,             waw,          "#",    "↑", },
             { ".",                       zay,          "@",    "↓", },
-a            { "؟",         thaa,         "!",    _at, },
+            { "؟",         thaa,         "!",    _at, },
             { label = "Backspace",
               icon = "resources/icons/appbar.clear.reflect.horizontal.png",
               width = 1.5
