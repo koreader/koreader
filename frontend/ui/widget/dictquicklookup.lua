@@ -78,7 +78,7 @@ function DictQuickLookup:init()
     if font_size_alt < 8 then
         font_size_alt = 8
     end
-    self.image_alt_face = Font:getFace("cfont", font_size_alt),
+    self.image_alt_face = Font:getFace("cfont", font_size_alt)
     self:changeToDefaultDict()
     if Device:hasKeys() then
         self.key_events = {
@@ -291,7 +291,7 @@ function DictQuickLookup:update()
         text_widget = ScrollHtmlWidget:new{
             html_body = self.definition,
             css = self:getHtmlDictionaryCss(),
-            default_font_size = Screen:scaleBySize(DDICT_FONT_SIZE),
+            default_font_size = Screen:scaleBySize(G_reader_settings:readSetting("dict_font_size") or 20),
             width = self.width,
             height = self.is_fullpage and self.height*0.75 or self.height*0.7,
             dialog = self,
