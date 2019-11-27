@@ -296,6 +296,30 @@ If you'd like to change the order in which dictionaries are queried (and their r
                 callback = function()
                     G_reader_settings:flipNilOrTrue("dict_justify")
                 end,
+            },
+            { -- setting used by dictquicklookup
+                text_func = function()
+                    local font_size = G_reader_settings:readSetting("dict_font_size") or 20
+                    return T(_("Font size (%1)"), font_size)
+                end,
+                callback = function()
+                    local SpinWidget = require("ui/widget/spinwidget")
+                    local font_size = G_reader_settings:readSetting("dict_font_size") or 20
+                    local items_font = SpinWidget:new{
+                        width = Screen:getWidth() * 0.6,
+                        value = font_size,
+                        value_min = 8,
+                        value_max = 32,
+                        default_value = 20,
+                        ok_text = _("Set size"),
+                        title_text =  _("Dictionary font size"),
+                        callback = function(spin)
+                            G_reader_settings:saveSetting("dict_font_size", spin.value)
+                            self.ui:onRefresh()
+                        end,
+                    }
+                    UIManager:show(items_font)
+                end
             }
         }
     }
