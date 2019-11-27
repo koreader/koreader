@@ -44,8 +44,8 @@ local DictQuickLookup = InputContainer:new{
     is_html = false,
     dict_index = 1,
     title_face = Font:getFace("x_smalltfont"),
-    content_face = Font:getFace("cfont", DDICT_FONT_SIZE),
-    image_alt_face = Font:getFace("cfont", DDICT_FONT_SIZE-4),
+    content_face = Font:getFace("cfont", 20),
+    image_alt_face = Font:getFace("cfont", 16),
     width = nil,
     height = nil,
     -- box of highlighted word, quick lookup window tries to not hide the word
@@ -72,6 +72,13 @@ local highlight_strings = {
 }
 
 function DictQuickLookup:init()
+    local font_size = G_reader_settings:readSetting("dict_font_size") or 20
+    self.content_face = Font:getFace("cfont", font_size)
+    local font_size_alt = font_size - 4
+    if font_size_alt < 8 then
+        font_size_alt = 8
+    end
+    self.image_alt_face = Font:getFace("cfont", font_size_alt),
     self:changeToDefaultDict()
     if Device:hasKeys() then
         self.key_events = {
