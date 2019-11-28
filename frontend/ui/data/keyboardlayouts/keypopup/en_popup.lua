@@ -43,26 +43,28 @@ return {
         north = "Ä",
         northeast = "Á",
         northwest = "À",
-        east = "Â",
-        west = "Ã",
+        east = "Â", -- A with circumflex (Romanian)
+        west = "Ă", -- A with breve (Romanian)
         south = "Ą",
         southeast = "Æ",
         southwest = "Å",
         "Ā",
         "Ǎ",
+        "Ã",
     },
     _a_ = {
         "a",
         north = "ä",
         northeast = "á",
         northwest = "à",
-        east = "â",
-        west = "ã",
+        east = "â", -- a with circumflex (Romanian)
+        west = "ă", -- a with breve (Romanian)
         south = "ą",
         southeast = "æ",
         southwest = "å",
         "ā",
         "ǎ",
+        "ã",
     },
     _B_ = {
         "B",
@@ -175,9 +177,10 @@ return {
         north = "Í",
         northeast = "Í",
         northwest = "Ì",
-        east = "Î",
+        east = "Î", -- I with circumflex (Romanian)
         west = "Ĩ",
         south = "Į",
+        southeast = "Ĭ", -- I with breve (old Romanian)
         "Ī",
         "ɪ", -- small capital letter i, near-close front unrounded vowel IPA
     },
@@ -186,9 +189,10 @@ return {
         north = "ï",
         northeast = "í",
         northwest = "ì",
-        east = "î",
+        east = "î", -- i with circumflex (Romanian)
         west = "ĩ",
         south = "į",
+        southeast = "ĭ", -- i with breve (old Romanian)
         "ī",
         "ɪ", -- small capital letter i, near-close front unrounded vowel IPA
     },
@@ -360,11 +364,11 @@ return {
         "S",
         north = "ẞ", -- uppercase eszett
         northeast = "Ś",
-        northwest = "ʃ", -- esh, voiceless palato-alveolar fricative IPA
+        northwest = "Ș", -- S with comma below (Romanian)
         east = "Ŝ",
         west = "Š",
         south = "Ş",
-        southeast = "$",
+        southeast = "ʃ", -- esh, voiceless palato-alveolar fricative IPA
         southwest = "Ṣ",
         "ſ", -- long s
         "Σ", -- uppercase sigma
@@ -373,11 +377,11 @@ return {
         "s",
         north = "ß", -- lowercase eszett
         northeast = "ś",
-        northwest = "ʃ", -- esh, voiceless palato-alveolar fricative IPA
+        northwest = "ș", -- s with comma below (Romanian)
         east = "ŝ",
         west = "š",
         south = "ş",
-        southeast = "$",
+        southeast = "ʃ", -- esh, voiceless palato-alveolar fricative IPA
         southwest = "ṣ",
         "ſ", -- long s
         "σ", -- lowercase sigma
@@ -387,7 +391,7 @@ return {
         "T",
         north = "θ",
         northeast = "Þ",
-        northwest = "Ț",
+        northwest = "Ț", -- T with comma below (Romanian)
         east = "Ʈ",
         west = "Ť",
         south = "Ţ",
@@ -400,7 +404,7 @@ return {
         "t",
         north = "θ",
         northeast = "þ",
-        northwest = "ț",
+        northwest = "ț", -- t with comma below (Romanian)
         east = "Ʈ",
         west = "ť",
         south = "ţ",
@@ -418,6 +422,7 @@ return {
         west = "Ũ",
         south = "Ų",
         southwest = "Ů",
+        southeast = "Ŭ", -- U with breve (old Romanian)
         "Ū",
         "ʌ", -- turned v, open-mid back unrounded vowel IPA
     },
@@ -430,6 +435,7 @@ return {
         west = "ũ",
         south = "ų",
         southwest = "ů",
+        southeast = "ŭ", -- u with breve (old Romanian)
         "ū",
         "ʌ", -- turned v, open-mid back unrounded vowel IPA
     },
