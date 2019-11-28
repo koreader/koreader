@@ -27,11 +27,15 @@ describe("defaults module", function()
         assert.is_same("DFULL_SCREEN", Defaults.defaults_name[54])
         assert.is_same("SEARCH_LIBRARY_PATH", Defaults.defaults_name[103])
         assert.is_same("DTAP_ZONE_BACKWARD", Defaults.defaults_name[87])
-        assert.is_same("DCREREADER_CONFIG_WORD_GAP_LARGE", Defaults.defaults_name[47])
+        assert.is_same("DCREREADER_CONFIG_WORD_SPACING_LARGE", Defaults.defaults_name[47])
         assert.is_same("DCREREADER_CONFIG_H_MARGIN_SIZES_XXX_LARGE", Defaults.defaults_name[20])
         local fd = io.open(persistent_filename, "r")
         assert.Equals(
 [[-- For configuration changes that persists between updates
+DCREREADER_CONFIG_WORD_SPACING_LARGE = {
+    [1] = 100,
+    [2] = 90
+}
 SEARCH_LIBRARY_PATH = ""
 DTAP_ZONE_BACKWARD = {
     ["y"] = 0,
@@ -39,7 +43,6 @@ DTAP_ZONE_BACKWARD = {
     ["h"] = 1,
     ["w"] = 0.25
 }
-DCREREADER_CONFIG_WORD_GAP_LARGE = 100
 DCREREADER_CONFIG_H_MARGIN_SIZES_XXX_LARGE = {
     [1] = 50,
     [2] = 50
@@ -64,6 +67,10 @@ DFULL_SCREEN = 1
         fd = io.open(persistent_filename)
         assert.Equals(
 [[-- For configuration changes that persists between updates
+DCREREADER_CONFIG_WORD_SPACING_LARGE = {
+    [2] = 90,
+    [1] = 100
+}
 SEARCH_LIBRARY_PATH = ""
 DTAP_ZONE_BACKWARD = {
     ["y"] = 10,
@@ -71,7 +78,6 @@ DTAP_ZONE_BACKWARD = {
     ["h"] = 20.25,
     ["w"] = 20.75
 }
-DCREREADER_CONFIG_WORD_GAP_LARGE = 100
 DCREREADER_CONFIG_H_MARGIN_SIZES_XXX_LARGE = {
     [2] = 50,
     [1] = 50

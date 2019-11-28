@@ -703,11 +703,16 @@ function CreDocument:setFontKerning(mode)
     self._document:setIntProperty("font.kerning.mode", mode)
 end
 
--- min space condensing percent (how much we can decrease a space width to
--- make text fit on a line) 25...100%
-function CreDocument:setSpaceCondensing(value)
-    logger.dbg("CreDocument: set space condensing", value)
-    self._document:setIntProperty("crengine.style.space.condensing.percent", value)
+function CreDocument:setWordSpacing(values)
+    -- values should be a table of 2 numbers (e.g.: { 90, 75 })
+    -- - space width scale percent (hard scale the width of each space char in
+    --   all fonts - 100 to use the normal font space glyph width unchanged).
+    -- - min space condensing percent (how much we can additionally decrease
+    --   a space width to make text fit on a line).
+    logger.dbg("CreDocument: set space width scale", values[1])
+    self._document:setIntProperty("crengine.style.space.width.scale.percent", values[1])
+    logger.dbg("CreDocument: set space condensing", values[2])
+    self._document:setIntProperty("crengine.style.space.condensing.percent", values[2])
 end
 
 function CreDocument:setStyleSheet(new_css_file, appended_css_content )

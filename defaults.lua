@@ -168,10 +168,19 @@ DCREREADER_CONFIG_LINE_SPACE_PERCENT_LARGE = 120
 DCREREADER_CONFIG_LINE_SPACE_PERCENT_X_LARGE = 125
 DCREREADER_CONFIG_LINE_SPACE_PERCENT_XX_LARGE = 130
 
--- word gap percentage
-DCREREADER_CONFIG_WORD_GAP_SMALL = 50
-DCREREADER_CONFIG_WORD_GAP_MEDIUM = 75
-DCREREADER_CONFIG_WORD_GAP_LARGE = 100
+-- word spacing percentages
+-- 1st number scales the normal width of spaces in all font
+--     (100% uses the font space width untouched)
+-- 2nd number applies after the 1st has been applied, and
+--     tells how much these spaces can additionally be condensed
+--     to make more text fit on a line.
+-- So, {80,50} can reduce the width of a space up to 40% of its
+-- regular width. {99, 100} allows reducing it by at least 1px.
+-- (These replace the old settings DCREREADER_CONFIG_WORD_GAP_*,
+-- with the equivalence: new_option = { 100, old_option }.)
+DCREREADER_CONFIG_WORD_SPACING_SMALL = {75, 50}
+DCREREADER_CONFIG_WORD_SPACING_MEDIUM = {95, 75}
+DCREREADER_CONFIG_WORD_SPACING_LARGE = {100, 90}
 
 -- crereader progress bar (no longer needed)
 -- 0 for top "full" progress bar
