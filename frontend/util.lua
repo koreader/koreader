@@ -656,17 +656,21 @@ end
 function util.getFriendlySize(size)
     size = tonumber(size)
     if not size or type(size) ~= "number" then return end
-    local s
     if size > 1024*1024*1024 then
-        s = string.format("%4.1f GB", size/1024/1024/1024)
-    elseif size > 1024*1024 then
-        s = string.format("%4.1f MB", size/1024/1024)
-    elseif size > 1024 then
-        s = string.format("%4.1f KB", size/1024)
-    else
-        s = string.format("%d B", size)
+        -- @translators This is an abbreviation for the gigabyte, a unit of computer memory or data storage capacity.
+        return T(_("%1 GB"), string.format("%4.1f", size/1024/1024/1024))
     end
-    return s
+    if size > 1024*1024 then
+        -- @translators This is an abbreviation for the megabyte, a unit of computer memory or data storage capacity.
+        return T(_("%1 MB"), string.format("%4.1f", size/1024/1024))
+    end
+    if size > 1024 then
+        -- @translators This is an abbreviation for the kilobyte, a unit of computer memory or data storage capacity.
+        return T(_("%1 KB"), string.format("%4.1f", size/1024))
+    else
+        -- @translators This is an abbreviation for the byte, a unit of computer memory or data storage capacity.
+        return T(_("%1 B"), string.format("%d", size))
+    end
 end
 
 --- Gets formatted size as string (1273334 => "1,273,334")
