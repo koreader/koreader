@@ -302,7 +302,7 @@ If you'd like to change the order in which dictionaries are queried (and their r
                     local font_size = G_reader_settings:readSetting("dict_font_size") or 20
                     return T(_("Font size (%1)"), font_size)
                 end,
-                callback = function(instance)
+                callback = function(touchmenu_instance)
                     local SpinWidget = require("ui/widget/spinwidget")
                     local font_size = G_reader_settings:readSetting("dict_font_size") or 20
                     local items_font = SpinWidget:new{
@@ -315,7 +315,7 @@ If you'd like to change the order in which dictionaries are queried (and their r
                         title_text =  _("Dictionary font size"),
                         callback = function(spin)
                             G_reader_settings:saveSetting("dict_font_size", spin.value)
-                            if instance then instance:updateItems() end
+                            if touchmenu_instance then touchmenu_instance:updateItems() end
                         end,
                     }
                     UIManager:show(items_font)
