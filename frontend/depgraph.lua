@@ -40,7 +40,19 @@ function DepGraph:addNode(node_key, deps)
 end
 
 function DepGraph:removeNode(node_key)
-    self.nodes[node_key] = nil
+    -- self.nodes[node_key] = nil
+    -- We should not remove it from self.nodes if it has
+    -- a .deps array (it is the other nodes that had this one
+    -- in their override= that have added themselves in
+    -- this .deps. We don't want to lose these dependancies
+    -- if we later re-addNode this node.
+    local node = self.nodes[node_key]
+    if node then
+        if not node.deps or #node.deps == 0 then
+            self.nodes[node_key] = nil
+        end
+    end
+    -- But we should remove it from the .deps of other nodes.
     for curr_node_key, curr_node in pairs(self.nodes) do
         if curr_node.deps then
             local remove_idx

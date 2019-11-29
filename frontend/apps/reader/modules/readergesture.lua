@@ -1577,11 +1577,6 @@ function ReaderGesture:onToggleReadingOrder()
     local document_module = self.ui.document.info.has_pages and self.ui.paging or self.ui.rolling
     document_module.inverse_reading_order = not document_module.inverse_reading_order
     document_module:setupTouchZones()
-    -- Needed to reset the touch zone overrides
-    local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
-    for gesture, action in pairs(gesture_manager) do
-        self:setupGesture(gesture, action)
-    end
     UIManager:show(Notification:new{
         text = document_module.inverse_reading_order and _("RTL page turning.") or _("LTR page turning."),
         timeout = 2.5,
