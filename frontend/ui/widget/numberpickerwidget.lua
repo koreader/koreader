@@ -176,7 +176,7 @@ function NumberPickerWidget:paintWidget()
     end
 
     local text_value = Button:new{
-        text = value,
+        text = tostring(value),
         bordersize = 0,
         padding = 0,
         text_font_face = self.spinner_face.font,
