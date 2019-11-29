@@ -109,19 +109,19 @@ describe("DepGraph module", function()
         dg:addNodeDep('tap_backward', 'readermenu_tap')
         dg:addNodeDep('tap_forward', 'readermenu_tap')
         -- print(require("dump")(dg))
-	--     ["nodes"] = {
-	--         ["readermenu_tap"] = {},
-	--         ["tap_backward"] = {
-	--             ["deps"] = {
-	--                 [1] = "readermenu_tap"
-	--             }
-	--         },
-	--         ["tap_forward"] = {
-	--             ["deps"] = {
-	--                 [1] = "readermenu_tap"
-	--             }
-	--         }
-	--     }
+        --     ["nodes"] = {
+        --         ["readermenu_tap"] = {},
+        --         ["tap_backward"] = {
+        --             ["deps"] = {
+        --                 [1] = "readermenu_tap"
+        --             }
+        --         },
+        --         ["tap_forward"] = {
+        --             ["deps"] = {
+        --                 [1] = "readermenu_tap"
+        --             }
+        --         }
+        --     }
         dg:removeNode('tap_forward')
         dg:removeNode('tap_backward')
         dg:addNode('tap_forward')
