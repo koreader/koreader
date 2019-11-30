@@ -43,28 +43,28 @@ return {
         north = "Ä",
         northeast = "Á",
         northwest = "À",
-        east = "Â", -- A with circumflex (Romanian)
-        west = "Ă", -- A with breve (Romanian)
+        east = "Â", -- A with circumflex (Romanian, French)
+        west = "Ã",
         south = "Ą",
-        southeast = "Æ",
+        southeast = "Ă", -- A with breve (Romanian)
         southwest = "Å",
         "Ā",
         "Ǎ",
-        "Ã",
+        "Æ",
     },
     _a_ = {
         "a",
         north = "ä",
         northeast = "á",
         northwest = "à",
-        east = "â", -- a with circumflex (Romanian)
-        west = "ă", -- a with breve (Romanian)
+        east = "â", -- a with circumflex (Romanian, French)
+        west = "ã",
         south = "ą",
-        southeast = "æ",
+        southeast = "ă", -- a with breve (Romanian)
         southwest = "å",
         "ā",
         "ǎ",
-        "ã",
+        "æ",
     },
     _B_ = {
         "B",
@@ -177,7 +177,7 @@ return {
         north = "Í",
         northeast = "Í",
         northwest = "Ì",
-        east = "Î", -- I with circumflex (Romanian)
+        east = "Î", -- I with circumflex (Romanian, French)
         west = "Ĩ",
         south = "Į",
         southeast = "Ĭ", -- I with breve (old Romanian)
@@ -189,7 +189,7 @@ return {
         north = "ï",
         northeast = "í",
         northwest = "ì",
-        east = "î", -- i with circumflex (Romanian)
+        east = "î", -- i with circumflex (Romanian, French)
         west = "ĩ",
         south = "į",
         southeast = "ĭ", -- i with breve (old Romanian)
