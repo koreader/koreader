@@ -1,8 +1,11 @@
 local en_popup = require("ui/data/keyboardlayouts/keypopup/en_popup")
+local ru_popup = require("ui/data/keyboardlayouts/keypopup/ru_popup")
 local com = en_popup.com -- comma (,)
 local prd = en_popup.prd -- period (.)
 local _at = en_popup._at
 local _eq = en_popup._eq -- equals sign (=)
+local _Je_ = ru_popup._Je_
+local _je_ = ru_popup._je_
 
 return {
     min_layer = 1,
@@ -34,7 +37,7 @@ return {
             { "П",    "п",    ":",    ";",    "Ү",    "ү",    "Č",    "č", },
             { "Р",    "р",    '"',    "'",    "Ұ",    "ұ",    "Đ",    "đ", },
             { "О",    "о",    "{",    "[",    "Қ",    "қ",    "Š",    "š", },
-            { "Л",    "л",    "}",    "]",    "Ж",    "ж",    "Ž",    "ž", },
+            { "Л",    "л",    "}",    "]",   _Je_,   _je_,    "Ž",    "ž", },
             { "Д",    "д",    "_",    "-",    "Э",    "э",    "Ő",    "ő", },
         },
         -- third row
