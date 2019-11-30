@@ -130,9 +130,9 @@ function ReaderFont:onReadSettings(config)
             or G_reader_settings:readSetting("copt_font_kerning") or 3 -- harfbuzz (slower, but needed for proper arabic)
     self.ui.document:setFontKerning(self.font_kerning)
 
-    self.space_condensing = config:readSetting("space_condensing")
-        or G_reader_settings:readSetting("copt_space_condensing") or 75
-    self.ui.document:setSpaceCondensing(self.space_condensing)
+    self.word_spacing = config:readSetting("word_spacing")
+        or G_reader_settings:readSetting("copt_word_spacing") or {95, 75}
+    self.ui.document:setWordSpacing(self.word_spacing)
 
     self.line_space_percent = config:readSetting("line_space_percent")
             or G_reader_settings:readSetting("copt_line_spacing")
@@ -241,9 +241,9 @@ function ReaderFont:onSetFontKerning(mode)
     return true
 end
 
-function ReaderFont:onSetSpaceCondensing(space)
-    self.space_condensing = space
-    self.ui.document:setSpaceCondensing(space)
+function ReaderFont:onSetWordSpacing(values)
+    self.word_spacing = values
+    self.ui.document:setWordSpacing(values)
     self.ui:handleEvent(Event:new("UpdatePos"))
     return true
 end
@@ -267,7 +267,7 @@ function ReaderFont:onSaveSettings()
     self.ui.doc_settings:saveSetting("font_embolden", self.font_embolden)
     self.ui.doc_settings:saveSetting("font_hinting", self.font_hinting)
     self.ui.doc_settings:saveSetting("font_kerning", self.font_kerning)
-    self.ui.doc_settings:saveSetting("space_condensing", self.space_condensing)
+    self.ui.doc_settings:saveSetting("word_spacing", self.word_spacing)
     self.ui.doc_settings:saveSetting("line_space_percent", self.line_space_percent)
     self.ui.doc_settings:saveSetting("gamma_index", self.gamma_index)
 end

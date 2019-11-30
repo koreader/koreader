@@ -210,6 +210,7 @@ function TextWidget:setText(text)
     if text ~= self.text then
         self.text = text
         self._updated = false
+        self:free()
     end
 end
 dbg:guard(TextWidget, "setText",
@@ -219,8 +220,11 @@ dbg:guard(TextWidget, "setText",
     end)
 
 function TextWidget:setMaxWidth(max_width)
-    self.max_width = max_width
-    self._updated = false
+    if max_width ~= self.max_width then
+        self.max_width = max_width
+        self._updated = false
+        self:free()
+    end
 end
 
 function TextWidget:paintTo(bb, x, y)
