@@ -17,8 +17,6 @@ local Screen = Device.screen
 local input_field, input_description
 
 local MultiInputDialog = InputDialog:extend{
-    field = {},
-    field_hint = {},
     fields = {},
     description_padding = Size.padding.default,
     description_margin = Size.margin.small,
@@ -50,6 +48,13 @@ function MultiInputDialog:init()
             parent = self,
             padding = field.padding or nil,
             margin = field.margin or nil,
+            -- Allow these to be specified per field if needed
+            alignment = field.alignment or self.alignment,
+            justified = field.justified or self.justified,
+            lang = field.lang or self.lang,
+            para_direction_rtl = field.para_direction_rtl or self.para_direction_rtl,
+            auto_para_direction = field.auto_para_direction or self.auto_para_direction,
+            alignment_strict = field.alignment_strict or self.alignment_strict,
         }
         if Device:hasDPad() then
             -- little hack to piggyback on the layout of the button_table to handle the new InputText

@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local Button = require("ui/widget/button")
 local ButtonTable = require("ui/widget/buttontable")
@@ -309,6 +310,9 @@ function DictQuickLookup:update()
             dialog = self,
             -- allow for disabling justification
             justified = G_reader_settings:nilOrTrue("dict_justify"),
+            lang = self.lang and self.lang:lower(), -- only available on wikipedia results
+            para_direction_rtl = self.rtl_lang,     -- only available on wikipedia results
+            auto_para_direction = not self.is_wiki, -- only for dict results (we don't know their lang)
             image_alt_face = self.image_alt_face,
             images = self.images,
         }
@@ -404,10 +408,15 @@ function DictQuickLookup:update()
             },
         }
     else
+        local prev_dict_text = "◁◁"
+        local next_dict_text = "▷▷"
+        if BD.mirroredUILayout() then
+            prev_dict_text, next_dict_text = next_dict_text, prev_dict_text
+        end
         buttons = {
             {
                 {
-                    text = "◁◁",
+                    text = prev_dict_text,
                     enabled = self:isPrevDictAvaiable(),
                     callback = function()
                         self:changeToPrevDict()
@@ -426,7 +435,7 @@ function DictQuickLookup:update()
                     end,
                 },
                 {
-                    text = "▷▷",
+                    text = next_dict_text,
                     enabled = self:isNextDictAvaiable(),
                     callback = function()
                         self:changeToNextDict()
@@ -456,7 +465,10 @@ function DictQuickLookup:update()
                 {
                     -- if more than one language, enable it and display "current lang > next lang"
                     -- otherwise, just display current lang
-                    text = self.is_wiki and ( #self.wiki_languages > 1 and self.wiki_languages[1].." > "..self.wiki_languages[2] or self.wiki_languages[1] ) or _("Follow Link"),
+                    text = self.is_wiki
+                        and ( #self.wiki_languages > 1 and BD.wrap(self.wiki_languages[1]).." > "..BD.wrap(self.wiki_languages[2])
+                                                        or self.wiki_languages[1] ) -- (this " > " will be auro-mirrored by bidi)
+                        or _("Follow Link"),
                     enabled = (self.is_wiki and #self.wiki_languages > 1) or self.selected_link ~= nil,
                     callback = function()
                         if self.is_wiki then
@@ -656,6 +668,7 @@ function DictQuickLookup:changeDictionary(index)
     self.is_html = self.results[index].is_html
     self.css = self.results[index].css
     self.lang = self.results[index].lang
+    self.rtl_lang = self.results[index].rtl_lang
     self.images = self.results[index].images
     if self.images and #self.images > 0 then
         -- We'll be giving some images to textboxwidget that will
@@ -731,7 +744,7 @@ function DictQuickLookup:onTapCloseDict(arg, ges_ev)
     -- processed for scrolling definition by ScrollTextWidget, which
     -- will pop it up for us here when it can't scroll anymore).
     -- This allow for continuous reading of results' definitions with tap.
-    if ges_ev.pos.x < Screen:getWidth()/2 then
+    if BD.flipIfMirroredUILayout(ges_ev.pos.x < Screen:getWidth()/2) then
         local prev_index = self.dict_index
         self:changeToPrevDict()
         if self.dict_index ~= prev_index then
@@ -785,9 +798,10 @@ function DictQuickLookup:onSwipe(arg, ges)
     if ges.pos:intersectWith(self.definition_widget.dimen) then
     -- if we want changeDict to still work with swipe outside window :
     -- or not ges.pos:intersectWith(self.dict_frame.dimen) then
-        if ges.direction == "west" then
+        local direction = BD.mirrorDirectionIfMirroredUILayout(ges.direction)
+        if direction == "west" then
             self:changeToNextDict()
-        elseif ges.direction == "east" then
+        elseif direction == "east" then
             self:changeToPrevDict()
         else
             if self.refresh_callback then self.refresh_callback() end

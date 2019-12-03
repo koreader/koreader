@@ -488,6 +488,7 @@ function ReaderWikipedia:lookupWikipedia(word, box, get_fullpage, forced_lang)
                 definition = definition,
                 is_fullpage = get_fullpage,
                 lang = lang,
+                rtl_lang = Wikipedia:isWikipediaLanguageRTL(lang),
                 images = page.images,
             }
             table.insert(results, result)

@@ -18,6 +18,7 @@ Example:
 
 --]]
 
+local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local Geom = require("ui/geometry")
 local Size = require("ui/size")
@@ -38,6 +39,8 @@ local FrameContainer = WidgetContainer:new{
     width = nil,
     height = nil,
     invert = false,
+    allow_mirroring = true,
+    _mirroredUI = BD.mirroredUILayout(),
 }
 
 function FrameContainer:getSize()
@@ -46,6 +49,9 @@ function FrameContainer:getSize()
     self._padding_right = self.padding_right or self.padding
     self._padding_bottom = self.padding_bottom or self.padding
     self._padding_left = self.padding_left or self.padding
+    if self._mirroredUI and self.allow_mirroring then
+        self._padding_left, self._padding_right = self._padding_right, self._padding_left
+    end
     return Geom:new{
         w = content_size.w + ( self.margin + self.bordersize ) * 2 + self._padding_left + self._padding_right,
         h = content_size.h + ( self.margin + self.bordersize ) * 2 + self._padding_top + self._padding_bottom
@@ -61,6 +67,11 @@ function FrameContainer:paintTo(bb, x, y)
     }
     local container_width = self.width or my_size.w
     local container_height = self.height or my_size.h
+
+    local shift_x = 0
+    if self._mirroredUI and self.allow_mirroring then
+        shift_x = container_width - my_size.w
+    end
 
     --- @todo get rid of margin here?  13.03 2013 (houqp)
     if self.background then
@@ -83,7 +94,7 @@ function FrameContainer:paintTo(bb, x, y)
     end
     if self[1] then
         self[1]:paintTo(bb,
-            x + self.margin + self.bordersize + self._padding_left,
+            x + self.margin + self.bordersize + self._padding_left + shift_x,
             y + self.margin + self.bordersize + self._padding_top)
     end
     if self.invert then

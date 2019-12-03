@@ -2,10 +2,14 @@
 A layout widget that puts objects besides each other.
 --]]
 
+local BD = require("ui/bidi")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local util = require("util")
 
 local HorizontalGroup = WidgetContainer:new{
     align = "center",
+    allow_mirroring = true,
+    _mirroredUI = BD.mirroredUILayout(),
     _size = nil,
 }
 
@@ -13,6 +17,9 @@ function HorizontalGroup:getSize()
     if not self._size then
         self._size = { w = 0, h = 0 }
         self._offsets = { }
+        if self._mirroredUI and self.allow_mirroring then
+            util.arrayReverse(self)
+        end
         for i, widget in ipairs(self) do
             local w_size = widget:getSize()
             self._offsets[i] = {
@@ -24,6 +31,9 @@ function HorizontalGroup:getSize()
                 self._size.h = w_size.h
             end
         end
+        if self._mirroredUI and self.allow_mirroring then
+            util.arrayReverse(self)
+        end
     end
     return self._size
 end
@@ -31,6 +41,9 @@ end
 function HorizontalGroup:paintTo(bb, x, y)
     local size = self:getSize()
 
+    if self._mirroredUI and self.allow_mirroring then
+        util.arrayReverse(self)
+    end
     for i, widget in ipairs(self) do
         if self.align == "center" then
             widget:paintTo(bb,
@@ -44,6 +57,9 @@ function HorizontalGroup:paintTo(bb, x, y)
             io.stderr:write("[!] invalid alignment for HorizontalGroup: ",
                             self.align)
         end
+    end
+    if self._mirroredUI and self.allow_mirroring then
+        util.arrayReverse(self)
     end
 end
 

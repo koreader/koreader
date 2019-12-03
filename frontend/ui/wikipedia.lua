@@ -681,6 +681,13 @@ local rtl_wiki_code = {
     ks  = "Kashmiri",
 }
 
+function Wikipedia:isWikipediaLanguageRTL(lang)
+    if lang and rtl_wiki_code[lang:lower()] then
+        return true
+    end
+    return false
+end
+
 -- Create an epub file (with possibly images)
 function Wikipedia:createEpub(epub_path, page, lang, with_images)
     -- Use Trapper to display progress and ask questions through the UI.
@@ -1298,7 +1305,7 @@ table {
     local see_online_version = T(_("See %1 for up-to-date content"), online_version_htmllink)
     -- Set dir= attribute on the HTML tag for RTL languages
     local html_dir = ""
-    if rtl_wiki_code[lang:lower()] then
+    if self:isWikipediaLanguageRTL(lang) then
         html_dir = ' dir="rtl"'
     end
     epub:add("OEBPS/content.html", string.format([[

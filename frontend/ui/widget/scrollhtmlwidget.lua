@@ -2,6 +2,7 @@
 HTML widget with vertical scroll bar.
 --]]
 
+local BD = require("ui/bidi")
 local Device = require("device")
 local HtmlBoxWidget = require("ui/widget/htmlboxwidget")
 local Geom = require("ui/geometry")
@@ -143,7 +144,7 @@ function ScrollHtmlWidget:onScrollText(arg, ges)
 end
 
 function ScrollHtmlWidget:onTapScrollText(arg, ges)
-    if ges.pos.x < Screen:getWidth()/2 then
+    if BD.flipIfMirroredUILayout(ges.pos.x < Screen:getWidth()/2) then
         if self.htmlbox_widget.page_number > 1 then
             self:scrollText(-1)
             return true

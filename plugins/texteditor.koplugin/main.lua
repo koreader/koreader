@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Font = require("ui/font")
@@ -54,6 +55,8 @@ function TextEditor:loadSettings()
     if self.settings:readSetting("monospace_font") then
         self.monospace_font = self.settings:readSetting("monospace_font")
     end
+    self.auto_para_direction = self.settings:readSetting("auto_para_direction") or true
+    self.force_ltr_para_direction = self.settings:readSetting("force_ltr_para_direction") or false
 end
 
 function TextEditor:onFlushSettings()
@@ -63,6 +66,8 @@ function TextEditor:onFlushSettings()
         self.settings:saveSetting("last_path", self.last_path)
         self.settings:saveSetting("font_face", self.font_face)
         self.settings:saveSetting("font_size", self.font_size)
+        self.settings:saveSetting("auto_para_direction", self.auto_para_direction)
+        self.settings:saveSetting("force_ltr_para_direction", self.force_ltr_para_direction)
         self.settings:flush()
     end
 end
@@ -113,6 +118,32 @@ function TextEditor:getSubMenuItems()
                         else
                             self.font_face = self.monospace_font
                         end
+                    end,
+                    separator = true,
+                },
+                {
+                    text = _("Auto paragraph direction"),
+                    help_text = _([[
+Detect the direction of each paragraph in the text: align to the right paragraphs in languages such as Arabic and Hebrew…, while keeping other paragraphs aligned to the left.
+If disabled, paragraphs align according to KOReader's language default direction.]]),
+                    checked_func = function()
+                        return self.auto_para_direction
+                    end,
+                    callback = function()
+                        self.auto_para_direction = not self.auto_para_direction
+                    end,
+                },
+                {
+                    text = _("Force paragraph direction LTR"),
+                    help_text = _([[
+Force all text to be displayed Left-To-Right (LTR) and aligned to the left.
+Enable this if you are mostly editing code, HTML, CSS…]]),
+                    enabled_func = BD.rtlUIText, -- only useful for RTL users editing code
+                    checked_func = function()
+                        return BD.rtlUIText() and self.force_ltr_para_direction
+                    end,
+                    callback = function()
+                        self.force_ltr_para_direction = not self.force_ltr_para_direction
                     end,
                 },
             },
@@ -405,10 +436,16 @@ function TextEditor:editFile(file_path, readonly)
     local filename_without_suffix, filetype = util.splitFileNameSuffix(filename) -- luacheck: no unused
     local is_lua = filetype:lower() == "lua"
     local input
+    local para_direction_rtl = nil -- use UI language direction
+    if self.force_ltr_para_direction then
+        para_direction_rtl = false -- force LTR
+    end
     input = InputDialog:new{
         title =  filename,
         input = self:readFileContent(file_path),
         input_face = Font:getFace(self.font_face, self.font_size),
+        para_direction_rtl = para_direction_rtl,
+        auto_para_direction = self.auto_para_direction,
         fullscreen = true,
         condensed = true,
         allow_newline = true,

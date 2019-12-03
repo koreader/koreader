@@ -97,6 +97,7 @@ function TweakInfoWidget:init()
             text = css,
             face = Font:getFace("infont", 16),
             width = self.width - 2*Size.padding.large,
+            para_direction_rtl = false, -- LTR
         }
     })
     if self.is_global_default then

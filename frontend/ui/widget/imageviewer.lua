@@ -2,6 +2,7 @@
 ImageViewer displays an image with some simple manipulation options.
 ]]
 
+local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
@@ -459,11 +460,19 @@ function ImageViewer:onTap(_, ges)
     end
     if self._images_list then
         -- If it's a list of image (e.g. animated gifs), tap left/right 1/3 of screen to navigate
+        local show_prev_image, show_next_image
         if ges.pos.x < Screen:getWidth()/3 then
+            show_prev_image = not BD.mirroredUILayout()
+            show_next_image = BD.mirroredUILayout()
+        elseif ges.pos.x > Screen:getWidth()*2/3 then
+            show_prev_image = BD.mirroredUILayout()
+            show_next_image = not BD.mirroredUILayout()
+        end
+        if show_prev_image then
             if self._images_list_cur > 1 then
                 self:switchToImageNum(self._images_list_cur - 1)
             end
-        elseif ges.pos.x > Screen:getWidth()*2/3 then
+        elseif show_next_image then
             if self._images_list_cur < self._images_list_nb then
                 self:switchToImageNum(self._images_list_cur + 1)
             end

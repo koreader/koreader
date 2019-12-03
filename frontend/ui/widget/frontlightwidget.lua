@@ -651,9 +651,10 @@ function FrontLightWidget:onTapProgress(arg, ges_ev)
         -- Unschedule any pending updates.
         UIManager:unschedule(self.update)
 
-        local width = self.fl_group.dimen.w
-        local pos = ges_ev.pos.x - self.fl_group.dimen.x
-        local perc = pos / width
+        local perc = self.fl_group:getPercentageFromPosition(ges_ev.pos)
+        if not perc then
+            return true
+        end
         local num = Math.round(perc * self.fl_max)
 
         -- Always set the frontlight intensity.

@@ -51,6 +51,7 @@ function DocSettingTweak:editDirectoryDefaults()
         title = T(_("Directory Defaults: %1"),directory_defaults_path),
         input = defaults,
         input_type = "string",
+        para_direction_rtl = false, -- force LTR
         fullscreen = true,
         condensed = true,
         allow_newline = true,

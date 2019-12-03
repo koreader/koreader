@@ -27,6 +27,7 @@ Example:
 
 ]]
 
+local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local Geom = require("ui/geometry")
 local Widget = require("ui/widget/widget")
@@ -46,6 +47,9 @@ local ProgressWidget = Widget:new{
     ticks = nil,
     tick_width = Screen:scaleBySize(3),
     last = nil,
+    fill_from_right = false,
+    allow_mirroring = true,
+    _mirroredUI = BD.mirroredUILayout(),
 }
 
 function ProgressWidget:getSize()
@@ -69,17 +73,30 @@ function ProgressWidget:paintTo(bb, x, y)
                    self.bordersize, self.bordercolor, self.radius)
     -- paint percentage infill
     if self.percentage >= 0 and self.percentage <= 1 then
-        bb:paintRect(x+self.margin_h, math.ceil(y+self.margin_v+self.bordersize),
-                 math.ceil((my_size.w-2*self.margin_h)*self.percentage),
-                 my_size.h-2*(self.margin_v+self.bordersize), self.rectcolor)
+        if self.fill_from_right or (self._mirroredUI and not self.fill_from_right) then
+            bb:paintRect(x+self.margin_h + math.ceil((my_size.w-2*self.margin_h)*(1-self.percentage)),
+                    math.ceil(y+self.margin_v+self.bordersize),
+                    math.ceil((my_size.w-2*self.margin_h)*self.percentage),
+                    my_size.h-2*(self.margin_v+self.bordersize),
+                    self.rectcolor)
+        else
+            bb:paintRect(x+self.margin_h,
+                    math.ceil(y+self.margin_v+self.bordersize),
+                    math.ceil((my_size.w-2*self.margin_h)*self.percentage),
+                    my_size.h-2*(self.margin_v+self.bordersize), self.rectcolor)
+        end
     end
     if self.ticks and self.last and self.last > 0 then
         local bar_width = (my_size.w-2*self.margin_h)
         local y_pos = y + self.margin_v + self.bordersize
         local bar_height = my_size.h-2*(self.margin_v+self.bordersize)
         for i=1, #self.ticks do
+            local tick_x = bar_width*(self.ticks[i]/self.last)
+            if self._mirroredUI then
+                tick_x = bar_width - tick_x
+            end
             bb:paintRect(
-                x + bar_width*(self.ticks[i]/self.last) + self.margin_h,
+                x + self.margin_h + tick_x,
                 y_pos,
                 self.tick_width,
                 bar_height,
@@ -90,6 +107,21 @@ end
 
 function ProgressWidget:setPercentage(percentage)
     self.percentage = percentage
+end
+
+function ProgressWidget:getPercentageFromPosition(pos)
+    if not pos or not pos.x then
+        return nil
+    end
+    local width = self.dimen.w - 2*self.margin_h
+    local x = pos.x - self.dimen.x - self.margin_h
+    if x < 0 or x > width then
+        return nil
+    end
+    if BD.mirroredUILayout() then
+        x = width - x
+    end
+    return x / width
 end
 
 function ProgressWidget:updateStyle(thick, height)

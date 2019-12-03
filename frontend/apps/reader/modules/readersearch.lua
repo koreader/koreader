@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
@@ -28,6 +29,11 @@ function ReaderSearch:addToMainMenu(menu_items)
 end
 
 function ReaderSearch:onShowFulltextSearchInput()
+    local backward_text = "◁"
+    local forward_text = "▷"
+    if BD.mirroredUILayout() then
+        backward_text, forward_text = forward_text, backward_text
+    end
     self:onInput{
         title = _("Enter text to search for"),
         type = "text",
@@ -40,14 +46,14 @@ function ReaderSearch:onShowFulltextSearchInput()
                     end,
                 },
                 {
-                    text = "◁",
+                    text = backward_text,
                     callback = function()
                         self:onShowSearchDialog(self.input_dialog:getInputText(), 1)
                         self:closeInputDialog()
                     end,
                 },
                 {
-                    text = "▷",
+                    text = forward_text,
                     is_enter_default = true,
                     callback = function()
                         self:onShowSearchDialog(self.input_dialog:getInputText(), 0)
@@ -138,24 +144,33 @@ function ReaderSearch:onShowSearchDialog(text, direction)
             end
         end
     end
+    local from_start_text = "▕◁"
+    local backward_text = "◁"
+    local forward_text = "▷"
+    local from_end_text = "▷▏"
+    if BD.mirroredUILayout() then
+        backward_text, forward_text = forward_text, backward_text
+        -- Keep the LTR order of |< and >|:
+        from_start_text, from_end_text = BD.ltr(from_end_text), BD.ltr(from_start_text)
+    end
     self.search_dialog = ButtonDialog:new{
         -- alpha = 0.7,
         buttons = {
             {
                 {
-                    text = "▕◁",
+                    text = from_start_text,
                     callback = do_search(self.searchFromStart, text),
                 },
                 {
-                    text = "◁",
+                    text = backward_text,
                     callback = do_search(self.searchNext, text, 1),
                 },
                 {
-                    text = "▷",
+                    text = forward_text,
                     callback = do_search(self.searchNext, text, 0),
                 },
                 {
-                    text = "▷▏",
+                    text = from_end_text,
                     callback = do_search(self.searchFromEnd, text),
                 },
             }

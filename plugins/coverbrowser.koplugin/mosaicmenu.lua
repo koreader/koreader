@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
@@ -28,7 +29,7 @@ local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
-local getMenuText = require("util").getMenuText
+local getMenuText = require("ui/widget/menu").getMenuText
 
 local BookInfoManager = require("bookinfomanager")
 
@@ -195,7 +196,7 @@ function FakeCover:init()
         end
         if filename then
             filename_wg = TextBoxWidget:new{
-                text = filename,
+                text = BD.filename(filename),
                 face = Font:getFace("cfont", math.max(self.filename_font_max - sizedec, self.filename_font_min)),
                 width = text_width,
                 alignment = "center",
@@ -607,7 +608,12 @@ function MosaicMenuItem:paintTo(bb, x, y)
     if self.shortcut_icon then
         -- align it on bottom left corner of widget
         local target = self
-        local ix = 0
+        local ix
+        if BD.mirroredUILayout() then
+            ix = target.dimen.w - self.shortcut_icon.dimen.w
+        else
+            ix = 0
+        end
         local iy = target.dimen.h - self.shortcut_icon.dimen.h
         self.shortcut_icon:paintTo(bb, x+ix, y+iy)
     end
@@ -616,7 +622,12 @@ function MosaicMenuItem:paintTo(bb, x, y)
     if corner_mark and self.do_hint_opened and self.been_opened then
         -- align it on bottom right corner of sub-widget
         local target =  self[1][1][1]
-        local ix = self.width - math.ceil((self.width - target.dimen.w)/2) - corner_mark:getSize().w
+        local ix
+        if BD.mirroredUILayout() then
+            ix = math.floor((self.width - target.dimen.w)/2)
+        else
+            ix = self.width - math.ceil((self.width - target.dimen.w)/2) - corner_mark:getSize().w
+        end
         local iy = self.height - math.ceil((self.height - target.dimen.h)/2) - corner_mark:getSize().h
         -- math.ceil() makes it looks better than math.floor()
         corner_mark:paintTo(bb, x+ix, y+iy)
@@ -629,15 +640,27 @@ function MosaicMenuItem:paintTo(bb, x, y)
         local d_w = Screen:scaleBySize(3)
         local d_h = math.ceil(target.dimen.h / 8)
         -- Paint it directly relative to target.dimen.x/y which has been computed at this point
-        local ix = target.dimen.w - 1
+        local ix
+        if BD.mirroredUILayout() then
+            ix = - d_w + 1
+            -- Set alternate dimen to be marked as dirty to include this description in refresh
+            local x_overflow_left = x - target.dimen.x+ix -- positive if overflow
+            if x_overflow_left > 0 then
+                self.refresh_dimen = self[1].dimen:copy()
+                self.refresh_dimen.x = self.refresh_dimen.x - x_overflow_left
+                self.refresh_dimen.w = self.refresh_dimen.w + x_overflow_left
+            end
+        else
+            ix = target.dimen.w - 1
+            -- Set alternate dimen to be marked as dirty to include this description in refresh
+            local x_overflow_right = target.dimen.x+ix+d_w - x - self.dimen.w
+            if x_overflow_right > 0 then
+                self.refresh_dimen = self[1].dimen:copy()
+                self.refresh_dimen.w = self.refresh_dimen.w + x_overflow_right
+            end
+        end
         local iy = 0
         bb:paintBorder(target.dimen.x+ix, target.dimen.y+iy, d_w, d_h, 1)
-        local x_overflow = target.dimen.x+ix+d_w - x - self.dimen.w
-        if x_overflow > 0 then
-            -- Set alternate dimen to be marked as dirty to include this description in refresh
-            self.refresh_dimen = self[1].dimen:copy()
-            self.refresh_dimen.w = self.refresh_dimen.w + x_overflow
-        end
 
     end
 end
@@ -732,7 +755,7 @@ function MosaicMenu:_recalculateDimen()
         end
         corner_mark = ImageWidget:new{
             file = "resources/icons/dogear.png",
-            rotation_angle = 270,
+            rotation_angle = BD.mirroredUILayout() and 180 or 270,
             width = corner_mark_size,
             height = corner_mark_size,
         }
