@@ -225,7 +225,8 @@ function ListMenuItem:update()
             text = self.mandatory,
             face = Font:getFace("infont", math.min(max_fontsize_fileinfo, _fontSize(15))),
         }
-        local wleft_width = dimen.w - wright:getSize().w
+        local pad_width = Screen:scaleBySize(10) -- on the left, in between, and on the right
+        local wleft_width = dimen.w - wright:getWidth() - 3*pad_width
         local wleft = TextBoxWidget:new{
             text = self.text,
             face = Font:getFace("cfont", _fontSize(20)),
@@ -238,7 +239,7 @@ function ListMenuItem:update()
             LeftContainer:new{
                 dimen = dimen,
                 HorizontalGroup:new{
-                    HorizontalSpan:new{ width = Screen:scaleBySize(10) },
+                    HorizontalSpan:new{ width = pad_width },
                     wleft,
                 }
             },
@@ -246,7 +247,7 @@ function ListMenuItem:update()
                 dimen = dimen,
                 HorizontalGroup:new{
                     wright,
-                    HorizontalSpan:new{ width = Screen:scaleBySize(10) },
+                    HorizontalSpan:new{ width = pad_width },
                 },
             },
         }
