@@ -230,6 +230,9 @@ end
 -- the text widget to have the new text splittted into possibly different
 -- lines than before
 function InputText:initTextBox(text, char_added)
+    if self.text_widget then
+        self.text_widget:free()
+    end
     self.text = text
     local fgcolor
     local show_charlist
