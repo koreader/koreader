@@ -892,28 +892,22 @@ function TextBoxWidget:paintTo(bb, x, y)
 end
 
 function TextBoxWidget:onCloseWidget()
-    -- Free all resources (BlitBuffers, XText) when UIManager closes this
-    -- widget (as it won't be painted anymore), without waiting for Lua gc()
-    -- to kick in.
-    -- Free the between-renderings (between page scrolls) freeable resources
+    -- Free all resources when UIManager closes this widget
     self:free()
-    if self.use_xtext and self._xtext then
-        -- Free our self._xtext (that we can't free in :free()
-        -- as we need to keep it across renderings)
-        self._xtext:free()
-    end
 end
 
-function TextBoxWidget:free()
-    logger.dbg("TextBoxWidget:free called")
-    -- :free() is called when our parent widget is closing, and
-    -- here whenever :_renderText() is being called, to display
-    -- a new page: cancel any scheduled image update, as it
-    -- is no longer related to current page
+function TextBoxWidget:free(full)
+    -- logger.dbg("TextBoxWidget:free called")
+    -- We are called with full=false from other methods here whenever
+    -- :_renderText() is to be called to render a new page (when scrolling
+    -- inside this text, or moving the view).
+    -- Free the between-renderings freeable resources
     if self.image_update_action then
+        -- Cancel any scheduled image update, as it is no longer related to current page
         logger.dbg("TextBoxWidget:free: cancelling self.image_update_action")
         UIManager:unschedule(self.image_update_action)
     end
+    -- Free blitbuffers
     if self._bb then
         self._bb:free()
         self._bb = nil
@@ -922,10 +916,18 @@ function TextBoxWidget:free()
         self.cursor_restore_bb:free()
         self.cursor_restore_bb = nil
     end
+    if full ~= false then -- final free(): free all remaining resources
+        if self.use_xtext and self._xtext then
+            -- Allow not waiting until Lua gc() to cleanup C XText malloc'ed stuff
+            -- (we should not free it if full=false as it is re-usable across renderings)
+            self._xtext:free()
+            -- logger.dbg("TextBoxWidget:_xtext:free()")
+        end
+    end
 end
 
 function TextBoxWidget:update(scheduled_update)
-    self:free()
+    self:free(false)
     -- We set this flag so :_renderText() can know we were called from a
     -- scheduled update and so not schedule another one
     self.scheduled_update = scheduled_update
@@ -967,7 +969,7 @@ end
 function TextBoxWidget:scrollDown()
     self.image_show_alt_text = nil -- reset image bb/alt state
     if self.virtual_line_num + self.lines_per_page <= #self.vertical_string_list then
-        self:free()
+        self:free(false)
         self.virtual_line_num = self.virtual_line_num + self.lines_per_page
         -- If last line shown, set it to be the last line of view
         -- (only if editable, as this would be confusing when reading
@@ -992,7 +994,7 @@ end
 function TextBoxWidget:scrollUp()
     self.image_show_alt_text = nil
     if self.virtual_line_num > 1 then
-        self:free()
+        self:free(false)
         if self.virtual_line_num <= self.lines_per_page then
             self.virtual_line_num = 1
         else
@@ -1021,7 +1023,7 @@ function TextBoxWidget:scrollLines(nb_lines)
         new_line_num = #self.vertical_string_list - self.lines_per_page + 1
     end
     self.virtual_line_num = new_line_num
-    self:free()
+    self:free(false)
     self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
     if self.editable then
         local x, y = self:_getXYForCharPos() -- luacheck: no unused
@@ -1036,7 +1038,7 @@ end
 function TextBoxWidget:scrollToTop()
     self.image_show_alt_text = nil
     if self.virtual_line_num > 1 then
-        self:free()
+        self:free(false)
         self.virtual_line_num = 1
         self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
     end
@@ -1054,7 +1056,7 @@ function TextBoxWidget:scrollToBottom()
         ln = 1
     end
     if self.virtual_line_num ~= ln then
-        self:free()
+        self:free(false)
         self.virtual_line_num = ln
         self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
     end
@@ -1072,7 +1074,7 @@ function TextBoxWidget:scrollToRatio(ratio)
     local page_num = 1 + Math.round((page_count - 1) * ratio)
     local line_num = 1 + (page_num - 1) * self.lines_per_page
     if line_num ~= self.virtual_line_num then
-        self:free()
+        self:free(false)
         self.virtual_line_num = line_num
         self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
     end
@@ -1293,7 +1295,7 @@ function TextBoxWidget:moveCursorToCharPos(charpos)
     end
     if self.virtual_line_num ~= self.prev_virtual_line_num then
         -- We scrolled the view: full render and refresh needed
-        self:free()
+        self:free(false)
         self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
         -- Store the original image of where we will draw the cursor, for a
         -- quick restore and two small refreshes when moving only the cursor
