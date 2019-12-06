@@ -30,6 +30,8 @@ io.stdout:flush()
 G_reader_settings = require("luasettings"):open(
     DataStorage:getDataDir().."/settings.reader.lua")
 local lang_locale = G_reader_settings:readSetting("language")
+-- Allow quick switching to Arabic for testing RTL/UI mirroring
+if os.getenv("KO_RTL") then lang_locale = "ar_AA" end
 local _ = require("gettext")
 if lang_locale then
     _.changeLang(lang_locale)
@@ -146,6 +148,13 @@ SettingsMigration:migrateSettings(G_reader_settings)
 -- Document renderers canvas
 local CanvasContext = require("document/canvascontext")
 CanvasContext:init(Device)
+
+-- UI mirroring for RTL languages, and text shaping configuration
+local Bidi = require("ui/bidi")
+Bidi.setup(lang_locale)
+-- Avoid loading UIManager and widgets before here, as they may
+-- cache Bidi mirroring settings. Check that with:
+-- for name, _ in pairs(package.loaded) do print(name) end
 
 -- User fonts override
 local fontmap = G_reader_settings:readSetting("fontmap")
