@@ -37,7 +37,18 @@ local TextViewer = InputContainer:new{
     width = nil,
     height = nil,
     buttons_table = nil,
+    -- See TextBoxWidget for details about these options
+    -- We default to justified and auto_para_direction to adapt
+    -- to any kind of text we are given (book descriptions,
+    -- bookmarks' text, translation results...).
+    -- When used to display more technical text (HTML, CSS,
+    -- application logs...), it's best to reset them to false.
+    alignment = "left",
     justified = true,
+    lang = nil,
+    para_direction_rtl = nil,
+    auto_para_direction = true,
+    alignment_strict = false,
 
     title_face = Font:getFace("x_smalltfont"),
     text_face = Font:getFace("x_smallinfofont"),
@@ -157,7 +168,12 @@ function TextViewer:init()
         width = self.width - 2*self.text_padding - 2*self.text_margin,
         height = textw_height - 2*self.text_padding -2*self.text_margin,
         dialog = self,
+        alignment = self.alignment,
         justified = self.justified,
+        lang = self.lang,
+        para_direction_rtl = self.para_direction_rtl,
+        auto_para_direction = self.auto_para_direction,
+        alignment_strict = self.alignment_strict,
     }
     self.textw = FrameContainer:new{
         padding = self.text_padding,

@@ -109,6 +109,7 @@ function FileManager:init()
     self.path_text = TextWidget:new{
         face = Font:getFace("xx_smallinfofont"),
         text = filemanagerutil.abbreviate(self.root_path),
+        para_direction_rtl = false, -- force LTR
         max_width = Screen:getWidth() - 2*Size.padding.small,
         truncate_left = true,
     }

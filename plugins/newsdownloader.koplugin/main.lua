@@ -411,6 +411,7 @@ function NewsDownloader:changeFeedConfig()
         title = T(_("Config: %1"),feed_config_path),
         input = config,
         input_type = "string",
+        para_direction_rtl = false, -- force LTR
         fullscreen = true,
         condensed = true,
         allow_newline = true,

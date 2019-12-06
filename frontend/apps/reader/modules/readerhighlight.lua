@@ -781,6 +781,8 @@ function ReaderHighlight:viewSelectionHTML(debug_view)
                                 text = css_text or _("Failed getting CSS content"),
                                 text_face = Font:getFace("smallinfont"),
                                 justified = false,
+                                para_direction_rtl = false,
+                                auto_para_direction = false,
                                 buttons_table = {
                                     {{
                                         text = _("Prettify"),
@@ -792,6 +794,8 @@ function ReaderHighlight:viewSelectionHTML(debug_view)
                                                 text = prettifyCss(css_text),
                                                 text_face = Font:getFace("smallinfont"),
                                                 justified = false,
+                                                para_direction_rtl = false,
+                                                auto_para_direction = false,
                                             })
                                         end,
                                     }},
@@ -838,6 +842,8 @@ function ReaderHighlight:viewSelectionHTML(debug_view)
                 text = html,
                 text_face = Font:getFace("smallinfont"),
                 justified = false,
+                para_direction_rtl = false,
+                auto_para_direction = false,
                 buttons_table = buttons_table,
             }
             UIManager:show(textviewer)

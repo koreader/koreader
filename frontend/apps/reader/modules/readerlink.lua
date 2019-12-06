@@ -1062,12 +1062,13 @@ function ReaderLink:showAsFootnotePopup(link, neglect_current_location)
     -- then just ignore the whole stylesheet, including our own declarations
     -- we add at start)
     --
-    -- flags = 0x0000 to get the simplest/purest HTML without CSS
+    -- flags = 0x0001 to get the simplest/purest HTML without CSS, and dir=
+    -- and lang= attributes grabbed from parent nodes
     local html
     if extStartXP and extEndXP then
-        html = self.ui.document:getHTMLFromXPointers(extStartXP, extEndXP, 0x0000)
+        html = self.ui.document:getHTMLFromXPointers(extStartXP, extEndXP, 0x0001)
     else
-        html = self.ui.document:getHTMLFromXPointer(target_xpointer, 0x0000, true)
+        html = self.ui.document:getHTMLFromXPointer(target_xpointer, 0x0001, true)
         -- from_final_parent = true to get a possibly more complete footnote
     end
     if not html then
