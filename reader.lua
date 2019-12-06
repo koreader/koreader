@@ -13,18 +13,19 @@ io.stdout:write([[
  [*] Current time: ]], os.date("%x-%X"), "\n")
 io.stdout:flush()
 
--- load default settings
+-- Load default settings
 require("defaults")
 local DataStorage = require("datastorage")
 pcall(dofile, DataStorage:getDataDir() .. "/defaults.persistent.lua")
 
+-- Set up Lua and ffi search paths
 require("setupkoenv")
 
 io.stdout:write(" [*] Version: ", require("version"):getCurrentRevision(), "\n\n")
 io.stdout:flush()
 
--- read settings and check for language override
--- has to be done before requiring other files because
+-- Read settings and check for language override
+-- Has to be done before requiring other files because
 -- they might call gettext on load
 G_reader_settings = require("luasettings"):open(
     DataStorage:getDataDir().."/settings.reader.lua")
@@ -52,13 +53,13 @@ else
     end
 end
 
--- should check DEBUG option in arg and turn on DEBUG before loading other
+-- Should check DEBUG option in arg and turn on DEBUG before loading other
 -- modules, otherwise DEBUG in some modules may not be printed.
 local dbg = require("dbg")
 if G_reader_settings:isTrue("debug") then dbg:turnOn() end
 if G_reader_settings:isTrue("debug") and G_reader_settings:isTrue("debug_verbose") then dbg:setVerbose(true) end
 
--- option parsing:
+-- Option parsing:
 local longopts = {
     debug = "d",
     profile = "p",
@@ -112,21 +113,67 @@ while argidx <= #ARGV do
     end
 end
 
+-- Setup device
 local Device = require("device")
+-- DPI
 local dpi_override = G_reader_settings:readSetting("screen_dpi")
 if dpi_override ~= nil then
     Device:setScreenDPI(dpi_override)
 end
+-- Night mode
+if G_reader_settings:isTrue("night_mode") then
+    Device.screen:toggleNightMode()
+end
+-- Dithering
+if Device:hasEinkScreen() then
+    Device.screen:setupDithering()
+    if Device.screen.hw_dithering and G_reader_settings:isTrue("dev_no_hw_dither") then
+        Device.screen:toggleHWDithering()
+    end
+    if Device.screen.sw_dithering and G_reader_settings:isTrue("dev_no_sw_dither") then
+        Device.screen:toggleSWDithering()
+    end
+end
+-- Touch screen
+if Device:needsTouchScreenProbe() then
+    Device:touchScreenProbe()
+end
 
+-- Handle global settings migration
+local SettingsMigration = require("ui/data/settings_migration")
+SettingsMigration:migrateSettings(G_reader_settings)
+
+-- Document renderers canvas
 local CanvasContext = require("document/canvascontext")
 CanvasContext:init(Device)
 
-local ConfirmBox = require("ui/widget/confirmbox")
-local QuickStart = require("ui/quickstart")
-local UIManager = require("ui/uimanager")
-local lfs = require("libs/libkoreader-lfs")
+-- User fonts override
+local fontmap = G_reader_settings:readSetting("fontmap")
+if fontmap ~= nil then
+    local Font = require("ui/font")
+    for k, v in pairs(fontmap) do
+        Font.fontmap[k] = v
+    end
+end
 
+local UIManager = require("ui/uimanager")
+
+-- Inform once about color rendering on newly supported devices
+-- (there are some android devices that may not have a color screen,
+-- and we are not (yet?) able to guess that fact)
+if Device:hasColorScreen() and not G_reader_settings:has("color_rendering") then
+    -- enable it to prevent further display of this message
+    G_reader_settings:saveSetting("color_rendering", true)
+    local InfoMessage = require("ui/widget/infomessage")
+    UIManager:show(InfoMessage:new{
+        text = _("Documents will be rendered in color on this device.\nIf your device is grayscale, you can disable color rendering in the screen sub-menu for reduced memory usage."),
+    })
+end
+
+-- Helpers
+local lfs = require("libs/libkoreader-lfs")
 local function retryLastFile()
+    local ConfirmBox = require("ui/widget/confirmbox")
     return ConfirmBox:new{
         text = _("Cannot open last file.\nThis could be because it was deleted or because external storage is still being mounted.\nDo you want to retry?"),
         ok_callback = function()
@@ -142,64 +189,6 @@ local function retryLastFile()
         end,
     }
 end
-
--- read some global reader setting here:
--- font
-local fontmap = G_reader_settings:readSetting("fontmap")
-if fontmap ~= nil then
-    local Font = require("ui/font")
-    for k, v in pairs(fontmap) do
-        Font.fontmap[k] = v
-    end
-end
--- last file
-local last_file = G_reader_settings:readSetting("lastfile")
-local start_with = G_reader_settings:readSetting("start_with")
--- load last opened file
-local open_last = start_with == "last"
-if open_last and last_file and lfs.attributes(last_file, "mode") ~= "file" then
-    UIManager:show(retryLastFile())
-    last_file = nil
-elseif not QuickStart:isShown() then
-    open_last = true
-    last_file = QuickStart:getQuickStart()
-end
--- night mode
-if G_reader_settings:isTrue("night_mode") then
-    Device.screen:toggleNightMode()
-end
--- dithering
-if Device:hasEinkScreen() then
-    Device.screen:setupDithering()
-    if Device.screen.hw_dithering and G_reader_settings:isTrue("dev_no_hw_dither") then
-        Device.screen:toggleHWDithering()
-    end
-    if Device.screen.sw_dithering and G_reader_settings:isTrue("dev_no_sw_dither") then
-        Device.screen:toggleSWDithering()
-    end
-end
-
-if Device:needsTouchScreenProbe() then
-    Device:touchScreenProbe()
-end
-
--- Inform once about color rendering on newly supported devices
--- (there are some android devices that may not have a color screen,
--- and we are not (yet?) able to guess that fact)
-if Device:hasColorScreen() and not G_reader_settings:has("color_rendering") then
-    -- enable it to prevent further display of this message
-    G_reader_settings:saveSetting("color_rendering", true)
-    local InfoMessage = require("ui/widget/infomessage")
-    UIManager:show(InfoMessage:new{
-        text = _("Documents will be rendered in color on this device.\nIf your device is grayscale, you can disable color rendering in the screen sub-menu for reduced memory usage."),
-    })
-end
-
--- Handle global settings migration
-local SettingsMigration = require("ui/data/settings_migration")
-SettingsMigration:migrateSettings(G_reader_settings)
-
-local exit_code
 
 local function getPathFromURI(str)
     local hexToChar = function(x)
@@ -217,6 +206,24 @@ local function getPathFromURI(str)
     return unescape(str):sub(#prefix+1)
 end
 
+-- Get which file to start with
+local last_file = G_reader_settings:readSetting("lastfile")
+local start_with = G_reader_settings:readSetting("start_with")
+local open_last = start_with == "last"
+
+if open_last and last_file and lfs.attributes(last_file, "mode") ~= "file" then
+    UIManager:show(retryLastFile())
+    last_file = nil
+else
+    local QuickStart = require("ui/quickstart")
+    if not QuickStart:isShown() then
+        open_last = true
+        last_file = QuickStart:getQuickStart()
+    end
+end
+
+-- Start app
+local exit_code
 if ARGV[argidx] and ARGV[argidx] ~= "" then
     local file
     local sanitized_path = getPathFromURI(ARGV[argidx])
@@ -268,6 +275,7 @@ else
     return showusage()
 end
 
+-- Exit
 local function exitReader()
     local ReaderActivityIndicator =
         require("apps/reader/modules/readeractivityindicator")
