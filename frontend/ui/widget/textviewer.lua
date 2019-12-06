@@ -8,6 +8,7 @@ Displays some text in a scrollable view.
     }
     UIManager:show(textviewer)
 ]]
+local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
@@ -256,10 +257,11 @@ end
 
 function TextViewer:onSwipe(arg, ges)
     if ges.pos:intersectWith(self.textw.dimen) then
-        if ges.direction == "west" then
+        local direction = BD.flipDirectionIfMirroredUILayout(ges.direction)
+        if direction == "west" then
             self.scroll_text_w:scrollText(1)
             return true
-        elseif ges.direction == "east" then
+        elseif direction == "east" then
             self.scroll_text_w:scrollText(-1)
             return true
         else

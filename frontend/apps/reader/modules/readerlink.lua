@@ -2,6 +2,7 @@
 ReaderLink is an abstraction for document-specific link interfaces.
 ]]
 
+local BD = require("ui/bidi")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
@@ -689,7 +690,8 @@ function ReaderLink:onGoBackLink(show_notification_if_empty)
 end
 
 function ReaderLink:onSwipe(arg, ges)
-    if ges.direction == "east" then
+    local direction = BD.flipDirectionIfMirroredUILayout(ges.direction)
+    if direction == "east" then
         if isSwipeToGoBackEnabled() then
             if #self.location_stack > 0 then
                 -- Remember if location stack is going to be empty, so we
@@ -709,7 +711,7 @@ function ReaderLink:onSwipe(arg, ges)
                 return true
             end
         end
-    elseif ges.direction == "west" then
+    elseif direction == "west" then
         local ret = false
         if isSwipeToFollowNearestLinkEnabled() then
             ret = self:onGoToPageLink(ges, isSwipeIgnoreExternalLinksEnabled(), isFootnoteLinkInPopupEnabled())

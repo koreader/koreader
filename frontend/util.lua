@@ -694,20 +694,6 @@ function util.getFormattedSize(size)
     return s
 end
 
---- Adds > to touch menu items with a submenu
-function util.getMenuText(item)
-    local text
-    if item.text_func then
-        text = item.text_func()
-    else
-        text = item.text
-    end
-    if item.sub_item_table ~= nil or item.sub_item_table_func then
-        text = text .. " ▸"
-    end
-    return text
-end
-
 --[[--
 Replaces invalid UTF-8 characters with a replacement string.
 

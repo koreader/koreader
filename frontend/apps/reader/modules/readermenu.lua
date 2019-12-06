@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
@@ -373,10 +374,10 @@ function ReaderMenu:_getTabIndexFromLocation(ges)
         return self.last_tab_index
     -- if the start position is far right
     elseif ges.pos.x > 2 * Screen:getWidth() / 3 then
-        return #self.tab_item_table
+        return BD.mirroredUILayout() and 1 or #self.tab_item_table
     -- if the start position is far left
     elseif ges.pos.x < Screen:getWidth() / 3 then
-        return 1
+        return BD.mirroredUILayout() and #self.tab_item_table or 1
     -- if center return the last index
     else
         return self.last_tab_index

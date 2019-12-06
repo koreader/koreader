@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local Device = require("device")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
@@ -111,7 +112,11 @@ function ReaderPaging:setupTapTouchZones()
         ratio_w = DTAP_ZONE_BACKWARD.w, ratio_h = DTAP_ZONE_BACKWARD.h,
     }
 
+    local do_mirror = BD.mirroredUILayout()
     if self.inverse_reading_order then
+        do_mirror = not do_mirror
+    end
+    if do_mirror then
         forward_zone.ratio_x = 1 - forward_zone.ratio_x - forward_zone.ratio_w
         backward_zone.ratio_x = 1 - backward_zone.ratio_x - backward_zone.ratio_w
     end
@@ -373,39 +378,42 @@ function ReaderPaging:pageFlipping(flipping_page, flipping_ges)
     local steps = #self.flip_steps
     local stp_proportion = flipping_ges.distance / Screen:getWidth()
     local abs_proportion = flipping_ges.distance / Screen:getHeight()
-    if flipping_ges.direction == "east" then
+    local direction = BD.flipDirectionIfMirroredUILayout(flipping_ges.direction)
+    if direction == "east" then
         self:_gotoPage(flipping_page - self.flip_steps[math.ceil(steps*stp_proportion)])
-    elseif flipping_ges.direction == "west" then
+    elseif direction == "west" then
         self:_gotoPage(flipping_page + self.flip_steps[math.ceil(steps*stp_proportion)])
-    elseif flipping_ges.direction == "south" then
+    elseif direction == "south" then
         self:_gotoPage(flipping_page - math.floor(whole*abs_proportion))
-    elseif flipping_ges.direction == "north" then
+    elseif direction == "north" then
         self:_gotoPage(flipping_page + math.floor(whole*abs_proportion))
     end
     UIManager:setDirty(self.view.dialog, "partial")
 end
 
 function ReaderPaging:bookmarkFlipping(flipping_page, flipping_ges)
-    if flipping_ges.direction == "east" then
+    local direction = BD.flipDirectionIfMirroredUILayout(flipping_ges.direction)
+    if direction == "east" then
         self.ui:handleEvent(Event:new("GotoPreviousBookmark", flipping_page))
-    elseif flipping_ges.direction == "west" then
+    elseif direction == "west" then
         self.ui:handleEvent(Event:new("GotoNextBookmark", flipping_page))
     end
     UIManager:setDirty(self.view.dialog, "partial")
 end
 
 function ReaderPaging:onSwipe(_, ges)
+    local direction = BD.flipDirectionIfMirroredUILayout(ges.direction)
     if self.bookmark_flipping_mode then
         self:bookmarkFlipping(self.current_page, ges)
     elseif self.page_flipping_mode and self.original_page then
         self:_gotoPage(self.original_page)
-    elseif ges.direction == "west" then
+    elseif direction == "west" then
         if self.inverse_reading_order then
             self:onGotoViewRel(-1)
         else
             self:onGotoViewRel(1)
         end
-    elseif ges.direction == "east" then
+    elseif direction == "east" then
         if self.inverse_reading_order then
             self:onGotoViewRel(1)
         else

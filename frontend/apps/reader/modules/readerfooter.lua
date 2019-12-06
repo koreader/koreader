@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
@@ -21,6 +22,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local util = require("util")
 local T = require("ffi/util").template
 local _ = require("gettext")
+local C_ = _.pgettext
 local Screen = Device.screen
 
 local MODE = {
@@ -41,26 +43,45 @@ local symbol_prefix = {
     letters = {
         time = nil,
         pages_left = "=>",
-        battery = "B:",
-        percentage = "R:",
-        book_time_to_read = "TB:",
-        chapter_time_to_read = "TC:",
-        frontlight = "L:",
-        mem_usage = "M:",
-        wifi_status = "W:",
+        battery = C_("FooterLetterPrefix", "B:"),
+        percentage = C_("FooterLetterPrefix", "R:"),
+        book_time_to_read = C_("FooterLetterPrefix", "TB:"),
+        chapter_time_to_read = C_("FooterLetterPrefix", "TC:"),
+        frontlight = C_("FooterLetterPrefix", "L:"),
+        mem_usage = C_("FooterLetterPrefix", "M:"),
+        wifi_status = C_("FooterLetterPrefix", "W:"),
     },
     icons = {
         time = "⌚",
-        pages_left = "⇒",
+        pages_left = BD.mirroredUILayout() and "⇐" or "⇒",
         battery = "",
-        percentage = "⤠",
+        percentage = BD.mirroredUILayout() and "⤟" or "⤠",
         book_time_to_read = "⏳",
-        chapter_time_to_read = "⤻",
+        chapter_time_to_read = BD.mirroredUILayout() and "⥖" or "⤻",
         frontlight = "☼",
         mem_usage = "",
         wifi_status = "",
     }
 }
+if BD.mirroredUILayout() then
+    -- We need to RTL-wrap these letters and symbols for proper layout
+    for k, v in pairs(symbol_prefix.letters) do
+        local colon = v:find(":")
+        local wrapped
+        if colon then
+            local pre = v:sub(1, colon-1)
+            local post = v:sub(colon)
+            wrapped = BD.wrap(pre) .. BD.wrap(post)
+        else
+            wrapped = BD.wrap(v)
+        end
+        symbol_prefix.letters[k] = wrapped
+    end
+    for k, v in pairs(symbol_prefix.icons) do
+        symbol_prefix.icons[k] = BD.wrap(v)
+    end
+end
+
 local PROGRESS_BAR_STYLE_THICK_DEFAULT_HEIGHT = 7
 local PROGRESS_BAR_STYLE_THIN_DEFAULT_HEIGHT = 3
 
@@ -115,9 +136,9 @@ local footerTextGeneratorMap = {
                     prefix = ""
                 end
             end
-            return prefix .. batt_lvl .. "%"
+            return BD.wrap(prefix) .. batt_lvl .. "%"
         else
-            return prefix .. " " .. (powerd:isCharging() and "+" or "") .. batt_lvl .. "%"
+            return BD.wrap(prefix) .. " " .. (powerd:isCharging() and "+" or "") .. batt_lvl .. "%"
         end
     end,
     time = function(footer)
@@ -1230,10 +1251,13 @@ function ReaderFooter:genAllFooterText()
     elseif self.settings.items_separator == "bullet" then
         separator = " • "
     end
+    -- We need to BD.wrap() all items and separators, so we're
+    -- sure they are laid out in our order (reversed in RTL),
+    -- without ordering by the RTL Bidi algorithm.
     for _, gen in ipairs(self.footerTextGenerators) do
-        table.insert(info, gen(self))
+        table.insert(info, BD.wrap(gen(self)))
     end
-    return table.concat(info, separator)
+    return table.concat(info, BD.wrap(separator))
 end
 
 function ReaderFooter:setTocMarkers(reset)

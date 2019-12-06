@@ -2,6 +2,7 @@
 Text widget with vertical scroll bar.
 --]]
 
+local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local Device = require("device")
 local Geom = require("ui/geometry")
@@ -161,6 +162,9 @@ function ScrollTextWidget:moveCursorToCharPos(charpos)
 end
 
 function ScrollTextWidget:moveCursorToXY(x, y, no_overflow)
+    if BD.mirroredUILayout() then -- the scroll bar is on the left
+        x = x - self.scroll_bar_width - self.text_scroll_span
+    end
     self.text_widget:moveCursorToXY(x, y, no_overflow)
     self:updateScrollBar()
 end
@@ -238,7 +242,7 @@ function ScrollTextWidget:onTapScrollText(arg, ges)
         return false
     end
     -- same tests as done in TextBoxWidget:scrollUp/Down
-    if ges.pos.x < Screen:getWidth()/2 then
+    if BD.flipIfMirroredUILayout(ges.pos.x < Screen:getWidth()/2) then
         if self.text_widget.virtual_line_num > 1 then
             self:scrollText(-1)
             return true

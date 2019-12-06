@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local Button = require("ui/widget/button")
@@ -239,15 +240,20 @@ function DoubleKeyValuePage:init()
         text_font_bold = false,
     }
     -- group for page info
+    local chevron_left = "resources/icons/appbar.chevron.left.png"
+    local chevron_right = "resources/icons/appbar.chevron.right.png"
+    if BD.mirroredUILayout() then
+        chevron_left, chevron_right = chevron_right, chevron_left
+    end
     self.page_info_left_chev = Button:new{
-        icon = "resources/icons/appbar.chevron.left.png",
+        icon = chevron_left,
         callback = function() self:prevPage() end,
         bordersize = 0,
         show_parent = self,
     }
     self.page_info_right_chev = Button:new{
-        icon = "resources/icons/appbar.chevron.right.png",
-        callback = function() self:_nextPage() end,
+        icon = chevron_right,
+        callback = function() self:nextPage() end,
         bordersize = 0,
         show_parent = self,
     }
@@ -413,16 +419,17 @@ function DoubleKeyValuePage:onPrevPage()
 end
 
 function DoubleKeyValuePage:onSwipe(arg, ges_ev)
-    if ges_ev.direction == "west" then
+    local direction = BD.flipDirectionIfMirroredUILayout(ges_ev.direction)
+    if direction == "west" then
         self:_nextPage()
         return true
-    elseif ges_ev.direction == "east" then
+    elseif direction == "east" then
         self:prevPage()
         return true
-    elseif ges_ev.direction == "south" then
+    elseif direction == "south" then
         -- Allow easier closing with swipe down
         self:onClose()
-    elseif ges_ev.direction == "north" then
+    elseif direction == "north" then
         -- no use for now
         do end -- luacheck: ignore 541
     else -- diagonal swipe

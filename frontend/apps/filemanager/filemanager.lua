@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local Button = require("ui/widget/button")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
@@ -457,9 +458,10 @@ function FileManager:onShowPlusMenu()
 end
 
 function FileManager:onSwipeFM(ges)
-    if ges.direction == "west" then
+    local direction = BD.flipDirectionIfMirroredUILayout(ges.direction)
+    if direction == "west" then
         self.file_chooser:onNextPage()
-    elseif ges.direction == "east" then
+    elseif direction == "east" then
         self.file_chooser:onPrevPage()
     end
     return true

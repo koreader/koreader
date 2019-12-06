@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local Button = require("ui/widget/button")
@@ -452,14 +453,15 @@ function SortWidget:onPrevPage()
 end
 
 function SortWidget:onSwipe(arg, ges_ev)
-    if ges_ev.direction == "west" then
+    local direction = BD.flipDirectionIfMirroredUILayout(ges_ev.direction)
+    if direction == "west" then
         self:onNextPage()
-    elseif ges_ev.direction == "east" then
+    elseif direction == "east" then
         self:onPrevPage()
-    elseif ges_ev.direction == "south" then
+    elseif direction == "south" then
         -- Allow easier closing with swipe down
         self:onClose()
-    elseif ges_ev.direction == "north" then
+    elseif direction == "north" then
         -- no use for now
         do end -- luacheck: ignore 541
     else -- diagonal swipe

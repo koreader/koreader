@@ -19,6 +19,7 @@ Example:
 
 ]]
 
+local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local Button = require("ui/widget/button")
@@ -333,6 +334,7 @@ function KeyValuePage:init()
     end
 
     -- return button
+    --- @todo: alternative icon if BD.mirroredUILayout()
     self.page_return_arrow = Button:new{
         icon = "resources/icons/appbar.arrow.left.up.png",
         callback = function() self:onReturn() end,
@@ -340,26 +342,34 @@ function KeyValuePage:init()
         show_parent = self,
     }
     -- group for page info
+    local chevron_left = "resources/icons/appbar.chevron.left.png"
+    local chevron_right = "resources/icons/appbar.chevron.right.png"
+    local chevron_first = "resources/icons/appbar.chevron.first.png"
+    local chevron_last = "resources/icons/appbar.chevron.last.png"
+    if BD.mirroredUILayout() then
+        chevron_left, chevron_right = chevron_right, chevron_left
+        chevron_first, chevron_last = chevron_last, chevron_first
+    end
     self.page_info_left_chev = Button:new{
-        icon = "resources/icons/appbar.chevron.left.png",
+        icon = chevron_left,
         callback = function() self:prevPage() end,
         bordersize = 0,
         show_parent = self,
     }
     self.page_info_right_chev = Button:new{
-        icon = "resources/icons/appbar.chevron.right.png",
+        icon = chevron_right,
         callback = function() self:nextPage() end,
         bordersize = 0,
         show_parent = self,
     }
     self.page_info_first_chev = Button:new{
-        icon = "resources/icons/appbar.chevron.first.png",
+        icon = chevron_first,
         callback = function() self:goToPage(1) end,
         bordersize = 0,
         show_parent = self,
     }
     self.page_info_last_chev = Button:new{
-        icon = "resources/icons/appbar.chevron.last.png",
+        icon = chevron_last,
         callback = function() self:goToPage(self.pages) end,
         bordersize = 0,
         show_parent = self,
@@ -446,6 +456,7 @@ function KeyValuePage:init()
 
     local content = OverlapGroup:new{
         dimen = self.dimen:copy(),
+        allow_mirroring = false,
         VerticalGroup:new{
             align = "left",
             self.title_bar,
@@ -557,16 +568,17 @@ function KeyValuePage:onPrevPage()
 end
 
 function KeyValuePage:onSwipe(arg, ges_ev)
-    if ges_ev.direction == "west" then
+    local direction = BD.flipDirectionIfMirroredUILayout(ges_ev.direction)
+    if direction == "west" then
         self:nextPage()
         return true
-    elseif ges_ev.direction == "east" then
+    elseif direction == "east" then
         self:prevPage()
         return true
-    elseif ges_ev.direction == "south" then
+    elseif direction == "south" then
         -- Allow easier closing with swipe down
         self:onClose()
-    elseif ges_ev.direction == "north" then
+    elseif direction == "north" then
         -- no use for now
         do end -- luacheck: ignore 541
     else -- diagonal swipe
