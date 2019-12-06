@@ -237,22 +237,24 @@ function DictQuickLookup:update()
     end
     -- dictionary title
     local close_button = CloseButton:new{ window = self, padding_top = self.title_margin, }
+    local btn_width = close_button:getSize().w + Size.padding.default * 2
     local dict_title_text = TextWidget:new{
         text = self.dictionary,
         face = self.title_face,
         bold = true,
-        width = self.width,
+        max_width = self.width - btn_width,
     }
     -- Some different UI tweaks for dict or wiki
     local lookup_word_font_size, lookup_word_padding, lookup_word_margin
+    local dict_title_widget
     if self.is_wiki then
         -- visual hint : dictionary title left adjusted, Wikipedia title centered
-        dict_title_text = CenterContainer:new{
+        dict_title_widget = CenterContainer:new{
                 dimen = Geom:new{
                     w = self.width,
                     h = dict_title_text:getSize().h,
                 },
-                dict_title_text
+                dict_title_text,
         }
         -- Wikipedia has longer titles, so use a smaller font
         lookup_word_font_size = 18
@@ -262,6 +264,7 @@ function DictQuickLookup:update()
         -- by DictQuickLookup:resyncWikiLanguages()
         self.wiki_languages_copy = self.wiki_languages and {unpack(self.wiki_languages)} or nil
     else
+        dict_title_widget = dict_title_text
         -- Usual font size for dictionary
         lookup_word_font_size = 22
         lookup_word_padding = self.word_padding
@@ -271,7 +274,7 @@ function DictQuickLookup:update()
         padding = self.title_padding,
         margin = self.title_margin,
         bordersize = 0,
-        dict_title_text
+        dict_title_widget,
     }
     -- lookup word
     local lookup_word = Button:new{
@@ -507,7 +510,7 @@ function DictQuickLookup:update()
         close_button,
     }
     -- Fix dict title max width now that we know the final width
-    dict_title_text.width = self.dict_bar.dimen.w - close_button:getSize().w
+    dict_title_text:setMaxWidth(self.dict_bar.dimen.w - close_button:getSize().w)
 
     self.dict_frame = FrameContainer:new{
         radius = Size.radius.window,
