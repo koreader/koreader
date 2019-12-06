@@ -611,6 +611,7 @@ function Menu:init()
         self.path_text = TextWidget:new{
             face = Font:getFace("xx_smallinfofont"),
             text = self.path,
+            para_direction_rtl = false, -- force LTR
             max_width = self.dimen.w - 2*Size.padding.small,
             truncate_left = true,
         }

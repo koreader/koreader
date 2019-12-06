@@ -312,6 +312,9 @@ function DictQuickLookup:update()
             dialog = self,
             -- allow for disabling justification
             justified = G_reader_settings:nilOrTrue("dict_justify"),
+            lang = self.lang and self.lang:lower(), -- only available on wikipedia results
+            para_direction_rtl = self.rtl_lang,     -- only available on wikipedia results
+            auto_para_direction = not self.is_wiki, -- only for dict results (we don't know their lang)
             image_alt_face = self.image_alt_face,
             images = self.images,
         }
@@ -659,6 +662,7 @@ function DictQuickLookup:changeDictionary(index)
     self.is_html = self.results[index].is_html
     self.css = self.results[index].css
     self.lang = self.results[index].lang
+    self.rtl_lang = self.results[index].rtl_lang
     self.images = self.results[index].images
     if self.images and #self.images > 0 then
         -- We'll be giving some images to textboxwidget that will
