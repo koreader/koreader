@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
@@ -304,7 +305,11 @@ function ReaderRolling:setupTouchZones()
         ratio_w = DDOUBLE_TAP_ZONE_PREV_CHAPTER.w, ratio_h = DDOUBLE_TAP_ZONE_PREV_CHAPTER.h,
     }
 
+    local do_mirror = BD.mirroredUILayout()
     if self.inverse_reading_order then
+        do_mirror = not do_mirror
+    end
+    if do_mirror then
         forward_zone.ratio_x = 1 - forward_zone.ratio_x - forward_zone.ratio_w
         backward_zone.ratio_x = 1 - backward_zone.ratio_x - backward_zone.ratio_w
 
@@ -464,13 +469,14 @@ function ReaderRolling:getLastPercent()
 end
 
 function ReaderRolling:onSwipe(_, ges)
-    if ges.direction == "west" then
+    local direction = BD.flipDirectionIfMirroredUILayout(ges.direction)
+    if direction == "west" then
         if self.inverse_reading_order then
             self:onGotoViewRel(-1)
         else
             self:onGotoViewRel(1)
         end
-    elseif ges.direction == "east" then
+    elseif direction == "east" then
         if self.inverse_reading_order then
             self:onGotoViewRel(1)
         else
@@ -597,20 +603,36 @@ function ReaderRolling:onGotoXPointer(xp, marker_xp)
         -- Make it 4/5 of left margin wide (and bigger when huge margin)
         local marker_w = math.floor(math.max(doc_margins["left"] - Screen:scaleBySize(5), doc_margins["left"] * 4/5))
 
-        if self.ui.document:getVisiblePageCount() > 1 and screen_x > Screen:getWidth() / 2 then
-            -- On right page in 2-pages mode
-            -- We could show the marker on the right of the page with:
-            --   screen_x = Screen:getWidth() - marker_w
-            -- But it's best to show it on the left of text, so in
-            -- the middle margin, so it still shows just left of a
-            -- footnote number.
-            -- This is a bit tricky with how the middle margin is sized
-            -- by crengine (see LVDocView::updateLayout() in lvdocview.cpp)
-            screen_x = Screen:getWidth() / 2
-            local page2_x = self.ui.document:getPageOffsetX(self.ui.document:getCurrentPage()+1)
-            marker_w = page2_x + marker_w - screen_x
-        else
-            screen_x = 0
+        if self.ui.document:getVisiblePageCount() > 1 then -- 2-pages mode
+            if screen_x < Screen:getWidth() / 2 then -- On left page
+                if BD.mirroredUILayout() then
+                    -- In the middle margin, on the right of text
+                    -- Same trick as below, assuming page2_x is equal to page 1 right x
+                    screen_x = Screen:getWidth() / 2
+                    local page2_x = self.ui.document:getPageOffsetX(self.ui.document:getCurrentPage()+1)
+                    marker_w = page2_x + marker_w - screen_x
+                    screen_x = screen_x - marker_w
+                else
+                    screen_x = 0 -- In left page left margin
+                end
+            else -- On right page
+                if BD.mirroredUILayout() then
+                    screen_x = Screen:getWidth() - marker_w -- In right page right margin
+                else
+                    -- In the middle margin, on the left of text
+                    -- This is a bit tricky with how the middle margin is sized
+                    -- by crengine (see LVDocView::updateLayout() in lvdocview.cpp)
+                    screen_x = Screen:getWidth() / 2
+                    local page2_x = self.ui.document:getPageOffsetX(self.ui.document:getCurrentPage()+1)
+                    marker_w = page2_x + marker_w - screen_x
+                end
+            end
+        else -- 1-page mode
+            if BD.mirroredUILayout() then
+                screen_x = Screen:getWidth() - marker_w -- In right margin
+            else
+                screen_x = 0 -- In left margin
+            end
         end
 
         self.mark_func = function()

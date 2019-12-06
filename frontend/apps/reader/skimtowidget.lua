@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
@@ -91,7 +92,7 @@ function SkimToWidget:init()
             text = dialog_title,
             face = self.title_face,
             bold = true,
-            width = self.screen_width * 0.95,
+            max_width = self.screen_width * 0.95,
         },
     }
 
@@ -198,8 +199,16 @@ function SkimToWidget:init()
         end,
     }
 
+    local chapter_next_text = "▷│"
+    local chapter_prev_text = "│◁"
+    local bookmark_next_text = "☆▷"
+    local bookmark_prev_text = "◁☆"
+    if BD.mirroredUILayout() then
+        chapter_next_text, chapter_prev_text = chapter_prev_text, chapter_next_text
+        bookmark_next_text, bookmark_prev_text = bookmark_prev_text, bookmark_next_text
+    end
     local button_chapter_next = Button:new{
-        text = '▷│',
+        text = chapter_next_text,
         bordersize = self.button_bordersize,
         margin = self.button_margin,
         radius = 0,
@@ -218,7 +227,7 @@ function SkimToWidget:init()
     }
 
     local button_chapter_prev = Button:new{
-        text = "│◁",
+        text = chapter_prev_text,
         bordersize = self.button_bordersize,
         margin = self.button_margin,
         radius = 0,
@@ -237,7 +246,7 @@ function SkimToWidget:init()
     }
 
     local button_bookmark_next = Button:new{
-        text = "☆▷",
+        text = bookmark_next_text,
         bordersize = self.button_bordersize,
         margin = self.button_margin,
         radius = 0,
@@ -265,7 +274,7 @@ function SkimToWidget:init()
     }
 
     local button_bookmark_prev = Button:new{
-        text = "◁☆",
+        text = bookmark_prev_text,
         bordersize = self.button_bordersize,
         margin = self.button_margin,
         radius = 0,
@@ -420,9 +429,10 @@ end
 
 function SkimToWidget:onTapProgress(arg, ges_ev)
     if ges_ev.pos:intersectWith(self.progress_bar.dimen) then
-        local width = self.progress_bar.dimen.w
-        local pos = ges_ev.pos.x - self.progress_bar.dimen.x
-        local perc = pos / width
+        local perc = self.progress_bar:getPercentageFromPosition(ges_ev.pos)
+        if not perc then
+            return true
+        end
         local page = Math.round(perc * self.page_count)
         self:addOriginToLocationStack()
         self.ui:handleEvent(Event:new("GotoPage", page ))

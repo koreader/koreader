@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
 local Device = require("device")
 local Event = require("ui/event")
@@ -350,9 +351,19 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
     }
 
     if not self.ui.document.info.has_pages then
+        local start_prev = "◁⇱"
+        local start_next = "⇱▷"
+        local end_prev = "◁⇲"
+        local end_next = "⇲▷"
+        if BD.mirroredUILayout() then
+            -- Sadly, there's only north west & south east arrow to corner,
+            -- north east and south west do not exist in Unicode.
+            start_prev, start_next = BD.ltr(start_next), BD.ltr(start_prev)
+            end_prev, end_next = BD.ltr(end_next), BD.ltr(end_prev)
+        end
         table.insert(buttons, {
             {
-                text = "◁⇱",
+                text = start_prev,
                 callback = function()
                     self:updateHighlight(page, index, 0, -1, false)
                 end,
@@ -362,7 +373,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
                 end
             },
             {
-                text = "⇱▷",
+                text = start_next,
                 callback = function()
                     self:updateHighlight(page, index, 0, 1, false)
                 end,
@@ -372,7 +383,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
                 end
             },
             {
-                text = "◁⇲",
+                text = end_prev,
                 callback = function()
                     self:updateHighlight(page, index, 1, -1, false)
                 end,
@@ -381,7 +392,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
                 end
             },
             {
-                text = "⇲▷",
+                text = end_next,
                 callback = function()
                     self:updateHighlight(page, index, 1, 1, false)
                 end,
@@ -577,6 +588,14 @@ function ReaderHighlight:onHoldPan(_, ges)
                                   and self.holdpan_pos.x < 1/8*Screen:getWidth()
         local is_in_bottom_right_corner = self.holdpan_pos.y > 7/8*Screen:getHeight()
                                       and self.holdpan_pos.x > 7/8*Screen:getWidth()
+        if BD.mirroredUILayout() then
+            -- Note: this might not be really usable, as crengine native selection
+            -- is not adapted to RTL text
+            is_in_top_left_corner = self.holdpan_pos.y < 1/8*Screen:getHeight()
+                                      and self.holdpan_pos.x > 7/8*Screen:getWidth()
+            is_in_bottom_right_corner = self.holdpan_pos.y > 7/8*Screen:getHeight()
+                                          and self.holdpan_pos.x < 1/8*Screen:getWidth()
+        end
         if is_in_top_left_corner or is_in_bottom_right_corner then
             if self.was_in_some_corner then
                 -- Do nothing, wait for the user to move his finger out of that corner
