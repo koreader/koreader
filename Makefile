@@ -504,7 +504,9 @@ pot:
 	$(MAKE) -C l10n push
 
 po:
-	git submodule update --remote l10n
+	$(MAKE) -C l10n pull
+	# After Weblate migration
+	#git submodule update --remote l10n
 
 
 static-check:
