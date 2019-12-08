@@ -129,6 +129,8 @@ function OTAManager:getOTAModel()
         return "pocketbook"
     elseif Device:isSonyPRSTUX() then
         return "sony-prstux"
+	elseif Device:isRemarkable() then
+		return "remarkable"
     else
         return ""
     end
