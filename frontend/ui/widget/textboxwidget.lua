@@ -38,7 +38,9 @@ local TextBoxWidget = InputContainer:new{
     alignment = "left", -- or "center", "right"
     dialog = nil, -- parent dialog that will be set dirty
     face = nil,
-    bold = nil,
+    bold = nil,   -- use bold=true to use a real bold font (or synthetized if not available),
+                  -- or bold=Font.FORCE_SYNTHETIZED_BOLD to force using synthetized bold,
+                  -- which, with XText, makes a bold string the same width as it non-bolded.
     line_height = 0.3, -- in em
     fgcolor = Blitbuffer.COLOR_BLACK,
     width = Screen:scaleBySize(400), -- in pixels
@@ -59,6 +61,7 @@ local TextBoxWidget = InputContainer:new{
     text_height = nil,    -- adjusted height to visible text (lines_per_page*line_height_px)
     cursor_line = nil, -- LineWidget to draw the vertical cursor.
     _bb = nil,
+    _face_adjusted = nil,
 
     -- We can provide a list of images: each image will be displayed on each
     -- scrolled page, in its top right corner (if more images than pages, remaining
@@ -99,6 +102,15 @@ local TextBoxWidget = InputContainer:new{
 }
 
 function TextBoxWidget:init()
+    if not self._face_adjusted then
+        self._face_adjusted = true -- only do that once
+        -- If self.bold, or if self.face is a real bold face, we may need to use
+        -- an alternative instance of self.face, with possibly the associated
+        -- real bold font, and/or with tweaks so fallback fonts are rendered bold
+        -- too, without affecting the regular self.face
+        self.face, self.bold = Font:getAdjustedFace(self.face, self.bold)
+    end
+
     self.line_height_px = Math.round( (1 + self.line_height) * self.face.size )
     self.cursor_line = LineWidget:new{
         dimen = Geom:new{
