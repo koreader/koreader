@@ -64,9 +64,7 @@ local function isInFontsBlacklist(f)
 end
 
 local function getExternalFontDir()
-    if CanvasContext.isAndroid() then
-        return require("frontend/ui/elements/font_settings"):getAndroidPath()
-    elseif CanvasContext.isDesktop() then
+    if CanvasContext.isAndroid() or CanvasContext.isDesktop() then
         return require("frontend/ui/elements/font_settings"):getPath()
     else
         return os.getenv("EXT_FONT_DIR")

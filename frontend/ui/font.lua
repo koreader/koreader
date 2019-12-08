@@ -2,8 +2,6 @@
 Font module.
 ]]
 
-local is_android = pcall(require, "android")
-
 local FontList = require("fontlist")
 local Freetype = require("ffi/freetype")
 local Screen = require("device").screen
@@ -88,10 +86,6 @@ local Font = {
     -- face table
     faces = {},
 }
-
-if is_android then
-    table.insert(Font.fallbacks, 3, "DroidSansFallback.ttf") -- for some ancient pre-4.4 Androids
-end
 
 -- Synthetized bold strength can be tuned:
 -- local bold_strength_factor = 1   -- really too bold
