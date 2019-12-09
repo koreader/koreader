@@ -287,7 +287,7 @@ function MyClipping:parseHistoryFile(clippings, history_file, doc_file)
             title = title,
             author = author,
         }
-        self:parseHighlight(stored.highlight, stored.bookmarks, clippings.title)
+        self:parseHighlight(stored.highlight, stored.bookmarks, clippings[title])
     end
 end
 
