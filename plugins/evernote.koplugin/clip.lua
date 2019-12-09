@@ -318,7 +318,7 @@ function MyClipping:parseCurrentDoc(view)
         title = title,
         author = author,
     }
-    self:parseHighlight(view.highlight.saved, view.ui.bookmark.bookmarks, clippings.title)
+    self:parseHighlight(view.highlight.saved, view.ui.bookmark.bookmarks, clippings[title])
 
     return clippings
 end
