@@ -1,3 +1,4 @@
+local Device = require("device")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -9,6 +10,7 @@ local util = require("util")
 local _ = require("gettext")
 local C_ = _.pgettext
 local T = require("ffi/util").template
+local Screen = Device.screen
 
 local ReaderHyphenation = InputContainer:new{
     hyph_menu_title = _("Hyphenation"),
@@ -32,15 +34,23 @@ function ReaderHyphenation:init()
             return T(_("Left/right minimal sizes: %1"), limits_text)
         end,
         callback = function()
-            local HyphenationLimitsWidget = require("ui/widget/hyphenationlimits")
+            local DoubleSpinWidget = require("/ui/widget/doublespinwidget")
             local hyph_settings = self.hyph_algs_settings[self.hyph_alg] or {}
             local alg_left_hyphen_min = hyph_settings.left_hyphen_min
             local alg_right_hyphen_min = hyph_settings.right_hyphen_min
-            local hyph_limits_widget = HyphenationLimitsWidget:new{
+            local hyph_limits_widget = DoubleSpinWidget:new{
                 left_value = G_reader_settings:readSetting("hyph_left_hyphen_min") or alg_left_hyphen_min or 2,
                 right_value = G_reader_settings:readSetting("hyph_right_hyphen_min") or alg_right_hyphen_min or 2,
                 left_default = alg_left_hyphen_min or 2,
                 right_default = alg_right_hyphen_min or 2,
+                -- let room on the widget sides so we can see
+                -- the hyphenation changes happening
+                width = Screen:getWidth() * 0.6,
+                title_text = _("Hyphenation limits"),
+                info_text = _([[
+Set minimum length before hyphenation occurs.
+These settings will apply to all books with any hyphenation dictionary.
+'Use language defaults' resets them.]]),
                 callback = function(left_hyphen_min, right_hyphen_min)
                     G_reader_settings:saveSetting("hyph_left_hyphen_min", left_hyphen_min)
                     G_reader_settings:saveSetting("hyph_right_hyphen_min", right_hyphen_min)
