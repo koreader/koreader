@@ -43,12 +43,19 @@ local symbol_prefix = {
     letters = {
         time = nil,
         pages_left = "=>",
+        -- @translators This is the footer letter prefix for battery % remaining.
         battery = C_("FooterLetterPrefix", "B:"),
+        -- @translators This is the footer letter prefix for percentage read.
         percentage = C_("FooterLetterPrefix", "R:"),
+        -- @translators This is the footer letter prefix for book time to read.
         book_time_to_read = C_("FooterLetterPrefix", "TB:"),
+        -- @translators This is the footer letter prefix for chapter time to read.
         chapter_time_to_read = C_("FooterLetterPrefix", "TC:"),
+        -- @translators This is the footer letter prefix for frontlight level.
         frontlight = C_("FooterLetterPrefix", "L:"),
+        -- @translators This is the footer letter prefix for memory usage.
         mem_usage = C_("FooterLetterPrefix", "M:"),
+        -- @translators This is the footer letter prefix for wifi status.
         wifi_status = C_("FooterLetterPrefix", "W:"),
     },
     icons = {
