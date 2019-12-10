@@ -51,21 +51,27 @@ function LuaData:open(file_path, o) -- luacheck: ignore 312
         end
     end
 
-    local ok = pcall(dofile, new.file)
-
-    if ok then
-        logger.dbg("data is read from ", new.file)
-    else
-        logger.dbg(new.file, " is invalid, remove.")
-        os.remove(new.file)
+    local ok = false
+    if lfs.attributes(new.file, "mode") == "file" then
+        ok = pcall(dofile, new.file)
+        if ok then
+            logger.dbg("data is read from ", new.file)
+        else
+            logger.dbg(new.file, " is invalid, remove.")
+            os.remove(new.file)
+        end
+    end
+    if not ok then
         for i=1, self.max_backups, 1 do
             local backup_file = new.file..".old."..i
-            if pcall(dofile, backup_file) then
-                logger.dbg("data is read from ", backup_file)
-                break
-            else
-                logger.dbg(backup_file, " is invalid, remove.")
-                os.remove(backup_file)
+            if lfs.attributes(backup_file, "mode") == "file" then
+                if pcall(dofile, backup_file) then
+                    logger.dbg("data is read from ", backup_file)
+                    break
+                else
+                    logger.dbg(backup_file, " is invalid, remove.")
+                    os.remove(backup_file)
+                end
             end
         end
     end

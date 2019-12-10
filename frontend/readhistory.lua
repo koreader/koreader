@@ -1,10 +1,11 @@
 local DataStorage = require("datastorage")
 local DocSettings = require("docsettings")
 local dump = require("dump")
+local ffiutil = require("ffi/util")
 local getFriendlySize = require("util").getFriendlySize
-local joinPath = require("ffi/util").joinPath
+local joinPath = ffiutil.joinPath
 local lfs = require("libs/libkoreader-lfs")
-local realpath = require("ffi/util").realpath
+local realpath = ffiutil.realpath
 
 local history_file = joinPath(DataStorage:getDataDir(), "history.lua")
 
@@ -91,6 +92,7 @@ function ReadHistory:_flush()
     end
     local f = io.open(history_file, "w")
     f:write("return " .. dump(content) .. "\n")
+    ffiutil.fsyncOpenedFile(f) -- force flush to the storage device
     f:close()
 end
 

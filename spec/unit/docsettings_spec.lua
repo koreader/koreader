@@ -100,6 +100,12 @@ describe("docsettings module", function()
         d:flush()
         -- metadata.pdf.lua should be generated.
         assert.Equals("file", lfs.attributes(d.sidecar_file, "mode"))
+        d:flush()
+        -- metadata.pdf.lua.old should not yet be generated.
+        assert.are.not_equal("file", lfs.attributes(d.sidecar_file .. ".old", "mode"))
+        -- make metadata.pdf.lua older to bypass 60s age needed for .old rotation
+        local minutes_ago = os.time() - 120
+        lfs.touch(d.sidecar_file, minutes_ago)
         d:close()
         -- metadata.pdf.lua and metadata.pdf.lua.old should be generated.
         assert.Equals("file", lfs.attributes(d.sidecar_file, "mode"))
@@ -152,6 +158,9 @@ describe("docsettings module", function()
             d:flush()
             -- metadata.pdf.lua should be generated.
             assert.Equals("file", lfs.attributes(d.sidecar_file, "mode"))
+            -- make metadata.pdf.lua older to bypass 60s age needed for .old rotation
+            local minutes_ago = os.time() - 120
+            lfs.touch(d.sidecar_file, minutes_ago)
             d:close()
             -- metadata.pdf.lua and metadata.pdf.lua.old should be generated.
             assert.Equals("file", lfs.attributes(d.sidecar_file, "mode"))
@@ -182,6 +191,9 @@ describe("docsettings module", function()
             d:flush()
             -- metadata.pdf.lua should be generated.
             assert.Equals("file", lfs.attributes(d.sidecar_file, "mode"))
+            -- make metadata.pdf.lua older to bypass 60s age needed for .old rotation
+            local minutes_ago = os.time() - 120
+            lfs.touch(d.sidecar_file, minutes_ago)
             d:close()
             -- metadata.pdf.lua and metadata.pdf.lua.old should be generated.
             assert.Equals("file", lfs.attributes(d.sidecar_file, "mode"))
