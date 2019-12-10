@@ -11,7 +11,7 @@ function DataStorage:getDataDir()
     if data_dir then return data_dir end
 
     if isAndroid then
-        data_dir = android.externalStorage() .. "/koreader"
+        data_dir = android.getExternalStoragePath() .. "/koreader"
     elseif os.getenv("UBUNTU_APPLICATION_ISOLATION") then
         local app_id = os.getenv("APP_ID")
         local package_name = app_id:match("^(.-)_")
