@@ -20,7 +20,11 @@ local function getCodename()
     local api = android.app.activity.sdkVersion
     local codename = ""
 
-    if api > 27 then
+    if api > 29 then
+        codename = "R"
+    elseif api == 29 then
+        codename = "Q"
+    elseif api == 28 then
         codename = "Pie"
     elseif api == 27 or api == 26 then
         codename = "Oreo"
