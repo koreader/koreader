@@ -39,7 +39,7 @@ function ReaderHyphenation:init()
             local alg_left_hyphen_min = hyph_settings.left_hyphen_min
             local alg_right_hyphen_min = hyph_settings.right_hyphen_min
             local hyph_limits_widget = DoubleSpinWidget:new{
-                -- Min (2) and max (10) values are enforced by crengine
+                -- Min (1) and max (10) values are enforced by crengine
                 left_value = G_reader_settings:readSetting("hyph_left_hyphen_min") or alg_left_hyphen_min or 2,
                 left_min = 1,
                 left_max = 10,
