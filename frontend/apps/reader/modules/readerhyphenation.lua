@@ -39,13 +39,20 @@ function ReaderHyphenation:init()
             local alg_left_hyphen_min = hyph_settings.left_hyphen_min
             local alg_right_hyphen_min = hyph_settings.right_hyphen_min
             local hyph_limits_widget = DoubleSpinWidget:new{
+                -- Min (2) and max (10) values are enforced by crengine
                 left_value = G_reader_settings:readSetting("hyph_left_hyphen_min") or alg_left_hyphen_min or 2,
+                left_min = 1,
+                left_max = 10,
                 right_value = G_reader_settings:readSetting("hyph_right_hyphen_min") or alg_right_hyphen_min or 2,
+                right_min = 1,
+                right_max = 10,
                 left_default = alg_left_hyphen_min or 2,
                 right_default = alg_right_hyphen_min or 2,
                 -- let room on the widget sides so we can see
                 -- the hyphenation changes happening
                 width = Screen:getWidth() * 0.6,
+                default_values = true,
+                default_text = _("Use language defaults"),
                 title_text = _("Hyphenation limits"),
                 info_text = _([[
 Set minimum length before hyphenation occurs.

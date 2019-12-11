@@ -30,16 +30,18 @@ local DoubleSpinWidget = InputContainer:new{
     width = nil,
     height = nil,
     left_min = 1,
-    left_max = 10,
-    left_value = 2,
+    left_max = 20,
+    left_value = 1,
     left_default = nil,
     left_text = _("Left"),
     right_min = 1,
-    right_max = 10,
-    right_value = 2,
+    right_max = 20,
+    right_value = 1,
     right_default = nil,
     right_text = _("Right"),
-    button_default_text = _("Use language defaults"),
+    -- set this to see extra default button
+    default_values = nil,
+    default_text = _("Use defaults"),
 }
 
 function DoubleSpinWidget:init()
@@ -182,9 +184,11 @@ function DoubleSpinWidget:update()
                 end,
             },
         },
-        {
+    }
+    if self.default_values then
+        table.insert(buttons,{
             {
-                text = self.button_default_text,
+                text = self.default_text,
                 callback = function()
                     left_widget.value = self.left_default
                     right_widget.value = self.right_default
@@ -192,9 +196,9 @@ function DoubleSpinWidget:update()
                     right_widget:update()
                     self.callback(nil, nil)
                 end,
-            },
-        }
-    }
+            }
+        })
+    end
 
     local button_table = ButtonTable:new{
         width = self.width - 2*Size.padding.default,
