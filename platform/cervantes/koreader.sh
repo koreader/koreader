@@ -34,6 +34,8 @@ ko_update_check() {
         fi
         rm -f "${NEWUPDATE}" # always purge newupdate in all cases to prevent update loop
         unset BLOCKS CPOINTS
+        # Ensure everything is flushed to disk before we restart. This *will* stall for a while on slow storage!
+        sync
     fi
 }
 
