@@ -18,6 +18,14 @@ if not G_reader_settings:readSetting("device_id") then
     G_reader_settings:saveSetting("device_id", random.uuid())
 end
 
+-- DAUTO_SAVE_PAGING_COUNT was set to nil in defaults.lua, but
+-- could be overriden in defaults.persistent.lua with a value
+-- that was also used here as the interval for auto sync.
+-- DAUTO_SAVE_PAGING_COUNT has been removed, but let's allow
+-- this plugin to still pick it from defaults.persistent.lua.
+--- @todo make this tunable via an added menu item below
+local SYNC_PAGING_COUNT = DAUTO_SAVE_PAGING_COUNT -- luacheck: ignore
+
 local KOSync = InputContainer:new{
     name = "kosync",
     is_doc_only = true,
@@ -616,9 +624,9 @@ function KOSync:_onPageUpdate(page)
         self.last_page = page
         self.last_page_turn_ticks = os.time()
         self.page_update_times = self.page_update_times + 1
-        if DAUTO_SAVE_PAGING_COUNT ~= nil
-        and (DAUTO_SAVE_PAGING_COUNT <= 0
-             or self.page_update_times == DAUTO_SAVE_PAGING_COUNT) then
+        if SYNC_PAGING_COUNT ~= nil
+        and (SYNC_PAGING_COUNT <= 0
+             or self.page_update_times == SYNC_PAGING_COUNT) then
             self.page_update_times = 0
             UIManager:scheduleIn(1, function() self:updateProgress() end)
         end

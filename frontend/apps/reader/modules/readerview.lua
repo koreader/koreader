@@ -939,4 +939,10 @@ function ReaderView:onReaderReady()
     self.settings_last_save_ts = os.time()
 end
 
+function ReaderView:onResume()
+    -- As settings were saved on suspend, reset this on resume,
+    -- as there's no need for a possibly immediate save.
+    self.settings_last_save_ts = os.time()
+end
+
 return ReaderView
