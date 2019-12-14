@@ -1744,6 +1744,15 @@ function TextBoxWidget:onHoldReleaseText(callback, ges)
         if sel_start_idx > sel_end_idx then -- re-order if needed
             sel_start_idx, sel_end_idx = sel_end_idx, sel_start_idx
         end
+        -- We get cursor positions, which can be after last char,
+        -- and that we need to correct. But if both positions are
+        -- after last char, the full selection is out of text.
+        if sel_start_idx > #self._xtext then -- Both are after last char
+            return true
+        end
+        if sel_end_idx > #self._xtext then -- Only end is after last char
+            sel_end_idx = #self._xtext
+        end
         -- Delegate word boundaries search to xtext.cpp, which can
         -- use libunibreak's wordbreak features.
         -- (50 is the nb of chars backward and ahead of selection indices
