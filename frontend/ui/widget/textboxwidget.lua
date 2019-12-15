@@ -311,6 +311,7 @@ function TextBoxWidget:_splitToLines()
                     offset = size+1,
                     end_offset = nil,
                     width = 0,
+                    targeted_width = targeted_width,
                 }
             end
             ln = ln + 1
