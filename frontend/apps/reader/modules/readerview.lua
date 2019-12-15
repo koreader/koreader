@@ -76,7 +76,7 @@ local ReaderView = OverlapGroup:extend{
     dogear_visible = false,
     -- in flipping state
     flipping_visible = false,
-    -- to ensure periodic settings saving
+    -- to ensure periodic flush of settings
     settings_last_save_ts = nil,
 }
 
@@ -782,23 +782,6 @@ function ReaderView:onReadSettings(config)
     self.page_overlap_style = config:readSetting("page_overlap_style") or G_reader_settings:readSetting("page_overlap_style") or "dim"
 end
 
-function ReaderView:checkAutoSaveSettings()
-    if not self.settings_last_save_ts then -- reader not yet ready
-        return
-    end
-    local interval = G_reader_settings:readSetting("auto_save_settings_interval_minutes")
-    if not interval then -- no auto save
-        return
-    end
-    if os.time() - self.settings_last_save_ts >= interval*60 then
-        self.settings_last_save_ts = os.time()
-        UIManager:nextTick(function()
-            self.ui:saveSettings()
-            self.settings_last_save_ts = os.time() -- re-set when saving done
-        end)
-    end
-end
-
 function ReaderView:onPageUpdate(new_page_no)
     self.state.page = new_page_no
     self:recalculate()
@@ -943,6 +926,23 @@ function ReaderView:onResume()
     -- As settings were saved on suspend, reset this on resume,
     -- as there's no need for a possibly immediate save.
     self.settings_last_save_ts = os.time()
+end
+
+function ReaderView:checkAutoSaveSettings()
+    if not self.settings_last_save_ts then -- reader not yet ready
+        return
+    end
+    local interval = G_reader_settings:readSetting("auto_save_settings_interval_minutes")
+    if not interval then -- no auto save
+        return
+    end
+    if os.time() - self.settings_last_save_ts >= interval*60 then
+        self.settings_last_save_ts = os.time()
+        UIManager:nextTick(function()
+            self.ui:saveSettings()
+            self.settings_last_save_ts = os.time() -- re-set when saving done
+        end)
+    end
 end
 
 return ReaderView
