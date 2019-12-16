@@ -304,6 +304,10 @@ function TextBoxWidget:_splitToLines()
             -- - Between a line end_offset= and the next line offset=, there may be only
             --   a single indice not included: the \n or the space that allowed the break.
             self.vertical_string_list[ln] = line
+            if line.no_allowed_break_met then
+                -- let the fact a long word was splitted be known
+                self.has_split_inside_word = true
+            end
             if line.hard_newline_at_eot and not line.next_start_offset then
                 -- Add an empty line to reprensent the \n at end of text
                 -- and allow positionning cursor after it
