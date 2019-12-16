@@ -201,6 +201,11 @@ function GetText_mt.__index.changeLang(new_lang)
                     local nplurals = plural_forms:match("nplurals=([0-9]+);") or 2
                     local plurals = plural_forms:match("plural=%((.*)%);")
 
+                    -- Hardcoded workaround for Romanian which has 3 plural forms.
+                    if plurals == "n==1?0:(((n%100>19)||((n%100==0)&&(n!=0)))?2:1)" then
+                        plurals = "n==1 ? 0 : (n%100>19) || ((n%100==0) && (n!=0)) ? 2 : 1"
+                    end
+
                     if not plurals then
                         -- Some languages (e.g., Arabic) may not use parentheses.
                         -- However, the following more inclusive match is more likely
