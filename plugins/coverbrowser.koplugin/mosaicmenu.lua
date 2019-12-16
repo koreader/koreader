@@ -139,6 +139,17 @@ function FakeCover:init()
         title = title:gsub("|", "\n")
         -- Also replace underscores with spaces
         title = title:gsub("_", " ")
+        -- Some filenames may also use dots as separators, but dots
+        -- can also have some meaning, so we can't just remove them.
+        -- But at least, make dots breakable (they wouldn't be if not
+        -- followed by a space), by adding to them a zero-width-space,
+        -- so the dots stay on the right of their preceeding word.
+        title = title:gsub("%.", ".\xE2\x80\x8B")
+        -- Except for a last dot near end of title that might preceed
+        -- a file extension: we'd rather want the dot and its suffix
+        -- together on a last line: so, move the zero-width-space
+        -- before it.
+        title = title:gsub("%.\xE2\x80\x8B(%w%w?%w?%w?%w?)$", "\xE2\x80\x8B.%1")
     end
     -- If multiple authors (crengine separates them with \n), we
     -- can display them on multiple lines, but limit to 3, and
@@ -233,12 +244,24 @@ function FakeCover:init()
             if not loop2  then
                 loop2 = true
                 sizedec = self.initial_sizedec -- restart from initial big size
-                -- Replace underscores and hyphens with spaces, to allow text wrap there.
-                if title then
-                    title = title:gsub("-", " "):gsub("_", " ")
-                end
-                if authors then
-                    authors = authors:gsub("-", " "):gsub("_", " ")
+                if G_reader_settings:nilOrTrue("use_xtext") then
+                    -- With Unicode/libunibreak, a break after a hyphen is allowed,
+                    -- but not around underscores and dots without any space around.
+                    -- So, append a zero-width-space to allow text wrap after them.
+                    if title then
+                        title = title:gsub("_", "_\xE2\x80\x8B"):gsub("%.", ".\xE2\x80\x8B")
+                    end
+                    if authors then
+                        authors = authors:gsub("_", "_\xE2\x80\x8B"):gsub("%.", ".\xE2\x80\x8B")
+                    end
+                else
+                    -- Replace underscores and hyphens with spaces, to allow text wrap there.
+                    if title then
+                        title = title:gsub("-", " "):gsub("_", " ")
+                    end
+                    if authors then
+                        authors = authors:gsub("-", " "):gsub("_", " ")
+                    end
                 end
             else -- 2nd loop done, no luck, give up
                 break
@@ -397,7 +420,7 @@ function MosaicMenuItem:update()
         -- Directory : rounded corners
         local margin = Screen:scaleBySize(5) -- make directories less wide
         local padding = Screen:scaleBySize(5)
-        border_size = Screen:scaleBySize(2) -- make directories bolder
+        border_size = Screen:scaleBySize(2) -- make directories' borders larger
         local dimen_in = Geom:new{
             w = dimen.w - (margin + padding + border_size)*2,
             h = dimen.h - (margin + padding + border_size)*2
@@ -406,19 +429,43 @@ function MosaicMenuItem:update()
         if text:match('/$') then -- remove /, more readable
             text = text:sub(1, -2)
         end
-        local directory = TextBoxWidget:new{
-            text = text,
-            face = Font:getFace("cfont", 20),
-            width = dimen_in.w,
-            alignment = "center",
-            bold = true,
-        }
         local nbitems = TextBoxWidget:new{
             text = self.mandatory,
             face = Font:getFace("infont", 15),
             width = dimen_in.w,
             alignment = "center",
         }
+        -- The directory name will be centered, with nbitems at bottom.
+        -- We could use 2*nbitems:getSize().h to keep that centering,
+        -- but using 3* will avoid getting the directory name stuck
+        -- to nbitems.
+        local available_height = dimen_in.h - 3 * nbitems:getSize().h
+        local dir_font_size = 20
+        local directory
+        while true do
+            if directory then
+                directory:free()
+            end
+            directory = TextBoxWidget:new{
+                text = text,
+                face = Font:getFace("cfont", dir_font_size),
+                width = dimen_in.w,
+                alignment = "center",
+                bold = true,
+            }
+            if directory:getSize().h <= available_height then
+                break
+            end
+            dir_font_size = dir_font_size - 1
+            if dir_font_size < 10 then -- don't go too low
+                directory:free()
+                directory.height = available_height
+                directory.height_adjust = true
+                directory.height_overflow_show_ellipsis = true
+                directory:init()
+                break
+            end
+        end
         widget = FrameContainer:new{
             width = dimen.w,
             height = dimen.h,

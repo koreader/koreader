@@ -648,6 +648,9 @@ function ListMenuItem:update()
             local text_widget
             local fontsize_no_bookinfo = _fontSize(18)
             repeat
+                if text_widget then
+                    text_widget:free()
+                end
                 text_widget = TextBoxWidget:new{
                     text = self.text .. hint,
                     face = Font:getFace("cfont", fontsize_no_bookinfo),
