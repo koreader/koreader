@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
@@ -285,6 +286,7 @@ function ReaderToc:onShowToc()
     -- update collapsible state
     self.expand_button = Button:new{
         icon = "resources/icons/appbar.control.expand.png",
+        icon_rotation_angle = BD.mirroredUILayout() and 180 or 0,
         width = Screen:scaleBySize(30),
         bordersize = 0,
         show_parent = self,
@@ -338,7 +340,7 @@ function ReaderToc:onShowToc()
                     w = Screen:getWidth(),
                     h = Screen:getHeight(),
                 },
-                direction = "west"
+                direction = BD.flipDirectionIfMirroredUILayout("west")
             }
         }
     }
@@ -352,7 +354,15 @@ function ReaderToc:onShowToc()
     function toc_menu:onMenuSelect(item, pos)
         -- if toc item has expand/collapse state and tap select on the left side
         -- the state switch action is triggered, otherwise goto the linked page
-        if item.state and pos and pos.x < 0.3 then
+        local do_toggle_state = false
+        if item.state and pos and pos.x then
+            if BD.mirroredUILayout() then
+                do_toggle_state = pos.x > 0.7
+            else
+                do_toggle_state = pos.x < 0.3
+            end
+        end
+        if do_toggle_state then
             item.state.callback()
         else
             toc_menu:close_callback()

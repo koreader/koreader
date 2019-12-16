@@ -38,7 +38,9 @@ local TextBoxWidget = InputContainer:new{
     alignment = "left", -- or "center", "right"
     dialog = nil, -- parent dialog that will be set dirty
     face = nil,
-    bold = nil,
+    bold = nil,   -- use bold=true to use a real bold font (or synthetized if not available),
+                  -- or bold=Font.FORCE_SYNTHETIZED_BOLD to force using synthetized bold,
+                  -- which, with XText, makes a bold string the same width as it non-bolded.
     line_height = 0.3, -- in em
     fgcolor = Blitbuffer.COLOR_BLACK,
     width = Screen:scaleBySize(400), -- in pixels
@@ -59,6 +61,7 @@ local TextBoxWidget = InputContainer:new{
     text_height = nil,    -- adjusted height to visible text (lines_per_page*line_height_px)
     cursor_line = nil, -- LineWidget to draw the vertical cursor.
     _bb = nil,
+    _face_adjusted = nil,
 
     -- We can provide a list of images: each image will be displayed on each
     -- scrolled page, in its top right corner (if more images than pages, remaining
@@ -99,6 +102,15 @@ local TextBoxWidget = InputContainer:new{
 }
 
 function TextBoxWidget:init()
+    if not self._face_adjusted then
+        self._face_adjusted = true -- only do that once
+        -- If self.bold, or if self.face is a real bold face, we may need to use
+        -- an alternative instance of self.face, with possibly the associated
+        -- real bold font, and/or with tweaks so fallback fonts are rendered bold
+        -- too, without affecting the regular self.face
+        self.face, self.bold = Font:getAdjustedFace(self.face, self.bold)
+    end
+
     self.line_height_px = Math.round( (1 + self.line_height) * self.face.size )
     self.cursor_line = LineWidget:new{
         dimen = Geom:new{
@@ -299,6 +311,7 @@ function TextBoxWidget:_splitToLines()
                     offset = size+1,
                     end_offset = nil,
                     width = 0,
+                    targeted_width = targeted_width,
                 }
             end
             ln = ln + 1
@@ -447,14 +460,45 @@ end
 -- XText: shape a line into positionned glyphs
 function TextBoxWidget:_shapeLine(line)
     -- line is an item from self.vertical_string_list
-    if not line.end_offset then
-        return -- empty line (hard newline at end of file)
-    end
-    if line.end_offset < line.offset then
-        return -- empty line (hard newline while not at end of file)
-    end
-    if line.xglyphs then
+    if line._shaped then
         return -- already done
+    end
+    line._shaped = true
+    if not line.end_offset or line.end_offset < line.offset then
+        -- Empty line (first check above is for hard newline at end of file,
+        -- second check is for hard newline while not at end of file).
+        -- We need to set a direction on this line, so the cursor can be
+        -- positionned accordingly, on the left or on the right of the line
+        -- (for convenience, we have an empty line inherit the direction
+        -- of the previous line if non-empty)
+        local offset = line.offset
+        if not line.end_offset then -- last line with offset=#text+1
+            if offset > 1 then -- non empty text: get it from last char
+                offset = offset - 1
+            else
+                offset = nil -- no text: get _xtext specified or default direction
+            end
+        end
+        local para_dir_rtl, prev_char_para_dir_rtl = self._xtext:getParaDirection(offset)
+        line.para_is_rtl = para_dir_rtl or prev_char_para_dir_rtl
+        -- We also need to set x_start & x_end (similar to how we do it below)
+        local alignment = self.alignment
+        if not self.alignment_strict and line.para_is_rtl then
+            if alignment == "left" then
+                alignment = "right"
+            elseif alignment == "right" then
+                alignment = "left"
+            end
+        end
+        local pen_x = 0 -- when alignment == "left"
+        if alignment == "center" then
+            pen_x = line.targeted_width / 2
+        elseif alignment == "right" then
+            pen_x = line.targeted_width
+        end
+        line.x_start = pen_x
+        line.x_end = pen_x
+        return
     end
     -- Get glyphs, shaped and possibly substituted by Harfbuzz and re-ordered by FriBiDi.
     -- We'll add to 'line' this table of glyphs, with some additional
@@ -469,6 +513,7 @@ function TextBoxWidget:_shapeLine(line)
     --         ["can_extend"] = false,
     --         ["can_extend_fallback"] = false,
     --         ["is_rtl"] = false,
+    --         ["bidi_level"] = 0,
     --         ["text_index"] = 1,
     --         ["glyph"] = 68,
     --         ["font_num"] = 0,
@@ -483,6 +528,7 @@ function TextBoxWidget:_shapeLine(line)
     --         ["can_extend"] = false,
     --         ["can_extend_fallback"] = false,
     --         ["is_rtl"] = true,
+    --         ["bidi_level"] = 1,
     --         ["text_index"] = 8,
     --         ["glyph"] = 1292,
     --         ["font_num"] = 3,
@@ -496,6 +542,7 @@ function TextBoxWidget:_shapeLine(line)
     --         ["can_extend"] = false,
     --         ["can_extend_fallback"] = false,
     --         ["is_rtl"] = true,
+    --         ["bidi_level"] = 1,
     --         ["text_index"] = 8,
     --         ["glyph"] = 1321,
     --         ["font_num"] = 3,
@@ -549,6 +596,7 @@ function TextBoxWidget:_shapeLine(line)
         end
     end
 
+    line.x_start = pen_x
     local prev_cluster_start_xglyph
     for i, xglyph in ipairs(xshaping) do
         xglyph.x0 = pen_x
@@ -568,7 +616,7 @@ function TextBoxWidget:_shapeLine(line)
         -- with advance or zero-advance...), glyphs may not always be fine to position
         -- the cursor caret. For X/Y/Charpos positionning/guessing, we'll ignore
         -- glyphs that are not cluster_start, and we build here the full cluster x0/x1/w
-        -- by mergin them from all glyphs part of this cluster
+        -- by merging them from all glyphs part of this cluster
         if xglyph.is_cluster_start then
             prev_cluster_start_xglyph = xglyph
         else
@@ -580,7 +628,10 @@ function TextBoxWidget:_shapeLine(line)
             -- has a backward advance that go back the 1st glyph x0, to not mess positionning.
         end
     end
+    line.x_end = pen_x
     line.xglyphs = xshaping
+    -- (Copy para_is_rtl up into 'line', where empty lines without xglyphs have it)
+    line.para_is_rtl = line.xglyphs.para_is_rtl
     --- @todo Should we drop these when no more displayed in the page to reclaim memory,
     -- at the expense of recomputing it when back to this page?
 end
@@ -892,28 +943,22 @@ function TextBoxWidget:paintTo(bb, x, y)
 end
 
 function TextBoxWidget:onCloseWidget()
-    -- Free all resources (BlitBuffers, XText) when UIManager closes this
-    -- widget (as it won't be painted anymore), without waiting for Lua gc()
-    -- to kick in.
-    -- Free the between-renderings (between page scrolls) freeable resources
+    -- Free all resources when UIManager closes this widget
     self:free()
-    if self.use_xtext and self._xtext then
-        -- Free our self._xtext (that we can't free in :free()
-        -- as we need to keep it across renderings)
-        self._xtext:free()
-    end
 end
 
-function TextBoxWidget:free()
-    logger.dbg("TextBoxWidget:free called")
-    -- :free() is called when our parent widget is closing, and
-    -- here whenever :_renderText() is being called, to display
-    -- a new page: cancel any scheduled image update, as it
-    -- is no longer related to current page
+function TextBoxWidget:free(full)
+    -- logger.dbg("TextBoxWidget:free called")
+    -- We are called with full=false from other methods here whenever
+    -- :_renderText() is to be called to render a new page (when scrolling
+    -- inside this text, or moving the view).
+    -- Free the between-renderings freeable resources
     if self.image_update_action then
+        -- Cancel any scheduled image update, as it is no longer related to current page
         logger.dbg("TextBoxWidget:free: cancelling self.image_update_action")
         UIManager:unschedule(self.image_update_action)
     end
+    -- Free blitbuffers
     if self._bb then
         self._bb:free()
         self._bb = nil
@@ -922,10 +967,18 @@ function TextBoxWidget:free()
         self.cursor_restore_bb:free()
         self.cursor_restore_bb = nil
     end
+    if full ~= false then -- final free(): free all remaining resources
+        if self.use_xtext and self._xtext then
+            -- Allow not waiting until Lua gc() to cleanup C XText malloc'ed stuff
+            -- (we should not free it if full=false as it is re-usable across renderings)
+            self._xtext:free()
+            -- logger.dbg("TextBoxWidget:_xtext:free()")
+        end
+    end
 end
 
 function TextBoxWidget:update(scheduled_update)
-    self:free()
+    self:free(false)
     -- We set this flag so :_renderText() can know we were called from a
     -- scheduled update and so not schedule another one
     self.scheduled_update = scheduled_update
@@ -967,7 +1020,7 @@ end
 function TextBoxWidget:scrollDown()
     self.image_show_alt_text = nil -- reset image bb/alt state
     if self.virtual_line_num + self.lines_per_page <= #self.vertical_string_list then
-        self:free()
+        self:free(false)
         self.virtual_line_num = self.virtual_line_num + self.lines_per_page
         -- If last line shown, set it to be the last line of view
         -- (only if editable, as this would be confusing when reading
@@ -992,7 +1045,7 @@ end
 function TextBoxWidget:scrollUp()
     self.image_show_alt_text = nil
     if self.virtual_line_num > 1 then
-        self:free()
+        self:free(false)
         if self.virtual_line_num <= self.lines_per_page then
             self.virtual_line_num = 1
         else
@@ -1021,7 +1074,7 @@ function TextBoxWidget:scrollLines(nb_lines)
         new_line_num = #self.vertical_string_list - self.lines_per_page + 1
     end
     self.virtual_line_num = new_line_num
-    self:free()
+    self:free(false)
     self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
     if self.editable then
         local x, y = self:_getXYForCharPos() -- luacheck: no unused
@@ -1036,7 +1089,7 @@ end
 function TextBoxWidget:scrollToTop()
     self.image_show_alt_text = nil
     if self.virtual_line_num > 1 then
-        self:free()
+        self:free(false)
         self.virtual_line_num = 1
         self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
     end
@@ -1054,7 +1107,7 @@ function TextBoxWidget:scrollToBottom()
         ln = 1
     end
     if self.virtual_line_num ~= ln then
-        self:free()
+        self:free(false)
         self.virtual_line_num = ln
         self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
     end
@@ -1072,7 +1125,7 @@ function TextBoxWidget:scrollToRatio(ratio)
     local page_num = 1 + Math.round((page_count - 1) * ratio)
     local line_num = 1 + (page_num - 1) * self.lines_per_page
     if line_num ~= self.virtual_line_num then
-        self:free()
+        self:free(false)
         self.virtual_line_num = line_num
         self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
     end
@@ -1114,18 +1167,36 @@ function TextBoxWidget:_getXYForCharPos(charpos)
         end
     end
     local y = (ln - self.virtual_line_num) * self.line_height_px
+
     -- Find the x offset in the current line.
-    local x = 0
 
     if self.use_xtext then
         local line = self.vertical_string_list[ln]
         self:_shapeLine(line)
+        local x = line.x_start -- used if empty line (line.x_start = line.x_end)
         if line.xglyphs then -- non-empty line
+            -- If charpos is the end of the logical order line, it may not be at end of
+            -- visual line (it might be at start, or even in the middle, with bidi!)
+            local is_after_last_char = charpos > line.end_offset
+            if is_after_last_char then
+                -- Find the last char that is really part of this line
+                charpos = line.end_offset
+            end
             for i, xglyph in ipairs(line.xglyphs) do
                 if xglyph.is_cluster_start then -- ignore non-start cluster glyphs
                     if charpos >= xglyph.text_index and charpos < xglyph.text_index + xglyph.cluster_len then
+                        -- Correct glyph found
+                        if is_after_last_char then
+                            -- Draw on the right of this glyph if LTR, on the left if RTL
+                            if xglyph.is_rtl then
+                                x = xglyph.x0
+                            else
+                                x = xglyph.x1
+                            end
+                            break
+                        end
                         --- @todo Be more clever with RTL, and at bidi boundaries,
-                        -- may be depending on line.xglyphs.para_is_rtl.
+                        -- may be depending on line.para_is_rtl and xglyph.bidi_level
                         if xglyph.is_rtl then
                             x = xglyph.x1 -- draw cursor on the right of this RTL glyph
                         else
@@ -1144,8 +1215,6 @@ function TextBoxWidget:_getXYForCharPos(charpos)
                         break
                     end
                     x = xglyph.x1
-                    --- @todo When line.xglyphs.para_is_rtl and no x found, it should
-                    -- be the first line glyph's x0
                 end
             end
         end
@@ -1155,6 +1224,7 @@ function TextBoxWidget:_getXYForCharPos(charpos)
 
     -- Only when not self.use_xtext:
 
+    local x = 0
     local offset = self.vertical_string_list[ln].offset
     local nbchars = #self.charlist
     while offset < charpos do
@@ -1183,13 +1253,6 @@ function TextBoxWidget:getCharPosAtXY(x, y)
     elseif ln > #self.vertical_string_list then
         return #self.charlist + 1 -- return end of last line
     end
-    if x > self.vertical_string_list[ln].width then -- no need to loop thru chars
-        local pos = self.vertical_string_list[ln].end_offset
-        if not pos then -- empty last line
-            return self.vertical_string_list[ln].offset
-        end
-        return pos + 1 -- after last char
-    end
     local idx = self.vertical_string_list[ln].offset
     local end_offset = self.vertical_string_list[ln].end_offset
     if not end_offset then -- empty line
@@ -1199,7 +1262,21 @@ function TextBoxWidget:getCharPosAtXY(x, y)
     if self.use_xtext then
         local line = self.vertical_string_list[ln]
         self:_shapeLine(line)
-        --- @todo Probably some specific/inverted work if line.xglyphs.para_is_rtl
+        -- If before start of line or after end of line, no need to loop thru chars
+        -- (we return line.end_offset+1 to be after last char)
+        if x <= line.x_start then
+            if line.para_is_rtl then
+                return line.end_offset and line.end_offset + 1 or line.offset
+            else
+                return line.offset
+            end
+        elseif x > line.x_end then
+            if line.para_is_rtl then
+                return line.offset
+            else
+                return line.end_offset and line.end_offset + 1 or line.offset
+            end
+        end
         if line.xglyphs then -- non-empty line
             for i, xglyph in ipairs(line.xglyphs) do
                 if xglyph.is_cluster_start then -- ignore non-start cluster glyphs
@@ -1230,6 +1307,13 @@ function TextBoxWidget:getCharPosAtXY(x, y)
 
     -- Only when not self.use_xtext:
 
+    if x > self.vertical_string_list[ln].width then -- no need to loop thru chars
+        local pos = self.vertical_string_list[ln].end_offset
+        if not pos then -- empty last line
+            return self.vertical_string_list[ln].offset
+        end
+        return pos + 1 -- after last char
+    end
     local w = 0
     local w_prev
     while idx <= end_offset do
@@ -1293,7 +1377,7 @@ function TextBoxWidget:moveCursorToCharPos(charpos)
     end
     if self.virtual_line_num ~= self.prev_virtual_line_num then
         -- We scrolled the view: full render and refresh needed
-        self:free()
+        self:free(false)
         self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
         -- Store the original image of where we will draw the cursor, for a
         -- quick restore and two small refreshes when moving only the cursor
@@ -1660,6 +1744,15 @@ function TextBoxWidget:onHoldReleaseText(callback, ges)
         end
         if sel_start_idx > sel_end_idx then -- re-order if needed
             sel_start_idx, sel_end_idx = sel_end_idx, sel_start_idx
+        end
+        -- We get cursor positions, which can be after last char,
+        -- and that we need to correct. But if both positions are
+        -- after last char, the full selection is out of text.
+        if sel_start_idx > #self._xtext then -- Both are after last char
+            return true
+        end
+        if sel_end_idx > #self._xtext then -- Only end is after last char
+            sel_end_idx = #self._xtext
         end
         -- Delegate word boundaries search to xtext.cpp, which can
         -- use libunibreak's wordbreak features.

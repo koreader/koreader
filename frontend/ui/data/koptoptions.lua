@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local Device = require("device")
 local S = require("ui/data/strings")
 local optionsutil = require("ui/data/optionsutil")
@@ -314,5 +315,17 @@ This can also be used to remove some gray background or to convert a grayscale o
         }
     },
 }
+
+if BD.mirroredUILayout() then
+    -- The justification items {AUTO, LEFT, CENTER, RIGHT, JUSTIFY} will
+    -- be mirrored - but that's not enough: we need to swap LEFT and RIGHT,
+    -- so they appear in a more expected and balanced order to RTL users:
+    -- {JUSTIFY, LEFT, CENTER, RIGHT, AUTO}
+    local j = KoptOptions[3].options[6]
+    assert(j.name == "justification")
+    j.item_icons[2], j.item_icons[4] = j.item_icons[4], j.item_icons[2]
+    j.values[2], j.values[4] = j.values[4], j.values[2]
+    j.labels[2], j.labels[4] = j.labels[4], j.labels[2]
+end
 
 return KoptOptions

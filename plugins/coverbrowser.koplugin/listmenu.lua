@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
@@ -31,6 +32,7 @@ local _ = require("gettext")
 local N_ = _.ngettext
 local Screen = Device.screen
 local T = require("ffi/util").template
+local getMenuText = require("ui/widget/menu").getMenuText
 
 local BookInfoManager = require("bookinfomanager")
 
@@ -225,7 +227,8 @@ function ListMenuItem:update()
             text = self.mandatory,
             face = Font:getFace("infont", math.min(max_fontsize_fileinfo, _fontSize(15))),
         }
-        local wleft_width = dimen.w - wright:getSize().w
+        local pad_width = Screen:scaleBySize(10) -- on the left, in between, and on the right
+        local wleft_width = dimen.w - wright:getWidth() - 3*pad_width
         local wleft = TextBoxWidget:new{
             text = self.text,
             face = Font:getFace("cfont", _fontSize(20)),
@@ -238,7 +241,7 @@ function ListMenuItem:update()
             LeftContainer:new{
                 dimen = dimen,
                 HorizontalGroup:new{
-                    HorizontalSpan:new{ width = Screen:scaleBySize(10) },
+                    HorizontalSpan:new{ width = pad_width },
                     wleft,
                 }
             },
@@ -246,7 +249,7 @@ function ListMenuItem:update()
                 dimen = dimen,
                 HorizontalGroup:new{
                     wright,
-                    HorizontalSpan:new{ width = Screen:scaleBySize(10) },
+                    HorizontalSpan:new{ width = pad_width },
                 },
             },
         }
@@ -338,7 +341,7 @@ function ListMenuItem:update()
             local filename_without_suffix, filetype = util.splitFileNameSuffix(filename)
             local fileinfo_str = filetype
             if self.mandatory then
-                fileinfo_str = self.mandatory .. "  " .. fileinfo_str
+                fileinfo_str = self.mandatory .. "  " .. BD.wrap(fileinfo_str)
             end
             if bookinfo._no_provider then
                 -- for unspported files: don't show extension on the right,
@@ -451,7 +454,7 @@ function ListMenuItem:update()
                 end
                 corner_mark = ImageWidget:new{
                     file = "resources/icons/dogear.png",
-                    rotation_angle = 270,
+                    rotation_angle = BD.mirroredUILayout() and 180 or 270,
                     width = corner_mark_size,
                     height = corner_mark_size,
                 }
@@ -694,7 +697,12 @@ function ListMenuItem:paintTo(bb, x, y)
     if self.shortcut_icon then
         -- align it on bottom left corner of sub-widget
         local target = self[1][1][2]
-        local ix = 0
+        local ix
+        if BD.mirroredUILayout() then
+            ix = target.dimen.w - self.shortcut_icon.dimen.w
+        else
+            ix = 0
+        end
         local iy = target.dimen.h - self.shortcut_icon.dimen.h
         self.shortcut_icon:paintTo(bb, x+ix, y+iy)
     end
@@ -702,7 +710,12 @@ function ListMenuItem:paintTo(bb, x, y)
     -- to which we paint over a dogear if needed
     if corner_mark and self.do_hint_opened and self.been_opened then
         -- align it on bottom right corner of widget
-        local ix = self.width - corner_mark:getSize().w
+        local ix
+        if BD.mirroredUILayout() then
+            ix = 0
+        else
+            ix = self.width - corner_mark:getSize().w
+        end
         local iy = self.height - corner_mark:getSize().h
         corner_mark:paintTo(bb, x+ix, y+iy)
     end
@@ -715,10 +728,22 @@ function ListMenuItem:paintTo(bb, x, y)
         if self.do_cover_image and target[1][1][1] then
             -- it has an image, align it on image's framecontainer's right border
             target = target[1][1]
-            bb:paintBorder(target.dimen.x + target.dimen.w - 1, target.dimen.y, d_w, d_h, 1)
+            local ix
+            if BD.mirroredUILayout() then
+                ix = target.dimen.x - d_w + 1
+            else
+                ix = target.dimen.x + target.dimen.w - 1
+            end
+            bb:paintBorder(ix, target.dimen.y, d_w, d_h, 1)
         else
             -- no image, align it to the left border
-            bb:paintBorder(x, y, d_w, d_h, 1)
+            local ix
+            if BD.mirroredUILayout() then
+                ix = target.dimen.x + target.dimen.w - d_w
+            else
+                ix = x
+            end
+            bb:paintBorder(ix, y, d_w, d_h, 1)
         end
     end
 end
@@ -883,7 +908,7 @@ function ListMenu:_updateItemsBuildUI()
                 height = self.item_height,
                 width = self.item_width,
                 entry = entry,
-                text = util.getMenuText(entry),
+                text = getMenuText(entry),
                 show_parent = self.show_parent,
                 mandatory = entry.mandatory,
                 dimen = self.item_dimen:new(),

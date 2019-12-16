@@ -163,6 +163,7 @@ function VirtualKey:init()
         background = Blitbuffer.COLOR_WHITE,
         radius = 0,
         padding = 0,
+        allow_mirroring = false,
         CenterContainer:new{
             dimen = Geom:new{
                 w = self.width - 2*self.bordersize,
@@ -465,11 +466,11 @@ function VirtualKeyPopup:init()
     }
     local v_key_padding = VerticalSpan:new{width = parent_key.keyboard.key_padding}
 
-    local vertical_group = VerticalGroup:new{}
-    local horizontal_group_extra = HorizontalGroup:new{}
-    local horizontal_group_top = HorizontalGroup:new{}
-    local horizontal_group_middle = HorizontalGroup:new{}
-    local horizontal_group_bottom = HorizontalGroup:new{}
+    local vertical_group = VerticalGroup:new{ allow_mirroring = false }
+    local horizontal_group_extra = HorizontalGroup:new{ allow_mirroring = false }
+    local horizontal_group_top = HorizontalGroup:new{ allow_mirroring = false }
+    local horizontal_group_middle = HorizontalGroup:new{ allow_mirroring = false }
+    local horizontal_group_bottom = HorizontalGroup:new{ allow_mirroring = false }
 
     local function horizontalRow(chars, group)
         local layout_horizontal = {}
@@ -565,6 +566,7 @@ function VirtualKeyPopup:init()
         background = Blitbuffer.COLOR_WHITE,
         radius = 0,
         padding = parent_key.keyboard.padding,
+        allow_mirroring = false,
         CenterContainer:new{
             dimen = Geom:new{
                 w = parent_key.width*num_columns + 2*Size.border.default + (num_columns)*parent_key.keyboard.key_padding,
@@ -778,9 +780,9 @@ function VirtualKeyboard:addKeys()
     local base_key_height = math.floor((self.height - (#self.KEYS + 1)*self.key_padding - 2*self.padding)/#self.KEYS)
     local h_key_padding = HorizontalSpan:new{width = self.key_padding}
     local v_key_padding = VerticalSpan:new{width = self.key_padding}
-    local vertical_group = VerticalGroup:new{}
+    local vertical_group = VerticalGroup:new{ allow_mirroring = false }
     for i = 1, #self.KEYS do
-        local horizontal_group = HorizontalGroup:new{}
+        local horizontal_group = HorizontalGroup:new{ allow_mirroring = false }
         local layout_horizontal = {}
         for j = 1, #self.KEYS[i] do
             local key
@@ -828,6 +830,7 @@ function VirtualKeyboard:addKeys()
         background = Blitbuffer.COLOR_WHITE,
         radius = 0,
         padding = self.padding,
+        allow_mirroring = false,
         CenterContainer:new{
             dimen = Geom:new{
                 w = self.width - 2*Size.border.default - 2*self.padding,

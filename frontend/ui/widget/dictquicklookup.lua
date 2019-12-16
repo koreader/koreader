@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local Button = require("ui/widget/button")
 local ButtonTable = require("ui/widget/buttontable")
@@ -237,22 +238,24 @@ function DictQuickLookup:update()
     end
     -- dictionary title
     local close_button = CloseButton:new{ window = self, padding_top = self.title_margin, }
+    local btn_width = close_button:getSize().w + Size.padding.default * 2
     local dict_title_text = TextWidget:new{
         text = self.dictionary,
         face = self.title_face,
         bold = true,
-        width = self.width,
+        max_width = self.width - btn_width,
     }
     -- Some different UI tweaks for dict or wiki
     local lookup_word_font_size, lookup_word_padding, lookup_word_margin
+    local dict_title_widget
     if self.is_wiki then
         -- visual hint : dictionary title left adjusted, Wikipedia title centered
-        dict_title_text = CenterContainer:new{
+        dict_title_widget = CenterContainer:new{
                 dimen = Geom:new{
                     w = self.width,
                     h = dict_title_text:getSize().h,
                 },
-                dict_title_text
+                dict_title_text,
         }
         -- Wikipedia has longer titles, so use a smaller font
         lookup_word_font_size = 18
@@ -262,6 +265,7 @@ function DictQuickLookup:update()
         -- by DictQuickLookup:resyncWikiLanguages()
         self.wiki_languages_copy = self.wiki_languages and {unpack(self.wiki_languages)} or nil
     else
+        dict_title_widget = dict_title_text
         -- Usual font size for dictionary
         lookup_word_font_size = 22
         lookup_word_padding = self.word_padding
@@ -271,7 +275,7 @@ function DictQuickLookup:update()
         padding = self.title_padding,
         margin = self.title_margin,
         bordersize = 0,
-        dict_title_text
+        dict_title_widget,
     }
     -- lookup word
     local lookup_word = Button:new{
@@ -309,6 +313,9 @@ function DictQuickLookup:update()
             dialog = self,
             -- allow for disabling justification
             justified = G_reader_settings:nilOrTrue("dict_justify"),
+            lang = self.lang and self.lang:lower(), -- only available on wikipedia results
+            para_direction_rtl = self.rtl_lang,     -- only available on wikipedia results
+            auto_para_direction = not self.is_wiki, -- only for dict results (we don't know their lang)
             image_alt_face = self.image_alt_face,
             images = self.images,
         }
@@ -404,10 +411,15 @@ function DictQuickLookup:update()
             },
         }
     else
+        local prev_dict_text = "◁◁"
+        local next_dict_text = "▷▷"
+        if BD.mirroredUILayout() then
+            prev_dict_text, next_dict_text = next_dict_text, prev_dict_text
+        end
         buttons = {
             {
                 {
-                    text = "◁◁",
+                    text = prev_dict_text,
                     enabled = self:isPrevDictAvaiable(),
                     callback = function()
                         self:changeToPrevDict()
@@ -426,7 +438,7 @@ function DictQuickLookup:update()
                     end,
                 },
                 {
-                    text = "▷▷",
+                    text = next_dict_text,
                     enabled = self:isNextDictAvaiable(),
                     callback = function()
                         self:changeToNextDict()
@@ -456,7 +468,10 @@ function DictQuickLookup:update()
                 {
                     -- if more than one language, enable it and display "current lang > next lang"
                     -- otherwise, just display current lang
-                    text = self.is_wiki and ( #self.wiki_languages > 1 and self.wiki_languages[1].." > "..self.wiki_languages[2] or self.wiki_languages[1] ) or _("Follow Link"),
+                    text = self.is_wiki
+                        and ( #self.wiki_languages > 1 and BD.wrap(self.wiki_languages[1]).." > "..BD.wrap(self.wiki_languages[2])
+                                                        or self.wiki_languages[1] ) -- (this " > " will be auro-mirrored by bidi)
+                        or _("Follow Link"),
                     enabled = (self.is_wiki and #self.wiki_languages > 1) or self.selected_link ~= nil,
                     callback = function()
                         if self.is_wiki then
@@ -507,7 +522,7 @@ function DictQuickLookup:update()
         close_button,
     }
     -- Fix dict title max width now that we know the final width
-    dict_title_text.width = self.dict_bar.dimen.w - close_button:getSize().w
+    dict_title_text:setMaxWidth(self.dict_bar.dimen.w - close_button:getSize().w)
 
     self.dict_frame = FrameContainer:new{
         radius = Size.radius.window,
@@ -656,6 +671,7 @@ function DictQuickLookup:changeDictionary(index)
     self.is_html = self.results[index].is_html
     self.css = self.results[index].css
     self.lang = self.results[index].lang
+    self.rtl_lang = self.results[index].rtl_lang
     self.images = self.results[index].images
     if self.images and #self.images > 0 then
         -- We'll be giving some images to textboxwidget that will
@@ -731,7 +747,7 @@ function DictQuickLookup:onTapCloseDict(arg, ges_ev)
     -- processed for scrolling definition by ScrollTextWidget, which
     -- will pop it up for us here when it can't scroll anymore).
     -- This allow for continuous reading of results' definitions with tap.
-    if ges_ev.pos.x < Screen:getWidth()/2 then
+    if BD.flipIfMirroredUILayout(ges_ev.pos.x < Screen:getWidth()/2) then
         local prev_index = self.dict_index
         self:changeToPrevDict()
         if self.dict_index ~= prev_index then
@@ -785,9 +801,10 @@ function DictQuickLookup:onSwipe(arg, ges)
     if ges.pos:intersectWith(self.definition_widget.dimen) then
     -- if we want changeDict to still work with swipe outside window :
     -- or not ges.pos:intersectWith(self.dict_frame.dimen) then
-        if ges.direction == "west" then
+        local direction = BD.flipDirectionIfMirroredUILayout(ges.direction)
+        if direction == "west" then
             self:changeToNextDict()
-        elseif ges.direction == "east" then
+        elseif direction == "east" then
             self:changeToPrevDict()
         else
             if self.refresh_callback then self.refresh_callback() end

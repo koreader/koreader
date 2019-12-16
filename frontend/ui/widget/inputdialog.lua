@@ -181,6 +181,14 @@ local InputDialog = InputContainer:new{
     button_padding = Size.padding.default,
     border_size = Size.border.window,
 
+    -- See TextBoxWidget for details about these options
+    alignment = "left",
+    justified = false,
+    lang = nil,
+    para_direction_rtl = nil,
+    auto_para_direction = false,
+    alignment_strict = false,
+
     -- for internal use
     _text_modified = false, -- previous known modified status
     _top_line_num = nil,
@@ -307,6 +315,9 @@ function InputDialog:init()
             width = self.text_width,
             padding = self.input_padding,
             margin = self.input_margin,
+            lang = self.lang, -- these might influence height
+            para_direction_rtl = self.para_direction_rtl,
+            auto_para_direction = self.auto_para_direction,
         }
         local text_height = input_widget:getTextHeight()
         local line_height = input_widget:getLineHeight()
@@ -351,6 +362,12 @@ function InputDialog:init()
         text = self.input,
         hint = self.input_hint,
         face = self.input_face,
+        alignment = self.alignment,
+        justified = self.justified,
+        lang = self.lang,
+        para_direction_rtl = self.para_direction_rtl,
+        auto_para_direction = self.auto_para_direction,
+        alignment_strict = self.alignment_strict,
         width = self.text_width,
         height = self.text_height or nil,
         padding = self.input_padding,

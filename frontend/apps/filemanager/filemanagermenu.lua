@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local CloudStorage = require("apps/cloudstorage/cloudstorage")
 local ConfirmBox = require("ui/widget/confirmbox")
@@ -399,6 +400,37 @@ function FileManagerMenu:setUpdateItemTable()
             })
         end,
     })
+    table.insert(self.menu_items.developer_options.sub_item_table, {
+        text = "UI layout mirroring and text direction",
+        sub_item_table = {
+            {
+                text = _("Reverse UI layout mirroring"),
+                checked_func = function()
+                    return G_reader_settings:isTrue("dev_reverse_ui_layout_mirroring")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrFalse("dev_reverse_ui_layout_mirroring")
+                    local InfoMessage = require("ui/widget/infomessage")
+                    UIManager:show(InfoMessage:new{
+                        text = _("This will take effect on next restart."),
+                    })
+                end
+            },
+            {
+                text = _("Reverse UI text direction"),
+                checked_func = function()
+                    return G_reader_settings:isTrue("dev_reverse_ui_text_direction")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrFalse("dev_reverse_ui_text_direction")
+                    local InfoMessage = require("ui/widget/infomessage")
+                    UIManager:show(InfoMessage:new{
+                        text = _("This will take effect on next restart."),
+                    })
+                end
+            }
+        }
+    })
 
     self.menu_items.cloud_storage = {
         text = _("Cloud storage"),
@@ -580,10 +612,10 @@ function FileManagerMenu:_getTabIndexFromLocation(ges)
         return last_tab_index
     -- if the start position is far right
     elseif ges.pos.x > 2 * Screen:getWidth() / 3 then
-        return #self.tab_item_table
+        return BD.mirroredUILayout() and 1 or #self.tab_item_table
     -- if the start position is far left
     elseif ges.pos.x < Screen:getWidth() / 3 then
-        return 1
+        return BD.mirroredUILayout() and #self.tab_item_table or 1
     -- if center return the last index
     else
         return last_tab_index

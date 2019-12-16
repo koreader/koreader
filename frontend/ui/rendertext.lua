@@ -84,6 +84,10 @@ end
 -- @bool[opt=false] bold whether the text should be measured as bold
 -- @treturn glyph
 function RenderText:getGlyph(face, charcode, bold)
+    local orig_bold = bold
+    if face.is_real_bold then
+        bold = false -- don't embolden glyphs already bold
+    end
     local hash = "glyph|"..face.hash.."|"..charcode.."|"..(bold and 1 or 0)
     local glyph = GlyphCache:check(hash)
     if glyph then
@@ -98,7 +102,7 @@ function RenderText:getGlyph(face, charcode, bold)
             if fb_face ~= nil then
             -- for some characters it cannot find in Fallbacks, it will crash here
                 if fb_face.ftface:checkGlyph(charcode) ~= 0 then
-                    rendered_glyph = fb_face.ftface:renderGlyph(charcode, bold)
+                    rendered_glyph = fb_face.ftface:renderGlyph(charcode, orig_bold)
                     break
                 end
             end
@@ -295,6 +299,9 @@ end
 -- @bool[opt=false] bold whether the glyph should be artificially boldened
 -- @treturn glyph
 function RenderText:getGlyphByIndex(face, glyphindex, bold)
+    if face.is_real_bold then
+        bold = false -- don't embolden glyphs already bold
+    end
     local hash = "xglyph|"..face.hash.."|"..glyphindex.."|"..(bold and 1 or 0)
     local glyph = GlyphCache:check(hash)
     if glyph then

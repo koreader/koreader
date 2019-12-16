@@ -928,11 +928,10 @@ function ReaderView:onReaderReady()
             end
         else
             self.autoSaveSettings = function()
+                self.auto_save_paging_count = self.auto_save_paging_count + 1
                 if self.auto_save_paging_count == DAUTO_SAVE_PAGING_COUNT then
                     self.ui:saveSettings()
                     self.auto_save_paging_count = 0
-                else
-                    self.auto_save_paging_count = self.auto_save_paging_count + 1
                 end
             end
         end

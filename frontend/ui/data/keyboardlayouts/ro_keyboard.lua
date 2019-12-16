@@ -18,7 +18,7 @@ local _u_ = ro_popup._u_
 return {
     min_layer = 1,
     max_layer = 8,
-    shiftmode_keys = {[""] = true},
+    shiftmode_keys = {[""] = true, ["1/2"] = true, ["2/2"] = true},
     symbolmode_keys = {["123"] = true, ["ABC"] = true, ["alt"] = true},
     utf8mode_keys = {["🌐"] = true},
     umlautmode_keys = {["Îșț"] = true},
@@ -50,7 +50,7 @@ return {
         },
         -- third row
         {  --  1       2       3       4       5       6       7       8
-            { label = "",
+            { "",   "",   "2/2",  "1/2",   "",   "",   "",    "",
               width = 1.5
             },
             { "Z",    "z",    "&",    "7",    "Ѣ",    "ѣ",    "Ű",    "ű", },

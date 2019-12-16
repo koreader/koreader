@@ -42,6 +42,14 @@ local InputText = InputContainer:new{
     margin = Size.margin.default,
     bordersize = Size.border.inputtext,
 
+    -- See TextBoxWidget for details about these options
+    alignment = "left",
+    justified = false,
+    lang = nil,
+    para_direction_rtl = nil,
+    auto_para_direction = false,
+    alignment_strict = false,
+
     -- for internal use
     text_widget = nil, -- Text Widget for cursor movement, possibly a ScrollTextWidget
     charlist = nil, -- table of individual chars from input string
@@ -230,6 +238,9 @@ end
 -- the text widget to have the new text splittted into possibly different
 -- lines than before
 function InputText:initTextBox(text, char_added)
+    if self.text_widget then
+        self.text_widget:free()
+    end
     self.text = text
     local fgcolor
     local show_charlist
@@ -305,6 +316,9 @@ function InputText:initTextBox(text, char_added)
             charlist = show_charlist,
             face = self.face,
             width = text_width,
+            lang = self.lang, -- these might influence height
+            para_direction_rtl = self.para_direction_rtl,
+            auto_para_direction = self.auto_para_direction,
         }
         self.height = text_widget:getTextHeight()
         self.scroll = true
@@ -319,6 +333,12 @@ function InputText:initTextBox(text, char_added)
             editable = self.focused,
             face = self.face,
             fgcolor = fgcolor,
+            alignment = self.alignment,
+            justified = self.justified,
+            lang = self.lang,
+            para_direction_rtl = self.para_direction_rtl,
+            auto_para_direction = self.auto_para_direction,
+            alignment_strict = self.alignment_strict,
             width = self.width,
             height = self.height,
             dialog = self.parent,
@@ -334,6 +354,12 @@ function InputText:initTextBox(text, char_added)
             editable = self.focused,
             face = self.face,
             fgcolor = fgcolor,
+            alignment = self.alignment,
+            justified = self.justified,
+            lang = self.lang,
+            para_direction_rtl = self.para_direction_rtl,
+            auto_para_direction = self.auto_para_direction,
+            alignment_strict = self.alignment_strict,
             width = self.width,
             height = self.height,
             dialog = self.parent,

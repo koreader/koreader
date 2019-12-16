@@ -23,6 +23,7 @@ function Terminal:start()
     self.input = InputDialog:new{
         title =  _("Enter a command and press \"Execute\""),
         input = self.command,
+        para_direction_rtl = false, -- force LTR
         text_height = Screen:getHeight() * 0.4,
         input_type = "string",
         buttons = {{{

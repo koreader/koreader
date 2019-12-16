@@ -59,7 +59,7 @@ local _z_ = en_popup._z_
 return {
     min_layer = 1,
     max_layer = 8,
-    shiftmode_keys = {[""] = true},
+    shiftmode_keys = {[""] = true, ["1/2"] = true, ["2/2"] = true,},
     symbolmode_keys = {["Sym"] = true, ["ABC"] = true},
     utf8mode_keys = {["🌐"] = true},
     umlautmode_keys = {["Äéß"] = true},
@@ -91,7 +91,7 @@ return {
         },
         -- third row
         {  --  1       2       3       4       5       6       7       8
-            { label = "",
+            { "",   "",   "2/2",  "1/2",   "",   "",   "",    "",
               width = 1.5
             },
             { _Z_,    _z_,    "&",    "7",    "Á",    "á",    "Ű",    "ű", },

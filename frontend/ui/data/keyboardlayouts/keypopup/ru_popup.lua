@@ -7,4 +7,12 @@ return {
         "ж",
         north = "ӂ", -- ж with breve (Moldavian)
     },
+    _Ye_ = {
+        "Е",
+        north = "Ё",
+    },
+    _ye_ = {
+        "е",
+        north = "ё",
+    },
 }

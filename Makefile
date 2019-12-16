@@ -350,7 +350,6 @@ androidupdate: all
 	# assets are compressed manually and stored inside the APK.
 	cd $(INSTALL_DIR)/koreader && zip -r9 \
 		../../$(ANDROID_LAUNCHER_DIR)/assets/module/koreader-$(VERSION).zip * \
-		--exclude=*fonts/droid* \
 		--exclude=*resources/fonts* \
 		--exclude=*resources/icons/src* \
 		--exclude=*share/man* \
@@ -504,7 +503,9 @@ pot:
 	$(MAKE) -C l10n push
 
 po:
-	git submodule update --remote l10n
+	$(MAKE) -C l10n pull
+	# After Weblate migration
+	#git submodule update --remote l10n
 
 
 static-check:

@@ -280,6 +280,17 @@ function util.arrayAppend(t1, t2)
     end
 end
 
+-- Reverse array elements in-place in table t
+---- @param t Lua table
+function util.arrayReverse(t)
+    local i, j = 1, #t
+    while i < j do
+        t[i], t[j] = t[j], t[i]
+        i = i + 1
+        j = j - 1
+    end
+end
+
 -- Merge t2 into t1, overwriting existing elements if they already exist
 -- Probably not safe with nested tables (c.f., https://stackoverflow.com/q/1283388)
 ---- @param t1 Lua table
@@ -681,20 +692,6 @@ function util.getFormattedSize(size)
     s = s:reverse():gsub("(%d%d%d)", "%1,")
     s = s:reverse():gsub("^,", "")
     return s
-end
-
---- Adds > to touch menu items with a submenu
-function util.getMenuText(item)
-    local text
-    if item.text_func then
-        text = item.text_func()
-    else
-        text = item.text
-    end
-    if item.sub_item_table ~= nil or item.sub_item_table_func then
-        text = text .. " ▸"
-    end
-    return text
 end
 
 --[[--

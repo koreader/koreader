@@ -1,6 +1,7 @@
 --[[--
 TouchMenu widget for hierarchical menus.
 ]]
+local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
@@ -26,9 +27,9 @@ local UIManager = require("ui/uimanager")
 local UnderlineContainer = require("ui/widget/container/underlinecontainer")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
-local util = require("ffi/util")
+local getMenuText = require("ui/widget/menu").getMenuText
 local _ = require("gettext")
-local getMenuText = require("util").getMenuText
+local T = require("ffi/util").template
 local Input = Device.input
 local Screen = Device.screen
 
@@ -247,6 +248,11 @@ function TouchMenuBar:init()
         -- we have to use local variable here for closure callback
         local _start_seg = end_seg + icon_sep_width
         local _end_seg = _start_seg + self.icon_widgets[k]:getSize().w
+        end_seg = _end_seg -- for next loop _start_seg
+
+        if BD.mirroredUILayout() then
+            _start_seg, _end_seg = self.width - _end_seg, self.width - _start_seg
+        end
 
         if k == 1 then
             self.bar_sep = LineWidget:new{
@@ -294,9 +300,15 @@ function TouchMenuBar:init()
                 -- if the active icon is the last icon then the empty bar segment has
                 -- to move over to the right by the width of a separator and the stretch width
                 if last_icon then
+                    local _start_last_seg = icon_sep_width + stretch_width + _start_seg
+                    local _end_last_seg = icon_sep_width + stretch_width + _end_seg
+                    if BD.mirroredUILayout() then
+                        _start_last_seg = _start_seg - icon_sep_width - stretch_width
+                        _end_last_seg = _end_seg - icon_sep_width - stretch_width
+                    end
                     self.bar_sep.empty_segments = {
                         {
-                            s = icon_sep_width + stretch_width + _start_seg, e = icon_sep_width + stretch_width + _end_seg
+                            s = _start_last_seg, e = _end_last_seg
                         }
                     }
                     sep.style = "solid"
@@ -327,8 +339,6 @@ function TouchMenuBar:init()
             table.insert(self.icon_seps, icon_sep_duplicate)
             table.insert(self.bar_icon_group, icon_sep_duplicate)
         end
-
-        end_seg = _end_seg
     end
 
     self[1] = FrameContainer:new{
@@ -429,14 +439,19 @@ function TouchMenu:init()
         align = "center",
     }
     -- group for page info
+    local chevron_left = "resources/icons/appbar.chevron.left.png"
+    local chevron_right = "resources/icons/appbar.chevron.right.png"
+    if BD.mirroredUILayout() then
+        chevron_left, chevron_right = chevron_right, chevron_left
+    end
     self.page_info_left_chev = Button:new{
-        icon = "resources/icons/appbar.chevron.left.png",
+        icon = chevron_left,
         callback = function() self:onPrevPage() end,
         bordersize = 0,
         show_parent = self.show_parent,
     }
     self.page_info_right_chev = Button:new{
-        icon = "resources/icons/appbar.chevron.right.png",
+        icon = chevron_right,
         callback = function() self:onNextPage() end,
         bordersize = 0,
         show_parent = self.show_parent,
@@ -592,7 +607,7 @@ function TouchMenu:updateItems()
     table.insert(self.item_group, self.footer)
     if self.page_num > 1 then
         -- @translators %1 is the current page. %2 is the total number of pages. In some languages a good translation might need to reverse this order, for instance: "Total %2, page %1".
-        self.page_info_text:setText(util.template(_("Page %1 of %2"), self.page, self.page_num))
+        self.page_info_text:setText(T(_("Page %1 of %2"), self.page, self.page_num))
     else
         self.page_info_text:setText("")
     end
@@ -609,35 +624,35 @@ function TouchMenu:updateItems()
     end
     local powerd = Device:getPowerDevice()
     local batt_lvl = powerd:getCapacity()
-    time_info_txt = time_info_txt .. " ⌁"
+    local batt_symbol
     if powerd:isCharging() then
-        time_info_txt = time_info_txt .. ""
+        batt_symbol = ""
     else
         if batt_lvl >= 100 then
-            time_info_txt = time_info_txt .. ""
+            batt_symbol = ""
         elseif batt_lvl >= 90 then
-            time_info_txt = time_info_txt .. ""
+            batt_symbol = ""
         elseif batt_lvl >= 80 then
-            time_info_txt = time_info_txt .. ""
+            batt_symbol = ""
         elseif batt_lvl >= 70 then
-            time_info_txt = time_info_txt .. ""
+            batt_symbol = ""
         elseif batt_lvl >= 60 then
-            time_info_txt = time_info_txt .. ""
+            batt_symbol = ""
         elseif batt_lvl >= 50 then
-            time_info_txt = time_info_txt .. ""
+            batt_symbol = ""
         elseif batt_lvl >= 40 then
-            time_info_txt = time_info_txt .. ""
+            batt_symbol = ""
         elseif batt_lvl >= 30 then
-            time_info_txt = time_info_txt .. ""
+            batt_symbol = ""
         elseif batt_lvl >= 20 then
-            time_info_txt = time_info_txt .. ""
+            batt_symbol = ""
         elseif batt_lvl >= 10 then
-            time_info_txt = time_info_txt .. ""
+            batt_symbol = ""
         else
-            time_info_txt = time_info_txt .. ""
+            batt_symbol = ""
         end
     end
-     time_info_txt = time_info_txt .. batt_lvl .. "%"
+    time_info_txt = BD.wrap(time_info_txt) .. " " .. BD.wrap("⌁") .. BD.wrap(batt_symbol) ..  BD.wrap(batt_lvl .. "%")
     self.time_info:setText(time_info_txt)
 
     -- recalculate dimen based on new layout
@@ -721,11 +736,12 @@ function TouchMenu:onPrevPage()
 end
 
 function TouchMenu:onSwipe(arg, ges_ev)
-    if ges_ev.direction == "west" then
+    local direction = BD.flipDirectionIfMirroredUILayout(ges_ev.direction)
+    if direction == "west" then
         self:onNextPage()
-    elseif ges_ev.direction == "east" then
+    elseif direction == "east" then
         self:onPrevPage()
-    elseif ges_ev.direction == "north" then
+    elseif direction == "north" then
         self:closeMenu()
     end
 end
