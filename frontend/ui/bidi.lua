@@ -99,6 +99,20 @@ function Bidi.setup(lang)
         Bidi.path = Bidi.nowrap
         Bidi.url = Bidi.nowrap
     end
+    -- If RTL UI text, let's have untranslated strings (so english) still rendered LTR
+    if Bidi._rtl_ui_text then
+        _.wrapUntranslated = function(text)
+            -- We need to split by line and wrap each line as LTR (as the
+            -- paragraph direction will still be RTL).
+            local lines = {}
+            for s in text:gmatch("[^\r\n]+") do
+                table.insert(lines, Bidi.ltr(s))
+            end
+            return table.concat(lines, "\n")
+        end
+    else
+        _.wrapUntranslated = _.wrapUntranslated_nowrap
+    end
 end
 
 
@@ -185,9 +199,6 @@ end
 function Bidi.wrap(text)
     return Bidi._rtl_ui_text and Bidi.rtl(text) or text
 end
-
--- See at having GetText_mt.__call() wrap untranslated strings in Bidi.ltr()
--- so they are fully displayed LTR.
 
 -- Use these specific wrappers when the wrapped content type is known
 -- (so we can easily switch to use rtl() if RTL readers prefer filenames
