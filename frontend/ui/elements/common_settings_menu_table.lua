@@ -356,7 +356,7 @@ This sets how often to rewrite to disk global settings and book metadata, includ
 
 The normal behavior is to save those only when the document is closed, or your device suspended, or when exiting KOReader.
 
-Setting it to some interval may help prevent losing new settings/sidecar data after a software crash, but will cause more I/O writes the lower the interval is,  and may wear your storage media in the long run.]])
+Setting it to some interval may help prevent losing new settings/sidecar data after a software crash, but will cause more I/O writes the lower the interval is, and may wear out your storage media in the long run.]])
 
 -- Some devices with FAT32 storage may not like having settings rewritten too often,
 -- so let that be known. See https://github.com/koreader/koreader/pull/3625
