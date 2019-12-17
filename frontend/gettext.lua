@@ -34,6 +34,15 @@ local GetText_mt = {
     __index = {}
 }
 
+-- wrapUntranslated() will be overriden by bidi.lua when UI language is RTL,
+-- to wrap untranslated english strings as LTR-isolated segments.
+-- It should do nothing when the UI language is LTR.
+GetText.wrapUntranslated_nowrap = function(text) return text end
+GetText.wrapUntranslated = GetText.wrapUntranslated_nowrap
+-- Note: this won't be possible if we switch from our Lua GetText to
+-- GetText through FFI (but hopefully, RTL languages will be fully
+-- translated by then).
+
 --[[--
 Returns a translation.
 
@@ -48,7 +57,7 @@ Returns a translation.
     local translation = _("A meaningful message.")
 --]]
 function GetText_mt.__call(gettext, msgid)
-    return gettext.translation[msgid] or msgid
+    return gettext.translation[msgid] or gettext.wrapUntranslated(msgid)
 end
 
 local function c_escape(what)
@@ -296,9 +305,9 @@ function GetText_mt.__index.ngettext(msgid, msgid_plural, n)
     local plural = GetText.getPlural(n)
 
     if plural == 0 then
-        return GetText.translation[msgid] and GetText.translation[msgid][plural] or msgid
+        return GetText.translation[msgid] and GetText.translation[msgid][plural] or GetText.wrapUntranslated(msgid)
     else
-        return GetText.translation[msgid] and GetText.translation[msgid][plural] or msgid_plural
+        return GetText.translation[msgid] and GetText.translation[msgid][plural] or GetText.wrapUntranslated(msgid_plural)
     end
 end
 
@@ -329,9 +338,9 @@ function GetText_mt.__index.npgettext(msgctxt, msgid, msgid_plural, n)
     local plural = GetText.getPlural(n)
 
     if plural == 0 then
-        return GetText.context[msgctxt] and GetText.context[msgctxt][msgid] and GetText.context[msgctxt][msgid][plural] or msgid
+        return GetText.context[msgctxt] and GetText.context[msgctxt][msgid] and GetText.context[msgctxt][msgid][plural] or GetText.wrapUntranslated(msgid)
     else
-        return GetText.context[msgctxt] and GetText.context[msgctxt][msgid] and GetText.context[msgctxt][msgid][plural] or msgid_plural
+        return GetText.context[msgctxt] and GetText.context[msgctxt][msgid] and GetText.context[msgctxt][msgid][plural] or GetText.wrapUntranslated(msgid_plural)
     end
 end
 
@@ -362,7 +371,7 @@ See [gettext contexts](https://www.gnu.org/software/gettext/manual/html_node/Con
     local copy_text = C_("Text", "Copy")
 --]]
 function GetText_mt.__index.pgettext(msgctxt, msgid)
-    return GetText.context[msgctxt] and GetText.context[msgctxt][msgid] or msgid
+    return GetText.context[msgctxt] and GetText.context[msgctxt][msgid] or GetText.wrapUntranslated(msgid)
 end
 
 setmetatable(GetText, GetText_mt)
