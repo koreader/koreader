@@ -135,6 +135,7 @@ Widget that displays an item for menu
 --]]
 local MenuItem = InputContainer:new{
     text = nil,
+    bidi_wrap_func = nil,
     show_parent = nil,
     detail = nil,
     font = "cfont",
@@ -256,6 +257,12 @@ function MenuItem:init()
     -- overflow and not be displayed, or show a tofu char when displayed by TextWidget:
     -- get rid of any \n (which could be found in highlighted text in bookmarks).
     local text = self.text:gsub("\n", " ")
+
+    -- Wrap text with provided bidi_wrap_func (only provided by FileChooser,
+    -- to correctly display filenames and directories)
+    if self.bidi_wrap_func then
+        text = self.bidi_wrap_func(text)
+    end
 
     if self.single_line then  -- items only in single line
         -- No font size change: text will be truncated if it overflows
@@ -1002,6 +1009,7 @@ function Menu:updateItems(select_number)
                 state = self.item_table[i].state,
                 state_size = self.state_size or {},
                 text = Menu.getMenuText(self.item_table[i]),
+                bidi_wrap_func = self.item_table[i].bidi_wrap_func,
                 mandatory = self.item_table[i].mandatory,
                 bold = self.item_table.current == i or self.item_table[i].bold == true,
                 dim = self.item_table[i].dim,
@@ -1307,9 +1315,6 @@ function Menu.getMenuText(item)
         text = item.text_func()
     else
         text = item.text
-    end
-    if item.bidi_wrap_func then
-        text = item.bidi_wrap_func(text)
     end
     if item.sub_item_table ~= nil or item.sub_item_table_func then
         text = string.format(sub_item_format, text)
