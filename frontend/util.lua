@@ -663,24 +663,27 @@ end
 
 --- Gets human friendly size as string
 ---- @int size (bytes)
+---- @bool right_align (by padding with spaces on the left)
 ---- @treturn string
-function util.getFriendlySize(size)
+function util.getFriendlySize(size, right_align)
+    local frac_format = right_align and "%6.1f" or "%.1f"
+    local deci_format = right_align and "%6d" or "%d"
     size = tonumber(size)
     if not size or type(size) ~= "number" then return end
     if size > 1024*1024*1024 then
         -- @translators This is an abbreviation for the gigabyte, a unit of computer memory or data storage capacity.
-        return T(_("%1 GB"), string.format("%4.1f", size/1024/1024/1024))
+        return T(_("%1 GB"), string.format(frac_format, size/1024/1024/1024))
     end
     if size > 1024*1024 then
         -- @translators This is an abbreviation for the megabyte, a unit of computer memory or data storage capacity.
-        return T(_("%1 MB"), string.format("%4.1f", size/1024/1024))
+        return T(_("%1 MB"), string.format(frac_format, size/1024/1024))
     end
     if size > 1024 then
         -- @translators This is an abbreviation for the kilobyte, a unit of computer memory or data storage capacity.
-        return T(_("%1 KB"), string.format("%4.1f", size/1024))
+        return T(_("%1 KB"), string.format(frac_format, size/1024))
     else
         -- @translators This is an abbreviation for the byte, a unit of computer memory or data storage capacity.
-        return T(_("%1 B"), string.format("%d", size))
+        return T(_("%1 B"), string.format(deci_format, size))
     end
 end
 
