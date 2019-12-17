@@ -37,6 +37,7 @@ https://material.io/design/usability/bidirectionality.html
 ]]
 
 local Language = require("ui/language")
+local util = require("util")
 local _ = require("gettext")
 
 local Bidi = {
@@ -78,13 +79,25 @@ function Bidi.setup(lang)
             xtext.setDefaultLang(alt_lang)
         end
     end
-    -- Optimise Bidi.default and Bidi.wrap by aliasing them to the right wrappers
+    -- Optimise some wrappers by aliasing them to the right wrappers
     if Bidi._rtl_ui_text then
         Bidi.default = Bidi.rtl
         Bidi.wrap = Bidi.rtl
+        Bidi.filename = Bidi._filename_rtl
+        Bidi.filepath = Bidi.ltr -- see if we need to split and _filename_rtl() the filename part
+        Bidi.directory = Bidi.ltr
+        Bidi.dirpath = Bidi.ltr
+        Bidi.path = Bidi.ltr
+        Bidi.url = Bidi.ltr
     else
         Bidi.default = Bidi.ltr
-        Bidi.wrap = Bidi.noop
+        Bidi.wrap = Bidi.nowrap
+        Bidi.filename = Bidi.nowrap
+        Bidi.filepath = Bidi.nowrap
+        Bidi.directory = Bidi.nowrap
+        Bidi.dirpath = Bidi.nowrap
+        Bidi.path = Bidi.nowrap
+        Bidi.url = Bidi.nowrap
     end
 end
 
@@ -160,14 +173,14 @@ function Bidi.default(text) -- default direction
     return Bidi._rtl_ui_text and Bidi.rtl(text) or Bidi.ltr(text)
 end
 
-function Bidi.noop(text) -- no wrap
+function Bidi.nowrap(text)
     return text
 end
 
 -- Helper for concatenated string bits of numbers an symbols (like
 -- our reader footer) to keep them ordered in RTL UI (to not have
 -- a letter B for battery make the whole string considered LTR).
--- Note: it will be replaced and aliased to Bidi.noop or Bidi.rtl
+-- Note: it will be replaced and aliased to Bidi.nowrap or Bidi.rtl
 -- by Bibi.setup() as an optimisation
 function Bidi.wrap(text)
     return Bidi._rtl_ui_text and Bidi.rtl(text) or text
@@ -181,9 +194,21 @@ end
 -- shown as real RTL).
 -- Note: when the filename or path are standalone in a TextWidget, it's
 -- better to use "para_direction_rtl = false" without any wrapping.
-Bidi.filename = Bidi.ltr
-Bidi.directory = Bidi.ltr
-Bidi.path = Bidi.ltr
-Bidi.url = Bidi.ltr
+Bidi.filename = Bidi.nowrap  -- aliased to Bidi._filename_rtl if _rtl_ui_text
+Bidi.filepath = Bidi.nowrap  -- aliased to Bidi.ltr if _rtl_ui_text
+Bidi.directory = Bidi.nowrap -- aliased to Bidi.ltr if _rtl_ui_text
+Bidi.dirpath = Bidi.nowrap   -- aliased to Bidi.ltr if _rtl_ui_text
+Bidi.path = Bidi.nowrap      -- aliased to Bidi.ltr if _rtl_ui_text
+Bidi.url = Bidi.nowrap       -- aliased to Bidi.ltr if _rtl_ui_text
+
+function Bidi._filename_rtl(filename)
+    -- We always want to show the extension either on the left
+    -- or on the right - never in the middle (which could happen
+    -- with the bidi algo if we give it the filename as-is).
+    local name, suffix = util.splitFileNameSuffix(filename)
+    -- Let the first strong character of the filename decides
+    -- about the direction
+    return Bidi.auto(name .. "." .. Bidi.ltr(suffix))
+end
 
 return Bidi
