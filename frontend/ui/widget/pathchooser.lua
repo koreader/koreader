@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local FileChooser = require("ui/widget/filechooser")
 local Font = require("ui/font")
@@ -104,14 +105,14 @@ function PathChooser:onMenuHold(item)
             local filesize = util.getFormattedSize(attr.size)
             local lastmod = os.date("%Y-%m-%d %H:%M", attr.modification)
             title = T(_("Select this file?\n\n%1\n\nFile size: %2 bytes\nLast modified: %3"),
-                        path, filesize, lastmod)
+                        BD.filepath(path), filesize, lastmod)
         else
-            title = T(_("Select this file?\n\n%1"), path)
+            title = T(_("Select this file?\n\n%1"), BD.filepath(path))
         end
     elseif attr.mode == "directory" then
-        title = T(_("Select this directory?\n\n%1"), path)
+        title = T(_("Select this directory?\n\n%1"), BD.dirpath(path))
     else -- just in case we get something else
-        title = T(_("Select this path?\n\n%1"), path)
+        title = T(_("Select this path?\n\n%1"), BD.path(path))
     end
     local onConfirm = self.onConfirm
     self.button_dialog = ButtonDialogTitle:new{

@@ -791,7 +791,7 @@ function ReaderHighlight:viewSelectionHTML(debug_view)
             if css_files then
                 for i=1, #css_files do
                     local button = {
-                        text = T(_("View %1"), css_files[i]),
+                        text = T(_("View %1"), BD.filepath(css_files[i])),
                         callback = function()
                             local css_text = self.ui.document:getDocumentFileContent(css_files[i])
                             local cssviewer

@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local ConfirmBox = require("ui/widget/confirmbox")
@@ -343,7 +344,7 @@ end
 
 function CloudStorage:onMenuHold(item)
     if item.type == "folder_long_press" then
-        local title = T(_("Select this directory?\n\n%1"), item.url)
+        local title = T(_("Select this directory?\n\n%1"), BD.dirpath(item.url))
         local onConfirm = self.onConfirm
         local button_dialog
         button_dialog = ButtonDialogTitle:new{
@@ -524,7 +525,7 @@ function CloudStorage:synchronizeSettings(item)
     local dropbox_sync_folder = item.sync_source_folder or "not set"
     local local_sync_folder = item.sync_dest_folder or "not set"
     syn_dialog = ButtonDialogTitle:new {
-        title = T(_("Dropbox folder:\n%1\nLocal folder:\n%2"), dropbox_sync_folder, local_sync_folder),
+        title = T(_("Dropbox folder:\n%1\nLocal folder:\n%2"), BD.dirpath(dropbox_sync_folder), BD.dirpath(local_sync_folder)),
         title_align = "center",
         buttons = {
             {

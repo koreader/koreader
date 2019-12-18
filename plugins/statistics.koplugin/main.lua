@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local BookStatusWidget = require("ui/widget/bookstatuswidget")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
@@ -235,7 +236,7 @@ Cannot open database in %1.
 The database may have been moved or deleted.
 Do you want to create an empty database?
 ]]),
-                        db_location),
+                        BD.filepath(db_location)),
                 cancel_text = _("Close"),
                 cancel_callback = function()
                     return

@@ -31,7 +31,11 @@ function ReaderHyphenation:init()
                 limits_text = T("%1 - %2", G_reader_settings:readSetting("hyph_left_hyphen_min"),
                     G_reader_settings:readSetting("hyph_right_hyphen_min"))
             end
-            return T(_("Left/right minimal sizes: %1"), limits_text)
+            -- Not sure how this should be wrapped in RTL UI, while left/right hyphenation
+            -- apply to left/right side of LTR text but are inverted for RTL text...
+            -- But crengine does not support hyphenation with RTL languages, so let's
+            -- show this LTR.
+            return T(_("Left/right minimal sizes: %1"), BD.ltr(limits_text))
         end,
         callback = function()
             local DoubleSpinWidget = require("/ui/widget/doublespinwidget")
@@ -120,7 +124,7 @@ These settings will apply to all books with any hyphenation dictionary.
                     self.hyph_alg = v.filename
                     self.ui.doc_settings:saveSetting("hyph_alg", self.hyph_alg)
                     UIManager:show(InfoMessage:new{
-                        text = T(_("Changed hyphenation to %1."), v.name),
+                        text = T(_("Changed hyphenation to %1."), BD.wrap(v.name)),
                     })
                     self.ui.document:setHyphDictionary(v.filename)
                     -- Apply hyphenation sides limits
@@ -137,7 +141,7 @@ These settings will apply to all books with any hyphenation dictionary.
                         -- one is set, no fallback will ever be used - if a fallback one
                         -- is set, no default is wanted; so when we set one below, we
                         -- remove the other).
-                        text = T( _("Would you like %1 to be used as the default (★) or fallback (�) hyphenation language?\n\nDefault will always take precedence while fallback will only be used if the language of the book can't be automatically determined."), v.name),
+                        text = T( _("Would you like %1 to be used as the default (★) or fallback (�) hyphenation language?\n\nDefault will always take precedence while fallback will only be used if the language of the book can't be automatically determined."), BD.wrap(v.name)),
                         choice1_text = _("Default"),
                         choice1_callback = function()
                             G_reader_settings:saveSetting("hyph_alg_default", v.filename)

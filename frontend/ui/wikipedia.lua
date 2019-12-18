@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local JSON = require("json")
 local RenderImage = require("ui/renderimage")
 local Screen = require("device").screen

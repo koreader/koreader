@@ -84,20 +84,21 @@ function Bidi.setup(lang)
         Bidi.default = Bidi.rtl
         Bidi.wrap = Bidi.rtl
         Bidi.filename = Bidi._filename_rtl
-        Bidi.filepath = Bidi.ltr -- see if we need to split and _filename_rtl() the filename part
-        Bidi.directory = Bidi.ltr
-        Bidi.dirpath = Bidi.ltr
-        Bidi.path = Bidi.ltr
-        Bidi.url = Bidi.ltr
+        Bidi.filepath = Bidi._filepath_rtl
+        Bidi.directory = Bidi._path
+        Bidi.dirpath = Bidi._path
+        Bidi.path = Bidi._path
+        Bidi.url = Bidi._path
     else
         Bidi.default = Bidi.ltr
         Bidi.wrap = Bidi.nowrap
-        Bidi.filename = Bidi.nowrap
-        Bidi.filepath = Bidi.nowrap
-        Bidi.directory = Bidi.nowrap
-        Bidi.dirpath = Bidi.nowrap
-        Bidi.path = Bidi.nowrap
-        Bidi.url = Bidi.nowrap
+        Bidi.filename = Bidi.nowrap -- no hint to bidi algo: it will do according to Unicode specs
+        Bidi.filepath = Bidi._filepath_ltr
+        -- Bidi.filepath = Bidi._path_lrm
+        Bidi.directory = Bidi._path
+        Bidi.dirpath = Bidi._path
+        Bidi.path = Bidi._path
+        Bidi.url = Bidi._path
     end
     -- If RTL UI text, let's have untranslated strings (so english) still rendered LTR
     if Bidi._rtl_ui_text then
@@ -171,6 +172,9 @@ local RLI = "\xE2\x81\xA7"     -- U+2067 RLI / RIGHT-TO-LEFT ISOLATE
 local FSI = "\xE2\x81\xA8"     -- U+2068 FSI / FIRST STRONG ISOLATE
 local PDI = "\xE2\x81\xA9"     -- U+2069 PDI / POP DIRECTIONAL ISOLATE
 
+local LRM = "\xE2\x80\x8E"     -- U+200E LRM / LEFT-TO-RIGHT MARK
+local RLM = "\xE2\x80\x8F"     -- U+200F RLM / RIGHT-TO-LEFT MARK
+
 function Bidi.ltr(text)
     return string.format("%s%s%s", LRI, text, PDI)
 end
@@ -205,12 +209,14 @@ end
 -- shown as real RTL).
 -- Note: when the filename or path are standalone in a TextWidget, it's
 -- better to use "para_direction_rtl = false" without any wrapping.
-Bidi.filename = Bidi.nowrap  -- aliased to Bidi._filename_rtl if _rtl_ui_text
-Bidi.filepath = Bidi.nowrap  -- aliased to Bidi.ltr if _rtl_ui_text
-Bidi.directory = Bidi.nowrap -- aliased to Bidi.ltr if _rtl_ui_text
-Bidi.dirpath = Bidi.nowrap   -- aliased to Bidi.ltr if _rtl_ui_text
-Bidi.path = Bidi.nowrap      -- aliased to Bidi.ltr if _rtl_ui_text
-Bidi.url = Bidi.nowrap       -- aliased to Bidi.ltr if _rtl_ui_text
+-- These are replaced above and aliased to the right wrapper depending
+-- on Bidi._rtl_ui_text
+Bidi.filename = Bidi.nowrap
+Bidi.filepath = Bidi.nowrap
+Bidi.directory = Bidi.nowrap
+Bidi.dirpath = Bidi.nowrap
+Bidi.path = Bidi.nowrap
+Bidi.url = Bidi.nowrap
 
 function Bidi._filename_rtl(filename)
     -- We always want to show the extension either on the left
@@ -220,6 +226,35 @@ function Bidi._filename_rtl(filename)
     -- Let the first strong character of the filename decides
     -- about the direction
     return Bidi.auto(name .. "." .. Bidi.ltr(suffix))
+end
+
+function Bidi._path_lrm(path)
+    -- with a single LRM mark before / to make it LTR
+    return Bidi.ltr(path:gsub("/", LRM.."/"))
+end
+
+function Bidi._path(path)
+    -- by wrapping each component in path in FSI (first strong char)
+    local parts = {}
+    -- for part in path:gmatch("[^/]+") do
+    for part in util.gsplit(path, "[^/]+", true, true) do
+        if part == "/" then
+            table.insert(parts, "/")
+        elseif part ~= "" then
+            table.insert(parts, Bidi.auto(part))
+        end
+    end
+    return Bidi.ltr(table.concat(parts))
+end
+
+function Bidi._filepath_ltr(path)
+    local dirpath, filename = util.splitFilePathName(path)
+    return Bidi.ltr(Bidi._path(dirpath) .. filename)
+end
+
+function Bidi._filepath_rtl(path)
+    local dirpath, filename = util.splitFilePathName(path)
+    return Bidi.ltr(Bidi._path(dirpath) .. Bidi._filename_rtl(filename))
 end
 
 return Bidi

@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DocumentRegistry = require("document/documentregistry")
 local DropBoxApi = require("apps/cloudstorage/dropboxapi")
@@ -26,12 +27,12 @@ function DropBox:downloadFile(item, password, path, close)
         local __, filename = util.splitFilePathName(path)
         if G_reader_settings:isTrue("show_unsupported") and not DocumentRegistry:hasProvider(filename) then
             UIManager:show(InfoMessage:new{
-                text = T(_("File saved to:\n%1"), path),
+                text = T(_("File saved to:\n%1"), BD.filename(path)),
             })
         else
             UIManager:show(ConfirmBox:new{
                 text = T(_("File saved to:\n%1\nWould you like to read the downloaded book now?"),
-                    path),
+                    BD.filepath(path)),
                 ok_callback = function()
                     close()
                     ReaderUI:showReader(path)
@@ -40,7 +41,7 @@ function DropBox:downloadFile(item, password, path, close)
         end
     else
         UIManager:show(InfoMessage:new{
-            text = T(_("Could not save file to:\n%1"), path),
+            text = T(_("Could not save file to:\n%1"), BD.filepath(path)),
             timeout = 3,
         })
     end
