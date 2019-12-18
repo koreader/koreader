@@ -11,7 +11,8 @@
 DHINTCOUNT = 1
 
 -- full screen mode, 1 for true, 0 for false
-DFULL_SCREEN = 1
+-- no longer needed
+--DFULL_SCREEN = 1
 
 -- scroll mode, 1 for true, 0 for false
 DSCROLL_MODE = 1
