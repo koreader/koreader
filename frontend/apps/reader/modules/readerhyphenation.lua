@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local Device = require("device")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
