@@ -954,14 +954,15 @@ end
 function util.unpackArchive(archive, extract_to)
     dbg.dassert(type(archive) == "string")
 
+    local BD = require("ui/bidi")
     local ok
     if archive:match("%.tar%.bz2$") or archive:match("%.tar%.gz$") or archive:match("%.tar%.lz$") or archive:match("%.tgz$") then
         ok = os.execute(("./tar xf %q -C %q"):format(archive, extract_to))
     else
-        return false, T(_("Couldn't extract archive:\n\n%1\n\nUnrecognized filename extension."), archive)
+        return false, T(_("Couldn't extract archive:\n\n%1\n\nUnrecognized filename extension."), BD.filepath(archive))
     end
     if not ok then
-        return false, T(_("Extracting archive failed:\n\n%1", archive))
+        return false, T(_("Extracting archive failed:\n\n%1", BD.filepath(archive)))
     end
     return true
 end

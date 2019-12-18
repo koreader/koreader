@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local DocSettings = require("docsettings")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
@@ -53,7 +54,7 @@ function FileManagerHistory:onMenuHold(item)
                 callback = function()
                     local ConfirmBox = require("ui/widget/confirmbox")
                     UIManager:show(ConfirmBox:new{
-                        text = util.template(_("Purge .sdr to reset settings for this document?\n\n%1"), item.text),
+                        text = util.template(_("Purge .sdr to reset settings for this document?\n\n%1"), BD.filename(item.text)),
                         ok_text = _("Purge"),
                         ok_callback = function()
                             filemanagerutil.purgeSettings(item.file)

@@ -2,6 +2,7 @@
 @module koplugin.wallabag
 ]]
 
+local BD = require("ui/bidi")
 local DataStorage = require("datastorage")
 local DocSettings = require("docsettings")
 local Event = require("ui/event")
@@ -163,7 +164,7 @@ function Wallabag:addToMainMenu(menu_items)
                             else
                                 path = filemanagerutil.abbreviate(self.directory)
                             end
-                            return T(_("Set download directory (%1)"), path)
+                            return T(_("Set download directory (%1)"), BD.dirpath(path))
                         end,
                         keep_menu_open = true,
                         callback = function(touchmenu_instance)
@@ -261,7 +262,7 @@ The 'Synchronize remotely deleted files' option will remove local files that no 
 
 More details: https://wallabag.org
 
-Downloads to directory: %1]]), filemanagerutil.abbreviate(self.directory))
+Downloads to directory: %1]]), BD.dirpath(filemanagerutil.abbreviate(self.directory)))
                     })
                 end,
             },
@@ -824,7 +825,7 @@ Enter the details of your Wallabag server and account.
 Client ID and client secret are long strings so you might prefer to save the empty settings and edit the config file directly in your installation directory:
 %1/wallabag.lua
 
-Restart KOReader after editing the config file.]]), DataStorage:getSettingsDir())
+Restart KOReader after editing the config file.]]), BD.dirpath(DataStorage:getSettingsDir()))
 
     self.settings_dialog = MultiInputDialog:new {
         title = _("Wallabag settings"),
@@ -994,11 +995,11 @@ function Wallabag:onAddWallabagArticle(article_url)
     local wallabag_result = self:addArticle(article_url)
     if wallabag_result then
         UIManager:show(InfoMessage:new{
-            text = T(_("Article added to Wallabag:\n%1"), article_url),
+            text = T(_("Article added to Wallabag:\n%1"), BD.url(article_url)),
         })
     else
         UIManager:show(InfoMessage:new{
-            text = T(_("Error adding link to Wallabag:\n%1"), article_url),
+            text = T(_("Error adding link to Wallabag:\n%1"), BD.url(article_url)),
         })
     end
 

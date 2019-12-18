@@ -365,14 +365,14 @@ function DictQuickLookup:update()
                         end
                         local epub_path = dir .. "/" .. filename
                         UIManager:show(ConfirmBox:new{
-                            text = T(_("Save as %1?"), filename),
+                            text = T(_("Save as %1?"), BD.filename(filename)),
                             ok_callback = function()
                                 UIManager:scheduleIn(0.1, function()
                                     local Wikipedia = require("ui/wikipedia")
                                     Wikipedia:createEpubWithUI(epub_path, self.lookupword, lang, function(success)
                                         if success then
                                             UIManager:show(ConfirmBox:new{
-                                                text = T(_("Article saved to:\n%1\n\nWould you like to read the downloaded article now?"), epub_path),
+                                                text = T(_("Article saved to:\n%1\n\nWould you like to read the downloaded article now?"), BD.filepath(epub_path)),
                                                 ok_callback = function()
                                                     -- close all dict/wiki windows, without scheduleIn(highlight.clear())
                                                     self:onHoldClose(true)

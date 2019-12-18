@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
@@ -42,7 +43,7 @@ function Screenshoter:onScreenshot(filename)
     local screenshot_name = filename or os.date(self.screenshot_fn_fmt)
     Screen:shot(screenshot_name)
     local widget = ConfirmBox:new{
-        text = T( _("Saved screenshot to %1.\nWould you like to set it as screensaver?"), screenshot_name),
+        text = T( _("Saved screenshot to %1.\nWould you like to set it as screensaver?"), BD.filepath(screenshot_name)),
         ok_text = _("Yes"),
         ok_callback = function()
             G_reader_settings:saveSetting("screensaver_type", "image_file")
@@ -67,7 +68,7 @@ function Screenshoter:chooseFolder()
                     onConfirm = function(path)
                         G_reader_settings:saveSetting("screenshot_dir", path .. "/")
                         UIManager:show(InfoMessage:new{
-                            text = T(_("Screenshot directory set to:\n%1"), path),
+                            text = T(_("Screenshot directory set to:\n%1"), BD.dirpath(path)),
                             timeout = 3,
                         })
                     end,
@@ -85,7 +86,7 @@ function Screenshoter:chooseFolder()
     })
     local screenshot_dir = G_reader_settings:readSetting("screenshot_dir") or DataStorage:getDataDir() .. "/screenshots/"
     self.choose_dialog = ButtonDialogTitle:new{
-        title = T(_("Current screenshot directory:\n%1"), screenshot_dir),
+        title = T(_("Current screenshot directory:\n%1"), BD.dirpath(screenshot_dir)),
         buttons = buttons
     }
     UIManager:show(self.choose_dialog)

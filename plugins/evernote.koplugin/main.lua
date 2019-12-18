@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LoginDialog = require("ui/widget/logindialog")
 local InfoMessage = require("ui/widget/infomessage")
@@ -242,7 +243,7 @@ For Windows: netsh interface portproxy add listeningaddress:0.0.0.0 listeningpor
 For Linux: $socat tcp-listen:41185,reuseaddr,fork tcp:localhost:41184
 
 For more information, please visit https://github.com/koreader/koreader/wiki/Evernote-export.]])
-                            ,DataStorage:getDataDir())
+                            , BD.dirpath(DataStorage:getDataDir()))
                             })
                         end
                     }
@@ -595,7 +596,7 @@ function EvernoteExporter:exportClippings(clippings)
         end
     end
     if (self.html_export or self.txt_export) and export_count > 0 then
-        msg = msg .. T(_("\nNotes can be found in %1/."), realpath(self.clipping_dir))
+        msg = msg .. T(_("\nNotes can be found in %1/."), BD.dirpath(realpath(self.clipping_dir)))
     end
     UIManager:show(InfoMessage:new{ text = msg })
 end

@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local BookStatusWidget = require("ui/widget/bookstatuswidget")
@@ -66,7 +67,7 @@ function Screensaver:chooseFolder()
                         logger.dbg("set screensaver directory to", path)
                         G_reader_settings:saveSetting("screensaver_dir", path)
                         UIManager:show(InfoMessage:new{
-                            text = T(_("Screensaver directory set to:\n%1"), path),
+                            text = T(_("Screensaver directory set to:\n%1"), BD.dirpath(path)),
                             timeout = 3,
                         })
                     end,
@@ -87,7 +88,7 @@ function Screensaver:chooseFolder()
         screensaver_dir = DataStorage:getDataDir() .. "/screenshots/"
     end
     self.choose_dialog = ButtonDialogTitle:new{
-        title = T(_("Current screensaver image directory:\n%1"), screensaver_dir),
+        title = T(_("Current screensaver image directory:\n%1"), BD.dirpath(screensaver_dir)),
         buttons = buttons
     }
     UIManager:show(self.choose_dialog)
@@ -120,13 +121,13 @@ function Screensaver:chooseFile(document_cover)
                         if document_cover then
                             G_reader_settings:saveSetting("screensaver_document_cover", file_path)
                             UIManager:show(InfoMessage:new{
-                                text = T(_("Screensaver document cover set to:\n%1"), file_path),
+                                text = T(_("Screensaver document cover set to:\n%1"), BD.filepath(file_path)),
                                 timeout = 3,
                             })
                         else
                             G_reader_settings:saveSetting("screensaver_image", file_path)
                             UIManager:show(InfoMessage:new{
-                                text = T(_("Screensaver image set to:\n%1"), file_path),
+                                text = T(_("Screensaver image set to:\n%1"), BD.filepath(file_path)),
                                 timeout = 3,
                             })
                         end
@@ -149,8 +150,8 @@ function Screensaver:chooseFile(document_cover)
     if screensaver_image == nil then
         screensaver_image = DataStorage:getDataDir() .. "/resources/koreader.png"
     end
-    local title = document_cover and T(_("Current screensaver document cover:\n%1"), screensaver_document_cover)
-        or T(_("Current screensaver image:\n%1"), screensaver_image)
+    local title = document_cover and T(_("Current screensaver document cover:\n%1"), BD.filepath(screensaver_document_cover))
+        or T(_("Current screensaver image:\n%1"), BD.filepath(screensaver_image))
     self.choose_dialog = ButtonDialogTitle:new{
         title = title,
         buttons = buttons

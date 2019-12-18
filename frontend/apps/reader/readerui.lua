@@ -4,6 +4,7 @@ ReaderUI is an abstraction for a reader interface.
 It works using data gathered from a document interface.
 ]]--
 
+local BD = require("ui/bidi")
 local Cache = require("cache")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
@@ -448,14 +449,14 @@ function ReaderUI:showReader(file, provider)
 
     if lfs.attributes(file, "mode") ~= "file" then
         UIManager:show(InfoMessage:new{
-             text = T(_("File '%1' does not exist."), file)
+             text = T(_("File '%1' does not exist."), BD.filepath(file))
         })
         return
     end
 
     if not DocumentRegistry:hasProvider(file) and provider == nil then
         UIManager:show(InfoMessage:new{
-            text = T(_("File '%1' is not supported."), file)
+            text = T(_("File '%1' is not supported."), BD.filepath(file))
         })
         self:showFileManager(file)
         return
@@ -471,7 +472,7 @@ function ReaderUI:showReader(file, provider)
             (provider.provider == "mupdf" and type(bookmarks[1].page) == "string")) then
                 UIManager:show(ConfirmBox:new{
                     text = T(_("The document '%1' with bookmarks or highlights was previously opened with a different engine. To prevent issues, bookmarks need to be deleted before continuing."),
-                        file),
+                        BD.filepath(file)),
                     ok_text = _("Delete"),
                     ok_callback = function()
                         doc_settings:delSetting("bookmarks")
@@ -488,7 +489,7 @@ end
 
 function ReaderUI:showReaderCoroutine(file, provider)
     UIManager:show(InfoMessage:new{
-        text = T(_("Opening file '%1'."), file),
+        text = T(_("Opening file '%1'."), BD.filepath(file)),
         timeout = 0.0,
     })
     -- doShowReader might block for a long time, so force repaint here

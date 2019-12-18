@@ -182,8 +182,16 @@ function SortWidget:init()
     self.item_height = Size.item.height_big
 
     -- group for footer
+    local footer_left_text = "◀"
+    local footer_right_text = "▶"
+    local footer_first_up_text = "◀◀"
+    local footer_last_down_text = "▶▶"
+    if BD.mirroredUILayout() then
+        footer_left_text, footer_right_text = footer_right_text, footer_left_text
+        footer_first_up_text, footer_last_down_text = footer_last_down_text, footer_first_up_text
+    end
     self.footer_left = Button:new{
-        text = "◀",
+        text = footer_left_text,
         width = self.width_widget * 13 / 100,
         callback = function() self:prevPage() end,
         text_font_size = 28,
@@ -192,7 +200,7 @@ function SortWidget:init()
         radius = 0,
     }
     self.footer_right = Button:new{
-        text = "▶",
+        text = footer_right_text,
         width = self.width_widget * 13 / 100,
         callback = function() self:nextPage() end,
         text_font_size = 28,
@@ -201,7 +209,7 @@ function SortWidget:init()
         radius = 0,
     }
     self.footer_first_up = Button:new{
-        text = "◀◀",
+        text = footer_first_up_text,
         width = self.width_widget * 13 / 100,
         callback = function()
             if self.marked > 0 then
@@ -216,7 +224,7 @@ function SortWidget:init()
         radius = 0,
     }
     self.footer_last_down = Button:new{
-        text = "▶▶",
+        text = footer_last_down_text,
         width = self.width_widget * 13 / 100,
         callback = function()
             if self.marked > 0 then
@@ -415,13 +423,18 @@ function SortWidget:_populateItems()
         )
     end
 
-    self.footer_page:setText(T(_("%1/%2"), self.show_page, self.pages), self.width_widget * 22 / 100)
+    self.footer_page:setText(T(_("%1 / %2"), self.show_page, self.pages), self.width_widget * 22 / 100)
+    local footer_first_up_text = "◀◀"
+    local footer_last_down_text = "▶▶"
+    if BD.mirroredUILayout() then
+        footer_first_up_text, footer_last_down_text = footer_last_down_text, footer_first_up_text
+    end
     if self.marked > 0 then
         self.footer_first_up:setText("▲", self.width_widget * 13 / 100)
         self.footer_last_down:setText("▼", self.width_widget * 13 / 100)
     else
-        self.footer_first_up:setText("◀◀", self.width_widget * 13 / 100)
-        self.footer_last_down:setText("▶▶", self.width_widget * 13 / 100)
+        self.footer_first_up:setText(footer_first_up_text, self.width_widget * 13 / 100)
+        self.footer_last_down:setText(footer_last_down_text, self.width_widget * 13 / 100)
     end
     self.footer_left:enableDisable(self.show_page > 1)
     self.footer_right:enableDisable(self.show_page < self.pages)

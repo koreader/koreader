@@ -142,9 +142,10 @@ function Device:init()
                     -- we cannot blit to a window here since we have no focus yet.
                     local UIManager = require("ui/uimanager")
                     local InfoMessage = require("ui/widget/infomessage")
+                    local BD = require("ui/bidi")
                     UIManager:scheduleIn(0.1, function()
                         UIManager:show(InfoMessage:new{
-                            text = T(_("Opening file '%1'."), new_file),
+                            text = T(_("Opening file '%1'."), BD.filepath(new_file)),
                             timeout = 0.0,
                         })
                     end)
@@ -255,7 +256,8 @@ function Device:retrieveNetworkInfo()
     if ip == "0" or gw == "0" then
         return _("Not connected")
     else
-        return T(_("Connected to %1\n IP address: %2\n gateway: %3"), ssid, ip, gw)
+        local BD = require("ui/bidi")
+        return T(_("Connected to %1\n IP address: %2\n gateway: %3"), BD.wrap(ssid), BD.ltr(ip), BD.ltr(gw))
     end
 end
 

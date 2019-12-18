@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local DataStorage = require("datastorage")
 local Device =  require("device")
 local InfoMessage = require("ui/widget/infomessage")  -- luacheck:ignore
@@ -178,7 +179,7 @@ function SSH:addToMainMenu(menu_items)
                 callback = function()
                     local info = InfoMessage:new{
                         timeout = 60,
-                        text = T(_("Put your public SSH keys in %1"), path.."/settings/SSH/authorized_keys"),
+                        text = T(_("Put your public SSH keys in %1"), BD.filepath(path.."/settings/SSH/authorized_keys")),
                     }
                     UIManager:show(info)
                 end,
