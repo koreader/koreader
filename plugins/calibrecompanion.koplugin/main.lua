@@ -468,7 +468,7 @@ function CalibreCompanion:sendBook(arg)
             outfile:close()
             logger.info("complete writing file", filename)
             UIManager:show(InfoMessage:new{
-                text = _("Received file:") .. filename,
+                text = _("Received file:") .. BD.filepath(filename),
                 timeout = 1,
             })
             -- switch to JSON data receiving mode

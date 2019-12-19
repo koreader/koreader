@@ -84,7 +84,8 @@ function Bidi.setup(lang)
         Bidi.default = Bidi.rtl
         Bidi.wrap = Bidi.rtl
         Bidi.filename = Bidi._filename_rtl
-        Bidi.filepath = Bidi._filepath_rtl
+        -- Bidi.filepath = Bidi._filepath_ltr -- keep filename LTR, with extension on the right
+        Bidi.filepath = Bidi._filepath_rtl -- filename auto, but with extension on the right
         Bidi.directory = Bidi._path
         Bidi.dirpath = Bidi._path
         Bidi.path = Bidi._path
@@ -225,7 +226,20 @@ function Bidi._filename_rtl(filename)
     local name, suffix = util.splitFileNameSuffix(filename)
     -- Let the first strong character of the filename decides
     -- about the direction
+    if suffix == "" then
+        return Bidi.auto(name)
+    end
     return Bidi.auto(name .. "." .. Bidi.ltr(suffix))
+end
+
+function Bidi._filename_auto_ext_right(filename)
+    -- Auto/First strong char for name part, but extension still
+    -- on the right
+    local name, suffix = util.splitFileNameSuffix(filename)
+    if suffix == "" then
+        return Bidi.auto(name)
+    end
+    return Bidi.ltr(Bidi.auto(name) .. "." .. suffix)
 end
 
 function Bidi._path_lrm(path)
@@ -254,7 +268,7 @@ end
 
 function Bidi._filepath_rtl(path)
     local dirpath, filename = util.splitFilePathName(path)
-    return Bidi.ltr(Bidi._path(dirpath) .. Bidi._filename_rtl(filename))
+    return Bidi.ltr(Bidi._path(dirpath) .. Bidi._filename_auto_ext_right(filename))
 end
 
 return Bidi

@@ -546,7 +546,7 @@ function OPDSBrowser:downloadFile(item, format, remote_url)
                 end
             else
                 UIManager:show(InfoMessage:new {
-                    text = _("Could not save file to:\n") .. local_path,
+                    text = _("Could not save file to:\n") .. BD.filepath(local_path),
                     timeout = 3,
                 })
             end

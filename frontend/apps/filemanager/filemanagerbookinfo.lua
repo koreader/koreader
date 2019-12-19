@@ -2,6 +2,7 @@
 This module provides a way to display book information (filename and book metadata)
 ]]
 
+local BD = require("ui/bidi")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
 local ImageViewer = require("ui/widget/imageviewer")
@@ -46,10 +47,10 @@ function BookInfo:show(file, book_props)
     local size_f = util.getFriendlySize(file_size)
     local size_b = util.getFormattedSize(file_size)
     local size = string.format("%s (%s bytes)", size_f, size_b)
-    table.insert(kv_pairs, { _("Filename:"), filename })
+    table.insert(kv_pairs, { _("Filename:"), BD.filename(filename) })
     table.insert(kv_pairs, { _("Format:"), filetype:upper() })
     table.insert(kv_pairs, { _("Size:"), size })
-    table.insert(kv_pairs, { _("Directory:"), filemanagerutil.abbreviate(directory) })
+    table.insert(kv_pairs, { _("Directory:"), BD.dirpath(filemanagerutil.abbreviate(directory)) })
     table.insert(kv_pairs, "----")
 
     -- book_props may be provided if caller already has them available
