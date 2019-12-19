@@ -81,7 +81,7 @@ function FileManagerHistory:onMenuHold(item)
                 callback = function()
                     local ConfirmBox = require("ui/widget/confirmbox")
                     UIManager:show(ConfirmBox:new{
-                        text = _("Are you sure that you want to delete this file?\n") .. item.file .. ("\n") .. _("If you delete a file, it is permanently lost."),
+                        text = _("Are you sure that you want to delete this file?\n") .. BD.filepath(item.file) .. ("\n") .. _("If you delete a file, it is permanently lost."),
                         ok_text = _("Delete"),
                         ok_callback = function()
                             local FileManager = require("apps/filemanager/filemanager")
@@ -117,7 +117,7 @@ function FileManagerHistory:onMenuHold(item)
         },
     }
     self.histfile_dialog = ButtonDialogTitle:new{
-        title = item.text:match("([^/]+)$"),
+        title = BD.filename(item.text:match("([^/]+)$")),
         title_align = "center",
         buttons = buttons,
     }

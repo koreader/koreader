@@ -358,8 +358,15 @@ function FileManager:init()
             })
         end
 
+        local title
+        if lfs.attributes(file, "mode") == "directory" then
+            title = BD.directory(file:match("([^/]+)$"))
+        else
+            title = BD.filename(file:match("([^/]+)$"))
+        end
+
         self.file_dialog = ButtonDialogTitle:new{
-            title = file:match("([^/]+)$"),
+            title = title,
             title_align = "center",
             buttons = buttons,
         }
@@ -567,7 +574,7 @@ function FileManager:tapPlus()
     end
 
     self.file_dialog = ButtonDialogTitle:new{
-        title = filemanagerutil.abbreviate(self.file_chooser.path),
+        title = BD.dirpath(filemanagerutil.abbreviate(self.file_chooser.path)),
         title_align = "center",
         buttons = buttons,
     }
