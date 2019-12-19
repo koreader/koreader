@@ -106,11 +106,15 @@ function Bidi.setup(lang)
         _.wrapUntranslated = function(text)
             -- We need to split by line and wrap each line as LTR (as the
             -- paragraph direction will still be RTL).
-            local lines = {}
-            for s in text:gmatch("[^\r\n]+") do
-                table.insert(lines, Bidi.ltr(s))
+            local parts = {}
+            for part in util.gsplit(text, "\n", true, true) do
+                if part == "\n" then
+                    table.insert(parts, "\n")
+                elseif part ~= "" then
+                    table.insert(parts, Bidi.ltr(part))
+                end
             end
-            return table.concat(lines, "\n")
+            return table.concat(parts)
         end
     else
         _.wrapUntranslated = _.wrapUntranslated_nowrap
@@ -250,8 +254,7 @@ end
 function Bidi._path(path)
     -- by wrapping each component in path in FSI (first strong char)
     local parts = {}
-    -- for part in path:gmatch("[^/]+") do
-    for part in util.gsplit(path, "[^/]+", true, true) do
+    for part in util.gsplit(path, "/", true, true) do
         if part == "/" then
             table.insert(parts, "/")
         elseif part ~= "" then

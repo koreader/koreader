@@ -26,17 +26,16 @@ function ReaderHyphenation:init()
 
     table.insert(self.hyph_table, {
         text_func = function()
-            local limits_text = _("language defaults")
-            if G_reader_settings:readSetting("hyph_left_hyphen_min")
-                or G_reader_settings:readSetting("hyph_right_hyphen_min") then
-                limits_text = T("%1 - %2", G_reader_settings:readSetting("hyph_left_hyphen_min"),
+            -- Note: with our callback, we either get hyph_left_hyphen_min and
+            -- hyph_right_hyphen_min both nil, or both defined.
+            if G_reader_settings:readSetting("hyph_left_hyphen_min") or
+                        G_reader_settings:readSetting("hyph_right_hyphen_min") then
+                -- @translators to RTL language translators: %1/left is the min length of the start of a hyphenated word, %2/right is the min length of the end of a hyphenated word (note that there is yet no support for hyphenation with RTL languages, so this will mostly apply to LTR documents)
+                return T(_("Left/right minimal sizes: %1 - %2"),
+                    G_reader_settings:readSetting("hyph_left_hyphen_min"),
                     G_reader_settings:readSetting("hyph_right_hyphen_min"))
             end
-            -- Not sure how this should be wrapped in RTL UI, while left/right hyphenation
-            -- apply to left/right side of LTR text but are inverted for RTL text...
-            -- But crengine does not support hyphenation with RTL languages, so let's
-            -- show this LTR.
-            return T(_("Left/right minimal sizes: %1"), BD.ltr(limits_text))
+            return _("Left/right minimal sizes: language defaults")
         end,
         callback = function()
             local DoubleSpinWidget = require("/ui/widget/doublespinwidget")
