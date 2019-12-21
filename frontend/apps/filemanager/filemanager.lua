@@ -552,6 +552,20 @@ function FileManager:tapPlus()
         }
     }
 
+    if Device:canImportFiles() then
+        table.insert(buttons, 3, {
+            {
+                text = _("Import files here"),
+                enabled = Device.isValidPath(self.file_chooser.path),
+                callback = function()
+                    local current_dir = self.file_chooser.path
+                    UIManager:close(self.file_dialog)
+                    Device.importFile(current_dir)
+                end,
+            },
+        })
+    end
+
     self.file_dialog = ButtonDialogTitle:new{
         title = filemanagerutil.abbreviate(self.file_chooser.path),
         title_align = "center",
