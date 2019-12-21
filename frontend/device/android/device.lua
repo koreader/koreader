@@ -83,6 +83,10 @@ local Device = Generic:new{
         if not link or type(link) ~= "string" then return end
         return android.openLink(link) == 0
     end,
+    canImportFiles = function() return android.app.activity.sdkVersion >= 19 end,
+    importFile = function(path) android.importFile(path) end,
+    isValidPath = function(path) return android.isPathInsideSandbox(path) end,
+
     canExternalDictLookup = yes,
     getExternalDictLookupList = getExternalDicts,
     doExternalDictLookup = function (self, text, method, callback)
@@ -133,7 +137,6 @@ function Device:init()
                     external_dict_when_back_callback()
                     external_dict_when_back_callback = nil
                 end
-
                 local new_file = android.getIntent()
                 if new_file ~= nil and lfs.attributes(new_file, "mode") == "file" then
                     -- we cannot blit to a window here since we have no focus yet.
@@ -148,6 +151,20 @@ function Device:init()
                     UIManager:scheduleIn(0.2, function()
                         require("apps/reader/readerui"):doShowReader(new_file)
                     end)
+                else
+                    -- check if we're resuming from importing content.
+                    local content_path = android.getLastImportedPath()
+                    if content_path ~= nil then
+                        local FileManager = require("apps/filemanager/filemanager")
+                        local UIManager = require("ui/uimanager")
+                        UIManager:scheduleIn(0.5, function()
+                            if FileManager.instance then
+                                FileManager.instance:onRefresh()
+                            else
+                                FileManager:showFiles(content_path)
+                            end
+                        end)
+                    end
                 end
             end
         end,

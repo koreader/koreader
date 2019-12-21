@@ -45,6 +45,7 @@ local Device = {
     canUseCBB = yes, -- The C BB maintains a 1:1 feature parity with the Lua BB, except that is has NO support for BB4, and limited support for BBRGB24
     hasColorScreen = no,
     hasBGRFrameBuffer = no,
+    canImportFiles = no,
     canToggleGSensor = no,
     canToggleMassStorage = no,
     canUseWAL = yes, -- requires mmap'ed I/O on the target FS
