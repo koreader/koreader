@@ -782,6 +782,8 @@ function ReaderView:onReadSettings(config)
     self.page_scroll = page_scroll == 1 and true or false
     self.highlight.saved = config:readSetting("highlight") or {}
     self.page_overlap_style = config:readSetting("page_overlap_style") or G_reader_settings:readSetting("page_overlap_style") or "dim"
+    self.page_gap.height = config:readSetting("kopt_page_gap") or 8
+    self.page_gap_width = config:readSetting("kopt_page_gap") or 8
 end
 
 function ReaderView:onPageUpdate(new_page_no)
@@ -842,6 +844,12 @@ function ReaderView:onSetViewMode(new_mode)
         self.ui.document:setViewMode(new_mode)
         self.ui:handleEvent(Event:new("ChangeViewMode"))
     end
+    return true
+end
+
+function ReaderView:onPageGapUpdate(page_gap)
+    self.page_gap.height = page_gap
+    self.page_gap.width = page_gap
     return true
 end
 
