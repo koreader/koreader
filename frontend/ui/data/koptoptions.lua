@@ -90,7 +90,11 @@ local KoptOptions = {
                 values = {0, 8, 16, 32},
                 default_value = 8,
                 args = {0, 8, 16, 32},
-                event = "PageGapUpdate"
+                event = "PageGapUpdate",
+                enabled_func = function (configurable)
+                    return optionsutil.enableIfEquals(configurable, "page_scroll", 1)
+                end,
+                name_text_hold_callback = optionsutil.showValues,
             },
             {
                 name = "max_columns",
