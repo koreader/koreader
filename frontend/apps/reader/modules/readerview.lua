@@ -48,7 +48,6 @@ local ReaderView = OverlapGroup:extend{
     page_scroll = nil,
     page_bgcolor = Blitbuffer.gray(DBACKGROUND_COLOR/15),
     page_states = {},
-    scroll_mode = "vertical",
     -- properties of the gap drawn between each page in scroll mode:
     page_gap = {
         -- color (0 = white, 8 = gray, 15 = black)
@@ -385,11 +384,7 @@ function ReaderView:getScrollPageRect(page, rect_p)
 end
 
 function ReaderView:drawPageGap(bb, x, y)
-    if self.scroll_mode == "vertical" then
-        bb:paintRect(x, y, self.dimen.w, self.page_gap.height, self.page_gap.color)
-    elseif self.scroll_mode == "horizontal" then
-        bb:paintRect(x, y, self.page_gap.width, self.dimen.h, self.page_gap.color)
-    end
+    bb:paintRect(x, y, self.dimen.w, self.page_gap.height, self.page_gap.color)
 end
 
 function ReaderView:drawSinglePage(bb, x, y)
@@ -778,7 +773,8 @@ function ReaderView:onReadSettings(config)
     self.page_scroll = page_scroll == 1 and true or false
     self.highlight.saved = config:readSetting("highlight") or {}
     self.page_overlap_style = config:readSetting("page_overlap_style") or G_reader_settings:readSetting("page_overlap_style") or "dim"
-    self.page_gap.height = Screen:scaleBySize(config:readSetting("kopt_page_gap_height") or 8)
+    self.page_gap.height = Screen:scaleBySize(config:readSetting("kopt_page_gap_height") or 
+    G_reader_settings("kopt_page_gap_height") or 8)
 end
 
 function ReaderView:onPageUpdate(new_page_no)
