@@ -84,7 +84,7 @@ local KoptOptions = {
                 name_text_hold_callback = optionsutil.showValues,
             },
             {
-                name = "page_gap",
+                name = "page_gap_height",
                 name_text = S.PAGE_GAP,
                 toggle = {S.NONE, S.SMALL, S.MEDIUM, S.LARGE},
                 values = {0, 8, 16, 32},
