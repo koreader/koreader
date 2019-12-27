@@ -27,16 +27,16 @@ local mt_height = 1023
 local mt_scale_x = 1404 / mt_width
 local mt_scale_y = 1872 / mt_height
 local adjustTouchEvt = function(self, ev)
-	if ev.type == EV_ABS then
-		-- Mirror X and scale up both X & Y as touch input is different res from
-		-- display
-		if ev.code == ABS_X or ev.code == ABS_MT_POSITION_X then
-			ev.value = (mt_width - ev.value) * mt_scale_x
-		end
-		if ev.code == ABS_Y or ev.code == ABS_MT_POSITION_Y then
-			ev.value = (mt_height - ev.value) * mt_scale_y
-		end
-	end
+    if ev.type == EV_ABS then
+        -- Mirror X and scale up both X & Y as touch input is different res from
+        -- display
+        if ev.code == ABS_X or ev.code == ABS_MT_POSITION_X then
+            ev.value = (mt_width - ev.value) * mt_scale_x
+        end
+        if ev.code == ABS_Y or ev.code == ABS_MT_POSITION_Y then
+            ev.value = (mt_height - ev.value) * mt_scale_y
+        end
+    end
 end
 
 function Remarkable:init()
@@ -62,7 +62,7 @@ end
 function Remarkable:supportsScreensaver() return true end
 
 function Remarkable:setDateTime(year, month, day, hour, min, sec)
-	-- TODO Remarkable
+    -- TODO Remarkable
     if hour == nil or min == nil then return true end
     local command
     if year and month and day then
@@ -150,7 +150,7 @@ end
 
 
 function Remarkable:getSoftwareVersion()
-	-- TODO read from /etc/os-release?
+    -- TODO read from /etc/os-release?
     return ffi.string("ZeroGravitas")
 end
 

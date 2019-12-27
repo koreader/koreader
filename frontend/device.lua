@@ -26,15 +26,15 @@ local function probeDevice()
         return require("device/pocketbook/device")
     end
 
+    local remarkable_test_stat = lfs.attributes("/usr/bin/xochitl")
+    if remarkable_test_stat then
+        return require("device/remarkable/device")
+    end
+
     local sony_prstux_test_stat = lfs.attributes("/etc/PRSTUX")
     if sony_prstux_test_stat then
         return require("device/sony-prstux/device")
     end
-
-	local remarkable_test_stat = lfs.attributes("/usr/bin/xochitl")
-	if remarkable_test_stat then
-		return require("device/remarkable/device")
-	end
 
     local cervantes_test_stat = lfs.attributes("/usr/bin/ntxinfo")
     if cervantes_test_stat then
