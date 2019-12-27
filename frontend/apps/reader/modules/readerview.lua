@@ -774,7 +774,7 @@ function ReaderView:onReadSettings(config)
     self.highlight.saved = config:readSetting("highlight") or {}
     self.page_overlap_style = config:readSetting("page_overlap_style") or G_reader_settings:readSetting("page_overlap_style") or "dim"
     self.page_gap.height = Screen:scaleBySize(config:readSetting("kopt_page_gap_height") or
-    G_reader_settings("kopt_page_gap_height") or 8)
+    G_reader_settings:readSetting("kopt_page_gap_height") or 8)
 end
 
 function ReaderView:onPageUpdate(new_page_no)
