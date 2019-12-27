@@ -192,7 +192,7 @@ function UIManager:init()
             Device:usbPlugOut()
             self:_afterNotCharging()
         end
-    elseif Device:isSonyPRSTUX() then
+    elseif Device:isRemarkable() then
         self.event_handlers["PowerPress"] = function()
             UIManager:scheduleIn(2, self.poweroff_action)
         end
@@ -223,7 +223,7 @@ function UIManager:init()
                 self:sendEvent(input_event)
             end
         end
-    elseif Device:isRemarkable() then
+    elseif Device:isSonyPRSTUX() then
         self.event_handlers["PowerPress"] = function()
             UIManager:scheduleIn(2, self.poweroff_action)
         end
@@ -1186,7 +1186,7 @@ end
 -- Executes all the operations of a suspending request. This function usually puts the device into
 -- suspension.
 function UIManager:suspend()
-    if Device:isCervantes() or Device:isKobo() or Device:isSDL() or Device:isSonyPRSTUX() or Device:isRemarkable() then
+    if Device:isCervantes() or Device:isKobo() or Device:isSDL() or Device:isRemarkable() or Device:isSonyPRSTUX() then
         self.event_handlers["Suspend"]()
     elseif Device:isKindle() then
         Device.powerd:toggleSuspend()
@@ -1195,7 +1195,7 @@ end
 
 -- Executes all the operations of a resume request. This function usually wakes up the device.
 function UIManager:resume()
-    if Device:isCervantes() or Device:isKobo() or Device:isSDL() or Device:isSonyPRSTUX() or Device:isRemarkable() then
+    if Device:isCervantes() or Device:isKobo() or Device:isSDL() or Device:isRemarkable() or Device:isSonyPRSTUX() then
         self.event_handlers["Resume"]()
     elseif Device:isKindle() then
         self.event_handlers["OutOfSS"]()

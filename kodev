@@ -116,8 +116,8 @@ SUPPORTED_TARGETS="
     kindle-legacy   Needed only for Kindle2/3/DXG
     kobo
     cervantes
+    remarkable
     sony-prstux
-	remarkable
     android
     pocketbook
     ubuntu-touch
@@ -188,12 +188,12 @@ ${SUPPORTED_TARGETS}"
             make TARGET=kobo
             assert_ret_zero $?
             ;;
-        sony-prstux)
-            make TARGET=sony-prstux
-            assert_ret_zero $?
-            ;;
         remarkable)
             make TARGET=remarkable
+            assert_ret_zero $?
+            ;;
+        sony-prstux)
+            make TARGET=sony-prstux
             assert_ret_zero $?
             ;;
         kindle-legacy)
@@ -308,11 +308,11 @@ ${SUPPORTED_TARGETS}"
         kobo)
             make TARGET=kobo clean
             ;;
-        sony-prstux)
-            make TARGET=sony-prstux clean
-            ;;
         remarkable)
             make TARGET=remarkable clean
+            ;;
+        sony-prstux)
+            make TARGET=sony-prstux clean
             ;;
         kindle-legacy)
             make TARGET=kindle-legacy clean
@@ -421,13 +421,13 @@ ${SUPPORTED_RELEASE_TARGETS}"
             kodev-build kobo
             make TARGET=kobo update
             ;;
-        sony-prstux)
-            kodev-build sony-prstux
-            make TARGET=sony-prstux update
-            ;;
         remarkable)
             kodev-build remarkable
             make TARGET=remarkable update
+            ;;
+        sony-prstux)
+            kodev-build sony-prstux
+            make TARGET=sony-prstux update
             ;;
         cervantes)
             kodev-build cervantes

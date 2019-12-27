@@ -15,7 +15,7 @@ function Remarkable_PowerD:init()
 end
 
 function Remarkable_PowerD:frontlightIntensityHW()
-	return 0
+    return 0
 end
 
 function Remarkable_PowerD:setIntensityHW(intensity)

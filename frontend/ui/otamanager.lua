@@ -127,10 +127,10 @@ function OTAManager:getOTAModel()
         return "kobo"
     elseif Device:isPocketBook() then
         return "pocketbook"
+    elseif Device:isRemarkable() then
+        return "remarkable"
     elseif Device:isSonyPRSTUX() then
         return "sony-prstux"
-	elseif Device:isRemarkable() then
-		return "remarkable"
     else
         return ""
     end
