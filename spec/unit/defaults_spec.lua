@@ -8,7 +8,7 @@ describe("defaults module", function()
 
     it("should load all defaults from defaults.lua", function()
         Defaults:init()
-        assert.is_same(107, #Defaults.defaults_name)
+        assert.is_same(106, #Defaults.defaults_name)
     end)
 
     it("should save changes to defaults.persistent.lua", function()
@@ -19,12 +19,12 @@ describe("defaults module", function()
         Defaults.changed[20] = true
         Defaults.changed[47] = true
         Defaults.changed[54] = true
-        Defaults.changed[86] = true
-        Defaults.changed[102] = true
+        Defaults.changed[85] = true
+        Defaults.changed[101] = true
         Defaults:saveSettings()
-        assert.is_same(107, #Defaults.defaults_name)
-        assert.is_same("SEARCH_LIBRARY_PATH", Defaults.defaults_name[102])
-        assert.is_same("DTAP_ZONE_BACKWARD", Defaults.defaults_name[86])
+        assert.is_same(106, #Defaults.defaults_name)
+        assert.is_same("SEARCH_LIBRARY_PATH", Defaults.defaults_name[101])
+        assert.is_same("DTAP_ZONE_BACKWARD", Defaults.defaults_name[85])
         assert.is_same("DCREREADER_CONFIG_WORD_SPACING_LARGE", Defaults.defaults_name[47])
         assert.is_same("DCREREADER_CONFIG_H_MARGIN_SIZES_XXX_LARGE", Defaults.defaults_name[20])
         local fd = io.open(persistent_filename, "r")
@@ -54,8 +54,8 @@ DGLOBALGAMMA = 1
         Defaults:init()
         Defaults.changed[54] = true
         Defaults.defaults_value[54] = 2
-        Defaults.changed[86] = true
-        Defaults.defaults_value[86] = {
+        Defaults.changed[85] = true
+        Defaults.defaults_value[85] = {
             y = 10,
             x = 10.125,
             h = 20.25,

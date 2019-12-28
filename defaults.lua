@@ -189,7 +189,8 @@ DCREREADER_CONFIG_WORD_SPACING_LARGE = {100, 90}
 --DCREREADER_PROGRESS_BAR = 1
 
 -- configure "mini" progress bar
-DMINIBAR_TOC_MARKER_WIDTH = 2   -- Looses usefulness > 3
+-- no longer needed
+--DMINIBAR_TOC_MARKER_WIDTH = 2   -- Looses usefulness > 3
 DMINIBAR_CONTAINER_HEIGHT = 14  -- Larger means more padding at the bottom, at the risk of eating into the last line
 DMINIBAR_FONT_SIZE = 14
 -- no longer needed
