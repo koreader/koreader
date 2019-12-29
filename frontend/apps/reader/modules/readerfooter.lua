@@ -1188,7 +1188,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                                     return self.settings.toc_markers_width == 1
                                 end,
                                 callback = function()
-                                    self.settings.toc_markers_width = 1
+                                    self.settings.toc_markers_width = 1  -- unscaled_size_check: ignore
                                     self:setTocMarkers()
                                     self:refreshFooter(true)
                                 end,
@@ -1199,7 +1199,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                                     return self.settings.toc_markers_width == 2
                                 end,
                                 callback = function()
-                                    self.settings.toc_markers_width = 2
+                                    self.settings.toc_markers_width = 2  -- unscaled_size_check: ignore
                                     self:setTocMarkers()
                                     self:refreshFooter(true)
                                 end,
@@ -1210,7 +1210,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                                     return self.settings.toc_markers_width == 3
                                 end,
                                 callback = function()
-                                    self.settings.toc_markers_width = 3
+                                    self.settings.toc_markers_width = 3  -- unscaled_size_check: ignore
                                     self:setTocMarkers()
                                     self:refreshFooter(true)
                                 end
