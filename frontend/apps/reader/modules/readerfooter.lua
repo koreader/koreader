@@ -335,7 +335,7 @@ function ReaderFooter:init()
         width = nil,
         height = nil,
         percentage = self.progress_percentage,
-        tick_width = self.settings.toc_markers_width,
+        tick_width = Screen:scaleBySize(self.settings.toc_markers_width),
         ticks = nil, -- ticks will be populated in self:updateFooterText
         last = nil, -- last will be initialized in self:updateFooterText
     }
@@ -1174,9 +1174,9 @@ function ReaderFooter:addToMainMenu(menu_items)
                             if self.settings.toc_markers_width == 1 then
                                 markers_width_text = _("thin")
                             elseif self.settings.toc_markers_width == 2 then
-                                markers_width_text = _("normal")
+                                markers_width_text = _("medium")
                             end
-                            return T(_("Chapter markers width (%1)"), markers_width_text)
+                            return T(_("Chapter marker width (%1)"), markers_width_text)
                         end,
                         enabled_func = function()
                             return not self.settings.progress_style_thin and self.settings.toc_markers
@@ -1188,18 +1188,18 @@ function ReaderFooter:addToMainMenu(menu_items)
                                     return self.settings.toc_markers_width == 1
                                 end,
                                 callback = function()
-                                    self.settings.toc_markers_width = Screen:scaleBySize(1)
+                                    self.settings.toc_markers_width = 1
                                     self:setTocMarkers()
                                     self:refreshFooter(true)
                                 end,
                             },
                             {
-                                text = _("Normal"),
+                                text = _("Medium"),
                                 checked_func = function()
                                     return self.settings.toc_markers_width == 2
                                 end,
                                 callback = function()
-                                    self.settings.toc_markers_width = Screen:scaleBySize(2)
+                                    self.settings.toc_markers_width = 2
                                     self:setTocMarkers()
                                     self:refreshFooter(true)
                                 end,
@@ -1210,7 +1210,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                                     return self.settings.toc_markers_width == 3
                                 end,
                                 callback = function()
-                                    self.settings.toc_markers_width = Screen:scaleBySize(3)
+                                    self.settings.toc_markers_width = 3
                                     self:setTocMarkers()
                                     self:refreshFooter(true)
                                 end
@@ -1327,7 +1327,7 @@ function ReaderFooter:setTocMarkers(reset)
         self.pages = self.view.document:getPageCount()
     end
     if self.settings.toc_markers then
-        self.progress_bar.tick_width = self.settings.toc_markers_width
+        self.progress_bar.tick_width = Screen:scaleBySize(self.settings.toc_markers_width)
         if self.progress_bar.ticks ~= nil then return end
         local ticks_candidates = {}
         if self.ui.toc then
