@@ -91,6 +91,7 @@ end
 
 local PROGRESS_BAR_STYLE_THICK_DEFAULT_HEIGHT = 7
 local PROGRESS_BAR_STYLE_THIN_DEFAULT_HEIGHT = 3
+local DMINIBAR_TOC_MARKER_WIDTH = 2
 
 -- functions that generates footer text for each mode
 local footerTextGeneratorMap = {
@@ -270,7 +271,8 @@ function ReaderFooter:init()
         frontlight = false,
         mem_usage = false,
         wifi_status = false,
-        item_prefix = "icons"
+        item_prefix = "icons",
+        toc_markers_width = DMINIBAR_TOC_MARKER_WIDTH,
     }
 
     if not self.settings.order then
@@ -299,6 +301,9 @@ function ReaderFooter:init()
     -- default margin (like self.horizontal_margin)
     if not self.settings.progress_margin_width  then
         self.settings.progress_margin_width = Screen:scaleBySize(10)
+    end
+    if not self.settings.toc_markers_width then
+        self.settings.toc_markers_width = DMINIBAR_TOC_MARKER_WIDTH
     end
     self.mode_list = {}
     for i = 0, #self.mode_index do
@@ -330,7 +335,7 @@ function ReaderFooter:init()
         width = nil,
         height = nil,
         percentage = self.progress_percentage,
-        tick_width = DMINIBAR_TOC_MARKER_WIDTH,
+        tick_width = Screen:scaleBySize(self.settings.toc_markers_width),
         ticks = nil, -- ticks will be populated in self:updateFooterText
         last = nil, -- last will be initialized in self:updateFooterText
     }
@@ -1160,9 +1165,57 @@ function ReaderFooter:addToMainMenu(menu_items)
                         callback = function()
                             self.settings.toc_markers = not self.settings.toc_markers
                             self:setTocMarkers()
-                            self:updateFooter()
-                            UIManager:setDirty(nil, "ui")
+                            self:refreshFooter(true)
                         end
+                    },
+                    {
+                        text_func = function()
+                            local markers_width_text = _("thick")
+                            if self.settings.toc_markers_width == 1 then
+                                markers_width_text = _("thin")
+                            elseif self.settings.toc_markers_width == 2 then
+                                markers_width_text = _("medium")
+                            end
+                            return T(_("Chapter marker width (%1)"), markers_width_text)
+                        end,
+                        enabled_func = function()
+                            return not self.settings.progress_style_thin and self.settings.toc_markers
+                        end,
+                        sub_item_table = {
+                            {
+                                text = _("Thin"),
+                                checked_func = function()
+                                    return self.settings.toc_markers_width == 1
+                                end,
+                                callback = function()
+                                    self.settings.toc_markers_width = 1  -- unscaled_size_check: ignore
+                                    self:setTocMarkers()
+                                    self:refreshFooter(true)
+                                end,
+                            },
+                            {
+                                text = _("Medium"),
+                                checked_func = function()
+                                    return self.settings.toc_markers_width == 2
+                                end,
+                                callback = function()
+                                    self.settings.toc_markers_width = 2  -- unscaled_size_check: ignore
+                                    self:setTocMarkers()
+                                    self:refreshFooter(true)
+                                end,
+                            },
+                            {
+                                text = _("Thick"),
+                                checked_func = function()
+                                    return self.settings.toc_markers_width == 3
+                                end,
+                                callback = function()
+                                    self.settings.toc_markers_width = 3  -- unscaled_size_check: ignore
+                                    self:setTocMarkers()
+                                    self:refreshFooter(true)
+                                end
+                            },
+                        },
                     },
                 },
             },
@@ -1274,6 +1327,7 @@ function ReaderFooter:setTocMarkers(reset)
         self.pages = self.view.document:getPageCount()
     end
     if self.settings.toc_markers then
+        self.progress_bar.tick_width = Screen:scaleBySize(self.settings.toc_markers_width)
         if self.progress_bar.ticks ~= nil then return end
         local ticks_candidates = {}
         if self.ui.toc then
