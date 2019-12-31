@@ -78,10 +78,14 @@ update_koreader() {
             fail=$?
         fi
         if [ $fail -eq 0 ]; then
-            logmsg "Update to v${koreader_pkg_ver} successful :)"
             # Cleanup behind us...
             rm -f "${found_koreader_package}"
+            # Flush to disk first...
+            sync
+            logmsg "Update to v${koreader_pkg_ver} successful :)"
         else
+            # Flush to disk first anyway...
+            sync
             logmsg "Failed to update to v${koreader_pkg_ver} :("
         fi
     fi
