@@ -8,6 +8,7 @@
 [![Mobileread][badge-mobileread]][link-forum]
 [![Build Status][badge-circleci]][link-circleci]
 [![Coverage Status][badge-coverage]][link-coverage]
+[![Weblate Status][badge-weblate]][link-weblate]
 
 [Download](https://github.com/koreader/koreader/releases) •
 [Wiki](https://github.com/koreader/koreader/wiki) •
@@ -93,6 +94,7 @@ Also if you have and old Pocketbook device you don't want, we might find it usef
 [badge-license]:https://img.shields.io/github/license/koreader/koreader
 [badge-release]:https://img.shields.io/github/release/koreader/koreader.svg
 [badge-mobileread]:https://img.shields.io/badge/forum-on_mobileread-lightgrey
+[badge-weblate]:https://hosted.weblate.org/widgets/koreader/-/koreader/svg-badge.svg
 
 [link-bountysource]:https://www.bountysource.com/teams/koreader
 [link-circleci]:https://circleci.com/gh/koreader/koreader
@@ -106,3 +108,4 @@ Also if you have and old Pocketbook device you don't want, we might find it usef
 [link-issues-features]:https://github.com/koreader/koreader/issues?q=is%3Aopen+is%3Aissue+label%3Aenhancement
 [link-translations-transifex]:https://www.transifex.com/projects/p/koreader/
 [link-wiki]:https://github.com/koreader/koreader/wiki
+[link-weblate]:https://hosted.weblate.org/engage/koreader/?utm_source=widget

@@ -489,7 +489,7 @@ DOMAIN=koreader
 TEMPLATE_DIR=l10n/templates
 XGETTEXT_BIN=xgettext
 
-pot:
+pot: po
 	mkdir -p $(TEMPLATE_DIR)
 	$(XGETTEXT_BIN) --from-code=utf-8 \
 		--keyword=C_:1c,2 --keyword=N_:1,2 --keyword=NC_:1c,2,3 \
@@ -498,14 +498,9 @@ pot:
 		`find plugins -iname "*.lua"` \
 		`find tools -iname "*.lua"` \
 		-o $(TEMPLATE_DIR)/$(DOMAIN).pot
-	# push source file to Transifex
-	$(MAKE) -i -C l10n bootstrap
-	$(MAKE) -C l10n push
 
 po:
-	$(MAKE) -C l10n pull
-	# After Weblate migration
-	#git submodule update --remote l10n
+	git submodule update --remote l10n
 
 
 static-check:

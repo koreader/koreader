@@ -9,6 +9,16 @@ set +e
 if [ -z "${CIRCLE_PULL_REQUEST}" ] && [ "${CIRCLE_BRANCH}" = 'master' ]; then
     echo "CIRCLE_NODE_INDEX: ${CIRCLE_NODE_INDEX}"
     if [ "$CIRCLE_NODE_INDEX" = 1 ]; then
+        echo -e "\\n${ANSI_GREEN}Updating translation source file."
+        make pot
+        pushd l10n && {
+            git checkout master
+            git -c user.name="KOReader build bot" -c user.email="non-reply@koreader.rocks" \
+                commit templates/koreader.pot -m "Updated translation source file"
+            git push --quiet "https://${TRANSLATIONS_GITHUB_TOKEN}@github.com/koreader/koreader-translations.git" master
+            echo -e "\\n${ANSI_GREEN}Translation update pushed."
+        } && popd || exit
+
         echo -e "\\n${ANSI_GREEN}Checking out koreader/doc for update."
         git clone git@github.com:koreader/doc.git koreader_doc
 
