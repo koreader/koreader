@@ -18,7 +18,7 @@ fi
 ## Check if we have an FBInk binary available somewhere...
 # Default to something that won't horribly blow up...
 FBINK_BIN="true"
-for my_dir in libkh/bin koreader linkss/bin linkfonts/bin usbnet/bin; do
+for my_dir in koreader libkh/bin linkss/bin linkfonts/bin usbnet/bin; do
     my_fbink="/mnt/us/${my_dir}/fbink"
     if [ -x "${my_fbink}" ]; then
         FBINK_BIN="${my_fbink}"
@@ -38,7 +38,7 @@ has_fbink() {
     return 1
 }
 
-# NOTE: Yeah, the name becomes a bit of a lie now that we're exclusively using FBInk ;p.
+# NOTE: Yeah, the name becomes a bit of a lie now that we're (hopefully) exclusively using FBInk ;p.
 eips_print_bottom_centered() {
     # We need at least two args
     if [ $# -lt 2 ]; then
