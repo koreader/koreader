@@ -63,7 +63,7 @@ Please follow the model specific steps for your device:
 KOReader is developed and supported by volunteers all around the world. There are many ways you can help:
 
 - [fix bugs][link-issues-bugs] and [implement new features][link-issues-features]
-- [translate the program into your language][link-translations-transifex] or improve an existing translation
+- [translate the program into your language][link-weblate] or improve an existing translation
 - document lesser-known features on the [wiki][link-wiki]
 - help others with your knowledge on the [forum][link-forum]
 
@@ -106,6 +106,5 @@ Also if you have and old Pocketbook device you don't want, we might find it usef
 [link-gitter]:https://gitter.im/koreader/koreader
 [link-issues-bugs]:https://github.com/koreader/koreader/issues?q=is%3Aopen+is%3Aissue+label%3Abug
 [link-issues-features]:https://github.com/koreader/koreader/issues?q=is%3Aopen+is%3Aissue+label%3Aenhancement
-[link-translations-transifex]:https://www.transifex.com/projects/p/koreader/
-[link-wiki]:https://github.com/koreader/koreader/wiki
 [link-weblate]:https://hosted.weblate.org/engage/koreader/?utm_source=widget
+[link-wiki]:https://github.com/koreader/koreader/wiki
