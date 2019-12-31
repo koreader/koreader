@@ -38,7 +38,7 @@ has_fbink() {
     return 1
 }
 
-# NOTE: Yeah, the name becomes a bit of a lie now that we're exclusively using FBInk ;p.
+# NOTE: Yeah, the name becomes a bit of a lie now that we're (hopefully) exclusively using FBInk ;p.
 eips_print_bottom_centered() {
     # We need at least two args
     if [ $# -lt 2 ]; then

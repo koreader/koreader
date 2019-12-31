@@ -22,7 +22,7 @@ logmsg() {
         f_log I koreader kual "" "${1}"
     fi
 
-    # And handle user visual feedback via eips...
+    # And handle user visual feedback via FBInk/eips...
     eips_print_bottom_centered "${1}" 1
 }
 
@@ -93,76 +93,12 @@ install_koreader() {
     update_koreader "clean"
 }
 
-# Handle cre's settings...
-set_cre_prop() {
-    # We need at least two args
-    if [ $# -lt 2 ]; then
-        logmsg "not enough arg passed to set_cre_prop"
-        return
-    fi
-
-    cre_prop_key="${1}"
-    cre_prop_value="${2}"
-
-    cre_config="/mnt/us/koreader/data/cr3.ini"
-
-    # Check that the config exists...
-    if [ -f "${cre_config}" ]; then
-        # dos2unix
-        # shellcheck disable=SC2039
-        sed -e "s/$(echo -ne '\r')$//g" -i "${cre_config}"
-
-        # And finally set the prop
-        if sed -re "s/^(${cre_prop_key})(=)(.*?)$/\1\2${cre_prop_value}/" -i "${cre_config}"; then
-            logmsg "Set ${cre_prop_key} to ${cre_prop_value}"
-        else
-            logmsg "Failed to set ${cre_prop_key}"
-        fi
-    else
-        logmsg "No CRe config, launch CRe once first"
-    fi
-}
-
-# Handle CRe's font.hinting.mode
-cre_autohint() {
-    set_cre_prop "font.hinting.mode" "2"
-}
-cre_bci() {
-    set_cre_prop "font.hinting.mode" "1"
-}
-cre_nohinting() {
-    set_cre_prop "font.hinting.mode" "0"
-}
-
-# Handle CRe's font.kerning.enabled
-cre_kerning() {
-    set_cre_prop "font.kerning.enabled" "1"
-}
-cre_nokerning() {
-    set_cre_prop "font.kerning.enabled" "0"
-}
-
 ## Main
 case "${1}" in
     "update_koreader")
         ${1}
         ;;
     "install_koreader")
-        ${1}
-        ;;
-    "cre_autohint")
-        ${1}
-        ;;
-    "cre_bci")
-        ${1}
-        ;;
-    "cre_nohinting")
-        ${1}
-        ;;
-    "cre_kerning")
-        ${1}
-        ;;
-    "cre_nokerning")
         ${1}
         ;;
     *)
