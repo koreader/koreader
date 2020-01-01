@@ -774,7 +774,7 @@ function ReaderView:onReadSettings(config)
     self.highlight.saved = config:readSetting("highlight") or {}
     self.page_overlap_style = config:readSetting("page_overlap_style") or G_reader_settings:readSetting("page_overlap_style") or "dim"
     self.page_gap.height = Screen:scaleBySize(config:readSetting("kopt_page_gap_height") or
-    G_reader_settings:readSetting("kopt_page_gap_height") or 8)
+        G_reader_settings:readSetting("kopt_page_gap_height") or 8)
 end
 
 function ReaderView:onPageUpdate(new_page_no)
@@ -838,6 +838,9 @@ function ReaderView:onSetViewMode(new_mode)
     return true
 end
 
+--Refresh after changing a variable done by koptoptions.lua since all of them
+--requires full screen refresh. If this handler used for changing page gap from
+--another source (eg. coptions.lua) triggering a redraw is needed.
 function ReaderView:onPageGapUpdate(page_gap)
     self.page_gap.height = page_gap
     return true
