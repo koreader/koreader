@@ -211,8 +211,8 @@ function GetText_mt.__index.changeLang(new_lang)
                     local plurals = plural_forms:match("plural=%((.*)%);")
 
                     -- Hardcoded workaround for Romanian which has 3 plural forms.
-                    if plurals == "n==1?0:(((n%100>19)||((n%100==0)&&(n!=0)))?2:1)" then
-                        plurals = "n==1 ? 0 : (n%100>19) || ((n%100==0) && (n!=0)) ? 2 : 1"
+                    if plurals == "n == 1) ? 0 : ((n == 0 || n != 1 && n % 100 >= 1 && n % 100 <= 19) ? 1 : 2" then
+                        plurals = "n == 1 ? 0 : (n == 0 || n != 1 && n % 100 >= 1 && n % 100 <= 19) ? 1 : 2"
                     end
 
                     if not plurals then
