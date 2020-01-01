@@ -143,14 +143,14 @@ NOTE: Extra dependencies for tests: `luacheck` from luarocks.
 ## Translations
 
 Please refer to [l10n's README][l10n-readme] to grab the latest translations
-from [the KOReader project on Transifex][koreader-transifex] with this command:
+from [the KOReader project on Weblate][koreader-weblate] with this command:
 
 ```
 make po
 ```
 
-If your language is not listed on the Transifex project, please don't hesitate
-to send a language request [here][koreader-transifex].
+If your language is not listed on the Weblate project, please don't hesitate
+to send a language request [here][koreader-weblate].
 
 ### Variables in translation
 
@@ -196,6 +196,6 @@ KOReader's build system. To install ccache:
 * for more information about ccache, visit: https://ccache.samba.org/
 
 [circleci-conf]:https://github.com/koreader/koreader/blob/master/.circleci/config.yml
-[koreader-transifex]:https://www.transifex.com/projects/p/koreader/
+[koreader-weblate]:https://hosted.weblate.org/engage/koreader/
 [base-readme]:https://github.com/koreader/koreader-base/blob/master/README.md
 [l10n-readme]:https://github.com/koreader/koreader/blob/master/l10n/README.md

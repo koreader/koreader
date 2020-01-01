@@ -393,15 +393,11 @@ ${SUPPORTED_RELEASE_TARGETS}"
 
     check_submodules
     if [ "${ignore_translation}" -eq 0 ]; then
-        if command -v tx>/dev/null; then
-            make po || {
-                echo "ERROR: failed to fetch translation."
-                echo "Tip: Use --ignore-translation OPTION if you want to build a release without translation."
-                exit 1
-            }
-        else
-            echo "WARN: Transifex client not found, no translation pulled."
-        fi
+        make po || {
+            echo "ERROR: failed to fetch translation."
+            echo "Tip: Use --ignore-translation OPTION if you want to build a release without translation."
+            exit 1
+        }
     fi
 
     case "${1}" in
