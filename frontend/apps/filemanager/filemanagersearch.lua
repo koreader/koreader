@@ -639,10 +639,10 @@ function Search:browse(option, run, chosen)
         local i = 1
         while i <= self.count do
             if (option == "tags" and self.data[i][self.tags3]:find("\t" .. chosen .. "\t",nil,true)) or (option == "series" and chosen == self.data[i][self.series]) then
-                local entry = _("Title: ")  .. (self.data[i][self.title] or "-") .. "\n \n" ..
-                              _("Author(s):") .. " " .. (self.data[i][self.authors2] or "-") .. "\n \n" ..
-                              _("Tags:") .. " " .. (self.data[i][self.tags2] or "-") .. "\n \n" ..
-                              _("Series:") .. " " .. (self.data[i][self.series] or "-")
+                local entry = T(_("Title: %1"), (self.data[i][self.title] or "-")) .. "\n \n" ..
+                              T(_("Author(s): %1"), (self.data[i][self.authors2] or "-")) .. "\n \n" ..
+                              T(_("Tags: %1"), (self.data[i][self.tags2] or "-")) .. "\n \n" ..
+                              T(_("Series: %1"), (self.data[i][self.series] or "-"))
                 if self.data[i][self.series] ~= "-" then
                     entry = entry .. " (" .. tostring(self.data[i][self.series_index]):gsub(".0$","") .. ")"
                 end

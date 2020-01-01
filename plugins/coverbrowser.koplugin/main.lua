@@ -4,6 +4,7 @@ local logger = require("logger")
 local _ = require("gettext")
 local BookInfoManager = require("bookinfomanager")
 local Screen = require("device").screen
+local T = require("ffi/util").template
 
 --[[
     This plugin provides additional display modes to file browsers (File Manager
@@ -105,7 +106,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                 end
                 if self.full_featured then
                     -- Inform that this settings applies only to classic file chooser
-                    current_state = _("(Classic mode) ") .. current_state
+                    current_state = T(_("(Classic mode) %1"), current_state)
                 end
                 return current_state
             end,
@@ -366,7 +367,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                         }
                     },
                     {
-                        text = _("Series "),
+                        text = _("Series"),
                         sub_item_table = {
                             {
                                 text = _("Append series metadata to authors"),
