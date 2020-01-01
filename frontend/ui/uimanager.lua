@@ -69,7 +69,7 @@ function UIManager:init()
     self.reboot_action = function()
         self._entered_poweroff_stage = true;
         Screen:setRotationMode(0)
-        require("ui/screensaver"):show("reboot", _("Rebooting..."))
+        require("ui/screensaver"):show("reboot", _("Rebooting…"))
         if Device:needsScreenRefreshAfterResume() then
             Screen:refreshFull()
         end
