@@ -197,7 +197,8 @@ DMINIBAR_FONT_SIZE = 14
 --DMINIBAR_HEIGHT = 7             -- Should be smaller than DMINIBAR_CONTAINER_HEIGHT
 
 -- change this to any numerical value if you want to automatically save settings when turning pages
-DAUTO_SAVE_PAGING_COUNT = nil
+-- no longer needed (now available in menu as an interval in minutes)
+-- DAUTO_SAVE_PAGING_COUNT = nil
 
 -- dictionary font size
 -- no longer needed

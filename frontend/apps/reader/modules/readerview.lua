@@ -76,10 +76,8 @@ local ReaderView = OverlapGroup:extend{
     dogear_visible = false,
     -- in flipping state
     flipping_visible = false,
-
-    -- auto save settings after turning pages
-    auto_save_paging_count = 0,
-    autoSaveSettings = function()end
+    -- to ensure periodic flush of settings
+    settings_last_save_ts = nil,
 }
 
 function ReaderView:init()
@@ -788,14 +786,14 @@ function ReaderView:onPageUpdate(new_page_no)
     self.state.page = new_page_no
     self:recalculate()
     self.highlight.temp = {}
-    UIManager:nextTick(self.autoSaveSettings)
+    self:checkAutoSaveSettings()
 end
 
 function ReaderView:onPosUpdate(new_pos)
     self.state.pos = new_pos
     self:recalculate()
     self.highlight.temp = {}
-    UIManager:nextTick(self.autoSaveSettings)
+    self:checkAutoSaveSettings()
 end
 
 function ReaderView:onZoomUpdate(zoom)
@@ -921,20 +919,29 @@ function ReaderView:onCloseDocument()
 end
 
 function ReaderView:onReaderReady()
-    if DAUTO_SAVE_PAGING_COUNT ~= nil then
-        if DAUTO_SAVE_PAGING_COUNT <= 0 then
-            self.autoSaveSettings = function()
-                self.ui:saveSettings()
-            end
-        else
-            self.autoSaveSettings = function()
-                self.auto_save_paging_count = self.auto_save_paging_count + 1
-                if self.auto_save_paging_count == DAUTO_SAVE_PAGING_COUNT then
-                    self.ui:saveSettings()
-                    self.auto_save_paging_count = 0
-                end
-            end
-        end
+    self.settings_last_save_ts = os.time()
+end
+
+function ReaderView:onResume()
+    -- As settings were saved on suspend, reset this on resume,
+    -- as there's no need for a possibly immediate save.
+    self.settings_last_save_ts = os.time()
+end
+
+function ReaderView:checkAutoSaveSettings()
+    if not self.settings_last_save_ts then -- reader not yet ready
+        return
+    end
+    local interval = G_reader_settings:readSetting("auto_save_settings_interval_minutes")
+    if not interval then -- no auto save
+        return
+    end
+    if os.time() - self.settings_last_save_ts >= interval*60 then
+        self.settings_last_save_ts = os.time()
+        UIManager:nextTick(function()
+            self.ui:saveSettings()
+            self.settings_last_save_ts = os.time() -- re-set when saving done
+        end)
     end
 end
 
