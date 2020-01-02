@@ -604,7 +604,9 @@ ol.references > li > .mw-cite-backlink { display: none; }
 Show footnotes with classic class names at the bottom of pages.
 This tweak can be duplicated as a user style tweak when books contain footnotes wrapped with other class names.]]),
                 css = [[
-.footnote, .note, .note1, .ntb, .ntb-txt, .ntb-txt-j
+.footnote, .footnotes, .fn,
+.note, .note1, .note2, .note3,
+.ntb, .ntb-txt, .ntb-txt-j
 {
     -cr-hint: footnote-inpage;
     margin: 0 !important;
@@ -618,7 +620,9 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
 Show footnotes with classic classname at the bottom of pages.
 This tweak can be duplicated as a user style tweak when books contain footnotes wrapped with other class names.]]),
                 css = [[
-.footnote, .note, .note1, .ntb, .ntb-txt, .ntb-txt-j
+.footnote, .footnotes, .fn,
+.note, .note1, .note2, .note3,
+.ntb, .ntb-txt, .ntb-txt-j
 {
     -cr-hint: footnote-inpage;
     margin: 0 !important;
