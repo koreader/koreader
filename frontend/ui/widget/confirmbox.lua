@@ -168,9 +168,9 @@ end
 function ConfirmBox:onTapClose(arg, ges)
     if ges.pos:notIntersectWith(self[1][1].dimen) then
         self:onClose()
-        return true
     end
-    return false
+    -- Don't let it propagate to underlying widgets
+    return true
 end
 
 function ConfirmBox:onSelect()
