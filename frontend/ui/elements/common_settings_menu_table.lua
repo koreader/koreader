@@ -373,7 +373,7 @@ local function genAutoSaveMenuItem(value)
     if not value then
         text = _("Only on close, suspend and exit")
     else
-        text = T(N_("Every 1 minute", "Every %1 minutes", value), value)
+        text = T(N_("Every minute", "Every %1 minutes", value), value)
     end
     return {
         text = text,
@@ -397,7 +397,7 @@ common_settings.document = {
                 if interval == false then
                     s_interval = "only on close"
                 else
-                    s_interval = T(_("every %1 mn"), interval)
+                    s_interval = T(N_("every 1 m", "every %1 m", interval), interval)
                 end
                 return T(_("Auto-save book metadata: %1"), s_interval)
             end,
