@@ -13,10 +13,13 @@ if [ -z "${CIRCLE_PULL_REQUEST}" ] && [ "${CIRCLE_BRANCH}" = 'master' ]; then
         make pot
         pushd l10n && {
             git checkout master
-            git -c user.name="KOReader build bot" -c user.email="non-reply@koreader.rocks" \
-                commit templates/koreader.pot -m "Updated translation source file"
-            git push --quiet "https://${TRANSLATIONS_GITHUB_TOKEN}@github.com/koreader/koreader-translations.git" master
-            echo -e "\\n${ANSI_GREEN}Translation update pushed."
+            # If only one line was added and removed, it was just the timestamp.
+            git diff --numstat | grep "1[[:space:]]1[[:space:]]templates/koreader.pot" && echo -e "\\n${ANSI_GREEN}No updated translations found." || {
+                git -c user.name="KOReader build bot" -c user.email="non-reply@koreader.rocks" \
+                    commit templates/koreader.pot -m "Updated translation source file"
+                git push --quiet "https://${TRANSLATIONS_GITHUB_TOKEN}@github.com/koreader/koreader-translations.git" master
+                echo -e "\\n${ANSI_GREEN}Translation update pushed."
+            }
         } && popd || exit
 
         echo -e "\\n${ANSI_GREEN}Checking out koreader/doc for update."
