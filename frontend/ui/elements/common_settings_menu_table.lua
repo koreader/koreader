@@ -7,6 +7,7 @@ local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
 local TimeWidget = require("ui/widget/timewidget")
 local _ = require("gettext")
+local N_ = _.ngettext
 local Screen = Device.screen
 local T = require("ffi/util").template
 
@@ -372,7 +373,7 @@ local function genAutoSaveMenuItem(value)
     if not value then
         text = _("Only on close, suspend and exit")
     else
-        text = T(_("Every %1 mn"), value)
+        text = T(N_("Every 1 minute", "Every %1 minutes", value), value)
     end
     return {
         text = text,
