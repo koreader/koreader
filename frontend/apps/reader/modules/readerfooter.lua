@@ -24,6 +24,7 @@ local T = require("ffi/util").template
 local _ = require("gettext")
 local C_ = _.pgettext
 local Screen = Device.screen
+local logger = require("logger")
 
 local MODE = {
     off = 0,
@@ -92,6 +93,7 @@ end
 local PROGRESS_BAR_STYLE_THICK_DEFAULT_HEIGHT = 7
 local PROGRESS_BAR_STYLE_THIN_DEFAULT_HEIGHT = 3
 local DMINIBAR_TOC_MARKER_WIDTH = 2
+local DMINIBAR_FONT_SIZE = 14
 
 -- functions that generates footer text for each mode
 local footerTextGeneratorMap = {
@@ -243,7 +245,6 @@ local ReaderFooter = WidgetContainer:extend{
     progress_percentage = 0.0,
     footer_text = nil,
     text_font_face = "ffont",
-    text_font_size = DMINIBAR_FONT_SIZE,
     height = Screen:scaleBySize(DMINIBAR_CONTAINER_HEIGHT),
     horizontal_margin = Screen:scaleBySize(10),
     text_left_margin = Screen:scaleBySize(10),
@@ -273,6 +274,7 @@ function ReaderFooter:init()
         wifi_status = false,
         item_prefix = "icons",
         toc_markers_width = DMINIBAR_TOC_MARKER_WIDTH,
+        text_font_size = DMINIBAR_FONT_SIZE,
     }
 
     if not self.settings.order then
@@ -325,9 +327,12 @@ function ReaderFooter:init()
         end
     end
 
+    if not self.settings.text_font_size then
+        self.settings.text_font_size = DMINIBAR_FONT_SIZE
+    end
     self.footer_text = TextWidget:new{
         text = '',
-        face = Font:getFace(self.text_font_face, self.text_font_size),
+        face = Font:getFace(self.text_font_face, self.settings.text_font_size),
     }
     -- all width related values will be initialized in self:resetLayout()
     self.text_width = 0
@@ -1004,6 +1009,40 @@ function ReaderFooter:addToMainMenu(menu_items)
                         end,
                     },
                 }
+            },
+            {
+                text_func = function()
+                    return T(_("Font size (%1)"), self.settings.text_font_size)
+                end,
+                callback = function(touchmenu_instance)
+                    local SpinWidget = require("ui/widget/spinwidget")
+                    local font_size = self.settings.text_font_size
+                    local items_font = SpinWidget:new{
+                        width = Screen:getWidth() * 0.6,
+                        value = font_size,
+                        value_min = 10,
+                        value_max = 18,
+                        default_value = 14,
+                        ok_text = _("Set size"),
+                        title_text =  _("Footer font size"),
+                        callback = function(spin)
+                            self.settings.text_font_size = spin.value
+                            local text = self.footer_text.text
+                            self.footer_text = TextWidget:new{
+                                text = text,
+                                face = Font:getFace(self.text_font_face, self.settings.text_font_size)
+                            }
+                            self.text_container = RightContainer:new{
+                                dimen = Geom:new{ w = 0, h = self.height },
+                                self.footer_text,
+                            }
+                            self:refreshFooter(true, true)
+                            if touchmenu_instance then touchmenu_instance:updateItems() end
+                        end,
+                    }
+                    UIManager:show(items_font)
+                end,
+                keep_menu_open = true,
             },
         }
     })
