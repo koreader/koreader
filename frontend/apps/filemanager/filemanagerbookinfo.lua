@@ -136,7 +136,7 @@ function BookInfo:show(file, book_props)
         end
         authors = table.concat(authors, "\n")
     else
-	authors = BD.auto(authors)
+        authors = BD.auto(authors)
     end
     table.insert(kv_pairs, { _("Authors:"), authors })
 
@@ -166,7 +166,7 @@ function BookInfo:show(file, book_props)
         end
         keywords = table.concat(keywords, "\n")
     else
-	keywords = BD.auto(keywords)
+        keywords = BD.auto(keywords)
     end
     table.insert(kv_pairs, { _("Keywords:"), keywords })
 
