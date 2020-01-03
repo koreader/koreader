@@ -310,6 +310,10 @@ function Device:info()
     return common_text..eink_text..wakelocks_text
 end
 
+function Device:epdTest()
+    android.einkTest()
+end
+
 function Device:exit()
     android.LOGI(string.format("Stopping %s main activity", android.prop.name));
     android.lib.ANativeActivity_finish(android.app.activity)
