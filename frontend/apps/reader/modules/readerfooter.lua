@@ -761,7 +761,6 @@ function ReaderFooter:addToMainMenu(menu_items)
             },
             {
                 text = _("Show footer separator"),
-                separator = true,
                 checked_func = function()
                     return self.settings.bottom_horizontal_separator
                 end,
@@ -769,6 +768,41 @@ function ReaderFooter:addToMainMenu(menu_items)
                     self.settings.bottom_horizontal_separator = not self.settings.bottom_horizontal_separator
                     self:refreshFooter(true, true)
                 end,
+            },
+            {
+                text_func = function()
+                    return T(_("Font size (%1)"), self.settings.text_font_size)
+                end,
+                separator = true,
+                callback = function(touchmenu_instance)
+                    local SpinWidget = require("ui/widget/spinwidget")
+                    local font_size = self.settings.text_font_size
+                    local items_font = SpinWidget:new{
+                        width = Screen:getWidth() * 0.6,
+                        value = font_size,
+                        value_min = 10,
+                        value_max = 18,
+                        default_value = 14,
+                        ok_text = _("Set size"),
+                        title_text =  _("Footer font size"),
+                        callback = function(spin)
+                            self.settings.text_font_size = spin.value
+                            local text = self.footer_text.text
+                            self.footer_text = TextWidget:new{
+                                text = text,
+                                face = Font:getFace(self.text_font_face, self.settings.text_font_size)
+                            }
+                            self.text_container = RightContainer:new{
+                                dimen = Geom:new{ w = 0, h = self.height },
+                                self.footer_text,
+                            }
+                            self:refreshFooter(true, true)
+                            if touchmenu_instance then touchmenu_instance:updateItems() end
+                        end,
+                    }
+                    UIManager:show(items_font)
+                end,
+                keep_menu_open = true,
             },
             {
                 text = _("Alignment"),
@@ -1008,40 +1042,6 @@ function ReaderFooter:addToMainMenu(menu_items)
                         end,
                     },
                 }
-            },
-            {
-                text_func = function()
-                    return T(_("Font size (%1)"), self.settings.text_font_size)
-                end,
-                callback = function(touchmenu_instance)
-                    local SpinWidget = require("ui/widget/spinwidget")
-                    local font_size = self.settings.text_font_size
-                    local items_font = SpinWidget:new{
-                        width = Screen:getWidth() * 0.6,
-                        value = font_size,
-                        value_min = 10,
-                        value_max = 18,
-                        default_value = 14,
-                        ok_text = _("Set size"),
-                        title_text =  _("Footer font size"),
-                        callback = function(spin)
-                            self.settings.text_font_size = spin.value
-                            local text = self.footer_text.text
-                            self.footer_text = TextWidget:new{
-                                text = text,
-                                face = Font:getFace(self.text_font_face, self.settings.text_font_size)
-                            }
-                            self.text_container = RightContainer:new{
-                                dimen = Geom:new{ w = 0, h = self.height },
-                                self.footer_text,
-                            }
-                            self:refreshFooter(true, true)
-                            if touchmenu_instance then touchmenu_instance:updateItems() end
-                        end,
-                    }
-                    UIManager:show(items_font)
-                end,
-                keep_menu_open = true,
             },
         }
     })
