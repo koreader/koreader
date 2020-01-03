@@ -230,7 +230,7 @@ function ListMenuItem:update()
         local pad_width = Screen:scaleBySize(10) -- on the left, in between, and on the right
         local wleft_width = dimen.w - wright:getWidth() - 3*pad_width
         local wleft = TextBoxWidget:new{
-            text = self.text,
+            text = BD.directory(self.text),
             face = Font:getFace("cfont", _fontSize(20)),
             width = wleft_width,
             alignment = "left",
@@ -479,17 +479,26 @@ function ListMenuItem:update()
             local series_mode = BookInfoManager:getSetting("series_mode")
 
             -- whether to use or not title and authors
+            -- (We wrap each metadata text with BD.auto() to get for each of them
+            -- the text direction from the first strong character - which should
+            -- individually be the best thing, and additionnaly prevent shuffling
+            -- if concatenated.)
             if self.do_filename_only or bookinfo.ignore_meta then
                 title = filename_without_suffix -- made out above
+                title = BD.auto(title)
                 authors = nil
             else
                 title = bookinfo.title and bookinfo.title or filename_without_suffix
+                title = BD.auto(title)
                 authors = bookinfo.authors
                 -- If multiple authors (crengine separates them with \n), we
                 -- can display them on multiple lines, but limit to 2, and
                 -- append "et al." to the 2nd if there are more
                 if authors and authors:find("\n") then
                     authors = util.splitToArray(authors, "\n")
+                    for i=1, #authors do
+                        authors[i] = BD.auto(authors[i])
+                    end
                     if #authors > 1 and bookinfo.series and series_mode == "series_in_separate_line" then
                         authors = { T(_("%1 et al."), authors[1]) }
                     elseif #authors > 2 then
@@ -499,12 +508,15 @@ function ListMenuItem:update()
                     -- as we'll fit 3 lines instead of 2, we can avoid some loops by starting from a lower font size
                     fontsize_title = _fontSize(17)
                     fontsize_authors = _fontSize(15)
+                elseif authors then
+                    authors = BD.auto(authors)
                 end
             end
             -- add Series metadata if requested
             if bookinfo.series then
                 -- Shorten calibre series decimal number (#4.0 => #4)
                 bookinfo.series = bookinfo.series:gsub("(#%d+)%.0$", "%1")
+                bookinfo.series = BD.auto(bookinfo.series)
                 if series_mode == "append_series_to_title" then
                     if title then
                         title = title .. " - " .. bookinfo.series
@@ -645,6 +657,7 @@ function ListMenuItem:update()
             if self.file_deleted then -- unless file was deleted (can happen with History)
                 hint = " " .. _("(deleted)")
             end
+            local text = BD.filename(self.text)
             local text_widget
             local fontsize_no_bookinfo = _fontSize(18)
             repeat
@@ -652,7 +665,7 @@ function ListMenuItem:update()
                     text_widget:free()
                 end
                 text_widget = TextBoxWidget:new{
-                    text = self.text .. hint,
+                    text = text .. hint,
                     face = Font:getFace("cfont", fontsize_no_bookinfo),
                     width = dimen.w - 2 * Screen:scaleBySize(10),
                     alignment = "left",

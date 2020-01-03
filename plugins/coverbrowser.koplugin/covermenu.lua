@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local DocumentRegistry = require("document/documentregistry")
 local DocSettings = require("docsettings")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
@@ -95,7 +96,7 @@ function CoverMenu:updateItems(select_number)
     self:updatePageInfo(select_number)
 
     if self.show_path then
-        self.path_text:setText(self.path)
+        self.path_text:setText(BD.directory(self.path))
     end
     self.show_parent.dithered = self._has_cover_images
     UIManager:setDirty(self.show_parent, function()
