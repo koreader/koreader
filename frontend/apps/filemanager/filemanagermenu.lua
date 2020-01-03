@@ -389,7 +389,7 @@ function FileManagerMenu:setUpdateItemTable()
     end
     if Device:isAndroid() then
         table.insert(self.menu_items.developer_options.sub_item_table, {
-            text = _("Start Eink Test"),
+            text = _("Start E-ink test"),
             callback = function()
                 Device:epdTest()
             end,
