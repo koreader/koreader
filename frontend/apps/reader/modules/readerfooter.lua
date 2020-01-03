@@ -24,7 +24,6 @@ local T = require("ffi/util").template
 local _ = require("gettext")
 local C_ = _.pgettext
 local Screen = Device.screen
-local logger = require("logger")
 
 local MODE = {
     off = 0,
