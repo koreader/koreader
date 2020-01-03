@@ -260,11 +260,18 @@ function OTAManager:fetchAndProcessUpdate()
                 ok_callback = function()
                     local isAndroid, android = pcall(require, "android")
                     if isAndroid then
-                        -- download the package if not present.
-                        if android.download(link, ota_package) then
+                        -- try to download the package
+                        local ok = android.download(link, ota_package)
+                        if ok == 1 then
                             android.notification(T(_("The file %1 already exists."), ota_package))
-                        else
+                        elseif ok == 0 then
                             android.notification(T(_("Downloading %1"), ota_package))
+                        else
+                            UIManager:show(ConfirmBox:new{
+                                text = _("Your device seems unable to download packages.\nRetry using the browser?"),
+                                ok_text = _("Retry"),
+                                ok_callback = function() Device:openLink(link) end,
+                            })
                         end
                     elseif Device:isSDL() then
                         Device:openLink(link)
