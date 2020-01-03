@@ -627,8 +627,7 @@ function Menu:init()
     if self.show_path then
         self.path_text = TextWidget:new{
             face = Font:getFace("xx_smallinfofont"),
-            text = self.path,
-            para_direction_rtl = false, -- force LTR
+            text = BD.directory(self.path),
             max_width = self.dimen.w - 2*Size.padding.small,
             truncate_left = true,
         }
@@ -1035,7 +1034,7 @@ function Menu:updateItems(select_number)
 
     self:updatePageInfo(select_number)
     if self.show_path then
-        self.path_text:setText(self.path)
+        self.path_text:setText(BD.directory(self.path))
     end
 
     UIManager:setDirty(self.show_parent, function()

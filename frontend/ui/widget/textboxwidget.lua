@@ -665,7 +665,8 @@ function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
                 -- Requested to add an ellipsis on this line
                 local ellipsis_width = RenderText:getEllipsisWidth(self.face)
                     -- no bold: xtext does synthetized bold with normal metrics
-                if line.width + ellipsis_width > line.targeted_width then
+                line.width = line.width + ellipsis_width
+                if line.width > line.targeted_width then
                     -- The ellipsis would overflow: we need to re-makeLine()
                     -- this line with a smaller targeted_width
                     line = self._xtext:makeLine(line.offset, line.targeted_width - ellipsis_width)

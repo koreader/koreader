@@ -109,8 +109,7 @@ function FileManager:init()
 
     self.path_text = TextWidget:new{
         face = Font:getFace("xx_smallinfofont"),
-        text = filemanagerutil.abbreviate(self.root_path),
-        para_direction_rtl = false, -- force LTR
+        text = BD.directory(filemanagerutil.abbreviate(self.root_path)),
         max_width = Screen:getWidth() - 2*Size.padding.small,
         truncate_left = true,
     }
@@ -179,7 +178,7 @@ function FileManager:init()
     self.focused_file = nil -- use it only once
 
     function file_chooser:onPathChanged(path)  -- luacheck: ignore
-        FileManager.instance.path_text:setText(filemanagerutil.abbreviate(path))
+        FileManager.instance.path_text:setText(BD.directory(filemanagerutil.abbreviate(path)))
         UIManager:setDirty(FileManager.instance, function()
             return "ui", FileManager.instance.path_text.dimen, FileManager.instance.dithered
         end)

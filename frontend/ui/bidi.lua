@@ -84,19 +84,17 @@ function Bidi.setup(lang)
         Bidi.default = Bidi.rtl
         Bidi.wrap = Bidi.rtl
         Bidi.filename = Bidi._filename_rtl
-        -- Bidi.filepath = Bidi._filepath_ltr -- keep filename LTR, with extension on the right
         Bidi.filepath = Bidi._filepath_rtl -- filename auto, but with extension on the right
-        Bidi.directory = Bidi._path
+        Bidi.directory = Bidi._path -- will keep any trailing / on the right
         Bidi.dirpath = Bidi._path
         Bidi.path = Bidi._path
         Bidi.url = Bidi._path
     else
         Bidi.default = Bidi.ltr
         Bidi.wrap = Bidi.nowrap
-        Bidi.filename = Bidi.nowrap -- no hint to bidi algo: it will do according to Unicode specs
+        Bidi.filename = Bidi._filename_ltr
         Bidi.filepath = Bidi._filepath_ltr
-        -- Bidi.filepath = Bidi._path_lrm
-        Bidi.directory = Bidi._path
+        Bidi.directory = Bidi._path -- will keep any trailing / on the right
         Bidi.dirpath = Bidi._path
         Bidi.path = Bidi._path
         Bidi.url = Bidi._path
@@ -177,7 +175,8 @@ local RLI = "\xE2\x81\xA7"     -- U+2067 RLI / RIGHT-TO-LEFT ISOLATE
 local FSI = "\xE2\x81\xA8"     -- U+2068 FSI / FIRST STRONG ISOLATE
 local PDI = "\xE2\x81\xA9"     -- U+2069 PDI / POP DIRECTIONAL ISOLATE
 
-local LRM = "\xE2\x80\x8E"     -- U+200E LRM / LEFT-TO-RIGHT MARK
+-- Not currently needed:
+-- local LRM = "\xE2\x80\x8E"     -- U+200E LRM / LEFT-TO-RIGHT MARK
 -- local RLM = "\xE2\x80\x8F"     -- U+200F RLM / RIGHT-TO-LEFT MARK
 
 function Bidi.ltr(text)
@@ -223,6 +222,21 @@ Bidi.dirpath = Bidi.nowrap
 Bidi.path = Bidi.nowrap
 Bidi.url = Bidi.nowrap
 
+function Bidi._filename_ltr(filename)
+    -- We always want to show the extension on the left,
+    -- but the text before should be auto.
+    local name, suffix = util.splitFileNameSuffix(filename)
+    -- Let the first strong character of the filename decides
+    -- about the direction
+    if suffix == "" then
+        return Bidi.auto(name)
+    end
+    return Bidi.auto(name) .. "." .. suffix
+    -- No need to additionally wrap it in ltr(), as the
+    -- default text direction must be LTR.
+    -- return Bidi.ltr(Bidi.auto(name) .. "." .. suffix)
+end
+
 function Bidi._filename_rtl(filename)
     -- We always want to show the extension either on the left
     -- or on the right - never in the middle (which could happen
@@ -244,11 +258,6 @@ function Bidi._filename_auto_ext_right(filename)
         return Bidi.auto(name)
     end
     return Bidi.ltr(Bidi.auto(name) .. "." .. suffix)
-end
-
-function Bidi._path_lrm(path)
-    -- with a single LRM mark before / to make it LTR
-    return Bidi.ltr(path:gsub("/", LRM.."/"))
 end
 
 function Bidi._path(path)
