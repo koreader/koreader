@@ -30,6 +30,7 @@ Example:
 
 ]]
 
+local BD = require("ui/bidi")
 local bit = require("bit")
 local Blitbuffer = require("ffi/blitbuffer")
 local CenterContainer = require("ui/widget/container/centercontainer")
@@ -469,7 +470,7 @@ function NetworkSetting:init()
                 UIManager:close(self, 'ui', self.dimen)
             end
             UIManager:show(InfoMessage:new{
-                text = T(_("Connected to network %1"), connected_item.info.ssid),
+                text = T(_("Connected to network %1"), BD.wrap(connected_item.info.ssid)),
                 timeout = 3,
             })
             if self.connect_callback then

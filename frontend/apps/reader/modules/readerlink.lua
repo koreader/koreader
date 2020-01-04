@@ -534,7 +534,7 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
                 display_filename = display_filename .. anchor
             end
             UIManager:show(ConfirmBox:new{
-                text = T(_("Would you like to read this local document?\n\n%1\n"), display_filename),
+                text = T(_("Would you like to read this local document?\n\n%1\n"), BD.filepath(display_filename)),
                 ok_callback = function()
                     UIManager:scheduleIn(0.1, function()
                         self.ui:switchDocument(linked_filename)
@@ -543,7 +543,7 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
             })
         else
             UIManager:show(InfoMessage:new{
-                text = T(_("Link to unsupported local file:\n%1"), link_url),
+                text = T(_("Link to unsupported local file:\n%1"), BD.url(link_url)),
             })
         end
         return true
@@ -551,7 +551,7 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
 
     -- Not supported
     UIManager:show(InfoMessage:new{
-        text = T(_("Invalid or external link:\n%1"), link_url),
+        text = T(_("Invalid or external link:\n%1"), BD.url(link_url)),
         -- no timeout to allow user to type that link in his web browser
     })
     -- don't propagate, user will notice and tap elsewhere if he wants to change page
@@ -658,7 +658,7 @@ function ReaderLink:onGoToExternalLink(link_url)
             -- No external link handler
             return false
         end
-        text = T(_("External link:\n\n%1"), link_url)
+        text = T(_("External link:\n\n%1"), BD.url(link_url))
     end
 
     -- Add all alternative handlers buttons

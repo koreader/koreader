@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local DataStorage = require("datastorage")
 --local DownloadBackend = require("internaldownloadbackend")
 --local DownloadBackend = require("luahttpdownloadbackend")
@@ -125,7 +126,7 @@ function NewsDownloader:addToMainMenu(menu_items)
                 callback = function()
                     UIManager:show(InfoMessage:new{
                         text = T(_("News downloader retrieves RSS and Atom news entries and stores them to:\n%1\n\nEach entry is a separate html file, that can be browsed by KOReader file manager.\nItems download limit can be configured in Settings."),
-                                 news_download_dir_path)
+                                 BD.dirpath(news_download_dir_path))
                     })
                 end,
             },
@@ -183,7 +184,7 @@ function NewsDownloader:loadConfigAndProcessFeeds()
         local download_full_article = feed.download_full_article == nil or feed.download_full_article
         local include_images = feed.include_images
         if url and limit then
-            local feed_message = T(_("Processing %1/%2:\n%3"), idx, total_feed_entries, url)
+            local feed_message = T(_("Processing %1/%2:\n%3"), idx, total_feed_entries, BD.url(url))
             UI:info(feed_message)
             NewsDownloader:processFeedSource(url, tonumber(limit), unsupported_feeds_urls, download_full_article, include_images, feed_message)
         else
@@ -198,7 +199,7 @@ function NewsDownloader:loadConfigAndProcessFeeds()
         for k,url in pairs(unsupported_feeds_urls) do
             unsupported_urls = unsupported_urls .. url
             if k ~= #unsupported_feeds_urls then
-                unsupported_urls = unsupported_urls .. ", "
+                unsupported_urls = BD.url(unsupported_urls) .. ", "
             end
         end
         UI:info(T(_("Downloading news finished. Could not process some feeds. Unsupported format in: %1"), unsupported_urls))
@@ -408,7 +409,7 @@ function NewsDownloader:changeFeedConfig()
     feed_config_file:close()
     local config_editor
     config_editor = InputDialog:new{
-        title = T(_("Config: %1"),feed_config_path),
+        title = T(_("Config: %1"), BD.filepath(feed_config_path)),
         input = config,
         input_type = "string",
         para_direction_rtl = false, -- force LTR

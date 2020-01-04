@@ -228,7 +228,7 @@ function ReaderMenu:setUpdateItemTable()
                 return _("Open previous document")
             end
             local path, file_name = util.splitFilePathName(previous_file) -- luacheck: no unused
-            return T(_("Previous: %1"), file_name)
+            return T(_("Previous: %1"), BD.filename(file_name))
         end,
         enabled_func = function()
             return self:getPreviousFile() ~= nil
@@ -239,7 +239,7 @@ function ReaderMenu:setUpdateItemTable()
         hold_callback = function()
             local previous_file = self:getPreviousFile()
             UIManager:show(ConfirmBox:new{
-                text = T(_("Would you like to open the previous document: %1?"), previous_file),
+                text = T(_("Would you like to open the previous document: %1?"), BD.filepath(previous_file)),
                 ok_text = _("OK"),
                 ok_callback = function()
                     self.ui:switchDocument(previous_file)

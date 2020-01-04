@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local DataStorage = require("datastorage")
 local Device = require("device")
@@ -844,7 +845,7 @@ Do you want to prune the cache of removed books?]]
 
         local orig_moved_offset = info.movable:getMovedOffset()
         info:free()
-        info.text = T(_("Indexing %1 / %2…\n\n%3"), i, nb_files, filename)
+        info.text = T(_("Indexing %1 / %2…\n\n%3"), i, nb_files, BD.filename(filename))
         info:init()
         local text_widget = table.remove(info.movable[1][1], 3)
         local text_widget_size = text_widget:getSize()

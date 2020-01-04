@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DocumentRegistry = require("document/documentregistry")
 local InfoMessage = require("ui/widget/infomessage")
@@ -22,12 +23,12 @@ function WebDav:downloadFile(item, address, username, password, local_path, clos
         local __, filename = util.splitFilePathName(local_path)
         if G_reader_settings:isTrue("show_unsupported") and not DocumentRegistry:hasProvider(filename) then
             UIManager:show(InfoMessage:new{
-                text = T(_("File saved to:\n%1"), local_path),
+                text = T(_("File saved to:\n%1"), BD.filepath(local_path)),
             })
         else
             UIManager:show(ConfirmBox:new{
                 text = T(_("File saved to:\n%1\nWould you like to read the downloaded book now?"),
-                    local_path),
+                    BD.filepath(local_path)),
                 ok_callback = function()
                     close()
                     ReaderUI:showReader(local_path)
@@ -36,7 +37,7 @@ function WebDav:downloadFile(item, address, username, password, local_path, clos
         end
     else
         UIManager:show(InfoMessage:new{
-            text = T(_("Could not save file to:\n%1"), local_path),
+            text = T(_("Could not save file to:\n%1"), BD.filepath(local_path)),
             timeout = 3,
         })
     end
