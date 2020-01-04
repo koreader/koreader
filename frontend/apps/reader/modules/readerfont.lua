@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
@@ -397,7 +398,7 @@ a { color: black; }
     f:write("</body></html>\n")
     f:close()
     UIManager:show(ConfirmBox:new{
-        text = T(_("Document created as:\n%1\n\nWould you like to read it now?"), fonts_test_path),
+        text = T(_("Document created as:\n%1\n\nWould you like to read it now?"), BD.filepath(fonts_test_path)),
         ok_callback = function()
             UIManager:scheduleIn(1.0, function()
                 self.ui:switchDocument(fonts_test_path)

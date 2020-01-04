@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
@@ -233,7 +234,7 @@ function ReaderDictionary:addToMainMenu(menu_items)
                         text = T(_([[
 If you'd like to change the order in which dictionaries are queried (and their results displayed), you can:
 - move all dictionary directories out of %1.
-- move them back there, one by one, in the order you want them to be used.]]), self.data_dir)
+- move them back there, one by one, in the order you want them to be used.]]), BD.dirpath(self.data_dir))
                     })
                 end,
             },
@@ -928,7 +929,7 @@ function ReaderDictionary:downloadDictionary(dict, download_location, continue)
         logger.dbg("file downloaded to", download_location)
     else
         UIManager:show(InfoMessage:new{
-            text = _("Could not save file to:\n") .. download_location,
+            text = _("Could not save file to:\n") .. BD.filepath(download_location),
             --timeout = 3,
         })
         return false

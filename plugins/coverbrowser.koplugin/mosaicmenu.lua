@@ -99,10 +99,15 @@ local FakeCover = FrameContainer:new{
     padding = 0,
     bordersize = Size.line.thin,
     dim = nil,
+    -- Provided filename, title and authors should not be BD wrapped
     filename = nil,
     file_deleted = nil,
     title = nil,
     authors = nil,
+    -- The *_add should be provided BD wrapped if needed
+    filename_add = nil,
+    title_add = nil,
+    authors_add = nil,
     -- these font sizes will be scaleBySize'd by Font:getFace()
     authors_font_max = 20,
     authors_font_min = 6,
@@ -123,14 +128,25 @@ function FakeCover:init()
     local title = self.title
     local filename = self.filename
     -- (some engines may have already given filename (without extension) as title)
+    local bd_wrap_title_as_filename = false
     if not title then -- use filename as title (big and centered)
         title = filename
         filename = nil
+        if not self.title_add and self.filename_add then
+            -- filename_add ("…" or "(deleted)") always comes without any title_add
+            self.title_add = self.filename_add
+            self.filename_add = nil
+        end
+        bd_wrap_title_as_filename = true
+    end
+    if filename then
+        filename = BD.filename(filename)
     end
     -- If no authors, and title is filename without extension, it was
     -- probably made by an engine, and we can consider it a filename, and
     -- act according to common usage in naming files.
-    if not authors and title and self.filename:sub(1,title:len()) == title then
+    if not authors and title and self.filename and self.filename:sub(1,title:len()) == title then
+        bd_wrap_title_as_filename = true
         -- Replace a hyphen surrounded by spaces (which most probably was
         -- used to separate Authors/Title/Serie/Year/Categorie in the
         -- filename with a \n
@@ -150,16 +166,35 @@ function FakeCover:init()
         -- together on a last line: so, move the zero-width-space
         -- before it.
         title = title:gsub("%.\xE2\x80\x8B(%w%w?%w?%w?%w?)$", "\xE2\x80\x8B.%1")
+        -- These substitutions will hopefully have no impact with the following BD wrapping
+    end
+    if title then
+        title = bd_wrap_title_as_filename and BD.filename(title) or BD.auto(title)
     end
     -- If multiple authors (crengine separates them with \n), we
     -- can display them on multiple lines, but limit to 3, and
     -- append "et al." on a 4th line if there are more
     if authors and authors:find("\n") then
         authors = util.splitToArray(authors, "\n")
+        for i=1, #authors do
+            authors[i] = BD.auto(authors[i])
+        end
         if #authors > 3 then
             authors = { authors[1], authors[2], T(_("%1 et al."), authors[3]) }
         end
         authors = table.concat(authors, "\n")
+    elseif authors then
+        authors = BD.auto(authors)
+    end
+    -- Add any _add, which must be already BD wrapped if needed
+    if self.filename_add then
+        filename = (filename and filename or "") .. self.filename_add
+    end
+    if self.title_add then
+        title = (title and title or "") .. self.title_add
+    end
+    if self.authors_add then
+        authors = (authors and authors or "") .. self.authors_add
     end
 
     -- We build the VerticalGroup widget with decreasing font sizes till
@@ -207,7 +242,7 @@ function FakeCover:init()
         end
         if filename then
             filename_wg = TextBoxWidget:new{
-                text = BD.filename(filename),
+                text = filename,
                 face = Font:getFace("cfont", math.max(self.filename_font_max - sizedec, self.filename_font_min)),
                 width = text_width,
                 alignment = "center",
@@ -429,6 +464,7 @@ function MosaicMenuItem:update()
         if text:match('/$') then -- remove /, more readable
             text = text:sub(1, -2)
         end
+        text = BD.directory(text)
         local nbitems = TextBoxWidget:new{
             text = self.mandatory,
             face = Font:getFace("infont", 15),
@@ -553,25 +589,27 @@ function MosaicMenuItem:update()
             else
                 -- add Series metadata if requested
                 local series_mode = BookInfoManager:getSetting("series_mode")
+                local title_add, authors_add
                 if bookinfo.series then
                     -- Shorten calibre series decimal number (#4.0 => #4)
                     bookinfo.series = bookinfo.series:gsub("(#%d+)%.0$", "%1")
+                    bookinfo.series = BD.auto(bookinfo.series)
                     if series_mode == "append_series_to_title" then
                         if bookinfo.title then
-                            bookinfo.title = bookinfo.title .. " - " .. bookinfo.series
+                            title_add = " - " .. bookinfo.series
                         else
-                            bookinfo.title = bookinfo.series
+                            title_add = bookinfo.series
                         end
                     end
                     if not bookinfo.authors then
                         if series_mode == "append_series_to_authors" or series_mode == "series_in_separate_line" then
-                            bookinfo.authors = bookinfo.series
+                            authors_add = bookinfo.series
                         end
                     else
                         if series_mode == "append_series_to_authors" then
-                            bookinfo.authors = bookinfo.authors .. " - " .. bookinfo.series
+                            authors_add = " - " .. bookinfo.series
                         elseif series_mode == "series_in_separate_line" then
-                            bookinfo.authors = bookinfo.authors .. "\n \n" .. bookinfo.series
+                            authors_add = "\n \n" .. bookinfo.series
                         end
                     end
                 end
@@ -585,6 +623,8 @@ function MosaicMenuItem:update()
                         filename = self.text,
                         title = not bookinfo.ignore_meta and bookinfo.title,
                         authors = not bookinfo.ignore_meta and bookinfo.authors,
+                        title_add = not bookinfo.ignore_meta and title_add,
+                        authors_add = not bookinfo.ignore_meta and authors_add,
                         file_deleted = self.file_deleted,
                     }
                 }
@@ -622,7 +662,8 @@ function MosaicMenuItem:update()
                     width = dimen.w,
                     height = dimen.h,
                     bordersize = border_size,
-                    filename = self.text .. "\n" .. hint,
+                    filename = self.text,
+                    filename_add = "\n" .. hint,
                     initial_sizedec = 4, -- start with a smaller font when filenames only
                     file_deleted = self.file_deleted,
                 }

@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
@@ -225,7 +226,7 @@ function NetworkMgr:getProxyMenuTable()
     end
     return {
         text_func = function()
-            return T(_("HTTP proxy %1"), (proxy_enabled() and proxy() or ""))
+            return T(_("HTTP proxy %1"), (proxy_enabled() and BD.url(proxy()) or ""))
         end,
         checked_func = function() return proxy_enabled() end,
         callback = function()
@@ -388,7 +389,7 @@ function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback)
                            complete_callback()
                        end
                        UIManager:show(InfoMessage:new{
-                           text = T(_("Connected to network %1"), network.ssid),
+                           text = T(_("Connected to network %1"), BD.wrap(network.ssid)),
                            timeout = 3,
                        })
                        return

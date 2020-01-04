@@ -469,7 +469,7 @@ function FileManagerMenu:setUpdateItemTable()
             end
             local last_file = G_reader_settings:readSetting("lastfile")
             local path, file_name = util.splitFilePathName(last_file); -- luacheck: no unused
-            return T(_("Last: %1"), file_name)
+            return T(_("Last: %1"), BD.filename(file_name))
         end,
         enabled_func = function()
             return G_reader_settings:readSetting("lastfile") ~= nil
@@ -480,7 +480,7 @@ function FileManagerMenu:setUpdateItemTable()
         hold_callback = function()
             local last_file = G_reader_settings:readSetting("lastfile")
             UIManager:show(ConfirmBox:new{
-                text = T(_("Would you like to open the last document: %1?"), last_file),
+                text = T(_("Would you like to open the last document: %1?"), BD.filepath(last_file)),
                 ok_text = _("OK"),
                 ok_callback = function()
                     self:openLastDoc()

@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local DataStorage = require("datastorage")
 local DocSettings = require("frontend/docsettings")
 local ReadHistory = require("readhistory")
@@ -103,7 +104,7 @@ function Send2Ebook:addToMainMenu(menu_items)
                 keep_menu_open = true,
                 callback = function()
                     UIManager:show(InfoMessage:new{
-                        text = T(_('Send2Ebook lets you send articles found on PC/Android phone to your Ebook reader (using ftp server).\n\nMore details: https://github.com/mwoz123/send2ebook\n\nDownloads to local folder: %1'), download_dir_path)
+                        text = T(_('Send2Ebook lets you send articles found on PC/Android phone to your Ebook reader (using ftp server).\n\nMore details: https://github.com/mwoz123/send2ebook\n\nDownloads to local folder: %1'), BD.dirpath(download_dir_path))
                     })
                 end,
             },
@@ -143,7 +144,7 @@ function Send2Ebook:process()
     local ftp_files_table = FtpApi:listFolder(connection_url .. ftp_config.folder, ftp_config.folder) --args looks strange but otherwise resonse with invalid paths
 
     if not ftp_files_table then
-      info = InfoMessage:new{ text = T(_("Could not get file list for server: %1, user: %2, folder: %3"), ftp_config.address, ftp_config.username, ftp_config.folder) }
+      info = InfoMessage:new{ text = T(_("Could not get file list for server: %1, user: %2, folder: %3"), BD.ltr(ftp_config.address), ftp_config.username, BD.dirpath(ftp_config.folder)) }
     else
       local total_entries = table.getn(ftp_files_table)
       logger.dbg("Send2Ebook: total_entries ", total_entries)

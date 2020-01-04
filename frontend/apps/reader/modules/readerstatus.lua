@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local BookStatusWidget = require("ui/widget/bookstatuswidget")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local Device = require("device")
@@ -181,7 +182,7 @@ function ReaderStatus:deleteFile(file, text_end_book)
         message_end_book = "You've reached the end of the document.\n"
     end
     UIManager:show(ConfirmBox:new{
-        text = T(_("%1Are you sure that you want to delete this file?\n%2\nIf you delete a file, it is permanently lost."), message_end_book, file),
+        text = T(_("%1Are you sure that you want to delete this file?\n%2\nIf you delete a file, it is permanently lost."), message_end_book, BD.filepath(file)),
         ok_text = _("Delete"),
         ok_callback = function()
             local FileManager = require("apps/filemanager/filemanager")

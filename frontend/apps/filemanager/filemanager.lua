@@ -109,8 +109,7 @@ function FileManager:init()
 
     self.path_text = TextWidget:new{
         face = Font:getFace("xx_smallinfofont"),
-        text = filemanagerutil.abbreviate(self.root_path),
-        para_direction_rtl = false, -- force LTR
+        text = BD.directory(filemanagerutil.abbreviate(self.root_path)),
         max_width = Screen:getWidth() - 2*Size.padding.small,
         truncate_left = true,
     }
@@ -179,7 +178,7 @@ function FileManager:init()
     self.focused_file = nil -- use it only once
 
     function file_chooser:onPathChanged(path)  -- luacheck: ignore
-        FileManager.instance.path_text:setText(filemanagerutil.abbreviate(path))
+        FileManager.instance.path_text:setText(BD.directory(filemanagerutil.abbreviate(path)))
         UIManager:setDirty(FileManager.instance, function()
             return "ui", FileManager.instance.path_text.dimen, FileManager.instance.dithered
         end)
@@ -223,7 +222,7 @@ function FileManager:init()
                     enabled = DocSettings:hasSidecarFile(util.realpath(file)),
                     callback = function()
                         UIManager:show(ConfirmBox:new{
-                            text = util.template(_("Purge .sdr to reset settings for this document?\n\n%1"), self.file_dialog.title),
+                            text = util.template(_("Purge .sdr to reset settings for this document?\n\n%1"), BD.filename(self.file_dialog.title)),
                             ok_text = _("Purge"),
                             ok_callback = function()
                                 filemanagerutil.purgeSettings(file)
@@ -247,7 +246,7 @@ function FileManager:init()
                     text = _("Delete"),
                     callback = function()
                         UIManager:show(ConfirmBox:new{
-                            text = _("Are you sure that you want to delete this file?\n") .. file .. ("\n") .. _("If you delete a file, it is permanently lost."),
+                            text = _("Are you sure that you want to delete this file?\n") .. BD.filepath(file) .. ("\n") .. _("If you delete a file, it is permanently lost."),
                             ok_text = _("Delete"),
                             ok_callback = function()
                                 deleteFile(file)
@@ -358,8 +357,15 @@ function FileManager:init()
             })
         end
 
+        local title
+        if lfs.attributes(file, "mode") == "directory" then
+            title = BD.directory(file:match("([^/]+)$"))
+        else
+            title = BD.filename(file:match("([^/]+)$"))
+        end
+
         self.file_dialog = ButtonDialogTitle:new{
-            title = file:match("([^/]+)$"),
+            title = title,
             title_align = "center",
             buttons = buttons,
         }
@@ -567,7 +573,7 @@ function FileManager:tapPlus()
     end
 
     self.file_dialog = ButtonDialogTitle:new{
-        title = filemanagerutil.abbreviate(self.file_chooser.path),
+        title = BD.dirpath(filemanagerutil.abbreviate(self.file_chooser.path)),
         title_align = "center",
         buttons = buttons,
     }
@@ -666,7 +672,7 @@ end
 function FileManager:setHome(path)
     path = path or self.file_chooser.path
     UIManager:show(ConfirmBox:new{
-        text = util.template(_("Set '%1' as HOME directory?"), path),
+        text = util.template(_("Set '%1' as HOME directory?"), BD.dirpath(path)),
         ok_text = _("Set as HOME"),
         ok_callback = function()
             G_reader_settings:saveSetting("home_dir", path)
@@ -679,7 +685,7 @@ function FileManager:openRandomFile(dir)
     local random_file = DocumentRegistry:getRandomFile(dir, false)
     if random_file then
         UIManager:show(MultiConfirmBox:new {
-            text = T(_("Do you want to open %1?"), util.basename(random_file)),
+            text = T(_("Do you want to open %1?"), BD.filename(util.basename(random_file))),
             choice1_text = _("Open"),
             choice1_callback = function()
                 FileManager.instance:onClose()
@@ -724,12 +730,12 @@ function FileManager:pasteHere(file)
             end
             if util.execute(self.cp_bin, "-r", orig, dest) == 0 then
                 UIManager:show(InfoMessage:new {
-                    text = T(_("Copied to: %1"), dest),
+                    text = T(_("Copied to: %1"), BD.dirpath(dest)),
                     timeout = 2,
                 })
             else
                 UIManager:show(InfoMessage:new {
-                    text = T(_("An error occurred while trying to copy %1"), orig),
+                    text = T(_("An error occurred while trying to copy %1"), BD.filepath(orig)),
                     timeout = 2,
                 })
             end
@@ -750,12 +756,12 @@ function FileManager:pasteHere(file)
                     G_reader_settings:saveSetting("lastfile", dest_file)
                 end
                 UIManager:show(InfoMessage:new {
-                    text = T(_("Moved to: %1"), dest),
+                    text = T(_("Moved to: %1"), BD.dirpath(dest)),
                     timeout = 2,
                 })
             else
                 UIManager:show(InfoMessage:new {
-                    text = T(_("An error occurred while trying to move %1"), orig),
+                    text = T(_("An error occurred while trying to move %1"), BD.filepath(orig)),
                     timeout = 2,
                 })
             end
@@ -772,9 +778,9 @@ function FileManager:pasteHere(file)
         if mode == "file" or mode == "directory" then
             local text
             if mode == "file" then
-                text = T(_("The file %1 already exists. Do you want to overwrite it?"), basename)
+                text = T(_("The file %1 already exists. Do you want to overwrite it?"), BD.filename(basename))
             else
-                text = T(_("The directory %1 already exists. Do you want to overwrite it?"), basename)
+                text = T(_("The directory %1 already exists. Do you want to overwrite it?"), BD.directory(basename))
             end
 
             UIManager:show(ConfirmBox:new {
@@ -800,7 +806,7 @@ function FileManager:createFolder(curr_folder, new_folder)
     local text
     if code == 0 then
         self:onRefresh()
-        text = T(_("Folder created:\n%1"), new_folder)
+        text = T(_("Folder created:\n%1"), BD.directory(new_folder))
     else
         text = _("The folder has not been created.")
     end
@@ -815,7 +821,7 @@ function FileManager:deleteFile(file)
     local file_abs_path = util.realpath(file)
     if file_abs_path == nil then
         UIManager:show(InfoMessage:new{
-            text = util.template(_("File %1 not found"), file),
+            text = util.template(_("File %1 not found"), BD.filepath(file)),
         })
         return
     end
@@ -839,12 +845,12 @@ function FileManager:deleteFile(file)
         end
         ReadCollection:removeItemByPath(file, is_dir)
         UIManager:show(InfoMessage:new{
-            text = util.template(_("Deleted %1"), file),
+            text = util.template(_("Deleted %1"), BD.filepath(file)),
             timeout = 2,
         })
     else
         UIManager:show(InfoMessage:new{
-            text = util.template(_("An error occurred while trying to delete %1"), file),
+            text = util.template(_("An error occurred while trying to delete %1"), BD.filepath(file)),
         })
     end
 end
@@ -867,21 +873,21 @@ function FileManager:renameFile(file)
                 end
                 if move_history then
                     UIManager:show(InfoMessage:new{
-                        text = util.template(_("Renamed from %1 to %2"), file, dest),
+                        text = util.template(_("Renamed from %1 to %2"), BD.filepath(file), BD.filepath(dest)),
                         timeout = 2,
                     })
                 else
                     UIManager:show(InfoMessage:new{
                         text = util.template(
                             _("Failed to move history data of %1 to %2.\nThe reading history may be lost."),
-                            file, dest),
+                            BD.filepath(file), BD.filepath(dest)),
                     })
                 end
             end
         else
             UIManager:show(InfoMessage:new{
                 text = util.template(
-                    _("Failed to rename from %1 to %2"), file, dest),
+                    _("Failed to rename from %1 to %2"), BD.filepath(file), BD.filepath(dest)),
             })
         end
     end

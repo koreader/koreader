@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
@@ -252,7 +253,7 @@ function ReaderTypeset:genStyleSheetMenu()
         text_func = function()
             local text = _("Obsolete")
             if obsoleted_css[self.css] then
-                text = T(_("Obsolete (%1)"), obsoleted_css[self.css])
+                text = T(_("Obsolete (%1)"), BD.filename(obsoleted_css[self.css]))
             end
             if obsoleted_css[G_reader_settings:readSetting("copt_css")] then
                 text = text .. "   ★"
@@ -450,7 +451,7 @@ end
 
 function ReaderTypeset:makeDefaultStyleSheet(css, text, touchmenu_instance)
     UIManager:show(ConfirmBox:new{
-        text = T( _("Set default style to %1?"), text),
+        text = T( _("Set default style to %1?"), BD.filename(text)),
         ok_callback = function()
             G_reader_settings:saveSetting("copt_css", css)
             if touchmenu_instance then touchmenu_instance:updateItems() end

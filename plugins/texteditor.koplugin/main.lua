@@ -171,7 +171,7 @@ Enable this if you are mostly editing code, HTML, CSS…]]),
         local file_path = self.history[i]
         local directory, filename = util.splitFilePathName(file_path) -- luacheck: no unused
         table.insert(sub_item_table, {
-            text = T("%1. %2", i, filename),
+            text = T("%1. %2", i, BD.filename(filename)),
             keep_menu_open = true,
             callback = function(touchmenu_instance)
                 self:setupWhenDoneFunc(touchmenu_instance)
@@ -186,10 +186,10 @@ Enable this if you are mostly editing code, HTML, CSS…]]),
                     local filesize = util.getFormattedSize(attr.size)
                     local lastmod = os.date("%Y-%m-%d %H:%M", attr.modification)
                     text = T(_("File path:\n%1\n\nFile size: %2 bytes\nLast modified: %3\n\nRemove this file from text editor history?"),
-                                file_path, filesize, lastmod)
+                                BD.filepath(file_path), filesize, lastmod)
                 else
                     text = T(_("File path:\n%1\n\nThis file does not exist anymore.\n\nRemove it from text editor history?"),
-                                file_path)
+                                BD.filepath(file_path))
                 end
                 UIManager:show(ConfirmBox:new{
                     text = text,
@@ -332,7 +332,7 @@ function TextEditor:checkEditFile(file_path, from_history, possibly_new_file)
     local attr = lfs.attributes(file_path)
     if not possibly_new_file and not attr then
         UIManager:show(ConfirmBox:new{
-            text = T(_("This file does not exist anymore:\n\n%1\n\nDo you want to create it and start editing it?"), file_path),
+            text = T(_("This file does not exist anymore:\n\n%1\n\nDo you want to create it and start editing it?"), BD.filepath(file_path)),
             ok_text = _("Yes"),
             cancel_text = _("No"),
             ok_callback = function()
@@ -350,7 +350,7 @@ function TextEditor:checkEditFile(file_path, from_history, possibly_new_file)
     if attr then -- File exists
         if attr.mode ~= "file" then
             UIManager:show(InfoMessage:new{
-                text = T(_("This file is not a regular file:\n\n%1"), file_path)
+                text = T(_("This file is not a regular file:\n\n%1"), BD.filepath(file_path))
             })
             return
         end
@@ -368,7 +368,7 @@ function TextEditor:checkEditFile(file_path, from_history, possibly_new_file)
         if not from_history and attr.size > self.min_file_size_warn then
             UIManager:show(ConfirmBox:new{
                 text = T(_("This file is %2:\n\n%1\n\nAre you sure you want to open it?\n\nOpening big files may take some time."),
-                    file_path, util.getFriendlySize(attr.size)),
+                    BD.filepath(file_path), util.getFriendlySize(attr.size)),
                 ok_text = _("Yes"),
                 cancel_text = _("No"),
                 ok_callback = function()
@@ -389,7 +389,7 @@ function TextEditor:checkEditFile(file_path, from_history, possibly_new_file)
             self:editFile(file_path)
         else
             UIManager:show(InfoMessage:new{
-                text = T(_("This file can not be created:\n\n%1\n\nReason: %2"), file_path, err)
+                text = T(_("This file can not be created:\n\n%1\n\nReason: %2"), BD.filepath(file_path), err)
             })
             return
         end
@@ -526,7 +526,7 @@ Lua syntax check failed:
 KOReader may crash if this is saved.
 Do you really want to save to this file?
 
-%2]]), parse_error, file_path),  _("Do not save"), _("Save anyway"))
+%2]]), parse_error, BD.filepath(file_path)),  _("Do not save"), _("Save anyway"))
                 -- we'll get the safer "Do not save" on tap outside
                 if save_anyway then
                     local ok, err = self:saveFileContent(file_path, content)
@@ -543,7 +543,7 @@ Do you really want to save to this file?
 Text content is empty.
 Do you want to keep this file as empty, or do you prefer to delete it?
 
-%1]]), file_path), _("Keep empty file"), _("Delete file"))
+%1]]), BD.filepath(file_path)), _("Keep empty file"), _("Delete file"))
                 -- we'll get the safer "Keep empty file" on tap outside
                 if delete_file then
                     local ok, err = self:deleteFile(file_path)
