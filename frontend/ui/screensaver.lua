@@ -471,12 +471,10 @@ function Screensaver:close()
 end
 
 function Screensaver:addOverlayMessage(widget, text)
-    local Font = require("ui/font")
     local FrameContainer = require("ui/widget/container/framecontainer")
     local OverlapGroup = require("ui/widget/overlapgroup")
     local RightContainer = require("ui/widget/container/rightcontainer")
     local Size = require("ui/size")
-    local TextBoxWidget = require("ui/widget/textboxwidget")
     local TextWidget = require("ui/widget/textwidget")
 
     local face = Font:getFace("infofont")
