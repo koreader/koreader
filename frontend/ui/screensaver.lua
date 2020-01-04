@@ -2,11 +2,13 @@ local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local BookStatusWidget = require("ui/widget/bookstatuswidget")
+local BottomContainer = require("ui/widget/container/bottomcontainer")
 local DataStorage = require("datastorage")
 local Device = require("device")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
 local Font = require("ui/font")
+local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
 local ImageWidget = require("ui/widget/imagewidget")
 local Math = require("optmath")
@@ -18,6 +20,7 @@ local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
 local TextBoxWidget = require("ui/widget/textboxwidget")
+local TopContainer = require("ui/widget/container/topcontainer")
 
 local screensaver_provider = {
     ["jpg"] = true,
@@ -386,17 +389,24 @@ function Screensaver:show(event, fallback_message)
             }
         else
             local face = Font:getFace("infofont")
-            local y = 0
-            if messagePos == "bottom" then
-                y = Screen:getHeight() - (face.size+1)
+            local container
+            if messagePos == "bottom" then container = BottomContainer
+            else container = TopContainer
             end
-            widget = TextBoxWidget:new{
-                text = screensaver_message,
-                face = face,
-                width = Screen:getWidth(),
-                height = face.size,
-                x = 0, y = y,
-                alignment = "center",
+
+            local screen_w, screen_h = Screen:getWidth(), Screen:getHeight()
+            widget = container:new{
+                dimen = Geom:new{
+                    w = screen_w,
+                    h = screen_h,
+                },
+                TextBoxWidget:new{
+                    text = screensaver_message,
+                    face = face,
+                    width = screen_w,
+                    height = face.size,
+                    alignment = "center",
+                }
             }
         end
         -- No overlay needed as we just displayed the message
