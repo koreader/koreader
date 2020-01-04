@@ -192,7 +192,8 @@ DCREREADER_CONFIG_WORD_SPACING_LARGE = {100, 90}
 -- no longer needed
 --DMINIBAR_TOC_MARKER_WIDTH = 2   -- Looses usefulness > 3
 DMINIBAR_CONTAINER_HEIGHT = 14  -- Larger means more padding at the bottom, at the risk of eating into the last line
-DMINIBAR_FONT_SIZE = 14
+-- no longer needed
+--DMINIBAR_FONT_SIZE = 14
 -- no longer needed
 --DMINIBAR_HEIGHT = 7             -- Should be smaller than DMINIBAR_CONTAINER_HEIGHT
 
