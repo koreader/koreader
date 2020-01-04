@@ -238,7 +238,7 @@ function EvernoteExporter:addToMainMenu(menu_items)
 
 To export to Joplin, you must forward the IP and port used by this plugin to the localhost:port on which Joplin is listening. This can be done with socat or a similar program. For example:
 
-For Windows: netsh interface portproxy add listeningaddress:0.0.0.0 listeningport:41185 connectaddress:localhost connectport:41184
+For Windows: netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=41185 connectaddress=localhost connectport=41184
 
 For Linux: $socat tcp-listen:41185,reuseaddr,fork tcp:localhost:41184
 
