@@ -86,6 +86,8 @@ local Device = Generic:new{
     canImportFiles = function() return android.app.activity.sdkVersion >= 19 end,
     importFile = function(path) android.importFile(path) end,
     isValidPath = function(path) return android.isPathInsideSandbox(path) end,
+    canShareText = yes,
+    doShareText = function(text) android.sendText(text) end,
 
     canExternalDictLookup = yes,
     getExternalDictLookupList = getExternalDicts,
