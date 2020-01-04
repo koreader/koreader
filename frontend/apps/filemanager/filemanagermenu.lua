@@ -387,6 +387,15 @@ function FileManagerMenu:setUpdateItemTable()
             end,
         })
     end
+    if Device:isAndroid() then
+        table.insert(self.menu_items.developer_options.sub_item_table, {
+            text = _("Start E-ink test"),
+            callback = function()
+                Device:epdTest()
+            end,
+        })
+    end
+
     table.insert(self.menu_items.developer_options.sub_item_table, {
         text = _("Disable enhanced UI text shaping (xtext)"),
         checked_func = function()
