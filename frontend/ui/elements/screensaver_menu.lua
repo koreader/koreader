@@ -97,7 +97,7 @@ return {
         end
     },
     {
-        text = _("Use message as screensaver"),
+        text = _("Use message box as screensaver"),
         checked_func = function()
             if screensaverType() == "message" or screensaverType() == nil then
                 return true
@@ -107,6 +107,19 @@ return {
         end,
         callback = function()
             G_reader_settings:saveSetting("screensaver_type", "message")
+        end
+    },
+    {
+        text = _("Use top-of-screen message as screensaver"),
+        checked_func = function()
+            if screensaverType() == "topmessage" or screensaverType() == nil then
+                return true
+            else
+                return false
+            end
+        end,
+        callback = function()
+            G_reader_settings:saveSetting("screensaver_type", "topmessage")
         end
     },
     {

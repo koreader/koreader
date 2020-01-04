@@ -5,6 +5,7 @@ local DataStorage = require("datastorage")
 local Device = require("device")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
+local Font = require("ui/font")
 local InfoMessage = require("ui/widget/infomessage")
 local ImageWidget = require("ui/widget/imagewidget")
 local Math = require("optmath")
@@ -15,6 +16,7 @@ local logger = require("logger")
 local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
+local TextBoxWidget = require("ui/widget/textboxwidget")
 
 local screensaver_provider = {
     ["jpg"] = true,
@@ -358,7 +360,7 @@ function Screensaver:show(event, fallback_message)
             screensaver_type = "message"
         end
     end
-    if screensaver_type == "message" then
+    if screensaver_type == "message" or screensaver_type == "topmessage" then
         local screensaver_message = G_reader_settings:readSetting(prefix.."screensaver_message")
         if not self:whiteBackground() then
             background = nil -- no background filling, let book text visible
@@ -375,10 +377,22 @@ function Screensaver:show(event, fallback_message)
             screensaver_message = self:expandSpecial(screensaver_message, fallback)
         end
 
-        widget = InfoMessage:new{
-            text = screensaver_message,
-            readonly = true,
-        }
+        if screensaver_type == "message" then
+            widget = InfoMessage:new{
+                text = screensaver_message,
+                readonly = true,
+            }
+        else
+            local face = Font:getFace("infofont")
+            widget = TextBoxWidget:new{
+                text = screensaver_message,
+                face = face,
+                width = Screen:getWidth(),
+                height = face.size,
+                x = 0, y = 0,
+                alignment = "center",
+            }
+        end
         -- No overlay needed as we just displayed the message
         overlay_message = nil
     end
