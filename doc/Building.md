@@ -11,7 +11,7 @@ You can skip most of the following instructions if desired, and use our premade 
 
 To get and compile the source you must have `patch`, `wget`, `unzip`, `git`,
 `cmake` and `luarocks` installed, as well as a version of `autoconf`
-greater than 2.64. You also need `nasm` and of course a compiler like `gcc`
+greater than 2.64. You also need `nasm`, `ragel`, and of course a compiler like `gcc`
 or `clang`.
 
 ### Debian/Ubuntu and derivates
@@ -20,7 +20,7 @@ Install the prerequisites using APT:
 
 ```
 sudo apt-get install build-essential git patch wget unzip \
-gettext autoconf automake cmake libtool nasm luarocks libsdl2-dev \
+gettext autoconf automake cmake libtool nasm ragel luarocks libsdl2-dev \
 libssl-dev libffi-dev libsdl2-dev libc6-dev-i386 xutils-dev linux-libc-dev:i386 zlib1g:i386
 ```
 
@@ -38,7 +38,7 @@ sudo dnf install libstdc++-static SDL SDL-devel
 Install the prerequisites using [Homebrew](https://brew.sh/):
 
 ```
-brew install nasm binutils coreutils libtool autoconf automake cmake makedepend \
+brew install nasm ragel binutils coreutils libtool autoconf automake cmake makedepend \
 sdl2 lua@5.1 luarocks gettext pkg-config wget md5sha1sum
 echo 'export PATH="/usr/local/opt/gettext/bin:$PATH"' >> "$HOME"/.bash_profile
 ```
