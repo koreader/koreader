@@ -275,6 +275,10 @@ function Document:getImageFromPosition(pos)
     return nil
 end
 
+function Document:getTextFromPositions(pos0, pos1)
+    return nil
+end
+
 function Document:getTextBoxes(pageno)
     return nil
 end
