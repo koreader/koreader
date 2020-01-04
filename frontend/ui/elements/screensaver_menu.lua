@@ -13,6 +13,7 @@ end
 local function whiteBackground() return G_reader_settings:isTrue("screensaver_white_background") end
 local function noBackground() return G_reader_settings:isTrue("screensaver_no_background") end
 local function stretchImages() return G_reader_settings:isTrue("screensaver_stretch_images") end
+local function messagePos() return G_reader_settings:readSetting("screensaver_message_position") end
 
 return {
     {
@@ -97,7 +98,7 @@ return {
         end
     },
     {
-        text = _("Use message box as screensaver"),
+        text = _("Use message as screensaver"),
         checked_func = function()
             if screensaverType() == "message" or screensaverType() == nil then
                 return true
@@ -107,19 +108,6 @@ return {
         end,
         callback = function()
             G_reader_settings:saveSetting("screensaver_type", "message")
-        end
-    },
-    {
-        text = _("Use top-of-screen message as screensaver"),
-        checked_func = function()
-            if screensaverType() == "topmessage" or screensaverType() == nil then
-                return true
-            else
-                return false
-            end
-        end,
-        callback = function()
-            G_reader_settings:saveSetting("screensaver_type", "topmessage")
         end
     },
     {
@@ -189,6 +177,50 @@ return {
                     G_reader_settings:saveSetting("screensaver_stretch_images", not stretchImages())
                 end,
                 separator = true,
+            },
+            {
+                text = _("Screensaver message position"),
+                sub_item_table = {
+                    {
+                        text = _("Top"),
+                        checked_func = function()
+                            if messagePos() == nil or messagePos() == "top" then
+                                return true
+                            else
+                                return false
+                            end
+                        end,
+                        callback = function()
+                            G_reader_settings:saveSetting("screensaver_message_position", "top")
+                        end
+                    },
+                    {
+                        text = _("Middle"),
+                        checked_func = function()
+                            if messagePos() == "middle" then
+                                return true
+                            else
+                                return false
+                            end
+                        end,
+                        callback = function()
+                            G_reader_settings:saveSetting("screensaver_message_position", "middle")
+                        end
+                    },
+                    {
+                        text = _("Bottom"),
+                        checked_func = function()
+                            if messagePos() == "bottom" then
+                                return true
+                            else
+                                return false
+                            end
+                        end,
+                        callback = function()
+                            G_reader_settings:saveSetting("screensaver_message_position", "bottom")
+                        end
+                    },
+                }
             },
             {
                 text = _("Delay when exit from screensaver"),

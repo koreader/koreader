@@ -361,8 +361,9 @@ function Screensaver:show(event, fallback_message)
             screensaver_type = "message"
         end
     end
-    if screensaver_type == "message" or screensaver_type == "topmessage" then
+    if screensaver_type == "message" then
         local screensaver_message = G_reader_settings:readSetting(prefix.."screensaver_message")
+        local messagePos = G_reader_settings:readSetting(prefix.."screensaver_message_position")
         if not self:whiteBackground() then
             background = nil -- no background filling, let book text visible
             covers_fullscreen = false
@@ -378,19 +379,23 @@ function Screensaver:show(event, fallback_message)
             screensaver_message = self:expandSpecial(screensaver_message, fallback)
         end
 
-        if screensaver_type == "message" then
+        if messagePos == "middle" or messagePos == nil then
             widget = InfoMessage:new{
                 text = screensaver_message,
                 readonly = true,
             }
         else
             local face = Font:getFace("infofont")
+            local y = 0
+            if messagePos == "bottom" then
+                y = Screen:getHeight() - (face.size+1)
+            end
             widget = TextBoxWidget:new{
                 text = screensaver_message,
                 face = face,
                 width = Screen:getWidth(),
                 height = face.size,
-                x = 0, y = 0,
+                x = 0, y = y,
                 alignment = "center",
             }
         end
