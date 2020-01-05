@@ -498,6 +498,17 @@ function ReaderHighlight:onShowHighlightMenu()
             },
         })
     end
+    if Device:canShareText() then
+            table.insert(highlight_buttons, {
+            {
+                text = _("Share text"),
+                callback = function()
+                    Device.doShareText(self.selected_text.text)
+                end,
+            },
+        })
+    end
+
     self.highlight_dialog = ButtonDialog:new{
         buttons = highlight_buttons,
         tap_close_callback = function() self:handleEvent(Event:new("Tap")) end,

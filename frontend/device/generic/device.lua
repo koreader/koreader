@@ -46,6 +46,7 @@ local Device = {
     hasColorScreen = no,
     hasBGRFrameBuffer = no,
     canImportFiles = no,
+    canShareText = no,
     canToggleGSensor = no,
     canToggleMassStorage = no,
     canUseWAL = yes, -- requires mmap'ed I/O on the target FS
