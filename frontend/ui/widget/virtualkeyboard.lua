@@ -764,8 +764,7 @@ function VirtualKeyboard:addKeys()
             local key_chars = self.KEYS[i][j][self.keyboard_layer]
             local label
             if type(key_chars) == "table" then
-                 key = key_chars.key or key_chars[1]
-                 label = key_chars.label
+                key = key_chars[1]
                 label = key_chars.label
             else
                 key = key_chars
