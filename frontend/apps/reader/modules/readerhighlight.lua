@@ -503,7 +503,10 @@ function ReaderHighlight:onShowHighlightMenu()
             {
                 text = _("Share text"),
                 callback = function()
-                    Device.doShareText(self.selected_text.text)
+                    local text = self.selected_text.text
+                    -- call self:onClose() before calling the android framework
+                    self:onClose()
+                    Device.doShareText(text)
                 end,
             },
         })
