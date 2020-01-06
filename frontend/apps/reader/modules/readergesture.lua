@@ -1603,7 +1603,7 @@ function ReaderGesture:onGSensorToggle()
     if G_reader_settings:isTrue("input_ignore_gsensor") then
         new_text = _("Accelerometer rotation events on.")
     else
-        new_text = _("Accelerometer rotation events off.")
+        new_text = _("Accelerometer rotation events on.")
     end
     UIManager:show(Notification:new{
         text = new_text,
