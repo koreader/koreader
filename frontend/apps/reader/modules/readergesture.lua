@@ -76,7 +76,7 @@ local action_strings = {
     toggle_rotation = _("Toggle rotation"),
 
     wifi_on = _("Turn on Wi-Fi"),
-    wifi_off = _("Tun off Wi-Fi"),
+    wifi_off = _("Turn off Wi-Fi"),
     toggle_wifi = _("Toggle Wi-Fi"),
 
     toggle_bookmark = _("Toggle bookmark"),
