@@ -598,19 +598,29 @@ function ReaderHighlight:onHoldPan(_, ges)
         -- With CreDocuments, allow text selection across multiple pages
         -- by (temporarily) switching to scroll mode when panning to the
         -- top left or bottom right corners.
-        local is_in_top_left_corner = self.holdpan_pos.y < 1/8*Screen:getHeight()
-                                  and self.holdpan_pos.x < 1/8*Screen:getWidth()
-        local is_in_bottom_right_corner = self.holdpan_pos.y > 7/8*Screen:getHeight()
-                                      and self.holdpan_pos.x > 7/8*Screen:getWidth()
-        if BD.mirroredUILayout() then
+        local mirrored_reading = BD.mirroredUILayout()
+        if self.ui.rolling and self.ui.rolling.inverse_reading_order then
+            mirrored_reading = not mirrored_reading
+        end
+        local is_in_prev_page_corner, is_in_next_page_corner
+        if mirrored_reading then
             -- Note: this might not be really usable, as crengine native selection
             -- is not adapted to RTL text
-            is_in_top_left_corner = self.holdpan_pos.y < 1/8*Screen:getHeight()
+            -- top right corner
+            is_in_prev_page_corner = self.holdpan_pos.y < 1/8*Screen:getHeight()
                                       and self.holdpan_pos.x > 7/8*Screen:getWidth()
-            is_in_bottom_right_corner = self.holdpan_pos.y > 7/8*Screen:getHeight()
+            -- bottom left corner
+            is_in_next_page_corner = self.holdpan_pos.y > 7/8*Screen:getHeight()
                                           and self.holdpan_pos.x < 1/8*Screen:getWidth()
+        else -- default in LTR UI with no inverse_reading_order
+            -- top left corner
+            is_in_prev_page_corner = self.holdpan_pos.y < 1/8*Screen:getHeight()
+                                      and self.holdpan_pos.x < 1/8*Screen:getWidth()
+            -- bottom right corner
+            is_in_next_page_corner = self.holdpan_pos.y > 7/8*Screen:getHeight()
+                                      and self.holdpan_pos.x > 7/8*Screen:getWidth()
         end
-        if is_in_top_left_corner or is_in_bottom_right_corner then
+        if is_in_prev_page_corner or is_in_next_page_corner then
             if self.was_in_some_corner then
                 -- Do nothing, wait for the user to move his finger out of that corner
                 return true
@@ -631,7 +641,7 @@ function ReaderHighlight:onHoldPan(_, ges)
                 end
                 -- (using rolling:onGotoViewRel(1/3) has some strange side effects)
                 local scroll_distance = math.floor(Screen:getHeight() * 1/3)
-                local move_y = is_in_bottom_right_corner and scroll_distance or -scroll_distance
+                local move_y = is_in_next_page_corner and scroll_distance or -scroll_distance
                 self.ui.rolling:_gotoPos(self.ui.document:getCurrentPos() + move_y)
                 local new_y = self.ui.document:getScreenPositionFromXPointer(self.selected_text_start_xpointer)
                 self.hold_pos.y = self.hold_pos.y - orig_y + new_y
@@ -643,6 +653,10 @@ function ReaderHighlight:onHoldPan(_, ges)
                 -- Unlike in 1-page mode, we have a limitation here: we can't adjust
                 -- the selection to further than current page and prev/next one.
                 -- So don't handle another corner if we already handled one:
+                -- Note that this feature won't work well with the RTL UI or
+                -- if inverse_reading_order as crengine currently always displays
+                -- the first page on the left and the second on the right in
+                -- dual page mode.
                 if self.restore_page_mode_func then
                     return true
                 end
@@ -650,9 +664,9 @@ function ReaderHighlight:onHoldPan(_, ges)
                 -- so if we started on the right page, ignore top left corner,
                 -- and if we started on the left page, ignore bottom right corner.
                 local screen_half_width = math.floor(Screen:getWidth() * 1/2)
-                if self.hold_pos.x >= screen_half_width and is_in_top_left_corner then
+                if self.hold_pos.x >= screen_half_width and is_in_prev_page_corner then
                     return true
-                elseif self.hold_pos.x <= screen_half_width and is_in_bottom_right_corner then
+                elseif self.hold_pos.x <= screen_half_width and is_in_next_page_corner then
                     return true
                 end
                 local cur_page = self.ui.document:getCurrentPage()
@@ -660,10 +674,10 @@ function ReaderHighlight:onHoldPan(_, ges)
                 self.restore_page_mode_func = function()
                     self.ui.rolling:onGotoXPointer(restore_page_mode_xpointer, self.selected_text_start_xpointer)
                 end
-                if is_in_bottom_right_corner then
+                if is_in_next_page_corner then -- bottom right corner in LTR UI
                     self.ui.rolling:_gotoPage(cur_page + 1, true) -- no odd left page enforcement
                     self.hold_pos.x = self.hold_pos.x - screen_half_width
-                else
+                else -- top left corner in RTL UI
                     self.ui.rolling:_gotoPage(cur_page - 1, true) -- no odd left page enforcement
                     self.hold_pos.x = self.hold_pos.x + screen_half_width
                 end
