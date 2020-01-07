@@ -15,10 +15,12 @@ DHINTCOUNT = 1
 --DFULL_SCREEN = 1
 
 -- scroll mode, 1 for true, 0 for false
-DSCROLL_MODE = 1
+-- no longer needed
+--DSCROLL_MODE = 1
 
 -- default gamma setting:
-DGLOBALGAMMA = 1.0
+-- no longer needed
+--DGLOBALGAMMA = 1.0
 
 -- DjVu page rendering mode (used in djvu.c:drawPage())
 -- See comments in djvureader.lua:DJVUReader:select_render_mode()
