@@ -761,7 +761,7 @@ function ReaderView:onReadSettings(config)
         Screen:setScreenMode(screen_mode)
         self:onSetScreenMode(screen_mode, config:readSetting("rotation_mode"), true)
     end
-    self.state.gamma = config:readSetting("gamma") or DGLOBALGAMMA
+    self.state.gamma = config:readSetting("gamma") or 1.0
     local full_screen = config:readSetting("kopt_full_screen") or self.document.configurable.full_screen
     if full_screen == 0 then
         self.footer_visible = false
