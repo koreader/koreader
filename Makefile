@@ -202,7 +202,7 @@ kindleupdate: all
 	# note that the targz file extension is intended to keep ISP from caching
 	# the file, see koreader#1644.
 	cd $(INSTALL_DIR) && \
-		tar -I"gzip --rsyncable" -cah --no-recursion -f ../$(KINDLE_PACKAGE_OTA) \
+		tar --hard-dereference -I"gzip --rsyncable" -cah --no-recursion -f ../$(KINDLE_PACKAGE_OTA) \
 		-T koreader/ota/package.index
 
 KOBO_PACKAGE:=koreader-kobo$(KODEDUG_SUFFIX)-$(VERSION).zip
@@ -233,7 +233,7 @@ koboupdate: all
 		koreader/ota/package.index koreader.png README_kobo.txt
 	# make gzip koboupdate for zsync OTA update
 	cd $(INSTALL_DIR) && \
-		tar -I"gzip --rsyncable" -cah --no-recursion -f ../$(KOBO_PACKAGE_OTA) \
+		tar --hard-dereference -I"gzip --rsyncable" -cah --no-recursion -f ../$(KOBO_PACKAGE_OTA) \
 		-T koreader/ota/package.index
 
 PB_PACKAGE:=koreader-pocketbook$(KODEDUG_SUFFIX)-$(VERSION).zip
@@ -272,7 +272,7 @@ pbupdate: all
 		applications/koreader/ota/package.index system
 	# make gzip pbupdate for zsync OTA update
 	cd $(INSTALL_DIR)/applications && \
-		tar -I"gzip --rsyncable" -cah --no-recursion -f ../../$(PB_PACKAGE_OTA) \
+		tar --hard-dereference -I"gzip --rsyncable" -cah --no-recursion -f ../../$(PB_PACKAGE_OTA) \
 		-T koreader/ota/package.index
 
 utupdate: all
@@ -410,7 +410,7 @@ sony-prstuxupdate: all
 	        koreader/ota/package.index
 	# make gzip sonyprstux update for zsync OTA update
 	cd $(INSTALL_DIR) && \
-	        tar -I"gzip --rsyncable" -cah --no-recursion -f ../$(SONY_PRSTUX_PACKAGE_OTA) \
+	        tar --hard-dereference -I"gzip --rsyncable" -cah --no-recursion -f ../$(SONY_PRSTUX_PACKAGE_OTA) \
 	        -T koreader/ota/package.index
 
 CERVANTES_PACKAGE:=koreader-cervantes$(KODEDUG_SUFFIX)-$(VERSION).zip
@@ -439,7 +439,7 @@ cervantesupdate: all
 	koreader/ota/package.index
 	# make gzip cervantes update for zsync OTA update
 	cd $(INSTALL_DIR) && \
-	tar -I"gzip --rsyncable" -cah --no-recursion -f ../$(CERVANTES_PACKAGE_OTA) \
+	tar --hard-dereference -I"gzip --rsyncable" -cah --no-recursion -f ../$(CERVANTES_PACKAGE_OTA) \
 	-T koreader/ota/package.index
 
 update:
