@@ -7,7 +7,7 @@
 if [ "$(dirname ${0})" != "/var/tmp" ]; then
     cp -pf "${0}" /var/tmp/koreader.sh
     chmod 777 /var/tmp/koreader.sh
-    exec /var/tmp/koreader.sh
+    exec /var/tmp/koreader.sh "$@"
 fi
 
 export LC_ALL="en_US.UTF-8"
