@@ -307,7 +307,7 @@ function ReaderFooter:init()
         self.settings.toc_markers_width = DMINIBAR_TOC_MARKER_WIDTH
     end
     if not self.settings.progress_bar_min_width_pct then
-        self.settings.progress_bar_min_width_pct = 20  -- unscaled_size_check: ignore
+        self.settings.progress_bar_min_width_pct = 20
     end
     self.mode_list = {}
     for i = 0, #self.mode_index do
