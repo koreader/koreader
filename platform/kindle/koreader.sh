@@ -20,8 +20,8 @@ PROC_FIVEWAY="/proc/fiveway"
 # KOReader's working directory
 export KOREADER_DIR="/mnt/us/koreader"
 
-# NOTE: Same vfat+fuse shenanigans needed for FBink, before we source libko...
-cp -pf ${KOREADER_DIR}/fbink /var/tmp/fbink
+# NOTE: Same vfat+fuse shenanigans needed for FBInk, before we source libko...
+cp -pf "${KOREADER_DIR}/fbink" /var/tmp/fbink
 chmod 777 /var/tmp/fbink
 
 # Load our helper functions...
