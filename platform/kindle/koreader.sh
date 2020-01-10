@@ -1,4 +1,15 @@
 #!/bin/sh
+
+# NOTE: Stupid workaround to make sure the script we end up running is a *copy*,
+# living in a magical land that doesn't suffer from gross filesystem deficiencies.
+# Otherwise, the vfat+fuse mess means an OTA update will break the script on exit,
+# and potentially leave the user in a broken state, with the WM still paused...
+if [ "$(dirname ${0})" != "/var/tmp" ]; then
+    cp -pf "${0}" /var/tmp/koreader.sh
+    chmod 777 /var/tmp/koreader.sh
+    exec /var/tmp/koreader.sh
+fi
+
 export LC_ALL="en_US.UTF-8"
 
 PROC_KEYPAD="/proc/keypad"
