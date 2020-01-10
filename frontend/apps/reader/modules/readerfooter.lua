@@ -1497,6 +1497,7 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
     else
         if self.has_no_mode or not text or text == "" then
             self.text_width = 0
+            self.footer_text:setText(text)
         else
             local min_progress_bar_width = (100 - self.settings.progress_bar_min_width) / 100
             self.footer_text:setMaxWidth(math.floor(min_progress_bar_width * self._saved_screen_width - 2 * self.settings.progress_margin_width))
