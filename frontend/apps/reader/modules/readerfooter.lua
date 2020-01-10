@@ -1490,7 +1490,7 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
             self.footer_container.dimen.h = 0
             self.footer_text.height = 0
         end
-        self.footer_text.max_width = math.floor(self._saved_screen_width - 2 * self.settings.progress_margin_width)
+        self.footer_text:setMaxWidth(math.floor(self._saved_screen_width - 2 * self.settings.progress_margin_width))
         self.footer_text:setText(text)
         self.progress_bar.width = math.floor(self._saved_screen_width - 2 * self.settings.progress_margin_width)
         self.text_width = self.footer_text:getSize().w
