@@ -20,6 +20,10 @@ PROC_FIVEWAY="/proc/fiveway"
 # KOReader's working directory
 export KOREADER_DIR="/mnt/us/koreader"
 
+# NOTE: Same vfat+fuse shenanigans needed for FBink, before we source libko...
+cp -pf ${KOREADER_DIR}/fbink /var/tmp/fbink
+chmod 777 /var/tmp/fbink
+
 # Load our helper functions...
 if [ -f "${KOREADER_DIR}/libkohelper.sh" ]; then
     # shellcheck source=/dev/null
@@ -364,6 +368,6 @@ if [ "${PASSCODE_DISABLED}" = "yes" ]; then
 fi
 
 # Wipe the clone on exit
-rm -f /var/tmp/koreader.sh
+rm -f /var/tmp/koreader.sh /var/tmp/fbink
 
 exit ${RETURN_VALUE}
