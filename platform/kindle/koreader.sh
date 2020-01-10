@@ -4,7 +4,7 @@
 # living in a magical land that doesn't suffer from gross filesystem deficiencies.
 # Otherwise, the vfat+fuse mess means an OTA update will break the script on exit,
 # and potentially leave the user in a broken state, with the WM still paused...
-if [ "$(dirname ${0})" != "/var/tmp" ]; then
+if [ "$(dirname "${0}")" != "/var/tmp" ]; then
     cp -pf "${0}" /var/tmp/koreader.sh
     chmod 777 /var/tmp/koreader.sh
     exec /var/tmp/koreader.sh "$@"
