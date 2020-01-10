@@ -18,7 +18,7 @@ fi
 ## Check if we have an FBInk binary available somewhere...
 # Default to something that won't horribly blow up...
 # NOTE: Put our own at the end of the list, because if it gets picked up during an OTA upgrade,
-#       we get an EBUSY when tar tries to overwrite it, because vfat + fuse -_-".
+#       we get an EBUSY when tar tries to overwrite it, because vfat+fuse -_-".
 FBINK_BIN="true"
 for my_dir in libkh/bin linkss/bin linkfonts/bin usbnet/bin koreader; do
     my_fbink="/mnt/us/${my_dir}/fbink"
