@@ -367,7 +367,7 @@ if [ "${PASSCODE_DISABLED}" = "yes" ]; then
     touch "/var/local/system/userpasswdenabled"
 fi
 
-# Wipe the clone on exit
+# Wipe the clones on exit
 rm -f /var/tmp/koreader.sh /var/tmp/fbink
 
 exit ${RETURN_VALUE}
