@@ -306,6 +306,9 @@ function ReaderFooter:init()
     if not self.settings.toc_markers_width then
         self.settings.toc_markers_width = DMINIBAR_TOC_MARKER_WIDTH
     end
+    if not self.settings.progress_bar_min_width then
+        self.settings.progress_bar_min_width = 20
+    end
     self.mode_list = {}
     for i = 0, #self.mode_index do
         self.mode_list[self.mode_index[i]] = i
@@ -1271,7 +1274,6 @@ function ReaderFooter:addToMainMenu(menu_items)
                 enabled_func = function()
                     return not self.settings.disable_progress_bar
                 end,
-                separator = true,
                 sub_item_table = {
                     {
                         text = _("No margins (0)"),
@@ -1320,6 +1322,35 @@ function ReaderFooter:addToMainMenu(menu_items)
                     },
                 },
             },
+            {
+                text_func = function()
+                    return T(_("Minimal width (%1%)"), self.settings.progress_bar_min_width)
+                end,
+                enabled_func = function()
+                    return not self.settings.progress_bar_position and not self.settings.disable_progress_bar
+                        and self.settings.all_at_once
+                end,
+                callback = function(touchmenu_instance)
+                    local SpinWidget = require("ui/widget/spinwidget")
+                    local items = SpinWidget:new{
+                        width = Screen:getWidth() * 0.6,
+                        value = self.settings.progress_bar_min_width,
+                        value_min = 20,
+                        value_step = 5,
+                        value_hold_step = 20,
+                        value_max = 50,
+                        title_text =  _("Minimal width"),
+                        text = _("Minimal progress bar width in percentage of screen width"),
+                        callback = function(spin)
+                            self.settings.progress_bar_min_width = spin.value
+                            self:refreshFooter(true, true)
+                            if touchmenu_instance then touchmenu_instance:updateItems() end
+                        end
+                    }
+                    UIManager:show(items)
+                end,
+                keep_menu_open = true,
+            }
         }
     })
     table.insert(sub_items, getMinibarOption("page_progress"))
@@ -1442,29 +1473,34 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
         return
     end
     local text = self:genFooterText()
-    if text then
-        self.footer_text:setText(text)
-    end
     if self.settings.disable_progress_bar then
         if self.has_no_mode or not text or text == "" then
             self.text_width = 0
             self.footer_container.dimen.h = 0
             self.footer_text.height = 0
         else
+            self.footer_text:setMaxWidth(math.floor(self._saved_screen_width - 2 * self.settings.progress_margin_width))
+            self.footer_text:setText(text)
             self.text_width = self.footer_text:getSize().w
         end
         self.progress_bar.width = 0
     elseif self.settings.progress_bar_position then
         if text == "" then
+            self.footer_text:setText(text)
             self.footer_container.dimen.h = 0
             self.footer_text.height = 0
         end
+        self.footer_text.max_width = math.floor(self._saved_screen_width - 2 * self.settings.progress_margin_width)
+        self.footer_text:setText(text)
         self.progress_bar.width = math.floor(self._saved_screen_width - 2 * self.settings.progress_margin_width)
         self.text_width = self.footer_text:getSize().w
     else
         if self.has_no_mode or not text or text == "" then
             self.text_width = 0
         else
+            local min_progress_bar_width = (100 - self.settings.progress_bar_min_width) / 100
+            self.footer_text:setMaxWidth(math.floor(min_progress_bar_width * self._saved_screen_width - 2 * self.settings.progress_margin_width))
+            self.footer_text:setText(text)
             self.text_width = self.footer_text:getSize().w + self.text_left_margin
         end
         self.progress_bar.width = math.floor(
