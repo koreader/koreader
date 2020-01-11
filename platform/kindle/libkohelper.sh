@@ -18,8 +18,8 @@ fi
 ## Check if we have an FBInk binary available somewhere...
 # Default to something that won't horribly blow up...
 FBINK_BIN="true"
-for my_dir in koreader libkh/bin linkss/bin linkfonts/bin usbnet/bin; do
-    my_fbink="/mnt/us/${my_dir}/fbink"
+for my_dir in /var/tmp /mnt/us/koreader /mnt/us/libkh/bin /mnt/us/linkss/bin /mnt/us/linkfonts/bin /mnt/us/usbnet/bin; do
+    my_fbink="${my_dir}/fbink"
     if [ -x "${my_fbink}" ]; then
         FBINK_BIN="${my_fbink}"
         # Got it!
