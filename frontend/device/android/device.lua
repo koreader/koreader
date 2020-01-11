@@ -87,8 +87,9 @@ local Device = Generic:new{
     importFile = function(path) android.importFile(path) end,
     isValidPath = function(path) return android.isPathInsideSandbox(path) end,
     canShareText = yes,
+    canShareFile = yes,
     doShareText = function(text) android.sendText(text) end,
-
+    doShareFile = function(path, title) android.sendFile(path, title) end,
     canExternalDictLookup = yes,
     getExternalDictLookupList = getExternalDicts,
     doExternalDictLookup = function (self, text, method, callback)

@@ -311,6 +311,20 @@ function FileManager:init()
                     end,
                 }
             })
+
+            if Device:canShareFile() then
+                local title = _("Share")
+                table.insert(buttons, {
+                    {
+                        text = title,
+                        callback = function()
+                            UIManager:close(self.file_dialog)
+                            Device.doShareFile(file, title)
+                        end,
+                    }
+                })
+            end
+
             table.insert(buttons, {
                 {
                     text_func = function()

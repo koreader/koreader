@@ -47,6 +47,7 @@ local Device = {
     hasBGRFrameBuffer = no,
     canImportFiles = no,
     canShareText = no,
+    canShareFile = no,
     canToggleGSensor = no,
     canToggleMassStorage = no,
     canUseWAL = yes, -- requires mmap'ed I/O on the target FS
