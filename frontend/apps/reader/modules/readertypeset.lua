@@ -342,11 +342,13 @@ end
 -- FLOAT_FLOATBOXES                   0x00040000               x   x
 -- DO_NOT_CLEAR_OWN_FLOATS            0x00100000               x   x
 -- ALLOW_EXACT_FLOATS_FOOTPRINTS      0x00200000               x   x
+--
+-- BOX_INLINE_BLOCKS                  0x01000000          x    x   x
 
 local BLOCK_RENDERING_FLAGS = {
     0x00000000, -- legacy block rendering
-    0x00030031, -- flat mode (with prepared floatBoxes, so inlined, to avoid display hash mismatch)
-    0x00375131, -- book mode (floating floatBoxes, limited widths support)
+    0x01030031, -- flat mode (with prepared floatBoxes, so inlined, to avoid display hash mismatch)
+    0x01375131, -- book mode (floating floatBoxes, limited widths support)
     0x7FFFFFFF, -- web mode, all features/flags
 }
 
