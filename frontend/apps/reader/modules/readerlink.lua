@@ -1064,13 +1064,15 @@ function ReaderLink:showAsFootnotePopup(link, neglect_current_location)
     -- then just ignore the whole stylesheet, including our own declarations
     -- we add at start)
     --
-    -- flags = 0x0001 to get the simplest/purest HTML without CSS, and dir=
-    -- and lang= attributes grabbed from parent nodes
+    -- flags = 0x1001 to get the simplest/purest HTML without CSS, with added
+    -- soft-hyphens where hyphenation is allowed (done by crengine according
+    -- to user's hyphenation settings), and dir= and lang= attributes grabbed
+    -- from parent nodes
     local html
     if extStartXP and extEndXP then
-        html = self.ui.document:getHTMLFromXPointers(extStartXP, extEndXP, 0x0001)
+        html = self.ui.document:getHTMLFromXPointers(extStartXP, extEndXP, 0x1001)
     else
-        html = self.ui.document:getHTMLFromXPointer(target_xpointer, 0x0001, true)
+        html = self.ui.document:getHTMLFromXPointer(target_xpointer, 0x1001, true)
         -- from_final_parent = true to get a possibly more complete footnote
     end
     if not html then
