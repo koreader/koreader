@@ -575,25 +575,21 @@ function EvernoteExporter:exportClippings(clippings)
     local msg = "Nothing was exported."
     local all_count = export_count + error_count
     if export_count > 0 and error_count == 0 then
-        if all_count == 1 then
-            msg = T(
-                N_("Exported notes from the book:\n%1",
-                   "Exported notes from the book:\n%1\nand %2 others.",
-                   all_count-1),
-                export_title,
-                all_count-1
-            )
-        end
+        msg = T(
+            N_("Exported notes from the book:\n%1",
+                "Exported notes from the book:\n%1\nand %2 others.",
+                all_count-1),
+            export_title,
+            all_count-1
+        )
     elseif error_count > 0 then
-        if all_count == 1 then
-            msg = T(
-                N_("An error occurred while trying to export notes from the book:\n%1",
-                   "Multiple errors occurred while trying to export notes from the book:\n%1\nand %2 others.",
-                   error_count-1),
-                error_title,
-                error_count-1
-            )
-        end
+        msg = T(
+            N_("An error occurred while trying to export notes from the book:\n%1",
+                "Multiple errors occurred while trying to export notes from the book:\n%1\nand %2 others.",
+                error_count-1),
+            error_title,
+            error_count-1
+        )
     end
     if (self.html_export or self.txt_export) and export_count > 0 then
         msg = msg .. T(_("\nNotes can be found in %1/."), BD.dirpath(realpath(self.clipping_dir)))
