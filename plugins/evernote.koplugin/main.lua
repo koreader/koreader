@@ -577,7 +577,7 @@ function EvernoteExporter:exportClippings(clippings)
     if export_count > 0 and error_count == 0 then
         msg = T(
             N_("Exported notes from the book:\n%1",
-                "Exported notes from the book:\n%1\nand %2 others.",
+               "Exported notes from the book:\n%1\nand %2 others.",
                 all_count-1),
             export_title,
             all_count-1
@@ -585,7 +585,7 @@ function EvernoteExporter:exportClippings(clippings)
     elseif error_count > 0 then
         msg = T(
             N_("An error occurred while trying to export notes from the book:\n%1",
-                "Multiple errors occurred while trying to export notes from the book:\n%1\nand %2 others.",
+               "Multiple errors occurred while trying to export notes from the book:\n%1\nand %2 others.",
                 error_count-1),
             error_title,
             error_count-1
