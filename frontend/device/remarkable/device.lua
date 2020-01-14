@@ -11,7 +11,6 @@ local Remarkable = Generic:new{
     isRemarkable = yes,
     hasKeys = yes,
     hasOTAUpdates = yes,
-    hasWifiManager = yes,
     canReboot = yes,
     canPowerOff = yes,
 }
@@ -112,42 +111,6 @@ end
 function Remarkable:reboot()
     os.execute("systemctl reboot")
 end
-
-function Remarkable:initNetworkManager(NetworkMgr)
-    function NetworkMgr:turnOffWifi(complete_callback)
-       self:releaseIP()
-       os.execute("./set-wifi.sh off")
-       if complete_callback then
-           complete_callback()
-       end
-    end
-
-    function NetworkMgr:turnOnWifi(complete_callback)
-       os.execute("./set-wifi.sh on")
-       self:showNetworkMenu(complete_callback)
-    end
-
-    NetworkMgr:setWirelessBackend("wpa_supplicant", {ctrl_interface = "/var/run/wpa_supplicant/wlan0"})
-
-    function NetworkMgr:obtainIP()
-        self:releaseIP()
-        os.execute("dhclient wlan0")
-    end
-
-    function NetworkMgr:releaseIP()
-        logger.info("killing dhclient")
-        os.execute("dhclient -x wlan0")
-    end
-
-    function NetworkMgr:restoreWifiAsync()
-        -- os.execute("./restore-wifi-async.sh")
-    end
-
-    function NetworkMgr:isWifiOn()
-        return 0 == os.execute("wmiconfig -i wlan0 --wlan query | grep -q enabled")
-    end
-end
-
 
 function Remarkable:getSoftwareVersion()
     -- TODO read from /etc/os-release?
