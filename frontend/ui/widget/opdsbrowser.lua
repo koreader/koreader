@@ -88,6 +88,10 @@ function OPDSBrowser:init()
              title = "textos.info (Spanish)",
              url = "https://www.textos.info/catalogo.atom",
           },
+          {
+             title = "Gallica (French)",
+             url = "https://gallica.bnf.fr/opds",
+          },
         }
         G_reader_settings:saveSetting("opds_servers", servers)
     elseif servers[4] and servers[4].title == "Internet Archive" and servers[4].url == "http://bookserver.archive.org/catalog/"  then
@@ -455,7 +459,17 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
         local author = "Unknown Author"
         if type(entry.author) == "table" and entry.author.name then
             author = entry.author.name
-            item.text = title .. "\n" .. author
+            if type(author) == "table" then
+                if #author > 0 then
+                    author = table.concat(author, ", ")
+                else
+                    -- we may get an empty table on https://gallica.bnf.fr/opds
+                    author = nil
+                end
+            end
+            if author then
+                item.text = title .. "\n" .. author
+            end
         end
         item.title = title
         item.author = author
