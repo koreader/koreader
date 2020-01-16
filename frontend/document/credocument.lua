@@ -133,6 +133,9 @@ function CreDocument:init()
     self.info.has_pages = false
     self:_readMetadata()
     self.info.configurable = true
+
+    -- Setup crengine library calls caching
+    self:setupCallCache()
 end
 
 function CreDocument:getLatestDomVersion()
@@ -879,6 +882,391 @@ function CreDocument:register(registry)
     registry:addProvider("rtf", "application/rtf", self, 90)
     registry:addProvider("xhtml", "application/xhtml+xml", self, 90)
     registry:addProvider("zip", "application/zip", self, 10)
+end
+
+-- Optimise usage of some of the above methods by caching their results,
+-- either globally, or per page/pos for those whose result may depend on
+-- current page number or y-position.
+function CreDocument:setupCallCache()
+    if not G_reader_settings:isTrue("use_cre_call_cache") then
+        return -- call cache disabled
+    end
+    local do_stats = G_reader_settings:isTrue("use_cre_call_cache_log_stats")
+    -- Tune these when debugging
+    local do_stats_include_not_cached = false
+    local do_log = false
+
+    -- Beware below for luacheck warnings "shadowing upvalue argument 'self'":
+    -- the 'self' we got and use here, and the one we may get implicitely
+    -- as first parameter of the methods we define or redefine, are actually
+    -- the same, but luacheck doesn't know that and would logically complain.
+    -- So, we define our helpers (self._callCache*) as functions and not methods:
+    -- no 'self' as first argument, use 'self.' and not 'self:' when calling them.
+
+    -- reset full cache
+    self._callCacheReset = function()
+        self._call_cache = {}
+        self._call_cache_tags_lru = {}
+    end
+    -- global cache
+    self._callCacheGet = function(key)
+        return self._call_cache[key]
+    end
+    self._callCacheSet = function(key, value)
+        self._call_cache[key] = value
+    end
+
+    -- nb of by-tag sub-caches to keep
+    self._call_cache_keep_tags_nb = 10
+    -- current tag (page, pos) sub-cache
+    self._callCacheSetCurrentTag = function(tag)
+        if not self._call_cache[tag] then
+            self._call_cache[tag] = {}
+        end
+        self._call_cache_current_tag = tag
+        -- clean up LRU tag list
+        if self._call_cache_tags_lru[1] ~= tag then
+            for i = #self._call_cache_tags_lru, 1, -1 do
+                if self._call_cache_tags_lru[i] == tag then
+                    table.remove(self._call_cache_tags_lru, i)
+                elseif i > self._call_cache_keep_tags_nb then
+                    self._call_cache[self._call_cache_tags_lru[i]] = nil
+                    table.remove(self._call_cache_tags_lru, i)
+                end
+            end
+            table.insert(self._call_cache_tags_lru, 1, tag)
+        end
+    end
+    self._callCacheGetCurrentTag = function(tag)
+        return self._call_cache_current_tag
+    end
+    -- per current tag cache
+    self._callCacheTagGet = function(key)
+        if self._call_cache_current_tag and self._call_cache[self._call_cache_current_tag] then
+            return self._call_cache[self._call_cache_current_tag][key]
+        end
+    end
+    self._callCacheTagSet = function(key, value)
+        if self._call_cache_current_tag and self._call_cache[self._call_cache_current_tag] then
+            self._call_cache[self._call_cache_current_tag][key] = value
+        end
+    end
+    self._callCacheReset()
+
+    -- serialize function arguments as a single string, to be used as a table key
+    local asString = function(...)
+        local sargs = {} -- args as string
+        for i, arg in ipairs({...}) do
+            local sarg
+            if type(arg) == "table" then
+                -- We currently don't get nested tables, and only keyword tables
+                local items = {}
+                for k, v in pairs(arg) do
+                    table.insert(items, tostring(k)..tostring(v))
+                end
+                table.sort(items)
+                sarg = table.concat(items, "|")
+            else
+                sarg = tostring(arg)
+            end
+            table.insert(sargs, sarg)
+        end
+        return table.concat(sargs, "|")
+    end
+
+    local no_op = function() end
+    local getTime = no_op
+    local addStatMiss = no_op
+    local addStatHit = no_op
+    local dumpStats = no_op
+    if do_stats then
+        -- cache statistics
+        self._call_cache_stats = {}
+        local _gettime = require("ffi/util").gettime
+        getTime = function()
+            local secs, usecs = _gettime()
+            return secs + usecs/1000000
+        end
+        addStatMiss = function(name, starttime, not_cached)
+            local duration = getTime() - starttime
+            if not self._call_cache_stats[name] then
+                self._call_cache_stats[name] = {0, 0.0, 1, duration, not_cached}
+            else
+                local stat = self._call_cache_stats[name]
+                stat[3] = stat[3] + 1
+                stat[4] = stat[4] + duration
+            end
+        end
+        addStatHit = function(name, starttime)
+            local duration = getTime() - starttime
+            if not duration then duration = 0.0 end
+            if not self._call_cache_stats[name] then
+                self._call_cache_stats[name] = {1, duration, 0, 0.0}
+            else
+                local stat = self._call_cache_stats[name]
+                stat[1] = stat[1] + 1
+                stat[2] = stat[2] + duration
+            end
+        end
+        dumpStats = function()
+            logger.info("cre call cache statistics:\n" .. self.getCallCacheStatistics())
+        end
+        -- Make this one non-local, in case we want to have it shown via a menu item
+        self.getCallCacheStatistics = function()
+            local util = require("util")
+            local res = {}
+            table.insert(res, "CRE call cache content:")
+            table.insert(res, string.format("     all: %d items", util.tableSize(self._call_cache)))
+            table.insert(res, string.format("  global: %d items", util.tableSize(self._call_cache) - #self._call_cache_tags_lru))
+            table.insert(res, string.format("    tags: %d items", #self._call_cache_tags_lru))
+            for i=1, #self._call_cache_tags_lru do
+                table.insert(res, string.format("          '%s': %d items", self._call_cache_tags_lru[i],
+                        util.tableSize(self._call_cache[self._call_cache_tags_lru[i]])))
+            end
+            local hit_keys = {}
+            local nohit_keys = {}
+            local notcached_keys = {}
+            for k, v in pairs(self._call_cache_stats) do
+                if self._call_cache_stats[k][1] > 0 then
+                    table.insert(hit_keys, k)
+                else
+                    if #v > 4 then
+                        table.insert(notcached_keys, k)
+                    else
+                        table.insert(nohit_keys, k)
+                    end
+                end
+            end
+            table.sort(hit_keys)
+            table.sort(nohit_keys)
+            table.sort(notcached_keys)
+            table.insert(res, "CRE call cache hits statistics:")
+            local total_duration = 0
+            local total_duration_saved = 0
+            for _, k in ipairs(hit_keys) do
+                local hits, hits_duration, misses, missed_duration = unpack(self._call_cache_stats[k])
+                local total = hits + misses
+                local pct_hit = 100.0 * hits / total
+                local duration_avoided = 1.0 * hits * missed_duration / misses
+                local duration_added_s = ""
+                if hits_duration >= 0.001 then
+                    duration_added_s = string.format(" (-%.3fs)", hits_duration)
+                end
+                local pct_duration_avoided = 100.0 * duration_avoided / (missed_duration + hits_duration + duration_avoided)
+                table.insert(res, string.format("    %s: %d/%d hits (%d%%) %.3fs%s saved, %.3fs used (%d%% saved)", k, hits, total,
+                        pct_hit, duration_avoided, duration_added_s, missed_duration, pct_duration_avoided))
+                total_duration = total_duration + missed_duration + hits_duration
+                total_duration_saved = total_duration_saved + duration_avoided - hits_duration
+            end
+            table.insert(res, "  By call times (hits | misses):")
+            for _, k in ipairs(hit_keys) do
+                local hits, hits_duration, misses, missed_duration = unpack(self._call_cache_stats[k])
+                table.insert(res, string.format("    %s: (%d) %.3f ms | %.3f ms (%d)", k, hits, 1000*hits_duration/hits, 1000*missed_duration/misses, misses))
+            end
+            table.insert(res, "  No hit for:")
+            for _, k in ipairs(nohit_keys) do
+                local hits, hits_duration, misses, missed_duration = unpack(self._call_cache_stats[k]) -- luacheck: no unused
+                table.insert(res, string.format("    %s: %d misses %.3fs",
+                        k, misses, missed_duration))
+                total_duration = total_duration + missed_duration + hits_duration
+            end
+            if #notcached_keys > 0 then
+                table.insert(res, "  No cache for:")
+                for _, k in ipairs(notcached_keys) do
+                    local hits, hits_duration, misses, missed_duration = unpack(self._call_cache_stats[k]) -- luacheck: no unused
+                    table.insert(res, string.format("    %s: %d calls %.3fs",
+                            k, misses, missed_duration))
+                    total_duration = total_duration + missed_duration + hits_duration
+                end
+            end
+            local pct_duration_saved = 100.0 * total_duration_saved / (total_duration+total_duration_saved)
+            table.insert(res, string.format("  cpu time used: %.3fs, saved: %.3fs (%d%% saved)", total_duration, total_duration_saved, pct_duration_saved))
+            return table.concat(res, "\n")
+        end
+    end
+
+    -- Tweak CreDocument functions for cache interaction
+    -- No need to tweak metatable and play with __index, we just put
+    -- in self wrapped copies of the original CreDocument functions.
+    for name, func in pairs(CreDocument) do
+        if type(func) == "function" then
+            -- Various type of wrap
+            local no_wrap = false -- luacheck: no unused
+            local add_reset = false
+            local add_buffer_trash = false
+            local cache_by_tag = false
+            local cache_global = false
+            local set_tag = nil
+            local set_arg = nil
+            local is_cached = false
+
+            -- Assume all set* may change rendering
+            if name == "setBatteryState" then no_wrap = true -- except this one
+            elseif name:sub(1,3) == "set" then add_reset = true
+            elseif name:sub(1,6) == "toggle" then add_reset = true
+            elseif name:sub(1,6) == "update" then add_reset = true
+            elseif name == "zoomFont" then add_reset = true -- not used by koreader
+
+            -- These may have crengine do native highlight or unhighlight
+            -- (we could keep the original buffer and use a scratch buffer while
+            -- these are used, but not worth bothering)
+            elseif name == "clearSelection" then add_buffer_trash = true
+            elseif name == "highlightXPointer" then add_buffer_trash = true
+            elseif name == "getWordFromPosition" then add_buffer_trash = true
+            elseif name == "getTextFromPositions" then add_buffer_trash = true
+            elseif name == "findText" then add_buffer_trash = true
+
+            -- These may change page/pos
+            elseif name == "gotoPage" then set_tag = "page" ; set_arg = 2
+            elseif name == "gotoPos" then set_tag = "pos" ; set_arg = 2
+            elseif name == "drawCurrentViewByPage" then set_tag = "page" ; set_arg = 6
+            elseif name == "drawCurrentViewByPos" then set_tag = "pos" ; set_arg = 6
+            -- gotoXPointer() is for cre internal fixup, we always use gotoPage/Pos
+            -- (goBack, goForward, gotoLink are not used)
+
+            -- For some, we prefer no cache (if they costs nothing, return some huge
+            -- data that we'd rather not cache, are called with many different args,
+            -- or we'd rather have up to date crengine state)
+            elseif name == "getCurrentPage" then no_wrap = true
+            elseif name == "getCurrentPos" then no_wrap = true
+            elseif name == "getVisiblePageCount" then no_wrap = true
+            elseif name == "getCoverPageImage" then no_wrap = true
+            elseif name == "getDocumentFileContent" then no_wrap = true
+            elseif name == "getHTMLFromXPointer" then no_wrap = true
+            elseif name == "getHTMLFromXPointers" then no_wrap = true
+            elseif name == "getImageFromPosition" then no_wrap = true
+            elseif name == "getTextFromXPointer" then no_wrap = true
+            elseif name == "getTextFromXPointers" then no_wrap = true
+            elseif name == "getPageOffsetX" then no_wrap = true
+            elseif name == "getNextVisibleWordStart" then no_wrap = true
+            elseif name == "getNextVisibleWordEnd" then no_wrap = true
+            elseif name == "getPrevVisibleWordStart" then no_wrap = true
+            elseif name == "getPrevVisibleWordEnd" then no_wrap = true
+            elseif name == "getPrevVisibleChar" then no_wrap = true
+            elseif name == "getNextVisibleChar" then no_wrap = true
+            elseif name == "getCacheFilePath" then no_wrap = true
+            elseif name == "getStatistics" then no_wrap = true
+
+            -- Some get* have different results by page/pos
+            elseif name == "getLinkFromPosition" then cache_by_tag = true
+            elseif name == "getPageLinks" then cache_by_tag = true
+            elseif name == "getScreenBoxesFromPositions" then cache_by_tag = true
+            elseif name == "getScreenPositionFromXPointer" then cache_by_tag = true
+            elseif name == "getXPointer" then cache_by_tag = true
+            elseif name == "isXPointerInCurrentPage" then cache_by_tag = true
+
+            -- Assume all remaining get* can have their results
+            -- cached globally by function arguments
+            elseif name:sub(1,3) == "get" then cache_global = true
+
+            -- All others don't need to be wrapped
+            end
+
+            if add_reset then
+                self[name] = function(...)
+                    -- logger.dbg("callCache:", name, "called with", select(2,...))
+                    if do_log then logger.dbg("callCache:", name, "reseting cache") end
+                    self._callCacheReset()
+                    return func(...)
+                end
+            elseif add_buffer_trash then
+                self[name] = function(...)
+                    if do_log then logger.dbg("callCache:", name, "reseting buffer") end
+                    self._callCacheSet("current_buffer_tag", nil)
+                    return func(...)
+                end
+            elseif set_tag then
+                self[name] = function(...)
+                    if do_log then logger.dbg("callCache:", name, "setting tag") end
+                    local val = select(set_arg, ...)
+                    self._callCacheSetCurrentTag(set_tag .. val)
+                    return func(...)
+                end
+            elseif cache_by_tag then
+                is_cached = true
+                self[name] = function(...)
+                    local starttime = getTime()
+                    local cache_key = name .. asString(select(2, ...))
+                    local results = self._callCacheTagGet(cache_key)
+                    if results then
+                        if do_log then logger.dbg("callCache:", name, "cache hit:", cache_key) end
+                        addStatHit(name, starttime)
+                        -- We might want to return a deep-copy of results, in case callers
+                        -- play at modifying values. But it looks like none currently do.
+                        -- So, better to keep calling code not modifying returned results.
+                        return unpack(results)
+                    else
+                        if do_log then logger.dbg("callCache:", name, "cache miss:", cache_key) end
+                        results = { func(...) }
+                        self._callCacheTagSet(cache_key, results)
+                        addStatMiss(name, starttime)
+                        return unpack(results)
+                    end
+                end
+            elseif cache_global then
+                is_cached = true
+                self[name] = function(...)
+                    local starttime = getTime()
+                    local cache_key = name .. asString(select(2, ...))
+                    local results = self._callCacheGet(cache_key)
+                    if results then
+                        if do_log then logger.dbg("callCache:", name, "cache hit:", cache_key) end
+                        addStatHit(name, starttime)
+                        -- See comment above
+                        return unpack(results)
+                    else
+                        if do_log then logger.dbg("callCache:", name, "cache miss:", cache_key) end
+                        results = { func(...) }
+                        self._callCacheSet(cache_key, results)
+                        addStatMiss(name, starttime)
+                        return unpack(results)
+                    end
+                end
+            end
+            if do_stats_include_not_cached and not is_cached then
+                local func2 = self[name] -- might already be wrapped
+                self[name] = function(...)
+                    local starttime = getTime()
+                    local results = { func2(...) }
+                    addStatMiss(name, starttime, true) -- not_cached = true
+                    return unpack(results)
+                end
+            end
+        end
+    end
+    -- We override a bit more specifically the one responsible for drawing page
+    self.drawCurrentView = function(_self, target, x, y, rect, pos)
+        local do_draw = false
+        local current_tag = self._callCacheGetCurrentTag()
+        local current_buffer_tag = self._callCacheGet("current_buffer_tag")
+        if _self.buffer and (_self.buffer.w ~= rect.w or _self.buffer.h ~= rect.h) then
+            do_draw = true
+        elseif not _self.buffer then
+            do_draw = true
+        elseif not current_buffer_tag then
+            do_draw = true
+        elseif current_buffer_tag ~= current_tag then
+            do_draw = true
+        end
+        local starttime = getTime()
+        if do_draw then
+            if do_log then logger.dbg("callCache: ########## drawCurrentView: full draw") end
+            CreDocument.drawCurrentView(_self, target, x, y, rect, pos)
+            addStatMiss("drawCurrentView", starttime)
+            self._callCacheSet("current_buffer_tag", current_tag)
+        else
+            if do_log then logger.dbg("callCache: ---------- drawCurrentView: light draw") end
+            target:blitFrom(_self.buffer, x, y, 0, 0, rect.w, rect.h)
+            addStatHit("drawCurrentView", starttime)
+        end
+    end
+    -- Dump statistics on close
+    if do_stats then
+        self.close = function(_self)
+            CreDocument.close(_self)
+            dumpStats()
+        end
+    end
 end
 
 return CreDocument
