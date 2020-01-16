@@ -86,7 +86,7 @@ describe("Evernote plugin module", function()
         readerui.evernote:exportBooknotesToTXT("Title1", sample_clippings.Title1)
         assert.spy(io.open).was.called()
         assert.spy(file_mock.write).was.called_with(match.is_ref(file_mock), "Some important stuff 1")
-       _G.io = old_io
+        _G.io = old_io
 
     end)
 

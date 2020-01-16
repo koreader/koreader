@@ -488,11 +488,11 @@ Highlight: Highlighted text or image in document, stored in "highlights" table i
 documents sidecar file. Parser uses this table.
 Bookmarks: Text in bookmark explorer, user can edit this fields. If user didn't
 edit highlight or "renamed" bookmark this is not created. Stored in "bookmarks" table
-in documents sidecar file. Parser looks to this file for edited parts.
+in documents sidecar file. Parser looks to this file for edited notes.
 Clippings: Parsed form of highlights, stored in clipboard/evernote.sdr/metadata.sdr.lua
-for all documents.Used only for exporting bookmarks. Internal functions does not use
+for all documents. Used only for exporting bookmarks. Internal functions does not use
 this table.
-Booknotes: Every table in clippings table. Clippings = {"key" = booknotes}
+Booknotes: Every table in clippings table. Clippings = {"title" = booknotes}
 --]]
 function EvernoteExporter:exportAllNotes()
     -- Flush highlights of current document.
