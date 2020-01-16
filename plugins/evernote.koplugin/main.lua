@@ -6,7 +6,6 @@ local NetworkMgr = require("ui/network/manager")
 local DataStorage = require("datastorage")
 local DocSettings = require("docsettings")
 local UIManager = require("ui/uimanager")
-local ConfirmBox = require("ui/widget/confirmbox")
 local Screen = require("device").screen
 local util = require("ffi/util")
 local Device = require("device")
@@ -309,13 +308,9 @@ For more information, please visit https://github.com/koreader/koreader/wiki/Eve
                 text = _("Purge history records"),
                 callback = function()
                     self.config:purge()
-                    UIManager:show(ConfirmBox:new{
-                        text = _("History records have been purged.\nAll notes will be exported again next time.\nWould you like to remove the existing KOReaderClipping.txt file to avoid duplication?\nRecords will be appended to KOReaderClipping.txt instead of being overwritten."),
-                        ok_text = _("Remove file"),
-                        ok_callback = function()
-                            os.remove(self.text_clipping_file)
-                        end,
-                        cancel_text = _("Keep file"),
+                    UIManager:show(InfoMessage:new{
+                        text = _("History records have been purged.\nAll notes will be exported again next time.\n"),
+                        timeout = 2,
                     })
                 end
             }
@@ -484,6 +479,21 @@ function EvernoteExporter:updateMyClippings(clippings, new_clippings)
     return clippings
 end
 
+--[[--
+Parses highlights and calls exporter functions.
+
+Entry point for exporting highlights. User interface calls this function.
+Parses current document and documents from history, passes them to exportClippings().
+Highlight: Highlighted text or image in document, stored in "highlights" table in
+documents sidecar file. Parser uses this table.
+Bookmarks: Text in bookmark explorer, user can edit this fields. If user didn't
+edit highlight or "renamed" bookmark this is not created. Stored in "bookmarks" table
+in documents sidecar file. Parser looks to this file for edited parts.
+Clippings: Parsed form of highlights, stored in clipboard/evernote.sdr/metadata.sdr.lua
+for all documents.Used only for exporting bookmarks. Internal functions does not use
+this table.
+Booknotes: Every table in clippings table. Clippings = {"key" = booknotes}
+--]]
 function EvernoteExporter:exportAllNotes()
     -- Flush highlights of current document.
     if not self:isDocless() then
@@ -518,6 +528,7 @@ function EvernoteExporter:exportClippings(clippings)
     elseif self.html_export then
         exported_stamp= "html"
     elseif self.txt_export then
+        os.remove(self.text_clipping_file)
         exported_stamp = "txt"
     elseif self.joplin_export then
         exported_stamp = "joplin"
@@ -544,7 +555,8 @@ function EvernoteExporter:exportClippings(clippings)
         end
         -- check if booknotes are exported in this notebook
         -- so that booknotes will still be exported after switching user account
-        if booknotes.exported[exported_stamp] ~= true then
+        --Don't respect exported_stamp on txt export since it isn't possible to delete(update) prior clippings.
+        if booknotes.exported[exported_stamp] ~= true or self.txt_export then
             local ok, err
             if self.html_export then
                 ok, err = pcall(self.exportBooknotesToHTML, self, title, booknotes)
@@ -639,7 +651,6 @@ end
 function EvernoteExporter:exportBooknotesToTXT(title, booknotes)
     -- Use wide_space to avoid crengine to treat it specially.
     local wide_space = "\227\128\128"
-    local file_modification = lfs.attributes(self.text_clipping_file, "modification") or 0
     local file = io.open(self.text_clipping_file, "a")
     if file then
         file:write(title .. "\n" .. wide_space .. "\n")
@@ -648,19 +659,16 @@ function EvernoteExporter:exportBooknotesToTXT(title, booknotes)
                 file:write(wide_space .. chapter.title .. "\n" .. wide_space .. "\n")
             end
             for _ignore2, clipping in ipairs(chapter) do
-                -- If this clipping has already been exported, we ignore it.
-                if clipping.time >= file_modification then
-                    file:write(wide_space .. wide_space ..
-                               T(_("-- Page: %1, added on %2\n"),
-                                 clipping.page, os.date("%c", clipping.time)))
-                    if clipping.text then
-                        file:write(clipping.text)
-                    end
-                    if clipping.image then
-                        file:write(_("<An image>"))
-                    end
-                    file:write("\n-=-=-=-=-=-\n")
+                file:write(wide_space .. wide_space ..
+                            T(_("-- Page: %1, added on %2\n"),
+                                clipping.page, os.date("%c", clipping.time)))
+                if clipping.text then
+                    file:write(clipping.text)
                 end
+                if clipping.image then
+                    file:write(_("<An image>"))
+                end
+                file:write("\n-=-=-=-=-=-\n")
             end
         end
 
