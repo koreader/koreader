@@ -1,8 +1,11 @@
 describe("Evernote plugin module", function()
-    local readerui
+    local readerui, match
+    local sample_clippings, sample_epub
+    local DocumentRegistry
     setup(function()
         require("commonrequire")
-        ReaderUI = require("apps/reader/readerui")
+        match = require("luassert.match")
+        local ReaderUI = require("apps/reader/readerui")
         DocumentRegistry = require("document/documentregistry")
         sample_epub = "spec/front/unit/data/juliet.epub"
         readerui = ReaderUI:new{
