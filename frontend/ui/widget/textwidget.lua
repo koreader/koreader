@@ -201,6 +201,49 @@ function TextWidget:_measureWithXText()
     end
 end
 
+function TextWidget:getFittedText()
+    -- Returns the substring of text that fits in self.max_width, without
+    -- the possibly added ellipsis when truncated.
+    -- 2nd returned value is nil if no truncation, false when truncated
+    -- and no ellipsis would be added, true if truncated and an ellipsis
+    -- will be added (on the right or left of string in logical order,
+    -- caller knows the side from the provided 'truncate_left').
+    if not self.max_width then
+        return self.text, nil
+    end
+    self:updateSize()
+    if self._is_empty then
+        return "", nil
+    end
+    if not self.use_xtext then
+        local truncated = nil
+        if self._text_to_draw ~= self.text then
+            truncated = self.truncate_with_ellipsis
+        end
+        return self._text_to_draw, truncated
+    end
+    if self._shape_start == 1 and self._shape_end == #self.text then
+        -- not truncated
+        return self.text, nil
+    end
+    local with_ellipsis = false
+    local start_idx, end_idx = self._shape_start, self._shape_end
+    if self._shape_idx_to_substitute_with_ellipsis then
+        with_ellipsis = true
+        if self.truncate_left then
+            start_idx = start_idx + 1
+        else
+            end_idx = end_idx -1
+        end
+    end
+    -- These start and end indexes are in the internal unicode
+    -- string of the xtext object, and we can't use them as
+    -- indices of the UTF-8 self.text.
+    -- So, get the UTF-8 directly from xtext.
+    local text = self._xtext:getText(start_idx, end_idx)
+    return text, with_ellipsis
+end
+
 function TextWidget:getSize()
     self:updateSize()
     return Geom:new{
