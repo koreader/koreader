@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
@@ -21,6 +22,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local util = require("util")
 local T = require("ffi/util").template
 local _ = require("gettext")
+local C_ = _.pgettext
 local Screen = Device.screen
 
 local MODE = {
@@ -41,28 +43,56 @@ local symbol_prefix = {
     letters = {
         time = nil,
         pages_left = "=>",
-        battery = "B:",
-        percentage = "R:",
-        book_time_to_read = "TB:",
-        chapter_time_to_read = "TC:",
-        frontlight = "L:",
-        mem_usage = "M:",
-        wifi_status = "W:",
+        -- @translators This is the footer letter prefix for battery % remaining.
+        battery = C_("FooterLetterPrefix", "B:"),
+        -- @translators This is the footer letter prefix for percentage read.
+        percentage = C_("FooterLetterPrefix", "R:"),
+        -- @translators This is the footer letter prefix for book time to read.
+        book_time_to_read = C_("FooterLetterPrefix", "TB:"),
+        -- @translators This is the footer letter prefix for chapter time to read.
+        chapter_time_to_read = C_("FooterLetterPrefix", "TC:"),
+        -- @translators This is the footer letter prefix for frontlight level.
+        frontlight = C_("FooterLetterPrefix", "L:"),
+        -- @translators This is the footer letter prefix for memory usage.
+        mem_usage = C_("FooterLetterPrefix", "M:"),
+        -- @translators This is the footer letter prefix for wifi status.
+        wifi_status = C_("FooterLetterPrefix", "W:"),
     },
     icons = {
         time = "⌚",
-        pages_left = "⇒",
+        pages_left = BD.mirroredUILayout() and "⇐" or "⇒",
         battery = "",
-        percentage = "⤠",
+        percentage = BD.mirroredUILayout() and "⤟" or "⤠",
         book_time_to_read = "⏳",
-        chapter_time_to_read = "⤻",
+        chapter_time_to_read = BD.mirroredUILayout() and "⥖" or "⤻",
         frontlight = "☼",
         mem_usage = "",
         wifi_status = "",
     }
 }
+if BD.mirroredUILayout() then
+    -- We need to RTL-wrap these letters and symbols for proper layout
+    for k, v in pairs(symbol_prefix.letters) do
+        local colon = v:find(":")
+        local wrapped
+        if colon then
+            local pre = v:sub(1, colon-1)
+            local post = v:sub(colon)
+            wrapped = BD.wrap(pre) .. BD.wrap(post)
+        else
+            wrapped = BD.wrap(v)
+        end
+        symbol_prefix.letters[k] = wrapped
+    end
+    for k, v in pairs(symbol_prefix.icons) do
+        symbol_prefix.icons[k] = BD.wrap(v)
+    end
+end
+
 local PROGRESS_BAR_STYLE_THICK_DEFAULT_HEIGHT = 7
 local PROGRESS_BAR_STYLE_THIN_DEFAULT_HEIGHT = 3
+local DMINIBAR_TOC_MARKER_WIDTH = 2
+local DMINIBAR_FONT_SIZE = 14
 
 -- functions that generates footer text for each mode
 local footerTextGeneratorMap = {
@@ -115,9 +145,9 @@ local footerTextGeneratorMap = {
                     prefix = ""
                 end
             end
-            return prefix .. batt_lvl .. "%"
+            return BD.wrap(prefix) .. batt_lvl .. "%"
         else
-            return prefix .. " " .. (powerd:isCharging() and "+" or "") .. batt_lvl .. "%"
+            return BD.wrap(prefix) .. " " .. (powerd:isCharging() and "+" or "") .. batt_lvl .. "%"
         end
     end,
     time = function(footer)
@@ -214,7 +244,6 @@ local ReaderFooter = WidgetContainer:extend{
     progress_percentage = 0.0,
     footer_text = nil,
     text_font_face = "ffont",
-    text_font_size = DMINIBAR_FONT_SIZE,
     height = Screen:scaleBySize(DMINIBAR_CONTAINER_HEIGHT),
     horizontal_margin = Screen:scaleBySize(10),
     text_left_margin = Screen:scaleBySize(10),
@@ -242,7 +271,9 @@ function ReaderFooter:init()
         frontlight = false,
         mem_usage = false,
         wifi_status = false,
-        item_prefix = "icons"
+        item_prefix = "icons",
+        toc_markers_width = DMINIBAR_TOC_MARKER_WIDTH,
+        text_font_size = DMINIBAR_FONT_SIZE,
     }
 
     if not self.settings.order then
@@ -272,6 +303,12 @@ function ReaderFooter:init()
     if not self.settings.progress_margin_width  then
         self.settings.progress_margin_width = Screen:scaleBySize(10)
     end
+    if not self.settings.toc_markers_width then
+        self.settings.toc_markers_width = DMINIBAR_TOC_MARKER_WIDTH
+    end
+    if not self.settings.progress_bar_min_width_pct then
+        self.settings.progress_bar_min_width_pct = 20
+    end
     self.mode_list = {}
     for i = 0, #self.mode_index do
         self.mode_list[self.mode_index[i]] = i
@@ -292,9 +329,12 @@ function ReaderFooter:init()
         end
     end
 
+    if not self.settings.text_font_size then
+        self.settings.text_font_size = DMINIBAR_FONT_SIZE
+    end
     self.footer_text = TextWidget:new{
         text = '',
-        face = Font:getFace(self.text_font_face, self.text_font_size),
+        face = Font:getFace(self.text_font_face, self.settings.text_font_size),
     }
     -- all width related values will be initialized in self:resetLayout()
     self.text_width = 0
@@ -302,7 +342,7 @@ function ReaderFooter:init()
         width = nil,
         height = nil,
         percentage = self.progress_percentage,
-        tick_width = DMINIBAR_TOC_MARKER_WIDTH,
+        tick_width = Screen:scaleBySize(self.settings.toc_markers_width),
         ticks = nil, -- ticks will be populated in self:updateFooterText
         last = nil, -- last will be initialized in self:updateFooterText
     }
@@ -724,7 +764,6 @@ function ReaderFooter:addToMainMenu(menu_items)
             },
             {
                 text = _("Show footer separator"),
-                separator = true,
                 checked_func = function()
                     return self.settings.bottom_horizontal_separator
                 end,
@@ -732,6 +771,41 @@ function ReaderFooter:addToMainMenu(menu_items)
                     self.settings.bottom_horizontal_separator = not self.settings.bottom_horizontal_separator
                     self:refreshFooter(true, true)
                 end,
+            },
+            {
+                text_func = function()
+                    return T(_("Font size (%1)"), self.settings.text_font_size)
+                end,
+                separator = true,
+                callback = function(touchmenu_instance)
+                    local SpinWidget = require("ui/widget/spinwidget")
+                    local font_size = self.settings.text_font_size
+                    local items_font = SpinWidget:new{
+                        width = Screen:getWidth() * 0.6,
+                        value = font_size,
+                        value_min = 10,
+                        value_max = 18,
+                        default_value = 14,
+                        ok_text = _("Set size"),
+                        title_text =  _("Footer font size"),
+                        callback = function(spin)
+                            self.settings.text_font_size = spin.value
+                            local text = self.footer_text.text
+                            self.footer_text = TextWidget:new{
+                                text = text,
+                                face = Font:getFace(self.text_font_face, self.settings.text_font_size)
+                            }
+                            self.text_container = RightContainer:new{
+                                dimen = Geom:new{ w = 0, h = self.height },
+                                self.footer_text,
+                            }
+                            self:refreshFooter(true, true)
+                            if touchmenu_instance then touchmenu_instance:updateItems() end
+                        end,
+                    }
+                    UIManager:show(items_font)
+                end,
+                keep_menu_open = true,
             },
             {
                 text = _("Alignment"),
@@ -1132,9 +1206,57 @@ function ReaderFooter:addToMainMenu(menu_items)
                         callback = function()
                             self.settings.toc_markers = not self.settings.toc_markers
                             self:setTocMarkers()
-                            self:updateFooter()
-                            UIManager:setDirty(nil, "ui")
+                            self:refreshFooter(true)
                         end
+                    },
+                    {
+                        text_func = function()
+                            local markers_width_text = _("thick")
+                            if self.settings.toc_markers_width == 1 then
+                                markers_width_text = _("thin")
+                            elseif self.settings.toc_markers_width == 2 then
+                                markers_width_text = _("medium")
+                            end
+                            return T(_("Chapter marker width (%1)"), markers_width_text)
+                        end,
+                        enabled_func = function()
+                            return not self.settings.progress_style_thin and self.settings.toc_markers
+                        end,
+                        sub_item_table = {
+                            {
+                                text = _("Thin"),
+                                checked_func = function()
+                                    return self.settings.toc_markers_width == 1
+                                end,
+                                callback = function()
+                                    self.settings.toc_markers_width = 1  -- unscaled_size_check: ignore
+                                    self:setTocMarkers()
+                                    self:refreshFooter(true)
+                                end,
+                            },
+                            {
+                                text = _("Medium"),
+                                checked_func = function()
+                                    return self.settings.toc_markers_width == 2
+                                end,
+                                callback = function()
+                                    self.settings.toc_markers_width = 2  -- unscaled_size_check: ignore
+                                    self:setTocMarkers()
+                                    self:refreshFooter(true)
+                                end,
+                            },
+                            {
+                                text = _("Thick"),
+                                checked_func = function()
+                                    return self.settings.toc_markers_width == 3
+                                end,
+                                callback = function()
+                                    self.settings.toc_markers_width = 3  -- unscaled_size_check: ignore
+                                    self:setTocMarkers()
+                                    self:refreshFooter(true)
+                                end
+                            },
+                        },
                     },
                 },
             },
@@ -1152,7 +1274,6 @@ function ReaderFooter:addToMainMenu(menu_items)
                 enabled_func = function()
                     return not self.settings.disable_progress_bar
                 end,
-                separator = true,
                 sub_item_table = {
                     {
                         text = _("No margins (0)"),
@@ -1201,6 +1322,35 @@ function ReaderFooter:addToMainMenu(menu_items)
                     },
                 },
             },
+            {
+                text_func = function()
+                    return T(_("Minimal width (%1%)"), self.settings.progress_bar_min_width_pct)
+                end,
+                enabled_func = function()
+                    return not self.settings.progress_bar_position and not self.settings.disable_progress_bar
+                        and self.settings.all_at_once
+                end,
+                callback = function(touchmenu_instance)
+                    local SpinWidget = require("ui/widget/spinwidget")
+                    local items = SpinWidget:new{
+                        width = Screen:getWidth() * 0.6,
+                        value = self.settings.progress_bar_min_width_pct,
+                        value_min = 20,
+                        value_step = 5,
+                        value_hold_step = 20,
+                        value_max = 50,
+                        title_text =  _("Minimal width"),
+                        text = _("Minimal progress bar width in percentage of screen width"),
+                        callback = function(spin)
+                            self.settings.progress_bar_min_width_pct = spin.value
+                            self:refreshFooter(true, true)
+                            if touchmenu_instance then touchmenu_instance:updateItems() end
+                        end
+                    }
+                    UIManager:show(items)
+                end,
+                keep_menu_open = true,
+            }
         }
     })
     table.insert(sub_items, getMinibarOption("page_progress"))
@@ -1230,10 +1380,13 @@ function ReaderFooter:genAllFooterText()
     elseif self.settings.items_separator == "bullet" then
         separator = " • "
     end
+    -- We need to BD.wrap() all items and separators, so we're
+    -- sure they are laid out in our order (reversed in RTL),
+    -- without ordering by the RTL Bidi algorithm.
     for _, gen in ipairs(self.footerTextGenerators) do
-        table.insert(info, gen(self))
+        table.insert(info, BD.wrap(gen(self)))
     end
-    return table.concat(info, separator)
+    return table.concat(info, BD.wrap(separator))
 end
 
 function ReaderFooter:setTocMarkers(reset)
@@ -1243,6 +1396,7 @@ function ReaderFooter:setTocMarkers(reset)
         self.pages = self.view.document:getPageCount()
     end
     if self.settings.toc_markers then
+        self.progress_bar.tick_width = Screen:scaleBySize(self.settings.toc_markers_width)
         if self.progress_bar.ticks ~= nil then return end
         local ticks_candidates = {}
         if self.ui.toc then
@@ -1319,11 +1473,11 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
         return
     end
     local text = self:genFooterText()
-    if text then
-        self.footer_text:setText(text)
-    end
+    if not text then text = "" end
+    self.footer_text:setText(text)
+    self.footer_text:setMaxWidth(math.floor(self._saved_screen_width - 2 * self.settings.progress_margin_width))
     if self.settings.disable_progress_bar then
-        if self.has_no_mode or not text or text == "" then
+        if self.has_no_mode or text == "" then
             self.text_width = 0
             self.footer_container.dimen.h = 0
             self.footer_text.height = 0
@@ -1339,9 +1493,11 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
         self.progress_bar.width = math.floor(self._saved_screen_width - 2 * self.settings.progress_margin_width)
         self.text_width = self.footer_text:getSize().w
     else
-        if self.has_no_mode or not text or text == "" then
+        if self.has_no_mode or text == "" then
             self.text_width = 0
         else
+            local text_max_available_ratio = (100 - self.settings.progress_bar_min_width_pct) / 100
+            self.footer_text:setMaxWidth(math.floor(text_max_available_ratio * self._saved_screen_width - 2 * self.settings.progress_margin_width))
             self.text_width = self.footer_text:getSize().w + self.text_left_margin
         end
         self.progress_bar.width = math.floor(

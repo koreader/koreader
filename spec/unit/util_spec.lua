@@ -6,14 +6,14 @@ describe("util module", function()
         util = require("util")
     end)
 
-    it("should strip punctuations around word", function()
-        assert.is_equal("hello world", util.stripePunctuations("\"hello world\""))
-        assert.is_equal("hello world", util.stripePunctuations("\"hello world?\""))
-        assert.is_equal("hello, world", util.stripePunctuations("\"hello, world?\""))
-        assert.is_equal("你好", util.stripePunctuations("“你好“"))
-        assert.is_equal("你好", util.stripePunctuations("“你好?“"))
-        assert.is_equal("", util.stripePunctuations(""))
-        assert.is_nil(util.stripePunctuations(nil))
+    it("should strip punctuation marks around word", function()
+        assert.is_equal("hello world", util.stripPunctuation("\"hello world\""))
+        assert.is_equal("hello world", util.stripPunctuation("\"hello world?\""))
+        assert.is_equal("hello, world", util.stripPunctuation("\"hello, world?\""))
+        assert.is_equal("你好", util.stripPunctuation("“你好“"))
+        assert.is_equal("你好", util.stripPunctuation("“你好?“"))
+        assert.is_equal("", util.stripPunctuation(""))
+        assert.is_nil(util.stripPunctuation(nil))
     end)
 
     describe("gsplit()", function()
@@ -334,21 +334,41 @@ describe("util module", function()
                 assert.is_equal("100.0 GB",
                                 util.getFriendlySize(100*1024*1024*1024))
             end)
-            it("to 1.0 GB with minimum field width alignment", function()
-                assert.is_equal(" 1.0 GB",
+            it("to 1.0 GB", function()
+                assert.is_equal("1.0 GB",
                                 util.getFriendlySize(1024*1024*1024+1))
             end)
-            it("to 1.0 MB with minimum field width alignment", function()
-                assert.is_equal(" 1.0 MB",
+            it("to 1.0 MB", function()
+                assert.is_equal("1.0 MB",
                                 util.getFriendlySize(1024*1024+1))
             end)
-            it("to 1.0 KB with minimum field width alignment", function()
-                assert.is_equal(" 1.0 KB",
+            it("to 1.0 KB", function()
+                assert.is_equal("1.0 KB",
                                 util.getFriendlySize(1024+1))
             end)
             it("to B", function()
-                assert.is_equal("100 B",
-                                util.getFriendlySize(100))
+                assert.is_equal("10 B",
+                                util.getFriendlySize(10))
+            end)
+            it("to 100.0 GB with minimum field width alignment", function()
+                assert.is_equal(" 100.0 GB",
+                                util.getFriendlySize(100*1024*1024*1024, true))
+            end)
+            it("to 1.0 GB with minimum field width alignment", function()
+                assert.is_equal("   1.0 GB",
+                                util.getFriendlySize(1024*1024*1024+1, true))
+            end)
+            it("to 1.0 MB with minimum field width alignment", function()
+                assert.is_equal("   1.0 MB",
+                                util.getFriendlySize(1024*1024+1, true))
+            end)
+            it("to 1.0 KB with minimum field width alignment", function()
+                assert.is_equal("   1.0 KB",
+                                util.getFriendlySize(1024+1, true))
+            end)
+            it("to B with minimum field width alignment", function()
+                assert.is_equal("    10 B",
+                                util.getFriendlySize(10, true))
             end)
         end)
         it("should return nil when input is nil or false", function()
@@ -429,6 +449,22 @@ describe("util module", function()
                             util.secondsToHClock(3569, true))
             assert.is_equal("10h01",
                             util.secondsToHClock(36060, true))
+        end)
+        it("should round seconds to minutes in 0h00m format", function()
+            assert.is_equal("1m",
+                util.secondsToHClock(89, true, true))
+            assert.is_equal("2m",
+                util.secondsToHClock(90, true, true))
+            assert.is_equal("2m",
+                util.secondsToHClock(110, true, true))
+            assert.is_equal("1h00",
+                util.secondsToHClock(3600, true, true))
+            assert.is_equal("1h00",
+                util.secondsToHClock(3599, true, true))
+            assert.is_equal("59m",
+                util.secondsToHClock(3569, true, true))
+            assert.is_equal("10h01",
+                util.secondsToHClock(36060, true, true))
         end)
         it("should convert seconds to 0h00'00'' format", function()
             assert.is_equal("0''",

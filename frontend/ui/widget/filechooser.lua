@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local Device = require("device")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
@@ -121,7 +122,7 @@ end
 function FileChooser:genItemTableFromPath(path)
     local dirs = {}
     local files = {}
-    local up_folder_arrow = "⬆ ../"
+    local up_folder_arrow = BD.mirroredUILayout() and BD.ltr("../ ⬆") or "⬆ ../"
 
     self.list(path, dirs, files)
 
@@ -213,15 +214,18 @@ function FileChooser:genItemTableFromPath(path)
         local num_items = #sub_dirs + #dir_files
         local istr = ffiUtil.template(N_("1 item", "%1 items", num_items), num_items)
         local text
+        local bidi_wrap_func
         if dir.name == ".." then
             text = up_folder_arrow
         elseif dir.name == "." then -- possible with show_current_dir_for_hold
             text = _("Long-press to select current directory")
         else
             text = dir.name.."/"
+            bidi_wrap_func = BD.directory
         end
         table.insert(item_table, {
             text = text,
+            bidi_wrap_func = bidi_wrap_func,
             mandatory = istr,
             path = subdir_path,
             is_go_up = dir.name == ".."
@@ -239,6 +243,7 @@ function FileChooser:genItemTableFromPath(path)
         local sstr = getFriendlySize(file_size)
         local file_item = {
             text = file.name,
+            bidi_wrap_func = BD.filename,
             mandatory = sstr,
             path = full_path
         }
@@ -437,7 +442,7 @@ function FileChooser:showSetProviderButtons(file, filemanager_instance, reader_u
                 if self.set_provider_dialog._check_file_button.checked then
                     UIManager:show(ConfirmBox:new{
                         text = T(_("Always open '%2' with %1?"),
-                                   provider.provider_name, filename_pure),
+                                   provider.provider_name, BD.filename(filename_pure)),
                         ok_text = _("Always"),
                         ok_callback = function()
                             DocumentRegistry:setProvider(file, provider, false)
@@ -485,7 +490,7 @@ function FileChooser:showSetProviderButtons(file, filemanager_instance, reader_u
     end
 
     self.set_provider_dialog = OpenWithDialog:new{
-        title = T(_("Open %1 with:"), filename_pure),
+        title = T(_("Open %1 with:"), BD.filename(filename_pure)),
         radio_buttons = radio_buttons,
         buttons = buttons,
     }

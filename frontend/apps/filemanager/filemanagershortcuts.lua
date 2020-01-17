@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -73,7 +74,7 @@ function FileManagerShortcuts:addNewFolder()
                 title = self.title,
                 input = friendly_name,
                 input_type = "text",
-                description = T(_("Title for selected folder:\n%1"), path),
+                description = T(_("Title for selected folder:\n%1"), BD.dirpath(path)),
                 buttons = {
                     {
                         {
@@ -162,7 +163,7 @@ function FileManagerShortcuts:editFolderShortcut(item)
         title = _("Edit friendly name"),
         input = item.friendly_name,
         input_type = "text",
-        description = T(_("Rename title for selected folder:\n%1"), item.folder),
+        description = T(_("Rename title for selected folder:\n%1"), BD.dirpath(item.folder)),
         buttons = {
             {
                 {

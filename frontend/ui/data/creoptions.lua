@@ -277,8 +277,10 @@ Note that your selected font size is not affected by this setting.]]),
                 },
                 name_text_hold_callback = optionsutil.showValues,
                 -- used by showValues
-                name_text_suffix = "%",
                 name_text_true_values = true,
+                show_true_value_func = function(val) -- add "%"
+                    return string.format("%d%%", val)
+                end,
             },
         }
     },
@@ -399,26 +401,27 @@ Note that your selected font size is not affected by this setting.]]),
 (Font Hinting may need to be adjusted for the best result with either kerning implementation.)]]),
             },
             {
-                name = "space_condensing",
-                name_text = S.WORD_GAP,
+                name = "word_spacing",
+                name_text = S.WORD_SPACING,
                 toggle = {S.SMALL, S.MEDIUM, S.LARGE},
                 values = {
-                    DCREREADER_CONFIG_WORD_GAP_SMALL,
-                    DCREREADER_CONFIG_WORD_GAP_MEDIUM,
-                    DCREREADER_CONFIG_WORD_GAP_LARGE,
+                    DCREREADER_CONFIG_WORD_SPACING_SMALL,
+                    DCREREADER_CONFIG_WORD_SPACING_MEDIUM,
+                    DCREREADER_CONFIG_WORD_SPACING_LARGE,
                 },
-                default_value = DCREREADER_CONFIG_WORD_GAP_MEDIUM,
+                default_value = DCREREADER_CONFIG_WORD_SPACING_MEDIUM,
                 args = {
-                    DCREREADER_CONFIG_WORD_GAP_SMALL,
-                    DCREREADER_CONFIG_WORD_GAP_MEDIUM,
-                    DCREREADER_CONFIG_WORD_GAP_LARGE,
+                    DCREREADER_CONFIG_WORD_SPACING_SMALL,
+                    DCREREADER_CONFIG_WORD_SPACING_MEDIUM,
+                    DCREREADER_CONFIG_WORD_SPACING_LARGE,
                     },
-                event = "SetSpaceCondensing",
+                event = "SetWordSpacing",
+                help_text = _([[Tells the rendering engine how much to scale the width of each 'space' character in the text from its regular width, and how much it can additionally reduce them to make more words fit on a line (100% means no reduction).]]),
                 name_text_hold_callback = optionsutil.showValues,
-                -- used by showValues
-                name_text_suffix = "%",
                 name_text_true_values = true,
-                help_text = _([[Tells the rendering engine how much each 'space' character in the text can be reduced from its regular width to make words fit on a line (100% means no reduction).]]),
+                show_true_value_func = function(val)
+                    return string.format("%d%%, +%d%%", val[1], val[2])
+                end,
             }
         }
     },
@@ -430,9 +433,9 @@ Note that your selected font size is not affected by this setting.]]),
                 name_text = S.PROGRESS_BAR,
                 toggle = {S.FULL, S.MINI},
                 values = {0, 1},
-                default_value = DCREREADER_PROGRESS_BAR,
+                default_value = 1,
                 args = {0, 1},
-                default_arg = DCREREADER_PROGRESS_BAR,
+                default_arg = 1,
                 event = "SetStatusLine",
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[- 'full' displays a status bar at the top of the screen (this status bar can't be customized).

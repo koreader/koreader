@@ -19,6 +19,7 @@ Example:
 
 ]]
 
+local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local Button = require("ui/widget/button")
@@ -145,18 +146,21 @@ function KeyValueItem:init()
 
     local frame_padding = Size.padding.default
     local frame_internal_width = self.width - frame_padding * 2
+    local middle_padding = Size.padding.default -- min enforced padding between key and value
+    local available_width = frame_internal_width - middle_padding
+
     -- Default widths (and position of value widget) if each text fits in 1/2 screen width
-    local key_w = frame_internal_width / 2
+    local key_w = frame_internal_width / 2 - middle_padding
     local value_w = frame_internal_width / 2
 
     local key_widget = TextWidget:new{
         text = self.key,
-        max_width = frame_internal_width,
+        max_width = available_width,
         face = self.tface,
     }
     local value_widget = TextWidget:new{
         text = tvalue,
-        max_width = frame_internal_width,
+        max_width = available_width,
         face = self.cface,
     }
     local key_w_rendered = key_widget:getWidth()
@@ -165,26 +169,23 @@ function KeyValueItem:init()
     -- As both key_widget and value_width will be in a HorizontalGroup,
     -- and key is always left aligned, we can just tweak the key width
     -- to position the value_widget
-    local value_prepend_space = false
     local value_align_right = false
     local fit_right_align = true -- by default, really right align
 
     if key_w_rendered > key_w or value_w_rendered > value_w then
         -- One (or both) does not fit in 1/2 width
-        if key_w_rendered + value_w_rendered > frame_internal_width then
+        if key_w_rendered + value_w_rendered > available_width then
             -- Both do not fit: one has to be truncated so they fit
             if key_w_rendered >= value_w_rendered then
                 -- Rare case: key larger than value.
                 -- We should have kept our keys small, smaller than 1/2 width.
                 -- If it is larger than value, it's that value is kinda small,
                 -- so keep the whole value, and truncate the key
-                key_w = frame_internal_width - value_w_rendered
+                key_w = available_width - value_w_rendered
             else
                 -- Usual case: value larger than key.
-                -- Keep our small key, fit the value in the remaining width,
-                -- prepend some space to separate them
+                -- Keep our small key, fit the value in the remaining width.
                 key_w = key_w_rendered
-                value_prepend_space = true
             end
             value_align_right = true -- so the ellipsis touches the screen right border
             if self.value_overflow_align ~= "right" and self.value_align ~= "right" then
@@ -204,28 +205,24 @@ function KeyValueItem:init()
         else
             -- Both can fit: break the 1/2 widths
             if self.value_overflow_align == "right" or self.value_align == "right" then
-                key_w = frame_internal_width - value_w_rendered
+                key_w = available_width - value_w_rendered
                 value_align_right = true
             else
                 key_w = key_w_rendered
-                value_prepend_space = true
             end
         end
         -- In all the above case, we set the right key_w to include any
-        -- needed in-between padding: value_w is what's left.
-        value_w = frame_internal_width - key_w
+        -- needed additional in-between padding: value_w is what's left.
+        value_w = available_width - key_w
     else
         if self.value_align == "right" then
-            key_w = frame_internal_width - value_w_rendered
+            key_w = available_width - value_w_rendered
             value_w = value_w_rendered
             value_align_right = true
         end
     end
 
-    -- Adjust widgets' max widths and text as needed
-    if value_prepend_space then
-        value_widget:setText(" "..tvalue)
-    end
+    -- Adjust widgets' max widths if needed
     value_widget:setMaxWidth(value_w)
     if fit_right_align and value_align_right and value_widget:getWidth() < value_w then
         -- Because of truncation at glyph boundaries, value_widget
@@ -249,6 +246,9 @@ function KeyValueItem:init()
                     h = self.height
                 },
                 key_widget,
+            },
+            HorizontalSpan:new{
+                width = middle_padding,
             },
             LeftContainer:new{
                 dimen = {
@@ -334,6 +334,7 @@ function KeyValuePage:init()
     end
 
     -- return button
+    --- @todo: alternative icon if BD.mirroredUILayout()
     self.page_return_arrow = Button:new{
         icon = "resources/icons/appbar.arrow.left.up.png",
         callback = function() self:onReturn() end,
@@ -341,26 +342,34 @@ function KeyValuePage:init()
         show_parent = self,
     }
     -- group for page info
+    local chevron_left = "resources/icons/appbar.chevron.left.png"
+    local chevron_right = "resources/icons/appbar.chevron.right.png"
+    local chevron_first = "resources/icons/appbar.chevron.first.png"
+    local chevron_last = "resources/icons/appbar.chevron.last.png"
+    if BD.mirroredUILayout() then
+        chevron_left, chevron_right = chevron_right, chevron_left
+        chevron_first, chevron_last = chevron_last, chevron_first
+    end
     self.page_info_left_chev = Button:new{
-        icon = "resources/icons/appbar.chevron.left.png",
+        icon = chevron_left,
         callback = function() self:prevPage() end,
         bordersize = 0,
         show_parent = self,
     }
     self.page_info_right_chev = Button:new{
-        icon = "resources/icons/appbar.chevron.right.png",
+        icon = chevron_right,
         callback = function() self:nextPage() end,
         bordersize = 0,
         show_parent = self,
     }
     self.page_info_first_chev = Button:new{
-        icon = "resources/icons/appbar.chevron.first.png",
+        icon = chevron_first,
         callback = function() self:goToPage(1) end,
         bordersize = 0,
         show_parent = self,
     }
     self.page_info_last_chev = Button:new{
-        icon = "resources/icons/appbar.chevron.last.png",
+        icon = chevron_last,
         callback = function() self:goToPage(self.pages) end,
         bordersize = 0,
         show_parent = self,
@@ -447,6 +456,7 @@ function KeyValuePage:init()
 
     local content = OverlapGroup:new{
         dimen = self.dimen:copy(),
+        allow_mirroring = false,
         VerticalGroup:new{
             align = "left",
             self.title_bar,
@@ -558,16 +568,17 @@ function KeyValuePage:onPrevPage()
 end
 
 function KeyValuePage:onSwipe(arg, ges_ev)
-    if ges_ev.direction == "west" then
+    local direction = BD.flipDirectionIfMirroredUILayout(ges_ev.direction)
+    if direction == "west" then
         self:nextPage()
         return true
-    elseif ges_ev.direction == "east" then
+    elseif direction == "east" then
         self:prevPage()
         return true
-    elseif ges_ev.direction == "south" then
+    elseif direction == "south" then
         -- Allow easier closing with swipe down
         self:onClose()
-    elseif ges_ev.direction == "north" then
+    elseif direction == "north" then
         -- no use for now
         do end -- luacheck: ignore 541
     else -- diagonal swipe

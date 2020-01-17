@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
@@ -193,7 +194,11 @@ function FootnoteWidget:init()
     -- bullets in its own left margin. To get a chance to have them
     -- shown, we let MuPDF handle our left margin.
     local html_left_margin = self.doc_margins.left .. "px"
-    local css = T(PAGE_CSS, "0", "0", "0", html_left_margin, -- top right bottom left
+    local html_right_margin = "0"
+    if BD.mirroredUILayout() then
+        html_left_margin, html_right_margin = html_right_margin, html_left_margin
+    end
+    local css = T(PAGE_CSS, "0", html_right_margin, "0", html_left_margin, -- top right bottom left
                     self.font_face, DEFAULT_CSS)
     if self.css then -- add any provided css
         css = css .. "\n" .. self.css
@@ -327,14 +332,15 @@ function FootnoteWidget:onTapClose(arg, ges)
 end
 
 function FootnoteWidget:onSwipeFollow(arg, ges)
-    if ges.direction == "west" then
+    local direction = BD.flipDirectionIfMirroredUILayout(ges.direction)
+    if direction == "west" then
         if self.follow_callback then
             if self.close_callback then
                 self.close_callback(self.height)
             end
             return self.follow_callback()
         end
-    elseif ges.direction == "south" or ges.direction == "east" then
+    elseif direction == "south" or direction == "east" then
         UIManager:close(self)
         -- We can close with swipe down. If footnote is scrollable,
         -- this event will be eaten by ScrollHtmlWidget, and it will
@@ -345,7 +351,7 @@ function FootnoteWidget:onSwipeFollow(arg, ges)
             self.close_callback(self.height)
         end
         return true
-    elseif ges.direction == "north" then
+    elseif direction == "north" then
         -- no use for now
         do end -- luacheck: ignore 541
     else -- diagonal swipe

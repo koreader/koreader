@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
 local Device = require("device")
 local Event = require("ui/event")
@@ -350,9 +351,19 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
     }
 
     if not self.ui.document.info.has_pages then
+        local start_prev = "◁⇱"
+        local start_next = "⇱▷"
+        local end_prev = "◁⇲"
+        local end_next = "⇲▷"
+        if BD.mirroredUILayout() then
+            -- Sadly, there's only north west & south east arrow to corner,
+            -- north east and south west do not exist in Unicode.
+            start_prev, start_next = BD.ltr(start_next), BD.ltr(start_prev)
+            end_prev, end_next = BD.ltr(end_next), BD.ltr(end_prev)
+        end
         table.insert(buttons, {
             {
-                text = "◁⇱",
+                text = start_prev,
                 callback = function()
                     self:updateHighlight(page, index, 0, -1, false)
                 end,
@@ -362,7 +373,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
                 end
             },
             {
-                text = "⇱▷",
+                text = start_next,
                 callback = function()
                     self:updateHighlight(page, index, 0, 1, false)
                 end,
@@ -372,7 +383,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
                 end
             },
             {
-                text = "◁⇲",
+                text = end_prev,
                 callback = function()
                     self:updateHighlight(page, index, 1, -1, false)
                 end,
@@ -381,7 +392,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
                 end
             },
             {
-                text = "⇲▷",
+                text = end_next,
                 callback = function()
                     self:updateHighlight(page, index, 1, 1, false)
                 end,
@@ -487,6 +498,20 @@ function ReaderHighlight:onShowHighlightMenu()
             },
         })
     end
+    if Device:canShareText() then
+            table.insert(highlight_buttons, {
+            {
+                text = _("Share text"),
+                callback = function()
+                    local text = self.selected_text.text
+                    -- call self:onClose() before calling the android framework
+                    self:onClose()
+                    Device.doShareText(text)
+                end,
+            },
+        })
+    end
+
     self.highlight_dialog = ButtonDialog:new{
         buttons = highlight_buttons,
         tap_close_callback = function() self:handleEvent(Event:new("Tap")) end,
@@ -573,11 +598,29 @@ function ReaderHighlight:onHoldPan(_, ges)
         -- With CreDocuments, allow text selection across multiple pages
         -- by (temporarily) switching to scroll mode when panning to the
         -- top left or bottom right corners.
-        local is_in_top_left_corner = self.holdpan_pos.y < 1/8*Screen:getHeight()
-                                  and self.holdpan_pos.x < 1/8*Screen:getWidth()
-        local is_in_bottom_right_corner = self.holdpan_pos.y > 7/8*Screen:getHeight()
+        local mirrored_reading = BD.mirroredUILayout()
+        if self.ui.rolling and self.ui.rolling.inverse_reading_order then
+            mirrored_reading = not mirrored_reading
+        end
+        local is_in_prev_page_corner, is_in_next_page_corner
+        if mirrored_reading then
+            -- Note: this might not be really usable, as crengine native selection
+            -- is not adapted to RTL text
+            -- top right corner
+            is_in_prev_page_corner = self.holdpan_pos.y < 1/8*Screen:getHeight()
                                       and self.holdpan_pos.x > 7/8*Screen:getWidth()
-        if is_in_top_left_corner or is_in_bottom_right_corner then
+            -- bottom left corner
+            is_in_next_page_corner = self.holdpan_pos.y > 7/8*Screen:getHeight()
+                                          and self.holdpan_pos.x < 1/8*Screen:getWidth()
+        else -- default in LTR UI with no inverse_reading_order
+            -- top left corner
+            is_in_prev_page_corner = self.holdpan_pos.y < 1/8*Screen:getHeight()
+                                      and self.holdpan_pos.x < 1/8*Screen:getWidth()
+            -- bottom right corner
+            is_in_next_page_corner = self.holdpan_pos.y > 7/8*Screen:getHeight()
+                                      and self.holdpan_pos.x > 7/8*Screen:getWidth()
+        end
+        if is_in_prev_page_corner or is_in_next_page_corner then
             if self.was_in_some_corner then
                 -- Do nothing, wait for the user to move his finger out of that corner
                 return true
@@ -598,7 +641,7 @@ function ReaderHighlight:onHoldPan(_, ges)
                 end
                 -- (using rolling:onGotoViewRel(1/3) has some strange side effects)
                 local scroll_distance = math.floor(Screen:getHeight() * 1/3)
-                local move_y = is_in_bottom_right_corner and scroll_distance or -scroll_distance
+                local move_y = is_in_next_page_corner and scroll_distance or -scroll_distance
                 self.ui.rolling:_gotoPos(self.ui.document:getCurrentPos() + move_y)
                 local new_y = self.ui.document:getScreenPositionFromXPointer(self.selected_text_start_xpointer)
                 self.hold_pos.y = self.hold_pos.y - orig_y + new_y
@@ -610,6 +653,10 @@ function ReaderHighlight:onHoldPan(_, ges)
                 -- Unlike in 1-page mode, we have a limitation here: we can't adjust
                 -- the selection to further than current page and prev/next one.
                 -- So don't handle another corner if we already handled one:
+                -- Note that this feature won't work well with the RTL UI or
+                -- if inverse_reading_order as crengine currently always displays
+                -- the first page on the left and the second on the right in
+                -- dual page mode.
                 if self.restore_page_mode_func then
                     return true
                 end
@@ -617,9 +664,9 @@ function ReaderHighlight:onHoldPan(_, ges)
                 -- so if we started on the right page, ignore top left corner,
                 -- and if we started on the left page, ignore bottom right corner.
                 local screen_half_width = math.floor(Screen:getWidth() * 1/2)
-                if self.hold_pos.x >= screen_half_width and is_in_top_left_corner then
+                if self.hold_pos.x >= screen_half_width and is_in_prev_page_corner then
                     return true
-                elseif self.hold_pos.x <= screen_half_width and is_in_bottom_right_corner then
+                elseif self.hold_pos.x <= screen_half_width and is_in_next_page_corner then
                     return true
                 end
                 local cur_page = self.ui.document:getCurrentPage()
@@ -627,10 +674,10 @@ function ReaderHighlight:onHoldPan(_, ges)
                 self.restore_page_mode_func = function()
                     self.ui.rolling:onGotoXPointer(restore_page_mode_xpointer, self.selected_text_start_xpointer)
                 end
-                if is_in_bottom_right_corner then
+                if is_in_next_page_corner then -- bottom right corner in LTR UI
                     self.ui.rolling:_gotoPage(cur_page + 1, true) -- no odd left page enforcement
                     self.hold_pos.x = self.hold_pos.x - screen_half_width
-                else
+                else -- top left corner in RTL UI
                     self.ui.rolling:_gotoPage(cur_page - 1, true) -- no odd left page enforcement
                     self.hold_pos.x = self.hold_pos.x + screen_half_width
                 end
@@ -736,17 +783,19 @@ function ReaderHighlight:viewSelectionHTML(debug_view)
     end
     if self.selected_text and self.selected_text.pos0 and self.selected_text.pos1 then
         -- For available flags, see the "#define WRITENODEEX_*" in crengine/src/lvtinydom.cpp
-        local html_flags = 0x3030 -- valid and classic displayed HTML, with only block nodes indented
+        -- Start with valid and classic displayed HTML (with only block nodes indented),
+        -- including styles found in <HEAD>, and linked CSS files content.
+        local html_flags = 0x6030
         if not debug_view then
             debug_view = 0
         end
         if debug_view == 1 then
             -- Each node on a line, with markers and numbers of skipped chars and siblings shown,
             -- with possibly invalid HTML (text nodes not escaped)
-            html_flags = 0x3353
+            html_flags = 0x635A
         elseif debug_view == 2 then
             -- Additionally see rendering methods and unicode codepoint of each char
-            html_flags = 0x3757
+            html_flags = 0x675E
         end
         local html, css_files = self.ui.document:getHTMLFromXPointers(self.selected_text.pos0,
                                     self.selected_text.pos1, html_flags, true)
@@ -772,7 +821,7 @@ function ReaderHighlight:viewSelectionHTML(debug_view)
             if css_files then
                 for i=1, #css_files do
                     local button = {
-                        text = T(_("View %1"), css_files[i]),
+                        text = T(_("View %1"), BD.filepath(css_files[i])),
                         callback = function()
                             local css_text = self.ui.document:getDocumentFileContent(css_files[i])
                             local cssviewer
@@ -781,6 +830,8 @@ function ReaderHighlight:viewSelectionHTML(debug_view)
                                 text = css_text or _("Failed getting CSS content"),
                                 text_face = Font:getFace("smallinfont"),
                                 justified = false,
+                                para_direction_rtl = false,
+                                auto_para_direction = false,
                                 buttons_table = {
                                     {{
                                         text = _("Prettify"),
@@ -792,6 +843,8 @@ function ReaderHighlight:viewSelectionHTML(debug_view)
                                                 text = prettifyCss(css_text),
                                                 text_face = Font:getFace("smallinfont"),
                                                 justified = false,
+                                                para_direction_rtl = false,
+                                                auto_para_direction = false,
                                             })
                                         end,
                                     }},
@@ -838,6 +891,8 @@ function ReaderHighlight:viewSelectionHTML(debug_view)
                 text = html,
                 text_face = Font:getFace("smallinfont"),
                 justified = false,
+                para_direction_rtl = false,
+                auto_para_direction = false,
                 buttons_table = buttons_table,
             }
             UIManager:show(textviewer)
@@ -1116,7 +1171,7 @@ function ReaderHighlight:onHighlightSearch()
     logger.dbg("search highlight")
     self:highlightFromHoldPos()
     if self.selected_text then
-        local text = require("util").stripePunctuations(self.selected_text.text)
+        local text = require("util").stripPunctuation(self.selected_text.text)
         self.ui:handleEvent(Event:new("ShowSearchDialog", text))
     end
 end

@@ -13,6 +13,7 @@ Example:
 --]]
 
 local Blitbuffer = require("ffi/blitbuffer")
+local Font = require("ui/font")
 local Geom = require("ui/geometry")
 local Math = require("optmath")
 local RenderText = require("ui/rendertext")
@@ -25,7 +26,9 @@ local util = require("util")
 local TextWidget = Widget:new{
     text = nil,
     face = nil,
-    bold = false, -- synthetized/fake bold (use a bold face for nicer bold)
+    bold = false, -- use bold=true to use a real bold font (or synthetized if not available),
+                  -- or bold=Font.FORCE_SYNTHETIZED_BOLD to force using synthetized bold,
+                  -- which, with XText, makes a bold string the same width as it non-bolded.
     fgcolor = Blitbuffer.COLOR_BLACK,
     padding = Size.padding.small, -- vertical padding (should it be function of face.size ?)
                                   -- (no horizontal padding is added)
@@ -35,6 +38,7 @@ local TextWidget = Widget:new{
 
     -- for internal use
     _updated = nil,
+    _face_adjusted = nil,
     _text_to_draw = nil,
     _length = 0,
     _height = 0,
@@ -57,6 +61,15 @@ function TextWidget:updateSize()
         return
     end
     self._updated = true
+
+    if not self._face_adjusted then
+        self._face_adjusted = true -- only do that once
+        -- If self.bold, or if self.face is a real bold face, we may need to use
+        -- an alternative instance of self.face, with possibly the associated
+        -- real bold font, and/or with tweaks so fallback fonts are rendered bold
+        -- too, without affecting the regular self.face
+        self.face, self.bold = Font:getAdjustedFace(self.face, self.bold)
+    end
 
     -- Compute height:
     -- Used to be:
@@ -210,6 +223,7 @@ function TextWidget:setText(text)
     if text ~= self.text then
         self.text = text
         self._updated = false
+        self:free()
     end
 end
 dbg:guard(TextWidget, "setText",
@@ -219,8 +233,11 @@ dbg:guard(TextWidget, "setText",
     end)
 
 function TextWidget:setMaxWidth(max_width)
-    self.max_width = max_width
-    self._updated = false
+    if max_width ~= self.max_width then
+        self.max_width = max_width
+        self._updated = false
+        self:free()
+    end
 end
 
 function TextWidget:paintTo(bb, x, y)

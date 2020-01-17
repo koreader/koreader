@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
@@ -233,7 +234,7 @@ function ReaderDictionary:addToMainMenu(menu_items)
                         text = T(_([[
 If you'd like to change the order in which dictionaries are queried (and their results displayed), you can:
 - move all dictionary directories out of %1.
-- move them back there, one by one, in the order you want them to be used.]]), self.data_dir)
+- move them back there, one by one, in the order you want them to be used.]]), BD.dirpath(self.data_dir))
                     })
                 end,
             },
@@ -296,6 +297,31 @@ If you'd like to change the order in which dictionaries are queried (and their r
                 callback = function()
                     G_reader_settings:flipNilOrTrue("dict_justify")
                 end,
+            },
+            { -- setting used by dictquicklookup
+                text_func = function()
+                    local font_size = G_reader_settings:readSetting("dict_font_size") or 20
+                    return T(_("Font size (%1)"), font_size)
+                end,
+                callback = function(touchmenu_instance)
+                    local SpinWidget = require("ui/widget/spinwidget")
+                    local font_size = G_reader_settings:readSetting("dict_font_size") or 20
+                    local items_font = SpinWidget:new{
+                        width = Screen:getWidth() * 0.6,
+                        value = font_size,
+                        value_min = 8,
+                        value_max = 32,
+                        default_value = 20,
+                        ok_text = _("Set size"),
+                        title_text =  _("Dictionary font size"),
+                        callback = function(spin)
+                            G_reader_settings:saveSetting("dict_font_size", spin.value)
+                            if touchmenu_instance then touchmenu_instance:updateItems() end
+                        end,
+                    }
+                    UIManager:show(items_font)
+                end,
+                keep_menu_open = true,
             }
         }
     }
@@ -567,7 +593,7 @@ function ReaderDictionary:cleanSelection(text)
     -- with plain ascii quote (for french words like "aujourd’hui")
     text = text:gsub("\xE2\x80\x99", "'") -- U+2019 (right single quotation mark)
     -- Strip punctuation characters around selection
-    text = util.stripePunctuations(text)
+    text = util.stripPunctuation(text)
     -- Strip some common english grammatical construct
     text = text:gsub("'s$", '') -- english possessive
     -- Strip some common french grammatical constructs
@@ -903,7 +929,7 @@ function ReaderDictionary:downloadDictionary(dict, download_location, continue)
         logger.dbg("file downloaded to", download_location)
     else
         UIManager:show(InfoMessage:new{
-            text = _("Could not save file to:\n") .. download_location,
+            text = _("Could not save file to:\n") .. BD.filepath(download_location),
             --timeout = 3,
         })
         return false

@@ -20,7 +20,11 @@ local function getCodename()
     local api = android.app.activity.sdkVersion
     local codename = ""
 
-    if api > 27 then
+    if api > 29 then
+        codename = "R"
+    elseif api == 29 then
+        codename = "Q"
+    elseif api == 28 then
         codename = "Pie"
     elseif api == 27 or api == 26 then
         codename = "Oreo"
@@ -79,6 +83,12 @@ local Device = Generic:new{
         if not link or type(link) ~= "string" then return end
         return android.openLink(link) == 0
     end,
+    canImportFiles = function() return android.app.activity.sdkVersion >= 19 end,
+    importFile = function(path) android.importFile(path) end,
+    isValidPath = function(path) return android.isPathInsideSandbox(path) end,
+    canShareText = yes,
+    doShareText = function(text) android.sendText(text) end,
+
     canExternalDictLookup = yes,
     getExternalDictLookupList = getExternalDicts,
     doExternalDictLookup = function (self, text, method, callback)
@@ -129,21 +139,35 @@ function Device:init()
                     external_dict_when_back_callback()
                     external_dict_when_back_callback = nil
                 end
-
                 local new_file = android.getIntent()
                 if new_file ~= nil and lfs.attributes(new_file, "mode") == "file" then
                     -- we cannot blit to a window here since we have no focus yet.
                     local UIManager = require("ui/uimanager")
                     local InfoMessage = require("ui/widget/infomessage")
+                    local BD = require("ui/bidi")
                     UIManager:scheduleIn(0.1, function()
                         UIManager:show(InfoMessage:new{
-                            text = T(_("Opening file '%1'."), new_file),
+                            text = T(_("Opening file '%1'."), BD.filepath(new_file)),
                             timeout = 0.0,
                         })
                     end)
                     UIManager:scheduleIn(0.2, function()
                         require("apps/reader/readerui"):doShowReader(new_file)
                     end)
+                else
+                    -- check if we're resuming from importing content.
+                    local content_path = android.getLastImportedPath()
+                    if content_path ~= nil then
+                        local FileManager = require("apps/filemanager/filemanager")
+                        local UIManager = require("ui/uimanager")
+                        UIManager:scheduleIn(0.5, function()
+                            if FileManager.instance then
+                                FileManager.instance:onRefresh()
+                            else
+                                FileManager:showFiles(content_path)
+                            end
+                        end)
+                    end
                 end
             end
         end,
@@ -234,7 +258,8 @@ function Device:retrieveNetworkInfo()
     if ip == "0" or gw == "0" then
         return _("Not connected")
     else
-        return T(_("Connected to %1\n IP address: %2\n gateway: %3"), ssid, ip, gw)
+        local BD = require("ui/bidi")
+        return T(_("Connected to %1\n IP address: %2\n gateway: %3"), BD.wrap(ssid), BD.ltr(ip), BD.ltr(gw))
     end
 end
 
@@ -287,6 +312,10 @@ function Device:info()
     end
 
     return common_text..eink_text..wakelocks_text
+end
+
+function Device:epdTest()
+    android.einkTest()
 end
 
 function Device:exit()

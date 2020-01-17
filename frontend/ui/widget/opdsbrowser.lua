@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local Cache = require("cache")
@@ -303,7 +304,7 @@ function OPDSBrowser:fetchFeed(item_url, username, password, method)
         return
     elseif code == 301 then
         UIManager:show(InfoMessage:new{
-            text = T(_("The catalog has been permanently moved. Please update catalog URL to '%1'."), headers['Location']),
+            text = T(_("The catalog has been permanently moved. Please update catalog URL to '%1'."), BD.url(headers['Location'])),
         })
     elseif code == 401 then
         UIManager:show(InfoMessage:new{
@@ -355,7 +356,7 @@ function OPDSBrowser:getCatalog(item_url, username, password)
     elseif not ok and catalog then
         logger.info("cannot get catalog info from", item_url, catalog)
         UIManager:show(InfoMessage:new{
-            text = T(_("Cannot get catalog info from %1"), (item_url or "")),
+            text = T(_("Cannot get catalog info from %1"), (BD.url(item_url) or "")),
         })
         return
     end
@@ -545,7 +546,7 @@ function OPDSBrowser:downloadFile(item, format, remote_url)
                 end
             else
                 UIManager:show(InfoMessage:new {
-                    text = _("Could not save file to:\n") .. local_path,
+                    text = _("Could not save file to:\n") .. BD.filepath(local_path),
                     timeout = 3,
                 })
             end
@@ -559,7 +560,7 @@ function OPDSBrowser:downloadFile(item, format, remote_url)
 
     if lfs.attributes(local_path, "mode") == "file" then
         UIManager:show(ConfirmBox:new {
-            text = T(_("The file %1 already exists. Do you want to overwrite it?"), local_path),
+            text = T(_("The file %1 already exists. Do you want to overwrite it?"), BD.filepath(local_path)),
             ok_text = _("Overwrite"),
             ok_callback = function()
                 download()
@@ -572,7 +573,7 @@ end
 
 function OPDSBrowser:createNewDownloadDialog(path, buttons)
     self.download_dialog = ButtonDialogTitle:new{
-        title = T(_("Download directory:\n%1\n\nDownload file type:"), path),
+        title = T(_("Download directory:\n%1\n\nDownload file type:"), BD.dirpath(path)),
         buttons = buttons
     }
 end

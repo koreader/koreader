@@ -33,6 +33,7 @@ local Button = InputContainer:new{
     text = nil, -- mandatory
     text_func = nil,
     icon = nil,
+    icon_rotation_angle = 0,
     preselect = false,
     callback = nil,
     enabled = true,
@@ -74,6 +75,7 @@ function Button:init()
     else
         self.label_widget = ImageWidget:new{
             file = self.icon,
+            rotation_angle = self.icon_rotation_angle,
             dim = not self.enabled,
             scale_for_dpi = true,
         }

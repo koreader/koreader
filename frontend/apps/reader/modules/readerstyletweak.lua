@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
@@ -97,6 +98,7 @@ function TweakInfoWidget:init()
             text = css,
             face = Font:getFace("infont", 16),
             width = self.width - 2*Size.padding.large,
+            para_direction_rtl = false, -- LTR
         }
     })
     if self.is_global_default then
@@ -497,7 +499,7 @@ You can enable individual tweaks on this book with a tap, or view more details a
             table.insert(item_table, {
                 title = title,
                 id = file, -- keep ".css" in id, to distinguish between koreader/user tweaks
-                description = T(_("User style tweak at %1"), filepath),
+                description = T(_("User style tweak at %1"), BD.filepath(filepath)),
                 priority = 10, -- give user tweaks a higher priority
                 css_path = filepath,
             })

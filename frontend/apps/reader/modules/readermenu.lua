@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
@@ -227,7 +228,7 @@ function ReaderMenu:setUpdateItemTable()
                 return _("Open previous document")
             end
             local path, file_name = util.splitFilePathName(previous_file) -- luacheck: no unused
-            return T(_("Previous: %1"), file_name)
+            return T(_("Previous: %1"), BD.filename(file_name))
         end,
         enabled_func = function()
             return self:getPreviousFile() ~= nil
@@ -238,7 +239,7 @@ function ReaderMenu:setUpdateItemTable()
         hold_callback = function()
             local previous_file = self:getPreviousFile()
             UIManager:show(ConfirmBox:new{
-                text = T(_("Would you like to open the previous document: %1?"), previous_file),
+                text = T(_("Would you like to open the previous document: %1?"), BD.filepath(previous_file)),
                 ok_text = _("OK"),
                 ok_callback = function()
                     self.ui:switchDocument(previous_file)
@@ -373,10 +374,10 @@ function ReaderMenu:_getTabIndexFromLocation(ges)
         return self.last_tab_index
     -- if the start position is far right
     elseif ges.pos.x > 2 * Screen:getWidth() / 3 then
-        return #self.tab_item_table
+        return BD.mirroredUILayout() and 1 or #self.tab_item_table
     -- if the start position is far left
     elseif ges.pos.x < Screen:getWidth() / 3 then
-        return 1
+        return BD.mirroredUILayout() and #self.tab_item_table or 1
     -- if center return the last index
     else
         return self.last_tab_index

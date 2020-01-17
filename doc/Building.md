@@ -11,7 +11,7 @@ You can skip most of the following instructions if desired, and use our premade 
 
 To get and compile the source you must have `patch`, `wget`, `unzip`, `git`,
 `cmake` and `luarocks` installed, as well as a version of `autoconf`
-greater than 2.64. You also need `nasm` and of course a compiler like `gcc`
+greater than 2.64. You also need `nasm`, `ragel`, and of course a compiler like `gcc`
 or `clang`.
 
 ### Debian/Ubuntu and derivates
@@ -20,7 +20,7 @@ Install the prerequisites using APT:
 
 ```
 sudo apt-get install build-essential git patch wget unzip \
-gettext autoconf automake cmake libtool nasm luarocks libsdl2-dev \
+gettext autoconf automake cmake libtool nasm ragel luarocks libsdl2-dev \
 libssl-dev libffi-dev libsdl2-dev libc6-dev-i386 xutils-dev linux-libc-dev:i386 zlib1g:i386
 ```
 
@@ -38,7 +38,7 @@ sudo dnf install libstdc++-static SDL SDL-devel
 Install the prerequisites using [Homebrew](https://brew.sh/):
 
 ```
-brew install nasm binutils coreutils libtool autoconf automake cmake makedepend \
+brew install nasm ragel binutils coreutils libtool autoconf automake cmake makedepend \
 sdl2 lua@5.1 luarocks gettext pkg-config wget md5sha1sum
 echo 'export PATH="/usr/local/opt/gettext/bin:$PATH"' >> "$HOME"/.bash_profile
 ```
@@ -143,14 +143,14 @@ NOTE: Extra dependencies for tests: `luacheck` from luarocks.
 ## Translations
 
 Please refer to [l10n's README][l10n-readme] to grab the latest translations
-from [the KOReader project on Transifex][koreader-transifex] with this command:
+from [the KOReader project on Weblate][koreader-weblate] with this command:
 
 ```
 make po
 ```
 
-If your language is not listed on the Transifex project, please don't hesitate
-to send a language request [here][koreader-transifex].
+If your language is not listed on the Weblate project, please don't hesitate
+to send a language request [here][koreader-weblate].
 
 ### Variables in translation
 
@@ -196,6 +196,6 @@ KOReader's build system. To install ccache:
 * for more information about ccache, visit: https://ccache.samba.org/
 
 [circleci-conf]:https://github.com/koreader/koreader/blob/master/.circleci/config.yml
-[koreader-transifex]:https://www.transifex.com/projects/p/koreader/
+[koreader-weblate]:https://hosted.weblate.org/engage/koreader/
 [base-readme]:https://github.com/koreader/koreader-base/blob/master/README.md
 [l10n-readme]:https://github.com/koreader/koreader/blob/master/l10n/README.md

@@ -5,21 +5,44 @@ local _ = require("gettext")
 
 --[[ Font settings for desktop linux, mac and android ]]--
 
-local function getUserDir()
-    local home = os.getenv("HOME")
-    if home then
-        return home.."/.local/share/fonts"
+local ANDROID_SYSTEM_FONT_DIR = "/system/fonts"
+local LINUX_SYSTEM_FONT_DIR = "/usr/share/fonts"
+local DESKTOP_USER_FONT_DIR = "/.local/share/fonts"
+
+-- get primary storage on Android
+local function getAndroidPrimaryStorage()
+    local A, android = pcall(require, "android")
+    if not A then return end
+    local path = android.getExternalStoragePath()
+    if path ~= "Unknown" then
+        -- use the external storage identified by the app
+        return path
+    else
+        -- unable to identify external storage. Use defaults
+        return "/sdcard"
     end
 end
 
--- System fonts are common in linux
+-- user font path, should be rw. On linux/mac it goes under $HOME.
+-- on Android it goes in the primary storage (internal/sd)
+local function getUserDir()
+    if Device:isDesktop() then
+        local home = os.getenv("HOME")
+        if home then return home..DESKTOP_USER_FONT_DIR end
+    elseif Device:isAndroid() then
+        local p = getAndroidPrimaryStorage()
+        return p.."/koreader/fonts;"..p.."/fonts"
+    end
+end
+
+-- system (ttf) fonts are available on linux and android but not on mac
 local function getSystemDir()
-    local path = "/usr/share/fonts"
-    if util.pathExists(path) then
-        return path
-    else
-        -- mac doesn't use ttf fonts
-        return nil
+    if Device:isDesktop() then
+        if util.pathExists(LINUX_SYSTEM_FONT_DIR) then
+            return LINUX_SYSTEM_FONT_DIR
+        else return nil end
+    elseif Device:isAndroid() then
+        return ANDROID_SYSTEM_FONT_DIR
     end
 end
 
@@ -54,43 +77,31 @@ function FontSettings:getPath()
     return getUserDir()
 end
 
-function FontSettings:getAndroidPath()
-    local A, android = pcall(require, "android")
-    if not A then return end
-    local system_path = "/system/fonts"
-    local user_path = android.getExternalStoragePath()
-    if user_path == "Unknown" then
-        -- unable to identify external storage. Use defaults
-        return system_path..";".."/sdcard/koreader/fonts"
-    else
-        -- use the external storage identified by the app
-        return system_path..";"..user_path.."/koreader/fonts"
-    end
-end
-
 function FontSettings:getMenuTable()
+    local t = {{
+        text = _("Enable system fonts"),
+        checked_func = usesSystemFonts,
+        callback = function()
+            G_reader_settings:saveSetting("system_fonts", not usesSystemFonts())
+            local UIManager = require("ui/uimanager")
+            local InfoMessage = require("ui/widget/infomessage")
+            UIManager:show(InfoMessage:new{
+                text = _("This will take effect on next restart.")
+            })
+        end,
+    }}
+
+    if Device:isDesktop() then table.insert(t, 2, {
+            text = _("Open fonts folder"),
+            keep_menu_open = true,
+            callback = openFontDir,
+        })
+    end
+
     return {
         text = _("Font settings"),
         separator = true,
-        sub_item_table = {
-            {
-                text = _("Enable system fonts"),
-                checked_func = usesSystemFonts,
-                callback = function()
-                    G_reader_settings:saveSetting("system_fonts", not usesSystemFonts())
-                    local UIManager = require("ui/uimanager")
-                    local InfoMessage = require("ui/widget/infomessage")
-                    UIManager:show(InfoMessage:new{
-                        text = _("This will take effect on next restart.")
-                    })
-                end,
-            },
-            {
-                text = _("Open fonts folder"),
-                keep_menu_open = true,
-                callback = openFontDir,
-            },
-        }
+        sub_item_table = t
     }
 end
 

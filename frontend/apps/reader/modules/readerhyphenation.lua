@@ -1,3 +1,5 @@
+local BD = require("ui/bidi")
+local Device = require("device")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -9,6 +11,7 @@ local util = require("util")
 local _ = require("gettext")
 local C_ = _.pgettext
 local T = require("ffi/util").template
+local Screen = Device.screen
 
 local ReaderHyphenation = InputContainer:new{
     hyph_menu_title = _("Hyphenation"),
@@ -23,24 +26,42 @@ function ReaderHyphenation:init()
 
     table.insert(self.hyph_table, {
         text_func = function()
-            local limits_text = _("language defaults")
-            if G_reader_settings:readSetting("hyph_left_hyphen_min")
-                or G_reader_settings:readSetting("hyph_right_hyphen_min") then
-                limits_text = T("%1 - %2", G_reader_settings:readSetting("hyph_left_hyphen_min"),
+            -- Note: with our callback, we either get hyph_left_hyphen_min and
+            -- hyph_right_hyphen_min both nil, or both defined.
+            if G_reader_settings:readSetting("hyph_left_hyphen_min") or
+                        G_reader_settings:readSetting("hyph_right_hyphen_min") then
+                -- @translators to RTL language translators: %1/left is the min length of the start of a hyphenated word, %2/right is the min length of the end of a hyphenated word (note that there is yet no support for hyphenation with RTL languages, so this will mostly apply to LTR documents)
+                return T(_("Left/right minimal sizes: %1 - %2"),
+                    G_reader_settings:readSetting("hyph_left_hyphen_min"),
                     G_reader_settings:readSetting("hyph_right_hyphen_min"))
             end
-            return T(_("Left/right minimal sizes: %1"), limits_text)
+            return _("Left/right minimal sizes: language defaults")
         end,
         callback = function()
-            local HyphenationLimitsWidget = require("ui/widget/hyphenationlimits")
+            local DoubleSpinWidget = require("/ui/widget/doublespinwidget")
             local hyph_settings = self.hyph_algs_settings[self.hyph_alg] or {}
             local alg_left_hyphen_min = hyph_settings.left_hyphen_min
             local alg_right_hyphen_min = hyph_settings.right_hyphen_min
-            local hyph_limits_widget = HyphenationLimitsWidget:new{
+            local hyph_limits_widget = DoubleSpinWidget:new{
+                -- Min (1) and max (10) values are enforced by crengine
                 left_value = G_reader_settings:readSetting("hyph_left_hyphen_min") or alg_left_hyphen_min or 2,
+                left_min = 1,
+                left_max = 10,
                 right_value = G_reader_settings:readSetting("hyph_right_hyphen_min") or alg_right_hyphen_min or 2,
+                right_min = 1,
+                right_max = 10,
                 left_default = alg_left_hyphen_min or 2,
                 right_default = alg_right_hyphen_min or 2,
+                -- let room on the widget sides so we can see
+                -- the hyphenation changes happening
+                width = Screen:getWidth() * 0.6,
+                default_values = true,
+                default_text = _("Use language defaults"),
+                title_text = _("Hyphenation limits"),
+                info_text = _([[
+Set minimum length before hyphenation occurs.
+These settings will apply to all books with any hyphenation dictionary.
+'Use language defaults' resets them.]]),
                 callback = function(left_hyphen_min, right_hyphen_min)
                     G_reader_settings:saveSetting("hyph_left_hyphen_min", left_hyphen_min)
                     G_reader_settings:saveSetting("hyph_right_hyphen_min", right_hyphen_min)
@@ -103,7 +124,7 @@ function ReaderHyphenation:init()
                     self.hyph_alg = v.filename
                     self.ui.doc_settings:saveSetting("hyph_alg", self.hyph_alg)
                     UIManager:show(InfoMessage:new{
-                        text = T(_("Changed hyphenation to %1."), v.name),
+                        text = T(_("Changed hyphenation to %1."), BD.wrap(v.name)),
                     })
                     self.ui.document:setHyphDictionary(v.filename)
                     -- Apply hyphenation sides limits
@@ -120,7 +141,7 @@ function ReaderHyphenation:init()
                         -- one is set, no fallback will ever be used - if a fallback one
                         -- is set, no default is wanted; so when we set one below, we
                         -- remove the other).
-                        text = T( _("Would you like %1 to be used as the default (★) or fallback (�) hyphenation language?\n\nDefault will always take precedence while fallback will only be used if the language of the book can't be automatically determined."), v.name),
+                        text = T( _("Would you like %1 to be used as the default (★) or fallback (�) hyphenation language?\n\nDefault will always take precedence while fallback will only be used if the language of the book can't be automatically determined."), BD.wrap(v.name)),
                         choice1_text = _("Default"),
                         choice1_callback = function()
                             G_reader_settings:saveSetting("hyph_alg_default", v.filename)

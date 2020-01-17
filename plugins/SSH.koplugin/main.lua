@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local DataStorage = require("datastorage")
 local Device =  require("device")
 local InfoMessage = require("ui/widget/infomessage")  -- luacheck:ignore
@@ -66,8 +67,9 @@ function SSH:start()
     if os.execute(cmd) == 0 then
         local info = InfoMessage:new{
                 timeout = 10,
-                text = string.format("%s %s \n %s",
-                    _("SSH port: "), self.SSH_port,
+                -- @translators: %1 is the SSH port, %2 is the network info.
+                text = T(_("SSH port: %1\n%2"),
+                    self.SSH_port,
                     Device.retrieveNetworkInfo and Device:retrieveNetworkInfo() or _("Could not retrieve network info.")),
         }
         UIManager:show(info)
@@ -177,7 +179,7 @@ function SSH:addToMainMenu(menu_items)
                 callback = function()
                     local info = InfoMessage:new{
                         timeout = 60,
-                        text = T(_("Put your public SSH keys in %1"), path.."/settings/SSH/authorized_keys"),
+                        text = T(_("Put your public SSH keys in %1"), BD.filepath(path.."/settings/SSH/authorized_keys")),
                     }
                     UIManager:show(info)
                 end,

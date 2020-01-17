@@ -30,6 +30,7 @@ local VirtualKey = InputContainer:new{
     key = nil,
     icon = nil,
     label = nil,
+    bold = nil,
 
     keyboard = nil,
     callback = nil,
@@ -102,7 +103,7 @@ function VirtualKey:init()
     elseif self.keyboard.umlautmode_keys[self.label] ~= nil then
         self.callback = function () self.keyboard:setLayer("Äéß") end
         self.skiptap = true
-    elseif self.label == "Backspace" then
+    elseif self.label == "" then
         self.callback = function () self.keyboard:delChar() end
         self.hold_callback = function ()
             self.ignore_key_release = true -- don't have delChar called on release
@@ -147,12 +148,13 @@ function VirtualKey:init()
             file = self.icon,
             scale_factor = 0, -- keep icon aspect ratio
             height = icon_height,
-            width = icon_height * 100, -- to fit height when ensuring a/r
+            width = self.width - 2*self.bordersize,
         }
     else
         label_widget = TextWidget:new{
             text = self.label,
             face = self.face,
+            bold = self.bold or false,
         }
     end
     self[1] = FrameContainer:new{
@@ -161,6 +163,7 @@ function VirtualKey:init()
         background = Blitbuffer.COLOR_WHITE,
         radius = 0,
         padding = 0,
+        allow_mirroring = false,
         CenterContainer:new{
             dimen = Geom:new{
                 w = self.width - 2*self.bordersize,
@@ -392,6 +395,7 @@ function VirtualKeyPopup:onClose()
 end
 
 function VirtualKeyPopup:onCloseWidget()
+    self:free()
     UIManager:setDirty(nil, function()
         return "ui", self[1][1].dimen
     end)
@@ -462,11 +466,11 @@ function VirtualKeyPopup:init()
     }
     local v_key_padding = VerticalSpan:new{width = parent_key.keyboard.key_padding}
 
-    local vertical_group = VerticalGroup:new{}
-    local horizontal_group_extra = HorizontalGroup:new{}
-    local horizontal_group_top = HorizontalGroup:new{}
-    local horizontal_group_middle = HorizontalGroup:new{}
-    local horizontal_group_bottom = HorizontalGroup:new{}
+    local vertical_group = VerticalGroup:new{ allow_mirroring = false }
+    local horizontal_group_extra = HorizontalGroup:new{ allow_mirroring = false }
+    local horizontal_group_top = HorizontalGroup:new{ allow_mirroring = false }
+    local horizontal_group_middle = HorizontalGroup:new{ allow_mirroring = false }
+    local horizontal_group_bottom = HorizontalGroup:new{ allow_mirroring = false }
 
     local function horizontalRow(chars, group)
         local layout_horizontal = {}
@@ -485,10 +489,12 @@ function VirtualKeyPopup:init()
                 local key = type(v) == "table" and v.key or v
                 local label = type(v) == "table" and v.label or key
                 local icon = type(v) == "table" and v.icon
+                local bold = type(v) == "table" and v.bold
                 local virtual_key = VirtualKey:new{
                     key = key,
                     label = label,
                     icon = icon,
+                    bold = bold,
                     keyboard = parent_key.keyboard,
                     key_chars = key_chars,
                     width = parent_key.width,
@@ -560,6 +566,7 @@ function VirtualKeyPopup:init()
         background = Blitbuffer.COLOR_WHITE,
         radius = 0,
         padding = parent_key.keyboard.padding,
+        allow_mirroring = false,
         CenterContainer:new{
             dimen = Geom:new{
                 w = parent_key.width*num_columns + 2*Size.border.default + (num_columns)*parent_key.keyboard.key_padding,
@@ -657,12 +664,17 @@ local VirtualKeyboard = FocusManager:new{
         ja = "ja_keyboard",
         pt_BR = "pt_keyboard",
         ar_AA = "ar_AA_keyboard",
+        ro = "ro_keyboard",
         ko_KR = "ko_KR_keyboard",
         ru = "ru_keyboard",
     },
 }
 
 function VirtualKeyboard:init()
+    if self.uwrap_func then
+        self.uwrap_func()
+        self.uwrap_func = nil
+    end
     local lang = self:getKeyboardLayout()
     local keyboard_layout = self.lang_to_keyboard_layout[lang] or self.lang_to_keyboard_layout["en"]
     local keyboard = require("ui/data/keyboardlayouts/" .. keyboard_layout)
@@ -682,7 +694,7 @@ function VirtualKeyboard:init()
         self.key_events.Close = { {"Back"}, doc = "close keyboard" }
     end
     if keyboard.wrapInputBox then
-        keyboard.wrapInputBox(self.inputbox)
+        self.uwrap_func = keyboard.wrapInputBox(self.inputbox) or self.uwrap_func
     end
 end
 
@@ -691,9 +703,18 @@ function VirtualKeyboard:getKeyboardLayout()
 end
 
 function VirtualKeyboard:setKeyboardLayout(layout)
+    local prev_keyboard_height = self.dimen and self.dimen.h
     G_reader_settings:saveSetting("keyboard_layout", layout)
     self:init()
-    self:_refresh(true)
+    if prev_keyboard_height and self.dimen.h ~= prev_keyboard_height then
+        self:_refresh(true, true)
+        -- Keyboard height change: notify parent (InputDialog)
+        if self.inputbox and self.inputbox.parent and self.inputbox.parent.onKeyboardHeightChanged then
+            self.inputbox.parent:onKeyboardHeightChanged()
+        end
+    else
+        self:_refresh(true)
+    end
 end
 
 function VirtualKeyboard:onClose()
@@ -706,10 +727,14 @@ function VirtualKeyboard:onPressKey()
     return true
 end
 
-function VirtualKeyboard:_refresh(want_flash)
+function VirtualKeyboard:_refresh(want_flash, fullscreen)
     local refresh_type = "ui"
     if want_flash then
         refresh_type = "flashui"
+    end
+    if fullscreen then
+        UIManager:setDirty("all", refresh_type)
+        return
     end
     UIManager:setDirty(self, function()
         return refresh_type, self[1][1].dimen
@@ -750,14 +775,15 @@ function VirtualKeyboard:initLayer(layer)
 end
 
 function VirtualKeyboard:addKeys()
+    self:free() -- free previous keys' TextWidgets
     self.layout = {}
     local base_key_width = math.floor((self.width - (#self.KEYS[1] + 1)*self.key_padding - 2*self.padding)/#self.KEYS[1])
     local base_key_height = math.floor((self.height - (#self.KEYS + 1)*self.key_padding - 2*self.padding)/#self.KEYS)
     local h_key_padding = HorizontalSpan:new{width = self.key_padding}
     local v_key_padding = VerticalSpan:new{width = self.key_padding}
-    local vertical_group = VerticalGroup:new{}
+    local vertical_group = VerticalGroup:new{ allow_mirroring = false }
     for i = 1, #self.KEYS do
-        local horizontal_group = HorizontalGroup:new{}
+        local horizontal_group = HorizontalGroup:new{ allow_mirroring = false }
         local layout_horizontal = {}
         for j = 1, #self.KEYS[i] do
             local key
@@ -780,6 +806,7 @@ function VirtualKeyboard:addKeys()
                 key_chars = key_chars,
                 icon = self.KEYS[i][j].icon,
                 label = label,
+                bold = self.KEYS[i][j].bold,
                 keyboard = self,
                 width = key_width,
                 height = key_height,
@@ -806,6 +833,7 @@ function VirtualKeyboard:addKeys()
         background = Blitbuffer.COLOR_WHITE,
         radius = 0,
         padding = self.padding,
+        allow_mirroring = false,
         CenterContainer:new{
             dimen = Geom:new{
                 w = self.width - 2*Size.border.default - 2*self.padding,

@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local DataStorage = require("datastorage")
 local FFIUtil = require("ffi/util")
 local InputDialog = require("ui/widget/inputdialog")
@@ -48,9 +49,10 @@ function DocSettingTweak:editDirectoryDefaults()
     directory_defaults_file:close()
     local config_editor
     config_editor = InputDialog:new{
-        title = T(_("Directory Defaults: %1"),directory_defaults_path),
+        title = T(_("Directory Defaults: %1"), BD.filepath(directory_defaults_path)),
         input = defaults,
         input_type = "string",
+        para_direction_rtl = false, -- force LTR
         fullscreen = true,
         condensed = true,
         allow_newline = true,

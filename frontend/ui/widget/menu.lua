@@ -2,6 +2,7 @@
 Widget that displays a shortcut icon for menu item.
 --]]
 
+local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local Button = require("ui/widget/button")
@@ -33,7 +34,6 @@ local util = require("ffi/util")
 local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
-local getMenuText = require("util").getMenuText
 
 local ItemShortCutIcon = WidgetContainer:new{
     dimen = Geom:new{ w = Screen:scaleBySize(22), h = Screen:scaleBySize(22) },
@@ -92,21 +92,30 @@ local MenuCloseButton = InputContainer:new{
 }
 
 function MenuCloseButton:init()
-    self[1] = TextWidget:new{
+    local text_widget = TextWidget:new{
         text = "×",
         face = Font:getFace("cfont", 30), -- this font size align nicely with title
     }
-
-    local text_size = self[1]:getSize()
-    -- The text box height is greater than its width, and we want this × to
-    -- be diagonally aligned with our top right border
+    -- The text box height is greater than its width, and we want this × to be
+    -- diagonally aligned with the top right corner (assuming padding_right=0,
+    -- or padding_right = padding_top so the diagonal aligment is preserved).
+    local text_size = text_widget:getSize()
     local text_width_pad = (text_size.h - text_size.w) / 2
-    -- We also add the provided padding_right
+
+    self[1] = FrameContainer:new{
+        bordersize = 0,
+        padding = 0,
+        padding_top = self.padding_top,
+        padding_bottom = self.padding_bottom,
+        padding_left = self.padding_left,
+        padding_right = self.padding_right + text_width_pad,
+        text_widget,
+    }
+
     self.dimen = Geom:new{
         w = text_size.w + text_width_pad + self.padding_right,
         h = text_size.h,
     }
-
     self.ges_events.Close = {
         GestureRange:new{
             ges = "tap",
@@ -126,6 +135,7 @@ Widget that displays an item for menu
 --]]
 local MenuItem = InputContainer:new{
     text = nil,
+    bidi_wrap_func = nil,
     show_parent = nil,
     detail = nil,
     font = "cfont",
@@ -247,6 +257,12 @@ function MenuItem:init()
     -- overflow and not be displayed, or show a tofu char when displayed by TextWidget:
     -- get rid of any \n (which could be found in highlighted text in bookmarks).
     local text = self.text:gsub("\n", " ")
+
+    -- Wrap text with provided bidi_wrap_func (only provided by FileChooser,
+    -- to correctly display filenames and directories)
+    if self.bidi_wrap_func then
+        text = self.bidi_wrap_func(text)
+    end
 
     if self.single_line then  -- items only in single line
         -- No font size change: text will be truncated if it overflows
@@ -401,6 +417,7 @@ function MenuItem:init()
         table.insert(hgroup, HorizontalSpan:new{ width = Size.span.horizontal_default })
     end
     table.insert(hgroup, self._underline_container)
+    table.insert(hgroup, HorizontalSpan:new{ width = Size.padding.fullscreen })
 
     self[1] = FrameContainer:new{
         bordersize = 0,
@@ -610,7 +627,7 @@ function Menu:init()
     if self.show_path then
         self.path_text = TextWidget:new{
             face = Font:getFace("xx_smallinfofont"),
-            text = self.path,
+            text = BD.directory(self.path),
             max_width = self.dimen.w - 2*Size.padding.small,
             truncate_left = true,
         }
@@ -640,26 +657,34 @@ function Menu:init()
     -- group for items
     self.item_group = VerticalGroup:new{}
     -- group for page info
+    local chevron_left = "resources/icons/appbar.chevron.left.png"
+    local chevron_right = "resources/icons/appbar.chevron.right.png"
+    local chevron_first = "resources/icons/appbar.chevron.first.png"
+    local chevron_last = "resources/icons/appbar.chevron.last.png"
+    if BD.mirroredUILayout() then
+        chevron_left, chevron_right = chevron_right, chevron_left
+        chevron_first, chevron_last = chevron_last, chevron_first
+    end
     self.page_info_left_chev = Button:new{
-        icon = "resources/icons/appbar.chevron.left.png",
+        icon = chevron_left,
         callback = function() self:onPrevPage() end,
         bordersize = 0,
         show_parent = self.show_parent,
     }
     self.page_info_right_chev = Button:new{
-        icon = "resources/icons/appbar.chevron.right.png",
+        icon = chevron_right,
         callback = function() self:onNextPage() end,
         bordersize = 0,
         show_parent = self.show_parent,
     }
     self.page_info_first_chev = Button:new{
-        icon = "resources/icons/appbar.chevron.first.png",
+        icon = chevron_first,
         callback = function() self:onFirstPage() end,
         bordersize = 0,
         show_parent = self.show_parent,
     }
     self.page_info_last_chev = Button:new{
-        icon = "resources/icons/appbar.chevron.last.png",
+        icon = chevron_last,
         callback = function() self:onLastPage() end,
         bordersize = 0,
         show_parent = self.show_parent,
@@ -806,6 +831,10 @@ function Menu:init()
         }
     end
     local content = OverlapGroup:new{
+        -- This unique allow_mirroring=false looks like it's enough
+        -- to have this complex Menu, and all widgets based on it,
+        -- be mirrored correctly with RTL languages
+        allow_mirroring = false,
         dimen = self.dimen:copy(),
         self.content_group,
         page_return,
@@ -978,7 +1007,8 @@ function Menu:updateItems(select_number)
                 show_parent = self.show_parent,
                 state = self.item_table[i].state,
                 state_size = self.state_size or {},
-                text = getMenuText(self.item_table[i]),
+                text = Menu.getMenuText(self.item_table[i]),
+                bidi_wrap_func = self.item_table[i].bidi_wrap_func,
                 mandatory = self.item_table[i].mandatory,
                 bold = self.item_table.current == i or self.item_table[i].bold == true,
                 dim = self.item_table[i].dim,
@@ -1004,7 +1034,7 @@ function Menu:updateItems(select_number)
 
     self:updatePageInfo(select_number)
     if self.show_path then
-        self.path_text:setText(self.path)
+        self.path_text:setText(BD.directory(self.path))
     end
 
     UIManager:setDirty(self.show_parent, function()
@@ -1236,11 +1266,12 @@ function Menu:onTapCloseAllMenus(arg, ges_ev)
 end
 
 function Menu:onSwipe(arg, ges_ev)
-    if ges_ev.direction == "west" then
+    local direction = BD.flipDirectionIfMirroredUILayout(ges_ev.direction)
+    if direction == "west" then
         self:onNextPage()
-    elseif ges_ev.direction == "east" then
+    elseif direction == "east" then
         self:onPrevPage()
-    elseif ges_ev.direction == "south" then
+    elseif direction == "south" then
         if self.has_close_button and not self.no_title then
             -- If there is a close button displayed (so, this Menu can be
             -- closed), allow easier closing with swipe up/down
@@ -1248,13 +1279,46 @@ function Menu:onSwipe(arg, ges_ev)
         end
         -- If there is no close button, it's a top level Menu and swipe
         -- up/down may hide/show top menu
-    elseif ges_ev.direction == "north" then
+    elseif direction == "north" then
         -- no use for now
         do end -- luacheck: ignore 541
     else -- diagonal swipe
         -- trigger full refresh
         UIManager:setDirty(nil, "full")
     end
+end
+
+--- Adds > to touch menu items with a submenu
+local arrow_left  = "◂" -- U+25C2 BLACK LEFT-POINTING SMALL TRIANGLE
+local arrow_right = "▸" -- U+25B8 BLACK RIGHT-POINTING SMALL TRIANGLE
+local sub_item_format
+-- Adjust arrow direction and position for menu with sub items
+-- according to possible user choices
+if BD.mirroredUILayout() then
+    if BD.rtlUIText() then -- normal case with RTL language
+        sub_item_format = "%s " .. BD.rtl(arrow_left)
+    else -- user reverted text direction, so LTR
+        sub_item_format = BD.ltr(arrow_left) .. " %s"
+    end
+else
+    if BD.rtlUIText() then -- user reverted text direction, so RTL
+        sub_item_format = BD.rtl(arrow_right) .. " %s"
+    else -- normal case with LTR language
+        sub_item_format = "%s " .. BD.ltr(arrow_right)
+    end
+end
+
+function Menu.getMenuText(item)
+    local text
+    if item.text_func then
+        text = item.text_func()
+    else
+        text = item.text
+    end
+    if item.sub_item_table ~= nil or item.sub_item_table_func then
+        text = string.format(sub_item_format, text)
+    end
+    return text
 end
 
 function Menu.itemTableFromTouchMenu(t)

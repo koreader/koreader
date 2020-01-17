@@ -36,6 +36,7 @@ Note that ListView is created mainly to be used as a building block for other
 widgets like @{ui.widget.networksetting|NetworkSetting}, so they can share the same pagination code.
 ]]
 
+local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local Device = require("device")
 local FrameContainer = require("ui/widget/container/framecontainer")
@@ -113,10 +114,11 @@ function ListView:prevPage()
 end
 
 function ListView:onSwipe(arg, ges_ev)
-    if ges_ev.direction == "west" then
+    local direction = BD.flipDirectionIfMirroredUILayout(ges_ev.direction)
+    if direction == "west" then
         self:nextPage()
         return true
-    elseif ges_ev.direction == "east" then
+    elseif direction == "east" then
         self:prevPage()
         return true
     end

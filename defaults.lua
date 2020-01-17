@@ -3,20 +3,24 @@
 
 -- number of page turns between full screen refresh
 -- default to do a full refresh on every 6 page turns
-DRCOUNTMAX = 6
+-- no longer needed
+--DRCOUNTMAX = 6
 
 -- number of pages for hinting
 -- default to pre-rendering 1 page
 DHINTCOUNT = 1
 
 -- full screen mode, 1 for true, 0 for false
-DFULL_SCREEN = 1
+-- no longer needed
+--DFULL_SCREEN = 1
 
 -- scroll mode, 1 for true, 0 for false
-DSCROLL_MODE = 1
+-- no longer needed
+--DSCROLL_MODE = 1
 
 -- default gamma setting:
-DGLOBALGAMMA = 1.0
+-- no longer needed
+--DGLOBALGAMMA = 1.0
 
 -- DjVu page rendering mode (used in djvu.c:drawPage())
 -- See comments in djvureader.lua:DJVUReader:select_render_mode()
@@ -167,28 +171,41 @@ DCREREADER_CONFIG_LINE_SPACE_PERCENT_LARGE = 120
 DCREREADER_CONFIG_LINE_SPACE_PERCENT_X_LARGE = 125
 DCREREADER_CONFIG_LINE_SPACE_PERCENT_XX_LARGE = 130
 
--- word gap percentage
-DCREREADER_CONFIG_WORD_GAP_SMALL = 50
-DCREREADER_CONFIG_WORD_GAP_MEDIUM = 75
-DCREREADER_CONFIG_WORD_GAP_LARGE = 100
+-- word spacing percentages
+-- 1st number scales the normal width of spaces in all font
+--     (100% uses the font space width untouched)
+-- 2nd number applies after the 1st has been applied, and
+--     tells how much these spaces can additionally be condensed
+--     to make more text fit on a line.
+-- So, {80,50} can reduce the width of a space up to 40% of its
+-- regular width. {99, 100} allows reducing it by at least 1px.
+-- (These replace the old settings DCREREADER_CONFIG_WORD_GAP_*,
+-- with the equivalence: new_option = { 100, old_option }.)
+DCREREADER_CONFIG_WORD_SPACING_SMALL = {75, 50}
+DCREREADER_CONFIG_WORD_SPACING_MEDIUM = {95, 75}
+DCREREADER_CONFIG_WORD_SPACING_LARGE = {100, 90}
 
--- crereader progress bar
+-- crereader progress bar (no longer needed)
 -- 0 for top "full" progress bar
 -- 1 for bottom "mini" progress bar
-DCREREADER_PROGRESS_BAR = 1
+--DCREREADER_PROGRESS_BAR = 1
 
 -- configure "mini" progress bar
-DMINIBAR_TOC_MARKER_WIDTH = 2   -- Looses usefulness > 3
+-- no longer needed
+--DMINIBAR_TOC_MARKER_WIDTH = 2   -- Looses usefulness > 3
 DMINIBAR_CONTAINER_HEIGHT = 14  -- Larger means more padding at the bottom, at the risk of eating into the last line
-DMINIBAR_FONT_SIZE = 14
+-- no longer needed
+--DMINIBAR_FONT_SIZE = 14
 -- no longer needed
 --DMINIBAR_HEIGHT = 7             -- Should be smaller than DMINIBAR_CONTAINER_HEIGHT
 
 -- change this to any numerical value if you want to automatically save settings when turning pages
-DAUTO_SAVE_PAGING_COUNT = nil
+-- no longer needed (now available in menu as an interval in minutes)
+-- DAUTO_SAVE_PAGING_COUNT = nil
 
 -- dictionary font size
-DDICT_FONT_SIZE = 20
+-- no longer needed
+--DDICT_FONT_SIZE = 20
 
 -- Frontlight decrease of sensitivity for two-fingered pan gesture,
 -- e.g. 2 changes the sensitivity by 1/2, 3 by 1/3 etc.

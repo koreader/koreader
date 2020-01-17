@@ -2,6 +2,7 @@
 Checks for updates on the specified nightly build server.
 ]]
 
+local BD = require("ui/bidi")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
@@ -243,13 +244,13 @@ function OTAManager:fetchAndProcessUpdate()
         })
     elseif ota_version then
         local update_message = T(_("Do you want to update?\nInstalled version: %1\nAvailable version: %2"),
-                                 local_version,
-                                 ota_version)
+                                 BD.ltr(local_version),
+                                 BD.ltr(ota_version))
         local update_ok_text = _("Update")
         if ota_version < local_version then
             update_message =  T(_("The currently installed version is newer than the available version.\nWould you still like to continue and downgrade?\nInstalled version: %1\nAvailable version: %2"),
-                                local_version,
-                                ota_version)
+                                BD.ltr(local_version),
+                                BD.ltr(ota_version))
             update_ok_text = _("Downgrade")
         end
 
@@ -260,11 +261,18 @@ function OTAManager:fetchAndProcessUpdate()
                 ok_callback = function()
                     local isAndroid, android = pcall(require, "android")
                     if isAndroid then
-                        -- download the package if not present.
-                        if android.download(link, ota_package) then
+                        -- try to download the package
+                        local ok = android.download(link, ota_package)
+                        if ok == 1 then
                             android.notification(T(_("The file %1 already exists."), ota_package))
-                        else
+                        elseif ok == 0 then
                             android.notification(T(_("Downloading %1"), ota_package))
+                        else
+                            UIManager:show(ConfirmBox:new{
+                                text = _("Your device seems to be unable to download packages.\nRetry using the browser?"),
+                                ok_text = _("Retry"),
+                                ok_callback = function() Device:openLink(link) end,
+                            })
                         end
                     elseif Device:isSDL() then
                         Device:openLink(link)

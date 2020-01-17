@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LoginDialog = require("ui/widget/logindialog")
 local InfoMessage = require("ui/widget/infomessage")
@@ -237,12 +238,12 @@ function EvernoteExporter:addToMainMenu(menu_items)
 
 To export to Joplin, you must forward the IP and port used by this plugin to the localhost:port on which Joplin is listening. This can be done with socat or a similar program. For example:
 
-For Windows: netsh interface portproxy add listeningaddress:0.0.0.0 listeningport:41185 connectaddress:localhost connectport:41184
+For Windows: netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=41185 connectaddress=localhost connectport=41184
 
 For Linux: $socat tcp-listen:41185,reuseaddr,fork tcp:localhost:41184
 
 For more information, please visit https://github.com/koreader/koreader/wiki/Evernote-export.]])
-                            ,DataStorage:getDataDir())
+                            , BD.dirpath(DataStorage:getDataDir()))
                             })
                         end
                     }
@@ -574,28 +575,24 @@ function EvernoteExporter:exportClippings(clippings)
     local msg = "Nothing was exported."
     local all_count = export_count + error_count
     if export_count > 0 and error_count == 0 then
-        if all_count == 1 then
-            msg = T(
-                N_("Exported notes from the book:\n%1",
-                   "Exported notes from the book:\n%1\nand %2 others.",
-                   all_count-1),
-                export_title,
-                all_count-1
-            )
-        end
+        msg = T(
+            N_("Exported notes from the book:\n%1",
+               "Exported notes from the book:\n%1\nand %2 others.",
+               all_count-1),
+            export_title,
+            all_count-1
+        )
     elseif error_count > 0 then
-        if all_count == 1 then
-            msg = T(
-                N_("An error occurred while trying to export notes from the book:\n%1",
-                   "Multiple errors occurred while trying to export notes from the book:\n%1\nand %2 others.",
-                   error_count-1),
-                error_title,
-                error_count-1
-            )
-        end
+        msg = T(
+            N_("An error occurred while trying to export notes from the book:\n%1",
+               "Multiple errors occurred while trying to export notes from the book:\n%1\nand %2 others.",
+               error_count-1),
+            error_title,
+            error_count-1
+        )
     end
     if (self.html_export or self.txt_export) and export_count > 0 then
-        msg = msg .. T(_("\nNotes can be found in %1/."), realpath(self.clipping_dir))
+        msg = msg .. T(_("\nNotes can be found in %1/."), BD.dirpath(realpath(self.clipping_dir)))
     end
     UIManager:show(InfoMessage:new{ text = msg })
 end

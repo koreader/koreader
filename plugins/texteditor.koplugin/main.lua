@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Font = require("ui/font")
@@ -54,6 +55,8 @@ function TextEditor:loadSettings()
     if self.settings:readSetting("monospace_font") then
         self.monospace_font = self.settings:readSetting("monospace_font")
     end
+    self.auto_para_direction = self.settings:readSetting("auto_para_direction") or true
+    self.force_ltr_para_direction = self.settings:readSetting("force_ltr_para_direction") or false
 end
 
 function TextEditor:onFlushSettings()
@@ -63,6 +66,8 @@ function TextEditor:onFlushSettings()
         self.settings:saveSetting("last_path", self.last_path)
         self.settings:saveSetting("font_face", self.font_face)
         self.settings:saveSetting("font_size", self.font_size)
+        self.settings:saveSetting("auto_para_direction", self.auto_para_direction)
+        self.settings:saveSetting("force_ltr_para_direction", self.force_ltr_para_direction)
         self.settings:flush()
     end
 end
@@ -114,6 +119,32 @@ function TextEditor:getSubMenuItems()
                             self.font_face = self.monospace_font
                         end
                     end,
+                    separator = true,
+                },
+                {
+                    text = _("Auto paragraph direction"),
+                    help_text = _([[
+Detect the direction of each paragraph in the text: align to the right paragraphs in languages such as Arabic and Hebrew…, while keeping other paragraphs aligned to the left.
+If disabled, paragraphs align according to KOReader's language default direction.]]),
+                    checked_func = function()
+                        return self.auto_para_direction
+                    end,
+                    callback = function()
+                        self.auto_para_direction = not self.auto_para_direction
+                    end,
+                },
+                {
+                    text = _("Force paragraph direction LTR"),
+                    help_text = _([[
+Force all text to be displayed Left-To-Right (LTR) and aligned to the left.
+Enable this if you are mostly editing code, HTML, CSS…]]),
+                    enabled_func = BD.rtlUIText, -- only useful for RTL users editing code
+                    checked_func = function()
+                        return BD.rtlUIText() and self.force_ltr_para_direction
+                    end,
+                    callback = function()
+                        self.force_ltr_para_direction = not self.force_ltr_para_direction
+                    end,
                 },
             },
             separator = true,
@@ -140,7 +171,7 @@ function TextEditor:getSubMenuItems()
         local file_path = self.history[i]
         local directory, filename = util.splitFilePathName(file_path) -- luacheck: no unused
         table.insert(sub_item_table, {
-            text = T("%1. %2", i, filename),
+            text = T("%1. %2", i, BD.filename(filename)),
             keep_menu_open = true,
             callback = function(touchmenu_instance)
                 self:setupWhenDoneFunc(touchmenu_instance)
@@ -155,10 +186,10 @@ function TextEditor:getSubMenuItems()
                     local filesize = util.getFormattedSize(attr.size)
                     local lastmod = os.date("%Y-%m-%d %H:%M", attr.modification)
                     text = T(_("File path:\n%1\n\nFile size: %2 bytes\nLast modified: %3\n\nRemove this file from text editor history?"),
-                                file_path, filesize, lastmod)
+                                BD.filepath(file_path), filesize, lastmod)
                 else
                     text = T(_("File path:\n%1\n\nThis file does not exist anymore.\n\nRemove it from text editor history?"),
-                                file_path)
+                                BD.filepath(file_path))
                 end
                 UIManager:show(ConfirmBox:new{
                     text = text,
@@ -301,7 +332,7 @@ function TextEditor:checkEditFile(file_path, from_history, possibly_new_file)
     local attr = lfs.attributes(file_path)
     if not possibly_new_file and not attr then
         UIManager:show(ConfirmBox:new{
-            text = T(_("This file does not exist anymore:\n\n%1\n\nDo you want to create it and start editing it?"), file_path),
+            text = T(_("This file does not exist anymore:\n\n%1\n\nDo you want to create it and start editing it?"), BD.filepath(file_path)),
             ok_text = _("Yes"),
             cancel_text = _("No"),
             ok_callback = function()
@@ -319,7 +350,7 @@ function TextEditor:checkEditFile(file_path, from_history, possibly_new_file)
     if attr then -- File exists
         if attr.mode ~= "file" then
             UIManager:show(InfoMessage:new{
-                text = T(_("This file is not a regular file:\n\n%1"), file_path)
+                text = T(_("This file is not a regular file:\n\n%1"), BD.filepath(file_path))
             })
             return
         end
@@ -337,7 +368,7 @@ function TextEditor:checkEditFile(file_path, from_history, possibly_new_file)
         if not from_history and attr.size > self.min_file_size_warn then
             UIManager:show(ConfirmBox:new{
                 text = T(_("This file is %2:\n\n%1\n\nAre you sure you want to open it?\n\nOpening big files may take some time."),
-                    file_path, util.getFriendlySize(attr.size)),
+                    BD.filepath(file_path), util.getFriendlySize(attr.size)),
                 ok_text = _("Yes"),
                 cancel_text = _("No"),
                 ok_callback = function()
@@ -358,7 +389,7 @@ function TextEditor:checkEditFile(file_path, from_history, possibly_new_file)
             self:editFile(file_path)
         else
             UIManager:show(InfoMessage:new{
-                text = T(_("This file can not be created:\n\n%1\n\nReason: %2"), file_path, err)
+                text = T(_("This file can not be created:\n\n%1\n\nReason: %2"), BD.filepath(file_path), err)
             })
             return
         end
@@ -405,10 +436,16 @@ function TextEditor:editFile(file_path, readonly)
     local filename_without_suffix, filetype = util.splitFileNameSuffix(filename) -- luacheck: no unused
     local is_lua = filetype:lower() == "lua"
     local input
+    local para_direction_rtl = nil -- use UI language direction
+    if self.force_ltr_para_direction then
+        para_direction_rtl = false -- force LTR
+    end
     input = InputDialog:new{
         title =  filename,
         input = self:readFileContent(file_path),
         input_face = Font:getFace(self.font_face, self.font_size),
+        para_direction_rtl = para_direction_rtl,
+        auto_para_direction = self.auto_para_direction,
         fullscreen = true,
         condensed = true,
         allow_newline = true,
@@ -489,7 +526,7 @@ Lua syntax check failed:
 KOReader may crash if this is saved.
 Do you really want to save to this file?
 
-%2]]), parse_error, file_path),  _("Do not save"), _("Save anyway"))
+%2]]), parse_error, BD.filepath(file_path)),  _("Do not save"), _("Save anyway"))
                 -- we'll get the safer "Do not save" on tap outside
                 if save_anyway then
                     local ok, err = self:saveFileContent(file_path, content)
@@ -506,7 +543,7 @@ Do you really want to save to this file?
 Text content is empty.
 Do you want to keep this file as empty, or do you prefer to delete it?
 
-%1]]), file_path), _("Keep empty file"), _("Delete file"))
+%1]]), BD.filepath(file_path)), _("Keep empty file"), _("Delete file"))
                 -- we'll get the safer "Keep empty file" on tap outside
                 if delete_file then
                     local ok, err = self:deleteFile(file_path)

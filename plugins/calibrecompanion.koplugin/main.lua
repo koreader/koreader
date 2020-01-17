@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
@@ -127,7 +128,7 @@ function CalibreCompanion:addToMainMenu(menu_items)
                         address = G_reader_settings:readSetting("calibre_wireless_url")
                         address = string.format("%s:%s", address["address"], address["port"])
                     end
-                    return T(_("Server address (%1)"), address)
+                    return T(_("Server address (%1)"), BD.ltr(address))
                 end,
                 sub_item_table = {
                     {
@@ -214,7 +215,7 @@ function CalibreCompanion:initCalibreMQ(host, port)
                 self:onReceiveJSON(data)
                 if not self.connect_message then
                     UIManager:show(InfoMessage:new{
-                        text = T(_("Connected to calibre server at %1:%2"), host, port),
+                        text = T(_("Connected to calibre server at %1"), BD.ltr(T("%1:%2", host, port))),
                     })
                     self.connect_message = true
                     if self.failed_connect_callback then
@@ -467,7 +468,7 @@ function CalibreCompanion:sendBook(arg)
             outfile:close()
             logger.info("complete writing file", filename)
             UIManager:show(InfoMessage:new{
-                text = _("Received file:") .. filename,
+                text = _("Received file:") .. BD.filepath(filename),
                 timeout = 1,
             })
             -- switch to JSON data receiving mode

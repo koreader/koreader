@@ -181,7 +181,7 @@ kindleupdate: all
 	ln -sf ../$(KINDLE_DIR)/launchpad $(INSTALL_DIR)/
 	ln -sf ../../$(KINDLE_DIR)/koreader.sh $(INSTALL_DIR)/koreader
 	ln -sf ../../$(KINDLE_DIR)/libkohelper.sh $(INSTALL_DIR)/koreader
-	ln -sf ../../../../$(KINDLE_DIR)/libkohelper.sh $(INSTALL_DIR)/extensions/koreader/bin
+	ln -sf ../../../../../$(KINDLE_DIR)/libkohelper.sh $(INSTALL_DIR)/extensions/koreader/bin
 	ln -sf ../../$(COMMON_DIR)/spinning_zsync $(INSTALL_DIR)/koreader
 	# create new package
 	cd $(INSTALL_DIR) && pwd && \
@@ -202,7 +202,7 @@ kindleupdate: all
 	# note that the targz file extension is intended to keep ISP from caching
 	# the file, see koreader#1644.
 	cd $(INSTALL_DIR) && \
-		tar -I"gzip --rsyncable" -cah --no-recursion -f ../$(KINDLE_PACKAGE_OTA) \
+		tar --hard-dereference -I"gzip --rsyncable" -cah --no-recursion -f ../$(KINDLE_PACKAGE_OTA) \
 		-T koreader/ota/package.index
 
 KOBO_PACKAGE:=koreader-kobo$(KODEDUG_SUFFIX)-$(VERSION).zip
@@ -233,7 +233,7 @@ koboupdate: all
 		koreader/ota/package.index koreader.png README_kobo.txt
 	# make gzip koboupdate for zsync OTA update
 	cd $(INSTALL_DIR) && \
-		tar -I"gzip --rsyncable" -cah --no-recursion -f ../$(KOBO_PACKAGE_OTA) \
+		tar --hard-dereference -I"gzip --rsyncable" -cah --no-recursion -f ../$(KOBO_PACKAGE_OTA) \
 		-T koreader/ota/package.index
 
 PB_PACKAGE:=koreader-pocketbook$(KODEDUG_SUFFIX)-$(VERSION).zip
@@ -272,7 +272,7 @@ pbupdate: all
 		applications/koreader/ota/package.index system
 	# make gzip pbupdate for zsync OTA update
 	cd $(INSTALL_DIR)/applications && \
-		tar -I"gzip --rsyncable" -cah --no-recursion -f ../../$(PB_PACKAGE_OTA) \
+		tar --hard-dereference -I"gzip --rsyncable" -cah --no-recursion -f ../../$(PB_PACKAGE_OTA) \
 		-T koreader/ota/package.index
 
 utupdate: all
@@ -350,7 +350,6 @@ androidupdate: all
 	# assets are compressed manually and stored inside the APK.
 	cd $(INSTALL_DIR)/koreader && zip -r9 \
 		../../$(ANDROID_LAUNCHER_DIR)/assets/module/koreader-$(VERSION).zip * \
-		--exclude=*fonts/droid* \
 		--exclude=*resources/fonts* \
 		--exclude=*resources/icons/src* \
 		--exclude=*share/man* \
@@ -411,7 +410,7 @@ sony-prstuxupdate: all
 	        koreader/ota/package.index
 	# make gzip sonyprstux update for zsync OTA update
 	cd $(INSTALL_DIR) && \
-	        tar -I"gzip --rsyncable" -cah --no-recursion -f ../$(SONY_PRSTUX_PACKAGE_OTA) \
+	        tar --hard-dereference -I"gzip --rsyncable" -cah --no-recursion -f ../$(SONY_PRSTUX_PACKAGE_OTA) \
 	        -T koreader/ota/package.index
 
 CERVANTES_PACKAGE:=koreader-cervantes$(KODEDUG_SUFFIX)-$(VERSION).zip
@@ -440,7 +439,7 @@ cervantesupdate: all
 	koreader/ota/package.index
 	# make gzip cervantes update for zsync OTA update
 	cd $(INSTALL_DIR) && \
-	tar -I"gzip --rsyncable" -cah --no-recursion -f ../$(CERVANTES_PACKAGE_OTA) \
+	tar --hard-dereference -I"gzip --rsyncable" -cah --no-recursion -f ../$(CERVANTES_PACKAGE_OTA) \
 	-T koreader/ota/package.index
 
 update:
@@ -490,18 +489,15 @@ DOMAIN=koreader
 TEMPLATE_DIR=l10n/templates
 XGETTEXT_BIN=xgettext
 
-pot:
+pot: po
 	mkdir -p $(TEMPLATE_DIR)
 	$(XGETTEXT_BIN) --from-code=utf-8 \
 		--keyword=C_:1c,2 --keyword=N_:1,2 --keyword=NC_:1c,2,3 \
 		--add-comments=@translators \
-		reader.lua `find frontend -iname "*.lua"` \
-		`find plugins -iname "*.lua"` \
-		`find tools -iname "*.lua"` \
+		reader.lua `find frontend -iname "*.lua" | sort` \
+		`find plugins -iname "*.lua" | sort` \
+		`find tools -iname "*.lua" | sort` \
 		-o $(TEMPLATE_DIR)/$(DOMAIN).pot
-	# push source file to Transifex
-	$(MAKE) -i -C l10n bootstrap
-	$(MAKE) -C l10n push
 
 po:
 	git submodule update --remote l10n

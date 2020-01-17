@@ -14,6 +14,7 @@ local T = require("ffi/util").template
 local FileConverter = {
     formats_from = {
         md = {
+            -- @translators See <https://en.wikipedia.org/wiki/Markdown>. In languages written in the Latin alphabet this is unlikely to change.
             name = _("Markdown"),
             from = "markdown",
         },

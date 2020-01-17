@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local DocSettings = require("docsettings")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
@@ -53,7 +54,7 @@ function FileManagerHistory:onMenuHold(item)
                 callback = function()
                     local ConfirmBox = require("ui/widget/confirmbox")
                     UIManager:show(ConfirmBox:new{
-                        text = util.template(_("Purge .sdr to reset settings for this document?\n\n%1"), item.text),
+                        text = util.template(_("Purge .sdr to reset settings for this document?\n\n%1"), BD.filename(item.text)),
                         ok_text = _("Purge"),
                         ok_callback = function()
                             filemanagerutil.purgeSettings(item.file)
@@ -80,7 +81,7 @@ function FileManagerHistory:onMenuHold(item)
                 callback = function()
                     local ConfirmBox = require("ui/widget/confirmbox")
                     UIManager:show(ConfirmBox:new{
-                        text = _("Are you sure that you want to delete this file?\n") .. item.file .. ("\n") .. _("If you delete a file, it is permanently lost."),
+                        text = _("Are you sure that you want to delete this file?\n") .. BD.filepath(item.file) .. ("\n") .. _("If you delete a file, it is permanently lost."),
                         ok_text = _("Delete"),
                         ok_callback = function()
                             local FileManager = require("apps/filemanager/filemanager")
@@ -116,7 +117,7 @@ function FileManagerHistory:onMenuHold(item)
         },
     }
     self.histfile_dialog = ButtonDialogTitle:new{
-        title = item.text:match("([^/]+)$"),
+        title = BD.filename(item.text:match("([^/]+)$")),
         title_align = "center",
         buttons = buttons,
     }

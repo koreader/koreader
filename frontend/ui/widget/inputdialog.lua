@@ -181,6 +181,14 @@ local InputDialog = InputContainer:new{
     button_padding = Size.padding.default,
     border_size = Size.border.window,
 
+    -- See TextBoxWidget for details about these options
+    alignment = "left",
+    justified = false,
+    lang = nil,
+    para_direction_rtl = nil,
+    auto_para_direction = false,
+    alignment_strict = false,
+
     -- for internal use
     _text_modified = false, -- previous known modified status
     _top_line_num = nil,
@@ -288,6 +296,15 @@ function InputDialog:init()
         self.button_table,
     }
 
+    -- Remember provided text_height if any (to restore it on keyboard height change)
+    if self.orig_text_height == nil then
+        if self.text_height then
+            self.orig_text_height = self.text_height
+        else
+            self.orig_text_height = false
+        end
+    end
+
     -- InputText
     if not self.text_height or self.fullscreen then
         -- We need to find the best height to avoid screen overflow
@@ -298,6 +315,9 @@ function InputDialog:init()
             width = self.text_width,
             padding = self.input_padding,
             margin = self.input_margin,
+            lang = self.lang, -- these might influence height
+            para_direction_rtl = self.para_direction_rtl,
+            auto_para_direction = self.auto_para_direction,
         }
         local text_height = input_widget:getTextHeight()
         local line_height = input_widget:getLineHeight()
@@ -306,7 +326,7 @@ function InputDialog:init()
         if not self.keyboard_hidden then
             keyboard_height = input_widget:getKeyboardDimen().h
         end
-        input_widget:free()
+        input_widget:onCloseWidget() -- free() textboxwidget and keyboard
         -- Find out available height
         local available_height = Screen:getHeight()
                                     - 2*self.border_size
@@ -342,6 +362,12 @@ function InputDialog:init()
         text = self.input,
         hint = self.input_hint,
         face = self.input_face,
+        alignment = self.alignment,
+        justified = self.justified,
+        lang = self.lang,
+        para_direction_rtl = self.para_direction_rtl,
+        auto_para_direction = self.auto_para_direction,
+        alignment_strict = self.alignment_strict,
         width = self.text_width,
         height = self.text_height or nil,
         padding = self.input_padding,
@@ -469,6 +495,21 @@ function InputDialog:onShowKeyboard(ignore_first_hold_release)
     if not self.readonly and not self.keyboard_hidden then
         self._input_widget:onShowKeyboard(ignore_first_hold_release)
     end
+end
+
+function InputDialog:onKeyboardHeightChanged()
+    self.input = self:getInputText() -- re-init with up-to-date text
+    self:onClose() -- will close keyboard and save view position
+    self._input_widget:onCloseWidget() -- proper cleanup of InputText and its keyboard
+    self:free()
+    -- Restore original text_height (or reset it if none to force recomputing it)
+    self.text_height = self.orig_text_height or nil
+    self:init()
+    if not self.keyboard_hidden then
+        self:onShowKeyboard()
+    end
+    -- Our position on screen has probably changed, so have the full screen refreshed
+    UIManager:setDirty("all", "flashui")
 end
 
 function InputDialog:onClose()

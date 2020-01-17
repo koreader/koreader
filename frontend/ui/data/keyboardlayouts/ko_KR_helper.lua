@@ -22,6 +22,7 @@
 --]]
 
 local BaseUtil = require("ffi/util")
+local util = require("util")
 local logger = require("logger")
 
 -- Hangul Syllables
@@ -82,8 +83,8 @@ end
 
 
 function HgSylbls:get_combined_char(initial, medial, final)
-    -- utf8.char()
-    return BaseUtil.unichar(HgSylbls:_get_combined_charcode(initial, medial, final))
+    -- utf8.char() (i.e., encode)
+    return util.unicodeCodepointToUtf8(HgSylbls:_get_combined_charcode(initial, medial, final))
 end
 function HgSylbls:_get_combined_charcode(initial, medial, final)
     local len_medial = #HgSylbls.CHARS_MEDIAL
@@ -145,7 +146,7 @@ function HgSylbls:in_vowel_char(char)
             HgSylbls.UNI_HG_COMPAT_VOWEL_BASE, HgSylbls.UNI_HG_COMPAT_VOWEL_UPPER)
 end
 function HgSylbls:_in_target_char_group(char, base, upper, compat_base, compat_upper)
-    local code = BaseUtil.utf8charcode(char) -- utf8.codepoint()
+    local code = BaseUtil.utf8charcode(char) -- utf8.codepoint() (i.e., decode)
 
     if code == nil then
         return false

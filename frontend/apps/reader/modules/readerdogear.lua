@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local Device = require("device")
 local Geom = require("ui/geometry")
 local ImageWidget = require("ui/widget/imagewidget")
@@ -33,6 +34,7 @@ function ReaderDogear:setupDogear(new_dogear_size)
             dimen = Geom:new{w = Screen:getWidth(), h = self.dogear_size},
             ImageWidget:new{
                 file = "resources/icons/dogear.png",
+                rotation_angle = BD.mirroredUILayout() and 90 or 0,
                 width = self.dogear_size,
                 height = self.dogear_size,
             }

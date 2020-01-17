@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
@@ -225,6 +226,44 @@ function ReaderGesture:init()
     }
     local gm = G_reader_settings:readSetting(self.ges_mode)
     if gm == nil then G_reader_settings:saveSetting(self.ges_mode, {}) end
+
+    -- Some of these defaults need to be reversed in RTL mirrored UI,
+    -- and as we set them in the saved gestures, we need to reset them
+    -- to the defaults in case of UI language's direction change.
+    local mirrored_if_rtl = {
+        tap_top_left_corner = "tap_top_right_corner",
+        tap_right_bottom_corner = "tap_left_bottom_corner",
+    }
+    local is_rtl = BD.mirroredUILayout()
+    if is_rtl then
+        for k, v in pairs(mirrored_if_rtl) do
+            self.default_gesture[k], self.default_gesture[v] = self.default_gesture[v], self.default_gesture[k]
+        end
+    end
+    -- We remember the last UI direction gestures were made on. If it changes,
+    -- reset the mirrored_if_rtl ones to the default for the new direction.
+    local ges_dir_setting = self.ges_mode.."ui_lang_direction_rtl"
+    local prev_lang_dir_rtl = G_reader_settings:isTrue(ges_dir_setting)
+    if (is_rtl and not prev_lang_dir_rtl) or (not is_rtl and prev_lang_dir_rtl) then
+        local reset = false
+        for k, v in pairs(mirrored_if_rtl) do
+            -- We only replace them if they are still the other direction's default.
+            -- If not, the user has changed them: let him deal with setting new ones if needed.
+            if gm[k] == self.default_gesture[v] then
+                gm[k] = self.default_gesture[k]
+                reset = true
+            end
+            if gm[v] == self.default_gesture[k] then
+                gm[v] = self.default_gesture[v]
+                reset = true
+            end
+        end
+        if reset then
+            logger.info("UI language direction changed: resetting some gestures to direction default")
+        end
+        G_reader_settings:flipNilOrFalse(ges_dir_setting)
+    end
+
     self.ui.menu:registerToMainMenu(self)
     self:initGesture()
 end
@@ -1451,7 +1490,7 @@ function ReaderGesture:gestureAction(action, ges)
             local current_network = NetworkMgr:getCurrentNetwork()
             -- this method is only available for some implementations
             if current_network and current_network.ssid then
-                info_text = T(_("Already connected to network %1."), current_network.ssid)
+                info_text = T(_("Already connected to network %1."), BD.wrap(current_network.ssid))
             else
                 info_text = _("Already connected.")
             end
@@ -1577,13 +1616,12 @@ function ReaderGesture:onToggleReadingOrder()
     local document_module = self.ui.document.info.has_pages and self.ui.paging or self.ui.rolling
     document_module.inverse_reading_order = not document_module.inverse_reading_order
     document_module:setupTouchZones()
-    -- Needed to reset the touch zone overrides
-    local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
-    for gesture, action in pairs(gesture_manager) do
-        self:setupGesture(gesture, action)
+    local is_rtl = BD.mirroredUILayout()
+    if document_module.inverse_reading_order then
+        is_rtl = not is_rtl
     end
     UIManager:show(Notification:new{
-        text = document_module.inverse_reading_order and _("RTL page turning.") or _("LTR page turning."),
+        text = is_rtl and _("RTL page turning.") or _("LTR page turning."),
         timeout = 2.5,
     })
     return true

@@ -23,29 +23,32 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local HyphenationLimitsWidget = InputContainer:new{
-    title_text = _("Hyphenation limits"),
+local DoubleSpinWidget = InputContainer:new{
+    title_text = "",
     title_face = Font:getFace("x_smalltfont"),
+    info_text = "",
     width = nil,
     height = nil,
-    -- Min (2) and max (10) values are enforced by crengine
     left_min = 1,
-    left_max = 10,
-    left_value = 2,
+    left_max = 20,
+    left_value = 1,
     left_default = nil,
+    left_text = _("Left"),
     right_min = 1,
-    right_max = 10,
-    right_value = 2,
+    right_max = 20,
+    right_value = 1,
     right_default = nil,
+    right_text = _("Right"),
+    -- set this to see extra default button
+    default_values = nil,
+    default_text = _("Use defaults"),
 }
 
-function HyphenationLimitsWidget:init()
+function DoubleSpinWidget:init()
     self.medium_font_face = Font:getFace("ffont")
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()
-    -- let room on the widget sides so we can see
-    -- the hyphenation changes happening
-    self.width = self.screen_width * 0.6
+    self.width = self.width or self.screen_width * 0.8
     self.picker_width = self.screen_width * 0.25
     if Device:hasKeys() then
         self.key_events = {
@@ -63,12 +66,12 @@ function HyphenationLimitsWidget:init()
                     }
                 },
             },
-         }
+        }
     end
     self:update()
 end
 
-function HyphenationLimitsWidget:update()
+function DoubleSpinWidget:update()
     -- This picker_update_callback will be redefined later. It is needed
     -- so we can have our MovableContainer repainted on NumberPickerWidgets
     -- update It is needed if we have enabled transparency on MovableContainer,
@@ -92,33 +95,44 @@ function HyphenationLimitsWidget:update()
         wrap = false,
         update_callback = function() picker_update_callback() end,
     }
-    local hyph_group = HorizontalGroup:new{
+    local left_vertical_group = VerticalGroup:new{
         align = "center",
-        VerticalGroup:new{
-            align = "center",
-            VerticalSpan:new{ width = Size.span.vertical_large },
-            TextBoxWidget:new{
-                text = _("Left"),
-                alignment = "center",
-                face = self.title_face,
-                width = self.picker_width,
-            },
-            left_widget,
+        VerticalSpan:new{ width = Size.span.vertical_large },
+        TextWidget:new{
+            text = self.left_text,
+            face = self.title_face,
+            max_width = 0.95 * self.width / 2,
         },
-        VerticalGroup:new{
-            align = "center",
-            VerticalSpan:new{ width = Size.span.vertical_large },
-            TextBoxWidget:new{
-                text = _("Right"),
-                alignment = "center",
-                face = self.title_face,
-                width = self.picker_width,
-            },
-            right_widget,
-        },
+        left_widget,
     }
-
-    local hyph_title = FrameContainer:new{
+    local right_vertical_group = VerticalGroup:new{
+        align = "center",
+        VerticalSpan:new{ width = Size.span.vertical_large },
+        TextWidget:new{
+            text = self.right_text,
+            face = self.title_face,
+            max_width = 0.95 * self.width / 2,
+        },
+        right_widget,
+    }
+    local widget_group = HorizontalGroup:new{
+        align = "center",
+        CenterContainer:new{
+            dimen = Geom:new{
+                w = self.width / 2,
+                h = left_vertical_group:getSize().h,
+            },
+            left_vertical_group
+        },
+        CenterContainer:new{
+            dimen = Geom:new{
+                w = self.width / 2,
+                h = right_vertical_group:getSize().h,
+            },
+            right_vertical_group
+        }
+    }
+    local widget_title = FrameContainer:new{
         padding = Size.padding.default,
         margin = Size.margin.title,
         bordersize = 0,
@@ -129,36 +143,30 @@ function HyphenationLimitsWidget:update()
             width = self.width,
         },
     }
-    local hyph_line = LineWidget:new{
+    local widget_line = LineWidget:new{
         dimen = Geom:new{
             w = self.width,
             h = Size.line.thick,
         }
     }
-    local hyph_bar = OverlapGroup:new{
+    local widget_bar = OverlapGroup:new{
         dimen = {
             w = self.width,
-            h = hyph_title:getSize().h
+            h = widget_title:getSize().h
         },
-        hyph_title,
+        widget_title,
         CloseButton:new{ window = self, padding_top = Size.margin.title, },
     }
-
-    local hyph_into_text = _([[
-Set minimum length before hyphenation occurs.
-These settings will apply to all books with any hyphenation dictionary.
-'Use language defaults' resets them.]])
-    local hyph_info = FrameContainer:new{
+    local widget_info = FrameContainer:new{
         padding = Size.padding.default,
         margin = Size.margin.small,
         bordersize = 0,
         TextBoxWidget:new{
-            text = hyph_into_text,
+            text = self.info_text,
             face = Font:getFace("x_smallinfofont"),
             width = self.width * 0.9,
         }
     }
-
     local buttons = {
         {
             {
@@ -176,9 +184,11 @@ These settings will apply to all books with any hyphenation dictionary.
                 end,
             },
         },
-        {
+    }
+    if self.default_values then
+        table.insert(buttons,{
             {
-                text = _("Use language defaults"),
+                text = self.default_text,
                 callback = function()
                     left_widget.value = self.left_default
                     right_widget.value = self.right_default
@@ -186,9 +196,9 @@ These settings will apply to all books with any hyphenation dictionary.
                     right_widget:update()
                     self.callback(nil, nil)
                 end,
-            },
-        }
-    }
+            }
+        })
+    end
 
     local button_table = ButtonTable:new{
         width = self.width - 2*Size.padding.default,
@@ -197,23 +207,23 @@ These settings will apply to all books with any hyphenation dictionary.
         show_parent = self,
     }
 
-    self.hyph_frame = FrameContainer:new{
+    self.widget_frame = FrameContainer:new{
         radius = Size.radius.window,
         padding = 0,
         margin = 0,
         background = Blitbuffer.COLOR_WHITE,
         VerticalGroup:new{
             align = "left",
-            hyph_bar,
-            hyph_line,
-            hyph_info,
+            widget_bar,
+            widget_line,
+            widget_info,
             VerticalSpan:new{ width = Size.span.vertical_large },
             CenterContainer:new{
                 dimen = Geom:new{
                     w = self.width,
-                    h = hyph_group:getSize().h,
+                    h = widget_group:getSize().h,
                 },
-                hyph_group
+                widget_group
             },
             VerticalSpan:new{ width = Size.span.vertical_large },
             CenterContainer:new{
@@ -226,7 +236,7 @@ These settings will apply to all books with any hyphenation dictionary.
         }
     }
     self.movable = MovableContainer:new{
-        self.hyph_frame,
+        self.widget_frame,
     }
     self[1] = WidgetContainer:new{
         align = "center",
@@ -238,7 +248,7 @@ These settings will apply to all books with any hyphenation dictionary.
         self.movable,
     }
     UIManager:setDirty(self, function()
-        return "ui", self.hyph_frame.dimen
+        return "ui", self.widget_frame.dimen
     end)
     picker_update_callback = function()
         UIManager:setDirty("all", function()
@@ -249,35 +259,35 @@ These settings will apply to all books with any hyphenation dictionary.
     end
 end
 
-function HyphenationLimitsWidget:onCloseWidget()
+function DoubleSpinWidget:onCloseWidget()
     UIManager:setDirty(nil, function()
-        return "partial", self.hyph_frame.dimen
+        return "partial", self.widget_frame.dimen
     end)
     return true
 end
 
-function HyphenationLimitsWidget:onShow()
+function DoubleSpinWidget:onShow()
     UIManager:setDirty(self, function()
-        return "ui", self.hyph_frame.dimen
+        return "ui", self.widget_frame.dimen
     end)
     return true
 end
 
-function HyphenationLimitsWidget:onAnyKeyPressed()
+function DoubleSpinWidget:onAnyKeyPressed()
     UIManager:close(self)
     return true
 end
 
-function HyphenationLimitsWidget:onTapClose(arg, ges_ev)
-    if ges_ev.pos:notIntersectWith(self.hyph_frame.dimen) then
+function DoubleSpinWidget:onTapClose(arg, ges_ev)
+    if ges_ev.pos:notIntersectWith(self.widget_frame.dimen) then
         self:onClose()
     end
     return true
 end
 
-function HyphenationLimitsWidget:onClose()
+function DoubleSpinWidget:onClose()
     UIManager:close(self)
     return true
 end
 
-return HyphenationLimitsWidget
+return DoubleSpinWidget

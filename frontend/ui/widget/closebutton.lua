@@ -34,11 +34,11 @@ function CloseButton:init()
         face = Font:getFace("cfont", 30),
     }
 
+    -- The text box height is greater than its width, and we want this × to be
+    -- diagonally aligned with the top right corner (assuming padding_right=0,
+    -- or padding_right = padding_top so the diagonal aligment is preserved).
     local text_size = text_widget:getSize()
-    -- The text box height is greater than its width, and we want this × to
-    -- be diagonally aligned with our top right border
     local text_width_pad = (text_size.h - text_size.w) / 2
-    -- We also add the provided padding_right
 
     self[1] = FrameContainer:new{
         bordersize = 0,

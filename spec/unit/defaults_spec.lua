@@ -8,8 +8,7 @@ describe("defaults module", function()
 
     it("should load all defaults from defaults.lua", function()
         Defaults:init()
-        assert.is_same(111, #Defaults.defaults_name)
-        assert.is_same("DFULL_SCREEN", Defaults.defaults_name[56])
+        assert.is_same(103, #Defaults.defaults_name)
     end)
 
     it("should save changes to defaults.persistent.lua", function()
@@ -19,19 +18,22 @@ describe("defaults module", function()
         -- not in persistent but checked in defaults
         Defaults.changed[20] = true
         Defaults.changed[47] = true
-        Defaults.changed[56] = true
-        Defaults.changed[90] = true
-        Defaults.changed[106] = true
+        Defaults.changed[53] = true
+        Defaults.changed[82] = true
+        Defaults.changed[98] = true  --SEARCH_LIBRARY_PATH = ""
         Defaults:saveSettings()
-        assert.is_same(111, #Defaults.defaults_name)
-        assert.is_same("DFULL_SCREEN", Defaults.defaults_name[56])
-        assert.is_same("SEARCH_LIBRARY_PATH", Defaults.defaults_name[106])
-        assert.is_same("DTAP_ZONE_BACKWARD", Defaults.defaults_name[90])
-        assert.is_same("DCREREADER_CONFIG_WORD_GAP_LARGE", Defaults.defaults_name[47])
+        assert.is_same(103, #Defaults.defaults_name)
+        assert.is_same("SEARCH_LIBRARY_PATH", Defaults.defaults_name[98])
+        assert.is_same("DTAP_ZONE_BACKWARD", Defaults.defaults_name[82])
+        assert.is_same("DCREREADER_CONFIG_WORD_SPACING_LARGE", Defaults.defaults_name[47])
         assert.is_same("DCREREADER_CONFIG_H_MARGIN_SIZES_XXX_LARGE", Defaults.defaults_name[20])
         local fd = io.open(persistent_filename, "r")
         assert.Equals(
 [[-- For configuration changes that persists between updates
+DCREREADER_CONFIG_WORD_SPACING_LARGE = {
+    [1] = 100,
+    [2] = 90
+}
 SEARCH_LIBRARY_PATH = ""
 DTAP_ZONE_BACKWARD = {
     ["y"] = 0,
@@ -39,22 +41,31 @@ DTAP_ZONE_BACKWARD = {
     ["h"] = 1,
     ["w"] = 0.25
 }
-DCREREADER_CONFIG_WORD_GAP_LARGE = 100
 DCREREADER_CONFIG_H_MARGIN_SIZES_XXX_LARGE = {
     [1] = 50,
     [2] = 50
 }
-DFULL_SCREEN = 1
+DDOUBLE_TAP_ZONE_PREV_CHAPTER = {
+    ["y"] = 0,
+    ["x"] = 0,
+    ["h"] = 0.25,
+    ["w"] = 0.25
+}
 ]],
                        fd:read("*a"))
         fd:close()
 
         -- in persistent
         Defaults:init()
-        Defaults.changed[56] = true
-        Defaults.defaults_value[56] = 2
-        Defaults.changed[90] = true
-        Defaults.defaults_value[90] = {
+        Defaults.changed[53] = true
+        Defaults.defaults_value[53] = {
+            y = 0,
+            x = 0,
+            h = 0.25,
+            w = 0.75
+        }
+        Defaults.changed[82] = true
+        Defaults.defaults_value[82] = {
             y = 10,
             x = 10.125,
             h = 20.25,
@@ -64,6 +75,10 @@ DFULL_SCREEN = 1
         fd = io.open(persistent_filename)
         assert.Equals(
 [[-- For configuration changes that persists between updates
+DCREREADER_CONFIG_WORD_SPACING_LARGE = {
+    [2] = 90,
+    [1] = 100
+}
 SEARCH_LIBRARY_PATH = ""
 DTAP_ZONE_BACKWARD = {
     ["y"] = 10,
@@ -71,12 +86,16 @@ DTAP_ZONE_BACKWARD = {
     ["h"] = 20.25,
     ["w"] = 20.75
 }
-DCREREADER_CONFIG_WORD_GAP_LARGE = 100
 DCREREADER_CONFIG_H_MARGIN_SIZES_XXX_LARGE = {
     [2] = 50,
     [1] = 50
 }
-DFULL_SCREEN = 2
+DDOUBLE_TAP_ZONE_PREV_CHAPTER = {
+    ["y"] = 0,
+    ["x"] = 0,
+    ["h"] = 0.25,
+    ["w"] = 0.75
+}
 ]],
                        fd:read("*a"))
         fd:close()
@@ -100,8 +119,8 @@ DHINTCOUNT = 2
 
         -- in persistent
         Defaults:init()
-        Defaults.changed[56] = true
-        Defaults.defaults_value[56] = 1
+        Defaults.changed[54] = true
+        Defaults.defaults_value[54] = 1
         Defaults:saveSettings()
         fd = io.open(persistent_filename)
         assert.Equals(
@@ -112,7 +131,7 @@ DCREREADER_CONFIG_H_MARGIN_SIZES_LARGE = {
     [1] = 15
 }
 DHINTCOUNT = 2
-DFULL_SCREEN = 1
+DGLOBAL_CACHE_FREE_PROPORTION = 1
 DCREREADER_VIEW_MODE = "page"
 ]],
                        fd:read("*a"))

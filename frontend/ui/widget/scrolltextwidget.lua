@@ -2,6 +2,7 @@
 Text widget with vertical scroll bar.
 --]]
 
+local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local Device = require("device")
 local Geom = require("ui/geometry")
@@ -22,7 +23,6 @@ local ScrollTextWidget = InputContainer:new{
     charpos = nil,
     top_line_num = nil,
     editable = false,
-    justified = false,
     scroll_callback = nil, -- called with (low, high) when view is scrolled
     scroll_by_pan = false, -- allow scrolling by lines with Pan
     face = nil,
@@ -33,6 +33,13 @@ local ScrollTextWidget = InputContainer:new{
     text_scroll_span = Screen:scaleBySize(12),
     dialog = nil,
     images = nil,
+    -- See TextBoxWidget for details about these options
+    alignment = "left",
+    justified = false,
+    lang = nil,
+    para_direction_rtl = nil,
+    auto_para_direction = false,
+    alignment_strict = false,
 }
 
 function ScrollTextWidget:init()
@@ -43,13 +50,18 @@ function ScrollTextWidget:init()
         top_line_num = self.top_line_num,
         dialog = self.dialog,
         editable = self.editable,
-        justified = self.justified,
         face = self.face,
         image_alt_face = self.image_alt_face,
         fgcolor = self.fgcolor,
         width = self.width - self.scroll_bar_width - self.text_scroll_span,
         height = self.height,
         images = self.images,
+        alignment = self.alignment,
+        justified = self.justified,
+        lang = self.lang,
+        para_direction_rtl = self.para_direction_rtl,
+        auto_para_direction = self.auto_para_direction,
+        alignment_strict = self.alignment_strict,
     }
     local visible_line_count = self.text_widget:getVisLineCount()
     local total_line_count = self.text_widget:getAllLineCount()
@@ -150,6 +162,9 @@ function ScrollTextWidget:moveCursorToCharPos(charpos)
 end
 
 function ScrollTextWidget:moveCursorToXY(x, y, no_overflow)
+    if BD.mirroredUILayout() then -- the scroll bar is on the left
+        x = x - self.scroll_bar_width - self.text_scroll_span
+    end
     self.text_widget:moveCursorToXY(x, y, no_overflow)
     self:updateScrollBar()
 end
@@ -227,7 +242,7 @@ function ScrollTextWidget:onTapScrollText(arg, ges)
         return false
     end
     -- same tests as done in TextBoxWidget:scrollUp/Down
-    if ges.pos.x < Screen:getWidth()/2 then
+    if BD.flipIfMirroredUILayout(ges.pos.x < Screen:getWidth()/2) then
         if self.text_widget.virtual_line_num > 1 then
             self:scrollText(-1)
             return true

@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local FrameContainer = require("ui/widget/container/framecontainer")
@@ -26,7 +27,7 @@ function OPDSCatalog:init()
         file_downloaded_callback = function(downloaded_file)
             UIManager:show(ConfirmBox:new{
                 text = T(_("File saved to:\n%1\nWould you like to read the downloaded book now?"),
-                    downloaded_file),
+                    BD.filepath(downloaded_file)),
                 ok_text = _("Read now"),
                 cancel_text = _("Read later"),
                 ok_callback = function()

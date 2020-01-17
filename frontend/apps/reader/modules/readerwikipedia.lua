@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
@@ -175,7 +176,7 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                         if not default_dir then default_dir = require("apps/filemanager/filemanagerutil").getDefaultDir() end
                         local dialog
                         dialog = ButtonDialogTitle:new{
-                            title = T(_("Current Wikipedia 'Save as EPUB' directory:\n\n%1\n"), default_dir),
+                            title = T(_("Current Wikipedia 'Save as EPUB' directory:\n\n%1\n"), BD.dirpath(default_dir)),
                             buttons = {
                                 {
                                     {
@@ -220,7 +221,7 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                                             onConfirm = function(path)
                                                 G_reader_settings:saveSetting("wikipedia_save_dir", path)
                                                 UIManager:show(InfoMessage:new{
-                                                    text = T(_("Wikipedia 'Save as EPUB' directory set to:\n%1"), path),
+                                                    text = T(_("Wikipedia 'Save as EPUB' directory set to:\n%1"), BD.dirpath(path)),
                                                 })
                                             end
                                         }
@@ -257,7 +258,7 @@ Where do you want them saved?]])
                                     end
                                     G_reader_settings:saveSetting("wikipedia_save_dir", wikipedia_dir)
                                     UIManager:show(InfoMessage:new{
-                                        text = T(_("Wikipedia 'Save as EPUB' directory set to:\n%1"), wikipedia_dir),
+                                        text = T(_("Wikipedia 'Save as EPUB' directory set to:\n%1"), BD.dirpath(wikipedia_dir)),
                                     })
                                 end,
                                 cancel_text = _("Select directory"),
@@ -488,6 +489,7 @@ function ReaderWikipedia:lookupWikipedia(word, box, get_fullpage, forced_lang)
                 definition = definition,
                 is_fullpage = get_fullpage,
                 lang = lang,
+                rtl_lang = Wikipedia:isWikipediaLanguageRTL(lang),
                 images = page.images,
             }
             table.insert(results, result)

@@ -9,15 +9,18 @@ set +e
 if [ -z "${CIRCLE_PULL_REQUEST}" ] && [ "${CIRCLE_BRANCH}" = 'master' ]; then
     echo "CIRCLE_NODE_INDEX: ${CIRCLE_NODE_INDEX}"
     if [ "$CIRCLE_NODE_INDEX" = 1 ]; then
-        echo -e "\\n${ANSI_GREEN}Pushing translation to Transifex."
-
-        cat >~/.transifexrc <<EOF
-[https://www.transifex.com]
-hostname = https://www.transifex.com
-password = ${TRANSIFEX_TOKEN}
-username = api
-EOF
+        echo -e "\\n${ANSI_GREEN}Updating translation source file."
         make pot
+        pushd l10n && {
+            git checkout master
+            # If only one line was added and removed, it was just the timestamp.
+            git diff --numstat | grep "1[[:space:]]1[[:space:]]templates/koreader.pot" && echo -e "\\n${ANSI_GREEN}No updated translations found." || {
+                git -c user.name="KOReader build bot" -c user.email="non-reply@koreader.rocks" \
+                    commit templates/koreader.pot -m "Updated translation source file"
+                git push --quiet "https://${TRANSLATIONS_GITHUB_TOKEN}@github.com/koreader/koreader-translations.git" master
+                echo -e "\\n${ANSI_GREEN}Translation update pushed."
+            }
+        } && popd || exit
 
         echo -e "\\n${ANSI_GREEN}Checking out koreader/doc for update."
         git clone git@github.com:koreader/doc.git koreader_doc

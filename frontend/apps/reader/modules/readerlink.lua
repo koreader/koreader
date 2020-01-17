@@ -2,6 +2,7 @@
 ReaderLink is an abstraction for document-specific link interfaces.
 ]]
 
+local BD = require("ui/bidi")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
@@ -533,7 +534,7 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
                 display_filename = display_filename .. anchor
             end
             UIManager:show(ConfirmBox:new{
-                text = T(_("Would you like to read this local document?\n\n%1\n"), display_filename),
+                text = T(_("Would you like to read this local document?\n\n%1\n"), BD.filepath(display_filename)),
                 ok_callback = function()
                     UIManager:scheduleIn(0.1, function()
                         self.ui:switchDocument(linked_filename)
@@ -542,7 +543,7 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
             })
         else
             UIManager:show(InfoMessage:new{
-                text = T(_("Link to unsupported local file:\n%1"), link_url),
+                text = T(_("Link to unsupported local file:\n%1"), BD.url(link_url)),
             })
         end
         return true
@@ -550,7 +551,7 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
 
     -- Not supported
     UIManager:show(InfoMessage:new{
-        text = T(_("Invalid or external link:\n%1"), link_url),
+        text = T(_("Invalid or external link:\n%1"), BD.url(link_url)),
         -- no timeout to allow user to type that link in his web browser
     })
     -- don't propagate, user will notice and tap elsewhere if he wants to change page
@@ -657,7 +658,7 @@ function ReaderLink:onGoToExternalLink(link_url)
             -- No external link handler
             return false
         end
-        text = T(_("External link:\n\n%1"), link_url)
+        text = T(_("External link:\n\n%1"), BD.url(link_url))
     end
 
     -- Add all alternative handlers buttons
@@ -689,7 +690,8 @@ function ReaderLink:onGoBackLink(show_notification_if_empty)
 end
 
 function ReaderLink:onSwipe(arg, ges)
-    if ges.direction == "east" then
+    local direction = BD.flipDirectionIfMirroredUILayout(ges.direction)
+    if direction == "east" then
         if isSwipeToGoBackEnabled() then
             if #self.location_stack > 0 then
                 -- Remember if location stack is going to be empty, so we
@@ -709,7 +711,7 @@ function ReaderLink:onSwipe(arg, ges)
                 return true
             end
         end
-    elseif ges.direction == "west" then
+    elseif direction == "west" then
         local ret = false
         if isSwipeToFollowNearestLinkEnabled() then
             ret = self:onGoToPageLink(ges, isSwipeIgnoreExternalLinksEnabled(), isFootnoteLinkInPopupEnabled())
@@ -1062,12 +1064,15 @@ function ReaderLink:showAsFootnotePopup(link, neglect_current_location)
     -- then just ignore the whole stylesheet, including our own declarations
     -- we add at start)
     --
-    -- flags = 0x0000 to get the simplest/purest HTML without CSS
+    -- flags = 0x1001 to get the simplest/purest HTML without CSS, with added
+    -- soft-hyphens where hyphenation is allowed (done by crengine according
+    -- to user's hyphenation settings), and dir= and lang= attributes grabbed
+    -- from parent nodes
     local html
     if extStartXP and extEndXP then
-        html = self.ui.document:getHTMLFromXPointers(extStartXP, extEndXP, 0x0000)
+        html = self.ui.document:getHTMLFromXPointers(extStartXP, extEndXP, 0x1001)
     else
-        html = self.ui.document:getHTMLFromXPointer(target_xpointer, 0x0000, true)
+        html = self.ui.document:getHTMLFromXPointer(target_xpointer, 0x1001, true)
         -- from_final_parent = true to get a possibly more complete footnote
     end
     if not html then

@@ -5,6 +5,7 @@ Displays a button that toggles between states. Used in bottom configuration pane
     local ToggleSwitch = require("ui/widget/toggleswitch")
 ]]
 
+local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
@@ -173,6 +174,9 @@ end
 
 function ToggleSwitch:calculatePosition(gev)
     local x = (gev.pos.x - self.dimen.x) / self.dimen.w * self.n_pos
+    if BD.mirroredUILayout() then
+        x = self.n_pos - x
+    end
     local y = (gev.pos.y - self.dimen.y) / self.dimen.h * self.row_count
     return math.max(1, math.ceil(x)) + math.min(self.row_count-1, math.floor(y)) * self.n_pos
 end

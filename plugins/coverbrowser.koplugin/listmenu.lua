@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
@@ -31,6 +32,7 @@ local _ = require("gettext")
 local N_ = _.ngettext
 local Screen = Device.screen
 local T = require("ffi/util").template
+local getMenuText = require("ui/widget/menu").getMenuText
 
 local BookInfoManager = require("bookinfomanager")
 
@@ -225,9 +227,10 @@ function ListMenuItem:update()
             text = self.mandatory,
             face = Font:getFace("infont", math.min(max_fontsize_fileinfo, _fontSize(15))),
         }
-        local wleft_width = dimen.w - wright:getSize().w
+        local pad_width = Screen:scaleBySize(10) -- on the left, in between, and on the right
+        local wleft_width = dimen.w - wright:getWidth() - 3*pad_width
         local wleft = TextBoxWidget:new{
-            text = self.text,
+            text = BD.directory(self.text),
             face = Font:getFace("cfont", _fontSize(20)),
             width = wleft_width,
             alignment = "left",
@@ -238,7 +241,7 @@ function ListMenuItem:update()
             LeftContainer:new{
                 dimen = dimen,
                 HorizontalGroup:new{
-                    HorizontalSpan:new{ width = Screen:scaleBySize(10) },
+                    HorizontalSpan:new{ width = pad_width },
                     wleft,
                 }
             },
@@ -246,7 +249,7 @@ function ListMenuItem:update()
                 dimen = dimen,
                 HorizontalGroup:new{
                     wright,
-                    HorizontalSpan:new{ width = Screen:scaleBySize(10) },
+                    HorizontalSpan:new{ width = pad_width },
                 },
             },
         }
@@ -338,7 +341,7 @@ function ListMenuItem:update()
             local filename_without_suffix, filetype = util.splitFileNameSuffix(filename)
             local fileinfo_str = filetype
             if self.mandatory then
-                fileinfo_str = self.mandatory .. "  " .. fileinfo_str
+                fileinfo_str = self.mandatory .. "  " .. BD.wrap(fileinfo_str)
             end
             if bookinfo._no_provider then
                 -- for unspported files: don't show extension on the right,
@@ -451,7 +454,7 @@ function ListMenuItem:update()
                 end
                 corner_mark = ImageWidget:new{
                     file = "resources/icons/dogear.png",
-                    rotation_angle = 270,
+                    rotation_angle = BD.mirroredUILayout() and 180 or 270,
                     width = corner_mark_size,
                     height = corner_mark_size,
                 }
@@ -476,17 +479,26 @@ function ListMenuItem:update()
             local series_mode = BookInfoManager:getSetting("series_mode")
 
             -- whether to use or not title and authors
+            -- (We wrap each metadata text with BD.auto() to get for each of them
+            -- the text direction from the first strong character - which should
+            -- individually be the best thing, and additionnaly prevent shuffling
+            -- if concatenated.)
             if self.do_filename_only or bookinfo.ignore_meta then
                 title = filename_without_suffix -- made out above
+                title = BD.auto(title)
                 authors = nil
             else
                 title = bookinfo.title and bookinfo.title or filename_without_suffix
+                title = BD.auto(title)
                 authors = bookinfo.authors
                 -- If multiple authors (crengine separates them with \n), we
                 -- can display them on multiple lines, but limit to 2, and
                 -- append "et al." to the 2nd if there are more
                 if authors and authors:find("\n") then
                     authors = util.splitToArray(authors, "\n")
+                    for i=1, #authors do
+                        authors[i] = BD.auto(authors[i])
+                    end
                     if #authors > 1 and bookinfo.series and series_mode == "series_in_separate_line" then
                         authors = { T(_("%1 et al."), authors[1]) }
                     elseif #authors > 2 then
@@ -496,12 +508,15 @@ function ListMenuItem:update()
                     -- as we'll fit 3 lines instead of 2, we can avoid some loops by starting from a lower font size
                     fontsize_title = _fontSize(17)
                     fontsize_authors = _fontSize(15)
+                elseif authors then
+                    authors = BD.auto(authors)
                 end
             end
             -- add Series metadata if requested
             if bookinfo.series then
                 -- Shorten calibre series decimal number (#4.0 => #4)
                 bookinfo.series = bookinfo.series:gsub("(#%d+)%.0$", "%1")
+                bookinfo.series = BD.auto(bookinfo.series)
                 if series_mode == "append_series_to_title" then
                     if title then
                         title = title .. " - " .. bookinfo.series
@@ -642,11 +657,15 @@ function ListMenuItem:update()
             if self.file_deleted then -- unless file was deleted (can happen with History)
                 hint = " " .. _("(deleted)")
             end
+            local text = BD.filename(self.text)
             local text_widget
             local fontsize_no_bookinfo = _fontSize(18)
             repeat
+                if text_widget then
+                    text_widget:free()
+                end
                 text_widget = TextBoxWidget:new{
-                    text = self.text .. hint,
+                    text = text .. hint,
                     face = Font:getFace("cfont", fontsize_no_bookinfo),
                     width = dimen.w - 2 * Screen:scaleBySize(10),
                     alignment = "left",
@@ -694,7 +713,12 @@ function ListMenuItem:paintTo(bb, x, y)
     if self.shortcut_icon then
         -- align it on bottom left corner of sub-widget
         local target = self[1][1][2]
-        local ix = 0
+        local ix
+        if BD.mirroredUILayout() then
+            ix = target.dimen.w - self.shortcut_icon.dimen.w
+        else
+            ix = 0
+        end
         local iy = target.dimen.h - self.shortcut_icon.dimen.h
         self.shortcut_icon:paintTo(bb, x+ix, y+iy)
     end
@@ -702,7 +726,12 @@ function ListMenuItem:paintTo(bb, x, y)
     -- to which we paint over a dogear if needed
     if corner_mark and self.do_hint_opened and self.been_opened then
         -- align it on bottom right corner of widget
-        local ix = self.width - corner_mark:getSize().w
+        local ix
+        if BD.mirroredUILayout() then
+            ix = 0
+        else
+            ix = self.width - corner_mark:getSize().w
+        end
         local iy = self.height - corner_mark:getSize().h
         corner_mark:paintTo(bb, x+ix, y+iy)
     end
@@ -715,10 +744,22 @@ function ListMenuItem:paintTo(bb, x, y)
         if self.do_cover_image and target[1][1][1] then
             -- it has an image, align it on image's framecontainer's right border
             target = target[1][1]
-            bb:paintBorder(target.dimen.x + target.dimen.w - 1, target.dimen.y, d_w, d_h, 1)
+            local ix
+            if BD.mirroredUILayout() then
+                ix = target.dimen.x - d_w + 1
+            else
+                ix = target.dimen.x + target.dimen.w - 1
+            end
+            bb:paintBorder(ix, target.dimen.y, d_w, d_h, 1)
         else
             -- no image, align it to the left border
-            bb:paintBorder(x, y, d_w, d_h, 1)
+            local ix
+            if BD.mirroredUILayout() then
+                ix = target.dimen.x + target.dimen.w - d_w
+            else
+                ix = x
+            end
+            bb:paintBorder(ix, y, d_w, d_h, 1)
         end
     end
 end
@@ -883,7 +924,7 @@ function ListMenu:_updateItemsBuildUI()
                 height = self.item_height,
                 width = self.item_width,
                 entry = entry,
-                text = util.getMenuText(entry),
+                text = getMenuText(entry),
                 show_parent = self.show_parent,
                 mandatory = entry.mandatory,
                 dimen = self.item_dimen:new(),

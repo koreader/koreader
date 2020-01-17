@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
@@ -12,6 +13,7 @@ local HorizontalSpan = require("ui/widget/horizontalspan")
 local ImageWidget = require("ui/widget/imagewidget")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local LeftContainer = require("ui/widget/container/leftcontainer")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
@@ -27,7 +29,7 @@ local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
-local getMenuText = require("util").getMenuText
+local getMenuText = require("ui/widget/menu").getMenuText
 
 local BookInfoManager = require("bookinfomanager")
 
@@ -97,10 +99,15 @@ local FakeCover = FrameContainer:new{
     padding = 0,
     bordersize = Size.line.thin,
     dim = nil,
+    -- Provided filename, title and authors should not be BD wrapped
     filename = nil,
     file_deleted = nil,
     title = nil,
     authors = nil,
+    -- The *_add should be provided BD wrapped if needed
+    filename_add = nil,
+    title_add = nil,
+    authors_add = nil,
     -- these font sizes will be scaleBySize'd by Font:getFace()
     authors_font_max = 20,
     authors_font_min = 6,
@@ -121,14 +128,25 @@ function FakeCover:init()
     local title = self.title
     local filename = self.filename
     -- (some engines may have already given filename (without extension) as title)
+    local bd_wrap_title_as_filename = false
     if not title then -- use filename as title (big and centered)
         title = filename
         filename = nil
+        if not self.title_add and self.filename_add then
+            -- filename_add ("…" or "(deleted)") always comes without any title_add
+            self.title_add = self.filename_add
+            self.filename_add = nil
+        end
+        bd_wrap_title_as_filename = true
+    end
+    if filename then
+        filename = BD.filename(filename)
     end
     -- If no authors, and title is filename without extension, it was
     -- probably made by an engine, and we can consider it a filename, and
     -- act according to common usage in naming files.
-    if not authors and title and self.filename:sub(1,title:len()) == title then
+    if not authors and title and self.filename and self.filename:sub(1,title:len()) == title then
+        bd_wrap_title_as_filename = true
         -- Replace a hyphen surrounded by spaces (which most probably was
         -- used to separate Authors/Title/Serie/Year/Categorie in the
         -- filename with a \n
@@ -137,16 +155,46 @@ function FakeCover:init()
         title = title:gsub("|", "\n")
         -- Also replace underscores with spaces
         title = title:gsub("_", " ")
+        -- Some filenames may also use dots as separators, but dots
+        -- can also have some meaning, so we can't just remove them.
+        -- But at least, make dots breakable (they wouldn't be if not
+        -- followed by a space), by adding to them a zero-width-space,
+        -- so the dots stay on the right of their preceeding word.
+        title = title:gsub("%.", ".\xE2\x80\x8B")
+        -- Except for a last dot near end of title that might preceed
+        -- a file extension: we'd rather want the dot and its suffix
+        -- together on a last line: so, move the zero-width-space
+        -- before it.
+        title = title:gsub("%.\xE2\x80\x8B(%w%w?%w?%w?%w?)$", "\xE2\x80\x8B.%1")
+        -- These substitutions will hopefully have no impact with the following BD wrapping
+    end
+    if title then
+        title = bd_wrap_title_as_filename and BD.filename(title) or BD.auto(title)
     end
     -- If multiple authors (crengine separates them with \n), we
     -- can display them on multiple lines, but limit to 3, and
     -- append "et al." on a 4th line if there are more
     if authors and authors:find("\n") then
         authors = util.splitToArray(authors, "\n")
+        for i=1, #authors do
+            authors[i] = BD.auto(authors[i])
+        end
         if #authors > 3 then
             authors = { authors[1], authors[2], T(_("%1 et al."), authors[3]) }
         end
         authors = table.concat(authors, "\n")
+    elseif authors then
+        authors = BD.auto(authors)
+    end
+    -- Add any _add, which must be already BD wrapped if needed
+    if self.filename_add then
+        filename = (filename and filename or "") .. self.filename_add
+    end
+    if self.title_add then
+        title = (title and title or "") .. self.title_add
+    end
+    if self.authors_add then
+        authors = (authors and authors or "") .. self.authors_add
     end
 
     -- We build the VerticalGroup widget with decreasing font sizes till
@@ -231,12 +279,24 @@ function FakeCover:init()
             if not loop2  then
                 loop2 = true
                 sizedec = self.initial_sizedec -- restart from initial big size
-                -- Replace underscores and hyphens with spaces, to allow text wrap there.
-                if title then
-                    title = title:gsub("-", " "):gsub("_", " ")
-                end
-                if authors then
-                    authors = authors:gsub("-", " "):gsub("_", " ")
+                if G_reader_settings:nilOrTrue("use_xtext") then
+                    -- With Unicode/libunibreak, a break after a hyphen is allowed,
+                    -- but not around underscores and dots without any space around.
+                    -- So, append a zero-width-space to allow text wrap after them.
+                    if title then
+                        title = title:gsub("_", "_\xE2\x80\x8B"):gsub("%.", ".\xE2\x80\x8B")
+                    end
+                    if authors then
+                        authors = authors:gsub("_", "_\xE2\x80\x8B"):gsub("%.", ".\xE2\x80\x8B")
+                    end
+                else
+                    -- Replace underscores and hyphens with spaces, to allow text wrap there.
+                    if title then
+                        title = title:gsub("-", " "):gsub("_", " ")
+                    end
+                    if authors then
+                        authors = authors:gsub("-", " "):gsub("_", " ")
+                    end
                 end
             else -- 2nd loop done, no luck, give up
                 break
@@ -395,7 +455,7 @@ function MosaicMenuItem:update()
         -- Directory : rounded corners
         local margin = Screen:scaleBySize(5) -- make directories less wide
         local padding = Screen:scaleBySize(5)
-        border_size = Screen:scaleBySize(2) -- make directories bolder
+        border_size = Screen:scaleBySize(2) -- make directories' borders larger
         local dimen_in = Geom:new{
             w = dimen.w - (margin + padding + border_size)*2,
             h = dimen.h - (margin + padding + border_size)*2
@@ -404,19 +464,44 @@ function MosaicMenuItem:update()
         if text:match('/$') then -- remove /, more readable
             text = text:sub(1, -2)
         end
-        local directory = TextBoxWidget:new{
-            text = text,
-            face = Font:getFace("cfont", 20),
-            width = dimen_in.w,
-            alignment = "center",
-            bold = true,
-        }
+        text = BD.directory(text)
         local nbitems = TextBoxWidget:new{
             text = self.mandatory,
             face = Font:getFace("infont", 15),
             width = dimen_in.w,
             alignment = "center",
         }
+        -- The directory name will be centered, with nbitems at bottom.
+        -- We could use 2*nbitems:getSize().h to keep that centering,
+        -- but using 3* will avoid getting the directory name stuck
+        -- to nbitems.
+        local available_height = dimen_in.h - 3 * nbitems:getSize().h
+        local dir_font_size = 20
+        local directory
+        while true do
+            if directory then
+                directory:free()
+            end
+            directory = TextBoxWidget:new{
+                text = text,
+                face = Font:getFace("cfont", dir_font_size),
+                width = dimen_in.w,
+                alignment = "center",
+                bold = true,
+            }
+            if directory:getSize().h <= available_height then
+                break
+            end
+            dir_font_size = dir_font_size - 1
+            if dir_font_size < 10 then -- don't go too low
+                directory:free()
+                directory.height = available_height
+                directory.height_adjust = true
+                directory.height_overflow_show_ellipsis = true
+                directory:init()
+                break
+            end
+        end
         widget = FrameContainer:new{
             width = dimen.w,
             height = dimen.h,
@@ -504,25 +589,27 @@ function MosaicMenuItem:update()
             else
                 -- add Series metadata if requested
                 local series_mode = BookInfoManager:getSetting("series_mode")
+                local title_add, authors_add
                 if bookinfo.series then
                     -- Shorten calibre series decimal number (#4.0 => #4)
                     bookinfo.series = bookinfo.series:gsub("(#%d+)%.0$", "%1")
+                    bookinfo.series = BD.auto(bookinfo.series)
                     if series_mode == "append_series_to_title" then
                         if bookinfo.title then
-                            bookinfo.title = bookinfo.title .. " - " .. bookinfo.series
+                            title_add = " - " .. bookinfo.series
                         else
-                            bookinfo.title = bookinfo.series
+                            title_add = bookinfo.series
                         end
                     end
                     if not bookinfo.authors then
                         if series_mode == "append_series_to_authors" or series_mode == "series_in_separate_line" then
-                            bookinfo.authors = bookinfo.series
+                            authors_add = bookinfo.series
                         end
                     else
                         if series_mode == "append_series_to_authors" then
-                            bookinfo.authors = bookinfo.authors .. " - " .. bookinfo.series
+                            authors_add = " - " .. bookinfo.series
                         elseif series_mode == "series_in_separate_line" then
-                            bookinfo.authors = bookinfo.authors .. "\n \n" .. bookinfo.series
+                            authors_add = "\n \n" .. bookinfo.series
                         end
                     end
                 end
@@ -536,6 +623,8 @@ function MosaicMenuItem:update()
                         filename = self.text,
                         title = not bookinfo.ignore_meta and bookinfo.title,
                         authors = not bookinfo.ignore_meta and bookinfo.authors,
+                        title_add = not bookinfo.ignore_meta and title_add,
+                        authors_add = not bookinfo.ignore_meta and authors_add,
                         file_deleted = self.file_deleted,
                     }
                 }
@@ -573,7 +662,8 @@ function MosaicMenuItem:update()
                     width = dimen.w,
                     height = dimen.h,
                     bordersize = border_size,
-                    filename = self.text .. "\n" .. hint,
+                    filename = self.text,
+                    filename_add = "\n" .. hint,
                     initial_sizedec = 4, -- start with a smaller font when filenames only
                     file_deleted = self.file_deleted,
                 }
@@ -606,7 +696,12 @@ function MosaicMenuItem:paintTo(bb, x, y)
     if self.shortcut_icon then
         -- align it on bottom left corner of widget
         local target = self
-        local ix = 0
+        local ix
+        if BD.mirroredUILayout() then
+            ix = target.dimen.w - self.shortcut_icon.dimen.w
+        else
+            ix = 0
+        end
         local iy = target.dimen.h - self.shortcut_icon.dimen.h
         self.shortcut_icon:paintTo(bb, x+ix, y+iy)
     end
@@ -615,7 +710,12 @@ function MosaicMenuItem:paintTo(bb, x, y)
     if corner_mark and self.do_hint_opened and self.been_opened then
         -- align it on bottom right corner of sub-widget
         local target =  self[1][1][1]
-        local ix = self.width - math.ceil((self.width - target.dimen.w)/2) - corner_mark:getSize().w
+        local ix
+        if BD.mirroredUILayout() then
+            ix = math.floor((self.width - target.dimen.w)/2)
+        else
+            ix = self.width - math.ceil((self.width - target.dimen.w)/2) - corner_mark:getSize().w
+        end
         local iy = self.height - math.ceil((self.height - target.dimen.h)/2) - corner_mark:getSize().h
         -- math.ceil() makes it looks better than math.floor()
         corner_mark:paintTo(bb, x+ix, y+iy)
@@ -628,15 +728,27 @@ function MosaicMenuItem:paintTo(bb, x, y)
         local d_w = Screen:scaleBySize(3)
         local d_h = math.ceil(target.dimen.h / 8)
         -- Paint it directly relative to target.dimen.x/y which has been computed at this point
-        local ix = target.dimen.w - 1
+        local ix
+        if BD.mirroredUILayout() then
+            ix = - d_w + 1
+            -- Set alternate dimen to be marked as dirty to include this description in refresh
+            local x_overflow_left = x - target.dimen.x+ix -- positive if overflow
+            if x_overflow_left > 0 then
+                self.refresh_dimen = self[1].dimen:copy()
+                self.refresh_dimen.x = self.refresh_dimen.x - x_overflow_left
+                self.refresh_dimen.w = self.refresh_dimen.w + x_overflow_left
+            end
+        else
+            ix = target.dimen.w - 1
+            -- Set alternate dimen to be marked as dirty to include this description in refresh
+            local x_overflow_right = target.dimen.x+ix+d_w - x - self.dimen.w
+            if x_overflow_right > 0 then
+                self.refresh_dimen = self[1].dimen:copy()
+                self.refresh_dimen.w = self.refresh_dimen.w + x_overflow_right
+            end
+        end
         local iy = 0
         bb:paintBorder(target.dimen.x+ix, target.dimen.y+iy, d_w, d_h, 1)
-        local x_overflow = target.dimen.x+ix+d_w - x - self.dimen.w
-        if x_overflow > 0 then
-            -- Set alternate dimen to be marked as dirty to include this description in refresh
-            self.refresh_dimen = self[1].dimen:copy()
-            self.refresh_dimen.w = self.refresh_dimen.w + x_overflow
-        end
 
     end
 end
@@ -731,7 +843,7 @@ function MosaicMenu:_recalculateDimen()
         end
         corner_mark = ImageWidget:new{
             file = "resources/icons/dogear.png",
-            rotation_angle = 270,
+            rotation_angle = BD.mirroredUILayout() and 180 or 270,
             width = corner_mark_size,
             height = corner_mark_size,
         }
@@ -749,7 +861,15 @@ function MosaicMenu:_updateItemsBuildUI()
         if idx % self.nb_cols == 1 then -- new row
             table.insert(self.item_group, VerticalSpan:new{ width = self.item_margin })
             cur_row = HorizontalGroup:new{}
-            table.insert(self.item_group, cur_row)
+            -- Have items on the possibly non-fully filled last row aligned to the left
+            local container = self._do_center_partial_rows and CenterContainer or LeftContainer
+            table.insert(self.item_group, container:new{
+                dimen = Geom:new{
+                    w = self.dimen.w,
+                    h = self.item_height
+                },
+                cur_row
+            })
             table.insert(cur_row, HorizontalSpan:new({ width = self.item_margin }))
         end
 

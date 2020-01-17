@@ -1,4 +1,15 @@
 #!/bin/sh
+
+# NOTE: Stupid workaround to make sure the script we end up running is a *copy*,
+# living in a magical land that doesn't suffer from gross filesystem deficiencies.
+# Otherwise, the vfat+fuse mess means an OTA update will break the script on exit,
+# and potentially leave the user in a broken state, with the WM still paused...
+if [ "$(dirname "${0}")" != "/var/tmp" ]; then
+    cp -pf "${0}" /var/tmp/koreader.sh
+    chmod 777 /var/tmp/koreader.sh
+    exec /var/tmp/koreader.sh "$@"
+fi
+
 export LC_ALL="en_US.UTF-8"
 
 PROC_KEYPAD="/proc/keypad"
@@ -8,6 +19,10 @@ PROC_FIVEWAY="/proc/fiveway"
 
 # KOReader's working directory
 export KOREADER_DIR="/mnt/us/koreader"
+
+# NOTE: Same vfat+fuse shenanigans needed for FBInk, before we source libko...
+cp -pf "${KOREADER_DIR}/fbink" /var/tmp/fbink
+chmod 777 /var/tmp/fbink
 
 # Load our helper functions...
 if [ -f "${KOREADER_DIR}/libkohelper.sh" ]; then
@@ -134,6 +149,8 @@ ko_update_check() {
         fi
         rm -f "${NEWUPDATE}" # always purge newupdate in all cases to prevent update loop
         unset BLOCKS CPOINTS
+        # Ensure everything is flushed to disk before we restart. This *will* stall for a while on slow storage!
+        sync
     fi
 }
 # NOTE: Keep doing an initial update check, in addition to one during the restart loop, so we can pickup potential updates of this very script...
@@ -349,5 +366,8 @@ if [ "${PASSCODE_DISABLED}" = "yes" ]; then
     logmsg "Restoring system passcode . . ."
     touch "/var/local/system/userpasswdenabled"
 fi
+
+# Wipe the clones on exit
+rm -f /var/tmp/koreader.sh /var/tmp/fbink
 
 exit ${RETURN_VALUE}
