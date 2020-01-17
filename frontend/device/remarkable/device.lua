@@ -61,20 +61,14 @@ end
 function Remarkable:supportsScreensaver() return true end
 
 function Remarkable:setDateTime(year, month, day, hour, min, sec)
-    -- TODO Remarkable
     if hour == nil or min == nil then return true end
     local command
     if year and month and day then
-        command = string.format("date -s '%d-%d-%d %d:%d:%d'", year, month, day, hour, min, sec)
+        command = string.format("timedatectl set-time '%d-%d-%d %d:%d:%d'", year, month, day, hour, min, sec)
     else
-        command = string.format("date -s '%d:%d'",hour, min)
+        command = string.format("timedatectl set-time '%d:%d'",hour, min)
     end
-    if os.execute(command) == 0 then
-        os.execute('hwclock -u -w')
-        return true
-    else
-        return false
-    end
+    return os.execute(command) == 0
 end
 
 function Remarkable:intoScreenSaver()
