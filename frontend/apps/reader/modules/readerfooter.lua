@@ -1685,15 +1685,6 @@ function ReaderFooter:onReaderReady()
     self:setTocMarkers()
     self.updateFooterText = self._updateFooterText
     self:updateFooter()
-
-
-    local logger = require("logger")
-    logger.info("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
-    --logger.info(self.document)
-    logger.info(self.ui.document:getProps().title)
-
-
-
 end
 
 function ReaderFooter:onReadSettings(config)
