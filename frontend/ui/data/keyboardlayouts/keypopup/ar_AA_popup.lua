@@ -143,17 +143,17 @@ return {
    diacritic_tanween_kasr = {
           "ٍ",
     },
---
+-- الحركات
    diacritics = {
          "ّ",
-         north = "ٌ",
-         northeast = "ً",
-         northwest = "ّ",
-         east = "َ",
-         west = "ُ",
-         south="ِ",
-         southeast="ْ",
-         southwest="ٍ",
+         north = "َ",
+         northeast = "ْ",
+         northwest = "ً",
+         east = "ُ",
+         west = "ٌ",
+         south= "ِ",
+         southeast= "~",
+         southwest= "ٍ",
     },
    arabic_comma = {
           "،",
