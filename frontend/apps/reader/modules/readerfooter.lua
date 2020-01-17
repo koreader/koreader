@@ -60,9 +60,9 @@ local symbol_prefix = {
         mem_usage = C_("FooterLetterPrefix", "M:"),
         -- @translators This is the footer letter prefix for wifi status.
         wifi_status = C_("FooterLetterPrefix", "W:"),
-        -- @translators This is the footer letter prefix for title of book
+        -- @translators This is the footer letter prefix for the book title.
         book_title = C_("FooterLetterPrefix", "T:"),
-        -- @translators This is the footer letter prefix for current book chapter
+        -- @translators This is the footer letter prefix for the current chapter.
         book_chapter = C_("FooterLetterPrefix", "CH:"),
     },
     icons = {
@@ -671,7 +671,7 @@ function ReaderFooter:textOptionTitles(option)
         mem_usage = T(_("KOReader memory usage (%1)"), symbol_prefix[symbol].mem_usage),
         wifi_status = T(_("Wi-Fi status (%1)"), symbol_prefix[symbol].wifi_status),
         book_title = T(_("Book title (%1)"),symbol_prefix[symbol].book_title),
-        book_chapter = T(_("Book current chapter (%1)"),symbol_prefix[symbol].book_chapter),
+        book_chapter = T(_("Current chapter (%1)"),symbol_prefix[symbol].book_chapter),
     }
     return option_titles[option]
 end
@@ -898,7 +898,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                     },
                     {
                         text_func = function()
-                            return T(_("Book current chapter (%1%)"), self.settings.book_chapter_max_width_pct)
+                            return T(_("Current chapter (%1%)"), self.settings.book_chapter_max_width_pct)
                         end,
                         callback = function(touchmenu_instance)
                             local SpinWidget = require("ui/widget/spinwidget")
