@@ -656,6 +656,7 @@ local VirtualKeyboard = FocusManager:new{
     key_padding = Size.padding.default,
 
     lang_to_keyboard_layout = {
+        ar_AA = "ar_AA_keyboard",
         el = "el_keyboard",
         en = "en_keyboard",
         es = "es_keyboard",
@@ -663,7 +664,6 @@ local VirtualKeyboard = FocusManager:new{
         he = "he_keyboard",
         ja = "ja_keyboard",
         pt_BR = "pt_keyboard",
-        ar_AA = "ar_AA_keyboard",
         ro = "ro_keyboard",
         ko_KR = "ko_KR_keyboard",
         ru = "ru_keyboard",
