@@ -1,0 +1,14 @@
+[Unit]
+Description=KOReader Button Listener
+StartLimitIntervalSec=600
+StartLimitBurst=4
+After=home.mount
+
+[Service]
+ExecStart=/home/root/koreader/button-listen
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+
+

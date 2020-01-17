@@ -420,8 +420,9 @@ remarkableupdate: all
 	file $(INSTALL_DIR)/koreader/luajit | grep ARM || exit 1
 	# remove old package if any
 	rm -f $(REMARKABLE_PACKAGE)
-	# Remarkable launching scripts
-	#cp $(SONY_PRSTUX_DIR)/*.sh $(INSTALL_DIR)/koreader
+	# Remarkable scripts
+	cp $(REMARKABLE_DIR)/* $(INSTALL_DIR)/koreader
+	cp $(COMMON_DIR)/spinning_zsync $(INSTALL_DIR)/koreader
 	# create new package
 	cd $(INSTALL_DIR) && \
 	        zip -9 -r \
