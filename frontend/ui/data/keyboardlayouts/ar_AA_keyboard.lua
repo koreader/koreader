@@ -8,10 +8,10 @@ local alef = ar_popup.alef
 local ba = ar_popup.ba
 local jeem = ar_popup.jeem
 local daal = ar_popup.daal
-local h_aa = ar_popup.h_aa
+local h_aa = ar_popup.h_aa -- This is Arabic letter هـ / as in English "hello".
 local waw = ar_popup.waw
 local zay = ar_popup.zay
-local ha = ar_popup.ha
+local ha = ar_popup.ha     -- while this is Arabic letter ح / as in the sound you make when blowing on a glass to clean it.
 local tah = ar_popup.tah
 local yaa = ar_popup.yaa
 local kaf = ar_popup.kaf
@@ -51,52 +51,52 @@ local arabic_comma = ar_popup.arabic_comma
 return {
     min_layer = 1,
     max_layer = 4,
-    shiftmode_keys = {["بدّل"] = true},
-    symbolmode_keys = {["رمز"] = true,["حرف"]=true},
-    utf8mode_keys = {["🌐"] = true},
-    umlautmode_keys = {["Äéß"] = false},
+    shiftmode_keys = {["بدّل"] = true},                    -- بدّل means "Shift".
+    symbolmode_keys = {["رمز"] = true,["حرف"]=true},      -- رمز means "Symbol", حرف means "letter" (traditionally "ABC" on QWERTY layouts)
+    utf8mode_keys = {["🌐"] = true},                      -- The famous globe key for layout switching
+    umlautmode_keys = {["Äéß"] = false},                  -- No need for this keyboard panel
     keys = {
         -- first row
-        {  --  1                          2        3       4
-            { diacritic_fat_ha,          dhad,    "„",   "0", },
-            { diacritic_tanween_fath,    saad,    "!",   "1", },
-            { diacritic_damma,           thaa,    _at,   "2", },
-            { diacritic_tanween_damm,     qaf,     "#",    "3", },
-            { "ﻹ",     fah,     "+",    _eq, },
-            { "إ",   ghayn,    "€",    "(", },
-            { "`",                       ayin,    "‰",    ")", },
-            { "÷",                       h_aa,    "|",    "ـ", },
-            { "×",                       khaa,    "?",    "ّ",  },
-            { "؛",      ha,    "~",    "ٌ",  },
-            { "<",                       jeem,    "<",     "ً",  },
-            { ">",                       daal,    ">",    "~", },
+        {  --  1                         2            3      4
+            { diacritic_fat_ha,          dhad,        "„",   "0", },
+            { diacritic_tanween_fath,    saad,        "!",   "1", },
+            { diacritic_damma,           thaa,        _at,   "2", },
+            { diacritic_tanween_damm,    qaf,         "#",   "3", },
+            { "ﻹ",                       fah,         "+",   _eq, },
+            { "إ",                       ghayn,       "€",   "(", },
+            { "`",                       ayin,        "‰",   ")", },
+            { "÷",                       h_aa,        "|",   "ـ", },
+            { "×",                       khaa,        "?",   "ّ",  },
+            { "؛",                       ha,          "~",   "ٌ",  },
+            { "<",                       jeem,        "<",   "ً",  },
+            { ">",                       daal,        ">",   "~", },
         },
         -- second row
-        {  --  1                          2       3       4
-            { diacritic_kasra,           sheen,    "…",    "4", },
-            { diacritic_tanween_kasr,    seen,     "$",   "5", },
-            { "]",                       yaa,     "%",   "6", },
-            { "[",                       ba,     "^",    ";", },
-            { "ﻷ",      lam,     ":",   "'", },
-            { "أ",     alef,     '"',  "\\", },
-            { "ـ",      taa,     "}",    "ّ", },
-            { "،",                       nun,     "{",    "'", },
-            { "/",                       meem,     "_",    "ِ", },
-            { ":",                       kaf,     "÷",    "ُ", },
-            { "\"",                      tah,     "×",    "َ", },
+       {  --  1                          2            3       4
+            { diacritic_kasra,           sheen,       "…",    "4", },
+            { diacritic_tanween_kasr,    seen,        "$",    "5", },
+            { "]",                       yaa,         "%",    "6", },
+            { "[",                       ba,          "^",    ";", },
+            { "ﻷ",                       lam,         ":",    "'", },
+            { "أ",                       alef,        '"',   "\\", },
+            { "ـ",                       taa,         "}",     "ّ", },
+            { "،",                       nun,         "{",    "'", },
+            { "/",                       meem,        "_",     "ِ", },
+            { ":",                       kaf,         "÷",     "ُ", },
+            { "\"",                      tah,         "×",     "َ", },
         },
         -- third row
-        {  --  1                          2            3       4
+        {  --  1                         2             3       4
             { diacritic_shadda,          thaal,        "&",    "7", },
             { diacritic_sukoon,          hamza,        "*",    "8", },
             { "}",                       wawhamza,     "£",    "9", },
             { "{",                       raa,          "_",    com, },
-            { "ﻵ",          laa,          "/",    prd, },
-            { "آ", alefmaqsoura, "‘",    "[", },
+            { "ﻵ",                       laa,          "/",    prd, },
+            { "آ",                       alefmaqsoura, "‘",    "[", },
             { "'",                       taamarbouta,  "'",    "]", },
             {  arabic_comma,             waw,          "#",    "↑", },
             { ".",                       zay,          "@",    "↓", },
-            { "؟",         thaa,         "!",    _at, },
+            { "؟",                       thaa,         "!",    _at, },
             { label = "Backspace",
               icon = "resources/icons/appbar.clear.reflect.horizontal.png",
               width = 1.5
