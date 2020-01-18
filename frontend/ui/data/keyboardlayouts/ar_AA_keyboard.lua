@@ -72,7 +72,7 @@ return {
             { ">",                       daal,        ">",   "~", },
         },
         -- second row
-       {  --  1                          2            3       4
+        {  --  1                         2            3       4
             { diacritic_kasra,           sheen,       "…",    "4", },
             { diacritic_tanween_kasr,    seen,        "$",    "5", },
             { "]",                       yaa,         "%",    "6", },
