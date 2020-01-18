@@ -90,19 +90,19 @@ return {
         "ث",
     },
     thaal = {
-         "ذ",
+        "ذ",
     },
     dhad = {
-       "ض",
+        "ض",
     },
     th_aa = {
-       "ظ",
+        "ظ",
     },
     ghayn = {
-       "غ",
+        "غ",
     },
     khaa = {
-       "خ",
+        "خ",
     },
     alefmaqsoura = {
         "ى",
@@ -111,52 +111,52 @@ return {
         "ء",
     },
     wawhamza = {
-         "ؤ",
+        "ؤ",
     },
     laa = {
-          "ﻻ",
+        "ﻻ",
     },
     taamarbouta = {
-          "ة",
-          label = "ﺔ",
+        "ة",
+        label = "ﺔ",
     },
-   diacritic_fat_ha = {
-          "َ",
+    diacritic_fat_ha = {
+        "َ",
     },
-   diacritic_damma = {
-          "ُ",
+    diacritic_damma = {
+        "ُ",
     },
-   diacritic_kasra = {
-          "ِ",
+    diacritic_kasra = {
+        "ِ",
     },
-   diacritic_sukoon = {
-          "ْ",
+    diacritic_sukoon = {
+        "ْ",
     },
-   diacritic_shadda = {
-          "ّ",
+    diacritic_shadda = {
+        "ّ",
     },
-   diacritic_tanween_fath = {
-          "ً",
+    diacritic_tanween_fath = {
+        "ً",
     },
-   diacritic_tanween_damm = {
-          "ٌ",
+    diacritic_tanween_damm = {
+        "ٌ",
     },
-   diacritic_tanween_kasr = {
-          "ٍ",
+    diacritic_tanween_kasr = {
+        "ٍ",
     },
--- Diacritics (al-Harakat الحركات)
-   diacritics = {
-         "ّ",
-         north = "َ",
-         northeast = "ْ",
-         northwest = "ً",
-         east = "ُ",
-         west = "ٌ",
-         south= "~",
-         southeast= "ِ",
-         southwest= "ٍ",
+    -- Diacritics (al-Harakat الحركات)
+    diacritics = {
+        "ّ",
+        north = "َ",
+        northeast = "ْ",
+        northwest = "ً",
+        east = "ُ",
+        west = "ٌ",
+        south= "~",
+        southeast= "ِ",
+        southwest= "ٍ",
     },
-   arabic_comma = {
-          "،",
+    arabic_comma = {
+        "،",
     },
 }
