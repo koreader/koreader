@@ -485,14 +485,16 @@ Parses highlights and calls exporter functions.
 Entry point for exporting highlights. User interface calls this function.
 Parses current document and documents from history, passes them to exportClippings().
 Highlight: Highlighted text or image in document, stored in "highlights" table in
-documents sidecar file. Parser uses this table.
-Bookmarks: Text in bookmark explorer, user can edit this fields. If user didn't
-edit highlight or "renamed" bookmark this is not created. Stored in "bookmarks" table
-in documents sidecar file. Parser looks to this file for edited notes.
+documents sidecar file. Parser uses this table. If highlight._._.text field is empty parser uses
+highlight._._.pboxes field to get an image instead.
+Bookmarks: Data in bookmark explorer. Stored in "bookmarks" table of documents sidecar file. Every
+field in bookmarks._ has "text" and "notes" fields When user edits a highlight or "renames" bookmark,
+text field is created or updated. Parser looks to bookmarks._.text field for edited notes. bookmarks._.notes isn't used for exporting operations.
+https://github.com/koreader/koreader/blob/605f6026bbf37856ee54741b8a0697337ca50039/plugins/evernote.koplugin/clip.lua#L229
 Clippings: Parsed form of highlights, stored in clipboard/evernote.sdr/metadata.sdr.lua
-for all documents. Used only for exporting bookmarks. Internal functions does not use
-this table.
-Booknotes: Every table in clippings table. Clippings = {"title" = booknotes}
+for all documents. Used only for exporting bookmarks. Internal highlight or bookmark functions
+does not usew this table.
+Booknotes: Every table in clippings table. clippings = {"title" = booknotes}
 --]]
 function EvernoteExporter:exportAllNotes()
     -- Flush highlights of current document.
