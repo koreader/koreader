@@ -60,10 +60,6 @@ local symbol_prefix = {
         mem_usage = C_("FooterLetterPrefix", "M:"),
         -- @translators This is the footer letter prefix for wifi status.
         wifi_status = C_("FooterLetterPrefix", "W:"),
-        -- @translators This is the footer letter prefix for the book title.
-        book_title = C_("FooterLetterPrefix", "T:"),
-        -- @translators This is the footer letter prefix for the current chapter.
-        book_chapter = C_("FooterLetterPrefix", "CH:"),
     },
     icons = {
         time = "⌚",
@@ -75,8 +71,6 @@ local symbol_prefix = {
         frontlight = "☼",
         mem_usage = "",
         wifi_status = "",
-        book_title = "✎",
-        book_chapter = "☝",
     }
 }
 if BD.mirroredUILayout() then
@@ -244,37 +238,39 @@ local footerTextGeneratorMap = {
         end
     end,
     book_title = function(footer)
-        local symbol_type = footer.settings.item_prefix or "icons"
-        local prefix = symbol_prefix[symbol_type].book_title
         local doc_info = footer.ui.document:getProps()
         if doc_info and doc_info.title then
-            local title_text = T(_("%1 %2"), prefix, doc_info.title)
-            local face = Font:getFace(footer.text_font_face, footer.settings.text_font_size)
-            local tsize = RenderText:sizeUtf8Text(0, Screen:getWidth(), face, title_text, true, false)
-            if tsize.x > footer._saved_screen_width * footer.settings.book_title_max_width_pct / 100 then
-                title_text = RenderText:truncateTextByWidth(title_text, face,
-                    footer._saved_screen_width * footer.settings.book_title_max_width_pct / 100)
+            local title_widget = TextWidget:new{
+                text = doc_info.title,
+                max_width = footer._saved_screen_width * footer.settings.book_title_max_width_pct / 100,
+                face = Font:getFace(footer.text_font_face, footer.settings.text_font_size),
+            }
+            local fitted_title_text, add_ellipsis = title_widget:getFittedText()
+            title_widget:free()
+            if add_ellipsis then
+                fitted_title_text = fitted_title_text .. "…"
             end
-            return title_text
+            return BD.wrap(fitted_title_text)
         else
-            return T(_("%1 N/A"), prefix)
+            return
         end
     end,
     book_chapter = function(footer)
-        local symbol_type = footer.settings.item_prefix or "icons"
-        local prefix = symbol_prefix[symbol_type].book_chapter
         local chapter_title = footer.ui.toc:getTocTitleByPage(footer.pageno)
-        if chapter_title then
-            local chapter_text = T(_("%1 %2"), prefix, chapter_title)
-            local face = Font:getFace(footer.text_font_face, footer.settings.text_font_size)
-            local tsize = RenderText:sizeUtf8Text(0, Screen:getWidth(), face, chapter_text, true, false)
-            if tsize.x > footer._saved_screen_width * footer.settings.book_chapter_max_width_pct / 100 then
-                chapter_text = RenderText:truncateTextByWidth(chapter_text, face,
-                    footer._saved_screen_width * footer.settings.book_chapter_max_width_pct / 100)
+        if chapter_title and chapter_title ~= "" then
+            local chapter_widget = TextWidget:new{
+                text = chapter_title,
+                max_width = footer._saved_screen_width * footer.settings.book_chapter_max_width_pct / 100,
+                face = Font:getFace(footer.text_font_face, footer.settings.text_font_size),
+            }
+            local fitted_chapter_text, add_ellipsis = chapter_widget:getFittedText()
+            chapter_widget:free()
+            if add_ellipsis then
+                fitted_chapter_text = fitted_chapter_text .. "…"
             end
-            return chapter_text
+            return BD.wrap(fitted_chapter_text)
         else
-            return T(_("%1 N/A"), prefix)
+            return
         end
     end
 }
@@ -670,8 +666,8 @@ function ReaderFooter:textOptionTitles(option)
         frontlight = T(_("Frontlight level (%1)"), symbol_prefix[symbol].frontlight),
         mem_usage = T(_("KOReader memory usage (%1)"), symbol_prefix[symbol].mem_usage),
         wifi_status = T(_("Wi-Fi status (%1)"), symbol_prefix[symbol].wifi_status),
-        book_title = T(_("Book title (%1)"),symbol_prefix[symbol].book_title),
-        book_chapter = T(_("Current chapter (%1)"),symbol_prefix[symbol].book_chapter),
+        book_title = _("Book title"),
+        book_chapter = _("Current chapter"),
     }
     return option_titles[option]
 end
@@ -910,7 +906,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                                 value_hold_step = 20,
                                 value_max = 100,
                                 title_text =  _("Maximum width"),
-                                text = _("Maximum book current chapter width in percentage of screen width"),
+                                text = _("Maximum chapter width in percentage of screen width"),
                                 callback = function(spin)
                                     self.settings.book_chapter_max_width_pct = spin.value
                                     self:refreshFooter(true, true)
