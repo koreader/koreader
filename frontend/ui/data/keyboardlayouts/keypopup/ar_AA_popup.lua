@@ -144,7 +144,7 @@ return {
    diacritic_tanween_kasr = {
           "ٍ",
     },
---  Diacritics (al-Harakat الحركات)
+-- Diacritics (al-Harakat الحركات)
    diacritics = {
          "ّ",
          north = "َ",
