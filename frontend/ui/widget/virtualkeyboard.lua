@@ -656,6 +656,7 @@ local VirtualKeyboard = FocusManager:new{
     key_padding = Size.padding.default,
 
     lang_to_keyboard_layout = {
+        ar_AA = "ar_AA_keyboard",
         el = "el_keyboard",
         en = "en_keyboard",
         es = "es_keyboard",
@@ -787,8 +788,10 @@ function VirtualKeyboard:addKeys()
         for j = 1, #self.KEYS[i] do
             local key
             local key_chars = self.KEYS[i][j][self.keyboard_layer]
+            local label
             if type(key_chars) == "table" then
                 key = key_chars[1]
+                label = key_chars.label
             else
                 key = key_chars
                 key_chars = nil
@@ -797,7 +800,7 @@ function VirtualKeyboard:addKeys()
             local key_width = math.floor((base_key_width + self.key_padding) * width_factor)
                             - self.key_padding
             local key_height = base_key_height
-            local label = self.KEYS[i][j].label or key
+            label = label or self.KEYS[i][j].label or key
             local virtual_key = VirtualKey:new{
                 key = key,
                 key_chars = key_chars,
