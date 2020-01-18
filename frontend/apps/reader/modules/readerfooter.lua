@@ -249,7 +249,7 @@ local footerTextGeneratorMap = {
             if add_ellipsis then
                 fitted_title_text = fitted_title_text .. "…"
             end
-            return BD.wrap(fitted_title_text)
+            return BD.auto(fitted_title_text)
         else
             return
         end
@@ -267,7 +267,7 @@ local footerTextGeneratorMap = {
             if add_ellipsis then
                 fitted_chapter_text = fitted_chapter_text .. "…"
             end
-            return BD.wrap(fitted_chapter_text)
+            return BD.auto(fitted_chapter_text)
         else
             return
         end
