@@ -121,7 +121,6 @@ return {
               icon = "resources/icons/appbar.arrow.enter.png",
               width = 1.5,
             },
-
+        },
     },
-}
 }
