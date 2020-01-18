@@ -20,7 +20,7 @@ return {
     },
     h_aa = { -- الهاء
         "ه",
-        label = "‍ه",
+        label = "ﻪ",
     },
     waw = {
         "و",
@@ -118,7 +118,7 @@ return {
     },
     taamarbouta = {
           "ة",
-          label = "‍ة",
+          label = "ﺔ",
     },
    diacritic_fat_ha = {
           "َ",
