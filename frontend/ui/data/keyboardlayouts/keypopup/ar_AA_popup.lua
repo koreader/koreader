@@ -20,7 +20,7 @@ return {
     },
     h_aa = { -- الهاء
         "ه",
-        north = "هـ",
+        label = "هـ",
     },
     waw = {
         "و",
@@ -118,6 +118,7 @@ return {
     },
     taamarbouta = {
           "ة",
+          label = "ـة",
     },
    diacritic_fat_ha = {
           "َ",
@@ -151,12 +152,11 @@ return {
          northwest = "ً",
          east = "ُ",
          west = "ٌ",
-         south= "ِ",
-         southeast= "~",
+         south= "~",
+         southeast= "ِ",
          southwest= "ٍ",
     },
    arabic_comma = {
           "،",
     },
 }
-
