@@ -316,32 +316,29 @@ function ReaderFooter:init()
         text_font_size = DMINIBAR_FONT_SIZE,
     }
 
-    if not self.settings.order then
-        self.mode_nb = 0
-        self.mode_index = {}
-        local mode_tbl = {}
-        for k,v in pairs(MODE) do
-            mode_tbl[v] = k
+    local mode_tbl = {}
+    local mode_name
+    self.mode_nb = 0
+    self.mode_index = {}
+    if not Device:isAndroid() then
+        MODE.wifi_status = nil
+    end
+    if not Device:hasFrontlight() then
+        MODE.frontlight = nil
+    end
+    for k, v in pairs(MODE) do
+        mode_tbl[v] = k
+    end
+    for i = 0, #mode_tbl do
+        mode_name = mode_tbl[i]
+        if mode_name then
+            self.mode_index[self.mode_nb] = mode_name
+            self.mode_nb = self.mode_nb + 1
         end
-        local mode_name
-        for i = 0, #mode_tbl do
-            mode_name = mode_tbl[i]
-            if mode_name == "wifi_status" and not Device:isAndroid() then
-                do end -- luacheck: ignore 541
-            elseif mode_name == "frontlight" and not Device:hasFrontlight() then
-                do end -- luacheck: ignore 541
-            else
-                self.mode_index[self.mode_nb] = mode_name
-                self.mode_nb = self.mode_nb + 1
-            end
-        end
-    else
-        if not self.settings.max_possible_modes then
-            self.settings.max_possible_modes = 13
-            -- Add new modes: title and chapter.
-            self.mode_nb = #self.settings.order
-            self.settings.order[self.mode_nb+1] = "book_title"
-            self.settings.order[self.mode_nb+2] = "book_chapter"
+    end
+    if self.settings.order then
+        while #self.settings.order < #self.mode_index do
+            self.settings.order[#self.settings.order + 1] = self.mode_index[#self.settings.order + 1]
         end
         self.mode_index = self.settings.order
         self.mode_nb = #self.mode_index
