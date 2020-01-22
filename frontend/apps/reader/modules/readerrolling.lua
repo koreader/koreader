@@ -854,6 +854,7 @@ end
 function ReaderRolling:onChangeScreenMode(mode, rotation)
     -- Flag it as interactive so we can properly swap to Inverted orientations
     -- (we usurp the second argument, which usually means rotation)
+    print("ReaderRolling:onChangeScreenMode", mode, rotation)
     self.ui:handleEvent(Event:new("SetScreenMode", mode, rotation or true))
     -- (This had the above ReaderRolling:onSetDimensions() called to resize
     -- document dimensions and keep up with current position)
