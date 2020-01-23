@@ -67,6 +67,7 @@ function FileManagerShortcuts:addNewFolder()
         select_directory = true,
         select_file = false,
         path = self.fm_bookmark.curr_path,
+        show_hidden = self.ui.file_chooser.show_hidden,
         onConfirm = function(path)
             local add_folder_input
             local friendly_name = util.basename(path) or _("my folder")
