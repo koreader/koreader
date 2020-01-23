@@ -397,6 +397,12 @@ function ReaderBookmark:removeHighlight(item)
         self.ui:handleEvent(Event:new("Unhighlight", item))
     else
         self:removeBookmark(item)
+        -- Update dogear in case we removed a bookmark for current page
+        if self.ui.document.info.has_pages then
+            self:setDogearVisibility(self.view.state.page)
+        else
+            self:setDogearVisibility(self.ui.document:getXPointer())
+        end
     end
 end
 
