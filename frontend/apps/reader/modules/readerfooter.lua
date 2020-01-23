@@ -1335,7 +1335,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                     local items = SpinWidget:new{
                         width = Screen:getWidth() * 0.6,
                         value = self.settings.progress_bar_min_width_pct,
-                        value_min = 20,
+                        value_min = 5,
                         value_step = 5,
                         value_hold_step = 20,
                         value_max = 50,
