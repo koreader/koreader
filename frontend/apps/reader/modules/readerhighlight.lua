@@ -38,10 +38,18 @@ function ReaderHighlight:setupTouchZones()
                 ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
             },
             overrides = {
+                -- Tap on existing highlights have priority over
+                -- everything but tap on links (as links can be
+                -- part of some highlighted text)
                 "tap_forward",
                 "tap_backward",
                 "readermenu_tap",
                 "readerconfigmenu_tap",
+                "readerfooter_tap",
+                "tap_top_left_corner",
+                "tap_top_right_corner",
+                "tap_left_bottom_corner",
+                "tap_right_bottom_corner",
             },
             handler = function(ges) return self:onTap(nil, ges) end
         },
@@ -50,6 +58,9 @@ function ReaderHighlight:setupTouchZones()
             ges = "hold",
             screen_zone = {
                 ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
+            },
+            overrides = {
+                "readerfooter_hold",
             },
             handler = function(ges) return self:onHold(nil, ges) end
         },
@@ -521,14 +532,14 @@ end
 
 function ReaderHighlight:onHold(arg, ges)
     -- disable hold gesture if highlighting is disabled
-    if self.view.highlight.disabled then return true end
+    if self.view.highlight.disabled then return false end
     self:clear() -- clear previous highlight (delayed clear may not have done it yet)
     self.hold_ges_pos = ges.pos -- remember hold original gesture position
     self.hold_pos = self.view:screenToPageTransform(ges.pos)
     logger.dbg("hold position in page", self.hold_pos)
     if not self.hold_pos then
         logger.dbg("not inside page area")
-        return true
+        return false
     end
 
     -- check if we were holding on an image
@@ -576,8 +587,9 @@ function ReaderHighlight:onHold(arg, ges)
             -- is handled in onHoldPan()
             self.selected_text_start_xpointer = word.pos0
         end
+        return true
     end
-    return true
+    return false
 end
 
 function ReaderHighlight:onHoldPan(_, ges)

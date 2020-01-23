@@ -152,15 +152,19 @@ function InputContainer:registerTouchZones(zones)
             },
         }
         self.touch_zone_dg:addNode(zone.id)
+        -- print("added "..zone.id)
         if zone.overrides then
             for _, override_zone_id in ipairs(zone.overrides) do
+                -- print("  override "..override_zone_id)
                 self.touch_zone_dg:addNodeDep(override_zone_id, zone.id)
             end
         end
     end
+    -- print("ordering:")
     self._ordered_touch_zones = {}
     for _, zone_id in ipairs(self.touch_zone_dg:serialize()) do
         table.insert(self._ordered_touch_zones, self._zones[zone_id])
+        -- print("  "..zone_id)
     end
 end
 
