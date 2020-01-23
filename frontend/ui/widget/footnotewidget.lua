@@ -81,6 +81,11 @@ a   { color: black; }           /* MuPDF: color: #06C; */
  * Wikipedia EPUBs, each footnote is a LI */
 body > li { list-style-type: none; }
 
+/* MuPDF always aligns the last line to the left when text-align: justify,
+ * which is wrong with RTL. So cancel justification on RTL elements: they
+ * will be correctly aligned to the right */
+*[dir=rtl] { text-align: initial; }
+
 /* Remove any (possibly multiple) backlinks in Wikipedia EPUBs footnotes */
 .noprint { display: none; }
 ]]
