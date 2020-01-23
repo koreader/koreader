@@ -556,8 +556,11 @@ function ListMenuItem:update()
                 end
                 -- BookInfoManager:extractBookInfo() made sure
                 -- to save as nil (NULL) metadata that were an empty string
+                -- We provide the book language to get a chance to render title
+                -- and authors with alternate glyphs for that language.
                 wtitle = TextBoxWidget:new{
                     text = title,
+                    lang = bookinfo.language,
                     face = Font:getFace(fontname_title, fontsize_title),
                     width = wmain_width,
                     alignment = "left",
@@ -568,6 +571,7 @@ function ListMenuItem:update()
                 if authors then
                     wauthors = TextBoxWidget:new{
                         text = authors,
+                        lang = bookinfo.language,
                         face = Font:getFace(fontname_authors, fontsize_authors),
                         width = wmain_width,
                         alignment = "left",

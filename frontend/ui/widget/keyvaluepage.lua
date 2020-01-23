@@ -116,6 +116,7 @@ end
 local KeyValueItem = InputContainer:new{
     key = nil,
     value = nil,
+    value_lang = nil,
     cface = Font:getFace("smallinfofont"),
     tface = Font:getFace("smallinfofontbold"),
     width = nil,
@@ -162,6 +163,7 @@ function KeyValueItem:init()
         text = tvalue,
         max_width = available_width,
         face = self.cface,
+        lang = self.value_lang,
     }
     local key_w_rendered = key_widget:getWidth()
     local value_w_rendered = value_widget:getWidth()
@@ -288,6 +290,7 @@ function KeyValueItem:onHold()
     local textviewer = TextViewer:new{
         title = self.key,
         text = self.value,
+        lang = self.value_lang,
         width = self.textviewer_width,
         height = self.textviewer_height,
     }
@@ -300,6 +303,7 @@ local KeyValuePage = InputContainer:new{
     title = "",
     width = nil,
     height = nil,
+    values_lang = nil,
     -- index for the first item to show
     show_page = 1,
     use_top_page_count = false,
@@ -514,6 +518,7 @@ function KeyValuePage:_populateItems()
                     width = self.item_width,
                     key = entry[1],
                     value = entry[2],
+                    value_lang = self.values_lang,
                     callback = entry.callback,
                     callback_back = entry.callback_back,
                     textviewer_width = self.textviewer_width,
