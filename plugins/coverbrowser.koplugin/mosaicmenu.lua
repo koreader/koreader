@@ -108,6 +108,7 @@ local FakeCover = FrameContainer:new{
     filename_add = nil,
     title_add = nil,
     authors_add = nil,
+    book_lang = nil,
     -- these font sizes will be scaleBySize'd by Font:getFace()
     authors_font_max = 20,
     authors_font_min = 6,
@@ -225,6 +226,7 @@ function FakeCover:init()
         if authors then
             authors_wg = TextBoxWidget:new{
                 text = authors,
+                lang = self.book_lang,
                 face = Font:getFace("cfont", math.max(self.authors_font_max - sizedec, self.authors_font_min)),
                 width = text_width,
                 alignment = "center",
@@ -234,6 +236,7 @@ function FakeCover:init()
         if title then
             title_wg = TextBoxWidget:new{
                 text = title,
+                lang = self.book_lang,
                 face = Font:getFace("cfont", math.max(self.title_font_max - sizedec, self.title_font_min)),
                 width = text_width,
                 alignment = "center",
@@ -243,6 +246,7 @@ function FakeCover:init()
         if filename then
             filename_wg = TextBoxWidget:new{
                 text = filename,
+                lang = self.book_lang, -- might as well use it for filename
                 face = Font:getFace("cfont", math.max(self.filename_font_max - sizedec, self.filename_font_min)),
                 width = text_width,
                 alignment = "center",
@@ -625,6 +629,7 @@ function MosaicMenuItem:update()
                         authors = not bookinfo.ignore_meta and bookinfo.authors,
                         title_add = not bookinfo.ignore_meta and title_add,
                         authors_add = not bookinfo.ignore_meta and authors_add,
+                        book_lang = not bookinfo.ignore_meta and bookinfo.language,
                         file_deleted = self.file_deleted,
                     }
                 }

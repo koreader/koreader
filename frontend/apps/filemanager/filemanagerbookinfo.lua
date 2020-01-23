@@ -210,10 +210,18 @@ function BookInfo:show(file, book_props)
     end
     table.insert(kv_pairs, { _("Cover image:"), _("Tap to display"), callback=viewCoverImage })
 
+    -- Get a chance to have title, authors... rendered with alternate
+    -- glyphs for the book language (e.g. japanese book in chinese UI)
+    local values_lang = nil
+    if book_props.language and book_props.language ~= "" then
+        values_lang = book_props.language
+    end
+
     local widget = KeyValuePage:new{
         title = _("Book information"),
         value_overflow_align = "right",
         kv_pairs = kv_pairs,
+        values_lang = values_lang,
     }
     UIManager:show(widget)
 end
