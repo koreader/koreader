@@ -37,6 +37,8 @@ local MODE = {
     frontlight = 8,
     mem_usage = 9,
     wifi_status = 10,
+    book_title = 11,
+    book_chapter = 12,
 }
 
 local symbol_prefix = {
@@ -234,6 +236,42 @@ local footerTextGeneratorMap = {
             return T(_("%1 Off"), prefix)
         end
     end,
+    book_title = function(footer)
+        local doc_info = footer.ui.document:getProps()
+        if doc_info and doc_info.title then
+            local title_widget = TextWidget:new{
+                text = doc_info.title,
+                max_width = footer._saved_screen_width * footer.settings.book_title_max_width_pct / 100,
+                face = Font:getFace(footer.text_font_face, footer.settings.text_font_size),
+            }
+            local fitted_title_text, add_ellipsis = title_widget:getFittedText()
+            title_widget:free()
+            if add_ellipsis then
+                fitted_title_text = fitted_title_text .. "…"
+            end
+            return BD.auto(fitted_title_text)
+        else
+            return
+        end
+    end,
+    book_chapter = function(footer)
+        local chapter_title = footer.ui.toc:getTocTitleByPage(footer.pageno)
+        if chapter_title and chapter_title ~= "" then
+            local chapter_widget = TextWidget:new{
+                text = chapter_title,
+                max_width = footer._saved_screen_width * footer.settings.book_chapter_max_width_pct / 100,
+                face = Font:getFace(footer.text_font_face, footer.settings.text_font_size),
+            }
+            local fitted_chapter_text, add_ellipsis = chapter_widget:getFittedText()
+            chapter_widget:free()
+            if add_ellipsis then
+                fitted_chapter_text = fitted_chapter_text .. "…"
+            end
+            return BD.auto(fitted_chapter_text)
+        else
+            return
+        end
+    end
 }
 
 local ReaderFooter = WidgetContainer:extend{
@@ -271,34 +309,41 @@ function ReaderFooter:init()
         frontlight = false,
         mem_usage = false,
         wifi_status = false,
+        book_title = false,
+        book_chapter = false,
         item_prefix = "icons",
         toc_markers_width = DMINIBAR_TOC_MARKER_WIDTH,
         text_font_size = DMINIBAR_FONT_SIZE,
     }
 
-    if not self.settings.order then
-        self.mode_nb = 0
-        self.mode_index = {}
-        local mode_tbl = {}
-        for k,v in pairs(MODE) do
-            mode_tbl[v] = k
+    local mode_tbl = {}
+    local mode_name
+    self.mode_nb = 0
+    self.mode_index = {}
+    if not Device:isAndroid() then
+        MODE.wifi_status = nil
+    end
+    if not Device:hasFrontlight() then
+        MODE.frontlight = nil
+    end
+    for k, v in pairs(MODE) do
+        mode_tbl[v] = k
+    end
+    for i = 0, #mode_tbl do
+        mode_name = mode_tbl[i]
+        if mode_name then
+            self.mode_index[self.mode_nb] = mode_name
+            self.mode_nb = self.mode_nb + 1
         end
-        local mode_name
-        for i = 0, #mode_tbl do
-            mode_name = mode_tbl[i]
-            if mode_name == "wifi_status" and not Device:isAndroid() then
-                do end -- luacheck: ignore 541
-            elseif mode_name == "frontlight" and not Device:hasFrontlight() then
-                do end -- luacheck: ignore 541
-            else
-                self.mode_index[self.mode_nb] = mode_name
-                self.mode_nb = self.mode_nb + 1
-            end
+    end
+    if self.settings.order then
+        while #self.settings.order < #self.mode_index do
+            self.settings.order[#self.settings.order + 1] = self.mode_index[#self.settings.order + 1]
         end
-    else
         self.mode_index = self.settings.order
         self.mode_nb = #self.mode_index
     end
+
     -- default margin (like self.horizontal_margin)
     if not self.settings.progress_margin_width  then
         self.settings.progress_margin_width = Screen:scaleBySize(10)
@@ -308,6 +353,12 @@ function ReaderFooter:init()
     end
     if not self.settings.progress_bar_min_width_pct then
         self.settings.progress_bar_min_width_pct = 20
+    end
+    if not self.settings.book_title_max_width_pct then
+        self.settings.book_title_max_width_pct = 30
+    end
+    if not self.settings.book_chapter_max_width_pct then
+        self.settings.book_chapter_max_width_pct = 30
     end
     self.mode_list = {}
     for i = 0, #self.mode_index do
@@ -611,6 +662,8 @@ function ReaderFooter:textOptionTitles(option)
         frontlight = T(_("Frontlight level (%1)"), symbol_prefix[symbol].frontlight),
         mem_usage = T(_("KOReader memory usage (%1)"), symbol_prefix[symbol].mem_usage),
         wifi_status = T(_("Wi-Fi status (%1)"), symbol_prefix[symbol].wifi_status),
+        book_title = _("Book title"),
+        book_chapter = _("Current chapter"),
     }
     return option_titles[option]
 end
@@ -806,6 +859,61 @@ function ReaderFooter:addToMainMenu(menu_items)
                     UIManager:show(items_font)
                 end,
                 keep_menu_open = true,
+            },
+            {
+                text = _("Maximum width of items"),
+                sub_item_table = {
+                    {
+                        text_func = function()
+                            return T(_("Book title (%1%)"), self.settings.book_title_max_width_pct)
+                        end,
+                        callback = function(touchmenu_instance)
+                            local SpinWidget = require("ui/widget/spinwidget")
+                            local items = SpinWidget:new{
+                                width = Screen:getWidth() * 0.6,
+                                value = self.settings.book_title_max_width_pct,
+                                value_min = 10,
+                                value_step = 5,
+                                value_hold_step = 20,
+                                value_max = 100,
+                                title_text =  _("Maximum width"),
+                                text = _("Maximum book title width in percentage of screen width"),
+                                callback = function(spin)
+                                    self.settings.book_title_max_width_pct = spin.value
+                                    self:refreshFooter(true, true)
+                                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                                end
+                            }
+                            UIManager:show(items)
+                        end,
+                        keep_menu_open = true,
+                    },
+                    {
+                        text_func = function()
+                            return T(_("Current chapter (%1%)"), self.settings.book_chapter_max_width_pct)
+                        end,
+                        callback = function(touchmenu_instance)
+                            local SpinWidget = require("ui/widget/spinwidget")
+                            local items = SpinWidget:new{
+                                width = Screen:getWidth() * 0.6,
+                                value = self.settings.book_chapter_max_width_pct,
+                                value_min = 10,
+                                value_step = 5,
+                                value_hold_step = 20,
+                                value_max = 100,
+                                title_text =  _("Maximum width"),
+                                text = _("Maximum chapter width in percentage of screen width"),
+                                callback = function(spin)
+                                    self.settings.book_chapter_max_width_pct = spin.value
+                                    self:refreshFooter(true, true)
+                                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                                end
+                            }
+                            UIManager:show(items)
+                        end,
+                        keep_menu_open = true,
+                    }
+                },
             },
             {
                 text = _("Alignment"),
@@ -1367,6 +1475,8 @@ function ReaderFooter:addToMainMenu(menu_items)
     if Device:isAndroid() then
         table.insert(sub_items, getMinibarOption("wifi_status"))
     end
+    table.insert(sub_items, getMinibarOption("book_title"))
+    table.insert(sub_items, getMinibarOption("book_chapter"))
 end
 
 -- this method will be updated at runtime based on user setting
@@ -1591,6 +1701,9 @@ function ReaderFooter:applyFooterMode(mode)
     -- 8 for front light level
     -- 9 for memory usage
     -- 10 for wifi status
+    -- 11 for book title
+    -- 12 for current chapter
+
     if mode ~= nil then self.mode = mode end
     self.view.footer_visible = (self.mode ~= self.mode_list.off)
 
