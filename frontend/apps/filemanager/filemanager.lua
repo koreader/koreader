@@ -47,9 +47,16 @@ local Screen = Device.screen
 local T = require("ffi/util").template
 
 local function restoreScreenMode()
-    local screen_mode = G_reader_settings:readSetting("fm_screen_mode")
+    --- @todo: Not Yet Implemented. Layout is currently broken in Landscape.
+    local screen_mode = G_reader_settings:readSetting("fm_screen_mode") or "portrait"
+    --- @note: Basically, if we were already in Portrait/Inverted Portrait, don't mess with it,
+    --         as the FM supports it.
+    --         See setScreenMode in base's ffi/framebuffer.lua for the gory details.
+    --         See also ReaderView:onSetScreenMode in apps/reader/modules/readerview.lua for a similar logic,
+    --         if we ever need to add Landscape to the mix.
+    --         c.f., https://github.com/koreader/koreader/issues/5772#issuecomment-577242365
     if Screen:getScreenMode() ~= screen_mode then
-        Screen:setScreenMode(screen_mode or "portrait")
+        Screen:setScreenMode(screen_mode)
     end
 end
 

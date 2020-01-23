@@ -693,7 +693,6 @@ function ReaderView:onSetScreenMode(new_mode, rotation, noskip)
         return true
     end
     if new_mode == "landscape" or new_mode == "portrait" then
-        self.screen_mode = new_mode
         -- NOTE: Hacky hack! If rotation is "true", that's actually an "interactive" flag for setScreenMode
         --- @fixme That's because we can't store nils in a table, which is what Event:new attempts to do ;).
         --        c.f., <https://stackoverflow.com/q/7183998/> & <http://lua-users.org/wiki/VarargTheSecondClassCitizen>
@@ -710,7 +709,6 @@ function ReaderView:onSetScreenMode(new_mode, rotation, noskip)
         self.ui:onScreenResize(new_screen_size)
         self.ui:handleEvent(Event:new("InitScrollPageStates"))
     end
-    self.cur_rotation_mode = Screen:getRotationMode()
     return true
 end
 
@@ -758,7 +756,6 @@ function ReaderView:onReadSettings(config)
         screen_mode = config:readSetting("screen_mode") or G_reader_settings:readSetting("copt_screen_mode") or "portrait"
     end
     if screen_mode then
-        Screen:setScreenMode(screen_mode)
         self:onSetScreenMode(screen_mode, config:readSetting("rotation_mode"), true)
     end
     self.state.gamma = config:readSetting("gamma") or 1.0
@@ -846,8 +843,8 @@ end
 
 function ReaderView:onSaveSettings()
     self.ui.doc_settings:saveSetting("render_mode", self.render_mode)
-    self.ui.doc_settings:saveSetting("screen_mode", self.screen_mode)
-    self.ui.doc_settings:saveSetting("rotation_mode", self.cur_rotation_mode)
+    self.ui.doc_settings:saveSetting("screen_mode", Screen:getScreenMode())
+    self.ui.doc_settings:saveSetting("rotation_mode", Screen:getRotationMode())
     self.ui.doc_settings:saveSetting("gamma", self.state.gamma)
     self.ui.doc_settings:saveSetting("highlight", self.highlight.saved)
     self.ui.doc_settings:saveSetting("page_overlap_style", self.page_overlap_style)
