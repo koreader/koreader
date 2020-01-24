@@ -97,9 +97,9 @@ return {
             {  arabic_comma,             waw,          "#",    "↑", },
             { ".",                       zay,          "@",    "↓", },
             { "؟",                       thaa,         "!",    _at, },
-            { label = "Backspace",
-              icon = "resources/icons/appbar.clear.reflect.horizontal.png",
-              width = 1.5
+            { label = "",
+              width = 1.5,
+              bold = false
             },
         },
         -- fourth row
@@ -116,9 +116,8 @@ return {
             { prd,    prd,          "”",    "→", },
             { label = "حركات", diacritics, diacritics,    diacritics,  diacritics,
               width = 1.5},
-            { label = "Enter",
+            { label = "⮠",
               "\n",       "\n",   "\n",   "\n",
-              icon = "resources/icons/appbar.arrow.enter.png",
               width = 1.5,
             },
         },
