@@ -414,6 +414,11 @@ function ReaderUI:init()
         v()
     end
     self.postReaderCallback = nil
+
+    -- print("Ordered registered gestures:")
+    -- for _, tzone in ipairs(self._ordered_touch_zones) do
+    --     print("  "..tzone.def.id)
+    -- end
 end
 
 function ReaderUI:getLastDirFile()

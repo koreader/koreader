@@ -1005,6 +1005,10 @@ function ReaderGesture:setupGesture(ges, action)
             "readerfooter_tap",
         }
         overrides_hold_corner = {
+            -- As hold corners are "ignored" by default, and we have
+            -- a "Ignore hold on corners" menu item and gesture, let
+            -- them have priority over word lookup and text selection.
+            "readerhighlight_hold",
             "readerfooter_hold",
         }
         overrides_vertical_edge = {

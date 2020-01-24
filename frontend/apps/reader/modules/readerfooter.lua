@@ -535,15 +535,17 @@ function ReaderFooter:setupTouchZones()
                 "tap_backward",
                 "readerconfigmenu_tap",
             },
+            -- (Low priority: tap on existing highlights
+            -- or links have priority)
         },
         {
             id = "readerfooter_hold",
             ges = "hold",
             screen_zone = footer_screen_zone,
             handler = function() return self:onHoldFooter() end,
-            overrides = {
-                "readerhighlight_hold",
-            },
+            -- (Low priority: word lookup and text selection
+            -- have priority - SkimTo widget can be more easily
+            -- brought up via some other gestures)
         },
     })
 end
