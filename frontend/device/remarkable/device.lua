@@ -50,6 +50,8 @@ function Remarkable:init()
     self.input.open("/dev/input/event1") -- Touchscreen
     self.input.open("/dev/input/event2") -- Buttons
     self.input:registerEventAdjustHook(adjustTouchEvt)
+    -- USB plug/unplug, battery charge/not charging are generated as fake events
+    self.input.open("fake_events")
 
     local rotation_mode = self.screen.ORIENTATION_PORTRAIT
     self.screen.native_rotation_mode = rotation_mode
