@@ -7,7 +7,7 @@ local function yes() return true end
 local function no() return false end
 
 local Remarkable = Generic:new{
-    model = "Remarkable",
+    model = "reMarkable",
     isRemarkable = yes,
     hasKeys = yes,
     hasOTAUpdates = yes,
@@ -112,7 +112,7 @@ function Remarkable:getSoftwareVersion()
 end
 
 function Remarkable:getDeviceModel()
-    return ffi.string("Remarkable")
+    return ffi.string("reMarkable")
 end
 
 return Remarkable:new{
