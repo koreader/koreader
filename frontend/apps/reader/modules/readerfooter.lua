@@ -838,8 +838,8 @@ function ReaderFooter:addToMainMenu(menu_items)
                     local items_font = SpinWidget:new{
                         width = Screen:getWidth() * 0.6,
                         value = font_size,
-                        value_min = 10,
-                        value_max = 18,
+                        value_min = 8,
+                        value_max = 36,
                         default_value = 14,
                         ok_text = _("Set size"),
                         title_text =  _("Footer font size"),
