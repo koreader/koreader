@@ -269,6 +269,16 @@ DocFragment {
             },
         },
         {
+            id = "hyphenate_all_auto";
+            title = _("Allow hyphenation on all text"),
+            description = _("Allow hyphenation on all text (except headings), in case the publisher has disabled it."),
+            css = [[
+* { hyphens: auto !important; }
+h1, h2, h3, h4, h5, h6 { hyphens: none !important; }
+            ]],
+            separator = true,
+        },
+        {
             id = "sub_sup_smaller";
             title = _("Smaller sub- and superscript"),
             description = _("Prevent sub- and superscript from affecting line-height."),
@@ -279,16 +289,6 @@ DocFragment {
 sup { font-size: 50% !important; vertical-align: super !important; }
 sub { font-size: 50% !important; vertical-align: sub !important; }
             ]],
-            separator = true,
-        },
-        {
-            id = "hyphenate_all_auto";
-            title = _("Allow hyphenation on all text"),
-            description = _("Allow hyphenation to happen on all text (except headings), in case the publisher has disabled it."),
-            css = [[
-* { hyphens: auto !important; }
-h1, h2, h3, h4, h5, h6 { hyphens: none !important; }
-            ]],
         },
         {
             id = "lineheight_all_inherit";
@@ -297,17 +297,25 @@ h1, h2, h3, h4, h5, h6 { hyphens: none !important; }
             css = [[* { line-height: inherit !important; }]],
         },
         {
-            id = "font_family_all_inherit";
-            title = _("Ignore publisher font families"),
-            description = _("Disable font-family specified in embedded styles."),
-            -- we have to use this trick, font-family handling by crengine is a bit complex
-            css = [[* { font-family: "NoSuchFont" !important; }]],
+            id = "lineheight_all_normal_strut_confined";
+            title = _("Enforce steady line heights"),
+            description = _("Prevent inline content like sub- and superscript from changing their paragraph line height."),
+            priority = -5, -- so other -cr-hint can override (this one has effect only on inline content)
+            css = [[* { -cr-hint: strut-confined; }]],
+            separator = true,
         },
         {
             id = "font_size_all_inherit";
             title = _("Ignore publisher font sizes"),
             description = _("Disable font-size specified in embedded styles."),
             css = [[* { font-size: inherit !important; }]],
+        },
+        {
+            id = "font_family_all_inherit";
+            title = _("Ignore publisher font families"),
+            description = _("Disable font-family specified in embedded styles."),
+            -- we have to use this trick, font-family handling by crengine is a bit complex
+            css = [[* { font-family: "NoSuchFont" !important; }]],
         },
     },
     {
