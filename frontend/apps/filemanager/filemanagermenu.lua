@@ -442,17 +442,17 @@ function FileManagerMenu:setUpdateItemTable()
     })
     table.insert(self.menu_items.developer_options.sub_item_table, {
         text_func = function()
-            if G_reader_settings:isTrue("use_cre_call_cache")
+            if G_reader_settings:nilOrTrue("use_cre_call_cache")
                     and G_reader_settings:isTrue("use_cre_call_cache_log_stats") then
                 return _("Enable CRE call cache (with stats)")
             end
             return _("Enable CRE call cache")
         end,
         checked_func = function()
-            return G_reader_settings:isTrue("use_cre_call_cache")
+            return G_reader_settings:nilOrTrue("use_cre_call_cache")
         end,
         callback = function()
-            G_reader_settings:flipNilOrFalse("use_cre_call_cache")
+            G_reader_settings:flipNilOrTrue("use_cre_call_cache")
             -- No need to show "This will take effect on next CRE book opening."
             -- as this menu is only accessible from file browser
         end,
