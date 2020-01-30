@@ -888,9 +888,11 @@ end
 -- either globally, or per page/pos for those whose result may depend on
 -- current page number or y-position.
 function CreDocument:setupCallCache()
-    if not G_reader_settings:isTrue("use_cre_call_cache") then
-        return -- call cache disabled
+    if not G_reader_settings:nilOrTrue("use_cre_call_cache") then
+        logger.dbg("CreDocument: not using cre call cache")
+        return
     end
+    logger.dbg("CreDocument: using cre call cache")
     local do_stats = G_reader_settings:isTrue("use_cre_call_cache_log_stats")
     -- Tune these when debugging
     local do_stats_include_not_cached = false
@@ -1105,6 +1107,7 @@ function CreDocument:setupCallCache()
             elseif name:sub(1,3) == "set" then add_reset = true
             elseif name:sub(1,6) == "toggle" then add_reset = true
             elseif name:sub(1,6) == "update" then add_reset = true
+            elseif name:sub(1,6) == "enable" then add_reset = true
             elseif name == "zoomFont" then add_reset = true -- not used by koreader
 
             -- These may have crengine do native highlight or unhighlight
