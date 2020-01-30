@@ -13,6 +13,10 @@ local Remarkable = Generic:new{
     hasOTAUpdates = yes,
     canReboot = yes,
     canPowerOff = yes,
+    isTouchDevice = yes,
+    hasKeys = yes,
+    hasFrontlight = no,
+    display_dpi = 166,
 }
 
 local EV_ABS = 3
@@ -108,18 +112,5 @@ function Remarkable:reboot()
     os.execute("systemctl reboot")
 end
 
-function Remarkable:getSoftwareVersion()
-    -- TODO read from /etc/os-release?
-    return ffi.string("ZeroGravitas")
-end
+return Remarkable
 
-function Remarkable:getDeviceModel()
-    return ffi.string("reMarkable")
-end
-
-return Remarkable:new{
-    isTouchDevice = yes,
-    hasKeys = yes,
-    hasFrontlight = no,
-    display_dpi = 166,
-}
