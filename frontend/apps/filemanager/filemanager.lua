@@ -324,7 +324,7 @@ function FileManager:init()
                             else
                                 --- @note: Lua 5.1 returns the raw return value from the os's system call. Counteract this madness.
                                 UIManager:show(InfoMessage:new{
-                                    text = T(_("It returned a non-zero status code: %1!"), bit.rshift(rv, 8)),
+                                    text = T(_("The script returned a non-zero status code: %1!"), bit.rshift(rv, 8)),
                                     icon_file = "resources/info-warn.png",
                                 })
                             end
