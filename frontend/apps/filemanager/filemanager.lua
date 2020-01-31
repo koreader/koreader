@@ -310,11 +310,13 @@ function FileManager:init()
                     enabled = true,
                     callback = function()
                         UIManager:close(self.file_dialog)
+                        local script_is_running_msg = InfoMessage:new{
+                                text = T(_("Running shell script %1 ..."), BD.filepath(util.basename(file))),
+                        }
+                        UIManager:show(script_is_running_msg)
                         UIManager:scheduleIn(0.5, function()
-                            UIManager:show(InfoMessage:new{
-                                text = T(_("Running shell script %1 ..."), BD.filepath(file)),
-                            })
                             local rv = os.execute(util.realpath(file))
+                            UIManager:close(script_is_running_msg)
                             if rv == 0 then
                                 UIManager:show(InfoMessage:new{
                                     text = _("It exited successfully."),
