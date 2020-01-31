@@ -109,11 +109,11 @@ function FileManagerCollection:onMenuHold(item)
                         UIManager:close(script_is_running_msg)
                         if rv == 0 then
                             UIManager:show(InfoMessage:new{
-                                text = _("It exited successfully."),
+                                text = _("The script exited successfully."),
                             })
                         else
                             UIManager:show(InfoMessage:new{
-                                text = T(_("It returned a non-zero status code: %1!"), bit.rshift(rv, 8)),
+                                text = T(_("The script returned a non-zero status code: %1!"), bit.rshift(rv, 8)),
                                 icon_file = "resources/info-warn.png",
                             })
                         end

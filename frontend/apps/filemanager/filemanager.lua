@@ -319,7 +319,7 @@ function FileManager:init()
                             UIManager:close(script_is_running_msg)
                             if rv == 0 then
                                 UIManager:show(InfoMessage:new{
-                                    text = _("It exited successfully."),
+                                    text = _("The script exited successfully."),
                                 })
                             else
                                 --- @note: Lua 5.1 returns the raw return value from the os's system call. Counteract this madness.
