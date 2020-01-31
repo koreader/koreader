@@ -230,7 +230,7 @@ function FileManager:init()
                     enabled = DocSettings:hasSidecarFile(util.realpath(file)),
                     callback = function()
                         UIManager:show(ConfirmBox:new{
-                            text = util.template(_("Purge .sdr to reset settings for this document?\n\n%1"), BD.filename(self.file_dialog.title)),
+                            text = T(_("Purge .sdr to reset settings for this document?\n\n%1"), BD.filename(self.file_dialog.title)),
                             ok_text = _("Purge"),
                             ok_callback = function()
                                 filemanagerutil.purgeSettings(file)
@@ -310,7 +310,21 @@ function FileManager:init()
                     enabled = true,
                     callback = function()
                         UIManager:close(self.file_dialog)
-                        os.execute(util.realpath(file))
+                        UIManager:scheduleIn(0.5, function()
+                            UIManager:show(InfoMessage:new{
+                                text = T(_("Running shell script %1 ..."), BD.filepath(file)),
+                            })
+                            local rv = os.execute(util.realpath(file))
+                            if rv == 0 then
+                                UIManager:show(InfoMessage:new{
+                                    text = _("It exited successfully."),
+                                })
+                            else
+                                UIManager:show(InfoMessage:new{
+                                    text = T(_("It returned a non-zero status code: %1!"), rv),
+                                })
+                            end
+                        end)
                     end,
                 }
             )
@@ -696,7 +710,7 @@ end
 function FileManager:setHome(path)
     path = path or self.file_chooser.path
     UIManager:show(ConfirmBox:new{
-        text = util.template(_("Set '%1' as HOME directory?"), BD.dirpath(path)),
+        text = T(_("Set '%1' as HOME directory?"), BD.dirpath(path)),
         ok_text = _("Set as HOME"),
         ok_callback = function()
             G_reader_settings:saveSetting("home_dir", path)
@@ -845,7 +859,7 @@ function FileManager:deleteFile(file)
     local file_abs_path = util.realpath(file)
     if file_abs_path == nil then
         UIManager:show(InfoMessage:new{
-            text = util.template(_("File %1 not found"), BD.filepath(file)),
+            text = T(_("File %1 not found"), BD.filepath(file)),
         })
         return
     end
@@ -869,12 +883,12 @@ function FileManager:deleteFile(file)
         end
         ReadCollection:removeItemByPath(file, is_dir)
         UIManager:show(InfoMessage:new{
-            text = util.template(_("Deleted %1"), BD.filepath(file)),
+            text = T(_("Deleted %1"), BD.filepath(file)),
             timeout = 2,
         })
     else
         UIManager:show(InfoMessage:new{
-            text = util.template(_("An error occurred while trying to delete %1"), BD.filepath(file)),
+            text = T(_("An error occurred while trying to delete %1"), BD.filepath(file)),
         })
     end
 end
@@ -897,12 +911,12 @@ function FileManager:renameFile(file)
                 end
                 if move_history then
                     UIManager:show(InfoMessage:new{
-                        text = util.template(_("Renamed from %1 to %2"), BD.filepath(file), BD.filepath(dest)),
+                        text = T(_("Renamed from %1 to %2"), BD.filepath(file), BD.filepath(dest)),
                         timeout = 2,
                     })
                 else
                     UIManager:show(InfoMessage:new{
-                        text = util.template(
+                        text = T(
                             _("Failed to move history data of %1 to %2.\nThe reading history may be lost."),
                             BD.filepath(file), BD.filepath(dest)),
                     })
@@ -910,7 +924,7 @@ function FileManager:renameFile(file)
             end
         else
             UIManager:show(InfoMessage:new{
-                text = util.template(
+                text = T(
                     _("Failed to rename from %1 to %2"), BD.filepath(file), BD.filepath(dest)),
             })
         end
@@ -949,7 +963,7 @@ function FileManager:getSortingMenuTable()
     end
     return {
         text_func = function()
-            return util.template(
+            return T(
                 _("Sort by: %1"),
                 collates[fm.file_chooser.collate][1]
             )
@@ -999,7 +1013,7 @@ function FileManager:getStartWithMenuTable()
     end
     return {
         text_func = function()
-            return util.template(
+            return T(
                 _("Start with: %1"),
                 start_withs[start_with_setting][1]
             )
