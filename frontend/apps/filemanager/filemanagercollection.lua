@@ -93,7 +93,7 @@ function FileManagerCollection:onMenuHold(item)
         },
     }
     -- NOTE: Duplicated from frontend/apps/filemanager/filemanager.lua
-    if string.lower(util.getFileNameSuffix(item.file)) == "sh" then
+    if util.isAllowedScript(item.file) then
         table.insert(buttons, {
             {
                 text = _("Execute shell script"),

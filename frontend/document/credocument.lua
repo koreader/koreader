@@ -879,10 +879,12 @@ function CreDocument:register(registry)
     registry:addProvider("tcr", "application/tcr", self)
     registry:addProvider("txt", "text/plain", self, 90)
     registry:addProvider("txt.zip", "application/zip", self, 90)
-    registry:addProvider("sh", "application/x-shellscript", self, 90)
     registry:addProvider("rtf", "application/rtf", self, 90)
     registry:addProvider("xhtml", "application/xhtml+xml", self, 90)
     registry:addProvider("zip", "application/zip", self, 10)
+    -- Scripts that we allow running in the FM (c.f., util.isAllowedScript)
+    registry:addProvider("sh", "application/x-shellscript", self, 90)
+    registry:addProvider("py", "text/x-python", self, 90)
 end
 
 -- Optimise usage of some of the above methods by caching their results,

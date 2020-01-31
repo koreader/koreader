@@ -661,6 +661,19 @@ function util.getFileNameSuffix(file)
     return suffix
 end
 
+--- Returns true if the file is a script we allow running
+--- Basically a helper method to check a specific list of file extensions.
+---- @string filename
+---- @treturn boolean
+function util.isAllowedScript(file)
+    if string.lower(util.getFileNameSuffix(file)) == "sh"
+    or string.lower(util.getFileNameSuffix(file)) == "py" then
+        return true
+    else
+        return false
+    end
+end
+
 --- Gets human friendly size as string
 ---- @int size (bytes)
 ---- @bool right_align (by padding with spaces on the left)
