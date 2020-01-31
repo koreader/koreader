@@ -298,11 +298,13 @@ function FileManager:init()
                 }
             },
             -- a little hack to get visual functionality grouping
-            {},
+            {
+            },
         }
+
         if lfs.attributes(file, "mode") == "file" and string.lower(FrontUtil.getFileNameSuffix(file)) == "sh" then
             -- NOTE: We populate the empty separator, in order not to mess with the button reordering code in CoverMenu
-            table.insert(buttons[3], 1, {
+            table.insert(buttons[3],
                 {
                     text = _("Execute shell script"),
                     enabled = true,
@@ -311,8 +313,9 @@ function FileManager:init()
                         os.execute(util.realpath(file))
                     end,
                 }
-            })
+            )
         end
+
         if lfs.attributes(file, "mode") == "file" then
             table.insert(buttons, {
                 {
