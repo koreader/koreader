@@ -302,7 +302,7 @@ function FileManager:init()
             },
         }
 
-        if lfs.attributes(file, "mode") == "file" and util.isAllowedScript(file) then
+        if not Device:isAndroid() and lfs.attributes(file, "mode") == "file" and util.isAllowedScript(file) then
             -- NOTE: We populate the empty separator, in order not to mess with the button reordering code in CoverMenu
             table.insert(buttons[3],
                 {

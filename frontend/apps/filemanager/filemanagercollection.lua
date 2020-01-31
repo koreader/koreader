@@ -1,5 +1,6 @@
 local BD = require("ui/bidi")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
+local Device = require("device")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -93,7 +94,7 @@ function FileManagerCollection:onMenuHold(item)
         },
     }
     -- NOTE: Duplicated from frontend/apps/filemanager/filemanager.lua
-    if util.isAllowedScript(item.file) then
+    if not Device:isAndroid() and util.isAllowedScript(item.file) then
         table.insert(buttons, {
             {
                 text = _("Execute shell script"),
