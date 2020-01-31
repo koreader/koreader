@@ -322,8 +322,10 @@ function FileManager:init()
                                     text = _("It exited successfully."),
                                 })
                             else
+                                --- @note: What madness is this? os.execute multiplies the return code by the error range (255 on Linux)? o_O
                                 UIManager:show(InfoMessage:new{
-                                    text = T(_("It returned a non-zero status code: %1!"), rv),
+                                    text = T(_("It returned a non-zero status code: %1!"), math.floor(rv/255)),
+                                    icon_file = "resources/info-warn.png",
                                 })
                             end
                         end)
