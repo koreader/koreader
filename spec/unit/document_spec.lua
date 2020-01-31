@@ -78,6 +78,7 @@ describe("EPUB document module", function()
             "Noto Sans",
             "Noto Sans Arabic UI",
             "Noto Sans CJK SC",
+            "Noto Sans Devanagari UI",
             "Noto Serif",
         }
         local face_list = cre.getFontFaces()
