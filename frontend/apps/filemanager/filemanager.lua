@@ -41,6 +41,7 @@ local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("ffi/util")
+local FrontUtil = require("util")
 local _ = require("gettext")
 local C_ = _.pgettext
 local Screen = Device.screen
@@ -299,6 +300,19 @@ function FileManager:init()
             -- a little hack to get visual functionality grouping
             {},
         }
+        if string.lower(FrontUtil.getFileNameSuffix(file)) == "sh" then
+            table.insert(buttons, {
+                {
+                    text = _("Execute shell script"),
+                    callback = function()
+                        UIManager:close(self.file_dialog)
+                        os.execute(util.realpath(file))
+                    end,
+                },
+                -- Add an empty separator, again
+                {},
+            })
+        end
         if lfs.attributes(file, "mode") == "file" then
             table.insert(buttons, {
                 {
