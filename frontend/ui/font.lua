@@ -108,9 +108,10 @@ local Font = {
         [1] = "NotoSans-Regular.ttf",
         [2] = "NotoSansCJKsc-Regular.otf",
         [3] = "NotoSansArabicUI-Regular.ttf",
-        [4] = "nerdfonts/symbols.ttf",
-        [5] = "freefont/FreeSans.ttf",
-        [6] = "freefont/FreeSerif.ttf",
+        [4] = "NotoSansDevanagariUI-Regular.ttf",
+        [5] = "nerdfonts/symbols.ttf",
+        [6] = "freefont/FreeSans.ttf",
+        [7] = "freefont/FreeSerif.ttf",
     },
 
     -- face table
