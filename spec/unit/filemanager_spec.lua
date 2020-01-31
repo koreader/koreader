@@ -41,7 +41,7 @@ describe("FileManager module", function()
             root_path = "../../test",
         }
 
-        local tmp_fn = "../../test/2col.test.tmp.sh"
+        local tmp_fn = "../../test/2col.test.tmp.foo"
         util.copyFile("../../test/2col.pdf", tmp_fn)
 
         local tmp_sidecar = docsettings:getSidecarDir(util.realpath(tmp_fn))
