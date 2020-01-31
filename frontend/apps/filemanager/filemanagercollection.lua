@@ -113,7 +113,7 @@ function FileManagerCollection:onMenuHold(item)
                             })
                         else
                             UIManager:show(InfoMessage:new{
-                                text = T(_("It returned a non-zero status code: %1!"), math.floor(rv/255)),
+                                text = T(_("It returned a non-zero status code: %1!"), bit.rshift(rv, 8)),
                                 icon_file = "resources/info-warn.png",
                             })
                         end
