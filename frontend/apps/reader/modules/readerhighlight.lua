@@ -806,8 +806,11 @@ function ReaderHighlight:viewSelectionHTML(debug_view)
             -- with possibly invalid HTML (text nodes not escaped)
             html_flags = 0x635A
         elseif debug_view == 2 then
-            -- Additionally see rendering methods and unicode codepoint of each char
-            html_flags = 0x675E
+            -- Additionally see rendering methods of each node
+            html_flags = 0x675A
+        elseif debug_view == 3 then
+            -- Or additionally see unicode codepoint of each char
+            html_flags = 0x635E
         end
         local html, css_files = self.ui.document:getHTMLFromXPointers(self.selected_text.pos0,
                                     self.selected_text.pos1, html_flags, true)
@@ -880,7 +883,9 @@ function ReaderHighlight:viewSelectionHTML(debug_view)
             if next_debug_view == 1 then
                 next_debug_text = _("Switch to debug view")
             elseif next_debug_view == 2 then
-                next_debug_text = _("Switch to extended debug view")
+                next_debug_text = _("Switch to rendering debug view")
+            elseif next_debug_view == 3 then
+                next_debug_text = _("Switch to unicode debug view")
             else
                 next_debug_view = 0
                 next_debug_text = _("Switch to standard view")
