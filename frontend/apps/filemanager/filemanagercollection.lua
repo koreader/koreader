@@ -1,11 +1,16 @@
+local BD = require("ui/bidi")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
+local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
 local ReadCollection = require("readcollection")
 local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
+local BaseUtil = require("ffi/util")
+local util = require("util")
 local _ = require("gettext")
+local T = require("ffi/util").template
 
 local FileManagerCollection = InputContainer:extend{
     coll_menu_title = _("Favorites"),
@@ -87,6 +92,36 @@ function FileManagerCollection:onMenuHold(item)
             },
         },
     }
+    -- NOTE: Duplicated from frontend/apps/filemanager/filemanager.lua
+    if string.lower(util.getFileNameSuffix(item.file)) == "sh" then
+        table.insert(buttons, {
+            {
+                text = _("Execute shell script"),
+                enabled = true,
+                callback = function()
+                    UIManager:close(self.collfile_dialog)
+                    local script_is_running_msg = InfoMessage:new{
+                            text = T(_("Running shell script %1 ..."), BD.filepath(BaseUtil.basename(item.file))),
+                    }
+                    UIManager:show(script_is_running_msg)
+                    UIManager:scheduleIn(0.5, function()
+                        local rv = os.execute(BaseUtil.realpath(item.file))
+                        UIManager:close(script_is_running_msg)
+                        if rv == 0 then
+                            UIManager:show(InfoMessage:new{
+                                text = _("It exited successfully."),
+                            })
+                        else
+                            UIManager:show(InfoMessage:new{
+                                text = T(_("It returned a non-zero status code: %1!"), rv),
+                            })
+                        end
+                    end)
+                end,
+            }
+        })
+    end
+
     self.collfile_dialog = ButtonDialogTitle:new{
         title = item.text:match("([^/]+)$"),
         title_align = "center",
