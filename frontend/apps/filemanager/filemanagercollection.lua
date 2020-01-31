@@ -101,7 +101,7 @@ function FileManagerCollection:onMenuHold(item)
                 callback = function()
                     UIManager:close(self.collfile_dialog)
                     local script_is_running_msg = InfoMessage:new{
-                            text = T(_("Running shell script %1 ..."), BD.filepath(BaseUtil.basename(item.file))),
+                            text = T(_("Running shell script %1 ..."), BD.filename(BaseUtil.basename(item.file))),
                     }
                     UIManager:show(script_is_running_msg)
                     UIManager:scheduleIn(0.5, function()

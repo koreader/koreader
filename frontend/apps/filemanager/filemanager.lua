@@ -311,7 +311,7 @@ function FileManager:init()
                     callback = function()
                         UIManager:close(self.file_dialog)
                         local script_is_running_msg = InfoMessage:new{
-                                text = T(_("Running shell script %1 ..."), BD.filepath(util.basename(file))),
+                                text = T(_("Running shell script %1 ..."), BD.filename(util.basename(file))),
                         }
                         UIManager:show(script_is_running_msg)
                         UIManager:scheduleIn(0.5, function()
