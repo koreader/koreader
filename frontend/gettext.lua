@@ -188,6 +188,7 @@ function GetText_mt.__index.changeLang(new_lang)
     end
 
     local data = {}
+    local fuzzy = false
     local headers
     local what = nil
     while true do
@@ -257,13 +258,18 @@ function GetText_mt.__index.changeLang(new_lang)
                     -- string continuation
                     s = line:match("^%s*\"(.*)\"%s*$")
                 end
-                if what and s then
+                if what and s and not fuzzy then
                     -- unescape \n or msgid won't match
                     s = s:gsub("\\n", "\n")
                     -- unescape " or msgid won't match
                     s = s:gsub('\\"', '"')
                     data[what] = (data[what] or "") .. s
+                else
+                    -- Don't save this fuzzy string and unset fuzzy for the next one.
+                    fuzzy = false
                 end
+            elseif line:match("#, fuzzy") then
+                fuzzy = true
             end
         end
     end
