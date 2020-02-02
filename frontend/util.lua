@@ -666,8 +666,9 @@ end
 ---- @string filename
 ---- @treturn boolean
 function util.isAllowedScript(file)
-    if string.lower(util.getFileNameSuffix(file)) == "sh"
-    or string.lower(util.getFileNameSuffix(file)) == "py" then
+    local file_ext = string.lower(util.getFileNameSuffix(file))
+    if file_ext == "sh"
+    or file_ext == "py" then
         return true
     else
         return false
@@ -679,9 +680,10 @@ end
 ---- @string filename
 ---- @treturn string (lowercase) (or nil if !isAllowedScript)
 function util.getScriptType(file)
-    if string.lower(util.getFileNameSuffix(file)) == "sh" then
+    local file_ext = string.lower(util.getFileNameSuffix(file))
+    if file_ext == "sh" then
         return "shell"
-    elseif string.lower(util.getFileNameSuffix(file)) == "py" then
+    elseif file_ext == "py" then
         return "python"
     end
 end
