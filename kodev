@@ -40,26 +40,26 @@ function gnuplot_wrapper() {
     # inspired by https://gist.github.com/nicolasazrak/32d68ed6c845a095f75f037ecc2f0436
     trap capture_ctrl_c INT
     TEMP_DIR=$(mktemp --directory /tmp/tmp.koreaderXXX)
-    LOG="$TEMP_DIR/memory.log"
-    SCRIPT_PNG="$TEMP_DIR/script_png.p"
-    SCRIPT_SHOW="$TEMP_DIR/script_show.p"
-    IMAGE_PNG="$TEMP_DIR/graph.png"
+    LOG="${TEMP_DIR}/memory.log"
+    SCRIPT_PNG="${TEMP_DIR}/script_png.p"
+    SCRIPT_SHOW="${TEMP_DIR}/script_show.p"
+    IMAGE_PNG="${TEMP_DIR}/graph.png"
 
-    echo "Memory plot output to $TEMP_DIR"
+    echo "Memory plot output to ${TEMP_DIR}"
 
-    cat >"$SCRIPT_PNG" <<EOL
+    cat >"${SCRIPT_PNG}" <<EOL
 set term pngcairo size 1600,1200
-set output "$IMAGE_PNG"
+set output "${IMAGE_PNG}"
 set ylabel "RSS"
 set y2label "VSZ"
 set ytics nomirror
 set y2tics nomirror in
 set yrange [0:*]
 set y2range [0:*]
-plot "$LOG" using 3 with lines axes x1y1 title "RSS", "$LOG" using 2 with lines axes x1y2 title "VSZ"
+plot "${LOG}" using 3 with lines axes x1y1 title "RSS", "${LOG}" using 2 with lines axes x1y2 title "VSZ"
 EOL
 
-    cat >"$SCRIPT_SHOW" <<EOL
+    cat >"${SCRIPT_SHOW}" <<EOL
 set term wxt noraise
 set ylabel "RSS"
 set y2label "VSZ"
@@ -67,15 +67,15 @@ set ytics nomirror
 set y2tics nomirror in
 set yrange [0:*]
 set y2range [0:*]
-plot "$LOG" using 3 with lines axes x1y1 title "RSS", "$LOG" using 2 with lines axes x1y2 title "VSZ"
+plot "${LOG}" using 3 with lines axes x1y1 title "RSS", "${LOG}" using 2 with lines axes x1y2 title "VSZ"
 pause 1
 reread
 EOL
 
     function capture_ctrl_c() {
-        kill "$LOOP_PID"
-        kill "$GNUPLOT_PID"
-        gnuplot "$SCRIPT_PNG"
+        kill "${LOOP_PID}"
+        kill "${GNUPLOT_PID}"
+        gnuplot "${SCRIPT_PNG}"
         exit
     }
 
@@ -87,7 +87,7 @@ EOL
         sleep 1
     done &
     LOOP_PID=$!
-    gnuplot "$SCRIPT_SHOW" &
+    gnuplot "${SCRIPT_SHOW}" &
     GNUPLOT_PID=$!
 }
 
@@ -161,7 +161,7 @@ ${SUPPORTED_TARGETS}"
                 KODEBUG_NO_DEFAULT=1
                 ;;
             *)
-                echo "ERROR: unknown option \"$PARAM\""
+                echo "ERROR: unknown option \"${PARAM}\""
                 echo "${BUILD_HELP_MSG}"
                 exit 1
                 ;;
@@ -278,7 +278,7 @@ ${SUPPORTED_TARGETS}"
                 KODEBUG_NO_DEFAULT=1
                 ;;
             *)
-                echo "ERROR: unknown option \"$PARAM\""
+                echo "ERROR: unknown option \"${PARAM}\""
                 echo "${BUILD_HELP_MSG}"
                 exit 1
                 ;;
@@ -383,7 +383,7 @@ ${SUPPORTED_RELEASE_TARGETS}"
                 exit 0
                 ;;
             *)
-                echo "ERROR: unknown option \"$PARAM\""
+                echo "ERROR: unknown option \"${PARAM}\""
                 echo "${RELEASE_HELP_MSG}"
                 exit 1
                 ;;
@@ -427,13 +427,13 @@ ${SUPPORTED_RELEASE_TARGETS}"
             ;;
         android)
             kodev-build android
-            export PATH=$PATH:${CURDIR}/base/toolchain/android-sdk-linux/tools
+            export PATH=${PATH}:${CURDIR}/base/toolchain/android-sdk-linux/tools
             command -v android &>/dev/null || {
                 make -C "${CURDIR}/base/toolchain" android-sdk
             }
             ANDROID_HOME=$(dirname "$(dirname "$(command -v android)")")
             export ANDROID_HOME
-            export PATH=$PATH:${NDK}
+            export PATH=${PATH}:${NDK}
             make TARGET=android update
             ;;
         pocketbook)
@@ -595,7 +595,7 @@ TARGET:
                 exit 0
                 ;;
             *)
-                echo "ERROR: unknown option \"$PARAM\""
+                echo "ERROR: unknown option \"${PARAM}\""
                 echo "${RUN_HELP_MSG}"
                 exit 1
                 ;;
@@ -670,7 +670,7 @@ TARGET:
                     args="$*"
                     [[ "${args}" != /* ]] && args="${CURDIR}/${args}"
                 fi
-                KOREADER_COMMAND="$KOREADER_COMMAND ${args}"
+                KOREADER_COMMAND="${KOREADER_COMMAND} ${args}"
 
                 RETURN_VALUE=85
                 while [ "${RETURN_VALUE}" -eq 85 ]; do
@@ -717,7 +717,7 @@ OPTIONS:
                 exit 0
                 ;;
             *)
-                echo "ERROR: unknown option \"$PARAM\""
+                echo "ERROR: unknown option \"${PARAM}\""
                 echo "${TEST_HELP_MSG}"
                 exit 1
                 ;;
@@ -783,7 +783,7 @@ OPTIONS:
                 exit 0
                 ;;
             *)
-                echo "ERROR: unknown option \"$PARAM\""
+                echo "ERROR: unknown option \"${PARAM}\""
                 echo "${COV_HELP_MSG}"
                 exit 1
                 ;;
