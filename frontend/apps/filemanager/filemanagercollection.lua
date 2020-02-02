@@ -97,12 +97,12 @@ function FileManagerCollection:onMenuHold(item)
     if not Device:isAndroid() and util.isAllowedScript(item.file) then
         table.insert(buttons, {
             {
-                text = _("Execute shell script"),
+                text = T(_("Execute %1 script"), util.getScriptType(item.file)),
                 enabled = true,
                 callback = function()
                     UIManager:close(self.collfile_dialog)
                     local script_is_running_msg = InfoMessage:new{
-                            text = T(_("Running shell script %1 ..."), BD.filename(BaseUtil.basename(item.file))),
+                            text = T(_("Running %1 script %2 ..."), util.getScriptType(item.file), BD.filename(BaseUtil.basename(item.file))),
                     }
                     UIManager:show(script_is_running_msg)
                     UIManager:scheduleIn(0.5, function()

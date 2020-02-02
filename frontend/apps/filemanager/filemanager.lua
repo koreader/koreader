@@ -306,12 +306,12 @@ function FileManager:init()
             -- NOTE: We populate the empty separator, in order not to mess with the button reordering code in CoverMenu
             table.insert(buttons[3],
                 {
-                    text = _("Execute shell script"),
+                    text = T(_("Execute %1 script"), util.getScriptType(file)),
                     enabled = true,
                     callback = function()
                         UIManager:close(self.file_dialog)
                         local script_is_running_msg = InfoMessage:new{
-                                text = T(_("Running shell script %1 ..."), BD.filename(BaseUtil.basename(file))),
+                                text = T(_("Running %1 script %2 ..."), util.getScriptType(file), BD.filename(BaseUtil.basename(file))),
                         }
                         UIManager:show(script_is_running_msg)
                         UIManager:scheduleIn(0.5, function()
