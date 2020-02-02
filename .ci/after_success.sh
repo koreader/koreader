@@ -27,7 +27,7 @@ if [ -z "${CIRCLE_PULL_REQUEST}" ] && [ "${CIRCLE_BRANCH}" = 'master' ]; then
 
         # push doc update
         pushd doc && {
-            luajit "$(which ldoc)" . 2>/dev/null
+            luajit "$(command -v ldoc)" . 2>/dev/null
             if [ ! -d html ]; then
                 echo "Failed to generate documents..."
                 exit 1

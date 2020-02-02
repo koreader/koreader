@@ -37,4 +37,4 @@ if [ "${untagged_todo}" ]; then
 fi
 
 echo -e "\n${ANSI_GREEN}Luacheck results"
-luajit "$(which luacheck)" --no-color -q {reader,setupkoenv,datastorage}.lua frontend plugins spec
+luajit "$(command -v luacheck)" --no-color -q {reader,setupkoenv,datastorage}.lua frontend plugins spec

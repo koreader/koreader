@@ -6,10 +6,10 @@ if [ "${CXX}" = "g++" ]; then
 fi
 # in case anything ignores the environment variables, override through PATH
 mkdir bin
-ln -s "$(which gcc-5)" bin/cc
-ln -s "$(which gcc-5)" bin/gcc
-ln -s "$(which c++)" bin/c++
-ln -s "$(which g++-5)" bin/g++
+ln -s "$(command -v gcc-5)" bin/cc
+ln -s "$(command -v gcc-5)" bin/gcc
+ln -s "$(command -v c++)" bin/c++
+ln -s "$(command -v g++-5)" bin/g++
 
 # Travis only makes a shallow clone of --depth=50. KOReader is small enough that
 # we can just grab it all. This is necessary to generate the version number,

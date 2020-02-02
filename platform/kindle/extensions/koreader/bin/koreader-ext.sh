@@ -77,7 +77,7 @@ update_koreader() {
             unzip -q -o "${found_koreader_package}" -d "/mnt/us"
             fail=$?
         fi
-        if [ $fail -eq 0 ]; then
+        if [ ${fail} -eq 0 ]; then
             # Cleanup behind us...
             rm -f "${found_koreader_package}"
             # Flush to disk first...
@@ -99,13 +99,13 @@ install_koreader() {
 
 ## Main
 case "${1}" in
-    "update_koreader")
-        ${1}
-        ;;
-    "install_koreader")
-        ${1}
-        ;;
-    *)
-        logmsg "invalid action (${1})"
-        ;;
+"update_koreader")
+    ${1}
+    ;;
+"install_koreader")
+    ${1}
+    ;;
+*)
+    logmsg "invalid action (${1})"
+    ;;
 esac
