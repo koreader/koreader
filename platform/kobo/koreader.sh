@@ -154,12 +154,12 @@ ORIG_FB_BPP="$(./fbdepth -g)"
 echo "Original fb bitdepth is set @ ${ORIG_FB_BPP}bpp" >>crash.log 2>&1
 # Sanity check...
 case "${ORIG_FB_BPP}" in
-16) ;;
-32) ;;
-*)
-    # Uh oh? Don't do anything...
-    unset ORIG_FB_BPP
-    ;;
+    16) ;;
+    32) ;;
+    *)
+        # Uh oh? Don't do anything...
+        unset ORIG_FB_BPP
+        ;;
 esac
 
 # The actual swap is done in a function, because we can disable it in the Developer settings, and we want to honor it on restart.

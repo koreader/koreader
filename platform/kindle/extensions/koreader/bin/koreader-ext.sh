@@ -99,13 +99,13 @@ install_koreader() {
 
 ## Main
 case "${1}" in
-"update_koreader")
-    ${1}
-    ;;
-"install_koreader")
-    ${1}
-    ;;
-*)
-    logmsg "invalid action (${1})"
-    ;;
+    "update_koreader")
+        ${1}
+        ;;
+    "install_koreader")
+        ${1}
+        ;;
+    *)
+        logmsg "invalid action (${1})"
+        ;;
 esac
