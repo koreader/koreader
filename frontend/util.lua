@@ -674,6 +674,18 @@ function util.isAllowedScript(file)
     end
 end
 
+--- Companion helper function that returns the script's language,
+--- based on the filme extension.
+---- @string filename
+---- @treturn string (lowercase) (or nil if !isAllowedScript)
+function util.getScriptType(file)
+    if string.lower(util.getFileNameSuffix(file)) == "sh" then
+        return "shell"
+    elseif string.lower(util.getFileNameSuffix(file)) == "py" then
+        return "python"
+    end
+end
+
 --- Gets human friendly size as string
 ---- @int size (bytes)
 ---- @bool right_align (by padding with spaces on the left)
