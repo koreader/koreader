@@ -203,9 +203,9 @@ CRASH_TS=0
 CRASH_PREV_TS=0
 # Because we *want* an initial fbdepth pass ;).
 RETURN_VALUE=85
-while [ $RETURN_VALUE -ne 0 ]; do
+while [ ${RETURN_VALUE} -ne 0 ]; do
     # 85 is what we return when asking for a KOReader restart
-    if [ $RETURN_VALUE -eq 85 ]; then
+    if [ ${RETURN_VALUE} -eq 85 ]; then
         # Do an update check now, so we can actually update KOReader via the "Restart KOReader" menu entry ;).
         ko_update_check
         # Do or double-check the fb depth switch, or restore original bitdepth if requested
@@ -216,7 +216,7 @@ while [ $RETURN_VALUE -ne 0 ]; do
     RETURN_VALUE=$?
 
     # Did we crash?
-    if [ $RETURN_VALUE -ne 0 ] && [ $RETURN_VALUE -ne 85 ]; then
+    if [ ${RETURN_VALUE} -ne 0 ] && [ ${RETURN_VALUE} -ne 85 ]; then
         # Increment the crash counter
         CRASH_COUNT=$((CRASH_COUNT + 1))
         CRASH_TS=$(date +'%s')
@@ -241,8 +241,8 @@ while [ $RETURN_VALUE -ne 0 ]; do
         eval "$(./fbink -e | tr ';' '\n' | grep -e viewWidth -e viewHeight -e FONTH | tr '\n' ';')"
         # Compute margins & sizes relative to the screen's resolution, so we end up with a similar layout, no matter the device.
         # Height @ ~56.7%, w/ a margin worth 1.5 lines
-        bombHeight=$((viewHeight/2 + viewHeight/15))
-        bombMargin=$((FONTH + FONTH/2))
+        bombHeight=$((viewHeight / 2 + viewHeight / 15))
+        bombMargin=$((FONTH + FONTH / 2))
         # With a little notice at the top of the screen, on a big gray screen of death ;).
         ./fbink -q -b -c -B GRAY9 -m -y 1 "Don't Panic! (Crash n°${CRASH_COUNT} -> ${RETURN_VALUE})"
         if [ ${CRASH_COUNT} -eq 1 ]; then
@@ -255,7 +255,7 @@ while [ $RETURN_VALUE -ne 0 ]; do
         # And then print the tail end of the log on the bottom of the screen...
         crashLog="$(tail -n 25 crash.log | sed -e 's/\t/    /g')"
         # The idea for the margins being to leave enough room for an fbink -Z bar, small horizontal margins, and a font size based on what 6pt looked like @ 265dpi
-        ./fbink -q -b -O -t regular=./fonts/droid/DroidSansMono.ttf,top=$((viewHeight/2 + FONTH * 2 + FONTH/2)),left=$((viewWidth/60)),right=$((viewWidth/60)),px=$((viewHeight/64)) "${crashLog}"
+        ./fbink -q -b -O -t regular=./fonts/droid/DroidSansMono.ttf,top=$((viewHeight / 2 + FONTH * 2 + FONTH / 2)),left=$((viewWidth / 60)),right=$((viewWidth / 60)),px=$((viewHeight / 64)) "${crashLog}"
         # So far, we hadn't triggered an actual screen refresh, do that now, to make sure everything is bundled in a single flashing refresh.
         ./fbink -q -f -s top=0,left=0
         # Cue a lemming's faceplant sound effect!
@@ -265,7 +265,7 @@ while [ $RETURN_VALUE -ne 0 ]; do
             echo "Uh oh, something went awry... (Crash n°${CRASH_COUNT}: $(date +'%x @ %X'))"
             echo "Running FW $(cut -f3 -d',' /mnt/onboard/.kobo/version) on Linux $(uname -r) ($(uname -v))"
         } >>crash.log 2>&1
-        if [ $CRASH_COUNT -lt 5 ] && [ "${ALWAYS_ABORT}" = "false" ]; then
+        if [ ${CRASH_COUNT} -lt 5 ] && [ "${ALWAYS_ABORT}" = "false" ]; then
             echo "Attempting to restart KOReader . . ." >>crash.log 2>&1
             echo "!!!!" >>crash.log 2>&1
         fi
@@ -282,7 +282,7 @@ while [ $RETURN_VALUE -ne 0 ]; do
 
         # But if we've crashed more than 5 consecutive times, exit, because we wouldn't want to be stuck in a loop...
         # NOTE: No need to check for ALWAYS_ABORT, CRASH_COUNT will always be 1 when it's true ;).
-        if [ $CRASH_COUNT -ge 5 ]; then
+        if [ ${CRASH_COUNT} -ge 5 ]; then
             echo "Too many consecutive crashes, aborting . . ." >>crash.log 2>&1
             echo "!!!! ! !!!!" >>crash.log 2>&1
             break
@@ -337,4 +337,4 @@ else
     fi
 fi
 
-exit $RETURN_VALUE
+exit ${RETURN_VALUE}

@@ -15,23 +15,23 @@ travis_retry() {
     local count=1
     set +e
 
-    while [ $count -le 3 ]; do
-        [ $result -ne 0 ] && {
-            echo -e "\n${ANSI_RED}The command \"$*\" failed. Retrying, $count of 3.${ANSI_RESET}\n" >&2
+    while [ ${count} -le 3 ]; do
+        [ ${result} -ne 0 ] && {
+            echo -e "\n${ANSI_RED}The command \"$*\" failed. Retrying, ${count} of 3.${ANSI_RESET}\n" >&2
         }
         "$@"
         result=$?
-        [ $result -eq 0 ] && break
+        [ ${result} -eq 0 ] && break
         count=$((count + 1))
         sleep 1
     done
 
-    [ $count -gt 3 ] && {
+    [ ${count} -gt 3 ] && {
         echo -e "\n${ANSI_RED}The command \"$*\" failed 3 times.${ANSI_RESET}\n" >&2
     }
 
     set -e
-    return $result
+    return ${result}
 }
 
 retry_cmd() {
@@ -42,23 +42,23 @@ retry_cmd() {
     retry_cnt=$1
     shift 1
 
-    while [ $count -le "${retry_cnt}" ]; do
-        [ $result -ne 0 ] && {
-            echo -e "\n${ANSI_RED}The command \"$*\" failed. Retrying, $count of ${retry_cnt}${ANSI_RESET}\n" >&2
+    while [ ${count} -le "${retry_cnt}" ]; do
+        [ ${result} -ne 0 ] && {
+            echo -e "\n${ANSI_RED}The command \"$*\" failed. Retrying, ${count} of ${retry_cnt}${ANSI_RESET}\n" >&2
         }
         "$@"
         result=$?
-        [ $result -eq 0 ] && break
+        [ ${result} -eq 0 ] && break
         count=$((count + 1))
         sleep 1
     done
 
-    [ $count -gt "${retry_cnt}" ] && {
+    [ ${count} -gt "${retry_cnt}" ] && {
         echo -e "\n${ANSI_RED}The command \"$*\" failed ${retry_cnt} times.${ANSI_RESET}\n" >&2
     }
 
     set -e
-    return $result
+    return ${result}
 }
 
 # export CI_BUILD_DIR=${TRAVIS_BUILD_DIR}
@@ -67,8 +67,8 @@ eval CI_BUILD_DIR="${CIRCLE_WORKING_DIRECTORY}"
 export CI_BUILD_DIR
 
 test -e "${HOME}/bin" || mkdir "${HOME}/bin"
-export PATH=$PWD/bin:$HOME/bin:$PATH
-export PATH=$PATH:${CI_BUILD_DIR}/install/bin
+export PATH=${PWD}/bin:${HOME}/bin:${PATH}
+export PATH=${PATH}:${CI_BUILD_DIR}/install/bin
 if [ -f "${CI_BUILD_DIR}/install/bin/luarocks" ]; then
     # add local rocks to $PATH
     eval "$(luarocks path --bin)"

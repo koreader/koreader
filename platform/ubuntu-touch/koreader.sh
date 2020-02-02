@@ -8,7 +8,7 @@ KOREADER_DIR="${0%/*}"
 cd "${KOREADER_DIR}" || exit
 
 # export load library path for some old firmware
-export LD_LIBRARY_PATH=${KOREADER_DIR}/libs:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=${KOREADER_DIR}/libs:${LD_LIBRARY_PATH}
 
 # export trained OCR data directory
 export TESSDATA_PREFIX="data"
@@ -21,9 +21,9 @@ export SDL_FULLSCREEN=1
 
 RETURN_VALUE=85
 
-while [ $RETURN_VALUE -eq 85 ]; do
+while [ ${RETURN_VALUE} -eq 85 ]; do
     ./reader.lua -d ~/Documents
     RETURN_VALUE=$?
 done
 
-exit $RETURN_VALUE
+exit ${RETURN_VALUE}

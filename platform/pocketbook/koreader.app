@@ -9,8 +9,8 @@ NEWUPDATE="${KOREADER_DIR}/ota/koreader.updated.tar"
 INSTALLED="${KOREADER_DIR}/ota/koreader.installed.tar"
 if [ -f "${NEWUPDATE}" ]; then
     # TODO: any graphic indication for the updating progress?
-    cd /mnt/ext1/ && "${KOREADER_DIR}/tar" xf "${NEWUPDATE}" --no-same-permissions --no-same-owner \
-        && mv "${NEWUPDATE}" "${INSTALLED}"
+    cd /mnt/ext1/ && "${KOREADER_DIR}/tar" xf "${NEWUPDATE}" --no-same-permissions --no-same-owner &&
+        mv "${NEWUPDATE}" "${INSTALLED}"
     rm -f "${NEWUPDATE}" # always purge newupdate in all cases to prevent update loop
 fi
 
@@ -43,7 +43,7 @@ if [ -e crash.log ]; then
 fi
 
 RETURN_VALUE=85
-while [ $RETURN_VALUE -eq 85 ]; do
+while [ ${RETURN_VALUE} -eq 85 ]; do
     ./reader.lua "${args}" >>crash.log 2>&1
     RETURN_VALUE=$?
 done
@@ -52,4 +52,4 @@ if pidof reader.lua >/dev/null 2>&1; then
     killall -TERM reader.lua
 fi
 
-exit $RETURN_VALUE
+exit ${RETURN_VALUE}

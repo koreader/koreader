@@ -16,7 +16,7 @@ fi
 
 # assign public & private partition devices based on pcb.
 PCB_ID=$(/usr/bin/ntxinfo /dev/mmcblk0 | grep pcb | cut -d ":" -f2)
-if [ "$PCB_ID" -eq 22 ] || [ "$PCB_ID" -eq 23 ]; then
+if [ "${PCB_ID}" -eq 22 ] || [ "${PCB_ID}" -eq 23 ]; then
     PRIVATE="/dev/mmcblk0p5"
     PUBLIC="/dev/mmcblk0p7"
 else
@@ -25,8 +25,8 @@ else
 fi
 
 # mount internal partitions
-mount $PRIVATE /mnt/private
-mount $PUBLIC /mnt/public
+mount ${PRIVATE} /mnt/private
+mount ${PUBLIC} /mnt/public
 
 # mount sdcard if present
 if [ -b /dev/mmcblk1p1 ]; then
@@ -37,7 +37,7 @@ fi
 [ -x /etc/init.d/connman ] && /etc/init.d/connman stop
 
 # for Cervantes 4 unload realtek module.
-if [ "$PCB_ID" -eq 68 ] && lsmod | grep -q 8189fs; then
+if [ "${PCB_ID}" -eq 68 ] && lsmod | grep -q 8189fs; then
     modprobe -r 8189fs
 fi
 

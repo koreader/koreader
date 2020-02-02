@@ -31,8 +31,7 @@ if [ ! -f "${CI_BUILD_DIR}/install/bin/luarocks" ]; then
         git checkout 6529891
         cmake . -DWITH_LUAJIT21=ON -DCMAKE_INSTALL_PREFIX="${CI_BUILD_DIR}/install"
         make install
-    } || exit
-    popd
+    } && popd || exit
 else
     echo -e "${ANSI_GREEN}Using cached luarocks."
 fi
@@ -50,9 +49,10 @@ else
 fi
 
 #install our own updated shellcheck
-SHELLCHECK_URL="https://s3.amazonaws.com/travis-blue-public/binaries/ubuntu/14.04/x86_64/shellcheck-0.4.5.tar.bz2"
+SHELLCHECK_VERSION="v0.7.0"
+SHELLCHECK_URL="https://storage.googleapis.com/shellcheck/shellcheck-${SHELLCHECK_VERSION?}.linux.x86_64.tar.xz"
 if ! command -v shellcheck; then
-    curl -sSL "${SHELLCHECK_URL}" | tar --exclude 'SHA256SUMS' --strip-components=1 -C "${HOME}/bin" -xjf -
+    curl -sSL "${SHELLCHECK_URL}" | tar --exclude 'SHA256SUMS' --strip-components=1 -C "${HOME}/bin" -xJf -
     chmod +x "${HOME}/bin/shellcheck"
     shellcheck --version
 else
@@ -60,8 +60,8 @@ else
 fi
 
 # install shfmt
-SHFMT_URL="https://github.com/mvdan/sh/releases/download/v1.3.1/shfmt_v1.3.1_linux_amd64"
-if [ "$(shfmt --version)" != "v1.3.1" ]; then
+SHFMT_URL="https://github.com/mvdan/sh/releases/download/v3.0.1/shfmt_v3.0.1_linux_amd64"
+if [ "$(shfmt --version)" != "v3.0.1" ]; then
     curl -sSL "${SHFMT_URL}" -o "${HOME}/bin/shfmt"
     chmod +x "${HOME}/bin/shfmt"
 else
