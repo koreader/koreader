@@ -97,6 +97,11 @@ msgstr[2] "Pagina's context 2 plural 2"
 msgstr[3] ""
 msgstr[4] ""
 msgstr[5] ""
+
+#: frontend/ui/data/css_tweaks.lua:50
+#, fuzzy
+msgid "Fuzzy"
+msgstr "Fuzzy translated"
 ]]
 
 describe("GetText module", function()
@@ -210,6 +215,9 @@ describe("GetText module", function()
 
     describe("language with standard plurals", function()
         GetText.changeLang("nl_NL")
+        it("gettext should ignore fuzzy strings", function()
+            assert.is_equal("Fuzzy", GetText("Fuzzy"))
+        end)
         it("gettext should translate multiline string", function()
             assert.is_equal("\nbericht", GetText("\nmessage"))
         end)
@@ -232,6 +240,9 @@ describe("GetText module", function()
 
     describe("language with simple plurals n > 2", function()
         GetText.changeLang("simple")
+        it("gettext should ignore fuzzy strings", function()
+            assert.is_equal("Fuzzy", GetText("Fuzzy"))
+        end)
         it("gettext should translate multiline string", function()
             assert.is_equal("\nbericht", GetText("\nmessage"))
         end)
@@ -256,6 +267,9 @@ describe("GetText module", function()
 
     describe("language with no plurals", function()
         GetText.changeLang("none")
+        it("gettext should ignore fuzzy strings", function()
+            assert.is_equal("Fuzzy", GetText("Fuzzy"))
+        end)
         it("gettext should translate multiline string", function()
             assert.is_equal("\nbericht", GetText("\nmessage"))
         end)
@@ -280,6 +294,9 @@ describe("GetText module", function()
 
     describe("language with complex plurals (Arabic)", function()
         GetText.changeLang("ar")
+        it("gettext should ignore fuzzy strings", function()
+            assert.is_equal("Fuzzy", GetText("Fuzzy"))
+        end)
         it("gettext should translate multiline string", function()
             assert.is_equal("\nbericht", GetText("\nmessage"))
         end)
@@ -306,6 +323,9 @@ describe("GetText module", function()
 
     describe("language with complex plurals (Russian)", function()
         GetText.changeLang("ru")
+        it("gettext should ignore fuzzy strings", function()
+            assert.is_equal("Fuzzy", GetText("Fuzzy"))
+        end)
         it("gettext should translate multiline string", function()
             assert.is_equal("\nbericht", GetText("\nmessage"))
         end)
@@ -332,6 +352,9 @@ describe("GetText module", function()
     -- to follow, so there we focus on algorithm correctness.
     describe("language with many plurals", function()
         GetText.changeLang("many")
+        it("gettext should ignore fuzzy strings", function()
+            assert.is_equal("Fuzzy", GetText("Fuzzy"))
+        end)
         it("gettext should translate multiline string", function()
             assert.is_equal("\nbericht", GetText("\nmessage"))
         end)
