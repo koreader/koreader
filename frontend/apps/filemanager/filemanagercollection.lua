@@ -97,11 +97,13 @@ function FileManagerCollection:onMenuHold(item)
     if not Device:isAndroid() and util.isAllowedScript(item.file) then
         table.insert(buttons, {
             {
+                -- @translators This is the script's programming language (f.g., shell or python)
                 text = T(_("Execute %1 script"), util.getScriptType(item.file)),
                 enabled = true,
                 callback = function()
                     UIManager:close(self.collfile_dialog)
                     local script_is_running_msg = InfoMessage:new{
+                            -- @translators %1 is the script's programming language (f.g., shell or python), %2 is the filename
                             text = T(_("Running %1 script %2 ..."), util.getScriptType(item.file), BD.filename(BaseUtil.basename(item.file))),
                     }
                     UIManager:show(script_is_running_msg)
