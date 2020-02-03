@@ -395,7 +395,7 @@ end
 
 function OTAManager:zsync(full_dl)
     if full_dl or self:_buildLocalPackage() == 0 then
-        local zsync_wrapper = "zsync"
+        local zsync_wrapper = "zsync2"
         -- With visual feedback if supported...
         if self.can_pretty_print then
             zsync_wrapper = "spinning_zsync"
