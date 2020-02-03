@@ -67,7 +67,7 @@ KOReader is developed and supported by volunteers all around the world. There ar
 - document lesser-known features on the [wiki][link-wiki]
 - help others with your knowledge on the [forum][link-forum]
 
-Right now we only support [liberapay](https://liberapay.com/KOReader) donations, but you can also create a [bounty][link-bountysource] to motivate others to work on specific bug or feature request.
+Right now we only support [liberapay](https://liberapay.com/KOReader) donations, but you can also create a [bounty][link-bountysource] to motivate others to work on a specific bug or feature request.
 
 Also if you have and old Pocketbook device you don't want, we might find it useful to tinker a bit with that platform. Please contact us through the forum or GitHub.
 
