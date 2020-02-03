@@ -306,7 +306,7 @@ function FileManager:init()
             -- NOTE: We populate the empty separator, in order not to mess with the button reordering code in CoverMenu
             table.insert(buttons[3],
                 {
-                    -- @translators This is the script's programming language (f.g., shell or python)
+                    -- @translators This is the script's programming language (e.g., shell or python)
                     text = T(_("Execute %1 script"), util.getScriptType(file)),
                     enabled = true,
                     callback = function()
