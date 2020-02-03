@@ -312,7 +312,7 @@ function FileManager:init()
                     callback = function()
                         UIManager:close(self.file_dialog)
                         local script_is_running_msg = InfoMessage:new{
-                                -- @translators %1 is the script's programming language (f.g., shell or python), %2 is the filename
+                                -- @translators %1 is the script's programming language (e.g., shell or python), %2 is the filename
                                 text = T(_("Running %1 script %2 ..."), util.getScriptType(file), BD.filename(BaseUtil.basename(file))),
                         }
                         UIManager:show(script_is_running_msg)
