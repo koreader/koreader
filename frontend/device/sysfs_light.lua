@@ -67,7 +67,7 @@ function SysfsLight:setNaturalBrightness(brightness, warmth)
 
     -- Newer devices use a mixer instead of writting values per color.
     if self.frontlight_mixer then
-        -- Honor the device's scale, which may not be [0...100] (f.g., it's [0...10] on the Forma) ;).
+        -- Honor the device's scale, which may not be [0...100] (e.g., it's [0...10] on the Forma) ;).
         warmth = math.floor(warmth / self.nl_max)
         if set_brightness then
             -- Prefer the ioctl, as it's much lower latency.

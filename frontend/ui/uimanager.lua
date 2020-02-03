@@ -491,15 +491,15 @@ the second parameter (refreshtype) can either specify a refreshtype
 or a function that returns refreshtype AND refreshregion and is called
 after painting the widget.
 Here's a quick rundown of what each refreshtype should be used for:
-full: high-fidelity flashing refresh (f.g., large images).
+full: high-fidelity flashing refresh (e.g., large images).
       Highest quality, but highest latency.
       Don't abuse if you only want a flash (in this case, prefer flashpartial or flashui).
-partial: medium fidelity refresh (f.g., text on a white background).
+partial: medium fidelity refresh (e.g., text on a white background).
          Can be promoted to flashing after FULL_REFRESH_COUNT refreshes.
          Don't abuse to avoid spurious flashes.
-ui: medium fidelity refresh (f.g., mixed content).
+ui: medium fidelity refresh (e.g., mixed content).
     Should apply to most UI elements.
-fast: low fidelity refresh (f.g., monochrome content).
+fast: low fidelity refresh (e.g., monochrome content).
       Should apply to most highlighting effects achieved through inversion.
       Note that if your highlighted element contains text,
       you might want to keep the unhighlight refresh as "ui" instead, for crisper text.
@@ -877,9 +877,9 @@ function UIManager:_refresh(mode, region, dither)
 
     -- NOTE: While, ideally, we shouldn't merge refreshes w/ different waveform modes,
     --       this allows us to optimize away a number of quirks of our rendering stack
-    --       (f.g., multiple setDirty calls queued when showing/closing a widget because of update mechanisms),
+    --       (e.g., multiple setDirty calls queued when showing/closing a widget because of update mechanisms),
     --       as well as a few actually effective merges
-    --       (f.g., the disappearance of a selection HL with the following menu update).
+    --       (e.g., the disappearance of a selection HL with the following menu update).
     for i = 1, #self._refresh_stack do
         -- check for collision with refreshes that are already enqueued
         if region:intersectWith(self._refresh_stack[i].region) then

@@ -1,11 +1,17 @@
+local BD = require("ui/bidi")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
+local Device = require("device")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
+local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
 local ReadCollection = require("readcollection")
 local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
+local BaseUtil = require("ffi/util")
+local util = require("util")
 local _ = require("gettext")
+local T = require("ffi/util").template
 
 local FileManagerCollection = InputContainer:extend{
     coll_menu_title = _("Favorites"),
@@ -87,6 +93,39 @@ function FileManagerCollection:onMenuHold(item)
             },
         },
     }
+    -- NOTE: Duplicated from frontend/apps/filemanager/filemanager.lua
+    if not Device:isAndroid() and util.isAllowedScript(item.file) then
+        table.insert(buttons, {
+            {
+                -- @translators This is the script's programming language (e.g., shell or python)
+                text = T(_("Execute %1 script"), util.getScriptType(item.file)),
+                enabled = true,
+                callback = function()
+                    UIManager:close(self.collfile_dialog)
+                    local script_is_running_msg = InfoMessage:new{
+                            -- @translators %1 is the script's programming language (e.g., shell or python), %2 is the filename
+                            text = T(_("Running %1 script %2 ..."), util.getScriptType(item.file), BD.filename(BaseUtil.basename(item.file))),
+                    }
+                    UIManager:show(script_is_running_msg)
+                    UIManager:scheduleIn(0.5, function()
+                        local rv = os.execute(BaseUtil.realpath(item.file))
+                        UIManager:close(script_is_running_msg)
+                        if rv == 0 then
+                            UIManager:show(InfoMessage:new{
+                                text = _("The script exited successfully."),
+                            })
+                        else
+                            UIManager:show(InfoMessage:new{
+                                text = T(_("The script returned a non-zero status code: %1!"), bit.rshift(rv, 8)),
+                                icon_file = "resources/info-warn.png",
+                            })
+                        end
+                    end)
+                end,
+            }
+        })
+    end
+
     self.collfile_dialog = ButtonDialogTitle:new{
         title = item.text:match("([^/]+)$"),
         title_align = "center",

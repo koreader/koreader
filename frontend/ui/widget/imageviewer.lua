@@ -363,7 +363,7 @@ function ImageViewer:update()
         file = self.file,
         image = self.image,
         image_disposable = false, -- we may re-use self.image
-        alpha = true, -- we might be showing images with an alpha channel (f.g., from Wikipedia)
+        alpha = true, -- we might be showing images with an alpha channel (e.g., from Wikipedia)
         width = max_image_w,
         height = max_image_h,
         rotation_angle = rotation_angle,

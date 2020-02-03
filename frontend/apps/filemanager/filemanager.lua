@@ -40,7 +40,8 @@ local UIManager = require("ui/uimanager")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local util = require("ffi/util")
+local BaseUtil = require("ffi/util")
+local util = require("util")
 local _ = require("gettext")
 local C_ = _.pgettext
 local Screen = Device.screen
@@ -226,10 +227,10 @@ function FileManager:init()
                 },
                 {
                     text = _("Purge .sdr"),
-                    enabled = DocSettings:hasSidecarFile(util.realpath(file)),
+                    enabled = DocSettings:hasSidecarFile(BaseUtil.realpath(file)),
                     callback = function()
                         UIManager:show(ConfirmBox:new{
-                            text = util.template(_("Purge .sdr to reset settings for this document?\n\n%1"), BD.filename(self.file_dialog.title)),
+                            text = T(_("Purge .sdr to reset settings for this document?\n\n%1"), BD.filename(self.file_dialog.title)),
                             ok_text = _("Purge"),
                             ok_callback = function()
                                 filemanagerutil.purgeSettings(file)
@@ -271,7 +272,7 @@ function FileManager:init()
                         UIManager:close(self.file_dialog)
                         fileManager.rename_dialog = InputDialog:new{
                             title = _("Rename file"),
-                            input = util.basename(file),
+                            input = BaseUtil.basename(file),
                             buttons = {{
                                 {
                                     text = _("Cancel"),
@@ -297,8 +298,44 @@ function FileManager:init()
                 }
             },
             -- a little hack to get visual functionality grouping
-            {},
+            {
+            },
         }
+
+        if not Device:isAndroid() and lfs.attributes(file, "mode") == "file" and util.isAllowedScript(file) then
+            -- NOTE: We populate the empty separator, in order not to mess with the button reordering code in CoverMenu
+            table.insert(buttons[3],
+                {
+                    -- @translators This is the script's programming language (e.g., shell or python)
+                    text = T(_("Execute %1 script"), util.getScriptType(file)),
+                    enabled = true,
+                    callback = function()
+                        UIManager:close(self.file_dialog)
+                        local script_is_running_msg = InfoMessage:new{
+                                -- @translators %1 is the script's programming language (e.g., shell or python), %2 is the filename
+                                text = T(_("Running %1 script %2 ..."), util.getScriptType(file), BD.filename(BaseUtil.basename(file))),
+                        }
+                        UIManager:show(script_is_running_msg)
+                        UIManager:scheduleIn(0.5, function()
+                            local rv = os.execute(BaseUtil.realpath(file))
+                            UIManager:close(script_is_running_msg)
+                            if rv == 0 then
+                                UIManager:show(InfoMessage:new{
+                                    text = _("The script exited successfully."),
+                                })
+                            else
+                                --- @note: Lua 5.1 returns the raw return value from the os's system call. Counteract this madness.
+                                UIManager:show(InfoMessage:new{
+                                    text = T(_("The script returned a non-zero status code: %1!"), bit.rshift(rv, 8)),
+                                    icon_file = "resources/info-warn.png",
+                                })
+                            end
+                        end)
+                    end,
+                }
+            )
+        end
+
         if lfs.attributes(file, "mode") == "file" then
             table.insert(buttons, {
                 {
@@ -352,7 +389,7 @@ function FileManager:init()
             end
         end
         if lfs.attributes(file, "mode") == "directory" then
-            local realpath = util.realpath(file)
+            local realpath = BaseUtil.realpath(file)
             table.insert(buttons, {
                 {
                     text = _("Set as HOME directory"),
@@ -679,7 +716,7 @@ end
 function FileManager:setHome(path)
     path = path or self.file_chooser.path
     UIManager:show(ConfirmBox:new{
-        text = util.template(_("Set '%1' as HOME directory?"), BD.dirpath(path)),
+        text = T(_("Set '%1' as HOME directory?"), BD.dirpath(path)),
         ok_text = _("Set as HOME"),
         ok_callback = function()
             G_reader_settings:saveSetting("home_dir", path)
@@ -692,7 +729,7 @@ function FileManager:openRandomFile(dir)
     local random_file = DocumentRegistry:getRandomFile(dir, false)
     if random_file then
         UIManager:show(MultiConfirmBox:new {
-            text = T(_("Do you want to open %1?"), BD.filename(util.basename(random_file))),
+            text = T(_("Do you want to open %1?"), BD.filename(BaseUtil.basename(random_file))),
             choice1_text = _("Open"),
             choice1_callback = function()
                 FileManager.instance:onClose()
@@ -725,17 +762,17 @@ end
 
 function FileManager:pasteHere(file)
     if self.clipboard then
-        file = util.realpath(file)
-        local orig = util.realpath(self.clipboard)
+        file = BaseUtil.realpath(file)
+        local orig = BaseUtil.realpath(self.clipboard)
         local dest = lfs.attributes(file, "mode") == "directory" and
             file or file:match("(.*/)")
 
         local function infoCopyFile()
             -- if we copy a file, also copy its sidecar directory
             if DocSettings:hasSidecarFile(orig) then
-                util.execute(self.cp_bin, "-r", DocSettings:getSidecarDir(orig), dest)
+                BaseUtil.execute(self.cp_bin, "-r", DocSettings:getSidecarDir(orig), dest)
             end
-            if util.execute(self.cp_bin, "-r", orig, dest) == 0 then
+            if BaseUtil.execute(self.cp_bin, "-r", orig, dest) == 0 then
                 UIManager:show(InfoMessage:new {
                     text = T(_("Copied to: %1"), BD.dirpath(dest)),
                     timeout = 2,
@@ -755,7 +792,7 @@ function FileManager:pasteHere(file)
             end
             if self:moveFile(orig, dest) then
                 -- Update history and collections.
-                local dest_file = string.format("%s/%s", dest, util.basename(orig))
+                local dest_file = string.format("%s/%s", dest, BaseUtil.basename(orig))
                 require("readhistory"):updateItemByPath(orig, dest_file)
                 ReadCollection:updateItemByPath(orig, dest_file)
                 -- Update last open file.
@@ -780,7 +817,7 @@ function FileManager:pasteHere(file)
         else
             info_file = infoCopyFile
         end
-        local basename = util.basename(self.clipboard)
+        local basename = BaseUtil.basename(self.clipboard)
         local mode = lfs.attributes(string.format("%s/%s", dest, basename), "mode")
         if mode == "file" or mode == "directory" then
             local text
@@ -809,7 +846,7 @@ end
 
 function FileManager:createFolder(curr_folder, new_folder)
     local folder = string.format("%s/%s", curr_folder, new_folder)
-    local code = util.execute(self.mkdir_bin, folder)
+    local code = BaseUtil.execute(self.mkdir_bin, folder)
     local text
     if code == 0 then
         self:onRefresh()
@@ -825,10 +862,10 @@ end
 
 function FileManager:deleteFile(file)
     local ok, err, is_dir
-    local file_abs_path = util.realpath(file)
+    local file_abs_path = BaseUtil.realpath(file)
     if file_abs_path == nil then
         UIManager:show(InfoMessage:new{
-            text = util.template(_("File %1 not found"), BD.filepath(file)),
+            text = T(_("File %1 not found"), BD.filepath(file)),
         })
         return
     end
@@ -837,7 +874,7 @@ function FileManager:deleteFile(file)
     if lfs.attributes(file_abs_path, "mode") == "file" then
         ok, err = os.remove(file_abs_path)
     else
-        ok, err = util.purgeDir(file_abs_path)
+        ok, err = BaseUtil.purgeDir(file_abs_path)
         is_dir = true
     end
     if ok and not err then
@@ -852,19 +889,19 @@ function FileManager:deleteFile(file)
         end
         ReadCollection:removeItemByPath(file, is_dir)
         UIManager:show(InfoMessage:new{
-            text = util.template(_("Deleted %1"), BD.filepath(file)),
+            text = T(_("Deleted %1"), BD.filepath(file)),
             timeout = 2,
         })
     else
         UIManager:show(InfoMessage:new{
-            text = util.template(_("An error occurred while trying to delete %1"), BD.filepath(file)),
+            text = T(_("An error occurred while trying to delete %1"), BD.filepath(file)),
         })
     end
 end
 
 function FileManager:renameFile(file)
-    if util.basename(file) ~= self.rename_dialog:getInputText() then
-        local dest = util.joinPath(util.dirname(file), self.rename_dialog:getInputText())
+    if BaseUtil.basename(file) ~= self.rename_dialog:getInputText() then
+        local dest = BaseUtil.joinPath(BaseUtil.dirname(file), self.rename_dialog:getInputText())
         if self:moveFile(file, dest) then
             ReadCollection:updateItemByPath(file, dest)
             if lfs.attributes(dest, "mode") == "file" then
@@ -880,12 +917,12 @@ function FileManager:renameFile(file)
                 end
                 if move_history then
                     UIManager:show(InfoMessage:new{
-                        text = util.template(_("Renamed from %1 to %2"), BD.filepath(file), BD.filepath(dest)),
+                        text = T(_("Renamed from %1 to %2"), BD.filepath(file), BD.filepath(dest)),
                         timeout = 2,
                     })
                 else
                     UIManager:show(InfoMessage:new{
-                        text = util.template(
+                        text = T(
                             _("Failed to move history data of %1 to %2.\nThe reading history may be lost."),
                             BD.filepath(file), BD.filepath(dest)),
                     })
@@ -893,7 +930,7 @@ function FileManager:renameFile(file)
             end
         else
             UIManager:show(InfoMessage:new{
-                text = util.template(
+                text = T(
                     _("Failed to rename from %1 to %2"), BD.filepath(file), BD.filepath(dest)),
             })
         end
@@ -932,7 +969,7 @@ function FileManager:getSortingMenuTable()
     end
     return {
         text_func = function()
-            return util.template(
+            return T(
                 _("Sort by: %1"),
                 collates[fm.file_chooser.collate][1]
             )
@@ -982,7 +1019,7 @@ function FileManager:getStartWithMenuTable()
     end
     return {
         text_func = function()
-            return util.template(
+            return T(
                 _("Start with: %1"),
                 start_withs[start_with_setting][1]
             )
@@ -1018,7 +1055,7 @@ A shortcut to execute mv command (self.mv_bin) with from and to as parameters.
 Returns a boolean value to indicate the result of mv command.
 --]]
 function FileManager:moveFile(from, to)
-    return util.execute(self.mv_bin, from, to) == 0
+    return BaseUtil.execute(self.mv_bin, from, to) == 0
 end
 
 function FileManager:onHome()

@@ -142,7 +142,7 @@ function Kindle:usbPlugIn()
     -- NOTE: We cannot support running in USBMS mode (we cannot, we live on the partition being exported!).
     --       But since that's the default state of the Kindle system, we have to try to make nice...
     --       To that end, we're currently SIGSTOPping volumd to inhibit the system's USBMS mode handling.
-    --       It's not perfect (f.g., if the system is setup for USBMS and not USBNet,
+    --       It's not perfect (e.g., if the system is setup for USBMS and not USBNet,
     --       the frontlight will be turned off when plugged in), but it at least prevents users from completely
     --       shooting themselves in the foot (c.f., https://github.com/koreader/koreader/issues/3220)!
     --       On the upside, we don't have to bother waking up the WM to show us the USBMS screen :D.
