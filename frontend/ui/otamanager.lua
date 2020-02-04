@@ -21,7 +21,10 @@ local ota_dir = DataStorage:getDataDir() .. "/ota/"
 local OTAManager = {
     ota_servers = {
         "http://ota.koreader.rocks/",
+        --[[
+        -- NOTE: Seems down? Ping @chrox ;).
         "http://vislab.bjmu.edu.cn/apps/koreader/ota/",
+        --]]
         "http://koreader-fr.ak-team.com/",
         "http://koreader-pl.ak-team.com/",
         "http://koreader-na.ak-team.com/",
