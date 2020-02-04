@@ -119,17 +119,19 @@ function ReaderGoto:gotoPage()
     end
 end
 
-function ReaderGoto:gotoBeginning()
+function ReaderGoto:onGoToBeginning()
     self.ui.link:addCurrentLocationToStack()
     self.ui:handleEvent(Event:new("GotoPage", 1))
+    return true
 end
 
-function ReaderGoto:gotoEnd()
+function ReaderGoto:onGoToEnd()
     local endpage = self.document:getPageCount()
     if endpage then
         self.ui.link:addCurrentLocationToStack()
         self.ui:handleEvent(Event:new("GotoPage", endpage))
     end
+    return true
 end
 
 return ReaderGoto

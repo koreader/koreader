@@ -2,6 +2,7 @@ local BD = require("ui/bidi")
 local BookStatusWidget = require("ui/widget/bookstatuswidget")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local Device = require("device")
+local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
@@ -82,7 +83,7 @@ function ReaderStatus:onEndOfBook()
                 {
                     text = _("Go to beginning"),
                     callback = function()
-                        self.ui.gotopage:gotoBeginning()
+                        self.ui:handleEvent(Event:new("GoToBeginning"))
                         UIManager:close(choose_action)
                     end,
                 },
@@ -144,7 +145,7 @@ function ReaderStatus:onEndOfBook()
             })
         end
     elseif settings == "goto_beginning" then
-        self.ui.gotopage:gotoBeginning()
+        self.ui:handleEvent(Event:new("GoToBeginning"))
     elseif settings == "file_browser" then
         self:openFileBrowser()
     elseif settings == "mark_read" then
