@@ -20,12 +20,12 @@ local ota_dir = DataStorage:getDataDir() .. "/ota/"
 
 local OTAManager = {
     ota_servers = {
-        "http://ota.koreader.rocks:80/",
-        "http://vislab.bjmu.edu.cn:80/apps/koreader/ota/",
-        "http://koreader-fr.ak-team.com:80/",
-        "http://koreader-pl.ak-team.com:80/",
-        "http://koreader-na.ak-team.com:80/",
-        "http://koreader.ak-team.com:80/",
+        "http://ota.koreader.rocks/",
+        "http://vislab.bjmu.edu.cn/apps/koreader/ota/",
+        "http://koreader-fr.ak-team.com/",
+        "http://koreader-pl.ak-team.com/",
+        "http://koreader-na.ak-team.com/",
+        "http://koreader.ak-team.com/",
     },
     ota_channels = {
         "stable",
