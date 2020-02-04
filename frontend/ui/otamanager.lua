@@ -19,6 +19,7 @@ local T = require("ffi/util").template
 local ota_dir = DataStorage:getDataDir() .. "/ota/"
 
 local OTAManager = {
+    -- NOTE: Each URL *MUST* end with a /
     ota_servers = {
         "http://ota.koreader.rocks/",
         --[[
