@@ -65,14 +65,15 @@ function FileChooser:init()
                     local filename = path.."/"..f
                     local attributes = lfs.attributes(filename)
                     if attributes ~= nil then
-                        if attributes.mode == "directory" and f ~= "." and f~=".." then
+                        if attributes.mode == "directory" and f ~= "." and f ~= ".." then
                             if self.dir_filter(filename) then
                                 table.insert(dirs, {name = f,
                                                     suffix = getFileNameSuffix(f),
                                                     fullpath = filename,
                                                     attr = attributes})
                             end
-                        elseif attributes.mode == "file" then
+                        -- Always ignore macOS resource forks, too.
+                        elseif attributes.mode == "file" not util.stringStartsWith(f, "._") then
                             if self.file_filter == nil or self.file_filter(filename) or self.show_unsupported then
                                 local percent_finished = 0
                                 if self.collate == "percent_unopened_first" or self.collate == "percent_unopened_last" then
