@@ -38,8 +38,8 @@ fi
     done
 ) &
 
-# Launch zsync, and remember its exit code...
-./zsync "$@"
+# Launch zsync2, and remember its exit code...
+./zsync2 "$@"
 rc=$?
 
 # Kill the spinner subshell now that we're done

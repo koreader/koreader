@@ -19,20 +19,17 @@ local T = require("ffi/util").template
 local ota_dir = DataStorage:getDataDir() .. "/ota/"
 
 local OTAManager = {
+    -- NOTE: Each URL *MUST* end with a /
     ota_servers = {
-        "http://ota.koreader.rocks:80/",
-        "http://vislab.bjmu.edu.cn:80/apps/koreader/ota/",
+        "http://ota.koreader.rocks/",
         --[[
-        -- NOTE: Because we can't have nice things,
-        --       the HTTP frontend of these OpenStack storage containers doesn't actually properly support
-        --       HTTP/1.1 Range requests when multiple byte ranges are requested: they return bogus data when doing so,
-        --       which confuses zsync, causing it to retry indefinitely instead of aborting...
-        --       c.f., https://github.com/koreader/koreader-base/pull/699
-        "http://koreader-fr.ak-team.com:80/",
-        "http://koreader-pl.ak-team.com:80/",
-        "http://koreader-na.ak-team.com:80/",
+        -- NOTE: Seems down? Ping @chrox ;).
+        "http://vislab.bjmu.edu.cn/apps/koreader/ota/",
         --]]
-        "http://koreader.ak-team.com:80/",
+        "http://koreader-fr.ak-team.com/",
+        "http://koreader-pl.ak-team.com/",
+        "http://koreader-na.ak-team.com/",
+        "http://koreader.ak-team.com/",
     },
     ota_channels = {
         "stable",
@@ -395,7 +392,7 @@ end
 
 function OTAManager:zsync(full_dl)
     if full_dl or self:_buildLocalPackage() == 0 then
-        local zsync_wrapper = "zsync"
+        local zsync_wrapper = "zsync2"
         -- With visual feedback if supported...
         if self.can_pretty_print then
             zsync_wrapper = "spinning_zsync"
