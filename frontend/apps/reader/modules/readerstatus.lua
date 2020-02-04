@@ -80,9 +80,9 @@ function ReaderStatus:onEndOfBook()
             },
             {
                 {
-                    text = _("Delete file"),
+                    text = _("Go to beginning"),
                     callback = function()
-                        self:deleteFile(self.document.file, false)
+                        self.ui.gotopage:gotoBeginning()
                         UIManager:close(choose_action)
                     end,
                 },
@@ -97,8 +97,9 @@ function ReaderStatus:onEndOfBook()
             },
             {
                 {
-                    text = _("Cancel"),
+                    text = _("Delete file"),
                     callback = function()
+                        self:deleteFile(self.document.file, false)
                         UIManager:close(choose_action)
                     end,
                 },
@@ -106,6 +107,14 @@ function ReaderStatus:onEndOfBook()
                     text = _("File browser"),
                     callback = function()
                         self:openFileBrowser()
+                        UIManager:close(choose_action)
+                    end,
+                },
+            },
+            {
+                {
+                    text = _("Cancel"),
+                    callback = function()
                         UIManager:close(choose_action)
                     end,
                 },
@@ -134,6 +143,8 @@ function ReaderStatus:onEndOfBook()
                 text = _("Could not open next file. Sort by last read date does not support this feature."),
             })
         end
+    elseif settings == "goto_beginning" then
+        self.ui.gotopage:gotoBeginning()
     elseif settings == "file_browser" then
         self:openFileBrowser()
     elseif settings == "mark_read" then

@@ -505,6 +505,15 @@ common_settings.document = {
                     end,
                 },
                 {
+                    text = _("Go to beginning"),
+                    checked_func = function()
+                        return G_reader_settings:readSetting("end_document_action") == "goto_beginning"
+                    end,
+                    callback = function()
+                        G_reader_settings:saveSetting("end_document_action", "goto_beginning")
+                    end,
+                },
+                {
                     text = _("Return to file browser"),
                     checked_func = function()
                         return G_reader_settings:readSetting("end_document_action") == "file_browser"
