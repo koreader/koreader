@@ -43,7 +43,8 @@ function FileSearcher:readDir()
                 if attributes.mode == "directory" and f ~= "." and f ~= ".." and (G_reader_settings:isTrue("show_hidden") or not util.stringStartsWith(f, ".")) then
                     table.insert(new_dirs, fullpath)
                     table.insert(self.files, {name = f, path = fullpath, attr = attributes})
-                elseif attributes.mode == "file" and DocumentRegistry:hasProvider(fullpath) then
+                -- Always Ingnore macOS resource forks, too.
+                elseif attributes.mode == "file" and not util.stringStartsWith(f, "._") and DocumentRegistry:hasProvider(fullpath) then
                     table.insert(self.files, {name = f, path = fullpath, attr = attributes})
                 end
             end
