@@ -72,8 +72,8 @@ function FileChooser:init()
                                                     fullpath = filename,
                                                     attr = attributes})
                             end
-                        -- Always ignore macOS resource forks, too.
-                        elseif attributes.mode == "file" not util.stringStartsWith(f, "._") then
+                        -- Always ignore macOS resource forks.
+                        elseif attributes.mode == "file" and not util.stringStartsWith(f, "._") then
                             if self.file_filter == nil or self.file_filter(filename) or self.show_unsupported then
                                 local percent_finished = 0
                                 if self.collate == "percent_unopened_first" or self.collate == "percent_unopened_last" then
