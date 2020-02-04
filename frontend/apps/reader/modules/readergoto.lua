@@ -128,7 +128,7 @@ function ReaderGoto:gotoEnd()
     local endpage = self.document:getPageCount()
     if endpage then
         self.ui.link:addCurrentLocationToStack()
-        self.ui:handleEvent(Event:new("GotoPage", number))
+        self.ui:handleEvent(Event:new("GotoPage", endpage))
     end
 end
 
