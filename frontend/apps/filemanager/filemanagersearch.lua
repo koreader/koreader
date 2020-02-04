@@ -190,7 +190,7 @@ function Search:ShowSearch()
                         end,
                     },
                     {
-                        -- @translators Search for books in calibre catalog.
+                        -- @translators Search for books in calibre Library, via on-device metadata (as setup by Calibre's 'Send To Device').
                         text = _("Find books"),
                         enabled = true,
                         callback = function()

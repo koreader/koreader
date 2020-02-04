@@ -477,7 +477,7 @@ function FileManagerMenu:setUpdateItemTable()
 
     -- search tab
     self.menu_items.find_book_in_calibre_catalog = {
-        text = _("Find a book in calibre catalog"),
+        text = _("Find a book via calibre metadata"),
         callback = function()
             Search:getCalibre()
             Search:ShowSearch()
