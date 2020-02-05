@@ -61,9 +61,10 @@ function FileChooser:init()
         local ok, iter, dir_obj = pcall(lfs.dir, path)
         if ok then
             for f in iter, dir_obj do
-                if count_only
-                   and (self.show_hidden or (not string.match(f, "^%.[^.]") and not util.stringStartsWith(f, "._"))) then
-                    table.insert(dirs, true)
+                if count_only then
+                    if self.show_hidden or not util.stringStartsWith(f, ".") then
+                        table.insert(dirs, true)
+                    end
                 elseif self.show_hidden or not string.match(f, "^%.[^.]") then
                     local filename = path.."/"..f
                     local attributes = lfs.attributes(filename)
