@@ -56,12 +56,14 @@ function FileChooser:init()
         end
         return true
     end
-    self.list = function(path, dirs, files)
+    self.list = function(path, dirs, files, count_only)
         -- lfs.dir directory without permission will give error
         local ok, iter, dir_obj = pcall(lfs.dir, path)
         if ok then
             for f in iter, dir_obj do
-                if self.show_hidden or not string.match(f, "^%.[^.]") then
+                if count_only then
+                    table.insert(dirs, true)
+                elseif self.show_hidden or not string.match(f, "^%.[^.]") then
                     local filename = path.."/"..f
                     local attributes = lfs.attributes(filename)
                     if attributes ~= nil then
@@ -211,7 +213,7 @@ function FileChooser:genItemTableFromPath(path)
         local sub_dirs = {}
         local dir_files = {}
         local subdir_path = self.path.."/"..dir.name
-        self.list(subdir_path, sub_dirs, dir_files)
+        self.list(subdir_path, sub_dirs, dir_files, true)
         local num_items = #sub_dirs + #dir_files
         local istr = ffiUtil.template(N_("1 item", "%1 items", num_items), num_items)
         local text
