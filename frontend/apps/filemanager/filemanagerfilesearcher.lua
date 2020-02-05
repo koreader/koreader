@@ -7,7 +7,8 @@ local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
 local lfs = require("libs/libkoreader-lfs")
-local util = require("ffi/util")
+local BaseUtil = require("ffi/util")
+local util = require("util")
 local _ = require("gettext")
 local Screen = require("device").screen
 
@@ -38,10 +39,12 @@ function FileSearcher:readDir()
             for f in lfs.dir(d) do
                 local fullpath = d.."/"..f
                 local attributes = lfs.attributes(fullpath) or {}
-                if attributes.mode == "directory" and f ~= "." and f~=".." then
+                -- Don't traverse hidden folders if we're not showing them
+                if attributes.mode == "directory" and f ~= "." and f ~= ".." and (G_reader_settings:isTrue("show_hidden") or not util.stringStartsWith(f, ".")) then
                     table.insert(new_dirs, fullpath)
                     table.insert(self.files, {name = f, path = fullpath, attr = attributes})
-                elseif attributes.mode == "file" and DocumentRegistry:hasProvider(fullpath) then
+                -- Always ignore macOS resource forks, too.
+                elseif attributes.mode == "file" and not util.stringStartsWith(f, "._") and DocumentRegistry:hasProvider(fullpath) then
                     table.insert(self.files, {name = f, path = fullpath, attr = attributes})
                 end
             end
@@ -93,7 +96,7 @@ function FileSearcher:close()
             else
                 UIManager:show(
                     InfoMessage:new{
-                        text = util.template(_("Found no files matching '%1'."),
+                        text = BaseUtil.template(_("Found no files matching '%1'."),
                                              self.search_value)
                     }
                 )
