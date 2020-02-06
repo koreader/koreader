@@ -308,8 +308,10 @@ function OTAManager:fetchAndProcessUpdate()
                                         timeout = 3,
                                     })
                                     -- Clear the installed package, as well as the complete/incomplete update download
-                                    os.execute("rm " .. self.installed_package)
-                                    os.execute("rm " .. self.updated_package .. "*")
+                                    os.execute("rm -f" .. self.installed_package)
+                                    os.execute("rm -f" .. self.updated_package .. "*")
+                                    -- As well as temporary files, in case zsync went kablooey too early...
+                                    os.execute("rm -f ./rcksum-*")
                                     -- And then relaunch zsync in full download mode...
                                     UIManager:scheduleIn(1, function()
                                         if OTAManager:zsync(true) == 0 then
