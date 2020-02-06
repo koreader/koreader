@@ -123,7 +123,6 @@ function OPDSBrowser:addServerFromInput(fields)
       password = fields[4],
     }
     table.insert(servers, new_item)
-    logge.info("new catalog fields", new_item)
     G_reader_settings:saveSetting("opds_servers", servers)
     self:init()
 end
@@ -661,19 +660,19 @@ function OPDSBrowser:showDownloads(item)
     UIManager:show(self.download_dialog)
 end
 
-function OPDSBrowser:browse(url, username, password)
-  logger.info("launch url", url)
+function OPDSBrowser:browse(browse_url, username, password)
+  logger.info("launch url", browse_url)
   table.insert(self.paths, {
-                 url = url,
+                 url = browse_url,
                  username = username,
                  password = password,
   })
-  if not self:updateCatalog(url, username, password) then
+  if not self:updateCatalog(browse_url, username, password) then
     table.remove(self.paths)
   end
 end
 
-function OPDSBrowser:browseSearchable(url, username, password)
+function OPDSBrowser:browseSearchable(browse_url, username, password)
     self.search_server_dialog = InputDialog:new{
         title = _("Search OPDS catalog"),
         input = "",
@@ -694,8 +693,8 @@ function OPDSBrowser:browseSearchable(url, username, password)
                     is_enter_default = true,
                     callback = function()
                                 UIManager:close(self.search_server_dialog)
-                                local search,   = self.search_server_dialog:getInputText():gsub(" ", "+")
-                                local searched_url,   = url:gsub("%%s", search)
+                                local search, _ = self.search_server_dialog:getInputText():gsub(" ", "+")
+                                local searched_url, _ = browse_url:gsub("%%s", search)
                                 logger.info ("Searched url becomes", searched_url)
                                 self:browse(searched_url, username, password)
                     end,
@@ -703,7 +702,7 @@ function OPDSBrowser:browseSearchable(url, username, password)
             }
         },
     }
-    logger.info ("display broswse search for url", url)
+    logger.info ("display broswse search for url", browse_url)
     UIManager:show(self.search_server_dialog)
     self.search_server_dialog:onShowKeyboard()
 end
