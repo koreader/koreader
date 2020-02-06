@@ -248,7 +248,7 @@ function SkimToWidget:init()
             else
                 page = self.ui.bookmark:getNextBookmarkedPageFromPage(self.curr_page)
             end
-            self:gotoBookmark(page)
+            self:goToBookmark(page)
         end,
         hold_callback = function()
             local page
@@ -257,7 +257,7 @@ function SkimToWidget:init()
             else
                 page = self.ui.bookmark:getLastBookmarkedPageFromPage(self.curr_page)
             end
-            self:gotoBookmark(page)
+            self:goToBookmark(page)
         end,
     }
 
@@ -276,7 +276,7 @@ function SkimToWidget:init()
             else
                 page = self.ui.bookmark:getPreviousBookmarkedPageFromPage(self.curr_page)
             end
-            self:gotoBookmark(page)
+            self:goToBookmark(page)
         end,
         hold_callback = function()
             local page
@@ -285,7 +285,7 @@ function SkimToWidget:init()
             else
                 page = self.ui.bookmark:getFirstBookmarkedPageFromPage(self.curr_page)
             end
-            self:gotoBookmark(page)
+            self:goToBookmark(page)
         end,
     }
 
@@ -417,7 +417,7 @@ function SkimToWidget:goToPage(page)
     self:update()
 end
 
-function SkimToWidget:gotoBookmark(page)
+function SkimToWidget:goToBookmark(page)
     if page then
         self:addOriginToLocationStack()
         self.ui.bookmark:gotoBookmark(page)
