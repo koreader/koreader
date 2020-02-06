@@ -134,7 +134,7 @@ function SkimToWidget:init()
         width = self.button_width,
         show_parent = self,
         callback = function()
-            self:gotoPageCallback(self.curr_page - 1)
+            self:goToPage(self.curr_page - 1)
         end,
     }
     local button_minus_ten = Button:new{
@@ -146,7 +146,7 @@ function SkimToWidget:init()
         width = self.button_width,
         show_parent = self,
         callback = function()
-            self:gotoPageCallback(self.curr_page - 10)
+            self:goToPage(self.curr_page - 10)
         end,
     }
     local button_plus = Button:new{
@@ -158,7 +158,7 @@ function SkimToWidget:init()
         width = self.button_width,
         show_parent = self,
         callback = function()
-            self:gotoPageCallback(self.curr_page + 1)
+            self:goToPage(self.curr_page + 1)
         end,
     }
     local button_plus_ten = Button:new{
@@ -170,7 +170,7 @@ function SkimToWidget:init()
         width = self.button_width,
         show_parent = self,
         callback = function()
-            self:gotoPageCallback(self.curr_page + 10)
+            self:goToPage(self.curr_page + 10)
         end,
     }
     self.current_page_text = Button:new{
@@ -206,11 +206,11 @@ function SkimToWidget:init()
         callback = function()
             local page = self:getNextChapter(self.curr_page)
             if page and page >=1 and page <= self.page_count then
-                self:gotoPageCallback(page)
+                self:goToPage(page)
             end
         end,
         hold_callback = function()
-            self:gotoPageCallback(self.page_count)
+            self:goToPage(self.page_count)
         end,
     }
 
@@ -225,11 +225,11 @@ function SkimToWidget:init()
         callback = function()
             local page = self:getPrevChapter(self.curr_page)
             if page and page >=1 and page <= self.page_count then
-                self:gotoPageCallback(page)
+                self:goToPage(page)
             end
         end,
         hold_callback = function()
-            self:gotoPageCallback(1)
+            self:goToPage(1)
         end,
     }
 
@@ -248,7 +248,7 @@ function SkimToWidget:init()
             else
                 page = self.ui.bookmark:getNextBookmarkedPageFromPage(self.curr_page)
             end
-            self:gotoBookmarkCallback(page)
+            self:gotoBookmark(page)
         end,
         hold_callback = function()
             local page
@@ -257,7 +257,7 @@ function SkimToWidget:init()
             else
                 page = self.ui.bookmark:getLastBookmarkedPageFromPage(self.curr_page)
             end
-            self:gotoBookmarkCallback(page)
+            self:gotoBookmark(page)
         end,
     }
 
@@ -276,7 +276,7 @@ function SkimToWidget:init()
             else
                 page = self.ui.bookmark:getPreviousBookmarkedPageFromPage(self.curr_page)
             end
-            self:gotoBookmarkCallback(page)
+            self:gotoBookmark(page)
         end,
         hold_callback = function()
             local page
@@ -285,7 +285,7 @@ function SkimToWidget:init()
             else
                 page = self.ui.bookmark:getFirstBookmarkedPageFromPage(self.curr_page)
             end
-            self:gotoBookmarkCallback(page)
+            self:gotoBookmark(page)
         end,
     }
 
@@ -410,14 +410,14 @@ function SkimToWidget:onShow()
     return true
 end
 
-function SkimToWidget:gotoPageCallback(page)
+function SkimToWidget:goToPage(page)
     self.curr_page = page
     self:addOriginToLocationStack()
     self.ui:handleEvent(Event:new("GotoPage", self.curr_page))
     self:update()
 end
 
-function SkimToWidget:gotoBookmarkCallback(page)
+function SkimToWidget:gotoBookmark(page)
     if page then
         self:addOriginToLocationStack()
         self.ui.bookmark:gotoBookmark(page)
