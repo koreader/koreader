@@ -248,16 +248,16 @@ function SkimToWidget:init()
             else
                 page = self.ui.bookmark:getNextBookmarkedPageFromPage(self.curr_page)
             end
-            if page then
-                self:addOriginToLocationStack()
-                self.ui.bookmark:gotoBookmark(page)
-                if self.document.info.has_pages then
-                    self.curr_page = self.ui.paging.current_page
-                else
-                    self.curr_page = self.document:getCurrentPage()
-                end
-                self:update()
+            self:gotoBookmarkCallback(page)
+        end,
+        hold_callback = function()
+            local page
+            if self.document.info.has_pages then
+                page = self.ui.bookmark:getLastBookmarkedPageFromPage(self.ui.paging.current_page)
+            else
+                page = self.ui.bookmark:getLastBookmarkedPageFromPage(self.curr_page)
             end
+            self:gotoBookmarkCallback(page)
         end,
     }
 
@@ -276,16 +276,16 @@ function SkimToWidget:init()
             else
                 page = self.ui.bookmark:getPreviousBookmarkedPageFromPage(self.curr_page)
             end
-            if page then
-                self:addOriginToLocationStack()
-                self.ui.bookmark:gotoBookmark(page)
-                if self.document.info.has_pages then
-                    self.curr_page = self.ui.paging.current_page
-                else
-                    self.curr_page = self.document:getCurrentPage()
-                end
-                self:update()
+            self:gotoBookmarkCallback(page)
+        end,
+        hold_callback = function()
+            local page
+            if self.document.info.has_pages then
+                page = self.ui.bookmark:getFirstBookmarkedPageFromPage(self.ui.paging.current_page)
+            else
+                page = self.ui.bookmark:getFirstBookmarkedPageFromPage(self.curr_page)
             end
+            self:gotoBookmarkCallback(page)
         end,
     }
 
@@ -415,6 +415,19 @@ function SkimToWidget:gotoPageCallback(page)
     self:addOriginToLocationStack()
     self.ui:handleEvent(Event:new("GotoPage", self.curr_page))
     self:update()
+end
+
+function SkimToWidget:gotoBookmarkCallback(page)
+    if page then
+        self:addOriginToLocationStack()
+        self.ui.bookmark:gotoBookmark(page)
+        if self.document.info.has_pages then
+            self.curr_page = self.ui.paging.current_page
+        else
+            self.curr_page = self.document:getCurrentPage()
+        end
+        self:update()
+    end
 end
 
 function SkimToWidget:onAnyKeyPressed()

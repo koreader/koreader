@@ -571,6 +571,24 @@ function ReaderBookmark:getNextBookmarkedPageFromPage(pn_or_xp)
     end
 end
 
+function ReaderBookmark:getFirstBookmarkedPageFromPage(pn_or_xp)
+    if #self.bookmarks > 0 then
+        local first = #self.bookmarks
+        if self:isBookmarkPageInPageOrder(pn_or_xp, self.bookmarks[first]) then
+            return self.bookmarks[first].page
+        end
+    end
+end
+
+function ReaderBookmark:getLastBookmarkedPageFromPage(pn_or_xp)
+    if #self.bookmarks > 0 then
+        local last = 1
+        if self:isBookmarkPageInReversePageOrder(pn_or_xp, self.bookmarks[last]) then
+            return self.bookmarks[last].page
+        end
+    end
+end
+
 function ReaderBookmark:onGotoPreviousBookmark(pn_or_xp)
     self:gotoBookmark(self:getPreviousBookmarkedPage(pn_or_xp))
     return true
