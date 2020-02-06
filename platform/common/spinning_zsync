@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# We're going to need to remember failures from the *left* side of a pipeline...
+set -o pipefail
+
 # Figure out whether that's a delta or a full download given the number of arguments passed...
 if [ $# -lt 7 ]; then
     ZSYNC_MESSAGE="Downloading update data"
@@ -7,43 +10,16 @@ else
     ZSYNC_MESSAGE="Computing zsync delta"
 fi
 
-# Small zsync wrapper so we can get a pretty spinner while it works...
-./fbink -q -y -7 -pmh "${ZSYNC_MESSAGE} !"
+# Small zsync wrapper so we can print its output while it works...
+./fbink -q -y -7 -pmh "${ZSYNC_MESSAGE} . . ."
 # Clear any potential leftover from the local OTA tarball creation.
 ./fbink -q -y -6 -pm ' '
 
-# Spin in the background while we work ;).
-(
-    # See https://stackoverflow.com/questions/2685435 for inspiration
-    # as well as https://www.npmjs.com/package/cli-spinners
-    # & https://github.com/swelljoe/spinner
-    # http://www.fileformat.info/info/unicode/block/block_elements/list.htm
-    ##
-    # Simple bars, they look better when a bit smoother, with a snappier interval (~250ms)
-    #SPINNER="� ▁ ▂ ▃ ▄ ▅ ▆ ▇ █ ▇ ▆ ▅ ▄ ▃ ▂ ▁"
-    #SPINNER="� ▏ ▎ ▍ ▌ ▋ ▊ ▉ █ ▉ ▊ ▋ ▌ ▍ ▎ ▏"
-    # Spinning blocks
-    SPINNER="▖ ▘ ▝ ▗"
-    #SPINNER="▜ ▟ ▙ ▛"
-    # Snaking blocks
-    #SPINNER="▌ ▀ ▐ ▄"
-    #SPINNER="▌ ▛ ▀ ▜ ▐ ▟ ▄ ▙"
-    while :; do
-        for spin in ${SPINNER}; do
-            usleep 500000 2>/dev/null || sleep 0.5
-            # NOTE: Throw stderr to the void because I'm cheating w/ U+FFFD for a blank character,
-            #       which FBInk replaces by a blank, but not before shouting at us on stderr ;).
-            ./fbink -q -y -7 -pmh "${ZSYNC_MESSAGE} ${spin}" 2>/dev/null
-        done
-    done
-) &
-
 # Launch zsync2, and remember its exit code...
-./zsync2 "$@"
+# We'll be piping its output to FBInk in order to print it live, in a smaller font than usual...
+# NOTE: This depends on an undocumented FBInk hack (-z) in order to deal with the progress bars (and their CR) sanely.
+./zsync2 "$@" | ./fbink -q -z -pm -F scientifica
 rc=$?
-
-# Kill the spinner subshell now that we're done
-kill -15 $!
 
 # And return with zsync's exit code, not kill's ;).
 exit ${rc}
