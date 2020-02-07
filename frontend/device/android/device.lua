@@ -265,7 +265,7 @@ function Device:retrieveNetworkInfo()
         elseif type == C.ANETWORK_ETHERNET then
             return _("Connected to ethernet")
         elseif type == C.ANETWORK_BLUETOOTH then
-            return _("Connected to bluetooth")
+            return _("Connected to Bluetooth")
         elseif type == C.ANETWORK_VPN then
             return _("Connected to VPN")
         end
