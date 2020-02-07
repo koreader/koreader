@@ -177,7 +177,7 @@ while [ $RETURN_VALUE -ne 0 ]; do
         # The idea for the margins being to leave enough room for an fbink -Z bar, small horizontal margins, and a font size based on what 6pt looked like @ 265dpi
         ./fbink -q -b -O -t regular=./fonts/droid/DroidSansMono.ttf,top=$((viewHeight/2 + FONTH * 2 + FONTH/2)),left=$((viewWidth/60)),right=$((viewWidth/60)),px=$((viewHeight/64)) "${crashLog}"
         # So far, we hadn't triggered an actual screen refresh, do that now, to make sure everything is bundled in a single flashing refresh.
-        ./fbink -q -f -s top=0,left=0
+        ./fbink -q -f -s
         # Cue a lemming's faceplant sound effect!
 
         {

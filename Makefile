@@ -440,7 +440,7 @@ sony-prstuxupdate: all
 	        koreader/ota/package.index
 	# make gzip sonyprstux update for zsync OTA update
 	cd $(INSTALL_DIR) && \
-	        tar -I"gzip --rsyncable" -cah --no-recursion -f ../$(SONY_PRSTUX_PACKAGE_OTA) \
+	        tar --hard-dereference -I"gzip --rsyncable" -cah --no-recursion -f ../$(SONY_PRSTUX_PACKAGE_OTA) \
 	        -T koreader/ota/package.index
 
 CERVANTES_PACKAGE:=koreader-cervantes$(KODEDUG_SUFFIX)-$(VERSION).zip
