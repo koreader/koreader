@@ -230,22 +230,21 @@ end
 
 function Device:initNetworkManager(NetworkMgr)
     function NetworkMgr:turnOnWifi(complete_callback)
-        android.setWifiEnabled(true)
-        if complete_callback then
-            local UIManager = require("ui/uimanager")
-            UIManager:scheduleIn(1, complete_callback)
-        end
+        android.openWifiSettings()
+    end
+    function NetworkMgr:turnOffWifi(complete_callback)
+        android.openWifiSettings()
     end
 
-    function NetworkMgr:turnOffWifi(complete_callback)
-        android.setWifiEnabled(false)
-        if complete_callback then
-            local UIManager = require("ui/uimanager")
-            UIManager:scheduleIn(1, complete_callback)
-        end
+    function NetworkMgr:openSettings()
+        android.openWifiSettings()
     end
-    NetworkMgr.isWifiOn = function()
-        return android.isWifiEnabled()
+
+    function NetworkMgr:isWifiOn()
+        local ok = android.getNetworkInfo()
+        ok = tonumber(ok)
+        if not ok then return false end
+        return ok == 1
     end
 end
 
@@ -254,12 +253,23 @@ function Device:performHapticFeedback(type)
 end
 
 function Device:retrieveNetworkInfo()
-    local ssid, ip, gw = android.getNetworkInfo()
-    if ip == "0" or gw == "0" then
+    local ok, type = android.getNetworkInfo()
+    ok, type = tonumber(ok), tonumber(type)
+    if not ok or not type or type == C.ANETWORK_NONE then
         return _("Not connected")
     else
-        local BD = require("ui/bidi")
-        return T(_("Connected to %1\n IP address: %2\n gateway: %3"), BD.wrap(ssid), BD.ltr(ip), BD.ltr(gw))
+        if type == C.ANETWORK_WIFI then
+            return _("Connected to Wi-Fi")
+        elseif type == C.ANETWORK_MOBILE then
+            return _("Connected to mobile data network")
+        elseif type == C.ANETWORK_ETHERNET then
+            return _("Connected to Ethernet")
+        elseif type == C.ANETWORK_BLUETOOTH then
+            return _("Connected to Bluetooth")
+        elseif type == C.ANETWORK_VPN then
+            return _("Connected to VPN")
+        end
+        return _("Unknown connection")
     end
 end
 
