@@ -661,15 +661,15 @@ function OPDSBrowser:showDownloads(item)
 end
 
 function OPDSBrowser:browse(browse_url, username, password)
-  logger.info("launch url", browse_url)
-  table.insert(self.paths, {
-                 url = browse_url,
-                 username = username,
-                 password = password,
-  })
-  if not self:updateCatalog(browse_url, username, password) then
-    table.remove(self.paths)
-  end
+    logger.dbg("Browse opds url", browse_url)
+    table.insert(self.paths, {
+                     url = browse_url,
+                     username = username,
+                     password = password,
+    })
+    if not self:updateCatalog(browse_url, username, password) then
+        table.remove(self.paths)
+    end
 end
 
 function OPDSBrowser:browseSearchable(browse_url, username, password)
@@ -693,8 +693,8 @@ function OPDSBrowser:browseSearchable(browse_url, username, password)
                     is_enter_default = true,
                     callback = function()
                                 UIManager:close(self.search_server_dialog)
-                                local search, _ = self.search_server_dialog:getInputText():gsub(" ", "+")
-                                local searched_url, _ = browse_url:gsub("%%s", search)
+                                local search = self.search_server_dialog:getInputText():gsub(" ", "+")
+                                local searched_url = browse_url:gsub("%%s", search)
                                 logger.info ("Searched url becomes", searched_url)
                                 self:browse(searched_url, username, password)
                     end,
@@ -702,13 +702,11 @@ function OPDSBrowser:browseSearchable(browse_url, username, password)
             }
         },
     }
-    logger.info ("display broswse search for url", browse_url)
     UIManager:show(self.search_server_dialog)
     self.search_server_dialog:onShowKeyboard()
 end
 
 function OPDSBrowser:onMenuSelect(item)
-    logger.info("selected catalog item", item)
     -- add catalog
     if item.callback then
         item.callback()
