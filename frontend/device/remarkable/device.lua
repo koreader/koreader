@@ -16,7 +16,7 @@ local Remarkable = Generic:new{
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = no,
-    display_dpi = 166,
+    display_dpi = 226,
 }
 
 local EV_ABS = 3
