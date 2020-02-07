@@ -116,11 +116,11 @@ function OPDSBrowser:addServerFromInput(fields)
     logger.info("input catalog", fields)
     local servers = G_reader_settings:readSetting("opds_servers") or {}
     local new_item = {
-      title = fields[1],
-      url = (fields[2]:match("^%a+://") and fields[2] or "http://" .. fields[2]),
-      searchable =  (fields[2]:match("%%s") and true or false),
-      username = fields[3],
-      password = fields[4],
+        title = fields[1],
+        url = (fields[2]:match("^%a+://") and fields[2] or "http://" .. fields[2]),
+        searchable =  (fields[2]:match("%%s") and true or false),
+        username = fields[3],
+        password = fields[4],
     }
     table.insert(servers, new_item)
     G_reader_settings:saveSetting("opds_servers", servers)
@@ -663,9 +663,9 @@ end
 function OPDSBrowser:browse(browse_url, username, password)
     logger.dbg("Browse opds url", browse_url)
     table.insert(self.paths, {
-                     url = browse_url,
-                     username = username,
-                     password = password,
+        url = browse_url,
+        username = username,
+        password = password,
     })
     if not self:updateCatalog(browse_url, username, password) then
         table.remove(self.paths)
@@ -695,7 +695,6 @@ function OPDSBrowser:browseSearchable(browse_url, username, password)
                                 UIManager:close(self.search_server_dialog)
                                 local search = self.search_server_dialog:getInputText():gsub(" ", "+")
                                 local searched_url = browse_url:gsub("%%s", search)
-                                logger.info ("Searched url becomes", searched_url)
                                 self:browse(searched_url, username, password)
                     end,
                 },
