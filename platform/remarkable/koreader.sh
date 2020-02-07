@@ -161,8 +161,8 @@ while [ $RETURN_VALUE -ne 0 ]; do
         eval "$(./fbink -e | tr ';' '\n' | grep -e viewWidth -e viewHeight -e FONTH | tr '\n' ';')"
         # Compute margins & sizes relative to the screen's resolution, so we end up with a similar layout, no matter the device.
         # Height @ ~56.7%, w/ a margin worth 1.5 lines
-        bombHeight=$((viewHeight/2 + viewHeight/15))
-        bombMargin=$((FONTH + FONTH/2))
+        bombHeight=$((viewHeight / 2 + viewHeight / 15))
+        bombMargin=$((FONTH + FONTH / 2))
         # With a little notice at the top of the screen, on a big gray screen of death ;).
         ./fbink -q -b -c -B GRAY9 -m -y 1 "Don't Panic! (Crash n°${CRASH_COUNT} -> ${RETURN_VALUE})"
         if [ ${CRASH_COUNT} -eq 1 ]; then
@@ -175,7 +175,7 @@ while [ $RETURN_VALUE -ne 0 ]; do
         # And then print the tail end of the log on the bottom of the screen...
         crashLog="$(tail -n 25 crash.log | sed -e 's/\t/    /g')"
         # The idea for the margins being to leave enough room for an fbink -Z bar, small horizontal margins, and a font size based on what 6pt looked like @ 265dpi
-        ./fbink -q -b -O -t regular=./fonts/droid/DroidSansMono.ttf,top=$((viewHeight/2 + FONTH * 2 + FONTH/2)),left=$((viewWidth/60)),right=$((viewWidth/60)),px=$((viewHeight/64)) "${crashLog}"
+        ./fbink -q -b -O -t regular=./fonts/droid/DroidSansMono.ttf,top=$((viewHeight / 2 + FONTH * 2 + FONTH / 2)),left=$((viewWidth / 60)),right=$((viewWidth / 60)),px=$((viewHeight / 64)) "${crashLog}"
         # So far, we hadn't triggered an actual screen refresh, do that now, to make sure everything is bundled in a single flashing refresh.
         ./fbink -q -f -s
         # Cue a lemming's faceplant sound effect!
