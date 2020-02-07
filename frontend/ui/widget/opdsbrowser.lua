@@ -91,6 +91,11 @@ function OPDSBrowser:init()
              url = "http://www.flibusta.is/opds",
           },
           {
+             title = "Flibusta [Ru] [Searchable]",
+             url = "http://www.flibusta.is/opds/search?searchTerm=%s",
+             searchable = true,
+          },
+          {
              title = "textos.info (Spanish)",
              url = "https://www.textos.info/catalogo.atom",
           },
