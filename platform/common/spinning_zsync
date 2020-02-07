@@ -18,8 +18,7 @@ fi
 # Launch zsync2, and remember its exit code...
 # We'll be piping its output to FBInk in order to print it live, in a smaller font than usual...
 # NOTE: This depends on an undocumented FBInk hack (-z) in order to deal with the progress bars (and their CR) sanely.
-# NOTE: As usual, redirect FBInk's stderr to /dev/null because of the "missing codepoint" warnings ;).
-./zsync2 "$@" 2>&1 | ./fbink -q -z -pm -F scientifica 2>/dev/null
+./zsync2 "$@" 2>&1 | ./fbink -q -z -pm -F scientifica
 rc=$?
 
 # And return with zsync's exit code, not kill's ;).
