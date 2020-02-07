@@ -242,7 +242,8 @@ function FileChooser:genItemTableFromPath(path)
     -- otherwise, show new files in bold
     local show_file_in_bold = G_reader_settings:readSetting("show_file_in_bold")
 
-    for _, file in ipairs(files) do
+    for i = 1, #files do
+        local file = files[i]
         local full_path = self.path.."/"..file.name
         local file_size = lfs.attributes(full_path, "size") or 0
         local sstr = getFriendlySize(file_size)
