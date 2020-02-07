@@ -7,6 +7,7 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local InfoMessage = require("ui/widget/infomessage")
 local Menu = require("ui/widget/menu")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
+local InputDialog = require("ui/widget/inputdialog")
 local NetworkMgr = require("ui/network/manager")
 local OPDSParser = require("ui/opdsparser")
 local Screen = require("device").screen
@@ -69,6 +70,11 @@ function OPDSBrowser:init()
             url = "http://m.gutenberg.org/ebooks.opds/?format=opds",
           },
           {
+            title = "Project Gutenberg [Searchable]",
+            url = "https://m.gutenberg.org/ebooks/search.mobile/?format=opds&query=%s",
+            searchable = true,
+          },
+          {
              title = "Feedbooks",
              url = "http://www.feedbooks.com/publicdomain/catalog.atom",
           },
@@ -92,6 +98,11 @@ function OPDSBrowser:init()
              title = "Gallica (French)",
              url = "https://gallica.bnf.fr/opds",
           },
+          {
+             title = "Gallica [Fr] [Searchable]",
+             url = "https://gallica.bnf.fr/services/engine/search/opds?operation=searchRetrieve&query=(gallica all \"%s\")",
+             searchable = true,
+          }
         }
         G_reader_settings:saveSetting("opds_servers", servers)
     elseif servers[4] and servers[4].title == "Internet Archive" and servers[4].url == "http://bookserver.archive.org/catalog/"  then
@@ -104,12 +115,14 @@ end
 function OPDSBrowser:addServerFromInput(fields)
     logger.info("input catalog", fields)
     local servers = G_reader_settings:readSetting("opds_servers") or {}
-    table.insert(servers, {
+    local new_server = {
         title = fields[1],
         url = (fields[2]:match("^%a+://") and fields[2] or "http://" .. fields[2]),
+        searchable =  (fields[2]:match("%%s") and true or false),
         username = fields[3],
         password = fields[4],
-    })
+    }
+    table.insert(servers, new_server)
     G_reader_settings:saveSetting("opds_servers", servers)
     self:init()
 end
@@ -243,6 +256,7 @@ function OPDSBrowser:genItemTableFromRoot()
             password = server.password,
             deletable = true,
             editable = true,
+            searchable = server.searchable,
         })
     end
     local calibre_opds = G_reader_settings:readSetting("calibre_opds") or {}
@@ -263,6 +277,7 @@ function OPDSBrowser:genItemTableFromRoot()
             password = calibre_opds.password,
             editable = true,
             deletable = false,
+            searchable = false,
         })
     end
     table.insert(item_table, {
@@ -282,7 +297,7 @@ function OPDSBrowser:fetchFeed(item_url, username, password, method)
     request['url'] = item_url
     request['method'] = method and method or "GET"
     request['sink'] = ltn12.sink.table(sink)
-    request['headers'] = { Authorization = "Basic " .. mime.b64(auth), ["Host"] = hostname, }
+    request['headers'] = username and { Authorization = "Basic " .. mime.b64(auth), ["Host"] = hostname, } or  { ["Host"] = hostname, }
     logger.info("request", request)
     http.TIMEOUT, https.TIMEOUT = 10, 10
     local httpRequest = parsed.scheme == 'http' and http.request or https.request
@@ -645,6 +660,51 @@ function OPDSBrowser:showDownloads(item)
     UIManager:show(self.download_dialog)
 end
 
+function OPDSBrowser:browse(browse_url, username, password)
+    logger.dbg("Browse opds url", browse_url)
+    table.insert(self.paths, {
+        url = browse_url,
+        username = username,
+        password = password,
+    })
+    if not self:updateCatalog(browse_url, username, password) then
+        table.remove(self.paths)
+    end
+end
+
+function OPDSBrowser:browseSearchable(browse_url, username, password)
+    self.search_server_dialog = InputDialog:new{
+        title = _("Search OPDS catalog"),
+        input = "",
+        hint = _("Search string"),
+        input_hint = _("author:dumas alexandre"),
+        input_type = "string",
+        description = _("%s in url will be replaced by your input"),
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    callback = function()
+                        UIManager:close(self.search_server_dialog)
+                    end,
+                },
+                {
+                    text = _("Search"),
+                    is_enter_default = true,
+                    callback = function()
+                        UIManager:close(self.search_server_dialog)
+                        local search = self.search_server_dialog:getInputText():gsub(" ", "+")
+                        local searched_url = browse_url:gsub("%%s", search)
+                        self:browse(searched_url, username, password)
+                    end,
+                },
+            }
+        },
+    }
+    UIManager:show(self.search_server_dialog)
+    self.search_server_dialog:onShowKeyboard()
+end
+
 function OPDSBrowser:onMenuSelect(item)
     -- add catalog
     if item.callback then
@@ -655,13 +715,10 @@ function OPDSBrowser:onMenuSelect(item)
         self:showDownloads(item)
     -- navigation
     else
-        table.insert(self.paths, {
-            url = item.url,
-            username = item.username,
-            password = item.password,
-        })
-        if not self:updateCatalog(item.url, item.username, item.password) then
-            table.remove(self.paths)
+        if item.searchable then
+            self:browseSearchable(item.url, item.username, item.password)
+        else
+            self:browse(item.url, item.username, item.password)
         end
     end
     return true
@@ -674,6 +731,7 @@ function OPDSBrowser:editServerFromInput(item, fields)
         if server.title == item.text or server.url == item.url then
             server.title = fields[1]
             server.url = (fields[2]:match("^%a+://") and fields[2] or "http://" .. fields[2])
+            server.searchable =  (fields[2]:match("%%s") and true or false)
             server.username = fields[3]
             server.password = fields[4]
         end
