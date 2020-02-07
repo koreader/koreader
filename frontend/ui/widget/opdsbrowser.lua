@@ -115,14 +115,14 @@ end
 function OPDSBrowser:addServerFromInput(fields)
     logger.info("input catalog", fields)
     local servers = G_reader_settings:readSetting("opds_servers") or {}
-    local new_item = {
+    local new_server = {
         title = fields[1],
         url = (fields[2]:match("^%a+://") and fields[2] or "http://" .. fields[2]),
         searchable =  (fields[2]:match("%%s") and true or false),
         username = fields[3],
         password = fields[4],
     }
-    table.insert(servers, new_item)
+    table.insert(servers, new_server)
     G_reader_settings:saveSetting("opds_servers", servers)
     self:init()
 end
