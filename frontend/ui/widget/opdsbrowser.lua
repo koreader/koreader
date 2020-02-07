@@ -692,10 +692,10 @@ function OPDSBrowser:browseSearchable(browse_url, username, password)
                     text = _("Search"),
                     is_enter_default = true,
                     callback = function()
-                                UIManager:close(self.search_server_dialog)
-                                local search = self.search_server_dialog:getInputText():gsub(" ", "+")
-                                local searched_url = browse_url:gsub("%%s", search)
-                                self:browse(searched_url, username, password)
+                        UIManager:close(self.search_server_dialog)
+                        local search = self.search_server_dialog:getInputText():gsub(" ", "+")
+                        local searched_url = browse_url:gsub("%%s", search)
+                        self:browse(searched_url, username, password)
                     end,
                 },
             }
