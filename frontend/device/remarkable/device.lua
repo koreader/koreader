@@ -1,7 +1,5 @@
 local Generic = require("device/generic/device") -- <= look at this file!
 local logger = require("logger")
-local TimeVal = require("ui/timeval")
-local ffi = require("ffi")
 
 local function yes() return true end
 local function no() return false end
@@ -14,7 +12,6 @@ local Remarkable = Generic:new{
     canReboot = yes,
     canPowerOff = yes,
     isTouchDevice = yes,
-    hasKeys = yes,
     hasFrontlight = no,
     display_dpi = 226,
 }
@@ -25,8 +22,8 @@ local ABS_Y = 01
 local ABS_MT_POSITION_X = 53
 local ABS_MT_POSITION_Y = 54
 -- Resolutions from libremarkable src/framebuffer/common.rs
-local mt_width = 767
-local mt_height = 1023
+local mt_width = 767 -- unscaled_size_check: ignore
+local mt_height = 1023 -- unscaled_size_check: ignore
 local mt_scale_x = 1404 / mt_width
 local mt_scale_y = 1872 / mt_height
 local adjustTouchEvt = function(self, ev)
