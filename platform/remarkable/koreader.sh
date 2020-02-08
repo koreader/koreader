@@ -16,7 +16,7 @@ ko_update_check() {
         # the update can overwite the binary
         systemctl is-active --quiet button-listen
         USING_BUTTON_LISTEN=$?
-        if [ $USING_BUTTON_LISTEN -eq 0 ]; then
+        if [ ${USING_BUTTON_LISTEN} -eq 0 ]; then
             systemctl stop button-listen
         fi
 
@@ -44,7 +44,7 @@ ko_update_check() {
         # Ensure everything is flushed to disk before we restart. This *will* stall for a while on slow storage!
         sync
 
-        if [ $USING_BUTTON_LISTEN -eq 0 ]; then
+        if [ ${USING_BUTTON_LISTEN} -eq 0 ]; then
             systemctl start button-listen
         fi
     fi
@@ -123,9 +123,9 @@ CRASH_TS=0
 CRASH_PREV_TS=0
 # Because we *want* an initial fbdepth pass ;).
 RETURN_VALUE=85
-while [ $RETURN_VALUE -ne 0 ]; do
+while [ ${RETURN_VALUE} -ne 0 ]; do
     # 85 is what we return when asking for a KOReader restart
-    if [ $RETURN_VALUE -eq 85 ]; then
+    if [ ${RETURN_VALUE} -eq 85 ]; then
         # Do an update check now, so we can actually update KOReader via the "Restart KOReader" menu entry ;).
         ko_update_check
         # Do or double-check the fb depth switch, or restore original bitdepth if requested
@@ -136,7 +136,7 @@ while [ $RETURN_VALUE -ne 0 ]; do
     RETURN_VALUE=$?
 
     # Did we crash?
-    if [ $RETURN_VALUE -ne 0 ] && [ $RETURN_VALUE -ne 85 ]; then
+    if [ ${RETURN_VALUE} -ne 0 ] && [ ${RETURN_VALUE} -ne 85 ]; then
         # Increment the crash counter
         CRASH_COUNT=$((CRASH_COUNT + 1))
         CRASH_TS=$(date +'%s')
@@ -185,7 +185,7 @@ while [ $RETURN_VALUE -ne 0 ]; do
             echo "Uh oh, something went awry... (Crash n°${CRASH_COUNT}: $(date +'%x @ %X'))"
             echo "Running on Linux $(uname -r) ($(uname -v))"
         } >>crash.log 2>&1
-        if [ $CRASH_COUNT -lt 5 ] && [ "${ALWAYS_ABORT}" = "false" ]; then
+        if [ ${CRASH_COUNT} -lt 5 ] && [ "${ALWAYS_ABORT}" = "false" ]; then
             echo "Attempting to restart KOReader . . ." >>crash.log 2>&1
             echo "!!!!" >>crash.log 2>&1
         fi
@@ -202,7 +202,7 @@ while [ $RETURN_VALUE -ne 0 ]; do
 
         # But if we've crashed more than 5 consecutive times, exit, because we wouldn't want to be stuck in a loop...
         # NOTE: No need to check for ALWAYS_ABORT, CRASH_COUNT will always be 1 when it's true ;).
-        if [ $CRASH_COUNT -ge 5 ]; then
+        if [ ${CRASH_COUNT} -ge 5 ]; then
             echo "Too many consecutive crashes, aborting . . ." >>crash.log 2>&1
             echo "!!!! ! !!!!" >>crash.log 2>&1
             break
@@ -230,4 +230,4 @@ else
     ./fbdepth -r "${ORIG_FB_ROTA}" >>crash.log 2>&1
 fi
 
-exit $RETURN_VALUE
+exit ${RETURN_VALUE}
