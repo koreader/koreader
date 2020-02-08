@@ -87,8 +87,6 @@ function Remarkable:outofScreenSaver()
     if self.screen_saver_mode == true then
         local Screensaver = require("ui/screensaver")
         Screensaver:close()
-        local UIManager = require("ui/uimanager")
-        UIManager:nextTick(function() UIManager:setDirty("all", "full") end)
     end
     self.powerd:afterResume()
     self.screen_saver_mode = false
