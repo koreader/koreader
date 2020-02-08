@@ -1,7 +1,5 @@
 local Generic = require("device/generic/device") -- <= look at this file!
 local logger = require("logger")
-local TimeVal = require("ui/timeval")
-local ffi = require("ffi")
 
 local function yes() return true end
 local function no() return false end
@@ -14,7 +12,6 @@ local Remarkable = Generic:new{
     canReboot = yes,
     canPowerOff = yes,
     isTouchDevice = yes,
-    hasKeys = yes,
     hasFrontlight = no,
     display_dpi = 226,
 }
