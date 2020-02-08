@@ -132,7 +132,7 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
         ko_do_fbdepth
     fi
 
-    ./reader.lua "$HOME" >>crash.log 2>&1
+    ./reader.lua "/home/root/" >>crash.log 2>&1
     RETURN_VALUE=$?
 
     # Did we crash?
