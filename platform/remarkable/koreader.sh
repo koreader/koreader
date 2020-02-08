@@ -118,6 +118,12 @@ if [ -e crash.log ]; then
     mv -f crash.log.new crash.log
 fi
 
+if [ "$#" -eq 0 ]; then
+    args="/home/root"
+else
+    args="$*"
+fi
+
 CRASH_COUNT=0
 CRASH_TS=0
 CRASH_PREV_TS=0
@@ -132,7 +138,7 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
         ko_do_fbdepth
     fi
 
-    ./reader.lua "/home/root/" >>crash.log 2>&1
+    ./reader.lua "${args}" >>crash.log 2>&1
     RETURN_VALUE=$?
 
     # Did we crash?
