@@ -25,8 +25,8 @@ local ABS_Y = 01
 local ABS_MT_POSITION_X = 53
 local ABS_MT_POSITION_Y = 54
 -- Resolutions from libremarkable src/framebuffer/common.rs
-local mt_width = 767
-local mt_height = 1023
+local mt_width = 767 -- unscaled_size_check: ignore
+local mt_height = 1023 -- unscaled_size_check: ignore
 local mt_scale_x = 1404 / mt_width
 local mt_scale_y = 1872 / mt_height
 local adjustTouchEvt = function(self, ev)
