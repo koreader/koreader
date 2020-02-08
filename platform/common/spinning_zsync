@@ -1,7 +1,15 @@
 #!/bin/sh
 
 # We're going to need to remember failures from the *left* side of a pipeline...
-set -o pipefail
+set -o pipefail 2>/dev/null
+# But because we can't have nice things, some devices (hi, Kindle) may use an extremely old busybox build,
+# one in which pipefail was not yet implemented,
+# (it appeared in busybox 1.16.0, and is contingent on bash compatibility being enabled in ash).
+if [ $? -ne 0 ]; then
+    FAKE_PIPEFAIL="true"
+else
+    FAKE_PIPEFAIL="false"
+fi
 
 # Figure out whether that's a delta or a full download given the number of arguments passed...
 if [ $# -lt 7 ]; then
@@ -18,8 +26,19 @@ fi
 # Launch zsync2, and remember its exit code...
 # We'll be piping its output to FBInk in order to print it live, in a smaller font than usual...
 # NOTE: This depends on an undocumented FBInk hack (-z) in order to deal with the progress bars (and their CR) sanely.
-./zsync2 "$@" 2>&1 | ./fbink -q -z -pm -F scientifica
-rc=$?
+rc=0
+
+if [ "${FAKE_PIPEFAIL}" = "false" ]; then
+    # We can use pipefail, let the shell do the heavy lifting for us...
+    ./zsync2 "$@" 2>&1 | ./fbink -q -z -pm -F scientifica
+    rc=$?
+else
+    # We cannot use pipefail, extreme shell wizardy is required...
+    # Pure magic courtesy of https://unix.stackexchange.com/a/70675
+    # Much more compact the the stock answer from the Usenet shell FAQ: http://cfajohnson.com/shell/cus-faq-2.html#Q11
+    { { { { ./zsync2 "$@" 2>&1 3>&- 4>&-; echo $? >&3; } | ./fbink -q -z -pm -F scientifica >&4; } 3>&1; } | { read xs; exit $xs; } } 4>&1
+    rc=$?
+fi
 
 # And return with zsync's exit code, not kill's ;).
 exit ${rc}
