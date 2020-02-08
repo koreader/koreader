@@ -18,6 +18,8 @@ function filemanagerutil.getDefaultDir()
         return "/mnt/us/documents"
     elseif Device:isKobo() then
         return "/mnt/onboard"
+    elseif Device:isRemarkable() then
+        return "/home/root"
     else
         return "."
     end

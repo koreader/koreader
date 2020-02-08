@@ -49,6 +49,7 @@ DEBIAN_DIR=$(PLATFORM_DIR)/debian
 KINDLE_DIR=$(PLATFORM_DIR)/kindle
 KOBO_DIR=$(PLATFORM_DIR)/kobo
 POCKETBOOK_DIR=$(PLATFORM_DIR)/pocketbook
+REMARKABLE_DIR=$(PLATFORM_DIR)/remarkable
 SONY_PRSTUX_DIR=$(PLATFORM_DIR)/sony-prstux
 UBUNTUTOUCH_DIR=$(PLATFORM_DIR)/ubuntu-touch
 UBUNTUTOUCH_SDL_DIR:=$(UBUNTUTOUCH_DIR)/ubuntu-touch-sdl
@@ -385,6 +386,35 @@ debianupdate: all
 		rm -rf resources/fonts resources/icons/src && \
 		rm -rf ev_replay.py
 
+REMARKABLE_PACKAGE:=koreader-remarkable$(KODEDUG_SUFFIX)-$(VERSION).zip
+REMARKABLE_PACKAGE_OTA:=koreader-remarkable$(KODEDUG_SUFFIX)-$(VERSION).targz
+remarkableupdate: all
+	# ensure that the binaries were built for ARM
+	file $(INSTALL_DIR)/koreader/luajit | grep ARM || exit 1
+	# remove old package if any
+	rm -f $(REMARKABLE_PACKAGE)
+	# Remarkable scripts
+	cp $(REMARKABLE_DIR)/* $(INSTALL_DIR)/koreader
+	cp $(COMMON_DIR)/spinning_zsync $(INSTALL_DIR)/koreader
+	# create new package
+	cd $(INSTALL_DIR) && \
+	        zip -9 -r \
+	                ../$(REMARKABLE_PACKAGE) \
+	                koreader -x "koreader/resources/fonts/*" \
+	                "koreader/resources/icons/src/*" "koreader/spec/*" \
+	                $(ZIP_EXCLUDE)
+	# generate update package index file
+	zipinfo -1 $(REMARKABLE_PACKAGE) > \
+	        $(INSTALL_DIR)/koreader/ota/package.index
+	echo "koreader/ota/package.index" >> $(INSTALL_DIR)/koreader/ota/package.index
+	# update index file in zip package
+	cd $(INSTALL_DIR) && zip -u ../$(REMARKABLE_PACKAGE) \
+	        koreader/ota/package.index
+	# make gzip remarkable update for zsync OTA update
+	cd $(INSTALL_DIR) && \
+	        tar -I"gzip --rsyncable" -cah --no-recursion -f ../$(REMARKABLE_PACKAGE_OTA) \
+	        -T koreader/ota/package.index
+
 SONY_PRSTUX_PACKAGE:=koreader-sony-prstux$(KODEDUG_SUFFIX)-$(VERSION).zip
 SONY_PRSTUX_PACKAGE_OTA:=koreader-sony-prstux$(KODEDUG_SUFFIX)-$(VERSION).targz
 sony-prstuxupdate: all
@@ -461,6 +491,8 @@ else ifeq ($(TARGET), pocketbook)
 	make pbupdate
 else ifeq ($(TARGET), sony-prstux)
 	make sony-prstuxupdate
+else ifeq ($(TARGET), remarkable)
+	make remarkableupdate
 else ifeq ($(TARGET), ubuntu-touch)
 	make utupdate
 else ifeq ($(TARGET), debian)

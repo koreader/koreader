@@ -63,6 +63,7 @@ local Device = {
     isKindle = no,
     isKobo = no,
     isPocketBook = no,
+    isRemarkable = no,
     isSonyPRSTUX = no,
     isSDL = no,
     isEmulator = no,
