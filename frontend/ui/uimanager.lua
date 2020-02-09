@@ -577,6 +577,7 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
                 if self._window_stack[i].widget.dithered then
                     -- NOTE: That works when refreshtype is NOT a function,
                     --       which is why _repaint does another pass of this check ;).
+                    logger.dbg("setDirty on all widgets: found a dithered widget, infecting the refresh queue")
                     refreshdither = true
                 end
             end
@@ -591,6 +592,18 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
             -- Again, if it's flagged as dithered, honor that
             if widget.dithered then
                 refreshdither = true
+            end
+        end
+    else
+        -- Another special case: if we did NOT specify a widget, but requested a full refresh nonetheless (i.e., a diagonal swipe),
+        -- we'll want to check the window stack in order to honor dithering...
+        if refreshtype == "full" then
+            for i = 1, #self._window_stack do
+                -- If any of 'em were dithered, honor their dithering hint
+                if self._window_stack[i].widget.dithered then
+                    logger.dbg("setDirty full on no specific widget: found a dithered widget, infecting the refresh queue")
+                    refreshdither = true
+                end
             end
         end
     end
