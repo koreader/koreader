@@ -308,8 +308,10 @@ function OTAManager:fetchAndProcessUpdate()
                                         timeout = 3,
                                     })
                                     -- Clear the installed package, as well as the complete/incomplete update download
-                                    os.execute("rm " .. self.installed_package)
-                                    os.execute("rm " .. self.updated_package .. "*")
+                                    os.execute("rm -f " .. self.installed_package)
+                                    os.execute("rm -f " .. self.updated_package .. "*")
+                                    -- As well as temporary files, in case zsync went kablooey too early...
+                                    os.execute("rm -f ./rcksum-*")
                                     -- And then relaunch zsync in full download mode...
                                     UIManager:scheduleIn(1, function()
                                         if OTAManager:zsync(true) == 0 then
@@ -326,7 +328,7 @@ function OTAManager:fetchAndProcessUpdate()
                                             UIManager:show(ConfirmBox:new{
                                                 text = _("Error updating KOReader. Would you like to delete temporary files?"),
                                                 ok_callback = function()
-                                                    os.execute("rm " .. ota_dir .. "ko*")
+                                                    os.execute("rm -f " .. ota_dir .. "ko*")
                                                 end,
                                             })
                                         end
@@ -334,7 +336,9 @@ function OTAManager:fetchAndProcessUpdate()
                                 end,
                                 choice2_text = _("Abort"),
                                 choice2_callback = function()
-                                    os.execute("rm " .. ota_dir .. "ko*")
+                                    os.execute("rm -f " .. ota_dir .. "ko*")
+                                    os.execute("rm -f " .. self.updated_package .. "*")
+                                    os.execute("rm -f ./rcksum-*")
                                 end,
                             })
                         end
