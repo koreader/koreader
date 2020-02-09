@@ -601,7 +601,7 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
             for i = 1, #self._window_stack do
                 -- If any of 'em were dithered, honor their dithering hint
                 if self._window_stack[i].widget.dithered then
-                    logger.dbg("setDirty full on no widgets: found a dithered widget, infecting the refresh queue")
+                    logger.dbg("setDirty full on no specific widget: found a dithered widget, infecting the refresh queue")
                     refreshdither = true
                 end
             end
