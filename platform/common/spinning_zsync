@@ -47,5 +47,5 @@ else
     rc=$?
 fi
 
-# And return with zsync's exit code, not kill's ;).
+# And return with zsync's exit code
 exit ${rc}
