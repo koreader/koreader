@@ -154,6 +154,7 @@ ORIG_FB_BPP="$(./fbdepth -g)"
 echo "Original fb bitdepth is set @ ${ORIG_FB_BPP}bpp" >>crash.log 2>&1
 # Sanity check...
 case "${ORIG_FB_BPP}" in
+    8)  ;;
     16) ;;
     32) ;;
     *)
