@@ -1030,6 +1030,20 @@ body > div:dir(rtl) > div.thumb { /* invert if RTL */
         clear: left;
         margin:  0 0.5em 0.2em 0 !important;
 }
+/* Allow original mix of left/right floats in web mode */
+body > div > div.thumb.tleft {
+    -cr-only-if: float-floatboxes allow-style-w-h-absolute-units;
+        float: left !important;
+        clear: left;
+        margin:  0 0.5em 0.2em 0 !important;
+}
+body > div > div.thumb.tright {
+    -cr-only-if: float-floatboxes allow-style-w-h-absolute-units;
+        float: right !important;
+        clear: right;
+        margin:  0 0 0.2em 0.5em !important;
+}
+
 body > div > div.thumb img {
     /* Make float's inner images 100% of their container's width when not in "web" mode */
     -cr-only-if: float-floatboxes -allow-style-w-h-absolute-units;
