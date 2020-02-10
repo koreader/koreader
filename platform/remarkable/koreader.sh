@@ -85,6 +85,7 @@ echo "Original fb settings: bitdepth = ${ORIG_FB_BPP}, rotation = ${ORIG_FB_ROTA
 
 # Sanity check...
 case "${ORIG_FB_BPP}" in
+    8)  ;;
     16) ;;
     32) ;;
     *)
