@@ -30,7 +30,7 @@ rc=0
 
 if [ "${WITH_PIPEFAIL}" = "true" ]; then
     # We can use pipefail, let the shell do the heavy lifting for us...
-    ./zsync2 "$@" 2>&1 | ./fbink -q -z -pm -F scientifica
+    ./zsync2 "$@" 2>&1 | tee -a ./crash.log | ./fbink -q -z -pm -F scientifica
     rc=$?
 else
     # We cannot use pipefail, extreme shell wizardry is required...
