@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# NOTE: We can use pipefail via bash on Cervantes
+
+export WITH_PIPEFAIL="true"
+exec /bin/bash ./spinning_zsync.sh "$@"
