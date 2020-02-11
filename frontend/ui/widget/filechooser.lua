@@ -62,7 +62,9 @@ function FileChooser:init()
         if ok then
             for f in iter, dir_obj do
                 if count_only then
-                    if self.show_hidden or not util.stringStartsWith(f, ".") then
+                    if (not self.show_hidden and not util.stringStartsWith(f, "."))
+                        or (self.show_hidden and f ~= "." and f ~= ".." and self.dir_filter(f) and not util.stringStartsWith(f, "._"))
+                    then
                         table.insert(dirs, true)
                     end
                 elseif self.show_hidden or not string.match(f, "^%.[^.]") then
