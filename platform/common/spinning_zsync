@@ -1,14 +1,15 @@
 #!/bin/sh
 
 # We're going to need to remember failures from the *left* side of a pipeline...
-# shellcheck disable=SC2039
-if set -o pipefail 2>/dev/null; then
-    WITH_PIPEFAIL="true"
-else
-    # But because we can't have nice things, some devices (hi, Kindle) may use an extremely old busybox build,
-    # one in which pipefail was not yet implemented,
-    # (it appeared in busybox 1.16.0, and is contingent on bash compatibility being enabled in ash).
-    WITH_PIPEFAIL="false"
+# But because we can't have nice things, some devices (hi, Kindle) may use an extremely old busybox build,
+# one in which pipefail was not yet implemented,
+# (it appeared in busybox 1.16.0, and is contingent on bash compatibility being enabled in ash).
+
+# NOTE: We inherit WITH_PIPEFAIL from the env via OTAManager, because of course old busybox ash versions abort on set -o failures...
+#       c.f., https://github.com/koreader/koreader/pull/5844
+if [ "${WITH_PIPEFAIL}" = "true" ]; then
+    # shellcheck disable=SC2039
+    set -o pipefail
 fi
 
 # Figure out whether that's a delta or a full download given the number of arguments passed...
