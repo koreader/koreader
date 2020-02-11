@@ -682,7 +682,8 @@ function OPDSBrowser:browseSearchable(browse_url, username, password)
         title = _("Search OPDS catalog"),
         input = "",
         hint = _("Search string"),
-        input_hint = _("author:dumas alexandre"),
+        -- @translators: This is an input hint for something to search for in an OPDS catalog, namely a famous author everyone knows. It probably doesn't need to be localized, but this is just here in case another name or book title would be more appropriate outside of a European context.
+        input_hint = _("Alexandre Dumas"),
         input_type = "string",
         description = _("%s in url will be replaced by your input"),
         buttons = {
