@@ -8,7 +8,7 @@ else
     # But because we can't have nice things, some devices (hi, Kindle) may use an extremely old busybox build,
     # one in which pipefail was not yet implemented,
     # (it appeared in busybox 1.16.0, and is contingent on bash compatibility being enabled in ash).
-    WITH_PIPEFAIL="true"
+    WITH_PIPEFAIL="false"
 fi
 
 # Figure out whether that's a delta or a full download given the number of arguments passed...
