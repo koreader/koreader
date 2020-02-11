@@ -399,14 +399,22 @@ end
 function OTAManager:zsync(full_dl)
     if full_dl or self:_buildLocalPackage() == 0 then
         local zsync_wrapper = "zsync2"
+        local use_pipefail = true
         -- With visual feedback if supported...
         if self.can_pretty_print then
             zsync_wrapper = "spinning_zsync"
+            -- And because everything is terrible, we can't check for pipefail's usability in spinning_zsync,
+            -- because older ash versions abort on set -o failures...
+            -- c.f., ko/#5844
+            -- So, instead, check from this side of the fence...
+            -- (remember, os.execute is essentially system(), it goes through sh)
+            use_pipefail = (os.execute("set -o pipefail 2>/dev/null") == 0)
         end
         -- If that's a full-download fallback, drop the input tarball
         if full_dl then
             return os.execute(
-            ("./%s -o '%s' -u '%s' '%s%s'"):format(
+            ("env WITH_PIPEFAIL='%s' ./%s -o '%s' -u '%s' '%s%s'"):format(
+                use_pipefail,
                 zsync_wrapper,
                 self.updated_package,
                 self:getOTAServer(),
@@ -415,7 +423,8 @@ function OTAManager:zsync(full_dl)
             )
         else
             return os.execute(
-            ("./%s -i '%s' -o '%s' -u '%s' '%s%s'"):format(
+            ("env WITH_PIPEFAIL='%s' ./%s -i '%s' -o '%s' -u '%s' '%s%s'"):format(
+                use_pipefail,
                 zsync_wrapper,
                 self.installed_package,
                 self.updated_package,
