@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # We're going to need to remember failures from the *left* side of a pipeline...
 # shellcheck disable=SC2039
