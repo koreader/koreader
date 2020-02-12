@@ -301,7 +301,7 @@ function CalendarWeek:update()
     local bspan_margin_v = Size.margin.tiny
     local bspan_padding = Size.padding.tiny -- only used to compute the adequate font size
     local bspan_border = Size.border.thin
-    local text_height = self.span_height - 2*(bspan_margin_v + bspan_border + bspan_padding)
+    local text_height = self.span_height - 2 * (bspan_margin_v + bspan_border + bspan_padding)
     local inner_font_size = TextBoxWidget:getFontSizeToFitHeight(text_height, 1, 0)
     for col, day_books in ipairs(self.days_books) do
         for row, book in ipairs(day_books) do
@@ -406,7 +406,7 @@ function CalendarView:init()
     -- 7 days in a week
     self.day_width = math.floor((self.dimen.w - 2*outer_padding - 6*self.inner_padding) / 7)
     -- Put back the possible 7px lost in rounding into outer_padding
-    outer_padding = math.floor((self.dimen.w - 7*self.day_width - 6*self.inner_padding)/2)
+    outer_padding = math.floor((self.dimen.w - 7*self.day_width - 6*self.inner_padding) / 2)
     self.content_width = self.dimen.w - 2*outer_padding
 
     if not MIN_MONTH then
@@ -470,7 +470,7 @@ function CalendarView:init()
         text = "",
         hold_input = {
             title = _("Enter month"),
-            input = self.cur_month,
+            input_func = function() return self.cur_month end,
             callback = function(input)
                 local year, month = input:match("^(%d%d%d%d)-(%d%d)$")
                 if year and month then
