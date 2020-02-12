@@ -50,7 +50,7 @@ The start folder is appended to the server path.]])
 
     local hint_name = _("Server display name")
     local text_name = ""
-    local hint_address = _("WebDAV address eg https://example.com/dav")
+    local hint_address = _("WebDAV address, for example https://example.com/dav")
     local text_address = ""
     local hint_username = _("Username")
     local text_username = ""
