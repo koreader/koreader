@@ -453,6 +453,7 @@ cervantesupdate: all
 	# Cervantes launching scripts
 	cp $(COMMON_DIR)/spinning_zsync $(INSTALL_DIR)/koreader/spinning_zsync.sh
 	cp $(CERVANTES_DIR)/*.sh $(INSTALL_DIR)/koreader
+	cp $(CERVANTES_DIR)/spinning_zsync $(INSTALL_DIR)/koreader
 	# create new package
 	cd $(INSTALL_DIR) && \
 		zip -9 -r \
