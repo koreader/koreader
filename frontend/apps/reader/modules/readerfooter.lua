@@ -243,6 +243,7 @@ local footerTextGeneratorMap = {
                 text = doc_info.title,
                 max_width = footer._saved_screen_width * footer.settings.book_title_max_width_pct / 100,
                 face = Font:getFace(footer.text_font_face, footer.settings.text_font_size),
+                bold = footer.settings.text_font_bold,
             }
             local fitted_title_text, add_ellipsis = title_widget:getFittedText()
             title_widget:free()
@@ -261,6 +262,7 @@ local footerTextGeneratorMap = {
                 text = chapter_title,
                 max_width = footer._saved_screen_width * footer.settings.book_chapter_max_width_pct / 100,
                 face = Font:getFace(footer.text_font_face, footer.settings.text_font_size),
+                bold = footer.settings.text_font_bold,
             }
             local fitted_chapter_text, add_ellipsis = chapter_widget:getFittedText()
             chapter_widget:free()
@@ -314,6 +316,7 @@ function ReaderFooter:init()
         item_prefix = "icons",
         toc_markers_width = DMINIBAR_TOC_MARKER_WIDTH,
         text_font_size = DMINIBAR_FONT_SIZE,
+        text_font_bold = false,
     }
 
     local mode_tbl = {}
@@ -383,9 +386,13 @@ function ReaderFooter:init()
     if not self.settings.text_font_size then
         self.settings.text_font_size = DMINIBAR_FONT_SIZE
     end
+    if not self.settings.text_font_bold then
+        self.settings.text_font_bold = false
+    end
     self.footer_text = TextWidget:new{
         text = '',
         face = Font:getFace(self.text_font_face, self.settings.text_font_size),
+        bold = self.settings.text_font_bold,
     }
     -- all width related values will be initialized in self:resetLayout()
     self.text_width = 0
@@ -828,39 +835,61 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
             },
             {
-                text_func = function()
-                    return T(_("Font size (%1)"), self.settings.text_font_size)
-                end,
+                text = _("Font"),
                 separator = true,
-                callback = function(touchmenu_instance)
-                    local SpinWidget = require("ui/widget/spinwidget")
-                    local font_size = self.settings.text_font_size
-                    local items_font = SpinWidget:new{
-                        width = Screen:getWidth() * 0.6,
-                        value = font_size,
-                        value_min = 8,
-                        value_max = 36,
-                        default_value = 14,
-                        ok_text = _("Set size"),
-                        title_text =  _("Footer font size"),
-                        callback = function(spin)
-                            self.settings.text_font_size = spin.value
-                            local text = self.footer_text.text
+                sub_item_table = {
+                    {
+                        text_func = function()
+                            return T(_("Font size (%1)"), self.settings.text_font_size)
+                        end,
+                        callback = function(touchmenu_instance)
+                            local SpinWidget = require("ui/widget/spinwidget")
+                            local font_size = self.settings.text_font_size
+                            local items_font = SpinWidget:new{
+                                width = Screen:getWidth() * 0.6,
+                                value = font_size,
+                                value_min = 8,
+                                value_max = 36,
+                                default_value = 14,
+                                ok_text = _("Set size"),
+                                title_text =  _("Footer font size"),
+                                callback = function(spin)
+                                    self.settings.text_font_size = spin.value
+                                    self.footer_text:free()
+                                    self.footer_text = TextWidget:new{
+                                        text = self.footer_text.text,
+                                        face = Font:getFace(self.text_font_face, self.settings.text_font_size),
+                                        bold = self.settings.text_font_bold,
+                                    }
+                                    self.text_container[1] = self.footer_text
+                                    self:refreshFooter(true, true)
+                                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                                end,
+                            }
+                            UIManager:show(items_font)
+                        end,
+                        keep_menu_open = true,
+                    },
+                    {
+                        text = _("Use bold font"),
+                        checked_func = function()
+                            return self.settings.text_font_bold == true
+                        end,
+                        callback = function(touchmenu_instance)
+                            self.settings.text_font_bold = not self.settings.text_font_bold
+                            self.footer_text:free()
                             self.footer_text = TextWidget:new{
-                                text = text,
-                                face = Font:getFace(self.text_font_face, self.settings.text_font_size)
+                                text = self.footer_text.text,
+                                face = Font:getFace(self.text_font_face, self.settings.text_font_size),
+                                bold = self.settings.text_font_bold,
                             }
-                            self.text_container = RightContainer:new{
-                                dimen = Geom:new{ w = 0, h = self.height },
-                                self.footer_text,
-                            }
+                            self.text_container[1] = self.footer_text
                             self:refreshFooter(true, true)
                             if touchmenu_instance then touchmenu_instance:updateItems() end
                         end,
-                    }
-                    UIManager:show(items_font)
-                end,
-                keep_menu_open = true,
+                        keep_menu_open = true,
+                    },
+                }
             },
             {
                 text = _("Maximum width of items"),
