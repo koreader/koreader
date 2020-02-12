@@ -16,7 +16,7 @@
 
 ## Main features
 
-* **portable**: runs on embedded devices (Cervantes, Kindle, Kobo, PocketBook), Android and Linux computers. Developers can run a KOReader emulator in Linux and MacOS.
+* **portable**: runs on embedded devices (Cervantes, Kindle, Kobo, PocketBook, reMarkable), Android and Linux computers. Developers can run a KOReader emulator in Linux and MacOS.
 
 * **multi-format documents**: supports fixed page formats (PDF, DjVu, CBT, CBZ) and reflowable e-book formats (EPUB, FB2, Mobi, DOC, CHM, TXT). Scanned PDF/DjVu documents can also be reflowed with the built-in K2pdfopt library.
 
@@ -47,7 +47,8 @@ Please follow the model specific steps for your device:
 [Kindle](https://github.com/koreader/koreader/wiki/Installation-on-Kindle-devices) •
 [Kobo](https://github.com/koreader/koreader/wiki/Installation-on-Kobo-devices) •
 [Linux](https://github.com/koreader/koreader/wiki/Installation-on-desktop-linux) •
-[Pocketbook](https://github.com/koreader/koreader/wiki/Installation-on-PocketBook-devices)
+[Pocketbook](https://github.com/koreader/koreader/wiki/Installation-on-PocketBook-devices) •
+[reMarkable](https://github.com/koreader/koreader/wiki/Installation-on-Remarkable)
 
 
 ## Development
