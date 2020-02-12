@@ -56,16 +56,21 @@ function OverlapGroup:paintTo(bb, x, y)
     local size = self:getSize()
 
     for i, wget in ipairs(self) do
+        local wget_size = wget:getSize()
         local overlap_align = wget.overlap_align
         if self._mirroredUI and self.allow_mirroring then
+            -- Checks in the same order as how they are checked below
             if overlap_align == "right" then
                 overlap_align = "left"
-            elseif overlap_align ~= "center" then
+            elseif overlap_align == "center" then
+                overlap_align = "center"
+            elseif wget.overlap_offset then
+                wget.overlap_offset[1] = size.w - wget_size.w - wget.overlap_offset[1]
+            else
                 overlap_align = "right"
             end
             -- see if something to do with wget.overlap_offset
         end
-        local wget_size = wget:getSize()
         if overlap_align == "right" then
             wget:paintTo(bb, x+size.w-wget_size.w, y)
         elseif overlap_align == "center" then

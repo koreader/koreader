@@ -770,6 +770,18 @@ function ReaderStatistics:addToMainMenu(menu_items)
                     self:statMenu()
                 end
             },
+            {
+                text = _("Calendar view"),
+                keep_menu_open = true,
+                callback = function()
+                    local CalendarView = require("calendarview")
+                    UIManager:show(CalendarView:new{
+                        reader_statistics = self,
+                        monthTranslation = monthTranslation,
+                        shortDayOfWeekTranslation = shortDayOfWeekTranslation,
+                    })
+                end,
+            },
         },
     }
 end
@@ -1788,6 +1800,82 @@ function ReaderStatistics:onReaderReady()
     -- we have correct page count now, do the actual initialization work
     self:initData()
     self.view.footer:updateFooter()
+end
+
+-- Used by calendarview.lua CalendarView
+function ReaderStatistics:getFirstTimestamp()
+    local sql_stmt = [[
+        SELECT min(start_time)
+        FROM   page_stat
+    ]]
+    local conn = SQ3.open(db_location)
+    local first_ts = conn:rowexec(sql_stmt)
+    conn:close()
+    return first_ts and tonumber(first_ts) or nil
+end
+
+function ReaderStatistics:getReadingRatioPerHourByDay(month)
+    local sql_stmt = [[
+        SELECT
+            strftime('%Y-%m-%d', start_time, 'unixepoch', 'localtime') day,
+            strftime('%H', start_time, 'unixepoch', 'localtime') hour,
+            sum(period)/3600.0 ratio
+        FROM   page_stat
+        WHERE  strftime('%Y-%m', start_time, 'unixepoch', 'localtime') = ?
+        GROUP  BY
+            strftime('%Y-%m-%d', start_time, 'unixepoch', 'localtime'),
+            strftime('%H', start_time, 'unixepoch', 'localtime')
+        ORDER BY day, hour
+    ]]
+    local conn = SQ3.open(db_location)
+    local stmt = conn:prepare(sql_stmt)
+    local res, nb = stmt:reset():bind(month):resultset("i")
+    stmt:close()
+    conn:close()
+    local per_day = {}
+    for i=1, nb do
+        local day, hour, ratio = res[1][i], res[2][i], res[3][i]
+        if not per_day[day] then
+            per_day[day] = {}
+        end
+        -- +1 as histogram starts counting at 1
+        per_day[day][tonumber(hour)+1] = ratio
+    end
+    return per_day
+end
+
+function ReaderStatistics:getReadBookByDay(month)
+    local sql_stmt = [[
+        SELECT
+            strftime('%Y-%m-%d', start_time, 'unixepoch', 'localtime') day,
+            sum(period) duration,
+            id_book book_id,
+            book.title book_title
+        FROM   page_stat
+        JOIN   book on book.id = page_stat.id_book
+        WHERE  strftime('%Y-%m', start_time, 'unixepoch', 'localtime') = ?
+        GROUP  BY
+            strftime('%Y-%m-%d', start_time, 'unixepoch', 'localtime'),
+            id_book,
+            title
+        ORDER BY day, duration desc, book_id, book_title
+    ]]
+    local conn = SQ3.open(db_location)
+    local stmt = conn:prepare(sql_stmt)
+    local res, nb = stmt:reset():bind(month):resultset("i")
+    stmt:close()
+    conn:close()
+    local per_day = {}
+    for i=1, nb do
+        -- (We don't care about the duration, we just needed it
+        -- to have the books in decreasing duration order)
+        local day, duration, book_id, book_title = res[1][i], res[2][i], res[3][i], res[4][i] -- luacheck: no unused
+        if not per_day[day] then
+            per_day[day] = {}
+        end
+        table.insert(per_day[day], { id = tonumber(book_id), title = tostring(book_title) })
+    end
+    return per_day
 end
 
 return ReaderStatistics
