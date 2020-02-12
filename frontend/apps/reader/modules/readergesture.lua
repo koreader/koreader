@@ -75,9 +75,9 @@ local action_strings = {
     toggle_gsensor = _("Toggle accelerometer"),
     toggle_rotation = _("Toggle rotation"),
 
-    wifi_on = _("Enable wifi"),
-    wifi_off = _("Disable wifi"),
-    toggle_wifi = _("Toggle wifi"),
+    wifi_on = _("Turn on Wi-Fi"),
+    wifi_off = _("Turn off Wi-Fi"),
+    toggle_wifi = _("Toggle Wi-Fi"),
 
     toggle_bookmark = _("Toggle bookmark"),
     toggle_page_flipping = _("Toggle page flipping"),
@@ -346,7 +346,7 @@ function ReaderGesture:addToMainMenu(menu_items)
         text = _("Gesture manager"),
         sub_item_table = {
             {
-                text = _("Enable multiswipes"),
+                text = _("Turn on multiswipes"),
                 checked_func = function() return self.multiswipes_enabled end,
                 callback = function()
                     G_reader_settings:saveSetting("multiswipes_enabled", not self.multiswipes_enabled)
@@ -1224,13 +1224,13 @@ function ReaderGesture:registerGesture(ges, action, ges_type, zone, overrides, d
                 if ges == "multiswipe" then
                     if self.multiswipes_enabled == nil then
                         UIManager:show(ConfirmBox:new{
-                            text = _("You have just performed a multiswipe gesture for the first time.") .."\n\n".. multiswipes_info_text,
-                            ok_text = _("Enable"),
+                            text = _("You have just performed your first multiswipe gesture.") .."\n\n".. multiswipes_info_text,
+                            ok_text = _("Turn on"),
                             ok_callback = function()
                                 G_reader_settings:saveSetting("multiswipes_enabled", true)
                                 self.multiswipes_enabled = true
                             end,
-                            cancel_text = _("Disable"),
+                            cancel_text = _("Turn off"),
                             cancel_callback = function()
                                 G_reader_settings:saveSetting("multiswipes_enabled", false)
                                 self.multiswipes_enabled = false
@@ -1453,7 +1453,7 @@ function ReaderGesture:gestureAction(action, ges)
 
         if not NetworkMgr:isOnline() then
             UIManager:show(InfoMessage:new{
-                text = _("Enabling wifi…"),
+                text = _("Turning on Wi-Fi…"),
                 timeout = 1,
             })
 
@@ -1464,7 +1464,7 @@ function ReaderGesture:gestureAction(action, ges)
             NetworkMgr:turnOffWifi()
 
             UIManager:show(InfoMessage:new{
-                text = _("Wifi disabled."),
+                text = _("Wi-Fi off."),
                 timeout = 1,
             })
         end
@@ -1474,7 +1474,7 @@ function ReaderGesture:gestureAction(action, ges)
         NetworkMgr:turnOffWifi()
 
         UIManager:show(InfoMessage:new{
-            text = _("Wifi disabled."),
+            text = _("Wi-Fi off."),
             timeout = 1,
         })
     elseif action == "wifi_on" then
@@ -1487,7 +1487,7 @@ function ReaderGesture:gestureAction(action, ges)
             })
 
             -- NB Normal widgets should use NetworkMgr:promptWifiOn()
-            -- This is specifically the toggle wifi action, so consent is implied.
+            -- This is specifically the toggle Wi-Fi action, so consent is implied.
             NetworkMgr:turnOnWifi()
         else
             local info_text
@@ -1591,9 +1591,9 @@ function ReaderGesture:onShowFLOnOff()
     local powerd = Device:getPowerDevice()
     local new_text
     if powerd.is_fl_on then
-        new_text = _("Frontlight is on.")
+        new_text = _("Frontlight on.")
     else
-        new_text = _("Frontlight is off.")
+        new_text = _("Frontlight off.")
     end
     UIManager:show(Notification:new{
         text = new_text,
@@ -1605,9 +1605,9 @@ end
 function ReaderGesture:onGSensorToggle()
     local new_text
     if G_reader_settings:isTrue("input_ignore_gsensor") then
-        new_text = _("Accelerometer rotation events will now be ignored.")
+        new_text = _("Accelerometer rotation events off.")
     else
-        new_text = _("Accelerometer rotation events will now be honored.")
+        new_text = _("Accelerometer rotation events on.")
     end
     UIManager:show(Notification:new{
         text = new_text,
