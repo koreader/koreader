@@ -855,16 +855,13 @@ function ReaderFooter:addToMainMenu(menu_items)
                                 title_text =  _("Footer font size"),
                                 callback = function(spin)
                                     self.settings.text_font_size = spin.value
-                                    --local text = self.footer_text.text
+                                    self.footer_text:free()
                                     self.footer_text = TextWidget:new{
                                         text = self.footer_text.text,
                                         face = Font:getFace(self.text_font_face, self.settings.text_font_size),
                                         bold = self.settings.text_font_bold,
                                     }
-                                    self.text_container = RightContainer:new{
-                                        dimen = Geom:new{ w = 0, h = self.height },
-                                        self.footer_text,
-                                    }
+                                    self.text_container[1] = self.footer_text
                                     self:refreshFooter(true, true)
                                     if touchmenu_instance then touchmenu_instance:updateItems() end
                                 end,
@@ -880,15 +877,13 @@ function ReaderFooter:addToMainMenu(menu_items)
                         end,
                         callback = function(touchmenu_instance)
                             self.settings.text_font_bold = not self.settings.text_font_bold
+                            self.footer_text:free()
                             self.footer_text = TextWidget:new{
                                 text = self.footer_text.text,
                                 face = Font:getFace(self.text_font_face, self.settings.text_font_size),
                                 bold = self.settings.text_font_bold,
                             }
-                            self.text_container = RightContainer:new{
-                                dimen = Geom:new{ w = 0, h = self.height },
-                                self.footer_text,
-                            }
+                            self.text_container[1] = self.footer_text
                             self:refreshFooter(true, true)
                             if touchmenu_instance then touchmenu_instance:updateItems() end
                         end,
