@@ -871,7 +871,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         keep_menu_open = true,
                     },
                     {
-                        text = _("Bold"),
+                        text = _("Use bold font"),
                         checked_func = function()
                             return self.settings.text_font_bold == true
                         end,
