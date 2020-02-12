@@ -20,8 +20,6 @@ ANDROID_NAME?=$(VERSION)
 # set PATH to find CC in managed toolchains
 ifeq ($(TARGET), android)
 	PATH:=$(ANDROID_TOOLCHAIN)/bin:$(PATH)
-else ifeq ($(TARGET), pocketbook)
-	PATH:=$(POCKETBOOK_TOOLCHAIN)/bin:$(PATH)
 endif
 
 MACHINE=$(shell PATH=$(PATH) $(CC) -dumpmachine 2>/dev/null)
@@ -511,9 +509,6 @@ androiddev: androidupdate
 
 android-toolchain:
 	$(MAKE) -C $(KOR_BASE) android-toolchain
-
-pocketbook-toolchain:
-	$(MAKE) -C $(KOR_BASE) pocketbook-toolchain
 
 
 # for gettext
