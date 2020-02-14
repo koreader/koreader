@@ -190,6 +190,16 @@ function DictQuickLookup:getHtmlDictionaryCss()
             line-height: 1.3;
             ]]..css_justify..[[
         }
+
+        blockquote {
+            margin-left: 1em;
+            margin-right: .5em;
+        }
+
+        dd {
+            margin-left: 1em;
+            margin-right: 0;
+        }
     ]]
 
     if self.css then
