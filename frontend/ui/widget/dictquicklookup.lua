@@ -189,18 +189,19 @@ function DictQuickLookup:getHtmlDictionaryCss()
             margin: 0;
             line-height: 1.3;
             ]]..css_justify..[[
-        }
-
-        /* MuPDF doesn't currently scale CSS pixels, so we have to use a font-size based measurement.
-         * Unfortunately MuPDF doesn't properly support `rem` either, which it bases on a hard-coded
-         * value of `16px`, so we have to go with `em` (or `%`).
-         *
-         * These `em`-based margins can vary slightly, but it's the best available compromise.
-         *
-         * We also keep left and right margin the same so it also displays as expected in RTL.
-         * Because MuPDF doesn't currently support `margin-start`, this results in a slightly
-         * unconventional but hopefully barely noticeable right margin for <dd>.
-         */
+        }]]
+        ..
+        -- MuPDF doesn't currently scale CSS pixels, so we have to use a font-size based measurement.
+        -- Unfortunately MuPDF doesn't properly support `rem` either, which it bases on a hard-coded
+        -- value of `16px`, so we have to go with `em` (or `%`).
+        --
+        -- These `em`-based margins can vary slightly, but it's the best available compromise.
+        --
+        -- We also keep left and right margin the same so it also displays as expected in RTL.
+        -- Because MuPDF doesn't currently support `margin-start`, this results in a slightly
+        -- unconventional but hopefully barely noticeable right margin for <dd>.
+        --
+        [[
         blockquote, dd {
             margin: 0 1em;
         }
