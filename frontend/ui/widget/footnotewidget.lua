@@ -64,13 +64,14 @@ body {
     line-height: 1.3;
     text-align: justify;
 }
+/* We keep left and right margin the same so it also displays as expected in RTL */
 h1, h2, h3, h4, h5, h6 { margin: 0; } /* MuPDF: margin: XXem 0 , vary with level */
-blockquote { margin: 0 3em }    /* MuPDF: margin: 1em 40px */
+blockquote { margin: 0 1em; }   /* MuPDF: margin: 1em 40px */
 p   { margin: 0; }              /* MuPDF: margin: 1em 0 */
-ol  { margin: 0.5em 0; }        /* MuPDF: margin: 1em 0; padding: 0 0 0 30pt */
-ul  { margin: 0.5em 0; }        /* MuPDF: margin: 1em 0; padding: 0 0 0 30pt */
-dl  { margin: 0.5em; }          /* MuPDF: margin: 1em 0 */
-dd  { margin-left: 1.3em; }     /* MuPDF: margin: 0 0 0 40px */
+ol  { margin: 0; }              /* MuPDF: margin: 1em 0; padding: 0 0 0 30pt */
+ul  { margin: 0; }              /* MuPDF: margin: 1em 0; padding: 0 0 0 30pt */
+dl  { margin: 0; }              /* MuPDF: margin: 1em 0 */
+dd  { margin: 0 1em; }          /* MuPDF: margin: 0 0 0 40px */
 pre { margin: 0.5em 0; }        /* MuPDF: margin: 1em 0 */
 a   { color: black; }           /* MuPDF: color: #06C; */
 /* MuPDF has no support for text-decoration, so we can't underline links,
