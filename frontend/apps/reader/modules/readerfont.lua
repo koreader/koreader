@@ -313,6 +313,9 @@ function ReaderFont:addToMainMenu(menu_items)
     menu_items.change_font = {
         text = self.font_menu_title,
         sub_item_table = self.face_table,
+        max_per_page = 5,
+            -- show half of the usual nb of items, so we have more
+            -- room to see how the text looks with that font
     }
 end
 

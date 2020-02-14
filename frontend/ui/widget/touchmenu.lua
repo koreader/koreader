@@ -371,6 +371,7 @@ local TouchMenu = FocusManager:new{
     tab_item_table = {},
     -- for returning in multi-level menus
     item_table_stack = nil,
+    max_per_page_stack = nil,
     item_table = nil,
     item_height = Size.item.height_large,
     bordersize = Size.border.window,
@@ -400,6 +401,7 @@ function TouchMenu:init()
         end
     end
 
+    self.max_per_page_initial = self.max_per_page
     self.layout = {}
 
     self.ges_events.TapCloseAllMenus = {
@@ -695,6 +697,8 @@ function TouchMenu:switchMenuTab(tab_num)
         self.page = 1
         -- clear item table stack
         self.item_table_stack = {}
+        self.max_per_page_stack = {}
+        self.max_per_page = self.tab_item_table[tab_num].max_per_page or self.max_per_page_initial
         self.cur_tab = tab_num
         self.item_table = self.tab_item_table[tab_num]
         self:updateItems()
@@ -704,6 +708,7 @@ end
 function TouchMenu:backToUpperMenu()
     if #self.item_table_stack ~= 0 then
         self.item_table = table.remove(self.item_table_stack)
+        self.max_per_page = table.remove(self.max_per_page_stack)
         self.page = 1
         self:updateItems()
     else
@@ -789,6 +794,10 @@ function TouchMenu:onMenuSelect(item)
         else
             table.insert(self.item_table_stack, self.item_table)
             self.item_table = sub_item_table
+            table.insert(self.max_per_page_stack, self.max_per_page)
+            if item.max_per_page then
+                self.max_per_page = item.max_per_page
+            end
             self.page = 1
             self:updateItems()
         end
