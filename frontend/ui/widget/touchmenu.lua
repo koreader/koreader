@@ -379,7 +379,7 @@ local TouchMenu = FocusManager:new{
     width = nil,
     height = nil,
     page = 1,
-    max_per_page = 10,
+    max_per_page_default = 10,
     -- for UIManager:setDirty
     show_parent = nil,
     cur_tab = -1,
@@ -560,8 +560,9 @@ function TouchMenu:_recalculatePageLayout()
 
     local item_list_content_height = content_height - footer_height
     self.perpage = math.floor(item_list_content_height / self.item_height)
-    if self.perpage > self.max_per_page then
-        self.perpage = self.max_per_page
+    local max_per_page = self.item_table.max_per_page or self.max_per_page_default
+    if self.perpage > max_per_page then
+        self.perpage = max_per_page
     end
 
     self.page_num = math.ceil(#self.item_table / self.perpage)

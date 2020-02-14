@@ -309,6 +309,9 @@ function ReaderFont:makeDefault(face, touchmenu_instance)
 end
 
 function ReaderFont:addToMainMenu(menu_items)
+    -- Have TouchMenu show half of the usual nb of items, so we
+    -- have more room to see how the text looks with that font
+    self.face_table.max_per_page = 5
     -- insert table to main reader menu
     menu_items.change_font = {
         text = self.font_menu_title,
