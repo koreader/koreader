@@ -220,10 +220,6 @@ ${SUPPORTED_TARGETS}"
             assert_ret_zero $?
             ;;
         pocketbook)
-            if ! command -v arm-obreey-linux-gnueabi-gcc >/dev/null && [ ! -d "${CURDIR}/base/toolchain/pocketbook-toolchain" ]; then
-                make pocketbook-toolchain
-                assert_ret_zero $?
-            fi
             make TARGET=pocketbook
             assert_ret_zero $?
             ;;
