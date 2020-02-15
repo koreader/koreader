@@ -56,6 +56,29 @@ local TextWidget = Widget:new{
     _xshaping = nil,
 }
 
+-- Helper function to be used before instantiating a TextWidget instance
+-- (This is more precise than the one with the same name in TextBoxWidget,
+-- as we use the real font metrics.)
+function TextWidget:getFontSizeToFitHeight(font_name, height_px, padding)
+    -- Get a font size that would fit the text in height_px.
+    if not padding then
+        padding = self.padding -- (TextWidget default above: Size.padding.small)
+    end
+    -- We need to iterate (skip 1 early as font_size is always smaller
+    -- than font height)
+    local font_size = height_px
+    repeat
+        font_size = font_size - 1
+        if font_size <= 1 then
+            break
+        end
+        local face = Font:getFace(font_name, font_size)
+        local face_height = face.ftface:getHeightAndAscender()
+        face_height = math.ceil(face_height) + 2*padding
+    until face_height <= height_px
+    return font_size
+end
+
 function TextWidget:updateSize()
     if self._updated then
         return

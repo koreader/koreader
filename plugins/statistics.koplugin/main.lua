@@ -29,18 +29,24 @@ local db_location = DataStorage:getSettingsDir() .. "/statistics.sqlite3"
 local PAGE_INSERT = 50
 local DEFAULT_MIN_READ_SEC = 5
 local DEFAULT_MAX_READ_SEC = 120
+local DEFAULT_CALENDAR_START_DAY_OF_WEEK = 2 -- Monday
+local DEFAULT_CALENDAR_NB_BOOK_SPANS = 3
 
 local ReaderStatistics = Widget:extend{
     name = "statistics",
     page_min_read_sec = DEFAULT_MIN_READ_SEC,
     page_max_read_sec = DEFAULT_MAX_READ_SEC,
+    calendar_start_day_of_week = DEFAULT_CALENDAR_START_DAY_OF_WEEK,
+    calendar_nb_book_spans = DEFAULT_CALENDAR_NB_BOOK_SPANS,
+    calendar_show_histogram = true,
+    calendar_browse_future_months = false,
     start_current_period = 0,
     curr_page = 0,
     id_curr_book = nil,
     curr_total_time = 0,
     curr_total_pages = 0,
     is_enabled = nil,
-    convert_to_db = nil,
+    convert_to_db = nil, -- true when migration to DB has been done
     total_read_pages = 0,
     total_read_time = 0,
     avg_time = nil,
@@ -59,6 +65,8 @@ local ReaderStatistics = Widget:extend{
     },
 }
 
+local weekDays = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" } -- in Lua wday order
+
 local shortDayOfWeekTranslation = {
     ["Mon"] = _("Mon"),
     ["Tue"] = _("Tue"),
@@ -67,6 +75,16 @@ local shortDayOfWeekTranslation = {
     ["Fri"] = _("Fri"),
     ["Sat"] = _("Sat"),
     ["Sun"] = _("Sun"),
+}
+
+local longDayOfWeekTranslation = {
+    ["Mon"] = _("Monday"),
+    ["Tue"] = _("Tuesday"),
+    ["Wed"] = _("Wednesday"),
+    ["Thu"] = _("Thursday"),
+    ["Fri"] = _("Friday"),
+    ["Sat"] = _("Saturday"),
+    ["Sun"] = _("Sunday"),
 }
 
 local monthTranslation = {
@@ -97,6 +115,10 @@ function ReaderStatistics:init()
     local settings = G_reader_settings:readSetting("statistics") or {}
     self.page_min_read_sec = tonumber(settings.min_sec)
     self.page_max_read_sec = tonumber(settings.max_sec)
+    self.calendar_start_day_of_week = settings.calendar_start_day_of_week
+    self.calendar_nb_book_spans = settings.calendar_nb_book_spans
+    self.calendar_show_histogram = settings.calendar_show_histogram
+    self.calendar_browse_future_months = settings.calendar_browse_future_months
     self.is_enabled = not (settings.is_enabled == false)
     self.convert_to_db = settings.convert_to_db
     self.ui.menu:registerToMainMenu(self)
@@ -228,7 +250,7 @@ end
 
 function ReaderStatistics:checkInitDatabase()
     local conn = SQ3.open(db_location)
-    if self.convert_to_db then      -- if conversion to sqlite was doing earlier
+    if self.convert_to_db then      -- if conversion to sqlite DB has already been done
         if not conn:exec("pragma table_info('book');") then
             UIManager:show(ConfirmBox:new{
                 text = T(_([[
@@ -251,7 +273,7 @@ Do you want to create an empty database?
                 end,
             })
         end
-    else  -- first time convertion to sqlite database
+    else  -- Migrate stats for books in history from metadata.lua to sqlite database
         self.convert_to_db = true
         if not conn:exec("pragma table_info('book');") then
             local filename_first_history, quickstart_filename, __
@@ -671,48 +693,6 @@ function ReaderStatistics:getStatisticEnabledMenuItem()
     }
 end
 
-function ReaderStatistics:updateSettings()
-    self.settings_dialog = MultiInputDialog:new {
-        title = _("Statistics settings"),
-        fields = {
-            {
-                text = self.page_min_read_sec,
-                description = T(_("Min seconds, default is %1"), DEFAULT_MIN_READ_SEC),
-                input_type = "number",
-            },
-            {
-                text = self.page_max_read_sec,
-                description = T(_("Max seconds, default is %1"), DEFAULT_MAX_READ_SEC),
-                input_type = "number",
-            },
-        },
-        buttons = {
-            {
-                {
-                    text = _("Cancel"),
-                    callback = function()
-                        self.settings_dialog:onClose()
-                        UIManager:close(self.settings_dialog)
-                    end
-                },
-                {
-                    text = _("Apply"),
-                    callback = function()
-                        self:saveSettings(MultiInputDialog:getFields())
-                        self.settings_dialog:onClose()
-                        UIManager:close(self.settings_dialog)
-                    end
-                },
-            },
-        },
-        width = Screen:getWidth() * 0.95,
-        height = Screen:getHeight() * 0.2,
-        input_type = "number",
-    }
-    UIManager:show(self.settings_dialog)
-    self.settings_dialog:onShowKeyboard()
-end
-
 function ReaderStatistics:addToMainMenu(menu_items)
     menu_items.statistics = {
         text = _("Reading statistics"),
@@ -720,15 +700,131 @@ function ReaderStatistics:addToMainMenu(menu_items)
             self:getStatisticEnabledMenuItem(),
             {
                 text = _("Settings"),
-                keep_menu_open = true,
-                callback = function() self:updateSettings() end,
+                sub_item_table = {
+                    {
+                        text_func = function()
+                            return T(_("Read page duration limits: %1 s / %2 s"),
+                                self.page_min_read_sec, self.page_max_read_sec)
+                        end,
+                        callback = function(touchmenu_instance)
+                            local DoubleSpinWidget = require("/ui/widget/doublespinwidget")
+                            local durations_widget
+                            durations_widget = DoubleSpinWidget:new{
+                                left_text = _("Min"),
+                                left_value = self.page_min_read_sec,
+                                left_default = DEFAULT_MIN_READ_SEC,
+                                left_min = 3,
+                                left_max = 120,
+                                left_step = 1,
+                                left_hold_step = 10,
+                                right_text = _("Max"),
+                                right_value = self.page_max_read_sec,
+                                right_default = DEFAULT_MAX_READ_SEC,
+                                right_min = 10,
+                                right_max = 7200,
+                                right_step = 10,
+                                right_hold_step = 60,
+                                default_values = true,
+                                default_text = _("Use defaults"),
+                                title_text = _("Read page duration limits"),
+                                info_text = _([[
+Set min and max durations (in seconds) for a page to be considered as read and counted in statistics.
+The min value ensures pages you quickly browse and skip are not included.
+The max value ensures a page you stay on for a long time (because you fell asleep or went away) will be included, but with a duration capped to this specified max value.
+'Use defaults' resets them.]]),
+                                callback = function(min, max)
+                                    if not min then min = DEFAULT_MIN_READ_SEC end
+                                    if not max then max = DEFAULT_MAX_READ_SEC end
+                                    if min > max then
+                                        min, max = max, min
+                                    end
+                                    self.page_min_read_sec = min
+                                    self.page_max_read_sec = max
+                                    self:saveSettings()
+                                    UIManager:close(durations_widget)
+                                    touchmenu_instance:updateItems()
+                                end,
+                            }
+                            UIManager:show(durations_widget)
+                        end,
+                        keep_menu_open = true,
+                        separator = true,
+                    },
+                    {
+                        text_func = function()
+                            return T(_("Calendar weeks start on %1"),
+                                longDayOfWeekTranslation[weekDays[self.calendar_start_day_of_week]])
+                        end,
+                        sub_item_table = {
+                            { -- Friday (Bangladesh and Maldives)
+                                text = longDayOfWeekTranslation[weekDays[6]],
+                                checked_func = function() return self.calendar_start_day_of_week == 6 end,
+                                callback = function() self.calendar_start_day_of_week = 6 end
+                            },
+                            { -- Saturday (some Middle East countries)
+                                text = longDayOfWeekTranslation[weekDays[7]],
+                                checked_func = function() return self.calendar_start_day_of_week == 7 end,
+                                callback = function() self.calendar_start_day_of_week = 7 end
+                            },
+                            { -- Sunday
+                                text = longDayOfWeekTranslation[weekDays[1]],
+                                checked_func = function() return self.calendar_start_day_of_week == 1 end,
+                                callback = function() self.calendar_start_day_of_week = 1 end
+                            },
+                            { -- Monday
+                                text = longDayOfWeekTranslation[weekDays[2]],
+                                checked_func = function() return self.calendar_start_day_of_week == 2 end,
+                                callback = function() self.calendar_start_day_of_week = 2 end
+                            },
+                        },
+                    },
+                    {
+                        text_func = function()
+                            return T(_("Books per calendar day: %1"), self.calendar_nb_book_spans)
+                        end,
+                        callback = function(touchmenu_instance)
+                            local SpinWidget = require("ui/widget/spinwidget")
+                            UIManager:show(SpinWidget:new{
+                                width = Screen:getWidth() * 0.6,
+                                value = self.calendar_nb_book_spans,
+                                value_min = 1,
+                                value_max = 5,
+                                ok_text = _("Set"),
+                                title_text =  _("Books per calendar day"),
+                                text = _("Set the max number of book spans to show for a day"),
+                                callback = function(spin)
+                                    self.calendar_nb_book_spans = spin.value
+                                    touchmenu_instance:updateItems()
+                                end,
+                                extra_text = _("Use default"),
+                                extra_callback = function()
+                                    self.calendar_nb_book_spans = DEFAULT_CALENDAR_NB_BOOK_SPANS
+                                    touchmenu_instance:updateItems()
+                                end
+                            })
+                        end,
+                        keep_menu_open = true,
+                    },
+                    {
+                        text = _("Show hourly histogram in calendar days"),
+                        checked_func = function() return self.calendar_show_histogram end,
+                        callback = function()
+                            self.calendar_show_histogram = not self.calendar_show_histogram
+                        end,
+                    },
+                    {
+                        text = _("Allow browsing coming months"),
+                        checked_func = function() return self.calendar_browse_future_months end,
+                        callback = function()
+                            self.calendar_browse_future_months = not self.calendar_browse_future_months
+                        end,
+                    },
+                },
             },
             {
-                text = _("Reset book statistics"),
-                keep_menu_open = true,
-                callback = function()
-                    self:resetBook()
-                end
+                text = _("Reset statistics"),
+                sub_item_table = self:genResetBookSubItemTable(),
+                separator = true,
             },
             {
                 text = _("Current book"),
@@ -779,6 +875,11 @@ function ReaderStatistics:addToMainMenu(menu_items)
                         reader_statistics = self,
                         monthTranslation = monthTranslation,
                         shortDayOfWeekTranslation = shortDayOfWeekTranslation,
+                        longDayOfWeekTranslation = longDayOfWeekTranslation,
+                        start_day_of_week = self.calendar_start_day_of_week,
+                        nb_book_spans = self.calendar_nb_book_spans,
+                        show_hourly_histogram = self.calendar_show_histogram,
+                        browse_future_months = self.calendar_browse_future_months,
                     })
                 end,
             },
@@ -1580,6 +1681,32 @@ function ReaderStatistics:getTotalStats()
     return T(_("Total hours read %1"), util.secondsToClock(total_books_time, false)), total_stats
 end
 
+function ReaderStatistics:genResetBookSubItemTable()
+    local sub_item_table = {}
+    table.insert(sub_item_table, {
+        text = _("Reset statistics per book"),
+        keep_menu_open = true,
+        callback = function()
+            self:resetBook()
+        end,
+        separator = true,
+    })
+    local reset_minutes = { 1, 5, 15, 30, 60 }
+    for _, minutes in ipairs(reset_minutes) do
+        local text = T(N_("Reset stats for books read for < 1 m",
+                          "Reset stats for books read for < %1 m",
+                          minutes), minutes)
+        table.insert(sub_item_table, {
+            text = text,
+            keep_menu_open = true,
+            callback = function()
+                self:deleteBooksByTotalDuration(minutes)
+            end,
+        })
+    end
+    return sub_item_table
+end
+
 function ReaderStatistics:resetBook()
     local total_stats = {}
     local kv_reset_book
@@ -1674,6 +1801,56 @@ function ReaderStatistics:deleteBook(id_book)
     stmt:close()
     conn:close()
 end
+
+function ReaderStatistics:deleteBooksByTotalDuration(max_total_duration_mn)
+    local max_total_duration_sec = max_total_duration_mn * 60
+    UIManager:show(ConfirmBox:new{
+        text = T(N_("Do you want to permanently remove statistics for books read for less than 1 minute?",
+                    "Do you want to permanently remove statistics for books read for less than %1 minutes?",
+                    max_total_duration_mn), max_total_duration_mn),
+        ok_text = _("Remove"),
+        ok_callback = function()
+            local conn = SQ3.open(db_location)
+            local sql_stmt = [[
+                    DELETE from page_stat
+                    WHERE  id_book in (
+                      select id from book where id != ? and (total_read_time is NULL or total_read_time < ?)
+                    )
+                ]]
+            local stmt = conn:prepare(sql_stmt)
+            stmt:reset():bind(self.id_curr_book, max_total_duration_sec):step()
+            sql_stmt = [[
+                    DELETE from book
+                    WHERE  id != ? and (total_read_time is NULL or total_read_time < ?)
+                ]]
+            stmt = conn:prepare(sql_stmt)
+            stmt:reset():bind(self.id_curr_book, max_total_duration_sec):step()
+            stmt:close()
+            -- Get nb of deleted books
+            sql_stmt = [[
+                SELECT changes()
+            ]]
+            local nb_deleted = conn:rowexec(sql_stmt)
+            nb_deleted = nb_deleted and tonumber(nb_deleted) or 0
+            if max_total_duration_mn >= 30 and nb_deleted >= 10 then
+                -- Do a VACUUM to reduce db size (but not worth doing if not much was removed)
+                conn:exec("PRAGMA temp_store = 2") -- use memory for temp files
+                local ok, errmsg = pcall(conn.exec, conn, "VACUUM") -- this may take some time
+                if not ok then
+                    logger.warn("Failed compacting statistics database:", errmsg)
+                end
+            end
+            conn:close()
+            UIManager:show(InfoMessage:new{
+                text = nb_deleted > 0 and T(N_("Statistics for 1 book removed.",
+                                               "Statistics for %1 books removed.",
+                                               nb_deleted), nb_deleted)
+                                       or T(_("No statistics removed."))
+            })
+        end,
+    })
+end
+
 
 function ReaderStatistics:onPosUpdate(pos, pageno)
     if self.curr_page ~= pageno then
@@ -1777,17 +1954,16 @@ function ReaderStatistics:onResume()
     self.pages_stats[self.start_current_period] = self.curr_page
 end
 
-function ReaderStatistics:saveSettings(fields)
-    if fields then
-        self.page_min_read_sec = tonumber(fields[1])
-        self.page_max_read_sec = tonumber(fields[2])
-    end
-
+function ReaderStatistics:saveSettings()
     local settings = {
         min_sec = self.page_min_read_sec,
         max_sec = self.page_max_read_sec,
         is_enabled = self.is_enabled,
-        convert_to_db = self.convert_to_db
+        convert_to_db = self.convert_to_db,
+        calendar_start_day_of_week = self.calendar_start_day_of_week,
+        calendar_nb_book_spans = self.calendar_nb_book_spans,
+        calendar_show_histogram = self.calendar_show_histogram,
+        calendar_browse_future_months = self.calendar_browse_future_months,
     }
     G_reader_settings:saveSetting("statistics", settings)
 end
