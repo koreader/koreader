@@ -727,7 +727,7 @@ function ReaderStatistics:addToMainMenu(menu_items)
                                 default_text = _("Use defaults"),
                                 title_text = _("Read page duration limits"),
                                 info_text = _([[
-Set min and max duration (in seconds) on a page for it to be counted as read in statistics.
+Set min and max duration (in seconds) for a page to be counted as read in statistics.
 The min value ensures pages you quickly browse and skip are not included.
 The max value ensures a page you stay on for a long time (because you fell asleep or went away) will be included, but with a duration capped to this specified max value.]]),
                                 callback = function(min, max)
