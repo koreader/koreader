@@ -327,7 +327,7 @@ function CalendarWeek:update()
     -- But cap it to the day num font size
     inner_font_size = math.min(inner_font_size, self.font_size)
 
-    local offset_y_fixup = 0
+    local offset_y_fixup
     if self.histo_shown then
         -- No real y positionning needed, but push it a bit down
         -- over histogram, as histograms rarely reach 100%, and
