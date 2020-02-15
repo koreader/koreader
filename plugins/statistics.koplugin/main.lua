@@ -727,10 +727,9 @@ function ReaderStatistics:addToMainMenu(menu_items)
                                 default_text = _("Use defaults"),
                                 title_text = _("Read page duration limits"),
                                 info_text = _([[
-Set min and max durations (in seconds) for a page to be considered as read and counted in statistics.
+Set min and max duration (in seconds) on a page for it to be counted as read in statistics.
 The min value ensures pages you quickly browse and skip are not included.
-The max value ensures a page you stay on for a long time (because you fell asleep or went away) will be included, but with a duration capped to this specified max value.
-'Use defaults' resets them.]]),
+The max value ensures a page you stay on for a long time (because you fell asleep or went away) will be included, but with a duration capped to this specified max value.]]),
                                 callback = function(min, max)
                                     if not min then min = DEFAULT_MIN_READ_SEC end
                                     if not max then max = DEFAULT_MAX_READ_SEC end
@@ -1804,8 +1803,8 @@ end
 function ReaderStatistics:deleteBooksByTotalDuration(max_total_duration_mn)
     local max_total_duration_sec = max_total_duration_mn * 60
     UIManager:show(ConfirmBox:new{
-        text = T(N_("Do you want to permanently remove statistics for books read for less than 1 minute?",
-                    "Do you want to permanently remove statistics for books read for less than %1 minutes?",
+        text = T(N_("Permanently remove statistics for books read for less than 1 minute?",
+                    "Permanently remove statistics for books read for less than %1 minutes?",
                     max_total_duration_mn), max_total_duration_mn),
         ok_text = _("Remove"),
         ok_callback = function()
