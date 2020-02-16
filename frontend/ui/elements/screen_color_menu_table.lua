@@ -4,9 +4,10 @@ local UIManager = require("ui/uimanager")
 local CanvasContext = require("document/canvascontext")
 local _ = require("gettext")
 
+-- NOTE: Again, make sure this is enabled if for some reason color is enabled on a Grayscale screen...
 return {
     text = _("Color rendering"),
-    enabled_func = Screen.isColorScreen,
+    enabled = Screen:isColorEnabled() or Screen:isColorScreen(),
     checked_func = Screen.isColorEnabled,
     callback = function()
         local new_val = not Screen.isColorEnabled()
