@@ -97,7 +97,8 @@ local TextBoxWidget = InputContainer:new{
                                  -- used as a weak hint about direction)
     alignment_strict = false, -- true to force the alignemnt set by the alignment= attribute.
                               -- When false, specified alignment is inverted when para direction is RTL
-    tabstop_nb_space_width = 8, -- width of tabstops, as a factor of the width of a space
+    tabstop_nb_space_width = 8, -- unscaled_size_check: ignore
+                                -- width of tabstops, as a factor of the width of a space
                                 -- (set to 0 to disable any tab handling and display a tofu glyph)
     _xtext = nil, -- for internal use
     _alt_color_for_rtl = nil, -- (for debugging) draw LTR glyphs in black, RTL glyphs in gray
