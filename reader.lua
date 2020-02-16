@@ -188,7 +188,7 @@ if G_reader_settings:isTrue("color_rendering") and not Device:hasColorScreen() t
     --G_reader_settings:delSetting("color_rendering")
     local InfoMessage = require("ui/widget/infomessage")
     UIManager:show(InfoMessage:new{
-        text = _("Color rendering is mistakenly enabled on your grayscale device.\nThis will subtly break some features, and adversely affect performance, please disable color rendering in the screen sub-menu."),
+        text = _("Color rendering is mistakenly enabled on your grayscale device.\nThis will subtly break some features, and adversely affect performance.\nPlease disable color rendering in the screen sub-menu."),
     })
 end
 
