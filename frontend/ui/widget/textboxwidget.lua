@@ -97,6 +97,8 @@ local TextBoxWidget = InputContainer:new{
                                  -- used as a weak hint about direction)
     alignment_strict = false, -- true to force the alignemnt set by the alignment= attribute.
                               -- When false, specified alignment is inverted when para direction is RTL
+    tabstop_nb_space_width = 8, -- width of tabstops, as a factor of the width of a space
+                                -- (set to 0 to disable any tab handling and display a tofu glyph)
     _xtext = nil, -- for internal use
     _alt_color_for_rtl = nil, -- (for debugging) draw LTR glyphs in black, RTL glyphs in gray
 }
@@ -231,6 +233,10 @@ function TextBoxWidget:_measureWithXText()
             -- expected, got userdata", so we know)
     end
     self._xtext:measure()
+    if self.tabstop_nb_space_width > 0 and not self._tabstop_width then
+        local space_width = RenderText:sizeUtf8Text(0, false, self.face, " ").x
+        self._tabstop_width = self.tabstop_nb_space_width * space_width
+    end
 end
 
 -- Split the text into logical lines to fit into the text box.
@@ -286,7 +292,7 @@ function TextBoxWidget:_splitToLines()
 
         if self.use_xtext then
             -- All of what's done below when use_xtext=false is done by the C++ module.
-            local line = self._xtext:makeLine(offset, targeted_width)
+            local line = self._xtext:makeLine(offset, targeted_width, false, self._tabstop_width)
             -- logger.dbg("makeLine", ln, line)
             -- We get a line such as this:
             --    {
@@ -570,6 +576,87 @@ function TextBoxWidget:_shapeLine(line)
         end
     end
 
+    if xshaping.has_tabs and self.tabstop_nb_space_width > 0 then
+        -- Try to handle tabs: we got offset and end_offset to target the
+        -- expected width with tabstops applied on the logical order string.
+        -- We can really handle them correctly only with:
+        --   - pure LTR text and alignment=left
+        --   - pure RTL text and alignment=right
+        -- and with some possibly uneven spacing when text is justified.
+        -- Hopefully, we shouldn't use right or center with external text,
+        -- and our internal text is probably tab-free.
+        -- Note that tab is a Unicode SS (Segment Separator), so hopefully,
+        -- it seems to always get back the main direction of the paragraph
+        -- if text is Bidi - so our tabstops always fly in the main
+        -- paragraph direction.
+        -- When we can't do well, we let the tab char have its tofu glyph
+        -- width (which seems to be around the width of 4 spaces with our
+        -- fonts), and we just avoid displaying the glyph. So, there will
+        -- be enough spacing, but no tabstop alignment.
+        if alignment == "left" and not xshaping.para_is_rtl then
+            local last_tab = 0
+            local pen_x = 0
+            for i=1, #xshaping, 1 do
+                local xglyph = xshaping[i]
+                if xglyph.is_tab then
+                    last_tab = i
+                    local nb_tabstops_passed_by = math.floor(pen_x / self._tabstop_width)
+                    local new_pen_x = (nb_tabstops_passed_by + 1) * self._tabstop_width
+                    local this_tab_width = new_pen_x - pen_x
+                    xshaping.width = xshaping.width - xglyph.x_advance + this_tab_width
+                    xglyph.x_advance = this_tab_width
+                end
+                pen_x = pen_x + xglyph.x_advance
+            end
+            if last_tab > 0 and self.justified and line.can_be_justified then
+                -- Remove all can_extend before (on the left of) last tab
+                -- so justification does not affect tabstops
+                for i=1, last_tab, 1 do
+                    local xglyph = xshaping[i]
+                    if xglyph.can_extend then
+                        xglyph.can_extend = false
+                        xshaping.nb_can_extend = xshaping.nb_can_extend - 1
+                    end
+                    if xglyph.can_extend_fallback then
+                        xglyph.can_extend_fallback = false
+                        xshaping.nb_can_extend_fallback = xshaping.nb_can_extend_fallback - 1
+                    end
+                end
+            end
+        elseif alignment == "right" and xshaping.para_is_rtl then
+            -- Similar, but scanning and using a pen_x from the right
+            local last_tab = 0
+            local pen_x = 0
+            for i=#xshaping, 1, -1 do
+                local xglyph = xshaping[i]
+                if xglyph.is_tab then
+                    last_tab = i
+                    local nb_tabstops_passed_by = math.floor(pen_x / self._tabstop_width)
+                    local new_pen_x = (nb_tabstops_passed_by + 1) * self._tabstop_width
+                    local this_tab_width = new_pen_x - pen_x
+                    xshaping.width = xshaping.width - xglyph.x_advance + this_tab_width
+                    xglyph.x_advance = this_tab_width
+                end
+                pen_x = pen_x + xglyph.x_advance
+            end
+            if last_tab > 0 and self.justified and line.can_be_justified then
+                -- Remove all can_extend before (on the right of) last tab
+                -- so justification does not affect tabstops
+                for i=#xshaping, last_tab, -1 do
+                    local xglyph = xshaping[i]
+                    if xglyph.can_extend then
+                        xglyph.can_extend = false
+                        xshaping.nb_can_extend = xshaping.nb_can_extend - 1
+                    end
+                    if xglyph.can_extend_fallback then
+                        xglyph.can_extend_fallback = false
+                        xshaping.nb_can_extend_fallback = xshaping.nb_can_extend_fallback - 1
+                    end
+                end
+            end
+        end
+    end
+
     local pen_x = 0 -- when alignment == "left"
     if alignment == "center" then
         pen_x = (line.targeted_width - line.width)/2 or 0
@@ -631,6 +718,11 @@ function TextBoxWidget:_shapeLine(line)
             -- We don't update/decrease prev_cluster_start_xglyph.x0, even if one of its glyph
             -- has a backward advance that go back the 1st glyph x0, to not mess positionning.
         end
+        if xglyph.is_tab then
+            xglyph.no_drawing = true
+            -- Note that xglyph.glyph=0 when no glyph was found in any font,
+            -- if we ever want to not draw them
+        end
     end
     line.x_end = pen_x
     line.xglyphs = xshaping
@@ -669,7 +761,7 @@ function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
                 if line.width > line.targeted_width then
                     -- The ellipsis would overflow: we need to re-makeLine()
                     -- this line with a smaller targeted_width
-                    line = self._xtext:makeLine(line.offset, line.targeted_width - ellipsis_width)
+                    line = self._xtext:makeLine(line.offset, line.targeted_width - ellipsis_width, false, self._tabstop_width)
                     self.vertical_string_list[i] = line -- replace the former one
                 end
                 if line.end_offset and line.end_offset < #self._xtext then
@@ -682,16 +774,18 @@ function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
             self:_shapeLine(line)
             if line.xglyphs then -- non-empty line
                 for __, xglyph in ipairs(line.xglyphs) do
-                    local face = self.face.getFallbackFont(xglyph.font_num) -- callback (not a method)
-                    local glyph = RenderText:getGlyphByIndex(face, xglyph.glyph, self.bold)
-                    local color = self.fgcolor
-                    if self._alt_color_for_rtl then
-                        color = xglyph.is_rtl and Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_BLACK
+                    if not xglyph.no_drawing then
+                        local face = self.face.getFallbackFont(xglyph.font_num) -- callback (not a method)
+                        local glyph = RenderText:getGlyphByIndex(face, xglyph.glyph, self.bold)
+                        local color = self.fgcolor
+                        if self._alt_color_for_rtl then
+                            color = xglyph.is_rtl and Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_BLACK
+                        end
+                        self._bb:colorblitFrom(glyph.bb,
+                                    xglyph.x0 + glyph.l + xglyph.x_offset,
+                                    y - glyph.t + xglyph.y_offset,
+                                    0, 0, glyph.bb:getWidth(), glyph.bb:getHeight(), color)
                     end
-                    self._bb:colorblitFrom(glyph.bb,
-                                xglyph.x0 + glyph.l + xglyph.x_offset,
-                                y - glyph.t + xglyph.y_offset,
-                                0, 0, glyph.bb:getWidth(), glyph.bb:getHeight(), color)
                 end
             end
             y = y + self.line_height_px
