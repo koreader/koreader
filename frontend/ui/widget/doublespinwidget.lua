@@ -83,6 +83,8 @@ function DoubleSpinWidget:update()
         value = self.left_value,
         value_min = self.left_min,
         value_max = self.left_max,
+        value_step = self.left_step,
+        value_hold_step = self.left_hold_step,
         wrap = false,
         update_callback = function() picker_update_callback() end,
     }
@@ -92,6 +94,8 @@ function DoubleSpinWidget:update()
         value = self.right_value,
         value_min = self.right_min,
         value_max = self.right_max,
+        value_step = self.right_step,
+        value_hold_step = self.right_hold_step,
         wrap = false,
         update_callback = function() picker_update_callback() end,
     }
