@@ -972,9 +972,11 @@ function ReaderDictionary:onReadSettings(config)
 end
 
 function ReaderDictionary:onSaveSettings()
-    logger.dbg("save default dictionary", self.default_dictionary)
-    self.ui.doc_settings:saveSetting("default_dictionary", self.default_dictionary)
-    self.ui.doc_settings:saveSetting("disable_fuzzy_search", self.disable_fuzzy_search)
+    if self.ui.doc_settings then
+        logger.dbg("save default dictionary", self.default_dictionary)
+        self.ui.doc_settings:saveSetting("default_dictionary", self.default_dictionary)
+        self.ui.doc_settings:saveSetting("disable_fuzzy_search", self.disable_fuzzy_search)
+    end
 end
 
 function ReaderDictionary:toggleFuzzyDefault()
