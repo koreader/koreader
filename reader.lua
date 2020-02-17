@@ -193,6 +193,7 @@ if G_reader_settings:isTrue("color_rendering") and not Device:hasColorScreen() t
         end,
         ok_text = _("Disable"),
         ok_callback = function()
+                local Event = require("ui/event")
                 G_reader_settings:delSetting("color_rendering")
                 CanvasContext:setColorRenderingEnabled(false)
                 UIManager:broadcastEvent(Event:new("ColorRenderingUpdate"))
