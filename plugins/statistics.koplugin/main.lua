@@ -1808,6 +1808,9 @@ function ReaderStatistics:deleteBooksByTotalDuration(max_total_duration_mn)
                     max_total_duration_mn), max_total_duration_mn),
         ok_text = _("Remove"),
         ok_callback = function()
+            -- Allow following SQL statements to work even when doc less by
+            -- using -1 as the book id, as real book ids are positive.
+            local id_curr_book = self.id_curr_book or -1
             local conn = SQ3.open(db_location)
             local sql_stmt = [[
                     DELETE from page_stat
@@ -1816,13 +1819,13 @@ function ReaderStatistics:deleteBooksByTotalDuration(max_total_duration_mn)
                     )
                 ]]
             local stmt = conn:prepare(sql_stmt)
-            stmt:reset():bind(self.id_curr_book, max_total_duration_sec):step()
+            stmt:reset():bind(id_curr_book, max_total_duration_sec):step()
             sql_stmt = [[
                     DELETE from book
                     WHERE  id != ? and (total_read_time is NULL or total_read_time < ?)
                 ]]
             stmt = conn:prepare(sql_stmt)
-            stmt:reset():bind(self.id_curr_book, max_total_duration_sec):step()
+            stmt:reset():bind(id_curr_book, max_total_duration_sec):step()
             stmt:close()
             -- Get nb of deleted books
             sql_stmt = [[

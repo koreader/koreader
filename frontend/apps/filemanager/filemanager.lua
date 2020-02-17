@@ -664,6 +664,7 @@ end
 
 function FileManager:onClose()
     logger.dbg("close filemanager")
+    self:handleEvent(Event:new("SaveSettings"))
     G_reader_settings:flush()
     UIManager:close(self)
     if self.onExit then
