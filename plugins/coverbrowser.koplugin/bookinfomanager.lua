@@ -651,6 +651,7 @@ function BookInfoManager:cleanUp()
 end
 
 local function findFilesInDir(path, recursive)
+    local stringStartsWith = require("util").stringStartsWith
     local dirs = {path}
     local files = {}
     while #dirs ~= 0 do
@@ -662,10 +663,10 @@ local function findFilesInDir(path, recursive)
                 local fullpath = d.."/"..f
                 local attributes = lfs.attributes(fullpath)
                 -- Don't traverse hidden folders if we're not showing them
-                if recursive and attributes.mode == "directory" and f ~= "." and f ~= ".." and (G_reader_settings:isTrue("show_hidden") or not util.stringStartsWith(f, ".")) then
+                if recursive and attributes.mode == "directory" and f ~= "." and f ~= ".." and (G_reader_settings:isTrue("show_hidden") or not stringStartsWith(f, ".")) then
                     table.insert(new_dirs, fullpath)
                 -- Always ignore macOS resource forks, too.
-                elseif attributes.mode == "file" and not util.stringStartsWith(f, "._") and DocumentRegistry:hasProvider(fullpath) then
+                elseif attributes.mode == "file" and not stringStartsWith(f, "._") and DocumentRegistry:hasProvider(fullpath) then
                     table.insert(files, fullpath)
                 end
             end
