@@ -198,7 +198,8 @@ if Device:canToggleGSensor() then
     common_settings.screen_toggle_gsensor = require("ui/elements/screen_toggle_gsensor")
 end
 
-if Screen.isColorScreen() then
+-- NOTE: Allow disabling color if it's mistakenly enabled on a Grayscale screen (after a settings import?)
+if Screen:isColorEnabled() or Screen:isColorScreen() then
     common_settings.color_rendering = require("ui/elements/screen_color_menu_table")
 end
 

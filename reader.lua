@@ -182,6 +182,25 @@ if Device:hasColorScreen() and not G_reader_settings:has("color_rendering") then
     })
 end
 
+-- Conversely, if color is enabled on a Grayscale screen (e.g., after importing settings from a color device), warn that it'll break stuff and adversely affect performance.
+if G_reader_settings:isTrue("color_rendering") and not Device:hasColorScreen() then
+    local ConfirmBox = require("ui/widget/confirmbox")
+    UIManager:show(ConfirmBox:new{
+        text = _("Color rendering is mistakenly enabled on your grayscale device.\nThis will subtly break some features, and adversely affect performance."),
+        cancel_text = _("Ignore"),
+        cancel_callback = function()
+                return
+        end,
+        ok_text = _("Disable"),
+        ok_callback = function()
+                local Event = require("ui/event")
+                G_reader_settings:delSetting("color_rendering")
+                CanvasContext:setColorRenderingEnabled(false)
+                UIManager:broadcastEvent(Event:new("ColorRenderingUpdate"))
+        end,
+    })
+end
+
 -- Helpers
 local lfs = require("libs/libkoreader-lfs")
 local function retryLastFile()
