@@ -403,7 +403,6 @@ function Screensaver:show(event, fallback_message)
                     text = screensaver_message,
                     face = face,
                     width = screen_w,
-                    height = face.size,
                     alignment = "center",
                 }
             }
