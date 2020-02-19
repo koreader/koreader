@@ -575,8 +575,10 @@ function ReaderView:recalculate()
             self.visible_area.x = self.page_area.x + self.page_area.w - self.visible_area.w
             self.visible_area.y = self.page_area.y
         end
-        -- and recalculate it according to page size
-        self.visible_area:offsetWithin(self.page_area, 0, 0)
+        if not self.page_scroll then
+            -- and recalculate it according to page size
+            self.visible_area:offsetWithin(self.page_area, 0, 0)
+        end
         -- clear dim area
         self.dim_area.w = 0
         self.dim_area.h = 0
