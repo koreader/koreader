@@ -115,7 +115,7 @@ describe("Readerview module", function()
         local saved_ctx = {
             {
                  gamma = 1,
-                 offset = {x = 17, y = 0},
+                 offset = {x = 0, y = 0},
                  page = 1,
                  page_area = {
                      h = 800,

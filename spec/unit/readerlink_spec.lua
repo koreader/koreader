@@ -44,7 +44,7 @@ describe("ReaderLink module", function()
         readerui:handleEvent(Event:new("SetZoomMode", "page"))
         readerui.paging:onGotoPage(1)
         assert.is.same(1, readerui.paging.current_page)
-        readerui.link:onTap(nil, {pos = {x = 250, y = 534}})
+        readerui.link:onTap(nil, {pos = {x = 228, y = 534}})
         UIManager:run()
         -- its really hard to get the exact page number in scroll mode
         -- page positions may have unexpected impact on page number
@@ -87,7 +87,7 @@ describe("ReaderLink module", function()
         readerui:handleEvent(Event:new("SetZoomMode", "page"))
         readerui.paging:onGotoPage(1)
         assert.is.same(1, readerui.paging.current_page)
-        readerui.link:onTap(nil, {pos = {x = 250, y = 534}})
+        readerui.link:onTap(nil, {pos = {x = 228, y = 534}})
         UIManager:run()
         assert.truthy(readerui.paging.current_page == 21
             or readerui.paging.current_page == 20)
@@ -100,7 +100,7 @@ describe("ReaderLink module", function()
         local expected_page_states = {
             {
                 gamma = 1,
-                offset = {x = 17, y = 0},
+                offset = {x = 0, y = 0},
                 page = 3,
                 page_area = {
                   x = 0, y = 0,
@@ -115,7 +115,7 @@ describe("ReaderLink module", function()
            },
            {
                 gamma = 1,
-                offset = {x = 17, y = 0},
+                offset = {x = 0, y = 0},
                 page = 4,
                 page_area = {
                   h = 800, w = 566,
@@ -161,7 +161,7 @@ describe("ReaderLink module", function()
         assert.is.same(4, readerui.paging.current_page)
         assert.are.same(expected_page_states, readerui.view.page_states)
 
-        readerui.link:onTap(nil, {pos = {x = 181, y = 366}})
+        readerui.link:onTap(nil, {pos = {x = 164, y = 366}})
         UIManager:run()
         assert.is.same(22, readerui.paging.current_page)
         readerui.link:onGoBackLink()
