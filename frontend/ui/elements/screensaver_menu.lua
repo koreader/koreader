@@ -13,7 +13,7 @@ end
 local function whiteBackground() return G_reader_settings:isTrue("screensaver_white_background") end
 local function noBackground() return G_reader_settings:isTrue("screensaver_no_background") end
 local function stretchImages() return G_reader_settings:isTrue("screensaver_stretch_images") end
-local function messagePos() return G_reader_settings:readSetting("screensaver_message_position") end
+local function messagePosition() return G_reader_settings:readSetting("screensaver_message_position") end
 
 return {
     {
@@ -184,11 +184,7 @@ return {
                     {
                         text = _("Top"),
                         checked_func = function()
-                            if messagePos() == nil or messagePos() == "top" then
-                                return true
-                            else
-                                return false
-                            end
+                            return messagePosition() == "top" or messagePosition() == nil
                         end,
                         callback = function()
                             G_reader_settings:saveSetting("screensaver_message_position", "top")
@@ -197,11 +193,7 @@ return {
                     {
                         text = _("Middle"),
                         checked_func = function()
-                            if messagePos() == "middle" then
-                                return true
-                            else
-                                return false
-                            end
+                            return messagePosition() == "middle" or messagePosition() == nil
                         end,
                         callback = function()
                             G_reader_settings:saveSetting("screensaver_message_position", "middle")
@@ -210,11 +202,7 @@ return {
                     {
                         text = _("Bottom"),
                         checked_func = function()
-                            if messagePos() == "bottom" then
-                                return true
-                            else
-                                return false
-                            end
+                            return messagePosition() == "bottom" or messagePosition() == nil
                         end,
                         callback = function()
                             G_reader_settings:saveSetting("screensaver_message_position", "bottom")
