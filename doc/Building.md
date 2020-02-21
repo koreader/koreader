@@ -40,8 +40,13 @@ Install the prerequisites using [Homebrew](https://brew.sh/):
 ```
 brew install nasm ragel binutils coreutils libtool autoconf automake cmake makedepend \
 sdl2 lua@5.1 luarocks gettext pkg-config wget md5sha1sum
-echo 'export PATH="/usr/local/opt/gettext/bin:$PATH"' >> "$HOME"/.bash_profile
 ```
+
+You will also have to ensure Homebrew's gettext is in your path, e.g., via
+```
+export PATH="/usr/local/opt/gettext/bin:${PATH}"
+```
+See also `brew info gettext` for details on how to make that permnanent in your shell.
 
 *Note:* With current XCode versions, you *will* need to set a minimum deployment version higher than `10.04`. Otherwise, you'll hit various linking errors related to missing unwinding libraries/symbols.
 On Mojave, `10.09` has been known to behave with XCode 10, And `10.14` with XCode 11. When in doubt, go with your current macOS version.
