@@ -48,6 +48,11 @@ export PATH="/usr/local/opt/gettext/bin:${PATH}"
 ```
 See also `brew info gettext` for details on how to make that permnanent in your shell.
 
+In the same vein, if that's not already the case, you probably also want to make sure Homebrew's stuff takes precedence:
+```
+export PATH="/usr/local/bin:/usr/local/sbin:${PATH/:\/usr\/local\/bin/}"
+```
+
 *Note:* With current XCode versions, you *will* need to set a minimum deployment version higher than `10.04`. Otherwise, you'll hit various linking errors related to missing unwinding libraries/symbols.
 On Mojave, `10.09` has been known to behave with XCode 10, And `10.14` with XCode 11. When in doubt, go with your current macOS version.
 ```
