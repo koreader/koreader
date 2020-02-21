@@ -1168,7 +1168,14 @@ end
 
 function ReaderHighlight:exportToDocument(page, item)
     logger.dbg("export highlight to document", item)
-    self.ui.document:saveHighlight(page, item)
+    local can_write = self.ui.document:saveHighlight(page, item)
+    if can_write == false and not self.warned_once then
+        self.warned_once = true
+        UIManager:show(InfoMessage:new{
+            text = _("Document is read only. Cannot write to it"),
+            timeout = 3,
+        })
+    end
 end
 
 function ReaderHighlight:addNote()
