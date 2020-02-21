@@ -46,7 +46,7 @@ You will also have to ensure Homebrew's gettext is in your path, e.g., via
 ```
 export PATH="/usr/local/opt/gettext/bin:${PATH}"
 ```
-See also `brew info gettext` for details on how to make that permnanent in your shell.
+See also `brew info gettext` for details on how to make that permanent in your shell.
 
 In the same vein, if that's not already the case, you probably also want to make sure Homebrew's stuff takes precedence:
 ```
