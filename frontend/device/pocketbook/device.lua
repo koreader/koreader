@@ -308,6 +308,17 @@ local PocketBook740_2 = PocketBook:new{
     emu_events_dev = "/var/dev/shm/emu_events",
 }
 
+-- PocketBook InkPad X
+local PocketBook1040 = PocketBook:new{
+    model = "PB1040",
+    isTouchDevice = yes,
+    hasKeys = yes,
+    hasFrontlight = yes,
+    isAlwaysPortrait = yes,
+    display_dpi = 227,
+    emu_events_dev = "/var/dev/shm/emu_events",
+}
+
 -- PocketBook Sense
 local PocketBook630 = PocketBook:new{
     model = "PBSense",
@@ -370,6 +381,8 @@ elseif codename == "PB740" then
     return PocketBook740
 elseif codename == "PB740-2" then
     return PocketBook740_2
+elseif codename == "PB1040" then
+    return PocketBook1040
 elseif codename == "PocketBook 840" then
     return PocketBook840
 elseif codename == "PocketBook Color Lux" then
