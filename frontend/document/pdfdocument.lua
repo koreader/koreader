@@ -176,9 +176,8 @@ function PdfDocument:saveHighlight(pageno, item)
     if string.lower(suffix) ~= "pdf" then return end
     if self.is_writable == nil then
         local handle = io.open(self.file, 'r+b')
-        local writable = handle ~= nil
+        self.is_writable = handle ~= nil
         if handle then handle:close() end
-        self.is_writable = writable
     end
     if self.is_writable == false then
         return false

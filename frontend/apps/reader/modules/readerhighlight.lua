@@ -1167,6 +1167,8 @@ end
 --]]
 
 function ReaderHighlight:exportToDocument(page, item)
+    local setting = G_reader_settings:readSetting("save_document")
+    if setting == "disable" then return end
     logger.dbg("export highlight to document", item)
     local can_write = self.ui.document:saveHighlight(page, item)
     if can_write == false and not self.warned_once then
