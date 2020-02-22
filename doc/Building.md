@@ -39,8 +39,18 @@ Install the prerequisites using [Homebrew](https://brew.sh/):
 
 ```
 brew install nasm ragel binutils coreutils libtool autoconf automake cmake makedepend \
-sdl2 lua@5.1 luarocks gettext pkg-config wget md5sha1sum
-echo 'export PATH="/usr/local/opt/gettext/bin:$PATH"' >> "$HOME"/.bash_profile
+sdl2 lua@5.1 luarocks gettext pkg-config wget
+```
+
+You will also have to ensure Homebrew's gettext is in your path, e.g., via
+```
+export PATH="/usr/local/opt/gettext/bin:${PATH}"
+```
+See also `brew info gettext` for details on how to make that permanent in your shell.
+
+In the same vein, if that's not already the case, you probably also want to make sure Homebrew's stuff takes precedence:
+```
+export PATH="/usr/local/bin:/usr/local/sbin:${PATH/:\/usr\/local\/bin/}"
 ```
 
 *Note:* With current XCode versions, you *will* need to set a minimum deployment version higher than `10.04`. Otherwise, you'll hit various linking errors related to missing unwinding libraries/symbols.
