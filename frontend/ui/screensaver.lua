@@ -13,14 +13,15 @@ local InfoMessage = require("ui/widget/infomessage")
 local ImageWidget = require("ui/widget/imagewidget")
 local Math = require("optmath")
 local ScreenSaverWidget = require("ui/widget/screensaverwidget")
+local TextBoxWidget = require("ui/widget/textboxwidget")
+local TopContainer = require("ui/widget/container/topcontainer")
 local UIManager = require("ui/uimanager")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
-local TextBoxWidget = require("ui/widget/textboxwidget")
-local TopContainer = require("ui/widget/container/topcontainer")
+
 local screensaver_provider = {
     ["jpg"] = true,
     ["jpeg"] = true,
@@ -365,7 +366,7 @@ function Screensaver:show(event, fallback_message)
     end
     if screensaver_type == "message" then
         local screensaver_message = G_reader_settings:readSetting(prefix.."screensaver_message")
-        local messagePos = G_reader_settings:readSetting(prefix.."screensaver_message_position")
+        local message_pos = G_reader_settings:readSetting(prefix.."screensaver_message_position")
         if not self:whiteBackground() then
             background = nil -- no background filling, let book text visible
             covers_fullscreen = false
@@ -381,7 +382,7 @@ function Screensaver:show(event, fallback_message)
             screensaver_message = self:expandSpecial(screensaver_message, fallback)
         end
 
-        if messagePos == "middle" or messagePos == nil then
+        if message_pos == "middle" or message_pos == nil then
             widget = InfoMessage:new{
                 text = screensaver_message,
                 readonly = true,
@@ -389,7 +390,7 @@ function Screensaver:show(event, fallback_message)
         else
             local face = Font:getFace("infofont")
             local container
-            if messagePos == "bottom" then
+            if message_pos == "bottom" then
                 container = BottomContainer
             else
                 container = TopContainer
