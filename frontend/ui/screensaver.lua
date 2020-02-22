@@ -2,14 +2,19 @@ local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local BookStatusWidget = require("ui/widget/bookstatuswidget")
+local BottomContainer = require("ui/widget/container/bottomcontainer")
 local DataStorage = require("datastorage")
 local Device = require("device")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
+local Font = require("ui/font")
+local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
 local ImageWidget = require("ui/widget/imagewidget")
 local Math = require("optmath")
 local ScreenSaverWidget = require("ui/widget/screensaverwidget")
+local TextBoxWidget = require("ui/widget/textboxwidget")
+local TopContainer = require("ui/widget/container/topcontainer")
 local UIManager = require("ui/uimanager")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
@@ -361,6 +366,7 @@ function Screensaver:show(event, fallback_message)
     end
     if screensaver_type == "message" then
         local screensaver_message = G_reader_settings:readSetting(prefix.."screensaver_message")
+        local message_pos = G_reader_settings:readSetting(prefix.."screensaver_message_position")
         if not self:whiteBackground() then
             background = nil -- no background filling, let book text visible
             covers_fullscreen = false
@@ -376,10 +382,34 @@ function Screensaver:show(event, fallback_message)
             screensaver_message = self:expandSpecial(screensaver_message, fallback)
         end
 
-        widget = InfoMessage:new{
-            text = screensaver_message,
-            readonly = true,
-        }
+        if message_pos == "middle" or message_pos == nil then
+            widget = InfoMessage:new{
+                text = screensaver_message,
+                readonly = true,
+            }
+        else
+            local face = Font:getFace("infofont")
+            local container
+            if message_pos == "bottom" then
+                container = BottomContainer
+            else
+                container = TopContainer
+            end
+
+            local screen_w, screen_h = Screen:getWidth(), Screen:getHeight()
+            widget = container:new{
+                dimen = Geom:new{
+                    w = screen_w,
+                    h = screen_h,
+                },
+                TextBoxWidget:new{
+                    text = screensaver_message,
+                    face = face,
+                    width = screen_w,
+                    alignment = "center",
+                }
+            }
+        end
         -- No overlay needed as we just displayed the message
         overlay_message = nil
     end
@@ -457,12 +487,10 @@ function Screensaver:close()
 end
 
 function Screensaver:addOverlayMessage(widget, text)
-    local Font = require("ui/font")
     local FrameContainer = require("ui/widget/container/framecontainer")
     local OverlapGroup = require("ui/widget/overlapgroup")
     local RightContainer = require("ui/widget/container/rightcontainer")
     local Size = require("ui/size")
-    local TextBoxWidget = require("ui/widget/textboxwidget")
     local TextWidget = require("ui/widget/textwidget")
 
     local face = Font:getFace("infofont")
