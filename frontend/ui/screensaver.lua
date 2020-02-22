@@ -365,7 +365,7 @@ function Screensaver:show(event, fallback_message)
     end
     if screensaver_type == "message" then
         local screensaver_message = G_reader_settings:readSetting(prefix.."screensaver_message")
-        local messagePos = G_reader_settings:readSetting(prefix.."screensaver_message_position")
+        local message_pos = G_reader_settings:readSetting(prefix.."screensaver_message_position")
         if not self:whiteBackground() then
             background = nil -- no background filling, let book text visible
             covers_fullscreen = false
