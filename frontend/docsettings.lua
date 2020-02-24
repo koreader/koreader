@@ -132,7 +132,7 @@ function DocSettings:open(docfile)
                                    return l[2] > r[2]
                                end
                            end)
-    local ok, stored
+    local ok, stored, filepath
     for _, k in pairs(candidates) do
         -- Ignore empty files
         if lfs.attributes(k[1], "size") > 0 then
@@ -140,6 +140,7 @@ function DocSettings:open(docfile)
             -- Ignore the empty table.
             if ok and next(stored) ~= nil then
                 logger.dbg("data is read from ", k[1])
+                filepath = k[1]
                 break
             end
         end
@@ -149,6 +150,7 @@ function DocSettings:open(docfile)
     if ok and stored then
         new.data = stored
         new.candidates = candidates
+        new.filepath = filepath
     else
         new.data = {}
     end
@@ -234,6 +236,10 @@ end
 
 function DocSettings:close()
     self:flush()
+end
+
+function DocSettings:getFilePath()
+    return self.filepath
 end
 
 --- Purges (removes) sidecar directory.
