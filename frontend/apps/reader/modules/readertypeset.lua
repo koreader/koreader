@@ -344,11 +344,12 @@ end
 -- ALLOW_EXACT_FLOATS_FOOTPRINTS      0x00200000               x   x
 --
 -- BOX_INLINE_BLOCKS                  0x01000000          x    x   x
+-- COMPLETE_INCOMPLETE_TABLES         0x02000000          x    x   x
 
 local BLOCK_RENDERING_FLAGS = {
     0x00000000, -- legacy block rendering
-    0x01030031, -- flat mode (with prepared floatBoxes, so inlined, to avoid display hash mismatch)
-    0x01375131, -- book mode (floating floatBoxes, limited widths support)
+    0x03030031, -- flat mode (with prepared floatBoxes, so inlined, to avoid display hash mismatch)
+    0x03375131, -- book mode (floating floatBoxes, limited widths support)
     0x7FFFFFFF, -- web mode, all features/flags
 }
 
@@ -364,8 +365,28 @@ function ReaderTypeset:setBlockRenderingMode(mode)
         return
     end
     self.block_rendering_mode = mode
+    if self.ensure_saner_block_rendering_flags then -- see next function
+        -- Don't enable BOX_INLINE_BLOCKS
+        -- inlineBoxes have been around and allowed on older DOM_VERSION
+        -- for a few weeks - let's disable it: it may break highlights
+        -- made during this time, but may resurrect others made during
+        -- a longer previous period of time.
+        flags = bit.band(flags, bit.bnot(0x01000000))
+        -- Don't enable COMPLETE_INCOMPLETE_TABLES, as they may add
+        -- many boxing elements around huge amount of text, and break
+        -- some past highlights made on the non-boxed elements.
+        flags = bit.band(flags, bit.bnot(0x02000000))
+    end
     self.ui.document:setBlockRenderingFlags(flags)
     self.ui:handleEvent(Event:new("UpdatePos"))
+end
+
+function ReaderTypeset:ensureSanerBlockRenderingFlags(mode)
+    -- Called by ReaderRolling:onReadSettings() when old
+    -- DOM version requested, before normalized xpointers,
+    -- asking us to unset some of the flags set previously.
+    self.ensure_saner_block_rendering_flags = true
+    self:setBlockRenderingMode(self.block_rendering_mode)
 end
 
 function ReaderTypeset:toggleImageScaling(toggle)
