@@ -73,6 +73,11 @@ function ConfirmBox:init()
             }
         end
     end
+    local text_widget = TextBoxWidget:new{
+        text = self.text,
+        face = self.face,
+        width = Screen:getWidth()*2/3,
+    }
     local content = HorizontalGroup:new{
         align = "center",
         ImageWidget:new{
@@ -80,11 +85,7 @@ function ConfirmBox:init()
             scale_for_dpi = true,
         },
         HorizontalSpan:new{ width = Size.span.horizontal_default },
-        TextBoxWidget:new{
-            text = self.text,
-            face = self.face,
-            width = Screen:getWidth()*2/3,
-        }
+        text_widget,
     }
 
     local buttons = {{
@@ -100,20 +101,26 @@ function ConfirmBox:init()
             UIManager:close(self)
         end,
     },}
+    buttons = { buttons } -- single row
 
     if self.other_buttons ~= nil then
-        for __, button in ipairs(self.other_buttons) do
-            assert(type(button.text) == "string")
-            assert(button.callback == nil or type(button.callback) == "function")
-            table.insert(buttons, {
-                text = button.text,
-                callback = function()
-                    if button.callback ~= nil then
-                        button.callback()
-                    end
-                    UIManager:close(self)
-                end,
-            })
+        -- additional rows
+        for __, buttons_row in ipairs(self.other_buttons) do
+            local row = {}
+            table.insert(buttons, row)
+            for ___, button in ipairs(buttons_row) do
+                assert(type(button.text) == "string")
+                assert(button.callback == nil or type(button.callback) == "function")
+                table.insert(row, {
+                    text = button.text,
+                    callback = function()
+                        if button.callback ~= nil then
+                            button.callback()
+                        end
+                        UIManager:close(self)
+                    end,
+                })
+            end
         end
     end
 
@@ -121,29 +128,54 @@ function ConfirmBox:init()
         width = content:getSize().w,
         button_font_face = "cfont",
         button_font_size = 20,
-        buttons = { buttons },
+        buttons = buttons,
         zero_sep = true,
         show_parent = self,
     }
 
-    self[1] = CenterContainer:new{
-        dimen = Screen:getSize(),
-        MovableContainer:new{
-            FrameContainer:new{
-                background = Blitbuffer.COLOR_WHITE,
-                margin = self.margin,
-                padding = self.padding,
-                padding_bottom = 0, -- no padding below buttontable
-                VerticalGroup:new{
-                    align = "left",
-                    content,
-                    -- Add same vertical space after than before content
-                    VerticalSpan:new{ width = self.margin + self.padding },
-                    button_table,
-                }
-            }
+    local frame = FrameContainer:new{
+        background = Blitbuffer.COLOR_WHITE,
+        margin = self.margin,
+        padding = self.padding,
+        padding_bottom = 0, -- no padding below buttontable
+        VerticalGroup:new{
+            align = "left",
+            content,
+            -- Add same vertical space after than before content
+            VerticalSpan:new{ width = self.margin + self.padding },
+            button_table,
         }
     }
+    self.movable = MovableContainer:new{
+        frame,
+    }
+    self[1] = CenterContainer:new{
+        dimen = Screen:getSize(),
+        self.movable,
+    }
+
+    -- Reduce font size until widget fit screen height if needed
+    local cur_size = frame:getSize()
+    if cur_size and cur_size.h > 0.95 * Screen:getHeight() then
+        local orig_font = text_widget.face.orig_font
+        local orig_size = text_widget.face.orig_size
+        local real_size = text_widget.face.size
+        if orig_size > 10 then -- don't go too small
+            while true do
+                orig_size = orig_size - 1
+                self.face = Font:getFace(orig_font, orig_size)
+                -- scaleBySize() in Font:getFace() may give the same
+                -- real font size even if we decreased orig_size,
+                -- so check we really got a smaller real font size
+                if self.face.size < real_size then
+                    break
+                end
+            end
+            -- re-init this widget
+            self:free()
+            self:init()
+        end
+    end
 end
 
 function ConfirmBox:onShow()
