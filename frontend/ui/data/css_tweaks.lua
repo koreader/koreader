@@ -424,6 +424,20 @@ body, h1, h2, h3, h4, h5, h6, div, li, td, th { text-indent: 0 !important; }
                 priority = 3,
                 css = [[p, li { padding-left: 0 !important; padding-right: 0 !important; }]],
             },
+            separator = true,
+        },
+        {
+            title = _("List items"),
+            {
+                id = "ul_li_type_disc";
+                title = _("Force bullets with unordered lists"),
+                css = [[ul > li { list-style-type: disc !important; }]],
+            },
+            {
+                id = "ol_li_type_decimal";
+                title = _("Force decimal numbers with ordered lists"),
+                css = [[ol > li { list-style-type: decimal !important; }]],
+            },
         },
     },
     {
