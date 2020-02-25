@@ -1167,8 +1167,19 @@ end
 --]]
 
 function ReaderHighlight:exportToDocument(page, item)
+    local setting = G_reader_settings:readSetting("save_document")
+    if setting == "disable" then return end
     logger.dbg("export highlight to document", item)
-    self.ui.document:saveHighlight(page, item)
+    local can_write = self.ui.document:saveHighlight(page, item)
+    if can_write == false and not self.warned_once then
+        self.warned_once = true
+        UIManager:show(InfoMessage:new{
+            text = _([[The highlights you'll be making on this document will be saved in the setting file but won't be written in the document itself, as the file is in a read-only location.
+
+If you wish your highlights to be saved in the document just move it first to a writable directory]]),
+            timeout = 5,
+        })
+    end
 end
 
 function ReaderHighlight:addNote()

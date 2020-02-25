@@ -175,6 +175,14 @@ function PdfDocument:saveHighlight(pageno, item)
     local suffix = util.getFileNameSuffix(self.file)
     if string.lower(suffix) ~= "pdf" then return end
 
+    if self.is_writable == nil then
+        local handle = io.open(self.file, 'r+b')
+        self.is_writable = handle ~= nil
+        if handle then handle:close() end
+    end
+    if self.is_writable == false then
+        return false
+    end
     self.is_edited = true
     -- will also need mupdf_h.lua to be evaluated once
     -- but this is guaranteed at this point
