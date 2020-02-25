@@ -72,6 +72,33 @@ local function showSyncError()
     })
 end
 
+local function validate(entry)
+    if not entry then return false end
+    if type(entry) == "string" then
+        if entry == "" or not entry:match("%S") then return false end
+    end
+    return true
+end
+
+local function validateUser(user, pass)
+    local error_message = nil
+    local user_ok = validate(user)
+    local pass_ok = validate(pass)
+    if not user_ok and not pass_ok then
+        error_message = _("invalid username and password")
+    elseif not user_ok then
+        error_message = _("invalid username")
+    elseif not pass_ok then
+        error_message = _("invalid password")
+    end
+
+    if not error_message then
+        return user_ok and pass_ok
+    else
+        return user_ok and pass_ok, error_message
+    end
+end
+
 function KOSync:onReaderReady()
     local settings = G_reader_settings:readSetting("kosync") or {}
     self.kosync_custom_server = settings.custom_server
@@ -277,15 +304,23 @@ function KOSync:login()
                     enabled = true,
                     callback = function()
                         local username, password = self:getCredential()
-                        self:closeDialog()
-                        UIManager:scheduleIn(0.5, function()
-                            self:doLogin(username, password)
-                        end)
+                        local ok, err = validateUser(username, password)
+                        if not ok then
+                            UIManager:show(InfoMessage:new{
+                                text = T(_("Cannot login: %1"), err),
+                                timeout = 2,
+                            })
+                        else
+                            self:closeDialog()
+                            UIManager:scheduleIn(0.5, function()
+                                self:doLogin(username, password)
+                            end)
 
-                        UIManager:show(InfoMessage:new{
-                            text = _("Logging in. Please wait…"),
-                            timeout = 1,
-                        })
+                            UIManager:show(InfoMessage:new{
+                                text = _("Logging in. Please wait…"),
+                                timeout = 1,
+                            })
+                        end
                     end,
                 },
                 {
@@ -293,15 +328,23 @@ function KOSync:login()
                     enabled = true,
                     callback = function()
                         local username, password = self:getCredential()
-                        self:closeDialog()
-                        UIManager:scheduleIn(0.5, function()
-                            self:doRegister(username, password)
-                        end)
+                        local ok, err = validateUser(username, password)
+                        if not ok then
+                            UIManager:show(InfoMessage:new{
+                                text = T(_("Cannot register: %1"), err),
+                                timeout = 2,
+                            })
+                        else
+                            self:closeDialog()
+                            UIManager:scheduleIn(0.5, function()
+                                self:doRegister(username, password)
+                            end)
 
-                        UIManager:show(InfoMessage:new{
-                            text = _("Registering. Please wait…"),
-                            timeout = 1,
-                        })
+                            UIManager:show(InfoMessage:new{
+                                text = _("Registering. Please wait…"),
+                                timeout = 1,
+                            })
+                        end
                     end,
                 },
             },
