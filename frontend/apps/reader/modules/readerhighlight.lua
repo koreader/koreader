@@ -1177,7 +1177,7 @@ function ReaderHighlight:exportToDocument(page, item)
             text = _([[
 Highlights in this document will be saved in the settings file, but they won't be written in the document itself because the file is in a read-only location.
 
-If you wish your highlights to be saved in the document, just move it first to a writable directory.]]),
+If you wish your highlights to be saved in the document, just move it to a writable directory first.]]),
             timeout = 5,
         })
     end
