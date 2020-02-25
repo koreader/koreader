@@ -157,9 +157,16 @@ local footerTextGeneratorMap = {
         local prefix = symbol_prefix[symbol_type].time
         local clock
         if footer.settings.time_format == "12" then
-            clock = os.date("%I:%M%p")
+            if os.date("%p") == "AM" then
+                -- @translators this is the time in the morning in 12-hours format (%I is the hour, %M the minute)
+                clock = os.date(_("%I:%M AM"))
+            else
+                -- @translators this is the time in the afternoon in 12-hours format (%I is the hour, %M the minute)
+                clock = os.date(_("%I:%M PM"))
+            end
         else
-            clock = os.date("%H:%M")
+            -- @translators this is the time in 24-hours format (%H is the hour, %M the minute)
+            clock = os.date(_("%H:%M"))
         end
         if not prefix then
             return clock
