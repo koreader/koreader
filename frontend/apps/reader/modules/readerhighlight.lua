@@ -1175,7 +1175,7 @@ function ReaderHighlight:exportToDocument(page, item)
         self.warned_once = true
         UIManager:show(InfoMessage:new{
             text = _([[
-The highlights you'll be making on this document will be saved in the setting file but won't be written in the document itself, as the file is in a read-only location.
+Highlights in this document will be saved in the settings file, but they won't be written in the document itself because the file is in a read-only location.
 
 If you wish your highlights to be saved in the document, just move it first to a writable directory.]]),
             timeout = 5,
