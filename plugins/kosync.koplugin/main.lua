@@ -85,11 +85,11 @@ local function validateUser(user, pass)
     local user_ok = validate(user)
     local pass_ok = validate(pass)
     if not user_ok and not pass_ok then
-        error_message = _("Invalid user and password")
+        error_message = _("invalid username and password")
     elseif not user_ok then
-        error_message = _("Invalid user")
+        error_message = _("invalid username")
     elseif not pass_ok then
-        error_message = _("Invalid password")
+        error_message = _("invalid password")
     end
 
     if not error_message then
@@ -307,8 +307,8 @@ function KOSync:login()
                         local ok, err = validateUser(username, password)
                         if not ok then
                             UIManager:show(InfoMessage:new{
-                                text = err,
-                                timeout = 3,
+                                text = T(_("Cannot login: %1"), err),
+                                timeout = 2,
                             })
                         else
                             self:closeDialog()
@@ -331,8 +331,8 @@ function KOSync:login()
                         local ok, err = validateUser(username, password)
                         if not ok then
                             UIManager:show(InfoMessage:new{
-                                text = err,
-                                timeout = 3,
+                                text = T(_("Cannot register: %1"), err),
+                                timeout = 2,
                             })
                         else
                             self:closeDialog()
