@@ -619,9 +619,16 @@ function TouchMenu:updateItems()
 
     local time_info_txt
     if G_reader_settings:nilOrTrue("twelve_hour_clock") then
-        time_info_txt = os.date("%I:%M %p")
+        if os.date("%p") == "AM" then
+            -- @translators This is the time in the morning in the 12-hour clock (%I is the hour, %M the minute).
+            time_info_txt = os.date(_("%I:%M AM"))
+        else
+            -- @translators This is the time in the afternoon in the 12-hour clock (%I is the hour, %M the minute).
+            time_info_txt = os.date(_("%I:%M PM"))
+        end
     else
-        time_info_txt = os.date("%H:%M")
+        -- @translators This is the time in the 24-hour clock (%H is the hour, %M the minute).
+        time_info_txt = os.date(_("%H:%M"))
     end
     local powerd = Device:getPowerDevice()
     local batt_lvl = powerd:getCapacity()
