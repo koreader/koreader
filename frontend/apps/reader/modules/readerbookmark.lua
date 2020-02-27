@@ -71,19 +71,31 @@ end
 
 function ReaderBookmark:isBookmarkInPageOrder(a, b)
     if self.ui.document.info.has_pages then
+        if a.page == b.page then -- have bookmarks before highlights
+            return a.highlighted
+        end
         return a.page > b.page
     else
-        return self.ui.document:getPageFromXPointer(a.page) >
-                self.ui.document:getPageFromXPointer(b.page)
+        local a_page = self.ui.document:getPageFromXPointer(a.page)
+        local b_page = self.ui.document:getPageFromXPointer(b.page)
+        if a_page == b_page then -- have bookmarks before highlights
+            return a.highlighted
+        end
+        return a_page > b_page
     end
 end
 
 function ReaderBookmark:isBookmarkInReversePageOrder(a, b)
+    -- The way this is used (by getNextBookmarkedPage(), iterating bookmarks
+    -- in reverse order), we want to skip highlights, but also the current
+    -- page: so we do not do any "a.page == b.page" check (not even with
+    -- a reverse logic than the one from above function).
     if self.ui.document.info.has_pages then
         return a.page < b.page
     else
-        return self.ui.document:getPageFromXPointer(a.page) <
-                self.ui.document:getPageFromXPointer(b.page)
+        local a_page = self.ui.document:getPageFromXPointer(a.page)
+        local b_page = self.ui.document:getPageFromXPointer(b.page)
+        return a_page < b_page
     end
 end
 
@@ -329,12 +341,8 @@ function ReaderBookmark:getDogearBookmarkIndex(pn_or_xp)
     while _start <= _end do
         _middle = math.floor((_start + _end)/2)
         local v = self.bookmarks[_middle]
-        if self:isBookmarkMatch(v, pn_or_xp) then
-            if v.highlighted then
-                return
-            else
-                return _middle
-            end
+        if not v.highlighted and self:isBookmarkMatch(v, pn_or_xp) then
+            return _middle
         elseif self:isBookmarkInPageOrder({page = pn_or_xp}, v) then
             _end = _middle - 1
         else
