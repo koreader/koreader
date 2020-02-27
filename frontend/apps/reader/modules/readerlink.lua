@@ -1000,13 +1000,15 @@ function ReaderLink:showAsFootnotePopup(link, neglect_current_location)
         -- if not trusted, checks marked (*) don't apply
         flags = flags + 0x0002
     end
+    -- Checks for private CSS properties "-cr-hint: footnote/noteref/..." are
+    -- always done (they can be applied to specific elements or classe names
+    -- with Styles tweaks.)
 
     -- Trust role= and epub:type= attribute values if defined, for source(*) and target
-    -- (If needed, we could add a check for a private CSS property "-cr-hint: footnote"
-    -- or "-cr-hint: noteref", so one can define it to specific classes with Styles
-    -- tweaks.)
     flags = flags + 0x0004
-    -- flags = flags + 0x0008 -- Unused yet
+
+    -- Accept classic FB2 footnotes: body[name="notes" or "comments"] > section
+    flags = flags + 0x0008
 
     -- TARGET STATUS AND SOURCE RELATION
     -- Target must have an anchor #id (ie: must not be a simple link to a html file)
