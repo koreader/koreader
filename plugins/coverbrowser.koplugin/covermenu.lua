@@ -50,6 +50,8 @@ function CoverMenu:updateItems(select_number)
     self:_recalculateDimen()
     self.page_info:resetLayout()
     self.return_button:resetLayout()
+    self.vertical_span:clear()
+    self.content_group:resetLayout()
     -- default to select the first item
     if not select_number then
         select_number = 1
