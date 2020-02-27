@@ -614,6 +614,22 @@ This is just an example, that will need to be adapted into a user style tweak.]]
         {
             title = _("In-page footnotes"),
             {
+                id = "footnote-inpage_fb2";
+                title = _("In-page FB2 footnotes"),
+                description = _([[
+Show FB2 footnote text at the bottom of pages that contain links to them.]]),
+                -- (fb2.css already set font-size to 70% - so no need for a "smaller" variant)
+                css = [[
+body[name="notes"] section,
+body[name="comments"] section
+{
+    -cr-hint: footnote-inpage;
+    margin: 0 !important;
+}
+                ]],
+                separator = true,
+            },
+            {
                 id = "footnote-inpage_epub";
                 title = _("In-page EPUB footnotes"),
                 description = _([[
