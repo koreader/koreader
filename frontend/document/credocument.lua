@@ -586,6 +586,18 @@ function CreDocument:setFontFace(new_font_face)
         --          for font-family: monospace
         -- +256001: prefer our font to any existing font-family font
         self._document:setAsPreferredFontWithBias(new_font_face, 1)
+        -- +1 +128x5 +256x5: we want our main font, even if it has no italic
+        -- nor bold variant (eg FreeSerif), to win over all other fonts that
+        -- have an italic or bold variant:
+        --   italic_match = 5 * (256 for real italic, or 128 for fake italic
+        --   weight_match = 5 * (256 - weight_diff * 256 / 800)
+        -- so give our font a bias enough to win over real italic or bold fonts
+        -- (all others params (size, family, name), used for computing the match
+        -- score, have a factor of 100 or 1000 vs the 5 used for italic & weight,
+        -- so it shouldn't hurt much).
+        -- Note that this is mostly necessary when forcing a not found name,
+        -- as we do in the Ignore font-family style tweak.
+        self._document:setAsPreferredFontWithBias(new_font_face, 1 + 128*5 + 256*5)
     end
 end
 
