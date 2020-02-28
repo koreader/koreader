@@ -12,7 +12,14 @@ They may have the following optional attributes:
 local _ = require("gettext")
 local C_ = _.pgettext
 
+-- Default globally enabled style tweaks, for new installations
+local DEFAULT_GLOBAL_STYLE_TWEAKS = {}
+-- Display in-page per-specs footnotes for EPUB and FB2:
+DEFAULT_GLOBAL_STYLE_TWEAKS["footnote-inpage_epub_smaller"] = true
+DEFAULT_GLOBAL_STYLE_TWEAKS["footnote-inpage_fb2"] = true
+
 local CssTweaks = {
+    DEFAULT_GLOBAL_STYLE_TWEAKS = DEFAULT_GLOBAL_STYLE_TWEAKS,
     {
         title = C_("Style tweaks category", "Pages"),
         {
