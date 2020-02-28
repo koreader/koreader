@@ -10,8 +10,10 @@ local Geom = require("ui/geometry")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
+local logger = require("logger")
 local _ = require("gettext")
 local Screen = Device.screen
+local T = require("ffi/util").template
 
 local ReaderToc = InputContainer:new{
     toc = nil,
@@ -89,6 +91,111 @@ function ReaderToc:fillToc()
         end
     end
     self.toc = self.ui.document:getToc()
+    self:validateAndFixToc()
+end
+
+function ReaderToc:validateAndFixToc()
+    -- Our code expects (rightfully) the TOC items to be ordered and to have
+    -- increasing page numbers, but we may occasionally not get that from the
+    -- engines (usually, because of bugs or duplicated IDs in the document).
+    local toc = self.toc
+    local first = 1
+    local last = #toc
+
+    -- For testing: shuffle a bit a valid TOC and make it randomely invalid
+    -- for i = first, last do
+    --     toc[i].page = toc[i].page + math.random(10) - 5
+    -- end
+
+    -- Do a cheap quick scan first
+    logger.dbg("validateAndFixToc(): quick scan")
+    local has_bogus
+    local cur_page = 0
+    for i = first, last do
+        local page = toc[i].page
+        if page < cur_page then
+            has_bogus = true
+            break
+        end
+        cur_page = page
+    end
+    if not has_bogus then -- no TOC items, or all are valid
+        logger.dbg("validateAndFixToc(): TOC is fine")
+        return
+    end
+    logger.dbg("validateAndFixToc(): TOC needs fixing")
+
+    -- Bad ordering previously noticed: try to fix the wrong items' page
+    -- by setting it to the previous or next good item page.
+    local nb_bogus = 0
+    local nb_fixed_pages = 0
+    -- We fix only one bogus item per loop, taking the option that
+    -- changes the least nb of items.
+    -- Sample cases, *N* being the page noticed as bogus:
+    --   1 4 57 *6*  9 13 24         best to reset 57 to 4 (or 6, or 5)
+    --   1 4 57 *6* 79 84 96         best to reset 6 to 57 (or 79 or 68)
+    --   1 4 55 56 57 *6*  7 8 9 10  best to reset 55,56,57 to 4
+    --   1 4 55 56 57 *6*  7 60 62   best to reset 6,7 to 57
+    -- (These cases are met in the following code with cur_page=57 and page=6)
+    cur_page = 0
+    for i = first, last do
+        local page = toc[i].fixed_page or toc[i].page
+        if page >= cur_page then
+            cur_page = page
+        else
+            -- Bogus page (or bogus previous page)
+            nb_bogus = nb_bogus + 1
+            -- See how many pages we'd need fixing on either side
+            local nb_prev = 0
+            for j = i-1, first, -1 do
+                local ppage = toc[j].fixed_page or toc[j].page
+                if ppage <= page then
+                    break
+                else
+                    nb_prev = nb_prev + 1
+                end
+            end
+            local nb_next = 1
+            for j = i+1, last do
+                local npage = toc[j].fixed_page or toc[j].page
+                if npage >= cur_page then
+                    break
+                else
+                    nb_next = nb_next + 1
+                end
+            end
+            logger.dbg("BOGUS TOC:", i, page, ">", i-1, cur_page, "-", nb_prev, nb_next)
+            if nb_prev <= nb_next then -- less changes when fixing previous pages
+                local fixed_page
+                if i-nb_prev-1 >= 1 then
+                    fixed_page = toc[i-nb_prev-1].fixed_page or toc[i-nb_prev-1].page
+                else
+                    fixed_page = 1
+                end
+                for j = i-1, i-nb_prev, -1 do
+                    toc[j].fixed_page = fixed_page
+                    logger.dbg("  fix prev", j, toc[j].page, "=>", fixed_page)
+                end
+            else
+                local fixed_page = cur_page -- (might be better to use next one, but not safer)
+                for j = i, i+nb_next-1 do
+                    toc[j].fixed_page = fixed_page
+                    logger.dbg("  fix next", j, toc[j].page, "=>", fixed_page)
+                end
+            end
+            cur_page = toc[i].fixed_page or toc[i].page
+        end
+    end
+    if nb_bogus > 0 then
+        for i = first, last do
+            if toc[i].fixed_page and toc[i].fixed_page ~= toc[i].page then
+                toc[i].orig_page = toc[i].page -- keep the original one, for display only
+                toc[i].page = toc[i].fixed_page
+                nb_fixed_pages = nb_fixed_pages + 1
+            end
+        end
+    end
+    logger.info(string.format("TOC had %d bogus page numbers: fixed %d items to keep them ordered.", nb_bogus, nb_fixed_pages))
 end
 
 function ReaderToc:getTocIndexByPage(pn_or_xp)
@@ -280,6 +387,9 @@ function ReaderToc:onShowToc()
         for _,v in ipairs(self.toc) do
             v.text = self.toc_indent:rep(v.depth-1)..self:cleanUpTocTitle(v.title)
             v.mandatory = v.page
+            if v.orig_page then -- bogus page fixed: show original page number
+                v.mandatory = T("(%1) %2", v.orig_page, v.page)
+            end
         end
     end
 
