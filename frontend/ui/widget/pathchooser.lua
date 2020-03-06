@@ -24,7 +24,6 @@ local PathChooser = FileChooser:extend{
     select_file = true,      -- allow selecting files
     show_files = true, -- show files, even if select_files=false
     -- (directories are always shown, to allow navigation)
-    show_hidden = G_reader_settings:readSetting("show_hidden"),
     detailed_file_info = false, -- show size and last mod time in Select message
 }
 
@@ -38,6 +37,7 @@ function PathChooser:init()
             self.title = _("Long-press to select")
         end
     end
+    self.show_hidden = G_reader_settings:readSetting("show_hidden")
     if not self.show_files then
         self.file_filter = function() return false end -- filter out regular files
     end
