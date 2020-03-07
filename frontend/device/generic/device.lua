@@ -231,7 +231,7 @@ function Device:onPowerEvent(ev)
         logger.dbg("Suspending...")
         -- Mostly always suspend in Portrait/Inverted Portrait mode...
         -- ... except when we just show an InfoMessage, it plays badly with Landscape mode (c.f., #4098)
-        if G_reader_settings:readSetting("screensaver_type") ~= "message" then
+        if (G_reader_settings:readSetting("screensaver_type") ~= "message" and G_reader_settings:readSetting("screensaver_type") ~= "disable") then
             self.orig_rotation_mode = self.screen:getRotationMode()
             -- Leave Portrait & Inverted Portrait alone, that works just fine.
             if bit.band(self.orig_rotation_mode, 1) == 1 then
