@@ -1276,6 +1276,10 @@ Note that %1 (out of %2) xpaths from your bookmarks and highlights have been nor
 
     UIManager:show(ConfirmBox:new{
         text = text,
+        -- Given the layout of the buttons (Cancel|OK, and a big other button below
+        -- with "Not now"), we don't want cancel_callback to be called when dismissing
+        -- this ConfirmBox by taping outside. So, make it non dismissable.
+        dismissable = false,
         other_buttons = {{
             {
                 -- this is the real cancel/do nothing
