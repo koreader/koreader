@@ -524,7 +524,7 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
     end
 
     -- Check if it is a link to a local file
-    local linked_filename = link_url:gsub("^file:", "") -- remove local file protocol if any
+    local linked_filename = link_url:gsub("^file:/?/?", "") -- remove local file protocol if any
     local anchor
     if linked_filename:find("?") then -- remove any query string (including any following anchor)
         linked_filename, anchor = linked_filename:match("^(.-)(%?.*)$")
