@@ -163,9 +163,6 @@ function Kindle:intoScreenSaver()
             if os.getenv("AWESOME_STOPPED") == "yes" then
                 os.execute("killall -cont awesome")
             end
-            if os.getenv("LIGL_PAUSED") == "yes" then
-                os.execute("lipc-set-prop com.lab126.winmgr liglPause 0")
-            end
         end
     end
     self.powerd:beforeSuspend()
@@ -179,9 +176,6 @@ function Kindle:outofScreenSaver()
             Screensaver:close()
         else
             -- Stop awesome again if need be...
-            if os.getenv("LIGL_PAUSED") == "yes" then
-                os.execute("lipc-set-prop com.lab126.winmgr liglPause 1")
-            end
             if os.getenv("AWESOME_STOPPED") == "yes" then
                 os.execute("killall -stop awesome")
             end
