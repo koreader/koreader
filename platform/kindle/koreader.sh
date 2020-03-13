@@ -228,12 +228,6 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
     if [ "${kpv_launch_count}" = "" ] || [ "${kpv_launch_count}" = "0" ]; then
         # NOTE: Dump the fb so we can restore something useful on exit...
         cat /dev/fb0 >/var/tmp/koreader-fb.dump
-        # Stop stock UI eInk refreshes entirely when we're not using KPVBooklet...
-        if [ "${FROM_KUAL}" = "yes" ]; then
-            logmsg "Pausing UI updates . . ."
-            lipc-set-prop com.lab126.winmgr liglPause 1
-            LIGL_PAUSED="yes"
-        fi
         # We're going to need our current FW version...
         FW_VERSION="$(grep '^Kindle 5' /etc/prettyversion.txt 2>&1 | sed -n -r 's/^(Kindle)([[:blank:]]*)([[:digit:]\.]*)(.*?)$/\3/p')"
         # NOTE: We want to disable the status bar (at the very least). Unfortunately, the soft hide/unhide method doesn't work properly anymore since FW 5.6.5...
@@ -358,13 +352,6 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
         rm -f /var/tmp/koreader-fb.dump
         lipc-set-prop com.lab126.pillow interrogatePillow '{"pillowId": "default_status_bar", "function": "nativeBridge.showMe();"}'
         lipc-set-prop com.lab126.appmgrd start app://com.lab126.booklet.home
-    fi
-    # And re-enable stock UI eInk refreshes (will flash)
-    if [ "${LIGL_PAUSED}" = "yes" ]; then
-        if [ "$(lipc-get-prop -q -e com.lab126.winmgr liglPause)" -eq "1" ]; then
-            logmsg "Resuming UI updates . . ."
-            lipc-set-prop com.lab126.winmgr liglPause 0
-        fi
     fi
 fi
 
