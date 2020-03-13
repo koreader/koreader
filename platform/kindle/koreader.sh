@@ -350,8 +350,6 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
         rm -f /var/tmp/koreader-fb.dump
         lipc-set-prop com.lab126.pillow disableEnablePillow enable
         lipc-set-prop com.lab126.appmgrd start app://com.lab126.booklet.home
-        # NOTE: In case we ever need an extra full flash refresh...
-        #eips -s w=${SCREEN_X_RES},h=${SCREEN_Y_RES} -f
     fi
     if [ "${PILLOW_SOFT_DISABLED}" = "yes" ]; then
         logmsg "Restoring the status bar . . ."
@@ -363,8 +361,10 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
     fi
     # And re-enable stock UI eInk refreshes (will flash)
     if [ "${LIGL_PAUSED}" = "yes" ]; then
-        logmsg "Resuming UI updates . . ."
-        lipc-set-prop com.lab126.winmgr liglPause 0
+        if [ "$(lipc-get-prop -q -e com.lab126.winmgr liglPause)" -eq "1" ]; then
+            logmsg "Resuming UI updates . . ."
+            lipc-set-prop com.lab126.winmgr liglPause 0
+        fi
     fi
 fi
 
