@@ -56,7 +56,6 @@ if [ "${INIT_TYPE}" = "upstart" ]; then
 fi
 
 # Keep track of what we do with pillow...
-export LIGL_PAUSED="no"
 export AWESOME_STOPPED="no"
 export VOLUMD_STOPPED="no"
 PILLOW_HARD_DISABLED="no"
