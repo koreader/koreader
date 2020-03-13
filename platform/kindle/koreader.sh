@@ -56,6 +56,7 @@ if [ "${INIT_TYPE}" = "upstart" ]; then
 fi
 
 # Keep track of what we do with pillow...
+export LIGL_PAUSED="no"
 export AWESOME_STOPPED="no"
 export VOLUMD_STOPPED="no"
 PILLOW_HARD_DISABLED="no"
@@ -227,6 +228,12 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
     if [ "${kpv_launch_count}" = "" ] || [ "${kpv_launch_count}" = "0" ]; then
         # NOTE: Dump the fb so we can restore something useful on exit...
         cat /dev/fb0 >/var/tmp/koreader-fb.dump
+        # Stop stock UI eInk refreshes entirely when we're not using KPVBooklet...
+        if [ "${FROM_KUAL}" = "yes" ]; then
+            logmsg "Pausing UI updates . . ."
+            lipc-set-prop com.lab126.winmgr liglPause 1
+            LIGL_PAUSED="yes"
+        fi
         # We're going to need our current FW version...
         FW_VERSION="$(grep '^Kindle 5' /etc/prettyversion.txt 2>&1 | sed -n -r 's/^(Kindle)([[:blank:]]*)([[:digit:]\.]*)(.*?)$/\3/p')"
         # NOTE: We want to disable the status bar (at the very least). Unfortunately, the soft hide/unhide method doesn't work properly anymore since FW 5.6.5...
@@ -237,9 +244,11 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
             lipc-set-prop com.lab126.pillow disableEnablePillow disable
             # NOTE: And, oh, joy, on FW >= 5.7.2, this is not enough to prevent the clock from refreshing, so, take the bull by the horns, and SIGSTOP the WM while we run...
             if [ "$(version "${FW_VERSION}")" -ge "$(version "5.7.2")" ]; then
-                logmsg "Stopping awesome . . ."
-                killall -stop awesome
-                AWESOME_STOPPED="yes"
+                if [ "${FROM_KUAL}" = "yes" ]; then
+                    logmsg "Stopping awesome . . ."
+                    killall -stop awesome
+                    AWESOME_STOPPED="yes"
+                fi
             fi
         else
             logmsg "Hiding the status bar . . ."
@@ -336,10 +345,10 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
     fi
     if [ "${PILLOW_HARD_DISABLED}" = "yes" ]; then
         logmsg "Enabling pillow . . ."
-        lipc-set-prop com.lab126.pillow disableEnablePillow enable
         # NOTE: Try to leave the user with a slightly more useful FB content than our own last screen...
         cat /var/tmp/koreader-fb.dump >/dev/fb0
         rm -f /var/tmp/koreader-fb.dump
+        lipc-set-prop com.lab126.pillow disableEnablePillow enable
         lipc-set-prop com.lab126.appmgrd start app://com.lab126.booklet.home
         # NOTE: In case we ever need an extra full flash refresh...
         #eips -s w=${SCREEN_X_RES},h=${SCREEN_Y_RES} -f
@@ -351,6 +360,11 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
         rm -f /var/tmp/koreader-fb.dump
         lipc-set-prop com.lab126.pillow interrogatePillow '{"pillowId": "default_status_bar", "function": "nativeBridge.showMe();"}'
         lipc-set-prop com.lab126.appmgrd start app://com.lab126.booklet.home
+    fi
+    # And re-enable stock UI eInk refreshes (will flash)
+    if [ "${LIGL_PAUSED}" = "yes" ]; then
+        logmsg "Resuming UI updates . . ."
+        lipc-set-prop com.lab126.winmgr liglPause 0
     fi
 fi
 
