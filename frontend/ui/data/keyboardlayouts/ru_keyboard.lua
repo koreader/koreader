@@ -14,7 +14,7 @@ local _SH_ = ru_popup._SH_
 local _sh_ = ru_popup._sh_
 
 -- Kazakh Cyrillic letters: ә і ң ғ ү ұ қ ө һ
-local _KA_ = ru_popup._KA_ 
+local _KA_ = ru_popup._KA_
 local _ka_ = ru_popup._ka_
 local _KI_ = ru_popup._KI_
 local _ki_ = ru_popup._ki_
