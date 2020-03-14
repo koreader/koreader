@@ -9,7 +9,7 @@ local _je_ = ru_popup._je_
 local _Ye_ = ru_popup._Ye_
 local _ye_ = ru_popup._ye_
 
--- the Russian soft/hard sign 
+-- the Russian soft/hard sign
 local _SH_ = ru_popup._SH_
 local _sh_ = ru_popup._sh_
 
