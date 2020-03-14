@@ -8,6 +8,7 @@
 
     Pure Lua Version written by: William A Adams
     Dramatic Speed Improvements by: Robert G Jakabosky
+    https://github.com/Wiladams/LAPHLibs/blob/master/laphlibs/luxl.lua
 
     References
 
@@ -20,10 +21,15 @@ local ffi = require "ffi"
 local bit = require "bit"
 local band = bit.band
 
+
 --[[
- Types of characters; 0 is not valid, 1 is letters, 2 are digits
-   (including '.') and 3 whitespace.
+ Types of characters;
+     0 is not valid
+     1 is letters,
+     2 are digits (including '.')
+     3 whitespace
 --]]
+
 local char_type = ffi.new("const int[256]", {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 0, 0, 3, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -43,22 +49,24 @@ local char_type = ffi.new("const int[256]", {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 });
 
+
+
 -- Internal states that the parser can be in at any given time.
-local ST_START = 0;         -- starting base state; default state
+local ST_START = 0;            -- starting base state; default state
 local ST_TEXT =1;              -- text state
-local ST_START_TAG = 2;         -- start tag state
+local ST_START_TAG = 2;        -- start tag state
 local ST_START_TAGNAME =3;     -- start tagname state
 local ST_START_TAGNAME_END =4; -- start tagname ending state
 local ST_END_TAG =5;           -- end tag state
-local ST_END_TAGNAME=6;       -- end tag tagname state
-local ST_END_TAGNAME_END=7;   -- end tag tagname ending
-local ST_EMPTY_TAG=8;         -- empty tag state
-local ST_SPACE=9;             -- linear whitespace state
+local ST_END_TAGNAME=6;        -- end tag tagname state
+local ST_END_TAGNAME_END=7;    -- end tag tagname ending
+local ST_EMPTY_TAG=8;          -- empty tag state
+local ST_SPACE=9;              -- linear whitespace state
 local ST_ATTR_NAME=10;         -- attribute name state
 local ST_ATTR_NAME_END=11;     -- attribute name ending state
 local ST_ATTR_VAL=12;          -- attribute value starting state
 local ST_ATTR_VAL2=13;         -- attribute value state
-local ST_ERROR=14;              -- error state
+local ST_ERROR=14;             -- error state
 
 -- character classes that we will match against; This could be expanded if
 --   need be, however, we are aiming for simple.
@@ -74,14 +82,14 @@ local CCLASS_ANY=8;            -- matches any ASCII character; will match all ab
 
 -- Types of events: start element, end element, text, attr name, attr
 -- val and start/end document. Other events can be ignored!
-local EVENT_START = 0;   -- Start tag
-local EVENT_END = 1;       -- End tag
-local EVENT_TEXT = 2;      -- Text
-local EVENT_ATTR_NAME = 3; -- Attribute name
-local EVENT_ATTR_VAL = 4;  -- Attribute value
-local EVENT_END_DOC = 5;   -- End of document
-local EVENT_MARK = 6;      -- Internal only; notes position in buffer
-local EVENT_NONE = 7;      -- Internal only; should never see this event
+local EVENT_START = 0;        -- Start tag
+local EVENT_END = 1;          -- End tag
+local EVENT_TEXT = 2;         -- Text
+local EVENT_ATTR_NAME = 3;    -- Attribute name
+local EVENT_ATTR_VAL = 4;     -- Attribute value
+local EVENT_END_DOC = 5;      -- End of document
+local EVENT_MARK = 6;         -- Internal only; notes position in buffer
+local EVENT_NONE = 7;         -- Internal only; should never see this event
 
 local entity_refs =  {
     ["&lt;"] = '<',
@@ -133,7 +141,7 @@ local LEXER_STATES = {
   -- [6-8] handle start tag
   { state = ST_START_TAG,     cclass = CCLASS_LETTERS,      next_state = ST_START_TAGNAME,     event = EVENT_MARK },
   { state = ST_START_TAG,     cclass = CCLASS_SLASH,        next_state = ST_END_TAG,           event = EVENT_MARK },
-  { state = ST_START_TAG,     cclass = CCLASS_SPACE,        next_state = ST_START_TAG,         event = EVENT_NONE },    -- < tag >
+  { state = ST_START_TAG,     cclass = CCLASS_SPACE,        next_state = ST_START_TAG,         event = EVENT_NONE },         -- < tag >
 
   -- [9-12] handle start tag name
   { state = ST_START_TAGNAME, cclass = CCLASS_LETTERS,      next_state = ST_START_TAGNAME,     event = EVENT_NONE },
@@ -145,10 +153,10 @@ local LEXER_STATES = {
   { state = ST_START_TAGNAME_END,  cclass = CCLASS_LETTERS, next_state = ST_ATTR_NAME,         event = EVENT_MARK },
   { state = ST_START_TAGNAME_END,  cclass = CCLASS_SPACE,   next_state = ST_START_TAGNAME_END, event = EVENT_NONE },
   { state = ST_START_TAGNAME_END,  cclass = CCLASS_RIGHT_ANGLE, next_state = ST_START,         event = EVENT_START },
-  { state = ST_START_TAGNAME_END,  cclass = CCLASS_SLASH,   next_state = ST_EMPTY_TAG,         event = EVENT_MARK },    -- Empty tag <br />
+  { state = ST_START_TAGNAME_END,  cclass = CCLASS_SLASH,   next_state = ST_EMPTY_TAG,         event = EVENT_MARK },         -- Empty tag <br />
 
   -- [17] handle empty tags, e.g., <br />
-  { state = ST_EMPTY_TAG,     cclass = CCLASS_RIGHT_ANGLE,  next_state = ST_START,             event = EVENT_END }, -- Empty tag <br />
+  { state = ST_EMPTY_TAG,     cclass = CCLASS_RIGHT_ANGLE,  next_state = ST_START,             event = EVENT_END },          -- Empty tag <br />
 
   -- [18] handle end tag, e.g., <tag />
   { state = ST_END_TAG,       cclass = CCLASS_LETTERS,      next_state = ST_END_TAGNAME,       event = EVENT_NONE },
@@ -156,7 +164,7 @@ local LEXER_STATES = {
   -- [19-21] handle end tag name
   { state = ST_END_TAGNAME,   cclass = CCLASS_LETTERS,      next_state = ST_END_TAGNAME,       event = EVENT_NONE },
   { state = ST_END_TAGNAME,   cclass = CCLASS_RIGHT_ANGLE,  next_state = ST_START,             event = EVENT_END },
-  { state = ST_END_TAGNAME,   cclass = CCLASS_SPACE,        next_state = ST_END_TAGNAME_END,   event = EVENT_END }, -- space after end tag name </br >
+  { state = ST_END_TAGNAME,   cclass = CCLASS_SPACE,        next_state = ST_END_TAGNAME_END,   event = EVENT_END },          -- space after end tag name </br >
 
   -- [22-23] handle ending of end tag name
   { state = ST_END_TAGNAME_END, cclass = CCLASS_SPACE,      next_state = ST_END_TAGNAME_END,   event = EVENT_NONE },
@@ -169,8 +177,8 @@ local LEXER_STATES = {
 
   -- [27-29] handle attribute names
   { state = ST_ATTR_NAME,     cclass = CCLASS_LETTERS,      next_state = ST_ATTR_NAME,         event = EVENT_MARK },
-  { state = ST_ATTR_NAME,     cclass = CCLASS_SPACE,        next_state = ST_ATTR_NAME_END,     event = EVENT_ATTR_NAME },   -- space before '=' sign
-  { state = ST_ATTR_NAME,     cclass = CCLASS_EQUALS,       next_state = ST_ATTR_VAL,          event = EVENT_ATTR_NAME },   -- <tag attr ="2">
+  { state = ST_ATTR_NAME,     cclass = CCLASS_SPACE,        next_state = ST_ATTR_NAME_END,     event = EVENT_ATTR_NAME },    -- space before '=' sign
+  { state = ST_ATTR_NAME,     cclass = CCLASS_EQUALS,       next_state = ST_ATTR_VAL,          event = EVENT_ATTR_NAME },    -- <tag attr ="2">
 
   -- [30-32] attribute name end
   { state = ST_ATTR_NAME_END, cclass = CCLASS_SPACE,        next_state = ST_ATTR_NAME_END,     event = EVENT_NONE },
@@ -198,6 +206,7 @@ struct parse_state {
     int i;
     int ix;               /* index into buffer */
 };
+
 ]]
 
 local cclass_match = {
@@ -320,28 +329,28 @@ fsm_code = nil
 
 
 local luxl = {
-    EVENT_START = EVENT_START;   -- Start tag
-    EVENT_END = EVENT_END;       -- End tag
-    EVENT_TEXT = EVENT_TEXT;      -- Text
+    EVENT_START = EVENT_START;         -- Start tag
+    EVENT_END = EVENT_END;             -- End tag
+    EVENT_TEXT = EVENT_TEXT;           -- Text
     EVENT_ATTR_NAME = EVENT_ATTR_NAME; -- Attribute name
-    EVENT_ATTR_VAL = EVENT_ATTR_VAL;  -- Attribute value
-    EVENT_END_DOC = EVENT_END_DOC;   -- End of document
-    EVENT_MARK = EVENT_MARK;      -- Internal only; notes position in buffer
-    EVENT_NONE = EVENT_NONE;      -- Internal only; should never see this event
+    EVENT_ATTR_VAL = EVENT_ATTR_VAL;   -- Attribute value
+    EVENT_END_DOC = EVENT_END_DOC;     -- End of document
+    EVENT_MARK = EVENT_MARK;           -- Internal only; notes position in buffer
+    EVENT_NONE = EVENT_NONE;           -- Internal only; should never see this event
 }
 local luxl_mt = { __index = luxl }
 
 function luxl.new(buffer, bufflen)
     local newone = {
-        buf = ffi.cast("const uint8_t *", buffer);          -- pointer to "uint8_t *" buffer (0 based)
-        bufsz = bufflen;        -- size of input buffer
-        state = ST_START;       -- current state
-        event = EVENT_NONE;     -- current event
-        err = 0;                -- number of errors thus far
-        markix = 0;             -- offset of current item of interest
-        marksz = 0;             -- size of current item of interest
-        MsgHandler = nil;       -- Routine to handle messages
-        ErrHandler = nil;       -- Routine to call when there's an error
+        buf = ffi.cast("const uint8_t *", buffer); -- pointer to "uint8_t *" buffer (0 based)
+        bufsz = bufflen;       -- size of input buffer
+        state = ST_START;      -- current state
+        event = EVENT_NONE;    -- current event
+        err = 0;               -- number of errors thus far
+        markix = 0;            -- offset of current item of interest
+        marksz = 0;            -- size of current item of interest
+        MsgHandler = nil;      -- Routine to handle messages
+        ErrHandler = nil;      -- Routine to call when there's an error
         EventHandler = nil;
         ps = ffi.new('struct parse_state', {
             buf = buffer,
@@ -357,13 +366,13 @@ function luxl.new(buffer, bufflen)
 end
 
 function luxl:Reset(buffer, bufflen)
-    self.buf = buffer           -- pointer to "uint8_t *" buffer (0 based)
-    self.bufsz = bufflen        -- size of input buffer
-    self.state = ST_START       -- current state
-    self.event = EVENT_NONE     -- current event
-    self.err = 0                -- number of errors thus far
-    self.markix = 0             -- offset of current item of interest
-    self.marksz = 0             -- size of current item of interest
+    self.buf = buffer          -- pointer to "uint8_t *" buffer (0 based)
+    self.bufsz = bufflen       -- size of input buffer
+    self.state = ST_START      -- current state
+    self.event = EVENT_NONE    -- current event
+    self.err = 0               -- number of errors thus far
+    self.markix = 0            -- offset of current item of interest
+    self.marksz = 0            -- size of current item of interest
     local ps = self.ps
     ps.buf = buffer
     ps.bufsz = bufflen
