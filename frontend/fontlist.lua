@@ -7,6 +7,7 @@ local FontList = {
 
 --[[
 These non-LGC Kindle system fonts fail CRe's moronic header check.
+Also applies to a number of LGC fonts that have different family names for different styles...
 --]]
 local kindle_fonts_blacklist = {
     ["DiwanMuna-Bold.ttf"] = true,
@@ -48,10 +49,28 @@ local kindle_fonts_blacklist = {
     ["TBMinchoBold_213.ttf"] = true,
     ["TBMinchoMedium_213.ttf"] = true,
     ["STKaiMedium.ttf"] = true,
+    ["Amazon-Ember-Bold.ttf"] = false,
+    ["Amazon-Ember-BoldItalic.ttf"] = false,
+    ["Amazon-Ember-Heavy.ttf"] = true,
+    ["Amazon-Ember-HeavyItalic.ttf"] = true,
+    ["Amazon-Ember-Medium.ttf"] = true,
+    ["Amazon-Ember-MediumItalic.ttf"] = true,
+    ["Amazon-Ember-Regular.ttf"] = false,
+    ["Amazon-Ember-RegularItalic.ttf"] = false,
+    ["AmazonEmberBold-Bold.ttf"] = true,
+    ["AmazonEmberBold-BoldItalic.ttf"] = true,
+    ["AmazonEmberBold-Italic.ttf"] = true,
+    ["AmazonEmberBold-Regular.ttf"] = true,
+    ["Caecilia_LT_65_Medium.ttf"] = false,
+    ["Caecilia_LT_66_Medium_Italic.ttf"] = false,
+    ["Caecilia_LT_75_Bold.ttf"] = false,
+    ["Caecilia_LT_76_Bold_Italic.ttf"] = false,
     ["Caecilia_LT_67_Cond_Medium.ttf"] = true,
     ["Caecilia_LT_68_Cond_Medium_Italic.ttf"] = true,
     ["Caecilia_LT_77_Cond_Bold.ttf"] = true,
     ["Caecilia_LT_78_Cond_Bold_Italic.ttf"] = true,
+    ["Futura-Bold.ttf"] = true,
+    ["Futura-BoldOblique.ttf"] = true,
     ["Helvetica_LT_65_Medium.ttf"] = true,
     ["Helvetica_LT_66_Medium_Italic.ttf"] = true,
     ["Helvetica_LT_75_Bold.ttf"] = true,
