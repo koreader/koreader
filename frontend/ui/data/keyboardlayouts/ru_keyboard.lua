@@ -10,7 +10,7 @@ local _Ye_ = ru_popup._Ye_
 local _ye_ = ru_popup._ye_
 
 -- the Russian soft/hard sign 
-local _SH_ = ru_popup._SH_ 
+local _SH_ = ru_popup._SH_
 local _sh_ = ru_popup._sh_
 
 -- Kazakh Cyrillic letters: ә і ң ғ ү ұ қ ө һ
