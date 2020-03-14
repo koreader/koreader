@@ -8,6 +8,7 @@ local FontList = {
 --[[
 These non-LGC Kindle system fonts fail CRe's moronic header check.
 Also applies to a number of LGC fonts that have different family names for different styles...
+(Those are actually "fixed" via FontConfig in the stock system).
 --]]
 local kindle_fonts_blacklist = {
     ["DiwanMuna-Bold.ttf"] = true,
