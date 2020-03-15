@@ -832,8 +832,6 @@ end
 
 function ReaderDictionary:showDownload(downloadable_dicts)
     local kv_pairs = {}
-    table.insert(kv_pairs, {_("Tap dictionary name to download"), ""})
-    table.insert(kv_pairs, "----------------------------")
     for dummy, dict in ipairs(downloadable_dicts) do
         table.insert(kv_pairs, {dict.name, "",
             callback = function()
@@ -855,7 +853,7 @@ function ReaderDictionary:showDownload(downloadable_dicts)
         table.insert(kv_pairs, "----------------------------")
     end
     self.download_window = KeyValuePage:new{
-        title = _("Download dictionaries"),
+        title = _("Tap dictionary name to download"),
         kv_pairs = kv_pairs,
     }
     UIManager:show(self.download_window)
