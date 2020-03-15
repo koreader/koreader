@@ -28,6 +28,8 @@ local action_strings = {
     page_jmp_fwd_1 = _("Next page"),
     prev_chapter = _("Previous chapter"),
     next_chapter = _("Next chapter"),
+    prev_bookmark = _("Previous bookmark"),
+    next_bookmark = _("Next bookmark"),
     go_to = _("Go to"),
     skim = _("Skim"),
     back = _("Back"),
@@ -702,6 +704,8 @@ function ReaderGesture:buildMenu(ges, default)
         {"page_jmp_fwd_1", not self.is_docless},
         {"prev_chapter", not self.is_docless},
         {"next_chapter", not self.is_docless},
+        {"prev_bookmark", not self.is_docless},
+        {"next_bookmark", not self.is_docless},
         {"go_to", true},
         {"skim", not self.is_docless},
         {"back", true},
@@ -1300,6 +1304,10 @@ function ReaderGesture:gestureAction(action, ges)
         self.ui:handleEvent(Event:new("GotoNextChapter"))
     elseif action == "prev_chapter" then
         self.ui:handleEvent(Event:new("GotoPrevChapter"))
+    elseif action == "next_bookmark" then
+        self.ui:handleEvent(Event:new("GotoNextBookmarkFromPage", self:getCurrentPage()))
+    elseif action == "prev_bookmark" then
+        self.ui:handleEvent(Event:new("GotoPreviousBookmarkFromPage", self:getCurrentPage()))
     elseif action == "go_to" then
         self.ui:handleEvent(Event:new("ShowGotoDialog"))
     elseif action == "skim" then
@@ -1629,6 +1637,16 @@ function ReaderGesture:onToggleReadingOrder()
         timeout = 2.5,
     })
     return true
+end
+
+function ReaderGesture:getCurrentPage()
+    local page
+    if self.document.info.has_pages then
+        page = self.ui.paging.current_page
+    else
+        page = self.document:getCurrentPage()
+    end
+    return page
 end
 
 return ReaderGesture

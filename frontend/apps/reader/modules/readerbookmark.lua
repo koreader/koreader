@@ -209,8 +209,10 @@ function ReaderBookmark:onPosUpdate(pos)
 end
 
 function ReaderBookmark:gotoBookmark(pn_or_xp)
-    local event = self.ui.document.info.has_pages and "GotoPage" or "GotoXPointer"
-    self.ui:handleEvent(Event:new(event, pn_or_xp))
+    if pn_or_xp then
+        local event = self.ui.document.info.has_pages and "GotoPage" or "GotoXPointer"
+        self.ui:handleEvent(Event:new(event, pn_or_xp))
+    end
 end
 
 function ReaderBookmark:onShowBookmark()
@@ -599,6 +601,16 @@ end
 
 function ReaderBookmark:onGotoPreviousBookmark(pn_or_xp)
     self:gotoBookmark(self:getPreviousBookmarkedPage(pn_or_xp))
+    return true
+end
+
+function ReaderBookmark:onGotoNextBookmarkFromPage(pn_or_xp)
+    self:gotoBookmark(self:getNextBookmarkedPageFromPage(pn_or_xp))
+    return true
+end
+
+function ReaderBookmark:onGotoPreviousBookmarkFromPage(pn_or_xp)
+    self:gotoBookmark(self:getPreviousBookmarkedPageFromPage(pn_or_xp))
     return true
 end
 
