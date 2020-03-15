@@ -1471,12 +1471,18 @@ function ReaderGesture:gestureAction(action, ges)
     elseif action == "wifi_off" then
         local NetworkMgr = require("ui/network/manager")
         -- can't hurt
-        NetworkMgr:turnOffWifi()
-
-        UIManager:show(InfoMessage:new{
-            text = _("Wi-Fi off."),
-            timeout = 1,
-        })
+        if not NetworkMgr:isOnline() then
+            UIManager:show(InfoMessage:new{
+                text = _("Wi-Fi is already off."),
+                timeout = 1,
+            })
+        else
+            NetworkMgr:turnOffWifi()
+            UIManager:show(InfoMessage:new{
+                text = _("Turning Wi-Fi off."),
+                timeout = 1,
+            })
+        end
     elseif action == "wifi_on" then
         local NetworkMgr = require("ui/network/manager")
 
