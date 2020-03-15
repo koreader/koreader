@@ -1,0 +1,5 @@
+wmctrl, Copyright (C) 2003 Tomas Styblo <tripie@cpan.org>,
+  Licensed under the GNU General Public License version 2 (http://www.gnu.org/licenses/old-licenses/gpl-2.0.html),
+  (http://sweb.cz/tripie/utils/wmctrl)
+
+See BR-2020.02-config for the BuildRoot 2020.02 config used to build it.

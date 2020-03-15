@@ -60,6 +60,7 @@ export AWESOME_STOPPED="no"
 export VOLUMD_STOPPED="no"
 PILLOW_HARD_DISABLED="no"
 PILLOW_SOFT_DISABLED="no"
+USED_WMCTRL="no"
 PASSCODE_DISABLED="no"
 
 REEXEC_FLAGS=""
@@ -237,9 +238,17 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
             lipc-set-prop com.lab126.pillow disableEnablePillow disable
             # NOTE: And, oh, joy, on FW >= 5.7.2, this is not enough to prevent the clock from refreshing, so, take the bull by the horns, and SIGSTOP the WM while we run...
             if [ "$(version "${FW_VERSION}")" -ge "$(version "5.7.2")" ]; then
-                logmsg "Stopping awesome . . ."
-                killall -stop awesome
-                AWESOME_STOPPED="yes"
+                # Less drastically, we'll also be "minimizing" (actually, resizing) the title bar manually (c.f., https://www.mobileread.com/forums/showpost.php?p=2449275&postcount=5).
+                # NOTE: Hiding it "works", but has a nasty side-effect of triggering ligl timeouts in some circumstances (c.f., https://github.com/koreader/koreader/pull/5943#issuecomment-598514376)
+                logmsg "Hiding the title bar . . ."
+                TITLEBAR_GEOMETRY="$(./wmctrl -l -G | grep "titleBar" | awk '{print $2,$3,$4,$5,$6}' OFS=',')"
+                ./wmctrl -r titleBar -e "${TITLEBAR_GEOMETRY%,*},1"
+                USED_WMCTRL="yes"
+                if [ "${FROM_KUAL}" = "yes" ]; then
+                    logmsg "Stopping awesome . . ."
+                    killall -stop awesome
+                    AWESOME_STOPPED="yes"
+                fi
             fi
         else
             logmsg "Hiding the status bar . . ."
@@ -336,13 +345,11 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
     fi
     if [ "${PILLOW_HARD_DISABLED}" = "yes" ]; then
         logmsg "Enabling pillow . . ."
-        lipc-set-prop com.lab126.pillow disableEnablePillow enable
         # NOTE: Try to leave the user with a slightly more useful FB content than our own last screen...
         cat /var/tmp/koreader-fb.dump >/dev/fb0
         rm -f /var/tmp/koreader-fb.dump
+        lipc-set-prop com.lab126.pillow disableEnablePillow enable
         lipc-set-prop com.lab126.appmgrd start app://com.lab126.booklet.home
-        # NOTE: In case we ever need an extra full flash refresh...
-        #eips -s w=${SCREEN_X_RES},h=${SCREEN_Y_RES} -f
     fi
     if [ "${PILLOW_SOFT_DISABLED}" = "yes" ]; then
         logmsg "Restoring the status bar . . ."
@@ -351,6 +358,10 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
         rm -f /var/tmp/koreader-fb.dump
         lipc-set-prop com.lab126.pillow interrogatePillow '{"pillowId": "default_status_bar", "function": "nativeBridge.showMe();"}'
         lipc-set-prop com.lab126.appmgrd start app://com.lab126.booklet.home
+    fi
+    if [ "${USED_WMCTRL}" = "yes" ]; then
+        logmsg "Restoring the title bar . . ."
+        ./wmctrl -r titleBar -e "${TITLEBAR_GEOMETRY}"
     fi
 fi
 
