@@ -104,6 +104,10 @@ body > section > autoBoxing + p,
 body > section > p + p {
     display: block;
 }
+body > section > autoBoxing > title,
+body > section > title {
+    font-weight: bold;
+}
 ]]
 
 -- Add this if needed for debugging:
