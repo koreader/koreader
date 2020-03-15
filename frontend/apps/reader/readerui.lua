@@ -270,6 +270,10 @@ function ReaderUI:init()
             ui = self,
             document = self.document,
         })
+        -- Current page
+        self.getCurrentPage = function()
+          return self.paging.current_page
+        end
     else
         -- load crengine default settings (from cr3.ini, some of these
         -- will be overriden by our settings by some reader modules below)
@@ -320,6 +324,11 @@ function ReaderUI:init()
             ui = self
         })
         self.disable_double_tap = G_reader_settings:readSetting("disable_double_tap") ~= false
+        -- Current page
+        self.getCurrentPage = function()
+          return self.document:getCurrentPage()
+        end
+
     end
     -- back location stack
     self:registerModule("back", ReaderBack:new{

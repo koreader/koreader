@@ -677,11 +677,7 @@ function ReaderStatistics:getStatisticEnabledMenuItem()
                 self:initData()
                 self.pages_stats = {}
                 self.start_current_period = TimeVal:now().sec
-                if self.document.info.has_pages then
-                    self.curr_page = self.ui.paging.current_page
-                else
-                    self.curr_page = self.document:getCurrentPage()
-                end
+                self.curr_page  = self.ui:getCurrentPage()
                 self.pages_stats[self.start_current_period] = self.curr_page
             end
             self:saveSettings()

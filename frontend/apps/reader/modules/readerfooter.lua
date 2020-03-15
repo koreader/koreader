@@ -203,12 +203,7 @@ local footerTextGeneratorMap = {
     book_time_to_read = function(footer)
         local symbol_type = footer.settings.item_prefix or "icons"
         local prefix = symbol_prefix[symbol_type].book_time_to_read
-        local current_page
-        if footer.view.document.info.has_pages then
-            current_page = footer.ui.paging.current_page
-        else
-            current_page = footer.view.document:getCurrentPage()
-        end
+        local current_page = footer.ui:getCurrentPage()
         return footer:getDataFromStatistics(prefix .. " ", footer.pages - current_page)
     end,
     chapter_time_to_read = function(footer)

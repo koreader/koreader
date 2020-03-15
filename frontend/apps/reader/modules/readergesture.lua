@@ -1305,9 +1305,9 @@ function ReaderGesture:gestureAction(action, ges)
     elseif action == "prev_chapter" then
         self.ui:handleEvent(Event:new("GotoPrevChapter"))
     elseif action == "next_bookmark" then
-        self.ui:handleEvent(Event:new("GotoNextBookmarkFromPage", self:getCurrentPage()))
+        self.ui:handleEvent(Event:new("GotoNextBookmarkFromPage", self.ui:getCurrentPage()))
     elseif action == "prev_bookmark" then
-        self.ui:handleEvent(Event:new("GotoPreviousBookmarkFromPage", self:getCurrentPage()))
+        self.ui:handleEvent(Event:new("GotoPreviousBookmarkFromPage", self.ui:getCurrentPage()))
     elseif action == "go_to" then
         self.ui:handleEvent(Event:new("ShowGotoDialog"))
     elseif action == "skim" then
@@ -1572,12 +1572,7 @@ function ReaderGesture:multiswipeAction(multiswipe_directions, ges)
 end
 
 function ReaderGesture:pageUpdate(page)
-    local curr_page
-    if self.document.info.has_pages then
-        curr_page = self.ui.paging.current_page
-    else
-        curr_page = self.document:getCurrentPage()
-    end
+    local curr_page = self.ui:getCurrentPage()
     if curr_page and page then
         curr_page = curr_page + page
         self.ui:handleEvent(Event:new("GotoPage", curr_page))
@@ -1637,16 +1632,6 @@ function ReaderGesture:onToggleReadingOrder()
         timeout = 2.5,
     })
     return true
-end
-
-function ReaderGesture:getCurrentPage()
-    local page
-    if self.document.info.has_pages then
-        page = self.ui.paging.current_page
-    else
-        page = self.document:getCurrentPage()
-    end
-    return page
 end
 
 return ReaderGesture
