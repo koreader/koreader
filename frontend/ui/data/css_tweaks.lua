@@ -621,19 +621,52 @@ This is just an example, that will need to be adapted into a user style tweak.]]
         {
             title = _("In-page footnotes"),
             {
-                id = "footnote-inpage_fb2";
                 title = _("In-page FB2 footnotes"),
-                description = _([[
+                {
+                    id = "footnote-inpage_fb2";
+                    title = _("In-page FB2 footnotes"),
+                    description = _([[
 Show FB2 footnote text at the bottom of pages that contain links to them.]]),
-                -- (fb2.css already set font-size to 70% - so no need for a "smaller" variant)
-                css = [[
-body[name="notes"] section,
-body[name="comments"] section
-{
+                    -- Avoid 75% of 75% in case of nested <section>
+                    css = [[
+body[name="notes"] section {
     -cr-hint: footnote-inpage;
     margin: 0 !important;
 }
-                ]],
+body[name="notes"] > section {
+    font-size: 75%;
+}
+                    ]],
+                },
+                {
+                    id = "footnote-inpage_fb2_comments";
+                    title = _("In-page FB2 endnotes"),
+                    description = _([[
+Show FB2 endnote text at the bottom of pages that contain links to them.]]),
+                    css = [[
+body[name="comments"] section {
+    -cr-hint: footnote-inpage;
+    margin: 0 !important;
+}
+body[name="comments"] > section {
+    font-size: 85%;
+}
+                    ]],
+                    separator = true,
+                },
+                {
+                    id = "fb2_footnotes_regular_font_size";
+                    title = _("Keep regular font size"),
+                    description = _([[
+FB2 footnotes and endnotes get a smaller font size when displayed in-page. This allows them to be shown with the normal font size.]]),
+                    css = [[
+body[name="notes"] > section,
+body[name="comments"] > section
+{
+    font-size: 100% !important;
+}
+                    ]],
+                },
                 separator = true,
             },
             {
