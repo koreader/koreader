@@ -94,7 +94,7 @@ local Cervantes2013 = Cervantes:new{
     model = "Cervantes2013",
     display_dpi = 212,
     hasMultitouch = no,
-    -- FIXME: Possibly requires canHWInvert = no, as it seems to be based on a similar board as the Kobo Aura...
+    --- @fixme: Possibly requires canHWInvert = no, as it seems to be based on a similar board as the Kobo Aura...
 }
 -- Cervantes 3 / Fnac Touch Light 2
 local Cervantes3 = Cervantes:new{
