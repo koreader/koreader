@@ -72,6 +72,9 @@ local Cervantes = Generic:new{
     -- currently only Cervantes 4 has coloured frontlight
     hasNaturalLight = no,
     hasNaturalLightMixer = no,
+
+    -- HW inversion is generally safe on Cervantes, except on a few boards/kernels
+    canHWInvert = yes,
 }
 -- Cervantes Touch
 local CervantesTouch = Cervantes:new{
@@ -91,6 +94,7 @@ local Cervantes2013 = Cervantes:new{
     model = "Cervantes2013",
     display_dpi = 212,
     hasMultitouch = no,
+    --- @fixme: Possibly requires canHWInvert = no, as it seems to be based on a similar board as the Kobo Aura...
 }
 -- Cervantes 3 / Fnac Touch Light 2
 local Cervantes3 = Cervantes:new{
@@ -151,7 +155,29 @@ function Cervantes:initEventAdjustHooks()
     end
 end
 
+-- Make sure the C BB cannot be used on devices with unsafe HW inversion, as otherwise NightMode would be ineffective.
+function Cervantes:blacklistCBB()
+    local ffi = require("ffi")
+    local dummy = require("ffi/posix_h")
+    local C = ffi.C
+
+    -- NOTE: canUseCBB is never no on Cervantes ;).
+    if not self:canUseCBB() or not self:canHWInvert() then
+        logger.info("Blacklisting the C BB on this device")
+        if ffi.os == "Windows" then
+            C._putenv("KO_NO_CBB=true")
+        else
+            C.setenv("KO_NO_CBB", "true", 1)
+        end
+        -- Enforce the global setting, too, so the Dev menu is accurate...
+        G_reader_settings:saveSetting("dev_no_c_blitter", true)
+    end
+end
+
 function Cervantes:init()
+    -- Blacklist the C BB before the first BB require...
+    self:blacklistCBB()
+
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
 
     -- Automagically set this so we never have to remember to do it manually ;p
