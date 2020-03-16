@@ -677,7 +677,7 @@ function ReaderStatistics:getStatisticEnabledMenuItem()
                 self:initData()
                 self.pages_stats = {}
                 self.start_current_period = TimeVal:now().sec
-                self.curr_page  = self.ui:getCurrentPage()
+                self.curr_page = self.ui:getCurrentPage()
                 self.pages_stats[self.start_current_period] = self.curr_page
             end
             self:saveSettings()

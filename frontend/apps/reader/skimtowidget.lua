@@ -395,7 +395,7 @@ function SkimToWidget:goToBookmark(page)
     if page then
         self:addOriginToLocationStack()
         self.ui.bookmark:gotoBookmark(page)
-        self.curr_page  = self.ui:getCurrentPage()
+        self.curr_page = self.ui:getCurrentPage()
         self:update()
     end
 end
