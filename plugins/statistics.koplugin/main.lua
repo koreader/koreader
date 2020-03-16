@@ -205,6 +205,8 @@ function ReaderStatistics:initData()
     self.total_read_pages, self.total_read_time = self:getPageTimeTotalStats(self.id_curr_book)
     if self.total_read_pages > 0 then
         self.avg_time = self.total_read_time / self.total_read_pages
+    else
+        self.avg_time = 0
     end
 end
 
