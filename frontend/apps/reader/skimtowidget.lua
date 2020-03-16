@@ -238,8 +238,7 @@ function SkimToWidget:init()
         width = self.button_width,
         show_parent = self,
         callback = function()
-            local page = self.ui.bookmark:getNextBookmarkedPageFromPage(self.ui:getCurrentPage())
-            self:goToBookmark(page)
+            self.ui:handleEvent(Event:new("GotoNextBookmarkFromPage"))
         end,
         hold_callback = function()
             local page = self.ui.bookmark:getLastBookmarkedPageFromPage(self.ui:getCurrentPage())
@@ -256,8 +255,7 @@ function SkimToWidget:init()
         width = self.button_width,
         show_parent = self,
         callback = function()
-            local page = self.ui.bookmark:getPreviousBookmarkedPageFromPage(self.ui:getCurrentPage())
-            self:goToBookmark(page)
+            self.ui:handleEvent(Event:new("GotoPreviousBookmarkFromPage"))
         end,
         hold_callback = function()
             local page = self.ui.bookmark:getFirstBookmarkedPageFromPage(self.ui:getCurrentPage())

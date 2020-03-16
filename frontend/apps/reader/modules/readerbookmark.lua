@@ -604,18 +604,18 @@ function ReaderBookmark:onGotoPreviousBookmark(pn_or_xp)
     return true
 end
 
-function ReaderBookmark:onGotoNextBookmarkFromPage(pn_or_xp)
-    self:gotoBookmark(self:getNextBookmarkedPageFromPage(pn_or_xp))
-    return true
-end
-
-function ReaderBookmark:onGotoPreviousBookmarkFromPage(pn_or_xp)
-    self:gotoBookmark(self:getPreviousBookmarkedPageFromPage(pn_or_xp))
-    return true
-end
-
 function ReaderBookmark:onGotoNextBookmark(pn_or_xp)
     self:gotoBookmark(self:getNextBookmarkedPage(pn_or_xp))
+    return true
+end
+
+function ReaderBookmark:onGotoNextBookmarkFromPage()
+    self:gotoBookmark(self:getNextBookmarkedPageFromPage(self.ui:getCurrentPage()))
+    return true
+end
+
+function ReaderBookmark:onGotoPreviousBookmarkFromPage()
+    self:gotoBookmark(self:getPreviousBookmarkedPageFromPage(self.ui:getCurrentPage()))
     return true
 end
 

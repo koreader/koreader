@@ -1305,9 +1305,9 @@ function ReaderGesture:gestureAction(action, ges)
     elseif action == "prev_chapter" then
         self.ui:handleEvent(Event:new("GotoPrevChapter"))
     elseif action == "next_bookmark" then
-        self.ui:handleEvent(Event:new("GotoNextBookmarkFromPage", self.ui:getCurrentPage()))
+        self.ui:handleEvent(Event:new("GotoNextBookmarkFromPage"))
     elseif action == "prev_bookmark" then
-        self.ui:handleEvent(Event:new("GotoPreviousBookmarkFromPage", self.ui:getCurrentPage()))
+        self.ui:handleEvent(Event:new("GotoPreviousBookmarkFromPage"))
     elseif action == "go_to" then
         self.ui:handleEvent(Event:new("ShowGotoDialog"))
     elseif action == "skim" then
