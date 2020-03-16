@@ -747,4 +747,12 @@ function ReaderUI:switchDocument(new_file)
     self:showReader(new_file)
 end
 
+function ReaderUI:getCurrentPage()
+    if self.document.info.has_pages then
+        return self.paging.current_page
+    else
+        return self.document:getCurrentPage()
+    end
+end
+
 return ReaderUI
