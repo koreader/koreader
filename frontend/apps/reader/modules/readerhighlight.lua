@@ -329,6 +329,26 @@ function ReaderHighlight:updateHighlight(page, index, side, direction, move_by_c
         datetime = highlight_time,
         updated_highlight = new_highlight
     }, true)
+    if side == 0 then
+        -- Ensure we show the page with the new beginning of highlight
+        if not self.ui.document:isXPointerInCurrentPage(new_beginning) then
+            self.ui:handleEvent(Event:new("GotoXPointer", new_beginning))
+        end
+    else
+        -- Ensure we show the page with the new end of highlight
+        if not self.ui.document:isXPointerInCurrentPage(new_end) then
+            if self.view.view_mode == "page" then
+                self.ui:handleEvent(Event:new("GotoXPointer", new_end))
+            else
+                -- Not easy to get the y that would show the whole line
+                -- containing new_end. So, we scroll so that new_end
+                -- is at 2/3 of the screen.
+                local end_y = self.ui.document:getPosFromXPointer(new_end)
+                local top_y = end_y - math.floor(Screen:getHeight() * 2/3)
+                self.ui.rolling:_gotoPos(top_y)
+            end
+        end
+    end
     UIManager:setDirty(self.dialog, "ui")
 end
 
