@@ -2,6 +2,8 @@ local DataStorage = require("datastorage")
 local Font = require("ui/font")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
+local TextViewer = require("ui/widget/textviewer")
+local Trapper = require("ui/trapper")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
@@ -36,7 +38,9 @@ function Terminal:start()
             is_enter_default = true,
             callback = function()
                 UIManager:close(self.input)
-                self:execute()
+                Trapper:wrap(function()
+                    self:execute()
+                end)
             end,
         }}},
     }
@@ -46,32 +50,27 @@ end
 
 function Terminal:execute()
     self.command = self.input:getInputText()
-    UIManager:show(InfoMessage:new{
+    local wait_msg = InfoMessage:new{
         text = _("Executing…"),
-        timeout = 0.1,
-    })
-    UIManager:forceRePaint()
-    local std_out = io.popen(self.command)
+    }
+    UIManager:show(wait_msg)
     local entries = { self.command }
-    if std_out then
-        while true do
-            local line = std_out:read()
-            if line == nil then break end
-            table.insert(entries, line)
-        end
-        std_out:close()
+    local command = self.command .. " 2>&1 ; echo" -- ensure we get stderr and output something
+    local completed, result_str = Trapper:dismissablePopen(command, wait_msg)
+    if completed then
+        table.insert(entries, result_str)
+        self:dump(entries)
+        table.insert(entries, _("Output was also written to"))
+        table.insert(entries, self.dump_file)
     else
-        table.insert(entries, _("Failed to execute command."))
+        table.insert(entries, _("Execution canceled."))
     end
-    self:dump(entries)
-    table.insert(entries, _("Output will also be written to"))
-    table.insert(entries, self.dump_file)
-    UIManager:show(InfoMessage:new{
-        cface = Font:getFace("xx_smallinfofont"),
-        text = _("Command output\n") .. table.concat(entries, "\n"),
-        show_icon = false,
-        width = Screen:getWidth() * 0.8,
-        height = Screen:getHeight() * 0.8,
+    UIManager:close(wait_msg)
+    UIManager:show(TextViewer:new{
+        title = _("Command output"),
+        text = table.concat(entries, "\n"),
+        justified = false,
+        text_face = Font:getFace("smallinfont"),
     })
 end
 
