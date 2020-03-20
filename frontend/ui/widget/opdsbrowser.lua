@@ -55,6 +55,7 @@ local OPDSBrowser = Menu:extend{
         ["application/x-mobi8-ebook"] = "AZW3",
         ["application/x-cbz"] = "CBZ",
         ["application/x-cbr"] = "CBR",
+        ["application/djvu"] = "DJVU",
     },
 
     width = Screen:getWidth(),
