@@ -19,6 +19,7 @@ function BasePowerD:new(o)
     if o.init then o:init() end
     if o.device and o.device:hasFrontlight() then
         o.fl_intensity = o:frontlightIntensityHW()
+        print("BasePowerD:new", o.fl_intensity)
         o:_decideFrontlightState()
     end
     return o
@@ -43,6 +44,7 @@ function BasePowerD:afterResume() end
 
 function BasePowerD:isFrontlightOn()
     assert(self ~= nil)
+    print("BasePowerD:isFrontlightOn", self.is_fl_on)
     return self.is_fl_on
 end
 
@@ -50,14 +52,17 @@ function BasePowerD:_decideFrontlightState()
     assert(self ~= nil)
     assert(self.device:hasFrontlight())
     self.is_fl_on = self:isFrontlightOnHW()
+    print("BasePowerD:_decideFrontlightState", self.is_fl_on)
 end
 
 function BasePowerD:isFrontlightOff()
+    print("BasePowerD:isFrontlightOff")
     return not self:isFrontlightOn()
 end
 
 function BasePowerD:frontlightIntensity()
     assert(self ~= nil)
+    print("BasePowerD:frontlightIntensity")
     if not self.device:hasFrontlight() then return 0 end
     if self:isFrontlightOff() then return 0 end
     return self.fl_intensity
@@ -65,6 +70,7 @@ end
 
 function BasePowerD:toggleFrontlight()
     assert(self ~= nil)
+    print("BasePowerD:toggleFrontlight")
     if not self.device:hasFrontlight() then return false end
     if self:isFrontlightOn() then
         return self:turnOffFrontlight()
@@ -75,6 +81,7 @@ end
 
 function BasePowerD:turnOffFrontlight()
     assert(self ~= nil)
+    print("BasePowerD:turnOffFrontlight")
     if not self.device:hasFrontlight() then return end
     if self:isFrontlightOff() then return false end
     self:turnOffFrontlightHW()
@@ -84,6 +91,7 @@ end
 
 function BasePowerD:turnOnFrontlight()
     assert(self ~= nil)
+    print("BasePowerD:turnOnFrontlight")
     if not self.device:hasFrontlight() then return end
     if self:isFrontlightOn() then return false end
     if self.fl_intensity == self.fl_min then return false end
@@ -124,7 +132,7 @@ function BasePowerD:setIntensity(intensity)
     if intensity == self:frontlightIntensity() then return false end
     self.fl_intensity = self:normalizeIntensity(intensity)
     self:_decideFrontlightState()
-    logger.dbg("set light intensity", self.fl_intensity)
+    print("set light intensity", self.fl_intensity)
     self:_setIntensity(self.fl_intensity)
     return true
 end
