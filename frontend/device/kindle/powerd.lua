@@ -17,13 +17,11 @@ end
 -- If we start with the light off (fl_intensity is fl_min), ensure a toggle will set it to the lowest step,
 -- and that we update fl_intensity (by using setIntensity and not _setIntensity).
 function KindlePowerD:turnOnFrontlightHW()
-    print("KindlePowerD:turnOnFrontlightHW")
     self:setIntensity(self.fl_intensity == self.fl_min and self.fl_min + 1 or self.fl_intensity)
 end
 -- Which means we need to get rid of the insane fl_intensity == fl_min shortcut in turnOnFrontlight, too...
 -- That dates back from #2941, and I have no idea what it's supposed to help with.
 function BasePowerD:turnOnFrontlight()
-    print("KindlePowerD:turnOnFrontlight")
     if not self.device:hasFrontlight() then return end
     if self:isFrontlightOn() then return false end
     self:turnOnFrontlightHW()
@@ -33,27 +31,22 @@ end
 
 function KindlePowerD:frontlightIntensityHW()
     if not self.device:hasFrontlight() then return 0 end
-    print("KindlePowerD:frontlightIntensityHW()")
     -- Kindle stock software does not use intensity file directly, so go through lipc to keep us in sync.
     if self.lipc_handle ~= nil then
         local lipc_fl_intensity = self.lipc_handle:get_int_property("com.lab126.powerd", "flIntensity")
         -- NOTE: If lipc returns 0, compare against what the kernel says,
         --       to avoid breaking on/off detection on devices where lipc 0 doesn't actually turn it off (<= PW3),
         --       c.f., #5986
-        print("lipc_fl_intensity", lipc_fl_intensity)
         if lipc_fl_intensity == self.fl_min then
             local sysfs_fl_intensity = self:_readFLIntensity()
-            print("sysfs_fl_intensity", sysfs_fl_intensity)
             if sysfs_fl_intensity ~= self.fl_min then
                 -- Return something potentially slightly off (as we can't be sure of the sysfs -> lipc mapping),
                 -- but, more importantly, something that's not fl_min (0), so we properly detect the light as on,
                 -- and update fl_intensity accordingly.
                 -- That's only tripped if it was set to fl_min from the stock UI,
                 -- as we ourselves *do* really turn it off when we do that.
-                print("sysfs != min, return min + 1")
                 return self.fl_min + 1
             else
-                print("sysfs == min, return min")
                 return self.fl_min
             end
         else
@@ -67,7 +60,6 @@ function KindlePowerD:frontlightIntensityHW()
 end
 
 function KindlePowerD:setIntensityHW(intensity)
-    print("KindlePowerD:setIntensityHW", intensity)
     -- NOTE: This means we *require* a working lipc handle to set the FL:
     --       it knows what the UI values should map to for the specific hardware much better than us.
     if self.lipc_handle ~= nil then
