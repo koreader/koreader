@@ -127,9 +127,9 @@ ko_update_check() {
         #       and run that one (c.f., #4602)...
         #       This is most likely a side-effect of the weird fuse overlay being used for /mnt/us (vs. the real vfat on /mnt/base-us),
         #       which we cannot use because it's been mounted noexec for a few years now...
-        cp -pf ./tar /var/tmp/gnutar
+        cp -pf "${KOREADER_DIR}/tar" /var/tmp/gnutar
         # shellcheck disable=SC2016
-        /var/tmp/gnutar --no-same-permissions --no-same-owner --checkpoint="${CPOINTS}" --checkpoint-action=exec='./fbink -q -y -6 -P $(($TAR_CHECKPOINT/$CPOINTS))' -C "/mnt/us" -xf "${NEWUPDATE}"
+        /var/tmp/gnutar --no-same-permissions --no-same-owner --checkpoint="${CPOINTS}" --checkpoint-action=exec='/var/tmp/fbink -q -y -6 -P $(($TAR_CHECKPOINT/$CPOINTS))' -C "/mnt/us" -xf "${NEWUPDATE}"
         fail=$?
         # And remove our temporary tar binary...
         rm -f /var/tmp/gnutar
@@ -241,9 +241,9 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
                 # Less drastically, we'll also be "minimizing" (actually, resizing) the title bar manually (c.f., https://www.mobileread.com/forums/showpost.php?p=2449275&postcount=5).
                 # NOTE: Hiding it "works", but has a nasty side-effect of triggering ligl timeouts in some circumstances (c.f., https://github.com/koreader/koreader/pull/5943#issuecomment-598514376)
                 logmsg "Hiding the title bar . . ."
-                TITLEBAR_GEOMETRY="$(./wmctrl -l -G | grep "titleBar" | awk '{print $2,$3,$4,$5,$6}' OFS=',')"
-                ./wmctrl -r titleBar -e "${TITLEBAR_GEOMETRY%,*},1"
-                logmsg "Title bar geometry: '${TITLEBAR_GEOMETRY}' -> '$(./wmctrl -l -G | grep "titleBar" | awk '{print $2,$3,$4,$5,$6}' OFS=',')'"
+                TITLEBAR_GEOMETRY="$(${KOREADER_DIR}/wmctrl -l -G | grep "titleBar" | awk '{print $2,$3,$4,$5,$6}' OFS=',')"
+                ${KOREADER_DIR}/wmctrl -r titleBar -e "${TITLEBAR_GEOMETRY%,*},1"
+                logmsg "Title bar geometry: '${TITLEBAR_GEOMETRY}' -> '$(${KOREADER_DIR}/wmctrl -l -G | grep "titleBar" | awk '{print $2,$3,$4,$5,$6}' OFS=',')'"
                 USED_WMCTRL="yes"
                 if [ "${FROM_KUAL}" = "yes" ]; then
                     logmsg "Stopping awesome . . ."
@@ -362,8 +362,8 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
     fi
     if [ "${USED_WMCTRL}" = "yes" ]; then
         logmsg "Restoring the title bar . . ."
-        ./wmctrl -r titleBar -e "${TITLEBAR_GEOMETRY}"
-        logmsg "Title bar geometry restored to '$(./wmctrl -l -G | grep "titleBar" | awk '{print $2,$3,$4,$5,$6}' OFS=',')' (ought to be: '${TITLEBAR_GEOMETRY}')"
+        ${KOREADER_DIR}/wmctrl -r titleBar -e "${TITLEBAR_GEOMETRY}"
+        logmsg "Title bar geometry restored to '$(${KOREADER_DIR}/wmctrl -l -G | grep "titleBar" | awk '{print $2,$3,$4,$5,$6}' OFS=',')' (ought to be: '${TITLEBAR_GEOMETRY}')"
     fi
 fi
 
