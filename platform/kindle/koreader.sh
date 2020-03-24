@@ -243,6 +243,7 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
                 logmsg "Hiding the title bar . . ."
                 TITLEBAR_GEOMETRY="$(./wmctrl -l -G | grep "titleBar" | awk '{print $2,$3,$4,$5,$6}' OFS=',')"
                 ./wmctrl -r titleBar -e "${TITLEBAR_GEOMETRY%,*},1"
+                logmsg "Title bar geometry: '${TITLEBAR_GEOMETRY}' -> '$(./wmctrl -l -G | grep "titleBar" | awk '{print $2,$3,$4,$5,$6}' OFS=',')'"
                 USED_WMCTRL="yes"
                 if [ "${FROM_KUAL}" = "yes" ]; then
                     logmsg "Stopping awesome . . ."
@@ -362,6 +363,7 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
     if [ "${USED_WMCTRL}" = "yes" ]; then
         logmsg "Restoring the title bar . . ."
         ./wmctrl -r titleBar -e "${TITLEBAR_GEOMETRY}"
+        logmsg "Title bar geometry restored to '$(./wmctrl -l -G | grep "titleBar" | awk '{print $2,$3,$4,$5,$6}' OFS=',')' (ought to be: '${TITLEBAR_GEOMETRY}')"
     fi
 fi
 
