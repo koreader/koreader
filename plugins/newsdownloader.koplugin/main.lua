@@ -29,6 +29,7 @@ local config_key_custom_dl_dir = "custom_dl_dir";
 local file_extension = ".epub"
 local news_download_dir_name = "news"
 local news_download_dir_path, feed_config_path
+local global_exlude_images_config_name = 'global_exlude_images_config_name';
 
 -- if a title looks like <title>blabla</title> it'll just be feed.title
 -- if a title looks like <title attr="alb">blabla</title> then we get a table
@@ -106,6 +107,15 @@ function NewsDownloader:addToMainMenu(menu_items)
                 callback = function() self:removeNewsButKeepFeedConfig() end,
             },
             {
+                text = _("Global skip images download"),
+                keep_menu_open = true,
+                callback = function()
+                    local skip = news_downloader_settings:readSetting(global_exlude_images_config_name) or false;
+                    news_downloader_settings:saveSetting(global_exlude_images_config_name, not skip)
+                    UI:info("Global skip images download set to %1", not skip)
+                end,
+            },
+            {
                 text = _("Settings"),
                 sub_item_table = {
                     {
@@ -175,6 +185,8 @@ function NewsDownloader:loadConfigAndProcessFeeds()
         return
     end
 
+    local global_exlude_images = news_downloader_settings:readSetting(global_exlude_images_config_name) or false
+
     local unsupported_feeds_urls = {}
 
     local total_feed_entries = table.getn(feed_config)
@@ -182,7 +194,7 @@ function NewsDownloader:loadConfigAndProcessFeeds()
         local url = feed[1]
         local limit = feed.limit
         local download_full_article = feed.download_full_article == nil or feed.download_full_article
-        local include_images = feed.include_images
+        local include_images = not global_exlude_images and feed.include_images
         if url and limit then
             local feed_message = T(_("Processing %1/%2:\n%3"), idx, total_feed_entries, BD.url(url))
             UI:info(feed_message)
