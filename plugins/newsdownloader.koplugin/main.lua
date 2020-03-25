@@ -107,12 +107,18 @@ function NewsDownloader:addToMainMenu(menu_items)
                 callback = function() self:removeNewsButKeepFeedConfig() end,
             },
             {
-                text = _("Global skip images download"),
+                text = _("Force skip images download toggle"),
                 keep_menu_open = true,
                 callback = function()
+                    local news_downloader_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), news_downloader_config_file))
                     local skip = news_downloader_settings:readSetting(global_skip_images_download_config_name) or false;
+                    logger.warn('NewsDownloader: global_skip_images_download', skip)
                     news_downloader_settings:saveSetting(global_skip_images_download_config_name, not skip)
-                    UI:info("Global skip images download set to %1", not skip)
+                    news_downloader_settings:flush()
+                    UIManager:show(InfoMessage:new{
+                        text = T(_("Global skip images download set to %1"),
+                        string.format("%s", not skip))
+                    })
                 end,
             },
             {
