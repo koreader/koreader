@@ -29,7 +29,7 @@ local config_key_custom_dl_dir = "custom_dl_dir";
 local file_extension = ".epub"
 local news_download_dir_name = "news"
 local news_download_dir_path, feed_config_path
-local global_exlude_images_config_name = 'global_exlude_images_config_name';
+local global_skip_images_download_config_name = 'global_skip_images_download_config_name';
 
 -- if a title looks like <title>blabla</title> it'll just be feed.title
 -- if a title looks like <title attr="alb">blabla</title> then we get a table
@@ -110,8 +110,8 @@ function NewsDownloader:addToMainMenu(menu_items)
                 text = _("Global skip images download"),
                 keep_menu_open = true,
                 callback = function()
-                    local skip = news_downloader_settings:readSetting(global_exlude_images_config_name) or false;
-                    news_downloader_settings:saveSetting(global_exlude_images_config_name, not skip)
+                    local skip = news_downloader_settings:readSetting(global_skip_images_download_config_name) or false;
+                    news_downloader_settings:saveSetting(global_skip_images_download_config_name, not skip)
                     UI:info("Global skip images download set to %1", not skip)
                 end,
             },
@@ -185,7 +185,7 @@ function NewsDownloader:loadConfigAndProcessFeeds()
         return
     end
 
-    local global_exlude_images = news_downloader_settings:readSetting(global_exlude_images_config_name) or false
+    local global_exlude_images = news_downloader_settings:readSetting(global_skip_images_download_config_name) or false
 
     local unsupported_feeds_urls = {}
 
