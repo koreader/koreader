@@ -107,7 +107,7 @@ function NewsDownloader:addToMainMenu(menu_items)
                 callback = function() self:removeNewsButKeepFeedConfig() end,
             },
             {
-                text = _("Toogle: force skip images download"),
+                text = _("Force skip images download"),
                 keep_menu_open = true,
                 callback = function()
                     local news_downloader_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), news_downloader_config_file))
@@ -190,7 +190,7 @@ function NewsDownloader:loadConfigAndProcessFeeds()
         logger.err('NewsDownloader: empty feed list.', feed_config_path)
         return
     end
-    
+
     local news_downloader_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), news_downloader_config_file))
     local force_exlude_images = news_downloader_settings:readSetting(force_skip_images_download_config_name) or false
 
