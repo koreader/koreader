@@ -111,14 +111,13 @@ function NewsDownloader:addToMainMenu(menu_items)
                 keep_menu_open = true,
                 checked_func = function()
                     local news_downloader_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), news_downloader_config_file))
-                    local skip = news_downloader_settings:readSetting(never_download_images_config_name)
-                    return skip
+                    return news_downloader_settings:readSetting(never_download_images_config_name)
                 end,
                 callback = function()
                     local news_downloader_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), news_downloader_config_file))
-                    local skip = news_downloader_settings:readSetting(never_download_images_config_name) or false
-                    logger.info('NewsDownloader: previous never_download_images: ', skip)
-                    news_downloader_settings:saveSetting(never_download_images_config_name, not skip)
+                    local never_download_images = news_downloader_settings:readSetting(never_download_images_config_name) or false
+                    logger.info("NewsDownloader: previous never_download_images: ", never_download_images)
+                    news_downloader_settings:saveSetting(never_download_images_config_name, not never_download_images)
                     news_downloader_settings:flush()
                 end,
             },
@@ -193,7 +192,7 @@ function NewsDownloader:loadConfigAndProcessFeeds()
     end
 
     local news_downloader_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), news_downloader_config_file))
-    local force_exlude_images = news_downloader_settings:readSetting(never_download_images_config_name) or false
+    local never_download_images = news_downloader_settings:readSetting(never_download_images_config_name) or false
 
     local unsupported_feeds_urls = {}
 
@@ -202,7 +201,7 @@ function NewsDownloader:loadConfigAndProcessFeeds()
         local url = feed[1]
         local limit = feed.limit
         local download_full_article = feed.download_full_article == nil or feed.download_full_article
-        local include_images = not force_exlude_images and feed.include_images
+        local include_images = not never_download_images and feed.include_images
         if url and limit then
             local feed_message = T(_("Processing %1/%2:\n%3"), idx, total_feed_entries, BD.url(url))
             UI:info(feed_message)
