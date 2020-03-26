@@ -212,7 +212,8 @@ describe("device module", function()
             assert.is.same(kindle_dev.input.event_map[104], "LPgBack")
             assert.is.same(kindle_dev.input.event_map[109], "LPgFwd")
             assert.is.same(kindle_dev.powerd.fl_min, 0)
-            assert.is.same(kindle_dev.powerd.fl_max, 24)
+            -- NOTE: fl_max + 1 since #5989
+            assert.is.same(kindle_dev.powerd.fl_max, 25)
         end)
 
         it("should toggle frontlight", function()

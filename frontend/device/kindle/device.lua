@@ -86,6 +86,8 @@ local Kindle = Generic:new{
     hasOTAUpdates = yes,
     -- NOTE: HW inversion is generally safe on mxcfb Kindles
     canHWInvert = yes,
+    -- NOTE: Newer devices will turn the frontlight off at 0
+    canTurnFrontlightOff = yes,
 }
 
 function Kindle:initNetworkManager(NetworkMgr)
@@ -279,6 +281,7 @@ local KindlePaperWhite = Kindle:new{
     model = "KindlePaperWhite",
     isTouchDevice = yes,
     hasFrontlight = yes,
+    canTurnFrontlightOff = no,
     display_dpi = 212,
     touch_dev = "/dev/input/event0",
 }
@@ -287,6 +290,7 @@ local KindlePaperWhite2 = Kindle:new{
     model = "KindlePaperWhite2",
     isTouchDevice = yes,
     hasFrontlight = yes,
+    canTurnFrontlightOff = no,
     display_dpi = 212,
     touch_dev = "/dev/input/event1",
 }
@@ -301,6 +305,7 @@ local KindleVoyage = Kindle:new{
     model = "KindleVoyage",
     isTouchDevice = yes,
     hasFrontlight = yes,
+    canTurnFrontlightOff = no,
     hasKeys = yes,
     display_dpi = 300,
     touch_dev = "/dev/input/event1",
@@ -310,6 +315,7 @@ local KindlePaperWhite3 = Kindle:new{
     model = "KindlePaperWhite3",
     isTouchDevice = yes,
     hasFrontlight = yes,
+    canTurnFrontlightOff = no,
     display_dpi = 300,
     touch_dev = "/dev/input/event1",
 }

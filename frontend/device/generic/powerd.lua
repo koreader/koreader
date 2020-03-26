@@ -33,7 +33,7 @@ function BasePowerD:isChargingHW() return false end
 function BasePowerD:frontlightIntensityHW() return 0 end
 function BasePowerD:isFrontlightOnHW() return self.fl_intensity > self.fl_min end
 function BasePowerD:turnOffFrontlightHW() self:_setIntensity(self.fl_min) end
-function BasePowerD:turnOnFrontlightHW() self:_setIntensity(self.fl_intensity) end
+function BasePowerD:turnOnFrontlightHW() self:_setIntensity(self.fl_intensity) end --- @fixme: what if fl_intensity == fl_min (c.f., kindle)?
 -- Anything needs to be done before do a real hardware suspend. Such as turn off
 -- front light.
 function BasePowerD:beforeSuspend() end
@@ -86,7 +86,7 @@ function BasePowerD:turnOnFrontlight()
     assert(self ~= nil)
     if not self.device:hasFrontlight() then return end
     if self:isFrontlightOn() then return false end
-    if self.fl_intensity == self.fl_min then return false end
+    if self.fl_intensity == self.fl_min then return false end  --- @fixme what the hell?
     self:turnOnFrontlightHW()
     self.is_fl_on = true
     return true
