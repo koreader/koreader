@@ -390,6 +390,9 @@ function ReaderToc:onShowToc()
             if v.orig_page then -- bogus page fixed: show original page number
                 v.mandatory = T("(%1) %2", v.orig_page, v.page)
             end
+            if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
+                v.mandatory = self.ui.pagemap:getXPointerPageLabel(v.xpointer)
+            end
         end
     end
 

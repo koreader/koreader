@@ -38,6 +38,7 @@ local ReaderHyphenation = require("apps/reader/modules/readerhyphenation")
 local ReaderKoptListener = require("apps/reader/modules/readerkoptlistener")
 local ReaderLink = require("apps/reader/modules/readerlink")
 local ReaderMenu = require("apps/reader/modules/readermenu")
+local ReaderPageMap = require("apps/reader/modules/readerpagemap")
 local ReaderPanning = require("apps/reader/modules/readerpanning")
 local ReaderRotation = require("apps/reader/modules/readerrotation")
 local ReaderPaging = require("apps/reader/modules/readerpaging")
@@ -315,6 +316,12 @@ function ReaderUI:init()
         -- rolling controller
         self:registerModule("rolling", ReaderRolling:new{
             pan_rate = pan_rate,
+            dialog = self.dialog,
+            view = self.view,
+            ui = self
+        })
+        -- pagemap controller
+        self:registerModule("pagemap", ReaderPageMap:new{
             dialog = self.dialog,
             view = self.view,
             ui = self

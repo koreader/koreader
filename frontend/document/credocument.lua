@@ -877,12 +877,45 @@ function CreDocument:buildAlternativeToc()
     self._document:buildAlternativeToc()
 end
 
+function CreDocument:hasPageMap()
+    return self._document:hasPageMap()
+end
+
+function CreDocument:getPageMap()
+    return self._document:getPageMap()
+end
+
+function CreDocument:getPageMapSource()
+    return self._document:getPageMapSource()
+end
+
+function CreDocument:getPageMapCurrentPageLabel()
+    return self._document:getPageMapCurrentPageLabel()
+end
+
+function CreDocument:getPageMapFirstPageLabel()
+    return self._document:getPageMapFirstPageLabel()
+end
+
+function CreDocument:getPageMapLastPageLabel()
+    return self._document:getPageMapLastPageLabel()
+end
+
+function CreDocument:getPageMapXPointerPageLabel(xp)
+    return self._document:getPageMapXPointerPageLabel(xp)
+end
+
+function CreDocument:getPageMapVisiblePageLabels()
+    return self._document:getPageMapVisiblePageLabels()
+end
+
 function CreDocument:register(registry)
     registry:addProvider("azw", "application/vnd.amazon.mobi8-ebook", self, 90)
     registry:addProvider("chm", "application/vnd.ms-htmlhelp", self, 90)
     registry:addProvider("doc", "application/msword", self, 90)
     registry:addProvider("docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", self, 90)
     registry:addProvider("epub", "application/epub+zip", self, 100)
+    registry:addProvider("epub3", "application/epub+zip", self, 100)
     registry:addProvider("fb2", "application/fb2", self, 90)
     registry:addProvider("fb2.zip", "application/zip", self, 90)
     registry:addProvider("fb3", "application/fb3", self, 90)
@@ -1184,6 +1217,8 @@ function CreDocument:setupCallCache()
             elseif name == "getScreenPositionFromXPointer" then cache_by_tag = true
             elseif name == "getXPointer" then cache_by_tag = true
             elseif name == "isXPointerInCurrentPage" then cache_by_tag = true
+            elseif name == "getPageMapCurrentPageLabel" then cache_by_tag = true
+            elseif name == "getPageMapVisiblePageLabels" then cache_by_tag = true
 
             -- Assume all remaining get* can have their results
             -- cached globally by function arguments
