@@ -221,7 +221,11 @@ function ReaderBookmark:onShowBookmark()
         local page = v.page
         -- for CREngine, bookmark page is xpointer
         if not self.ui.document.info.has_pages then
-            page = self.ui.document:getPageFromXPointer(page)
+            if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
+                page = self.ui.pagemap:getXPointerPageLabel(page, true)
+            else
+                page = self.ui.document:getPageFromXPointer(page)
+            end
         end
         if v.text == nil or v.text == "" then
             v.text = T(_("Page %1 %2 @ %3"), page, v.notes, v.datetime)
