@@ -176,6 +176,11 @@ local footerTextGeneratorMap = {
     end,
     page_progress = function(footer)
         if footer.pageno then
+            if footer.ui.pagemap and footer.ui.pagemap:wantsPageLabels() then
+                -- (Page labels might not be numbers)
+                return ("%s / %s"):format(footer.ui.pagemap:getCurrentPageLabel(true),
+                                          footer.ui.pagemap:getLastPageLabel(true))
+            end
             return ("%d / %d"):format(footer.pageno, footer.pages)
         elseif footer.position then
             return ("%d / %d"):format(footer.position, footer.doc_height)
