@@ -66,6 +66,11 @@ function SkimToWidget:init()
     self.curr_page = self.ui:getCurrentPage()
     self.page_count = self.document:getPageCount()
 
+    local curr_page_display = tostring(self.curr_page)
+    if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
+        curr_page_display = self.ui.pagemap:getCurrentPageLabel(true)
+    end
+
     local ticks_candidates = {}
     if self.ui.toc then
         local max_level = self.ui.toc:getMaxDepth()
@@ -170,7 +175,7 @@ function SkimToWidget:init()
         end,
     }
     self.current_page_text = Button:new{
-        text = tostring(self.curr_page),
+        text = curr_page_display,
         bordersize = 0,
         margin = self.button_margin,
         radius = 0,
@@ -336,7 +341,11 @@ function SkimToWidget:update()
         self.curr_page = self.page_count
     end
     self.progress_bar.percentage = self.curr_page / self.page_count
-    self.current_page_text:setText(tostring(self.curr_page), self.current_page_text.width)
+    local curr_page_display = tostring(self.curr_page)
+    if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
+        curr_page_display = self.ui.pagemap:getCurrentPageLabel(true)
+    end
+    self.current_page_text:setText(curr_page_display, self.current_page_text.width)
 end
 
 function SkimToWidget:addOriginToLocationStack(add_current)

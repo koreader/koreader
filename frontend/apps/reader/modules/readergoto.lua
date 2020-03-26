@@ -4,6 +4,7 @@ local InputDialog = require("ui/widget/inputdialog")
 local SkimToWidget = require("apps/reader/skimtowidget")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
+local T = require("ffi/util").template
 
 local ReaderGoto = InputContainer:new{
     goto_menu_title = _("Go to"),
@@ -50,9 +51,17 @@ function ReaderGoto:onShowGotoDialog()
         -- only CreDocument has this method
         curr_page = self.document:getCurrentPage()
     end
+    local input_hint
+    if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
+        input_hint = T("@%1 (%2 - %3)", self.ui.pagemap:getCurrentPageLabel(true),
+                                        self.ui.pagemap:getFirstPageLabel(true),
+                                        self.ui.pagemap:getLastPageLabel(true))
+    else
+        input_hint = T("@%1 (1 - %2)", curr_page, self.document:getPageCount())
+    end
     self.goto_dialog = InputDialog:new{
         title = dialog_title,
-        input_hint = "@"..curr_page.." (1 - "..self.document:getPageCount()..")",
+        input_hint = input_hint,
         buttons = {
             {
                 {
@@ -113,7 +122,16 @@ function ReaderGoto:gotoPage()
         if relative_sign == "+" or relative_sign == "-" then
             self.ui:handleEvent(Event:new("GotoRelativePage", number))
         else
-            self.ui:handleEvent(Event:new("GotoPage", number))
+            if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
+                number = self.ui.pagemap:getRenderedPageNumber(page_number, true)
+                if number then -- found
+                    self.ui:handleEvent(Event:new("GotoPage", number))
+                else
+                    return -- avoid self:close()
+                end
+            else
+                self.ui:handleEvent(Event:new("GotoPage", number))
+            end
         end
         self:close()
     end

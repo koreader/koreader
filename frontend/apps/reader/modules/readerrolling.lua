@@ -790,7 +790,6 @@ function ReaderRolling:onUpdatePos()
     -- that were triggering a full repaint of crengine (so, the needed
     -- rerendering) before updatePos() is called.
     UIManager:scheduleIn(0.1, function () self:updatePos() end)
-    return true
 end
 
 function ReaderRolling:updatePos()
@@ -837,7 +836,6 @@ function ReaderRolling:onChangeViewMode()
             self:_gotoXPointer(self.xpointer)
         end)
     end
-    return true
 end
 
 function ReaderRolling:onRedrawCurrentView()
