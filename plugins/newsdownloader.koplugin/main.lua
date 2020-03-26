@@ -25,11 +25,11 @@ local initialized = false
 local wifi_enabled_before_action = true
 local feed_config_file_name = "feed_config.lua"
 local news_downloader_config_file = "news_downloader_settings.lua"
-local config_key_custom_dl_dir = "custom_dl_dir";
+local config_key_custom_dl_dir = "custom_dl_dir"
 local file_extension = ".epub"
 local news_download_dir_name = "news"
 local news_download_dir_path, feed_config_path
-local force_skip_images_download_config_name = 'force_skip_images_download_config_name';
+local never_download_images_config_name = "never_download_images_config_name"
 
 -- if a title looks like <title>blabla</title> it'll just be feed.title
 -- if a title looks like <title attr="alb">blabla</title> then we get a table
@@ -107,18 +107,19 @@ function NewsDownloader:addToMainMenu(menu_items)
                 callback = function() self:removeNewsButKeepFeedConfig() end,
             },
             {
-                text = _("Force skip images download"),
+                text = _("Never download images"),
                 keep_menu_open = true,
+                checked_func = function()
+                    local news_downloader_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), news_downloader_config_file))
+                    local skip = news_downloader_settings:readSetting(never_download_images_config_name)
+                    return skip
+                end,
                 callback = function()
                     local news_downloader_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), news_downloader_config_file))
-                    local skip = news_downloader_settings:readSetting(force_skip_images_download_config_name) or false;
-                    logger.warn('NewsDownloader: previous force_skip_images_download: ', skip)
-                    news_downloader_settings:saveSetting(force_skip_images_download_config_name, not skip)
+                    local skip = news_downloader_settings:readSetting(never_download_images_config_name) or false
+                    logger.info('NewsDownloader: previous never_download_images: ', skip)
+                    news_downloader_settings:saveSetting(never_download_images_config_name, not skip)
                     news_downloader_settings:flush()
-                    UIManager:show(InfoMessage:new{
-                        text = T(_("Force skip images download set to %1"),
-                        string.format("%s", not skip))
-                    })
                 end,
             },
             {
@@ -192,7 +193,7 @@ function NewsDownloader:loadConfigAndProcessFeeds()
     end
 
     local news_downloader_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), news_downloader_config_file))
-    local force_exlude_images = news_downloader_settings:readSetting(force_skip_images_download_config_name) or false
+    local force_exlude_images = news_downloader_settings:readSetting(never_download_images_config_name) or false
 
     local unsupported_feeds_urls = {}
 
