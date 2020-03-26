@@ -43,13 +43,27 @@ function BookInfo:show(file, book_props)
 
     local directory, filename = util.splitFilePathName(file)
     local filename_without_suffix, filetype = util.splitFileNameSuffix(filename) -- luacheck: no unused
+    if filetype:lower() == "zip" then
+        local filename_without_sub_suffix, sub_filetype = util.splitFileNameSuffix(filename_without_suffix) -- luacheck: no unused
+        sub_filetype = sub_filetype:lower()
+        local supported_sub_filetypes = { "fb2", "htm", "html", "log", "md", "txt" }
+
+        for __, t in ipairs(supported_sub_filetypes) do
+            if sub_filetype == t then
+                filetype = sub_filetype .. "." .. filetype
+                break
+            end
+        end
+    end
     local file_size = lfs.attributes(file, "size") or 0
+    local file_modification = lfs.attributes(file, "modification") or 0
     local size_f = util.getFriendlySize(file_size)
     local size_b = util.getFormattedSize(file_size)
     local size = string.format("%s (%s bytes)", size_f, size_b)
     table.insert(kv_pairs, { _("Filename:"), BD.filename(filename) })
     table.insert(kv_pairs, { _("Format:"), filetype:upper() })
     table.insert(kv_pairs, { _("Size:"), size })
+    table.insert(kv_pairs, { _("File date:"), os.date("%Y-%m-%d %H:%M:%S", file_modification) })
     table.insert(kv_pairs, { _("Directory:"), BD.dirpath(filemanagerutil.abbreviate(directory)) })
     table.insert(kv_pairs, "----")
 
