@@ -558,7 +558,6 @@ Tap to dismiss.]]),
             dismiss_callback = refresh_callback,
         })
     end
-    return true
 end
 
 return ReaderTypeset
