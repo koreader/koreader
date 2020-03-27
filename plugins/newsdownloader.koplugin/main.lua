@@ -30,7 +30,6 @@ local config_key_custom_dl_dir = "custom_dl_dir"
 local file_extension = ".epub"
 local news_download_dir_name = "news"
 local news_download_dir_path, feed_config_path
-local never_download_images_config_name = "never_download_images"
 
 -- if a title looks like <title>blabla</title> it'll just be feed.title
 -- if a title looks like <title attr="alb">blabla</title> then we get a table
@@ -111,12 +110,12 @@ function NewsDownloader:addToMainMenu(menu_items)
                 text = _("Never download images"),
                 keep_menu_open = true,
                 checked_func = function()
-                    return news_downloader_settings:readSetting(never_download_images_config_name)
+                    return news_downloader_settings:readSetting("never_download_images")
                 end,
                 callback = function()
-                    local never_download_images = news_downloader_settings:readSetting(never_download_images_config_name) or false
+                    local never_download_images = news_downloader_settings:readSetting("never_download_images") or false
                     logger.info("NewsDownloader: previous never_download_images: ", never_download_images)
-                    news_downloader_settings:saveSetting(never_download_images_config_name, not never_download_images)
+                    news_downloader_settings:saveSetting("never_download_images", not never_download_images)
                     news_downloader_settings:flush()
                 end,
             },
@@ -190,7 +189,7 @@ function NewsDownloader:loadConfigAndProcessFeeds()
         return
     end
 
-    local never_download_images = news_downloader_settings:readSetting(never_download_images_config_name) or false
+    local never_download_images = news_downloader_settings:readSetting("never_download_images") or false
 
     local unsupported_feeds_urls = {}
 
