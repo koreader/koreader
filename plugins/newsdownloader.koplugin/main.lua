@@ -25,11 +25,12 @@ local initialized = false
 local wifi_enabled_before_action = true
 local feed_config_file_name = "feed_config.lua"
 local news_downloader_config_file = "news_downloader_settings.lua"
+local news_downloader_settings
 local config_key_custom_dl_dir = "custom_dl_dir"
 local file_extension = ".epub"
 local news_download_dir_name = "news"
 local news_download_dir_path, feed_config_path
-local never_download_images_config_name = "never_download_images_config_name"
+local never_download_images_config_name = "never_download_images"
 
 -- if a title looks like <title>blabla</title> it'll just be feed.title
 -- if a title looks like <title attr="alb">blabla</title> then we get a table
@@ -110,11 +111,9 @@ function NewsDownloader:addToMainMenu(menu_items)
                 text = _("Never download images"),
                 keep_menu_open = true,
                 checked_func = function()
-                    local news_downloader_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), news_downloader_config_file))
                     return news_downloader_settings:readSetting(never_download_images_config_name)
                 end,
                 callback = function()
-                    local news_downloader_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), news_downloader_config_file))
                     local never_download_images = news_downloader_settings:readSetting(never_download_images_config_name) or false
                     logger.info("NewsDownloader: previous never_download_images: ", never_download_images)
                     news_downloader_settings:saveSetting(never_download_images_config_name, not never_download_images)
@@ -153,7 +152,7 @@ end
 function NewsDownloader:lazyInitialization()
    if not initialized then
         logger.dbg("NewsDownloader: obtaining news folder")
-        local news_downloader_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), news_downloader_config_file))
+        news_downloader_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), news_downloader_config_file))
         if news_downloader_settings:has(config_key_custom_dl_dir) then
             news_download_dir_path = news_downloader_settings:readSetting(config_key_custom_dl_dir)
         else
@@ -191,7 +190,6 @@ function NewsDownloader:loadConfigAndProcessFeeds()
         return
     end
 
-    local news_downloader_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), news_downloader_config_file))
     local never_download_images = news_downloader_settings:readSetting(never_download_images_config_name) or false
 
     local unsupported_feeds_urls = {}
@@ -409,7 +407,6 @@ function NewsDownloader:setCustomDownloadDirectory()
     require("ui/downloadmgr"):new{
        onConfirm = function(path)
            logger.dbg("NewsDownloader: set download directory to: ", path)
-           local news_downloader_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), news_downloader_config_file))
            news_downloader_settings:saveSetting(config_key_custom_dl_dir, ("%s/"):format(path))
            news_downloader_settings:flush()
 
