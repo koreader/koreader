@@ -362,8 +362,19 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
     fi
     if [ "${USED_WMCTRL}" = "yes" ]; then
         logmsg "Restoring the title bar . . ."
-        ${KOREADER_DIR}/wmctrl -r ":titleBar_ID:" -e "${TITLEBAR_GEOMETRY}"
-        logmsg "Title bar geometry restored to '$(${KOREADER_DIR}/wmctrl -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')' (ought to be: '${TITLEBAR_GEOMETRY}')"
+        # NOTE: Wait and retry for a bit, because apparently there may be timing issues (c.f., #5990)?
+        WMCTRL_COUNT=0
+        until [ "$(${KOREADER_DIR}/wmctrl -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')" = "${TITLEBAR_GEOMETRY}" ] ; do
+            # Abort after 5s
+            if [ ${WMCTRL_COUNT} -gt 20 ] ; then
+                log "Giving up on restoring the title bar geometry!"
+                break
+            fi
+            usleep 250000
+            ${KOREADER_DIR}/wmctrl -r ":titleBar_ID:" -e "${TITLEBAR_GEOMETRY}"
+            WMCTRL_COUNT=$((WMCTRL_COUNT + 1))
+        done
+        logmsg "Title bar geometry restored to '$(${KOREADER_DIR}/wmctrl -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')' (ought to be: '${TITLEBAR_GEOMETRY}') [${WMCTRL_COUNT} attempts]"
     fi
 fi
 
