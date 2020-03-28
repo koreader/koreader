@@ -364,9 +364,9 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
         logmsg "Restoring the title bar . . ."
         # NOTE: Wait and retry for a bit, because apparently there may be timing issues (c.f., #5990)?
         WMCTRL_COUNT=0
-        until [ "$(${KOREADER_DIR}/wmctrl -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')" = "${TITLEBAR_GEOMETRY}" ] ; do
+        until [ "$(${KOREADER_DIR}/wmctrl -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')" = "${TITLEBAR_GEOMETRY}" ]; do
             # Abort after 5s
-            if [ ${WMCTRL_COUNT} -gt 20 ] ; then
+            if [ ${WMCTRL_COUNT} -gt 20 ]; then
                 log "Giving up on restoring the title bar geometry!"
                 break
             fi
