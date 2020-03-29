@@ -241,9 +241,9 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
                 # Less drastically, we'll also be "minimizing" (actually, resizing) the title bar manually (c.f., https://www.mobileread.com/forums/showpost.php?p=2449275&postcount=5).
                 # NOTE: Hiding it "works", but has a nasty side-effect of triggering ligl timeouts in some circumstances (c.f., https://github.com/koreader/koreader/pull/5943#issuecomment-598514376)
                 logmsg "Hiding the title bar . . ."
-                TITLEBAR_GEOMETRY="$(${KOREADER_DIR}/wmctrl -l -G | grep "titleBar" | awk '{print $2,$3,$4,$5,$6}' OFS=',')"
-                ${KOREADER_DIR}/wmctrl -r titleBar -e "${TITLEBAR_GEOMETRY%,*},1"
-                logmsg "Title bar geometry: '${TITLEBAR_GEOMETRY}' -> '$(${KOREADER_DIR}/wmctrl -l -G | grep "titleBar" | awk '{print $2,$3,$4,$5,$6}' OFS=',')'"
+                TITLEBAR_GEOMETRY="$(${KOREADER_DIR}/wmctrl -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')"
+                ${KOREADER_DIR}/wmctrl -r ":titleBar_ID:" -e "${TITLEBAR_GEOMETRY%,*},1"
+                logmsg "Title bar geometry: '${TITLEBAR_GEOMETRY}' -> '$(${KOREADER_DIR}/wmctrl -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')'"
                 USED_WMCTRL="yes"
                 if [ "${FROM_KUAL}" = "yes" ]; then
                     logmsg "Stopping awesome . . ."
@@ -362,8 +362,20 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
     fi
     if [ "${USED_WMCTRL}" = "yes" ]; then
         logmsg "Restoring the title bar . . ."
-        ${KOREADER_DIR}/wmctrl -r titleBar -e "${TITLEBAR_GEOMETRY}"
-        logmsg "Title bar geometry restored to '$(${KOREADER_DIR}/wmctrl -l -G | grep "titleBar" | awk '{print $2,$3,$4,$5,$6}' OFS=',')' (ought to be: '${TITLEBAR_GEOMETRY}')"
+        # NOTE: Wait and retry for a bit, because apparently there may be timing issues (c.f., #5990)?
+        usleep 250000
+        WMCTRL_COUNT=0
+        until [ "$(${KOREADER_DIR}/wmctrl -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')" = "${TITLEBAR_GEOMETRY}" ]; do
+            # Abort after 5s
+            if [ ${WMCTRL_COUNT} -gt 20 ]; then
+                log "Giving up on restoring the title bar geometry!"
+                break
+            fi
+            ${KOREADER_DIR}/wmctrl -r ":titleBar_ID:" -e "${TITLEBAR_GEOMETRY}"
+            usleep 250000
+            WMCTRL_COUNT=$((WMCTRL_COUNT + 1))
+        done
+        logmsg "Title bar geometry restored to '$(${KOREADER_DIR}/wmctrl -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')' (ought to be: '${TITLEBAR_GEOMETRY}') [after ${WMCTRL_COUNT} attempts]"
     fi
 fi
 
