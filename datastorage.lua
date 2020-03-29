@@ -3,7 +3,6 @@ local isAndroid, android = pcall(require, "android")
 local lfs = require("libs/libkoreader-lfs")
 
 local DataStorage = {}
-
 local data_dir
 local full_data_dir
 
