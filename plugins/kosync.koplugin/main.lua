@@ -170,7 +170,7 @@ function KOSync:addToMainMenu(menu_items)
                         enabled = false,
                     },
                     {
-                        text = _("  Auto"),
+                        text = _("Auto"),
                         checked_func = function()
                             return self.kosync_whisper_forward == SYNC_STRATEGY.WHISPER
                         end,
@@ -201,7 +201,7 @@ function KOSync:addToMainMenu(menu_items)
                         enabled = false,
                     },
                     {
-                        text = _("  Auto"),
+                        text = _("Auto"),
                         checked_func = function()
                             return self.kosync_whisper_backward == SYNC_STRATEGY.WHISPER
                         end,
