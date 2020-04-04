@@ -88,8 +88,6 @@ local Kindle = Generic:new{
     canHWInvert = yes,
     -- NOTE: Newer devices will turn the frontlight off at 0
     canTurnFrontlightOff = yes,
-    -- NOTE: Legacy (armv6) devices have weird and intractable issues with HarfBuzz & XText (#5780, #6024)
-    canUseXText = yes,
 }
 
 function Kindle:initNetworkManager(NetworkMgr)
@@ -232,11 +230,6 @@ function Kindle:blacklistCBB()
         -- Enforce the global setting, too, so the Dev menu is accurate...
         G_reader_settings:saveSetting("dev_no_c_blitter", true)
     end
-
-    -- Let's piggyback on that for the XText blacklist, too...
-    if not self:canUseXText() then
-        G_reader_settings:saveSetting("use_xtext", false)
-    end
 end
 
 local Kindle2 = Kindle:new{
@@ -247,7 +240,6 @@ local Kindle2 = Kindle:new{
     canHWInvert = no,
     canUseCBB = no, -- 4bpp
     canUseWAL = no, -- Kernel too old to support mmap'ed I/O on /mnt/us
-    canUseXText = no, -- armv6
 }
 
 local KindleDXG = Kindle:new{
@@ -258,7 +250,6 @@ local KindleDXG = Kindle:new{
     canHWInvert = no,
     canUseCBB = no, -- 4bpp
     canUseWAL = no, -- Kernel too old to support mmap'ed I/O on /mnt/us
-    canUseXText = no, -- armv6
 }
 
 local Kindle3 = Kindle:new{
@@ -268,7 +259,6 @@ local Kindle3 = Kindle:new{
     hasDPad = yes,
     canHWInvert = no,
     canUseCBB = no, -- 4bpp
-    canUseXText = no, -- armv6
 }
 
 local Kindle4 = Kindle:new{
@@ -278,7 +268,6 @@ local Kindle4 = Kindle:new{
     canHWInvert = no,
     -- NOTE: It could *technically* use the C BB, as it's running @ 8bpp, but it's expecting an inverted palette...
     canUseCBB = no,
-    -- NOTE: Probably safe w/ XText, as it's essentially a K5 in disguise (i.e., armv7).
 }
 
 local KindleTouch = Kindle:new{
