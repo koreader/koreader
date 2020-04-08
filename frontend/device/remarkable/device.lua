@@ -22,19 +22,36 @@ local ABS_Y = 01
 local ABS_MT_POSITION_X = 53
 local ABS_MT_POSITION_Y = 54
 -- Resolutions from libremarkable src/framebuffer/common.rs
+local screen_width = 1404 -- unscaled_size_check: ignore
+local screen_height = 1872 -- unscaled_size_check: ignore
+local wacom_width = 15725 -- unscaled_size_check: ignore
+local wacom_height = 20967 -- unscaled_size_check: ignore
+local wacom_scale_x = screen_width / wacom_width
+local wacom_scale_y = screen_height / wacom_height
 local mt_width = 767 -- unscaled_size_check: ignore
 local mt_height = 1023 -- unscaled_size_check: ignore
-local mt_scale_x = 1404 / mt_width
-local mt_scale_y = 1872 / mt_height
+local mt_scale_x = screen_width / mt_width
+local mt_scale_y = screen_height / mt_height
 local adjustTouchEvt = function(self, ev)
     if ev.type == EV_ABS then
         -- Mirror X and scale up both X & Y as touch input is different res from
         -- display
-        if ev.code == ABS_X or ev.code == ABS_MT_POSITION_X then
+        if ev.code == ABS_MT_POSITION_X then
             ev.value = (mt_width - ev.value) * mt_scale_x
         end
-        if ev.code == ABS_Y or ev.code == ABS_MT_POSITION_Y then
+        if ev.code == ABS_MT_POSITION_Y then
             ev.value = (mt_height - ev.value) * mt_scale_y
+        end
+        -- The Wacom input layer is non-multi-touch and
+        -- uses its own scaling factor.
+        -- The X and Y coordinates are swapped, and the (real) Y
+        -- coordinate has to be inverted.
+        if ev.code == ABS_X then
+            ev.code = ABS_Y
+            ev.value = (wacom_height - ev.value) * wacom_scale_y
+        elseif ev.code == ABS_Y then
+            ev.code = ABS_X
+            ev.value = ev.value * wacom_scale_x
         end
     end
 end
