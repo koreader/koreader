@@ -680,14 +680,7 @@ end
 
 function FileManager:goHome()
     local home_dir = G_reader_settings:readSetting("home_dir")
-    if home_dir then
-        -- Jump to the first page if we're already home
-        if self.file_chooser.path and home_dir == self.file_chooser.path then
-            self.file_chooser:onGotoPage(1)
-        else
-            self.file_chooser:changeToPath(home_dir)
-        end
-    else
+    if not home_dir or lfs.attributes(home_dir, "mode") ~= "directory"  then
         -- Try some sane defaults, depending on platform
         if Device:isKindle() then
             home_dir = "/mnt/us"
@@ -700,16 +693,16 @@ function FileManager:goHome()
         elseif Device:isAndroid() then
             home_dir = Device.external_storage()
         end
-
-        if home_dir then
-            if self.file_chooser.path and home_dir == self.file_chooser.path then
-                self.file_chooser:onGotoPage(1)
-            else
-                self.file_chooser:changeToPath(home_dir)
-            end
+    end
+    if home_dir then
+        -- Jump to the first page if we're already home
+        if self.file_chooser.path and home_dir == self.file_chooser.path then
+            self.file_chooser:onGotoPage(1)
         else
-            self:setHome()
+            self.file_chooser:changeToPath(home_dir)
         end
+    else
+        self:setHome()
     end
     return true
 end
