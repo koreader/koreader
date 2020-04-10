@@ -47,6 +47,7 @@ local action_strings = {
     book_info = _("Book information"),
     book_description = _("Book description"),
     book_cover = _("Book cover"),
+    stats_calendar_view = _("Statistics calendar view"),
 
     history = _("History"),
     open_previous_document = _("Open previous document"),
@@ -719,7 +720,7 @@ function ReaderGesture:buildMenu(ges, default)
         {"show_plus_menu", self.is_docless},
         {"folder_shortcuts", true, true},
 
-        { "toc", not self.is_docless},
+        {"toc", not self.is_docless},
         {"bookmarks", not self.is_docless},
         {"reading_progress", ReaderGesture.getReaderProgress ~= nil},
         {"book_statistics", not self.is_docless},
@@ -733,6 +734,7 @@ function ReaderGesture:buildMenu(ges, default)
         {"open_previous_document", true, true},
         {"favorites", true},
         {"filemanager", not self.is_docless, true},
+        {"stats_calendar_view", true, true},
 
         {"dictionary_lookup", true},
         {"wikipedia_lookup", true, true},
@@ -1265,6 +1267,8 @@ function ReaderGesture:gestureAction(action, ges)
         UIManager:show(ReaderGesture.getReaderProgress())
     elseif action == "book_statistics" and ReaderGesture.getBookStats then
         UIManager:show(ReaderGesture.getBookStats())
+    elseif action == "stats_calendar_view" and ReaderGesture.getCalendarView then
+        UIManager:show(ReaderGesture.getCalendarView())
     elseif action == "toc" then
         self.ui:handleEvent(Event:new("ShowToc"))
     elseif action == "night_mode" then
