@@ -176,6 +176,10 @@ function ReaderStatistics:init()
         }
         return stats
     end
+
+    ReaderGesture.getCalendarView = function()
+        return self:getCalendarView()
+    end
 end
 
 function ReaderStatistics:initData()
@@ -866,17 +870,7 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                 text = _("Calendar view"),
                 keep_menu_open = true,
                 callback = function()
-                    local CalendarView = require("calendarview")
-                    UIManager:show(CalendarView:new{
-                        reader_statistics = self,
-                        monthTranslation = monthTranslation,
-                        shortDayOfWeekTranslation = shortDayOfWeekTranslation,
-                        longDayOfWeekTranslation = longDayOfWeekTranslation,
-                        start_day_of_week = self.calendar_start_day_of_week,
-                        nb_book_spans = self.calendar_nb_book_spans,
-                        show_hourly_histogram = self.calendar_show_histogram,
-                        browse_future_months = self.calendar_browse_future_months,
-                    })
+                    UIManager:show(self:getCalendarView())
                 end,
             },
         },
@@ -1975,6 +1969,21 @@ function ReaderStatistics:onReaderReady()
     -- we have correct page count now, do the actual initialization work
     self:initData()
     self.view.footer:updateFooter()
+end
+
+function ReaderStatistics:getCalendarView()
+    self:insertDB(self.id_curr_book)
+    local CalendarView = require("calendarview")
+    return CalendarView:new{
+        reader_statistics = self,
+        monthTranslation = monthTranslation,
+        shortDayOfWeekTranslation = shortDayOfWeekTranslation,
+        longDayOfWeekTranslation = longDayOfWeekTranslation,
+        start_day_of_week = self.calendar_start_day_of_week,
+        nb_book_spans = self.calendar_nb_book_spans,
+        show_hourly_histogram = self.calendar_show_histogram,
+        browse_future_months = self.calendar_browse_future_months,
+    }
 end
 
 -- Used by calendarview.lua CalendarView
