@@ -26,7 +26,7 @@ end
 -- user font path, should be rw. On linux/mac it goes under $HOME.
 -- on Android it goes in the primary storage (internal/sd)
 local function getUserDir()
-    if Device:isDesktop() then
+    if Device:isDesktop() or Device:isEmulator() then
         local home = os.getenv("HOME")
         if home then return home..DESKTOP_USER_FONT_DIR end
     elseif Device:isAndroid() then
@@ -37,7 +37,7 @@ end
 
 -- system (ttf) fonts are available on linux and android but not on mac
 local function getSystemDir()
-    if Device:isDesktop() then
+    if Device:isDesktop() or Device:isEmulator() then
         if util.pathExists(LINUX_SYSTEM_FONT_DIR) then
             return LINUX_SYSTEM_FONT_DIR
         else return nil end
@@ -91,7 +91,7 @@ function FontSettings:getMenuTable()
         end,
     }}
 
-    if Device:isDesktop() then table.insert(t, 2, {
+    if Device:isDesktop() or Device:isEmulator() then table.insert(t, 2, {
             text = _("Open fonts folder"),
             keep_menu_open = true,
             callback = openFontDir,

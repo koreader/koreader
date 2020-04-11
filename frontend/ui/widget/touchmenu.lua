@@ -660,7 +660,9 @@ function TouchMenu:updateItems()
             batt_symbol = ""
         end
     end
-    time_info_txt = BD.wrap(time_info_txt) .. " " .. BD.wrap("⌁") .. BD.wrap(batt_symbol) ..  BD.wrap(batt_lvl .. "%")
+    if not Device:isDesktop() then
+        time_info_txt = BD.wrap(time_info_txt) .. " " .. BD.wrap("⌁") .. BD.wrap(batt_symbol) ..  BD.wrap(batt_lvl .. "%")
+    end
     self.time_info:setText(time_info_txt)
 
     -- recalculate dimen based on new layout

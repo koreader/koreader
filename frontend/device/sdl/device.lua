@@ -74,7 +74,6 @@ local Emulator = Device:new{
     hasFrontlight = yes,
     hasWifiToggle = yes,
     hasWifiManager = yes,
-    isDesktop = yes,
 }
 
 local Linux = Device:new{
