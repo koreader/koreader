@@ -12,6 +12,7 @@ local function kindleEnableWifi(toggle)
     end
     if lipc_handle then
         -- Be extremely thorough... c.f., #6019
+        -- NOTE: I *assume* this'll also ensure we prefer WiFi over 3G/4G, which is a plus in my book...
         if toggle == 1 then
             lipc_handle:set_int_property("com.lab126.cmd", "wirelessEnable", 1)
             lipc_handle:set_int_property("com.lab126.wifid", "enable", 1)
