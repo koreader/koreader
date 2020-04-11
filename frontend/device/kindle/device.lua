@@ -11,7 +11,14 @@ local function kindleEnableWifi(toggle)
         lipc_handle = lipc.init("com.github.koreader.networkmgr")
     end
     if lipc_handle then
-        lipc_handle:set_int_property("com.lab126.cmd", "wirelessEnable", toggle)
+        -- Be extremely thorough... c.f., #6019
+        if toggle == 1 then
+            lipc_handle:set_int_property("com.lab126.cmd", "wirelessEnable", 1)
+            lipc_handle:set_int_property("com.lab126.wifid", "enable", 1)
+        else
+            lipc_handle:set_int_property("com.lab126.wifid", "enable", 0)
+            lipc_handle:set_int_property("com.lab126.cmd", "wirelessEnable", 0)
+        end
         lipc_handle:close()
     else
         -- No liblipclua on FW < 5.x ;)
