@@ -336,6 +336,9 @@ function ReaderFooter:init()
     if not Device:hasFrontlight() then
         MODE.frontlight = nil
     end
+    if Device:isDesktop() then
+        MODE.battery = nil
+    end
     for k, v in pairs(MODE) do
         mode_tbl[v] = k
     end
