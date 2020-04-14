@@ -1035,7 +1035,7 @@ end
 
 
 function Wallabag:onCloseDocument()
-    if self.remove_from_korader_history then 
+    if self.remove_from_korader_history then
         local document_full_path = self.ui.document.file
         if  document_full_path and self.directory and self.directory == string.sub(document_full_path, 1, string.len(self.directory)) then
             ReadHistory:removeItemByPath(document_full_path)
