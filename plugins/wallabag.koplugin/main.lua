@@ -82,7 +82,7 @@ function Wallabag:init()
     if self.wb_settings.data.wallabag.articles_per_sync ~= nil then
         self.articles_per_sync = self.wb_settings.data.wallabag.articles_per_sync
     end
-    self.remove_from_koreader_history = self.wb_settings.data.wallabag.remove_from_koreader_history or false
+    self.remove_finished_from_history = self.wb_settings.data.wallabag.remove_finished_from_history or false
 
     -- workaround for dateparser only available if newsdownloader is active
     self.is_dateparser_available = false
@@ -241,13 +241,13 @@ function Wallabag:addToMainMenu(menu_items)
                         end,
                     },
                     {
-                        text = _("Remove from KOReader history"),
+                        text = _("Remove finished articles from history"),
                         keep_menu_open = true,
                         checked_func = function()
-                            return self.remove_from_koreader_history or false
+                            return self.remove_finished_from_history or false
                         end,
                         callback = function()
-                            self.remove_from_koreader_history = not self.remove_from_koreader_history
+                            self.remove_finished_from_history = not self.remove_finished_from_history
                             self:saveSettings()
                         end,
                     },
@@ -979,7 +979,7 @@ function Wallabag:saveSettings()
         is_auto_delete        = self.is_auto_delete,
         is_sync_remote_delete = self.is_sync_remote_delete,
         articles_per_sync     = self.articles_per_sync,
-        remove_from_koreader_history = self.remove_from_koreader_history,
+        remove_finished_from_history = self.remove_finished_from_history,
     }
     self.wb_settings:saveSetting("wallabag", tempsettings)
     self.wb_settings:flush()
@@ -1035,7 +1035,7 @@ end
 
 
 function Wallabag:onCloseDocument()
-    if self.remove_from_koreader_history then
+    if self.remove_finished_from_history then
         local document_full_path = self.ui.document.file
         local docinfo = DocSettings:open(document_full_path)
         local status = docinfo.data.summary.status
