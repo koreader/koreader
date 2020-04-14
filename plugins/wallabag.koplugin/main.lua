@@ -242,6 +242,7 @@ function Wallabag:addToMainMenu(menu_items)
                     },
                     {
                         text = _("Remove from KOReader history"),
+                        keep_menu_open = true,
                         checked_func = function()
                             return self.remove_from_korader_history or false
                         end,
