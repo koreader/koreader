@@ -121,6 +121,7 @@ read_globals = {
     "KOBO_LIGHT_ON_START",
     "NETWORK_PROXY",
     "DUSE_TURBO_LIB",
+    "STARDICT_DATA_DIR",
     "cre",
     "lfs",
     "lipc",

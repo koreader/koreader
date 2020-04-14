@@ -101,7 +101,8 @@ end
 
 function ReaderDictionary:init()
     self.ui.menu:registerToMainMenu(self)
-    self.data_dir = os.getenv("STARDICT_DATA_DIR") or
+    self.data_dir = STARDICT_DATA_DIR or
+        os.getenv("STARDICT_DATA_DIR") or
         DataStorage:getDataDir() .. "/data/dict"
 
     -- Gather info about available dictionaries
