@@ -8,6 +8,10 @@ local Math = {}
 
 local band = bit.band
 
+function Math.roundPercent(percent)
+    return math.floor(percent * 10000) / 10000
+end
+
 function Math.roundAwayFromZero(num)
     if num > 0 then
         return math.ceil(num)

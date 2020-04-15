@@ -47,10 +47,6 @@ local SYNC_STRATEGY = {
     DEFAULT_BACKWARD = 3,
 }
 
-local function roundPercent(percent)
-    return math.floor(percent * 10000) / 10000
-end
-
 local function showSyncedMessage()
     UIManager:show(InfoMessage:new{
         text = _("Progress has been synchronized."),
@@ -446,9 +442,9 @@ end
 
 function KOSync:getLastPercent()
     if self.ui.document.info.has_pages then
-        return roundPercent(self.ui.paging:getLastPercent())
+        return Math.roundPercent(self.ui.paging:getLastPercent())
     else
-        return roundPercent(self.ui.rolling:getLastPercent())
+        return Math.roundPercent(self.ui.rolling:getLastPercent())
     end
 end
 

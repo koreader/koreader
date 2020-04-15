@@ -12,8 +12,10 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local JSON = require("json")
 local LuaSettings = require("frontend/luasettings")
+local Math = require("optmath")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local NetworkMgr = require("ui/network/manager")
+local ReadHistory = require("readhistory")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
@@ -81,6 +83,7 @@ function Wallabag:init()
     if self.wb_settings.data.wallabag.articles_per_sync ~= nil then
         self.articles_per_sync = self.wb_settings.data.wallabag.articles_per_sync
     end
+    self.remove_finished_from_history = self.wb_settings.data.wallabag.remove_finished_from_history or false
 
     -- workaround for dateparser only available if newsdownloader is active
     self.is_dateparser_available = false
@@ -235,6 +238,17 @@ function Wallabag:addToMainMenu(menu_items)
                         checked_func = function() return self.is_sync_remote_delete end,
                         callback = function()
                             self.is_sync_remote_delete = not self.is_sync_remote_delete
+                            self:saveSettings()
+                        end,
+                    },
+                    {
+                        text = _("Remove finished articles from history"),
+                        keep_menu_open = true,
+                        checked_func = function()
+                            return self.remove_finished_from_history or false
+                        end,
+                        callback = function()
+                            self.remove_finished_from_history = not self.remove_finished_from_history
                             self:saveSettings()
                         end,
                     },
@@ -965,7 +979,8 @@ function Wallabag:saveSettings()
         is_archiving_deleted  = self.is_archiving_deleted,
         is_auto_delete        = self.is_auto_delete,
         is_sync_remote_delete = self.is_sync_remote_delete,
-        articles_per_sync     = self.articles_per_sync
+        articles_per_sync     = self.articles_per_sync,
+        remove_finished_from_history = self.remove_finished_from_history,
     }
     self.wb_settings:saveSetting("wallabag", tempsettings)
     self.wb_settings:flush()
@@ -1017,6 +1032,24 @@ function Wallabag:onSynchronizeWallabag()
 
     -- stop propagation
     return true
+end
+
+function Wallabag:getLastPercent()
+    if self.ui.document.info.has_pages then
+        return Math.roundPercent(self.ui.paging:getLastPercent())
+    else
+        return Math.roundPercent(self.ui.rolling:getLastPercent())
+    end
+end
+
+
+function Wallabag:onCloseDocument() 
+    if self.remove_finished_from_history then
+        local document_full_path = self.ui.document.file
+        if document_full_path and self.directory and self:getLastPercent() == 1 and self.directory == string.sub(document_full_path, 1, string.len(self.directory)) then
+            ReadHistory:removeItemByPath(document_full_path)
+        end
+    end
 end
 
 return Wallabag
