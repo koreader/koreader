@@ -8,6 +8,10 @@ local Math = {}
 
 local band = bit.band
 
+function Math.roundPercent(percent)
+    return math.floor(percent * 10000) / 10000
+end
+
 function Math.roundAwayFromZero(num)
     if num > 0 then
         return math.ceil(num)
@@ -71,10 +75,6 @@ The optional argument func specifies a one-argument ordering function.
 ]]
 function Math.tmax(tab, func)
     return tmin_max(tab, func, "max")
-end
-
-function Math.roundPercent(percent)
-    return math.floor(percent * 10000) / 10000
 end
 
 return Math
