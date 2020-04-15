@@ -9,7 +9,8 @@ local DeviceModel = require("device").model
 local Event = require("ui/event")
 local Math = require("optmath")
 local DEBUG = require("dbg")
-local T = require("ffi/util").template
+local util = require("ffi/util")
+local T = util.template
 local _ = require("gettext")
 local md5 = require("ffi/MD5")
 local random = require("random")
@@ -46,10 +47,6 @@ local SYNC_STRATEGY = {
     DEFAULT_FORWARD = 1,
     DEFAULT_BACKWARD = 3,
 }
-
-local function roundPercent(percent)
-    return math.floor(percent * 10000) / 10000
-end
 
 local function showSyncedMessage()
     UIManager:show(InfoMessage:new{
@@ -446,9 +443,9 @@ end
 
 function KOSync:getLastPercent()
     if self.ui.document.info.has_pages then
-        return roundPercent(self.ui.paging:getLastPercent())
+        return util.roundPercent(self.ui.paging:getLastPercent())
     else
-        return roundPercent(self.ui.rolling:getLastPercent())
+        return util.roundPercent(self.ui.rolling:getLastPercent())
     end
 end
 

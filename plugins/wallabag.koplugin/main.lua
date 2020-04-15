@@ -1033,13 +1033,19 @@ function Wallabag:onSynchronizeWallabag()
     return true
 end
 
+function Wallabag:getLastPercent()
+    if self.ui.document.info.has_pages then
+        return FFIUtil.roundPercent(self.ui.paging:getLastPercent())
+    else
+        return FFIUtil.roundPercent(self.ui.rolling:getLastPercent())
+    end
+end
 
-function Wallabag:onCloseDocument()
+
+function Wallabag:onCloseDocument() 
     if self.remove_finished_from_history then
         local document_full_path = self.ui.document.file
-        local docinfo = DocSettings:open(document_full_path)
-        local status = docinfo.data.summary.status
-        if (status == "complete" or status == "abandoned") and document_full_path and self.directory and self.directory == string.sub(document_full_path, 1, string.len(self.directory)) then
+        if document_full_path and self.directory and self:getLastPercent() == 1 and self.directory == string.sub(document_full_path, 1, string.len(self.directory)) then
             ReadHistory:removeItemByPath(document_full_path)
         end
     end
