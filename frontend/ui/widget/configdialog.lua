@@ -558,6 +558,7 @@ function ConfigOption:init()
                     thin_grey_style = true,
                     font_face = item_font_face,
                     font_size = item_font_size,
+                    name = self.options[c].name,
                     num_buttons = #self.options[c].values,
                     position = self.options[c].default_pos,
                     callback = function(arg)
@@ -610,16 +611,14 @@ end
 
 function ConfigOption:_itemGroupToLayoutLine(option_items_group)
     local layout_line  = {}
-    for k, v in pairs(option_items_group) do
-        --pad the beginning of the line in the layout to align it with the current selected tab
-        if type(k) == "number" then
-            layout_line[k + self.config.panel_index-1] = v
-        end
-    end
-    for k, v in pairs(layout_line) do
-        --remove item_spacing (all widget have the name property)
-        if not v.name then
-            table.remove(layout_line,k)
+    -- Insert items (skpping item_spacing without a .name attribute),
+    -- skipping indices at the beginning of the line in the layout
+    -- to align it with the current selected tab
+    local j = self.config.panel_index
+    for i, v in ipairs(option_items_group) do
+        if v.name then
+            layout_line[j] = v
+            j = j + 1
         end
     end
     return layout_line

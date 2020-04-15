@@ -1042,7 +1042,6 @@ function Wallabag:getLastPercent()
     end
 end
 
-
 function Wallabag:onCloseDocument()
     if self.remove_finished_from_history then
         local document_full_path = self.ui.document.file

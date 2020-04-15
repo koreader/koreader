@@ -51,7 +51,7 @@ function ReaderFont:init()
     end
     -- build face_table for menu
     self.face_table = {}
-    if Device:isAndroid() or Device:isDesktop() then
+    if Device:isAndroid() or Device:isDesktop() or Device:isEmulator() then
         table.insert(self.face_table, require("ui/elements/font_settings"):getMenuTable())
     end
     local face_list = cre.getFontFaces()
