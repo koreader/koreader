@@ -12,6 +12,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local JSON = require("json")
 local LuaSettings = require("frontend/luasettings")
+local Math = require("optmath")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local NetworkMgr = require("ui/network/manager")
 local ReadHistory = require("readhistory")
@@ -1035,9 +1036,9 @@ end
 
 function Wallabag:getLastPercent()
     if self.ui.document.info.has_pages then
-        return FFIUtil.roundPercent(self.ui.paging:getLastPercent())
+        return Math.roundPercent(self.ui.paging:getLastPercent())
     else
-        return FFIUtil.roundPercent(self.ui.rolling:getLastPercent())
+        return Math.roundPercent(self.ui.rolling:getLastPercent())
     end
 end
 

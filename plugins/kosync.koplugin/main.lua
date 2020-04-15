@@ -9,8 +9,7 @@ local DeviceModel = require("device").model
 local Event = require("ui/event")
 local Math = require("optmath")
 local DEBUG = require("dbg")
-local util = require("ffi/util")
-local T = util.template
+local T = require("ffi/util").template
 local _ = require("gettext")
 local md5 = require("ffi/MD5")
 local random = require("random")
@@ -443,9 +442,9 @@ end
 
 function KOSync:getLastPercent()
     if self.ui.document.info.has_pages then
-        return util.roundPercent(self.ui.paging:getLastPercent())
+        return Math.roundPercent(self.ui.paging:getLastPercent())
     else
-        return util.roundPercent(self.ui.rolling:getLastPercent())
+        return Math.roundPercent(self.ui.rolling:getLastPercent())
     end
 end
 
