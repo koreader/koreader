@@ -1962,7 +1962,7 @@ function ReaderStatistics:saveSettings()
 end
 
 function ReaderStatistics:onReadSettings(config)
-    self.data = config.data.stats
+    self.data = config.data.stats or {}
 end
 
 function ReaderStatistics:onReaderReady()
