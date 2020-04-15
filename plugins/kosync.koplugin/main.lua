@@ -558,7 +558,7 @@ function KOSync:getProgress(manual)
                 return
             end
 
-            body.percentage = roundPercent(body.percentage)
+            body.percentage = Math.roundPercent(body.percentage)
             local progress = self:getLastProgress()
             local percentage = self:getLastPercent()
             DEBUG("current progress", percentage)
