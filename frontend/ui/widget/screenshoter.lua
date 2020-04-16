@@ -39,7 +39,7 @@ end
 
 function Screenshoter:onScreenshot(filename)
     local screenshots_dir = G_reader_settings:readSetting("screenshot_dir") or DataStorage:getDataDir() .. "/screenshots/"
-    self.screenshot_fn_fmt = screenshots_dir .. self.prefix .. "_%Y-%b-%d_%H%M%S.png"
+    self.screenshot_fn_fmt = screenshots_dir .. self.prefix .. "_%Y-%m-%d_%H%M%S.png"
     local screenshot_name = filename or os.date(self.screenshot_fn_fmt)
     Screen:shot(screenshot_name)
     local widget = ConfirmBox:new{
