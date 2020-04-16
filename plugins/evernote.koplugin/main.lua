@@ -680,7 +680,7 @@ function EvernoteExporter:exportBooknotesToHTML(title, booknotes)
 end
 
 function EvernoteExporter:exportBooknotesToJSON(title, booknotes)
-  local file = io.open(self.json_clipping_file, "w")
+  local file = io.open(self.json_clipping_file, "a")
   if file then
     file:write(json.encode(booknotes))
     file:write("\n")
