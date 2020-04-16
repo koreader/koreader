@@ -1,8 +1,8 @@
-local DocumentRegistry = require("document/documentregistry")
 local DocSettings = require("docsettings")
-local ReadHistory = require("readhistory")
+local DocumentRegistry = require("document/documentregistry")
 local logger = require("logger")
 local md5 = require("ffi/MD5")
+local ReadHistory = require("readhistory")
 local util = require("util")
 
 local MyClipping = {
@@ -324,4 +324,3 @@ function MyClipping:parseCurrentDoc(view)
 end
 
 return MyClipping
-

@@ -1,5 +1,5 @@
-local json = require("json")
 local http = require("socket.http")
+local json = require("json")
 local ltn12 = require("ltn12")
 
 local JoplinClient =  {
