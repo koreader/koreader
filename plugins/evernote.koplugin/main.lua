@@ -51,14 +51,14 @@ function EvernoteExporter:init()
     -- Do they check against external modifications to settings file?
 
     if self.html_export then
-      self.txt_export = false
-      self.joplin_export = false
-      self.json_export = false
+        self.txt_export = false
+        self.joplin_export = false
+        self.json_export = false
     elseif self.txt_export then
-      self.joplin_export = false
-      self.json_export = false
+        self.joplin_export = false
+        self.json_export = false
     elseif self.json_export then
-      self.joplin_export = false
+        self.joplin_export = false
     end
 
     self.parser = MyClipping:new{
@@ -77,16 +77,16 @@ function EvernoteExporter:isDocless()
 end
 
 function EvernoteExporter:readyToExport()
-  return self.evernote_token ~= nil or
-    self.html_export ~= false or
-    self.txt_export ~= false or
-    self.json_export ~= false or
-    self.joplin_export ~= false
+    return self.evernote_token ~= nil or
+        self.html_export ~= false or
+        self.txt_export ~= false or
+        self.json_export ~= false or
+        self.joplin_export ~= false
 end
 
 function EvernoteExporter:migrateClippings()
     local old_dir = util.joinPath(util.realpath(util.joinPath(self.path, "..")),
-        "evernote.sdr")
+                                  "evernote.sdr")
     if lfs.attributes(old_dir, "mode") == "directory" then
         local mv_bin = Device:isAndroid() and "/system/bin/mv" or "/bin/mv"
         return util.execute(mv_bin, old_dir, self.clipping_dir) == 0
@@ -108,11 +108,11 @@ function EvernoteExporter:addToMainMenu(menu_items)
                         domain = "Evernote"
                     end
                     return self.evernote_token and (_("Logout") .. " " .. domain)
-                            or _("Login")
+                        or _("Login")
                 end,
                 callback_func = function()
                     return self.evernote_token and function() self:logout() end
-                            or nil
+                        or nil
                 end,
                 sub_item_table_func = function()
                     return not self.evernote_token and {
@@ -130,7 +130,7 @@ function EvernoteExporter:addToMainMenu(menu_items)
                                 self:login()
                             end
                         }
-                    } or nil
+                                                       } or nil
                 end,
             },
             {
@@ -242,16 +242,16 @@ function EvernoteExporter:addToMainMenu(menu_items)
                         keep_menu_open = true,
                         callback = function()
                             UIManager:show(InfoMessage:new{
-                                text = T(_([[You can enter your auth token on your computer by saving an empty token. Then quit KOReader, edit the evernote.joplin_token field in %1/settings.reader.lua after creating a backup, and restart KOReader once you're done.
+                                               text = T(_([[You can enter your auth token on your computer by saving an empty token. Then quit KOReader, edit the evernote.joplin_token field in %1/settings.reader.lua after creating a backup, and restart KOReader once you're done.
 
-To export to Joplin, you must forward the IP and port used by this plugin to the localhost:port on which Joplin is listening. This can be done with socat or a similar program. For example:
+                                                   To export to Joplin, you must forward the IP and port used by this plugin to the localhost:port on which Joplin is listening. This can be done with socat or a similar program. For example:
 
-For Windows: netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=41185 connectaddress=localhost connectport=41184
+                                                   For Windows: netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=41185 connectaddress=localhost connectport=41184
 
-For Linux: $socat tcp-listen:41185,reuseaddr,fork tcp:localhost:41184
+                                                   For Linux: $socat tcp-listen:41185,reuseaddr,fork tcp:localhost:41184
 
-For more information, please visit https://github.com/koreader/koreader/wiki/Evernote-export.]])
-                            , BD.dirpath(DataStorage:getDataDir()))
+                                                   For more information, please visit https://github.com/koreader/koreader/wiki/Evernote-export.]])
+                                                            , BD.dirpath(DataStorage:getDataDir()))
                             })
                         end
                     }
@@ -264,12 +264,12 @@ For more information, please visit https://github.com/koreader/koreader/wiki/Eve
                 end,
                 callback = function()
                     UIManager:scheduleIn(0.5, function()
-                        self:exportCurrentNotes(self.view)
+                                             self:exportCurrentNotes(self.view)
                     end)
 
                     UIManager:show(InfoMessage:new{
-                        text = _("Exporting may take several seconds…"),
-                        timeout = 1,
+                                       text = _("Exporting may take several seconds…"),
+                                       timeout = 1,
                     })
                 end
             },
@@ -280,12 +280,12 @@ For more information, please visit https://github.com/koreader/koreader/wiki/Eve
                 end,
                 callback = function()
                     UIManager:scheduleIn(0.5, function()
-                        self:exportAllNotes()
+                                             self:exportAllNotes()
                     end)
 
                     UIManager:show(InfoMessage:new{
-                        text = _("Exporting may take several minutes…"),
-                        timeout = 1,
+                                       text = _("Exporting may take several minutes…"),
+                                       timeout = 1,
                     })
                 end
             },
@@ -303,17 +303,17 @@ For more information, please visit https://github.com/koreader/koreader/wiki/Eve
                 end
             },
             {
-              text = _("Export to local HTML files"),
-              checked_func = function() return self.html_export end,
-              callback = function()
-                self.html_export = not self.html_export
-                if self.html_export then
-                  self.txt_export = false
-                  self.json_export = false
-                  self.joplin_export = false
+                text = _("Export to local HTML files"),
+                checked_func = function() return self.html_export end,
+                callback = function()
+                    self.html_export = not self.html_export
+                    if self.html_export then
+                        self.txt_export = false
+                        self.json_export = false
+                        self.joplin_export = false
+                    end
+                    self:saveSettings()
                 end
-                self:saveSettings()
-              end
             },
             {
                 text = _("Export to local clipping text file"),
@@ -333,8 +333,8 @@ For more information, please visit https://github.com/koreader/koreader/wiki/Eve
                 callback = function()
                     self.config:purge()
                     UIManager:show(InfoMessage:new{
-                        text = _("History records have been purged.\nAll notes will be exported again next time.\n"),
-                        timeout = 2,
+                                       text = _("History records have been purged.\nAll notes will be exported again next time.\n"),
+                                       timeout = 2,
                     })
                 end
             }
@@ -366,12 +366,12 @@ function EvernoteExporter:login()
                         local username, password = self:getCredential()
                         self:closeDialog()
                         UIManager:scheduleIn(0.5, function()
-                            self:doLogin(username, password)
+                                                 self:doLogin(username, password)
                         end)
 
                         UIManager:show(InfoMessage:new{
-                            text = _("Logging in. Please wait…"),
-                            timeout = 1,
+                                           text = _("Logging in. Please wait…"),
+                                           timeout = 1,
                         })
                     end,
                 },
@@ -408,7 +408,7 @@ function EvernoteExporter:doLogin(username, password)
     -- prompt users to turn on Wifi if network is unreachable
     if not ok and token then
         UIManager:show(InfoMessage:new{
-            text = _("An error occurred while logging in:") .. "\n" .. token,
+                           text = _("An error occurred while logging in:") .. "\n" .. token,
         })
         return
     end
@@ -424,13 +424,13 @@ function EvernoteExporter:doLogin(username, password)
         return
     elseif not ok and guid then
         UIManager:show(InfoMessage:new{
-            text = _("An error occurred while logging in:") .. "\n" .. guid,
+                           text = _("An error occurred while logging in:") .. "\n" .. guid,
         })
     elseif ok and guid then
         self.evernote_token = token
         self.notebook_guid = guid
         UIManager:show(InfoMessage:new{
-            text = _("Logged in to Evernote."),
+                           text = _("Logged in to Evernote."),
         })
     end
 
@@ -482,7 +482,7 @@ function EvernoteExporter:updateHistoryClippings(clippings, new_clippings)
                     or clippings[title][chapter_index][note_index].page ~= note.page
                     or clippings[title][chapter_index][note_index].time ~= note.time
                     or clippings[title][chapter_index][note_index].text ~= note.text
-                    or clippings[title][chapter_index][note_index].note ~= note.note then
+                or clippings[title][chapter_index][note_index].note ~= note.note then
                     DEBUG("found new notes in history", booknotes.title)
                     clippings[title] = booknotes
                 end
@@ -505,21 +505,21 @@ function EvernoteExporter:updateMyClippings(clippings, new_clippings)
 end
 
 --[[--
-Parses highlights and calls exporter functions.
+    Parses highlights and calls exporter functions.
 
-Entry point for exporting highlights. User interface calls this function.
-Parses current document and documents from history, passes them to exportClippings().
-Highlight: Highlighted text or image in document, stored in "highlights" table in
-documents sidecar file. Parser uses this table. If highlight._._.text field is empty parser uses
-highlight._._.pboxes field to get an image instead.
-Bookmarks: Data in bookmark explorer. Stored in "bookmarks" table of documents sidecar file. Every
-field in bookmarks._ has "text" and "notes" fields When user edits a highlight or "renames" bookmark,
-text field is created or updated. Parser looks to bookmarks._.text field for edited notes. bookmarks._.notes isn't used for exporting operations.
-https://github.com/koreader/koreader/blob/605f6026bbf37856ee54741b8a0697337ca50039/plugins/evernote.koplugin/clip.lua#L229
-Clippings: Parsed form of highlights, stored in clipboard/evernote.sdr/metadata.sdr.lua
-for all documents. Used only for exporting bookmarks. Internal highlight or bookmark functions
-does not use this table.
-Booknotes: Every table in clippings table. clippings = {"title" = booknotes}
+    Entry point for exporting highlights. User interface calls this function.
+    Parses current document and documents from history, passes them to exportClippings().
+    Highlight: Highlighted text or image in document, stored in "highlights" table in
+    documents sidecar file. Parser uses this table. If highlight._._.text field is empty parser uses
+    highlight._._.pboxes field to get an image instead.
+    Bookmarks: Data in bookmark explorer. Stored in "bookmarks" table of documents sidecar file. Every
+    field in bookmarks._ has "text" and "notes" fields When user edits a highlight or "renames" bookmark,
+    text field is created or updated. Parser looks to bookmarks._.text field for edited notes. bookmarks._.notes isn't used for exporting operations.
+    https://github.com/koreader/koreader/blob/605f6026bbf37856ee54741b8a0697337ca50039/plugins/evernote.koplugin/clip.lua#L229
+    Clippings: Parsed form of highlights, stored in clipboard/evernote.sdr/metadata.sdr.lua
+    for all documents. Used only for exporting bookmarks. Internal highlight or bookmark functions
+    does not use this table.
+    Booknotes: Every table in clippings table. clippings = {"title" = booknotes}
 --]]
 function EvernoteExporter:exportAllNotes()
     -- Flush highlights of current document.
@@ -550,12 +550,12 @@ function EvernoteExporter:exportClippings(clippings)
         client = require("EvernoteClient"):new{
             domain = self.evernote_domain,
             authToken = self.evernote_token,
-        }
+                                              }
         exported_stamp = self.notebook_guid
     elseif self.html_export then
         exported_stamp= "html"
     elseif self.json_export then
-      exported_stamp= "json"
+        exported_stamp= "json"
     elseif self.txt_export then
         os.remove(self.text_clipping_file)
         exported_stamp = "txt"
@@ -588,15 +588,15 @@ function EvernoteExporter:exportClippings(clippings)
         if booknotes.exported[exported_stamp] ~= true or self.txt_export or self.json_export then
             local ok, err
             if self.html_export then
-              ok, err = pcall(self.exportBooknotesToHTML, self, title, booknotes)
+                ok, err = pcall(self.exportBooknotesToHTML, self, title, booknotes)
             elseif self.txt_export then
-              ok, err = pcall(self.exportBooknotesToTXT, self, title, booknotes)
+                ok, err = pcall(self.exportBooknotesToTXT, self, title, booknotes)
             elseif self.json_export then
-              ok, err = pcall(self.exportBooknotesToJSON, self, title, booknotes)
+                ok, err = pcall(self.exportBooknotesToJSON, self, title, booknotes)
             elseif self.joplin_export then
-              ok, err = pcall(self.exportBooknotesToJoplin, self, joplin_client, title, booknotes)
+                ok, err = pcall(self.exportBooknotesToJoplin, self, joplin_client, title, booknotes)
             else
-              ok, err = pcall(self.exportBooknotesToEvernote, self, client, title, booknotes)
+                ok, err = pcall(self.exportBooknotesToEvernote, self, client, title, booknotes)
             end
             -- error reporting
             if not ok and err and err:find("Transport not open") then
@@ -642,8 +642,8 @@ end
 
 function EvernoteExporter:exportBooknotesToEvernote(client, title, booknotes)
     local content = slt2.render(self.template, {
-        booknotes = booknotes,
-        notemarks = self.notemarks,
+                                    booknotes = booknotes,
+                                    notemarks = self.notemarks,
     })
     --DEBUG("content", content)
     local note_guid = client:findNoteByTitle(title, self.notebook_guid)
@@ -652,7 +652,7 @@ function EvernoteExporter:exportBooknotesToEvernote(client, title, booknotes)
         for _, clipping in ipairs(chapter) do
             if clipping.image then
                 table.insert(resources, {
-                    image = clipping.image
+                                 image = clipping.image
                 })
                 -- nullify clipping image after passing it to evernote client
                 clipping.image = nil
@@ -668,8 +668,8 @@ end
 
 function EvernoteExporter:exportBooknotesToHTML(title, booknotes)
     local content = slt2.render(self.template, {
-        booknotes = booknotes,
-        notemarks = self.notemarks,
+                                    booknotes = booknotes,
+                                    notemarks = self.notemarks,
     })
     --DEBUG("content", content)
     local html = io.open(self.clipping_dir .. "/" .. title .. ".html", "w")
@@ -680,12 +680,12 @@ function EvernoteExporter:exportBooknotesToHTML(title, booknotes)
 end
 
 function EvernoteExporter:exportBooknotesToJSON(title, booknotes)
-  local file = io.open(self.json_clipping_file, "a")
-  if file then
-    file:write(json.encode(booknotes))
-    file:write("\n")
-    file:close()
-  end
+    local file = io.open(self.json_clipping_file, "a")
+    if file then
+        file:write(json.encode(booknotes))
+        file:write("\n")
+        file:close()
+    end
 end
 
 function EvernoteExporter:exportBooknotesToTXT(title, booknotes)
@@ -700,8 +700,8 @@ function EvernoteExporter:exportBooknotesToTXT(title, booknotes)
             end
             for _ignore2, clipping in ipairs(chapter) do
                 file:write(wide_space .. wide_space ..
-                            T(_("-- Page: %1, added on %2\n"),
-                                clipping.page, os.date("%c", clipping.time)))
+                               T(_("-- Page: %1, added on %2\n"),
+                                 clipping.page, os.date("%c", clipping.time)))
                 if clipping.text then
                     file:write(clipping.text)
                 end
