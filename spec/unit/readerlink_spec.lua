@@ -17,9 +17,9 @@ describe("ReaderLink module", function()
         local readerui = ReaderUI:new{
             document = DocumentRegistry:openDocument(sample_epub),
         }
-        readerui.rolling:onGotoPage(4)
-        readerui.link:onTap(nil, {pos = {x = 320, y = 120}})
-        assert.is.same(36, readerui.rolling.current_page)
+        readerui.rolling:onGotoPage(5)
+        readerui.link:onTap(nil, {pos = {x = 320, y = 190}})
+        assert.is.same(37, readerui.rolling.current_page)
     end)
 
     it("should jump to links in pdf page mode", function()
@@ -56,11 +56,11 @@ describe("ReaderLink module", function()
         local readerui = ReaderUI:new{
             document = DocumentRegistry:openDocument(sample_epub),
         }
-        readerui.rolling:onGotoPage(4)
-        readerui.link:onTap(nil, {pos = {x = 320, y = 120}})
-        assert.is.same(36, readerui.rolling.current_page)
+        readerui.rolling:onGotoPage(5)
+        readerui.link:onTap(nil, {pos = {x = 320, y = 190}})
+        assert.is.same(37, readerui.rolling.current_page)
         readerui.link:onGoBackLink()
-        assert.is.same(4, readerui.rolling.current_page)
+        assert.is.same(5, readerui.rolling.current_page)
     end)
 
     it("should be able to go back after link jump in pdf page mode", function()
