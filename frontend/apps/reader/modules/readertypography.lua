@@ -14,39 +14,39 @@ local Screen = Device.screen
 
 -- Mostly for migrating hyph settings, and to know the dict
 -- left and right hyph min values (2/2 when not specified)
-local HYPH_DICT_NAME_TO_LANG_TAG = {
-    ["@none"]                = { "en" },
-    ["@softhyphens"]         = { "en" },
-    ["@algorithm"]           = { "en" },
-    ["Bulgarian.pattern"]    = { "bg" },
-    ["Catalan.pattern"]      = { "ca" },
-    ["Czech.pattern"]        = { "cs" },
-    ["Danish.pattern"]       = { "da" },
-    ["Dutch.pattern"]        = { "nl" },
-    ["English_GB.pattern"]   = { "en-GB" },
-    ["English_US.pattern"]   = { "en-US" },
-    ["Finnish.pattern"]      = { "fi" },
-    ["French.pattern"]       = { "fr", 2, 1 },
-    ["Galician.pattern"]     = { "gl" },
-    ["German.pattern"]       = { "de" },
-    ["Greek.pattern"]        = { "el" },
-    ["Hungarian.pattern"]    = { "hu" },
-    ["Icelandic.pattern"]    = { "is" },
-    ["Irish.pattern"]        = { "ga" },
-    ["Italian.pattern"]      = { "it" },
-    ["Norwegian.pattern"]    = { "no" },
-    ["Polish.pattern"]       = { "pl" },
-    ["Portuguese.pattern"]   = { "pt" },
-    ["Roman.pattern"]        = { "ro" },
-    ["Russian_EnGB.pattern"] = { "ru-GB" },
-    ["Russian_EnUS.pattern"] = { "ru-US" },
-    ["Russian.pattern"]      = { "ru" },
-    ["Slovak.pattern"]       = { "sk" },
-    ["Slovenian.pattern"]    = { "sl" },
-    ["Spanish.pattern"]      = { "es" },
-    ["Swedish.pattern"]      = { "sv" },
-    ["Turkish.pattern"]      = { "tr" },
-    ["Ukrain.pattern"]       = { "uk" },
+local HYPH_DICT_NAME_TO_LANG_NAME_TAG = {
+    ["@none"]                = { "@none",           "en" },
+    ["@softhyphens"]         = { "@softhyphens",    "en" },
+    ["@algorithm"]           = { "@algorithm",      "en" },
+    ["Bulgarian.pattern"]    = { _("Bulgarian"),    "bg" },
+    ["Catalan.pattern"]      = { _("Catalan"),      "ca" },
+    ["Czech.pattern"]        = { _("Czech"),        "cs" },
+    ["Danish.pattern"]       = { _("Danish"),       "da" },
+    ["Dutch.pattern"]        = { _("Dutch"),        "nl" },
+    ["English_GB.pattern"]   = { _("English (UK)"), "en-GB" },
+    ["English_US.pattern"]   = { _("English (US)"), "en-US" },
+    ["Finnish.pattern"]      = { _("Finnish"),      "fi" },
+    ["French.pattern"]       = { _("French"),       "fr", 2, 1 },
+    ["Galician.pattern"]     = { _("Galician"),     "gl" },
+    ["German.pattern"]       = { _("German"),       "de" },
+    ["Greek.pattern"]        = { _("Greek"),        "el" },
+    ["Hungarian.pattern"]    = { _("Hungarian"),    "hu" },
+    ["Icelandic.pattern"]    = { _("Icelandic"),    "is" },
+    ["Irish.pattern"]        = { _("Irish"),        "ga" },
+    ["Italian.pattern"]      = { _("Italian"),      "it" },
+    ["Norwegian.pattern"]    = { _("Norwegian"),    "no" },
+    ["Polish.pattern"]       = { _("Polish"),       "pl" },
+    ["Portuguese.pattern"]   = { _("Portuguese"),   "pt" },
+    ["Roman.pattern"]        = { _("Romanian"),     "ro" },
+    ["Russian_EnGB.pattern"] = { _("Russian + English (UK)"), "ru-GB" },
+    ["Russian_EnUS.pattern"] = { _("Russian + English (US)"), "ru-US" },
+    ["Russian.pattern"]      = { _("Russian"),      "ru" },
+    ["Slovak.pattern"]       = { _("Slovak"),       "sk" },
+    ["Slovenian.pattern"]    = { _("Slovenian"),    "sl" },
+    ["Spanish.pattern"]      = { _("Spanish"),      "es" },
+    ["Swedish.pattern"]      = { _("Swedish"),      "sv" },
+    ["Turkish.pattern"]      = { _("Turkish"),      "tr" },
+    ["Ukrain.pattern"]       = { _("Ukrainian"),    "uk" },
 }
 
 -- Languages to be shown in the menu.
@@ -127,9 +127,9 @@ function ReaderTypography:init()
         local g_text_lang_set = false
         local hyph_alg_default = G_reader_settings:readSetting("hyph_alg_default")
         if hyph_alg_default then
-            local dict_info = HYPH_DICT_NAME_TO_LANG_TAG[hyph_alg_default]
+            local dict_info = HYPH_DICT_NAME_TO_LANG_NAME_TAG[hyph_alg_default]
             if dict_info then
-                G_reader_settings:saveSetting("text_lang_default", dict_info[1])
+                G_reader_settings:saveSetting("text_lang_default", dict_info[2])
                 g_text_lang_set = true
                 -- Tweak the other settings if the default hyph algo happens
                 -- to be one of these:
@@ -144,9 +144,9 @@ function ReaderTypography:init()
         end
         local hyph_alg_fallback = G_reader_settings:readSetting("hyph_alg_fallback")
         if not g_text_lang_set and hyph_alg_fallback then
-            local dict_info = HYPH_DICT_NAME_TO_LANG_TAG[hyph_alg_fallback]
+            local dict_info = HYPH_DICT_NAME_TO_LANG_NAME_TAG[hyph_alg_fallback]
             if dict_info then
-                G_reader_settings:saveSetting("text_lang_fallback", dict_info[1])
+                G_reader_settings:saveSetting("text_lang_fallback", dict_info[2])
                 g_text_lang_set = true
                 -- We can't really tweak other settings if the hyph algo fallback
                 -- happens to be @none, @softhyphens, @algortihm...
@@ -160,19 +160,19 @@ function ReaderTypography:init()
     end
 
     local info_text = _([[
-Some languages have specific typographic rules: these include hyphenation, line breaking rules, and fonts language specific variations glyphs.
-KOReader will chose one according to the book metadata language tag, but you can select another one.
+Some languages have specific typographic rules: these include hyphenation, line breaking rules, and language specific glyph variants.
+KOReader will chose one according to the language tag from the book's metadata, but you can select another one.
 You can also set a default language or a fallback one with a long-press.
 
 Features available per language are marked with:
 ‐ : language specific hyphenation dictionary
  : specific line breaking rules (mostly related to quotation marks)
- : more line breaking rules (e.g. single letter prepositions not allowed at end of line)
+ : more line breaking rules (e.g., single letter prepositions not allowed at end of line)
 
-Note that when a language does not come with its own hyphenation dictionary, the English US one will be used.
-When the book language tag is not among our presets, no specific feature will be active, but it might be fine enough to trigger the fonts to use language variations known to them.]])
+Note that when a language does not come with its own hyphenation dictionary, the English (US) one will be used.
+When the book's language tag is not among our presets, no specific features will be enabled, but it might be enough to get language specific glyph variants (when supported by the fonts).]])
     table.insert(self.menu_table, {
-        text = _("About typography"),
+        text = _("About typography rules"),
         callback = function()
             UIManager:show(InfoMessage:new{
                 text = info_text,
@@ -266,7 +266,7 @@ When the book language tag is not among our presets, no specific feature will be
             end,
             callback = function()
                 UIManager:show(InfoMessage:new{
-                    text = T(_("Changed typography language to %1."), BD.wrap(lang_name)),
+                    text = T(_("Changed language for typography rules to %1."), BD.wrap(lang_name)),
                 })
                 self.text_lang_tag = lang_tag
                 self.ui.document:setTextMainLang(lang_tag)
@@ -279,14 +279,14 @@ When the book language tag is not among our presets, no specific feature will be
                     -- one is set, no fallback will ever be used - if a fallback one
                     -- is set, no default is wanted; so when we set one below, we
                     -- remove the other).
-                    text = T( _("Would you like %1 to be used as the default (★) or fallback (�) typography language?\n\nDefault will always take precedence while fallback will only be used if the language of the book can't be automatically determined."), BD.wrap(lang_name)),
+                    text = T( _("Would you like %1 to be used as the default (★) or fallback (�) language for typography rules?\n\nDefault will always take precedence while fallback will only be used if the language of the book can't be automatically determined."), BD.wrap(lang_name)),
                     choice1_text = _("Default"),
                     choice1_callback = function()
                         G_reader_settings:saveSetting("text_lang_default", lang_tag)
                         G_reader_settings:delSetting("text_lang_fallback")
                         if touchmenu_instance then touchmenu_instance:updateItems() end
                     end,
-                    choice2_text = C_("Hyphenation", "Fallback"),
+                    choice2_text = C_("Typography", "Fallback"),
                     choice2_callback = function()
                         G_reader_settings:saveSetting("text_lang_fallback", lang_tag)
                         G_reader_settings:delSetting("text_lang_default")
@@ -304,13 +304,13 @@ When the book language tag is not among our presets, no specific feature will be
     table.insert(self.menu_table, {
         text_func = function()
             local lang_name = LANG_TAG_TO_LANG_NAME[self.text_lang_tag] or self.text_lang_tag
-            return T(_("Typography language: %1"), lang_name)
+            return T(_("Typography rules: %1"), lang_name)
         end,
         sub_item_table = self.language_submenu,
     })
 
     table.insert(self.menu_table, {
-        text = _("Follow document embedded lang tags"),
+        text = _("Honor embedded lang tags"),
         callback = function()
             self.text_lang_embedded_langs = not self.text_lang_embedded_langs
             self.ui.document:setTextEmbeddedLangs(self.text_lang_embedded_langs)
@@ -319,16 +319,16 @@ When the book language tag is not among our presets, no specific feature will be
         hold_callback = function()
             local text_lang_embedded_langs = G_reader_settings:nilOrTrue("text_lang_embedded_langs")
             UIManager:show(MultiConfirmBox:new{
-                text = text_lang_embedded_langs and _("Would you like to enable or disable support for document embedded lang tags by default?\n\nThe current default (★) is enabled.")
-                or _("Would you like to enable or disable support for document embedded lang tags by default?\n\nThe current default (★) is disabled."),
+                text = text_lang_embedded_langs and _("Would you like to honor or ignore embedded lang tags by default?\n\nThe current default (★) is to honor them.")
+                or _("Would you like to honor or ignore embedded lang tags by default?\n\nThe current default (★) is to ignore them."),
                 choice1_text_func =  function()
-                    return text_lang_embedded_langs and _("Disable") or _("Disable (★)")
+                    return text_lang_embedded_langs and _("Ignore") or _("Ignore (★)")
                 end,
                 choice1_callback = function()
                     G_reader_settings:saveSetting("text_lang_embedded_langs", false)
                 end,
                 choice2_text_func = function()
-                    return text_lang_embedded_langs and _("Enable (★)") or _("Enable")
+                    return text_lang_embedded_langs and _("Honor (★)") or _("Honor")
                 end,
                 choice2_callback = function()
                     G_reader_settings:saveSetting("text_lang_embedded_langs", true)
@@ -391,10 +391,10 @@ When the book language tag is not among our presets, no specific feature will be
             local alg_left_hyphen_min = 2
             local alg_right_hyphen_min = 2
             local hyph_alg = cre.getSelectedHyphDict()
-            local hyph_dict_info = HYPH_DICT_NAME_TO_LANG_TAG[hyph_alg]
+            local hyph_dict_info = HYPH_DICT_NAME_TO_LANG_NAME_TAG[hyph_alg]
             if hyph_dict_info then
-                alg_left_hyphen_min = hyph_dict_info[2] or 2
-                alg_right_hyphen_min = hyph_dict_info[3] or 2
+                alg_left_hyphen_min = hyph_dict_info[3] or 2
+                alg_right_hyphen_min = hyph_dict_info[4] or 2
             end
             local hyph_limits_widget = DoubleSpinWidget:new{
                 -- Min (1) and max (10) values are enforced by crengine
@@ -472,9 +472,7 @@ These settings will apply to all books with any hyphenation dictionary.
     table.insert(hyphenation_submenu, {
         text_func = function()
             -- Show the current language default hyph dict (ie: English_US for zh)
-            local hyph_dict_name = self.ui.document:getTextMainLangDefaultHyphDictionary()
-            hyph_dict_name = hyph_dict_name:gsub(".pattern$", "")
-            return T(_("Hyphenation dictionary: %1"), hyph_dict_name)
+            return T(_("Hyphenation dictionary: %1"), self:getCurrentDefaultHyphDictLanguage())
         end,
         callback = function()
             self.hyph_soft_hyphens_only = false
@@ -577,8 +575,7 @@ These settings will apply to all books with any hyphenation dictionary.
             elseif self.hyph_force_algorithmic then
                 method = _("algorithmic")
             else
-                method = self.ui.document:getTextMainLangDefaultHyphDictionary()
-                method = method:gsub(".pattern$", "")
+                method = self:getCurrentDefaultHyphDictLanguage()
             end
             return T(_("Hyphenation: %1"), method)
         end,
@@ -594,10 +591,21 @@ function ReaderTypography:addToMainMenu(menu_items)
     menu_items.typography = {
         text_func = function()
             local lang_name = LANG_TAG_TO_LANG_NAME[self.text_lang_tag] or self.text_lang_tag
-            return T(_("Typography: %1"), lang_name)
+            return T(_("Typography rules: %1"), lang_name)
         end,
         sub_item_table = self.menu_table,
     }
+end
+
+function ReaderTypography:getCurrentDefaultHyphDictLanguage()
+    local hyph_dict_name = self.ui.document:getTextMainLangDefaultHyphDictionary()
+    local dict_info = HYPH_DICT_NAME_TO_LANG_NAME_TAG[hyph_dict_name]
+    if dict_info then
+        hyph_dict_name = dict_info[1]
+    else -- shouldn't happen
+        hyph_dict_name = hyph_dict_name:gsub(".pattern$", "")
+    end
+    return hyph_dict_name
 end
 
 function ReaderTypography:parseLanguageTag(lang_tag)
@@ -655,9 +663,9 @@ function ReaderTypography:onReadSettings(config)
     -- Migrate old readerhyphenation setting, if one was set
     if not config:readSetting("text_lang") and config:readSetting("hyph_alg") then
         local hyph_alg = config:readSetting("hyph_alg")
-        local dict_info = HYPH_DICT_NAME_TO_LANG_TAG[hyph_alg]
+        local dict_info = HYPH_DICT_NAME_TO_LANG_NAME_TAG[hyph_alg]
         if dict_info then
-            config:saveSetting("text_lang", dict_info[1])
+            config:saveSetting("text_lang", dict_info[2])
             -- Set the other settings if the default hyph algo happens
             -- to be one of these:
             if hyph_alg == "@none" then
@@ -753,7 +761,7 @@ function ReaderTypography:onPreRenderDocument(config)
         text = T(_("Book language: %1"), self.book_lang_tag or _("n/a")),
         callback = function()
             UIManager:show(InfoMessage:new{
-                text = T(_("Changed typography language to book language: %1."), BD.wrap(self.book_lang_tag)),
+                text = T(_("Changed language for typography rules to book language: %1."), BD.wrap(self.book_lang_tag)),
             })
             self.text_lang_tag = self.book_lang_tag
             self.ui.doc_settings:saveSetting("text_lang", self.text_lang_tag)
