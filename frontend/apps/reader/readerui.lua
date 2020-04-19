@@ -34,7 +34,6 @@ local ReaderGesture = require("apps/reader/modules/readergesture")
 local ReaderGoto = require("apps/reader/modules/readergoto")
 local ReaderHinting = require("apps/reader/modules/readerhinting")
 local ReaderHighlight = require("apps/reader/modules/readerhighlight")
-local ReaderHyphenation = require("apps/reader/modules/readerhyphenation")
 local ReaderKoptListener = require("apps/reader/modules/readerkoptlistener")
 local ReaderLink = require("apps/reader/modules/readerlink")
 local ReaderMenu = require("apps/reader/modules/readermenu")
@@ -48,6 +47,7 @@ local ReaderStatus = require("apps/reader/modules/readerstatus")
 local ReaderStyleTweak = require("apps/reader/modules/readerstyletweak")
 local ReaderToc = require("apps/reader/modules/readertoc")
 local ReaderTypeset = require("apps/reader/modules/readertypeset")
+local ReaderTypography = require("apps/reader/modules/readertypography")
 local ReaderView = require("apps/reader/modules/readerview")
 local ReaderWikipedia = require("apps/reader/modules/readerwikipedia")
 local ReaderZooming = require("apps/reader/modules/readerzooming")
@@ -307,8 +307,8 @@ function ReaderUI:init()
             view = self.view,
             ui = self
         })
-        -- hyphenation menu
-        self:registerModule("hyphenation", ReaderHyphenation:new{
+        -- typography menu (replaces previous hyphenation menu / ReaderHyphenation)
+        self:registerModule("typography", ReaderTypography:new{
             dialog = self.dialog,
             view = self.view,
             ui = self

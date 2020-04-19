@@ -28,7 +28,7 @@ local order = {
         "style_tweaks",
         "----------------------------",
         "change_font",
-        "hyphenation",
+        "typography",
         "floating_punctuation",
         "----------------------------",
         "switch_zoom_mode",

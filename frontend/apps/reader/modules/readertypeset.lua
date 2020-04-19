@@ -207,7 +207,7 @@ function ReaderTypeset:genStyleSheetMenu()
     local style_table = {}
     local obsoleted_table = {}
 
-    table.insert(style_table, getStyleMenuItem(_("Clear all external styles"), ""))
+    table.insert(style_table, getStyleMenuItem(_("None"), ""))
     table.insert(style_table, getStyleMenuItem(_("Auto"), nil, true))
 
     local css_files = {}
