@@ -44,6 +44,10 @@ function ReaderHyphenation:init()
             local alg_right_hyphen_min = hyph_settings.right_hyphen_min
             local hyph_limits_widget = DoubleSpinWidget:new{
                 -- Min (1) and max (10) values are enforced by crengine
+                -- Note that when hitting "Use language defaults", we show the default
+                -- values from languages.json, but we give 0 to crengine, which will
+                -- use its own default hardcoded values (in textlang.cpp).
+                -- Try to keep these values in sync.
                 left_value = G_reader_settings:readSetting("hyph_left_hyphen_min") or alg_left_hyphen_min or 2,
                 left_min = 1,
                 left_max = 10,
@@ -65,9 +69,8 @@ These settings will apply to all books with any hyphenation dictionary.
                 callback = function(left_hyphen_min, right_hyphen_min)
                     G_reader_settings:saveSetting("hyph_left_hyphen_min", left_hyphen_min)
                     G_reader_settings:saveSetting("hyph_right_hyphen_min", right_hyphen_min)
-                    self.ui.document:setHyphLeftHyphenMin(G_reader_settings:readSetting("hyph_left_hyphen_min") or alg_left_hyphen_min)
-                    self.ui.document:setHyphRightHyphenMin(G_reader_settings:readSetting("hyph_right_hyphen_min") or alg_right_hyphen_min)
-                    self.ui.toc:onUpdateToc()
+                    self.ui.document:setHyphLeftHyphenMin(G_reader_settings:readSetting("hyph_left_hyphen_min") or 0)
+                    self.ui.document:setHyphRightHyphenMin(G_reader_settings:readSetting("hyph_right_hyphen_min") or 0)
                     -- signal readerrolling to update pos in new height, and redraw page
                     self.ui:handleEvent(Event:new("UpdatePos"))
                 end
@@ -83,7 +86,6 @@ These settings will apply to all books with any hyphenation dictionary.
         callback = function()
             G_reader_settings:flipNilOrFalse("hyph_trust_soft_hyphens")
             self.ui.document:setTrustSoftHyphens(G_reader_settings:isTrue("hyph_trust_soft_hyphens"))
-            self.ui.toc:onUpdateToc()
             self.ui:handleEvent(Event:new("UpdatePos"))
         end,
         checked_func = function()
@@ -127,10 +129,7 @@ These settings will apply to all books with any hyphenation dictionary.
                         text = T(_("Changed hyphenation to %1."), BD.wrap(v.name)),
                     })
                     self.ui.document:setHyphDictionary(v.filename)
-                    -- Apply hyphenation sides limits
-                    self.ui.document:setHyphLeftHyphenMin(G_reader_settings:readSetting("hyph_left_hyphen_min") or v.left_hyphen_min)
-                    self.ui.document:setHyphRightHyphenMin(G_reader_settings:readSetting("hyph_right_hyphen_min") or v.right_hyphen_min)
-                    self.ui.toc:onUpdateToc()
+                    -- (No need to apply hyphenation sides limits: previous values will stick)
                     -- signal readerrolling to update pos in new height, and redraw page
                     self.ui:handleEvent(Event:new("UpdatePos"))
                 end,
@@ -258,6 +257,9 @@ function ReaderHyphenation:onReadSettings(config)
     logger.dbg("Hyphenation: no algo set")
     self:setHyphAlgo()
     logger.dbg("Hyphenation: keeping current crengine algo:", self.hyph_alg)
+    -- Note: it would be better to select English_US here, rather than
+    -- keeping the hyph dict possibly set from the previous book language,
+    -- to keep it consistent and avoid a re-rendering on the new book.
 end
 
 function ReaderHyphenation:onPreRenderDocument(config)
@@ -291,14 +293,14 @@ function ReaderHyphenation:setHyphAlgo(hyph_alg)
     -- If we haven't set any (nil, or invalid), hardcoded
     -- English_US.pattern (in cre.cpp) will be used
     self.hyph_alg = cre.getSelectedHyphDict()
-    -- Apply hyphenation sides limits
-    local hyph_settings = self.hyph_algs_settings[self.hyph_alg] or {}
-    self.ui.document:setHyphLeftHyphenMin(G_reader_settings:readSetting("hyph_left_hyphen_min") or hyph_settings.left_hyphen_min)
-    self.ui.document:setHyphRightHyphenMin(G_reader_settings:readSetting("hyph_right_hyphen_min") or hyph_settings.right_hyphen_min)
+    -- Apply hyphenation sides limits (default to 0, to use language defaults)
+    self.ui.document:setHyphLeftHyphenMin(G_reader_settings:readSetting("hyph_left_hyphen_min") or 0)
+    self.ui.document:setHyphRightHyphenMin(G_reader_settings:readSetting("hyph_right_hyphen_min") or 0)
     self.ui.document:setTrustSoftHyphens(G_reader_settings:isTrue("hyph_trust_soft_hyphens"))
 end
 
 function ReaderHyphenation:addToMainMenu(menu_items)
+    self.hyph_table.max_per_page = 5
     -- insert table to main reader menu
     menu_items.hyphenation = {
         text = self.hyph_menu_title,
