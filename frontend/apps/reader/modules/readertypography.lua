@@ -310,7 +310,7 @@ When the book's language tag is not among our presets, no specific features will
     })
 
     table.insert(self.menu_table, {
-        text = _("Honor embedded lang tags"),
+        text = _("Respect embedded lang tags"),
         callback = function()
             self.text_lang_embedded_langs = not self.text_lang_embedded_langs
             self.ui.document:setTextEmbeddedLangs(self.text_lang_embedded_langs)
@@ -319,8 +319,8 @@ When the book's language tag is not among our presets, no specific features will
         hold_callback = function()
             local text_lang_embedded_langs = G_reader_settings:nilOrTrue("text_lang_embedded_langs")
             UIManager:show(MultiConfirmBox:new{
-                text = text_lang_embedded_langs and _("Would you like to honor or ignore embedded lang tags by default?\n\nThe current default (★) is to honor them.")
-                or _("Would you like to honor or ignore embedded lang tags by default?\n\nThe current default (★) is to ignore them."),
+                text = text_lang_embedded_langs and _("Would you like to respect or ignore embedded lang tags by default?\n\nRespecting them will use their language typography rules for rendering their content, while ignoring them will always use the main language typography rules.\n\nThe current default (★) is to respect them.")
+                or _("Would you like to respect or ignore embedded lang tags by default?\n\nRespecting them will use their language typography rules for rendering their content, while ignoring them will always use the main language typography rules\n\nThe current default (★) is to ignore them."),
                 choice1_text_func =  function()
                     return text_lang_embedded_langs and _("Ignore") or _("Ignore (★)")
                 end,
@@ -328,7 +328,7 @@ When the book's language tag is not among our presets, no specific features will
                     G_reader_settings:saveSetting("text_lang_embedded_langs", false)
                 end,
                 choice2_text_func = function()
-                    return text_lang_embedded_langs and _("Honor (★)") or _("Honor")
+                    return text_lang_embedded_langs and _("Respect (★)") or _("Respect")
                 end,
                 choice2_callback = function()
                     G_reader_settings:saveSetting("text_lang_embedded_langs", true)
