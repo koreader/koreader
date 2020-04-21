@@ -617,6 +617,41 @@ function CreDocument:setFallbackFontFace(new_fallback_font_face)
     end
 end
 
+-- To use the new crengine language typography facilities (hyphenation, line breaking,
+-- OpenType fonts locl letter forms...)
+function CreDocument:setTextMainLang(lang)
+    if lang then
+        logger.dbg("CreDocument: set textlang main lang", lang)
+        self._document:setStringProperty("crengine.textlang.main.lang", lang)
+    end
+end
+
+function CreDocument:setTextEmbeddedLangs(toggle)
+    logger.dbg("CreDocument: set textlang embedded langs", toggle)
+    self._document:setStringProperty("crengine.textlang.embedded.langs.enabled", toggle and 1 or 0)
+end
+
+function CreDocument:setTextHyphenation(toggle)
+    logger.dbg("CreDocument: set textlang hyphenation enabled", toggle)
+    self._document:setStringProperty("crengine.textlang.hyphenation.enabled", toggle and 1 or 0)
+end
+
+function CreDocument:setTextHyphenationSoftHyphensOnly(toggle)
+    logger.dbg("CreDocument: set textlang hyphenation soft hyphens only", toggle)
+    self._document:setStringProperty("crengine.textlang.hyphenation.soft.hyphens.only", toggle and 1 or 0)
+end
+
+function CreDocument:setTextHyphenationForceAlgorithmic(toggle)
+    logger.dbg("CreDocument: set textlang hyphenation force algorithmic", toggle)
+    self._document:setStringProperty("crengine.textlang.hyphenation.force.algorithmic", toggle and 1 or 0)
+end
+
+function CreDocument:getTextMainLangDefaultHyphDictionary()
+    local main_lang_tag, main_lang_active_hyph_dict, loaded_lang_infos = cre.getTextLangStatus() -- luacheck: no unused
+    return loaded_lang_infos[main_lang_tag] and loaded_lang_infos[main_lang_tag].hyph_dict_name
+end
+
+-- To use the old crengine hyphenation manager (only one global hyphenation method)
 function CreDocument:setHyphDictionary(new_hyph_dictionary)
     if new_hyph_dictionary then
         logger.dbg("CreDocument: set hyphenation dictionary", new_hyph_dictionary)
