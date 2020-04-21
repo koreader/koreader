@@ -319,8 +319,8 @@ When the book's language tag is not among our presets, no specific features will
         hold_callback = function()
             local text_lang_embedded_langs = G_reader_settings:nilOrTrue("text_lang_embedded_langs")
             UIManager:show(MultiConfirmBox:new{
-                text = text_lang_embedded_langs and _("Would you like to respect or ignore embedded lang tags by default?\n\nRespecting them will use their language typography rules for rendering their content, while ignoring them will always use the main language typography rules.\n\nThe current default (★) is to respect them.")
-                or _("Would you like to respect or ignore embedded lang tags by default?\n\nRespecting them will use their language typography rules for rendering their content, while ignoring them will always use the main language typography rules\n\nThe current default (★) is to ignore them."),
+                text = text_lang_embedded_langs and _("Would you like to respect or ignore embedded lang tags by default?\n\nRespecting them will use relevant typographic rules to render their content, while ignoring them will always use the main language typography rules.\n\nThe current default (★) is to respect them.")
+                or _("Would you like to respect or ignore embedded lang tags by default?\n\nRespecting them will use relevant typographic rules to render their content, while ignoring them will always use the main language typography rules\n\nThe current default (★) is to ignore them."),
                 choice1_text_func =  function()
                     return text_lang_embedded_langs and _("Ignore") or _("Ignore (★)")
                 end,
