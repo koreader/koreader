@@ -845,6 +845,15 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
             },
             {
+                text = _("Lock tap status bar"),
+                checked_func = function()
+                    return self.settings.lock_tap
+                end,
+                callback = function()
+                    self.settings.lock_tap = not self.settings.lock_tap
+                end,
+            },
+            {
                 text = _("Font"),
                 separator = true,
                 sub_item_table = {
@@ -1776,6 +1785,9 @@ function ReaderFooter:onExitFlippingMode()
 end
 
 function ReaderFooter:onTapFooter(ges)
+    if self.settings.lock_tap then
+        return true
+    end
     if self.has_no_mode then
         return
     end
