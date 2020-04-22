@@ -1785,10 +1785,7 @@ function ReaderFooter:onExitFlippingMode()
 end
 
 function ReaderFooter:onTapFooter(ges)
-    if self.settings.lock_tap then
-        return true
-    end
-    if self.has_no_mode then
+    if self.has_no_mode or self.settings.lock_tap then
         return
     end
     if self.view.flipping_visible then
