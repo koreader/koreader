@@ -47,6 +47,16 @@ local SYNC_STRATEGY = {
     DEFAULT_BACKWARD = 3,
 }
 
+local function getNameStrategy(type)
+    if type == 1 then
+        return _("Prompt")
+    elseif type == 2 then
+        return _("Auto")
+    else
+        return _("Disable")
+    end
+end
+
 local function showSyncedMessage()
     UIManager:show(InfoMessage:new{
         text = _("Progress has been synchronized."),
@@ -162,66 +172,72 @@ function KOSync:addToMainMenu(menu_items)
                 enabled_func = function() return self.kosync_auto_sync end,
                 sub_item_table = {
                     {
-                        text = _("Sync to latest record >>>>"),
-                        enabled = false,
+                        text_func = function()
+                            return T(_("Sync to latest record (%1)"), getNameStrategy(self.kosync_whisper_forward))
+                        end,
+                        sub_item_table = {
+                            {
+                                text = _("Auto"),
+                                checked_func = function()
+                                    return self.kosync_whisper_forward == SYNC_STRATEGY.WHISPER
+                                end,
+                                callback = function()
+                                    self:setWhisperForward(SYNC_STRATEGY.WHISPER)
+                                end,
+                            },
+                            {
+                                text = _("Prompt"),
+                                checked_func = function()
+                                    return self.kosync_whisper_forward == SYNC_STRATEGY.PROMPT
+                                end,
+                                callback = function()
+                                    self:setWhisperForward(SYNC_STRATEGY.PROMPT)
+                                end,
+                            },
+                            {
+                                text = _("Disable"),
+                                checked_func = function()
+                                    return self.kosync_whisper_forward == SYNC_STRATEGY.DISABLE
+                                end,
+                                callback = function()
+                                    self:setWhisperForward(SYNC_STRATEGY.DISABLE)
+                                end,
+                            },
+                        }
                     },
                     {
-                        text = _("  Auto"),
-                        checked_func = function()
-                            return self.kosync_whisper_forward == SYNC_STRATEGY.WHISPER
+                        text_func = function()
+                            return T(_("Sync to a previous record (%1)"), getNameStrategy(self.kosync_whisper_backward))
                         end,
-                        callback = function()
-                            self:setWhisperForward(SYNC_STRATEGY.WHISPER)
-                        end,
-                    },
-                    {
-                        text = _("  Prompt"),
-                        checked_func = function()
-                            return self.kosync_whisper_forward == SYNC_STRATEGY.PROMPT
-                        end,
-                        callback = function()
-                            self:setWhisperForward(SYNC_STRATEGY.PROMPT)
-                        end,
-                    },
-                    {
-                        text = _("  Disable"),
-                        checked_func = function()
-                            return self.kosync_whisper_forward == SYNC_STRATEGY.DISABLE
-                        end,
-                        callback = function()
-                            self:setWhisperForward(SYNC_STRATEGY.DISABLE)
-                        end,
-                    },
-                    {
-                        text = _("Sync to a previous record <<<<"),
-                        enabled = false,
-                    },
-                    {
-                        text = _("  Auto"),
-                        checked_func = function()
-                            return self.kosync_whisper_backward == SYNC_STRATEGY.WHISPER
-                        end,
-                        callback = function()
-                            self:setWhisperBackward(SYNC_STRATEGY.WHISPER)
-                        end,
-                    },
-                    {
-                        text = _("  Prompt"),
-                        checked_func = function()
-                            return self.kosync_whisper_backward == SYNC_STRATEGY.PROMPT
-                        end,
-                        callback = function()
-                            self:setWhisperBackward(SYNC_STRATEGY.PROMPT)
-                        end,
-                    },
-                    {
-                        text = _("  Disable"),
-                        checked_func = function()
-                            return self.kosync_whisper_backward == SYNC_STRATEGY.DISABLE
-                        end,
-                        callback = function()
-                            self:setWhisperBackward(SYNC_STRATEGY.DISABLE)
-                        end,
+                        sub_item_table = {
+                            {
+                                text = _("Auto"),
+                                checked_func = function()
+                                    return self.kosync_whisper_backward == SYNC_STRATEGY.WHISPER
+                                end,
+                                callback = function()
+                                    self:setWhisperBackward(SYNC_STRATEGY.WHISPER)
+                                end,
+                            },
+                            {
+                                text = _("Prompt"),
+                                checked_func = function()
+                                    return self.kosync_whisper_backward == SYNC_STRATEGY.PROMPT
+                                end,
+                                callback = function()
+                                    self:setWhisperBackward(SYNC_STRATEGY.PROMPT)
+                                end,
+                            },
+                            {
+                                text = _("Disable"),
+                                checked_func = function()
+                                    return self.kosync_whisper_backward == SYNC_STRATEGY.DISABLE
+                                end,
+                                callback = function()
+                                    self:setWhisperBackward(SYNC_STRATEGY.DISABLE)
+                                end,
+                            },
+                        }
                     },
                 },
             },
