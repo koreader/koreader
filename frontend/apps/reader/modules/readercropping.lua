@@ -13,10 +13,11 @@ local RightContainer = require("ui/widget/container/rightcontainer")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local Screen = require("device").screen
+local _ = require("gettext")
 
 local PageCropDialog = VerticalGroup:new{
-    ok_text = "OK",
-    cancel_text = "Cancel",
+    ok_text = _("OK"),
+    cancel_text = _("Cancel"),
     ok_callback = function() end,
     cancel_callback = function() end,
     button_width = math.floor(Screen:scaleBySize(70)),
@@ -72,7 +73,6 @@ function PageCropDialog:onShow()
     end)
     return true
 end
-
 
 local ReaderCropping = InputContainer:new{}
 
