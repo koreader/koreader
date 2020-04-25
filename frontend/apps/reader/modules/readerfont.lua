@@ -60,7 +60,7 @@ function ReaderFont:init()
             text_func = function()
                 -- defaults are hardcoded in credocument.lua
                 local default_font = G_reader_settings:readSetting("cre_font") or self.ui.document.default_font
-                local fallback_font = G_reader_settings:readSetting("fallback_font") or self.ui.document.fallback_font
+                local fallback_font = G_reader_settings:readSetting("fallback_font") or self.ui.document.fallback_fonts[1]
                 local text = v
                 if v == default_font then
                     text = text .. "   ★"
@@ -298,10 +298,9 @@ function ReaderFont:makeDefault(face, touchmenu_instance)
             end,
             choice2_text = C_("Font", "Fallback"),
             choice2_callback = function()
-                if self.ui.document:setFallbackFontFace(face) then
-                    G_reader_settings:saveSetting("fallback_font", face)
-                    self.ui:handleEvent(Event:new("UpdatePos"))
-                end
+                G_reader_settings:saveSetting("fallback_font", face)
+                self.ui.document:setupFallbackFontFaces()
+                self.ui:handleEvent(Event:new("UpdatePos"))
                 if touchmenu_instance then touchmenu_instance:updateItems() end
             end,
         })

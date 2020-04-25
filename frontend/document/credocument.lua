@@ -28,7 +28,32 @@ local CreDocument = Document:new{
     line_space_percent = 100,
     default_font = "Noto Serif",
     header_font = "Noto Sans",
-    fallback_font = "Noto Sans CJK SC",
+
+    -- Reasons for the fallback font ordering:
+    -- - Noto Sans CJK SC before FreeSans/Serif, as it has nice and larger
+    --   symbol glyphs for Wikipedia EPUB headings than both Free fonts)
+    -- - FreeSerif after most, has it has good coverage but smaller glyphs
+    --   (and most other fonts are better looking)
+    -- - FreeSans covers areas that FreeSerif do not, and is usually
+    --   fine along other fonts (even serif fonts)
+    -- - Noto Serif & Sans at the end, just in case, and to have consistent
+    --   (and larger than FreeSerif) '?' glyphs for codepoints not found
+    --   in any fallback font. Also, we don't know if the user is using
+    --   a serif or a sans main font, so choosing to have one of these early
+    --   might not be the best decision (and moving them before FreeSans would
+    --   require one to set FreeSans as fallback to get its nicer glyphes, which
+    --   would override Noto Sans CJK good symbol glyphs with smaller ones
+    --   (Noto Sans & Serif do not have these symbol glyphs).
+    fallback_fonts = {
+        "Noto Sans CJK SC",
+        "Noto Sans Arabic UI",
+        "Noto Sans Devanagari UI",
+        "FreeSans",
+        "FreeSerif",
+        "Noto Serif",
+        "Noto Sans",
+    },
+
     default_css = "./data/cr3.css",
     provider = "crengine",
     provider_name = "Cool Reader Engine",
@@ -165,13 +190,12 @@ function CreDocument:setupDefaultView()
     self._document:readDefaults()
     logger.dbg("CreDocument: applied cr3.ini default settings.")
 
-    -- set fallback font face (this was formerly done in :init(), but it
+    -- set fallback font faces (this was formerly done in :init(), but it
     -- affects crengine calcGlobalSettingsHash() and would invalidate the
     -- cache from the main currently being read document when we just
-    -- loadDocument(only_metadata) another document go get its metadata
+    -- loadDocument(only_metadata) another document to get its metadata
     -- or cover image, eg. from History hold menu).
-    self._document:setStringProperty("crengine.font.fallback.face",
-        G_reader_settings:readSetting("fallback_font") or self.fallback_font)
+    self:setupFallbackFontFaces()
 
     -- adjust font sizes according to dpi set in canvas context
     self._document:adjustFontSizes(CanvasContext:getDPI())
@@ -601,20 +625,25 @@ function CreDocument:setFontFace(new_font_face)
     end
 end
 
-function CreDocument:setFallbackFontFace(new_fallback_font_face)
-    if new_fallback_font_face then
-        logger.dbg("CreDocument: set fallback font face", new_fallback_font_face)
-        self._document:setStringProperty("crengine.font.fallback.face", new_fallback_font_face)
-        -- crengine may not accept our fallback font, we need to check
-        local set_fallback_font_face = self._document:getStringProperty("crengine.font.fallback.face")
-        logger.dbg("CreDocument: crengine fallback font face", set_fallback_font_face)
-        if set_fallback_font_face ~= new_fallback_font_face then
-            logger.info("CreDocument:", new_fallback_font_face, "is not usable as a fallback font")
-            return false
-        end
-        self.fallback_font = new_fallback_font_face
-        return true
+function CreDocument:setupFallbackFontFaces()
+    local fallbacks = {}
+    local seen_fonts = {}
+    local user_fallback = G_reader_settings:readSetting("fallback_font")
+    if user_fallback then
+        table.insert(fallbacks, user_fallback)
+        seen_fonts[user_fallback] = true
     end
+    for _, font_name in pairs(self.fallback_fonts) do
+        if not seen_fonts[font_name] then
+            table.insert(fallbacks, font_name)
+            seen_fonts[font_name] = true
+        end
+    end
+    -- We use '|' as the delimiter (which is less likely to be found in font
+    -- names than ',' or ';', without the need to have to use quotes.
+    local s_fallbacks = table.concat(fallbacks, "|")
+    logger.dbg("CreDocument: set fallback font faces:", s_fallbacks)
+    self._document:setStringProperty("crengine.font.fallback.face", s_fallbacks)
 end
 
 -- To use the new crengine language typography facilities (hyphenation, line breaking,
