@@ -793,7 +793,7 @@ function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
                         end
                         self._bb:colorblitFrom(glyph.bb,
                                     xglyph.x0 + glyph.l + xglyph.x_offset,
-                                    y - glyph.t + xglyph.y_offset,
+                                    y - glyph.t - xglyph.y_offset,
                                     0, 0, glyph.bb:getWidth(), glyph.bb:getHeight(), color)
                     end
                 end
