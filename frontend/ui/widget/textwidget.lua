@@ -348,7 +348,7 @@ function TextWidget:paintTo(bb, x, y)
         bb:colorblitFrom(
             glyph.bb,
             x + pen_x + glyph.l + xglyph.x_offset,
-            y + baseline - glyph.t + xglyph.y_offset,
+            y + baseline - glyph.t - xglyph.y_offset,
             0, 0,
             glyph.bb:getWidth(), glyph.bb:getHeight(),
             self.fgcolor)
