@@ -57,10 +57,15 @@ function MenuSorter:sort(item_table, order)
             for order_number,order_number_id in ipairs(order_item) do
                 -- this is a submenu, mark it for later
                 if item_table[order_number_id] ~= nil and order[order_number_id] then
-                    table.insert(sub_menus, order_number_id)
-                    tmp_menu_table[order_number] = {
-                        id = order_number_id,
-                    }
+                    -- Do not show submenu with empty items (e.g. more_plugins)
+                    if item_table[order_number_id].id ~= nil and #item_table[order_number_id] == 0 then
+                        item_table[order_number_id] = nil
+                    else
+                        table.insert(sub_menus, order_number_id)
+                        tmp_menu_table[order_number] = {
+                            id = order_number_id,
+                        }
+                    end
                 -- regular, just insert a menu action
                 else
                     if order_number_id == separator_id then
