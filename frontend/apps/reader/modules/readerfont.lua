@@ -82,8 +82,28 @@ function ReaderFont:init()
         })
         face_list[k] = {text = v}
     end
+    self.face_table[#self.face_table].separator = true
+    table.insert(self.face_table, {
+        text = _("Complementary standard fallback fonts"),
+        checked_func = function()
+            return G_reader_settings:nilOrTrue("complementary_fallback_fonts")
+        end,
+        callback = function()
+        G_reader_settings:flipNilOrTrue("complementary_fallback_fonts")
+            self.ui.document:setupFallbackFontFaces()
+            self.ui:handleEvent(Event:new("UpdatePos"))
+        end,
+        help_text = T(_([[
+Enable additional fallback fonts, for the most complete scripts and languages coverage.
+Complementary fonts, used in this order:
+
+%1
+
+The fallback font set with a long-press on a font name will be used before these.
+Note that the first font of the whole fallback fonts set is still used when this option is disabled.]]),
+            table.concat(self.ui.document.fallback_fonts, "\n")),
+    })
     if self:hasFontsTestSample() then
-        self.face_table[#self.face_table].separator = true
         table.insert(self.face_table, {
             text = _("Generate fonts test HTML document"),
             callback = function()
