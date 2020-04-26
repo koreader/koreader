@@ -845,7 +845,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Lock tap status bar"),
+                text = _("Lock status bar"),
                 checked_func = function()
                     return self.settings.lock_tap
                 end,
