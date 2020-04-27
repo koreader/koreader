@@ -28,6 +28,8 @@ local action_strings = {
     page_jmp_fwd_1 = _("Next page"),
     prev_chapter = _("Previous chapter"),
     next_chapter = _("Next chapter"),
+    first_page = _("First page"),
+    last_page = _("Last page"),
     prev_bookmark = _("Previous bookmark"),
     next_bookmark = _("Next bookmark"),
     go_to = _("Go to"),
@@ -705,6 +707,8 @@ function ReaderGesture:buildMenu(ges, default)
         {"page_jmp_fwd_1", not self.is_docless},
         {"prev_chapter", not self.is_docless},
         {"next_chapter", not self.is_docless},
+        {"first_page", not self.is_docless},
+        {"last_page", not self.is_docless},
         {"prev_bookmark", not self.is_docless},
         {"next_bookmark", not self.is_docless},
         {"go_to", true},
@@ -1261,7 +1265,7 @@ end
 
 function ReaderGesture:gestureAction(action, ges)
     if action == "ignore"
-       or (ges.ges == "hold" and self.ignore_hold_corners) then
+        or (ges.ges == "hold" and self.ignore_hold_corners) then
         return
     elseif action == "reading_progress" and ReaderGesture.getReaderProgress then
         UIManager:show(ReaderGesture.getReaderProgress())
@@ -1306,6 +1310,12 @@ function ReaderGesture:gestureAction(action, ges)
         self.ui:handleEvent(Event:new("GotoViewRel", -1))
     elseif action == "next_chapter" then
         self.ui:handleEvent(Event:new("GotoNextChapter"))
+    elseif action == "first_page" then
+        self.ui:handleEvent(Event:new("GotoPage", 1))
+    elseif action == "last_page" then
+        if self.view.document then
+            self.ui:handleEvent(Event:new("GotoPage", self.view.document:getPageCount()))
+        end
     elseif action == "prev_chapter" then
         self.ui:handleEvent(Event:new("GotoPrevChapter"))
     elseif action == "next_bookmark" then
@@ -1348,7 +1358,7 @@ function ReaderGesture:gestureAction(action, ges)
         -- FileManager
         if self.ui.menu.openLastDoc and G_reader_settings:readSetting("lastfile") ~= nil then
             self.ui.menu:openLastDoc()
-        -- ReaderUI
+            -- ReaderUI
         elseif self.ui.switchDocument and self.ui.menu then
             self.ui:switchDocument(self.ui.menu:getPreviousFile())
         end
