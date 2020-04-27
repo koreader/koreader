@@ -38,19 +38,41 @@ if command_exists "${COMMAND}"; then
     {
         echo "Section: graphics"
         echo "Priority: optional"
-        echo "Depends: libsdl2-2.0-0"
+        echo "Depends: libsdl2-2.0-0, libc6 (>= 2.2.1)"
         echo "Architecture: ${ARCH}"
         echo "Version: ${VERSION}"
         echo "Installed-Size: $(du -ks "${INSTALL_DIR}/debian/usr/" | cut -f 1)"
 
-        echo "Package: KOReader"
-        echo "Maintainer: KOReader team"
+        echo "Package: koreader"
+        echo "Maintainer: KOReader team <dummy@koreader.rocks>"
         echo "Homepage: https://koreader.rocks"
-        echo "Description: An ebook reader application supporting PDF, DjVu, EPUB, FB2 and many more formats"
+        echo "Description: Ebook reader application supporting PDF, DjVu, EPUB, FB2 and many more formats"
         echo " KOReader is a document viewer application, originally created for Kindle e-ink readers."
         echo " It currently runs on Kindle, Kobo, PocketBook, Ubuntu Touch, Android and Linux devices"
 
     } >"${INSTALL_DIR}/debian/DEBIAN/control"
+
+    # remove executable bit from some cr3 files
+    (cd "${INSTALL_DIR}/debian/usr/lib/koreader/data/devices" &&
+        find . -type f -print0 | xargs -0 chmod 644)
+
+    # fix permissions for executables
+    (cd "${INSTALL_DIR}/debian/usr" &&
+        find . -executable -type f -print0 | xargs -0 chmod 755)
+
+    # fix permissions for shared libraries
+    (cd "${INSTALL_DIR}/debian/usr/lib/koreader/libs" &&
+        find . -type f -print0 | xargs -0 chmod 644)
+
+    # fix permissions for directories
+    (cd "${INSTALL_DIR}/debian/usr" &&
+        find . -type d -print0 | xargs -0 chmod 755)
+
+    # remove luarocks binaries and tests
+    (cd "${INSTALL_DIR}/debian/usr/lib/koreader/rocks/lib/luarocks" &&
+        find . -type f -name "discovery2spore" -print0 | xargs -0 rm -rfv &&
+        find . -type f -name "wadl2spore" -print0 | xargs -0 rm -rfv &&
+        find . -type d -name "test" -print0 | xargs -0 rm -rfv)
 
     (cd "${INSTALL_DIR}/.." &&
         fakeroot dpkg-deb -b "${INSTALL_DIR}/debian" "koreader-${VERSION}-${ARCH}.deb")
