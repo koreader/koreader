@@ -362,7 +362,7 @@ These fonts will be used in this order:
 
 %1
 
-You can set a prefered fallback font set with a long-press on a font name, and it will be used before these.
+You can set a prefered fallback font with a long-press on a font name, and it will be used before these.
 If that font happens to be part of this list already, it will be used first.]]),
             table.concat(self.ui.document.fallback_fonts, "\n")),
         separator = true,
@@ -397,7 +397,7 @@ function ReaderFont:buildFontsTestDocument()
         f:close()
     end
     if not html_sample then
-        local f = io.open(FONT_TEST_DEFAULT_SAMPLE_PATH, "r")
+        f = io.open(FONT_TEST_DEFAULT_SAMPLE_PATH, "r")
         if not f then return nil end
         html_sample = f:read("*all")
         f:close()
