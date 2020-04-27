@@ -1358,7 +1358,7 @@ function ReaderGesture:gestureAction(action, ges)
         -- FileManager
         if self.ui.menu.openLastDoc and G_reader_settings:readSetting("lastfile") ~= nil then
             self.ui.menu:openLastDoc()
-            -- ReaderUI
+        -- ReaderUI
         elseif self.ui.switchDocument and self.ui.menu then
             self.ui:switchDocument(self.ui.menu:getPreviousFile())
         end
