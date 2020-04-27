@@ -639,7 +639,7 @@ function CreDocument:setupFallbackFontFaces()
             seen_fonts[font_name] = true
         end
     end
-    if G_reader_settings:isFalse("complementary_fallback_fonts") then
+    if G_reader_settings:isFalse("additional_fallback_fonts") then
         -- Keep the first fallback font (user set or first from self.fallback_fonts),
         -- as crengine won't reset its current set when provided with an empty string
         for i=#fallbacks, 2, -1 do
