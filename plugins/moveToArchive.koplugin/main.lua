@@ -1,18 +1,14 @@
-local BD = require("ui/bidi")
 local DataStorage = require("datastorage")
-local DocSettings = require("frontend/docsettings")
 local ReadHistory = require("readhistory")
+local FileManager = require("apps/filemanager/filemanager")
 local FFIUtil = require("ffi/util")
-local Ftp = require("apps/cloudstorage/ftp")
-local FtpApi = require("apps/cloudstorage/ftpapi")
 local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("frontend/luasettings")
 local UIManager = require("ui/uimanager")
-local NetworkMgr = require("ui/network/manager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local ftp = require("socket.ftp")
 local logger = require("logger")
 local util = require("util")
+local FrontUtil = require("frontend/util")
 local _ = require("gettext")
 local T = FFIUtil.template
 
@@ -20,30 +16,26 @@ local MoveToArchive = WidgetContainer:new{
     name = "move2archive",
 }
 
-local initialized = false
-local moveToArchive_config_file = "moveToArchive_settings.lua"
+local move_to_archive_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), "move_to_archive_settings.lua"))
 local archive_dir_config_key = "archive_dir";
-local archive_dir_path
-local moveToArchive_settings
-
+local last_copied_from_config_key = "last_copied_from_dir";
+local archive_dir_path = move_to_archive_settings:readSetting(archive_dir_config_key)
+local last_copied_from_dir = move_to_archive_settings:readSetting(last_copied_from_config_key)
 
 function MoveToArchive:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
 function MoveToArchive:addToMainMenu(menu_items)
-    self:lazyInitialization()
     menu_items.moveToArchive = {
         text = _("Move to Archive"),
         sub_item_table = {
             {
                 text = _("Move current book to archive"),
-                keep_menu_open = true,
                 callback = self.moveToArchive,
             },
             {
                 text = _("Copy current book to archive"),
-                keep_menu_open = true,
                 callback = self.copyToArchive,
             },
             {
@@ -55,7 +47,6 @@ function MoveToArchive:addToMainMenu(menu_items)
                          })
                          return
                     end
-                    local FileManager = require("apps/filemanager/filemanager")
                     if FileManager.instance then
                         FileManager.instance:reinit(archive_dir_path)
                     else
@@ -63,104 +54,84 @@ function MoveToArchive:addToMainMenu(menu_items)
                     end
                 end,
             },
-            -- {
-            --     text = _("Go back to previous folder"),
-            --     callback = function()
-            --         local FileManager = require("apps/filemanager/filemanager")
-            --         if FileManager.instance then
-            --             FileManager.instance:reinit(archive_dir_path)
-            --         else
-            --             FileManager:showFiles(archive_dir_path)
-            --         end
-            --     end,
-            -- },
+            {
+                text = _("Go to last copied/moved from folder"),
+                callback = function()
+                    if not last_copied_from_dir then
+                        UIManager:show(InfoMessage:new{
+                            text = _("No previous dir found")
+                         })
+                         return
+                    end
+                    if FileManager.instance then
+                        FileManager.instance:reinit(last_copied_from_dir)
+                    else
+                        FileManager:showFiles(last_copied_from_dir)
+                    end
+                end,
+            },
             {
                 text = _("Set archive directory"),
                 keep_menu_open = true,
                 callback =  self.setArchiveDirectory,
-            },
-            -- {
-            --     text = _("Help"),
-            --     keep_menu_open = true,
-            --     callback = function()
-            --         UIManager:show(InfoMessage:new{
-            --             text = T(_('MoveToArchive lets you send articles found on PC/Android phone to your Ebook reader (using ftp server).\n\nMore details: https://github.com/mwoz123/moveToArchive\n\nDownloads to local folder: %1'), BD.dirpath(archive_dir_path))
-            --         })
-            --     end,
-            -- },
+            }
         },
     }
 end
 
-function MoveToArchive:lazyInitialization()
-   if not initialized then
-        logger.dbg("MoveToArchive: obtaining archive folder")
-        moveToArchive_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), moveToArchive_config_file))
-        if moveToArchive_settings:has(archive_dir_config_key) then
-            archive_dir_path = moveToArchive_settings:readSetting(archive_dir_config_key)
-        end
-    end
-end
-
 function MoveToArchive:moveToArchive()
-    MoveToArchive:copyToArchive()
-    -- remove files
-end
-
-function MoveToArchive:copyToArchive()
     if not archive_dir_path then
         UIManager:show(InfoMessage:new{
             text = _("No archive directory. Please set it first")
          })
          return
     end
-end
-
-
-
-function MoveToArchive:removeReadActicles()
-    logger.dbg("MoveToArchive: Removing read articles from :", archive_dir_path)
-    for entry in lfs.dir(archive_dir_path) do
-        if entry ~= "." and entry ~= ".." then
-            local entry_path = archive_dir_path .. entry
-            if DocSettings:hasSidecarFile(entry_path) then
-               local entry_mode = lfs.attributes(entry_path, "mode")
-               if entry_mode == "file" then
-                   os.remove(entry_path)
-                   local sdr_dir = DocSettings:getSidecarDir(entry_path)
-                   logger.dbg("MoveToArchive: sdr dir to be removed:", sdr_dir)
-                   FFIUtil.purgeDir(sdr_dir)
-               end
-            end
-        end
-    end
+    local document_full_path = G_reader_settings:readSetting("lastfile")
+    last_copied_from_dir = FrontUtil.splitFilePathName(document_full_path)
+    logger.dbg("MoveToArchive: last_copied_from_dir :", last_copied_from_dir)
+    
+    FileManager:moveFile(document_full_path, archive_dir_path)
+    
+    move_to_archive_settings:saveSetting(last_copied_from_config_key, ("%s/"):format(last_copied_from_dir))
+    
+    ReadHistory:removeItemByPath(document_full_path)
+    
     UIManager:show(InfoMessage:new{
-       text = _("All read articles removed.")
-    })
+        text = _("Book moved. Please reopen it from archive location.")
+     })
 end
+
+function MoveToArchive:copyToArchive()
+    if not archive_dir_path then
+        UIManager:show(InfoMessage:new{
+            text = _("No archive directory. Please set it first")
+        })
+        return
+    end
+    local document_full_path = G_reader_settings:readSetting("lastfile") 
+    last_copied_from_dir = FrontUtil.splitFilePathName(document_full_path)
+    
+    logger.dbg("MoveToArchive: last_copied_from_dir :", last_copied_from_dir)
+    move_to_archive_settings:saveSetting(last_copied_from_config_key, ("%s/"):format(last_copied_from_dir))
+
+    FileManager:cpFile(document_full_path, archive_dir_path)
+    
+    UIManager:show(InfoMessage:new{
+        text = _("Book copied. Please reopen it from archive location if needed.")
+     })
+end
+
 
 function MoveToArchive:setArchiveDirectory()
     require("ui/downloadmgr"):new{
         onConfirm = function(path)
             logger.dbg("MoveToArchive: set archive directory to: ", path)
-            moveToArchive_settings:saveSetting(archive_dir_config_key, ("%s/"):format(path))
-            moveToArchive_settings:flush()
+            move_to_archive_settings:saveSetting(archive_dir_config_key, ("%s/"):format(path))
+            move_to_archive_settings:flush()
 
-            -- initialized = false
-            -- MoveToArchive:lazyInitialization()
+            archive_dir_path = path
         end,
     }:chooseDir()
-end
-
-
-function MoveToArchive:onCloseDocument()
-    local document_full_path = self.ui.document.file
-    if  document_full_path and archive_dir_path and archive_dir_path == string.sub(document_full_path, 1, string.len(archive_dir_path)) then
-        logger.dbg("MoveToArchive: document_full_path:", document_full_path)
-        logger.dbg("MoveToArchive: archive_dir_path:", archive_dir_path)
-        logger.dbg("MoveToArchive: removing MoveToArchive file from history.")
-        ReadHistory:removeItemByPath(document_full_path)
-    end
 end
 
 return MoveToArchive
