@@ -12,6 +12,7 @@ lua-*
 .reader.kpdfview.lua
 *.kdev4
 .kdev4/*
+.kateconfig
 .vimrc
 .vscode/*
 *.o
