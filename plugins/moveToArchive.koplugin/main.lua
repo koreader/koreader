@@ -1,16 +1,13 @@
 local DataStorage = require("datastorage")
 local ReadHistory = require("readhistory")
 local FileManager = require("apps/filemanager/filemanager")
-local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("frontend/luasettings")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
-local util = require("util")
-local FrontUtil = require("frontend/util")
+local util = require("frontend/util")
 local _ = require("gettext")
-local T = FFIUtil.template
 
 local MoveToArchive = WidgetContainer:new{
     name = "move2archive",
@@ -87,15 +84,15 @@ function MoveToArchive:moveToArchive()
          return
     end
     local document_full_path = G_reader_settings:readSetting("lastfile")
-    last_copied_from_dir = FrontUtil.splitFilePathName(document_full_path)
+    last_copied_from_dir = util.splitFilePathName(document_full_path)
     logger.dbg("MoveToArchive: last_copied_from_dir :", last_copied_from_dir)
-    
+
     FileManager:moveFile(document_full_path, archive_dir_path)
-    
+
     move_to_archive_settings:saveSetting(last_copied_from_config_key, ("%s/"):format(last_copied_from_dir))
-    
+
     ReadHistory:removeItemByPath(document_full_path)
-    
+
     UIManager:show(InfoMessage:new{
         text = _("Book moved. Please reopen it from archive location.")
      })
@@ -108,14 +105,14 @@ function MoveToArchive:copyToArchive()
         })
         return
     end
-    local document_full_path = G_reader_settings:readSetting("lastfile") 
-    last_copied_from_dir = FrontUtil.splitFilePathName(document_full_path)
-    
+    local document_full_path = G_reader_settings:readSetting("lastfile")
+    last_copied_from_dir = util.splitFilePathName(document_full_path)
+
     logger.dbg("MoveToArchive: last_copied_from_dir :", last_copied_from_dir)
     move_to_archive_settings:saveSetting(last_copied_from_config_key, ("%s/"):format(last_copied_from_dir))
 
     FileManager:cpFile(document_full_path, archive_dir_path)
-    
+
     UIManager:show(InfoMessage:new{
         text = _("Book copied. Please reopen it from archive location if needed.")
      })
