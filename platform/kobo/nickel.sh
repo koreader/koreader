@@ -9,7 +9,10 @@ export LD_LIBRARY_PATH="/usr/local/Kobo"
 # Reset PWD, and clear up our own custom stuff from the env while we're there, otherwise, USBMS may become very wonky on newer FW...
 # shellcheck disable=SC2164
 cd /
-unset OLDPWD EXT_FONT_DIR TESSDATA_PREFIX FROM_NICKEL STARDICT_DATA_DIR LC_ALL KO_NO_CBB
+unset OLDPWD
+unset LC_ALL CPOINTS TESSDATA_PREFIX STARDICT_DATA_DIR EXT_FONT_DIR
+unset KO_NO_CBB
+unset FROM_NICKEL
 
 # Ensures fmon will restart. Note that we don't have to worry about reaping this, nickel kills on-animator.sh on start.
 (
