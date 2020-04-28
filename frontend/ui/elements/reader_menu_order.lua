@@ -120,6 +120,7 @@ local order = {
         "zsync",
         "news_downloader",
         "send2ebook",
+        "moveToArchive",
         "text_editor",
         "----------------------------",
         "more_plugins",
