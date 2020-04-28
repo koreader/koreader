@@ -75,7 +75,7 @@ export EXT_FONT_DIR="/mnt/onboard/fonts"
 
 # Quick'n dirty way of checking if we were started while Nickel was running (e.g., KFMon),
 # or from another launcher entirely, outside of Nickel (e.g., KSM).
-export VIA_NICKEL="false"
+VIA_NICKEL="false"
 if pkill -0 nickel; then
     VIA_NICKEL="true"
 fi
@@ -91,15 +91,13 @@ if [ "${VIA_NICKEL}" = "true" ]; then
         fi
     fi
 
-    # Detect if we were started from Nickel
-    FROM_NICKEL="false"
-    # Check if Nickel truly is our parent...
-    if [ "$(pidof nickel)" -eq "${PPID}" ]; then
+    # Check if Nickel is our parent...
+    if [ -z "${FROM_NICKEL}" ] && [ "$(pidof nickel)" -eq "${PPID}" ]; then
         FROM_NICKEL="true"
     fi
 
     # If we were spawned outside of Nickel, we'll need a few extra bits from its own env...
-    if [ "${FROM_NICKEL}" = "false" ]; then
+    if [ -z "${FROM_NICKEL}" ]; then
         # Siphon a few things from nickel's env (namely, stuff exported by rcS *after* on-animator.sh has been launched)...
         eval "$(xargs -n 1 -0 <"/proc/$(pidof nickel)/environ" | grep -e DBUS_SESSION_BUS_ADDRESS -e NICKEL_HOME -e WIFI_MODULE -e LANG -e WIFI_MODULE_PATH -e INTERFACE 2>/dev/null)"
         export DBUS_SESSION_BUS_ADDRESS NICKEL_HOME WIFI_MODULE LANG WIFI_MODULE_PATH INTERFACE
