@@ -327,7 +327,7 @@ if [ -n "${ORIG_CPUFREQ_GOV}" ]; then
 fi
 
 if [ "${VIA_NICKEL}" = "true" ]; then
-    if [ "${FROM_KFMON}" == "true" ]; then
+    if [ "${FROM_KFMON}" = "true" ]; then
         # KFMon is the only launcher that has a toggle to either reboot or restart Nickel on exit
         if grep -q "reboot_on_exit=false" "/mnt/onboard/.adds/kfmon/config/koreader.ini" 2>/dev/null; then
             # KFMon asked us to restart nickel on exit (default since KFMon 0.9.5)
