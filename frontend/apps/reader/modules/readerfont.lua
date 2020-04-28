@@ -362,14 +362,14 @@ These fonts will be used in this order:
 
 %1
 
-You can set a prefered fallback font with a long-press on a font name, and it will be used before these.
+You can set a preferred fallback font with a long-press on a font name, and it will be used before these.
 If that font happens to be part of this list already, it will be used first.]]),
             table.concat(self.ui.document.fallback_fonts, "\n")),
         separator = true,
     })
 
     table.insert(settings_table, {
-        text = _("Generate font test HTML document"),
+        text = _("Generate font test document"),
         callback = function()
             UIManager:show(ConfirmBox:new{
                 text = _("Would you like to generate an HTML document showing some sample text rendered with each available font?");
