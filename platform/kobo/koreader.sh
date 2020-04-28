@@ -92,12 +92,13 @@ if [ "${VIA_NICKEL}" = "true" ]; then
     fi
 
     # Check if Nickel is our parent...
-    if [ -z "${FROM_NICKEL}" ] && [ "$(pidof nickel)" -eq "${PPID}" ]; then
+    FROM_NICKEL="false"
+    if [ -n "${NICKEL_HOME}" ]; then
         FROM_NICKEL="true"
     fi
 
     # If we were spawned outside of Nickel, we'll need a few extra bits from its own env...
-    if [ -z "${FROM_NICKEL}" ]; then
+    if [ "${FROM_NICKEL}" = "false" ]; then
         # Siphon a few things from nickel's env (namely, stuff exported by rcS *after* on-animator.sh has been launched)...
         eval "$(xargs -n 1 -0 <"/proc/$(pidof nickel)/environ" | grep -e DBUS_SESSION_BUS_ADDRESS -e NICKEL_HOME -e WIFI_MODULE -e LANG -e WIFI_MODULE_PATH -e INTERFACE 2>/dev/null)"
         export DBUS_SESSION_BUS_ADDRESS NICKEL_HOME WIFI_MODULE LANG WIFI_MODULE_PATH INTERFACE
