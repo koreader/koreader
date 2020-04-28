@@ -77,7 +77,7 @@ function FontSettings:getPath()
     return getUserDir()
 end
 
-function FontSettings:getMenuTable()
+function FontSettings:getSystemFontMenuItems()
     local t = {{
         text = _("Enable system fonts"),
         checked_func = usesSystemFonts,
@@ -98,11 +98,7 @@ function FontSettings:getMenuTable()
         })
     end
 
-    return {
-        text = _("Font settings"),
-        separator = true,
-        sub_item_table = t
-    }
+    return t
 end
 
 return FontSettings
