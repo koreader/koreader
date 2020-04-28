@@ -73,15 +73,15 @@ export STARDICT_DATA_DIR="data/dict"
 # export external font directory
 export EXT_FONT_DIR="/mnt/onboard/fonts"
 
-# fast and dirty way of check if we are called from nickel
-# through fmon/KFMon, or from another launcher (KSM or advboot)
-# Do not delete this line because KSM detects newer versions of KOReader by the presence of the phrase 'from_nickel'.
-export FROM_NICKEL="false"
+# Quick'n dirty way of checking if we were started while Nickel was running (e.g., KFMon),
+# or from another launcher entirely, outside of Nickel (e.g., KSM).
+export VIA_NICKEL="false"
 if pkill -0 nickel; then
-    FROM_NICKEL="true"
+    VIA_NICKEL="true"
 fi
+# NOTE: Do not delete this line because KSM detects newer versions of KOReader by the presence of the phrase 'from_nickel'.
 
-if [ "${FROM_NICKEL}" = "true" ]; then
+if [ "${VIA_NICKEL}" = "true" ]; then
     # Detect if we were started from KFMon
     FROM_KFMON="false"
     if pkill -0 kfmon; then
@@ -316,7 +316,7 @@ if [ -n "${ORIG_CPUFREQ_GOV}" ]; then
     echo "${ORIG_CPUFREQ_GOV}" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
 fi
 
-if [ "${FROM_NICKEL}" = "true" ]; then
+if [ "${VIA_NICKEL}" = "true" ]; then
     if [ "${FROM_KFMON}" != "true" ]; then
         # start kobo software because it was running before koreader
         ./nickel.sh &
