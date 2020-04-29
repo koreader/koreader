@@ -105,6 +105,18 @@ local function validateUser(user, pass)
     end
 end
 
+function KOSync:init()
+    local ReaderGesture = require("apps/reader/modules/readergesture")
+    ReaderGesture.KOSyncPushProgress = function()
+        if not self.kosync_userkey then return end
+        self:updateProgress(true)
+    end
+    ReaderGesture.KOSyncPullProgress = function()
+        if not self.kosync_userkey then return end
+        self:getProgress(true)
+    end
+end
+
 function KOSync:onReaderReady()
     local settings = G_reader_settings:readSetting("kosync") or {}
     self.kosync_custom_server = settings.custom_server
