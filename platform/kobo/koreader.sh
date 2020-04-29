@@ -73,15 +73,15 @@ export STARDICT_DATA_DIR="data/dict"
 # export external font directory
 export EXT_FONT_DIR="/mnt/onboard/fonts"
 
-# fast and dirty way of check if we are called from nickel
-# through fmon/KFMon, or from another launcher (KSM or advboot)
-# Do not delete this line because KSM detects newer versions of KOReader by the presence of the phrase 'from_nickel'.
-export FROM_NICKEL="false"
+# Quick'n dirty way of checking if we were started while Nickel was running (e.g., KFMon),
+# or from another launcher entirely, outside of Nickel (e.g., KSM).
+VIA_NICKEL="false"
 if pkill -0 nickel; then
-    FROM_NICKEL="true"
+    VIA_NICKEL="true"
 fi
+# NOTE: Do not delete this line because KSM detects newer versions of KOReader by the presence of the phrase 'from_nickel'.
 
-if [ "${FROM_NICKEL}" = "true" ]; then
+if [ "${VIA_NICKEL}" = "true" ]; then
     # Detect if we were started from KFMon
     FROM_KFMON="false"
     if pkill -0 kfmon; then
@@ -91,13 +91,22 @@ if [ "${FROM_NICKEL}" = "true" ]; then
         fi
     fi
 
-    # Siphon a few things from nickel's env (namely, stuff exported by rcS *after* on-animator.sh has been launched)...
-    eval "$(xargs -n 1 -0 <"/proc/$(pidof nickel)/environ" | grep -e DBUS_SESSION_BUS_ADDRESS -e NICKEL_HOME -e WIFI_MODULE -e LANG -e WIFI_MODULE_PATH -e INTERFACE 2>/dev/null)"
-    export DBUS_SESSION_BUS_ADDRESS NICKEL_HOME WIFI_MODULE LANG WIFI_MODULE_PATH INTERFACE
+    # Check if Nickel is our parent...
+    FROM_NICKEL="false"
+    if [ -n "${NICKEL_HOME}" ]; then
+        FROM_NICKEL="true"
+    fi
 
-    # flush disks, might help avoid trashing nickel's DB...
+    # If we were spawned outside of Nickel, we'll need a few extra bits from its own env...
+    if [ "${FROM_NICKEL}" = "false" ]; then
+        # Siphon a few things from nickel's env (namely, stuff exported by rcS *after* on-animator.sh has been launched)...
+        eval "$(xargs -n 1 -0 <"/proc/$(pidof nickel)/environ" | grep -e DBUS_SESSION_BUS_ADDRESS -e NICKEL_HOME -e WIFI_MODULE -e LANG -e WIFI_MODULE_PATH -e INTERFACE 2>/dev/null)"
+        export DBUS_SESSION_BUS_ADDRESS NICKEL_HOME WIFI_MODULE LANG WIFI_MODULE_PATH INTERFACE
+    fi
+
+    # Flush disks, might help avoid trashing nickel's DB...
     sync
-    # stop kobo software because it's running
+    # And we can now stop the full Kobo software stack
     # NOTE: We don't need to kill KFMon, it's smart enough not to allow running anything else while we're up
     killall -TERM nickel hindenburg sickel fickel fmon 2>/dev/null
 fi
@@ -316,11 +325,9 @@ if [ -n "${ORIG_CPUFREQ_GOV}" ]; then
     echo "${ORIG_CPUFREQ_GOV}" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
 fi
 
-if [ "${FROM_NICKEL}" = "true" ]; then
-    if [ "${FROM_KFMON}" != "true" ]; then
-        # start kobo software because it was running before koreader
-        ./nickel.sh &
-    else
+if [ "${VIA_NICKEL}" = "true" ]; then
+    if [ "${FROM_KFMON}" = "true" ]; then
+        # KFMon is the only launcher that has a toggle to either reboot or restart Nickel on exit
         if grep -q "reboot_on_exit=false" "/mnt/onboard/.adds/kfmon/config/koreader.ini" 2>/dev/null; then
             # KFMon asked us to restart nickel on exit (default since KFMon 0.9.5)
             ./nickel.sh &
@@ -328,6 +335,9 @@ if [ "${FROM_NICKEL}" = "true" ]; then
             # KFMon asked us to restart the device on exit
             /sbin/reboot
         fi
+    else
+        # Otherwise, just restart Nickel
+        ./nickel.sh &
     fi
 else
     # if we were called from advboot then we must reboot to go to the menu
