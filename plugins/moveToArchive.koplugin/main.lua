@@ -77,25 +77,17 @@ function MoveToArchive:addToMainMenu(menu_items)
 end
 
 function MoveToArchive:moveToArchive()
-    if not archive_dir_path then
-        MoveToArchive:showNoArchiveConfirmBox()
-        return
-    end
-    local document_full_path = G_reader_settings:readSetting("lastfile")
-    local filename
-    last_copied_from_dir, filename = util.splitFilePathName(document_full_path)
-    logger.dbg("MoveToArchive: last_copied_from_dir :", last_copied_from_dir)
-
-    FileManager:moveFile(document_full_path, archive_dir_path)
-
-    move_to_archive_settings:saveSetting(last_copied_from_config_key, ("%s/"):format(last_copied_from_dir))
-
+    local move_done_text = _("Book moved. \nDo you want to open it from archive folder?")
+    MoveToArchive:commonProcess(true, move_done_text)
     ReadHistory:removeItemByPath(document_full_path)
-
-    MoveToArchive:showConfirmBox(_("Book moved. \nDo you want to open it from archive folder?"), function () ReaderUI:showReader(archive_dir_path .. filename) end)
 end
 
 function MoveToArchive:copyToArchive()
+    local copy_done_text =_("Book copied. \nDo you want to open it from archive folder?")
+    MoveToArchive:commonProcess(false, copy_done_text)
+end
+
+function MoveToArchive:commonProcess(is_move_process, moved_done_text)
     if not archive_dir_path then
         MoveToArchive:showNoArchiveConfirmBox()
         return
@@ -104,12 +96,16 @@ function MoveToArchive:copyToArchive()
     local filename
     last_copied_from_dir, filename = util.splitFilePathName(document_full_path)
 
-    logger.dbg("MoveToArchive: last_copied_from_dir :", last_copied_from_dir)
+    logger.dbg("MoveToArchive: last_moved/copied_from_dir :", last_copied_from_dir)
     move_to_archive_settings:saveSetting(last_copied_from_config_key, ("%s/"):format(last_copied_from_dir))
 
-    FileManager:copyFileFromTo(document_full_path, archive_dir_path)
+    if is_move_process then
+        FileManager:moveFile(document_full_path, archive_dir_path)
+    else
+        FileManager:copyFileFromTo(document_full_path, archive_dir_path)
+    end
 
-    MoveToArchive:showConfirmBox(_("Book copied. \nDo you want to open it from archive folder?"), function () ReaderUI:showReader(archive_dir_path .. filename) end)
+    MoveToArchive:showConfirmBox(moved_done_text, function () ReaderUI:showReader(archive_dir_path .. filename) end)
 end
 
 
