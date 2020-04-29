@@ -26,7 +26,7 @@ function MoveToArchive:init()
 end
 
 function MoveToArchive:addToMainMenu(menu_items)
-    menu_items.moveToArchive = {
+    menu_items.move_to_archive = {
         text = _("Move to Archive"),
         sub_item_table = {
             {

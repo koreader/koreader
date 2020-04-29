@@ -121,7 +121,7 @@ local order = {
         "news_downloader",
         "send2ebook",
         "text_editor",
-        "moveToArchive",
+        "move_to_archive",
         "----------------------------",
         "more_plugins",
         "plugin_management",
