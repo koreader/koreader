@@ -78,8 +78,8 @@ end
 
 function MoveToArchive:moveToArchive()
     local move_done_text = _("Book moved. \nDo you want to open it from archive folder?")
-    MoveToArchive:commonProcess(true, move_done_text)
-    ReadHistory:removeItemByPath(document_full_path)
+    local doc_old_path = MoveToArchive:commonProcess(true, move_done_text)
+    ReadHistory:removeItemByPath(doc_old_path)
 end
 
 function MoveToArchive:copyToArchive()
@@ -106,6 +106,7 @@ function MoveToArchive:commonProcess(is_move_process, moved_done_text)
     end
 
     MoveToArchive:showConfirmBox(moved_done_text, function () ReaderUI:showReader(archive_dir_path .. filename) end)
+    return document_full_path
 end
 
 
