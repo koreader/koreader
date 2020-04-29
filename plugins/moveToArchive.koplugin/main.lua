@@ -27,7 +27,7 @@ end
 
 function MoveToArchive:addToMainMenu(menu_items)
     menu_items.move_to_archive = {
-        text = _("Move to Archive"),
+        text = _("Move to archive"),
         sub_item_table = {
             {
                 text = _("Move current book to archive"),
@@ -77,13 +77,13 @@ function MoveToArchive:addToMainMenu(menu_items)
 end
 
 function MoveToArchive:moveToArchive()
-    local move_done_text = _("Book moved. \nDo you want to open it from archive folder?")
+    local move_done_text = _("Book moved.\nDo you want to open it from the archive folder?")
     local doc_old_path = MoveToArchive:commonProcess(true, move_done_text)
     ReadHistory:removeItemByPath(doc_old_path)
 end
 
 function MoveToArchive:copyToArchive()
-    local copy_done_text =_("Book copied. \nDo you want to open it from archive folder?")
+    local copy_done_text =_("Book copied.\nDo you want to open it from the archive folder?")
     MoveToArchive:commonProcess(false, copy_done_text)
 end
 
@@ -123,14 +123,13 @@ function MoveToArchive:setArchiveDirectory()
 end
 
 function MoveToArchive:showNoArchiveConfirmBox()
-    MoveToArchive:showConfirmBox(_("No archive directory. \nDo you want to set it now?"), self.setArchiveDirectory)
+    MoveToArchive:showConfirmBox(_("No archive directory.\nDo you want to set it now?"), self.setArchiveDirectory)
 end
 
 function MoveToArchive:showConfirmBox(text, ok_callback)
     UIManager:show(ConfirmBox:new{
         text = text,
-        cancel_text = _("Cancel"),
-        ok_text = _("Ok"),
+        ok_text = _("Set archive folder"),
         ok_callback = ok_callback
     })
 end
