@@ -1,5 +1,7 @@
+local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local ReadHistory = require("readhistory")
+local ReaderUI = require("apps/reader/readerui")
 local FileManager = require("apps/filemanager/filemanager")
 local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("frontend/luasettings")
@@ -39,10 +41,8 @@ function MoveToArchive:addToMainMenu(menu_items)
                 text = _("Go to archive folder"),
                 callback = function()
                     if not archive_dir_path then
-                        UIManager:show(InfoMessage:new{
-                            text = _("No archive directory. Please set it first")
-                         })
-                         return
+                        MoveToArchive:showNoArchiveConfirmBox()
+                        return
                     end
                     if FileManager.instance then
                         FileManager.instance:reinit(archive_dir_path)
@@ -56,9 +56,9 @@ function MoveToArchive:addToMainMenu(menu_items)
                 callback = function()
                     if not last_copied_from_dir then
                         UIManager:show(InfoMessage:new{
-                            text = _("No previous dir found")
+                            text = _("No previous folder found.")
                          })
-                         return
+                        return
                     end
                     if FileManager.instance then
                         FileManager.instance:reinit(last_copied_from_dir)
@@ -78,13 +78,12 @@ end
 
 function MoveToArchive:moveToArchive()
     if not archive_dir_path then
-        UIManager:show(InfoMessage:new{
-            text = _("No archive directory. Please set it first")
-         })
-         return
+        MoveToArchive:showNoArchiveConfirmBox()
+        return
     end
     local document_full_path = G_reader_settings:readSetting("lastfile")
-    last_copied_from_dir = util.splitFilePathName(document_full_path)
+    local filename
+    last_copied_from_dir, filename = util.splitFilePathName(document_full_path)
     logger.dbg("MoveToArchive: last_copied_from_dir :", last_copied_from_dir)
 
     FileManager:moveFile(document_full_path, archive_dir_path)
@@ -93,29 +92,24 @@ function MoveToArchive:moveToArchive()
 
     ReadHistory:removeItemByPath(document_full_path)
 
-    UIManager:show(InfoMessage:new{
-        text = _("Book moved. Please reopen it from archive location.")
-     })
+    MoveToArchive:showConfirmBox(_("Book moved. \nDo you want to open it from archive folder?"), function () ReaderUI:showReader(archive_dir_path .. filename) end)
 end
 
 function MoveToArchive:copyToArchive()
     if not archive_dir_path then
-        UIManager:show(InfoMessage:new{
-            text = _("No archive directory. Please set it first")
-        })
+        MoveToArchive:showNoArchiveConfirmBox()
         return
     end
     local document_full_path = G_reader_settings:readSetting("lastfile")
-    last_copied_from_dir = util.splitFilePathName(document_full_path)
+    local filename
+    last_copied_from_dir, filename = util.splitFilePathName(document_full_path)
 
     logger.dbg("MoveToArchive: last_copied_from_dir :", last_copied_from_dir)
     move_to_archive_settings:saveSetting(last_copied_from_config_key, ("%s/"):format(last_copied_from_dir))
 
-    FileManager:cpFile(document_full_path, archive_dir_path)
+    FileManager:copyFileFromTo(document_full_path, archive_dir_path)
 
-    UIManager:show(InfoMessage:new{
-        text = _("Book copied. Please reopen it from archive location if needed.")
-     })
+    MoveToArchive:showConfirmBox(_("Book copied. \nDo you want to open it from archive folder?"), function () ReaderUI:showReader(archive_dir_path .. filename) end)
 end
 
 
@@ -130,5 +124,19 @@ function MoveToArchive:setArchiveDirectory()
         end,
     }:chooseDir()
 end
+
+function MoveToArchive:showNoArchiveConfirmBox()
+    MoveToArchive:showConfirmBox(_("No archive directory. \nDo you want to set it now?"), self.setArchiveDirectory)
+end
+
+function MoveToArchive:showConfirmBox(text, ok_callback)
+    UIManager:show(ConfirmBox:new{
+        text = text,
+        cancel_text = _("Cancel"),
+        ok_text = _("Ok"),
+        ok_callback = ok_callback
+    })
+end
+
 
 return MoveToArchive
