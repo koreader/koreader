@@ -31,17 +31,17 @@ function MoveToArchive:addToMainMenu(menu_items)
         sub_item_table = {
             {
                 text = _("Move current book to archive"),
-                callback = self.moveToArchive,
+                callback = function() self:moveToArchive() end,
             },
             {
                 text = _("Copy current book to archive"),
-                callback = self.copyToArchive,
+                callback = function() self:copyToArchive() end,
             },
             {
                 text = _("Go to archive folder"),
                 callback = function()
                     if not archive_dir_path then
-                        MoveToArchive:showNoArchiveConfirmBox()
+                        self:showNoArchiveConfirmBox()
                         return
                     end
                     if FileManager.instance then
@@ -78,18 +78,18 @@ end
 
 function MoveToArchive:moveToArchive()
     local move_done_text = _("Book moved.\nDo you want to open it from the archive folder?")
-    local doc_old_path = MoveToArchive:commonProcess(true, move_done_text)
+    local doc_old_path = self:commonProcess(true, move_done_text)
     ReadHistory:removeItemByPath(doc_old_path)
 end
 
 function MoveToArchive:copyToArchive()
     local copy_done_text =_("Book copied.\nDo you want to open it from the archive folder?")
-    MoveToArchive:commonProcess(false, copy_done_text)
+    self:commonProcess(false, copy_done_text)
 end
 
 function MoveToArchive:commonProcess(is_move_process, moved_done_text)
     if not archive_dir_path then
-        MoveToArchive:showNoArchiveConfirmBox()
+        self:showNoArchiveConfirmBox()
         return
     end
     local document_full_path = G_reader_settings:readSetting("lastfile")
@@ -105,7 +105,7 @@ function MoveToArchive:commonProcess(is_move_process, moved_done_text)
         FileManager:copyFileFromTo(document_full_path, archive_dir_path)
     end
 
-    MoveToArchive:showConfirmBox(moved_done_text, function () ReaderUI:showReader(archive_dir_path .. filename) end)
+    self:showConfirmBox(moved_done_text, function () ReaderUI:showReader(archive_dir_path .. filename) end)
     return document_full_path
 end
 
@@ -123,7 +123,7 @@ function MoveToArchive:setArchiveDirectory()
 end
 
 function MoveToArchive:showNoArchiveConfirmBox()
-    MoveToArchive:showConfirmBox(_("No archive directory.\nDo you want to set it now?"), self.setArchiveDirectory)
+    self:showConfirmBox(_("No archive directory.\nDo you want to set it now?"), self.setArchiveDirectory)
 end
 
 function MoveToArchive:showConfirmBox(text, ok_callback)
