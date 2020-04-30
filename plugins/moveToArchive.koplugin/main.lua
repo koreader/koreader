@@ -122,11 +122,11 @@ function MoveToArchive:commonProcess(is_move_process, moved_done_text)
         FileManager:copyFileFromTo(document_full_path, archive_dir_path)
         FileManager:copyFileFromTo(DocSettings:getSidecarDir(document_full_path), archive_dir_path)
     end
-    local dest_file = string.format("%s/%s", dest, BaseUtil.basename(document_full_path))
+    local dest_file = string.format("%s/%s", archive_dir_path, BaseUtil.basename(document_full_path))
     require("readhistory"):updateItemByPath(document_full_path, dest_file)
     ReadCollection:updateItemByPath(document_full_path, dest_file)
     -- Update last open file.
-    if G_reader_settings:readSetting("lastfile") == orig then
+    if G_reader_settings:readSetting("lastfile") == document_full_path then
         G_reader_settings:saveSetting("lastfile", dest_file)
     end
 
