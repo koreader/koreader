@@ -1,5 +1,7 @@
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
+local DocSettings = require("docsettings")
+local ReadCollection = require("readcollection")
 local ReadHistory = require("readhistory")
 local ReaderUI = require("apps/reader/readerui")
 local FileManager = require("apps/filemanager/filemanager")
@@ -9,6 +11,7 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local util = require("frontend/util")
+local BaseUtil = require("ffi/util")
 local _ = require("gettext")
 
 local MoveToArchive = WidgetContainer:new{
@@ -44,6 +47,9 @@ function MoveToArchive:addToMainMenu(menu_items)
                         self:showNoArchiveConfirmBox()
                         return
                     end
+                    if self.ui.document then
+                        self.ui:onClose()
+                    end
                     if FileManager.instance then
                         FileManager.instance:reinit(archive_dir_path)
                     else
@@ -59,6 +65,9 @@ function MoveToArchive:addToMainMenu(menu_items)
                             text = _("No previous folder found.")
                          })
                         return
+                    end
+                    if self.ui.document then
+                        self.ui:onClose()
                     end
                     if FileManager.instance then
                         FileManager.instance:reinit(last_copied_from_dir)
@@ -99,6 +108,7 @@ function MoveToArchive:commonProcess(is_move_process, moved_done_text)
         return
     end
     local document_full_path = G_reader_settings:readSetting("lastfile")
+    self.ui:onClose()
     local filename
     last_copied_from_dir, filename = util.splitFilePathName(document_full_path)
 
@@ -107,8 +117,17 @@ function MoveToArchive:commonProcess(is_move_process, moved_done_text)
 
     if is_move_process then
         FileManager:moveFile(document_full_path, archive_dir_path)
+        FileManager:moveFile(DocSettings:getSidecarDir(document_full_path), archive_dir_path)
     else
         FileManager:copyFileFromTo(document_full_path, archive_dir_path)
+        FileManager:copyFileFromTo(DocSettings:getSidecarDir(document_full_path), archive_dir_path)
+    end
+    local dest_file = string.format("%s/%s", dest, BaseUtil.basename(document_full_path))
+    require("readhistory"):updateItemByPath(document_full_path, dest_file)
+    ReadCollection:updateItemByPath(document_full_path, dest_file)
+    -- Update last open file.
+    if G_reader_settings:readSetting("lastfile") == orig then
+        G_reader_settings:saveSetting("lastfile", dest_file)
     end
 
     self:showConfirmBox(moved_done_text, _("Ok"), function () ReaderUI:showReader(archive_dir_path .. filename) end)
