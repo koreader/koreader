@@ -786,8 +786,8 @@ function ReaderGesture:buildMenu(ges, default)
         {"cycle_highlight_style", not self.is_docless},
         {"wallabag_download", self.ui.wallabag ~= nil},
 
-        {"kosync_push_progress", not self.is_docless and ReaderGesture.KOSyncPushProgress ~= nil},
-        {"kosync_pull_progress", not self.is_docless and ReaderGesture.KOSyncPullProgress ~= nil},
+        {"kosync_push_progress", not self.is_docless},
+        {"kosync_pull_progress", not self.is_docless},
     }
     local return_menu = {}
     -- add default action to the top of the submenu
@@ -1566,10 +1566,10 @@ function ReaderGesture:gestureAction(action, ges)
         self.ui:handleEvent(Event:new("CycleHighlightAction"))
     elseif action == "cycle_highlight_style" then
         self.ui:handleEvent(Event:new("CycleHighlightStyle"))
-    elseif action == "kosync_push_progress" and ReaderGesture.KOSyncPushProgress then
-        ReaderGesture:KOSyncPushProgress()
-    elseif action == "kosync_pull_progress" and ReaderGesture.KOSyncPullProgress then
-        ReaderGesture:KOSyncPullProgress()
+    elseif action == "kosync_push_progress" then
+        self.ui:handleEvent(Event:new("KOSyncPushProgress"))
+    elseif action == "kosync_pull_progress" then
+        self.ui:handleEvent(Event:new("KOSyncPullProgress"))
     end
     return true
 end
