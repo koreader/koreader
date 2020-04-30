@@ -34,7 +34,7 @@ function MoveToArchive:addToMainMenu(menu_items)
                 callback = function() self:moveToArchive() end,
             },
             {
-                text = _("Copy current book to archive"),
+                text = _("Copy current book to archive - experimental"),
                 callback = function() self:copyToArchive() end,
             },
             {
@@ -88,6 +88,12 @@ function MoveToArchive:copyToArchive()
 end
 
 function MoveToArchive:commonProcess(is_move_process, moved_done_text)
+    if not self.ui.document then
+        UIManager:show(InfoMessage:new{
+            text = _("Only works in reading book mode.")
+         })
+        return
+    end
     if not archive_dir_path then
         self:showNoArchiveConfirmBox()
         return
@@ -105,7 +111,7 @@ function MoveToArchive:commonProcess(is_move_process, moved_done_text)
         FileManager:copyFileFromTo(document_full_path, archive_dir_path)
     end
 
-    self:showConfirmBox(moved_done_text, function () ReaderUI:showReader(archive_dir_path .. filename) end)
+    self:showConfirmBox(moved_done_text, _("Ok"), function () ReaderUI:showReader(archive_dir_path .. filename) end)
     return document_full_path
 end
 
@@ -123,13 +129,13 @@ function MoveToArchive:setArchiveDirectory()
 end
 
 function MoveToArchive:showNoArchiveConfirmBox()
-    self:showConfirmBox(_("No archive directory.\nDo you want to set it now?"), self.setArchiveDirectory)
+    self:showConfirmBox(_("No archive directory.\nDo you want to set it now?"), _("Set archive folder"), self.setArchiveDirectory)
 end
 
-function MoveToArchive:showConfirmBox(text, ok_callback)
+function MoveToArchive:showConfirmBox(text, ok_text, ok_callback)
     UIManager:show(ConfirmBox:new{
         text = text,
-        ok_text = _("Set archive folder"),
+        ok_text = ok_text,
         ok_callback = ok_callback
     })
 end
