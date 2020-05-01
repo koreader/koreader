@@ -1056,8 +1056,35 @@ end
 A shortcut to execute cp command (self.cp_bin) with from and to as parameters.
 Returns a boolean value to indicate the result of cp command.
 --]]
+
 function FileManager:copyFileFromTo(from, to)
+    logger.info("CCCCCCCCCC copyFileFromTo from", from)
+    logger.info("CCCCCCCCCC copyFileFromTo to", to)
     return BaseUtil.execute(self.cp_bin, from, to) == 0
+end
+
+--[[
+A shortcut to execute cp recursive command (self.cp_recursive_bin) with from and to as parameters.
+--]]
+function FileManager:copyRecursive(from, to)
+    local folder_name = BaseUtil.basename(from)
+    local new_folder_path = string.format("%s/%s/", to, folder_name)
+    BaseUtil.execute(self.mkdir_bin, new_folder_path)
+    logger.info("AAAAAAAAAAAAAAAA new_folder_path=", new_folder_path)
+    for file in lfs.dir(from) do
+        if file ~= ".." and file ~= "." then
+            local full_file_path = from .."/".. file
+            logger.info("BBBBBBBBBB full_file_path=", full_file_path)
+            logger.info("AAAAAAAAAAAAAAAA2 new_folder_path=", new_folder_path)
+            if lfs.attributes(full_file_path,"mode") == "file" then 
+                self.copyFileFromTo(full_file_path, new_folder_path )
+            elseif lfs.attributes(file,"mode") == "directory" then 
+                logger.info("found dir, ".. full_file_path," containing:")
+                self:copyRecursive(full_file_path, new_folder_path .. "/")
+            -- end
+            end
+        end
+    end
 end
 
 function FileManager:onHome()
