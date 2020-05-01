@@ -218,7 +218,7 @@ function Dispatcher:addSubMenu(menu, location, settings, dispatchCallback)
                     return self[location][settings] ~= nil and self[location][settings][k] ~= nil
                     end,
                     callback = function(touchmenu_instance)
-                        --TODO use a proper list picker widget
+                        --- @TODO use a proper list picker widget
                         --UIManager:show(items)
                     end,
                     hold_callback = function(touchmenu_instance)
