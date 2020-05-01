@@ -35,10 +35,12 @@ function MoveToArchive:addToMainMenu(menu_items)
             {
                 text = _("Move current book to archive"),
                 callback = function() self:moveToArchive() end,
+                enabled_func = function() return self:isActionEnabled() end,
             },
             {
-                text = _("Copy current book to archive - experimental"),
+                text = _("Copy current book (w/o progress) to archive"),
                 callback = function() self:copyToArchive() end,
+                enabled_func = function() return self:isActionEnabled() end,
             },
             {
                 text = _("Go to archive folder"),
@@ -47,14 +49,7 @@ function MoveToArchive:addToMainMenu(menu_items)
                         self:showNoArchiveConfirmBox()
                         return
                     end
-                    if self.ui.document then
-                        self.ui:onClose()
-                    end
-                    if FileManager.instance then
-                        FileManager.instance:reinit(archive_dir_path)
-                    else
-                        FileManager:showFiles(archive_dir_path)
-                    end
+                    self:openFileBrowser(archive_dir_path)
                 end,
             },
             {
@@ -66,14 +61,7 @@ function MoveToArchive:addToMainMenu(menu_items)
                          })
                         return
                     end
-                    if self.ui.document then
-                        self.ui:onClose()
-                    end
-                    if FileManager.instance then
-                        FileManager.instance:reinit(last_copied_from_dir)
-                    else
-                        FileManager:showFiles(last_copied_from_dir)
-                    end
+                    self:openFileBrowser(last_copied_from_dir)
                 end,
             },
             {
@@ -87,8 +75,7 @@ end
 
 function MoveToArchive:moveToArchive()
     local move_done_text = _("Book moved.\nDo you want to open it from the archive folder?")
-    local doc_old_path = self:commonProcess(true, move_done_text)
-    ReadHistory:removeItemByPath(doc_old_path)
+    self:commonProcess(true, move_done_text)
 end
 
 function MoveToArchive:copyToArchive()
@@ -97,17 +84,11 @@ function MoveToArchive:copyToArchive()
 end
 
 function MoveToArchive:commonProcess(is_move_process, moved_done_text)
-    if not self.ui.document then
-        UIManager:show(InfoMessage:new{
-            text = _("Only works in reading book mode.")
-         })
-        return
-    end
     if not archive_dir_path then
         self:showNoArchiveConfirmBox()
         return
     end
-    local document_full_path = G_reader_settings:readSetting("lastfile")
+    local document_full_path = self.ui.document.file
     self.ui:onClose()
     local filename
     last_copied_from_dir, filename = util.splitFilePathName(document_full_path)
@@ -120,9 +101,8 @@ function MoveToArchive:commonProcess(is_move_process, moved_done_text)
         FileManager:moveFile(DocSettings:getSidecarDir(document_full_path), archive_dir_path)
     else
         FileManager:copyFileFromTo(document_full_path, archive_dir_path)
-        FileManager:copyFileFromTo(DocSettings:getSidecarDir(document_full_path), archive_dir_path)
     end
-    local dest_file = string.format("%s/%s", archive_dir_path, BaseUtil.basename(document_full_path))
+    local dest_file = string.format("%s/%s", archive_dir_path, filename)
     require("readhistory"):updateItemByPath(document_full_path, dest_file)
     ReadCollection:updateItemByPath(document_full_path, dest_file)
     -- Update last open file.
@@ -130,19 +110,18 @@ function MoveToArchive:commonProcess(is_move_process, moved_done_text)
         G_reader_settings:saveSetting("lastfile", dest_file)
     end
 
-    self:showConfirmBox(moved_done_text, _("Ok"), function () ReaderUI:showReader(archive_dir_path .. filename) end)
-    return document_full_path
+    self:showConfirmBox(moved_done_text, _("Ok"), function () ReaderUI:showReader(archive_dir_path .. filename) end,
+        function () self:openFileBrowser(last_copied_from_dir) end)
+    ReadHistory:removeItemByPath(document_full_path)
 end
 
 
 function MoveToArchive:setArchiveDirectory()
     require("ui/downloadmgr"):new{
         onConfirm = function(path)
-            logger.dbg("MoveToArchive: set archive directory to: ", path)
+            archive_dir_path = path
             move_to_archive_settings:saveSetting(archive_dir_config_key, ("%s/"):format(path))
             move_to_archive_settings:flush()
-
-            archive_dir_path = path
         end,
     }:chooseDir()
 end
@@ -151,13 +130,29 @@ function MoveToArchive:showNoArchiveConfirmBox()
     self:showConfirmBox(_("No archive directory.\nDo you want to set it now?"), _("Set archive folder"), self.setArchiveDirectory)
 end
 
-function MoveToArchive:showConfirmBox(text, ok_text, ok_callback)
+function MoveToArchive:showConfirmBox(text, ok_text, ok_callback, cancel_callback)
     UIManager:show(ConfirmBox:new{
         text = text,
         ok_text = ok_text,
-        ok_callback = ok_callback
+        ok_callback = ok_callback,
+        cancel_callback = cancel_callback
     })
 end
 
+
+function MoveToArchive:isActionEnabled()
+    return self.ui.document ~= nil and ((BaseUtil.dirname(self.ui.document.file) .. "/") ~= archive_dir_path )
+end
+
+function MoveToArchive:openFileBrowser(path)
+    if self.ui.document then
+        self.ui:onClose()
+    end
+    if FileManager.instance then
+        FileManager.instance:reinit(path)
+    else
+        FileManager:showFiles(path)
+    end
+end
 
 return MoveToArchive
