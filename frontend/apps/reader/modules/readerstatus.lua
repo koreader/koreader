@@ -206,7 +206,7 @@ function ReaderStatus:deleteFile(file, text_end_book)
             if FileManager.instance then
                 FileManager.instance.file_chooser:refreshPath()
             else
-                self.ui:showFileManager()
+                FileManager:showFiles(last_dir, last_file)
             end
         end,
     })
