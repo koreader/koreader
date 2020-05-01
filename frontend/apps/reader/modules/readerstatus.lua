@@ -199,7 +199,6 @@ function ReaderStatus:deleteFile(file, text_end_book)
         ok_callback = function()
             local FileManager = require("apps/filemanager/filemanager")
             local filemanagerutil = require("apps/filemanager/filemanagerutil")
-            local last_dir = self.ui:getLastDirFile()
             self.ui:onClose()
             FileManager:deleteFile(file)
             filemanagerutil.removeFileFromHistoryIfWanted(file)
@@ -207,7 +206,7 @@ function ReaderStatus:deleteFile(file, text_end_book)
             if FileManager.instance then
                 FileManager.instance.file_chooser:refreshPath()
             else
-                FileManager:showFiles(last_dir)
+                FileManager:showFiles()
             end
         end,
     })
