@@ -2,7 +2,7 @@ local Event = require("ui/event")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local T = require("ffi/util").template
-local WidgetContainer = require("ui/widget/container/widgetcontainer")
+--local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local logger = require("logger")
 
@@ -121,7 +121,7 @@ function Dispatcher:addSubMenu(menu, location, settings, dispatchCallback)
             if settingsList[k].category == "none" then
                 table.insert(menu, {
                    text = settingsList[k].title,
-                   checked_func = function() 
+                   checked_func = function()
                    return self[location][settings] ~= nil and self[location][settings][k] ~= nil
                    end,
                    callback = function(touchmenu_instance)
@@ -218,7 +218,7 @@ function Dispatcher:addSubMenu(menu, location, settings, dispatchCallback)
                     return self[location][settings] ~= nil and self[location][settings][k] ~= nil
                     end,
                     callback = function(touchmenu_instance)
-                        --TODO use a proper list picker widget 
+                        --TODO use a proper list picker widget
                         --UIManager:show(items)
                     end,
                     hold_callback = function(touchmenu_instance)
