@@ -1061,7 +1061,7 @@ function FileManager:copyFileFromTo(from, to)
     return BaseUtil.execute(self.cp_bin, from, to) == 0
 end
 
---[[
+--[[--
 A shortcut to execute cp recursive command (self.cp_bin) with from and to as parameters.
 Returns a boolean value to indicate the result of cp command.
 ]]
