@@ -1045,7 +1045,7 @@ function FileManager:showFiles(path, focused_file)
 end
 
 
--- A shortcut to execute mv command (self.mv_bin) with from and to as parameters.
+--- A shortcut to execute mv command.
 -- @treturn boolean result of mv command
 function FileManager:moveFile(from, to)
     return BaseUtil.execute(self.mv_bin, from, to) == 0
