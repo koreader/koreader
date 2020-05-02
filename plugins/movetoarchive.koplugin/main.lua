@@ -38,7 +38,7 @@ function MoveToArchive:addToMainMenu(menu_items)
                 enabled_func = function() return self:isActionEnabled() end,
             },
             {
-                text = _("Copy current book (w/o progress) to archive"),
+                text = _("Copy current book to archive"),
                 callback = function() self:copyToArchive() end,
                 enabled_func = function() return self:isActionEnabled() end,
             },
