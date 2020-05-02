@@ -1,5 +1,6 @@
 #!/bin/bash
 # Script to generate debian packages for KOReader
+# shellcheck disable=SC2164
 
 if [ -z "${1}" ]; then
     echo "${0}: can't find KOReader build, please specify a path"
