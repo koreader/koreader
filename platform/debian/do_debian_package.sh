@@ -38,19 +38,64 @@ if command_exists "${COMMAND}"; then
     {
         echo "Section: graphics"
         echo "Priority: optional"
-        echo "Depends: libsdl2-2.0-0"
+        echo "Depends: libsdl2-2.0-0, libc6 (>= 2.2.3)"
         echo "Architecture: ${ARCH}"
         echo "Version: ${VERSION}"
         echo "Installed-Size: $(du -ks "${INSTALL_DIR}/debian/usr/" | cut -f 1)"
-
         echo "Package: KOReader"
         echo "Maintainer: KOReader team"
         echo "Homepage: https://koreader.rocks"
-        echo "Description: An ebook reader application supporting PDF, DjVu, EPUB, FB2 and many more formats"
-        echo " KOReader is a document viewer application, originally created for Kindle e-ink readers."
-        echo " It currently runs on Kindle, Kobo, PocketBook, Ubuntu Touch, Android and Linux devices"
+        echo "Description: Ebook reader application supporting PDF, DjVu, EPUB, FB2 and many more formats"
+        echo " KOReader is a document viewer application, originally created for"
+        echo " Kindle e-ink readers. It currently runs on Kindle, Kobo, PocketBook,"
+        echo " Ubuntu Touch, Android and Linux devices"
 
     } >"${INSTALL_DIR}/debian/DEBIAN/control"
+
+    ### fix permissions begins
+    pushd "${INSTALL_DIR}/debian/usr"
+
+    # remove executable bit from some cr3 files
+    find lib/koreader/data/devices -type f -print0 | xargs -0 chmod 644
+
+    # remove luarocks binaries and tests, fix permission for manifests
+    find lib/koreader/rocks/lib -type f -name "discovery2spore" -print0 | xargs -0 rm -rfv
+    find lib/koreader/rocks/lib -type f -name "wadl2spore" -print0 | xargs -0 rm -rfv
+    find lib/koreader/rocks/lib -type d -name "test" -print0 | xargs -0 rm -rfv
+    find . -type f -name "rock_manifest" -print0 | xargs -0 chmod 644
+    find . -type f -name "manifest" -print0 | xargs -0 chmod 644
+
+    # directories
+    find . -type d -print0 | xargs -0 chmod 755
+
+    # executables
+    find . -executable -type f -print0 | xargs -0 chmod 755
+
+    # scripts
+    find lib/koreader/frontend -type f -name "*.lua" -print0 | xargs -0 chmod 644
+    find lib/koreader/plugins -type f -name "*.lua" -print0 | xargs -0 chmod 644
+    find lib/koreader/tools -type f -name "*.lua" -print0 | xargs -0 chmod 644
+    find lib/koreader/ffi -type f -name "*.lua" -print0 | xargs -0 chmod 644
+    find lib/koreader/jit -type f -name "*.lua" -print0 | xargs -0 chmod 644
+
+    # shared libraries
+    find lib/koreader/libs -type f -print0 | xargs -0 chmod 644
+    find lib/koreader/common -type f -print0 | xargs -0 chmod 644
+
+    # translations
+    find . -type f -name "*.po*" -print0 | xargs -0 chmod 644
+
+    # misc
+    find . -type f -name "*.html" -print0 | xargs -0 chmod 644
+    find . -type f -name "*.pattern" -print0 | xargs -0 chmod 644
+    find . -type f -name "*.png" -print0 | xargs -0 chmod 644
+    find . -type f -name "git-rev" -print0 | xargs -0 chmod 644
+    find . -type f -name "re.lua" -print0 | xargs -0 chmod 644
+    find . -type f -name "defaults.lua" -print0 | xargs -0 chmod 644
+    find . -type f -name ".gitignore" -print0 | xargs -0 rm -rfv
+
+    popd
+    ### fix permission ends
 
     (cd "${INSTALL_DIR}/.." &&
         fakeroot dpkg-deb -b "${INSTALL_DIR}/debian" "koreader-${VERSION}-${ARCH}.deb")
