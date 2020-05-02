@@ -38,7 +38,7 @@ function MoveToArchive:addToMainMenu(menu_items)
                 enabled_func = function() return self:isActionEnabled() end,
             },
             {
-                text = _("Copy current book to archive"),
+                text = _("Copy current book to archive - experimental"),
                 callback = function() self:copyToArchive() end,
                 enabled_func = function() return self:isActionEnabled() end,
             },
@@ -101,6 +101,7 @@ function MoveToArchive:commonProcess(is_move_process, moved_done_text)
         FileManager:moveFile(DocSettings:getSidecarDir(document_full_path), archive_dir_path)
     else
         FileManager:copyFileFromTo(document_full_path, archive_dir_path)
+        FileManager:copyRecursive(DocSettings:getSidecarDir(document_full_path), archive_dir_path)
     end
     local dest_file = string.format("%s/%s", archive_dir_path, filename)
     require("readhistory"):updateItemByPath(document_full_path, dest_file)
