@@ -67,7 +67,7 @@ function MoveToArchive:addToMainMenu(menu_items)
             {
                 text = _("Set archive directory"),
                 keep_menu_open = true,
-                callback =  function ()
+                callback = function()
                     self:setArchiveDirectory()
                 end,
             }
