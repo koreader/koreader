@@ -81,7 +81,7 @@ function MoveToArchive:moveToArchive()
 end
 
 function MoveToArchive:copyToArchive()
-    local copy_done_text =_("Book copied.\nDo you want to open it from the archive folder?")
+    local copy_done_text = _("Book copied.\nDo you want to open it from the archive folder?")
     self:commonProcess(false, copy_done_text)
 end
 
