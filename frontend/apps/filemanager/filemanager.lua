@@ -1062,7 +1062,7 @@ function FileManager:copyFileFromTo(from, to)
 end
 
 --[[
-A shortcut to execute cp recursive command (self.cp_recursive_bin) with from and to as parameters.
+A shortcut to execute cp recursive command (self.cp_bin) with from and to as parameters.
 Returns a boolean value to indicate the result of cp command.
 --]]
 function FileManager:copyRecursive(from, to)
