@@ -1050,13 +1050,13 @@ function FileManager:moveFile(from, to)
     return BaseUtil.execute(self.mv_bin, from, to) == 0
 end
 
--- A shortcut to execute cp command (self.cp_bin) with from and to as parameters.
+--- A shortcut to execute cp command (self.cp_bin) with from and to as parameters.
 -- @treturn boolean result of cp command
 function FileManager:copyFileFromTo(from, to)
     return BaseUtil.execute(self.cp_bin, from, to) == 0
 end
 
--- A shortcut to execute cp recursive command (self.cp_bin) with from and to as parameters.
+--- A shortcut to execute cp recursive command (self.cp_bin) with from and to as parameters.
 -- @treturn boolean result of cp command
 function FileManager:copyRecursive(from, to)
     return BaseUtil.execute(self.cp_bin, "-r", from, to ) == 0
