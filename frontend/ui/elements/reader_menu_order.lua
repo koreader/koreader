@@ -116,6 +116,7 @@ local order = {
         "evernote",
         "statistics",
         "progress_sync",
+        "move_to_archive",
         "wallabag",
         "zsync",
         "news_downloader",

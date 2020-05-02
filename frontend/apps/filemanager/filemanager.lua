@@ -1044,12 +1044,22 @@ function FileManager:showFiles(path, focused_file)
     self.instance = file_manager
 end
 
---[[
-A shortcut to execute mv command (self.mv_bin) with from and to as parameters.
-Returns a boolean value to indicate the result of mv command.
---]]
+--- A shortcut to execute mv.
+-- @treturn boolean result of mv command
 function FileManager:moveFile(from, to)
     return BaseUtil.execute(self.mv_bin, from, to) == 0
+end
+
+--- A shortcut to execute cp.
+-- @treturn boolean result of cp command
+function FileManager:copyFileFromTo(from, to)
+    return BaseUtil.execute(self.cp_bin, from, to) == 0
+end
+
+--- A shortcut to execute cp recursively.
+-- @treturn boolean result of cp command
+function FileManager:copyRecursive(from, to)
+    return BaseUtil.execute(self.cp_bin, "-r", from, to ) == 0
 end
 
 function FileManager:onHome()

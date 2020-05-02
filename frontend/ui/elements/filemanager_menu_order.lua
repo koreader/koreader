@@ -91,6 +91,7 @@ local order = {
         "calibre_wireless_connection",
         "evernote",
         "statistics",
+        "move_to_archive",
         "cloud_storage",
         "read_timer",
         "wallabag",
