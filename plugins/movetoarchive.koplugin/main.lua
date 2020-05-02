@@ -16,12 +16,13 @@ local _ = require("gettext")
 
 local MoveToArchive = WidgetContainer:new{
     name = "move2archive",
-    move_to_archive_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), "move_to_archive_settings.lua")),
+    move_to_archive_settings = nil,
     archive_dir_path = nil,
     last_copied_from_dir = nil,
 }
 
 function MoveToArchive:init()
+    self.move_to_archive_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), "move_to_archive_settings.lua")),
     self.archive_dir_path = self.move_to_archive_settings:readSetting("archive_dir")
     self.last_copied_from_dir = self.move_to_archive_settings:readSetting("last_copied_from_dir")
     self.ui.menu:registerToMainMenu(self)
@@ -93,6 +94,7 @@ function MoveToArchive:commonProcess(is_move_process, moved_done_text)
 
     logger.dbg("MoveToArchive: last_moved/copied_from_dir :", self.last_copied_from_dir)
     self.move_to_archive_settings:saveSetting("last_copied_from_dir", ("%s/"):format(self.last_copied_from_dir))
+    self.move_to_archive_settings:flush()
 
     self.ui:onClose()
     if is_move_process then
@@ -111,12 +113,12 @@ function MoveToArchive:commonProcess(is_move_process, moved_done_text)
     end
 
     UIManager:show(ConfirmBox:new{
-    text = moved_done_text,
+        text = moved_done_text,
         ok_callback = function ()
             ReaderUI:showReader(self.archive_dir_path .. filename)
         end,
         cancel_callback = function ()
-            if DocSettings:open(dest_file).data.percent_finished == 1 then
+            if DocSettings:open(dest_file):readSetting("percent_finished") == 1 then
                 ReadHistory:removeItemByPath(dest_file)
             end
             self:openFileBrowser(self.last_copied_from_dir)
@@ -139,7 +141,9 @@ function MoveToArchive:showNoArchiveConfirmBox()
     UIManager:show(ConfirmBox:new{
         text = _("No archive directory.\nDo you want to set it now?"),
         ok_text = _("Set archive folder"),
-        ok_callback = self.setArchiveDirectory,
+        ok_callback = ok_callback = function()
+            self:setArchiveDirectory()
+        end,
     })
 end
 
