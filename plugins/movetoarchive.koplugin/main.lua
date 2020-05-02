@@ -22,10 +22,10 @@ local MoveToArchive = WidgetContainer:new{
 }
 
 function MoveToArchive:init()
-    self.move_to_archive_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), "move_to_archive_settings.lua"),
+    self.ui.menu:registerToMainMenu(self)
+    self.move_to_archive_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), "move_to_archive_settings.lua"))
     self.archive_dir_path = self.move_to_archive_settings:readSetting("archive_dir")
     self.last_copied_from_dir = self.move_to_archive_settings:readSetting("last_copied_from_dir")
-    self.ui.menu:registerToMainMenu(self)
 end
 
 function MoveToArchive:addToMainMenu(menu_items)
@@ -35,12 +35,16 @@ function MoveToArchive:addToMainMenu(menu_items)
             {
                 text = _("Move current book to archive"),
                 callback = function() self:moveToArchive() end,
-                enabled_func = function() return self:isActionEnabled() end,
+                enabled_func = function() 
+                    return self:isActionEnabled() 
+                end,
             },
             {
                 text = _("Copy current book to archive"),
                 callback = function() self:copyToArchive() end,
-                enabled_func = function() return self:isActionEnabled() end,
+                enabled_func = function() 
+                    return self:isActionEnabled() 
+                end,
             },
             {
                 text = _("Go to archive folder"),
@@ -67,7 +71,9 @@ function MoveToArchive:addToMainMenu(menu_items)
             {
                 text = _("Set archive directory"),
                 keep_menu_open = true,
-                callback =  self.setArchiveDirectory,
+                callback =  function () 
+                    self:setArchiveDirectory()
+                end,
             }
         },
     }
@@ -126,12 +132,11 @@ function MoveToArchive:commonProcess(is_move_process, moved_done_text)
     })
 end
 
-
 function MoveToArchive:setArchiveDirectory()
     require("ui/downloadmgr"):new{
         onConfirm = function(path)
-            self.archive_dir_path = path
-            self.move_to_archive_settings:saveSetting("archive_dir", ("%s/"):format(path))
+            self.archive_dir_path = ("%s/"):format(path)
+            self.move_to_archive_settings:saveSetting("archive_dir", self.archive_dir_path)
             self.move_to_archive_settings:flush()
         end,
     }:chooseDir()
@@ -141,7 +146,7 @@ function MoveToArchive:showNoArchiveConfirmBox()
     UIManager:show(ConfirmBox:new{
         text = _("No archive directory.\nDo you want to set it now?"),
         ok_text = _("Set archive folder"),
-        ok_callback = ok_callback = function()
+        ok_callback = function()
             self:setArchiveDirectory()
         end,
     })
