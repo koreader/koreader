@@ -35,15 +35,15 @@ function MoveToArchive:addToMainMenu(menu_items)
             {
                 text = _("Move current book to archive"),
                 callback = function() self:moveToArchive() end,
-                enabled_func = function() 
-                    return self:isActionEnabled() 
+                enabled_func = function()
+                    return self:isActionEnabled()
                 end,
             },
             {
                 text = _("Copy current book to archive"),
                 callback = function() self:copyToArchive() end,
-                enabled_func = function() 
-                    return self:isActionEnabled() 
+                enabled_func = function()
+                    return self:isActionEnabled()
                 end,
             },
             {
@@ -71,7 +71,7 @@ function MoveToArchive:addToMainMenu(menu_items)
             {
                 text = _("Set archive directory"),
                 keep_menu_open = true,
-                callback =  function () 
+                callback =  function ()
                     self:setArchiveDirectory()
                 end,
             }
