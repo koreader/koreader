@@ -1044,7 +1044,6 @@ function FileManager:showFiles(path, focused_file)
     self.instance = file_manager
 end
 
-
 --- A shortcut to execute mv command.
 -- @treturn boolean result of mv command
 function FileManager:moveFile(from, to)
