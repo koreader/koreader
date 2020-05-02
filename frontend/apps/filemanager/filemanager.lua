@@ -1055,7 +1055,7 @@ end
 --[[--
 A shortcut to execute cp command (self.cp_bin) with from and to as parameters.
 Returns a boolean value to indicate the result of cp command.
---]]
+]]
 
 function FileManager:copyFileFromTo(from, to)
     return BaseUtil.execute(self.cp_bin, from, to) == 0
