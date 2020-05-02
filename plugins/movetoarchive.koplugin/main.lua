@@ -17,7 +17,7 @@ local _ = require("gettext")
 local MoveToArchive = WidgetContainer:new{
     name = "move2archive",
     move_to_archive_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), "move_to_archive_settings.lua")),
-    archive_dir_path = nil, 
+    archive_dir_path = nil,
     last_copied_from_dir = nil,
 }
 
@@ -90,10 +90,10 @@ function MoveToArchive:commonProcess(is_move_process, moved_done_text)
     local document_full_path = self.ui.document.file
     local filename
     self.last_copied_from_dir, filename = util.splitFilePathName(document_full_path)
-    
+
     logger.dbg("MoveToArchive: last_moved/copied_from_dir :", self.last_copied_from_dir)
     self.move_to_archive_settings:saveSetting("last_copied_from_dir", ("%s/"):format(self.last_copied_from_dir))
-    
+
     self.ui:onClose()
     if is_move_process then
         FileManager:moveFile(document_full_path, self.archive_dir_path)
@@ -109,14 +109,16 @@ function MoveToArchive:commonProcess(is_move_process, moved_done_text)
     if G_reader_settings:readSetting("lastfile") == document_full_path then
         G_reader_settings:saveSetting("lastfile", dest_file)
     end
-    
+
     UIManager:show(ConfirmBox:new{
     text = moved_done_text,
         ok_callback = function ()
             ReaderUI:showReader(self.archive_dir_path .. filename)
         end,
         cancel_callback = function ()
-
+            if DocSettings:open(dest_file).data.percent_finished == 1 then
+                ReadHistory:removeItemByPath(dest_file)
+            end
             self:openFileBrowser(self.last_copied_from_dir)
         end,
     })
