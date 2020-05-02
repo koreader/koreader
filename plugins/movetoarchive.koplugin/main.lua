@@ -22,7 +22,7 @@ local MoveToArchive = WidgetContainer:new{
 }
 
 function MoveToArchive:init()
-    self.move_to_archive_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), "move_to_archive_settings.lua")),
+    self.move_to_archive_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), "move_to_archive_settings.lua"),
     self.archive_dir_path = self.move_to_archive_settings:readSetting("archive_dir")
     self.last_copied_from_dir = self.move_to_archive_settings:readSetting("last_copied_from_dir")
     self.ui.menu:registerToMainMenu(self)
