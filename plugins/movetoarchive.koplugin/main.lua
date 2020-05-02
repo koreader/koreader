@@ -16,16 +16,13 @@ local _ = require("gettext")
 
 local MoveToArchive = WidgetContainer:new{
     name = "move2archive",
-    move_to_archive_settings = nil,
-    archive_dir_path = nil,
-    last_copied_from_dir = nil,
 }
 
 function MoveToArchive:init()
     self.ui.menu:registerToMainMenu(self)
-    self.move_to_archive_settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), "move_to_archive_settings.lua"))
-    self.archive_dir_path = self.move_to_archive_settings:readSetting("archive_dir")
-    self.last_copied_from_dir = self.move_to_archive_settings:readSetting("last_copied_from_dir")
+    self.settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), "move_to_archive_settings.lua"))
+    self.archive_dir_path = self.settings:readSetting("archive_dir")
+    self.last_copied_from_dir = self.settings:readSetting("last_copied_from_dir")
 end
 
 function MoveToArchive:addToMainMenu(menu_items)
@@ -98,9 +95,8 @@ function MoveToArchive:commonProcess(is_move_process, moved_done_text)
     local filename
     self.last_copied_from_dir, filename = util.splitFilePathName(document_full_path)
 
-    logger.dbg("MoveToArchive: last_moved/copied_from_dir :", self.last_copied_from_dir)
-    self.move_to_archive_settings:saveSetting("last_copied_from_dir", ("%s/"):format(self.last_copied_from_dir))
-    self.move_to_archive_settings:flush()
+    self.settings:saveSetting("last_copied_from_dir", self.last_copied_from_dir)
+    self.settings:flush()
 
     self.ui:onClose()
     if is_move_process then
@@ -110,23 +106,19 @@ function MoveToArchive:commonProcess(is_move_process, moved_done_text)
         FileManager:copyFileFromTo(document_full_path, self.archive_dir_path)
         FileManager:copyRecursive(DocSettings:getSidecarDir(document_full_path), self.archive_dir_path)
     end
-    local dest_file = string.format("%s/%s", self.archive_dir_path, filename)
+    local dest_file = string.format("%s%s", self.archive_dir_path, filename)
     ReadHistory:updateItemByPath(document_full_path, dest_file)
     ReadCollection:updateItemByPath(document_full_path, dest_file)
     -- Update last open file.
     if G_reader_settings:readSetting("lastfile") == document_full_path then
         G_reader_settings:saveSetting("lastfile", dest_file)
     end
-
     UIManager:show(ConfirmBox:new{
         text = moved_done_text,
         ok_callback = function ()
-            ReaderUI:showReader(self.archive_dir_path .. filename)
+            ReaderUI:showReader(dest_file)
         end,
         cancel_callback = function ()
-            if DocSettings:open(dest_file):readSetting("percent_finished") == 1 then
-                ReadHistory:removeItemByPath(dest_file)
-            end
             self:openFileBrowser(self.last_copied_from_dir)
         end,
     })
@@ -136,8 +128,8 @@ function MoveToArchive:setArchiveDirectory()
     require("ui/downloadmgr"):new{
         onConfirm = function(path)
             self.archive_dir_path = ("%s/"):format(path)
-            self.move_to_archive_settings:saveSetting("archive_dir", self.archive_dir_path)
-            self.move_to_archive_settings:flush()
+            self.settings:saveSetting("archive_dir", self.archive_dir_path)
+            self.settings:flush()
         end,
     }:chooseDir()
 end
