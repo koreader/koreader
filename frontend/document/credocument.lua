@@ -812,6 +812,11 @@ function CreDocument:setWordSpacing(values)
     self._document:setIntProperty("crengine.style.space.condensing.percent", values[2])
 end
 
+function CreDocument:setWordStretching(values)
+    logger.dbg("CreDocument: set word stretching", values)
+    self._document:setIntProperty("crengine.style.max.added.letter.spacing.percent", values or 0)
+end
+
 function CreDocument:setStyleSheet(new_css_file, appended_css_content )
     logger.dbg("CreDocument: set style sheet:",
         new_css_file and new_css_file or "no file",

@@ -300,7 +300,7 @@ Note that your selected font size is not affected by this setting.]]),
             },
             {
                 name = "font_fine_tune",
-                name_text = S.FONTSIZE_FINE_TUNING,
+                name_text = S.FONT_SIZE,
                 toggle = Device:isTouchDevice() and {S.DECREASE, S.INCREASE} or nil,
                 item_text = not Device:isTouchDevice() and {S.DECREASE, S.INCREASE} or nil,
                 more_options = true,
@@ -325,7 +325,63 @@ Note that your selected font size is not affected by this setting.]]),
                     }
                     optionsutil.showValues(configurable, opt, prefix)
                 end,
-            }
+            },
+            {
+                name = "word_spacing",
+                name_text = S.WORD_SPACING,
+                toggle = {S.SMALL, S.MEDIUM, S.LARGE},
+                values = {
+                    DCREREADER_CONFIG_WORD_SPACING_SMALL,
+                    DCREREADER_CONFIG_WORD_SPACING_MEDIUM,
+                    DCREREADER_CONFIG_WORD_SPACING_LARGE,
+                },
+                default_value = DCREREADER_CONFIG_WORD_SPACING_MEDIUM,
+                args = {
+                    DCREREADER_CONFIG_WORD_SPACING_SMALL,
+                    DCREREADER_CONFIG_WORD_SPACING_MEDIUM,
+                    DCREREADER_CONFIG_WORD_SPACING_LARGE,
+                },
+                event = "SetWordSpacing",
+                help_text = _([[Tells the rendering engine how much to scale the width of each 'space' character in the text from its regular width, and how much it can additionally reduce them to make more words fit on a line (100% means no reduction).]]),
+                name_text_hold_callback = optionsutil.showValues,
+                name_text_true_values = true,
+                show_true_value_func = function(val)
+                    return string.format("%d%%, +%d%%", val[1], val[2])
+                end,
+            },
+            {
+                name = "word_stretching",
+                name_text = S.WORD_STRETCHING,
+                more_options = true,
+                more_options_param = {
+                    value_min = 0,
+                    value_max = 20,
+                    value_step = 1,
+                    value_hold_step = 4,
+                    name = "word_stretching",
+                    name_text = _("Max letter spacing %"),
+                    event = "SetWordStretching",
+                },
+                toggle = {S.LARGE, S.SMALL, S.OFF},
+                values = {
+                    DCREREADER_CONFIG_WORD_STRETCHING_LARGE,
+                    DCREREADER_CONFIG_WORD_STRETCHING_SMALL,
+                    DCREREADER_CONFIG_WORD_STRETCHING_OFF,
+                },
+                default_value = DCREREADER_CONFIG_WORD_STRETCHING_OFF,
+                args = {
+                    DCREREADER_CONFIG_WORD_STRETCHING_LARGE,
+                    DCREREADER_CONFIG_WORD_STRETCHING_SMALL,
+                    DCREREADER_CONFIG_WORD_STRETCHING_OFF,
+                },
+                event = "SetWordStretching",
+                help_text = _([[On justified lines having too wide spaces, allow distributing the excessive space into words, by using letter spacing. This sets the max allowed letter spacing as a % of the font size.]]),
+                name_text_hold_callback = optionsutil.showValues,
+                name_text_true_values = true,
+                show_true_value_func = function(val)
+                    return string.format("%d%%", val)
+                end,
+            },
         }
     },
     {
@@ -400,29 +456,6 @@ Note that your selected font size is not affected by this setting.]]),
 
 (Font Hinting may need to be adjusted for the best result with either kerning implementation.)]]),
             },
-            {
-                name = "word_spacing",
-                name_text = S.WORD_SPACING,
-                toggle = {S.SMALL, S.MEDIUM, S.LARGE},
-                values = {
-                    DCREREADER_CONFIG_WORD_SPACING_SMALL,
-                    DCREREADER_CONFIG_WORD_SPACING_MEDIUM,
-                    DCREREADER_CONFIG_WORD_SPACING_LARGE,
-                },
-                default_value = DCREREADER_CONFIG_WORD_SPACING_MEDIUM,
-                args = {
-                    DCREREADER_CONFIG_WORD_SPACING_SMALL,
-                    DCREREADER_CONFIG_WORD_SPACING_MEDIUM,
-                    DCREREADER_CONFIG_WORD_SPACING_LARGE,
-                    },
-                event = "SetWordSpacing",
-                help_text = _([[Tells the rendering engine how much to scale the width of each 'space' character in the text from its regular width, and how much it can additionally reduce them to make more words fit on a line (100% means no reduction).]]),
-                name_text_hold_callback = optionsutil.showValues,
-                name_text_true_values = true,
-                show_true_value_func = function(val)
-                    return string.format("%d%%, +%d%%", val[1], val[2])
-                end,
-            }
         }
     },
     {

@@ -125,6 +125,10 @@ function ReaderFont:onReadSettings(config)
         or G_reader_settings:readSetting("copt_word_spacing") or {95, 75}
     self.ui.document:setWordSpacing(self.word_spacing)
 
+    self.word_stretching = config:readSetting("word_stretching")
+        or G_reader_settings:readSetting("copt_word_stretching") or 0
+    self.ui.document:setWordStretching(self.word_stretching)
+
     self.line_space_percent = config:readSetting("line_space_percent")
             or G_reader_settings:readSetting("copt_line_spacing")
             or DCREREADER_CONFIG_LINE_SPACE_PERCENT_MEDIUM
@@ -239,6 +243,13 @@ function ReaderFont:onSetWordSpacing(values)
     return true
 end
 
+function ReaderFont:onSetWordStretching(values)
+    self.word_stretching = values
+    self.ui.document:setWordStretching(values)
+    self.ui:handleEvent(Event:new("UpdatePos"))
+    return true
+end
+
 function ReaderFont:onSetFontGamma(gamma)
     self.gamma_index = gamma
     self.ui.document:setGammaIndex(self.gamma_index)
@@ -259,6 +270,7 @@ function ReaderFont:onSaveSettings()
     self.ui.doc_settings:saveSetting("font_hinting", self.font_hinting)
     self.ui.doc_settings:saveSetting("font_kerning", self.font_kerning)
     self.ui.doc_settings:saveSetting("word_spacing", self.word_spacing)
+    self.ui.doc_settings:saveSetting("word_stretching", self.word_stretching)
     self.ui.doc_settings:saveSetting("line_space_percent", self.line_space_percent)
     self.ui.doc_settings:saveSetting("gamma_index", self.gamma_index)
 end
