@@ -8,24 +8,27 @@ describe("defaults module", function()
 
     it("should load all defaults from defaults.lua", function()
         Defaults:init()
-        assert.is_same(103, #Defaults.defaults_name)
+        assert.is_same(106, #Defaults.defaults_name)
     end)
 
     it("should save changes to defaults.persistent.lua", function()
         local persistent_filename = DataStorage:getDataDir() .. "/defaults.persistent.lua"
         os.remove(persistent_filename)
 
+        -- To see indices and help updating this when new settings are added:
+        -- for i=1, 106 do print(i.." ".. Defaults.defaults_name[i]) end
+
         -- not in persistent but checked in defaults
         Defaults.changed[20] = true
-        Defaults.changed[47] = true
-        Defaults.changed[53] = true
-        Defaults.changed[82] = true
-        Defaults.changed[98] = true  --SEARCH_LIBRARY_PATH = ""
+        Defaults.changed[50] = true
+        Defaults.changed[56] = true
+        Defaults.changed[85] = true
+        Defaults.changed[101] = true  --SEARCH_LIBRARY_PATH = ""
         Defaults:saveSettings()
-        assert.is_same(103, #Defaults.defaults_name)
-        assert.is_same("SEARCH_LIBRARY_PATH", Defaults.defaults_name[98])
-        assert.is_same("DTAP_ZONE_BACKWARD", Defaults.defaults_name[82])
-        assert.is_same("DCREREADER_CONFIG_WORD_SPACING_LARGE", Defaults.defaults_name[47])
+        assert.is_same(106, #Defaults.defaults_name)
+        assert.is_same("SEARCH_LIBRARY_PATH", Defaults.defaults_name[101])
+        assert.is_same("DTAP_ZONE_BACKWARD", Defaults.defaults_name[85])
+        assert.is_same("DCREREADER_CONFIG_WORD_SPACING_LARGE", Defaults.defaults_name[50])
         assert.is_same("DCREREADER_CONFIG_H_MARGIN_SIZES_XXX_LARGE", Defaults.defaults_name[20])
         local fd = io.open(persistent_filename, "r")
         assert.Equals(
@@ -57,15 +60,15 @@ DDOUBLE_TAP_ZONE_PREV_CHAPTER = {
 
         -- in persistent
         Defaults:init()
-        Defaults.changed[53] = true
-        Defaults.defaults_value[53] = {
+        Defaults.changed[56] = true
+        Defaults.defaults_value[56] = {
             y = 0,
             x = 0,
             h = 0.25,
             w = 0.75
         }
-        Defaults.changed[82] = true
-        Defaults.defaults_value[82] = {
+        Defaults.changed[85] = true
+        Defaults.defaults_value[85] = {
             y = 10,
             x = 10.125,
             h = 20.25,
@@ -119,8 +122,8 @@ DHINTCOUNT = 2
 
         -- in persistent
         Defaults:init()
-        Defaults.changed[54] = true
-        Defaults.defaults_value[54] = 1
+        Defaults.changed[57] = true
+        Defaults.defaults_value[57] = 1
         Defaults:saveSettings()
         fd = io.open(persistent_filename)
         assert.Equals(
