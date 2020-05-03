@@ -14,7 +14,7 @@ local BaseUtil = require("ffi/util")
 local _ = require("gettext")
 
 local MoveToArchive = WidgetContainer:new{
-    name = "move2archive",
+    name = "movetoarchive",
 }
 
 function MoveToArchive:init()
