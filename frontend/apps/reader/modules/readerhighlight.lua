@@ -963,7 +963,11 @@ function ReaderHighlight:onTranslateText(text)
 end
 
 function ReaderHighlight:onHoldRelease()
-    if self.hold_start_tv then
+    if G_reader_settings:isTrue("highlight_action_on_single_word") then
+        -- Force a 0-distance pan to have a self.selected_text with this word,
+        -- which will enable the highlight menu or action instead of dict lookup
+        self:onHoldPan(nil, {pos=self.hold_ges_pos})
+    elseif self.hold_start_tv then
         local hold_duration = TimeVal.now() - self.hold_start_tv
         hold_duration = hold_duration.sec + hold_duration.usec/1000000
         self.hold_start_tv = nil
@@ -988,6 +992,10 @@ function ReaderHighlight:onHoldRelease()
         elseif default_highlight_action == "wikipedia" then
             self:lookupWikipedia()
             self:onClose()
+        elseif default_highlight_action == "search" then
+            self:onHighlightSearch()
+            -- No self:onClose() to not remove the selected text
+            -- which will have been the first search result
         end
     elseif self.selected_word then
         self:lookup(self.selected_word, self.selected_link)
@@ -1000,7 +1008,8 @@ function ReaderHighlight:onCycleHighlightAction()
     local next_actions = {
         highlight = "translate",
         translate = "wikipedia",
-        wikipedia = nil
+        wikipedia = "search",
+        search = nil,
     }
     local current_action = G_reader_settings:readSetting("default_highlight_action")
     if not current_action then
