@@ -593,6 +593,15 @@ common_settings.document = {
                     end,
                 },
                 {
+                    text = _("Dictionary"),
+                    checked_func = function()
+                        return G_reader_settings:readSetting("default_highlight_action") == "dictionary"
+                    end,
+                    callback = function()
+                        G_reader_settings:saveSetting("default_highlight_action", "dictionary")
+                    end,
+                },
+                {
                     text = _("Fulltext search"),
                     checked_func = function()
                         return G_reader_settings:readSetting("default_highlight_action") == "search"
