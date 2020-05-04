@@ -125,9 +125,9 @@ function ReaderFont:onReadSettings(config)
         or G_reader_settings:readSetting("copt_word_spacing") or {95, 75}
     self.ui.document:setWordSpacing(self.word_spacing)
 
-    self.word_stretching = config:readSetting("word_stretching")
-        or G_reader_settings:readSetting("copt_word_stretching") or 0
-    self.ui.document:setWordStretching(self.word_stretching)
+    self.word_expansion = config:readSetting("word_expansion")
+        or G_reader_settings:readSetting("copt_word_expansion") or 0
+    self.ui.document:setWordExpansion(self.word_expansion)
 
     self.line_space_percent = config:readSetting("line_space_percent")
             or G_reader_settings:readSetting("copt_line_spacing")
@@ -243,9 +243,9 @@ function ReaderFont:onSetWordSpacing(values)
     return true
 end
 
-function ReaderFont:onSetWordStretching(values)
-    self.word_stretching = values
-    self.ui.document:setWordStretching(values)
+function ReaderFont:onSetWordExpansion(value)
+    self.word_expansion = value
+    self.ui.document:setWordExpansion(value)
     self.ui:handleEvent(Event:new("UpdatePos"))
     return true
 end
@@ -270,7 +270,7 @@ function ReaderFont:onSaveSettings()
     self.ui.doc_settings:saveSetting("font_hinting", self.font_hinting)
     self.ui.doc_settings:saveSetting("font_kerning", self.font_kerning)
     self.ui.doc_settings:saveSetting("word_spacing", self.word_spacing)
-    self.ui.doc_settings:saveSetting("word_stretching", self.word_stretching)
+    self.ui.doc_settings:saveSetting("word_expansion", self.word_expansion)
     self.ui.doc_settings:saveSetting("line_space_percent", self.line_space_percent)
     self.ui.doc_settings:saveSetting("gamma_index", self.gamma_index)
 end

@@ -185,9 +185,12 @@ DCREREADER_CONFIG_WORD_SPACING_SMALL = {75, 50}
 DCREREADER_CONFIG_WORD_SPACING_MEDIUM = {95, 75}
 DCREREADER_CONFIG_WORD_SPACING_LARGE = {100, 90}
 
-DCREREADER_CONFIG_WORD_STRETCHING_OFF = 0
-DCREREADER_CONFIG_WORD_STRETCHING_SMALL = 5
-DCREREADER_CONFIG_WORD_STRETCHING_LARGE = 15
+-- word expansion, to reduce excessive spacing on justified line
+-- by using letter spacing on the words
+-- value is the max allowed added letter spacing, as a % of the font size
+DCREREADER_CONFIG_WORD_EXPANSION_NONE = 0
+DCREREADER_CONFIG_WORD_EXPANSION_WIDER = 5
+DCREREADER_CONFIG_WORD_EXPANSION_WIDEST = 15
 
 -- crereader progress bar (no longer needed)
 -- 0 for top "full" progress bar
