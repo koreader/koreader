@@ -83,6 +83,7 @@ function Wallabag:init()
     if self.wb_settings.data.wallabag.articles_per_sync ~= nil then
         self.articles_per_sync = self.wb_settings.data.wallabag.articles_per_sync
     end
+    self.is_remove_downloaded_from_remote = self.wb_settings.data.wallabag.is_remove_downloaded_from_remote or false
     self.remove_finished_from_history = self.wb_settings.data.wallabag.remove_finished_from_history or false
 
     -- workaround for dateparser only available if newsdownloader is active
@@ -238,6 +239,14 @@ function Wallabag:addToMainMenu(menu_items)
                         checked_func = function() return self.is_sync_remote_delete end,
                         callback = function()
                             self.is_sync_remote_delete = not self.is_sync_remote_delete
+                            self:saveSettings()
+                        end,
+                    },
+                    {
+                        text = _("Remove downloaded from remote"),
+                        checked_func = function() return self.is_remove_downloaded_from_remote end,
+                        callback = function()
+                            self.is_remove_downloaded_from_remote = not self.is_remove_downloaded_from_remote
                             self:saveSettings()
                         end,
                     },
@@ -602,8 +611,18 @@ function Wallabag:synchronize()
                     failed_count = failed_count + 1
                 end
             end
-            -- synchronize remote deletions
-            deleted_count = deleted_count + self:processRemoteDeletes(remote_article_ids)
+            deleted_count = 0
+
+            if self.is_remove_downloaded_from_remote then
+                -- remove from remote right after download
+                for k,_ in pairs(tab) do
+                    self:callAPI("DELETE", "/api/entries/" .. k .. ".json", nil, "", "")
+                    deleted_count = deleted_count + 1
+                end
+            else
+                -- synchronize remote read deletions
+                deleted_count = deleted_count + self:processRemoteDeletes(remote_article_ids)
+            end
 
             local msg
             if failed_count ~= 0 then
@@ -980,6 +999,7 @@ function Wallabag:saveSettings()
         is_auto_delete        = self.is_auto_delete,
         is_sync_remote_delete = self.is_sync_remote_delete,
         articles_per_sync     = self.articles_per_sync,
+        is_remove_downloaded_from_remote = self.is_remove_downloaded_from_remote,
         remove_finished_from_history = self.remove_finished_from_history,
     }
     self.wb_settings:saveSetting("wallabag", tempsettings)
