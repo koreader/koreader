@@ -141,7 +141,9 @@ ko_update_check() {
             eips_print_bottom_centered "KOReader will start momentarily . . ." 1
             # NOTE: Because, yep, that'll probably happen, as there's a high probability sh will throw a bogus syntax error,
             #       probably for the same fuse-related reasons as tar...
-            eips_print_bottom_centered "If it doesn't, you can safely relaunch it!" 0
+            # NOTE: Even if it doesn't necessarily leave the device in an unusable state,
+            #       always recommend a hard-reboot to flush stale ghost copies...
+            eips_print_bottom_centered "If it doesn't, you'll want to force a hard reboot" 0
         else
             # Huh ho...
             logmsg "Update failed :( (${fail})"
