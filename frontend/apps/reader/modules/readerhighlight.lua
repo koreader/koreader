@@ -550,6 +550,14 @@ function ReaderHighlight:onShowHighlightMenu()
     UIManager:show(self.highlight_dialog)
 end
 
+function ReaderHighlight:_resetHoldTimer(clear)
+    if clear then
+        self.hold_last_tv = nil
+    else
+        self.hold_last_tv = TimeVal.now()
+    end
+end
+
 function ReaderHighlight:onHold(arg, ges)
     -- disable hold gesture if highlighting is disabled
     if self.view.highlight.disabled then return false end
@@ -600,7 +608,7 @@ function ReaderHighlight:onHold(arg, ges)
         --- @todo only mark word?
         -- Unfortunately, CREngine does not return good coordinates
         -- UIManager:setDirty(self.dialog, "partial", self.selected_word.sbox)
-        self.hold_start_tv = TimeVal.now()
+        self:_resetHoldTimer()
         if word.pos0 then
             -- Remember original highlight start position, so we can show
             -- a marker when back from across-pages text selection, which
@@ -615,11 +623,13 @@ end
 function ReaderHighlight:onHoldPan(_, ges)
     if self.hold_pos == nil then
         logger.dbg("no previous hold position")
+        self:_resetHoldTimer(true)
         return true
     end
     local page_area = self.view:getScreenPageArea(self.hold_pos.page)
     if ges.pos:notIntersectWith(page_area) then
         logger.dbg("not inside page area", ges, page_area)
+        self:_resetHoldTimer()
         return true
     end
 
@@ -653,6 +663,7 @@ function ReaderHighlight:onHoldPan(_, ges)
                                       and self.holdpan_pos.x > 7/8*Screen:getWidth()
         end
         if is_in_prev_page_corner or is_in_next_page_corner then
+            self:_resetHoldTimer()
             if self.was_in_some_corner then
                 -- Do nothing, wait for the user to move his finger out of that corner
                 return true
@@ -742,6 +753,7 @@ function ReaderHighlight:onHoldPan(_, ges)
         -- no modification
         return
     end
+    self:_resetHoldTimer() -- selection updated
     logger.dbg("selected text:", self.selected_text)
     if self.selected_text then
         self.view.highlight.temp[self.hold_pos.page] = self.selected_text.sboxes
@@ -963,25 +975,28 @@ function ReaderHighlight:onTranslateText(text)
 end
 
 function ReaderHighlight:onHoldRelease()
-    if G_reader_settings:isTrue("highlight_action_on_single_word") and self.selected_word then
-        -- Force a 0-distance pan to have a self.selected_text with this word,
-        -- which will enable the highlight menu or action instead of dict lookup
-        self:onHoldPan(nil, {pos=self.hold_ges_pos})
-    elseif self.hold_start_tv then
-        local hold_duration = TimeVal.now() - self.hold_start_tv
+    local long_final_hold = false
+    if self.hold_last_tv then
+        local hold_duration = TimeVal.now() - self.hold_last_tv
         hold_duration = hold_duration.sec + hold_duration.usec/1000000
-        self.hold_start_tv = nil
-        if hold_duration > 3.0 and self.selected_word then
-            -- if we were holding for more than 3 seconds on a word, make
-            -- it behave like we panned and selected more words, so we can
-            -- directly access the highlight menu and avoid a dict lookup
+        if hold_duration > 3.0 then
+            -- We stayed 3 seconds before release without updating selection
+            long_final_hold = true
+        end
+        self.hold_last_tv = nil
+    end
+    if self.selected_word then -- single-word selection
+        if long_final_hold or G_reader_settings:isTrue("highlight_action_on_single_word") then
+            -- Force a 0-distance pan to have a self.selected_text with this word,
+            -- which will enable the highlight menu or action instead of dict lookup
             self:onHoldPan(nil, {pos=self.hold_ges_pos})
         end
     end
 
     if self.selected_text then
         local default_highlight_action = G_reader_settings:readSetting("default_highlight_action")
-        if not default_highlight_action then
+        if long_final_hold or not default_highlight_action then
+            -- bypass default action and show popup if long final hold
             self:onShowHighlightMenu()
         elseif default_highlight_action == "highlight" then
             self:saveHighlight()
