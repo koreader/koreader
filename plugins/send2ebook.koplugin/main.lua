@@ -76,6 +76,9 @@ function Send2Ebook:addToMainMenu(menu_items)
             {
                 text = _("Go to download folder"),
                 callback = function()
+                    if self.ui.document then
+                        self.ui:onClose()
+                    end
                     local FileManager = require("apps/filemanager/filemanager")
                     if FileManager.instance then
                         FileManager.instance:reinit(download_dir_path)
