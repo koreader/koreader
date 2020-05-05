@@ -54,6 +54,7 @@ local order = {
         "enable_back_history",
         "android_volume_keys",
         "android_camera_key",
+        "android_haptic_feedback",
         "----------------------------",
         "invert_page_turn_buttons",
     },
