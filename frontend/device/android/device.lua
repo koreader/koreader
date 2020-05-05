@@ -214,9 +214,14 @@ function Device:init()
         self:toggleFullscreen()
     end
 
+    -- check if we allow haptic feedback in spite of system settings
+    if G_reader_settings:isTrue("haptic_feedback_override") then
+        android.setHapticOverride(true)
+    end
+
     -- check if we ignore volume keys and then they're forwarded to system services.
     if G_reader_settings:isTrue("android_ignore_volume_keys") then
-        android.setVolumeKeysIgnored(true);
+        android.setVolumeKeysIgnored(true)
     end
 
     -- check if we enable a custom light level for this activity

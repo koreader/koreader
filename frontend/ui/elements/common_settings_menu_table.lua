@@ -211,6 +211,16 @@ if Device:isAndroid() then
     -- screen timeout options, disabled if device needs wakelocks.
     common_settings.screen_timeout = require("ui/elements/screen_android"):getTimeoutMenuTable()
 
+    -- haptic feedback override
+    common_settings.android_haptic_feedback = {
+        text = _("Force haptic feedback"),
+        checked_func = function() return G_reader_settings:isTrue("haptic_feedback_override") end,
+        callback = function()
+            G_reader_settings:flipNilOrFalse("haptic_feedback_override")
+            android.setHapticOverride(G_reader_settings:isTrue("haptic_feedback_override"))
+        end,
+    }
+
     -- volume key events
     common_settings.android_volume_keys = {
         text = _("Volume key page turning"),
