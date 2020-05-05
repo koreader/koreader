@@ -244,8 +244,8 @@ function Wallabag:addToMainMenu(menu_items)
                     },
                     {
                         text = _("Remove downloaded from remote"),
-                        checked_func = function() 
-                            return self.remove_downloaded_from_remote 
+                        checked_func = function()
+                            return self.remove_downloaded_from_remote
                         end,
                         callback = function()
                             self.remove_downloaded_from_remote = not self.remove_downloaded_from_remote
