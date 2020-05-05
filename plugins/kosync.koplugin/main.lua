@@ -701,6 +701,16 @@ function KOSync:_onNetworkConnected()
     self:_onResume()
 end
 
+function KOSync:onKOSyncPushProgress()
+    if not self.kosync_userkey then return end
+    self:updateProgress(true)
+end
+
+function KOSync:onKOSyncPullProgress()
+    if not self.kosync_userkey then return end
+    self:getProgress(true)
+end
+
 function KOSync:registerEvents()
     if self.kosync_auto_sync then
         self.onPageUpdate = self._onPageUpdate

@@ -106,6 +106,8 @@ local action_strings = {
     cycle_highlight_action = _("Cycle highlight action"),
     cycle_highlight_style = _("Cycle highlight style"),
     wallabag_download = _("Wallabag retrieval"),
+    kosync_push_progress = _("Push progress from this device"),
+    kosync_pull_progress = _("Pull progress from other devices"),
 }
 
 local custom_multiswipes_path = DataStorage:getSettingsDir().."/multiswipes.lua"
@@ -787,6 +789,9 @@ function ReaderGesture:buildMenu(ges, default)
         {"cycle_highlight_action", not self.is_docless},
         {"cycle_highlight_style", not self.is_docless},
         {"wallabag_download", self.ui.wallabag ~= nil},
+
+        {"kosync_push_progress", not self.is_docless},
+        {"kosync_pull_progress", not self.is_docless},
     }
     local return_menu = {}
     -- add default action to the top of the submenu
@@ -1571,6 +1576,10 @@ function ReaderGesture:gestureAction(action, ges)
         self.ui:handleEvent(Event:new("CycleHighlightAction"))
     elseif action == "cycle_highlight_style" then
         self.ui:handleEvent(Event:new("CycleHighlightStyle"))
+    elseif action == "kosync_push_progress" then
+        self.ui:handleEvent(Event:new("KOSyncPushProgress"))
+    elseif action == "kosync_pull_progress" then
+        self.ui:handleEvent(Event:new("KOSyncPullProgress"))
     end
     return true
 end
