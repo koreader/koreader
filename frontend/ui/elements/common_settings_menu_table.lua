@@ -547,6 +547,16 @@ common_settings.document = {
             text = _("Highlight action"),
             sub_item_table = {
                 {
+                    text = _("Enable on single word selection"),
+                    checked_func = function()
+                        return G_reader_settings:isTrue("highlight_action_on_single_word")
+                    end,
+                    callback = function()
+                        G_reader_settings:flipNilOrFalse("highlight_action_on_single_word", nil)
+                    end,
+                    separator = true,
+                },
+                {
                     text = _("Ask with popup dialog"),
                     checked_func = function()
                         return G_reader_settings:nilOrFalse("default_highlight_action")
@@ -580,6 +590,24 @@ common_settings.document = {
                     end,
                     callback = function()
                         G_reader_settings:saveSetting("default_highlight_action", "wikipedia")
+                    end,
+                },
+                {
+                    text = _("Dictionary"),
+                    checked_func = function()
+                        return G_reader_settings:readSetting("default_highlight_action") == "dictionary"
+                    end,
+                    callback = function()
+                        G_reader_settings:saveSetting("default_highlight_action", "dictionary")
+                    end,
+                },
+                {
+                    text = _("Fulltext search"),
+                    checked_func = function()
+                        return G_reader_settings:readSetting("default_highlight_action") == "search"
+                    end,
+                    callback = function()
+                        G_reader_settings:saveSetting("default_highlight_action", "search")
                     end,
                 },
             }
