@@ -611,11 +611,10 @@ function Wallabag:synchronize()
                     failed_count = failed_count + 1
                 end
             end
-            deleted_count = 0
 
             if self.is_remove_downloaded_from_remote then
                 -- remove from remote right after download
-                for k,_ in pairs(tab) do
+                for k,_ in pairs(remote_article_ids) do
                     self:callAPI("DELETE", "/api/entries/" .. k .. ".json", nil, "", "")
                     deleted_count = deleted_count + 1
                 end
