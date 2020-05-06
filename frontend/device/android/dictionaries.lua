@@ -11,7 +11,7 @@ else
         { "ColorDict", "ColorDict", false, "com.socialnmobile.colordict", "colordict" },
         { "Fora", "Fora Dict", false, "com.ngc.fora", "search" },
         { "GoldenFree", "GoldenDict Free", false, "mobi.goldendict.android.free", "send" },
-        { "GoldenPro", "GoldenDict Pro", false, "mobi.goldendict.android.pro", "send" },
+        { "GoldenPro", "GoldenDict Pro", false, "mobi.goldendict.android", "send" },
         { "Kiwix", "Kiwix", false, "org.kiwix.kiwixmobile", "text" },
         { "Mdict", "Mdict", false, "cn.mdict", "send" },
         { "QuickDic", "QuickDic", false, "de.reimardoeffinger.quickdic", "quickdic" },
