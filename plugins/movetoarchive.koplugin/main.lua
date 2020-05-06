@@ -106,12 +106,8 @@ function MoveToArchive:commonProcess(is_move_process, moved_done_text)
         FileManager:copyRecursive(DocSettings:getSidecarDir(document_full_path), self.archive_dir_path)
     end
     local dest_file = string.format("%s%s", self.archive_dir_path, filename)
-    ReadHistory:updateItemByPath(document_full_path, dest_file)
+    ReadHistory:updateItemByPath(document_full_path, dest_file) -- (will update "lastfile" if needed)
     ReadCollection:updateItemByPath(document_full_path, dest_file)
-    -- Update last open file.
-    if G_reader_settings:readSetting("lastfile") == document_full_path then
-        G_reader_settings:saveSetting("lastfile", dest_file)
-    end
     UIManager:show(ConfirmBox:new{
         text = moved_done_text,
         ok_callback = function ()

@@ -72,16 +72,7 @@ function ReaderMenu:init()
 end
 
 function ReaderMenu:getPreviousFile()
-    local previous_file = nil
-    local readhistory = require("readhistory")
-    for i=2, #readhistory.hist do -- skip first one which is current book
-        -- skip deleted items kept in history
-        if lfs.attributes(readhistory.hist[i].file, "mode") == "file" then
-            previous_file = readhistory.hist[i].file
-            break
-        end
-    end
-    return previous_file
+    return require("readhistory"):getPreviousFile(self.ui.document.file)
 end
 
 function ReaderMenu:onReaderReady()

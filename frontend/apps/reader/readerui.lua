@@ -550,8 +550,7 @@ function ReaderUI:doShowReader(file, provider)
             end
         end
     end
-    require("readhistory"):addItem(file)
-    G_reader_settings:saveSetting("lastfile", file)
+    require("readhistory"):addItem(file) -- (will update "lastfile")
     local reader = ReaderUI:new{
         dimen = Screen:getSize(),
         covers_fullscreen = true, -- hint for UIManager:_repaint()
@@ -704,11 +703,7 @@ function ReaderUI:dealWithLoadDocumentFailure()
     -- We must still remove it from lastfile and history (as it has
     -- already been added there) so that koreader don't crash again
     -- at next launch...
-    local readhistory = require("readhistory")
-    readhistory:removeItemByPath(self.document.file)
-    if G_reader_settings:readSetting("lastfile") == self.document.file then
-        G_reader_settings:saveSetting("lastfile", #readhistory.hist > 0 and readhistory.hist[1].file or nil)
-    end
+    require("readhistory"):removeItemByPath(self.document.file) -- (will update "lastfile")
     -- As we are in a coroutine, we can pause and show an InfoMessage before exiting
     local _coroutine = coroutine.running()
     if coroutine then
