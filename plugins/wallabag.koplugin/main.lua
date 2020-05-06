@@ -744,7 +744,7 @@ function Wallabag:deleteLocalArticle(path)
         os.remove(path)
         local sdr_dir = DocSettings:getSidecarDir(path)
         FFIUtil.purgeDir(sdr_dir)
-        filemanagerutil.removeFileFromHistoryIfWanted(path)
+        ReadHistory:fileDeleted(document_full_path)
    end
 end
 

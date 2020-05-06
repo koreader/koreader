@@ -234,7 +234,7 @@ function FileManager:init()
                             ok_text = _("Purge"),
                             ok_callback = function()
                                 filemanagerutil.purgeSettings(file)
-                                filemanagerutil.removeFileFromHistoryIfWanted(file)
+                                require("readhistory"):fileSettingsPurged(file)
                                 self:refreshPath()
                                 UIManager:close(self.file_dialog)
                             end,
@@ -258,8 +258,7 @@ function FileManager:init()
                             ok_text = _("Delete"),
                             ok_callback = function()
                                 deleteFile(file)
-                                filemanagerutil.removeFileFromHistoryIfWanted(file)
-                                filemanagerutil.ensureLastFileExists()
+                                require("readhistory"):fileDeleted(file)
                                 self:refreshPath()
                                 UIManager:close(self.file_dialog)
                             end,
@@ -787,12 +786,8 @@ function FileManager:pasteHere(file)
             if self:moveFile(orig, dest) then
                 -- Update history and collections.
                 local dest_file = string.format("%s/%s", dest, BaseUtil.basename(orig))
-                require("readhistory"):updateItemByPath(orig, dest_file)
+                require("readhistory"):updateItemByPath(orig, dest_file) -- (will update "lastfile" if needed)
                 ReadCollection:updateItemByPath(orig, dest_file)
-                -- Update last open file.
-                if G_reader_settings:readSetting("lastfile") == orig then
-                    G_reader_settings:saveSetting("lastfile", dest_file)
-                end
                 UIManager:show(InfoMessage:new {
                     text = T(_("Moved to: %1"), BD.dirpath(dest)),
                     timeout = 2,
@@ -897,6 +892,7 @@ function FileManager:renameFile(file)
     if BaseUtil.basename(file) ~= self.rename_dialog:getInputText() then
         local dest = BaseUtil.joinPath(BaseUtil.dirname(file), self.rename_dialog:getInputText())
         if self:moveFile(file, dest) then
+            require("readhistory"):updateItemByPath(file, dest) -- (will update "lastfile" if needed)
             ReadCollection:updateItemByPath(file, dest)
             if lfs.attributes(dest, "mode") == "file" then
                 local doc = require("docsettings")
