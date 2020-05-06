@@ -220,7 +220,7 @@ function ReadHistory:updateItemByPath(old_path, new_path)
     for i = #self.hist, 1, -1 do
         if self.hist[i].file == old_path then
             self.hist[i].file = new_path
-            self.hist[i].text = new_path:gsub(".*/", ""),
+            self.hist[i].text = new_path:gsub(".*/", "")
             self:_flush()
             self.hist[i].callback = function()
                 local ReaderUI = require("apps/reader/readerui")

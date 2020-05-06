@@ -198,7 +198,6 @@ function ReaderStatus:deleteFile(file, text_end_book)
         ok_text = _("Delete"),
         ok_callback = function()
             local FileManager = require("apps/filemanager/filemanager")
-            local filemanagerutil = require("apps/filemanager/filemanagerutil")
             self.ui:onClose()
             FileManager:deleteFile(file)
             require("readhistory"):fileDeleted(file) -- (will update "lastfile")
