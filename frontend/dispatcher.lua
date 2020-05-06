@@ -81,7 +81,7 @@ local settingsList = {
     toggle_reflow = { category= , event= , title=_("Toggle reflow"), },
     toggle_inverse_reading_order = { category= , event= , title=_("Toggle page turn direction"), },
 ]]
-    zoom = { category="string", event="SetZoomMode", title=_("Zoom to"), values={"contentwidth", "contentheight", "pagewidth", "pageheight", "column", "content", "page"} },
+    zoom = { category="string", event="SetZoomMode", title=_("Zoom to"), args={"contentwidth", "contentheight", "pagewidth", "pageheight", "column", "content", "page"}, toggle={"content width", "content height", "page width", "page height", "column", "content", "page"} },
 --[[
     increase_font = { category= , event= , title=_("Increase font size"), },
     decrease_font = { category= , event= , title=_("Decrease font size"), },
@@ -210,6 +210,18 @@ function Dispatcher:addSubMenu(menu, location, settings, dispatchCallback)
                     end,
                 })
             elseif settingsList[k].category == "string" then
+                local sub_item_table = {}
+                for i=1,#settingsList[k].args do
+                    table.insert(sub_item_table, {
+                        text = settingsList[k].toggle[i],
+                        checked_func = function()
+                        return self[location][settings] ~= nil and self[location][settings][k] ~= nil and self[location][settings][k] == settingsList[k].args[i]
+                        end,
+                        callback = function()
+                            self[location][settings][k] = settingsList[k].args[i]
+                        end,
+                    })
+                end
                 table.insert(menu, {
                     text_func = function()
                         return T(settingsList[k].title, self[location][settings][k])
@@ -217,10 +229,8 @@ function Dispatcher:addSubMenu(menu, location, settings, dispatchCallback)
                     checked_func = function()
                     return self[location][settings] ~= nil and self[location][settings][k] ~= nil
                     end,
-                    callback = function(touchmenu_instance)
-                        --- @TODO use a proper list picker widget
-                        --UIManager:show(items)
-                    end,
+                    sub_item_table = sub_item_table,
+                    keep_menu_open = true,
                     hold_callback = function(touchmenu_instance)
                         self[location][settings][k] = nil
                         if touchmenu_instance then touchmenu_instance:updateItems() end
