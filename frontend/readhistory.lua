@@ -181,6 +181,7 @@ function ReadHistory:fileDeleted(path)
         for i=1, #self.hist do
             if self.hist[i].file == path then
                 self.hist[i].dim = true
+                break
             end
         end
         self:ensureLastFile()
