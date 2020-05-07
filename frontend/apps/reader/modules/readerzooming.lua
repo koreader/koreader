@@ -119,7 +119,7 @@ function ReaderZooming:onReadSettings(config)
     local zoom_mode = config:readSetting("zoom_mode") or
                     G_reader_settings:readSetting("zoom_mode") or
                     self.DEFAULT_ZOOM_MODE
-    self:setZoomMode(zoom_mode)
+    self:setZoomMode(zoom_mode, true) -- avoid informative message on load
 end
 
 function ReaderZooming:onSaveSettings()
@@ -340,8 +340,8 @@ function ReaderZooming:genSetZoomModeCallBack(mode)
     end
 end
 
-function ReaderZooming:setZoomMode(mode)
-    if self.ui.view.page_scroll and self.paged_modes[mode] then
+function ReaderZooming:setZoomMode(mode, no_warning)
+    if not no_warning and self.ui.view.page_scroll and self.paged_modes[mode] then
         UIManager:show(InfoMessage:new{
             text = T(_([[
 %1
