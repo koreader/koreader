@@ -63,7 +63,7 @@ This might be needed on scanned documents, that may have speckles or fingerprint
 - 'semi-auto" finds content area automatically, inside some larger area defined manually.
 - 'manual" uses the area defined manually as-is.
 
-In 'semi-auto' and 'manual' modes, you may need to define areas twice: on odd, and on even page numbers (these areas will then be used for all odd, and even, page numbers).]]),
+In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd page number, and once on an even page number (these areas will then be used for all odd, or even, page numbers).]]),
             },
             {
                 name = "page_margin",
@@ -90,7 +90,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas twice: on odd, a
                 args = {false, true},
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[- 'page' mode shows only one page of the document at a time.
-- 'scroll' mode allows you to scroll the pages like you would in a web browser.]]),
+- 'continuous' mode allows you to scroll the pages like you would in a web browser.]]),
             },
             {
                 name = "page_gap_height",
@@ -104,7 +104,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas twice: on odd, a
                     return optionsutil.enableIfEquals(configurable, "page_scroll", 1)
                 end,
                 name_text_hold_callback = optionsutil.showValues,
-                help_text = _([[In scroll mode, sets the thickness of the separator between document pages.]]),
+                help_text = _([[In continuous view mode, sets the thickness of the separator between document pages.]]),
             },
             {
                 name = "full_screen",
@@ -301,7 +301,7 @@ This can also be used to remove some gray background or to convert a grayscale o
                 event = "DocLangUpdate",
                 args = DKOPTREADER_CONFIG_DOC_LANGS_CODE,
                 name_text_hold_callback = optionsutil.showValues,
-                help_text = _([[(Used by the OCR engine.)]]),
+                help_text = _([[Set the language to be Used by the OCR engine.]]),
             },
             {
                 name = "forced_ocr",
@@ -376,7 +376,7 @@ This can also be used to remove some gray background or to convert a grayscale o
                     return optionsutil.enableIfEquals(configurable, "text_wrap", 1)
                 end,
                 name_text_hold_callback = optionsutil.showValues,
-                help_text = _([[In reflow mode, sets the max number of column to try to detect in the original document.
+                help_text = _([[In reflow mode, sets the max number of columns to try to detect in the original document.
 You might need to set it to 1 column if, in a full width document, text is incorrectly detected as multiple columns because of unlucky word spacing.]]),
             },
         }

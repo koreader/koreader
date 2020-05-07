@@ -4,6 +4,7 @@ local optionsutil = require("ui/data/optionsutil")
 local _ = require("gettext")
 
 -- add multiply operator to Aa dict
+--[[
 local Aa = setmetatable({"Aa"}, {
     __mul = function(t, mul)
         local new = {}
@@ -13,6 +14,7 @@ local Aa = setmetatable({"Aa"}, {
         return new
     end
 })
+]]--
 
 -- alternative to get font size numbers as a table of strings
 local tableOfNumbersToTableOfStrings = function(numbers)
@@ -203,7 +205,7 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
                 event = "SetViewMode",
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[- 'page' mode splits the text into pages, at the most acceptable places (page numbers and the number of pages may change when you change fonts, margins, styles, etc.).
-- 'scroll' mode allows you to scroll the text like you would in a web browser (the 'Page Overlap' setting is only available in this mode).]]),
+- 'continuous' mode allows you to scroll the text like you would in a web browser (the 'Page Overlap' setting is only available in this mode).]]),
             },
             {
                 name = "block_rendering_mode",
