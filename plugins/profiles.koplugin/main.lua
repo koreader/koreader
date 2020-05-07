@@ -106,7 +106,7 @@ function Profiles:getSubMenuItems()
         Dispatcher.addSubMenu(self, sub_items, "data", k)
         table.insert(sub_item_table, {
             text = k,
-            keep_menu_open = false,
+            hold_keep_menu_open = false,
             sub_item_table = sub_items,
             hold_callback = function()
                 logger.dbg("Profile callback")
