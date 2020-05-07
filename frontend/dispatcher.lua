@@ -4,7 +4,6 @@ local KoptOptions = require("ui/data/koptoptions")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local T = require("ffi/util").template
---local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local logger = require("logger")
 
@@ -20,8 +19,9 @@ each setting contains:
     title: for use in ui.
 and optionally
     min/max: for number
-    values: allowed values for string.
-    conditions: (is document open, etc.)
+    default
+    args: allowed values for string.
+    toggle: display name for args
 --]]--
 local settingsList = {
     page_jmp = { category="incrementalnumber", event="GotoViewRel" , title=_("Go %1 pages"),min=-50, max=50},
@@ -154,11 +154,10 @@ arguments are:
     2) the table representing the submenu (can be empty)
     3) the name of the parent of the settings table (must be a child of self)
     4) the name of the settings table
-    5) optionally a function to call when the settings are changed (to save them etc)
 example usage:
     Dispatcher.addSubMenu(self, sub_items, "profiles", "profile1")
 --]]--
-function Dispatcher:addSubMenu(menu, location, settings, dispatchCallback)
+function Dispatcher:addSubMenu(menu, location, settings)
     if not Dispatcher.initialized then Dispatcher:init() end
     table.insert(menu, {
         text = _("None"),

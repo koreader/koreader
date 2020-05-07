@@ -19,8 +19,6 @@ local Profiles = WidgetContainer:new{
 }
 
 function Profiles:init()
-    logger.dbg("Profiles:init()")
-    --self.profiles.profile1 = { ["page_jmp"]=2, ["toggle_bookmark"]=true, ["zoom"]="page"}
     self.ui.menu:registerToMainMenu(self)
 end
 
