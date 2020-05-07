@@ -1,4 +1,6 @@
+local CreOptions = require("ui/data/creoptions")
 local Event = require("ui/event")
+local KoptOptions = require("ui/data/koptoptions")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local T = require("ffi/util").template
@@ -6,7 +8,10 @@ local T = require("ffi/util").template
 local _ = require("gettext")
 local logger = require("logger")
 
-local Dispatcher = {}
+local Dispatcher = {
+    initialized = false,
+}
+
 --[[--
 contains a list of a dispatchable settings
 each setting contains:
@@ -93,7 +98,54 @@ local settingsList = {
     cycle_highlight_style = { category= , event= , title=_("Cycle highlight style"), },
     wallabag_download = { category= , event= , title=_("Wallabag retrieval"), },
 ]]
+    screen_mode = {category="string"},
+    font_size = {category="absolutenumber", title="Font Size (%1)"},
 }
+
+--[[--
+    add settings from CreOptions / KoptOptions
+--]]--
+function Dispatcher:init()
+    local parseoptions = function(base, i)
+        for y=1,#base[i].options do
+            local option = base[i].options[y]
+            if settingsList[option.name] ~= nil then
+                if settingsList[option.name].event == nil then
+                    settingsList[option.name].event = option.event
+                end
+                if settingsList[option.name].title == nil then
+                    settingsList[option.name].title = option.name_text
+                end
+                if settingsList[option.name].category == "string" then
+                    if settingsList[option.name].toggle == nil then
+                        settingsList[option.name].toggle = option.toggle or option.values
+                    end
+                    if settingsList[option.name].args == nil then
+                        settingsList[option.name].args = option.args or option.values
+                    end
+                elseif settingsList[option.name].category == "absolutenumber" then
+                    if settingsList[option.name].min == nil then
+                        settingsList[option.name].min = option.args[1]
+                    end
+                    if settingsList[option.name].max == nil then
+                        settingsList[option.name].max = option.args[#option.args]
+                    end
+                    if settingsList[option.name].default == nil then
+                        settingsList[option.name].default = option.default_value
+                    end
+                end
+            end
+        end
+    end
+    for i=1,#CreOptions do
+        parseoptions(CreOptions, i)
+    end
+    for i=1,#KoptOptions do
+        parseoptions(KoptOptions, i)
+    end
+    Dispatcher.initialized = true
+--logger.warn("#############", settingsList)
+end
 
 --[[--
 Add a submenu to edit which items are dispatched
@@ -107,11 +159,13 @@ example usage:
     Dispatcher.addSubMenu(self, sub_items, "profiles", "profile1")
 --]]--
 function Dispatcher:addSubMenu(menu, location, settings, dispatchCallback)
+    if not Dispatcher.initialized then Dispatcher:init() end
     table.insert(menu, {
         text = _("None"),
-       checked_func = function()
-           return  next(self[location][settings]) == nil
-       end,
+        separator = true,
+        checked_func = function()
+            return next(self[location][settings]) == nil
+        end,
         callback = function(touchmenu_instance)
             self[location][settings] = {}
             if touchmenu_instance then touchmenu_instance:updateItems() end
@@ -149,7 +203,7 @@ function Dispatcher:addSubMenu(menu, location, settings, dispatchCallback)
             elseif settingsList[k].category == "absolutenumber" then
                 table.insert(menu, {
                     text_func = function()
-                        return T(settingsList[k].title, self[location][settings][k] or 0)
+                        return T(settingsList[k].title, self[location][settings][k] or "")
                     end,
                     checked_func = function()
                     return self[location][settings] ~= nil and self[location][settings][k] ~= nil
@@ -158,13 +212,13 @@ function Dispatcher:addSubMenu(menu, location, settings, dispatchCallback)
                         local SpinWidget = require("ui/widget/spinwidget")
                         local items = SpinWidget:new{
                             width = Screen:getWidth() * 0.6,
-                            value = self[location][settings][k] or 0,
+                            value = self[location][settings][k] or settingsList[k].default or 0,
                             value_min = settingsList[k].min,
                             value_step = 1,
                             value_hold_step = 2,
                             value_max = settingsList[k].max,
                             default_value = 0,
-                            title_text = T(settingsList[k].title, self[location][settings][k] or 0),
+                            title_text = T(settingsList[k].title, self[location][settings][k] or ""),
                             callback = function(spin)
                                 self[location][settings][k] = spin.value
                                 if touchmenu_instance then touchmenu_instance:updateItems() end
@@ -180,7 +234,7 @@ function Dispatcher:addSubMenu(menu, location, settings, dispatchCallback)
             elseif settingsList[k].category == "incrementalnumber" then
                 table.insert(menu, {
                     text_func = function()
-                        return T(settingsList[k].title, self[location][settings][k] or 0)
+                        return T(settingsList[k].title, self[location][settings][k] or "")
                     end,
                     checked_func = function()
                     return self[location][settings] ~= nil and self[location][settings][k] ~= nil
@@ -195,7 +249,7 @@ function Dispatcher:addSubMenu(menu, location, settings, dispatchCallback)
                             value_hold_step = 2,
                             value_max = settingsList[k].max,
                             default_value = 0,
-                            title_text = T(settingsList[k].title, self[location][settings][k] or 0),
+                            title_text = T(settingsList[k].title, self[location][settings][k] or ""),
                             text = _([[If set to 0 and called by a gesture the amount of the gesture will be used]]),
                             callback = function(spin)
                                 self[location][settings][k] = spin.value
@@ -243,9 +297,7 @@ end
 function Dispatcher:execute(settings, gesture)
 logger.dbg("step 1:", settings)
     for k, v in pairs(settings) do
-logger.dbg("step 2",k,v)
         if settingsList[k].conditions == nil or settingsList[k].conditions == true then
-logger.dbg("step 3")
             if settingsList[k].category == "none" then
                 self.ui:handleEvent(Event:new(settingsList[k].event))
             end
