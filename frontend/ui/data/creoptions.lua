@@ -3,16 +3,15 @@ local S = require("ui/data/strings")
 local optionsutil = require("ui/data/optionsutil")
 local _ = require("gettext")
 
--- add multiply operator to Aa dict
-local Aa = setmetatable({"Aa"}, {
-    __mul = function(t, mul)
-        local new = {}
-        for i = 1, mul do
-            for _, v in ipairs(t) do table.insert(new, v) end
-        end
-        return new
+-- Get font size numbers as a table of strings
+local tableOfNumbersToTableOfStrings = function(numbers)
+    local t = {}
+    for i, v in ipairs(numbers) do
+        -- We turn 17.5 into 17<sup>5</sup>
+        table.insert(t, tostring(v%1==0 and v or (v-v%1).."⁵"))
     end
-})
+    return t
+end
 
 local CreOptions = {
     prefix = 'copt',
@@ -185,15 +184,15 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
             {
                 name = "view_mode",
                 name_text = S.VIEW_MODE,
-                toggle = {S.VIEW_SCROLL, S.VIEW_PAGE},
-                values = {1, 0},
+                toggle = {S.VIEW_PAGE, S.VIEW_SCROLL},
+                values = {0, 1},
                 default_value = 0,
-                args = {"scroll", "page"},
+                args = {"page", "scroll"},
                 default_arg = "page",
                 event = "SetViewMode",
                 name_text_hold_callback = optionsutil.showValues,
-                help_text = _([[- 'scroll' mode allows you to scroll the text like you would in a web browser (the 'Page Overlap' setting is only available in this mode).
-- 'page' mode splits the text into pages, at the most acceptable places (page numbers and the number of pages may change when you change fonts, margins, styles, etc.).]]),
+                help_text = _([[- 'page' mode splits the text into pages, at the most acceptable places (page numbers and the number of pages may change when you change fonts, margins, styles, etc.).
+- 'continuous' mode allows you to scroll the text like you would in a web browser (the 'Page Overlap' setting is only available in this mode).]]),
             },
             {
                 name = "block_rendering_mode",
@@ -254,8 +253,8 @@ Note that your selected font size is not affected by this setting.]]),
                 default_value = DCREREADER_CONFIG_LINE_SPACE_PERCENT_MEDIUM,
                 more_options = true,
                 more_options_param = {
-                  value_min = 70,
-                  value_max = 130,
+                  value_min = 50,
+                  value_max = 300,
                   value_step = 1,
                   value_hold_step = 5,
                 },
@@ -289,7 +288,7 @@ Note that your selected font size is not affected by this setting.]]),
         options = {
             {
                 name = "font_size",
-                item_text = Aa * #DCREREADER_CONFIG_FONT_SIZES,
+                item_text = tableOfNumbersToTableOfStrings(DCREREADER_CONFIG_FONT_SIZES),
                 item_align_center = 1.0,
                 spacing = 15,
                 item_font_size = DCREREADER_CONFIG_FONT_SIZES,
@@ -359,7 +358,7 @@ Note that your selected font size is not affected by this setting.]]),
                     value_step = 1,
                     value_hold_step = 4,
                     name = "word_expansion",
-                    name_text = _("Allowed word expansion (%)"),
+                    name_text = _("Max word expansion %"),
                     event = "SetWordExpansion",
                 },
                 toggle = {S.NONE, S.SOME, S.MORE},
@@ -463,24 +462,25 @@ Note that your selected font size is not affected by this setting.]]),
         options = {
             {
                 name = "status_line",
-                name_text = S.PROGRESS_BAR,
-                toggle = {S.FULL, S.MINI},
-                values = {0, 1},
-                default_value = 1,
-                args = {0, 1},
+                name_text = S.ALT_STATUS_BAR,
+                toggle = {S.OFF, S.ON},
+                values = {1, 0},
+                default_value = 1, -- Note that 1 means KOReader (bottom) status bar only
+                args = {1, 0},
                 default_arg = 1,
                 event = "SetStatusLine",
                 name_text_hold_callback = optionsutil.showValues,
-                help_text = _([[- 'full' displays a status bar at the top of the screen (this status bar can't be customized).
-- 'mini' displays a status bar at the bottom of the screen, which can be toggled by tapping. The items displayed can be customized via the main menu.]]),
+                help_text = _([[Enable or disable the rendering engine alternative status bar at the top of the screen (this status bar can't be customized).
+
+Whether enabled or disabled, KOReader's own status bar at the bottom of the screen can be toggled by tapping. The items displayed can be customized via the main menu.]]),
             },
             {
                 name = "embedded_css",
                 name_text = S.EMBEDDED_STYLE,
-                toggle = {S.ON, S.OFF},
-                values = {1, 0},
+                toggle = {S.OFF, S.ON},
+                values = {0, 1},
                 default_value = 1,
-                args = {true, false},
+                args = {false, true},
                 default_arg = nil,
                 event = "ToggleEmbeddedStyleSheet",
                 name_text_hold_callback = optionsutil.showValues,
@@ -490,10 +490,10 @@ Note that your selected font size is not affected by this setting.]]),
             {
                 name = "embedded_fonts",
                 name_text = S.EMBEDDED_FONTS,
-                toggle = {S.ON, S.OFF},
-                values = {1, 0},
+                toggle = {S.OFF, S.ON},
+                values = {0, 1},
                 default_value = 1,
-                args = {true, false},
+                args = {false, true},
                 default_arg = nil,
                 event = "ToggleEmbeddedFonts",
                 enabled_func = function(configurable)

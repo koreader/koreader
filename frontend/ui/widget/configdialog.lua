@@ -280,6 +280,7 @@ function ConfigOption:init()
                     bordersize = 0,
                     face = face,
                     enabled = enabled,
+                    allow_hold_when_disabled = self.options[c].name_text_hold_callback ~= nil,
                     padding = padding_small,
                     text_font_face = name_font_face,
                     text_font_size = name_font_size,
@@ -870,7 +871,9 @@ function ConfigDialog:onShowConfigPanel(index)
     -- NOTE: And we also only need to repaint what's behind us when switching to a smaller dialog...
     --       This is trickier than in touchmenu, because dimen appear to fluctuate before/after painting...
     --       So we've settled instead for the amount of lines in the panel, as line-height is constant.
-    local keep_bg = old_layout_h and #self.layout >= old_layout_h
+    -- NOTE: line/widget-height is actually not constant (e.g. the font size widget on the emulator),
+    --       so do it only when the new nb of widgets is strictly greater than the previous one.
+    local keep_bg = old_layout_h and #self.layout > old_layout_h
     UIManager:setDirty((self.is_fresh or keep_bg) and self or "all", function()
         local refresh_dimen =
             old_dimen and old_dimen:combine(self.dialog_frame.dimen)
