@@ -253,7 +253,7 @@ Note that your selected font size is not affected by this setting.]]),
                 default_value = DCREREADER_CONFIG_LINE_SPACE_PERCENT_MEDIUM,
                 more_options = true,
                 more_options_param = {
-                  value_min = 70,
+                  value_min = 50,
                   value_max = 300,
                   value_step = 1,
                   value_hold_step = 5,
