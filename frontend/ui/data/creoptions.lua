@@ -254,7 +254,7 @@ Note that your selected font size is not affected by this setting.]]),
                 more_options = true,
                 more_options_param = {
                   value_min = 70,
-                  value_max = 130,
+                  value_max = 300,
                   value_step = 1,
                   value_hold_step = 5,
                 },
