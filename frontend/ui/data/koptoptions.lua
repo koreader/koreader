@@ -6,13 +6,11 @@ local _ = require("gettext")
 local Screen = Device.screen
 
 -- The values used for Font Size are not actually font sizes, but kopt zoom levels.
--- local FONT_SCALE_FACTORS = {0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.0}
--- local FONT_SCALE_DISPLAY_SIZE = {24, 28, 32, 34, 36, 38, 42, 46}
 local FONT_SCALE_FACTORS = {0.2, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.3, 1.6, 2.0}
 -- Font sizes used for the font size widget only
 local FONT_SCALE_DISPLAY_SIZE = {12, 14, 15, 16, 17, 18, 19, 20, 22, 25, 30, 35}
 
--- alternative to get font size numbers as a table of strings
+-- Get font scale numbers as a table of strings
 local tableOfNumbersToTableOfStrings = function(numbers)
     local t = {}
     for i, v in ipairs(numbers) do
@@ -56,7 +54,7 @@ local KoptOptions = {
                 event = "PageCrop",
                 args = {"none", "auto", "semi-auto", "manual"},
                 name_text_hold_callback = optionsutil.showValues,
-                help_text = _([[Allows cutting out blank page margins in the original document.
+                help_text = _([[Allows cropping blank page margins in the original document.
 This might be needed on scanned documents, that may have speckles or fingerprints in the margins, to be able to use zoom to fit content width.
 - 'none' does not cut the original document margins.
 - 'auto' finds content area automatically.
@@ -149,7 +147,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 end,
                 labels = {S.AUTO, S.LEFT, S.CENTER, S.RIGHT, S.JUSTIFY},
                 name_text_hold_callback = optionsutil.showValues,
-                help_text = _([[In reflow mode, sets the lines alignment.
+                help_text = _([[In reflow mode, sets the text alignment.
 The first option ("auto") tries to automatically align reflowed text as it is in the original document.]]),
             },
         }
@@ -159,7 +157,6 @@ The first option ("auto") tries to automatically align reflowed text as it is in
         options = {
             {
                 name = "font_size",
-                -- item_text = {"Aa","Aa","Aa","Aa","Aa","Aa","Aa","Aa"},
                 item_text = tableOfNumbersToTableOfStrings(FONT_SCALE_FACTORS),
                 item_align_center = 1.0,
                 spacing = 15,
@@ -241,14 +238,11 @@ Some of the other settings are only available when reflow mode is enabled.]]),
                 buttonprogress = true,
                 -- See https://github.com/koreader/koreader/issues/1299#issuecomment-65183895
                 -- For pdf reflowing mode (kopt_contrast):
-                -- values = {1/0.8, 1/1.0, 1/1.5, 1/2.0, 1/3.0, 1/4.0, 1/6.0, 1/9.0},
                 values = {1/0.8, 1/1.0, 1/1.5, 1/2.0, 1/4.0, 1/6.0, 1/10.0, 1/50.0},
                 default_pos = 2,
                 default_value = DKOPTREADER_CONFIG_CONTRAST,
                 event = "GammaUpdate",
                 -- For pdf non-reflowing mode (mupdf):
-                -- args = {0.8, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0, 9.0},
-                -- labels = {0.8, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0, 9.0},
                 args =   {0.8, 1.0, 1.5, 2.0, 4.0, 6.0, 10.0, 50.0},
                 labels = {0.8, 1.0, 1.5, 2.0, 4.0, 6.0, 10.0, 50.0},
                 name_text_hold_callback = optionsutil.showValues,
@@ -301,7 +295,7 @@ This can also be used to remove some gray background or to convert a grayscale o
                 event = "DocLangUpdate",
                 args = DKOPTREADER_CONFIG_DOC_LANGS_CODE,
                 name_text_hold_callback = optionsutil.showValues,
-                help_text = _([[Set the language to be Used by the OCR engine.]]),
+                help_text = _([[Set the language to be used by the OCR engine.]]),
             },
             {
                 name = "forced_ocr",
@@ -311,7 +305,7 @@ This can also be used to remove some gray background or to convert a grayscale o
                 default_value = 0,
                 advanced = true,
                 name_text_hold_callback = optionsutil.showValues,
-                help_text = _([[Force the use of OCR for text selection, even if the document has some text layer.]]),
+                help_text = _([[Force the use of OCR for text selection, even if the document has a text layer.]]),
             },
             {
                 name = "writing_direction",
@@ -364,7 +358,7 @@ This can also be used to remove some gray background or to convert a grayscale o
             },
             {
                 name = "max_columns",
-                name_text = S.COLUMNS,
+                name_text = S.DOCUMENT_COLUMNS,
                 item_icons = {
                     "resources/icons/appbar.column.one.png",
                     "resources/icons/appbar.column.two.png",

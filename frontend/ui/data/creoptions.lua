@@ -3,20 +3,7 @@ local S = require("ui/data/strings")
 local optionsutil = require("ui/data/optionsutil")
 local _ = require("gettext")
 
--- add multiply operator to Aa dict
---[[
-local Aa = setmetatable({"Aa"}, {
-    __mul = function(t, mul)
-        local new = {}
-        for i = 1, mul do
-            for _, v in ipairs(t) do table.insert(new, v) end
-        end
-        return new
-    end
-})
-]]--
-
--- alternative to get font size numbers as a table of strings
+-- Get font size numbers as a table of strings
 local tableOfNumbersToTableOfStrings = function(numbers)
     local t = {}
     for i, v in ipairs(numbers) do
@@ -301,7 +288,6 @@ Note that your selected font size is not affected by this setting.]]),
         options = {
             {
                 name = "font_size",
-                -- item_text = Aa * #DCREREADER_CONFIG_FONT_SIZES,
                 item_text = tableOfNumbersToTableOfStrings(DCREREADER_CONFIG_FONT_SIZES),
                 item_align_center = 1.0,
                 spacing = 15,
