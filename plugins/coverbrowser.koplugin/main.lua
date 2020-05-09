@@ -414,7 +414,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                     {
                         text = _("(Detailed list) Files per page"),
                         help_text = _([[This sets the number of files and directories per page in non-'classic' display modes.]]),
-                        keep_menu_open = true,
+                        -- Best to not "keep_menu_open = true", to see how this apply on the full view
                         callback = function()
                             local SpinWidget = require("ui/widget/spinwidget")
                             -- "files_per_page" should have been saved with an adequate value
@@ -426,7 +426,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                                 value = curr_items,
                                 value_min = 4,
                                 value_max = 20,
-                                ok_text = _("Set files"),
+                                keep_shown_on_apply = true,
                                 title_text =  _("Files per page"),
                                 callback = function(spin)
                                     BookInfoManager:saveSetting("files_per_page", spin.value)

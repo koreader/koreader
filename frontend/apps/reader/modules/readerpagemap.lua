@@ -388,6 +388,7 @@ function ReaderPageMap:addToMainMenu(menu_items)
                 text_func = function()
                     return T(_("Page labels font size (%1)"), self.label_font_size)
                 end,
+                enabled_func = function() return self.show_page_labels end,
                 callback = function(touchmenu_instance)
                     local SpinWidget = require("ui/widget/spinwidget")
                     local spin_w = SpinWidget:new{
@@ -396,8 +397,8 @@ function ReaderPageMap:addToMainMenu(menu_items)
                         value_min = 8,
                         value_max = 20,
                         default_value = self.label_default_font_size,
-                        ok_text = _("Set size"),
                         title_text =  _("Page labels font size"),
+                        keep_shown_on_apply = true,
                         callback = function(spin)
                             self.label_font_size = spin.value
                             G_reader_settings:saveSetting("pagemap_label_font_size", self.label_font_size)

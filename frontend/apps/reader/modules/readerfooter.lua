@@ -872,6 +872,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                                 default_value = 14,
                                 ok_text = _("Set size"),
                                 title_text =  _("Footer font size"),
+                                keep_shown_on_apply = true,
                                 callback = function(spin)
                                     self.settings.text_font_size = spin.value
                                     self.footer_text:free()
@@ -927,7 +928,8 @@ function ReaderFooter:addToMainMenu(menu_items)
                                 value_hold_step = 20,
                                 value_max = 100,
                                 title_text =  _("Maximum width"),
-                                text = _("Maximum book title width in percentage of screen width"),
+                                info_text = _("Maximum book title width in percentage of screen width"),
+                                keep_shown_on_apply = true,
                                 callback = function(spin)
                                     self.settings.book_title_max_width_pct = spin.value
                                     self:refreshFooter(true, true)
@@ -952,7 +954,8 @@ function ReaderFooter:addToMainMenu(menu_items)
                                 value_hold_step = 20,
                                 value_max = 100,
                                 title_text =  _("Maximum width"),
-                                text = _("Maximum chapter width in percentage of screen width"),
+                                info_text = _("Maximum chapter width in percentage of screen width"),
+                                keep_shown_on_apply = true,
                                 callback = function(spin)
                                     self.settings.book_chapter_max_width_pct = spin.value
                                     self:refreshFooter(true, true)
@@ -1339,6 +1342,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                                 value_max = value_max,
                                 default_value = default_value,
                                 title_text =  _("Progress bar size"),
+                                keep_shown_on_apply = true,
                                 callback = function(spin)
                                     if self.settings.progress_style_thin then
                                         self.settings.progress_style_thin_height = spin.value
@@ -1499,6 +1503,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         value_max = 50,
                         title_text =  _("Minimal width"),
                         text = _("Minimal progress bar width in percentage of screen width"),
+                        keep_shown_on_apply = true,
                         callback = function(spin)
                             self.settings.progress_bar_min_width_pct = spin.value
                             self:refreshFooter(true, true)

@@ -257,7 +257,7 @@ From the footnote popup, you can jump to the footnote location in the book by sw
                     precision = "%+d",
                     ok_text = _("Set font size"),
                     title_text =  _("Set footnote popup font size"),
-                    text = _([[
+                    info_text = _([[
 The footnote popup font adjusts to the font size you've set for the document.
 You can specify here how much smaller or larger it should be relative to the document font size.
 A negative value will make it smaller, while a positive one will make it larger.

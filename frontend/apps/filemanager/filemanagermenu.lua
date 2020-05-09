@@ -147,8 +147,8 @@ function FileManagerMenu:setUpdateItemTable()
                         value = curr_items,
                         value_min = 6,
                         value_max = 24,
-                        ok_text = _("Set items"),
                         title_text =  _("Items per page"),
+                        keep_shown_on_apply = true,
                         callback = function(spin)
                             G_reader_settings:saveSetting("items_per_page", spin.value)
                             self.ui:onRefresh()
@@ -171,7 +171,7 @@ function FileManagerMenu:setUpdateItemTable()
                         value_min = 10,
                         value_max = 72,
                         default_value = default_font_size,
-                        ok_text = _("Set size"),
+                        keep_shown_on_apply = true,
                         title_text =  _("Maximum font size for item"),
                         callback = function(spin)
                             G_reader_settings:saveSetting("items_font_size", spin.value)
