@@ -455,7 +455,7 @@ You can set how many lines are shown.]])
                     precision = "%d",
                     ok_text = _("Set"),
                     title_text =  _("Set overlapped lines"),
-                    text = overlap_lines_help_text,
+                    info_text = overlap_lines_help_text,
                     callback = function(spin)
                         G_reader_settings:saveSetting("copt_overlap_lines", spin.value)
                         touchmenu_instance:updateItems()

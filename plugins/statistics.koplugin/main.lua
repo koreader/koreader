@@ -791,7 +791,7 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                                 value_max = 5,
                                 ok_text = _("Set"),
                                 title_text =  _("Books per calendar day"),
-                                text = _("Set the max number of book spans to show for a day"),
+                                info_text = _("Set the max number of book spans to show for a day"),
                                 callback = function(spin)
                                     self.calendar_nb_book_spans = spin.value
                                     touchmenu_instance:updateItems()

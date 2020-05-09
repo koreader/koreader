@@ -10,6 +10,7 @@ local Font = require("ui/font")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LineWidget = require("ui/widget/linewidget")
+local MovableContainer = require("ui/widget/container/movablecontainer")
 local NumberPickerWidget = require("ui/widget/numberpickerwidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local Size = require("ui/size")
@@ -22,8 +23,9 @@ local _ = require("gettext")
 local Screen = Device.screen
 
 local SpinWidget = InputContainer:new{
+    title_text = "",
     title_face = Font:getFace("x_smalltfont"),
-    text = nil,
+    info_text = nil,
     width = Screen:getWidth() * 0.95,
     height = Screen:getHeight(),
     value_table = nil,
@@ -33,14 +35,15 @@ local SpinWidget = InputContainer:new{
     value_min = 0,
     value_step = 1,
     value_hold_step = 4,
-    ok_text = _("OK"),
-    cancel_text = _("Cancel"),
-    -- extra button on bottom
-    extra_text = nil,
-    extra_callback = nil,
-    -- set this to see extra default button
+    cancel_text = _("Close"),
+    ok_text = _("Apply"),
+    keep_shown_on_apply = false,
+    -- Set this to add default button that restores number to its default value
     default_value = nil,
     default_text = _("Use default"),
+    -- Optional extra button on bottom
+    extra_text = nil,
+    extra_callback = nil,
 }
 
 function SpinWidget:init()
@@ -70,6 +73,11 @@ function SpinWidget:init()
 end
 
 function SpinWidget:update()
+    -- This picker_update_callback will be redefined later. It is needed
+    -- so we can have our MovableContainer repainted on NumberPickerWidgets
+    -- update. It is needed if we have enabled transparency on MovableContainer,
+    -- otherwise the NumberPicker area gets opaque on update.
+    local picker_update_callback = function() end
     local value_widget = NumberPickerWidget:new{
         show_parent = self,
         width = self.screen_width * 0.2,
@@ -81,6 +89,7 @@ function SpinWidget:update()
         value_step = self.value_step,
         value_hold_step = self.value_hold_step,
         precision = self.precision,
+        update_callback = function() picker_update_callback() end,
     }
     local value_group = HorizontalGroup:new{
         align = "center",
@@ -134,7 +143,9 @@ function SpinWidget:update()
                         self.value, self.value_index = value_widget:getValue()
                         self:callback(self)
                     end
-                    self:onClose()
+                    if not self.keep_shown_on_apply then
+                        self:onClose()
+                    end
                 end,
             },
         }
@@ -151,19 +162,21 @@ function SpinWidget:update()
             },
         })
     end
-        if self.extra_text then
-            table.insert(buttons,{
-                {
-                    text = self.extra_text,
-                    callback = function()
-                        if self.extra_callback then
-                            self.value, self.value_index = value_widget:getValue()
-                            self.extra_callback(self)
-                        end
+    if self.extra_text then
+        table.insert(buttons,{
+            {
+                text = self.extra_text,
+                callback = function()
+                    if self.extra_callback then
+                        self.value, self.value_index = value_widget:getValue()
+                        self.extra_callback(self)
+                    end
+                    if not self.keep_shown_on_apply then -- assume extra wants it same as ok
                         self:onClose()
-                    end,
-                },
-            })
+                    end
+                end,
+            },
+        })
     end
 
     local ok_cancel_buttons = ButtonTable:new{
@@ -178,13 +191,13 @@ function SpinWidget:update()
         value_bar,
         value_line,
     }
-    if self.text then
+    if self.info_text then
         table.insert(vgroup, FrameContainer:new{
             padding = Size.padding.default,
             margin = Size.margin.small,
             bordersize = 0,
             TextBoxWidget:new{
-                text = self.text,
+                text = self.info_text,
                 face = Font:getFace("x_smallinfofont"),
                 width = self.width * 0.9,
             }
@@ -211,6 +224,9 @@ function SpinWidget:update()
         background = Blitbuffer.COLOR_WHITE,
         vgroup,
     }
+    self.movable = MovableContainer:new{
+        self.spin_frame,
+    }
     self[1] = WidgetContainer:new{
         align = "center",
         dimen =Geom:new{
@@ -218,14 +234,21 @@ function SpinWidget:update()
             w = self.screen_width,
             h = self.screen_height,
         },
-        FrameContainer:new{
-            bordersize = 0,
-            self.spin_frame,
-        }
+        self.movable,
     }
     UIManager:setDirty(self, function()
         return "ui", self.spin_frame.dimen
     end)
+    picker_update_callback = function()
+        UIManager:setDirty("all", function()
+            return "ui", self.movable.dimen
+        end)
+    end
+end
+
+function SpinWidget:hasMoved()
+    local offset = self.movable:getMovedOffset()
+    return offset.x ~= 0 or offset.y ~= 0
 end
 
 function SpinWidget:onCloseWidget()

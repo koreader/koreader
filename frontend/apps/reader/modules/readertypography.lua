@@ -420,6 +420,7 @@ When the book's language tag is not among our presets, no specific features will
 Set minimum length before hyphenation occurs.
 These settings will apply to all books with any hyphenation dictionary.
 'Use language defaults' resets them.]]),
+                keep_shown_on_apply = true,
                 callback = function(left_hyphen_min, right_hyphen_min)
                     G_reader_settings:saveSetting("hyph_left_hyphen_min", left_hyphen_min)
                     G_reader_settings:saveSetting("hyph_right_hyphen_min", right_hyphen_min)

@@ -26,7 +26,7 @@ local Screen = Device.screen
 local DoubleSpinWidget = InputContainer:new{
     title_text = "",
     title_face = Font:getFace("x_smalltfont"),
-    info_text = "",
+    info_text = nil,
     width = nil,
     height = nil,
     left_min = 1,
@@ -39,9 +39,15 @@ local DoubleSpinWidget = InputContainer:new{
     right_value = 1,
     right_default = nil,
     right_text = _("Right"),
-    -- set this to see extra default button
+    cancel_text = _("Close"),
+    ok_text = _("Apply"),
+    keep_shown_on_apply = false,
+    -- Set this to add default button that restores numbers to their default values
     default_values = nil,
     default_text = _("Use defaults"),
+    -- Optional extra button on bottom
+    extra_text = nil,
+    extra_callback = nil,
 }
 
 function DoubleSpinWidget:init()
@@ -74,7 +80,7 @@ end
 function DoubleSpinWidget:update()
     -- This picker_update_callback will be redefined later. It is needed
     -- so we can have our MovableContainer repainted on NumberPickerWidgets
-    -- update It is needed if we have enabled transparency on MovableContainer,
+    -- update. It is needed if we have enabled transparency on MovableContainer,
     -- otherwise the NumberPicker area gets opaque on update.
     local picker_update_callback = function() end
     local left_widget = NumberPickerWidget:new{
@@ -166,7 +172,7 @@ function DoubleSpinWidget:update()
         margin = Size.margin.small,
         bordersize = 0,
         TextBoxWidget:new{
-            text = self.info_text,
+            text = self.info_text or "",
             face = Font:getFace("x_smallinfofont"),
             width = self.width * 0.9,
         }
@@ -174,16 +180,19 @@ function DoubleSpinWidget:update()
     local buttons = {
         {
             {
-                text = _("Close"),
+                text = self.cancel_text,
                 callback = function()
                     self:onClose()
                 end,
             },
             {
-                text = _("Apply"),
+                text = self.ok_text,
                 callback = function()
                     if self.callback then
                         self.callback(left_widget:getValue(), right_widget:getValue())
+                    end
+                    if not self.keep_shown_on_apply then
+                        self:onClose()
                     end
                 end,
             },
@@ -201,6 +210,21 @@ function DoubleSpinWidget:update()
                     self.callback(nil, nil)
                 end,
             }
+        })
+    end
+    if self.extra_text then
+        table.insert(buttons,{
+            {
+                text = self.extra_text,
+                callback = function()
+                    if self.extra_callback then
+                        self.extra_callback(left_widget:getValue(), right_widget:getValue())
+                    end
+                    if not self.keep_shown_on_apply then -- assume extra wants it same as ok
+                        self:onClose()
+                    end
+                end,
+            },
         })
     end
 
@@ -261,6 +285,11 @@ function DoubleSpinWidget:update()
         -- If we'd like to have the values auto-applied, uncomment this:
         -- self.callback(left_widget:getValue(), right_widget:getValue())
     end
+end
+
+function DoubleSpinWidget:hasMoved()
+    local offset = self.movable:getMovedOffset()
+    return offset.x ~= 0 or offset.y ~= 0
 end
 
 function DoubleSpinWidget:onCloseWidget()
