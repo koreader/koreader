@@ -226,13 +226,11 @@ end
 
 function ReaderBookmark:onShowBookmark()
     -- check if highlights already have "chapter" property
+    -- this executes only once, just to set has_chapter_property variable
     local has_chapter_property = false
     for _, highlights in pairs(self.view.highlight.saved) do
-        for _, highlight in ipairs(highlights) do
-            if highlight.chapter then
-              has_chapter_property = true
-            end
-            break
+        if highlights[1].chapter then
+            has_chapter_property = true
         end
         break
     end
