@@ -215,7 +215,31 @@ function ReaderBookmark:gotoBookmark(pn_or_xp)
     end
 end
 
+function ReaderBookmark:regenerateHighlights()
+    for _, highlights in pairs(self.view.highlight.saved) do
+        for _, highlight in pairs(highlights) do
+            local chapter_name = self.ui.toc:getTocTitleByPage(highlight.pos0)
+            highlight.chapter = chapter_name
+        end
+    end
+end
+
 function ReaderBookmark:onShowBookmark()
+    -- check if highlights already have "chapter" property
+    local has_chapter_property = false
+    for _, highlights in pairs(self.view.highlight.saved) do
+        for _, highlight in ipairs(highlights) do
+            if highlight.chapter then
+              has_chapter_property = true
+            end
+            break
+        end
+        break
+    end
+
+    if not has_chapter_property then
+        self:regenerateHighlights()
+    end
     -- build up item_table
     for k, v in ipairs(self.bookmarks) do
         local page = v.page
