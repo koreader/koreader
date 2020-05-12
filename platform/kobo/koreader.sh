@@ -119,12 +119,22 @@ else
 fi
 
 # check whether PLATFORM & PRODUCT have a value assigned by rcS
+if [ -z "${PRODUCT}" ] ; then
+   eval "$(xargs -n 1 -0 < "/proc/$(pidof -s udevd)/environ" | grep -s -F -e PRODUCT)"
+   export PRODUCT
+fi
+
 if [ -z "${PRODUCT}" ]; then
     PRODUCT="$(/bin/kobo_config.sh 2>/dev/null)"
     export PRODUCT
 fi
 
 # PLATFORM is used in koreader for the path to the WiFi drivers (as well as when restarting nickel)
+if [ -z "${PLATFORM}" ] ; then
+   eval "$(xargs -n 1 -0 < "/proc/$(pidof -s udevd)/environ" | grep -s -F -e PLATFORM)"
+   export PLATFORM
+fi
+
 if [ -z "${PLATFORM}" ]; then
     PLATFORM="freescale"
     if dd if="/dev/mmcblk0" bs=512 skip=1024 count=1 | grep -q "HW CONFIG"; then
