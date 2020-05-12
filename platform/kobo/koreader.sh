@@ -119,7 +119,7 @@ else
 fi
 
 # check whether PLATFORM & PRODUCT have a value assigned by rcS
-if [ -z "${PRODUCT}" ] ; then
+if [ -z "${PRODUCT}" ]; then
    eval "$(xargs -n 1 -0 <"/proc/$(pidof -s udevd)/environ" | grep -s -F -e PRODUCT)"
    export PRODUCT
 fi
@@ -130,7 +130,7 @@ if [ -z "${PRODUCT}" ]; then
 fi
 
 # PLATFORM is used in koreader for the path to the WiFi drivers (as well as when restarting nickel)
-if [ -z "${PLATFORM}" ] ; then
+if [ -z "${PLATFORM}" ]; then
    eval "$(xargs -n 1 -0 <"/proc/$(pidof -s udevd)/environ" | grep -s -F -e PLATFORM)"
    export PLATFORM
 fi
