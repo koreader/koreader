@@ -8,7 +8,7 @@ KOREADER_DIR="${0%/*}"
 cd "${KOREADER_DIR}" || exit
 
 # Attempt to switch to a sensible CPUFreq governor when that's not already the case...
-IFS= read -r current_cpufreq_gov < "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+IFS= read -r current_cpufreq_gov <"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
 # NOTE: We're being fairly conservative here, because what's used and what's available varies depending on HW...
 if [ "${current_cpufreq_gov}" != "ondemand" ] && [ "${current_cpufreq_gov}" != "interactive" ]; then
     # NOTE: Go with ondemand, because it's likely to be the lowest common denominator.
@@ -120,7 +120,7 @@ fi
 
 # check whether PLATFORM & PRODUCT have a value assigned by rcS
 if [ -z "${PRODUCT}" ] ; then
-   eval "$(xargs -n 1 -0 < "/proc/$(pidof -s udevd)/environ" | grep -s -F -e PRODUCT)"
+   eval "$(xargs -n 1 -0 <"/proc/$(pidof -s udevd)/environ" | grep -s -F -e PRODUCT)"
    export PRODUCT
 fi
 
@@ -131,7 +131,7 @@ fi
 
 # PLATFORM is used in koreader for the path to the WiFi drivers (as well as when restarting nickel)
 if [ -z "${PLATFORM}" ] ; then
-   eval "$(xargs -n 1 -0 < "/proc/$(pidof -s udevd)/environ" | grep -s -F -e PLATFORM)"
+   eval "$(xargs -n 1 -0 <"/proc/$(pidof -s udevd)/environ" | grep -s -F -e PLATFORM)"
    export PLATFORM
 fi
 
@@ -158,7 +158,7 @@ fi
 
 # We'll want to ensure Portrait rotation to allow us to use faster blitting codepaths @ 8bpp,
 # so remember the current one before fbdepth does its thing.
-IFS= read -r ORIG_FB_ROTA < "/sys/class/graphics/fb0/rotate"
+IFS= read -r ORIG_FB_ROTA <"/sys/class/graphics/fb0/rotate"
 echo "Original fb rotation is set @ ${ORIG_FB_ROTA}" >>crash.log 2>&1
 
 # In the same vein, swap to 8bpp,
@@ -169,7 +169,7 @@ echo "Original fb rotation is set @ ${ORIG_FB_ROTA}" >>crash.log 2>&1
 # NOTE: Even though both pickel & Nickel appear to restore their preferred fb setup, we'll have to do it ourselves,
 #       as they fail to flip the grayscale flag properly. Plus, we get to play nice with every launch method that way.
 #       So, remember the current bitdepth, so we can restore it on exit.
-IFS= read -r ORIG_FB_BPP < "/sys/class/graphics/fb0/bits_per_pixel"
+IFS= read -r ORIG_FB_BPP <"/sys/class/graphics/fb0/bits_per_pixel"
 echo "Original fb bitdepth is set @ ${ORIG_FB_BPP}bpp" >>crash.log 2>&1
 # Sanity check...
 case "${ORIG_FB_BPP}" in
