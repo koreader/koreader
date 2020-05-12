@@ -227,6 +227,7 @@ function Send2Ebook:onCloseDocument()
         logger.dbg("Send2Ebook: download_dir_path:", download_dir_path)
         logger.dbg("Send2Ebook: removing Send2Ebook file from history.")
         ReadHistory:removeItemByPath(document_full_path)
+        self.ui.setLastDirForFileBrowser(document_full_path)
     end
 end
 
