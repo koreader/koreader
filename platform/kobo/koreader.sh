@@ -86,7 +86,7 @@ if [ "${VIA_NICKEL}" = "true" ]; then
     FROM_KFMON="false"
     if pkill -0 kfmon; then
         # That's a start, now check if KFMon truly is our parent...
-        if [ "$(pidof kfmon)" -eq "${PPID}" ]; then
+        if [ "$(pidof -s kfmon)" -eq "${PPID}" ]; then
             FROM_KFMON="true"
         fi
     fi
@@ -100,7 +100,7 @@ if [ "${VIA_NICKEL}" = "true" ]; then
     # If we were spawned outside of Nickel, we'll need a few extra bits from its own env...
     if [ "${FROM_NICKEL}" = "false" ]; then
         # Siphon a few things from nickel's env (namely, stuff exported by rcS *after* on-animator.sh has been launched)...
-        eval "$(xargs -n 1 -0 <"/proc/$(pidof nickel)/environ" | grep -e DBUS_SESSION_BUS_ADDRESS -e NICKEL_HOME -e WIFI_MODULE -e LANG -e WIFI_MODULE_PATH -e INTERFACE 2>/dev/null)"
+        eval "$(xargs -n 1 -0 <"/proc/$(pidof -s nickel)/environ" | grep -s -F -e DBUS_SESSION_BUS_ADDRESS -e NICKEL_HOME -e WIFI_MODULE -e LANG -e WIFI_MODULE_PATH -e INTERFACE)"
         export DBUS_SESSION_BUS_ADDRESS NICKEL_HOME WIFI_MODULE LANG WIFI_MODULE_PATH INTERFACE
     fi
 
