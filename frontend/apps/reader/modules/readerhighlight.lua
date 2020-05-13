@@ -1146,7 +1146,10 @@ function ReaderHighlight:getHighlightBookmarkItem()
         local datetime = os.date("%Y-%m-%d %H:%M:%S")
         local page = self.ui.document.info.has_pages and
                 self.hold_pos.page or self.selected_text.pos0
-        local chapter_name = self.ui.toc:getAccurateTocTitleByXPointer(self.selected_text.pos0)
+        local chapter_name = self.ui.document.info.has_pages and
+                self.ui.toc:getTocTitleByPage(page) or
+                self.ui.toc:getAccurateTocTitleByXPointer(self.selected_text.pos0)
+
         return {
             page = page,
             pos0 = self.selected_text.pos0,
@@ -1168,7 +1171,6 @@ function ReaderHighlight:saveHighlight()
         if not self.view.highlight.saved[page] then
             self.view.highlight.saved[page] = {}
         end
-        local chapter_name = self.ui.toc:getAccurateTocTitleByXPointer(self.selected_text.pos0)
         local datetime = os.date("%Y-%m-%d %H:%M:%S")
         local hl_item = {
             datetime = datetime,
@@ -1177,8 +1179,14 @@ function ReaderHighlight:saveHighlight()
             pos1 = self.selected_text.pos1,
             pboxes = self.selected_text.pboxes,
             drawer = self.view.highlight.saved_drawer,
-            chapter = chapter_name,
         }
+        if not self.ui.document.info.has_pages then
+            local chapter_name = self.ui.toc:getAccurateTocTitleByXPointer(self.selected_text.pos0)
+            hl_item.chapter = chapter_name
+        else
+            local chapter_name = self.ui.toc:getTocTitleByPage(page)
+            hl_item.chapter = chapter_name
+        end
         table.insert(self.view.highlight.saved[page], hl_item)
         local bookmark_item = self:getHighlightBookmarkItem()
         if bookmark_item then
