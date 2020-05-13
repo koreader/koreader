@@ -8,7 +8,7 @@ KOREADER_DIR="${0%/*}"
 cd "${KOREADER_DIR}" || exit
 
 # Attempt to switch to a sensible CPUFreq governor when that's not already the case...
-current_cpufreq_gov="$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)"
+IFS= read -r current_cpufreq_gov <"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
 # NOTE: We're being fairly conservative here, because what's used and what's available varies depending on HW...
 if [ "${current_cpufreq_gov}" != "ondemand" ] && [ "${current_cpufreq_gov}" != "interactive" ]; then
     # NOTE: Go with ondemand, because it's likely to be the lowest common denominator.
@@ -86,7 +86,7 @@ if [ "${VIA_NICKEL}" = "true" ]; then
     FROM_KFMON="false"
     if pkill -0 kfmon; then
         # That's a start, now check if KFMon truly is our parent...
-        if [ "$(pidof kfmon)" -eq "${PPID}" ]; then
+        if [ "$(pidof -s kfmon)" -eq "${PPID}" ]; then
             FROM_KFMON="true"
         fi
     fi
@@ -100,7 +100,7 @@ if [ "${VIA_NICKEL}" = "true" ]; then
     # If we were spawned outside of Nickel, we'll need a few extra bits from its own env...
     if [ "${FROM_NICKEL}" = "false" ]; then
         # Siphon a few things from nickel's env (namely, stuff exported by rcS *after* on-animator.sh has been launched)...
-        eval "$(xargs -n 1 -0 <"/proc/$(pidof nickel)/environ" | grep -e DBUS_SESSION_BUS_ADDRESS -e NICKEL_HOME -e WIFI_MODULE -e LANG -e WIFI_MODULE_PATH -e INTERFACE 2>/dev/null)"
+        eval "$(xargs -n 1 -0 <"/proc/$(pidof -s nickel)/environ" | grep -s -F -e DBUS_SESSION_BUS_ADDRESS -e NICKEL_HOME -e WIFI_MODULE -e LANG -e WIFI_MODULE_PATH -e INTERFACE)"
         export DBUS_SESSION_BUS_ADDRESS NICKEL_HOME WIFI_MODULE LANG WIFI_MODULE_PATH INTERFACE
     fi
 
@@ -120,11 +120,21 @@ fi
 
 # check whether PLATFORM & PRODUCT have a value assigned by rcS
 if [ -z "${PRODUCT}" ]; then
+    eval "$(xargs -n 1 -0 <"/proc/$(pidof -s udevd)/environ" | grep -s -F -e PRODUCT)"
+    export PRODUCT
+fi
+
+if [ -z "${PRODUCT}" ]; then
     PRODUCT="$(/bin/kobo_config.sh 2>/dev/null)"
     export PRODUCT
 fi
 
 # PLATFORM is used in koreader for the path to the WiFi drivers (as well as when restarting nickel)
+if [ -z "${PLATFORM}" ]; then
+    eval "$(xargs -n 1 -0 <"/proc/$(pidof -s udevd)/environ" | grep -s -F -e PLATFORM)"
+    export PLATFORM
+fi
+
 if [ -z "${PLATFORM}" ]; then
     PLATFORM="freescale"
     if dd if="/dev/mmcblk0" bs=512 skip=1024 count=1 | grep -q "HW CONFIG"; then
@@ -148,7 +158,7 @@ fi
 
 # We'll want to ensure Portrait rotation to allow us to use faster blitting codepaths @ 8bpp,
 # so remember the current one before fbdepth does its thing.
-ORIG_FB_ROTA="$(cat /sys/class/graphics/fb0/rotate)"
+IFS= read -r ORIG_FB_ROTA <"/sys/class/graphics/fb0/rotate"
 echo "Original fb rotation is set @ ${ORIG_FB_ROTA}" >>crash.log 2>&1
 
 # In the same vein, swap to 8bpp,
@@ -159,7 +169,7 @@ echo "Original fb rotation is set @ ${ORIG_FB_ROTA}" >>crash.log 2>&1
 # NOTE: Even though both pickel & Nickel appear to restore their preferred fb setup, we'll have to do it ourselves,
 #       as they fail to flip the grayscale flag properly. Plus, we get to play nice with every launch method that way.
 #       So, remember the current bitdepth, so we can restore it on exit.
-ORIG_FB_BPP="$(./fbdepth -g)"
+IFS= read -r ORIG_FB_BPP <"/sys/class/graphics/fb0/bits_per_pixel"
 echo "Original fb bitdepth is set @ ${ORIG_FB_BPP}bpp" >>crash.log 2>&1
 # Sanity check...
 case "${ORIG_FB_BPP}" in
