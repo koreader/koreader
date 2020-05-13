@@ -215,8 +215,10 @@ function ReaderBookmark:gotoBookmark(pn_or_xp)
     end
 end
 
-function ReaderBookmark:updateHighlightsToAddChapterPropertyIfNeeded()
-    if G_reader_settings:has("bookmarks_chapters_updated") then
+-- This function adds "chapter" property to highlights already saved in the document
+function ReaderBookmark:updateHighlightsIfNeeded()
+    local version = self.ui.doc_settings:readSetting("bookmarks_version") or 0
+    if version >= 20200511 then
         return
     end
 
@@ -226,11 +228,11 @@ function ReaderBookmark:updateHighlightsToAddChapterPropertyIfNeeded()
             highlight.chapter = chapter_name
         end
     end
-    G_reader_settings:saveSetting("bookmarks_update_version", true)
+    self.ui.doc_settings:saveSetting("bookmarks_version", 20200511)
 end
 
 function ReaderBookmark:onShowBookmark()
-    self:updateHighlightsToAddChapterPropertyIfNeeded()
+    self:updateHighlightsIfNeeded()
     -- build up item_table
     for k, v in ipairs(self.bookmarks) do
         local page = v.page
