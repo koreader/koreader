@@ -215,29 +215,22 @@ function ReaderBookmark:gotoBookmark(pn_or_xp)
     end
 end
 
-function ReaderBookmark:regenerateHighlights()
+function ReaderBookmark:updateHighlightsToAddChapterPropertyIfNeeded()
+    if G_reader_settings:has("bookmarks_chapters_updated") then
+        return
+    end
+
     for _, highlights in pairs(self.view.highlight.saved) do
         for _, highlight in pairs(highlights) do
             local chapter_name = self.ui.toc:getTocTitleByPage(highlight.pos0)
             highlight.chapter = chapter_name
         end
     end
+    G_reader_settings:saveSetting("bookmarks_update_version", true)
 end
 
 function ReaderBookmark:onShowBookmark()
-    -- check if highlights already have "chapter" property
-    -- this executes only once, just to set has_chapter_property variable
-    local has_chapter_property = false
-    for _, highlights in pairs(self.view.highlight.saved) do
-        if highlights[1].chapter then
-            has_chapter_property = true
-        end
-        break
-    end
-
-    if not has_chapter_property then
-        self:regenerateHighlights()
-    end
+    self:updateHighlightsToAddChapterPropertyIfNeeded()
     -- build up item_table
     for k, v in ipairs(self.bookmarks) do
         local page = v.page
