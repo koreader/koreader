@@ -228,7 +228,7 @@ function ReaderToc:getAccurateTocIndexByXPointer(xptr)
 end
 
 function ReaderToc:getAccurateTocTitleByXPointer(xptr)
-    local index = self:getAccurateTocIndexByPage(xptr)
+    local index = self:getAccurateTocIndexByXPointer(xptr)
     if index then
         return self:cleanUpTocTitle(self.toc[index].title)
     else
