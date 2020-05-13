@@ -1146,7 +1146,7 @@ function ReaderHighlight:getHighlightBookmarkItem()
         local datetime = os.date("%Y-%m-%d %H:%M:%S")
         local page = self.ui.document.info.has_pages and
                 self.hold_pos.page or self.selected_text.pos0
-        local chapter_name = self.ui.toc:getTocTitleByPage(page)
+        local chapter_name = self.ui.toc:getAccurateTocTitleByXPointer(self.selected_text.pos0)
         return {
             page = page,
             pos0 = self.selected_text.pos0,
@@ -1163,12 +1163,12 @@ function ReaderHighlight:saveHighlight()
     self.ui:handleEvent(Event:new("AddHighlight"))
     logger.dbg("save highlight")
     local page = self.hold_pos.page
-    local chapter_name = self.ui.toc:getTocTitleByPage(page)
     if self.hold_pos and self.selected_text and self.selected_text.pos0
         and self.selected_text.pos1 then
         if not self.view.highlight.saved[page] then
             self.view.highlight.saved[page] = {}
         end
+        local chapter_name = self.ui.toc:getAccurateTocTitleByXPointer(self.selected_text.pos0)
         local datetime = os.date("%Y-%m-%d %H:%M:%S")
         local hl_item = {
             datetime = datetime,

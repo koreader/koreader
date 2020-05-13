@@ -215,6 +215,27 @@ function ReaderToc:getTocIndexByPage(pn_or_xp)
     return pre_index
 end
 
+function ReaderToc:getAccurateTocIndexByXPointer(xptr)
+    local index = self:getTocIndexByPage(xptr)
+    if self.toc[index + 1] then
+        local next_index_xptr = self.toc[index + 1].xpointer
+        local comparison = self.ui.document:compareXPointers(next_index_xptr, xptr)
+        if comparison and comparison > 0 then
+            return index + 1
+        end
+    end
+    return index
+end
+
+function ReaderToc:getAccurateTocTitleByXPointer(xptr)
+    local index = self:getAccurateTocIndexByPage(xptr)
+    if index then
+        return self:cleanUpTocTitle(self.toc[index].title)
+    else
+        return ""
+    end
+end
+
 function ReaderToc:getTocTitleByPage(pn_or_xp)
     local index = self:getTocIndexByPage(pn_or_xp)
     if index then
