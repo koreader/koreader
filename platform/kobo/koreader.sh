@@ -100,6 +100,7 @@ if [ "${VIA_NICKEL}" = "true" ]; then
     # If we were spawned outside of Nickel, we'll need a few extra bits from its own env...
     if [ "${FROM_NICKEL}" = "false" ]; then
         # Siphon a few things from nickel's env (namely, stuff exported by rcS *after* on-animator.sh has been launched)...
+        # shellcheck disable=SC2046
         export $(grep -s -E -e '^(DBUS_SESSION_BUS_ADDRESS|NICKEL_HOME|WIFI_MODULE|LANG|WIFI_MODULE_PATH|INTERFACE)=' "/proc/$(pidof -s nickel)/environ")
     fi
 
@@ -119,6 +120,7 @@ fi
 
 # check whether PLATFORM & PRODUCT have a value assigned by rcS
 if [ -z "${PRODUCT}" ]; then
+    # shellcheck disable=SC2046
     export $(grep -s -e '^PRODUCT=' "/proc/$(pidof -s udevd)/environ")
 fi
 
@@ -129,6 +131,7 @@ fi
 
 # PLATFORM is used in koreader for the path to the WiFi drivers (as well as when restarting nickel)
 if [ -z "${PLATFORM}" ]; then
+    # shellcheck disable=SC2046
     export $(grep -s -e '^PLATFORM=' "/proc/$(pidof -s udevd)/environ")
 fi
 
