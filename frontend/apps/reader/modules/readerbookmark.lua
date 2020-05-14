@@ -224,7 +224,9 @@ function ReaderBookmark:updateHighlightsIfNeeded()
 
     for _, highlights in pairs(self.view.highlight.saved) do
         for _, highlight in pairs(highlights) do
-            local chapter_name = self.ui.toc:getTocTitleByPage(highlight.pos0)
+            local pg_or_xp = self.ui.document.info.has_pages and
+                    highlight.pos0.page or highlight.pos0
+            local chapter_name = self.ui.toc:getTocTitleByPage(pg_or_xp)
             highlight.chapter = chapter_name
         end
     end

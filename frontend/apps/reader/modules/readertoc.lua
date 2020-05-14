@@ -203,7 +203,7 @@ function ReaderToc:getTocIndexByPage(pn_or_xp)
     if #self.toc == 0 then return end
     local pageno = pn_or_xp
     if type(pn_or_xp) == "string" then
-        pageno = self.ui.document:getPageFromXPointer(pn_or_xp)
+        return self:getAccurateTocIndexByXPointer(pn_or_xp)
     end
     local pre_index = 1
     for _k,_v in ipairs(self.toc) do
@@ -216,24 +216,31 @@ function ReaderToc:getTocIndexByPage(pn_or_xp)
 end
 
 function ReaderToc:getAccurateTocIndexByXPointer(xptr)
-    local index = self:getTocIndexByPage(xptr)
-    if self.toc[index + 1] then
-        local next_index_xptr = self.toc[index + 1].xpointer
-        local comparison = self.ui.document:compareXPointers(next_index_xptr, xptr)
-        if comparison and comparison > 0 then
-            return index + 1
+    local pageno = self.ui.document:getPageFromXPointer(xptr)
+    local index = self:getTocIndexByPage(pageno) -- get toc entry on the page
+    local i = index
+    if not index or not self.toc[index] then return end
+    local initial_comparison = self.ui.document:compareXPointers(self.toc[index].xpointer, xptr)
+    if initial_comparison and initial_comparison < 0 then
+        while self.toc[i] do
+            local toc_xptr = self.toc[i].xpointer
+            local cmp = self.ui.document:compareXPointers(toc_xptr, xptr)
+            if cmp and cmp >= 0 then
+                return i
+            end
+            i = i + 1
+        end
+    else
+        while self.toc[i] do
+            local toc_xptr = self.toc[i].xpointer
+            local cmp = self.ui.document:compareXPointers(toc_xptr, xptr)
+            if cmp and cmp < 0 then
+                return i - 1
+            end
+            i = i + 1
         end
     end
     return index
-end
-
-function ReaderToc:getAccurateTocTitleByXPointer(xptr)
-    local index = self:getAccurateTocIndexByXPointer(xptr)
-    if index then
-        return self:cleanUpTocTitle(self.toc[index].title)
-    else
-        return ""
-    end
 end
 
 function ReaderToc:getTocTitleByPage(pn_or_xp)
