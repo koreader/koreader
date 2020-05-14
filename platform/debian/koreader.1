@@ -1,0 +1,41 @@
+.TH KOReader 1 "May 4, 2020"
+.SH NAME
+koreader \- document viewer
+
+.SH SYNOPSIS
+.B koreader
+.RI [-dvp]
+.RI [file]
+
+.SH DESCRIPTION
+.B KOReader
+is a document viewer primarily aimed at e-ink readers. This manual page documents briefly its desktop usage.
+
+.SH OPTIONS
+
+Call
+.B KOReader
+followed by a file to open it directly. Supported document formats include PDF, DjVu, XPS, CBZ, FB2, PDB, TXT, HTML, RTF, CHM, EPUB, DOC, MOBI, and ZIP
+.B files.
+
+If no file is passed
+.B KOReader
+will start using user settings among a file manager (default), a history and the last document opened.
+
+A list of
+.BI flags
+and their descriptions:
+
+.PP
+.B -d	start in debug mode
+.PP
+.B -v	debug in verbose mode
+.PP
+.B -p	enable Lua code profiling
+
+.SH SETTINGS
+User settings are stored in ~/.config/koreader.
+
+.SH SEE ALSO
+Online documentation: https://github.com/koreader/koreader/wiki
+.PP

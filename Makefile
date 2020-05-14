@@ -12,6 +12,10 @@ ifneq (,$(findstring -,$(VERSION)))
 	VERSION:=$(VERSION)_$(shell git describe HEAD | xargs git show -s --format=format:"%cd" --date=short)
 endif
 
+# releases do not contain tests and misc data
+IS_RELEASE := $(if $(or $(EMULATE_READER),$(WIN32)),,1)
+IS_RELEASE := $(if $(or $(IS_RELEASE),$(APPIMAGE),$(DEBIAN)),1,)
+
 ANDROID_ARCH?=arm
 # Use the git commit count as the (integer) Android version code
 ANDROID_VERSION?=$(shell git rev-list --count HEAD)
@@ -71,7 +75,9 @@ all: $(if $(ANDROID),,$(KOR_BASE)/$(OUTPUT_DIR)/luajit)
 ifdef ANDROID
 	rm -f android-fdroid-version; echo -e "$(ANDROID_NAME)\n$(ANDROID_VERSION)" > koreader-android-fdroid-latest
 endif
-ifneq ($(or $(EMULATE_READER),$(WIN32)),)
+ifeq ($(IS_RELEASE),1)
+	$(RCP) -fL $(KOR_BASE)/$(OUTPUT_DIR)/. $(INSTALL_DIR)/koreader/.
+else
 	cp -f $(KOR_BASE)/ev_replay.py $(INSTALL_DIR)/koreader/
 	@echo "[*] create symlink instead of copying files in development mode"
 	cd $(INSTALL_DIR)/koreader && \
@@ -81,8 +87,6 @@ ifneq ($(or $(EMULATE_READER),$(WIN32)),)
 		ln -sf ../../../../spec ./front
 	cd $(INSTALL_DIR)/koreader/spec/front/unit && test -e data || \
 		ln -sf ../../test ./data
-else
-	$(RCP) -fL $(KOR_BASE)/$(OUTPUT_DIR)/. $(INSTALL_DIR)/koreader/.
 endif
 	for f in $(INSTALL_FILES); do \
 		ln -sf ../../$$f $(INSTALL_DIR)/koreader/; \
@@ -104,7 +108,7 @@ endif
 	@echo "[*] Installresources"
 	$(RCP) -pL resources/fonts/. $(INSTALL_DIR)/koreader/fonts/.
 	install -d $(INSTALL_DIR)/koreader/{screenshots,data/{dict,tessdata},fonts/host,ota}
-ifeq ($(or $(EMULATE_READER),$(WIN32)),)
+ifeq ($(IS_RELEASE),1)
 	@echo "[*] Clean up, remove unused files for releases"
 	rm -rf $(INSTALL_DIR)/koreader/data/{cr3.ini,cr3skin-format.txt,desktop,devices,manual}
 endif
@@ -368,22 +372,30 @@ androidupdate: all
 		koreader-android-$(ANDROID_ARCH)$(KODEDUG_SUFFIX)-$(VERSION).apk
 
 debianupdate: all
-	mkdir -p $(INSTALL_DIR)/debian/usr/share/pixmaps
-	cp -pr resources/koreader.png $(INSTALL_DIR)/debian/usr/share/pixmaps
+	mkdir -pv \
+		$(INSTALL_DIR)/debian/usr/bin \
+		$(INSTALL_DIR)/debian/usr/lib \
+		$(INSTALL_DIR)/debian/usr/share/pixmaps \
+		$(INSTALL_DIR)/debian/usr/share/applications \
+		$(INSTALL_DIR)/debian/usr/share/doc/koreader \
+		$(INSTALL_DIR)/debian/usr/share/man/man1
 
-	mkdir -p $(INSTALL_DIR)/debian/usr/share/applications
-	cp -pr $(DEBIAN_DIR)/koreader.desktop $(INSTALL_DIR)/debian/usr/share/applications
-
-	mkdir -p $(INSTALL_DIR)/debian/usr/bin
-	cp -pr $(DEBIAN_DIR)/koreader.sh $(INSTALL_DIR)/debian/usr/bin/koreader
-
-	mkdir -p $(INSTALL_DIR)/debian/usr/lib
+	cp -pv resources/koreader.png $(INSTALL_DIR)/debian/usr/share/pixmaps
+	cp -pv $(DEBIAN_DIR)/koreader.desktop $(INSTALL_DIR)/debian/usr/share/applications
+	cp -pv $(DEBIAN_DIR)/copyright COPYING $(INSTALL_DIR)/debian/usr/share/doc/koreader
+	cp -pv $(DEBIAN_DIR)/koreader.sh $(INSTALL_DIR)/debian/usr/bin/koreader
 	cp -Lr $(INSTALL_DIR)/koreader $(INSTALL_DIR)/debian/usr/lib
 
-	cd $(INSTALL_DIR)/debian/usr/lib/koreader && pwd && \
-		rm -rf ota cache clipboard screenshots spec && \
-		rm -rf resources/fonts resources/icons/src && \
-		rm -rf ev_replay.py
+	gzip -cn9 $(DEBIAN_DIR)/changelog > $(INSTALL_DIR)/debian/usr/share/doc/koreader/changelog.Debian.gz
+	gzip -cn9 $(DEBIAN_DIR)/koreader.1 > $(INSTALL_DIR)/debian/usr/share/man/man1/koreader.1.gz
+
+	chmod 644 \
+		$(INSTALL_DIR)/debian/usr/share/doc/koreader/changelog.Debian.gz \
+		$(INSTALL_DIR)/debian/usr/share/doc/koreader/copyright \
+		$(INSTALL_DIR)/debian/usr/share/man/man1/koreader.1.gz
+
+	rm -rf \
+		$(INSTALL_DIR)/debian/usr/lib/koreader/{ota,cache,clipboard,screenshots,spec,tools,resources/fonts,resources/icons/src}
 
 REMARKABLE_PACKAGE:=koreader-remarkable$(KODEDUG_SUFFIX)-$(VERSION).zip
 REMARKABLE_PACKAGE_OTA:=koreader-remarkable$(KODEDUG_SUFFIX)-$(VERSION).targz
