@@ -100,8 +100,7 @@ if [ "${VIA_NICKEL}" = "true" ]; then
     # If we were spawned outside of Nickel, we'll need a few extra bits from its own env...
     if [ "${FROM_NICKEL}" = "false" ]; then
         # Siphon a few things from nickel's env (namely, stuff exported by rcS *after* on-animator.sh has been launched)...
-        eval "$(xargs -n 1 -0 <"/proc/$(pidof -s nickel)/environ" | grep -s -F -e DBUS_SESSION_BUS_ADDRESS -e NICKEL_HOME -e WIFI_MODULE -e LANG -e WIFI_MODULE_PATH -e INTERFACE)"
-        export DBUS_SESSION_BUS_ADDRESS NICKEL_HOME WIFI_MODULE LANG WIFI_MODULE_PATH INTERFACE
+        export $(grep -s -E -e '^(DBUS_SESSION_BUS_ADDRESS|NICKEL_HOME|WIFI_MODULE|LANG|WIFI_MODULE_PATH|INTERFACE)=' "/proc/$(pidof -s nickel)/environ")
     fi
 
     # Flush disks, might help avoid trashing nickel's DB...
@@ -120,8 +119,7 @@ fi
 
 # check whether PLATFORM & PRODUCT have a value assigned by rcS
 if [ -z "${PRODUCT}" ]; then
-    eval "$(xargs -n 1 -0 <"/proc/$(pidof -s udevd)/environ" | grep -s -F -e PRODUCT)"
-    export PRODUCT
+    export $(grep -s -e '^PRODUCT=' "/proc/$(pidof -s udevd)/environ")
 fi
 
 if [ -z "${PRODUCT}" ]; then
@@ -131,8 +129,7 @@ fi
 
 # PLATFORM is used in koreader for the path to the WiFi drivers (as well as when restarting nickel)
 if [ -z "${PLATFORM}" ]; then
-    eval "$(xargs -n 1 -0 <"/proc/$(pidof -s udevd)/environ" | grep -s -F -e PLATFORM)"
-    export PLATFORM
+    export $(grep -s -e '^PLATFORM=' "/proc/$(pidof -s udevd)/environ")
 fi
 
 if [ -z "${PLATFORM}" ]; then
