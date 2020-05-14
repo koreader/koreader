@@ -103,7 +103,7 @@ if [ "${VIA_NICKEL}" = "true" ]; then
         # shellcheck disable=SC2046
         export $(grep -s -E -e '^(DBUS_SESSION_BUS_ADDRESS|NICKEL_HOME|WIFI_MODULE|LANG|WIFI_MODULE_PATH|INTERFACE)=' "/proc/$(pidof -s nickel)/environ")
         # NOTE: Quoted variant, w/ the busybox RS quirk (c.f., https://unix.stackexchange.com/a/125146):
-        #eval "$(awk -v 'RS="\0"' '/^(DBUS_SESSION_BUS_ADDRESS|NICKEL_HOME|WIFI_MODULE|LANG|WIFI_MODULE_PATH|INTERFACE)=/{gsub("\047", "\047\\\047\047"); print "export \047" $0 "\047"}' /proc/$(pidof -s nickel)/environ)"
+        #eval "$(awk -v 'RS="\0"' '/^(DBUS_SESSION_BUS_ADDRESS|NICKEL_HOME|WIFI_MODULE|LANG|WIFI_MODULE_PATH|INTERFACE)=/{gsub("\047", "\047\\\047\047"); print "export \047" $0 "\047"}' "/proc/$(pidof -s nickel)/environ")"
     fi
 
     # Flush disks, might help avoid trashing nickel's DB...
