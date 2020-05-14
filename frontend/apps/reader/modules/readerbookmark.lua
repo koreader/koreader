@@ -232,10 +232,13 @@ function ReaderBookmark:updateHighlightsIfNeeded()
     end
 
     for _, bookmark in ipairs(self.bookmarks) do
-        if bookmark.pos0 then -- this prevents tests from failing, shouldn't be necessary otherwise
+        if bookmark.pos0 then
             local pg_or_xp = self.ui.document.info.has_pages and
                     bookmark.pos0.page or bookmark.pos0
                 local chapter_name = self.ui.toc:getTocTitleByPage(pg_or_xp)
+            bookmark.chapter = chapter_name
+        elseif bookmark.page then -- dogear bookmark
+            local chapter_name = self.ui.toc:getTocTitleByPage(bookmark.page)
             bookmark.chapter = chapter_name
         end
     end
@@ -567,6 +570,7 @@ function ReaderBookmark:toggleBookmark(pn_or_xp)
     else
         -- build notes from TOC
         local notes = self.ui.toc:getTocTitleByPage(pn_or_xp)
+        local chapter_name = notes
         if notes ~= "" then
             notes = "in "..notes
         end
@@ -574,6 +578,7 @@ function ReaderBookmark:toggleBookmark(pn_or_xp)
             page = pn_or_xp,
             datetime = os.date("%Y-%m-%d %H:%M:%S"),
             notes = notes,
+            chapter = chapter_name
         })
     end
 end
