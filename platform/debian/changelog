@@ -1,0 +1,11 @@
+koreader (0.1) unstable; urgency=low
+
+  * Fixes most lintian errors and warnings
+
+ -- Martín Fdez <paziusss@gmail.com>  Thu, 14 May 2020 00:00:00 +0100
+
+koreader (0.0.1) experimental; urgency=low
+
+  * Initial release as Debian package (Closes: https://github.com/koreader/koreader/issues/3108)
+
+ -- Martín Fdez <paziusss@gmail.com>  Tue, 03 Jan 2019 00:00:00 +0100
