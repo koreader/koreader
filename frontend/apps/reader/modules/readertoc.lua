@@ -217,11 +217,25 @@ end
 
 function ReaderToc:getAccurateTocIndexByXPointer(xptr)
     local index = self:getTocIndexByPage(xptr)
-    if self.toc[index + 1] then
-        local next_index_xptr = self.toc[index + 1].xpointer
-        local comparison = self.ui.document:compareXPointers(next_index_xptr, xptr)
-        if comparison and comparison > 0 then
-            return index + 1
+    local i = 0
+    local initial_comparison = self.ui.document:compareXPointers(self.toc[index].xpointer, xptr)
+    if initial_comparison and initial_comparison < 0 then
+        while self.toc[index - i] do
+            local toc_xptr = self.toc[index - i].xpointer
+            local cmp = self.ui.document:compareXPointers(toc_xptr, xptr)
+            if cmp and cmp >= 0 then
+                return index - i
+            end
+            i = i + 1
+        end
+    else
+        while self.toc[index + i] do
+            local toc_xptr = self.toc[index + i].xpointer
+            local cmp = self.ui.document:compareXPointers(toc_xptr, xptr)
+            if cmp and cmp <= 0 then
+                return index + i
+            end
+            i = i + 1
         end
     end
     return index
