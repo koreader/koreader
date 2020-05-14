@@ -232,10 +232,12 @@ function ReaderBookmark:updateHighlightsIfNeeded()
     end
 
     for _, bookmark in ipairs(self.bookmarks) do
-        local pg_or_xp = self.ui.document.info.has_pages and
-                bookmark.pos0.page or bookmark.pos0
-        local chapter_name = self.ui.toc:getTocTitleByPage(pg_or_xp)
-        bookmark.chapter = chapter_name
+        if bookmark.pos0 then -- this prevents tests from failing, shouldn't be necessary otherwise
+            local pg_or_xp = self.ui.document.info.has_pages and
+                    bookmark.pos0.page or bookmark.pos0
+                local chapter_name = self.ui.toc:getTocTitleByPage(pg_or_xp)
+            bookmark.chapter = chapter_name
+        end
     end
     self.ui.doc_settings:saveSetting("bookmarks_version", 20200511)
 end
