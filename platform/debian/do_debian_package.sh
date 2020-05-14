@@ -22,11 +22,12 @@ uname_to_debian() {
     fi
 }
 
-link_font() {
-    font_name="$(basename $1)"
-    system_name="${2}/${font_name}"
-    rm -rf "$1"
-    ln -s "$system_name" "$i"
+link_fonts() {
+    syspath="../../../../share/fonts/truetype/$(basename "${1}")"
+    for FILE in *.ttf; do
+        rm -rf "${FILE}"
+        ln -s "${syspath}/${FILE}" "${FILE}"
+    done
 }
 
 if [ -z "${2}" ]; then
@@ -94,24 +95,14 @@ if command_exists "${COMMAND}"; then
 
     # use debian packaged fonts instead of our embedded ones to save a couple of MB.
     # Note: avoid linking against fonts-noto-cjk-extra, cause it weights ~200MB.
-
-    (cd "${BASE_DIR}/lib/koreader/fonts/noto" &&
-        for i in $(find . -type f -name "*.ttf"); do
-            link_font "$i" "../../../../share/fonts/truetype/noto"
-        done
-    )
-
-    (cd "${BASE_DIR}/lib/koreader/fonts/freefont" &&
-        for i in $(find . -type f -name "*.ttf"); do
-            link_font "$i" "../../../../share/fonts/truetype/freefont"
-        done
-    )
+    (cd "${BASE_DIR}/lib/koreader/fonts/noto" && link_fonts "$(pwd)")
+    (cd "${BASE_DIR}/lib/koreader/fonts/freefont" && link_fonts "$(pwd)")
 
     # DroidSansMono has a restrictive license. Replace it with DroidSansFallback
-    (cd "${BASE_DIR}/lib/koreader/fonts/droid" &&
-        rm -rf DroidSansMono.ttf
-        ln -s "../../../../share/fonts-droid-fallback/truetype/DroidSansFallback.ttf"
-        mv DroidSansFallback.ttf DroidSansMono.ttf
+    (
+        cd "${BASE_DIR}/lib/koreader/fonts/droid" &&
+            rm -rf DroidSansMono.ttf
+            ln -s ../../../../share/fonts-droid-fallback/truetype/DroidSansFallback.ttf DroidSansMono.ttf
     )
 
     # try to remove rpath
