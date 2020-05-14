@@ -322,7 +322,9 @@ function ReaderHighlight:updateHighlight(page, index, side, direction, move_by_c
     local new_beginning = self.view.highlight.saved[page][index].pos0
     local new_end = self.view.highlight.saved[page][index].pos1
     local new_text = self.ui.document:getTextFromXPointers(new_beginning, new_end)
+    local new_chapter = self.ui.toc:getTocTitleByPage(new_beginning)
     self.view.highlight.saved[page][index].text = new_text
+    self.view.highlight.saved[page][index].chapter = new_chapter
     local new_highlight = self.view.highlight.saved[page][index]
     self.ui.bookmark:updateBookmark({
         page = highlight_beginning,

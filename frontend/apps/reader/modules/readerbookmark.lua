@@ -230,6 +230,13 @@ function ReaderBookmark:updateHighlightsIfNeeded()
             highlight.chapter = chapter_name
         end
     end
+
+    for _, bookmark in ipairs(self.bookmarks) do
+        local pg_or_xp = self.ui.document.info.has_pages and
+                bookmark.pos0.page or bookmark.pos0
+        local chapter_name = self.ui.toc:getTocTitleByPage(pg_or_xp)
+        bookmark.chapter = chapter_name
+    end
     self.ui.doc_settings:saveSetting("bookmarks_version", 20200511)
 end
 
@@ -481,6 +488,7 @@ function ReaderBookmark:updateBookmark(item)
                                         new_text,
                                         item.updated_highlight.datetime)
             self.bookmarks[i].datetime = item.updated_highlight.datetime
+            self.bookmarks[i].chapter = item.updated_highlight.chapter
             self:onSaveSettings()
         end
     end

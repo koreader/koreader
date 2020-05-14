@@ -217,24 +217,28 @@ end
 
 function ReaderToc:getAccurateTocIndexByXPointer(xptr)
     local pageno = self.ui.document:getPageFromXPointer(xptr)
-    local index = self:getTocIndexByPage(pageno) -- get toc entry on the page
-    local i = index
+    -- get toc entry(index) on for the current page
+    -- we don't get infinite loop, because the this call is not
+    -- with xpointer, but with page
+    local index = self:getTocIndexByPage(pageno)
     if not index or not self.toc[index] then return end
     local initial_comparison = self.ui.document:compareXPointers(self.toc[index].xpointer, xptr)
     if initial_comparison and initial_comparison < 0 then
+        local i = index - 1
         while self.toc[i] do
             local toc_xptr = self.toc[i].xpointer
             local cmp = self.ui.document:compareXPointers(toc_xptr, xptr)
-            if cmp and cmp >= 0 then
+            if cmp and cmp >= 0 then -- toc_xptr is before xptr(xptr >= toc_xptr)
                 return i
             end
-            i = i + 1
+            i = i - 1
         end
     else
+        local i = index + 1
         while self.toc[i] do
             local toc_xptr = self.toc[i].xpointer
             local cmp = self.ui.document:compareXPointers(toc_xptr, xptr)
-            if cmp and cmp < 0 then
+            if cmp and cmp < 0 then -- toc_xptr is after xptr(xptr < toc_xptr)
                 return i - 1
             end
             i = i + 1
