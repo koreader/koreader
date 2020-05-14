@@ -100,8 +100,7 @@ if command_exists "${COMMAND}"; then
 
     # DroidSansMono has a restrictive license. Replace it with DroidSansFallback
     (
-        cd "${BASE_DIR}/lib/koreader/fonts/droid" &&
-            rm -rf DroidSansMono.ttf
+        cd "${BASE_DIR}/lib/koreader/fonts/droid" && rm -rf DroidSansMono.ttf &&
             ln -s ../../../../share/fonts-droid-fallback/truetype/DroidSansFallback.ttf DroidSansMono.ttf
     )
 
