@@ -9,6 +9,7 @@ else
         { "Aard2", "Aard2", false, "itkach.aard2", "aard2" },
         { "Alpus", "Alpus", false, "com.ngcomputing.fora.android", "search" },
         { "ColorDict", "ColorDict", false, "com.socialnmobile.colordict", "colordict" },
+        { "Eudic", "Eudic", false, "com.eusoft.eudic", "send" },
         { "Fora", "Fora Dict", false, "com.ngc.fora", "search" },
         { "GoldenFree", "GoldenDict Free", false, "mobi.goldendict.android.free", "send" },
         { "GoldenPro", "GoldenDict Pro", false, "mobi.goldendict.android", "send" },
