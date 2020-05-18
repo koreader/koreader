@@ -56,7 +56,7 @@ local Device = Generic:new{
     openLink = function(self, link)
         local enabled, tool = getLinkOpener()
         if not enabled or not tool or not link or type(link) ~= "string" then return end
-        return os.execute(tool.." '"..link.."'") == 0
+        return os.execute('LD_LIBRARY_PATH="" '..tool.." '"..link.."'") == 0
     end,
 }
 
