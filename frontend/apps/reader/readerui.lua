@@ -433,8 +433,10 @@ function ReaderUI:setLastDirForFileBrowser(dir)
 end
 
 function ReaderUI:getLastDirFile()
-    if to_file_browser and self.last_dir_for_file_browser then
-        return self.last_dir_for_file_browser
+    if self.last_dir_for_file_browser then
+        local dir = self.last_dir_for_file_browser
+        self.last_dir_for_file_browser = nil
+        return dir
     end
     local QuickStart = require("ui/quickstart")
     local last_dir
