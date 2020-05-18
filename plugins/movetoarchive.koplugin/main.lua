@@ -76,21 +76,25 @@ function MoveToArchive:addToMainMenu(menu_items)
 end
 
 function MoveToArchive:moveToArchive()
+    self:moveFileToArchive(self.ui.document.file)
+end
+
+function MoveToArchive:moveFileToArchive(file)
     local move_done_text = _("Book moved.\nDo you want to open it from the archive folder?")
-    self:commonProcess(true, move_done_text)
+    self:commonProcess(file, is_move_process, moved_done_text)
 end
 
 function MoveToArchive:copyToArchive()
     local copy_done_text = _("Book copied.\nDo you want to open it from the archive folder?")
-    self:commonProcess(false, copy_done_text)
+    self:commonProcess(self.ui.document.file, false, copy_done_text)
 end
 
-function MoveToArchive:commonProcess(is_move_process, moved_done_text)
+function MoveToArchive:commonProcess(file, is_move_process, moved_done_text)
     if not self.archive_dir_path then
         self:showNoArchiveConfirmBox()
         return
     end
-    local document_full_path = self.ui.document.file
+    local document_full_path = file
     local filename
     self.last_copied_from_dir, filename = util.splitFilePathName(document_full_path)
 

@@ -114,6 +114,13 @@ function ReaderStatus:onEndOfBook()
             },
             {
                 {
+                    text = _("Move to archive"),
+                    callback = function()
+                        local MoveToArchive = require("plugins/movetoarchive.koplugin/main")
+                        MoveToArchive:moveFileToArchive(self.document.file)
+                    end,
+                },
+                {
                     text = _("Cancel"),
                     callback = function()
                         UIManager:close(choose_action)
