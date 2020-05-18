@@ -432,8 +432,8 @@ function ReaderUI:setLastDirForFileBrowser(dir)
     self.last_dir_for_file_browser = dir
 end
 
-function ReaderUI:getLastDirFile()
-    if self.last_dir_for_file_browser then
+function ReaderUI:getLastDirFile(to_file_browser)
+    if to_file_browser and self.last_dir_for_file_browser then
         local dir = self.last_dir_for_file_browser
         self.last_dir_for_file_browser = nil
         return dir
