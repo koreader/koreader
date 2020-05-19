@@ -1047,7 +1047,7 @@ function Wallabag:onCloseDocument()
         local document_full_path = self.ui.document.file
         if document_full_path and self.directory and self:getLastPercent() == 1 and self.directory == string.sub(document_full_path, 1, string.len(self.directory)) then
             ReadHistory:removeItemByPath(document_full_path)
-            self.ui:setLastDirForFileBrowser(document_full_path)
+            self.ui:setLastDirForFileBrowser(self.directory)
         end
     end
 end
