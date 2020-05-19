@@ -428,7 +428,16 @@ function ReaderUI:init()
     -- end
 end
 
-function ReaderUI:getLastDirFile()
+function ReaderUI:setLastDirForFileBrowser(dir)
+    self.last_dir_for_file_browser = dir
+end
+
+function ReaderUI:getLastDirFile(to_file_browser)
+    if to_file_browser and self.last_dir_for_file_browser then
+        local dir = self.last_dir_for_file_browser
+        self.last_dir_for_file_browser = nil
+        return dir
+    end
     local QuickStart = require("ui/quickstart")
     local last_dir
     local last_file = G_reader_settings:readSetting("lastfile")
@@ -447,7 +456,7 @@ function ReaderUI:showFileManager(file)
         last_dir, last_file = util.splitFilePathName(file)
         last_dir = last_dir:match("(.*)/")
     else
-        last_dir, last_file = self:getLastDirFile()
+        last_dir, last_file = self:getLastDirFile(true)
     end
     if FileManager.instance then
         FileManager.instance:reinit(last_dir, last_file)
