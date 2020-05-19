@@ -60,6 +60,10 @@ local PocketBook = Generic:new{
     isInBackGround = false,
     hasOTAUpdates = yes,
     hasWifiToggle = yes,
+    isTouchDevice = yes,
+    hasKeys = yes,
+    hasFrontlight = yes,
+    emu_events_dev = "/dev/shm/emu_events",
 }
 
 -- Make sure the C BB cannot be used on devices with a 24bpp fb
@@ -198,158 +202,100 @@ end
 -- PocketBook InkPad
 local PocketBook840 = PocketBook:new{
     model = "PBInkPad",
-    isTouchDevice = yes,
-    hasKeys = yes,
-    hasFrontlight = yes,
     display_dpi = 250,
-    emu_events_dev = "/var/dev/shm/emu_events",
 }
 
 -- PocketBook Lux 4
 local PocketBook627 = PocketBook:new{
     model = "PBLux4",
-    isTouchDevice = yes,
-    hasKeys = yes,
-    hasFrontlight = yes,
     display_dpi = 212,
-    emu_events_dev = "/var/dev/shm/emu_events",
 }
 
 -- PocketBook Touch HD
 local PocketBook631 = PocketBook:new{
     model = "PBTouchHD",
-    isTouchDevice = yes,
-    hasKeys = yes,
-    hasFrontlight = yes,
     display_dpi = 300,
-    emu_events_dev = "/dev/shm/emu_events",
 }
 
 -- PocketBook Touch HD Plus
 local PocketBook632 = PocketBook:new{
     model = "PBTouchHDPlus",
-    isTouchDevice = yes,
-    hasKeys = yes,
-    hasFrontlight = yes,
     display_dpi = 300,
     isAlwaysPortrait = yes,
-    emu_events_dev = "/dev/shm/emu_events",
 }
 
 -- PocketBook Lux 3
 local PocketBook626 = PocketBook:new{
     model = "PBLux3",
-    isTouchDevice = yes,
-    hasKeys = yes,
-    hasFrontlight = yes,
     display_dpi = 212,
-    emu_events_dev = "/var/dev/shm/emu_events",
 }
 
 -- PocketBook Basic Touch
 local PocketBook624 = PocketBook:new{
     model = "PBBasicTouch",
-    isTouchDevice = yes,
-    hasKeys = yes,
     hasFrontlight = no,
     display_dpi = 166,
-    emu_events_dev = "/var/dev/shm/emu_events",
 }
 
 -- PocketBook Basic Touch 2
 local PocketBook625 = PocketBook:new{
     model = "PBBasicTouch2",
-    isTouchDevice = yes,
-    hasKeys = yes,
     hasFrontlight = no,
     display_dpi = 166,
-    emu_events_dev = "/var/dev/shm/emu_events",
 }
 
 -- PocketBook Touch
 local PocketBook622 = PocketBook:new{
     model = "PBTouch",
-    isTouchDevice = yes,
-    hasKeys = yes,
     hasFrontlight = no,
     display_dpi = 166,
-    emu_events_dev = "/var/dev/shm/emu_events",
 }
 
 -- PocketBook Touch Lux
 local PocketBook623 = PocketBook:new{
     model = "PBTouchLux",
-    isTouchDevice = yes,
-    hasKeys = yes,
-    hasFrontlight = yes,
     display_dpi = 212,
-    emu_events_dev = "/var/dev/shm/emu_events",
 }
 
 -- PocketBook InkPad 3
 local PocketBook740 = PocketBook:new{
     model = "PBInkPad3",
-    isTouchDevice = yes,
-    hasKeys = yes,
-    hasFrontlight = yes,
     isAlwaysPortrait = yes,
     display_dpi = 300,
-    emu_events_dev = "/var/dev/shm/emu_events",
 }
 
 -- PocketBook InkPad 3 Pro
 local PocketBook740_2 = PocketBook:new{
     model = "PBInkPad3Pro",
-    isTouchDevice = yes,
-    hasKeys = yes,
-    hasFrontlight = yes,
     isAlwaysPortrait = yes,
     display_dpi = 300,
-    emu_events_dev = "/var/dev/shm/emu_events",
 }
 
 -- PocketBook InkPad X
 local PocketBook1040 = PocketBook:new{
     model = "PB1040",
-    isTouchDevice = yes,
-    hasKeys = yes,
-    hasFrontlight = yes,
     isAlwaysPortrait = yes,
     display_dpi = 227,
-    emu_events_dev = "/var/dev/shm/emu_events",
 }
 
 -- PocketBook Sense
 local PocketBook630 = PocketBook:new{
     model = "PBSense",
-    isTouchDevice = yes,
-    hasKeys = yes,
-    hasFrontlight = yes,
     display_dpi = 212,
-    emu_events_dev = "/dev/shm/emu_events",
 }
 
 -- PocketBook Aqua 2
 local PocketBook641 = PocketBook:new{
     model = "PBAqua2",
-    isTouchDevice = yes,
-    hasKeys = yes,
-    hasFrontlight = yes,
     display_dpi = 212,
-    emu_events_dev = "/var/dev/shm/emu_events",
 }
 
 -- PocketBook Color Lux
 local PocketBookColorLux = PocketBook:new{
     model = "PBColorLux",
-    isTouchDevice = yes,
-    hasKeys = yes,
-    hasFrontlight = yes,
     hasColorScreen = yes,
     has3BytesWideFrameBuffer = yes,
     canUseCBB = no, -- 24bpp
-    isAlwaysPortrait = no,
-    emu_events_dev = "/var/dev/shm/emu_events",
 }
 
 logger.info('SoftwareVersion: ', PocketBook:getSoftwareVersion())
