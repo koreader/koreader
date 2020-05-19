@@ -3,6 +3,7 @@
 ]]
 
 local BD = require("ui/bidi")
+local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local DocSettings = require("docsettings")
 local Event = require("ui/event")
@@ -84,6 +85,7 @@ function Wallabag:init()
         self.articles_per_sync = self.wb_settings.data.wallabag.articles_per_sync
     end
     self.remove_finished_from_history = self.wb_settings.data.wallabag.remove_finished_from_history or false
+    self.download_queue = self.wb_settings.data.wallabag.download_queue or {}
 
     -- workaround for dateparser only available if newsdownloader is active
     self.is_dateparser_available = false
@@ -572,6 +574,17 @@ function Wallabag:synchronize()
     if self:getBearerToken() == false then
         return false
     end
+    if self.download_queue and next(self.download_queue) ~= nil then
+        info = InfoMessage:new{ text = _("Adding articles from queue…") }
+        UIManager:show(info)
+        UIManager:forceRePaint()
+        for url in self.download_queue do
+            self:addArticle(url)
+        end
+        self.download_queue = {}
+        self:saveSettings()
+        UIManager:close(info)
+    end
 
     local deleted_count = self:processLocalFiles()
 
@@ -981,6 +994,7 @@ function Wallabag:saveSettings()
         is_sync_remote_delete = self.is_sync_remote_delete,
         articles_per_sync     = self.articles_per_sync,
         remove_finished_from_history = self.remove_finished_from_history,
+        download_queue      = self.download_queue,
     }
     self.wb_settings:saveSetting("wallabag", tempsettings)
     self.wb_settings:flush()
@@ -1003,7 +1017,18 @@ end
 
 function Wallabag:onAddWallabagArticle(article_url)
     if not NetworkMgr:isOnline() then
-        NetworkMgr:promptWifiOn()
+        UIManager:show(ConfirmBox:new{
+            text = _("No Wi-Fi connection. Connect now or add to queue for later download?"),
+            ok_text = _("Connect"),
+            cancel_text = _("Queue"),
+            ok_callback = function()
+                NetworkMgr:turnOnWifi()
+            end,
+            cancel_callback = function()
+                self:addToDownloadQueue(article_url)
+            end,
+        })
+        -- NetworkMgr:promptWifiOn()
         return
     end
 
@@ -1040,6 +1065,11 @@ function Wallabag:getLastPercent()
     else
         return Math.roundPercent(self.ui.rolling:getLastPercent())
     end
+end
+
+function Wallabag:addToDownloadQueue(url)
+    table.insert(self.download_queue, url)
+    self:saveSettings()
 end
 
 function Wallabag:onCloseDocument()
