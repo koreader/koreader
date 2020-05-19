@@ -41,7 +41,7 @@ local function getLinkOpener()
     return enabled, tool
 end
 
--- differenciate between urls and commands
+-- differentiate between urls and commands
 local function isUrl(s)
     if type(s) == "string" and s:match("*?://") then
         return true
