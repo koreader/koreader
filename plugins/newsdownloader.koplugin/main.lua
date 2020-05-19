@@ -467,6 +467,8 @@ function NewsDownloader:onCloseDocument()
         logger.dbg("NewsDownloader: news_download_dir_path:", news_download_dir_path)
         logger.dbg("NewsDownloader: removing NewsDownloader file from history.")
         ReadHistory:removeItemByPath(document_full_path)
+        local doc_dir = util.splitFilePathName(document_full_path)
+        self.ui:setLastDirForFileBrowser(doc_dir)
     end
 end
 
