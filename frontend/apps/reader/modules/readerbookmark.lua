@@ -639,4 +639,22 @@ function ReaderBookmark:hasBookmarks()
     return self.bookmarks and #self.bookmarks > 0
 end
 
+function ReaderBookmark:getNumberOfHighlightsAndNotes()
+    local highlights = 0
+    local notes = 0
+    for i = 1, #self.bookmarks do
+        if self.bookmarks[i].highlighted then
+            highlights = highlights + 1
+            -- No real way currently to know which highlights
+            -- have been edited and became "notes". Editing them
+            -- adds this 'text' field, but just showing bookmarks
+            -- do that as well...
+            if self.bookmarks[i].text then
+                notes = notes + 1
+            end
+        end
+    end
+    return highlights, notes
+end
+
 return ReaderBookmark

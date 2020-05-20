@@ -203,6 +203,9 @@ function ReaderStatistics:initData()
     if not self.data.md5 then
         self.data.md5 = self:partialMd5(self.document.file)
     end
+    -- Update these numbers to what's actually stored in the settings
+    -- (not that "notes" is invalid and does not represent edited highlights)
+    self.data.highlights, self.data.notes = self.ui.bookmark:getNumberOfHighlightsAndNotes()
     self.curr_total_time = 0
     self.curr_total_pages = 0
     self.id_curr_book = self:getIdBookDB()
