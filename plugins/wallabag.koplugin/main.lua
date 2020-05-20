@@ -1017,18 +1017,11 @@ end
 
 function Wallabag:onAddWallabagArticle(article_url)
     if not NetworkMgr:isOnline() then
-        UIManager:show(ConfirmBox:new{
-            text = _("No Wi-Fi connection. Connect now or add to queue for later download?"),
-            ok_text = _("Connect"),
-            cancel_text = _("Queue"),
-            ok_callback = function()
-                NetworkMgr:turnOnWifi()
-            end,
-            cancel_callback = function()
-                self:addToDownloadQueue(article_url)
-            end,
-        })
-        -- NetworkMgr:promptWifiOn()
+        self:addToDownloadQueue(article_url)
+        UIManager:show(InfoMessage:new{
+            text = _("Article added to download queue"),
+            timeout = 1,
+         })
         return
     end
 
