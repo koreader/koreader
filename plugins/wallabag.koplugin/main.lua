@@ -3,7 +3,6 @@
 ]]
 
 local BD = require("ui/bidi")
-local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local DocSettings = require("docsettings")
 local Event = require("ui/event")
@@ -578,8 +577,8 @@ function Wallabag:synchronize()
         info = InfoMessage:new{ text = _("Adding articles from queue…") }
         UIManager:show(info)
         UIManager:forceRePaint()
-        for url in self.download_queue do
-            self:addArticle(url)
+        for articleUrl in self.download_queue do
+            self:addArticle(articleUrl)
         end
         self.download_queue = {}
         self:saveSettings()
@@ -1060,8 +1059,8 @@ function Wallabag:getLastPercent()
     end
 end
 
-function Wallabag:addToDownloadQueue(url)
-    table.insert(self.download_queue, url)
+function Wallabag:addToDownloadQueue(articleUrl)
+    table.insert(self.download_queue, articleUrl)
     self:saveSettings()
 end
 
