@@ -993,7 +993,7 @@ function Wallabag:saveSettings()
         is_sync_remote_delete = self.is_sync_remote_delete,
         articles_per_sync     = self.articles_per_sync,
         remove_finished_from_history = self.remove_finished_from_history,
-        download_queue      = self.download_queue,
+        download_queue        = self.download_queue,
     }
     self.wb_settings:saveSetting("wallabag", tempsettings)
     self.wb_settings:flush()
