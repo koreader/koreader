@@ -577,7 +577,7 @@ function Wallabag:synchronize()
         info = InfoMessage:new{ text = _("Adding articles from queue…") }
         UIManager:show(info)
         UIManager:forceRePaint()
-        for articleUrl in self.download_queue do
+        for _, articleUrl in ipairs(self.download_queue) do
             self:addArticle(articleUrl)
         end
         self.download_queue = {}
