@@ -1059,7 +1059,7 @@ function Wallabag:getLastPercent()
     end
 end
 
-function Wallabag:addToDownloadQueue(articleUrl)
+function Wallabag:addToDownloadQueue(article_url)
     table.insert(self.download_queue, articleUrl)
     self:saveSettings()
 end
