@@ -1018,7 +1018,7 @@ function Wallabag:onAddWallabagArticle(article_url)
     if not NetworkMgr:isOnline() then
         self:addToDownloadQueue(article_url)
         UIManager:show(InfoMessage:new{
-            text = _("Article added to download queue"),
+            text = T(_("Article added to download queue:\n%1"), BD.url(article_url)),
             timeout = 1,
          })
         return
