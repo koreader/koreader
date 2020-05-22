@@ -41,6 +41,34 @@ local function getLinkOpener()
     return enabled, tool
 end
 
+-- differentiate between urls and commands
+local function isUrl(s)
+    if type(s) == "string" and s:match("*?://") then
+        return true
+    end
+    return false
+end
+
+local EXTERNAL_DICTS_AVAILABILITY_CHECKED = false
+local EXTERNAL_DICTS = require("device/sdl/dictionaries")
+local external_dict_when_back_callback = nil
+
+local function getExternalDicts()
+    if not EXTERNAL_DICTS_AVAILABILITY_CHECKED then
+        EXTERNAL_DICTS_AVAILABILITY_CHECKED = true
+        for i, v in ipairs(EXTERNAL_DICTS) do
+            local tool = v[4]
+            if not tool then return end
+            if isUrl(tool) and getLinkOpener()
+            or os.execute("which "..tool) == 0 then
+                v[3] = true
+            end
+        end
+    end
+    return EXTERNAL_DICTS
+end
+
+
 local Device = Generic:new{
     model = "SDL",
     isSDL = yes,
@@ -56,7 +84,28 @@ local Device = Generic:new{
     openLink = function(self, link)
         local enabled, tool = getLinkOpener()
         if not enabled or not tool or not link or type(link) ~= "string" then return end
-        return os.execute('LD_LIBRARY_PATH="" '..tool.." '"..link.."'") == 0
+        return os.execute('env -u LD_LIBRARY_PATH '..tool.." '"..link.."'") == 0
+    end,
+    canExternalDictLookup = yes,
+    getExternalDictLookupList = getExternalDicts,
+    doExternalDictLookup = function(self, text, method, callback)
+        external_dict_when_back_callback = callback
+        local tool, ok = nil
+        for i, v in ipairs(getExternalDicts()) do
+            if v[1] == method then
+                tool = v[4]
+                break
+            end
+        end
+        if isUrl(tool) and getLinkOpener() then
+            ok = self:openLink(tool..text)
+        else
+            ok = os.execute('env -u LD_LIBRARY_PATH '..tool.." "..text.." &") == 0
+        end
+        if ok and external_dict_when_back_callback then
+            external_dict_when_back_callback()
+            external_dict_when_back_callback = nil
+        end
     end,
 }
 
