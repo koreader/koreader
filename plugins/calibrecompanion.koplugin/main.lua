@@ -11,6 +11,36 @@ local T = require("ffi/util").template
 
 require("ffi/zeromq_h")
 
+-- supported formats
+local extensions = require("extensions")
+local function getExtensionPathLengths()
+    local t = {}
+    for _, v in pairs(extensions) do
+        t[v] = 42
+    end
+    return t
+end
+
+-- info from calibre metadata to keep track of books on device.
+local calibreBookId = {
+    "uuid",
+    "lpath",
+    "authors",
+    "title",
+    "last_modified",
+}
+
+-- dump table to file
+local function dumpDb(t, file)
+    if not t or not file or file == "" then return end
+    local dump = require("dump")
+    local f = io.open(file, "w")
+    if f then
+        f:write("return "..dump(t))
+        f:close()
+    end
+end
+
 --[[
     This plugin implements a simple Calibre Companion protocol that communicates
     with Calibre Wireless Server from which users can send documents to KOReader
@@ -25,6 +55,7 @@ require("ffi/zeromq_h")
 --]]
 local CalibreCompanion = InputContainer:new{
     name = "calibrecompanion",
+    device_id = "KOReader calibre plugin",
     -- calibre companion local port
     port = 8134,
     -- calibre broadcast ports used to find calibre server
@@ -50,6 +81,9 @@ local CalibreCompanion = InputContainer:new{
         SET_CALIBRE_DEVICE_NAME   = 2,
         TOTAL_SPACE               = 4,
     },
+    -- list of cached books from previous connections
+    book_list = {},
+    book_list_db = "",
 }
 
 function CalibreCompanion:init()
@@ -57,6 +91,16 @@ function CalibreCompanion:init()
     self.opnames = {}
     for name, code in pairs(self.opcodes) do
         self.opnames[code] = name
+    end
+    -- initialize local database for input directory
+    local inbox_dir = G_reader_settings:readSetting("inbox_dir")
+    if inbox_dir then
+        local local_db = inbox_dir.."/.metadata.calibre.lua"
+        self.book_list_db = local_db
+        if lfs.attributes(local_db, "mode") == "file" then
+            local ok, f = pcall(dofile, local_db)
+            if ok then self.book_list = f end
+        end
     end
     self.ui.menu:registerToMainMenu(self)
 end
@@ -359,23 +403,15 @@ function CalibreCompanion:getInitInfo(arg)
     self.calibre_info = arg
     local init_info = {
         canUseCachedMetadata = true,
-        acceptedExtensions = {"epub", "mobi", "pdf", "djvu", "fb2", "pdb", "cbz"},
+        acceptedExtensions = extensions,
         canStreamMetadata = true,
         canAcceptLibraryInfo = true,
-        extensionPathLengths = {
-            epub = 42,
-            mobi = 42,
-            pdf = 42,
-            djvu = 42,
-            fb2 = 42,
-            pdb = 42,
-            cbz = 42,
-        },
+        extensionPathLengths = getExtensionPathLengths(),
         useUuidFileNames = false,
         passwordHash = "",
         canReceiveBookBinary = true,
         maxBookContentPacketLen = 4096,
-        appName = "KOReader Calibre plugin",
+        appName = self.device_id,
         ccVersionNumber = 106,
         deviceName = "KOReader",
         canStreamBooks = true,
@@ -394,7 +430,7 @@ function CalibreCompanion:getDeviceInfo(arg)
     local device_info = {
         device_info = {
            device_store_uuid = G_reader_settings:readSetting("device_store_uuid"),
-           device_name = "KOReader Calibre Companion",
+           device_name = self.device_id,
         },
         version  = 106,
         device_version = "KOReader",
@@ -430,9 +466,15 @@ function CalibreCompanion:getBookCount(arg)
     local books = {
         willStream = true,
         willScan = true,
-        count = 0,
+        count = #self.book_list
     }
     self:sendJsonData('OK', books)
+    for i, _ in ipairs(self.book_list) do
+        local book = self.book_list[i]
+        book.priKey = i
+        logger.info("sending id for book #"..i, book)
+        self:sendJsonData('OK', book)
+    end
 end
 
 function CalibreCompanion:noop(arg)
@@ -467,6 +509,14 @@ function CalibreCompanion:sendBook(arg)
             -- close file as all file data is received and written to local storage
             outfile:close()
             logger.info("complete writing file", filename)
+            -- add book to local database/table
+            local bookId = {}
+            for _, v in pairs(calibreBookId) do
+                bookId[v] = arg.metadata[v]
+            end
+            table.insert(self.book_list, #self.book_list + 1, bookId)
+            dumpDb(self.book_list, self.book_list_db)
+
             UIManager:show(InfoMessage:new{
                 text = _("Received file:") .. BD.filepath(filename),
                 timeout = 1,
