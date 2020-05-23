@@ -41,6 +41,14 @@ local function dumpDb(t, file)
     end
 end
 
+-- delete file
+local function delete(file)
+    if not file then return end
+    if lfs.attributes(file, "mode") == "file" then
+        os.remove(file)
+    end
+end
+
 --[[
     This plugin implements a simple Calibre Companion protocol that communicates
     with Calibre Wireless Server from which users can send documents to KOReader
@@ -381,6 +389,8 @@ function CalibreCompanion:onReceiveJSON(data)
                 self:sendBooklists(arg)
             elseif self.opnames[opcode] == 'SEND_BOOK' then
                 self:sendBook(arg)
+            elseif self.opnames[opcode] == 'DELETE_BOOK' then
+                self:deleteBook(arg)
             elseif self.opnames[opcode] == 'NOOP' then
                 self:noop(arg)
             end
@@ -538,6 +548,34 @@ function CalibreCompanion:sendBook(arg)
         end
     end
     self:sendJsonData('OK', {})
+end
+
+function CalibreCompanion:deleteBook(arg)
+    logger.dbg("DELETE_BOOK", arg)
+    self:sendJsonData('OK', {})
+    local inbox_dir = G_reader_settings:readSetting("inbox_dir")
+    if inbox_dir then
+        for i, v in ipairs(arg.lpaths) do
+            for index, value in ipairs(self.book_list) do
+                if v == value.lpath then
+                    --local uuid = value.uuid
+                    logger.info("removing book", v)
+                    table.remove(self.book_list, index)
+                    delete(inbox_dir.."/"..v)
+                    self:sendJsonData('OK', {uuid = v})
+                end
+            end
+            if i == #arg.lpaths then
+                if #self.book_list == 0 then
+                    --remove empty database
+                    delete(self.book_list_db)
+                else
+                    --update database
+                    dumpDb(self.book_list, self.book_list_db)
+                end
+            end
+        end
+    end
 end
 
 return CalibreCompanion
