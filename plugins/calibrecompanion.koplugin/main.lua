@@ -16,7 +16,7 @@ local extensions = require("extensions")
 local function getExtensionPathLengths()
     local t = {}
     for _, v in pairs(extensions) do
-        t[v] = 42
+        t[v] = 37
     end
     return t
 end
@@ -623,7 +623,7 @@ function CalibreCompanion:deleteBook(arg)
                     lastpath= inbox_dir.."/"..v
                     table.remove(self.book_list, index)
                     delete(lastpath)
-                    self:sendJsonData('OK', {uuid = v})
+                    self:sendJsonData('OK', {uuid = value.uuid})
                 end
             end
             if i == #arg.lpaths then
