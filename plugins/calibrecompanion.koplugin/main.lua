@@ -49,6 +49,44 @@ local function delete(file)
     end
 end
 
+-- disk usage
+local function diskUsage(dir)
+    -- fallback to 2GB total, 1GB used, 1GB free
+    local function diskUsageFallback()
+        return {
+            total = 2 * 1024 * 1024 * 1024,
+            used = 1024 * 1024 * 1024,
+            available = 1024 * 1024 * 1024,
+        }
+    end
+    -- we only work in valid directories
+    if not dir or lfs.attributes(dir, "mode") ~= "directory" then
+        return diskUsageFallback()
+    end
+    -- fill a table with total, available and used kb of the mountpoint that holds the directory,
+    -- this relies on common shell utilities: cut, df, grep & sed.
+    local std_out =  io.popen(
+        "df "..dir.." 2>/dev/null | sed -r 's/ +/ /g' "..
+        " | grep /dev | cut -d ' ' -f 2,3,4"
+    )
+    if std_out then
+        local stage = {}
+        local result = {}
+        local counter = 1
+        for size in string.gmatch(std_out:read("*all"), "%w+") do
+            table.insert(stage, size or diskUsageFallback()[counter])
+            counter = counter + 1
+        end
+        for k, v in pairs({"total", "used", "available"}) do
+            -- sizes are in kb, return bytes here
+            result[v] = stage[k] * 1024
+        end
+        return result
+    else
+        return diskUsageFallback()
+    end
+end
+
 --[[
     This plugin implements a simple Calibre Companion protocol that communicates
     with Calibre Wireless Server from which users can send documents to KOReader
@@ -381,6 +419,8 @@ function CalibreCompanion:onReceiveJSON(data)
                 self:setCalibreInfo(arg)
             elseif self.opnames[opcode] == 'FREE_SPACE' then
                 self:getFreeSpace(arg)
+            elseif self.opnames[opcode] == 'TOTAL_SPACE' then
+                self:getTotalSpace(arg)
             elseif self.opnames[opcode] == 'SET_LIBRARY_INFO' then
                 self:setLibraryInfo(arg)
             elseif self.opnames[opcode] == 'GET_BOOK_COUNT' then
@@ -457,12 +497,20 @@ end
 
 function CalibreCompanion:getFreeSpace(arg)
     logger.dbg("FREE_SPACE", arg)
-    --- @todo Portable free space calculation?
-    -- Assume we have 1GB of free space on device.
+    local free = diskUsage(G_reader_settings:readSetting("inbox_dir")).available
     local free_space = {
-        free_space_on_device = 1024*1024*1024,
+        free_space_on_device = free,
     }
     self:sendJsonData('OK', free_space)
+end
+
+function CalibreCompanion:getTotalSpace(arg)
+    logger.dbg("TOTAL_SPACE", arg)
+    local total = diskUsage(G_reader_settings:readSetting("inbox_dir")).total
+    local total_space = {
+        total_space_on_device = total,
+    }
+    self:sendJsonData('OK', total_space)
 end
 
 function CalibreCompanion:setLibraryInfo(arg)
