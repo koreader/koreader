@@ -84,6 +84,7 @@ function Wallabag:init()
         self.articles_per_sync = self.wb_settings.data.wallabag.articles_per_sync
     end
     self.remove_finished_from_history = self.wb_settings.data.wallabag.remove_finished_from_history or false
+    self.download_queue = self.wb_settings.data.wallabag.download_queue or {}
 
     -- workaround for dateparser only available if newsdownloader is active
     self.is_dateparser_available = false
@@ -572,6 +573,17 @@ function Wallabag:synchronize()
     if self:getBearerToken() == false then
         return false
     end
+    if self.download_queue and next(self.download_queue) ~= nil then
+        info = InfoMessage:new{ text = _("Adding articles from queue…") }
+        UIManager:show(info)
+        UIManager:forceRePaint()
+        for _, articleUrl in ipairs(self.download_queue) do
+            self:addArticle(articleUrl)
+        end
+        self.download_queue = {}
+        self:saveSettings()
+        UIManager:close(info)
+    end
 
     local deleted_count = self:processLocalFiles()
 
@@ -981,6 +993,7 @@ function Wallabag:saveSettings()
         is_sync_remote_delete = self.is_sync_remote_delete,
         articles_per_sync     = self.articles_per_sync,
         remove_finished_from_history = self.remove_finished_from_history,
+        download_queue        = self.download_queue,
     }
     self.wb_settings:saveSetting("wallabag", tempsettings)
     self.wb_settings:flush()
@@ -1003,7 +1016,11 @@ end
 
 function Wallabag:onAddWallabagArticle(article_url)
     if not NetworkMgr:isOnline() then
-        NetworkMgr:promptWifiOn()
+        self:addToDownloadQueue(article_url)
+        UIManager:show(InfoMessage:new{
+            text = T(_("Article added to download queue:\n%1"), BD.url(article_url)),
+            timeout = 1,
+         })
         return
     end
 
@@ -1040,6 +1057,11 @@ function Wallabag:getLastPercent()
     else
         return Math.roundPercent(self.ui.rolling:getLastPercent())
     end
+end
+
+function Wallabag:addToDownloadQueue(article_url)
+    table.insert(self.download_queue, article_url)
+    self:saveSettings()
 end
 
 function Wallabag:onCloseDocument()
