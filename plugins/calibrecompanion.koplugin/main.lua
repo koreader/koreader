@@ -530,7 +530,6 @@ function CalibreCompanion:getBookCount(arg)
     for i, _ in ipairs(self.book_list) do
         local book = self.book_list[i]
         book.priKey = i
-        logger.info("sending id for book #"..i, book)
         self:sendJsonData('OK', book)
     end
 end
