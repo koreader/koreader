@@ -205,6 +205,19 @@ local PocketBook840 = PocketBook:new{
     display_dpi = 250,
 }
 
+-- PocketBook 515
+local PocketBook515 = PocketBook:new{
+    model = "PB515",
+    display_dpi = 200,
+    isTouchDevice = no,
+}
+
+-- PocketBook Basic Lux 2
+local PocketBook616 = PocketBook:new{
+    model = "PBBLux2",
+    display_dpi = 212,
+}
+
 -- PocketBook Lux 4
 local PocketBook627 = PocketBook:new{
     model = "PBLux4",
@@ -302,7 +315,12 @@ logger.info('SoftwareVersion: ', PocketBook:getSoftwareVersion())
 
 local codename = PocketBook:getDeviceModel()
 
-if codename == "PocketBook 622" then
+if codename == "PocketBook 515" then
+    return PocketBook515
+elseif codename == "PB616W" or
+    codename == "PocketBook 616" then
+    return PocketBook616
+elseif codename == "PocketBook 622" then
     return PocketBook622
 elseif codename == "PocketBook 623" then
     return PocketBook623
