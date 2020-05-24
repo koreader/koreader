@@ -548,6 +548,9 @@ end
 
 function CalibreCompanion:sendBook(arg)
     logger.dbg("SEND_BOOK", arg)
+    local isLastBook = function()
+        return arg.totalBooks == arg.thisBook + 1
+    end
     local inbox_dir = G_reader_settings:readSetting("inbox_dir")
     local filename = inbox_dir .. "/" .. arg.lpath
     logger.dbg("write to file", filename)
@@ -556,6 +559,7 @@ function CalibreCompanion:sendBook(arg)
     local to_write_bytes = arg.length
     local calibre_device = self
     local calibre_socket = self.calibre_socket
+
     -- switching to raw data receiving mode
     self.calibre_socket.receiveCallback = function(data)
         --logger.info("receive file data", #data)
@@ -573,11 +577,13 @@ function CalibreCompanion:sendBook(arg)
                 bookId[v] = arg.metadata[v]
             end
             table.insert(self.book_list, #self.book_list + 1, bookId)
-            dumpDb(self.book_list, self.book_list_db)
-
+            if isLastBook() then
+                dumpDb(self.book_list, self.book_list_db)
+            end
             UIManager:show(InfoMessage:new{
-                text = _("Received file:") .. BD.filepath(filename),
-                timeout = 1,
+                text = T(_("Received file %1/%2: %3"),
+                    arg.thisBook + 1, arg.totalBooks, BD.filepath(filename)),
+                timeout = 2,
             })
             -- switch to JSON data receiving mode
             calibre_socket.receiveCallback = function(json_data)
@@ -603,17 +609,36 @@ function CalibreCompanion:deleteBook(arg)
     self:sendJsonData('OK', {})
     local inbox_dir = G_reader_settings:readSetting("inbox_dir")
     if inbox_dir then
+        local lastpath = nil
+        local getRemovedFiles = function()
+            local str = ""
+            for i, v in ipairs(arg.lpaths) do
+                str = str.."\n"..v
+            end
+            return str
+        end
         for i, v in ipairs(arg.lpaths) do
             for index, value in ipairs(self.book_list) do
                 if v == value.lpath then
-                    --local uuid = value.uuid
-                    logger.info("removing book", v)
+                    lastpath= inbox_dir.."/"..v
                     table.remove(self.book_list, index)
-                    delete(inbox_dir.."/"..v)
+                    delete(lastpath)
                     self:sendJsonData('OK', {uuid = v})
                 end
             end
             if i == #arg.lpaths then
+                if i == 1 then
+                    UIManager:show(InfoMessage:new{
+                        text = T(_("Deleted file: %1"), BD.filepath(lastpath)),
+                        timeout = 2,
+                    })
+                else
+                    UIManager:show(InfoMessage:new{
+                        text = T(_("Deleted %1 files in %2:\n %3"),
+                            #arg.lpaths, BD.filepath(inbox_dir), getRemovedFiles()
+                        ),
+                    })
+                end
                 if #self.book_list == 0 then
                     --remove empty database
                     delete(self.book_list_db)
