@@ -64,11 +64,8 @@ local function diskUsage(dir)
         return diskUsageFallback()
     end
     -- fill a table with total, available and used kb of the mountpoint that holds the directory,
-    -- this relies on common shell utilities: cut, df, grep & sed.
-    local std_out =  io.popen(
-        "df "..dir.." 2>/dev/null | sed -r 's/ +/ /g' "..
-        " | grep /dev | cut -d ' ' -f 2,3,4"
-    )
+    -- this relies on common shell utilities df & awk.
+    local std_out = io.popen("df -k "..dir.." | awk '$3 ~ /[0-9]+/ { print $2,$3,$4 }'")
     if std_out then
         local stage = {}
         local result = {}
