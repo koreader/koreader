@@ -210,6 +210,8 @@ local PocketBook515 = PocketBook:new{
     model = "PB515",
     display_dpi = 200,
     isTouchDevice = no,
+    hasWifiToggle = no,
+    hasDPad = yes,
 }
 
 -- PocketBook Basic Lux 2
