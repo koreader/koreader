@@ -100,6 +100,7 @@ local CalibreCompanion = InputContainer:new{
     id = "KOReader",
     model = require("device").model,
     version = require("version"):getCurrentRevision(),
+    calibre_version = {},
     -- calibre companion local port
     port = 8134,
     -- calibre broadcast ports used to find calibre server
@@ -107,6 +108,7 @@ local CalibreCompanion = InputContainer:new{
     opcodes = {
         NOOP                      = 12,
         OK                        = 0,
+        ERROR                     = 20,
         BOOK_DONE                 = 11,
         CALIBRE_BUSY              = 18,
         SET_LIBRARY_INFO          = 19,
@@ -445,6 +447,7 @@ end
 function CalibreCompanion:getInitInfo(arg)
     logger.dbg("GET_INITIALIZATION_INFO", arg)
     self.calibre_info = arg
+    self.calibre_version = arg.calibre_version
     local init_info = {
         appName = self.id,
         acceptedExtensions = extensions,
@@ -633,6 +636,14 @@ function CalibreCompanion:deleteBook(arg)
             end
         end
     end
+end
+
+function CalibreCompanion:isCalibreAtLeast(x,y,z)
+    local v = self.calibre_version
+    local function semanticVersion(a,b,c)
+        return ((a * 100000) + (b * 1000)) + c
+    end
+    return semanticVersion(v[1],v[2],v[3]) >= semanticVersion(x,y,z)
 end
 
 return CalibreCompanion
