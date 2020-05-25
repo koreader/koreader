@@ -97,8 +97,9 @@ end
     More details can be found at calibre/devices/smart_device_app/driver.py.
 --]]
 local CalibreCompanion = InputContainer:new{
-    name = "calibrecompanion",
-    device_id = "KOReader calibre plugin",
+    id = "KOReader",
+    model = require("device").model,
+    version = require("version"):getCurrentRevision(),
     -- calibre companion local port
     port = 8134,
     -- calibre broadcast ports used to find calibre server
@@ -449,27 +450,31 @@ function CalibreCompanion:getInitInfo(arg)
     logger.dbg("GET_INITIALIZATION_INFO", arg)
     self.calibre_info = arg
     local init_info = {
-        canUseCachedMetadata = true,
+        appName = self.id,
         acceptedExtensions = extensions,
-        canStreamMetadata = true,
-        canAcceptLibraryInfo = true,
-        extensionPathLengths = getExtensionPathLengths(),
-        useUuidFileNames = false,
-        passwordHash = "",
-        canReceiveBookBinary = true,
-        maxBookContentPacketLen = 4096,
-        appName = self.device_id,
-        ccVersionNumber = 106,
-        deviceName = "KOReader",
-        canStreamBooks = true,
-        versionOK = true,
-        canDeleteMultipleBooks = true,
-        canSendOkToSendbook = true,
-        coverHeight = 240,
         cacheUsesLpaths = true,
-        deviceKind = "KOReader",
+        canAcceptLibraryInfo = true,
+        canDeleteMultipleBooks = true,
+        canReceiveBookBinary = true,
+        canSendOkToSendbook = true,
+        canStreamBooks = true,
+        canStreamMetadata = true,
+        canUseCachedMetadata = true,
+        ccVersionNumber = self.version,
+        coverHeight = 240,
+        deviceKind = self.model,
+        deviceName = T("%1 (%2)", self.id, self.model),
+        extensionPathLengths = getExtensionPathLengths(),
+        passwordHash = self.password_hash or "",
+        maxBookContentPacketLen = 4096,
+        useUuidFileNames = false,
+        versionOK = true,
     }
     self:sendJsonData('OK', init_info)
+end
+
+function CalibreCompanion:setPassword(pass)
+    self.password_hash = pass
 end
 
 function CalibreCompanion:getDeviceInfo(arg)
@@ -477,10 +482,10 @@ function CalibreCompanion:getDeviceInfo(arg)
     local device_info = {
         device_info = {
            device_store_uuid = G_reader_settings:readSetting("device_store_uuid"),
-           device_name = self.device_id,
+           device_name = T("%1 (%2)", self.id, self.model),
         },
-        version  = 106,
-        device_version = "KOReader",
+        version  = self.version,
+        device_version = self.version,
     }
     self:sendJsonData('OK', device_info)
 end
