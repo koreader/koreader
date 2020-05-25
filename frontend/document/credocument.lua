@@ -205,6 +205,14 @@ function CreDocument:setupDefaultView()
         self._document:setIntProperty("crengine.page.header.font.size",
             G_reader_settings:readSetting("cre_header_status_font_size"))
     end
+
+    -- One can set these to change from white background
+    if G_reader_settings:readSetting("cre_background_color") then
+        self:setBackgroundColor(G_reader_settings:readSetting("cre_background_color"))
+    end
+    if G_reader_settings:readSetting("cre_background_image") then
+        self:setBackgroundImage(G_reader_settings:readSetting("cre_background_image"))
+    end
 end
 
 function CreDocument:loadDocument(full_document)
@@ -893,6 +901,11 @@ function CreDocument:setStatusLineProp(prop)
     self._document:setStringProperty("window.status.line", prop)
 end
 
+function CreDocument:setBackgroundColor(bgcolor) -- use nil to set to white
+    logger.dbg("CreDocument: set background color", bgcolor)
+    self._document:setBackgroundColor(bgcolor)
+end
+
 function CreDocument:setBackgroundImage(img_path) -- use nil to unset
     logger.dbg("CreDocument: set background image", img_path)
     self._document:setBackgroundImage(img_path)
@@ -939,6 +952,10 @@ end
 
 function CreDocument:getStatistics()
     return self._document:getStatistics()
+end
+
+function CreDocument:getUnknownEntities()
+    return self._document:getUnknownEntities()
 end
 
 function CreDocument:canHaveAlternativeToc()
