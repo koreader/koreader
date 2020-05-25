@@ -258,6 +258,11 @@ function ReaderRolling:onCloseDocument()
         end
     end
     logger.dbg("cre cache used:", cache_file_path or "none")
+    -- Unknown elements and attributes, uncomment if needed for debugging:
+    -- local elements, attributes, namespaces = self.ui.document:getUnknownEntities()
+    -- if elements ~= "" then logger.info("cre unknown elements: ", elements) end
+    -- if attributes ~= "" then logger.info("cre unknown attributes: ", attributes) end
+    -- if namespaces ~= "" then logger.info("cre unknown namespaces: ", namespaces) end
 end
 
 function ReaderRolling:onCheckDomStyleCoherence()
