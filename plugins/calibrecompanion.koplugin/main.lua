@@ -417,14 +417,10 @@ function CalibreCompanion:onReceiveJSON(data)
                 self:setCalibreInfo(arg)
             elseif self.opnames[opcode] == 'FREE_SPACE' then
                 self:getFreeSpace(arg)
-            elseif self.opnames[opcode] == 'TOTAL_SPACE' then
-                self:getTotalSpace(arg)
             elseif self.opnames[opcode] == 'SET_LIBRARY_INFO' then
                 self:setLibraryInfo(arg)
             elseif self.opnames[opcode] == 'GET_BOOK_COUNT' then
                 self:getBookCount(arg)
-            elseif self.opnames[opcode] == 'SEND_BOOKLISTS' then
-                self:sendBooklists(arg)
             elseif self.opnames[opcode] == 'SEND_BOOK' then
                 self:sendBook(arg)
             elseif self.opnames[opcode] == 'DELETE_BOOK' then
@@ -506,15 +502,6 @@ function CalibreCompanion:getFreeSpace(arg)
     self:sendJsonData('OK', free_space)
 end
 
-function CalibreCompanion:getTotalSpace(arg)
-    logger.dbg("TOTAL_SPACE", arg)
-    local total = diskUsage(G_reader_settings:readSetting("inbox_dir")).total
-    local total_space = {
-        total_space_on_device = total,
-    }
-    self:sendJsonData('OK', total_space)
-end
-
 function CalibreCompanion:setLibraryInfo(arg)
     logger.dbg("SET_LIBRARY_INFO", arg)
     self.library_info = arg
@@ -541,10 +528,6 @@ function CalibreCompanion:noop(arg)
     if not arg.count then
         self:sendJsonData('OK', {})
     end
-end
-
-function CalibreCompanion:sendBooklists(arg)
-    logger.dbg("SEND_BOOKLISTS", arg)
 end
 
 function CalibreCompanion:sendBook(arg)
