@@ -76,6 +76,7 @@ local GestureDetector = {
     },
     -- states are stored in separated slots
     states = {},
+    hold_timer_id = {},
     track_ids = {},
     tev_stacks = {},
     -- latest feeded touch event in each slots
@@ -234,6 +235,7 @@ end
 
 function GestureDetector:clearState(slot)
     self.states[slot] = self.initialState
+    self.hold_timer_id[slot] = nil
     self.detectings[slot] = false
     self.first_tevs[slot] = nil
     self.last_tevs[slot] = nil
@@ -367,7 +369,7 @@ function GestureDetector:handleDoubleTap(tev)
     }
 
     if not self.input.disable_double_tap and self.last_taps[slot] ~= nil and
-    self:isDoubleTap(self.last_taps[slot], cur_tap) then
+                self:isDoubleTap(self.last_taps[slot], cur_tap) then
         -- it is a double tap
         self:clearState(slot)
         ges_ev.ges = "double_tap"
@@ -411,8 +413,11 @@ function GestureDetector:handleNonTap(tev)
         local deadline = tev.timev + TimeVal:new{
             sec = 0, usec = ges_hold_interval
         }
+        -- Be sure the following setTimeout only react to this tapState
+        local hold_timer_id = tev.timev
+        self.hold_timer_id[slot] = hold_timer_id
         self.input:setTimeout(function()
-            if self.states[slot] == self.tapState then
+            if self.states[slot] == self.tapState and self.hold_timer_id[slot] == hold_timer_id then
                 -- timer set in tapState, so we switch to hold
                 logger.dbg("hold gesture detected in slot", slot)
                 return self:switchState("holdState", tev, true)
