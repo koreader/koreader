@@ -98,6 +98,11 @@ function PocketBook:init()
             [KEY_MENU] = "Menu",
             [KEY_PREV] = "LPgBack",
             [KEY_NEXT] = "LPgFwd",
+            [KEY_UP] = "Up",
+            [KEY_DOWN] = "Down",
+            [KEY_LEFT] = "Left",
+            [KEY_RIGHT] = "Right",
+            [KEY_OK] = "Press",
         },
         handleMiscEv = function(this, ev)
             if ev.code == EVT_BACKGROUND then
