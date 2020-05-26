@@ -234,7 +234,7 @@ function ReaderBookmark:updateHighlightsIfNeeded()
     for _, bookmark in ipairs(self.bookmarks) do
         if bookmark.pos0 then
             local pg_or_xp = self.ui.document.info.has_pages and
-                    bookmark.pos0.page or bookmark.pos0
+                    bookmark.page or bookmark.pos0
                 local chapter_name = self.ui.toc:getTocTitleByPage(pg_or_xp)
             bookmark.chapter = chapter_name
         elseif bookmark.page then -- dogear bookmark
