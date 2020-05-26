@@ -1160,6 +1160,7 @@ function ReaderStatistics:getBookStat(id_book)
 
     -- Due to some bug, some books opened around April 2020 might
     -- have notes and highlight NULL in the DB.
+    -- See: https://github.com/koreader/koreader/issues/6190#issuecomment-633693940
     -- (We made these last in the SQL so NULL/nil doesn't prevent
     -- fetching the other fields.)
     -- Show "?" when these values are not known (they will be
