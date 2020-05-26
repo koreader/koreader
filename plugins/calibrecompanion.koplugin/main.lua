@@ -101,6 +101,8 @@ local CalibreCompanion = InputContainer:new{
     model = require("device").model,
     version = require("version"):getCurrentRevision(),
     calibre_version = {},
+    calibre_version_string = "",
+    error_on_copy = false,
     -- calibre companion local port
     port = 8134,
     -- calibre broadcast ports used to find calibre server
@@ -446,8 +448,18 @@ end
 
 function CalibreCompanion:getInitInfo(arg)
     logger.dbg("GET_INITIALIZATION_INFO", arg)
+    local s = ""
+    for i, v in ipairs(arg.calibre_version) do
+        if i == #arg.calibre_version then
+            s = s .. v
+        else
+            s = s .. v .. "."
+        end
+    end
     self.calibre_info = arg
     self.calibre_version = arg.calibre_version
+    self.calibre_version_string = s
+
     local init_info = {
         appName = self.id,
         acceptedExtensions = extensions,
@@ -498,9 +510,8 @@ end
 
 function CalibreCompanion:getFreeSpace(arg)
     logger.dbg("FREE_SPACE", arg)
-    local free = diskUsage(G_reader_settings:readSetting("inbox_dir")).available
     local free_space = {
-        free_space_on_device = free,
+        free_space_on_device = diskUsage(G_reader_settings:readSetting("inbox_dir")).available,
     }
     self:sendJsonData('OK', free_space)
 end
@@ -535,43 +546,62 @@ end
 
 function CalibreCompanion:sendBook(arg)
     logger.dbg("SEND_BOOK", arg)
-    local isLastBook = function()
-        return arg.totalBooks == arg.thisBook + 1
-    end
     local inbox_dir = G_reader_settings:readSetting("inbox_dir")
     local filename = inbox_dir .. "/" .. arg.lpath
-    logger.dbg("write to file", filename)
-    util.makePath((util.splitFilePathName(filename)))
-    local outfile = io.open(filename, "wb")
+    local fits = diskUsage(inbox_dir).available >= (arg.length + 128 * 1024)
     local to_write_bytes = arg.length
     local calibre_device = self
     local calibre_socket = self.calibre_socket
-
+    local outfile
+    if fits then
+        logger.dbg("write to file", filename)
+        util.makePath((util.splitFilePathName(filename)))
+        outfile = io.open(filename, "wb")
+    else
+        local msg = T(_("Can't receive file %1/%2: %3\nNo space left on device"),
+            arg.thisBook + 1, arg.totalBooks, BD.filepath(filename))
+        if self:isCalibreAtLeast(4,18,0) then
+            -- report the error back to calibre
+            self:sendJsonData('ERROR', {message = msg})
+            return
+        else
+            -- report the error in the client
+            UIManager:show(InfoMessage:new{
+                text = msg,
+                timeout = 2,
+            })
+            self.error_on_copy = true
+        end
+    end
     -- switching to raw data receiving mode
     self.calibre_socket.receiveCallback = function(data)
         --logger.info("receive file data", #data)
         --logger.info("Memory usage KB:", collectgarbage("count"))
         local to_write_data = data:sub(1, to_write_bytes)
-        outfile:write(to_write_data)
+        if fits then
+            outfile:write(to_write_data)
+        end
         to_write_bytes = to_write_bytes - #to_write_data
         if to_write_bytes == 0 then
-            -- close file as all file data is received and written to local storage
-            outfile:close()
-            logger.info("complete writing file", filename)
-            -- add book to local database/table
-            local bookId = {}
-            for _, v in pairs(calibreBookId) do
-                bookId[v] = arg.metadata[v]
+            if fits then
+                -- close file as all file data is received and written to local storage
+                outfile:close()
+                logger.info("complete writing file", filename)
+                -- add book to local database/table
+                local bookId = {}
+                for _, v in pairs(calibreBookId) do
+                    bookId[v] = arg.metadata[v]
+                end
+                table.insert(self.book_list, #self.book_list + 1, bookId)
+                if arg.totalBooks == arg.thisBook + 1 then
+                    dumpDb(self.book_list, self.book_list_db)
+                end
+                UIManager:show(InfoMessage:new{
+                    text = T(_("Received file %1/%2: %3"),
+                        arg.thisBook + 1, arg.totalBooks, BD.filepath(filename)),
+                    timeout = 2,
+                })
             end
-            table.insert(self.book_list, #self.book_list + 1, bookId)
-            if isLastBook() then
-                dumpDb(self.book_list, self.book_list_db)
-            end
-            UIManager:show(InfoMessage:new{
-                text = T(_("Received file %1/%2: %3"),
-                    arg.thisBook + 1, arg.totalBooks, BD.filepath(filename)),
-                timeout = 2,
-            })
             -- switch to JSON data receiving mode
             calibre_socket.receiveCallback = function(json_data)
                 calibre_device:onReceiveJSON(json_data)
@@ -589,6 +619,16 @@ function CalibreCompanion:sendBook(arg)
         end
     end
     self:sendJsonData('OK', {})
+    if self.error_on_copy then
+        -- calibre versions up to 4.17 have no way to be informed that something went wrong with the book copy, thus reporting
+        -- all books sent in a batch as in device.
+        local error = _("Insufficient disk space")
+        local legacy_message = T(_("calibre %1 will report all books as in device. Please reconnect to get updated information"),
+            self.calibre_version_string)
+        UIManager:show(InfoMessage:new{
+            text = error .. "\n\n" .. legacy_message,
+        })
+    end
 end
 
 function CalibreCompanion:deleteBook(arg)
@@ -613,19 +653,19 @@ function CalibreCompanion:deleteBook(arg)
                     self:sendJsonData('OK', {uuid = value.uuid})
                 end
             end
+            -- do things once at the end of the batch
             if i == #arg.lpaths then
+                local msg
                 if i == 1 then
-                    UIManager:show(InfoMessage:new{
-                        text = T(_("Deleted file: %1"), BD.filepath(lastpath)),
-                        timeout = 2,
-                    })
+                    msg = T(_("Deleted file: %1"), BD.filepath(lastpath))
                 else
-                    UIManager:show(InfoMessage:new{
-                        text = T(_("Deleted %1 files in %2:\n %3"),
-                            #arg.lpaths, BD.filepath(inbox_dir), getRemovedFiles()
-                        ),
-                    })
+                    msg = T(_("Deleted %1 files in %2:\n %3"),
+                        #arg.lpaths, BD.filepath(inbox_dir), getRemovedFiles())
                 end
+                UIManager:show(InfoMessage:new{
+                    text = msg,
+                    timeout = 2,
+                })
                 if #self.book_list == 0 then
                     --remove empty database
                     delete(self.book_list_db)
