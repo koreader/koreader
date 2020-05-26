@@ -574,6 +574,8 @@ function CalibreCompanion:sendBook(arg)
         UIManager:show(InfoMessage:new{
             text = error .. "\n\n" .. legacy_message,
         })
+        -- clean the error for next batch
+        self.error_on_copy = false
     end
 end
 
