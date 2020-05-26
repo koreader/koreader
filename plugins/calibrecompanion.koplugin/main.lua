@@ -23,66 +23,12 @@ end
 
 -- info from calibre metadata to keep track of books on device.
 local calibreBookId = {
-    "uuid",
-    "lpath",
-    "authors",
     "title",
+    "authors",
+    "lpath",
     "last_modified",
+    "uuid",
 }
-
--- dump table to file
-local function dumpDb(t, file)
-    if not t or not file or file == "" then return end
-    local dump = require("dump")
-    local f = io.open(file, "w")
-    if f then
-        f:write("return "..dump(t))
-        f:close()
-    end
-end
-
--- delete file
-local function delete(file)
-    if not file then return end
-    if lfs.attributes(file, "mode") == "file" then
-        os.remove(file)
-    end
-end
-
--- disk usage
-local function diskUsage(dir)
-    -- fallback to 2GB total, 1GB used, 1GB free
-    local function diskUsageFallback()
-        return {
-            total = 2 * 1024 * 1024 * 1024,
-            used = 1024 * 1024 * 1024,
-            available = 1024 * 1024 * 1024,
-        }
-    end
-    -- we only work in valid directories
-    if not dir or lfs.attributes(dir, "mode") ~= "directory" then
-        return diskUsageFallback()
-    end
-    -- fill a table with total, available and used kb of the mountpoint that holds the directory,
-    -- this relies on common shell utilities df & awk.
-    local std_out = io.popen("df -k "..dir.." | awk '$3 ~ /[0-9]+/ { print $2,$3,$4 }'")
-    if std_out then
-        local stage = {}
-        local result = {}
-        local counter = 1
-        for size in string.gmatch(std_out:read("*all"), "%w+") do
-            table.insert(stage, size or diskUsageFallback()[counter])
-            counter = counter + 1
-        end
-        for k, v in pairs({"total", "used", "available"}) do
-            -- sizes are in kb, return bytes here
-            result[v] = stage[k] * 1024
-        end
-        return result
-    else
-        return diskUsageFallback()
-    end
-end
 
 --[[
     This plugin implements a simple Calibre Companion protocol that communicates
@@ -511,7 +457,7 @@ end
 function CalibreCompanion:getFreeSpace(arg)
     logger.dbg("FREE_SPACE", arg)
     local free_space = {
-        free_space_on_device = diskUsage(G_reader_settings:readSetting("inbox_dir")).available,
+        free_space_on_device = util.diskUsage(G_reader_settings:readSetting("inbox_dir")).available,
     }
     self:sendJsonData('OK', free_space)
 end
@@ -548,7 +494,7 @@ function CalibreCompanion:sendBook(arg)
     logger.dbg("SEND_BOOK", arg)
     local inbox_dir = G_reader_settings:readSetting("inbox_dir")
     local filename = inbox_dir .. "/" .. arg.lpath
-    local fits = diskUsage(inbox_dir).available >= (arg.length + 128 * 1024)
+    local fits = util.diskUsage(inbox_dir).available >= (arg.length + 128 * 1024)
     local to_write_bytes = arg.length
     local calibre_device = self
     local calibre_socket = self.calibre_socket
@@ -594,7 +540,7 @@ function CalibreCompanion:sendBook(arg)
                 end
                 table.insert(self.book_list, #self.book_list + 1, bookId)
                 if arg.totalBooks == arg.thisBook + 1 then
-                    dumpDb(self.book_list, self.book_list_db)
+                    util.dumpTable(self.book_list, self.book_list_db)
                 end
                 UIManager:show(InfoMessage:new{
                     text = T(_("Received file %1/%2: %3"),
@@ -649,7 +595,7 @@ function CalibreCompanion:deleteBook(arg)
                 if v == value.lpath then
                     lastpath= inbox_dir.."/"..v
                     table.remove(self.book_list, index)
-                    delete(lastpath)
+                    util.removeFile(lastpath)
                     self:sendJsonData('OK', {uuid = value.uuid})
                 end
             end
@@ -668,10 +614,10 @@ function CalibreCompanion:deleteBook(arg)
                 })
                 if #self.book_list == 0 then
                     --remove empty database
-                    delete(self.book_list_db)
+                    util.removeFile(self.book_list_db)
                 else
                     --update database
-                    dumpDb(self.book_list, self.book_list_db)
+                    util.dumpTable(self.book_list, self.book_list_db)
                 end
             end
         end

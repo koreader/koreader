@@ -563,6 +563,61 @@ function util.makePath(path)
     return lfs.mkdir(path)
 end
 
+--- As `rm`
+-- @string path of the file to remove
+-- @treturn bool true on success; nil, err_message on error
+function util.removeFile(file)
+    local lfs = require("libs/libkoreader-lfs")
+    if file and lfs.attributes(file, "mode") == "file" then
+        return os.remove(file)
+    elseif file then
+        return nil, file .. " is not a file"
+    else
+        return nil, "file is nil"
+    end
+end
+
+-- Gets total, used and available bytes for a given directory.
+-- If the directory does not exists (or any other error happens) it
+-- will return fallback values.
+-- @string path
+-- @treturn table with total, used and available bytes
+function util.diskUsage(dir)
+    -- fallback to 2GB total, 1GB used, 1GB free
+    local function diskUsageFallback()
+        return {
+            total = 2 * 1024 * 1024 * 1024,
+            used = 1024 * 1024 * 1024,
+            available = 1024 * 1024 * 1024,
+        }
+    end
+    -- we only work in valid directories
+    local lfs = require("libs/libkoreader-lfs")
+    if not dir or lfs.attributes(dir, "mode") ~= "directory" then
+        return diskUsageFallback()
+    end
+    -- fill a table with total, available and used bytes of the mountpoint that holds the directory,
+    -- this relies on common shell utilities df & awk.
+    local std_out = io.popen("df -k "..dir.." | awk '$3 ~ /[0-9]+/ { print $2,$3,$4 }'")
+    if std_out then
+        local stage = {}
+        local result = {}
+        local counter = 1
+        for size in string.gmatch(std_out:read("*all"), "%w+") do
+            table.insert(stage, size or diskUsageFallback()[counter])
+            counter = counter + 1
+        end
+        for k, v in pairs({"total", "used", "available"}) do
+            -- sizes are in kb, return bytes here
+            result[v] = stage[k] * 1024
+        end
+        return result
+    else
+        return diskUsageFallback()
+    end
+end
+
+
 --- Replaces characters that are invalid filenames.
 --
 -- Replaces the characters <code>\/:*?"<>|</code> with an <code>_</code>.
@@ -926,6 +981,23 @@ function util.clearTable(t)
     local c = #t
     for i = 0, c do t[i] = nil end
 end
+
+--- Dumps a table into a file.
+--- @table t the table to be dumped
+--- @string file the file to store the table
+--- @treturn bool true on success, false otherwise
+function util.dumpTable(t, file)
+    if not t or not file or file == "" then return end
+    local dump = require("dump")
+    local f = io.open(file, "w")
+    if f then
+        f:write("return "..dump(t))
+        f:close()
+        return true
+    end
+    return false
+end
+
 
 --- Encode URL also known as percent-encoding see https://en.wikipedia.org/wiki/Percent-encoding
 --- @string text the string to encode
