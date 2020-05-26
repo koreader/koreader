@@ -29,6 +29,7 @@ local Device = {
     hasKeyboard = no,
     hasKeys = no,
     hasDPad = no,
+    hasFewKeys = no,
     hasWifiToggle = yes,
     hasWifiManager = no,
     isHapticFeedbackEnabled = no,

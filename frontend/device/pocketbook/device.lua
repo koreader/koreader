@@ -217,6 +217,7 @@ local PocketBook515 = PocketBook:new{
     isTouchDevice = no,
     hasWifiToggle = no,
     hasDPad = yes,
+    hasFewKeys = yes,
 }
 
 -- PocketBoot 613 Basic
@@ -226,6 +227,7 @@ local PocketBook613 = PocketBook:new{
     isTouchDevice = no,
     hasWifiToggle = no,
     hasDPad = yes,
+    hasFewKeys = yes,
 }
 
 -- PocketBook Basic Lux 2
@@ -235,6 +237,7 @@ local PocketBook616 = PocketBook:new{
     isTouchDevice = no,
     hasWifiToggle = no,
     hasDPad = yes,
+    hasFewKeys = yes,
 }
 
 -- PocketBook Lux 4
