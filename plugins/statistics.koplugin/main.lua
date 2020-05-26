@@ -1137,7 +1137,7 @@ function ReaderStatistics:getCurrentStat(id_book)
         -- estimation, from current page to end of book
         { _("Current page/Total pages"),  self.curr_page .. "/" .. self.data.pages },
         { _("Percentage completed"), formatstr:format(self.curr_page/self.data.pages * 100) },
-        { _("Time to read"), util.secondsToClock(time_to_read, false) },
+        { _("Estimated time to read"), util.secondsToClock(time_to_read, false) },
         { _("Estimated reading finished"),
             T(N_("%1 (1 day)", "%1 (%2 days)", estimate_days_to_read), estimate_end_of_read_date, estimate_days_to_read) },
 
