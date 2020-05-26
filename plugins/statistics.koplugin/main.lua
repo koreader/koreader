@@ -6,6 +6,7 @@ local Device = require("device")
 local DocSettings = require("docsettings")
 local InfoMessage = require("ui/widget/infomessage")
 local KeyValuePage = require("ui/widget/keyvaluepage")
+local Math = require("optmath")
 local ReaderFooter = require("apps/reader/modules/readerfooter")
 local ReaderProgress = require("readerprogress")
 local ReadHistory = require("readhistory")
@@ -1117,22 +1118,31 @@ function ReaderStatistics:getCurrentStat(id_book)
     local estimate_end_of_read_date = os.date("%Y-%m-%d", tonumber(os.time() + estimate_days_to_read * 86400))
     local formatstr = "%.0f%%"
     return {
+        -- Global statistics (may consider other books than current book)
+        -- since last resume
         { _("Time spent reading this session"), util.secondsToClock(current_period, false) },
         { _("Pages read this session"), tonumber(current_pages) },
+        -- today
         { _("Time spent reading today"), util.secondsToClock(today_period, false) },
         { _("Pages read today"), tonumber(today_pages) },
-        { _("Time to read"), util.secondsToClock(time_to_read), false},
-        { _("Total time"), util.secondsToClock(total_time_book, false) },
-        { _("Total highlights"), tonumber(highlights) },
-        { _("Total notes"), tonumber(notes) },
-        { _("Total pages read"), tonumber(total_read_pages) },
-        { _("Total days"), tonumber(total_days) },
+        "----",
+        -- Current book statistics
+        { _("Time spent reading this book"), util.secondsToClock(total_time_book, false) },
+        -- per days
+        { _("Days reading this book"), tonumber(total_days) },
+        { _("Average time per day"), util.secondsToClock(total_time_book/tonumber(total_days), false) },
+        -- per page
+        { _("Pages read"), tonumber(total_read_pages) },
         { _("Average time per page"), util.secondsToClock(self.avg_time, false) },
-        { _("Current pages read/Total pages"),  self.curr_page .. "/" .. self.data.pages },
+        -- estimation, from current page to end of book
+        { _("Current page/Total pages"),  self.curr_page .. "/" .. self.data.pages },
         { _("Percentage completed"), formatstr:format(self.curr_page/self.data.pages * 100) },
-        { _("Average time per day"), util.secondsToClock(total_time_book/tonumber(total_days)), false },
+        { _("Time to read"), util.secondsToClock(time_to_read, false) },
         { _("Estimated reading finished"),
             T(N_("%1 (1 day)", "%1 (%2 days)", estimate_days_to_read), estimate_end_of_read_date, estimate_days_to_read) },
+
+        { _("Total highlights"), tonumber(highlights) },
+        -- { _("Total notes"), tonumber(notes) }, -- not accurate, don't show it
     }
 end
 
@@ -1142,11 +1152,20 @@ function ReaderStatistics:getBookStat(id_book)
     end
     local conn = SQ3.open(db_location)
     local sql_stmt = [[
-        SELECT title, authors, notes, highlights, pages, last_open
+        SELECT title, authors, pages, last_open, highlights, notes
         FROM book
         WHERE id = '%s'
     ]]
-    local title, authors, notes, highlights, pages, last_open = conn:rowexec(string.format(sql_stmt, id_book))
+    local title, authors, pages, last_open, highlights, notes = conn:rowexec(string.format(sql_stmt, id_book))
+
+    -- Due to some bug, some books opened around April 2020 might
+    -- have notes and highlight NULL in the DB.
+    -- (We made these last in the SQL so NULL/nil doesn't prevent
+    -- fetching the other fields.)
+    -- Show "?" when these values are not known (they will be
+    -- fixed next time this book is opened).
+    highlights = highlights and tonumber(highlights) or "?"
+    notes = notes and tonumber(notes) or "?"
 
     sql_stmt = [[
         SELECT count(*)
@@ -1193,14 +1212,14 @@ function ReaderStatistics:getBookStat(id_book)
         { _("Authors"), authors},
         { _("First opened"), os.date("%Y-%m-%d (%H:%M)", tonumber(first_open))},
         { _("Last opened"), os.date("%Y-%m-%d (%H:%M)", tonumber(last_open))},
-        { _("Total time"), util.secondsToClock(total_time_book, false) },
-        { _("Total highlights"), tonumber(highlights) },
-        { _("Total notes"), tonumber(notes) },
-        { _("Total days"), tonumber(total_days) },
+        { _("Days reading this book"), tonumber(total_days) },
+        { _("Time spent reading this book"), util.secondsToClock(total_time_book, false) },
         { _("Average time per page"), util.secondsToClock(avg_time_per_page, false) },
+        -- These 2 ones are about page actually read (not the current page and % into book)
         { _("Read pages/Total pages"), total_read_pages .. "/" .. pages },
-        -- adding 0.5 rounds to nearest integer with math.floor
-        { _("Percentage completed"), math.floor(total_read_pages / pages * 100 + 0.5) .. "%" },
+        { _("Percentage read"), Math.round(total_read_pages / pages * 100) .. "%" },
+        { _("Total highlights"), highlights },
+        -- { _("Total notes"), notes }, -- not accurate, don't show it
         "----",
         { _("Show days"), _("Tap to display"),
             callback = function()
@@ -1659,7 +1678,6 @@ function ReaderStatistics:getTotalStats()
 
                 self.kv = KeyValuePage:new{
                     title = book_title,
-                    value_overflow_align = "right",
                     kv_pairs = self:getBookStat(id_book),
                     callback_return = function()
                         UIManager:show(kv)
