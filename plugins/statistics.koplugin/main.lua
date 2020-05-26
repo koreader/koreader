@@ -1084,7 +1084,7 @@ function ReaderStatistics:getCurrentStat(id_book)
     local current_period, current_pages = self:getCurrentBookStats()
 
     local conn = SQ3.open(db_location)
-    local notes, highlights = conn:rowexec(string.format("SELECT notes, highlights  FROM book WHERE id = '%s';)", id_book))
+    local highlights, notes = conn:rowexec(string.format("SELECT highlights, notes  FROM book WHERE id = '%s';)", id_book)) -- luacheck: no unused
     local sql_stmt = [[
         SELECT count(*)
         FROM   (
@@ -1165,7 +1165,7 @@ function ReaderStatistics:getBookStat(id_book)
     -- Show "?" when these values are not known (they will be
     -- fixed next time this book is opened).
     highlights = highlights and tonumber(highlights) or "?"
-    notes = notes and tonumber(notes) or "?"
+    notes = notes and tonumber(notes) or "?" -- luacheck: no unused
 
     sql_stmt = [[
         SELECT count(*)
