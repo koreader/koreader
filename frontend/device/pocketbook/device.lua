@@ -219,10 +219,22 @@ local PocketBook515 = PocketBook:new{
     hasDPad = yes,
 }
 
+-- PocketBoot 613 Basic
+local PocketBook613 = PocketBook:new{
+    model = "PB613B",
+    display_dpi = 167,
+    isTouchDevice = no,
+    hasWifiToggle = no,
+    hasDPad = yes,
+}
+
 -- PocketBook Basic Lux 2
 local PocketBook616 = PocketBook:new{
     model = "PBBLux2",
     display_dpi = 212,
+    isTouchDevice = no,
+    hasWifiToggle = no,
+    hasDPad = yes,
 }
 
 -- PocketBook Lux 4
@@ -324,6 +336,8 @@ local codename = PocketBook:getDeviceModel()
 
 if codename == "PocketBook 515" then
     return PocketBook515
+elseif codename == "PocketBook 613" then
+    return PocketBook613
 elseif codename == "PB616W" or
     codename == "PocketBook 616" then
     return PocketBook616
