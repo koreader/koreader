@@ -1679,6 +1679,7 @@ function ReaderStatistics:getTotalStats()
 
                 self.kv = KeyValuePage:new{
                     title = book_title,
+                    value_overflow_align = "right",
                     kv_pairs = self:getBookStat(id_book),
                     callback_return = function()
                         UIManager:show(kv)
