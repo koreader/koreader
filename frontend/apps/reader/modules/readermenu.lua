@@ -59,10 +59,16 @@ function ReaderMenu:init()
     if Device:hasKeys() then
         if Device:isTouchDevice() then
             self.key_events.TapShowMenu = { { "Menu" }, doc = "show menu", }
+            if Device:hasFewKeys() then
+                self.key_events.TapShowMenu = { { { "Menu", "Right" } }, doc = "show menu", }
+            end
         else
             -- map menu key to only top menu because bottom menu is only
             -- designed for touch devices
             self.key_events.ShowReaderMenu = { { "Menu" }, doc = "show menu", }
+            if Device:hasFewKeys() then
+                self.key_events.ShowReaderMenu = { { { "Menu", "Right" } }, doc = "show menu", }
+            end
         end
     end
     self.activation_menu = G_reader_settings:readSetting("activate_menu")

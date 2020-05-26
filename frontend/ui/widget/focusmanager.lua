@@ -43,6 +43,9 @@ function FocusManager:init()
             FocusLeft =  { {"Left"},  doc = "move focus left",  event = "FocusMove", args = {-1, 0} },
             FocusRight = { {"Right"}, doc = "move focus right", event = "FocusMove", args = {1,  0} },
         }
+        if Device:hasFewKeys() then
+            self.key_events.FocusLeft = nil
+        end
     end
 end
 

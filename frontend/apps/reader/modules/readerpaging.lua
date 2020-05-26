@@ -52,6 +52,10 @@ function ReaderPaging:init()
             { { "RPgBack", "LPgBack", "Left" } }, doc = "go to previous page",
             event = "GotoViewRel", args = -1,
         }
+        if Device:hasFewKeys() then
+            table.remove(self.key_events.GotoNextPage[1][1], 3) -- right
+            table.remove(self.key_events.GotoPrevPage[1][1], 3) -- left
+        end
         self.key_events.GotoNextPos = {
             { {"Down" } }, doc = "go to next position",
             event = "GotoPosRel", args = 1,

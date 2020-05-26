@@ -420,6 +420,9 @@ function TouchMenu:init()
     }
 
     self.key_events.Back = { {"Back"}, doc = "back to upper menu or close touchmenu" }
+    if Device:hasFewKeys() then
+        self.key_events.Back = { {"Left"}, doc = "back to upper menu or close touchmenu" }
+    end
     self.key_events.NextPage = { {Input.group.PgFwd}, doc = "next page" }
     self.key_events.PrevPage = { {Input.group.PgBack}, doc = "previous page" }
     self.key_events.Press = { {"Press"}, doc = "chose selected item" }
