@@ -23,6 +23,12 @@ local function getExtensionPathLengths()
     return t
 end
 
+local function updateDir(dir)
+    local FileManager = require("apps/filemanager/filemanager")
+    if FileManager:getCurrentDir() == dir then
+        FileManager.instance:reinit(dir)
+    end
+end
 
 --[[
     This plugin implements a simple Calibre Companion protocol that communicates
@@ -613,6 +619,7 @@ function CalibreCompanion:sendBook(arg)
                         arg.thisBook + 1, arg.totalBooks, BD.filepath(filename)),
                     timeout = 2,
                 })
+                updateDir(inbox_dir)
             end
             -- switch to JSON data receiving mode
             calibre_socket.receiveCallback = function(json_data)
@@ -687,6 +694,7 @@ function CalibreCompanion:deleteBook(arg)
                     --update database
                     util.dumpTable(self.book_list, self.book_list_db)
                 end
+                updateDir(inbox_dir)
             end
         end
     end
