@@ -1,5 +1,6 @@
 local BD = require("ui/bidi")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local InputDialog = require("ui/widget/inputdialog")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local JSON = require("json")
@@ -7,6 +8,7 @@ local _ = require("gettext")
 local NetworkMgr = require("ui/network/manager")
 local logger = require("logger")
 local util = require("frontend/util")
+local sha = require("ffi/sha2")
 local T = require("ffi/util").template
 
 require("ffi/zeromq_h")
@@ -134,6 +136,9 @@ function CalibreCompanion:checkCalibreServer(host, port)
 end
 
 function CalibreCompanion:addToMainMenu(menu_items)
+    local function isDisconnected()
+        return not self.calibre_socket
+    end
     menu_items.calibre_wireless_connection = {
         text = _("calibre wireless connection"),
         sub_item_table = {
@@ -146,7 +151,7 @@ function CalibreCompanion:addToMainMenu(menu_items)
                     end
                 end,
                 callback = function()
-                    if not self.calibre_socket then
+                    if isDisconnected() then
                         self:connect()
                     else
                         self:disconnect()
@@ -154,10 +159,19 @@ function CalibreCompanion:addToMainMenu(menu_items)
                 end
             },
             {
-                text = _("Set inbox directory"),
+                text = _("Set password"),
+                enabled_func = isDisconnected,
                 callback = function()
-                    CalibreCompanion:setInboxDir()
-                end
+                    self:setPassword()
+                end,
+            },
+
+            {
+                text = _("Set inbox directory"),
+                enabled_func = isDisconnected,
+                callback = function()
+                    self:setInboxDir()
+                end,
             },
             {
                 text_func = function()
@@ -168,6 +182,7 @@ function CalibreCompanion:addToMainMenu(menu_items)
                     end
                     return T(_("Server address (%1)"), BD.ltr(address))
                 end,
+                enabled_func = isDisconnected,
                 sub_item_table = {
                     {
                         text = _("Automatic"),
@@ -252,10 +267,23 @@ function CalibreCompanion:initCalibreMQ(host, port)
             receiveCallback = function(data)
                 self:onReceiveJSON(data)
                 if not self.connect_message then
-                    UIManager:show(InfoMessage:new{
-                        text = T(_("Connected to calibre server at %1"), BD.ltr(T("%1:%2", host, port))),
-                    })
+                    self.password_check_callback = function()
+                        local msg
+                        if self.invalid_password then
+                            msg = _("Invalid password")
+                            self.invalid_password = nil
+                            self:disconnect()
+                        else
+                            msg = T(_("Connected to calibre server at %1"),
+                                BD.ltr(T("%1:%2", host, port)))
+                        end
+                        UIManager:show(InfoMessage:new{
+                            text = msg,
+                            timeout = 2,
+                        })
+                    end
                     self.connect_message = true
+                    UIManager:scheduleIn(1, self.password_check_callback)
                     if self.failed_connect_callback then
                         --don't disconnect if we connect in 10 seconds
                         UIManager:unschedule(self.failed_connect_callback)
@@ -375,6 +403,8 @@ function CalibreCompanion:onReceiveJSON(data)
                 self:sendBook(arg)
             elseif self.opnames[opcode] == 'DELETE_BOOK' then
                 self:deleteBook(arg)
+            elseif self.opnames[opcode] == 'DISPLAY_MESSAGE' then
+                self:serverFeedback(arg)
             elseif self.opnames[opcode] == 'NOOP' then
                 self:noop(arg)
             end
@@ -405,6 +435,15 @@ function CalibreCompanion:getInitInfo(arg)
     self.calibre_info = arg
     self.calibre_version = arg.calibre_version
     self.calibre_version_string = s
+    local getPasswordHash = function()
+        local password = G_reader_settings:readSetting("calibre_wireless_password")
+        local challenge = arg.passwordChallenge
+        if password and challenge then
+            return sha.sha1(password..challenge)
+        else
+            return ""
+        end
+    end
 
     local init_info = {
         appName = self.id,
@@ -422,7 +461,7 @@ function CalibreCompanion:getInitInfo(arg)
         deviceKind = self.model,
         deviceName = T("%1 (%2)", self.id, self.model),
         extensionPathLengths = getExtensionPathLengths(),
-        passwordHash = self.password_hash or "",
+        passwordHash = getPasswordHash(),
         maxBookContentPacketLen = 4096,
         useUuidFileNames = false,
         versionOK = true,
@@ -430,8 +469,41 @@ function CalibreCompanion:getInitInfo(arg)
     self:sendJsonData('OK', init_info)
 end
 
-function CalibreCompanion:setPassword(pass)
-    self.password_hash = pass
+function CalibreCompanion:setPassword()
+    local function passwordCheck(p)
+        local t = type(p)
+        if t == "number" or (t == "string" and p:match("%S")) then
+            return true
+        end
+        return false
+    end
+    local password_dialog
+    password_dialog = InputDialog:new{
+        title = _("Set a password for calibre wireless server"),
+        input = G_reader_settings:readSetting("calibre_wireless_password") or "",
+        buttons = {{
+            {
+                text = _("Cancel"),
+                callback = function()
+                    UIManager:close(password_dialog)
+                end,
+            },
+            {
+                text = _("Set password"),
+                callback = function()
+                    local pass = password_dialog:getInputText()
+                    if passwordCheck(pass) then
+                        G_reader_settings:saveSetting("calibre_wireless_password", pass)
+                    else
+                        G_reader_settings:delSetting("calibre_wireless_password")
+                    end
+                    UIManager:close(password_dialog)
+                end,
+            },
+        }},
+    }
+    UIManager:show(password_dialog)
+    password_dialog:onShowKeyboard()
 end
 
 function CalibreCompanion:getDeviceInfo(arg)
@@ -623,6 +695,14 @@ function CalibreCompanion:deleteBook(arg)
                 end
             end
         end
+    end
+end
+
+function CalibreCompanion:serverFeedback(arg)
+    logger.dbg("DISPLAY_MESSAGE", arg)
+    -- here we only care about password errors
+    if arg.messageKind == 1 then
+        self.invalid_password = true
     end
 end
 
