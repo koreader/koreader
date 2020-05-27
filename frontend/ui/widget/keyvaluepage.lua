@@ -124,19 +124,13 @@ local KeyValueItem = InputContainer:new{
     textviewer_width = nil,
     textviewer_height = nil,
     value_overflow_align = "left",
+        -- "right": only align right if value overflow 1/2 width
+        -- "right_always": align value right even when small and
+        --                 only key overflows 1/2 width
 }
 
 function KeyValueItem:init()
     self.dimen = Geom:new{w = self.width, h = self.height}
-
-    if self.callback and Device:isTouchDevice() then
-        self.ges_events.Tap = {
-            GestureRange:new{
-                ges = "tap",
-                range = self.dimen,
-            }
-        }
-    end
 
     -- self.value may contain some control characters (\n \t...) that would
     -- be rendered as a square. Replace them with a shorter and nicer '|'.
@@ -190,12 +184,13 @@ function KeyValueItem:init()
                 key_w = key_w_rendered
             end
             value_align_right = true -- so the ellipsis touches the screen right border
-            if self.value_overflow_align ~= "right" and self.value_align ~= "right" then
+            if self.value_align ~= "right" and self.value_overflow_align ~= "right"
+                    and self.value_overflow_align ~= "right_always" then
                 -- Don't adjust the ellipsis to the screen right border,
                 -- so the left of text is aligned with other truncated texts
                 fit_right_align = false
             end
-            -- Allow for displaying the non-truncated texts with Hold
+            -- Allow for displaying the non-truncated text with Hold
             if Device:isTouchDevice() then
                 self.ges_events.Hold = {
                     GestureRange:new{
@@ -203,10 +198,18 @@ function KeyValueItem:init()
                         range = self.dimen,
                     }
                 }
+                -- If no tap callback, allow for displaying the non-truncated
+                -- text with Tap too
+                if not self.callback then
+                    self.callback = function()
+                        self:onHold()
+                    end
+                end
             end
         else
             -- Both can fit: break the 1/2 widths
-            if self.value_overflow_align == "right" or self.value_align == "right" then
+            if self.value_align == "right" or self.value_overflow_align == "right_always"
+                    or (self.value_overflow_align == "right" and value_w_rendered > value_w) then
                 key_w = available_width - value_w_rendered
                 value_align_right = true
             else
@@ -236,6 +239,15 @@ function KeyValueItem:init()
 
     -- For debugging positioning:
     -- value_widget = FrameContainer:new{ padding=0, margin=0, bordersize=1, value_widget }
+
+    if self.callback and Device:isTouchDevice() then
+        self.ges_events.Tap = {
+            GestureRange:new{
+                ges = "tap",
+                range = self.dimen,
+            }
+        }
+    end
 
     self[1] = FrameContainer:new{
         padding = frame_padding,
