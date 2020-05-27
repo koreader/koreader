@@ -23,14 +23,6 @@ local function getExtensionPathLengths()
     return t
 end
 
--- info from calibre metadata to keep track of books on device.
-local calibreBookId = {
-    "title",
-    "authors",
-    "lpath",
-    "last_modified",
-    "uuid",
-}
 
 --[[
     This plugin implements a simple Calibre Companion protocol that communicates
@@ -48,9 +40,6 @@ local CalibreCompanion = InputContainer:new{
     id = "KOReader",
     model = require("device").model,
     version = require("version"):getCurrentRevision(),
-    calibre_version = {},
-    calibre_version_string = "",
-    error_on_copy = false,
     -- calibre companion local port
     port = 8134,
     -- calibre broadcast ports used to find calibre server
@@ -77,9 +66,16 @@ local CalibreCompanion = InputContainer:new{
         SET_CALIBRE_DEVICE_NAME   = 2,
         TOTAL_SPACE               = 4,
     },
-    -- list of cached books from previous connections
+    -- info from calibre metadata to keep track of books on device.
+    book_id = {
+        "title",
+        "authors",
+        "lpath",
+        "last_modified",
+        "uuid",
+    },
     book_list = {},
-    book_list_db = "",
+    calibre = {},
 }
 
 function CalibreCompanion:init()
@@ -432,9 +428,8 @@ function CalibreCompanion:getInitInfo(arg)
             s = s .. v .. "."
         end
     end
-    self.calibre_info = arg
-    self.calibre_version = arg.calibre_version
-    self.calibre_version_string = s
+    self.calibre.version = arg.calibre_version
+    self.calibre.version_string = s
     local getPasswordHash = function()
         local password = G_reader_settings:readSetting("calibre_wireless_password")
         local challenge = arg.passwordChallenge
@@ -521,7 +516,6 @@ end
 
 function CalibreCompanion:setCalibreInfo(arg)
     logger.dbg("SET_CALIBRE_DEVICE_INFO", arg)
-    self.calibre_info = arg
     G_reader_settings:saveSetting("device_store_uuid", arg.device_store_uuid)
     self:sendJsonData('OK', {})
 end
@@ -607,7 +601,7 @@ function CalibreCompanion:sendBook(arg)
                 logger.info("complete writing file", filename)
                 -- add book to local database/table
                 local bookId = {}
-                for _, v in pairs(calibreBookId) do
+                for _, v in pairs(self.book_id) do
                     bookId[v] = arg.metadata[v]
                 end
                 table.insert(self.book_list, #self.book_list + 1, bookId)
@@ -642,12 +636,12 @@ function CalibreCompanion:sendBook(arg)
         -- all books sent in a batch as in device.
         local error = _("Insufficient disk space")
         local legacy_message = T(_("calibre %1 will report all books as in device. Please reconnect to get updated information"),
-            self.calibre_version_string)
+            self.calibre.version_string)
         UIManager:show(InfoMessage:new{
             text = error .. "\n\n" .. legacy_message,
         })
         -- clean the error for next batch
-        self.error_on_copy = false
+        self.error_on_copy = nil
     end
 end
 
@@ -707,7 +701,7 @@ function CalibreCompanion:serverFeedback(arg)
 end
 
 function CalibreCompanion:isCalibreAtLeast(x,y,z)
-    local v = self.calibre_version
+    local v = self.calibre.version
     local function semanticVersion(a,b,c)
         return ((a * 100000) + (b * 1000)) + c
     end
