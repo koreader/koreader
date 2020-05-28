@@ -578,43 +578,34 @@ function util.removeFile(file)
 end
 
 -- Gets total, used and available bytes for a given directory.
--- If the directory does not exists (or any other error happens) it
--- will return fallback values.
 -- @string path
 -- @treturn table with total, used and available bytes
 function util.diskUsage(dir)
-    -- fallback to 2GB total, 1GB used, 1GB free
-    local function diskUsageFallback()
-        return {
-            total = 2 * 1024 * 1024 * 1024,
-            used = 1024 * 1024 * 1024,
-            available = 1024 * 1024 * 1024,
-        }
-    end
-    -- we only work in valid directories
-    local lfs = require("libs/libkoreader-lfs")
-    if not dir or lfs.attributes(dir, "mode") ~= "directory" then
-        return diskUsageFallback()
-    end
-    -- fill a table with total, available and used bytes of the mountpoint that holds the directory,
-    -- this relies on common shell utilities df & awk.
-    local std_out = io.popen("df -k "..dir.." | awk '$3 ~ /[0-9]+/ { print $2,$3,$4 }'")
-    if std_out then
-        local stage = {}
-        local result = {}
-        local counter = 1
-        for size in string.gmatch(std_out:read("*all"), "%w+") do
-            table.insert(stage, size or diskUsageFallback()[counter])
-            counter = counter + 1
+    -- safe way of testing df & awk
+    local function doCommand(dir)
+        local handle = io.popen("df -k " .. dir .. " 2>&1 | awk '$3 ~ /[0-9]+/ { print $2,$3,$4 }' 2>&1 || echo ::ERROR::")
+        if not handle then return end
+        local output = handle:read("*all")
+        if not output:find "::ERROR::" then
+            return output
         end
-        for k, v in pairs({"total", "used", "available"}) do
+    end
+    local err = { total = nil, used = nil, available = nil }
+    local lfs = require("libs/libkoreader-lfs")
+    if not dir or lfs.attributes(dir, "mode") ~= "directory" then return err end
+    local usage = doCommand(dir)
+    if not usage then return err end
+    local stage, result = {}, {}
+    for size in usage:gmatch("%w+") do
+        table.insert(stage, size)
+    end
+    for k, v in pairs({"total", "used", "available"}) do
+        if stage[k] ~= nil then
             -- sizes are in kb, return bytes here
             result[v] = stage[k] * 1024
         end
-        return result
-    else
-        return diskUsageFallback()
     end
+    return result
 end
 
 

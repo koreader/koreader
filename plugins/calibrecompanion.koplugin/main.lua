@@ -23,6 +23,9 @@ local function getExtensionPathLengths()
     return t
 end
 
+local function getFreeSpace(dir)
+    return util.diskUsage(dir).available or 1024 * 1024 * 1024
+end
 local function updateDir(dir)
     local FileManager = require("apps/filemanager/filemanager")
     if FileManager:getCurrentDir() == dir then
@@ -529,7 +532,7 @@ end
 function CalibreCompanion:getFreeSpace(arg)
     logger.dbg("FREE_SPACE", arg)
     local free_space = {
-        free_space_on_device = util.diskUsage(G_reader_settings:readSetting("inbox_dir")).available,
+        free_space_on_device = getFreeSpace(G_reader_settings:readSetting("inbox_dir")),
     }
     self:sendJsonData('OK', free_space)
 end
@@ -566,7 +569,7 @@ function CalibreCompanion:sendBook(arg)
     logger.dbg("SEND_BOOK", arg)
     local inbox_dir = G_reader_settings:readSetting("inbox_dir")
     local filename = inbox_dir .. "/" .. arg.lpath
-    local fits = util.diskUsage(inbox_dir).available >= (arg.length + 128 * 1024)
+    local fits = getFreeSpace(inbox_dir) >= (arg.length + 128 * 1024)
     local to_write_bytes = arg.length
     local calibre_device = self
     local calibre_socket = self.calibre_socket
