@@ -1,4 +1,5 @@
 local BD = require("ui/bidi")
+local ConfirmBox = require("ui/widget/confirmbox")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local InfoMessage = require("ui/widget/infomessage")
@@ -364,6 +365,11 @@ function CalibreCompanion:disconnect()
     self.calibre_messagequeue = nil
 end
 
+function CalibreCompanion:reconnect()
+    self:disconnect()
+    self:connect()
+end
+
 function CalibreCompanion:onReceiveJSON(data)
     self.buffer = (self.buffer or "") .. (data or "")
     --logger.info("data buffer", self.buffer)
@@ -535,6 +541,17 @@ function CalibreCompanion:getFreeSpace(arg)
         free_space_on_device = getFreeSpace(G_reader_settings:readSetting("inbox_dir")),
     }
     self:sendJsonData('OK', free_space)
+    if self.error_on_copy then
+        self.error_on_copy = nil
+        UIManager:show(ConfirmBox:new{
+            text = T(_("Insufficient disk space.\n\ncalibre %1 will report all books as in device. This might lead to error. Please reconnect to get updated info"),
+                self.calibre.version_string),
+            ok_text = _("Reconnect"),
+            ok_callback = function()
+                self:reconnect()
+            end,
+        })
+    end
 end
 
 function CalibreCompanion:setLibraryInfo(arg)
@@ -560,6 +577,12 @@ end
 
 function CalibreCompanion:noop(arg)
     logger.dbg("NOOP", arg)
+    if arg.ejecting then
+        -- calibre wants to close the socket, time to disconnect
+        self:sendJsonData('OK', {})
+        self:disconnect()
+        return
+    end
     if not arg.count then
         self:sendJsonData('OK', {})
     end
@@ -641,18 +664,6 @@ function CalibreCompanion:sendBook(arg)
         end
     end
     self:sendJsonData('OK', {})
-    if self.error_on_copy then
-        -- calibre versions up to 4.17 have no way to be informed that something went wrong with the book copy, thus reporting
-        -- all books sent in a batch as in device.
-        local error = _("Insufficient disk space")
-        local legacy_message = T(_("calibre %1 will report all books as in device. Please reconnect to get updated information"),
-            self.calibre.version_string)
-        UIManager:show(InfoMessage:new{
-            text = error .. "\n\n" .. legacy_message,
-        })
-        -- clean the error for next batch
-        self.error_on_copy = nil
-    end
 end
 
 function CalibreCompanion:deleteBook(arg)
