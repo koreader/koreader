@@ -582,8 +582,8 @@ end
 -- @treturn table with total, used and available bytes
 function util.diskUsage(dir)
     -- safe way of testing df & awk
-    local function doCommand(dir)
-        local handle = io.popen("df -k " .. dir .. " 2>&1 | awk '$3 ~ /[0-9]+/ { print $2,$3,$4 }' 2>&1 || echo ::ERROR::")
+    local function doCommand(d)
+        local handle = io.popen("df -k " .. d .. " 2>&1 | awk '$3 ~ /[0-9]+/ { print $2,$3,$4 }' 2>&1 || echo ::ERROR::")
         if not handle then return end
         local output = handle:read("*all")
         if not output:find "::ERROR::" then
