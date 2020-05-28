@@ -242,14 +242,17 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
             if [ "$(version "${FW_VERSION}")" -ge "$(version "5.7.2")" ]; then
                 # Less drastically, we'll also be "minimizing" (actually, resizing) the title bar manually (c.f., https://www.mobileread.com/forums/showpost.php?p=2449275&postcount=5).
                 # NOTE: Hiding it "works", but has a nasty side-effect of triggering ligl timeouts in some circumstances (c.f., https://github.com/koreader/koreader/pull/5943#issuecomment-598514376)
-                logmsg "Hiding the title bar . . ."
-                TITLEBAR_GEOMETRY="$(${KOREADER_DIR}/wmctrl -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')"
-                ${KOREADER_DIR}/wmctrl -r ":titleBar_ID:" -e "${TITLEBAR_GEOMETRY%,*},1"
-                logmsg "Title bar geometry: '${TITLEBAR_GEOMETRY}' -> '$(${KOREADER_DIR}/wmctrl -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')'"
-                USED_WMCTRL="yes"
+                # FIXME: There's apparently a nasty side-effect on FW >= 5.12.4 which somehow softlocks the UI on exit (despite wmctrl succeeding). Don't have the HW to investigate, so, just drop it. (#6117)
+                if [ "$(version "${FW_VERSION}")" -lt "$(version "5.12.4")" ]; then
+                    logmsg "Hiding the title bar . . ."
+                    TITLEBAR_GEOMETRY="$(${KOREADER_DIR}/wmctrl -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')"
+                    ${KOREADER_DIR}/wmctrl -r ":titleBar_ID:" -e "${TITLEBAR_GEOMETRY%,*},1"
+                    logmsg "Title bar geometry: '${TITLEBAR_GEOMETRY}' -> '$(${KOREADER_DIR}/wmctrl -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')'"
+                    USED_WMCTRL="yes"
+                fi
                 if [ "${FROM_KUAL}" = "yes" ]; then
                     logmsg "Stopping awesome . . ."
-                    killall -stop awesome
+                    killall -STOP awesome
                     AWESOME_STOPPED="yes"
                 fi
             fi
@@ -276,13 +279,13 @@ fi
 # stop cvm (sysv & framework up only)
 if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "sysv" ]; then
     logmsg "Stopping cvm . . ."
-    killall -stop cvm
+    killall -STOP cvm
 fi
 
 # SIGSTOP volumd, to inhibit USBMS (sysv & upstart)
 if [ -e "/etc/init.d/volumd" ] || [ -e "/etc/upstart/volumd.conf" ]; then
     logmsg "Stopping volumd . . ."
-    killall -stop volumd
+    killall -STOP volumd
     VOLUMD_STOPPED="yes"
 fi
 
@@ -317,13 +320,13 @@ fi
 # Resume volumd, if need be
 if [ "${VOLUMD_STOPPED}" = "yes" ]; then
     logmsg "Resuming volumd . . ."
-    killall -cont volumd
+    killall -CONT volumd
 fi
 
 # Resume cvm (only if we stopped it)
 if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "sysv" ]; then
     logmsg "Resuming cvm . . ."
-    killall -cont cvm
+    killall -CONT cvm
     # We need to handle the screen refresh ourselves, frontend/device/kindle/device.lua's Kindle3.exit is called before we resume cvm ;).
     echo 'send 139' >/proc/keypad
     echo 'send 139' >/proc/keypad
@@ -344,7 +347,7 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
     # Depending on the FW version, we may have handled things in a few different manners...
     if [ "${AWESOME_STOPPED}" = "yes" ]; then
         logmsg "Resuming awesome . . ."
-        killall -cont awesome
+        killall -CONT awesome
     fi
     if [ "${PILLOW_HARD_DISABLED}" = "yes" ]; then
         logmsg "Enabling pillow . . ."
