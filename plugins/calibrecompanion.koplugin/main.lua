@@ -19,6 +19,8 @@ local extensions = require("extensions")
 local function getExtensionPathLengths()
     local t = {}
     for _, v in pairs(extensions) do
+        -- magic number from calibre, see
+        -- https://github.com/koreader/koreader/pull/6177#discussion_r430753964
         t[v] = 37
     end
     return t
