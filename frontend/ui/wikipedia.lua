@@ -979,7 +979,7 @@ a {
     display:inline;
     text-decoration: underline;
     color: black;
-    font-weight: normal;
+    font-weight: inherit;
 }
 /* No underline for links without their href that we removed */
 a.newwikinonexistent {
