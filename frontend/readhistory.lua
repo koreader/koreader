@@ -84,11 +84,11 @@ end
 function ReadHistory:_flush()
     assert(self ~= nil)
     local content = {}
-    for k, v in pairs(self.hist) do
-        content[k] = {
+    for _, v in ipairs(self.hist) do
+        table.insert(content, {
             time = v.time,
             file = v.file
-        }
+        })
     end
     local f = io.open(history_file, "w")
     f:write("return " .. dump(content) .. "\n")
@@ -108,7 +108,8 @@ function ReadHistory:_read()
     self.last_read_time = history_file_modification_time
     local ok, data = pcall(dofile, history_file)
     if ok and data then
-        for k, v in pairs(data) do
+        self.hist = {}
+        for _, v in ipairs(data) do
             table.insert(self.hist, buildEntry(v.time, v.file))
         end
     end
