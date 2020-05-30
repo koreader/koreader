@@ -343,6 +343,7 @@ function ReaderFooter:init()
     self.mode_index = {}
     self.mode_nb = 0
 
+    local handled_modes = {}
     if self.settings.order then
         -- Start filling self.mode_index from what's been ordered by the user and saved
         for i=0, #self.settings.order do
@@ -351,7 +352,7 @@ function ReaderFooter:init()
             if MODE[name] then -- this mode still exists
                 self.mode_index[self.mode_nb] = name
                 self.mode_nb = self.mode_nb + 1
-                MODE[name] = nil -- remove those previously known, ordered and handled
+                handled_modes[name] = true
             end
         end
         -- go on completing it with remaining new modes in MODE
@@ -361,8 +362,10 @@ function ReaderFooter:init()
     local orig_indexes = {}
     local orig_indexes_to_name = {}
     for name, orig_index in pairs(MODE) do
-        table.insert(orig_indexes, orig_index)
-        orig_indexes_to_name[orig_index] = name
+        if not handled_modes[name] then
+            table.insert(orig_indexes, orig_index)
+            orig_indexes_to_name[orig_index] = name
+        end
     end
     table.sort(orig_indexes)
     for i = 1, #orig_indexes do
