@@ -326,10 +326,7 @@ function ReaderFooter:init()
         text_font_bold = false,
     }
 
-    local mode_tbl = {}
-    local mode_name
-    self.mode_nb = 0
-    self.mode_index = {}
+    -- Remove items not supported by the current device
     if not Device:isAndroid() then
         MODE.wifi_status = nil
     end
@@ -339,23 +336,40 @@ function ReaderFooter:init()
     if Device:isDesktop() then
         MODE.battery = nil
     end
-    for k, v in pairs(MODE) do
-        mode_tbl[v] = k
-    end
-    for i = 0, #mode_tbl do
-        mode_name = mode_tbl[i]
-        if mode_name then
-            self.mode_index[self.mode_nb] = mode_name
-            self.mode_nb = self.mode_nb + 1
-        end
-    end
+
+    -- self.mode_index will be an array of MODE names, with an additional element
+    -- with key 0 for "off", which feels a bit strange but seems to work...
+    -- (The same is true for self.settings.order which is saved in settings.)
+    self.mode_index = {}
+    self.mode_nb = 0
+
     if self.settings.order then
-        while #self.settings.order < #self.mode_index do
-            self.settings.order[#self.settings.order + 1] = self.mode_index[#self.settings.order + 1]
+        -- Start filling self.mode_index from what's been ordered by the user and saved
+        for i=0, #self.settings.order do
+            local name = self.settings.order[i]
+            -- (if name has been removed from our supported MODEs: ignore it)
+            if MODE[name] then -- this mode still exists
+                self.mode_index[self.mode_nb] = name
+                self.mode_nb = self.mode_nb + 1
+                MODE[name] = nil -- remove those previously known, ordered and handled
+            end
         end
-        self.mode_index = self.settings.order
-        self.mode_nb = #self.mode_index
+        -- go on completing it with remaining new modes in MODE
     end
+    -- If no previous self.settings.order, fill mode_index with what's in MODE
+    -- in the original indices order
+    local orig_indexes = {}
+    local orig_indexes_to_name = {}
+    for name, orig_index in pairs(MODE) do
+        table.insert(orig_indexes, orig_index)
+        orig_indexes_to_name[orig_index] = name
+    end
+    table.sort(orig_indexes)
+    for i = 1, #orig_indexes do
+        self.mode_index[self.mode_nb] = orig_indexes_to_name[orig_indexes[i]]
+        self.mode_nb = self.mode_nb + 1
+    end
+    -- require("logger").dbg(self.mode_nb, self.mode_index)
 
     -- default margin (like self.horizontal_margin)
     if not self.settings.progress_margin_width  then
