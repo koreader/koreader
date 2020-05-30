@@ -767,6 +767,10 @@ function Kobo:saveSettings()
 end
 
 function Kobo:powerOff()
+    -- Much like Nickel itself, disable the RTC alarm before powerinf down.
+    WakeupMgr:unsetWakeupAlarm()
+
+    -- Then shut down without init's help
     os.execute("poweroff -f")
 end
 
