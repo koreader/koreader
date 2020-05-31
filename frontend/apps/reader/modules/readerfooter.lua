@@ -308,7 +308,7 @@ function ReaderFooter:init()
         all_at_once = false,
         reclaim_height = false,
         toc_markers = true,
-        battery = true,
+        battery = not Device:isDesktop(),
         time = true,
         page_progress = true,
         pages_left = true,
@@ -1536,7 +1536,9 @@ function ReaderFooter:addToMainMenu(menu_items)
     table.insert(sub_items, getMinibarOption("page_progress"))
     table.insert(sub_items, getMinibarOption("time"))
     table.insert(sub_items, getMinibarOption("pages_left"))
-    table.insert(sub_items, getMinibarOption("battery"))
+    if not Device:isDesktop() then
+        table.insert(sub_items, getMinibarOption("battery"))
+    end
     table.insert(sub_items, getMinibarOption("percentage"))
     table.insert(sub_items, getMinibarOption("book_time_to_read"))
     table.insert(sub_items, getMinibarOption("chapter_time_to_read"))

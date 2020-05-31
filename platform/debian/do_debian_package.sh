@@ -50,7 +50,7 @@ if command_exists "${COMMAND}"; then
     {
         echo "Section: graphics"
         echo "Priority: optional"
-        echo "Depends: libsdl2-2.0-0, fonts-noto-hinted, fonts-freefont-ttf, fonts-droid-fallback, libc6 (>= 2.2.3)"
+        echo "Depends: libsdl2-2.0-0, fonts-noto-hinted, fonts-droid-fallback, libc6 (>= 2.2.3)"
         echo "Architecture: ${ARCH}"
         echo "Version: ${VERSION}"
         echo "Installed-Size: $(du -ks "${INSTALL_DIR}/debian/usr/" | cut -f 1)"
@@ -66,6 +66,7 @@ if command_exists "${COMMAND}"; then
     } >"${INSTALL_DIR}/debian/DEBIAN/control"
 
     # remove leftovers
+    find "${BASE_DIR}" -type f -name ".git" -print0 | xargs -0 rm -rf
     find "${BASE_DIR}" -type f -name ".gitignore" -print0 | xargs -0 rm -rf
     find "${BASE_DIR}" -type f -name "discovery2spore" -print0 | xargs -0 rm -rf
     find "${BASE_DIR}" -type f -name "wadl2spore" -print0 | xargs -0 rm -rf
@@ -79,14 +80,17 @@ if command_exists "${COMMAND}"; then
     # fix permissions
     find "${BASE_DIR}" -type d -print0 | xargs -0 chmod 755
     find "${BASE_DIR}" -executable -type f -print0 | xargs -0 chmod 755
+    find "${BASE_DIR}" -type f -name "*.cff" -print0 | xargs -0 chmod 644
     find "${BASE_DIR}" -type f -name "*.crt" -print0 | xargs -0 chmod 644
     find "${BASE_DIR}" -type f -name "*.html" -print0 | xargs -0 chmod 644
     find "${BASE_DIR}" -type f -name "*.lua" -print0 | xargs -0 chmod 644
     find "${BASE_DIR}" -type f -name "*manifest" -print0 | xargs -0 chmod 644
     find "${BASE_DIR}" -type f -name "*.pattern" -print0 | xargs -0 chmod 644
     find "${BASE_DIR}" -type f -name "*.png" -print0 | xargs -0 chmod 644
+    find "${BASE_DIR}" -type f -name "*.otf" -print0 | xargs -0 chmod 644
     find "${BASE_DIR}" -type f -name "*.po*" -print0 | xargs -0 chmod 644
     find "${BASE_DIR}" -type f -name "*.so*" -print0 | xargs -0 chmod 644
+    find "${BASE_DIR}" -type f -name "*.ttf" -print0 | xargs -0 chmod 644
     find "${BASE_DIR}" -type f -name "git-rev" -print0 | xargs -0 chmod 644
     find "${BASE_DIR}" -type f -name "reader.lua" -print0 | xargs -0 chmod 755
 
@@ -96,7 +100,6 @@ if command_exists "${COMMAND}"; then
     # use debian packaged fonts instead of our embedded ones to save a couple of MB.
     # Note: avoid linking against fonts-noto-cjk-extra, cause it weights ~200MB.
     (cd "${BASE_DIR}/lib/koreader/fonts/noto" && link_fonts "$(pwd)")
-    (cd "${BASE_DIR}/lib/koreader/fonts/freefont" && link_fonts "$(pwd)")
 
     # DroidSansMono has a restrictive license. Replace it with DroidSansFallback
     (
