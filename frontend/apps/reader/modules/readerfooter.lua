@@ -723,7 +723,7 @@ function ReaderFooter:addToMainMenu(menu_items)
             enabled_func = function()
                 return not self.view.flipping_visible
             end,
-            callback = function() self:onTapFooter() end,
+            callback = function() self:onTapFooter(true) end,
         })
     end
 
@@ -1809,10 +1809,12 @@ function ReaderFooter:onExitFlippingMode()
 end
 
 function ReaderFooter:onTapFooter(ges)
-    if self.has_no_mode or self.settings.lock_tap then
-        return
+    local ignore_lock = false
+    if ges == true then
+        ignore_lock = true
+        ges = nil
     end
-    if self.view.flipping_visible then
+    if self.view.flipping_visible and ges then
         local pos = ges.pos
         local dimen = self.progress_bar.dimen
         -- if reader footer is not drawn before the dimen value should be nil
@@ -1820,29 +1822,33 @@ function ReaderFooter:onTapFooter(ges)
             local percentage = (pos.x - dimen.x)/dimen.w
             self.ui:handleEvent(Event:new("GotoPercentage", percentage))
         end
-    else
-        if self.settings.all_at_once or self.has_no_mode then
-            if self.mode >= 1 then
-                self.mode = self.mode_list.off
-            else
-                self.mode = self.mode_list.page_progress
-            end
+        self:updateFooter(true)
+        return true
+    end
+    if self.has_no_mode or (self.settings.lock_tap and not ignore_lock) then
+        return
+    end
+    if self.settings.all_at_once or self.has_no_mode then
+        if self.mode >= 1 then
+            self.mode = self.mode_list.off
         else
-            self.mode = (self.mode + 1) % self.mode_nb
-            for i, m in ipairs(self.mode_index) do
-                if self.mode == self.mode_list.off then break end
-                if self.mode == i then
-                    if self.settings[m] then
-                        break
-                    else
-                        self.mode = (self.mode + 1) % self.mode_nb
-                    end
+            self.mode = self.mode_list.page_progress
+        end
+    else
+        self.mode = (self.mode + 1) % self.mode_nb
+        for i, m in ipairs(self.mode_index) do
+            if self.mode == self.mode_list.off then break end
+            if self.mode == i then
+                if self.settings[m] then
+                    break
+                else
+                    self.mode = (self.mode + 1) % self.mode_nb
                 end
             end
         end
-        self:applyFooterMode()
-        G_reader_settings:saveSetting("reader_footer_mode", self.mode)
     end
+    self:applyFooterMode()
+    G_reader_settings:saveSetting("reader_footer_mode", self.mode)
     self:updateFooter(true)
     return true
 end
@@ -1856,10 +1862,9 @@ end
 function ReaderFooter:setVisible(visible)
     if visible then
         -- If it was off, just do as if we tap'ed on it (so we don't
-        -- duplicate onTapFooter() code - not if flipping_visible as in
-        -- this case, a ges.pos argument to onTapFooter(ges) is required)
-        if self.mode == self.mode_list.off and not self.view.flipping_visible then
-            self:onTapFooter()
+        -- duplicate onTapFooter() code)
+        if self.mode == self.mode_list.off then
+            self:onTapFooter(true) -- ignore tap lock
         end
         self.view.footer_visible = (self.mode ~= self.mode_list.off)
     else
