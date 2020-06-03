@@ -49,20 +49,22 @@ local function filter(text, element)
         "div#newsstorytext",
         "div.general",
         }
-    if element then selectors[0] = element end
+    if element then table.insert(selectors, 1, element) end
     for _, sel in pairs(selectors) do
        local elements = root:select(sel)
        local stop = false
-       for _, e in ipairs(elements) do
-           filtered = e:getcontent()
-           if filtered then 
-               stop = true
-               break
+       if elements then
+           for _, e in ipairs(elements) do
+               filtered = e:getcontent()
+               if filtered then 
+                   stop = true
+                   break
+               end
            end
+           if stop then break end
        end
-       if stop then break end
     end
-    if not filtered then return text end
+    if filtered == "" then return text end
     return "<!DOCTYPE html><html><head></head><body>" .. filtered .. "</body></html>"
 end
 
