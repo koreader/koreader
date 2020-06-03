@@ -24,11 +24,11 @@ local max_redirects = 5; --prevent infinite redirects
 local TIMEOUT_CODE = "timeout" -- from socket.lua
 local MAXTIME_CODE = "maxtime reached" -- from sink_table_with_maxtime
 
+-- filter HTML using CSS selector
 local function filter(text, element)
     local htmlparser = require("htmlparser")
     local root = htmlparser.parse(text)
     local filtered = ""
-    
     local selectors = {
         "main",
         "article",
@@ -49,20 +49,21 @@ local function filter(text, element)
         "div#newsstorytext",
         "div.general",
         }
-    
     if element then selectors[0] = element end
-    
-    for _,sel in pairs(selectors) do
+    for _, sel in pairs(selectors) do
        local elements = root:select(sel)
-       if not elements then return text end
-       for _,e in ipairs(elements) do
+       local stop = false
+       for _, e in ipairs(elements) do
            filtered = e:getcontent()
-           if filtered then goto endloop end
+           if filtered then 
+               stop = true
+               break
+           end
        end
-end
-
-::endloop::
-return "<!DOCTYPE html><html><head></head><body>" .. filtered .. "</body></html>"
+       if stop then break end
+    end
+    if not filtered then return text end
+    return "<!DOCTYPE html><html><head></head><body>" .. filtered .. "</body></html>"
 end
 
 -- Sink that stores into a table, aborting if maxtime has elapsed
@@ -222,7 +223,6 @@ local ext_to_mimetype = {
     ttf = "application/truetype",
     woff = "application/font-woff",
 }
-
     
 -- Create an epub file (with possibly images)
 function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, message, filter_enable, filter_element)

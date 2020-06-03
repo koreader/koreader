@@ -282,7 +282,7 @@ function NewsDownloader:deserializeXMLString(xml_str)
     return xmlhandler.root
 end
 
-function NewsDownloader:processAtom(feeds, limit, download_full_article, include_images, message)
+function NewsDownloader:processAtom(feeds, limit, download_full_article, include_images, message, enable_filter, filter_element)
     local feed_output_dir = string.format("%s%s/",
                                           news_download_dir_path,
                                           util.getSafeFilename(getFeedTitle(feeds.feed.title)))

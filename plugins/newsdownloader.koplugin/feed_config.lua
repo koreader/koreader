@@ -28,7 +28,6 @@ return {--do NOT change this line
  -- 'filter_element="name_of_css.element.class" - means to filter the chosen CSS selector, it can be easily picked using a modern web browser
  -- default value is empty and it uses the default list of common selectors and they are used as fallback if this value is et
 
- -- 
  -- comment out line ("--" at line start) to stop downloading source
 
 
