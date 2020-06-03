@@ -199,10 +199,12 @@ function NewsDownloader:loadConfigAndProcessFeeds()
         local limit = feed.limit
         local download_full_article = feed.download_full_article == nil or feed.download_full_article
         local include_images = not never_download_images and feed.include_images
+        local enable_filter = feed.enable_filter or feed.enable_filter == nil
+        local filter_element = feed.filter_element or feed.filter_element == nil
         if url and limit then
             local feed_message = T(_("Processing %1/%2:\n%3"), idx, total_feed_entries, BD.url(url))
             UI:info(feed_message)
-            NewsDownloader:processFeedSource(url, tonumber(limit), unsupported_feeds_urls, download_full_article, include_images, feed_message)
+            NewsDownloader:processFeedSource(url, tonumber(limit), unsupported_feeds_urls, download_full_article, include_images, feed_message, enable_filter, filter_element)
         else
             logger.warn('NewsDownloader: invalid feed config entry', feed)
         end
@@ -230,7 +232,7 @@ function NewsDownloader:loadConfigAndProcessFeedsWithUI()
     end)
 end
 
-function NewsDownloader:processFeedSource(url, limit, unsupported_feeds_urls, download_full_article, include_images, message)
+function NewsDownloader:processFeedSource(url, limit, unsupported_feeds_urls, download_full_article, include_images, message, enable_filter, filter_element)
 
     local ok, response = pcall(function()
         return DownloadBackend:getResponseAsString(url)
@@ -250,11 +252,11 @@ function NewsDownloader:processFeedSource(url, limit, unsupported_feeds_urls, do
 
     if is_atom then
         ok = pcall(function()
-            return self:processAtom(feeds, limit, download_full_article, include_images, message)
+            return self:processAtom(feeds, limit, download_full_article, include_images, message, enable_filter, filter_element)
         end)
     elseif is_rss then
         ok = pcall(function()
-            return self:processRSS(feeds, limit, download_full_article, include_images, message)
+            return self:processRSS(feeds, limit, download_full_article, include_images, message, enable_filter, filter_element)
         end)
     end
     if not ok or (not is_rss and not is_atom) then
@@ -294,14 +296,14 @@ function NewsDownloader:processAtom(feeds, limit, download_full_article, include
         end
         local article_message = T(_("%1\n\nFetching article %2/%3:"), message, index, limit == 0 and #feeds.rss.channel.item or limit)
         if download_full_article then
-            self:downloadFeed(feed, feed_output_dir, include_images, article_message)
+            self:downloadFeed(feed, feed_output_dir, include_images, article_message, enable_filter, filter_element)
         else
             self:createFromDescription(feed, feed.content[1], feed_output_dir, include_images, article_message)
         end
     end
 end
 
-function NewsDownloader:processRSS(feeds, limit, download_full_article, include_images, message)
+function NewsDownloader:processRSS(feeds, limit, download_full_article, include_images, message, enable_filter, filter_element)
     local feed_output_dir = ("%s%s/"):format(
         news_download_dir_path, util.getSafeFilename(util.htmlEntitiesToUtf8(feeds.rss.channel.title)))
     if not lfs.attributes(feed_output_dir, "mode") then
@@ -314,7 +316,7 @@ function NewsDownloader:processRSS(feeds, limit, download_full_article, include_
         end
         local article_message = T(_("%1\n\nFetching article %2/%3:"), message, index, limit == 0 and #feeds.rss.channel.item or limit)
         if download_full_article then
-            self:downloadFeed(feed, feed_output_dir, include_images, article_message)
+            self:downloadFeed(feed, feed_output_dir, include_images, article_message, enable_filter, filter_element)
         else
             self:createFromDescription(feed, feed.description, feed_output_dir, include_images, article_message)
         end
@@ -341,7 +343,7 @@ local function getTitleWithDate(feed)
     return title
 end
 
-function NewsDownloader:downloadFeed(feed, feed_output_dir, include_images, message)
+function NewsDownloader:downloadFeed(feed, feed_output_dir, include_images, message, enable_filter, filter_element)
     local title_with_date = getTitleWithDate(feed)
     local news_file_path = ("%s%s%s"):format(feed_output_dir,
                                              title_with_date,
@@ -355,7 +357,7 @@ function NewsDownloader:downloadFeed(feed, feed_output_dir, include_images, mess
         local article_message = T(_("%1\n%2"), message, title_with_date)
         local link = getFeedLink(feed.link)
         local html = DownloadBackend:loadPage(link)
-        DownloadBackend:createEpub(news_file_path, html, link, include_images, article_message)
+        DownloadBackend:createEpub(news_file_path, html, link, include_images, article_message, enable_filter, filter_element)
     end
 end
 
