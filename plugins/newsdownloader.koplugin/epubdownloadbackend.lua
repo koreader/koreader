@@ -27,7 +27,7 @@ local MAXTIME_CODE = "maxtime reached" -- from sink_table_with_maxtime
 -- filter HTML using CSS selector
 local function filter(text, element)
     local htmlparser = require("htmlparser")
-    local root = htmlparser.parse(text, 10000)
+    local root = htmlparser.parse(text, 5000)
     local filtered = nil
     local selectors = {
         "main",
