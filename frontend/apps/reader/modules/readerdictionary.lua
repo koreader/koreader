@@ -330,6 +330,17 @@ function ReaderDictionary:addToMainMenu(menu_items)
                     UIManager:show(items_font)
                 end,
                 keep_menu_open = true,
+                separator = true,
+            },
+            { -- setting used by dictquicklookup
+                text = _("Show lookup window on cancel"),
+                checked_func = function()
+                    return G_reader_settings:nilOrTrue("dict_lookuponcancel")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrTrue("dict_lookuponcancel")
+                end,
+
             }
         }
     }
@@ -706,11 +717,10 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
     -- early exit if no dictionaries
     if dictDirsEmpty(dict_dirs) then
         final_results = {
-            {
-                dict = "",
-                word = word,
-                definition = _([[No dictionaries installed. Please search for "Dictionary support" in the KOReader Wiki to get more information about installing new dictionaries.]]),
-            }
+            info_message = true,
+            message = _([[No dictionaries installed. Please search for "Dictionary support" in the KOReader Wiki to get more information about installing new dictionaries.]]),
+            timeout = nil,
+            icon_file = "resources/info-error.png",
         }
         return final_results
     end
@@ -773,16 +783,41 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
         end
     end
     if #final_results == 0 then
-        -- dummy results
-        final_results = {
-            {
-                dict = "",
-                word = word,
-                definition = lookup_cancelled and _("Dictionary lookup canceled.") or _("No definition found."),
-            }
-        }
+        if lookup_cancelled then
+            if G_reader_settings:nilOrTrue("dict_lookuponcancel") then
+                final_results = {
+                    {
+                        dict = "",
+                        word = word,
+                        definition = _("Dictionary lookup canceled."),
+                    }
+                }
+            else
+                final_results = {
+                  info_message = true,
+                  message = _("Dictionary lookup canceled.") .. "\n" .. _("Search : ") .. word .. "\n" .. _("Tap to edit"),
+                  timeout = 1,
+                  icon_file = "resources/info-i.png",
+                  word = word,
+                  dummy_lookup = {
+                      {
+                          dict = "",
+                          word = word,
+                          definition = _("Dictionary lookup canceled."),
+                      }
+                  }
+                }
+            end
+        else
+          final_results = {
+              {
+                  dict = "",
+                  word = word,
+                  definition = _("No definition found."),
+              }
+          }
+        end
     end
-
     return final_results
 end
 
@@ -808,12 +843,7 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, box, li
 
     if Device:canExternalDictLookup() and G_reader_settings:isTrue("external_dict_lookup") then
         Device:doExternalDictLookup(word, G_reader_settings:readSetting("external_dict_lookup_method"), function()
-            if self.highlight then
-                local clear_id = self.highlight:getClearId()
-                UIManager:scheduleIn(0.5, function()
-                    self.highlight:clear(clear_id)
-                end)
-            end
+            self:clearHighlightShedule()
         end)
         return
     end
@@ -823,7 +853,52 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, box, li
     end
 
     local results = self:startSdcv(word, dict_names, fuzzy_search)
-    self:showDict(word, tidyMarkup(results), box, link)
+    if results["info_message"] then
+        self:showNoResultMessage(results)
+    else
+        self:showDict(word, tidyMarkup(results), box, link)
+    end
+end
+
+function ReaderDictionary:showNoResultMessage(result)
+    self.dict_info_message = InfoMessage:new{
+        text = result["message"],
+        timeout = result["timeout"],
+        icon_file = result["icon_file"],
+        dismiss_callback = function()
+            self:clearHighlightShedule()
+        end,
+    }
+    -- disable no_refresh_on_close so dismissing LookupInfo works if visible
+    -- (maybe we can we test if LookupInfo IM is fully under the dict_info_message IM ?)
+    if self.lookup_progress_msg then
+        self.lookup_progress_msg.no_refresh_on_close = nil
+    end
+
+    if result["timeout"] ~= nil then -- If cancel search IM
+        self.timeoutCleanHighlight = function()
+            self:clearHighlightShedule()
+        end
+        -- Allow user to get the lookup window if tapping the IM
+        self.dict_info_message.dismiss_callback = function()
+            self:showDict(result["word"], tidyMarkup(result["dummy_lookup"]), box, link)
+            UIManager:unschedule(self.timeoutCleanHighlight) -- dont remove highlight if in lookup
+        end
+        -- no dismiss_callback when IM timeout so we scheldule it
+        UIManager:scheduleIn(result["timeout"], self.timeoutCleanHighlight)
+    end
+    UIManager:show(self.dict_info_message)
+    self:dismissLookupInfo()
+end
+
+function ReaderDictionary:clearHighlightShedule()
+    if self.highlight then
+        -- delay unhighlight of selection, so we can see where we stopped
+        local clear_id = self.highlight:getClearId()
+        UIManager:scheduleIn(0.5, function()
+            self.highlight:clear(clear_id)
+        end)
+    end
 end
 
 function ReaderDictionary:showDict(word, results, box, link)
