@@ -278,7 +278,11 @@ end
 function CalibreSearch:find(option)
     -- load settings
     for _, opt in pairs(self.search_options) do
-        self[opt] = G_reader_settings:nilOrTrue("calibre_search_"..opt)
+        if opt == "case_sensitive" then
+            self[opt] = G_reader_settings:isTrue("calibre_search"..opt)
+        else
+            self[opt] = G_reader_settings:nilOrTrue("calibre_search_"..opt)
+        end
     end
     -- sanity check
     logger.dbg("loading libraries from file", self.user_libraries)

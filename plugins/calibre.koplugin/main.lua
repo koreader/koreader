@@ -111,10 +111,11 @@ function Calibre:getSearchMenuTable()
         {
             text = _("Case sensitive search"),
             checked_func = function()
-                return G_reader_settings:nilOrTrue("calibre_search_case_sensitive")
+                return G_reader_settings:isTrue("calibre_search_case_sensitive")
             end,
             callback = function()
-                G_reader_settings:flipNilOrTrue("calibre_search_case_sensitive")
+                local current = G_reader_settings:isTrue("calibre_search_case_sensitive")
+                G_reader_settings:saveSetting("calibre_search_case_sensitive", not current)
             end,
         },
         {
