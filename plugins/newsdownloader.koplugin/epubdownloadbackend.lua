@@ -61,10 +61,14 @@ local function filter(text, element)
                    break
                end
            end
-           if filtered then break end
+           if filtered then
+              break 
+           end
        end
     end
-    if not filtered then return text end
+    if not filtered then 
+        return text 
+    end
     return "<!DOCTYPE html><html><head></head><body>" .. filtered .. "</body></html>"
 end
 
