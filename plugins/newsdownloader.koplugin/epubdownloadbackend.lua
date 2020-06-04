@@ -57,17 +57,17 @@ local function filter(text, element)
        if elements then
            for _, e in ipairs(elements) do
                filtered = e:getcontent()
-               if filtered then 
+               if filtered then
                    break
                end
            end
            if filtered then
-              break 
+               break
            end
        end
     end
-    if not filtered then 
-        return text 
+    if not filtered then
+        return text
     end
     return "<!DOCTYPE html><html><head></head><body>" .. filtered .. "</body></html>"
 end
