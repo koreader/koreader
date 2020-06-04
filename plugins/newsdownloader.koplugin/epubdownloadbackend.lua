@@ -229,7 +229,6 @@ local ext_to_mimetype = {
     ttf = "application/truetype",
     woff = "application/font-woff",
 }
-    
 -- Create an epub file (with possibly images)
 function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, message, filter_enable, filter_element)
     logger.dbg("EpubDownloadBackend:createEpub(", epub_path, ")")
