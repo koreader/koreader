@@ -49,7 +49,7 @@ local function filter(text, element)
         "div#newsstorytext",
         "div.general",
         }
-    if element then 
+    if element then
         table.insert(selectors, 1, element)
     end
     for _, sel in ipairs(selectors) do
