@@ -24,6 +24,54 @@ local max_redirects = 5; --prevent infinite redirects
 local TIMEOUT_CODE = "timeout" -- from socket.lua
 local MAXTIME_CODE = "maxtime reached" -- from sink_table_with_maxtime
 
+-- filter HTML using CSS selector
+local function filter(text, element)
+    local htmlparser = require("htmlparser")
+    local root = htmlparser.parse(text, 5000)
+    local filtered = nil
+    local selectors = {
+        "main",
+        "article",
+        "div#main",
+        "#main-article",
+        ".main-content",
+        "#body",
+        "#content",
+        ".content",
+        "div#article",
+        "div.article",
+        "div.post",
+        "div.post-outer",
+        ".l-root",
+        ".content-container",
+        ".StandardArticleBody_body",
+        "div#article-inner",
+        "div#newsstorytext",
+        "div.general",
+        }
+    if element then
+        table.insert(selectors, 1, element)
+    end
+    for _, sel in ipairs(selectors) do
+       local elements = root:select(sel)
+       if elements then
+           for _, e in ipairs(elements) do
+               filtered = e:getcontent()
+               if filtered then
+                   break
+               end
+           end
+           if filtered then
+               break
+           end
+       end
+    end
+    if not filtered then
+        return text
+    end
+    return "<!DOCTYPE html><html><head></head><body>" .. filtered .. "</body></html>"
+end
+
 -- Sink that stores into a table, aborting if maxtime has elapsed
 local function sink_table_with_maxtime(t, maxtime)
     -- Start counting as soon as this sink is created
@@ -181,15 +229,13 @@ local ext_to_mimetype = {
     ttf = "application/truetype",
     woff = "application/font-woff",
 }
-
 -- Create an epub file (with possibly images)
-function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, message)
+function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, message, filter_enable, filter_element)
     logger.dbg("EpubDownloadBackend:createEpub(", epub_path, ")")
     -- Use Trapper to display progress and ask questions through the UI.
     -- We need to have been Trapper.wrap()'ed for UI to be used, otherwise
     -- Trapper:info() and Trapper:confirm() will just use logger.
     local UI = require("ui/trapper")
-
     -- We may need to build absolute urls for non-absolute links and images urls
     local base_url = socket_url.parse(url)
 
@@ -201,7 +247,7 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
     -- Not sure if this bookid may ever be used by indexing software/calibre, but if it is,
     -- should it changes if content is updated (as now, including the wikipedia revisionId),
     -- or should it stays the same even if revid changes (content of the same book updated).
-
+    if filter_enable then html = filter(html, filter_element) end
     local images = {}
     local seen_images = {}
     local imagenum = 1
