@@ -28,7 +28,7 @@ local MAXTIME_CODE = "maxtime reached" -- from sink_table_with_maxtime
 local function filter(text, element)
     local htmlparser = require("htmlparser")
     local root = htmlparser.parse(text)
-    local filtered = ""
+    local filtered = nil
     local selectors = {
         "main",
         "article",
@@ -49,22 +49,22 @@ local function filter(text, element)
         "div#newsstorytext",
         "div.general",
         }
-    if element then table.insert(selectors, 1, element) end
-    for _, sel in pairs(selectors) do
+    if element then 
+        table.insert(selectors, 1, element)
+    end
+    for _, sel in ipairs(selectors) do
        local elements = root:select(sel)
-       local stop = false
        if elements then
            for _, e in ipairs(elements) do
                filtered = e:getcontent()
                if filtered then 
-                   stop = true
                    break
                end
            end
-           if stop then break end
+           if filtered then break end
        end
     end
-    if filtered == "" then return text end
+    if not filtered then return text end
     return "<!DOCTYPE html><html><head></head><body>" .. filtered .. "</body></html>"
 end
 
