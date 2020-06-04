@@ -6,6 +6,7 @@
 		"items": [
 		{
 			"name": "Start the filemanager",
+			"if": "\"KindleVoyage\" -m!",
 			"priority": 1,
 			"action": "/mnt/us/koreader/koreader.sh",
 			"params": "--kual /mnt/us/documents",
@@ -13,10 +14,31 @@
 			"internal": "status Start KOReader on the File Manager"
 		},
 		{
+			"name": "Start the filemanager",
+			"if": "\"KindleVoyage\" -m",
+			"priority": 1,
+			"action": "/mnt/us/koreader/koreader.sh",
+			"params": "--kual /mnt/us/documents",
+			"exitmenu": false,
+			"status": false,
+			"internal": "status Start KOReader on the File Manager"
+		},
+		{
 			"name": "Open the last document",
+			"if": "\"KindleVoyage\" -m!",
 			"priority": 2,
 			"action": "/mnt/us/koreader/koreader.sh",
 			"params": "--kual",
+			"status": false,
+			"internal": "status Start KOReader on the last document"
+		},
+		{
+			"name": "Open the last document",
+			"if": "\"KindleVoyage\" -m",
+			"priority": 2,
+			"action": "/mnt/us/koreader/koreader.sh",
+			"params": "--kual",
+			"exitmenu": false,
 			"status": false,
 			"internal": "status Start KOReader on the last document"
 		},
@@ -40,6 +62,7 @@
 		},
 		{
 			"name": "Start the filemanager (ASAP)",
+			"if": "\"KindleVoyage\" -m!",
 			"priority": 5,
 			"action": "/mnt/us/koreader/koreader.sh",
 			"params": "--kual --asap /mnt/us/documents",
@@ -47,10 +70,31 @@
 			"internal": "status Start KOreader on the File Manager ASAP"
 		},
 		{
+			"name": "Start the filemanager (ASAP)",
+			"if": "\"KindleVoyage\" -m",
+			"priority": 5,
+			"action": "/mnt/us/koreader/koreader.sh",
+			"params": "--kual --asap /mnt/us/documents",
+			"exitmenu": false,
+			"status": false,
+			"internal": "status Start KOreader on the File Manager ASAP"
+		},
+		{
 			"name": "Open the last document (ASAP)",
+			"if": "\"KindleVoyage\" -m!",
 			"priority": 6,
 			"action": "/mnt/us/koreader/koreader.sh",
 			"params": "--kual --asap",
+			"status": false,
+			"internal": "status Start KOreader on the last document ASAP"
+		},
+		{
+			"name": "Open the last document (ASAP)",
+			"if": "\"KindleVoyage\" -m",
+			"priority": 6,
+			"action": "/mnt/us/koreader/koreader.sh",
+			"params": "--kual --asap",
+			"exitmenu": false,
 			"status": false,
 			"internal": "status Start KOreader on the last document ASAP"
 		},
