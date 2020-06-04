@@ -21,12 +21,12 @@ return {--do NOT change this line
  -- 'include_images=false' - means ignore any images, only download the text (faster download, smaller file sizes)
  -- default value is 'false' (if no 'include_images' entry)
 
- -- 'enable_filter=true' - means filter a css selector and thus delimit the page to just that (does not apply if download_full_article=false)
- -- 'enable_filter=false' - means no such filtering and having unlimited document
+ -- 'enable_filter=true' - means filter using a CSS selector to delimit part of the page to just that (does not apply if download_full_article=false)
+ -- 'enable_filter=false' - means no such filtering and including the full page
  -- default value is 'false'
 
  -- 'filter_element="name_of_css.element.class" - means to filter the chosen CSS selector, it can be easily picked using a modern web browser
- -- default value is empty and it uses the default list of common selectors and they are used as fallback if this value is et
+ -- The default value is empty. The default list of common selectors is used as fallback if this value is set.
 
  -- comment out line ("--" at line start) to stop downloading source
 
