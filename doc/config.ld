@@ -22,4 +22,5 @@ file = {
     '../frontend',
     '../base/ffi',
     '../platform/android/luajit-launcher/assets',
+    exclude = {'../base/ffi/sha2.lua'},
 }
