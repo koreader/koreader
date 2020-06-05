@@ -828,21 +828,21 @@ function ReaderHighlight:viewSelectionHTML(debug_view)
     if self.selected_text and self.selected_text.pos0 and self.selected_text.pos1 then
         -- For available flags, see the "#define WRITENODEEX_*" in crengine/src/lvtinydom.cpp
         -- Start with valid and classic displayed HTML (with only block nodes indented),
-        -- including styles found in <HEAD>, and linked CSS files content.
-        local html_flags = 0x6030
+        -- including styles found in <HEAD>, linked CSS files content, and misc info.
+        local html_flags = 0x6830
         if not debug_view then
             debug_view = 0
         end
         if debug_view == 1 then
             -- Each node on a line, with markers and numbers of skipped chars and siblings shown,
             -- with possibly invalid HTML (text nodes not escaped)
-            html_flags = 0x635A
+            html_flags = 0x6B5A
         elseif debug_view == 2 then
             -- Additionally see rendering methods of each node
-            html_flags = 0x675A
+            html_flags = 0x6F5A
         elseif debug_view == 3 then
             -- Or additionally see unicode codepoint of each char
-            html_flags = 0x635E
+            html_flags = 0x6B5E
         end
         local html, css_files = self.ui.document:getHTMLFromXPointers(self.selected_text.pos0,
                                     self.selected_text.pos1, html_flags, true)
