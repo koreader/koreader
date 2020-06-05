@@ -814,6 +814,7 @@ function ReaderRolling:updatePos()
         self.ui:handleEvent(Event:new("UpdateToc"))
         self.view.footer:updateFooter()
     end
+    self:updateTopStatusBarMarkers()
     UIManager:setDirty(self.view.dialog, "partial")
     -- Allow for the new rendering to be shown before possibly showing
     -- the "Styles have changes..." ConfirmBox so the user can decide
@@ -1003,6 +1004,15 @@ function ReaderRolling:onSetStatusLine(status_line, on_read_settings)
         self.view.footer:setVisible(status_line == 1)
     end
     self.ui:handleEvent(Event:new("UpdatePos"))
+end
+
+function ReaderRolling:updateTopStatusBarMarkers()
+    if not self.cre_top_bar_enabled then
+        return
+    end
+    local pages = self.ui.document:getPageCount()
+    local ticks = self.ui.toc:getTocTicksForFooter()
+    self.ui.document:setHeaderProgressMarks(pages, ticks)
 end
 
 function ReaderRolling:updateBatteryState()
