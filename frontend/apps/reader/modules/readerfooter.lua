@@ -1581,26 +1581,14 @@ function ReaderFooter:setTocMarkers(reset)
     end
     if self.settings.toc_markers then
         self.progress_bar.tick_width = Screen:scaleBySize(self.settings.toc_markers_width)
-        if self.progress_bar.ticks ~= nil then return end
-        local ticks_candidates = {}
+        if self.progress_bar.ticks ~= nil then -- already computed
+            return
+        end
+        self.progress_bar.ticks = {}
         if self.ui.toc then
-            local max_level = self.ui.toc:getMaxDepth()
-            for i = 0, -max_level, -1 do
-                local ticks = self.ui.toc:getTocTicks(i)
-                table.insert(ticks_candidates, ticks)
-            end
-            -- find the finest toc ticks by sorting out the largest one
-            table.sort(ticks_candidates, function(a, b) return #a > #b end)
+            self.progress_bar.ticks = self.ui.toc:getTocTicksForFooter()
         end
-
-        if #ticks_candidates > 0 then
-            self.progress_bar.ticks = ticks_candidates[1]
-            self.progress_bar.last = self.pages or self.view.document:getPageCount()
-        else
-            -- we still set ticks here so self.progress_bar.ticks will not be
-            -- initialized again if ticks_candidates is empty
-            self.progress_bar.ticks = {}
-        end
+        self.progress_bar.last = self.pages or self.view.document:getPageCount()
     else
         self.progress_bar.ticks = nil
     end

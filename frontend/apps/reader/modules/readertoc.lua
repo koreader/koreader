@@ -285,6 +285,21 @@ function ReaderToc:getTocTicks(level)
     return ticks
 end
 
+function ReaderToc:getTocTicksForFooter()
+    local ticks_candidates = {}
+    local max_level = self:getMaxDepth()
+    for i = 0, -max_level, -1 do
+        local ticks = self:getTocTicks(i)
+        table.insert(ticks_candidates, ticks)
+    end
+    if #ticks_candidates > 0 then
+        -- Find the finest toc ticks by sorting out the largest one
+        table.sort(ticks_candidates, function(a, b) return #a > #b end)
+        return ticks_candidates[1]
+    end
+    return {}
+end
+
 function ReaderToc:getNextChapter(cur_pageno, level)
     local ticks = self:getTocTicks(level)
     local next_chapter = nil

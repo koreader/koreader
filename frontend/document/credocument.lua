@@ -767,6 +767,10 @@ function CreDocument:setViewDimen(dimen)
     self._document:setViewDimen(dimen.w, dimen.h)
 end
 
+function CreDocument:setHeaderProgressMarks(pages, ticks)
+    self._document:setHeaderProgressMarks(pages, ticks)
+end
+
 function CreDocument:setHeaderFont(new_font)
     if new_font then
         logger.dbg("CreDocument: set header font", new_font)
