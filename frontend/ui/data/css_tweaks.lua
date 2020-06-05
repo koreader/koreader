@@ -281,13 +281,26 @@ DocFragment {
             },
         },
         {
-            id = "hyphenate_all_auto";
-            title = _("Allow hyphenation on all text"),
-            description = _("Allow hyphenation on all text (except headings), in case the publisher has disabled it."),
-            css = [[
+            title = _("Hyphenation and ligatures"),
+            {
+                id = "hyphenate_all_auto";
+                title = _("Allow hyphenation on all text"),
+                description = _("Allow hyphenation on all text (except headings), in case the publisher has disabled it."),
+                css = [[
 * { hyphens: auto !important; }
 h1, h2, h3, h4, h5, h6 { hyphens: none !important; }
-            ]],
+                ]],
+            },
+            {
+                id = "ligature_all_no_common_ligature";
+                title = _("Disable common ligatures"),
+                description = _("Disable common ligatures, which are enabled by default in 'best' kerning mode."),
+                -- We don't use !important, as this would stop other font-variant properties
+                -- from being applied
+                css = [[
+* { font-variant: no-common-ligatures; }
+                ]],
+            },
             separator = true,
         },
         {
@@ -454,6 +467,7 @@ body, h1, h2, h3, h4, h5, h6, div, li, td, th { text-indent: 0 !important; }
             title = _("Full-width tables"),
             description = _("Make table expand to the full width of the page. (Tables with small content now use only the width needed to display that content. This restores the previous behavior.)"),
             css = [[table { width: 100% !important; }]],
+            priority = 2, -- Override next one
         },
         {
             id = "table_td_width_auto";
@@ -788,6 +802,15 @@ This tweak toggles this behavior, and may show the <epub:case> content as plain 
             css = [[
 switch > case    { display: inline; }
 switch > default { display: none; }
+            ]],
+        },
+        {
+            id = "no_pseudo_element_before_after";
+            title = _("Disable before/after pseudo elements"),
+            description = _([[Disable generated text from ::before and ::after pseudo elements, usually used to add cosmetic text around some content.]]),
+            css = [[
+*::before { display: none !important; }
+*::after  { display: none !important; }
             ]],
         },
         {
