@@ -14,6 +14,7 @@ local function whiteBackground() return G_reader_settings:isTrue("screensaver_wh
 local function noBackground() return G_reader_settings:isTrue("screensaver_no_background") end
 local function stretchImages() return G_reader_settings:isTrue("screensaver_stretch_images") end
 local function messagePosition() return G_reader_settings:readSetting("screensaver_message_position") end
+local function showMessage() return G_reader_settings:isTrue("screensaver_show_message") end
 
 return {
     {
@@ -98,19 +99,6 @@ return {
         end
     },
     {
-        text = _("Use message as screensaver"),
-        checked_func = function()
-            if screensaverType() == "message" or screensaverType() == nil then
-                return true
-            else
-                return false
-            end
-        end,
-        callback = function()
-            G_reader_settings:saveSetting("screensaver_type", "message")
-        end
-    },
-    {
         text = _("Leave screen as it is"),
         checked_func = function()
             if screensaverType() == "disable" then
@@ -121,7 +109,16 @@ return {
         end,
         callback = function()
             G_reader_settings:saveSetting("screensaver_type", "disable")
-        end
+        end,
+        separator = true,
+    },
+    {
+        text = _("Add message to screensaver"),
+        checked_func = showMessage,
+        callback = function()
+            G_reader_settings:saveSetting("screensaver_show_message", not showMessage())
+        end,
+        separator = true,
     },
     {
         text = _("Settings"),
