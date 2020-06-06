@@ -378,7 +378,6 @@ function Screensaver:show(event, fallback_message)
     end
 
     if show_message == true then
-        local message_widget = nil
         local screensaver_message = G_reader_settings:readSetting(prefix.."screensaver_message")
         local message_pos = G_reader_settings:readSetting(prefix.."screensaver_message_position")
         if not self:whiteBackground() then
@@ -424,7 +423,7 @@ function Screensaver:show(event, fallback_message)
                 }
             }
         end
- 
+
         -- No overlay needed as we just displayed the message
         overlay_message = nil
 
@@ -433,6 +432,7 @@ function Screensaver:show(event, fallback_message)
             if widget ~= nil
             then
                 -- show message_widget on top of previously created widget
+                local screen_w, screen_h = Screen:getWidth(), Screen:getHeight()
                 widget = OverlapGroup:new{
                     dimen = {
                         h = screen_w,
