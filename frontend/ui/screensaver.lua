@@ -12,6 +12,7 @@ local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
 local ImageWidget = require("ui/widget/imagewidget")
 local Math = require("optmath")
+local OverlapGroup = require("ui/widget/overlapgroup")
 local ScreenSaverWidget = require("ui/widget/screensaverwidget")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TopContainer = require("ui/widget/container/topcontainer")
@@ -176,6 +177,10 @@ function Screensaver:noBackground()
     return G_reader_settings:isTrue("screensaver_no_background")
 end
 
+function Screensaver:showMessage()
+    return G_reader_settings:isTrue("screensaver_show_message")
+end
+
 function Screensaver:excluded()
     local lastfile = G_reader_settings:readSetting("lastfile")
     local exclude_ss = false -- consider it not excluded if there's no docsetting
@@ -240,12 +245,18 @@ function Screensaver:show(event, fallback_message)
         -- poweroff (overlay message)
         overlay_message = fallback_message
     end
+
+    local show_message = self:showMessage()
+
     if screensaver_type == nil then
-        screensaver_type = "message"
+        show_message = true
     end
-    if screensaver_type == "disable" then
+
+    -- messages can still be shown over "as-is" screensaver
+    if screensaver_type == "disable" and show_message == false then
         return
     end
+
     local widget = nil
     local background = Blitbuffer.COLOR_BLACK
     if self:whiteBackground() then
@@ -253,6 +264,7 @@ function Screensaver:show(event, fallback_message)
     elseif self:noBackground() then
         background = nil
     end
+
     local lastfile = G_reader_settings:readSetting("lastfile")
     if screensaver_type == "document_cover" then
         -- Set lastfile to the document of which we want to show the cover.
@@ -307,11 +319,11 @@ function Screensaver:show(event, fallback_message)
                     readonly = true,
                 }
             else
-                screensaver_type = "message"
+                show_message = true
             end
             doc:close()
         else
-            screensaver_type = "message"
+            show_message = true
         end
     end
     if screensaver_type == "random_image" then
@@ -324,7 +336,7 @@ function Screensaver:show(event, fallback_message)
         end
         local image_file = getRandomImage(screensaver_dir)
         if image_file == nil then
-            screensaver_type = "message"
+            show_message = true
         else
             widget = ImageWidget:new{
                 file = image_file,
@@ -345,7 +357,7 @@ function Screensaver:show(event, fallback_message)
             screensaver_image = DataStorage:getDataDir() .. "/resources/koreader.png"
         end
         if  lfs.attributes(screensaver_image, "mode") ~= "file" then
-            screensaver_type = "message"
+            show_message = true
         else
             widget = ImageWidget:new{
                 file = screensaver_image,
@@ -361,10 +373,12 @@ function Screensaver:show(event, fallback_message)
         if Screensaver.getReaderProgress ~= nil then
             widget = Screensaver.getReaderProgress()
         else
-            screensaver_type = "message"
+            show_message = true
         end
     end
-    if screensaver_type == "message" then
+
+    if show_message == true then
+        local message_widget = nil
         local screensaver_message = G_reader_settings:readSetting(prefix.."screensaver_message")
         local message_pos = G_reader_settings:readSetting(prefix.."screensaver_message_position")
         if not self:whiteBackground() then
@@ -383,7 +397,7 @@ function Screensaver:show(event, fallback_message)
         end
 
         if message_pos == "middle" or message_pos == nil then
-            widget = InfoMessage:new{
+            message_widget = InfoMessage:new{
                 text = screensaver_message,
                 readonly = true,
             }
@@ -397,7 +411,7 @@ function Screensaver:show(event, fallback_message)
             end
 
             local screen_w, screen_h = Screen:getWidth(), Screen:getHeight()
-            widget = container:new{
+            message_widget = container:new{
                 dimen = Geom:new{
                     w = screen_w,
                     h = screen_h,
@@ -410,8 +424,29 @@ function Screensaver:show(event, fallback_message)
                 }
             }
         end
+ 
         -- No overlay needed as we just displayed the message
         overlay_message = nil
+
+        -- check if message_widget should be overlaid on another widget
+        if message_widget ~= nil then
+            if widget ~= nil
+            then
+                -- show message_widget on top of previously created widget
+                widget = OverlapGroup:new{
+                    dimen = {
+                        h = screen_w,
+                        w = screen_h,
+                    },
+                    widget,
+                    message_widget,
+                }
+            else
+                -- no prevously created widget so just show message widget
+                widget = message_widget
+            end
+        end
+
     end
 
     if overlay_message then
@@ -488,7 +523,6 @@ end
 
 function Screensaver:addOverlayMessage(widget, text)
     local FrameContainer = require("ui/widget/container/framecontainer")
-    local OverlapGroup = require("ui/widget/overlapgroup")
     local RightContainer = require("ui/widget/container/rightcontainer")
     local Size = require("ui/size")
     local TextWidget = require("ui/widget/textwidget")
