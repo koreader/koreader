@@ -7,6 +7,7 @@
 *.un~
 cscope.*
 *.orig
+*.lua~
 lua
 lua-*
 .reader.kpdfview.lua
@@ -36,5 +37,4 @@ i18n
 
 /.cproject
 /.project
-frontend/ui/screensaver.lua~
-*.lua~
+.gitignore~

@@ -252,6 +252,13 @@ function Screensaver:show(event, fallback_message)
         show_message = true
     end
 
+    if screensaver_type == "message" then
+        -- obsolete screensaver_type: migrate to new show_message = true
+        screensaver_type = "disable"
+        G_reader_settings:saveSetting("screensaver_type", "disable")
+        G_reader_settings:saveSetting("screensaver_show_message", true)
+    end
+
     -- messages can still be shown over "as-is" screensaver
     if screensaver_type == "disable" and show_message == false then
         return
@@ -430,7 +437,7 @@ function Screensaver:show(event, fallback_message)
 
         -- check if message_widget should be overlaid on another widget
         if message_widget ~= nil then
-            if widget then      -- we have a screensaver widget
+            if widget then  -- we have a screensaver widget
                 -- show message_widget on top of previously created widget
                 local screen_w, screen_h = Screen:getWidth(), Screen:getHeight()
                 widget = OverlapGroup:new{
@@ -446,7 +453,6 @@ function Screensaver:show(event, fallback_message)
                 widget = message_widget
             end
         end
-
     end
 
     if overlay_message then
