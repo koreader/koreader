@@ -436,7 +436,7 @@ function Screensaver:show(event, fallback_message)
         overlay_message = nil
 
         -- check if message_widget should be overlaid on another widget
-        if message_widget ~= nil then
+        if message_widget then
             if widget then  -- we have a screensaver widget
                 -- show message_widget on top of previously created widget
                 local screen_w, screen_h = Screen:getWidth(), Screen:getHeight()
