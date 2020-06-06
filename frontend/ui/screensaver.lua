@@ -395,6 +395,7 @@ function Screensaver:show(event, fallback_message)
             screensaver_message = self:expandSpecial(screensaver_message, fallback)
         end
 
+        local message_widget
         if message_pos == "middle" or message_pos == nil then
             message_widget = InfoMessage:new{
                 text = screensaver_message,
@@ -429,8 +430,7 @@ function Screensaver:show(event, fallback_message)
 
         -- check if message_widget should be overlaid on another widget
         if message_widget ~= nil then
-            if widget ~= nil
-            then
+            if widget then      -- we have a screensaver widget
                 -- show message_widget on top of previously created widget
                 local screen_w, screen_h = Screen:getWidth(), Screen:getHeight()
                 widget = OverlapGroup:new{
