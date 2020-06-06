@@ -110,7 +110,7 @@ return {
         callback = function()
             G_reader_settings:saveSetting("screensaver_type", "disable")
         end,
-        separator = true
+        separator = true,
     },
     {
         text = _("Add message to screensaver"),
@@ -118,7 +118,7 @@ return {
         callback = function()
             G_reader_settings:saveSetting("screensaver_show_message", not showMessage())
         end,
-        separator = true
+        separator = true,
     },
     {
         text = _("Settings"),
