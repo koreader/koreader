@@ -161,10 +161,10 @@ function Kindle:usbPlugIn()
 end
 
 function Kindle:intoScreenSaver()
-    local Screensaver = require("ui/screensaver")
-    if self:supportsScreensaver() then
-        -- NOTE: Meaning this is not a SO device ;)
-        if self.screen_saver_mode == false then
+    if self.screen_saver_mode == false then
+        if self:supportsScreensaver() then
+            -- NOTE: Meaning this is not a SO device ;)
+            local Screensaver = require("ui/screensaver")
             -- NOTE: Pilefered from Device:onPowerEvent @ frontend/device/generic/device.lua
             -- Mostly always suspend in Portrait/Inverted Portrait mode...
             -- ... except when we just show an InfoMessage or when the screensaver
@@ -195,10 +195,8 @@ function Kindle:intoScreenSaver()
                 self.orig_rotation_mode = nil
             end
             Screensaver:show()
-        end
-    else
-        -- Let the native system handle screensavers on SO devices...
-        if self.screen_saver_mode == false then
+        else
+            -- Let the native system handle screensavers on SO devices...
             if os.getenv("AWESOME_STOPPED") == "yes" then
                 os.execute("killall -cont awesome")
             end
@@ -210,8 +208,8 @@ end
 
 function Kindle:outofScreenSaver()
     if self.screen_saver_mode == true then
-        local Screensaver = require("ui/screensaver")
         if self:supportsScreensaver() then
+            local Screensaver = require("ui/screensaver")
             -- Restore to previous rotation mode, if need be.
             if self.orig_rotation_mode then
                 self.screen:setRotationMode(self.orig_rotation_mode)
