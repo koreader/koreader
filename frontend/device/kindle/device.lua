@@ -161,15 +161,42 @@ function Kindle:usbPlugIn()
 end
 
 function Kindle:intoScreenSaver()
-    local Screensaver = require("ui/screensaver")
-    if self:supportsScreensaver() then
-        -- NOTE: Meaning this is not a SO device ;)
-        if self.screen_saver_mode == false then
+    if self.screen_saver_mode == false then
+        if self:supportsScreensaver() then
+            -- NOTE: Meaning this is not a SO device ;)
+            local Screensaver = require("ui/screensaver")
+            -- NOTE: Pilefered from Device:onPowerEvent @ frontend/device/generic/device.lua
+            -- Mostly always suspend in Portrait/Inverted Portrait mode...
+            -- ... except when we just show an InfoMessage or when the screensaver
+            -- is disabled, as it plays badly with Landscape mode (c.f., #4098 and #5290)
+            local screensaver_type = G_reader_settings:readSetting("screensaver_type")
+            if screensaver_type ~= "message" and screensaver_type ~= "disable" then
+                self.orig_rotation_mode = self.screen:getRotationMode()
+                -- Leave Portrait & Inverted Portrait alone, that works just fine.
+                if bit.band(self.orig_rotation_mode, 1) == 1 then
+                    -- i.e., only switch to Portrait if we're currently in *any* Landscape orientation (odd number)
+                    self.screen:setRotationMode(0)
+                else
+                    self.orig_rotation_mode = nil
+                end
+
+                -- On eInk, if we're using a screensaver mode that shows an image,
+                -- flash the screen to white first, to eliminate ghosting.
+                if self:hasEinkScreen() and
+                screensaver_type == "cover" or screensaver_type == "random_image" or
+                screensaver_type == "image_file" then
+                    if not G_reader_settings:isTrue("screensaver_no_background") then
+                        self.screen:clear()
+                    end
+                    self.screen:refreshFull()
+                end
+            else
+                -- nil it, in case user switched ScreenSaver modes during our lifetime.
+                self.orig_rotation_mode = nil
+            end
             Screensaver:show()
-        end
-    else
-        -- Let the native system handle screensavers on SO devices...
-        if self.screen_saver_mode == false then
+        else
+            -- Let the native system handle screensavers on SO devices...
             if os.getenv("AWESOME_STOPPED") == "yes" then
                 os.execute("killall -cont awesome")
             end
@@ -181,19 +208,26 @@ end
 
 function Kindle:outofScreenSaver()
     if self.screen_saver_mode == true then
-        local Screensaver = require("ui/screensaver")
         if self:supportsScreensaver() then
+            local Screensaver = require("ui/screensaver")
+            -- Restore to previous rotation mode, if need be.
+            if self.orig_rotation_mode then
+                self.screen:setRotationMode(self.orig_rotation_mode)
+            end
             Screensaver:close()
+            -- And redraw everything in case the framework managed to screw us over...
+            local UIManager = require("ui/uimanager")
+            UIManager:nextTick(function() UIManager:setDirty("all", "full") end)
         else
             -- Stop awesome again if need be...
             if os.getenv("AWESOME_STOPPED") == "yes" then
                 os.execute("killall -stop awesome")
             end
+            local UIManager = require("ui/uimanager")
+            -- NOTE: We redraw after a slightly longer delay to take care of the potentially dynamic ad screen...
+            --       This is obviously brittle as all hell. Tested on a slow-ass PW1.
+            UIManager:scheduleIn(1.5, function() UIManager:setDirty("all", "full") end)
         end
-        local UIManager = require("ui/uimanager")
-        -- NOTE: If we *really* wanted to avoid the framework seeping through, we could use tickAfterNext instead,
-        --       at the cost of an extra flashing update...
-        UIManager:nextTick(function() UIManager:setDirty("all", "full") end)
     end
     self.powerd:afterResume()
     self.screen_saver_mode = false
