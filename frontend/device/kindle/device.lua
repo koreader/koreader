@@ -217,16 +217,19 @@ function Kindle:outofScreenSaver()
                 self.screen:setRotationMode(self.orig_rotation_mode)
             end
             Screensaver:close()
+            -- And redraw everything in case the framework managed to screw us over...
+            local UIManager = require("ui/uimanager")
+            UIManager:nextTick(function() UIManager:setDirty("all", "full") end)
         else
             -- Stop awesome again if need be...
             if os.getenv("AWESOME_STOPPED") == "yes" then
                 os.execute("killall -stop awesome")
             end
+            local UIManager = require("ui/uimanager")
+            -- NOTE: We redraw after a slightly longer delay to take care of the potentially dynamic ad screen...
+            --       This is obviously brittle as all hell. Tested on a slow-ass PW1.
+            UIManager:scheduleIn(1.5, function() UIManager:setDirty("all", "full") end)
         end
-        local UIManager = require("ui/uimanager")
-        -- NOTE: If we *really* wanted to avoid the framework seeping through, we could use tickAfterNext instead,
-        --       at the cost of an extra flashing update...
-        UIManager:nextTick(function() UIManager:setDirty("all", "full") end)
     end
     self.powerd:afterResume()
     self.screen_saver_mode = false
