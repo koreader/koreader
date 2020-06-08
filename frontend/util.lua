@@ -908,6 +908,47 @@ function util.htmlEscape(text)
     })
 end
 
+--- Prettify a CSS stylesheet
+-- Not perfect, but enough to make some ugly CSS readable.
+-- By default, each selector and each property is put on its own line.
+-- With condensed=true, condense each full declaration on a single line.
+--
+--- @string CSS string
+--- @boolean condensed[opt=false] true to condense each declaration on a line
+--- @treturn string the CSS prettified
+function util.prettifyCSS(css_text, condensed)
+    if not condensed then
+        -- Get rid of \t so we can use it as a replacement/hiding char
+        css_text = css_text:gsub("\t", " ")
+        -- Wrap and indent declarations
+        css_text = css_text:gsub("%s*{%s*", " {\n    ")
+        css_text = css_text:gsub(";%s*}%s*", ";\n}\n")
+        css_text = css_text:gsub(";%s*([^}])", ";\n    %1")
+        css_text = css_text:gsub("%s*}%s*", "\n}\n")
+        -- Cleanup declarations
+        css_text = css_text:gsub("{[^}]*}", function(s)
+            s = s:gsub("%s*:%s*", ": ")
+            -- Temporarily hide/replace ',' in declaration so they
+            -- are not matched and made multi-lines by followup gsub
+            s = s:gsub("%s*,%s*", "\t")
+            return s
+        end)
+        -- Have each selector (separated by ',') on a new line
+        css_text = css_text:gsub("%s*,%s*", " ,\n")
+        -- Restore hidden ',' in declarations
+        css_text = css_text:gsub("\t", ", ")
+    else
+        -- Go thru previous method to have something standard to work on
+        css_text = util.prettifyCSS(css_text)
+        -- And condense that
+        css_text = css_text:gsub(" {\n    ", " { ")
+        css_text = css_text:gsub(";\n    ", "; ")
+        css_text = css_text:gsub("\n}", " }")
+        css_text = css_text:gsub(" ,\n", ", ")
+    end
+    return css_text
+end
+
 --- Escape list for shell usage
 --- @table args the list of arguments to escape
 --- @treturn string the escaped and concatenated arguments
