@@ -75,6 +75,7 @@ describe("EPUB document module", function()
             "Droid Sans Mono",
             "FreeSans",
             "FreeSerif",
+            "Noto Naskh Arabic",
             "Noto Sans",
             "Noto Sans Arabic UI",
             "Noto Sans CJK SC",
