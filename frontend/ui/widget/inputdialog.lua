@@ -152,6 +152,7 @@ local InputDialog = InputContainer:new{
                       -- - on success: as the notification text instead of the default one
                       -- - on failure: in an InfoMessage
     close_callback = nil, -- Called when closing (if discarded or saved, after save_callback if saved)
+    edited_callback = nil,  -- Called on each text modification
 
     -- For use by TextEditor plugin:
     view_pos_callback = nil, -- Called with no arg to get initial top_line_num/charpos,
@@ -466,8 +467,11 @@ function InputDialog:getInputValue()
     end
 end
 
-function InputDialog:setInputText(text)
+function InputDialog:setInputText(text, edited_state)
     self._input_widget:setText(text)
+    if edited_state ~= nil and self._buttons_edit_callback then
+        self._buttons_edit_callback(edited_state)
+    end
 end
 
 function InputDialog:isTextEditable()
@@ -579,6 +583,9 @@ function InputDialog:_addSaveCloseButtons()
             button("save"):enable()
             if button("reset") then button("reset"):enable() end
             self:refreshButtons()
+        end
+        if self.edited_callback then
+            self.edited_callback()
         end
     end
     if self.reset_callback then

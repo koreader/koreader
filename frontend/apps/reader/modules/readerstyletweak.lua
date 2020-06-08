@@ -13,6 +13,7 @@ local GestureRange = require("ui/gesturerange")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local MovableContainer = require("ui/widget/container/movablecontainer")
+local Notification = require("ui/widget/notification")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
@@ -37,7 +38,7 @@ local TweakInfoWidget = InputContainer:new{
 function TweakInfoWidget:init()
     local tweak = self.tweak
     if Device:isTouchDevice() then
-        self.ges_events.TapClose = {
+        self.ges_events.Tap = {
             GestureRange:new{
                 ges = "tap",
                 range = Geom:new{
@@ -90,17 +91,19 @@ function TweakInfoWidget:init()
             f:close()
         end
     end
-    css = css:gsub("^%s+", ""):gsub("%s+$", "")
-    table.insert(content, FrameContainer:new{
+    self.css_text = css:gsub("^%s+", ""):gsub("%s+$", "")
+    self.css_frame = FrameContainer:new{
         bordersize = Size.border.thin,
         padding = Size.padding.large,
         TextBoxWidget:new{
-            text = css,
+            text = self.css_text,
             face = Font:getFace("infont", 16),
             width = self.width - 2*Size.padding.large,
             para_direction_rtl = false, -- LTR
         }
-    })
+    }
+    table.insert(content, self.css_frame)
+
     if self.is_global_default then
         table.insert(content, VerticalSpan:new{
             width = Size.padding.large,
@@ -183,8 +186,19 @@ function TweakInfoWidget:onClose()
     return true
 end
 
-function TweakInfoWidget:onTapClose(arg, ges)
-    if ges.pos:notIntersectWith(self.movable.dimen) then
+function TweakInfoWidget:onTap(arg, ges)
+    if ges.pos:intersectWith(self.css_frame.dimen) and Device:hasClipboard() then
+        -- Tap inside CSS text copies it into clipboard (so it
+        -- can be pasted into the book specific tweak editor)
+        -- (Add \n on both sides for easier pasting)
+        Device.input.setClipboardText("\n"..self.css_text.."\n")
+        UIManager:show(Notification:new{
+            text = _("CSS text copied to clipboard"),
+            timeout = 2
+        })
+        return true
+    elseif ges.pos:notIntersectWith(self.movable.dimen) then
+        -- Tap outside closes widget
         self:onClose()
         return true
     end
@@ -298,6 +312,10 @@ function ReaderStyleTweak:updateCssText(apply)
             css = css:gsub("^%s+", ""):gsub("%s+$", "")
             table.insert(css_snippets, css)
         end
+        if self.book_style_tweak and self.book_style_tweak_enabled then
+            self.nb_enabled_tweaks = self.nb_enabled_tweaks + 1
+            table.insert(css_snippets, self.book_style_tweak)
+        end
         self.css_text = table.concat(css_snippets, "\n")
         logger.dbg("made tweak css:\n".. self.css_text .. "[END]")
     else
@@ -315,6 +333,9 @@ function ReaderStyleTweak:onReadSettings(config)
     -- Default globally enabled style tweaks (for new installations)
     -- are defined in css_tweaks.lua
     self.global_tweaks = G_reader_settings:readSetting("style_tweaks") or CssTweaks.DEFAULT_GLOBAL_STYLE_TWEAKS
+    self.book_style_tweak = config:readSetting("book_style_tweak") -- string or nil
+    self.book_style_tweak_enabled = config:readSetting("book_style_tweak_enabled")
+    self.book_style_tweak_last_edit_pos = config:readSetting("book_style_tweak_last_edit_pos")
     self:updateCssText()
 end
 
@@ -326,6 +347,9 @@ function ReaderStyleTweak:onSaveSettings()
     end
     self.ui.doc_settings:saveSetting("style_tweaks", util.tableSize(self.doc_tweaks) > 0 and self.doc_tweaks or nil)
     G_reader_settings:saveSetting("style_tweaks", self.global_tweaks)
+    self.ui.doc_settings:saveSetting("book_style_tweak", self.book_style_tweak)
+    self.ui.doc_settings:saveSetting("book_style_tweak_enabled", self.book_style_tweak_enabled)
+    self.ui.doc_settings:saveSetting("book_style_tweak_last_edit_pos", self.book_style_tweak_last_edit_pos)
 end
 
 function ReaderStyleTweak:init()
@@ -363,11 +387,12 @@ You can enable individual tweaks on this book with a tap, or view more details a
     -- css_tweaks.lua, or like the one we build from user styletweaks
     -- directory files and sub-directories)
     local addTweakMenuItem
-    addTweakMenuItem = function(menu, item)
+    addTweakMenuItem = function(menu, item, max_per_page)
         if type(item) == "table" and #item > 0 then -- sub-menu
             local sub_item_table = {}
+            sub_item_table.max_per_page = max_per_page
             for _, it in ipairs(item) do
-                addTweakMenuItem(sub_item_table, it) -- recurse
+                addTweakMenuItem(sub_item_table, it, max_per_page) -- recurse
             end
             table.insert(menu, {
                 text_func = function()
@@ -515,7 +540,36 @@ You can enable individual tweaks on this book with a tap, or view more details a
     local if_empty_menu_title = _("Add your own tweaks in koreader/styletweaks/")
     process_tweaks_dir(user_styletweaks_dir, user_tweaks_table, if_empty_menu_title)
     self.tweaks_table[#self.tweaks_table].separator = true
-    addTweakMenuItem(self.tweaks_table, user_tweaks_table)
+    addTweakMenuItem(self.tweaks_table, user_tweaks_table, 6)
+                                            -- limit to 6 user tweaks per page
+
+    -- Book specific editable tweak
+    self.tweaks_table[#self.tweaks_table].separator = true
+    local book_tweak_item = {
+        text_func = function()
+            if self.book_style_tweak then
+                return _("Book specific tweak (hold to edit)")
+            else
+                return _("Book specific tweak")
+            end
+        end,
+        enabled_func = function() return self.enabled end,
+        checked_func = function() return self.book_style_tweak_enabled end,
+        callback = function(touchmenu_instance)
+            if self.book_style_tweak then
+                -- There is a tweak: toggle it on tap, like other tweaks
+                self.book_style_tweak_enabled = not self.book_style_tweak_enabled
+                self:updateCssText(true) -- apply it immediately
+            else
+                -- No tweak defined: launch editor
+                self:editBookTweak(touchmenu_instance)
+            end
+        end,
+        hold_callback = function(touchmenu_instance)
+            self:editBookTweak(touchmenu_instance)
+        end,
+    }
+    table.insert(self.tweaks_table, book_tweak_item)
 
     self.ui.menu:registerToMainMenu(self)
 end
@@ -532,6 +586,209 @@ function ReaderStyleTweak:addToMainMenu(menu_items)
         end,
         sub_item_table = self.tweaks_table,
     }
+end
+
+local BOOK_TWEAK_SAMPLE_CSS = [[
+p.someTitleClassName { text-indent: 0; }
+
+DIV.advertisement { display: none !important; }
+
+.footnoteContainerClassName {
+    font-size: 80%;
+    margin: 0 !important;
+    -cr-hint: footnote-inpage;
+}
+]]
+
+local BOOK_TWEAK_INPUT_HINT = T([[
+/* %1 */
+
+%2]], _("You can add CSS snippets which will be applied only to this book."), BOOK_TWEAK_SAMPLE_CSS)
+
+function ReaderStyleTweak:editBookTweak(touchmenu_instance)
+    local InputDialog = require("ui/widget/inputdialog")
+    local editor -- our InputDialog instance
+    local tweak_button_id = "editBookTweakButton"
+    -- We add a button on the left, which can have 3 states/labels:
+    local BUTTON_USE_SAMPLE = _("Use sample")
+    local BUTTON_PRETTIFY = _("Prettify")
+    local BUTTON_CONDENSE = _("Condense")
+    -- Initial button state differs whether we already have some CSS content
+    local tweak_button_state = self.book_style_tweak and BUTTON_PRETTIFY or BUTTON_USE_SAMPLE
+    local toggle_tweak_button = function(state)
+        if state then -- use provided state
+            tweak_button_state = state
+        else -- natural toggling
+            if tweak_button_state == BUTTON_USE_SAMPLE then
+                tweak_button_state = BUTTON_PRETTIFY
+            elseif tweak_button_state == BUTTON_PRETTIFY then
+                tweak_button_state = BUTTON_CONDENSE
+            elseif tweak_button_state == BUTTON_CONDENSE then
+                tweak_button_state = BUTTON_PRETTIFY
+            end
+        end
+        local tweak_button = editor.button_table:getButtonById(tweak_button_id)
+        tweak_button:init()
+        editor:refreshButtons()
+    end
+    -- The Save and Close buttons default behaviour, how they trigger
+    -- the callbacks and how they show or not a notification, is not
+    -- the most convenient here. We try to tweak that a bit.
+    local SAVE_BUTTON_LABEL
+    if self.book_style_tweak_enabled or not self.book_style_tweak then
+        SAVE_BUTTON_LABEL = _("Apply")
+    else
+        SAVE_BUTTON_LABEL = _("Save")
+    end
+    -- This message might be shown by multiple notifications at the
+    -- same time: having it similar will make that unnoticed.
+    local NOT_MODIFIED_MSG = _("Book tweak not modified.")
+    editor = InputDialog:new{
+        title =  _("Edit book specific style tweak"),
+        input = self.book_style_tweak or "",
+        input_hint = BOOK_TWEAK_INPUT_HINT,
+        input_face = Font:getFace("infont", 16), -- same as in TweakInfoWidget
+        para_direction_rtl = false,
+        lang = "en",
+        fullscreen = true,
+        condensed = true,
+        allow_newline = true,
+        cursor_at_end = false,
+        add_nav_bar = true,
+        scroll_by_pan = true,
+        buttons = {{
+            -- First button on first row (row will be completed with Reset|Save|Close)
+            {
+                id = tweak_button_id,
+                text_func = function()
+                    return tweak_button_state -- usable as a label
+                end,
+                callback = function()
+                    if tweak_button_state == BUTTON_USE_SAMPLE then
+                        editor:setInputText(BOOK_TWEAK_SAMPLE_CSS, true)
+                        -- will have edited_callback() called, which will do toggle_tweak_button()
+                    else
+                        local css_text = editor:getInputText()
+                        css_text = util.prettifyCSS(css_text, tweak_button_state == BUTTON_CONDENSE)
+                        editor:setInputText(css_text, true)
+                        toggle_tweak_button()
+                    end
+                end,
+            },
+        }},
+        edited_callback = function()
+            if not editor then
+                -- We might be called while the InputDialog is being
+                -- initialized (so not yet assigned to 'editor')
+                return
+            end
+            if #editor:getInputText() == 0 then
+                -- No content: show "Use sample"
+                if tweak_button_state ~= BUTTON_USE_SAMPLE then
+                    toggle_tweak_button(BUTTON_USE_SAMPLE)
+                end
+            else
+                -- Some content: get rid of "Use sample" to not risk
+                -- overriding content
+                if tweak_button_state == BUTTON_USE_SAMPLE then
+                    toggle_tweak_button()
+                end
+            end
+        end,
+        -- Set/save view and cursor position callback
+        view_pos_callback = function(top_line_num, charpos)
+            -- This same callback is called with no argument to get initial position,
+            -- and with arguments to give back final position when closed.
+            if top_line_num and charpos then
+                self.book_style_tweak_last_edit_pos = {top_line_num, charpos}
+            else
+                local prev_pos = self.book_style_tweak_last_edit_pos
+                if type(prev_pos) == "table" and prev_pos[1] and prev_pos[2] then
+                    return prev_pos[1], prev_pos[2]
+                end
+                return nil, nil -- no previous position known
+            end
+        end,
+        reset_button_text = _("Restore"),
+        reset_callback = function(content) -- Will add a Reset button
+            return self.book_style_tweak or "", _("Book tweak restored")
+        end,
+        save_button_text = SAVE_BUTTON_LABEL,
+        close_save_button_text = SAVE_BUTTON_LABEL,
+        save_callback = function(content, closing) -- Will add Save/Close buttons
+            if content and content == "" then
+                content = nil -- we store nil when empty
+            end
+            local was_empty = self.book_style_tweak == nil
+            local is_empty = content == nil
+            local tweak_updated = content ~= self.book_style_tweak
+            local should_apply = false
+            local msg -- returned and shown as a notification by InputDialog
+            if was_empty and not is_empty then
+                -- Tweak was empty, and so just created: enable book tweak
+                -- so it's immediately applied, and checked in the menu
+                self.book_style_tweak_enabled = true
+                should_apply = true
+                msg = _("Book tweak created, applying…")
+            elseif is_empty then
+                if not was_empty and self.book_style_tweak_enabled then
+                    -- Tweak was enabled, but has been emptied: make it
+                    -- disabled in the menu, but apply CSS without it
+                    should_apply = true
+                    msg = _("Book tweak removed, rendering…")
+                else
+                    msg = _("Book tweak emptied and removed.")
+                end
+                self.book_style_tweak_enabled = false
+            elseif tweak_updated then
+                if self.book_style_tweak_enabled then
+                    should_apply = true
+                    msg = _("Book tweak updated, applying…")
+                else
+                    msg = _("Book tweak saved (not enabled).")
+                end
+            else
+                msg = NOT_MODIFIED_MSG
+            end
+            self.book_style_tweak = content
+            -- We always close the editor when this callback is called.
+            -- If closing=true, InputDialog will call close_callback().
+            -- If not, let's do it ourselves.
+            if not closing then
+                UIManager:close(editor)
+            end
+            if should_apply then
+                -- Let menu be closed and previous page be refreshed,
+                -- so one can see how the text is changed by the tweak.
+                touchmenu_instance:closeMenu()
+                UIManager:scheduleIn(0.2, function()
+                    self:updateCssText(true) -- have it applied
+                end)
+            else
+                touchmenu_instance:updateItems()
+            end
+            editor.save_callback_called = true
+            return true, msg
+        end,
+        close_callback = function()
+            -- save_callback() will always have shown some notification,
+            -- so don't add another one
+            if not editor.save_callback_called then
+                UIManager:show(Notification:new{
+                    text = NOT_MODIFIED_MSG,
+                    timeout = 2,
+                })
+                -- This has to be the same message above and below: when
+                -- discarding, we can't prevent these 2 notifications from
+                -- being shown: having them identical will hide that.
+            end
+        end,
+        close_discarded_notif_text = NOT_MODIFIED_MSG;
+
+    }
+    UIManager:show(editor)
+    editor:onShowKeyboard(true)
+        -- ignore first hold release, as we may be invoked from hold
 end
 
 return ReaderStyleTweak

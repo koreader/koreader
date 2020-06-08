@@ -10,6 +10,7 @@ local TimeVal = require("ui/timeval")
 local Translator = require("ui/translator")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
 local C_ = _.pgettext
 local T = require("ffi/util").template
@@ -797,30 +798,6 @@ function ReaderHighlight:lookup(selected_word, selected_link)
     end
 end
 
-local function prettifyCss(css_text)
-    -- This is not perfect, but enough to make some ugly CSS readable.
-    -- Get rid of \t so we can use it as a replacement/hiding char
-    css_text = css_text:gsub("\t", " ")
-    -- Wrap and indent declarations
-    css_text = css_text:gsub("%s*{%s*", " {\n    ")
-    css_text = css_text:gsub(";%s*}%s*", ";\n}\n")
-    css_text = css_text:gsub(";%s*([^}])", ";\n    %1")
-    css_text = css_text:gsub("%s*}%s*", "\n}\n")
-    -- Cleanup declarations
-    css_text = css_text:gsub("{[^}]*}", function(s)
-        s = s:gsub("%s*:%s*", ": ")
-        -- Temporarily hide/replace ',' in declaration so they
-        -- are not matched and made multi-lines by followup gsub
-        s = s:gsub("%s*,%s*", "\t")
-        return s
-    end)
-    -- Have each selector (separated by ',') on a new line
-    css_text = css_text:gsub("%s*,%s*", " ,\n")
-    -- Restore hidden ',' in declarations
-    css_text = css_text:gsub("\t", ", ")
-    return css_text
-end
-
 function ReaderHighlight:viewSelectionHTML(debug_view)
     if self.ui.document.info.has_pages then
         return
@@ -858,7 +835,7 @@ function ReaderHighlight:viewSelectionHTML(debug_view)
                 -- the height of this section, we don't want to have to scroll
                 -- many pages to get to the HTML content on the initial view.)
                 html = html:gsub("(<stylesheet[^>]*>)%s*(.-)%s*(</stylesheet>)", function(pre, css_text, post)
-                    return pre .. "\n" .. prettifyCss(css_text) .. post
+                    return pre .. "\n" .. util.prettifyCSS(css_text) .. post
                 end)
             end
             local TextViewer = require("ui/widget/textviewer")
@@ -887,7 +864,7 @@ function ReaderHighlight:viewSelectionHTML(debug_view)
                                             UIManager:close(cssviewer)
                                             UIManager:show(TextViewer:new{
                                                 title = css_files[i],
-                                                text = prettifyCss(css_text),
+                                                text = util.prettifyCSS(css_text),
                                                 text_face = Font:getFace("smallinfont"),
                                                 justified = false,
                                                 para_direction_rtl = false,
@@ -1248,7 +1225,7 @@ function ReaderHighlight:onHighlightSearch()
     logger.dbg("search highlight")
     self:highlightFromHoldPos()
     if self.selected_text then
-        local text = require("util").stripPunctuation(self.selected_text.text)
+        local text = util.stripPunctuation(self.selected_text.text)
         self.ui:handleEvent(Event:new("ShowSearchDialog", text))
     end
 end
