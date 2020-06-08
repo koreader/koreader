@@ -189,7 +189,7 @@ end
 function TweakInfoWidget:onTap(arg, ges)
     if ges.pos:intersectWith(self.css_frame.dimen) and Device:hasClipboard() then
         -- Tap inside CSS text copies it into clipboard (so it
-        -- can be pasted into the book specific tweak editor)
+        -- can be pasted into the book-specific tweak editor)
         -- (Add \n on both sides for easier pasting)
         Device.input.setClipboardText("\n"..self.css_text.."\n")
         UIManager:show(Notification:new{
@@ -543,14 +543,14 @@ You can enable individual tweaks on this book with a tap, or view more details a
     addTweakMenuItem(self.tweaks_table, user_tweaks_table, 6)
                                             -- limit to 6 user tweaks per page
 
-    -- Book specific editable tweak
+    -- Book-specific editable tweak
     self.tweaks_table[#self.tweaks_table].separator = true
     local book_tweak_item = {
         text_func = function()
             if self.book_style_tweak then
-                return _("Book specific tweak (hold to edit)")
+                return _("Book-specific tweak (hold to edit)")
             else
-                return _("Book specific tweak")
+                return _("Book-specific tweak")
             end
         end,
         enabled_func = function() return self.enabled end,
@@ -644,7 +644,7 @@ function ReaderStyleTweak:editBookTweak(touchmenu_instance)
     -- same time: having it similar will make that unnoticed.
     local NOT_MODIFIED_MSG = _("Book tweak not modified.")
     editor = InputDialog:new{
-        title =  _("Edit book specific style tweak"),
+        title =  _("Edit book-specific style tweak"),
         input = self.book_style_tweak or "",
         input_hint = BOOK_TWEAK_INPUT_HINT,
         input_face = Font:getFace("infont", 16), -- same as in TweakInfoWidget
