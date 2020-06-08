@@ -1,5 +1,5 @@
--- Start with the english keyboard layout
-local fr_keyboard = dofile("frontend/ui/data/keyboardlayouts/en_keyboard.lua")
+-- Start with the english keyboard layout (deep copy, to not alter it)
+local fr_keyboard = require("util").tableDeepCopy(require("ui/data/keyboardlayouts/en_keyboard"))
 
 -- Swap the four AZWQ keys (only in the lowercase and
 -- uppercase letters layouts) to change it from QWERTY to AZERTY
@@ -14,14 +14,30 @@ table.insert(keys[2],
            --  1       2       3       4       5       6       7       8
             { "M",    "m",    "§",    "+",    "Œ",    "œ",    "Ő",    "ő", }
 )
--- And swap the english M on the 3rd row to ','
-keys[3][8][1] = ","
-keys[3][8][2] = ","
--- And swap the english ',' on the 4th row (an extended key
--- including a popup) to ';'
-local en_com = keys[4][5][1]
-en_com[1] = ";"
-en_com.north = "," -- and swap the ';' there to ','
+-- But replace the alpha "M" and "m" with the original key+popup from english M/m
+keys[2][10][1] = keys[3][8][1]
+keys[2][10][2] = keys[3][8][2]
+
+-- We have one more key than en_keyboard: replace that original M key
+-- to show another char on alpha layouts: let's use ";", and a popup
+-- helpful for CSS style tweaks editing.
+local _semicolon = {
+    ";",
+    -- north = "!",
+    north = { label = "!…", key = "!important;" },
+    northeast = "}",
+    northwest = "{",
+    west = "-",
+    east = ":",
+    south = "*",
+    southwest = "0",
+    southeast = ">",
+    "[",
+    '+',
+    "]",
+}
+keys[3][8][1] = _semicolon
+keys[3][8][2] = _semicolon
 
 -- Swap ê and ë (and the like) in the keyboard popups, so the
 -- common french accentuated chars are all on the upper row.
