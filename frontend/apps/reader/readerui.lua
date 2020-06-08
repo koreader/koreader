@@ -429,6 +429,9 @@ function ReaderUI:init()
 end
 
 function ReaderUI:setLastDirForFileBrowser(dir)
+    if dir and #dir > 1 and dir:sub(-1) == "/" then
+        dir = dir:sub(1, -2)
+    end
     self.last_dir_for_file_browser = dir
 end
 
