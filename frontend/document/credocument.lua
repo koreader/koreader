@@ -46,7 +46,7 @@ local CreDocument = Document:new{
     --   (Noto Sans & Serif do not have these symbol glyphs).
     fallback_fonts = {
         "Noto Sans CJK SC",
-        "Noto Sans Arabic UI",
+        "Noto Naskh Arabic",
         "Noto Sans Devanagari UI",
         "FreeSans",
         "FreeSerif",
