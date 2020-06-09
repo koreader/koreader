@@ -10,6 +10,7 @@
 local BD = require("ui/bidi")
 local CalibreSearch = require("search")
 local CalibreWireless = require("wireless")
+local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("luasettings")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -62,8 +63,8 @@ function Calibre:addToMainMenu(menu_items)
             },
         }
     }
-    -- insert the metadata search in the FileManager
-    if not self.ui.view then
+    -- insert the metadata search
+    if G_reader_settings:isTrue("calibre_search_from_reader") or not self.ui.view then
         menu_items.find_book_in_calibre_catalog = {
             text = _("Find a book via calibre metadata"),
             callback = function()
@@ -113,6 +114,19 @@ function Calibre:getSearchMenuTable()
                     end,
                 })
                 return result
+            end,
+        },
+        {
+            text = _("Find metadata from reader"),
+            checked_func = function()
+                return G_reader_settings:isTrue("calibre_search_from_reader")
+            end,
+            callback = function()
+                local current = G_reader_settings:isTrue("calibre_search_from_reader")
+                G_reader_settings:saveSetting("calibre_search_from_reader", not current)
+                UIManager:show(InfoMessage:new{
+                    text = _("This will take effect on next restart."),
+                })
             end,
         },
         {

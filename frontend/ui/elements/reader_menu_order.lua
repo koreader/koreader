@@ -148,6 +148,7 @@ local order = {
         "----------------------------",
         "goodreads",
         "----------------------------",
+        "find_book_in_calibre_catalog",
         "fulltext_search",
     },
     filemanager = {},
