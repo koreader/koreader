@@ -470,14 +470,21 @@ function CalibreSearch:prompt(message)
             for _, dir in ipairs(self.last_scan) do
                 self.libraries[dir.path] = true
             end
-            util.dumpTable(self.libraries, self.user_libraries)
-            -- redo cache
-            if self.cache_metadata then
-                util.removeFile(self.user_book_cache)
+            local count = #self.last_scan
+            -- append current wireless dir if it wasn't found on the scan
+            -- this will happen if it is in a nested dir.
+            local inbox_dir = G_reader_settings:readSetting("inbox_dir")
+            if inbox_dir and not self.libraries[inbox_dir] then
+                if CalibreMetadata:getTimestamp(inbox_dir) then
+                    self.libraries[inbox_dir] = true
+                    count = count + 1
+                end
             end
+            util.dumpTable(self.libraries, self.user_libraries)
+            self:invalidateCache()
             self.books = self:getMetadata()
             UIManager:show(InfoMessage:new{
-                text = T(_("Found %1 calibre libraries in %2 (%3 books)"),  #self.last_scan, rootdir, #self.books),
+                text = T(_("Found %1 calibre libraries in %2 (%3 books)"),  count, rootdir, #self.books),
                 timeout = 3,
             })
         end,
@@ -510,6 +517,12 @@ function CalibreSearch:findCalibre(root)
             end
         end
     end
+end
+
+-- invalidate current cache
+function CalibreSearch:invalidateCache()
+    util.removeFile(self.user_book_cache)
+    self.books = {}
 end
 
 -- get metadata from cache or calibre files

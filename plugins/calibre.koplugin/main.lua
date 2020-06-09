@@ -94,6 +94,7 @@ function Calibre:getSearchMenuTable()
                         callback = function()
                             cache:saveSetting(path, not cache:readSetting(path))
                             cache:flush()
+                            CalibreSearch:invalidateCache()
                         end,
                     })
                 end
