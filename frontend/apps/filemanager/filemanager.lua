@@ -641,6 +641,12 @@ function FileManager:reinit(path, focused_file)
     -- self:onRefresh()
 end
 
+function FileManager:getCurrentDir()
+    if self.instance then
+        return self.instance.file_chooser.path
+    end
+end
+
 function FileManager:toggleHiddenFiles()
     self.file_chooser:toggleHiddenFiles()
     G_reader_settings:saveSetting("show_hidden", self.file_chooser.show_hidden)
