@@ -58,8 +58,11 @@ local function getAllMetadata(t)
     for path, enabled in pairs(t) do
         if enabled and CalibreMetadata:init(path, true) then
             -- calibre BQ driver reports invalid lpath
-            if Device:isCervantes() and string.match(string.upper(CalibreMetadata.drive.device_name), "BQ") then
-                path = path .. "/Books"
+            if Device:isCervantes() then
+                local device_name = CalibreMetadata.drive.device_name
+                if device_name and string.match(string.upper(device_name), "BQ") then
+                    path = path .. "/Books"
+                end
             end
             for _, book in ipairs(CalibreMetadata.books) do
                 local slim_book = {}
