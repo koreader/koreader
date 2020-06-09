@@ -826,6 +826,9 @@ function KoptInterface:getTextFromBoxes(boxes, pos0, pos1)
                 line_text = line_text..word..space
             end
         end
+        -- append a space at the end of the line unless its a hyphenated word
+        line_text = line_text .. " "
+        line_text = line_text:gsub("- $", "")
         -- insert line box
         local lb = boxes[i]
         if i > i_start and i < i_stop then
