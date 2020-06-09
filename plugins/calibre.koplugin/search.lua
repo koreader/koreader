@@ -21,10 +21,8 @@ local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
--- dump of libraries from disk scan
+-- cache files
 local libraries_file = "calibre-libraries.lua"
-
--- dump of books from all libraries
 local metadata_file = "calibre-books.lua"
 
 -- loads a table from disk
@@ -189,8 +187,8 @@ local CalibreSearch = InputContainer:new{
         "find_by_authors",
         "find_by_path",
     },
-    user_libraries = DataStorage:getSettingsDir() .. "/" .. libraries_file,
-    user_book_cache = DataStorage:getSettingsDir() .. "/" .. metadata_file,
+    user_libraries = DataStorage:getDataDir() .. "/cache/" .. libraries_file,
+    user_book_cache = DataStorage:getDataDir() .. "/cache/" .. metadata_file,
 }
 
 function CalibreSearch:ShowSearch()
@@ -451,29 +449,32 @@ end
 
 -- prompt the user for a library scan
 function CalibreSearch:prompt(message)
-    local root = getDefaultRootDir()
-    if root == "." then
-        root = lfs.currentdir()
+    local rootdir = getDefaultRootDir()
+    if rootdir == "." then
+        rootdir = lfs.currentdir()
     end
-    local warning = T(_("Scanning libraries can take time. All storage media under %1 will be analyzed"), root)
+    local warning = T(_("Scanning libraries can take time. All storage media under %1 will be analyzed"), rootdir)
     if message then
         message = message .. "\n\n" .. warning
     end
     UIManager:show(ConfirmBox:new{
         text = message or warning,
-        ok_text = _("Scan") .. " " .. root,
+        ok_text = _("Scan") .. " " .. rootdir,
         ok_callback = function()
             self.libraries = {}
             self.last_scan = {}
-            self:findCalibre(root)
+            self:findCalibre(rootdir)
             for _, dir in ipairs(self.last_scan) do
                 self.libraries[dir.path] = true
             end
             util.dumpTable(self.libraries, self.user_libraries)
-            util.removeFile(self.user_book_cache)
+            -- redo cache
+            if self.cache_metadata then
+                util.removeFile(self.user_book_cache)
+            end
             self.books = self:getMetadata()
             UIManager:show(InfoMessage:new{
-                text = T(_("Found %1 calibre libraries in %2 (%3 books)"),  #self.last_scan, root, #self.books),
+                text = T(_("Found %1 calibre libraries in %2 (%3 books)"),  #self.last_scan, rootdir, #self.books),
                 timeout = 3,
             })
         end,
