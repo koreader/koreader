@@ -60,7 +60,7 @@ local function getExternalDicts()
             local tool = v[4]
             if not tool then return end
             if isUrl(tool) and getLinkOpener()
-            or os.execute("which "..tool) == 0 then
+            or os.execute("which "..tool .. " >/dev/null 2>&1") == 0 then
                 v[3] = true
             end
         end
