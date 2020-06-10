@@ -8,10 +8,10 @@
 ## If they do not exist the get populated with an example to update 
 ## hyphen patterns from /sdcard/koreader/hyph/*.pattern
 
-## The scripts in /sdcard/koreader/scripts.once are only executed on the first
+## The scripts in /sdcard/koreader/scripts.afterupdate are only executed on the first
 ## start after an update of the apk
 
-## The scripts in /sdcard/koreader/scripts.update are executed on every start
+## The scripts in /sdcard/koreader/scripts.always are executed on every start
 ## (also on the first one).
 
 
@@ -25,38 +25,38 @@ SYSTEM_DIR=$PWD
 
 # ./scripts.done does not exist after apk update
 if [ ! -f ./scripts.done ]; then
-  # if scripts.once does not exist, create and populate it
-  if [ ! -d "$1"/scripts.once ]; then
-    mkdir "$1"/scripts.once
-    echo "#place *.sh scripts here, which should be executed after an update of koreader" > "$1"/scripts.once/README
-    echo "#you could overwrite hyphenation patterns with your own ones" >> "$1"/scripts.once/README
+  # if scripts.afterupdate does not exist, create and populate it
+  if [ ! -d "$1"/scripts.afterupdate ]; then
+    mkdir "$1"/scripts.afterupdate
+    echo "#place *.sh scripts here, which should be executed after an update of koreader" > "$1"/scripts.afterupdate/README
+    echo "#you could overwrite hyphenation patterns with your own ones" >> "$1"/scripts.afterupdate/README
 
-   cp "$SYSTEM_DIR"/scripts/*once.sh "$1"/scripts.once/ 
+   cp "$SYSTEM_DIR"/scripts/*afterupdate.sh "$1"/scripts.afterupdate/ 
   fi
 
-  # if scripts.update does not exist, create and populate it
-  if [ ! -d "$1"/scripts.update ]; then
-    mkdir "$1"/scripts.update
-    echo "#place *.sh scripts here, which should be executed everytime koreader starts" > "$1"/scripts.update/README
-    echo "#you could update the hyphenation patterns with new ones" >> "$1"/scripts.update/README
+  # if scripts.always does not exist, create and populate it
+  if [ ! -d "$1"/scripts.always ]; then
+    mkdir "$1"/scripts.always
+    echo "#place *.sh scripts here, which should be executed everytime koreader starts" > "$1"/scripts.always/README
+    echo "#you could update the hyphenation patterns with new ones" >> "$1"/scripts.always/README
   
-  cp "$SYSTEM_DIR"/scripts/*update.sh "$1"/scripts.update/
+  cp "$SYSTEM_DIR"/scripts/*update.sh "$1"/scripts.always/
   fi
 
-  # execute all scripts in scripts.once	
-  for script in $(ls "$1"/scripts.once/*.sh); do
+  # execute all scripts in scripts.afterupdate	
+  for script in $(ls "$1"/scripts.afterupdate/*.sh); do
     [[ -e "$script" ]] || break
     echo "execute: sh $script $1 $SYSTEM_DIR" >> ./scripts.done
     sh "$script" "$1" "$SYSTEM_DIR"
   done
-  echo "scripts once done" >> ./scripts.done
+  echo "scripts afterupdate done" >> ./scripts.done
 else
   rm ./scripts.done
 fi
 
-if [ -d "$1"/scripts.update ]; then
-  # execute all scripts in scripts.update	
-  for script in $(ls "$1"/scripts.update/*.sh); do
+if [ -d "$1"/scripts.always ]; then
+  # execute all scripts in scripts.always	
+  for script in $(ls "$1"/scripts.always/*.sh); do
     [[ -e "$script" ]] || break
     echo "execute: sh $script $1 $SYSTEM_DIR" >> ./scripts.done
     sh "$script" "$1" "$SYSTEM_DIR"
