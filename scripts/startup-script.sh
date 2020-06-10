@@ -23,10 +23,10 @@ WD=$(pwd)
 
 # system dir of koreader
 SYSTEM_DIR=$(echo "$WD" | $REV | $CUT -d'/' -f1- | $REV)
-
+SYYTEM_DIR=$(pwd)
 
 # ./scripts.done does not exist after apk update
-if [ ! -f "./scripts.done" ]; then
+if [ ! -f ./scripts.done ]; then
   # if scripts.once does not exist, create and populate it
   if [ ! -d "$1"/scripts.once ]; then
     mkdir "$1"/scripts.once
