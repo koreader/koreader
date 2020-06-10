@@ -172,7 +172,7 @@ return {
     },
     _I_ = {
         "I",
-        north = "Í",
+        north = "Ï",
         northeast = "Í",
         northwest = "Ì",
         east = "Î",
@@ -282,7 +282,7 @@ return {
     },
     _O_ = {
         "O",
-        north = "Ó",
+        north = "Ö",
         northeast = "Ó",
         northwest = "Ò",
         east = "Ô",
