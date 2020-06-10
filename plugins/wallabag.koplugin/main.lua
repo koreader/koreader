@@ -549,14 +549,14 @@ function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
                     text = _("Server response is not valid."), })
             end
         end
-    elseif not quiet then
+    else
         if filepath ~= "" then
             local entry_mode = lfs.attributes(filepath, "mode")
             if entry_mode == "file" then
                 os.remove(filepath)
                 logger.dbg("Wallabag: Removed failed download: ", filepath)
             end
-        else
+        elseif not quiet then
             UIManager:show(InfoMessage:new{
                 text = _("Communication with server failed."), })
         end
