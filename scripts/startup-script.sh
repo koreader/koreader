@@ -21,7 +21,7 @@ CUT="busybox cut"
 REV="busybox rev"
 
 # system dir of koreader
-SYYTEM_DIR=$PWD
+SYSTEM_DIR=$PWD
 
 # ./scripts.done does not exist after apk update
 if [ ! -f ./scripts.done ]; then
