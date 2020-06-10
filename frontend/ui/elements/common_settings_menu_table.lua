@@ -466,6 +466,16 @@ common_settings.document = {
             text = _("End of document action"),
             sub_item_table = {
                 {
+                    text = _("Always mark as read"),
+                    checked_func = function()
+                        return G_reader_settings:isTrue("end_document_auto_mark")
+                    end,
+                    callback = function()
+                        G_reader_settings:flipNilOrFalse("end_document_auto_mark", nil)
+                    end,
+                    separator = true,
+                },
+                {
                     text = _("Ask with pop-up dialog"),
                     checked_func = function()
                         local setting = G_reader_settings:readSetting("end_document_action")

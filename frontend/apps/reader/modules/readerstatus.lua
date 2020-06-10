@@ -54,6 +54,12 @@ function ReaderStatus:onEndOfBook()
     if G_reader_settings:readSetting("collate") == "access" then
         collate = false
     end
+
+    -- Should we start by marking the book as read?
+    if G_reader_settings:isTrue("end_document_auto_mark") then
+        self:onMarkBook(true)
+    end
+
     if settings == "pop-up" or settings == nil then
         local buttons = {
             {
