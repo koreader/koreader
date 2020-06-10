@@ -15,6 +15,10 @@ end
 -- path to primary external storage partition
 local path = android.getExternalStoragePath()
 
+-- startup scripts before patch.lua
+android.execute("chmod", "755", "./scripts/startup-script.sh") -- make script rwx for all
+android.execute("sh", "./scripts/startup-script.sh", path.."/koreader" );
+
 -- run koreader patch before koreader startup
 pcall(dofile, path.."/koreader/patch.lua")
 
