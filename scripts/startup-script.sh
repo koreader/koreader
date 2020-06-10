@@ -15,7 +15,6 @@
 ## (also on the first one).
 
 
-
 # $1 is the koreader user directory
 
 CUT="busybox cut"
@@ -23,44 +22,44 @@ REV="busybox rev"
 WD=$(pwd)
 
 # system dir of koreader
-SYSTEM_DIR=$(echo $WD | $REV | $CUT -d'/' -f1- | $REV)
+SYSTEM_DIR=$(echo "$WD" | $REV | $CUT -d'/' -f1- | $REV)
 
 
 # ./scripts.done does not exist after apk update
 if [ ! -f "./scripts.done" ]; then
   # if scripts.once does not exist, create and populate it
-  if [ ! -d $1/scripts.once ]; then
-    mkdir $1/scripts.once
-    echo "#place *.sh scripts here, which should be executed after an update of koreader" > $1/scripts.once/README
-    echo "#you could overwrite hyphenation patterns with your own ones" >> $1/scripts.once/README
+  if [ ! -d "$1"/scripts.once ]; then
+    mkdir "$1"/scripts.once
+    echo "#place *.sh scripts here, which should be executed after an update of koreader" > "$1"/scripts.once/README
+    echo "#you could overwrite hyphenation patterns with your own ones" >> "$1"/scripts.once/README
 
-   cp $SYSTEM_DIR/scripts/*once.sh $1/scripts.once/ 
+   cp "$SYSTEM_DIR"/scripts/*once.sh "$1"/scripts.once/ 
   fi
 
   # if scripts.update does not exist, create and populate it
-  if [ ! -d $1/scripts.update ]; then
-    mkdir $1/scripts.update
-    echo "#place *.sh scripts here, which should be executed everytime koreader starts" > $1/scripts.update/README
-    echo "#you could update the hyphenation patterns with new ones" >> $1/scripts.update/README
+  if [ ! -d "$1"/scripts.update ]; then
+    mkdir "$1"/scripts.update
+    echo "#place *.sh scripts here, which should be executed everytime koreader starts" > "$1"/scripts.update/README
+    echo "#you could update the hyphenation patterns with new ones" >> "$1"/scripts.update/README
   
-  cp $SYSTEM_DIR/scripts/*update.sh $1/scripts.update/
+  cp "$SYSTEM_DIR"/scripts/*update.sh "$1"/scripts.update/
   fi
 
   # execute all scripts in scripts.once	
-  for script in $(ls $1/scripts.once/*.sh); do
+  for script in $(ls "$1"/scripts.once/*.sh); do
     echo "execute: sh $script $1 $SYSTEM_DIR" >> ./scripts.done
-    sh $script $1 $SYSTEM_DIR
+    sh "$script" "$1" "$SYSTEM_DIR"
   done
   echo "scripts once done" >> ./scripts.done
 else
   rm ./scripts.done
 fi
 
-if [ -d $1/scripts.update ]; then
+if [ -d "$1"/scripts.update ]; then
   # execute all scripts in scripts.update	
-  for script in $(ls $1/scripts.update/*.sh); do
+  for script in $(ls "$1"/scripts.update/*.sh); do
     echo "execute: sh $script $1 $SYSTEM_DIR" >> ./scripts.done
-    sh $script $1 $SYSTEM_DIR
+    sh "$script" "$1" "$SYSTEM_DIR"
   done
 fi
 

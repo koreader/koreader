@@ -6,9 +6,9 @@
 SYSTEM_DIR=$2
 
 # copy pattern files from user to system directory
-if  [ -d $1/hyph ]; then
-	for i in $(ls $1/hyph/*.pattern); do
-		cp $i $SYSTEM_DIR/data/hyph/
+if  [ -d "$1"/hyph ]; then
+	for i in $(ls "$1"/hyph/*.pattern); do
+		cp "$i" "$SYSTEM_DIR"/data/hyph/
 	done
 fi
 
