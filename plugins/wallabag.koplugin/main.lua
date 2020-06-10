@@ -366,7 +366,7 @@ function Wallabag:getArticleList()
                           .. "&page=" .. page
                           .. "&perPage=" .. self.articles_per_sync
                           .. filtering
-        local articles_json = self:callAPI("GET", articles_url, nil, "", "")
+        local articles_json = self:callAPI("GET", articles_url, nil, "", "", true)
 
         if not articles_json then
             -- we may have hit the last page, there are no more articles
@@ -485,7 +485,7 @@ end
 -- body: empty string if not needed
 -- filepath: downloads the file if provided, returns JSON otherwise
 ---- @todo separate call to internal API from the download on external server
-function Wallabag:callAPI(method, apiurl, headers, body, filepath)
+function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
     local request, sink = {}, {}
     local parsed
 
@@ -549,7 +549,7 @@ function Wallabag:callAPI(method, apiurl, headers, body, filepath)
                     text = _("Server response is not valid."), })
             end
         end
-    else
+    elseif not quiet then
         if filepath ~= "" then
             local entry_mode = lfs.attributes(filepath, "mode")
             if entry_mode == "file" then
