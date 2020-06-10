@@ -45,6 +45,7 @@ if [ ! -f ./scripts.done ]; then
 
   # execute all scripts in scripts.once	
   for script in $(ls "$1"/scripts.once/*.sh); do
+    [[ -e "$script" ]] || break
     echo "execute: sh $script $1 $SYSTEM_DIR" >> ./scripts.done
     sh "$script" "$1" "$SYSTEM_DIR"
   done
@@ -56,6 +57,7 @@ fi
 if [ -d "$1"/scripts.update ]; then
   # execute all scripts in scripts.update	
   for script in $(ls "$1"/scripts.update/*.sh); do
+    [[ -e "$script" ]] || break
     echo "execute: sh $script $1 $SYSTEM_DIR" >> ./scripts.done
     sh "$script" "$1" "$SYSTEM_DIR"
   done
