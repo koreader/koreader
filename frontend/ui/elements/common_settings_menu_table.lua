@@ -471,7 +471,7 @@ common_settings.document = {
                         return G_reader_settings:isTrue("end_document_auto_mark")
                     end,
                     callback = function()
-                        G_reader_settings:flipNilOrFalse("end_document_auto_mark", nil)
+                        G_reader_settings:flipNilOrFalse("end_document_auto_mark")
                     end,
                     separator = true,
                 },
@@ -572,7 +572,7 @@ common_settings.document = {
                         return G_reader_settings:isTrue("highlight_action_on_single_word")
                     end,
                     callback = function()
-                        G_reader_settings:flipNilOrFalse("highlight_action_on_single_word", nil)
+                        G_reader_settings:flipNilOrFalse("highlight_action_on_single_word")
                     end,
                     separator = true,
                 },
