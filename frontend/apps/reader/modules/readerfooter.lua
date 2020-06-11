@@ -300,7 +300,7 @@ local ReaderFooter = WidgetContainer:extend{
     -- NOTE: Used for vertical spans by the VerticalGroup for multi-line footers.
     --       Needs to be separate from the actual bottom_padding, which is user-configurable.
     stock_bottom_padding = Screen:scaleBySize(1),
-    bottom_padding = stock_bottom_padding,
+    bottom_padding = Screen:scaleBySize(1),
     settings = {},
     -- added to expose them to unit tests
     textGeneratorMap = footerTextGeneratorMap,
