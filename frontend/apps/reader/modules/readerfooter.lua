@@ -385,14 +385,12 @@ function ReaderFooter:init()
     -- Container settings
     if not self.settings.container_height then
         self.settings.container_height = DMINIBAR_CONTAINER_HEIGHT
-    else
-        self.height = Screen:scaleBySize(self.settings.container_height)
     end
+    self.height = Screen:scaleBySize(self.settings.container_height)
     if not self.settings.container_bottom_padding then
         self.settings.container_bottom_padding = 1 -- unscaled_size_check: ignore
-    else
-        self.bottom_padding = Screen:scaleBySize(self.settings.container_bottom_padding)
     end
+    self.bottom_padding = Screen:scaleBySize(self.settings.container_bottom_padding)
 
     -- default margin (like self.horizontal_margin)
     if not self.settings.progress_margin_width  then
