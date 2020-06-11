@@ -331,7 +331,7 @@ function ReaderFooter:init()
         text_font_size = DMINIBAR_FONT_SIZE,
         text_font_bold = false,
         container_height = DMINIBAR_CONTAINER_HEIGHT,
-        container_bottom_padding = 1,
+        container_bottom_padding = 1, -- luacheck: ignore
     }
 
     -- Remove items not supported by the current device
@@ -389,7 +389,7 @@ function ReaderFooter:init()
         self.height = Screen:scaleBySize(self.settings.container_height)
     end
     if not self.settings.container_bottom_padding then
-        self.settings.container_bottom_padding = 1
+        self.settings.container_bottom_padding = 1 -- luacheck: ignore
     else
         self.bottom_padding = Screen:scaleBySize(self.settings.container_bottom_padding)
     end
