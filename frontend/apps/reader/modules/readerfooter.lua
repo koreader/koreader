@@ -1501,7 +1501,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 text_func = function()
                     local text = _("static margins (10)")
                     local cur_width = self.settings.progress_margin_width
-                    if cur_width == Screen:scaleBySize(0) then
+                    if cur_width == 0 then
                         text = _("no margins (0)")
                     elseif cur_width == Screen:scaleBySize(material_pixels) then
                         text = T(_("static margins (%1)"), material_pixels)
@@ -1519,11 +1519,11 @@ function ReaderFooter:addToMainMenu(menu_items)
                         {
                             text = _("No margins (0)"),
                             checked_func = function()
-                                return self.settings.progress_margin_width == Screen:scaleBySize(0)
+                                return self.settings.progress_margin_width == 0
                                     and not self.settings.progress_margin
                             end,
                             callback = function()
-                                self.settings.progress_margin_width = Screen:scaleBySize(0)
+                                self.settings.progress_margin_width = 0
                                 self.settings.progress_margin = false
                                 self:refreshFooter(true)
                             end,
