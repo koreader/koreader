@@ -10,6 +10,7 @@ local MultiInputDialog = require("ui/widget/multiinputdialog")
 local InputDialog = require("ui/widget/inputdialog")
 local NetworkMgr = require("ui/network/manager")
 local OPDSParser = require("ui/opdsparser")
+local Size = require("ui/size")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local http = require('socket.http')
@@ -195,8 +196,8 @@ function OPDSBrowser:addNewCatalog()
                 },
             },
         },
-        width = Screen:getWidth() * 0.95,
-        height = Screen:getHeight() * 0.2,
+        width = Size.screen_width.ninetyfive_percent,
+        height = Size.screen_height.twenty_percent,
     }
     UIManager:show(self.add_server_dialog)
     self.add_server_dialog:onShowKeyboard()
@@ -245,8 +246,8 @@ function OPDSBrowser:editCalibreServer()
                 },
             },
         },
-        width = Screen:getWidth() * 0.95,
-        height = Screen:getHeight() * 0.2,
+        width = Size.screen_width.ninetyfive_percent,
+        height = Size.screen_height.twenty_percent,
     }
     UIManager:show(self.add_server_dialog)
     self.add_server_dialog:onShowKeyboard()
@@ -792,8 +793,8 @@ function OPDSBrowser:editOPDSServer(item)
                 },
             },
         },
-        width = Screen:getWidth() * 0.95,
-        height = Screen:getHeight() * 0.2,
+        width = Size.screen_width.ninetyfive_percent,
+        height = Size.screen_height.twenty_percent,
     }
     UIManager:show(self.edit_server_dialog)
     self.edit_server_dialog:onShowKeyboard()

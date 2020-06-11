@@ -5,6 +5,7 @@ local FtpApi = require("apps/cloudstorage/ftpapi")
 local InfoMessage = require("ui/widget/infomessage")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local ReaderUI = require("apps/reader/readerui")
+local Size = require("ui/size")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
@@ -146,8 +147,8 @@ function Ftp:config(item, callback)
                 },
             },
         },
-        width = Screen:getWidth() * 0.95,
-        height = Screen:getHeight() * 0.2,
+        width = Size.screen_width.ninetyfive_percent,
+        height = Size.screen_height.twenty_percent,
         input_type = "text",
     }
     UIManager:show(self.settings_dialog)

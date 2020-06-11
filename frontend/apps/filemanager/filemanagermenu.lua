@@ -8,6 +8,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local PluginLoader = require("pluginloader")
 local Search = require("apps/filemanager/filemanagersearch")
 local SetDefaults = require("apps/filemanager/filemanagersetdefaults")
+local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local Screen = Device.screen
 local dbg = require("dbg")
@@ -143,7 +144,7 @@ function FileManagerMenu:setUpdateItemTable()
                     local SpinWidget = require("ui/widget/spinwidget")
                     local curr_items = G_reader_settings:readSetting("items_per_page") or 14
                     local items = SpinWidget:new{
-                        width = Screen:getWidth() * 0.6,
+                        width = Size.screen_width.sixty_percent,
                         value = curr_items,
                         value_min = 6,
                         value_max = 24,
@@ -166,7 +167,7 @@ function FileManagerMenu:setUpdateItemTable()
                     local default_font_size = math.floor(24 - ((curr_items - 6)/ 18) * 10 )
                     local curr_font_size = G_reader_settings:readSetting("items_font_size") or default_font_size
                     local items_font = SpinWidget:new{
-                        width = Screen:getWidth() * 0.6,
+                        width = Size.screen_width.sixty_percent,
                         value = curr_font_size,
                         value_min = 10,
                         value_max = 72,

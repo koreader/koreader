@@ -4,6 +4,7 @@ local DoubleKeyValuePage = require("doublekeyvaluepage")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
+local Size = require("ui/size")
 local Screen = require("device").screen
 local _ = require("gettext")
 local NetworkMgr = require("ui/network/manager")
@@ -146,8 +147,8 @@ How to generate a key and a secret key:
                 },
             },
         },
-        width = Screen:getWidth() * 0.95,
-        height = Screen:getHeight() * 0.2,
+        width = Size.screen_width.ninetyfive_percent,
+        height = Size.screen_height.twenty_percent,
         input_type = "text",
     }
     UIManager:show(self.settings_dialog)

@@ -28,6 +28,8 @@ defaults, please take a second to consider:
 local dbg = require("dbg")
 local Screen = require("device").screen
 
+--- @fixme: All of this ought to be recomputed on ScreenResize/ScreenMode Change?
+
 local Size = {
     border = {
         default = Screen:scaleBySize(1),
@@ -74,6 +76,20 @@ local Size = {
         horizontal_small = Screen:scaleBySize(5),
         vertical_default = Screen:scaleBySize(2),
         vertical_large = Screen:scaleBySize(5),
+    },
+    screen_width = {
+        twenty_percent = math.floor(Screen:getWidth() * 0.2),
+        forty_percent = math.floor(Screen:getWidth() * 0.4),
+        half = math.floor(Screen:getWidth() * 0.5),
+        sixty_percent = math.floor(Screen:getWidth() * 0.6),
+        eighty_percent = math.floor(Screen:getWidth() * 0.8),
+        ninety_percent = math.floor(Screen:getWidth() * 0.9),
+        ninetyfive_percent = math.floor(Screen:getWidth() * 0.95),
+    },
+    screen_height = {
+        twenty_percent = math.floor(Screen:getHeight() * 0.2),
+        forty_percent = math.floor(Screen:getHeight() * 0.4),
+        half = math.floor(Screen:getHeight() * 0.5),
     },
 }
 

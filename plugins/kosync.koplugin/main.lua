@@ -3,6 +3,7 @@ local LoginDialog = require("ui/widget/logindialog")
 local InfoMessage = require("ui/widget/infomessage")
 local ConfirmBox = require("ui/widget/confirmbox")
 local NetworkMgr = require("ui/network/manager")
+local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
 local DeviceModel = require("device").model
@@ -361,8 +362,8 @@ function KOSync:login()
                 },
             },
         },
-        width = Screen:getWidth() * 0.8,
-        height = Screen:getHeight() * 0.4,
+        width = Size.screen_width.eighty_percent,
+        height = Size.screen_height.forty_percent,
     }
 
     UIManager:show(self.login_dialog)

@@ -16,6 +16,7 @@ local Math = require("optmath")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local NetworkMgr = require("ui/network/manager")
 local ReadHistory = require("readhistory")
+local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
@@ -917,8 +918,8 @@ Restart KOReader after editing the config file.]]), BD.dirpath(DataStorage:getSe
                 },
             },
         },
-        width = Screen:getWidth() * 0.95,
-        height = Screen:getHeight() * 0.2,
+        width = Size.screen_width.ninetyfive_percent,
+        height = Size.screen_height.twenty_percent,
         input_type = "string",
     }
     UIManager:show(self.settings_dialog)
@@ -957,8 +958,8 @@ function Wallabag:editClientSettings()
                 },
             },
         },
-        width = Screen:getWidth() * 0.95,
-        height = Screen:getHeight() * 0.2,
+        width = Size.screen_width.ninetyfive_percent,
+        height = Size.screen_height.twenty_percent,
         input_type = "string",
     }
     UIManager:show(self.client_settings_dialog)

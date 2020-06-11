@@ -8,6 +8,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
+local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local dump = require("dump")
 local isAndroid, android = pcall(require, "android")
@@ -157,7 +158,7 @@ function SetDefaults:init()
                         },
                     },
                     input_type = setting_type,
-                    width = Screen:getWidth() * 0.95,
+                    width = Size.screen_witdh.ninetyfive_percent,
                 }
                 UIManager:show(self.set_dialog)
                 self.set_dialog:onShowKeyboard()
@@ -208,8 +209,8 @@ function SetDefaults:init()
                             },
                         },
                     },
-                    width = Screen:getWidth() * 0.95,
-                    height = Screen:getHeight() * 0.2,
+                    width = Size.screen_width.ninetyfive_percent,
+                    height = Size.screen_height.twenty_percent,
                 }
                 UIManager:show(self.set_dialog)
                 self.set_dialog:onShowKeyboard()
@@ -247,7 +248,7 @@ function SetDefaults:init()
                         },
                     },
                     input_type = setting_type,
-                    width = Screen:getWidth() * 0.95,
+                    width = Size.screen_width.ninetyfive_percent,
                 }
                 UIManager:show(self.set_dialog)
                 self.set_dialog:onShowKeyboard()

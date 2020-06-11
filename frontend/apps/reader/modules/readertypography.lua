@@ -4,6 +4,7 @@ local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
+local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local util = require("util")
@@ -412,7 +413,7 @@ When the book's language tag is not among our presets, no specific features will
                 right_default = alg_right_hyphen_min,
                 -- let room on the widget sides so we can see
                 -- the hyphenation changes happening
-                width = Screen:getWidth() * 0.6,
+                width = Size.screen_width.sixty_percent,
                 default_values = true,
                 default_text = _("Use language defaults"),
                 title_text = _("Hyphenation limits"),

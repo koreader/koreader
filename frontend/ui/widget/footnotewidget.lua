@@ -291,7 +291,7 @@ function FootnoteWidget:init()
         local added_bottom_pad = 0
         -- See if needed:
         -- Add a bit to bottom padding, as getSinglePageHeight() cut can be rough
-        -- added_bottom_pad = font_size * 0.2
+        -- added_bottom_pad = math.floor(font_size * 0.2)
         local reduced_height = single_page_height + top_border_size + padding_top + padding_bottom + added_bottom_pad
         vgroup = CenterContainer:new{
             dimen = Geom:new{

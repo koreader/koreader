@@ -42,7 +42,7 @@ function MultiInputDialog:init()
             input_type = field.input_type or "string",
             text_type =  field.text_type,
             face = self.input_face,
-            width = self.width * 0.9,
+            width = math.floor(self.width * 0.9),
             focused = k == 1 and true or false,
             scroll = false,
             parent = self,
@@ -68,7 +68,7 @@ function MultiInputDialog:init()
                 TextBoxWidget:new{
                     text = field.description,
                     face = Font:getFace("x_smallinfofont"),
-                    width = self.width * 0.9,
+                    width = math.floor(self.width * 0.9),
                 }
             }
             table.insert(VerticalGroupData, CenterContainer:new{

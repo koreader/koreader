@@ -3,6 +3,7 @@ local LineWidget = require("ui/widget/linewidget")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
+local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local InfoMessage = require("ui/widget/infomessage")
 local Geom = require("ui/geometry")
@@ -52,8 +53,8 @@ function PerceptionExpander:createUI(readSettings)
 
     self.screen_width = Screen:getWidth()
     local screen_height = Screen:getHeight()
-    local line_height = screen_height * 0.9
-    local line_top_position = screen_height * 0.05
+    local line_height = math.floor(screen_height * 0.9)
+    local line_top_position = math.floor(screen_height * 0.05)
 
     self.last_screen_mode = Screen:getScreenMode()
     if self.last_screen_mode == "landscape" then
@@ -152,8 +153,8 @@ function PerceptionExpander:showSettingsDialog()
                 },
             },
         },
-        width = Screen:getWidth() * 0.8,
-        height = Screen:getHeight() * 0.3,
+        width = Size.screen_width.eighty_percent,
+        height = math.floor(Screen:getHeight() * 0.3),
     }
     UIManager:show(self.settings_dialog)
     self.settings_dialog:onShowKeyboard()

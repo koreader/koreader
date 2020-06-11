@@ -56,7 +56,7 @@ function NumberPickerWidget:init()
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()
     if self.width == nil then
-        self.width = self.screen_width * 0.2
+        self.width = Size.screen_width.twenty_percent
     end
     if self.value_table then
         self.value_index = self.value_index or 1
@@ -116,7 +116,7 @@ function NumberPickerWidget:paintWidget()
     }
 
     local empty_space = VerticalSpan:new{
-        width = self.screen_height * 0.01
+        width = math.floor(self.screen_height * 0.01)
     }
     local value = self.value
     if not self.value_table then

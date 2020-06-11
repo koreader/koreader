@@ -5,6 +5,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
+local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local lfs = require("libs/libkoreader-lfs")
 local BaseUtil = require("ffi/util")
@@ -114,7 +115,7 @@ function FileSearcher:onShowFileSearch(search_path)
     self.search_dialog = InputDialog:new{
         title = _("Search for books by filename"),
         input = self.search_value,
-        width = Screen:getWidth() * 0.9,
+        width = Size.screen_width.ninety_percent,
         buttons = {
             {
                 {

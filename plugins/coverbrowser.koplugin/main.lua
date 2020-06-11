@@ -1,5 +1,6 @@
 local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
+local Size = require("ui/size")
 local logger = require("logger")
 local _ = require("gettext")
 local BookInfoManager = require("bookinfomanager")
@@ -422,7 +423,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                             -- value of 10 if it hasn't.
                             local curr_items = BookInfoManager:getSetting("files_per_page") or 10
                             local items = SpinWidget:new{
-                                width = Screen:getWidth() * 0.6,
+                                width = Size.screen_width.sixty_percent,
                                 value = curr_items,
                                 value_min = 4,
                                 value_max = 20,

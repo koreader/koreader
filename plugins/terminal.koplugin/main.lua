@@ -2,6 +2,7 @@ local DataStorage = require("datastorage")
 local Font = require("ui/font")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
+local Size = require("ui/size")
 local TextViewer = require("ui/widget/textviewer")
 local Trapper = require("ui/trapper")
 local UIManager = require("ui/uimanager")
@@ -26,7 +27,7 @@ function Terminal:start()
         title =  _("Enter a command and press \"Execute\""),
         input = self.command,
         para_direction_rtl = false, -- force LTR
-        text_height = Screen:getHeight() * 0.4,
+        text_height = Size.screen_height.forty_percent,
         input_type = "string",
         buttons = {{{
             text = _("Cancel"),

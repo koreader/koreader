@@ -4,6 +4,7 @@ local DocumentRegistry = require("document/documentregistry")
 local DropBoxApi = require("apps/cloudstorage/dropboxapi")
 local InfoMessage = require("ui/widget/infomessage")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
+local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local ReaderUI = require("apps/reader/readerui")
 local util = require("util")
@@ -130,8 +131,8 @@ function DropBox:config(item, callback)
                 },
             },
         },
-        width = Screen:getWidth() * 0.95,
-        height = Screen:getHeight() * 0.2,
+        width = Size.screen_width.ninetyfive_percent,
+        height = Size.screen_height.twenty_percent,
         input_type = "text",
     }
     UIManager:show(self.settings_dialog)

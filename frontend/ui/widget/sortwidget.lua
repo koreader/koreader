@@ -280,7 +280,7 @@ function SortWidget:init()
         width = self.width_widget * 22 / 100,
     }
     local button_vertical_line = LineWidget:new{
-        dimen = Geom:new{ w = Size.line.thick, h = self.item_height * 1.25 },
+        dimen = Geom:new{ w = Size.line.thick, h = math.floor(self.item_height * 1.25) },
         background = Blitbuffer.COLOR_DARK_GRAY,
         style = "solid",
     }

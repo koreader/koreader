@@ -12,6 +12,7 @@ local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
+local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local Screen = Device.screen
 local T = require("ffi/util").template
@@ -392,7 +393,7 @@ function ReaderPageMap:addToMainMenu(menu_items)
                 callback = function(touchmenu_instance)
                     local SpinWidget = require("ui/widget/spinwidget")
                     local spin_w = SpinWidget:new{
-                        width = Screen:getWidth() * 0.6,
+                        width = Size.screen_width.sixty_percent,
                         value = self.label_font_size,
                         value_min = 8,
                         value_max = 20,

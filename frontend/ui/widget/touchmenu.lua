@@ -484,8 +484,8 @@ function TouchMenu:init()
     local up_button = IconButton:new{
         icon_file = "resources/icons/appbar.chevron.up.png",
         show_parent = self.show_parent,
-        padding_left = footer_width*0.33*0.1,
-        padding_right = footer_width*0.33*0.1,
+        padding_left = math.floor(footer_width*0.33*0.1),
+        padding_right = math.floor(footer_width*0.33*0.1),
         callback = function()
             self:backToUpperMenu()
         end,
@@ -493,15 +493,15 @@ function TouchMenu:init()
     local footer_height = up_button:getSize().h + Size.line.thick
     self.footer = HorizontalGroup:new{
         LeftContainer:new{
-            dimen = Geom:new{ w = footer_width*0.33, h = footer_height},
+            dimen = Geom:new{ w = math.floor(footer_width*0.33), h = footer_height},
             up_button,
         },
         CenterContainer:new{
-            dimen = Geom:new{ w = footer_width*0.33, h = footer_height},
+            dimen = Geom:new{ w = math.floor(footer_width*0.33), h = footer_height},
             self.page_info,
         },
         RightContainer:new{
-            dimen = Geom:new{ w = footer_width*0.33, h = footer_height},
+            dimen = Geom:new{ w = math.floor(footer_width*0.33), h = footer_height},
             self.device_info,
         }
     }

@@ -1,5 +1,6 @@
 local _ = require("gettext")
 local Device = require("device")
+local Size = require("ui/size")
 local Screen = Device.screen
 local T = require("ffi/util").template
 
@@ -24,7 +25,7 @@ local function spinWidgetSetDPI(touchmenu_instance)
     local SpinWidget = require("ui/widget/spinwidget")
     local UIManager = require("ui/uimanager")
     local items = SpinWidget:new{
-        width = Screen:getWidth() * 0.6,
+        width = Size.screen_width.sixty_percent,
         value = custom() or dpi(),
         value_min = 90,
         value_max = 900,

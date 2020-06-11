@@ -12,6 +12,7 @@ local KeyValuePage = require("ui/widget/keyvaluepage")
 local LuaData = require("luadata")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local NetworkMgr = require("ui/network/manager")
+local Size = require("ui/size")
 local Trapper = require("ui/trapper")
 local UIManager = require("ui/uimanager")
 local ffiUtil  = require("ffi/util")
@@ -308,7 +309,7 @@ If you'd like to change the order in which dictionaries are queried (and their r
                     local SpinWidget = require("ui/widget/spinwidget")
                     local font_size = G_reader_settings:readSetting("dict_font_size") or 20
                     local items_font = SpinWidget:new{
-                        width = Screen:getWidth() * 0.6,
+                        width = Size.screen_width.sixty_percent,
                         value = font_size,
                         value_min = 8,
                         value_max = 32,

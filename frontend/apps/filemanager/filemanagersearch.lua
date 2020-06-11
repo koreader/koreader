@@ -5,6 +5,7 @@ local InputDialog = require("ui/widget/inputdialog")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
+local Size = require("ui/size")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local lfs = require("libs/libkoreader-lfs")
@@ -206,8 +207,8 @@ function Search:ShowSearch()
                     },
                 },
             },
-            width = Screen:getWidth() * 0.8,
-            height = Screen:getHeight() * 0.2,
+            width = Size.screen_width.eighty_percent,
+            height = Size.screen_height.twenty_percent,
         }
         UIManager:show(self.search_dialog)
         self.search_dialog:onShowKeyboard()

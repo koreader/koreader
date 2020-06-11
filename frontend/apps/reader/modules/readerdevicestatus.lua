@@ -2,6 +2,7 @@ local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local Device = require("device")
 local Font = require("ui/font")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local Size = require("ui/size")
 local Screen = Device.screen
 local UIManager = require("ui/uimanager")
 local powerd = Device:getPowerDevice()
@@ -79,7 +80,7 @@ function ReaderDeviceStatus:addToMainMenu(menu_items)
                     local SpinWidget = require("ui/widget/spinwidget")
                     local curr_items = G_reader_settings:readSetting("low_battery_threshold") or 20
                     local battery_spin = SpinWidget:new {
-                        width = Screen:getWidth() * 0.6,
+                        width = Size.screen_width.sixty_percent,
                         value = curr_items,
                         value_min = 5,
                         value_max = 90,

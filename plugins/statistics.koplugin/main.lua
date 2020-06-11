@@ -10,6 +10,7 @@ local Math = require("optmath")
 local ReaderFooter = require("apps/reader/modules/readerfooter")
 local ReaderProgress = require("readerprogress")
 local ReadHistory = require("readhistory")
+local Size = require("ui/size")
 local Screensaver = require("ui/screensaver")
 local SQ3 = require("lua-ljsqlite3/init")
 local TimeVal = require("ui/timeval")
@@ -789,7 +790,7 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                         callback = function(touchmenu_instance)
                             local SpinWidget = require("ui/widget/spinwidget")
                             UIManager:show(SpinWidget:new{
-                                width = Screen:getWidth() * 0.6,
+                                width = Size.screen_width.sixty_percent,
                                 value = self.calendar_nb_book_spans,
                                 value_min = 1,
                                 value_max = 5,

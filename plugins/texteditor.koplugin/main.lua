@@ -7,6 +7,7 @@ local InputDialog = require("ui/widget/inputdialog")
 local LuaSettings = require("luasettings")
 local Notification = require("ui/widget/notification")
 local PathChooser = require("ui/widget/pathchooser")
+local Size = require("ui/size")
 local Trapper = require("ui/trapper")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -95,7 +96,7 @@ function TextEditor:getSubMenuItems()
                         local SpinWidget = require("ui/widget/spinwidget")
                         local font_size = self.font_size
                         UIManager:show(SpinWidget:new{
-                            width = Screen:getWidth() * 0.6,
+                            width = Size.screen_width.sixty_percent,
                             value = font_size,
                             value_min = 8,
                             value_max = 26,

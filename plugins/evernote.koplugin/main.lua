@@ -5,6 +5,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local NetworkMgr = require("ui/network/manager")
 local DataStorage = require("datastorage")
 local DocSettings = require("docsettings")
+local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
 local util = require("ffi/util")
@@ -377,8 +378,8 @@ function EvernoteExporter:login()
                 },
             },
         },
-        width = Screen:getWidth() * 0.8,
-        height = Screen:getHeight() * 0.4,
+        width = Size.screen_width.eighty_percent,
+        height = Size.screen_height.forty_percent,
     }
 
     UIManager:show(self.login_dialog)

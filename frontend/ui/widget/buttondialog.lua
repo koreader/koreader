@@ -43,7 +43,7 @@ function ButtonDialog:init()
             alpha = self.alpha,
             FrameContainer:new{
                 ButtonTable:new{
-                    width = Screen:getWidth()*0.9,
+                    width = Size.screen_width.ninety_percent,
                     buttons = self.buttons,
                     show_parent = self,
                 },
