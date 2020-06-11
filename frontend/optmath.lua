@@ -8,10 +8,22 @@ local Math = {}
 
 local band = bit.band
 
+--[[--
+Rounds a percentage.
+
+@tparam float percent
+@treturn int rounded percentage
+]]
 function Math.roundPercent(percent)
     return math.floor(percent * 10000) / 10000
 end
 
+--[[--
+Rounds away from zero.
+
+@tparam float num
+@treturn int ceiled above 0, floored under 0
+]]
 function Math.roundAwayFromZero(num)
     if num > 0 then
         return math.ceil(num)
@@ -20,10 +32,23 @@ function Math.roundAwayFromZero(num)
     end
 end
 
+--[[--
+Rounds a number.
+No support for decimal points.
+
+@tparam float num
+@treturn int rounded number
+]]
 function Math.round(num)
     return math.floor(num + 0.5)
 end
 
+--[[--
+Determines if a number is odd or even.
+
+@int number
+@treturn string "odd" or "even"
+]]
 function Math.oddEven(number)
     if band(number, 1) == 1 then
         return "odd"
