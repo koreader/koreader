@@ -210,6 +210,7 @@ end
 
 function ReaderBookmark:gotoBookmark(pn_or_xp)
     if pn_or_xp then
+        self.ui.link:addCurrentLocationToStack()
         local event = self.ui.document.info.has_pages and "GotoPage" or "GotoXPointer"
         self.ui:handleEvent(Event:new(event, pn_or_xp))
     end
