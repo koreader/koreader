@@ -295,12 +295,9 @@ local ReaderFooter = WidgetContainer:extend{
     footer_text = nil,
     text_font_face = "ffont",
     height = Screen:scaleBySize(DMINIBAR_CONTAINER_HEIGHT),
-    horizontal_margin = Screen:scaleBySize(10),
-    text_left_margin = Screen:scaleBySize(10),
-    -- NOTE: Used for vertical spans by the VerticalGroup for multi-line footers.
-    --       Needs to be separate from the actual bottom_padding, which is user-configurable.
-    stock_bottom_padding = Screen:scaleBySize(1),
-    bottom_padding = Screen:scaleBySize(1),
+    horizontal_margin = Size.span.horizontal_default,
+    text_left_margin = Size.span.horizontal_default,
+    bottom_padding = Size.padding.tiny,
     settings = {},
     -- added to expose them to unit tests
     textGeneratorMap = footerTextGeneratorMap,
@@ -493,7 +490,7 @@ function ReaderFooter:updateFooterContainer()
                 h = Size.line.medium,
             }
         }
-        local vertical_span = VerticalSpan:new{width = self.stock_bottom_padding *2}
+        local vertical_span = VerticalSpan:new{width = Size.span.vertical_default}
         table.insert(self.vertical_frame, self.separator_line)
         table.insert(self.vertical_frame, vertical_span)
     end
@@ -529,7 +526,7 @@ function ReaderFooter:updateFooterContainer()
         }
     end
 
-    local vertical_span = VerticalSpan:new{width = self.stock_bottom_padding *2}
+    local vertical_span = VerticalSpan:new{width = Size.span.vertical_default}
 
     if self.settings.progress_bar_position == "above" and not self.settings.disable_progress_bar then
         table.insert(self.vertical_frame, self.progress_bar)
@@ -1350,7 +1347,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         callback = function()
                             if self.settings.progress_margin then
                                 self.settings.progress_margin = false
-                                self.settings.progress_margin_width = Screen:scaleBySize(10)
+                                self.settings.progress_margin_width = Size.span.horizontal_default
                             end
                             self.settings.progress_bar_position = nil
                             self:refreshFooter(true, true)
@@ -1803,7 +1800,7 @@ function ReaderFooter:onReaderReady()
     self:setupTouchZones()
     -- if same as book margins is selected in document with pages (pdf) we enforce static margins
     if self.ui.document.info.has_pages and self.settings.progress_margin then
-        self.settings.progress_margin_width = Screen:scaleBySize(10)
+        self.settings.progress_margin_width = Size.span.horizontal_default
         self:updateFooterContainer()
     -- set progress bar margins for current book
     elseif self.settings.progress_margin then
