@@ -96,6 +96,9 @@ local PROGRESS_BAR_STYLE_THIN_DEFAULT_HEIGHT = 3
 local DMINIBAR_TOC_MARKER_WIDTH = 2
 local DMINIBAR_FONT_SIZE = 14
 
+-- android: guidelines for rounded corner margins
+local material_pixels = 16 * math.floor(Screen:getDPI() / 160)
+
 -- functions that generates footer text for each mode
 local footerTextGeneratorMap = {
     empty = function() return "" end,
@@ -376,7 +379,8 @@ function ReaderFooter:init()
 
     -- default margin (like self.horizontal_margin)
     if not self.settings.progress_margin_width  then
-        self.settings.progress_margin_width = Screen:scaleBySize(10)
+        local defaults = Device:isAndroid() and material_pixels or 10
+        self.settings.progress_margin_width = Screen:scaleBySize(defaults)
     end
     if not self.settings.toc_markers_width then
         self.settings.toc_markers_width = DMINIBAR_TOC_MARKER_WIDTH
@@ -1442,8 +1446,11 @@ function ReaderFooter:addToMainMenu(menu_items)
             {
                 text_func = function()
                     local text = _("static margins (10)")
-                    if self.settings.progress_margin_width == Screen:scaleBySize(0) then
+                    local cur_width = self.settings.progress_margin_width
+                    if cur_width == Screen:scaleBySize(0) then
                         text = _("no margins (0)")
+                    elseif cur_width == Screen:scaleBySize(material_pixels) then
+                        text = T(_("static margins (%1)"), material_pixels)
                     end
                     if self.settings.progress_margin and not self.ui.document.info.has_pages then
                         text = T(_("same as book margins (%1)"), self.book_margins_footer_width)
@@ -1453,53 +1460,65 @@ function ReaderFooter:addToMainMenu(menu_items)
                 enabled_func = function()
                     return not self.settings.disable_progress_bar
                 end,
-                sub_item_table = {
-                    {
-                        text = _("No margins (0)"),
-                        checked_func = function()
-                            return self.settings.progress_margin_width == Screen:scaleBySize(0)
-                                and not self.settings.progress_margin
-                        end,
-                        callback = function()
-                            self.settings.progress_margin_width = Screen:scaleBySize(0)
-                            self.settings.progress_margin = false
-                            self:refreshFooter(true)
-                        end,
-                    },
-                    {
-                        text = _("Static margins (10)"),
-                        checked_func = function()
-                            return self.settings.progress_margin_width == Screen:scaleBySize(10)
-                                and not self.settings.progress_margin
-                                -- if same as book margins is selected in document with pages (pdf) we enforce static margins
-                                or (self.ui.document.info.has_pages and self.settings.progress_margin)
-                        end,
-                        callback = function()
-                            self.settings.progress_margin_width = Screen:scaleBySize(10)
-                            self.settings.progress_margin = false
-                            self:refreshFooter(true)
-                        end,
-                    },
-                    {
-                        text_func = function()
-                            if self.ui.document.info.has_pages then
-                                return _("Same as book margins")
+                sub_item_table_func = function()
+                    local common = {
+                        {
+                            text = _("No margins (0)"),
+                            checked_func = function()
+                                return self.settings.progress_margin_width == Screen:scaleBySize(0)
+                                    and not self.settings.progress_margin
+                            end,
+                            callback = function()
+                                self.settings.progress_margin_width = Screen:scaleBySize(0)
+                                self.settings.progress_margin = false
+                                self:refreshFooter(true)
+                            end,
+                        },
+                        {
+                            text_func = function()
+                                if self.ui.document.info.has_pages then
+                                    return _("Same as book margins")
+                                end
+                                return T(_("Same as book margins (%1)"), self.book_margins_footer_width)
+                            end,
+                            checked_func = function()
+                                return self.settings.progress_margin and not self.ui.document.info.has_pages
+                            end,
+                            enabled_func = function()
+                                return not self.ui.document.info.has_pages and self.settings.progress_bar_position ~= nil
+                            end,
+                            callback = function()
+                                self.settings.progress_margin = true
+                                self.settings.progress_margin_width = Screen:scaleBySize(self.book_margins_footer_width)
+                                self:refreshFooter(true)
                             end
-                            return T(_("Same as book margins (%1)"), self.book_margins_footer_width)
-                        end,
-                        checked_func = function()
-                            return self.settings.progress_margin and not self.ui.document.info.has_pages
-                        end,
-                        enabled_func = function()
-                            return not self.ui.document.info.has_pages and self.settings.progress_bar_position ~= nil
-                        end,
-                        callback = function()
-                            self.settings.progress_margin = true
-                            self.settings.progress_margin_width = Screen:scaleBySize(self.book_margins_footer_width)
-                            self:refreshFooter(true)
-                        end
-                    },
-                },
+                        },
+                    }
+                    local function customMargin(px)
+                        return {
+                            text = T(_("Static margins (%1)"), px),
+                            checked_func = function()
+                                return self.settings.progress_margin_width == Screen:scaleBySize(px)
+                                    and not self.settings.progress_margin
+                                    -- if same as book margins is selected in document with pages (pdf) we enforce static margins
+                                    or (self.ui.document.info.has_pages and self.settings.progress_margin)
+                            end,
+                            callback = function()
+                                self.settings.progress_margin_width = Screen:scaleBySize(px)
+                                self.settings.progress_margin = false
+                                self:refreshFooter(true)
+                            end,
+                        }
+                    end
+                    local device_defaults
+                    if Device:isAndroid() then
+                        device_defaults = customMargin(material_pixels)
+                    else
+                        device_defaults = customMargin(10)
+                    end
+                    table.insert(common, 2, device_defaults)
+                    return common
+                end,
             },
             {
                 text_func = function()
