@@ -46,7 +46,7 @@ function NaturalLightWidget:init()
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()
     self.span = math.ceil(self.screen_height * 0.01)
-    self.width = math.floor(Screen:getWidth() * 0.95)
+    self.width = math.floor(self.screen_width * 0.95)
     self.button_width = 0.08 * self.width
     self.textbox_width = 0.1 * self.width
     self.text_width = 0.2 * self.width
@@ -149,15 +149,15 @@ function NaturalLightWidget:createFrame()
             text = _("Natural light configuration"),
             face = self.title_face,
             bold = true,
-            width = math.floor(Screen:getWidth() * 0.95),
+            width = math.floor(self.screen_width * 0.95),
         },
     }
     local main_content = FrameContainer:new{
         padding = Size.padding.button,
         margin = Size.margin.small,
         bordersize = 0,
-        self:createMainContent(math.floor(Screen:getWidth() * 0.95),
-                               math.floor(Screen:getHeight() * 0.2))
+        self:createMainContent(math.floor(self.screen_width * 0.95),
+                               math.floor(self.screen_height * 0.2))
     }
     local nl_line = LineWidget:new{
         dimen = Geom:new{

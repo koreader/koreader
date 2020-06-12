@@ -80,7 +80,7 @@ function SpinWidget:update()
     local picker_update_callback = function() end
     local value_widget = NumberPickerWidget:new{
         show_parent = self,
-        width = math.floor(Screen:getWidth() * 0.2),
+        width = math.floor(self.screen_width * 0.2),
         value = self.value,
         value_table = self.value_table,
         value_index = self.value_index,

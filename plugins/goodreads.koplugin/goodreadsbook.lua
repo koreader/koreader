@@ -244,13 +244,13 @@ function GoodreadsBook:bookReview()
         ScrollHtmlWidget:new{
             html_body = self.dates.description,
             css = css,
-            width = math.floor(Screen:getWidth() * 0.9),
+            width = math.floor(self.screen_width * 0.9),
             height = math.floor(self.screen_height * 0.48),
             dialog = self,
         }
     }
     return CenterContainer:new{
-        dimen = Geom:new{ w = self.screen_width, h = math.floor(Screen:getHeight() * 0.5) },
+        dimen = Geom:new{ w = self.screen_width, h = math.floor(self.screen_height * 0.5) },
         book_meta_info_group,
     }
 end
