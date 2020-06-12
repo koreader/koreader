@@ -157,7 +157,7 @@ function SetDefaults:init()
                         },
                     },
                     input_type = setting_type,
-                    width = Size.screen_witdh.ninetyfive_percent,
+                    width = math.floor(Screen:getWidth() * 0.95),
                 }
                 UIManager:show(self.set_dialog)
                 self.set_dialog:onShowKeyboard()
