@@ -13,6 +13,7 @@ local InputDialog = require("ui/widget/inputdialog")
 local JSON = require("json")
 local LuaSettings = require("frontend/luasettings")
 local Math = require("optmath")
+local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local NetworkMgr = require("ui/network/manager")
 local ReadHistory = require("readhistory")
@@ -292,9 +293,27 @@ function Wallabag:getBearerToken()
         return s == nil or s == ""
     end
 
-    if isempty(self.server_url) or isempty(self.username) or isempty(self.password)  or isempty(self.client_id) or isempty(self.client_secret) or isempty(self.directory) then
-        UIManager:show(InfoMessage:new{
-            text = _("Please configure the server and local settings.")
+    local server_empty = isempty(self.server_url) or isempty(self.username) or isempty(self.password) or isempty(self.client_id) or isempty(self.client_secret)
+    local directory_empty = isempty(self.directory)
+    if server_empty or directory_empty then
+        UIManager:show(MultiConfirmBox:new{
+            text = _("Please configure the server and local settings."),
+            choice1_text_func = function()
+                if server_empty then
+                    return _("Server (★)")
+                else
+                    return _("Server")
+                end
+            end,
+            choice1_callback = function() self:editServerSettings() end,
+            choice2_text_func = function()
+                if directory_empty then
+                    return _("Folder (★)")
+                else
+                    return _("Folder")
+                end
+            end,
+            choice2_callback = function() self:setDownloadDirectory() end,
         })
         return false
     end
