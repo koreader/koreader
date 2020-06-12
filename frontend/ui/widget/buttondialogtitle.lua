@@ -65,14 +65,14 @@ function ButtonDialogTitle:init()
                         bordersize = 0,
                         TextBoxWidget:new{
                             text = self.title,
-                            width = Screen:getWidth() * 0.8 ,
+                            width = math.floor(Screen:getWidth() * 0.8),
                             face = self.use_info_style and self.info_face or self.title_face,
                             alignment = self.title_align or "left",
                         },
                     },
                     VerticalSpan:new{ width = Size.span.vertical_default },
                     ButtonTable:new{
-                        width = Screen:getWidth() * 0.9,
+                        width = math.floor(Screen:getWidth() * 0.9),
                         buttons = self.buttons,
                         zero_sep = true,
                         show_parent = self,

@@ -120,7 +120,7 @@ function AutoTurn:addToMainMenu(menu_items)
             local SpinWidget = require("ui/widget/spinwidget")
             local curr_items = G_reader_settings:readSetting("autoturn_timeout_seconds") or 30
             local autoturn_spin = SpinWidget:new {
-                width = Screen:getWidth() * 0.6,
+                width = math.floor(Screen:getWidth() * 0.6),
                 value = curr_items,
                 value_min = 0,
                 value_max = 240,
@@ -151,7 +151,7 @@ function AutoTurn:addToMainMenu(menu_items)
             local SpinWidget = require("ui/widget/spinwidget")
             local curr_items = G_reader_settings:readSetting("autoturn_distance") or 1
             local autoturn_spin = SpinWidget:new {
-                width = Screen:getWidth() * 0.6,
+                width = math.floor(Screen:getWidth() * 0.6),
                 value = curr_items,
                 value_min = -20,
                 value_max = 20,

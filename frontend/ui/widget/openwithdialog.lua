@@ -28,7 +28,7 @@ function OpenWithDialog:init()
 
     self.radio_button_table = RadioButtonTable:new{
         radio_buttons = self.radio_buttons,
-        width = self.width * 0.9,
+        width = math.floor(self.width * 0.9),
         focused = true,
         scroll = false,
         parent = self,
@@ -45,8 +45,8 @@ function OpenWithDialog:init()
             end
         end,
 
-        width = self.width * 0.9,
-        max_width = self.width * 0.9 - 2*Size.border.window,
+        width = math.floor(self.width * 0.9),
+        max_width = math.floor(self.width * 0.9 - 2 * Size.border.window),
         height = self.height,
         face = self.face,
 
@@ -55,7 +55,7 @@ function OpenWithDialog:init()
     self._always_file_toggle = LeftContainer:new{
         bordersize = 0,
         dimen = Geom:new{
-            w = self.width * 0.9,
+            w = math.floor(self.width * 0.9),
             h = self._check_file_button:getSize().h,
         },
         self._check_file_button,
@@ -71,8 +71,8 @@ function OpenWithDialog:init()
             end
         end,
 
-        width = self.width * 0.9,
-        max_width = self.width * 0.9 - 2*Size.border.window,
+        width = math.floor(self.width * 0.9),
+        max_width = math.floor(self.width * 0.9 - 2 * Size.border.window),
         height = self.height,
         face = self.face,
 
@@ -81,7 +81,7 @@ function OpenWithDialog:init()
     self._always_global_toggle = LeftContainer:new{
         bordersize = 0,
         dimen = Geom:new{
-            w = self.width * 0.9,
+            w = math.floor(self.width * 0.9),
             h = self._check_global_button:getSize().h,
         },
         self._check_global_button,
@@ -115,7 +115,7 @@ function OpenWithDialog:init()
                 LineWidget:new{
                     background = Blitbuffer.COLOR_DARK_GRAY,
                     dimen = Geom:new{
-                        w = self.width * 0.9,
+                        w = math.floor(self.width * 0.9),
                         h = Size.line.medium,
                     }
                 },

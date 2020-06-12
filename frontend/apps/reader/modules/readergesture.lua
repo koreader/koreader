@@ -489,7 +489,7 @@ function ReaderGesture:addToMainMenu(menu_items)
 Set double tap interval in milliseconds.
 The interval value can range from 100 (0.1 seconds) to 2000 (2 seconds).
 Default value: %1]]), GestureDetector.DOUBLE_TAP_INTERVAL/1000),
-                        width = Screen:getWidth() * 0.6,
+                        width = math.floor(Screen:getWidth() * 0.6),
                         value = GestureDetector:getInterval("ges_double_tap_interval")/1000,
                         value_min = 100,
                         value_max = 2000,
@@ -516,7 +516,7 @@ Default value: %1]]), GestureDetector.DOUBLE_TAP_INTERVAL/1000),
 Set two finger tap duration in milliseconds.
 The duration value can range from 100 (0.1 seconds) to 2000 (2 seconds).
 Default value: %1]]), GestureDetector.TWO_FINGER_TAP_DURATION/1000),
-                        width = Screen:getWidth() * 0.6,
+                        width = math.floor(Screen:getWidth() * 0.6),
                         value = GestureDetector:getInterval("ges_two_finger_tap_duration")/1000,
                         value_min = 100,
                         value_max = 2000,
@@ -543,7 +543,7 @@ Default value: %1]]), GestureDetector.TWO_FINGER_TAP_DURATION/1000),
 Set hold interval in milliseconds.
 The interval value can range from 100 (0.1 seconds) to 2000 (2 seconds).
 Default value: %1]]), GestureDetector.HOLD_INTERVAL/1000),
-                        width = Screen:getWidth() * 0.6,
+                        width = math.floor(Screen:getWidth() * 0.6),
                         value = GestureDetector:getInterval("ges_hold_interval")/1000,
                         value_min = 100,
                         value_max = 2000,
@@ -570,7 +570,7 @@ Default value: %1]]), GestureDetector.HOLD_INTERVAL/1000),
 Set pan delay interval in milliseconds.
 The interval value can range from 100 (0.1 seconds) to 2000 (2 seconds).
 Default value: %1]]), GestureDetector.PAN_DELAYED_INTERVAL/1000),
-                        width = Screen:getWidth() * 0.6,
+                        width = math.floor(Screen:getWidth() * 0.6),
                         value = GestureDetector:getInterval("ges_pan_delayed_interval")/1000,
                         value_min = 100,
                         value_max = 2000,
@@ -597,7 +597,7 @@ Default value: %1]]), GestureDetector.PAN_DELAYED_INTERVAL/1000),
 Set swipe interval in milliseconds.
 The interval value can range from 100 (0.1 seconds) to 2000 (2 seconds).
 Default value: %1]]), GestureDetector.SWIPE_INTERVAL/1000),
-                        width = Screen:getWidth() * 0.6,
+                        width = math.floor(Screen:getWidth() * 0.6),
                         value = GestureDetector:getInterval("ges_swipe_interval")/1000,
                         value_min = 100,
                         value_max = 2000,

@@ -250,7 +250,7 @@ From the footnote popup, you can jump to the footnote location in the book by sw
             callback = function()
                 local SpinWidget = require("ui/widget/spinwidget")
                 UIManager:show(SpinWidget:new{
-                    width = Screen:getWidth() * 0.75,
+                    width = math.floor(Screen:getWidth() * 0.75),
                     value = G_reader_settings:readSetting("footnote_popup_relative_font_size") or -2,
                     value_min = -10,
                     value_max = 5,

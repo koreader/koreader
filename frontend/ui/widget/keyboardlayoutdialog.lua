@@ -25,7 +25,7 @@ local KeyboardLayoutDialog = InputContainer:new{
     is_always_active = true,
     title = _("Keyboard layout"),
     modal = true,
-    width = Screen:getWidth() * 0.8,
+    width = math.floor(Screen:getWidth() * 0.8),
     face = Font:getFace("cfont", 22),
     title_face = Font:getFace("x_smalltfont"),
     title_padding = Size.padding.default,
@@ -86,7 +86,7 @@ function KeyboardLayoutDialog:init()
 
     self.radio_button_table = RadioButtonTable:new{
         radio_buttons = radio_buttons,
-        width = self.width * 0.9,
+        width = math.floor(self.width * 0.9),
         focused = true,
         scroll = false,
         parent = self,

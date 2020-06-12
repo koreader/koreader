@@ -42,15 +42,15 @@ function PageCropDialog:init()
         show_parent = self,
     }
     local ok_container = RightContainer:new{
-        dimen = Geom:new{ w = Screen:getWidth()*0.33, h = Screen:getHeight()/12},
+        dimen = Geom:new{ w = math.floor(Screen:getWidth()*0.33), h = math.floor(Screen:getHeight()/12)},
         ok_button,
     }
     local cancel_container = LeftContainer:new{
-        dimen = Geom:new{ w = Screen:getWidth()*0.33, h = Screen:getHeight()/12},
+        dimen = Geom:new{ w = math.floor(Screen:getWidth()*0.33), h = math.floor(Screen:getHeight()/12)},
         cancel_button,
     }
     table.insert(horizontal_group, ok_container)
-    table.insert(horizontal_group, HorizontalSpan:new{ width = Screen:getWidth()*0.34})
+    table.insert(horizontal_group, HorizontalSpan:new{ width = math.floor(Screen:getWidth()*0.34)})
     table.insert(horizontal_group, cancel_container)
     self[2] = FrameContainer:new{
         horizontal_group,

@@ -26,7 +26,7 @@ local SpinWidget = InputContainer:new{
     title_text = "",
     title_face = Font:getFace("x_smalltfont"),
     info_text = nil,
-    width = Screen:getWidth() * 0.95,
+    width = math.floor(Screen:getWidth() * 0.95),
     height = Screen:getHeight(),
     value_table = nil,
     value_index = nil,
@@ -80,7 +80,7 @@ function SpinWidget:update()
     local picker_update_callback = function() end
     local value_widget = NumberPickerWidget:new{
         show_parent = self,
-        width = self.screen_width * 0.2,
+        width = math.floor(self.screen_width * 0.2),
         value = self.value,
         value_table = self.value_table,
         value_index = self.value_index,
@@ -199,14 +199,14 @@ function SpinWidget:update()
             TextBoxWidget:new{
                 text = self.info_text,
                 face = Font:getFace("x_smallinfofont"),
-                width = self.width * 0.9,
+                width = math.floor(self.width * 0.9),
             }
         })
     end
     table.insert(vgroup, CenterContainer:new{
         dimen = Geom:new{
             w = self.width,
-            h = value_group:getSize().h + self.screen_height * 0.1,
+            h = value_group:getSize().h + math.floor(self.screen_height * 0.1),
         },
         value_group
     })

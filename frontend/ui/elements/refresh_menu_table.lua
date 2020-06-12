@@ -19,7 +19,7 @@ end
 local function spinWidgetSetRefresh(touchmenu_instance, refresh_rate_num)
     local SpinWidget = require("ui/widget/spinwidget")
     local items = SpinWidget:new{
-        width = Screen:getWidth() * 0.6,
+        width = math.floor(Screen:getWidth() * 0.6),
         value = custom(refresh_rate_num),
         value_min = 0,
         value_max = 200,

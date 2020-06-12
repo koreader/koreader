@@ -37,7 +37,7 @@ function DateWidget:init()
     self.light_bar = {}
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()
-    self.width = self.screen_width * 0.95
+    self.width = math.floor(self.screen_width * 0.95)
     if Device:hasKeys() then
         self.key_events = {
             Close = { {"Back"}, doc = "close date widget" }
@@ -62,7 +62,7 @@ end
 function DateWidget:update()
     local year_widget = NumberPickerWidget:new{
         show_parent = self,
-        width = self.screen_width * 0.2,
+        width = math.floor(self.screen_width * 0.2),
         value = self.year,
         value_min = 2017,
         value_max = 2037,
@@ -71,7 +71,7 @@ function DateWidget:update()
     }
     local month_widget = NumberPickerWidget:new{
         show_parent = self,
-        width = self.screen_width * 0.2,
+        width = math.floor(self.screen_width * 0.2),
         value = self.month,
         value_min = 1,
         value_max = 12,
@@ -80,7 +80,7 @@ function DateWidget:update()
     }
     local day_widget = NumberPickerWidget:new{
         show_parent = self,
-        width = self.screen_width * 0.2,
+        width = math.floor(self.screen_width * 0.2),
         value = self.day,
         value_min = 1,
         value_max = 31,
@@ -94,7 +94,7 @@ function DateWidget:update()
         alignment = "center",
         face = self.title_face,
         bold = true,
-        width = self.screen_width * 0.1,
+        width = math.floor(self.screen_width * 0.1),
     }
     local date_group = HorizontalGroup:new{
         align = "center",
@@ -113,7 +113,7 @@ function DateWidget:update()
             text = self.title_text,
             face = self.title_face,
             bold = true,
-            width = self.screen_width * 0.95,
+            width = math.floor(self.screen_width * 0.95),
         },
     }
     local date_line = LineWidget:new{
@@ -172,8 +172,8 @@ function DateWidget:update()
             date_line,
             CenterContainer:new{
                 dimen = Geom:new{
-                    w = self.screen_width * 0.95,
-                    h = date_group:getSize().h * 1.2,
+                    w = math.floor(self.screen_width * 0.95),
+                    h = math.floor(date_group:getSize().h * 1.2),
                 },
                 date_group
             },

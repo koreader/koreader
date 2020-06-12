@@ -247,7 +247,7 @@ function DictQuickLookup:update()
                 self.align = "bottom"
             end
         end
-        self.height = math.min(self.region.h*0.7, Screen:getHeight()*0.5)
+        self.height = math.floor(math.min(self.region.h*0.7, Screen:getHeight()*0.5))
     end
     -- dictionary title
     local close_button = CloseButton:new{ window = self, padding_top = self.title_margin, }
@@ -310,7 +310,7 @@ function DictQuickLookup:update()
             css = self:getHtmlDictionaryCss(),
             default_font_size = Screen:scaleBySize(G_reader_settings:readSetting("dict_font_size") or 20),
             width = self.width,
-            height = self.is_fullpage and self.height*0.75 or self.height*0.7,
+            height = self.is_fullpage and math.floor(self.height*0.75) or math.floor(self.height*0.7),
             dialog = self,
             html_link_tapped_callback = function(link)
                 self.html_dictionary_link_tapped_callback(self.dictionary, link)
@@ -322,7 +322,7 @@ function DictQuickLookup:update()
             face = self.content_face,
             width = self.width,
             -- get a bit more height for definition as wiki has one less button raw
-            height = self.is_fullpage and self.height*0.75 or self.height*0.7,
+            height = self.is_fullpage and math.floor(self.height*0.75) or math.floor(self.height*0.7),
             dialog = self,
             -- allow for disabling justification
             justified = G_reader_settings:nilOrTrue("dict_justify"),

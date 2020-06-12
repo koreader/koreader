@@ -361,8 +361,8 @@ function KOSync:login()
                 },
             },
         },
-        width = Screen:getWidth() * 0.8,
-        height = Screen:getHeight() * 0.4,
+        width = math.floor(Screen:getWidth() * 0.8),
+        height = math.floor(Screen:getHeight() * 0.4),
     }
 
     UIManager:show(self.login_dialog)

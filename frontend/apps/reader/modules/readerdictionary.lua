@@ -308,7 +308,7 @@ If you'd like to change the order in which dictionaries are queried (and their r
                     local SpinWidget = require("ui/widget/spinwidget")
                     local font_size = G_reader_settings:readSetting("dict_font_size") or 20
                     local items_font = SpinWidget:new{
-                        width = Screen:getWidth() * 0.6,
+                        width = math.floor(Screen:getWidth() * 0.6),
                         value = font_size,
                         value_min = 8,
                         value_max = 32,

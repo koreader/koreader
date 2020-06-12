@@ -46,7 +46,7 @@ function FrontLightWidget:init()
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()
     self.span = math.ceil(self.screen_height * 0.01)
-    self.width = self.screen_width * 0.95
+    self.width = math.floor(self.screen_width * 0.95)
     self.powerd = Device:getPowerDevice()
     self.fl_min = self.powerd.fl_min
     self.fl_max = self.powerd.fl_max
@@ -155,7 +155,7 @@ function FrontLightWidget:setProgress(num, step, num_warmth)
     end
 
     self.fl_group = ProgressWidget:new{
-        width = self.screen_width * 0.9,
+        width = math.floor(self.screen_width * 0.9),
         height = Size.item.height_big,
         percentage = self.fl_cur / self.fl_max,
         ticks = ticks,
@@ -167,14 +167,14 @@ function FrontLightWidget:setProgress(num, step, num_warmth)
         face = self.medium_font_face,
         bold = true,
         alignment = "center",
-        width = self.screen_width * 0.95
+        width = math.floor(self.screen_width * 0.95),
     }
     local button_minus = Button:new{
         text = "-1",
         margin = Size.margin.small,
         radius = 0,
         enabled = enable_button_minus and not self.light_fallback,
-        width = self.screen_width * 0.20,
+        width = math.floor(self.screen_width * 0.2),
         show_parent = self,
         callback = function()  self:setProgress(self.fl_cur - 1, step) end,
     }
@@ -183,7 +183,7 @@ function FrontLightWidget:setProgress(num, step, num_warmth)
         margin = Size.margin.small,
         radius = 0,
         enabled = enable_button_plus and not self.light_fallback,
-        width = self.screen_width * 0.20,
+        width = math.floor(self.screen_width * 0.2),
         show_parent = self,
         callback = function() self:setProgress(self.fl_cur + 1, step) end,
     }
@@ -191,14 +191,14 @@ function FrontLightWidget:setProgress(num, step, num_warmth)
         text = self.fl_cur,
         face = self.medium_font_face,
         alignment = "center",
-        width = self.screen_width * 0.95 - 1.275 * button_minus.width - 1.275 * button_plus.width,
+        width = math.floor(self.screen_width * 0.95 - 1.275 * button_minus.width - 1.275 * button_plus.width),
     }
     local button_min = Button:new{
         text = _("Min"),
         margin = Size.margin.small,
         radius = 0,
         enabled = not self.light_fallback,
-        width = self.screen_width * 0.20,
+        width = math.floor(self.screen_width * 0.2),
         show_parent = self,
         callback = function() self:setProgress(self.fl_min+1, step) end, -- min is 1 (use toggle for 0)
     }
@@ -207,7 +207,7 @@ function FrontLightWidget:setProgress(num, step, num_warmth)
         margin = Size.margin.small,
         radius = 0,
         enabled = not self.light_fallback,
-        width = self.screen_width * 0.20,
+        width = math.floor(self.screen_width * 0.2),
         show_parent = self,
         callback = function() self:setProgress(self.fl_max, step) end,
     }
@@ -216,14 +216,14 @@ function FrontLightWidget:setProgress(num, step, num_warmth)
         margin = Size.margin.small,
         radius = 0,
         enabled = not self.light_fallback,
-        width = self.screen_width * 0.20,
+        width = math.floor(self.screen_width * 0.2),
         show_parent = self,
         callback = function()
             self:setProgress(self.fl_min, step)
         end,
     }
     local empty_space = HorizontalSpan:new{
-        width = (self.screen_width * 0.95 - 1.2 * button_minus.width - 1.2 * button_plus.width - 1.2 * button_toggle.width) / 2,
+        width = math.floor((self.screen_width * 0.95 - 1.2 * button_minus.width - 1.2 * button_plus.width - 1.2 * button_toggle.width) / 2),
     }
     local button_table_up = HorizontalGroup:new{
         align = "center",
@@ -280,7 +280,7 @@ function FrontLightWidget:setProgress(num, step, num_warmth)
                 text = _("Configure"),
                 margin = Size.margin.small,
                 radius = 0,
-                width = self.screen_width * 0.20,
+                width = math.floor(self.screen_width * 0.2),
                 enabled = not self.nl_configure_open,
                 show_parent = self,
                 callback = function()
@@ -357,14 +357,14 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
         face = self.medium_font_face,
         bold = true,
         alignment = "center",
-        width = self.screen_width * 0.95
+        width = math.floor(self.screen_width * 0.95),
     }
     local button_minus = Button:new{
         text = "-" .. (1 * self.nl_scale),
         margin = Size.margin.small,
         radius = 0,
         enabled = enable_button_minus,
-        width = self.screen_width * 0.20,
+        width = math.floor(self.screen_width * 0.2),
         show_parent = self,
         callback = function()  self:setProgress(self.fl_cur, step, (num_warmth - (1 * self.nl_scale))) end,
     }
@@ -373,7 +373,7 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
         margin = Size.margin.small,
         radius = 0,
         enabled = enable_button_plus,
-        width = self.screen_width * 0.20,
+        width = math.floor(self.screen_width * 0.2),
         show_parent = self,
         callback = function() self:setProgress(self.fl_cur, step, (num_warmth + (1 * self.nl_scale))) end,
     }
@@ -381,14 +381,14 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
         text = num_warmth,
         face = self.medium_font_face,
         alignment = "center",
-        width = self.screen_width * 0.95 - 1.275 * button_minus.width - 1.275 * button_plus.width,
+        width = math.floor(self.screen_width * 0.95 - 1.275 * button_minus.width - 1.275 * button_plus.width),
     }
     local button_min = Button:new{
         text = _("Min"),
         margin = Size.margin.small,
         radius = 0,
         enabled = not self.powerd.auto_warmth,
-        width = self.screen_width * 0.20,
+        width = math.floor(self.screen_width * 0.2),
         show_parent = self,
         callback = function() self:setProgress(self.fl_cur, step, self.nl_min) end,
     }
@@ -397,12 +397,12 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
         margin = Size.margin.small,
         radius = 0,
         enabled = not self.powerd.auto_warmth,
-        width = self.screen_width * 0.20,
+        width = math.floor(self.screen_width * 0.2),
         show_parent = self,
         callback = function() self:setProgress(self.fl_cur, step, (self.nl_max * self.nl_scale)) end,
     }
     local empty_space = HorizontalSpan:new{
-        width = (self.screen_width * 0.95 - 1.2 * button_minus.width - 1.2 * button_plus.width) / 2,
+        width = math.floor((self.screen_width * 0.95 - 1.2 * button_minus.width - 1.2 * button_plus.width) / 2),
     }
     local button_table_up = HorizontalGroup:new{
         align = "center",
@@ -437,7 +437,7 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
         alignment = "right",
         fgcolor = self.powerd.auto_warmth and Blitbuffer.COLOR_BLACK or
             Blitbuffer.COLOR_DARK_GRAY,
-        width = self.screen_width * 0.3
+        width = math.floor(self.screen_width * 0.3),
     }
     local text_hour = TextBoxWidget:new{
         text = " " .. math.floor(self.powerd.max_warmth_hour) .. ":" ..
@@ -446,14 +446,14 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
         alignment = "center",
         fgcolor =self.powerd.auto_warmth and Blitbuffer.COLOR_BLACK or
             Blitbuffer.COLOR_DARK_GRAY,
-        width = self.screen_width * 0.15
+        width = math.floor(self.screen_width * 0.15),
     }
     local button_minus_one_hour = Button:new{
         text = "−",
         margin = Size.margin.small,
         radius = 0,
         enabled = self.powerd.auto_warmth,
-        width = self.screen_width * 0.1,
+        width = math.floor(self.screen_width * 0.1),
         show_parent = self,
         callback = function()
             self.powerd.max_warmth_hour =
@@ -473,7 +473,7 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
         margin = Size.margin.small,
         radius = 0,
         enabled = self.powerd.auto_warmth,
-        width = self.screen_width * 0.1,
+        width = math.floor(self.screen_width * 0.1),
         show_parent = self,
         callback = function()
             self.powerd.max_warmth_hour =
@@ -542,14 +542,14 @@ function FrontLightWidget:update()
             text = _("Frontlight"),
             face = self.title_face,
             bold = true,
-            width = self.screen_width * 0.95,
+            width = math.floor(self.screen_width * 0.95),
         },
     }
     local light_level = FrameContainer:new{
         padding = Size.padding.button,
         margin = Size.margin.small,
         bordersize = 0,
-        self:generateProgressGroup(self.screen_width * 0.95, self.screen_height * 0.20,
+        self:generateProgressGroup(math.floor(self.screen_width * 0.95), math.floor(self.screen_height * 0.2),
             self.fl_cur, self.one_step)
     }
     local light_line = LineWidget:new{

@@ -141,7 +141,7 @@ function AutoSuspend:addToMainMenu(menu_items)
             local SpinWidget = require("ui/widget/spinwidget")
             local curr_items = G_reader_settings:readSetting("auto_suspend_timeout_seconds") or 60*60
             local autosuspend_spin = SpinWidget:new {
-                width = Screen:getWidth() * 0.6,
+                width = math.floor(Screen:getWidth() * 0.6),
                 value = curr_items / 60,
                 value_min = 5,
                 value_max = 240,
@@ -173,7 +173,7 @@ function AutoSuspend:addToMainMenu(menu_items)
             local SpinWidget = require("ui/widget/spinwidget")
             local curr_items = self.autoshutdown_timeout_seconds
             local autosuspend_spin = SpinWidget:new {
-                width = Screen:getWidth() * 0.6,
+                width = math.floor(Screen:getWidth() * 0.6),
                 value = curr_items / 60 / 60,
                 -- About a minute, good for testing and battery life fanatics.
                 -- Just high enough to avoid an instant shutdown death scenario.

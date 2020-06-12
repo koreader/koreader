@@ -157,7 +157,7 @@ function SetDefaults:init()
                         },
                     },
                     input_type = setting_type,
-                    width = Screen:getWidth() * 0.95,
+                    width = math.floor(Screen:getWidth() * 0.95),
                 }
                 UIManager:show(self.set_dialog)
                 self.set_dialog:onShowKeyboard()
@@ -208,8 +208,8 @@ function SetDefaults:init()
                             },
                         },
                     },
-                    width = Screen:getWidth() * 0.95,
-                    height = Screen:getHeight() * 0.2,
+                    width = math.floor(Screen:getWidth() * 0.95),
+                    height = math.floor(Screen:getHeight() * 0.2),
                 }
                 UIManager:show(self.set_dialog)
                 self.set_dialog:onShowKeyboard()
@@ -247,7 +247,7 @@ function SetDefaults:init()
                         },
                     },
                     input_type = setting_type,
-                    width = Screen:getWidth() * 0.95,
+                    width = math.floor(Screen:getWidth() * 0.95),
                 }
                 UIManager:show(self.set_dialog)
                 self.set_dialog:onShowKeyboard()

@@ -130,8 +130,8 @@ function DropBox:config(item, callback)
                 },
             },
         },
-        width = Screen:getWidth() * 0.95,
-        height = Screen:getHeight() * 0.2,
+        width = math.floor(Screen:getWidth() * 0.95),
+        height = math.floor(Screen:getHeight() * 0.2),
         input_type = "text",
     }
     UIManager:show(self.settings_dialog)

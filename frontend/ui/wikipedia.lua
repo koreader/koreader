@@ -536,8 +536,8 @@ function Wikipedia:addImages(page, lang, more_images, image_size_factor, hi_imag
         local height = wimage.height or 100
         -- Give a little boost in size to thin images
         if width < height / 2 or height < width / 2 then
-            width = width * 1.3
-            height = height * 1.3
+            width = math.floor(width * 1.3)
+            height = math.floor(height * 1.3)
         end
         width = math.ceil(width * image_size_factor)
         height = math.ceil(height * image_size_factor)

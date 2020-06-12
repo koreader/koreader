@@ -207,12 +207,12 @@ function InputDialog:init()
         self.width = Screen:getWidth() - 2*self.border_size
         self.covers_fullscreen = true -- hint for UIManager:_repaint()
     else
-        self.width = self.width or Screen:getWidth() * 0.8
+        self.width = self.width or math.floor(Screen:getWidth() * 0.8)
     end
     if self.condensed then
         self.text_width = self.width - 2*(self.border_size + self.input_padding + self.input_margin)
     else
-        self.text_width = self.text_width or self.width * 0.9
+        self.text_width = self.text_width or math.floor(self.width * 0.9)
     end
     if self.readonly then -- hide keyboard if we can't edit
         self.keyboard_hidden = true

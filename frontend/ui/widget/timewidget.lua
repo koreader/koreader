@@ -37,7 +37,7 @@ function TimeWidget:init()
     self.light_bar = {}
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()
-    self.width = self.screen_width * 0.95
+    self.width = math.floor(self.screen_width * 0.95)
     if Device:hasKeys() then
         self.key_events = {
             Close = { {"Back"}, doc = "close time widget" }
@@ -62,7 +62,7 @@ end
 function TimeWidget:update()
     local hour_widget = NumberPickerWidget:new{
         show_parent = self,
-        width = self.screen_width * 0.2,
+        width = math.floor(self.screen_width * 0.2),
         value = self.hour,
         value_min = 0,
         value_max = self.hour_max,
@@ -71,7 +71,7 @@ function TimeWidget:update()
     }
     local min_widget = NumberPickerWidget:new{
         show_parent = self,
-        width = self.screen_width * 0.2,
+        width = math.floor(self.screen_width * 0.2),
         value = self.min,
         value_min = 0,
         value_max = 59,
@@ -83,7 +83,7 @@ function TimeWidget:update()
         alignment = "center",
         face = self.title_face,
         bold = true,
-        width = self.screen_width * 0.2,
+        width = math.floor(self.screen_width * 0.2),
     }
     local time_group = HorizontalGroup:new{
         align = "center",
@@ -101,7 +101,7 @@ function TimeWidget:update()
             text = self.title_text,
             face = self.title_face,
             bold = true,
-            max_width = self.screen_width * 0.95 - closebutton:getSize().w,
+            max_width = math.floor(self.screen_width * 0.95) - closebutton:getSize().w,
         },
     }
     local time_line = LineWidget:new{
@@ -158,8 +158,8 @@ function TimeWidget:update()
             time_line,
             CenterContainer:new{
                 dimen = Geom:new{
-                    w = self.screen_width * 0.95,
-                    h = time_group:getSize().h * 1.2,
+                    w = math.floor(self.screen_width * 0.95),
+                    h = math.floor(time_group:getSize().h * 1.2),
                 },
                 time_group
             },

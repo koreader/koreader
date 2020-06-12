@@ -206,8 +206,8 @@ function Search:ShowSearch()
                     },
                 },
             },
-            width = Screen:getWidth() * 0.8,
-            height = Screen:getHeight() * 0.2,
+            width = math.floor(Screen:getWidth() * 0.8),
+            height = math.floor(Screen:getHeight() * 0.2),
         }
         UIManager:show(self.search_dialog)
         self.search_dialog:onShowKeyboard()

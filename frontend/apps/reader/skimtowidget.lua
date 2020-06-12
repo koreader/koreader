@@ -37,12 +37,12 @@ function SkimToWidget:init()
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()
     self.span = math.ceil(self.screen_height * 0.01)
-    self.width = self.screen_width * 0.95
+    self.width = math.floor(self.screen_width * 0.95)
     self.button_bordersize = Size.border.button
     -- the buttons need some kind of separation but maybe I should just implement
     -- margin_left and margin_right…
     self.button_margin = self.button_bordersize
-    self.button_width = self.screen_width * 0.16 - (2*self.button_margin)
+    self.button_width = math.floor(self.screen_width * 0.16) - (2*self.button_margin)
     if Device:hasKeys() then
         self.key_events = {
             Close = { {"Back"}, doc = "close skimto page" }
@@ -93,12 +93,12 @@ function SkimToWidget:init()
             text = dialog_title,
             face = self.title_face,
             bold = true,
-            max_width = self.screen_width * 0.95,
+            max_width = math.floor(self.screen_width * 0.95),
         },
     }
 
     self.progress_bar = ProgressWidget:new{
-        width = self.screen_width * 0.9,
+        width = math.floor(self.screen_width * 0.9),
         height = Size.item.height_big,
         percentage = self.curr_page / self.page_count,
         ticks = self.ticks_candidates,
@@ -181,7 +181,7 @@ function SkimToWidget:init()
         radius = 0,
         padding = 0,
         enabled = true,
-        width = self.screen_width * 0.2 - (2*self.button_margin),
+        width = math.floor(self.screen_width * 0.2) - (2*self.button_margin),
         show_parent = self,
         callback = function()
             self.callback_switch_to_goto()
@@ -268,7 +268,7 @@ function SkimToWidget:init()
         end,
     }
 
-    local horizontal_span_up = HorizontalSpan:new{ width = self.screen_width * 0.2 }
+    local horizontal_span_up = HorizontalSpan:new{ width = math.floor(self.screen_width * 0.2) }
        local button_table_up = HorizontalGroup:new{
         align = "center",
         button_chapter_prev,

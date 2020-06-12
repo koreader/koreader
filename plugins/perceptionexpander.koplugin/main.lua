@@ -52,8 +52,8 @@ function PerceptionExpander:createUI(readSettings)
 
     self.screen_width = Screen:getWidth()
     local screen_height = Screen:getHeight()
-    local line_height = screen_height * 0.9
-    local line_top_position = screen_height * 0.05
+    local line_height = math.floor(screen_height * 0.9)
+    local line_top_position = math.floor(screen_height * 0.05)
 
     self.last_screen_mode = Screen:getScreenMode()
     if self.last_screen_mode == "landscape" then
@@ -152,8 +152,8 @@ function PerceptionExpander:showSettingsDialog()
                 },
             },
         },
-        width = Screen:getWidth() * 0.8,
-        height = Screen:getHeight() * 0.3,
+        width = math.floor(Screen:getWidth() * 0.8),
+        height = math.floor(Screen:getHeight() * 0.3),
     }
     UIManager:show(self.settings_dialog)
     self.settings_dialog:onShowKeyboard()

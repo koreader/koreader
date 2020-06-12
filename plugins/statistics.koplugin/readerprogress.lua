@@ -47,7 +47,7 @@ function ReaderProgress:init()
     self.large_font_face = Font:getFace("largeffont")
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()
-    if Screen:getWidth() < Screen:getHeight() then
+    if self.screen_width < self.screen_height then
         self.header_span = 25
         self.stats_span = 20
     else
@@ -256,7 +256,7 @@ function ReaderProgress:genWeekStats(stats_day)
             LeftContainer:new{
                 dimen = Geom:new{ w = self.screen_width , h = height / 3 },
                 ProgressWidget:new{
-                    width = (self.screen_width * 0.005) + (self.screen_width * 0.9 * select_day_time / max_week_time),
+                    width = math.floor((self.screen_width * 0.005) + (self.screen_width * 0.9 * select_day_time / max_week_time)),
                     height = Screen:scaleBySize(14),
                     percentage = 1.0,
                     ticks = nil,
@@ -272,7 +272,7 @@ function ReaderProgress:genWeekStats(stats_day)
     end  --for i=1
     table.insert(statistics_container, statistics_group)
     return CenterContainer:new{
-        dimen = Geom:new{ w = self.screen_width * 1.1 , h = self.screen_height * 0.50 },
+        dimen = Geom:new{ w = math.floor(self.screen_width * 1.1), h = math.floor(self.screen_height * 0.5) },
         statistics_container,
     }
 end
@@ -365,7 +365,7 @@ function ReaderProgress:genSummaryDay(width)
     table.insert(statistics_group, span_group)
     table.insert(statistics_container, statistics_group)
     return CenterContainer:new{
-        dimen = Geom:new{ w = self.screen_width , h = self.screen_height * 0.13 },
+        dimen = Geom:new{ w = self.screen_width , h = math.floor(self.screen_height * 0.13) },
         statistics_container,
     }
 end
@@ -490,7 +490,7 @@ function ReaderProgress:genSummaryWeek(width)
     table.insert(statistics_group, data_group)
     table.insert(statistics_container, statistics_group)
     return CenterContainer:new{
-        dimen = Geom:new{ w = self.screen_width , h = self.screen_height * 0.10 },
+        dimen = Geom:new{ w = self.screen_width , h = math.floor(self.screen_height * 0.10) },
         statistics_container,
     }
 end

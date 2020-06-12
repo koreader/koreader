@@ -97,7 +97,7 @@ function GoodreadsBook:genHeader(title)
 end
 
 function GoodreadsBook:genBookInfoGroup()
-    local split_span_width = self.screen_width * 0.05
+    local split_span_width = math.floor(self.screen_width * 0.05)
     local img_width, img_height
     if Screen:getScreenMode() == "landscape" then
         img_width = Screen:scaleBySize(132)
@@ -133,7 +133,7 @@ function GoodreadsBook:genBookInfoGroup()
         }
     )
     --span
-    local span_author = VerticalSpan:new{ width = height * 0.1 }
+    local span_author = VerticalSpan:new{ width = math.floor(height * 0.1) }
     table.insert(book_meta_info_group,
         CenterContainer:new{
             dimen = Geom:new{ w = width, h = Screen:scaleBySize(10) },
@@ -218,7 +218,7 @@ function GoodreadsBook:genBookInfoGroup()
         book_meta_info_group,
     })
     return CenterContainer:new{
-        dimen = Geom:new{ w = self.screen_width, h = self.screen_height * 0.35 },
+        dimen = Geom:new{ w = self.screen_width, h = math.floor(self.screen_height * 0.35) },
         book_info_group,
     }
 end
@@ -244,13 +244,13 @@ function GoodreadsBook:bookReview()
         ScrollHtmlWidget:new{
             html_body = self.dates.description,
             css = css,
-            width = self.screen_width * 0.9,
-            height = self.screen_height * 0.48,
+            width = math.floor(self.screen_width * 0.9),
+            height = math.floor(self.screen_height * 0.48),
             dialog = self,
         }
     }
     return CenterContainer:new{
-        dimen = Geom:new{ w = self.screen_width, h = self.screen_height * 0.50 },
+        dimen = Geom:new{ w = self.screen_width, h = math.floor(self.screen_height * 0.5) },
         book_meta_info_group,
     }
 end

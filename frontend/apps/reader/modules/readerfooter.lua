@@ -897,7 +897,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                             local SpinWidget = require("ui/widget/spinwidget")
                             local font_size = self.settings.text_font_size
                             local items_font = SpinWidget:new{
-                                width = Screen:getWidth() * 0.6,
+                                width = math.floor(Screen:getWidth() * 0.6),
                                 value = font_size,
                                 value_min = 8,
                                 value_max = 36,
@@ -951,7 +951,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                     local SpinWidget = require("ui/widget/spinwidget")
                     local container_height = self.settings.container_height
                     local items_font = SpinWidget:new{
-                        width = Screen:getWidth() * 0.6,
+                        width = math.floor(Screen:getWidth() * 0.6),
                         value = container_height,
                         value_min = 7,
                         value_max = 98,
@@ -978,7 +978,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                     local SpinWidget = require("ui/widget/spinwidget")
                     local container_bottom_padding = self.settings.container_bottom_padding
                     local items_font = SpinWidget:new{
-                        width = Screen:getWidth() * 0.6,
+                        width = math.floor(Screen:getWidth() * 0.6),
                         value = container_bottom_padding,
                         value_min = 0,
                         value_max = 49,
@@ -1007,7 +1007,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         callback = function(touchmenu_instance)
                             local SpinWidget = require("ui/widget/spinwidget")
                             local items = SpinWidget:new{
-                                width = Screen:getWidth() * 0.6,
+                                width = math.floor(Screen:getWidth() * 0.6),
                                 value = self.settings.book_title_max_width_pct,
                                 value_min = 10,
                                 value_step = 5,
@@ -1033,7 +1033,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         callback = function(touchmenu_instance)
                             local SpinWidget = require("ui/widget/spinwidget")
                             local items = SpinWidget:new{
-                                width = Screen:getWidth() * 0.6,
+                                width = math.floor(Screen:getWidth() * 0.6),
                                 value = self.settings.book_chapter_max_width_pct,
                                 value_min = 10,
                                 value_step = 5,
@@ -1409,7 +1409,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                             end
                             local SpinWidget = require("ui/widget/spinwidget")
                             local items = SpinWidget:new{
-                                width = Screen:getWidth() * 0.6,
+                                width = math.floor(Screen:getWidth() * 0.6),
                                 value = value,
                                 value_min = value_min,
                                 value_step = 1,
@@ -1585,7 +1585,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 callback = function(touchmenu_instance)
                     local SpinWidget = require("ui/widget/spinwidget")
                     local items = SpinWidget:new{
-                        width = Screen:getWidth() * 0.6,
+                        width = math.floor(Screen:getWidth() * 0.6),
                         value = self.settings.progress_bar_min_width_pct,
                         value_min = 5,
                         value_step = 5,

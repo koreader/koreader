@@ -54,8 +54,8 @@ function DoubleSpinWidget:init()
     self.medium_font_face = Font:getFace("ffont")
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()
-    self.width = self.width or self.screen_width * 0.8
-    self.picker_width = self.screen_width * 0.25
+    self.width = self.width or math.floor(self.screen_width * 0.8)
+    self.picker_width = math.floor(self.screen_width * 0.25)
     if Device:hasKeys() then
         self.key_events = {
             Close = { {"Back"}, doc = "close time widget" }
@@ -174,7 +174,7 @@ function DoubleSpinWidget:update()
         TextBoxWidget:new{
             text = self.info_text or "",
             face = Font:getFace("x_smallinfofont"),
-            width = self.width * 0.9,
+            width = math.floor(self.width * 0.9),
         }
     }
     local buttons = {

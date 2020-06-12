@@ -46,7 +46,7 @@ function NaturalLightWidget:init()
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()
     self.span = math.ceil(self.screen_height * 0.01)
-    self.width = self.screen_width*0.95
+    self.width = math.floor(self.screen_width * 0.95)
     self.button_width = 0.08 * self.width
     self.textbox_width = 0.1 * self.width
     self.text_width = 0.2 * self.width
@@ -149,15 +149,15 @@ function NaturalLightWidget:createFrame()
             text = _("Natural light configuration"),
             face = self.title_face,
             bold = true,
-            width = self.screen_width * 0.95,
+            width = math.floor(self.screen_width * 0.95),
         },
     }
     local main_content = FrameContainer:new{
         padding = Size.padding.button,
         margin = Size.margin.small,
         bordersize = 0,
-        self:createMainContent(self.screen_width * 0.95,
-                               self.screen_height * 0.201)
+        self:createMainContent(math.floor(self.screen_width * 0.95),
+                               math.floor(self.screen_height * 0.2))
     }
     local nl_line = LineWidget:new{
         dimen = Geom:new{
@@ -272,7 +272,7 @@ function NaturalLightWidget:createMainContent(width, height)
         text = "Restore Defaults",
         margin = Size.margin.small,
         radius = 0,
-        width = self.width * 0.35,
+        width = math.floor(self.width * 0.35),
         show_parent = self,
         callback = function()
             self:setAllValues({white_gain = 25,
@@ -288,7 +288,7 @@ function NaturalLightWidget:createMainContent(width, height)
         text = "Cancel",
         margin = Size.margin.small,
         radius = 0,
-        width = self.width * 0.2,
+        width = math.floor(self.width * 0.2),
         show_parent = self,
         callback = function()
             self:setAllValues(self.old_values)
@@ -299,7 +299,7 @@ function NaturalLightWidget:createMainContent(width, height)
         text = "Save",
         margin = Size.margin.small,
         radius = 0,
-        width = self.width * 0.2,
+        width = math.floor(self.width * 0.2),
         show_parent = self,
         callback = function()
             G_reader_settings:saveSetting("natural_light_config",

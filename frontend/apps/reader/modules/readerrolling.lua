@@ -453,7 +453,7 @@ You can set how many lines are shown.]])
             callback = function(touchmenu_instance)
                 local SpinWidget = require("ui/widget/spinwidget")
                 UIManager:show(SpinWidget:new{
-                    width = Screen:getWidth() * 0.75,
+                    width = math.floor(Screen:getWidth() * 0.75),
                     value = G_reader_settings:readSetting("copt_overlap_lines") or 1,
                     value_min = 1,
                     value_max = 10,

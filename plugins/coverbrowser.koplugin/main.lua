@@ -422,7 +422,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                             -- value of 10 if it hasn't.
                             local curr_items = BookInfoManager:getSetting("files_per_page") or 10
                             local items = SpinWidget:new{
-                                width = Screen:getWidth() * 0.6,
+                                width = math.floor(Screen:getWidth() * 0.6),
                                 value = curr_items,
                                 value_min = 4,
                                 value_max = 20,

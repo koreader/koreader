@@ -280,7 +280,7 @@ end
 
 function BookStatusWidget:genBookInfoGroup()
     local screen_width = Screen:getWidth()
-    local split_span_width = screen_width * 0.05
+    local split_span_width = math.floor(screen_width * 0.05)
 
     local img_width, img_height
     if Screen:getScreenMode() == "landscape" then
@@ -330,7 +330,7 @@ function BookStatusWidget:genBookInfoGroup()
     -- progress bar
     local read_percentage = self.view.state.page / self.total_pages
     local progress_bar = ProgressWidget:new{
-        width = width * 0.7,
+        width = math.floor(width * 0.7),
         height = Screen:scaleBySize(10),
         percentage = read_percentage,
         ticks = nil,
@@ -478,7 +478,7 @@ function BookStatusWidget:genSummaryGroup(width)
         text = self.summary.note,
         face = self.medium_font_face,
         width = width - self.padding * 3,
-        height = height * 0.75,
+        height = math.floor(height * 0.75),
         scroll = true,
         bordersize = Size.border.default,
         focused = false,
@@ -547,7 +547,7 @@ function BookStatusWidget:generateSwitchGroup(width)
     end
 
     local switch = ToggleSwitch:new{
-        width = width * 0.6,
+        width = math.floor(width * 0.6),
         default_value = config.default_value,
         name = config.name,
         name_text = config.name_text,
