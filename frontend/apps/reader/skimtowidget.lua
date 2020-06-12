@@ -42,7 +42,7 @@ function SkimToWidget:init()
     -- the buttons need some kind of separation but maybe I should just implement
     -- margin_left and margin_right…
     self.button_margin = self.button_bordersize
-    self.button_width = math.floor(self.screen_width * 0.16 - (2*self.button_margin))
+    self.button_width = math.floor(self.screen_width * 0.16) - (2*self.button_margin)
     if Device:hasKeys() then
         self.key_events = {
             Close = { {"Back"}, doc = "close skimto page" }
