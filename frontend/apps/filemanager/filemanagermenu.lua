@@ -8,7 +8,6 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local PluginLoader = require("pluginloader")
 local Search = require("apps/filemanager/filemanagersearch")
 local SetDefaults = require("apps/filemanager/filemanagersetdefaults")
-local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local Screen = Device.screen
 local dbg = require("dbg")

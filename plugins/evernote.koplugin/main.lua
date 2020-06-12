@@ -5,7 +5,6 @@ local InfoMessage = require("ui/widget/infomessage")
 local NetworkMgr = require("ui/network/manager")
 local DataStorage = require("datastorage")
 local DocSettings = require("docsettings")
-local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
 local util = require("ffi/util")

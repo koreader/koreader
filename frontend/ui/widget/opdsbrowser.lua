@@ -10,7 +10,6 @@ local MultiInputDialog = require("ui/widget/multiinputdialog")
 local InputDialog = require("ui/widget/inputdialog")
 local NetworkMgr = require("ui/network/manager")
 local OPDSParser = require("ui/opdsparser")
-local Size = require("ui/size")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local http = require('socket.http')

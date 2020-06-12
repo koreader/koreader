@@ -1,7 +1,6 @@
 local Device = require("device")
 local Event = require("ui/event")
 local PluginShare = require("pluginshare")
-local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")

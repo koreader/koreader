@@ -1,6 +1,5 @@
 local _ = require("gettext")
 local Device = require("device")
-local Size = require("ui/size")
 local Screen = Device.screen
 local T = require("ffi/util").template
 

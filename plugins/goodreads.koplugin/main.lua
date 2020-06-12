@@ -4,7 +4,6 @@ local DoubleKeyValuePage = require("doublekeyvaluepage")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
-local Size = require("ui/size")
 local Screen = require("device").screen
 local _ = require("gettext")
 local NetworkMgr = require("ui/network/manager")

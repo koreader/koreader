@@ -7,7 +7,6 @@ end
 local DataStorage = require("datastorage")
 local LuaSettings = require("luasettings")
 local PluginShare = require("pluginshare")
-local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")

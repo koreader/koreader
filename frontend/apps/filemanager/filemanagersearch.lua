@@ -5,7 +5,6 @@ local InputDialog = require("ui/widget/inputdialog")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
-local Size = require("ui/size")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local lfs = require("libs/libkoreader-lfs")

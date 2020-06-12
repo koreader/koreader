@@ -3,7 +3,6 @@ local LoginDialog = require("ui/widget/logindialog")
 local InfoMessage = require("ui/widget/infomessage")
 local ConfirmBox = require("ui/widget/confirmbox")
 local NetworkMgr = require("ui/network/manager")
-local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
 local DeviceModel = require("device").model

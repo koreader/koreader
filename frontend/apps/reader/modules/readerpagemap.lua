@@ -12,7 +12,6 @@ local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
-local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local Screen = Device.screen
 local T = require("ffi/util").template

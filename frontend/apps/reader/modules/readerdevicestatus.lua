@@ -2,7 +2,6 @@ local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local Device = require("device")
 local Font = require("ui/font")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local Size = require("ui/size")
 local Screen = Device.screen
 local UIManager = require("ui/uimanager")
 local powerd = Device:getPowerDevice()
