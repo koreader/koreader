@@ -116,7 +116,7 @@ function NumberPickerWidget:paintWidget()
     }
 
     local empty_space = VerticalSpan:new{
-        width = math.floor(self.screen_height * 0.01)
+        width = math.ceil(self.screen_height * 0.01)
     }
     local value = self.value
     if not self.value_table then
