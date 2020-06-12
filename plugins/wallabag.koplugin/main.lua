@@ -297,7 +297,7 @@ function Wallabag:getBearerToken()
     local directory_empty = isempty(self.directory)
     if server_empty or directory_empty then
         UIManager:show(MultiConfirmBox:new{
-            text = _("Please configure the server and local settings."),
+            text = _("Please configure the server settings and set a download folder."),
             choice1_text_func = function()
                 if server_empty then
                     return _("Server (★)")
