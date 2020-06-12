@@ -209,8 +209,8 @@ function SetDefaults:init()
                             },
                         },
                     },
-                    width = Size.screen_width.ninetyfive_percent,
-                    height = Size.screen_height.twenty_percent,
+                    width = math.floor(Screen:getWidth() * 0.95),
+                    height = math.floor(Screen:getHeight() * 0.2),
                 }
                 UIManager:show(self.set_dialog)
                 self.set_dialog:onShowKeyboard()
@@ -248,7 +248,7 @@ function SetDefaults:init()
                         },
                     },
                     input_type = setting_type,
-                    width = Size.screen_width.ninetyfive_percent,
+                    width = math.floor(Screen:getWidth() * 0.95),
                 }
                 UIManager:show(self.set_dialog)
                 self.set_dialog:onShowKeyboard()

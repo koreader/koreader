@@ -272,7 +272,7 @@ function ReaderProgress:genWeekStats(stats_day)
     end  --for i=1
     table.insert(statistics_container, statistics_group)
     return CenterContainer:new{
-        dimen = Geom:new{ w = math.floor(self.screen_width * 1.1), h = Size.screen_height.half },
+        dimen = Geom:new{ w = math.floor(self.screen_width * 1.1), h = math.floor(Screen:getHeight() * 0.5) },
         statistics_container,
     }
 end

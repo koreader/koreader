@@ -54,7 +54,7 @@ function DoubleSpinWidget:init()
     self.medium_font_face = Font:getFace("ffont")
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()
-    self.width = self.width or Size.screen_width.eighty_percent
+    self.width = self.width or math.floor(Screen:getWidth() * 0.8)
     self.picker_width = math.floor(self.screen_width * 0.25)
     if Device:hasKeys() then
         self.key_events = {

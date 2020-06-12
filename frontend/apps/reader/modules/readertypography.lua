@@ -413,7 +413,7 @@ When the book's language tag is not among our presets, no specific features will
                 right_default = alg_right_hyphen_min,
                 -- let room on the widget sides so we can see
                 -- the hyphenation changes happening
-                width = Size.screen_width.sixty_percent,
+                width = math.floor(Screen:getWidth() * 0.6),
                 default_values = true,
                 default_text = _("Use language defaults"),
                 title_text = _("Hyphenation limits"),

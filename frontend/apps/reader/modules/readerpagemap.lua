@@ -393,7 +393,7 @@ function ReaderPageMap:addToMainMenu(menu_items)
                 callback = function(touchmenu_instance)
                     local SpinWidget = require("ui/widget/spinwidget")
                     local spin_w = SpinWidget:new{
-                        width = Size.screen_width.sixty_percent,
+                        width = math.floor(Screen:getWidth() * 0.6),
                         value = self.label_font_size,
                         value_min = 8,
                         value_max = 20,

@@ -790,7 +790,7 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                         callback = function(touchmenu_instance)
                             local SpinWidget = require("ui/widget/spinwidget")
                             UIManager:show(SpinWidget:new{
-                                width = Size.screen_width.sixty_percent,
+                                width = math.floor(Screen:getWidth() * 0.6),
                                 value = self.calendar_nb_book_spans,
                                 value_min = 1,
                                 value_max = 5,

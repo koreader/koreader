@@ -80,7 +80,7 @@ function ReaderDeviceStatus:addToMainMenu(menu_items)
                     local SpinWidget = require("ui/widget/spinwidget")
                     local curr_items = G_reader_settings:readSetting("low_battery_threshold") or 20
                     local battery_spin = SpinWidget:new {
-                        width = Size.screen_width.sixty_percent,
+                        width = math.floor(Screen:getWidth() * 0.6),
                         value = curr_items,
                         value_min = 5,
                         value_max = 90,

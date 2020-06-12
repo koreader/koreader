@@ -153,7 +153,7 @@ function PerceptionExpander:showSettingsDialog()
                 },
             },
         },
-        width = Size.screen_width.eighty_percent,
+        width = math.floor(Screen:getWidth() * 0.8),
         height = math.floor(Screen:getHeight() * 0.3),
     }
     UIManager:show(self.settings_dialog)

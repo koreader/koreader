@@ -26,7 +26,7 @@ local SpinWidget = InputContainer:new{
     title_text = "",
     title_face = Font:getFace("x_smalltfont"),
     info_text = nil,
-    width = Size.screen_width.ninetyfive_percent,
+    width = math.floor(Screen:getWidth() * 0.95),
     height = Screen:getHeight(),
     value_table = nil,
     value_index = nil,
@@ -80,7 +80,7 @@ function SpinWidget:update()
     local picker_update_callback = function() end
     local value_widget = NumberPickerWidget:new{
         show_parent = self,
-        width = Size.screen_width.twenty_percent,
+        width = math.floor(Screen:getWidth() * 0.2),
         value = self.value,
         value_table = self.value_table,
         value_index = self.value_index,

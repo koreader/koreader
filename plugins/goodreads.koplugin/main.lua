@@ -147,8 +147,8 @@ How to generate a key and a secret key:
                 },
             },
         },
-        width = Size.screen_width.ninetyfive_percent,
-        height = Size.screen_height.twenty_percent,
+        width = math.floor(Screen:getWidth() * 0.95),
+        height = math.floor(Screen:getHeight() * 0.2),
         input_type = "text",
     }
     UIManager:show(self.settings_dialog)

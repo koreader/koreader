@@ -207,7 +207,7 @@ function InputDialog:init()
         self.width = Screen:getWidth() - 2*self.border_size
         self.covers_fullscreen = true -- hint for UIManager:_repaint()
     else
-        self.width = self.width or Size.screen_width.eighty_percent
+        self.width = self.width or math.floor(Screen:getWidth() * 0.8)
     end
     if self.condensed then
         self.text_width = self.width - 2*(self.border_size + self.input_padding + self.input_margin)

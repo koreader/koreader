@@ -27,7 +27,7 @@ function Terminal:start()
         title =  _("Enter a command and press \"Execute\""),
         input = self.command,
         para_direction_rtl = false, -- force LTR
-        text_height = Size.screen_height.forty_percent,
+        text_height = math.floor(Screen:getHeight() * 0.4),
         input_type = "string",
         buttons = {{{
             text = _("Cancel"),

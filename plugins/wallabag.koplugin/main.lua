@@ -918,8 +918,8 @@ Restart KOReader after editing the config file.]]), BD.dirpath(DataStorage:getSe
                 },
             },
         },
-        width = Size.screen_width.ninetyfive_percent,
-        height = Size.screen_height.twenty_percent,
+        width = math.floor(Screen:getWidth() * 0.95),
+        height = math.floor(Screen:getHeight() * 0.2),
         input_type = "string",
     }
     UIManager:show(self.settings_dialog)
@@ -958,8 +958,8 @@ function Wallabag:editClientSettings()
                 },
             },
         },
-        width = Size.screen_width.ninetyfive_percent,
-        height = Size.screen_height.twenty_percent,
+        width = math.floor(Screen:getWidth() * 0.95),
+        height = math.floor(Screen:getHeight() * 0.2),
         input_type = "string",
     }
     UIManager:show(self.client_settings_dialog)

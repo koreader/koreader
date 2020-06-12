@@ -96,7 +96,7 @@ function TextEditor:getSubMenuItems()
                         local SpinWidget = require("ui/widget/spinwidget")
                         local font_size = self.font_size
                         UIManager:show(SpinWidget:new{
-                            width = Size.screen_width.sixty_percent,
+                            width = math.floor(Screen:getWidth() * 0.6),
                             value = font_size,
                             value_min = 8,
                             value_max = 26,
