@@ -963,7 +963,7 @@ function UIManager:_refresh(mode, region, dither)
 end
 
 
--- A couple helper functions to compute/check aligned values...
+-- A couple helper functions to compute aligned values...
 -- c.f., <linux/kernel.h> & ffi/framebuffer_linux.lua
 local function ALIGN_DOWN(x, a)
     -- x & ~(a-1)
