@@ -1049,10 +1049,19 @@ function UIManager:_repaint()
         -- NOTE: We overshoot by 1px to account for potential off-by-ones.
         --       This may not strictly be needed anymore, and is blatantly unneeded for full-screen updates,
         --       but checkBounds & getPhysicalRect will sanitize that in mxc_update @ ffi/framebuffer_mxcfb ;).
-        refresh.region.x = refresh.region.x - 1
-        refresh.region.y = refresh.region.y - 1
-        refresh.region.w = refresh.region.w + 2
-        refresh.region.h = refresh.region.h + 2
+        -- NOTE: Don't blatantly shift stuff into negative coordinates, this skews alignment fixups when going through checkBounds...
+        if refresh.region.x > 0 then
+            refresh.region.x = refresh.region.x - 1
+            refresh.region.w = refresh.region.w + 2
+        else
+            refresh.region.w = refresh.region.w + 1
+        end
+        if refresh.region.y > 0 then
+            refresh.region.y = refresh.region.y - 1
+            refresh.region.h = refresh.region.h + 2
+        else
+            refresh.region.h = refresh.region.h + 1
+        end
         -- NOTE: If we're requesting hardware dithering on a partial update, make sure the rectangle is using
         --       coordinates aligned to the previous multiple of 8, and dimensions aligned to the next multiple of 8.
         --       Otherwise, some unlucky coordinates will play badly with the PxP's own alignment constraints,
