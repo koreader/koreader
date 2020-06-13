@@ -1053,14 +1053,14 @@ function UIManager:_repaint()
         refresh.region.y = refresh.region.y - 1
         refresh.region.w = refresh.region.w + 2
         refresh.region.h = refresh.region.h + 2
-        -- NOTE: If we're requesting hardware dithering, make sure the rectangle is using
+        -- NOTE: If we're requesting hardware dithering on a partial update, make sure the rectangle is using
         --       coordinates aligned to the previous multiple of 8, and dimensions aligned to the next multiple of 8.
         --       Otherwise, some unlucky coordinates will play badly with the PxP's own alignment constraints,
         --       leading to a refresh where content appears to have moved a few pixels to the side...
         --       (Sidebar: this is probably a kernel issue, the EPDC driver is responsible for the alignment fixup...).
         if refresh.dither then
-            refresh.region.x = ALIGN_DOWN(refresh.region.x, 8)
-            refresh.region.y = ALIGN_DOWN(refresh.region.y, 8)
+            refresh.region.x > 0 and refresh.region.x = ALIGN_DOWN(refresh.region.x, 8)
+            refresh.region.y > 0 and refresh.region.y = ALIGN_DOWN(refresh.region.y, 8)
             refresh.region.w = ALIGN_UP(refresh.region.w, 8)
             refresh.region.h = ALIGN_UP(refresh.region.h, 8)
         end
