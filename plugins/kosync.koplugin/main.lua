@@ -7,11 +7,12 @@ local UIManager = require("ui/uimanager")
 local Device = require("device")
 local Event = require("ui/event")
 local Math = require("optmath")
-local DEBUG = require("dbg")
-local T = require("ffi/util").template
-local _ = require("gettext")
+local Screen = Device.screen
+local logger = require("logger")
 local md5 = require("ffi/MD5")
 local random = require("random")
+local T = require("ffi/util").template
+local _ = require("gettext")
 
 if not G_reader_settings:readSetting("device_id") then
     G_reader_settings:saveSetting("device_id", random.uuid())
@@ -278,7 +279,7 @@ function KOSync:addToMainMenu(menu_items)
 end
 
 function KOSync:setCustomServer(server)
-    DEBUG("set custom server", server)
+    logger.dbg("set custom server", server)
     self.kosync_custom_server = server ~= "" and server or nil
     self:saveSettings()
 end
@@ -360,8 +361,8 @@ function KOSync:login()
                 },
             },
         },
-        width = math.floor(Device.screen:getWidth() * 0.8),
-        height = math.floor(Device.screen:getHeight() * 0.4),
+        width = math.floor(Screen:getWidth() * 0.8),
+        height = math.floor(Screen:getHeight() * 0.4),
     }
 
     UIManager:show(self.login_dialog)
@@ -383,6 +384,7 @@ function KOSync:doRegister(username, password)
         custom_url = self.kosync_custom_server,
         service_spec = self.path .. "/api.json"
     }
+    -- on Android to avoid ANR (no-op on other platforms)
     Device:setIgnoreInput(true)
     local userkey = md5.sum(password)
     local ok, status, body = pcall(client.register, client, username, userkey)
@@ -475,7 +477,7 @@ function KOSync:getLastProgress()
 end
 
 function KOSync:syncToProgress(progress)
-    DEBUG("sync to", progress)
+    logger.dbg("sync to", progress)
     if self.ui.document.info.has_pages then
         self.ui:handleEvent(Event:new("GotoPage", tonumber(progress)))
     else
@@ -509,7 +511,7 @@ function KOSync:updateProgress(manual)
         Device.model,
         self.kosync_device_id,
         function(ok, body)
-            DEBUG("update progress for", self.view.document.file, ok)
+            logger.dbg("update progress for", self.view.document.file, ok)
             if manual then
                 if ok then
                     UIManager:show(InfoMessage:new{
@@ -523,7 +525,7 @@ function KOSync:updateProgress(manual)
         end)
     if not ok then
         if manual then showSyncError() end
-        if err then DEBUG("err:", err) end
+        if err then logger.dbg("err:", err) end
     end
 end
 
@@ -547,7 +549,7 @@ function KOSync:getProgress(manual)
         self.kosync_userkey,
         doc_digest,
         function(ok, body)
-            DEBUG("get progress for", self.view.document.file, ok, body)
+            logger.dbg("get progress for", self.view.document.file, ok, body)
             if not ok or not body then
                 if manual then
                     showSyncError()
@@ -579,7 +581,7 @@ function KOSync:getProgress(manual)
             body.percentage = Math.roundPercent(body.percentage)
             local progress = self:getLastProgress()
             local percentage = self:getLastPercent()
-            DEBUG("current progress", percentage)
+            logger.dbg("current progress", percentage)
 
             if percentage == body.percentage
             or body.progress == progress then
@@ -641,7 +643,7 @@ function KOSync:getProgress(manual)
         end)
     if not ok then
         if manual then showSyncError() end
-        if err then DEBUG("err:", err) end
+        if err then logger.dbg("err:", err) end
     end
 end
 
@@ -664,7 +666,7 @@ function KOSync:saveSettings()
 end
 
 function KOSync:onCloseDocument()
-    DEBUG("on close document")
+    logger.dbg("on close document")
     if self.kosync_auto_sync then
         self:updateProgress()
     end
