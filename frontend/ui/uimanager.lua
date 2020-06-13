@@ -1061,14 +1061,21 @@ function UIManager:_repaint()
         if refresh.dither then
             -- NOTE: Make sure the coordinates are positive, first!
             --       The previous fixup will move 0 to -1, which we'd align to -8, which would skew the dimensions too much...
+            local x_fixup = 0
             if refresh.region.x > 0 then
-                refresh.region.x = ALIGN_DOWN(refresh.region.x, 8)
+                local x_orig = refresh.region.x
+                refresh.region.x = ALIGN_DOWN(x_orig, 8)
+                x_fixup = x_orig - refresh.region.x
             end
+            local y_fixup = 0
             if refresh.region.y > 0 then
-                refresh.region.y = ALIGN_DOWN(refresh.region.y, 8)
+                local y_orig = refresh.region.y
+                refresh.region.y = ALIGN_DOWN(y_orig, 8)
+                y_fixup = y_orig - refresh.region.y
             end
-            refresh.region.w = ALIGN_UP(refresh.region.w, 8)
-            refresh.region.h = ALIGN_UP(refresh.region.h, 8)
+            -- And also make sure we won't be inadvertently cropping our rectangle in case of severe alignment fixups...
+            refresh.region.w = ALIGN_UP(refresh.region.w + (x_fixup * 2), 8)
+            refresh.region.h = ALIGN_UP(refresh.region.h + (y_fixup * 2), 8)
         end
         Screen[refresh_methods[refresh.mode]](Screen,
             refresh.region.x, refresh.region.y,
