@@ -1050,9 +1050,10 @@ function UIManager:_repaint()
         --       coordinates aligned to the previous multiple of 8, and dimensions aligned to the next multiple of 8.
         --       Otherwise, some unlucky coordinates will play badly with the PxP's own alignment constraints,
         --       leading to a refresh where content appears to have moved a few pixels to the side...
-        --       (Sidebar: this is probably a kernel issue, the EPDC driver is responsible for the alignment fixup...).
+        --       (Sidebar: this is probably a kernel issue, the EPDC driver is responsible for the alignment fixup,
+        --       c.f., epdc_process_update @ drivers/video/fbdev/mxc/mxc_epdc_v2_fb.c on a Kobo Mk. 7 kernel...).
         if refresh.dither then
-            -- NOTE: Make sure the coordinates are positive, first! Otherwise, we'd gladly align firther down below 0,
+            -- NOTE: Make sure the coordinates are positive, first! Otherwise, we'd gladly align further down below 0,
             --       which would skew the rectangle's position/dimension after checkBounds...
             local x_fixup = 0
             if refresh.region.x > 0 then
