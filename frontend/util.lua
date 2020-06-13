@@ -537,6 +537,17 @@ function util.isEmptyDir(path)
     return true
 end
 
+--- check if the given path is a file
+---- @string path
+---- @treturn bool
+function util.fileExists(path)
+    local file = io.open(path, "r")
+    if file ~= nil then
+         file:close()
+         return true
+    end
+end
+
 --- Checks if the given path exists. Doesn't care if it's a file or directory.
 ---- @string path
 ---- @treturn bool
@@ -562,6 +573,53 @@ function util.makePath(path)
     local lfs = require("libs/libkoreader-lfs")
     return lfs.mkdir(path)
 end
+
+--- As `rm`
+-- @string path of the file to remove
+-- @treturn bool true on success; nil, err_message on error
+function util.removeFile(file)
+    local lfs = require("libs/libkoreader-lfs")
+    if file and lfs.attributes(file, "mode") == "file" then
+        return os.remove(file)
+    elseif file then
+        return nil, file .. " is not a file"
+    else
+        return nil, "file is nil"
+    end
+end
+
+-- Gets total, used and available bytes for the mountpoint that holds a given directory.
+-- @string path of the directory
+-- @treturn table with total, used and available bytes
+function util.diskUsage(dir)
+    -- safe way of testing df & awk
+    local function doCommand(d)
+        local handle = io.popen("df -k " .. d .. " 2>&1 | awk '$3 ~ /[0-9]+/ { print $2,$3,$4 }' 2>&1 || echo ::ERROR::")
+        if not handle then return end
+        local output = handle:read("*all")
+        handle:close()
+        if not output:find "::ERROR::" then
+            return output
+        end
+    end
+    local err = { total = nil, used = nil, available = nil }
+    local lfs = require("libs/libkoreader-lfs")
+    if not dir or lfs.attributes(dir, "mode") ~= "directory" then return err end
+    local usage = doCommand(dir)
+    if not usage then return err end
+    local stage, result = {}, {}
+    for size in usage:gmatch("%w+") do
+        table.insert(stage, size)
+    end
+    for k, v in pairs({"total", "used", "available"}) do
+        if stage[k] ~= nil then
+            -- sizes are in kb, return bytes here
+            result[v] = stage[k] * 1024
+        end
+    end
+    return result
+end
+
 
 --- Replaces characters that are invalid filenames.
 --
@@ -967,6 +1025,23 @@ function util.clearTable(t)
     local c = #t
     for i = 0, c do t[i] = nil end
 end
+
+--- Dumps a table into a file.
+--- @table t the table to be dumped
+--- @string file the file to store the table
+--- @treturn bool true on success, false otherwise
+function util.dumpTable(t, file)
+    if not t or not file or file == "" then return end
+    local dump = require("dump")
+    local f = io.open(file, "w")
+    if f then
+        f:write("return "..dump(t))
+        f:close()
+        return true
+    end
+    return false
+end
+
 
 --- Encode URL also known as percent-encoding see https://en.wikipedia.org/wiki/Percent-encoding
 --- @string text the string to encode

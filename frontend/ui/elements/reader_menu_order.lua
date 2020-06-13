@@ -114,7 +114,7 @@ local order = {
     },
     tools = {
         "read_timer",
-        "calibre_wireless_connection",
+        "calibre",
         "evernote",
         "statistics",
         "progress_sync",
@@ -149,6 +149,7 @@ local order = {
         "----------------------------",
         "goodreads",
         "----------------------------",
+        "find_book_in_calibre_catalog",
         "fulltext_search",
     },
     filemanager = {},
