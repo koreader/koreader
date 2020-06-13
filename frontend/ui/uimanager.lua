@@ -1059,6 +1059,8 @@ function UIManager:_repaint()
         --       leading to a refresh where content appears to have moved a few pixels to the side...
         --       (Sidebar: this is probably a kernel issue, the EPDC driver is responsible for the alignment fixup...).
         if refresh.dither then
+            -- NOTE: Make sure the coordinates are positive, first!
+            --       The previous fixup will move 0 to -1, which we'd align to -8, which would skew the dimensions too much...
             refresh.region.x > 0 and refresh.region.x = ALIGN_DOWN(refresh.region.x, 8)
             refresh.region.y > 0 and refresh.region.y = ALIGN_DOWN(refresh.region.y, 8)
             refresh.region.w = ALIGN_UP(refresh.region.w, 8)
