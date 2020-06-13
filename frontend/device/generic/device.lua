@@ -315,6 +315,9 @@ Device specific method for performing haptic feedback.
 --]]
 function Device:performHapticFeedback(type) end
 
+-- Device specific method for toggling input events
+function Device:setIgnoreInput(enable) return true end
+
 -- Device specific method for toggling the GSensor
 function Device:toggleGSensor(toggle) end
 
