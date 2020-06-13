@@ -107,7 +107,7 @@ function InfoMessage:init()
 
     local text_width
     if self.width == nil then
-        text_width = Screen:getWidth() * 2 / 3
+        text_width = math.floor(Screen:getWidth() * 2/3)
     else
         text_width = self.width - image_widget:getSize().w
         if text_width < 0 then

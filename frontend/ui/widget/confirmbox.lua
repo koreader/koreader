@@ -76,7 +76,7 @@ function ConfirmBox:init()
     local text_widget = TextBoxWidget:new{
         text = self.text,
         face = self.face,
-        width = Screen:getWidth()*2/3,
+        width = math.floor(Screen:getWidth() * 2/3),
     }
     local content = HorizontalGroup:new{
         align = "center",

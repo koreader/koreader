@@ -87,7 +87,7 @@ function MultiConfirmBox:init()
         TextBoxWidget:new{
             text = self.text,
             face = self.face,
-            width = Screen:getWidth()*2/3,
+            width = math.floor(Screen:getWidth() * 2/3),
         }
     }
 

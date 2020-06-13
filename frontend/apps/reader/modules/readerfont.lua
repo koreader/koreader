@@ -154,7 +154,7 @@ function ReaderFont:onShowFontMenu()
         title = self.font_menu_title,
         item_table = self.face_table,
         width = Screen:getWidth() - 100,
-        height = Screen:getHeight() / 2,
+        height = math.floor(Screen:getHeight() * 0.5),
         single_line = true,
         perpage_custom = 8,
     }

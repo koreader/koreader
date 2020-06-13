@@ -499,7 +499,7 @@ function Translator:_showTranslation(text, target_lang, source_lang)
             -- Showing the translation target language in this title may make
             -- it quite long and wrapped, taking valuable vertical spacing
         text = table.concat(output, "\n"),
-        height = Screen:getHeight() * 4/5,
+        height = math.floor(Screen:getHeight() * 0.8),
         justified = G_reader_settings:nilOrTrue("dict_justify"),
     })
 end

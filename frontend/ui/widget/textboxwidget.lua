@@ -6,7 +6,7 @@ Example:
     local Foo = TextBoxWidget:new{
         face = Font:getFace("cfont", 25),
         text = 'We can show multiple lines.\nFoo.\nBar.',
-        -- width = Screen:getWidth()*2/3,
+        -- width = math.floor(Screen:getWidth() * 2/3),
     }
     UIManager:show(Foo)
 
