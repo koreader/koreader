@@ -384,6 +384,7 @@ function KOSync:doRegister(username, password)
         custom_url = self.kosync_custom_server,
         service_spec = self.path .. "/api.json"
     }
+    Device:setIgnoreInput(true)
     local userkey = md5.sum(password)
     local ok, status, body = pcall(client.register, client, username, userkey)
     if not ok then
@@ -409,7 +410,7 @@ function KOSync:doRegister(username, password)
             text = body and body.message or _("Unknown server error"),
         })
     end
-
+    Device:setIgnoreInput(false)
     self:saveSettings()
 end
 
@@ -419,6 +420,7 @@ function KOSync:doLogin(username, password)
         custom_url = self.kosync_custom_server,
         service_spec = self.path .. "/api.json"
     }
+    Device:setIgnoreInput(true)
     local userkey = md5.sum(password)
     local ok, status, body = pcall(client.authorize, client, username, userkey)
     if not ok then
@@ -432,6 +434,7 @@ function KOSync:doLogin(username, password)
                 text = _("An unknown error occurred while logging in."),
             })
         end
+        Device:setIgnoreInput(false)
         return
     elseif status then
         self.kosync_username = username
@@ -445,7 +448,7 @@ function KOSync:doLogin(username, password)
             text = body and body.message or _("Unknown server error"),
         })
     end
-
+    Device:setIgnoreInput(false)
     self:saveSettings()
 end
 

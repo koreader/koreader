@@ -257,6 +257,10 @@ function Device:performHapticFeedback(type)
     android.hapticFeedback(C["AHAPTIC_"..type])
 end
 
+function Device:setIgnoreInput(enable)
+    android.setIgnoreInput(enable)
+end
+
 function Device:retrieveNetworkInfo()
     local ok, type = android.getNetworkInfo()
     ok, type = tonumber(ok), tonumber(type)
