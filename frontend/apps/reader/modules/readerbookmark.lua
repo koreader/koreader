@@ -218,7 +218,7 @@ end
 -- This function adds "chapter" property to highlights already saved in the document
 function ReaderBookmark:updateHighlightsIfNeeded()
     local version = self.ui.doc_settings:readSetting("bookmarks_version") or 0
-    if version >= 20200511 then
+    if version >= 20200615 then
         return
     end
 
@@ -242,7 +242,7 @@ function ReaderBookmark:updateHighlightsIfNeeded()
             bookmark.chapter = chapter_name
         end
     end
-    self.ui.doc_settings:saveSetting("bookmarks_version", 20200511)
+    self.ui.doc_settings:saveSetting("bookmarks_version", 20200615)
 end
 
 function ReaderBookmark:onShowBookmark()
