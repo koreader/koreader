@@ -1061,8 +1061,12 @@ function UIManager:_repaint()
         if refresh.dither then
             -- NOTE: Make sure the coordinates are positive, first!
             --       The previous fixup will move 0 to -1, which we'd align to -8, which would skew the dimensions too much...
-            refresh.region.x > 0 and refresh.region.x = ALIGN_DOWN(refresh.region.x, 8)
-            refresh.region.y > 0 and refresh.region.y = ALIGN_DOWN(refresh.region.y, 8)
+            if refresh.region.x > 0 then
+                refresh.region.x = ALIGN_DOWN(refresh.region.x, 8)
+            end
+            if refresh.region.y > 0 then
+                refresh.region.y = ALIGN_DOWN(refresh.region.y, 8)
+            end
             refresh.region.w = ALIGN_UP(refresh.region.w, 8)
             refresh.region.h = ALIGN_UP(refresh.region.h, 8)
         end
