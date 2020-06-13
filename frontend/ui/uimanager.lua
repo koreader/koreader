@@ -1052,7 +1052,8 @@ function UIManager:_repaint()
         --       leading to a refresh where content appears to have moved a few pixels to the side...
         --       (Sidebar: this is probably a kernel issue, the EPDC driver is responsible for the alignment fixup...).
         if refresh.dither then
-            -- NOTE: Make sure the coordinates are positive, first!
+            -- NOTE: Make sure the coordinates are positive, first! Otherwise, we'd gladly align firther down below 0,
+            --       which would skew the rectangle's position/dimension after checkBounds...
             local x_fixup = 0
             if refresh.region.x > 0 then
                 local x_orig = refresh.region.x
