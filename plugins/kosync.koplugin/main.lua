@@ -4,8 +4,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local ConfirmBox = require("ui/widget/confirmbox")
 local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
-local Screen = require("device").screen
-local DeviceModel = require("device").model
+local Device = require("device")
 local Event = require("ui/event")
 local Math = require("optmath")
 local DEBUG = require("dbg")
@@ -361,8 +360,8 @@ function KOSync:login()
                 },
             },
         },
-        width = math.floor(Screen:getWidth() * 0.8),
-        height = math.floor(Screen:getHeight() * 0.4),
+        width = math.floor(Device.screen:getWidth() * 0.8),
+        height = math.floor(Device.screen:getHeight() * 0.4),
     }
 
     UIManager:show(self.login_dialog)
@@ -507,7 +506,7 @@ function KOSync:updateProgress(manual)
         doc_digest,
         progress,
         percentage,
-        DeviceModel,
+        Device.model,
         self.kosync_device_id,
         function(ok, body)
             DEBUG("update progress for", self.view.document.file, ok)
@@ -566,7 +565,7 @@ function KOSync:getProgress(manual)
                 return
             end
 
-            if body.device == DeviceModel
+            if body.device == Device.model
             and body.device_id == self.kosync_device_id then
                 if manual then
                     UIManager:show(InfoMessage:new{
