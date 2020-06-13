@@ -962,6 +962,21 @@ function UIManager:_refresh(mode, region, dither)
     table.insert(self._refresh_stack, {mode = mode, region = region, dither = dither})
 end
 
+
+-- A couple helper functions to compute/check aligned values...
+-- c.f., <linux/kernel.h> & ffi/framebuffer_linux.lua
+local function ALIGN_DOWN(x, a)
+    -- x & ~(a-1)
+    local mask = a - 1
+    return bit.band(x, bit.bnot(mask))
+end
+
+local function ALIGN_UP(x, a)
+    -- (x + (a-1)) & ~(a-1)
+    local mask = a - 1
+    return bit.band(x + mask, bit.bnot(mask))
+end
+
 --- Repaints dirty widgets.
 function UIManager:_repaint()
     -- flag in which we will record if we did any repaints at all
@@ -1034,9 +1049,24 @@ function UIManager:_repaint()
         -- NOTE: We overshoot by 1px to account for potential off-by-ones.
         --       This may not strictly be needed anymore, and is blatantly unneeded for full-screen updates,
         --       but checkBounds & getPhysicalRect will sanitize that in mxc_update @ ffi/framebuffer_mxcfb ;).
+        refresh.region.x = refresh.region.x - 1
+        refresh.region.y = refresh.region.y - 1
+        refresh.region.w = refresh.region.w + 2
+        refresh.region.h = refresh.region.h + 2
+        -- NOTE: If we're requesting hardware dithering, make sure the rectangle is using
+        --       coordinates aligned to the previous multiple of 8, and dimensions aligned to the next multiple of 8.
+        --       Otherwise, some unlucky coordinates will play badly with the PxP's own alignment constraints,
+        --       leading to a refresh where content appears to have moved a few pixels to the side...
+        --       (Sidebar: this is probably a kernel issue, the EPDC driver is responsible for the alignment fixup...).
+        if refresh.dither then
+            refresh.region.x = ALIGN_DOWN(refresh.region.x, 8)
+            refresh.region.y = ALIGN_DOWN(refresh.region.y, 8)
+            refresh.region.w = ALIGN_UP(refresh.region.w, 8)
+            refresh.region.h = ALIGN_UP(refresh.region.h, 8)
+        end
         Screen[refresh_methods[refresh.mode]](Screen,
-            refresh.region.x - 1, refresh.region.y - 1,
-            refresh.region.w + 2, refresh.region.h + 2,
+            refresh.region.x, refresh.region.y,
+            refresh.region.w, refresh.region.h,
             refresh.dither)
     end
     self._refresh_stack = {}
