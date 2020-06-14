@@ -26,7 +26,6 @@ local unused_metadata = {
     "publisher",
     "rating",
     "rights",
-    "series_index",
     "thumbnail",
     "timestamp",
     "title_sort",
