@@ -168,7 +168,7 @@ function CalibreWireless:setInboxDir(host, port)
     local calibre_device = self
     require("ui/downloadmgr"):new{
         onConfirm = function(inbox)
-            CalibreMetadata:init(inbox)
+            CalibreMetadata:init(inbox, true)
             local driver
             if CalibreMetadata.drive then
                 driver = CalibreMetadata.drive.device_name
