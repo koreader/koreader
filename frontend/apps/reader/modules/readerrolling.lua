@@ -634,7 +634,7 @@ function ReaderRolling:onGotoXPointer(xp, marker_xp)
                 if BD.mirroredUILayout() then
                     -- In the middle margin, on the right of text
                     -- Same trick as below, assuming page2_x is equal to page 1 right x
-                    screen_x = Screen:getWidth() / 2
+                    screen_x = math.floor(Screen:getWidth() * 0.5)
                     local page2_x = self.ui.document:getPageOffsetX(self.ui.document:getCurrentPage()+1)
                     marker_w = page2_x + marker_w - screen_x
                     screen_x = screen_x - marker_w
@@ -648,7 +648,7 @@ function ReaderRolling:onGotoXPointer(xp, marker_xp)
                     -- In the middle margin, on the left of text
                     -- This is a bit tricky with how the middle margin is sized
                     -- by crengine (see LVDocView::updateLayout() in lvdocview.cpp)
-                    screen_x = Screen:getWidth() / 2
+                    screen_x = math.floor(Screen:getWidth() * 0.5)
                     local page2_x = self.ui.document:getPageOffsetX(self.ui.document:getCurrentPage()+1)
                     marker_w = page2_x + marker_w - screen_x
                 end
@@ -1086,7 +1086,7 @@ function ReaderRolling:showEngineProgress(percent)
         -- so it does not override the footer or a bookmark dogear
         local x = 0
         local y = Size.margin.small
-        local w = Screen:getWidth() / 3
+        local w = math.floor(Screen:getWidth() / 3)
         local h = Size.line.progress
         if self.engine_progress_widget then
             self.engine_progress_widget:setPercentage(percent)

@@ -53,7 +53,7 @@ function Notification:init()
     self[1] = CenterContainer:new{
         dimen = Geom:new{
             w = Screen:getWidth(),
-            h = Screen:getHeight()/10,
+            h = math.floor(Screen:getHeight() / 10),
         },
         FrameContainer:new{
             background = Blitbuffer.COLOR_WHITE,

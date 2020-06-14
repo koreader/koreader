@@ -707,7 +707,7 @@ function ReaderHighlight:onHoldPan(_, ges)
                 -- Also, we are not able to move hold_pos.x out of screen,
                 -- so if we started on the right page, ignore top left corner,
                 -- and if we started on the left page, ignore bottom right corner.
-                local screen_half_width = math.floor(Screen:getWidth() * 1/2)
+                local screen_half_width = math.floor(Screen:getWidth() * 0.5)
                 if self.hold_pos.x >= screen_half_width and is_in_prev_page_corner then
                     return true
                 elseif self.hold_pos.x <= screen_half_width and is_in_next_page_corner then

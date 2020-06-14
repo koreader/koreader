@@ -231,7 +231,7 @@ When the book's language tag is not among our presets, no specific features will
                 title = _("Language tags (and hyphenation dictionaries) used since start up"),
                 text = status_text,
                 text_face = Font:getFace("smallinfont"),
-                height = Screen:getHeight() * 4/5,
+                height = math.floor(Screen:getHeight() * 0.8),
             })
         end,
         keep_menu_open = true,

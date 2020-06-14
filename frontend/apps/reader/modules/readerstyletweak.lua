@@ -32,7 +32,7 @@ local TweakInfoWidget = InputContainer:new{
     is_global_default = nil,
     toggle_global_default_callback = function() end,
     modal = true,
-    width = Screen:getWidth()*3/4,
+    width = math.floor(Screen:getWidth() * 0.75),
 }
 
 function TweakInfoWidget:init()

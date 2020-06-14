@@ -112,7 +112,7 @@ function ReaderCropping:onPageCrop(mode)
         self.ui:handleEvent(Event:new("SetZoomMode", "page", "cropping"))
     end
     self.ui:handleEvent(Event:new("SetDimensions",
-        Geom:new{w = Screen:getWidth(), h = Screen:getHeight()*11/12})
+        Geom:new{w = Screen:getWidth(), h = math.floor(Screen:getHeight()*11/12)})
     )
     self.bbox_widget = BBoxWidget:new{
         crop = self,
