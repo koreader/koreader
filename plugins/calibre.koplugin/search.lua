@@ -70,6 +70,7 @@ local function getAllMetadata(t)
                 slim_book.lpath = book.lpath
                 slim_book.authors = book.authors
                 slim_book.series = book.series
+                slim_book.series_index = book.series_index
                 slim_book.tags = book.tags
                 slim_book.size = book.size
                 slim_book.rootpath = path
@@ -277,19 +278,36 @@ function CalibreSearch:onMenuHold(item)
     })
 end
 
-function CalibreSearch:bookCatalog(t)
+function CalibreSearch:bookCatalog(t, option)
     local catalog = {}
+    local series, subseries
+    if option and option == "series" then
+        series = true
+    end
     for _, book in ipairs(t) do
         local entry = {}
         entry.info = getBookInfo(book)
         entry.path = book.rootpath .. "/" .. book.lpath
-        entry.text = book.authors[1] .. ": " .. book.title
+        if series then
+            local major, minor = string.format("%.2f", book.series_index):match("([^.]+).([^.]+)")
+            if minor ~= "00" then
+                subseries = true
+            end
+            entry.text = string.format("%s.%s | %s - %s", major, minor, book.title, book.authors[1])
+        else
+            entry.text = string.format("%s - %s", book.title, book.authors[1])
+        end
         entry.callback = function()
             local ReaderUI = require("apps/reader/readerui")
             ReaderUI:showReader(book.rootpath .. "/" .. book.lpath)
             self.search_menu:onClose()
         end
         table.insert(catalog, entry)
+    end
+    if series and not subseries then
+        for index, entry in ipairs(catalog) do
+            catalog[index].text = entry.text:gsub(".00", "", 1)
+        end
     end
     return catalog
 end
@@ -397,14 +415,16 @@ function CalibreSearch:browse(option, run, chosen)
     end
     if run == 1 then
         local menu_entries = {}
-        local source
         local search_value
         if self.search_value ~= "" then
             search_value = self.search_value
         end
+        local name, source
         if option == "tags" then
+            name = _("Browse by tags")
             source = searchByTag(self.books, search_value, self.case_insensitive)
         elseif option == "series" then
+            name = _("Browse by series")
             source = searchBySeries(self.books, search_value, self.case_insensitive)
         end
         for k, v in pairs(source) do
@@ -416,19 +436,28 @@ function CalibreSearch:browse(option, run, chosen)
             table.insert(menu_entries, entry)
         end
         table.sort(menu_entries, function(v1,v2) return v1.text < v2.text end)
-        self.search_menu:switchItemTable(_("Browse") .. " " .. option, menu_entries)
+        self.search_menu:switchItemTable(name, menu_entries)
         UIManager:show(menu_container)
     else
+        local results
         if option == "tags" then
-            self:showresults(self:bookCatalog(getBooksByTag(self.books, chosen)))
+            results = getBooksByTag(self.books, chosen)
         elseif option == "series" then
-            self:showresults(self:bookCatalog(getBooksBySeries(self.books, chosen)))
+            results = getBooksBySeries(self.books, chosen)
+        end
+        if results then
+            local catalog = self:bookCatalog(results, option)
+            self:showresults(catalog, chosen)
         end
     end
+
 end
 
 -- show search results
-function CalibreSearch:showresults(t)
+function CalibreSearch:showresults(t, title)
+    if not title then
+        title = _("Search Results")
+    end
     local menu_container = CenterContainer:new{
         dimen = Screen:getSize(),
     }
@@ -446,7 +475,7 @@ function CalibreSearch:showresults(t)
     end
 
     table.sort(t, function(v1,v2) return v1.text < v2.text end)
-    self.search_menu:switchItemTable(_("Search Results"), t)
+    self.search_menu:switchItemTable(title, t)
     UIManager:show(menu_container)
 end
 
