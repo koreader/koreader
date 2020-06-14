@@ -22,6 +22,20 @@ local Calibre = WidgetContainer:new{
     is_doc_only = false,
 }
 
+function Calibre:onCalibreSearch()
+    CalibreSearch:ShowSearch()
+end
+
+function Calibre:onCalibreBrowseTags()
+    CalibreSearch.search_value = ""
+    CalibreSearch:find("tags", 1)
+end
+
+function Calibre:onCalibreBrowseSeries()
+    CalibreSearch.search_value = ""
+    CalibreSearch:find("series", 1)
+end
+
 function Calibre:init()
     CalibreWireless:init()
     self.ui.menu:registerToMainMenu(self)
