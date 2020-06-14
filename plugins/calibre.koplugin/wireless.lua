@@ -188,7 +188,7 @@ function CalibreWireless:setInboxDir(host, port)
             end
             -- probably not a good idea to mix calibre drivers because
             -- their default settings usually don't match (lpath et al)
-            if driver and danger then
+            if driver and danger() then
                 UIManager:show(ConfirmBox:new{
                     text = T(_([[This folder is already initialized as a %1.
 
