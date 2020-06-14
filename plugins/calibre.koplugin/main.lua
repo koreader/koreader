@@ -131,7 +131,7 @@ function Calibre:getSearchMenuTable()
             end,
         },
         {
-            text = _("Find metadata from reader"),
+            text = _("Enable searches in the reader"),
             checked_func = function()
                 return G_reader_settings:isTrue("calibre_search_from_reader")
             end,

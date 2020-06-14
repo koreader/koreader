@@ -334,7 +334,7 @@ function CalibreSearch:find(option)
     end
     -- this shouldn't happen unless the user disabled all libraries or they are empty.
     if #self.books == 0 then
-        logger.warn("no metedata to search, aborting")
+        logger.warn("no metadata to search, aborting")
         self:prompt(_("No metadata found"))
         return
     end
