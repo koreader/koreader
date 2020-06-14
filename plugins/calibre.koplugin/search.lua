@@ -504,7 +504,7 @@ function CalibreSearch:prompt(message)
             -- this will happen if it is in a nested dir.
             local inbox_dir = G_reader_settings:readSetting("inbox_dir")
             if inbox_dir and not self.libraries[inbox_dir] then
-                if CalibreMetadata:getTimestamp(inbox_dir) then
+                if CalibreMetadata:getDeviceInfo(inbox_dir, "date_last_connected") then
                     self.libraries[inbox_dir] = true
                     count = count + 1
                 end
@@ -563,7 +563,9 @@ function CalibreSearch:getMetadata()
     if self.cache_metadata then
         local function cacheIsNewer(timestamp)
             if not timestamp then return false end
-            return lfs.attributes(self.user_book_cache, "modification") > timestamp
+            local Y, M, D, h, m, s = timestamp:match("(%d+)-(%d+)-(%d+)T(%d+):(%d+):(%d+)")
+            local date = os.time({year = Y, month = M, day = D, hour = h, min = m, sec = s})
+            return lfs.attributes(self.user_book_cache, "modification") > date
         end
         local cache, err = loadTable(self.user_book_cache)
         if not cache then
@@ -571,7 +573,7 @@ function CalibreSearch:getMetadata()
         else
             local is_newer = true
             for path, enabled in pairs(self.libraries) do
-                if enabled and not cacheIsNewer(CalibreMetadata:getTimestamp(path)) then
+                if enabled and not cacheIsNewer(CalibreMetadata:getDeviceInfo(path, "date_last_connected")) then
                     is_newer = false
                     break
                 end

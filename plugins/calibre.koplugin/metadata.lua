@@ -197,21 +197,15 @@ function CalibreMetadata:clean()
     self.metadata = nil
 end
 
--- gets the last modification of the metadata for a given dir.
-function CalibreMetadata:getTimestamp(dir)
-    if not dir then return end
-    local ok1, __, metadata = findCalibreFiles(dir)
-    if not ok1 then return end
-    return lfs.attributes(metadata, "modification")
-end
-
--- gets the calibre driver used to initialize a given dir.
-function CalibreMetadata:getDriver(dir)
-    if not dir then return end
+-- get keys from driveinfo.calibre
+function CalibreMetadata:getDeviceInfo(dir, kind)
+    if not dir or not kind then return end
     local _, ok_drive, __, driveinfo = findCalibreFiles(dir)
     if not ok_drive then return end
     local drive = self:loadDeviceInfo(driveinfo)
-    if drive then return drive.device_name end
+    if drive then
+        return drive[kind]
+    end
 end
 
 -- initialize a directory as a calibre library.
