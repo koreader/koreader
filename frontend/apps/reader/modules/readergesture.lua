@@ -108,6 +108,9 @@ local action_strings = {
     wallabag_download = _("Wallabag retrieval"),
     kosync_push_progress = _("Push progress from this device"),
     kosync_pull_progress = _("Pull progress from other devices"),
+    calibre_search = _("Search in calibre metadata"),
+    calibre_browse_tags = _("Browse all calibre tags"),
+    calibre_browse_series = _("Browse all calibre series"),
 }
 
 local custom_multiswipes_path = DataStorage:getSettingsDir().."/multiswipes.lua"
@@ -792,6 +795,10 @@ function ReaderGesture:buildMenu(ges, default)
 
         {"kosync_push_progress", not self.is_docless},
         {"kosync_pull_progress", not self.is_docless},
+
+        {"calibre_search", true},
+        {"calibre_browse_tags", true},
+        {"calibre_browse_series", true},
     }
     local return_menu = {}
     -- add default action to the top of the submenu
@@ -1580,6 +1587,12 @@ function ReaderGesture:gestureAction(action, ges)
         self.ui:handleEvent(Event:new("KOSyncPushProgress"))
     elseif action == "kosync_pull_progress" then
         self.ui:handleEvent(Event:new("KOSyncPullProgress"))
+    elseif action == "calibre_search" then
+        self.ui:handleEvent(Event:new("CalibreSearch"))
+    elseif action == "calibre_browse_tags" then
+        self.ui:handleEvent(Event:new("CalibreBrowseTags"))
+    elseif action == "calibre_browse_series" then
+        self.ui:handleEvent(Event:new("CalibreBrowseSeries"))
     end
     return true
 end
