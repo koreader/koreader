@@ -168,13 +168,10 @@ function CalibreWireless:setInboxDir(host, port)
     local calibre_device = self
     require("ui/downloadmgr"):new{
         onConfirm = function(inbox)
-            CalibreMetadata:init(inbox, true)
-            local driver
-            if CalibreMetadata.drive then
-                driver = CalibreMetadata.drive.device_name
-            end
-            local function match(vendor)
-                return string.match(string.lower(driver), vendor)
+            local driver = CalibreMetadata:getDriver(inbox)
+            local warning = function()
+                if not driver then return end
+                return not driver:lower():match("koreader") and not driver:lower():match("folder")
             end
             local save_and_resume = function()
                 logger.info("set inbox directory", inbox)
@@ -183,12 +180,9 @@ function CalibreWireless:setInboxDir(host, port)
                     calibre_device:initCalibreMQ(host, port)
                 end
             end
-            local danger = function()
-                return not match("koreader") and not match("folder")
-            end
             -- probably not a good idea to mix calibre drivers because
             -- their default settings usually don't match (lpath et al)
-            if driver and danger() then
+            if warning() then
                 UIManager:show(ConfirmBox:new{
                     text = T(_([[This folder is already initialized as a %1.
 

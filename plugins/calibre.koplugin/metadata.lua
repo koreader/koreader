@@ -62,8 +62,9 @@ local CalibreMetadata = {
 }
 
 --- loads driveinfo from JSON file
-function CalibreMetadata:loadDeviceInfo()
-    local json, err = rapidjson.load(self.driveinfo)
+function CalibreMetadata:loadDeviceInfo(file)
+    if not file then file = self.driveinfo end
+    local json, err = rapidjson.load(file)
     if not json then
         logger.warn("Unable to load device info from JSON file:", err)
         return {}
@@ -202,6 +203,15 @@ function CalibreMetadata:getTimestamp(dir)
     local ok1, __, metadata = findCalibreFiles(dir)
     if not ok1 then return end
     return lfs.attributes(metadata, "modification")
+end
+
+-- gets the calibre driver used to initialize a given dir.
+function CalibreMetadata:getDriver(dir)
+    if not dir then return end
+    local _, ok_drive, __, driveinfo = findCalibreFiles(dir)
+    if not ok_drive then return end
+    local drive = self:loadDeviceInfo(driveinfo)
+    if drive then return drive.device_name end
 end
 
 -- initialize a directory as a calibre library.
