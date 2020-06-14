@@ -590,12 +590,16 @@ function CalibreSearch:getMetadata()
     local books = getAllMetadata(self.libraries)
     if self.cache_metadata then
         local dump = {}
-        for index, book in ipairs(books) do
-            local dumped_book = book
-            if type(dumped_book.series) == "function" then
-                dumped_book.series = nil
+        local function removeNull(t)
+            for _, key in ipairs({"series", "series_index"}) do
+                if type(t[key]) == "function" then
+                    t[key] = nil
+                end
             end
-            table.insert(dump, index, dumped_book)
+            return t
+        end
+        for index, book in ipairs(books) do
+            table.insert(dump, index, removeNull(book))
         end
         util.dumpTable(dump, self.user_book_cache)
     end
