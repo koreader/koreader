@@ -224,6 +224,11 @@ function Device:init()
         android.setVolumeKeysIgnored(true)
     end
 
+    -- check if we ignore the back button completely
+    if G_reader_settings:isTrue("android_ignore_back_button") then
+        android.setBackButtonIgnored(true)
+    end
+
     -- check if we enable a custom light level for this activity
     local last_value = G_reader_settings:readSetting("fl_last_level")
     if type(last_value) == "number" and last_value >= 0 then
