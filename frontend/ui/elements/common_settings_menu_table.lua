@@ -239,6 +239,16 @@ if Device:isAndroid() then
         callback = function() G_reader_settings:flipNilOrFalse("camera_key_toggles_touchscreen") end,
     }
 
+    common_settings.android_back_button = {
+        text = _("Ignore back button completely"),
+        checked_func = function() return android.isBackButtonIgnored() end,
+        callback = function()
+            local is_ignored = android.isBackButtonIgnored()
+            android.setBackButtonIgnored(not is_ignored)
+            G_reader_settings:saveSetting("android_ignore_back_button", not is_ignored)
+        end,
+    }
+
     -- fullscreen toggle on devices with compatible fullscreen methods (apis 14-18)
     if Device.firmware_rev < 19 then
         common_settings.fullscreen = {
