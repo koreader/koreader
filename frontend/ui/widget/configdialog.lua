@@ -220,7 +220,7 @@ function ConfigOption:init()
     -- They will carry the left default_option_hpadding, but the in-between
     -- one (and the right one) will be carried by the option items.
     -- (Both these variables are between 0 and 1 and represent a % of screen width)
-    local default_name_align_right = math.floor((max_option_name_width + default_option_hpadding + 2*padding_small) / Screen:getWidth())
+    local default_name_align_right = (max_option_name_width + default_option_hpadding + 2*padding_small) / Screen:getWidth()
     default_name_align_right = math.max(default_name_align_right, 0.25)
     default_name_align_right = math.min(default_name_align_right, 0.5)
     local default_item_align_center = 1 - default_name_align_right
