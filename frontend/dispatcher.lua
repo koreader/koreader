@@ -123,7 +123,12 @@ function Dispatcher:addSubMenu(menu, location, settings)
                    return self[location][settings] ~= nil and self[location][settings][k] ~= nil
                    end,
                    callback = function(touchmenu_instance)
-                      if self[location][settings] ~= nil and self[location][settings][k] then self[location][settings][k] = nil else self[location][settings][k] = true end
+                      if self[location][settings] ~= nil
+                      and self[location][settings][k] then
+                          self[location][settings][k] = nil
+                      else
+                          self[location][settings][k] = true
+                      end
                       if touchmenu_instance then touchmenu_instance:updateItems() end
                   end,
                })
@@ -165,7 +170,9 @@ function Dispatcher:addSubMenu(menu, location, settings)
                             title_text = T(settingsList[k].title, self[location][settings][k] or ""),
                             callback = function(spin)
                                 self[location][settings][k] = spin.value
-                                if touchmenu_instance then touchmenu_instance:updateItems() end
+                                if touchmenu_instance then
+                                    touchmenu_instance:updateItems()
+                                end
                             end
                         }
                         UIManager:show(items)
@@ -197,14 +204,18 @@ function Dispatcher:addSubMenu(menu, location, settings)
                             text = _([[If set to 0 and called by a gesture the amount of the gesture will be used]]),
                             callback = function(spin)
                                 self[location][settings][k] = spin.value
-                                if touchmenu_instance then touchmenu_instance:updateItems() end
+                                if touchmenu_instance then
+                                    touchmenu_instance:updateItems()
+                                end
                             end
                         }
                         UIManager:show(items)
                     end,
                     hold_callback = function(touchmenu_instance)
                         self[location][settings][k] = nil
-                        if touchmenu_instance then touchmenu_instance:updateItems() end
+                        if touchmenu_instance then
+                            touchmenu_instance:updateItems()
+                        end
                     end,
                 })
             elseif settingsList[k].category == "string" then
@@ -213,7 +224,9 @@ function Dispatcher:addSubMenu(menu, location, settings)
                     table.insert(sub_item_table, {
                         text = tostring(settingsList[k].toggle[i]),
                         checked_func = function()
-                        return self[location][settings] ~= nil and self[location][settings][k] ~= nil and self[location][settings][k] == settingsList[k].args[i]
+                            return self[location][settings] ~= nil
+                            and self[location][settings][k] ~= nil
+                            and self[location][settings][k] == settingsList[k].args[i]
                         end,
                         callback = function()
                             self[location][settings][k] = settingsList[k].args[i]
@@ -225,13 +238,16 @@ function Dispatcher:addSubMenu(menu, location, settings)
                         return T(settingsList[k].title, self[location][settings][k])
                     end,
                     checked_func = function()
-                    return self[location][settings] ~= nil and self[location][settings][k] ~= nil
+                        return self[location][settings] ~= nil
+                        and self[location][settings][k] ~= nil
                     end,
                     sub_item_table = sub_item_table,
                     keep_menu_open = true,
                     hold_callback = function(touchmenu_instance)
                         self[location][settings][k] = nil
-                        if touchmenu_instance then touchmenu_instance:updateItems() end
+                        if touchmenu_instance then
+                            touchmenu_instance:updateItems()
+                        end
                     end,
                 })
             end

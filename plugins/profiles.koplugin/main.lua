@@ -86,7 +86,7 @@ function Profiles:getSubMenuItems()
     for k,v in pairs(self.data) do
         local sub_items = {
             {
-                text = _("Delete Profile"),
+                text = _("Delete profile"),
                 keep_menu_open = false,
                 separator = true,
                 callback = function()
