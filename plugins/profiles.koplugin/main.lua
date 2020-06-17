@@ -1,15 +1,13 @@
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Dispatcher = require("dispatcher")
---local Event = require("ui/event")
---local FFIUtil = require("ffi/util")
+local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local LuaSettings = require("luasettings")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
-local logger = require("logger")
---local T = FFIUtil.template
+local T = require("ffi/util").template
 
 local Profiles = WidgetContainer:new{
     name = "profiles",
@@ -37,7 +35,6 @@ function Profiles:onFlushSettings()
 end
 
 function Profiles:addToMainMenu(menu_items)
-    logger.dbg("Profiles:addToMainMenu")
     menu_items.profiles = {
         text = _("Profiles"),
         sub_item_table_func = function()
@@ -68,8 +65,13 @@ function Profiles:getSubMenuItems()
                             text = _("Save"),
                             callback = function()
                                 local name = name_input:getInputText()
+                                if not self:newProfile(name) then
+                                    UIManager:show(InfoMessage:new{
+                                        text =  T(_("There is already a profile called: %1"), name),
+                                    })
+                                    return
+                                end
                                 UIManager:close(name_input)
-                                self:newProfile(name)
                                 touchmenu_instance.item_table = self:getSubMenuItems()
                                 touchmenu_instance.page = 1
                                 touchmenu_instance:updateItems()
@@ -107,7 +109,6 @@ function Profiles:getSubMenuItems()
             hold_keep_menu_open = false,
             sub_item_table = sub_items,
             hold_callback = function()
-                logger.dbg("Profile callback")
                 Dispatcher.execute(self, v)
             end,
         })
@@ -118,6 +119,9 @@ end
 function Profiles:newProfile(name)
     if self.data[name] == nil then
         self.data[name] = {}
+        return true
+    else
+        return false
     end
 end
 
