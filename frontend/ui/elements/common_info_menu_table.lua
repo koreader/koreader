@@ -26,7 +26,7 @@ common_info.help = {
     text = _("Help"),
 }
 common_info.more_plugins = {
-    text = _("More plugins"),
+    text = _("More tools"),
 }
 
 common_info.device = {
