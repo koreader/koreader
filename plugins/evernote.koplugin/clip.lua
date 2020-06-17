@@ -235,6 +235,7 @@ function MyClipping:parseHighlight(highlights, bookmarks, book)
             clipping.sort = "highlight"
             clipping.time = self:getTime(item.datetime or "")
             clipping.text = self:getText(item.text)
+            clipping.chapter = item.chapter
             for _, bookmark in pairs(bookmarks) do
                 if bookmark.datetime == item.datetime and bookmark.text then
                     local tmp = string.gsub(bookmark.text, "Page %d+ ", "")
@@ -324,4 +325,3 @@ function MyClipping:parseCurrentDoc(view)
 end
 
 return MyClipping
-

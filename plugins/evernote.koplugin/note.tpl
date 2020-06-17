@@ -1,4 +1,21 @@
 #{
+  -- helper function to convert decimal value to hex value(with trailing zeros)
+  function rgb_to_hex(r, g, b)
+    r = string.format("%x", r)
+    g = string.format("%x", g)
+    b = string.format("%x", b)
+    -- add trailing zeros
+    if #r == 1 then
+      r = "0" .. r
+    end
+    if #g == 1 then
+      g = "0" .. g
+    end
+    if #b == 1 then
+      b = "0" .. b
+    end
+    return "#" .. r .. g .. b
+  end
   -- helper function to map time to JET color
   function timecolor(time)
     local r,g,b
@@ -18,7 +35,7 @@
     b = b > 255 and 255 or math.floor(b)
     b = b < 0 and 0 or math.floor(b)
 
-    return r..','..g..','..b
+    return rgb_to_hex(r, g, b)
   end
 
   function htmlescape(text)
@@ -38,8 +55,8 @@
     #{ for index, clipping in ipairs(chapter) do }#
       <div style="padding-top:0.5em; padding-bottom:0.5em;#{ if index > 1 then }# border-top:1px dotted lightgray;#{ end }#">
         <div style="font-size:10pt; margin-bottom:0.2em; color:darkgray">
-          <div style="display:inline-block; width:0.2em; height:0.9em; margin-right:0.2em; background-color:rgb(#{= timecolor(clipping.time)}#);"></div>
-          <span>#{= os.date("%x", clipping.time) }#</span><span style="float:right">#{= clipping.page }#</span>
+          <div style="display:inline-block; width:0.2em; height:0.9em; margin-right:0.2em; background-color:#{= timecolor(clipping.time)}#;"></div>
+          <span>#{= os.date("%x", clipping.time) }#</span><span style="float:right">#{ if clipping.chapter then }#<b>#{= clipping.chapter }#</b>: #{ end }# #{= clipping.page }#</span>
         </div>
         <div style="font-size:12pt">
           <span>#{= htmlescape(clipping.text) }#</span>
@@ -57,4 +74,3 @@
     #{ end }#
   #{ end }#
 </div>
-

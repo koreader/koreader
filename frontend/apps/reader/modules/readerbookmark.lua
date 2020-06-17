@@ -215,7 +215,38 @@ function ReaderBookmark:gotoBookmark(pn_or_xp)
     end
 end
 
+-- This function adds "chapter" property to highlights already saved in the document
+function ReaderBookmark:updateHighlightsIfNeeded()
+    local version = self.ui.doc_settings:readSetting("bookmarks_version") or 0
+    if version >= 20200615 then
+        return
+    end
+
+    for page, highlights in pairs(self.view.highlight.saved) do
+        for _, highlight in pairs(highlights) do
+            local pg_or_xp = self.ui.document.info.has_pages and
+                    page or highlight.pos0
+            local chapter_name = self.ui.toc:getTocTitleByPage(pg_or_xp)
+            highlight.chapter = chapter_name
+        end
+    end
+
+    for _, bookmark in ipairs(self.bookmarks) do
+        if bookmark.pos0 then
+            local pg_or_xp = self.ui.document.info.has_pages and
+                    bookmark.page or bookmark.pos0
+                local chapter_name = self.ui.toc:getTocTitleByPage(pg_or_xp)
+            bookmark.chapter = chapter_name
+        elseif bookmark.page then -- dogear bookmark
+            local chapter_name = self.ui.toc:getTocTitleByPage(bookmark.page)
+            bookmark.chapter = chapter_name
+        end
+    end
+    self.ui.doc_settings:saveSetting("bookmarks_version", 20200615)
+end
+
 function ReaderBookmark:onShowBookmark()
+    self:updateHighlightsIfNeeded()
     -- build up item_table
     for k, v in ipairs(self.bookmarks) do
         local page = v.page
@@ -462,6 +493,7 @@ function ReaderBookmark:updateBookmark(item)
                                         new_text,
                                         item.updated_highlight.datetime)
             self.bookmarks[i].datetime = item.updated_highlight.datetime
+            self.bookmarks[i].chapter = item.updated_highlight.chapter
             self:onSaveSettings()
         end
     end
@@ -538,6 +570,7 @@ function ReaderBookmark:toggleBookmark(pn_or_xp)
     else
         -- build notes from TOC
         local notes = self.ui.toc:getTocTitleByPage(pn_or_xp)
+        local chapter_name = notes
         if notes ~= "" then
             notes = "in "..notes
         end
@@ -545,6 +578,7 @@ function ReaderBookmark:toggleBookmark(pn_or_xp)
             page = pn_or_xp,
             datetime = os.date("%Y-%m-%d %H:%M:%S"),
             notes = notes,
+            chapter = chapter_name
         })
     end
 end
