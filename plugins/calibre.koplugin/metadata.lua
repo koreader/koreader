@@ -113,7 +113,7 @@ end
 
 -- add a book to our books table
 function CalibreMetadata:addBook(metadata)
-    for key, _ in pairs(unused_metadata) do
+    for _, key in pairs(unused_metadata) do
         metadata[key] = nil
     end
     table.insert(self.books, #self.books + 1, metadata)
