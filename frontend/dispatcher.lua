@@ -1,6 +1,5 @@
 local CreOptions = require("ui/data/creoptions")
 local Event = require("ui/event")
-local KoptOptions = require("ui/data/koptoptions")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local T = require("ffi/util").template
