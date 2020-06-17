@@ -36,6 +36,18 @@ function Calibre:onCalibreBrowseSeries()
     CalibreSearch:find("series", 1)
 end
 
+function Calibre:onNetworkDisconnected()
+    if CalibreWireless.calibre_socket then
+        CalibreWireless:disconnect()
+    end
+end
+
+function Calibre:onSuspend()
+    if CalibreWireless.calibre_socket then
+        CalibreWireless:disconnect()
+    end
+end
+
 function Calibre:init()
     CalibreWireless:init()
     self.ui.menu:registerToMainMenu(self)
