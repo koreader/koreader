@@ -11,6 +11,7 @@ local T = require("ffi/util").template
 
 local Profiles = WidgetContainer:new{
     name = "profiles",
+    is_doc_only = true,
     profiles_file = DataStorage:getSettingsDir() .. "/profiles.lua",
     profiles = nil,
     data = nil,
