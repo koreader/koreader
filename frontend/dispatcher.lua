@@ -5,7 +5,7 @@ local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local T = require("ffi/util").template
 local _ = require("gettext")
-local logger = require("logger")
+--local logger = require("logger")
 
 local Dispatcher = {
     initialized = false,
@@ -24,82 +24,27 @@ and optionally
     toggle: display name for args
 --]]--
 local settingsList = {
-    page_jmp = { category="incrementalnumber", event="GotoViewRel" , title=_("Go %1 pages"),min=-50, max=50},
-    prev_chapter = { category="none", event="GotoPrevChapter", title=_("Previous chapter"), },
-    next_chapter = { category="none", event="GotoNextChapter", title=_("Next chapter"), },
-    prev_bookmark = { category="none", event="GotoPreviousBookmarkFromPage", title=_("Previous bookmark"), },
-    next_bookmark = { category="none", event="GotoNextBookmarkFromPage", title=_("Next bookmark"), },
-    go_to = { category="none", event="ShowGotoDialog", title=_("Go to"), },
-    skim = { category="none", event="ShowSkimtoDialog", title=_("Skim"), },
-    back = { category="none", event="Back", title=_("Back"), },
---[[    previous_location = { category= , event= , title=_("Back to previous location"), },
-    latest_bookmark = { category="none", event= , title=_("Go to latest bookmark"), },
-    follow_nearest_link = { category= , event= , title=_("Follow nearest link"), },
-    follow_nearest_internal_link = { category= , event= , title=_("Follow nearest internal link"), },
-    clear_location_history = { category= , event= , title=_("Clear location history"), },
-]]
-    toc = { category="none", event="ShowToc", title=_("Table of contents"), },
-    bookmarks = { category="none", event="ShowBookmark", title=_("Bookmarks"), },
---[[    reading_progress = { category= , event= , title=_("Reading progress"), },
-    book_statistics = { category= , event= , title=_("Book statistics"), },
-]]    book_status = { category="none", event="ShowBookStatus", title=_("Book status"), },
-    book_info = { category="none", event="ShowBookInfo", title=_("Book information"), },
-    book_description = { category="none", event="ShowBookDescription", title=_("Book description"), },
-    book_cover = { category="none", event="ShowBookCover", title=_("Book cover"), },
---    stats_calendar_view = { category= , event= , title=_("Statistics calendar view"), },
-
-    history = { category="none", event="ShowHist", title=_("History"), },
---    open_previous_document = { category= , event= , title=_("Open previous document"), },
---    filemanager = { category= , event= , title=_("File browser"), },
- --   favorites = { category= , event= , title=_("Favorites"), },
-
-    dictionary_lookup = { category="none", event="ShowDictionaryLookup", title=_("Dictionary lookup"), },
-    wikipedia_lookup = { category="none", event="ShowWikipediaLookup", title=_("Wikipedia lookup"), },
-    fulltext_search = { category="none", event="ShowFulltextSearchInput", title=_("Fulltext search"), },
---[[    file_search = { category= , event= , title=_("File search"), },
-
-    full_refresh = { category= , event= , title=_("Full screen refresh"), },
-    night_mode = { category= , event= , title=_("Night mode"), },
-    suspend = { category= , event= , title=_("Suspend"), },
-    exit = { category= , event= , title=_("Exit KOReader"), },
-    restart = { category= , event= , title=_("Restart KOReader"), },
-    reboot = { category= , event= , title=_("Reboot the device"), },
-    poweroff = { category= , event= , title=_("Power off"), },
-    show_menu = { category= , event= , title=_("Show menu"), },
-    show_config_menu = { category= , event= , title=_("Show bottom menu"), },
-    show_frontlight_dialog = { category= , event= , title=_("Show frontlight dialog"), },
-    toggle_frontlight = { category= , event= , title=_("Toggle frontlight"), },
-    increase_frontlight = { category= , event= , title=_("Increase frontlight brightness"), },
-    decrease_frontlight = { category= , event= , title=_("Decrease frontlight brightness"), },
-    increase_frontlight_warmth = { category= , event= , title=_("Increase frontlight warmth"), },
-    decrease_frontlight_warmth = { category= , event= , title=_("Decrease frontlight warmth"), },
-    toggle_hold_corners = { category= , event= , title=_("Toggle hold corners"), },
-    toggle_gsensor = { category= , event= , title=_("Toggle accelerometer"), },
-    toggle_rotation = { category= , event= , title=_("Toggle rotation"), },
-
-    wifi_on = { category= , event= , title=_("Turn on Wi-Fi"), },
-    wifi_off = { category= , event= , title=_("Turn off Wi-Fi"), },
-    toggle_wifi = { category= , event= , title=_("Toggle Wi-Fi"), },
-]]
-    toggle_bookmark = { category="none", event="ToggleBookmark", title=_("Toggle bookmark"), },
---[[    toggle_page_flipping = { category= , event= , title=_("Toggle page flipping"), },
-    toggle_reflow = { category= , event= , title=_("Toggle reflow"), },
-    toggle_inverse_reading_order = { category= , event= , title=_("Toggle page turn direction"), },
-]]
-    zoom = { category="string", event="SetZoomMode", title=_("Zoom to"), args={"contentwidth", "contentheight", "pagewidth", "pageheight", "column", "content", "page"}, toggle={"content width", "content height", "page width", "page height", "column", "content", "page"} },
---[[
-    increase_font = { category= , event= , title=_("Increase font size"), },
-    decrease_font = { category= , event= , title=_("Decrease font size"), },
-
-    folder_up = { category= , event= , title=_("Folder up"), },
-]]    show_plus_menu = { category="none", event="ShowPlusMenu", title=_("Show plus menu"), },
-    folder_shortcuts = { category="none", event="ShowFolderShortcutsDialog", title=_("Folder shortcuts"), },
---[[    cycle_highlight_action = { category= , event= , title=_("Cycle highlight action"), },
-    cycle_highlight_style = { category= , event= , title=_("Cycle highlight style"), },
-    wallabag_download = { category= , event= , title=_("Wallabag retrieval"), },
-]]
+    --CreOptions
     screen_mode = {category="string"},
-    font_size = {category="absolutenumber", title="Font Size (%1)"},
+    visible_pages = {category="string"},
+    h_page_margins = {category="string"},
+    sync_t_b_page_margins = {category="string"},
+    t_page_margin = {category="absolutenumber"},
+    b_page_margin = {category="absolutenumber"},
+    view_mode = {category="string", title="View Mode (CRengine)"},
+    block_rendering_mode = {category="string"},
+    render_dpi = {category="string"},
+    line_spacing = {category="absolutenumber"},
+    font_size = {category="absolutenumber", title="Font Size (CRengine)"},
+    font_weight = {category="string"},
+    --font_gamma = {category="string"},
+    font_hinting = {category="string"},
+    font_kerning = {category="string"},
+    status_line = {category="string"},
+    embedded_css = {category="string"},
+    embedded_fonts = {category="string"},
+    smooth_scaling = {category="string"},
+    nightmode_images = {category="string"},
 }
 
 --[[--
@@ -118,7 +63,12 @@ function Dispatcher:init()
                 end
                 if settingsList[option.name].category == "string" then
                     if settingsList[option.name].toggle == nil then
-                        settingsList[option.name].toggle = option.toggle or option.values
+                        settingsList[option.name].toggle = option.toggle or option.labels or option.values
+                        for z=1,#settingsList[option.name].toggle do
+                            if type(settingsList[option.name].toggle[z]) == "table" then
+                                settingsList[option.name].toggle[z] = settingsList[option.name].toggle[z][1]
+                            end
+                        end
                     end
                     if settingsList[option.name].args == nil then
                         settingsList[option.name].args = option.args or option.values
@@ -140,11 +90,7 @@ function Dispatcher:init()
     for i=1,#CreOptions do
         parseoptions(CreOptions, i)
     end
-    for i=1,#KoptOptions do
-        parseoptions(KoptOptions, i)
-    end
     Dispatcher.initialized = true
---logger.warn("#############", settingsList)
 end
 
 --[[--
@@ -266,7 +212,7 @@ function Dispatcher:addSubMenu(menu, location, settings)
                 local sub_item_table = {}
                 for i=1,#settingsList[k].args do
                     table.insert(sub_item_table, {
-                        text = settingsList[k].toggle[i],
+                        text = tostring(settingsList[k].toggle[i]),
                         checked_func = function()
                         return self[location][settings] ~= nil and self[location][settings][k] ~= nil and self[location][settings][k] == settingsList[k].args[i]
                         end,
@@ -294,7 +240,6 @@ function Dispatcher:addSubMenu(menu, location, settings)
 end
 
 function Dispatcher:execute(settings, gesture)
-logger.dbg("step 1:", settings)
     for k, v in pairs(settings) do
         if settingsList[k].conditions == nil or settingsList[k].conditions == true then
             if settingsList[k].category == "none" then
