@@ -30,6 +30,7 @@ local Device = {
     hasKeyboard = no,
     hasKeys = no,
     hasDPad = no,
+    hasExitOptions = yes,
     hasFewKeys = no,
     hasWifiToggle = yes,
     hasWifiManager = no,

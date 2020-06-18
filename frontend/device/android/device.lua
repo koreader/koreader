@@ -67,6 +67,7 @@ local Device = Generic:new{
     model = android.prop.product,
     hasKeys = yes,
     hasDPad = no,
+    hasExitOptions = no,
     hasEinkScreen = function() return android.isEink() end,
     hasColorScreen = function() return not android.isEink() end,
     hasFrontlight = yes,

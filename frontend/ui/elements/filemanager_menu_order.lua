@@ -154,19 +154,18 @@ local order = {
     },
     plus_menu = {},
     exit_menu = {
-        "restart_koreader",
+        "restart_koreader", -- if Device:canRestart()
         "----------------------------",
-        "sleep", -- if Device:isKindle() or Device:isKobo()
-        "poweroff", -- if Device:isKobo()
-        "reboot",   -- if Device:isKobo()
+        "sleep", -- if Device:canSuspend()
+        "poweroff", -- if Device:canPowerOff()
+        "reboot", -- if Device:canReboot()
         "----------------------------",
-        "start_bq",
+        "start_bq", -- if Device:isCervantes()
         "exit",
     }
 }
 
-if Device:isAndroid() then
+if not Device:hasExitOptions() then
     order.exit_menu = nil
 end
-
 return order
