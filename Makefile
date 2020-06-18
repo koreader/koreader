@@ -94,6 +94,8 @@ endif
 ifdef ANDROID
 	cd $(INSTALL_DIR)/koreader && \
 		ln -sf ../../$(ANDROID_DIR)/*.lua .
+	@echo "[*] Install afterupdate marker"
+	$(RCP) afterupdate.marker $(INSTALL_DIR)/koreader/
 endif
 ifdef WIN32
 	@echo "[*] Install runtime libraries for win32..."
@@ -105,7 +107,7 @@ endif
 	@# purge deleted plugins
 	for d in $$(ls $(INSTALL_DIR)/koreader/plugins); do \
 		test -d plugins/$$d || rm -rf $(INSTALL_DIR)/koreader/plugins/$$d ; done
-	@echo "[*] Installresources"
+	@echo "[*] Install resources"
 	$(RCP) -pL resources/fonts/. $(INSTALL_DIR)/koreader/fonts/.
 	install -d $(INSTALL_DIR)/koreader/{screenshots,data/{dict,tessdata},fonts/host,ota}
 ifeq ($(IS_RELEASE),1)
