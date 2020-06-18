@@ -63,6 +63,7 @@ local PocketBook = Generic:new{
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = yes,
+    canSuspend = no,
     emu_events_dev = "/dev/shm/emu_events",
 }
 

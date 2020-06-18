@@ -52,6 +52,7 @@ local Device = {
     canToggleMassStorage = no,
     canUseWAL = yes, -- requires mmap'ed I/O on the target FS
     canRestart = yes,
+    canSuspend = yes,
     canReboot = no,
     canPowerOff = no,
 

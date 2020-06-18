@@ -62,7 +62,7 @@ common_info.report_bug = {
     end
 }
 
-if Device:isCervantes() or Device:isKindle() or Device:isKobo() then
+if Device:canSuspend() then
     common_info.sleep = {
         text = _("Sleep"),
         callback = function()

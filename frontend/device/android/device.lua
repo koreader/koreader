@@ -72,6 +72,7 @@ local Device = Generic:new{
     hasFrontlight = yes,
     hasLightLevelFallback = yes,
     canRestart = no,
+    canSuspend = no,
     firmware_rev = android.app.activity.sdkVersion,
     external_storage = android.getExternalStoragePath,
     display_dpi = android.lib.AConfiguration_getDensity(android.app.config),
