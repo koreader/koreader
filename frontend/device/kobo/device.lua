@@ -47,6 +47,7 @@ local Kobo = Generic:new{
     hasNaturalLightMixer = no,
     -- HW inversion is generally safe on Kobo, except on a few boards/kernels
     canHWInvert = yes,
+    home_dir = "/mnt/onboard",
 }
 
 --- @todo hasKeys for some devices?

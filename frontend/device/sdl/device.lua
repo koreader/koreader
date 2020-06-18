@@ -115,6 +115,7 @@ local AppImage = Device:new{
     hasMultitouch = no,
     hasOTAUpdates = yes,
     isDesktop = yes,
+    home_dir = os.getenv("HOME"),
 }
 
 local Emulator = Device:new{
@@ -132,6 +133,7 @@ local Emulator = Device:new{
 local Linux = Device:new{
     model = "Linux",
     isDesktop = yes,
+    home_dir = os.getenv("HOME"),
 }
 
 local UbuntuTouch = Device:new{

@@ -65,6 +65,7 @@ local PocketBook = Generic:new{
     hasFrontlight = yes,
     canSuspend = no,
     emu_events_dev = "/dev/shm/emu_events",
+    home_dir = "/mnt/ext1",
 }
 
 -- Make sure the C BB cannot be used on devices with a 24bpp fb

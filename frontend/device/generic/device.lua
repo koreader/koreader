@@ -21,6 +21,7 @@ local Device = {
     screen = nil,
     screen_dpi_override = nil,
     input = nil,
+    home_dir = nil,
     -- For Kobo, wait at least 15 seconds before calling suspend script. Otherwise, suspend might
     -- fail and the battery will be drained while we are in screensaver mode
     suspend_wait_timeout = 15,
