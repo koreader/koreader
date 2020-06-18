@@ -18,7 +18,7 @@ local path = android.getExternalStoragePath()
 -- execute user scripts before patch.lua
 local lfs = require("libs/libkoreader-lfs")
 
-local user_dir = android.getExternalStoragePath() .. "/koreader"
+local user_dir = path .. "/koreader"
 local afterupdate_marker = android.dir .. "/afterupdate.marker"
 local run_once_scripts = user_dir .. "/scripts.afterupdate"
 local run_always_scripts = user_dir .. "/scripts.always"
@@ -26,14 +26,8 @@ local run_always_scripts = user_dir .. "/scripts.always"
 local shell_scripts = {}
 
 local function getUserScripts(path)
-    shell_scripts = {} -- zero list, as getUserScripts could be called multiple times
     local ret = lfs.attributes(path)
-    if ret == nil then
-        android.LOGI("no script folder " .. path .. " found!")
-        return
-    end
     if ret.mode == "directory" then
-        android.LOGI("script folder " .. path .. " found!")
         for entry in lfs.dir(path) do
             if entry ~= "." and entry ~= ".." then
                 local fullpath = path .. "/" .. entry
@@ -51,7 +45,7 @@ end
 
 local function runUserScripts(scripts)
     for _, script in ipairs(scripts) do
-        local ret = os.execute("/system/bin/sh " .. script, path, android.dir)
+        local ret = os.execute("/system/bin/sh " .. script .. " " .. user_dir .. " " .. android.dir)
         if ret == 0 then
             android.LOGI("script " .. script  .. " executed succesfully")
         else
@@ -64,22 +58,23 @@ end
 android.LOGI("checking and running scripts on update, if necessary.")
 if lfs.attributes(run_once_scripts, "mode") == "directory" then
     if lfs.attributes(afterupdate_marker, "mode") == "file" then
+        shell_scripts = {} -- clear table
         getUserScripts(run_once_scripts)
         runUserScripts(shell_scripts)
         android.LOGI(string.format("Executed %d afterupdate scripts from %s", #shell_scripts, run_once_scripts))
-        shell_scripts = {}
-        android.execute("rm", afterupdate_marker)
-        android.LOGI("Afterupdate marker " .. afterupdate_marker .." removed")
+        android.execute("/system/bin/rm", afterupdate_marker)
+        android.LOGI("Afterupdate marker " .. afterupdate_marker .." removed") 
     end
 end
 
 if lfs.attributes(run_always_scripts, "mode") == "directory" then
+    shell_scripts = {} -- clear table
     getUserScripts(run_always_scripts)
     runUserScripts(shell_scripts)
     android.LOGI(string.format("Executed %d scripts from %s", #shell_scripts, run_always_scripts))
-    shell_scripts = {}
 end
 
+shell_scripts = {} --clean up
 
 -- run koreader patch before koreader startup
 pcall(dofile, path.."/koreader/patch.lua")
@@ -87,8 +82,8 @@ pcall(dofile, path.."/koreader/patch.lua")
 -- Set proper permission for binaries.
 --- @todo Take care of this on extraction instead.
 -- Cf. <https://github.com/koreader/koreader/issues/5347#issuecomment-529476693>.
-android.execute("chmod", "755", "./sdcv")
-android.execute("chmod", "755", "./tar")
+android.execute("/system/bin/chmod", "755", "./sdcv")
+android.execute("/system/bin/chmod", "755", "./tar")
 
 -- set TESSDATA_PREFIX env var
 C.setenv("TESSDATA_PREFIX", path.."/koreader/data", 1)
