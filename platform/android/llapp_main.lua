@@ -16,9 +16,12 @@ end
 local path = android.getExternalStoragePath()
 
 -- execute user scripts before patch.lua
-
-local android = require("android")
 local lfs = require("libs/libkoreader-lfs")
+
+local user_dir = android.getExternalStoragePath() .. "/koreader"
+local afterupdate_marker = android.dir .. "/afterupdate.marker"
+local run_once_scripts = user_dir .. "/scripts.afterupdate"
+local run_always_scripts = user_dir .. "/scripts.always"
 
 local shell_scripts = {}
 
@@ -29,56 +32,54 @@ local function getUserScripts(path)
         android.LOGI("no script folder " .. path .. " found!")
         return
     end
-    
     if ret.mode == "directory" then
         android.LOGI("script folder " .. path .. " found!")
         for entry in lfs.dir(path) do
             if entry ~= "." and entry ~= ".." then
                 local fullpath = path .. "/" .. entry
                 if lfs.attributes(fullpath).mode ~= "directory" then
-                    if fullpath:sub(-#".sh") == ".sh" then  -- only include files ending in ".sh"
+                    if fullpath:match(".sh$") then  -- only include files ending in ".sh"
                         table.insert(shell_scripts, fullpath)
                     end
                 else
-                    getUserScripts(path) -- recurse into next directory
+                    getUserScripts(fullpath) -- recurse into next directory
                 end
             end
         end
     end
 end
 
-
--- scripts executed once after an update of koreader
-local user_dir = android.getExternalStoragePath() .. "/koreader"
-local afterupdate_marker = android.dir .. "/scripts.afterupdate"
-
-android.LOGI("checking update_marker: " .. afterupdate_marker)
-local start_afterupdate = lfs.attributes( afterupdate_marker )
-if start_afterupdate == nil then
-    getUserScripts(user_dir .. "/scripts.afterupdate" )
-    android.LOGI("running after an update of koreader:")
-    for _, script in ipairs(shell_scripts) do
-        local ret = os.execute("/system/bin/sh " .. script .. " " .. user_dir .. " " .. android.dir   )
+local function runUserScripts(scripts)
+    for _, script in ipairs(scripts) do
+        local ret = os.execute("/system/bin/sh " .. script, path, android.dir)
         if ret == 0 then
             android.LOGI("script " .. script  .. " executed succesfully")
         else
             android.LOGW("failed to execute " .. script)
         end
     end
-    android.LOGI("setting afterupdate marker")
-    android.execute("touch", afterupdate_marker )
 end
 
-getUserScripts(user_dir .. "/scripts.always" )
-android.LOGI("running always after start:")
-for _, script in ipairs(shell_scripts) do
-    local ret = os.execute("/system/bin/sh " .. script .. " " .. user_dir .. " " .. android.dir   )
-    if ret == 0 then
-        android.LOGI("script " .. script  .. " executed succesfully")
-    else
-        android.LOGW("failed to execute " .. script)
+-- scripts executed once after an update of koreader
+android.LOGI("checking and running scripts on update, if necessary.")
+if lfs.attributes(run_once_scripts, "mode") == "directory" then
+    if lfs.attributes(afterupdate_marker, "mode") == "file" then
+        getUserScripts(run_once_scripts)
+        runUserScripts(shell_scripts)
+        android.LOGI(string.format("Executed %d afterupdate scripts from %s", #shell_scripts, run_once_scripts))
+        shell_scripts = {}
+        android.execute("rm", afterupdate_marker)
+        android.LOGI("Afterupdate marker " .. afterupdate_marker .." removed")
     end
 end
+
+if lfs.attributes(run_always_scripts, "mode") == "directory" then
+    getUserScripts(run_always_scripts)
+    runUserScripts(shell_scripts)
+    android.LOGI(string.format("Executed %d scripts from %s", #shell_scripts, run_always_scripts))
+    shell_scripts = {}
+end
+
 
 -- run koreader patch before koreader startup
 pcall(dofile, path.."/koreader/patch.lua")
