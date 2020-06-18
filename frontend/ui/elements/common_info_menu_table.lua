@@ -55,14 +55,9 @@ common_info.report_bug = {
     text = _("Report a bug"),
     keep_menu_open = true,
     callback = function()
-        local device = Device.model
-        if Device:isAndroid() then
-            device = Device:info()
-        end
-
         UIManager:show(InfoMessage:new{
             text = T(_("Please report bugs to \nhttps://github.com/koreader/koreader/issues\n\nVersion:\n%1\n\nDetected device:\n%2"),
-                version, device),
+                version, Device:info()),
         })
     end
 }

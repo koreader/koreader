@@ -279,6 +279,10 @@ function Device:onPowerEvent(ev)
     end
 end
 
+function Device:info()
+    return self.model
+end
+
 -- Hardware specific method to handle usb plug in event
 function Device:usbPlugIn() end
 
