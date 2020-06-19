@@ -2,7 +2,7 @@
 export LC_ALL="en_US.UTF-8"
 
 # working directory of koreader
-KOREADER_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)"
+KOREADER_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd -P)"
 
 # we're always starting from our working directory
 cd "${KOREADER_DIR}" || exit
