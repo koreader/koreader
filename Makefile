@@ -95,7 +95,7 @@ ifdef ANDROID
 	cd $(INSTALL_DIR)/koreader && \
 		ln -sf ../../$(ANDROID_DIR)/*.lua .
 	@echo "[*] Install afterupdate marker"
-	$(RCP) afterupdate.marker $(INSTALL_DIR)/koreader/
+	@echo "# If this file is here, there are no afterupdate scripts in /sdcard/koreader/scripts/afterupdate." > $(INSTALL_DIR)/koreader/afterupdate.marker
 endif
 ifdef WIN32
 	@echo "[*] Install runtime libraries for win32..."
