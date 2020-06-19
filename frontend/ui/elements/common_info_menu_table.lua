@@ -25,7 +25,7 @@ common_info.version = {
 common_info.help = {
     text = _("Help"),
 }
-common_info.more_plugins = {
+common_info.more_tools = {
     text = _("More tools"),
 }
 

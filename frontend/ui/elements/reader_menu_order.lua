@@ -125,16 +125,17 @@ local order = {
         "send2ebook",
         "text_editor",
         "----------------------------",
-        "more_plugins",
-        "plugin_management",
+        "more_tools",
     },
-    more_plugins = {
+    more_tools = {
         "auto_frontlight",
         "battery_statistics",
         "synchronize_time",
         "keep_alive",
         "doc_setting_tweak",
         "terminal",
+        "----------------------------",
+        "plugin_management",
     },
     search = {
         "dictionary_lookup",
