@@ -39,13 +39,13 @@ if lfs.attributes(run_once_scripts, "mode") == "directory" then
          runUserScripts(run_once_scripts)
          android.execute("rm", afterupdate_marker)
      end
- end
+end
 
 -- scripts executed every start of koreader
 local run_always_scripts = path .. "/koreader/scripts.always"
 if lfs.attributes(run_always_scripts, "mode") == "directory" then
     runUserScripts(run_always_scripts)
- end
+end
  
 -- run koreader patch before koreader startup
 pcall(dofile, path.."/koreader/patch.lua")
