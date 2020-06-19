@@ -62,6 +62,7 @@ local Cervantes = Generic:new{
     hasWifiManager = yes,
     canReboot = yes,
     canPowerOff = yes,
+    home_dir = "/mnt/public",
 
     -- do we support usb mass storage?
     canToggleMassStorage = function() return isMassStorageSupported() end,

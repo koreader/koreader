@@ -21,6 +21,7 @@ local Device = {
     screen = nil,
     screen_dpi_override = nil,
     input = nil,
+    home_dir = nil,
     -- For Kobo, wait at least 15 seconds before calling suspend script. Otherwise, suspend might
     -- fail and the battery will be drained while we are in screensaver mode
     suspend_wait_timeout = 15,
@@ -29,6 +30,7 @@ local Device = {
     hasKeyboard = no,
     hasKeys = no,
     hasDPad = no,
+    hasExitOptions = yes,
     hasFewKeys = no,
     hasWifiToggle = yes,
     hasWifiManager = no,
@@ -52,6 +54,7 @@ local Device = {
     canToggleMassStorage = no,
     canUseWAL = yes, -- requires mmap'ed I/O on the target FS
     canRestart = yes,
+    canSuspend = yes,
     canReboot = no,
     canPowerOff = no,
 
@@ -277,6 +280,10 @@ function Device:onPowerEvent(ev)
           UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend)
         end)
     end
+end
+
+function Device:info()
+    return self.model
 end
 
 -- Hardware specific method to handle usb plug in event

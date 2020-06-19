@@ -10,19 +10,7 @@ local _ = require("gettext")
 local filemanagerutil = {}
 
 function filemanagerutil.getDefaultDir()
-    if Device:isAndroid() then
-        return Device.external_storage()
-    elseif Device:isCervantes() then
-        return "/mnt/public"
-    elseif Device:isKindle() then
-        return "/mnt/us/documents"
-    elseif Device:isKobo() then
-        return "/mnt/onboard"
-    elseif Device:isRemarkable() then
-        return "/home/root"
-    else
-        return "."
-    end
+    return Device.home_dir or "."
 end
 
 function filemanagerutil.abbreviate(path)

@@ -96,6 +96,7 @@ local Kindle = Generic:new{
     canHWInvert = yes,
     -- NOTE: Newer devices will turn the frontlight off at 0
     canTurnFrontlightOff = yes,
+    home_dir = "/mnt/us/documents",
 }
 
 function Kindle:initNetworkManager(NetworkMgr)

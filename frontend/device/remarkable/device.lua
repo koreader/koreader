@@ -14,6 +14,7 @@ local Remarkable = Generic:new{
     isTouchDevice = yes,
     hasFrontlight = no,
     display_dpi = 226,
+    home_dir = "/mnt/root",
 }
 
 local EV_ABS = 3

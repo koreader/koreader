@@ -80,6 +80,7 @@ local Device = Generic:new{
     needsScreenRefreshAfterResume = no,
     hasColorScreen = yes,
     hasEinkScreen = no,
+    canSuspend = no,
     canOpenLink = getLinkOpener,
     openLink = function(self, link)
         local enabled, tool = getLinkOpener()
@@ -114,6 +115,7 @@ local AppImage = Device:new{
     hasMultitouch = no,
     hasOTAUpdates = yes,
     isDesktop = yes,
+    home_dir = os.getenv("HOME"),
 }
 
 local Emulator = Device:new{
@@ -123,11 +125,15 @@ local Emulator = Device:new{
     hasFrontlight = yes,
     hasWifiToggle = yes,
     hasWifiManager = yes,
+    canPowerOff = yes,
+    canReboot = yes,
+    canSuspend = yes,
 }
 
 local Linux = Device:new{
     model = "Linux",
     isDesktop = yes,
+    home_dir = os.getenv("HOME"),
 }
 
 local UbuntuTouch = Device:new{
