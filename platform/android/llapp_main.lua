@@ -4,6 +4,7 @@ android.dl.library_path = android.dl.library_path .. ":" .. android.dir .. "/lib
 local ffi = require("ffi")
 local dummy = require("ffi/posix_h")
 local C = ffi.C
+local lfs = require("libs/libkoreader-lfs")
 
 -- check uri of the intent that starts this application
 local file = android.getIntent()
@@ -16,12 +17,6 @@ end
 local path = android.getExternalStoragePath()
 
 -- execute user scripts before patch.lua
-local lfs = require("libs/libkoreader-lfs")
-
-local user_dir = path .. "/koreader"
-local afterupdate_marker = android.dir .. "/afterupdate.marker"
-local run_once_scripts = user_dir .. "/scripts.afterupdate"
-local run_always_scripts = user_dir .. "/scripts.always"
 
 local shell_scripts = {}
 
@@ -42,7 +37,8 @@ end
 
 local function runUserScripts(scripts)
     for _, script in ipairs(scripts) do
-        local ret = os.execute("/system/bin/sh " .. script .. " " .. user_dir .. " " .. android.dir)
+        --local ret = os.execute("/system/bin/sh " .. script .. " " .. path .. "/koreader " .. android.dir)
+        ret = android.execute("/system/bin/sh", script, path .. "/koreader", android_dir)
         if ret == 0 then
             android.LOGI("script " .. script  .. " executed succesfully")
         else
@@ -52,24 +48,27 @@ local function runUserScripts(scripts)
 end
 
 -- scripts executed once after an update of koreader
+local run_once_scripts = path .. "/koreader/scripts.afterupdate"
 if lfs.attributes(run_once_scripts, "mode") == "directory" then
+    local afterupdate_marker = android.dir .. "/afterupdate.marker"
     if lfs.attributes(afterupdate_marker, "mode") == "file" then
-        shell_scripts = {} -- clear table
         getUserScripts(run_once_scripts)
         runUserScripts(shell_scripts)
         android.LOGI(string.format("Executed %d afterupdate scripts from %s", #shell_scripts, run_once_scripts))
+        shell_scripts = {} -- clear table
         android.execute("rm", afterupdate_marker)
     end
 end
 
+-- scripts executed every start of koreader
+local run_always_scripts = path .. "/koreader/scripts.always"
 if lfs.attributes(run_always_scripts, "mode") == "directory" then
-    shell_scripts = {} -- clear table
     getUserScripts(run_always_scripts)
     runUserScripts(shell_scripts)
     android.LOGI(string.format("Executed %d scripts from %s", #shell_scripts, run_always_scripts))
+    shell_scripts = {} -- clear table
 end
 
-shell_scripts = {} --clean up
 
 -- run koreader patch before koreader startup
 pcall(dofile, path.."/koreader/patch.lua")
