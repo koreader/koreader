@@ -37,18 +37,10 @@ end
 
 -- get root dir for disk scans
 local function getDefaultRootDir()
-    if Device:isAndroid() then
-        return Device.external_storage()
-    elseif Device:isDesktop() then
-        return os.getenv("HOME")
-    elseif Device:isKindle() then
-        return "/mnt/us/documents"
-    elseif Device:isRemarkable() then
-        return "/home/root"
-    elseif Device:isKobo() or Device:isCervantes() then
+    if Device:isCervantes() or Device:isKobo() then
         return "/mnt"
     else
-        return "."
+        return Device.home_dir or lfs.currentdir()
     end
 end
 
@@ -482,9 +474,6 @@ end
 -- prompt the user for a library scan
 function CalibreSearch:prompt(message)
     local rootdir = getDefaultRootDir()
-    if rootdir == "." then
-        rootdir = lfs.currentdir()
-    end
     local warning = T(_("Scanning libraries can take time. All storage media under %1 will be analyzed"), rootdir)
     if message then
         message = message .. "\n\n" .. warning
@@ -496,8 +485,10 @@ function CalibreSearch:prompt(message)
             self.libraries = {}
             self.last_scan = {}
             self:findCalibre(rootdir)
-            for _, dir in ipairs(self.last_scan) do
+            local paths = ""
+            for i, dir in ipairs(self.last_scan) do
                 self.libraries[dir.path] = true
+                paths = paths .. "\n" .. i .. ": " .. dir.path
             end
             local count = #self.last_scan
             -- append current wireless dir if it wasn't found on the scan
@@ -507,15 +498,19 @@ function CalibreSearch:prompt(message)
                 if CalibreMetadata:getDeviceInfo(inbox_dir, "date_last_connected") then
                     self.libraries[inbox_dir] = true
                     count = count + 1
+                    paths = paths .. "\n" .. count .. ": " .. inbox_dir
                 end
             end
             util.dumpTable(self.libraries, self.user_libraries)
             self:invalidateCache()
             self.books = self:getMetadata()
-            UIManager:show(InfoMessage:new{
-                text = T(_("Found %1 calibre libraries in %2 (%3 books)"),  count, rootdir, #self.books),
-                timeout = 3,
-            })
+            local info_text
+            if count == 0 then
+                info_text = _("No calibre libraries were found")
+            else
+                info_text = T(_("Found %1 calibre libraries with %2 books:%3"), count, #self.books, paths)
+            end
+            UIManager:show(InfoMessage:new{ text = info_text })
         end,
     })
 end
