@@ -6,7 +6,6 @@ local Device = require("device")
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local PluginLoader = require("pluginloader")
-local Search = require("apps/filemanager/filemanagersearch")
 local SetDefaults = require("apps/filemanager/filemanagersetdefaults")
 local UIManager = require("ui/uimanager")
 local Screen = Device.screen
@@ -475,14 +474,6 @@ function FileManagerMenu:setUpdateItemTable()
         end,
     }
 
-    -- search tab
-    self.menu_items.find_book_in_calibre_catalog = {
-        text = _("Find a book via calibre metadata"),
-        callback = function()
-            Search:getCalibre()
-            Search:ShowSearch()
-        end
-    }
     self.menu_items.find_file = {
         -- @translators Search for files by name.
         text = _("Find a file"),

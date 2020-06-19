@@ -90,7 +90,7 @@ local order = {
         "screen_disable_double_tab",
     },
     tools = {
-        "calibre_wireless_connection",
+        "calibre",
         "evernote",
         "statistics",
         "move_to_archive",
