@@ -24,25 +24,34 @@ local Calibre = WidgetContainer:new{
 
 function Calibre:onCalibreSearch()
     CalibreSearch:ShowSearch()
+    return true
 end
 
 function Calibre:onCalibreBrowseTags()
     CalibreSearch.search_value = ""
     CalibreSearch:find("tags", 1)
+    return true
 end
 
 function Calibre:onCalibreBrowseSeries()
     CalibreSearch.search_value = ""
     CalibreSearch:find("series", 1)
+    return true
 end
 
 function Calibre:onNetworkDisconnected()
-    if CalibreWireless.calibre_socket then
-        CalibreWireless:disconnect()
-    end
+    self:closeWirelessConnection()
 end
 
 function Calibre:onSuspend()
+    self:closeWirelessConnection()
+end
+
+function Calibre:onClose()
+    self:closeWirelessConnection()
+end
+
+function Calibre:closeWirelessConnection()
     if CalibreWireless.calibre_socket then
         CalibreWireless:disconnect()
     end
