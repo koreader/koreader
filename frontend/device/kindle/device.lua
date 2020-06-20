@@ -169,9 +169,12 @@ function Kindle:intoScreenSaver()
             -- NOTE: Pilefered from Device:onPowerEvent @ frontend/device/generic/device.lua
             -- Mostly always suspend in Portrait/Inverted Portrait mode...
             -- ... except when we just show an InfoMessage or when the screensaver
-            -- is disabled, as it plays badly with Landscape mode (c.f., #4098 and #5290)
+            -- is disabled, as it plays badly with Landscape mode (c.f., #4098 and #5290).
+            -- We also exclude full-screen widgets that work fine in Landscape mode,
+            -- like ReadingProgress and BookStatus (c.f., #5724)
             local screensaver_type = G_reader_settings:readSetting("screensaver_type")
-            if screensaver_type ~= "message" and screensaver_type ~= "disable" then
+            if screensaver_type ~= "message" and screensaver_type ~= "disable" and
+            screensaver_type ~= "readingprogress" and screensaver_type ~= "bookstatus" then
                 self.orig_rotation_mode = self.screen:getRotationMode()
                 -- Leave Portrait & Inverted Portrait alone, that works just fine.
                 if bit.band(self.orig_rotation_mode, 1) == 1 then
