@@ -1,11 +1,11 @@
 #!/bin/sh
 export LC_ALL="en_US.UTF-8"
 
-# working directory of koreader
-KOREADER_DIR="${0%/*}"
+# Compute our working directory in an extremely defensive manner
+KOREADER_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd -P)"
 
-# we're always starting from our working directory
-cd "${KOREADER_DIR}" || exit
+# We rely on starting from our working directory, and it needs to be set, sane and absolute.
+cd "${KOREADER_DIR:-/dev/null}" || exit
 
 # Attempt to switch to a sensible CPUFreq governor when that's not already the case...
 IFS= read -r current_cpufreq_gov <"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
