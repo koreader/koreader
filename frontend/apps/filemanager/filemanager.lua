@@ -47,7 +47,6 @@ local C_ = _.pgettext
 local Screen = Device.screen
 local T = require("ffi/util").template
 
-
 local function restoreScreenMode()
     --- @todo: Not Yet Implemented. Layout is currently broken in Landscape.
     local screen_mode = G_reader_settings:readSetting("fm_screen_mode") or "portrait"
@@ -320,11 +319,11 @@ function FileManager:init()
                         }
                         UIManager:show(script_is_running_msg)
                         UIManager:scheduleIn(0.5, function()
-                            local rv = 0;
+                            local rv;
                             if Device:isAndroid() then
-                                  rv = os.execute("sh " .. BaseUtil.realpath(file)) -- run by sh, because sdcard has no execute permissions
+                                rv = os.execute("sh " .. BaseUtil.realpath(file)) -- run by sh, because sdcard has no execute permissions
                             else
-                                  rv = os.execute(BaseUtil.realpath(file))
+                                rv = os.execute(BaseUtil.realpath(file))
                             end
                             UIManager:close(script_is_running_msg)
                             if rv == 0 then
