@@ -1,14 +1,14 @@
 # Collaborating with Git
 
 ## Basic
-If you are new to Git, following are some of the resources you might find useful:
+If you are new to Git, you might find some of the following resources useful:
 
 * [GitHub's blog post](https://github.com/blog/120-new-to-git)
 * <http://try.github.com/>
 * <http://sixrevisions.com/resources/git-tutorials-beginners/>
 * <http://rogerdudler.github.io/git-guide/>
 
-## Get latest code from the KOReader repository
+## How to pull the latest code from the KOReader repository
 First you need to add the official repo to your remote repo list:
 ```bash
 git remote add upstream git@github.com:koreader/koreader.git
@@ -35,8 +35,8 @@ git pull -r upstream master
 ```
 You might want to test that in a new branch first.
 
-## Get latest patches from other developer's branch
-First you need to add his/her own repo to your remote repo list:
+## Getting the latest patches from other developer's branch
+First you need to add their own repo to your remote repo list:
 ```bash
 git remote add NAME REPO_ADDR
 ```
@@ -45,16 +45,27 @@ Where `NAME` is the alias name you want to give for the remote repo, for example
 git remote add dpavlin git://github.com/dpavlin/kindlepdfviewer.git
 ```
 
-You can verify the remote repo is successfully added by using:
+You can verify the remote repo was successfully added by using:
 ```bash
 git remote -v show
 ```
 
 Now you can merge their branch to your local branch. But before you do this, I recommend you create a new branch first and do experimental stuff on top of the new branch so you won't mess with the master branch:
-```
+```bash
 git checkout -b NEW_TEST_BRANCH_NAME
 git pull dpavlin REMOTE_BRANCH_NAME
 ```
+
+## Quickly testing a patch from a PR
+The following example is not directly related to Git, but exclusive to GitHub, although Bitbucket, GitLab etc. tend to provide similar mechanisms.
+
+First, you have to figure out the PR number. It'll be prominently listed on the PR page as well as in the URL. As an example, we'll take `#6282`. Now you can fetch and checkout that code using the GitHub-specific reference:
+```bash
+git fetch upstream pull/6282/head
+git checkout FETCH_HEAD
+```
+
+Once you've finished testing, you can just `git checkout master` and it'll be as if nothing ever happened.
 
 ## Submitting code change
 How to submit my change on top of current development (which is master branch at origin).
