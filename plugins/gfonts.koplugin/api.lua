@@ -37,7 +37,7 @@ end
 
 function Api:request()
     local request, sink = {}, {}
-    request['url'] = self.base_url .. "?key=" .. self.api_key
+    request.url = self.base_url .. "?key=" .. self.api_key
     request['method'] = 'GET'
     request['sink'] = ltn12.sink.table(sink)
     https.TIMEOUT = 10
