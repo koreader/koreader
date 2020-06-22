@@ -1386,11 +1386,11 @@ function ReaderGesture:gestureAction(action, ges)
     elseif action == "book_status" then
         self.ui:handleEvent(Event:new("ShowBookStatus"))
     elseif action == "page_jmp_fwd_10" then
-        self:pageUpdate(10)
+        self.ui:handleEvent(Event:new("GotoRelativePage", 10))
     elseif action == "page_jmp_fwd_1" then
         self.ui:handleEvent(Event:new("GotoViewRel", 1))
     elseif action == "page_jmp_back_10" then
-        self:pageUpdate(-10)
+        self.ui:handleEvent(Event:new("GotoRelativePage", -10))
     elseif action == "page_jmp_back_1" then
         self.ui:handleEvent(Event:new("GotoViewRel", -1))
     elseif action == "next_chapter" then
@@ -1677,15 +1677,6 @@ function ReaderGesture:multiswipeAction(multiswipe_directions, ges)
     if action and action ~= "nothing" then
         return self:gestureAction(action, ges)
     end
-end
-
-function ReaderGesture:pageUpdate(page)
-    local curr_page = self.ui:getCurrentPage()
-    if curr_page and page then
-        curr_page = curr_page + page
-        self.ui:handleEvent(Event:new("GotoPage", curr_page))
-    end
-
 end
 
 function ReaderGesture:onIgnoreHoldCorners(ignore_hold_corners)
