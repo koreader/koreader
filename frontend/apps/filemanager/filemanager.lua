@@ -319,9 +319,9 @@ function FileManager:init()
                         }
                         UIManager:show(script_is_running_msg)
                         UIManager:scheduleIn(0.5, function()
-                            local rv;
+                            local rv
                             if Device:isAndroid() then
-                                rv = os.execute("sh " .. BaseUtil.realpath(file)) -- run by sh, because sdcard has no execute permissions
+                                rv = os.execute("sh -c" .. BaseUtil.realpath(file)) -- run by sh, because sdcard has no execute permissions
                             else
                                 rv = os.execute(BaseUtil.realpath(file))
                             end
