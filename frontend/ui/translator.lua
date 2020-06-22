@@ -502,7 +502,7 @@ function Translator:_showTranslation(text, target_lang, source_lang)
                 for j, res in ipairs(r[2]) do
                     table.insert(output, "\t● ".. res[1])
                 end
-		        end
+            end
         end
     end
 
