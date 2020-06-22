@@ -8,7 +8,7 @@ assignees: ''
 ---
 
 **Does your feature request involve difficulty completing a task? Please describe.**
-A clear and concise description of what the problem is. Ex. I think it takes to many steps to [...]
+A clear and concise description of what the problem is. Ex. I think it takes too many steps to [...]
 
 **Describe the solution you'd like**
 A clear and concise description of what you'd like to happen.
