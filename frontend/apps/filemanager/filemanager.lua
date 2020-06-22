@@ -483,6 +483,11 @@ function FileManager:init()
         table.insert(self, ReaderGesture:new{ ui = self })
     end
 
+    if Device:hasWifiToggle() then
+        local NetworkListener = require("ui/network/networklistener")
+        table.insert(self, NetworkListener:new{ ui = self })
+    end
+
     if Device:hasKeys() then
         self.key_events.Home = { {"Home"}, doc = "go home" }
         --Override the menu.lua way of handling the back key

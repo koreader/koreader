@@ -396,6 +396,15 @@ function ReaderUI:init()
         })
     end
 
+    if Device:hasWifiToggle() then
+        local NetworkListener = require("ui/network/networklistener")
+        self:registerModule("networklistener", NetworkListener:new {
+            document = self.document,
+            view = self.view,
+            ui = self,
+        })
+    end
+
     -- Allow others to change settings based on external factors
     -- Must be called after plugins are loaded & before setting are read.
     self:handleEvent(Event:new("DocSettingsLoad", self.doc_settings, self.document))

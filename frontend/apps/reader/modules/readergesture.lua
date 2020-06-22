@@ -1555,60 +1555,11 @@ function ReaderGesture:gestureAction(action, ges)
         local arg = bit.band((Screen:getRotationMode() + 1), 3)
         self.ui:handleEvent(Event:new("SetRotationMode", arg))
     elseif action == "toggle_wifi" then
-        local NetworkMgr = require("ui/network/manager")
-
-        if not NetworkMgr:isOnline() then
-            UIManager:show(InfoMessage:new{
-                text = _("Turning on Wi-Fi…"),
-                timeout = 1,
-            })
-
-            -- NB Normal widgets should use NetworkMgr:promptWifiOn()
-            -- This is specifically the toggle wifi action, so consent is implied.
-            NetworkMgr:turnOnWifi()
-        else
-            NetworkMgr:turnOffWifi()
-
-            UIManager:show(InfoMessage:new{
-                text = _("Wi-Fi off."),
-                timeout = 1,
-            })
-        end
+        self.ui:handleEvent(Event:new("ToggleWifi"))
     elseif action == "wifi_off" then
-        local NetworkMgr = require("ui/network/manager")
-        -- can't hurt
-        NetworkMgr:turnOffWifi()
-
-        UIManager:show(InfoMessage:new{
-            text = _("Wi-Fi off."),
-            timeout = 1,
-        })
+        self.ui:handleEvent(Event:new("InfoWifiOff"))
     elseif action == "wifi_on" then
-        local NetworkMgr = require("ui/network/manager")
-
-        if not NetworkMgr:isOnline() then
-            UIManager:show(InfoMessage:new{
-                text = _("Enabling wifi…"),
-                timeout = 1,
-            })
-
-            -- NB Normal widgets should use NetworkMgr:promptWifiOn()
-            -- This is specifically the toggle Wi-Fi action, so consent is implied.
-            NetworkMgr:turnOnWifi()
-        else
-            local info_text
-            local current_network = NetworkMgr:getCurrentNetwork()
-            -- this method is only available for some implementations
-            if current_network and current_network.ssid then
-                info_text = T(_("Already connected to network %1."), BD.wrap(current_network.ssid))
-            else
-                info_text = _("Already connected.")
-            end
-            UIManager:show(InfoMessage:new{
-                text = info_text,
-                timeout = 1,
-            })
-        end
+        self.ui:handleEvent(Event:new("InfoWifiOn"))
     elseif action == "increase_font" then
         self.ui:handleEvent(Event:new("AdjustFontSize", ges, 1))
     elseif action == "decrease_font" then
