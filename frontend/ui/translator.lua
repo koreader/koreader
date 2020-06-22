@@ -489,13 +489,11 @@ function Translator:_showTranslation(text, target_lang, source_lang)
                     table.insert(output, symbol .. " " .. t)
                 end
             end
-            table.insert(output, "")
         end
     end
 
-
     if result[13] and type(result[13]) == "table" and #result[13] > 0 then
-        -- Translation(word)
+        -- Definition(word)
         table.insert(output, "________")
         for i, r in ipairs(result[13]) do
             if r[2] and type(r[2]) == "table" then
