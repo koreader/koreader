@@ -38,31 +38,31 @@ local function runUserScripts(dir, migration, parent)
     end
 end
 
--- run scripts once after an update of koreader,
--- it can also trigger a recursive migration of user data
-local run_once_scripts = path .. "/koreader/scripts.afterupdate"
-if lfs.attributes(run_once_scripts, "mode") == "directory" then
-    local afterupdate_marker = android.dir .. "/afterupdate.marker"
-    if lfs.attributes(afterupdate_marker, "mode") ~= nil then
-         if lfs.attributes(run_once_scripts .. "/migrate", "mode") ~= nil then
-             android.LOGI("after-update: running migration")
-             runUserScripts(run_once_scripts, true)
-         else
-             android.LOGI("after-update: running shell scripts")
-             runUserScripts(run_once_scripts)
-         end
-         android.execute("rm", afterupdate_marker)
+if android.prop.flavor ~= "fdroid" then
+    -- run scripts once after an update of koreader,
+    -- it can also trigger a recursive migration of user data
+    local run_once_scripts = path .. "/koreader/scripts.afterupdate"
+    if lfs.attributes(run_once_scripts, "mode") == "directory" then
+        local afterupdate_marker = android.dir .. "/afterupdate.marker"
+        if lfs.attributes(afterupdate_marker, "mode") ~= nil then
+             if lfs.attributes(run_once_scripts .. "/migrate", "mode") ~= nil then
+                 android.LOGI("after-update: running migration")
+                 runUserScripts(run_once_scripts, true)
+             else
+                 android.LOGI("after-update: running shell scripts")
+                 runUserScripts(run_once_scripts)
+             end
+             android.execute("rm", afterupdate_marker)
+        end
     end
+    -- scripts executed every start of koreader, no migration here
+    local run_always_scripts = path .. "/koreader/scripts.always"
+    if lfs.attributes(run_always_scripts, "mode") == "directory" then
+        runUserScripts(run_always_scripts)
+    end
+    -- run koreader patch before koreader startup
+    pcall(dofile, path.."/koreader/patch.lua")
 end
-
--- scripts executed every start of koreader, no migration here
-local run_always_scripts = path .. "/koreader/scripts.always"
-if lfs.attributes(run_always_scripts, "mode") == "directory" then
-    runUserScripts(run_always_scripts)
-end
-
--- run koreader patch before koreader startup
-pcall(dofile, path.."/koreader/patch.lua")
 
 -- Set proper permission for binaries.
 --- @todo Take care of this on extraction instead.
