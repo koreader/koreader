@@ -136,6 +136,7 @@ function EvernoteExporter:addToMainMenu(menu_items)
             {
                 text = _("Joplin") ,
                 checked_func = function() return self.joplin_export end,
+                separator = true,
                 sub_item_table ={
                     {
                         text = _("Set Joplin IP and Port"),
@@ -287,7 +288,8 @@ For more information, please visit https://github.com/koreader/koreader/wiki/Eve
                         text = _("Exporting may take several minutes…"),
                         timeout = 1,
                     })
-                end
+                end,
+                separator = true,
             },
             {
                 text = _("Export to local JSON files"),
@@ -326,7 +328,8 @@ For more information, please visit https://github.com/koreader/koreader/wiki/Eve
                         self.joplin_export = false
                     end
                     self:saveSettings()
-                end
+                end,
+                separator = true,
             },
             {
                 text = _("Purge history records"),
