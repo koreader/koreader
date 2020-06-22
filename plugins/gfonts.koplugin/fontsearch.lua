@@ -112,40 +112,4 @@ function FontSearch:fontsBy(key, query, t)
     return result
 end
 
-function FontSearch:category(t)
-    local freq = {}
-    for _, font in ipairs(t) do
-        local category = font.category
-        freq[category] = (freq[category] or 0) + 1
-    end
-    return freq
-end
-
-function FontSearch:language(t)
-    local freq = {}
-    for _, font in ipairs(t) do
-        for __, lang in ipairs(font.subsets) do
-            freq[lang] = (freq[lang] or 0) + 1
-        end
-    end
-    return freq
-end
-
-function FontSearch:date(t)
-    local freq = {}
-    for _, font in ipairs(t) do
-        local Y, M, D = font.lastModified:match("(%d+)-(%d+)-(%d+)")
-        local modified = os.time({year = Y, month = M, day = D})
-        local elapsed_days = math.floor(os.difftime(os.time(), modified / (24 * 60 * 60)))
-        if elapsed_days <= 365 and elapsed_days > 30 then
-            freq["last_year"] = (freq["last_year"] or 0) + 1
-        elseif elapsed_days <= 30 and elapsed_days > 7 then
-            freq["last_month"] = (freq["last_month"] or 0) + 1
-        elseif elapsed_days <= 7 and elapsed_days >= 0 then
-            freq["last_week"] = (freq["last_week"] or 0) + 1
-        end
-    end
-    return freq
-end
-
 return FontSearch
