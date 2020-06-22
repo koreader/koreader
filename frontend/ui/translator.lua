@@ -165,7 +165,7 @@ local Translator = {
             -- "bd",  -- dictionary (articles, reverse translations, etc)
             -- "ex",  -- examples
             -- "ld",  -- ?
-            -- "md",  -- definitions of source text
+            "md",  -- definitions of source text
             -- "qca", -- ?
             -- "rw",  -- "see also" list
             -- "rm",  -- transcription / transliteration of source and translated texts
@@ -489,7 +489,20 @@ function Translator:_showTranslation(text, target_lang, source_lang)
                     table.insert(output, symbol .. " " .. t)
                 end
             end
-            table.insert(output, "")
+        end
+    end
+
+    if result[13] and type(result[13]) == "table" and #result[13] > 0 then
+        -- Definition(word)
+        table.insert(output, "________")
+        for i, r in ipairs(result[13]) do
+            if r[2] and type(r[2]) == "table" then
+                local symbol = util.unicodeCodepointToUtf8(10101 + (i < 10 and i or 10))
+                table.insert(output, symbol.. " ".. r[1])
+                for j, res in ipairs(r[2]) do
+                    table.insert(output, "\t● ".. res[1])
+                end
+            end
         end
     end
 
