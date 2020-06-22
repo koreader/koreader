@@ -321,7 +321,7 @@ function FileManager:init()
                             local rv
                             if Device:isAndroid() then
                                 Device:setIgnoreInput(true)
-                                rv = os.execute("sh -c" .. BaseUtil.realpath(file)) -- run by sh, because sdcard has no execute permissions
+                                rv = os.execute("sh " .. BaseUtil.realpath(file)) -- run by sh, because sdcard has no execute permissions
                                 Device:setIgnoreInput(false)
                             else
                                 rv = os.execute(BaseUtil.realpath(file))
