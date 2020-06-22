@@ -723,8 +723,15 @@ end
 --- Basically a helper method to check a specific list of file extensions.
 ---- @string filename
 ---- @treturn boolean
-function util.isAllowedScript(file)
+function util.isAllowedScript(file, has_restricted_scripts)
     local file_ext = string.lower(util.getFileNameSuffix(file))
+    if has_restricted_scripts ~=nil then
+        if file_ext == "sh" then
+            return true
+        else
+            return false
+        end
+    end
     if file_ext == "sh"
     or file_ext == "py" then
         return true
