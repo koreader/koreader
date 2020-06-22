@@ -246,7 +246,7 @@ end
 function GFonts:downloadFont(family)
     logger.info("Prompt download " .. family)
     UIManager:show(ConfirmBox:new{
-        text = T(_("Do you want to download %1"), family),
+        text = T(_("Download %1?"), family),
         ok_text = _("Download"),
         ok_callback = function()
             api:downloadFont(self.fonts.list, family)
