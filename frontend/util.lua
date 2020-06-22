@@ -727,9 +727,9 @@ function util.isAllowedScript(file, has_restricted_scripts)
     local file_ext = string.lower(util.getFileNameSuffix(file))
     if has_restricted_scripts ~=nil then
         if file_ext == "sh" then
-            return true
+          return true
         else
-            return false
+          return false
         end
     end
     if file_ext == "sh"
