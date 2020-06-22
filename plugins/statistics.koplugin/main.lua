@@ -149,38 +149,6 @@ function ReaderStatistics:init()
         end
         return readingprogress
     end
-    local ReaderGesture = require("apps/reader/modules/readergesture")
-    ReaderGesture.getReaderProgress = function()
-        local readingprogress
-        self:insertDB(self.id_curr_book)
-        local current_period, current_pages = self:getCurrentBookStats()
-        local today_period, today_pages = self:getTodayBookStats()
-        local dates_stats = self:getReadingProgressStats(7)
-        if dates_stats then
-            readingprogress = ReaderProgress:new{
-                dates = dates_stats,
-                current_period = current_period,
-                current_pages = current_pages,
-                today_period = today_period,
-                today_pages = today_pages,
-                --readonly = true,
-            }
-        end
-        return readingprogress
-    end
-
-    ReaderGesture.getBookStats = function()
-        if self:isDocless() or not self.is_enabled then return end
-        local stats = KeyValuePage:new{
-            title = _("Current statistics"),
-            kv_pairs = self:getCurrentStat(self.id_curr_book),
-        }
-        return stats
-    end
-
-    ReaderGesture.getCalendarView = function()
-        return self:getCalendarView()
-    end
 end
 
 function ReaderStatistics:initData()
@@ -692,7 +660,7 @@ function ReaderStatistics:getStatisticEnabledMenuItem()
             end
             self:saveSettings()
             if not self:isDocless() then
-                self.view.footer:updateFooter()
+                self.view.footer:onUpdateFooter()
             end
         end,
     }
@@ -2007,7 +1975,7 @@ end
 function ReaderStatistics:onReaderReady()
     -- we have correct page count now, do the actual initialization work
     self:initData()
-    self.view.footer:updateFooter()
+    self.view.footer:onUpdateFooter()
 end
 
 function ReaderStatistics:getCalendarView()
@@ -2099,6 +2067,38 @@ function ReaderStatistics:getReadBookByDay(month)
         table.insert(per_day[day], { id = tonumber(book_id), title = tostring(book_title) })
     end
     return per_day
+end
+
+function ReaderStatistics:onShowReaderProgress()
+    local readingprogress
+    self:insertDB(self.id_curr_book)
+    local current_period, current_pages = self:getCurrentBookStats()
+    local today_period, today_pages = self:getTodayBookStats()
+    local dates_stats = self:getReadingProgressStats(7)
+    if dates_stats then
+        readingprogress = ReaderProgress:new{
+            dates = dates_stats,
+            current_period = current_period,
+            current_pages = current_pages,
+            today_period = today_period,
+            today_pages = today_pages,
+            --readonly = true,
+        }
+    end
+    UIManager:show(readingprogress)
+end
+
+function ReaderStatistics:onShowBookStats()
+    if self:isDocless() or not self.is_enabled then return end
+    local stats = KeyValuePage:new{
+        title = _("Current statistics"),
+        kv_pairs = self:getCurrentStat(self.id_curr_book),
+    }
+    UIManager:show(stats)
+end
+
+function ReaderStatistics:onShowCalendarView()
+     UIManager:show(self:getCalendarView())
 end
 
 return ReaderStatistics

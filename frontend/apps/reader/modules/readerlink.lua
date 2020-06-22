@@ -426,7 +426,7 @@ function ReaderLink:onTap(_, ges)
             -- screen DPI if the user has set another one).
             max_distance = Screen:scaleByDPI(30)
         end
-        return self:onGoToPageLink(ges, isTapIgnoreExternalLinksEnabled(), allow_footnote_popup, max_distance)
+        return self:onGoToPageLink(ges, isTapIgnoreExternalLinksEnabled(), max_distance)
     end
 end
 
@@ -724,7 +724,7 @@ function ReaderLink:onSwipe(arg, ges)
     elseif direction == "west" then
         local ret = false
         if isSwipeToFollowNearestLinkEnabled() then
-            ret = self:onGoToPageLink(ges, isSwipeIgnoreExternalLinksEnabled(), isFootnoteLinkInPopupEnabled())
+            ret = self:onGoToPageLink(ges, isSwipeIgnoreExternalLinksEnabled())
         end
         -- If no link found, or no follow link option enabled,
         -- jump to latest bookmark (if enabled)
@@ -736,7 +736,7 @@ function ReaderLink:onSwipe(arg, ges)
 end
 
 --- Goes to link nearest to the gesture (or first link in page)
-function ReaderLink:onGoToPageLink(ges, internal_links_only, allow_footnote_popup, max_distance)
+function ReaderLink:onGoToPageLink(ges, internal_links_only, max_distance)
     local selected_link = nil
     local selected_distance2 = nil
     -- We use squares of distances all along the calculations, no need
@@ -928,9 +928,13 @@ function ReaderLink:onGoToPageLink(ges, internal_links_only, allow_footnote_popu
         if max_distance and selected_distance2 and selected_distance2 > math.pow(max_distance, 2) then
             logger.dbg("nearest link is further than max distance, ignoring it")
         else
-            return self:onGotoLink(selected_link, false, allow_footnote_popup)
+            return self:onGotoLink(selected_link, false, isFootnoteLinkInPopupEnabled())
         end
     end
+end
+
+function ReaderLink:onGoToInternalPageLink(ges)
+    self:onGoToPageLink(ges, true)
 end
 
 function ReaderLink:onGoToLatestBookmark(ges)
