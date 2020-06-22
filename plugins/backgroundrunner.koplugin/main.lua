@@ -1,3 +1,12 @@
+local Device = require("device")
+
+-- disable on android, since it breaks expect behaviour of an activity.
+-- it is also unused by other plugins.
+-- See https://github.com/koreader/koreader/issues/6297
+if Device:isAndroid() then
+    return { disabled = true, }
+end
+
 local CommandRunner = require("commandrunner")
 local PluginShare = require("pluginshare")
 local UIManager = require("ui/uimanager")
