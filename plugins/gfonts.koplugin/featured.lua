@@ -1,7 +1,7 @@
 local Featured = {
     -- recommended fonts, both from gfonts and custom repos
     fonts = {
-	"Bitter",
+        "Bitter",
         "Crimson Text",
         "Gentium Book Basic",
         "Ibarra Real Nova",
@@ -12,7 +12,7 @@ local Featured = {
 
     -- we'll use custom versions of the following font families:
     own_fonts = {
-	-- NiLuJe build of Literata 3 goes here
+        -- NiLuJe build of Literata 3 goes here
         ["Literata"] = {
             family = "Literata",
             version = "custom description here",
