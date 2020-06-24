@@ -6,6 +6,7 @@ This module defines stubs for common methods.
 
 local logger = require("logger")
 local _ = require("gettext")
+local util = require("util")
 
 local function yes() return true end
 local function no() return false end
@@ -389,6 +390,13 @@ end
 -- 4: dazzling.
 function Device:ambientBrightnessLevel()
     return 0
+end
+
+function Device:canExecuteScript(file)
+    local file_ext = string.lower(util.getFileNameSuffix(file))
+    if file_ext == "sh" or file_ext == "py"  then
+        return true
+    end
 end
 
 return Device

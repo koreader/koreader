@@ -7,6 +7,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local _ = require("gettext")
 local T = require("ffi/util").template
+local util = require("util")
 
 local function yes() return true end
 local function no() return false end
@@ -351,5 +352,12 @@ end
 
 android.LOGI(string.format("Android %s - %s (API %d) - flavor: %s",
     android.prop.version, getCodename(), Device.firmware_rev, android.prop.flavor))
+
+function Device:canExecuteScript(file)
+    local file_ext = string.lower(util.getFileNameSuffix(file))
+    if android.prop.flavor ~= "fdroid" and file_ext == "sh"  then
+        return true
+    end
+end
 
 return Device
