@@ -360,4 +360,4 @@ function Device:canExecuteScript(file)
     end
 end
 
-return Device
+return device
