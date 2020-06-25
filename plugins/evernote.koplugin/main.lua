@@ -1,3 +1,4 @@
+local logger = require('logger')
 local BD = require("ui/bidi")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LoginDialog = require("ui/widget/logindialog")
@@ -405,6 +406,7 @@ function EvernoteExporter:doLogin(username, password)
         domain = self.evernote_domain,
         username = username,
         password = password,
+        logger = logger.dbg
     }
     self.evernote_username = username
     local ok, token = pcall(oauth.getToken, oauth)
