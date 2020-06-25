@@ -405,7 +405,7 @@ function EvernoteExporter:doLogin(username, password)
         domain = self.evernote_domain,
         username = username,
         password = password,
-        logger = logger.dbg
+        logger = logger.dbg,
     }
     self.evernote_username = username
     local ok, token = pcall(oauth.getToken, oauth)
