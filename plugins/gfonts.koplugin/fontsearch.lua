@@ -17,7 +17,7 @@ end
 local function elapsedMatch(elapsed, cat)
     for category, match in pairs(mtime) do
         if category == cat and match(elapsed) then
-            return true, cat
+            return true
         end
     end
     return false
@@ -28,9 +28,9 @@ local function dateFreq(t)
     local freq = {}
     for _, font in ipairs(t) do
         for category, match in pairs(mtime) do
-            local ok, cat = elapsedMatch(elapsedDays(font.lastModified), category)
+            local ok = elapsedMatch(elapsedDays(font.lastModified), category)
             if ok then
-                freq[cat] = (freq[cat] or 0) + 1
+                freq[category] = (freq[category] or 0) + 1
             end
         end
     end
@@ -94,6 +94,17 @@ local function langMatch(t, query)
     return fonts
 end
 
+-- get fonts that partially match a family
+local function familyMatch(t, query)
+    local fonts = {}
+    for _, font in ipairs(t) do
+        if not query or font.family:lower():match(query:lower()) then
+            table.insert(fonts, #fonts + 1, font)
+        end
+    end
+    return fonts
+end
+
 local M = {}
 
 function M.frequenceOf(key, t)
@@ -115,6 +126,8 @@ function M.fontsByMatch(key, t, query)
         return categoryMatch(t, query)
     elseif key == "last" then
         return dateMatch(t, query)
+    elseif key == "family" then
+        return familyMatch(t, query)
     else
         return nil, "invalid key: " .. key
     end

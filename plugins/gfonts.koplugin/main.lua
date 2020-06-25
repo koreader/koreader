@@ -179,7 +179,6 @@ function GFonts:frontpage()
                 {
                     text = _("Featured"),
                     callback = function()
-                        self.search_value = self.search_dialog:getInputText()
                         self.lastsearch = "featured"
                         self:close()
                     end,
@@ -187,7 +186,6 @@ function GFonts:frontpage()
                 {
                     text = _("Last modified"),
                     callback = function()
-                        self.search_value = self.search_dialog:getInputText()
                         self.lastsearch = "last"
                         self:close()
                     end,
@@ -197,7 +195,6 @@ function GFonts:frontpage()
                 {
                     text = _("Category"),
                     callback = function()
-                        self.search_value = self.search_dialog:getInputText()
                         self.lastsearch = "category"
                         self:close()
                     end,
@@ -205,7 +202,6 @@ function GFonts:frontpage()
                 {
                     text = _("Language"),
                     callback = function()
-                        self.search_value = self.search_dialog:getInputText()
                         self.lastsearch = "language"
                         self:close()
                     end,
@@ -215,7 +211,6 @@ function GFonts:frontpage()
                 {
                     text = _("Cancel"),
                     callback = function()
-                        self.search_value = self.search_dialog:getInputText()
                         self.lastsearch = nil
                         self:close()
                     end,
@@ -289,8 +284,12 @@ function GFonts:find()
         end
         catalog = self:fontCatalog(featured_fonts)
     elseif s == "family" then
-        catalog_name = _("Fonts")
-        catalog = self:fontCatalog(self.fonts.list)
+        if not self.search_value then
+            catalog_name = _("Fonts")
+        else
+            catalog_name = T(_("Fonts that match %1"), self.search_value)
+        end
+        catalog = self:fontCatalog(fontsearch.fontsByMatch(s, self.fonts.list, self.search_value))
     elseif s == "category" or s == "language" or s == "last" then
         if s == "category" then
             catalog_name = _("Categories")
