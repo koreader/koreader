@@ -281,7 +281,7 @@ DocFragment {
             },
         },
         {
-            title = _("Hyphenation and ligatures"),
+            title = _("Hyphenation, ligatures, ruby"),
             {
                 id = "hyphenate_all_auto";
                 title = _("Allow hyphenation on all text"),
@@ -299,6 +299,14 @@ h1, h2, h3, h4, h5, h6 { hyphens: none !important; }
                 -- from being applied
                 css = [[
 * { font-variant: no-common-ligatures; }
+                ]],
+            },
+            {
+                id = "ruby_inline";
+                title = _("Render <ruby> content inline"),
+                description = _("Disable handling of <ruby> tags and have them rendered inline."),
+                css = [[
+ruby { display: inline !important; }
                 ]],
             },
             separator = true,
