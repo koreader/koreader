@@ -5,6 +5,7 @@ local ffi = require("ffi")
 local C = ffi.C
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
@@ -347,6 +348,13 @@ end
 function Device:exit()
     android.LOGI(string.format("Stopping %s main activity", android.prop.name));
     android.lib.ANativeActivity_finish(android.app.activity)
+end
+
+function Device:canExecuteScript(file)
+    local file_ext = string.lower(util.getFileNameSuffix(file))
+    if android.prop.flavor ~= "fdroid" and file_ext == "sh"  then
+        return true
+    end
 end
 
 android.LOGI(string.format("Android %s - %s (API %d) - flavor: %s",

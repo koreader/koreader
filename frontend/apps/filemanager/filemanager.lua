@@ -301,7 +301,7 @@ function FileManager:init()
             },
         }
 
-        if not Device:isAndroid() and lfs.attributes(file, "mode") == "file" and util.isAllowedScript(file) then
+        if lfs.attributes(file, "mode") == "file" and Device:canExecuteScript(file) then
             -- NOTE: We populate the empty separator, in order not to mess with the button reordering code in CoverMenu
             table.insert(buttons[3],
                 {
@@ -316,7 +316,14 @@ function FileManager:init()
                         }
                         UIManager:show(script_is_running_msg)
                         UIManager:scheduleIn(0.5, function()
-                            local rv = os.execute(BaseUtil.realpath(file))
+                            local rv
+                            if Device:isAndroid() then
+                                Device:setIgnoreInput(true)
+                                rv = os.execute("sh " .. BaseUtil.realpath(file)) -- run by sh, because sdcard has no execute permissions
+                                Device:setIgnoreInput(false)
+                            else
+                                rv = os.execute(BaseUtil.realpath(file))
+                            end
                             UIManager:close(script_is_running_msg)
                             if rv == 0 then
                                 UIManager:show(InfoMessage:new{

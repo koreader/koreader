@@ -719,20 +719,6 @@ function util.getFileNameSuffix(file)
     return suffix
 end
 
---- Returns true if the file is a script we allow running
---- Basically a helper method to check a specific list of file extensions.
----- @string filename
----- @treturn boolean
-function util.isAllowedScript(file)
-    local file_ext = string.lower(util.getFileNameSuffix(file))
-    if file_ext == "sh"
-    or file_ext == "py" then
-        return true
-    else
-        return false
-    end
-end
-
 --- Companion helper function that returns the script's language,
 --- based on the filme extension.
 ---- @string filename
