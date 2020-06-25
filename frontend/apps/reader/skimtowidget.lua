@@ -412,7 +412,8 @@ end
 function SkimToWidget:goToByEvent(event_name)
     if event_name then
         self:addOriginToLocationStack()
-        self.ui:handleEvent(Event:new(event_name))
+        self.ui:handleEvent(Event:new(event_name, false))
+            -- add_current_location_to_stack=false, as we handled it here
         self.curr_page = self.ui:getCurrentPage()
         self:update()
     end

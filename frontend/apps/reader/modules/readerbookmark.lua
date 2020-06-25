@@ -647,12 +647,18 @@ function ReaderBookmark:onGotoNextBookmark(pn_or_xp)
     return true
 end
 
-function ReaderBookmark:onGotoNextBookmarkFromPage()
+function ReaderBookmark:onGotoNextBookmarkFromPage(add_current_location_to_stack)
+    if add_current_location_to_stack ~= false then -- nil or true
+        self.ui.link:addCurrentLocationToStack()
+    end
     self:gotoBookmark(self:getNextBookmarkedPageFromPage(self.ui:getCurrentPage()))
     return true
 end
 
-function ReaderBookmark:onGotoPreviousBookmarkFromPage()
+function ReaderBookmark:onGotoPreviousBookmarkFromPage(add_current_location_to_stack)
+    if add_current_location_to_stack ~= false then -- nil or true
+        self.ui.link:addCurrentLocationToStack()
+    end
     self:gotoBookmark(self:getPreviousBookmarkedPageFromPage(self.ui:getCurrentPage()))
     return true
 end
