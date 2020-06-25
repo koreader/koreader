@@ -79,7 +79,7 @@ function ReaderToc:onPosUpdate(pos, pageno)
 end
 
 function ReaderToc:fillToc()
-    if self.toc and #self.toc > 0 then return end
+    if self.toc then return end
     if self.ui.document:canHaveAlternativeToc() then
         if self.ui.doc_settings:readSetting("alternative_toc") then
             -- (if the document has a cache, the previously built alternative
