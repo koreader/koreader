@@ -650,14 +650,13 @@ This is just an example, that will need to be adapted into a user style tweak.]]
                     title = _("In-page FB2 footnotes"),
                     description = _([[
 Show FB2 footnote text at the bottom of pages that contain links to them.]]),
-                    -- Avoid 75% of 75% in case of nested <section>
                     css = [[
 body[name="notes"] section {
     -cr-hint: footnote-inpage;
     margin: 0 !important;
 }
 body[name="notes"] > section {
-    font-size: 75%;
+    font-size: 0.75rem;
 }
                     ]],
                 },
@@ -672,7 +671,7 @@ body[name="comments"] section {
     margin: 0 !important;
 }
 body[name="comments"] > section {
-    font-size: 85%;
+    font-size: 0.85rem;
 }
                     ]],
                     separator = true,
@@ -686,7 +685,7 @@ FB2 footnotes and endnotes get a smaller font size when displayed in-page. This 
 body[name="notes"] > section,
 body[name="comments"] > section
 {
-    font-size: 100% !important;
+    font-size: 1rem !important;
 }
                     ]],
                 },
@@ -727,7 +726,7 @@ This only works with footnotes that have specific attributes set by the publishe
 {
     -cr-hint: footnote-inpage;
     margin: 0 !important;
-    font-size: 80% !important;
+    font-size: 0.8rem !important;
 }
                 ]],
                 separator = true,
@@ -754,7 +753,7 @@ ol.references > li > .mw-cite-backlink { display: none; }
 ol.references > li {
     -cr-hint: footnote-inpage;
     margin: 0 !important;
-    font-size: 80% !important;
+    font-size: 0.8rem !important;
 }
 /* hide backlinks */
 ol.references > li > .noprint { display: none; }
@@ -794,7 +793,7 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
 {
     -cr-hint: footnote-inpage;
     margin: 0 !important;
-    font-size: 80% !important;
+    font-size: 0.8rem !important;
 }
                 ]],
             },

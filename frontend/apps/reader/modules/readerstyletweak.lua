@@ -594,7 +594,8 @@ p.someTitleClassName { text-indent: 0; }
 DIV.advertisement { display: none !important; }
 
 .footnoteContainerClassName {
-    font-size: 80%;
+    font-size: 0.8rem !important;
+    text-align: justify !important;
     margin: 0 !important;
     -cr-hint: footnote-inpage;
 }
