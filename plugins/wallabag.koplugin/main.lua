@@ -21,11 +21,9 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local http = require("socket.http")
-local https = require("ssl.https")
 local logger = require("logger")
 local ltn12 = require("ltn12")
 local socket = require("socket")
-local url = require("socket.url")
 local util = require("util")
 local _ = require("gettext")
 local T = FFIUtil.template
@@ -506,12 +504,10 @@ end
 ---- @todo separate call to internal API from the download on external server
 function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
     local request, sink = {}, {}
-    local parsed
 
     -- Is it an API call, or a regular file direct download?
     if apiurl:sub(1, 1) == "/" then
         -- API call to our server, has the form "/random/api/call"
-        parsed = url.parse(self.server_url)
         request.url = self.server_url .. apiurl
         if headers == nil then
             headers = { ["Authorization"] = "Bearer " .. self.access_token, }
@@ -519,7 +515,6 @@ function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
     else
         -- regular url link to a foreign server
         local file_url = apiurl
-        parsed = url.parse(file_url)
         request.url = file_url
         if headers == nil then
             headers = {} -- no need for a token here
@@ -539,8 +534,8 @@ function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
     logger.dbg("Wallabag: URL     ", request.url)
     logger.dbg("Wallabag: method  ", method)
 
-    http.TIMEOUT, https.TIMEOUT = 30, 30
-    local httpRequest = parsed.scheme == "http" and http.request or https.request
+    http.TIMEOUT = 30
+    local httpRequest = http.request
     local code, resp_headers = socket.skip(1, httpRequest(request))
     -- raise error message when network is unavailable
     if resp_headers == nil then
