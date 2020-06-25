@@ -5,9 +5,9 @@ local ffi = require("ffi")
 local C = ffi.C
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
-local util = require("util")
 
 local function yes() return true end
 local function no() return false end
@@ -353,6 +353,10 @@ end
 android.LOGI(string.format("Android %s - %s (API %d) - flavor: %s",
     android.prop.version, getCodename(), Device.firmware_rev, android.prop.flavor))
 
+--- Returns true if the file is a script we allow running
+--- Basically a helper method to check a specific list of file extensions for executable scripts
+---- @string filename
+---- @treturn boolean
 function Device:canExecuteScript(file)
     local file_ext = string.lower(util.getFileNameSuffix(file))
     if android.prop.flavor ~= "fdroid" and file_ext == "sh"  then

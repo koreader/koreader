@@ -5,8 +5,8 @@ This module defines stubs for common methods.
 --]]
 
 local logger = require("logger")
-local _ = require("gettext")
 local util = require("util")
+local _ = require("gettext")
 
 local function yes() return true end
 local function no() return false end
@@ -395,6 +395,10 @@ function Device:ambientBrightnessLevel()
     return 0
 end
 
+--- Returns true if the file is a script we allow running
+--- Basically a helper method to check a specific list of file extensions for executable scripts
+---- @string filename
+---- @treturn boolean
 function Device:canExecuteScript(file)
     local file_ext = string.lower(util.getFileNameSuffix(file))
     if file_ext == "sh" or file_ext == "py"  then

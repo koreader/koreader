@@ -301,8 +301,6 @@ function FileManager:init()
             },
         }
 
-        -- checks if file is a python/shell script on non android devices
-        -- or if file is a shell script on android
         if lfs.attributes(file, "mode") == "file" and Device:canExecuteScript(file) then
             -- NOTE: We populate the empty separator, in order not to mess with the button reordering code in CoverMenu
             table.insert(buttons[3],
