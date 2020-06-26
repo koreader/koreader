@@ -1,4 +1,5 @@
 local BD = require("ui/bidi")
+local bit = require("bit")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
@@ -1551,7 +1552,7 @@ function ReaderGesture:gestureAction(action, ges)
         self.ui:handleEvent(Event:new("RestoreZoomMode"))
         self.ui:handleEvent(Event:new("InitScrollPageStates"))
     elseif action == "toggle_rotation" then
-        local arg = (Screen:getRotationMode() +1)%4
+        local arg = bit.band((Screen:getRotationMode() + 1), 3)
         self.ui:handleEvent(Event:new("SetRotationMode", arg))
     elseif action == "toggle_wifi" then
         local NetworkMgr = require("ui/network/manager")

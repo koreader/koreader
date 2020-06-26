@@ -28,10 +28,10 @@ local KoptOptions = {
             {
                 name = "rotation_mode",
                 name_text = S.SCREEN_MODE,
-                toggle = {S.PORTRAIT, S.LANDSCAPE, S.PORTRAIT_ROTATED, S.LANDSCAPE_ROTATED},
+                toggle = {S.LANDSCAPE_ROTATED, S.PORTRAIT, S.LANDSCAPE, S.PORTRAIT_ROTATED},
                 alternate = false,
-                values = {0, 1, 2, 3},
-                args = {0, 1, 2, 3},
+                values = {3, 0, 1, 2},
+                args = {3, 0, 1, 2},
                 default_arg = 0,
                 current_func = function() return Screen:getRotationMode() end,
                 event = "SetRotationMode",

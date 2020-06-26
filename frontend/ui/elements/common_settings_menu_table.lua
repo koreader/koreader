@@ -180,6 +180,7 @@ NetworkMgr:getMenuTable(common_settings)
 common_settings.screen = {
     text = _("Screen"),
 }
+common_settings.screen_rotation = require("ui/elements/screen_rotation_menu_table")
 common_settings.screen_dpi = require("ui/elements/screen_dpi_menu_table")
 common_settings.screen_eink_opt = require("ui/elements/screen_eink_opt_menu_table")
 common_settings.menu_activate = require("ui/elements/menu_activate")
@@ -193,10 +194,6 @@ common_settings.ignore_hold_corners = {
         UIManager:broadcastEvent(Event:new("IgnoreHoldCorners"))
     end,
 }
-
-if Device:canToggleGSensor() then
-    common_settings.screen_toggle_gsensor = require("ui/elements/screen_toggle_gsensor")
-end
 
 -- NOTE: Allow disabling color if it's mistakenly enabled on a Grayscale screen (after a settings import?)
 if Screen:isColorEnabled() or Screen:isColorScreen() then
