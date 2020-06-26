@@ -23,7 +23,7 @@ and optionally
 --]]--
 local settingsList = {
     --CreOptions
-    screen_mode = {category="string"},
+    rotation_mode = {category="string"},
     visible_pages = {category="string"},
     h_page_margins = {category="string"},
     sync_t_b_page_margins = {category="string"},
