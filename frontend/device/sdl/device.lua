@@ -331,12 +331,12 @@ end
 
 -- fake network manager for the emulator
 function Emulator:initNetworkManager(NetworkMgr)
+    local UIManager = require("ui/uimanager")
     local connectionChangedEvent = function()
-        local UIManager = require("ui/uimanager")
         if G_reader_settings:nilOrTrue("emulator_fake_wifi_connected") then
-            UIManager:broadcastEvent(Event:new("NetworkConnected")
+            UIManager:broadcastEvent(Event:new("NetworkConnected"))
         else
-            UIManager:broadcastEvent(Event:new("NetworkDisconnected")
+            UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
         end
     end
     function NetworkMgr:turnOffWifi(complete_callback)
