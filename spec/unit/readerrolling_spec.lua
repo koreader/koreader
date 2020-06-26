@@ -4,9 +4,11 @@ describe("Readerrolling module", function()
 
     setup(function()
         require("commonrequire")
+        Device = require("device")
         DocumentRegistry = require("document/documentregistry")
         ReaderUI = require("apps/reader/readerui")
         Event = require("ui/event")
+        Screen = Device.screen
 
         local sample_epub = "spec/front/unit/data/juliet.epub"
         readerui = ReaderUI:new{
@@ -184,14 +186,19 @@ describe("Readerrolling module", function()
 
     describe("test changing word gap - space condensing", function()
         it("should show pages for different word gap", function()
+            local new_screen_size = Screen:getSize()
+
             readerui.document:setWordSpacing({100, 90})
-            readerui:handleEvent(Event:new("SetRotationMode", 0, true))
+            readerui:handleEvent(Event:new("SetDimensions", new_screen_size))
+            readerui:handleEvent(Event:new("ScreenResize", new_screen_size))
             assert.are.same(252, readerui.document:getPageCount())
             readerui.document:setWordSpacing({95, 75})
-            readerui:handleEvent(Event:new("SetRotationMode", 0, true))
+            readerui:handleEvent(Event:new("SetDimensions", new_screen_size))
+            readerui:handleEvent(Event:new("ScreenResize", new_screen_size))
             assert.are.same(241, readerui.document:getPageCount())
             readerui.document:setWordSpacing({75, 50})
-            readerui:handleEvent(Event:new("SetRotationMode", 0, true))
+            readerui:handleEvent(Event:new("SetDimensions", new_screen_size))
+            readerui:handleEvent(Event:new("ScreenResize", new_screen_size))
             assert.are.same(231, readerui.document:getPageCount())
         end)
     end)
