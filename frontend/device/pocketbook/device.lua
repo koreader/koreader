@@ -240,7 +240,8 @@ local PocketBook614W = PocketBook:new{
     hasWifiToggle = no,
     hasFrontlight = no,
     hasDPad = yes,
-    hasFewKeys = yes, }
+    hasFewKeys = yes,
+}
 
 -- PocketBook Basic Lux 2
 local PocketBook616 = PocketBook:new{
