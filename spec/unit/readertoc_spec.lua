@@ -1,15 +1,17 @@
 describe("Readertoc module", function()
-    local DocumentRegistry, ReaderUI, DEBUG
+    local DocumentRegistry, ReaderUI, Screen, DEBUG
     local readerui, toc, toc_max_depth, title
 
     setup(function()
         require("commonrequire")
         DocumentRegistry = require("document/documentregistry")
         ReaderUI = require("apps/reader/readerui")
+        Screen = require("device").screen
         DEBUG = require("dbg")
 
         local sample_epub = "spec/front/unit/data/juliet.epub"
         readerui = ReaderUI:new{
+            dimen = Screen:getSize(),
             document = DocumentRegistry:openDocument(sample_epub),
         }
         -- reset book to first page

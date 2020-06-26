@@ -1,5 +1,5 @@
 describe("ReaderScreenshot module", function()
-    local DocumentRegistry, ReaderUI, lfs, UIManager, Event
+    local DocumentRegistry, ReaderUI, lfs, UIManager, Event, Screen
     local sample_epub = "spec/front/unit/data/leaves.epub"
     local readerui
     setup(function()
@@ -9,8 +9,10 @@ describe("ReaderScreenshot module", function()
         lfs = require("libs/libkoreader-lfs")
         UIManager = require("ui/uimanager")
         Event = require("ui/event")
+        Screen = require("device").screen
 
         readerui = ReaderUI:new{
+            dimen = Screen:getSize(),
             document = DocumentRegistry:openDocument(sample_epub),
         }
     end)

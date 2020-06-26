@@ -1,12 +1,13 @@
 describe("Readersearch module", function()
     local sample_epub = "spec/front/unit/data/juliet.epub"
     local sample_pdf = "spec/front/unit/data/sample.pdf"
-    local DocumentRegistry, ReaderUI, dbg
+    local DocumentRegistry, ReaderUI, Screen, dbg
 
     setup(function()
         require("commonrequire")
         DocumentRegistry = require("document/documentregistry")
         ReaderUI = require("apps/reader/readerui")
+        Screen = require("device").screen
         dbg = require("dbg")
     end)
 
@@ -14,6 +15,7 @@ describe("Readersearch module", function()
         local doc, search, rolling
         setup(function()
             local readerui = ReaderUI:new{
+                dimen = Screen:getSize(),
                 document = DocumentRegistry:openDocument(sample_epub),
             }
             doc = readerui.document
@@ -118,6 +120,7 @@ describe("Readersearch module", function()
         local doc, search, paging
         setup(function()
             local readerui = ReaderUI:new{
+                dimen = Screen:getSize(),
                 document = DocumentRegistry:openDocument(sample_pdf),
             }
             doc = readerui.document

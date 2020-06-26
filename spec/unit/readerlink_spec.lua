@@ -1,5 +1,5 @@
 describe("ReaderLink module", function()
-    local DocumentRegistry, ReaderUI, UIManager, sample_epub, sample_pdf, Event
+    local DocumentRegistry, ReaderUI, UIManager, sample_epub, sample_pdf, Event, Screen
 
     setup(function()
         require("commonrequire")
@@ -9,12 +9,14 @@ describe("ReaderLink module", function()
         Event = require("ui/event")
         ReaderUI = require("apps/reader/readerui")
         UIManager = require("ui/uimanager")
+        Screen = require("device").screen
         sample_epub = "spec/front/unit/data/leaves.epub"
         sample_pdf = "spec/front/unit/data/paper.pdf"
     end)
 
     it("should jump to links in epub #nocov", function()
         local readerui = ReaderUI:new{
+            dimen = Screen:getSize(),
             document = DocumentRegistry:openDocument(sample_epub),
         }
         readerui.rolling:onGotoPage(5)
@@ -25,6 +27,7 @@ describe("ReaderLink module", function()
     it("should jump to links in pdf page mode", function()
         UIManager:quit()
         local readerui = ReaderUI:new{
+            dimen = Screen:getSize(),
             document = DocumentRegistry:openDocument(sample_pdf),
         }
         readerui:handleEvent(Event:new("SetScrollMode", false))
@@ -38,6 +41,7 @@ describe("ReaderLink module", function()
     it("should jump to links in pdf scroll mode", function()
         UIManager:quit()
         local readerui = ReaderUI:new{
+            dimen = Screen:getSize(),
             document = DocumentRegistry:openDocument(sample_pdf),
         }
         readerui:handleEvent(Event:new("SetScrollMode", true))
@@ -54,6 +58,7 @@ describe("ReaderLink module", function()
 
     it("should be able to go back after link jump in epub #nocov", function()
         local readerui = ReaderUI:new{
+            dimen = Screen:getSize(),
             document = DocumentRegistry:openDocument(sample_epub),
         }
         readerui.rolling:onGotoPage(5)
@@ -66,6 +71,7 @@ describe("ReaderLink module", function()
     it("should be able to go back after link jump in pdf page mode", function()
         UIManager:quit()
         local readerui = ReaderUI:new{
+            dimen = Screen:getSize(),
             document = DocumentRegistry:openDocument(sample_pdf),
         }
         readerui:handleEvent(Event:new("SetScrollMode", false))
@@ -81,6 +87,7 @@ describe("ReaderLink module", function()
     it("should be able to go back after link jump in pdf scroll mode", function()
         UIManager:quit()
         local readerui = ReaderUI:new{
+            dimen = Screen:getSize(),
             document = DocumentRegistry:openDocument(sample_pdf),
         }
         readerui:handleEvent(Event:new("SetScrollMode", true))
@@ -133,6 +140,7 @@ describe("ReaderLink module", function()
         G_reader_settings:saveSetting("reader_footer_mode", 0)
         require("docsettings"):open(sample_pdf):purge()
         local readerui = ReaderUI:new{
+            dimen = Screen:getSize(),
             document = DocumentRegistry:openDocument(sample_pdf),
         }
         readerui:handleEvent(Event:new("SetZoomMode", "page"))

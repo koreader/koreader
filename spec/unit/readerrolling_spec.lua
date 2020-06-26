@@ -1,17 +1,17 @@
 describe("Readerrolling module", function()
-    local DocumentRegistry, ReaderUI, Event
+    local DocumentRegistry, ReaderUI, Event, Screen
     local readerui, rolling
 
     setup(function()
         require("commonrequire")
-        Device = require("device")
         DocumentRegistry = require("document/documentregistry")
         ReaderUI = require("apps/reader/readerui")
         Event = require("ui/event")
-        Screen = Device.screen
+        Screen = require("device").screen
 
         local sample_epub = "spec/front/unit/data/juliet.epub"
         readerui = ReaderUI:new{
+            dimen = Screen:getSize(),
             document = DocumentRegistry:openDocument(sample_epub),
         }
         rolling = readerui.rolling
@@ -81,6 +81,7 @@ describe("Readerrolling module", function()
         it("should emit EndOfBook event at the end sample txt", function()
             local sample_txt = "spec/front/unit/data/sample.txt"
             local txt_readerui = ReaderUI:new{
+                dimen = Screen:getSize(),
                 document = DocumentRegistry:openDocument(sample_txt),
             }
             local called = false
