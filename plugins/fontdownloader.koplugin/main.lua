@@ -110,7 +110,7 @@ end
 function FontDownloader:addToMainMenu(menu_items)
     -- plugin settings
     menu_items.font_downloader = {
-        text = _("Set download location"),
+        text = _("Font downloader"),
         sub_item_table = {
             {
                 text = _("Set download location"),
@@ -118,6 +118,12 @@ function FontDownloader:addToMainMenu(menu_items)
                     self:setFontDir()
                 end,
 
+            },
+            {
+                text = _("Sync font index"),
+                callback = function()
+                    self.fonts = self:fontTable()
+                end,
             },
         }
     }
@@ -411,6 +417,11 @@ end
 
 function FontDownloader:fontTable()
     -- get font table from google
+    UIManager:show(InfoMessage:new{
+        text = _("Downloading font index"),
+        timeout = 1,
+    })
+    UIManager:forceRePaint()
     local rapidjson = require("rapidjson")
     local socket = require("socket")
     local request, sink = {}, {}
