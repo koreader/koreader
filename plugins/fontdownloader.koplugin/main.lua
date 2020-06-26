@@ -482,7 +482,7 @@ function FontDownloader:downloadFont(t, family)
                     UIManager:forceRePaint()
                     https.request{
                         url = font_url,
-                        sink = ltn12.sink.file(io.open(font_name, "w")),
+                        sink = ltn12.sink.file(io.open(self.font_dir .. "/" .. font_name, "w")),
                     }
                     Device.setIgnoreInput(false)
                 end
