@@ -724,11 +724,14 @@ end
 
 function ReaderView:onReadSettings(config)
     self.render_mode = config:readSetting("render_mode") or 0
-    local rotation_mode
-    if self.ui.document.info.has_pages then
-        rotation_mode = config:readSetting("rotation_mode") or G_reader_settings:readSetting("kopt_rotation_mode") or 0
-    else
-        rotation_mode = config:readSetting("rotation_mode") or G_reader_settings:readSetting("copt_rotation_mode") or 0
+    local locked = G_reader_settings:readSetting("lock_rotation")
+    local rotation_mode = config:readSetting("rotation_mode")
+    if not rotation_mode and locked then
+        if self.ui.document.info.has_pages then
+            rotation_mode = G_reader_settings:readSetting("kopt_rotation_mode") or 0
+        else
+            rotation_mode = G_reader_settings:readSetting("copt_rotation_mode") or 0
+        end
     end
     if rotation_mode then
         self:onSetRotationMode(rotation_mode)
