@@ -2,11 +2,9 @@
 This module contains miscellaneous helper functions for the creoptions and koptoptions.
 ]]
 
-local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
-local Screen = Device.screen
 local T = require("ffi/util").template
 
 local optionsutil = {}

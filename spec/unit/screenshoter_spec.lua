@@ -16,12 +16,12 @@ describe("ReaderScreenshot module", function()
     end)
 
     teardown(function()
-        readerui:handleEvent(Event:new("ChangeScreenMode", "portrait"))
+        readerui:handleEvent(Event:new("SetRotationMode", 0))
     end)
 
     it("should get screenshot in portrait", function()
         local name = "screenshots/reader_screenshot_portrait.png"
-        readerui:handleEvent(Event:new("ChangeScreenMode", "portrait"))
+        readerui:handleEvent(Event:new("SetRotationMode", 0))
         UIManager:quit()
         UIManager:show(readerui)
         UIManager:scheduleIn(1, function() UIManager:close(readerui) end)
@@ -33,7 +33,7 @@ describe("ReaderScreenshot module", function()
 
     it("should get screenshot in landscape", function()
         local name = "screenshots/reader_screenshot_landscape.png"
-        readerui:handleEvent(Event:new("ChangeScreenMode", "landscape"))
+        readerui:handleEvent(Event:new("SetRotationMode", 1))
         UIManager:quit()
         UIManager:show(readerui)
         UIManager:scheduleIn(2, function() UIManager:close(readerui) end)
