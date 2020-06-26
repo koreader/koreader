@@ -233,7 +233,7 @@ local PocketBook613 = PocketBook:new{
 }
 
 -- PocketBook 614W Basic
-local PocketBook614W = PocketBook:new{ 
+local PocketBook614W = PocketBook:new{
     model = "PB614W",
     display_dpi = 167,
     isTouchDevice = no,
