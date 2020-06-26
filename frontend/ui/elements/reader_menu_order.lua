@@ -133,6 +133,7 @@ local order = {
         "battery_statistics",
         "synchronize_time",
         "keep_alive",
+        "font_downloader",
         "doc_setting_tweak",
         "terminal",
         "----------------------------",
