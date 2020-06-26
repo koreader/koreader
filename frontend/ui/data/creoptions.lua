@@ -19,14 +19,15 @@ local CreOptions = {
         icon = "resources/icons/appbar.transform.rotate.right.large.png",
         options = {
             {
-                name = "screen_mode",
+                name = "rotation_mode",
                 name_text = S.SCREEN_MODE,
-                toggle = {S.PORTRAIT, S.LANDSCAPE},
+                toggle = {S.PORTRAIT, S.LANDSCAPE, S.PORTRAIT_ROTATED, S.LANDSCAPE_ROTATED},
                 alternate = false,
-                args = {"portrait", "landscape"},
-                default_arg = "portrait",
-                current_func = function() return Device.screen:getScreenMode() end,
-                event = "ChangeScreenMode",
+                values = {0, 1, 2, 3},
+                args = {0, 1, 2, 3},
+                default_arg = 0,
+                current_func = function() return Device.screen:getRotationMode() end,
+                event = "SetRotationMode",
                 name_text_hold_callback = optionsutil.showValues,
             },
             {

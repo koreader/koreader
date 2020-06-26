@@ -1,6 +1,6 @@
 describe("Readerpaging module", function()
     local sample_pdf = "spec/front/unit/data/sample.pdf"
-    local readerui, UIManager, Event, DocumentRegistry, ReaderUI
+    local readerui, UIManager, Event, DocumentRegistry, ReaderUI, Screen
     local paging
 
     setup(function()
@@ -9,11 +9,13 @@ describe("Readerpaging module", function()
         Event = require("ui/event")
         DocumentRegistry = require("document/documentregistry")
         ReaderUI = require("apps/reader/readerui")
+        Screen = require("device").screen
     end)
 
     describe("Page mode", function()
         setup(function()
             readerui = ReaderUI:new{
+                dimen = Screen:getSize(),
                 document = DocumentRegistry:openDocument(sample_pdf),
             }
             paging = readerui.paging
@@ -46,6 +48,7 @@ describe("Readerpaging module", function()
             os.remove(DocSettings:getHistoryPath(sample_pdf))
 
             readerui = ReaderUI:new{
+                dimen = Screen:getSize(),
                 document = DocumentRegistry:openDocument(sample_pdf),
             }
             paging = readerui.paging
@@ -74,6 +77,7 @@ describe("Readerpaging module", function()
         it("should scroll backward on the first page without crash", function()
             local sample_djvu = "spec/front/unit/data/djvu3spec.djvu"
             local tmp_readerui = ReaderUI:new{
+                dimen = Screen:getSize(),
                 document = DocumentRegistry:openDocument(sample_djvu),
             }
             tmp_readerui.paging:onScrollPanRel(-100)
@@ -82,6 +86,7 @@ describe("Readerpaging module", function()
         it("should scroll forward on the last page without crash", function()
             local sample_djvu = "spec/front/unit/data/djvu3spec.djvu"
             local tmp_readerui = ReaderUI:new{
+                dimen = Screen:getSize(),
                 document = DocumentRegistry:openDocument(sample_djvu),
             }
             paging = tmp_readerui.paging

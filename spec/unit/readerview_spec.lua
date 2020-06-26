@@ -1,5 +1,5 @@
 describe("Readerview module", function()
-    local DocumentRegistry, Blitbuffer, ReaderUI, UIManager, Event
+    local DocumentRegistry, Blitbuffer, ReaderUI, UIManager, Event, Screen
 
     setup(function()
         require("commonrequire")
@@ -10,11 +10,13 @@ describe("Readerview module", function()
         ReaderUI = require("apps/reader/readerui")
         UIManager = require("ui/uimanager")
         Event = require("ui/event")
+        Screen = require("device").screen
     end)
 
     it("should stop hinting on document close event", function()
         local sample_epub = "spec/front/unit/data/leaves.epub"
         local readerui = ReaderUI:new{
+            dimen = Screen:getSize(),
             document = DocumentRegistry:openDocument(sample_epub),
         }
         for i = #UIManager._task_queue, 1, -1 do
@@ -52,6 +54,7 @@ describe("Readerview module", function()
         G_reader_settings:saveSetting("reader_footer_mode", 0)
         local sample_pdf = "spec/front/unit/data/2col.pdf"
         local readerui = ReaderUI:new{
+            dimen = Screen:getSize(),
             document = DocumentRegistry:openDocument(sample_pdf),
         }
         readerui:handleEvent(Event:new("SetScrollMode", false))
@@ -103,6 +106,7 @@ describe("Readerview module", function()
         G_reader_settings:saveSetting("reader_footer_mode", 0)
         local sample_pdf = "spec/front/unit/data/2col.pdf"
         local readerui = ReaderUI:new{
+            dimen = Screen:getSize(),
             document = DocumentRegistry:openDocument(sample_pdf),
         }
         readerui:handleEvent(Event:new("SetScrollMode", true))

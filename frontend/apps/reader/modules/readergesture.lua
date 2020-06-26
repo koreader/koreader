@@ -1551,9 +1551,8 @@ function ReaderGesture:gestureAction(action, ges)
         self.ui:handleEvent(Event:new("RestoreZoomMode"))
         self.ui:handleEvent(Event:new("InitScrollPageStates"))
     elseif action == "toggle_rotation" then
-        local event_name = self.document.info.has_pages and "SwapScreenMode" or "ChangeScreenMode"
-        local arg = Screen:getScreenMode() == "portrait" and "landscape" or "portrait"
-        self.ui:handleEvent(Event:new(event_name, arg))
+        local arg = (Screen:getRotationMode() +1)%4
+        self.ui:handleEvent(Event:new("SetRotationMode", arg))
     elseif action == "toggle_wifi" then
         local NetworkMgr = require("ui/network/manager")
 

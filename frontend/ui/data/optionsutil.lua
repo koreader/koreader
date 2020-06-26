@@ -2,11 +2,9 @@
 This module contains miscellaneous helper functions for the creoptions and koptoptions.
 ]]
 
-local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
-local Screen = Device.screen
 local T = require("ffi/util").template
 
 local optionsutil = {}
@@ -19,9 +17,6 @@ function optionsutil.showValues(configurable, option, prefix)
     local default = G_reader_settings:readSetting(prefix.."_"..option.name)
     local current = configurable[option.name]
     local value_default, value_current
-    if option.name == "screen_mode" then
-        current = Screen:getScreenMode()
-    end
     if option.toggle and option.values then
         -- build a table so we can see if current/default settings map
         -- to a known setting with a name (in option.toggle)
