@@ -64,7 +64,7 @@ function FileManager:onSetRotationMode(rotation)
         end
         Screen:setRotationMode(rotation)
     end
-    UIManager:setDirty(self.dialog, "full")
+    UIManager:onRotation()
     --todo: refresh FM
     return true
 end
