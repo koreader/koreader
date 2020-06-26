@@ -30,7 +30,7 @@ local FontDownloader = WidgetContainer:new{
     fonts = {},
     blacklist = {
         "Noto Sans", "Noto Sans HK", "Noto Sans JP", "Noto Sans KR", "Noto Sans SC", "Noto Sans TC",
-        "Noto Serif", "Noto Serif HK", "Noto Serif JP", "Noto Serif KR", "Noto Serif SC", "Noto Serif TC",
+        "Noto Serif", --"Noto Serif HK", "Noto Serif JP", "Noto Serif KR", "Noto Serif SC", "Noto Serif TC",
     },
     recommended = {
         "Bitter",
@@ -364,7 +364,9 @@ function FontDownloader:fontCatalog(t)
         local lang = _("Languages:")
         for index, subset in ipairs(font.subsets) do
             local id = self.languages[subset]
-            subset = id:lower() or subset
+            if id then
+                subset = id:lower()
+            end
             lang = index ~= 1 and lang .. ", " .. subset or lang .. " " .. subset
         end
         return info .. "\n" .. lang
