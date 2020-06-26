@@ -57,7 +57,7 @@ local function restoreScreenMode()
     --         if we ever need to add Landscape to the mix.
     --         c.f., https://github.com/koreader/koreader/issues/5772#issuecomment-577242365
     if Screen:getScreenMode() ~= screen_mode then
-        Screen:setScreenMode(screen_mode)
+        --Screen:setScreenMode(screen_mode)
     end
 end
 
