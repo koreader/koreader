@@ -111,6 +111,7 @@ local action_strings = {
     calibre_search = _("Search in calibre metadata"),
     calibre_browse_tags = _("Browse all calibre tags"),
     calibre_browse_series = _("Browse all calibre series"),
+    font_downloader_lookup = _("Download more fonts"),
 }
 
 local custom_multiswipes_path = DataStorage:getSettingsDir().."/multiswipes.lua"
@@ -799,6 +800,8 @@ function ReaderGesture:buildMenu(ges, default)
         {"calibre_search", true},
         {"calibre_browse_tags", true},
         {"calibre_browse_series", true},
+
+        {"font_downloader_lookup", true},
     }
     local return_menu = {}
     -- add default action to the top of the submenu
@@ -1593,6 +1596,8 @@ function ReaderGesture:gestureAction(action, ges)
         self.ui:handleEvent(Event:new("CalibreBrowseTags"))
     elseif action == "calibre_browse_series" then
         self.ui:handleEvent(Event:new("CalibreBrowseSeries"))
+    elseif action == "font_downloader_lookup" then
+        self.ui:handleEvent(Event:new("FontDownloadLookup"))
     end
     return true
 end
