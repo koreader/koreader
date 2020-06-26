@@ -28,10 +28,13 @@ local FontDownloader = WidgetContainer:new{
     user_key = DataStorage:getSettingsDir() .. "gfonts-api.txt",
     timestamp_format = "%Y%m%d",
     fonts = {},
+    blacklist = {}
+--[[
     blacklist = {
         "Noto Sans", "Noto Sans HK", "Noto Sans JP", "Noto Sans KR", "Noto Sans SC", "Noto Sans TC",
-        "Noto Serif", --"Noto Serif HK", "Noto Serif JP", "Noto Serif KR", "Noto Serif SC", "Noto Serif TC",
+        "Noto Serif", "Noto Serif HK", "Noto Serif JP", "Noto Serif KR", "Noto Serif SC", "Noto Serif TC",
     },
+--]]
     recommended = {
         "Bitter",
         "Crimson Text",
