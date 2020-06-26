@@ -47,20 +47,6 @@ local C_ = _.pgettext
 local Screen = Device.screen
 local T = require("ffi/util").template
 
-local function restoreScreenMode()
-    --- @todo: Not Yet Implemented. Layout is currently broken in Landscape.
-    local screen_mode = G_reader_settings:readSetting("fm_screen_mode") or "portrait"
-    --- @note: Basically, if we were already in Portrait/Inverted Portrait, don't mess with it,
-    --         as the FM supports it.
-    --         See setScreenMode in base's ffi/framebuffer.lua for the gory details.
-    --         See also ReaderView:onSetScreenMode in apps/reader/modules/readerview.lua for a similar logic,
-    --         if we ever need to add Landscape to the mix.
-    --         c.f., https://github.com/koreader/koreader/issues/5772#issuecomment-577242365
-    if Screen:getScreenMode() ~= screen_mode then
-        Screen:setScreenMode(screen_mode)
-    end
-end
-
 local FileManager = InputContainer:extend{
     title = _("KOReader"),
     root_path = lfs.currentdir(),
@@ -70,6 +56,27 @@ local FileManager = InputContainer:extend{
     cp_bin = Device:isAndroid() and "/system/bin/cp" or "/bin/cp",
     mkdir_bin =  Device:isAndroid() and "/system/bin/mkdir" or "/bin/mkdir",
 }
+
+function FileManager:onSetRotationMode(rotation)
+    if rotation ~= nil and rotation ~= Screen:getRotationMode() then
+        Screen:setRotationMode(rotation)
+        if self.instance then
+            self:reinit(self.instance.path, self.instance.focused_file)
+            UIManager:setDirty(self.instance.banner, function()
+                return "ui", self.instance.banner.dimen
+            end)
+        end
+    end
+    return true
+end
+
+function FileManager:setRotationMode()
+    local locked = G_reader_settings:readSetting("lock_rotation")
+    local rotation_mode = G_reader_settings:readSetting("fm_rotation_mode") or 0
+    if locked then
+        self:onSetRotationMode(rotation_mode)
+    end
+end
 
 function FileManager:init()
     if Device:isTouchDevice() then
@@ -1029,7 +1036,7 @@ end
 function FileManager:showFiles(path, focused_file)
     path = path or G_reader_settings:readSetting("lastdir") or filemanagerutil.getDefaultDir()
     G_reader_settings:saveSetting("lastdir", path)
-    restoreScreenMode()
+    self:setRotationMode()
     local file_manager = FileManager:new{
         dimen = Screen:getSize(),
         covers_fullscreen = true, -- hint for UIManager:_repaint()
