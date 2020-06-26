@@ -64,8 +64,19 @@ function FileManager:onSetRotationMode(rotation)
         end
         Screen:setRotationMode(rotation)
     end
-    UIManager:onRotation()
-    --todo: refresh FM
+    if self.instance then
+        local file_manager = FileManager:new{
+            dimen = Screen:getSize(),
+            covers_fullscreen = true, -- hint for UIManager:_repaint()
+            root_path = self.instance.root_path,
+            focused_file = self.instance.focused_file,
+            onExit = function()
+                self.instance = nil
+            end
+        }
+        UIManager:show(file_manager)
+        self.instance = file_manager
+    end
     return true
 end
 
