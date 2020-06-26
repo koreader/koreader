@@ -6,6 +6,7 @@ local Font = require("ui/font")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
+local NetworkMgr = require("ui/network/manager")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -19,20 +20,18 @@ local T = require("ffi/util").template
 local featured = require("featured")
 local fontsearch = require("fontsearch")
 
-local GFonts = WidgetContainer:new{
-    name = "gfonts",
+local FontDownloader = WidgetContainer:new{
+    name = "fontdownloader",
     is_doc_only = false,
     base_url = "https://www.googleapis.com/webfonts/v1/webfonts",
     user_cache = DataStorage:getDataDir() .. "/cache/gbooks.lua",
     user_key = DataStorage:getSettingsDir() .. "gfonts-api.txt",
     timestamp_format = "%Y%m%d",
     fonts = {},
-    blacklist = {},
---[[    blacklist = {
+    blacklist = {
         "Noto Sans", "Noto Sans HK", "Noto Sans JP", "Noto Sans KR", "Noto Sans SC", "Noto Sans TC",
         "Noto Serif", "Noto Serif HK", "Noto Serif JP", "Noto Serif KR", "Noto Serif SC", "Noto Serif TC",
     },
---]]
     recommended = {
         "Bitter",
         "Crimson Text",
@@ -93,7 +92,7 @@ local GFonts = WidgetContainer:new{
     },
 }
 
-function GFonts:init()
+function FontDownloader:init()
     self.ui.menu:registerToMainMenu(self)
     local keyfile = io.open(self.user_key, "r")
     if keyfile then
@@ -105,35 +104,58 @@ function GFonts:init()
     self.api_key = "AIzaSyDQZaihK8Lb7jJ3DYyrQrpyyJF7tyvrqAs"
 end
 
-function GFonts:addToMainMenu(menu_items)
-    menu_items.google_fonts = {
-        text = _("Download fonts"),
-        callback = function()
-            self:frontpage()
-        end,
-    }
-
-    menu_items.google_fonts_settings = {
+function FontDownloader:addToMainMenu(menu_items)
+    -- plugin settings
+    menu_items.font_downloader = {
         text = _("Set download location"),
-        callback = function()
-            self:setFontDir()
-        end,
+        sub_item_table = {
+            {
+                text = _("Set download location"),
+                callback = function()
+                    self:setFontDir()
+                end,
+
+            },
+        }
     }
+    -- inject in font menu for CRE documents
+    if self.ui.document and self.ui.document.provider == "crengine" then
+        local menu_orig = menu_items.change_font.sub_item_table[1].sub_item_table
+        local position = #menu_orig - 1 -- above fallback fonts
+        local menu = menu_orig
+        table.insert(menu, position, {
+            text = _("Download more fonts"),
+            callback = function()
+                self:frontpage()
+            end,
+        })
+        menu_items.change_font.sub_item_table[1].sub_item_table = menu
+    end
+end
+
+function FontDownloader:onFontDownloadLookup()
+    self:frontpage()
+    return true
+end
+
+function FontDownloader:onNetworkConnected()
+    if self.pending_action then
+        -- execute pending actions
+        self.pending_action()
+        self.pending_action = nil
+    end
 end
 
 -- frontpage for font lookup
-function GFonts:frontpage()
-    -- get path to download fonts
-    if not self.font_dir then
-        local font_dir = self:getFontDir()
-        -- no path, prompt for inbox dir and call this again
-        if not font_dir then
-            local callback = function() self:frontpage() end
-            self:setFontDir(callback)
-            return
-        end
-        self.font_dir = font_dir
+--
+-- the function schedules itself as a pending action if it fails for some reason,
+-- so we keep a retry count to avoid "fail" loops
+function FontDownloader:frontpage(retry_count)
+    if retry_count and retry_count > 3 then
+        logger.warn("Too many retries. Giving up")
+        return
     end
+
     -- returns true if modification time is equal or less than 7 days old
     local ok_stamp = function(timestamp)
         if not timestamp then return false end
@@ -142,31 +164,49 @@ function GFonts:frontpage()
         return true
     end
 
-    -- make sure fonts are ready before showing the UI
-    local ready = false
-    if #self.fonts > 0 and self.fonts.timestamp then
-        if ok_stamp(self.fonts.timestamp) then
-            ready = true
+    -- returns true if font table is loaded or cached (with valid timestamp)
+    local ok_table = function()
+        if #self.fonts > 0 and self.fonts.timestamp then
+            if ok_stamp(self.fonts.timestamp) then
+                return true
+            end
         end
-    end
-    if not ready and util.fileExists(self.user_cache) then
-        -- load font list from cache
-        local ok, data = pcall(dofile, self.user_cache)
-        if ok then
-            if ok_stamp(data.timestamp) then
-                self.fonts = data
-                ready = true
+        if util.fileExists(self.user_cache) then
+            local ok, data = pcall(dofile, self.user_cache)
+            if ok then
+                if ok_stamp(data.timestamp) then
+                    self.fonts = data
+                    return true
+                end
             end
         end
     end
 
-    if not ready then
-        -- generate a new font table, this is slow as it relies on network sources
-        self.fonts = self:fontTable()
+    -- check font dir
+    if not self.font_dir then
+        local font_dir = self:getFontDir()
+        if not font_dir then
+            -- failed: needs inbox dir
+            retry_count = (retry_count or 0) + 1
+            local callback = function() self:frontpage(retry_count) end
+            self:setFontDir(callback)
+            return nil, "no font dir"
+        end
+        self.font_dir = font_dir
+    end
 
-        -- this shouldn't happen, to-do: warn the user something failed?
+    -- check font table
+    local ready = ok_table()
+    if not ready and not NetworkMgr:isConnected() then
+        retry_count = (retry_count or 0) + 1
+        local callback = function() self:frontpage(retry_count) end
+        self.pending_action = callback
+        NetworkMgr:promptWifiOn()
+        return nil, "network is down"
+    elseif not ready then
+        self.fonts = self:fontTable()
         if not self.fonts or not self.fonts.list then
-            return
+            return nil, "unknown error"
         end
     end
 
@@ -230,9 +270,10 @@ function GFonts:frontpage()
     }
     UIManager:show(self.search_dialog)
     self.search_dialog:onShowKeyboard()
+    return true
 end
 
-function GFonts:showResults(t, title)
+function FontDownloader:showResults(t, title)
     local menu_container = CenterContainer:new{
         dimen = Screen:getSize(),
     }
@@ -253,14 +294,14 @@ function GFonts:showResults(t, title)
     UIManager:show(menu_container)
 end
 
-function GFonts:onMenuHold(item)
+function FontDownloader:onMenuHold(item)
     if not item.info or item.info:len() <= 0 then return end
     UIManager:show(InfoMessage:new{
         text = item.info,
     })
 end
 
-function GFonts:close()
+function FontDownloader:close()
     self.search_dialog:onClose()
     UIManager:close(self.search_dialog)
     if self.lastsearch then
@@ -268,8 +309,10 @@ function GFonts:close()
     end
 end
 
-function GFonts:find()
-    if not self.lastsearch then return end
+function FontDownloader:find()
+    if not self.lastsearch then
+        return
+    end
     local s = self.lastsearch
     local catalog, catalog_name
     if s == "featured" then
@@ -284,7 +327,7 @@ function GFonts:find()
         end
         catalog = self:fontCatalog(featured_fonts)
     elseif s == "family" then
-        if not self.search_value then
+        if self.search_value == "" then
             catalog_name = _("Fonts")
         else
             catalog_name = T(_("Fonts that match %1"), self.search_value)
@@ -305,14 +348,14 @@ function GFonts:find()
     end
 end
 
-function GFonts:onMenuHold(item)
+function FontDownloader:onMenuHold(item)
     if not item.info or item.info:len() <= 0 then return end
     UIManager:show(InfoMessage:new{
         text = item.info,
     })
 end
 
-function GFonts:fontCatalog(t)
+function FontDownloader:fontCatalog(t)
     if not t then return end
     local catalog = {}
     local info = function(font)
@@ -338,7 +381,7 @@ function GFonts:fontCatalog(t)
     return catalog
 end
 
-function GFonts:optionsCatalog(t, option)
+function FontDownloader:optionsCatalog(t, option)
     if not t or not option then return end
     local catalog = {}
     for item, ocurrence in pairs(t) do
@@ -361,7 +404,7 @@ function GFonts:optionsCatalog(t, option)
     return catalog
 end
 
-function GFonts:fontTable()
+function FontDownloader:fontTable()
     -- get font table from google
     local rapidjson = require("rapidjson")
     local socket = require("socket")
@@ -401,8 +444,14 @@ function GFonts:fontTable()
     util.dumpTable(self.fonts, self.user_cache)
 end
 
-function GFonts:promptDownload(t, family)
+function FontDownloader:promptDownload(t, family)
     if not t or not family then return end
+    if not NetworkMgr:isConnected() then
+        local callback = function() self:promptDownload(t, family) end
+        self.pending_action = callback
+        NetworkMgr:promptWifiOn()
+        return
+    end
     UIManager:show(ConfirmBox:new{
         text = T(_("Download %1?"), family),
         ok_text = _("Download"),
@@ -414,7 +463,7 @@ function GFonts:promptDownload(t, family)
     })
 end
 
-function GFonts:downloadFont(t, family)
+function FontDownloader:downloadFont(t, family)
     for index, font in ipairs(t) do
         if font.family == family then
             for key, value in pairs(self.variants) do
@@ -440,7 +489,7 @@ function GFonts:downloadFont(t, family)
     end
 end
 
-function GFonts:getFontDir()
+function FontDownloader:getFontDir()
     local font_dir = G_reader_settings:readSetting("font_inbox_dir")
     if not font_dir and (Device:isAndroid() or Device:isDesktop() or Device:isEmulator()) then
         font_dir = require("frontend/ui/elements/font_settings"):getPath()
@@ -450,7 +499,7 @@ function GFonts:getFontDir()
     return font_dir
 end
 
-function GFonts:setFontDir(callback)
+function FontDownloader:setFontDir(callback)
     require("ui/downloadmgr"):new{
         onConfirm = function(inbox)
             G_reader_settings:saveSetting("font_inbox_dir", inbox)
@@ -462,4 +511,4 @@ function GFonts:setFontDir(callback)
     }:chooseDir()
 end
 
-return GFonts
+return FontDownloader
