@@ -120,7 +120,7 @@ function NetworkMgr:beforeWifiAction(callback)
  end
 
 function NetworkMgr:isConnected()
-    if Device:isAndroid() or Device:isCervantes() or Device:isPocketBook() then
+    if Device:isAndroid() or Device:isCervantes() or Device:isPocketBook() or Device:isEmulator() then
         return self:isWifiOn()
     else
         -- Pull the default gateway first, so we don't even try to ping anything if there isn't one...
@@ -189,7 +189,7 @@ end
 function NetworkMgr:getWifiToggleMenuTable()
     return {
         text = _("Wi-Fi connection"),
-        enabled_func = function() return Device:hasWifiToggle() and not Device:isEmulator() end,
+        enabled_func = function() return Device:hasWifiToggle() end,
         checked_func = function() return NetworkMgr:isWifiOn() end,
         callback = function(touchmenu_instance)
             local wifi_status = NetworkMgr:isWifiOn() and NetworkMgr:isConnected()

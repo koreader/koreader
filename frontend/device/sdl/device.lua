@@ -329,6 +329,29 @@ function Device:simulateResume()
     })
 end
 
+-- fake network manager for the emulator
+function Emulator:initNetworkManager(NetworkMgr)
+    local connectionChangedEvent = function()
+        local UIManager = require("ui/uimanager")
+        if G_reader_settings:nilOrTrue("emulator_fake_wifi_connected") then
+            UIManager:broadcastEvent(Event:new("NetworkConnected")
+        else
+            UIManager:broadcastEvent(Event:new("NetworkDisconnected")
+        end
+    end
+    function NetworkMgr:turnOffWifi(complete_callback)
+        G_reader_settings:flipNilOrTrue("emulator_fake_wifi_connected")
+        UIManager:scheduleIn(2, connectionChangedEvent)
+    end
+    function NetworkMgr:turnOnWifi(complete_callback)
+        G_reader_settings:flipNilOrTrue("emulator_fake_wifi_connected")
+        UIManager:scheduleIn(2, connectionChangedEvent)
+    end
+    function NetworkMgr:isWifiOn()
+        return G_reader_settings:nilOrTrue("emulator_fake_wifi_connected")
+    end
+end
+
 -------------- device probe ------------
 if os.getenv("APPIMAGE") then
     return AppImage
