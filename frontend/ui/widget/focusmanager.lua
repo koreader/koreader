@@ -64,7 +64,7 @@ function FocusManager:onFocusMove(args)
     while true do
         if not self.layout[self.selected.y + dy] then
             --horizontal border, try to wraparound
-            if not self:_wrapAround(dy) then
+            if not self:_wrapAroundY(dy) then
                 break
             end
         elseif not self.layout[self.selected.y + dy][self.selected.x] then
@@ -73,8 +73,10 @@ function FocusManager:onFocusMove(args)
                 break
             end
         elseif not self.layout[self.selected.y + dy][self.selected.x + dx] then
-            --vertical border, no wraparound
-            break
+            --vertical border, try to wraparound
+            if not self:_wrapAroundX(dx) then
+                break
+            end
         else
             self.selected.y = self.selected.y + dy
             self.selected.x = self.selected.x + dx
@@ -96,9 +98,28 @@ function FocusManager:onFocusMove(args)
     return true
 end
 
-function FocusManager:_wrapAround(dy)
-    --go to the last valid item directly above or below the current item
-    --return false if none could be found
+--- Go to the last valid item directly left or right of the current item.
+-- @return false if none could be found
+function FocusManager:_wrapAroundX(dx)
+    local x = self.selected.x
+    while self.layout[x - dx] do
+        x = x - dx
+    end
+    if x ~= self.selected.x then
+        self.selected.x = x
+        if not self.layout[self.selected.y][self.selected.x] then
+            --call verticalStep on the current line to perform the search
+            return self:_verticalStep(0)
+        end
+        return true
+    else
+        return false
+    end
+end
+
+--- Go to the last valid item directly above or below the current item.
+-- @return false if none could be found
+function FocusManager:_wrapAroundY(dy)
     local y = self.selected.y
     while self.layout[y - dy] do
         y = y - dy
