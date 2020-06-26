@@ -672,9 +672,9 @@ function ReaderView:restoreViewContext(ctx)
     end
 end
 
-function ReaderView:onSetRotationMode(rotation)
+function ReaderView:onSetRotationMode(rotation, force)
     if rotation ~= nil then
-        if rotation == Screen:getRotationMode() then
+        if rotation == Screen:getRotationMode() and not force then
             return true
         end
         Screen:setRotationMode(rotation)
@@ -731,7 +731,7 @@ function ReaderView:onReadSettings(config)
         rotation_mode = config:readSetting("rotation_mode") or G_reader_settings:readSetting("copt_rotation_mode") or 0
     end
     if rotation_mode then
-        self:onSetRotationMode(rotation_mode)
+        self:onSetRotationMode(rotation_mode, true)
     end
     self.state.gamma = config:readSetting("gamma") or 1.0
     local full_screen = config:readSetting("kopt_full_screen") or self.document.configurable.full_screen
