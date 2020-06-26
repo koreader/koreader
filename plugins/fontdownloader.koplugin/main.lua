@@ -45,53 +45,52 @@ local FontDownloader = WidgetContainer:new{
         "Source Serif Pro",
     },
     categories = {
-        ["display"]            = _("Display"),
-        ["handwriting"]        = _("Handwriting"),
-        ["monospace"]          = _("Monospace"),
-        ["sans-serif"]         = _("Sans serif"),
-        ["serif"]              = _("Serif"),
+        ["display"]             = _("Display"),
+        ["handwriting"]         = _("Handwriting"),
+        ["monospace"]           = _("Monospace"),
+        ["sans-serif"]          = _("Sans serif"),
+        ["serif"]               = _("Serif"),
     },
     dates = {
-        ["last_week"]          = _("Last week"),
-        ["last_month" ]        = _("Last month"),
-        ["last_year" ]         = _("Last year"),
-        ["older"]              = _("Older"),
+        ["last_week"]           = _("Last week"),
+        ["last_month" ]         = _("Last month"),
+        ["last_year" ]          = _("Last year"),
+        ["older"]               = _("Older"),
     },
     languages = {
-        ["arabic"]             = _("Arabic"),
-        ["bengali"]            = _("Bengali"),
-        ["chinese-simplified"] = _("Simplified Chinese"),
-        ["cyrillic"]           = _("Cyrillic"),
-        ["cyrillic-ext"]       = _("Cyrillic (extended)"),
-        ["devanagari"]         = _("Devanagari"),
-        ["greek"]              = _("Greek"),
-        ["greek-ext"]          = _("Greek (extended)"),
-        ["gujarati"]           = _("Gujarati"),
-        ["gurmukhi"]           = _("Gurmukhi"),
-        ["hebrew"]             = _("Hebrew"),
-        ["japanese"]           = _("Japanese"),
-        ["kannada"]            = _("Kannada"),
-        ["khmer"]              = _("Khmer"),
-        ["korean"]             = _("Korean"),
-        ["latin"]              = _("Latin"),
-        ["latin-ext"]          = _("Latin (extended)"),
-        ["malayalam"]          = _("Malayalam"),
-        ["myanmar"]            = _("Myanmar"),
-        ["oriya"]              = _("Oriya"),
-        ["sinhala"]            = _("Sinhala"),
-        ["tamil"]              = _("Tamil"),
-        ["telugu"]             = _("Telugu"),
-        ["thai"]               = _("Thai"),
-        ["tibetan"]            = _("Tibetan"),
-        ["vietnamese"]         = _("Vietnamese"),
+        ["arabic"]              = _("Arabic"),
+        ["bengali"]             = _("Bengali"),
+        ["chinese-hongkong"]    = _("Hong Kong Chinese"),
+        ["chinese-simplified"]  = _("Simplified Chinese"),
+        ["chinese-traditional"] = _("Traditional Chinese"),
+        ["cyrillic"]            = _("Cyrillic"),
+        ["devanagari"]          = _("Devanagari"),
+        ["greek"]               = _("Greek"),
+        ["gujarati"]            = _("Gujarati"),
+        ["gurmukhi"]            = _("Gurmukhi"),
+        ["hebrew"]              = _("Hebrew"),
+        ["japanese"]            = _("Japanese"),
+        ["kannada"]             = _("Kannada"),
+        ["khmer"]               = _("Khmer"),
+        ["korean"]              = _("Korean"),
+        ["latin"]               = _("Latin"),
+        ["malayalam"]           = _("Malayalam"),
+        ["myanmar"]             = _("Myanmar"),
+        ["oriya"]               = _("Oriya"),
+        ["sinhala"]             = _("Sinhala"),
+        ["tamil"]               = _("Tamil"),
+        ["telugu"]              = _("Telugu"),
+        ["thai"]                = _("Thai"),
+        ["tibetan"]             = _("Tibetan"),
+        ["vietnamese"]          = _("Vietnamese"),
     },
     variants = {
-        ["regular"]            = "regular",
-        ["italic"]             = "italic",
-        ["500"]                = "medium",
-        ["500italic"]          = "medium-italic",
-        ["700"]                = "bold",
-        ["700italic"]          = "bold-italic",
+        ["regular"]             = "regular",
+        ["italic"]              = "italic",
+        ["500"]                 = "medium",
+        ["500italic"]           = "medium-italic",
+        ["700"]                 = "bold",
+        ["700italic"]           = "bold-italic",
     },
 }
 
@@ -206,17 +205,17 @@ function FontDownloader:frontpage(retry_count)
 
     -- check font table
     local ready = ok_table()
-    if not ready and not NetworkMgr:isConnected() then
+    if not ready then
         retry_count = (retry_count or 0) + 1
         local callback = function() self:frontpage(retry_count) end
-        self.pending_action = callback
-        NetworkMgr:promptWifiOn()
-        return nil, "network is down"
-    elseif not ready then
-        self.fonts = self:fontTable()
-        if not self.fonts or not self.fonts.list then
-            return nil, "unknown error"
+        if not NetworkMgr:isConnected() then
+            self.pending_action = callback
+            NetworkMgr:promptWifiOn()
+            return nil, "network is down"
         end
+        self.fonts = self:fontTable()
+        UIManager:nextTick(callback)
+        return nil, "downloading font index"
     end
 
     -- ready to show the UI
@@ -372,11 +371,15 @@ function FontDownloader:fontCatalog(t)
             font.family, font.version, font.category, font.lastModified)
         local lang = _("Languages:")
         for index, subset in ipairs(font.subsets) do
-            local id = self.languages[subset]
-            if id then
-                subset = id:lower()
+            -- check if current subset is an extension of the previous one
+            if subset:match("-ext$") then
+                subset = "+"
+                lang = lang .. subset
+            else
+                id = self.languages[subset]
+                if id then subset = id:lower() end
+                lang = index ~= 1 and lang .. ", " .. subset or lang .. " " .. subset
             end
-            lang = index ~= 1 and lang .. ", " .. subset or lang .. " " .. subset
         end
         return info .. "\n" .. lang
     end

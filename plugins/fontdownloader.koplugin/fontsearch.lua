@@ -75,7 +75,10 @@ local function langFreq(t)
     local freq = {}
     for _, font in ipairs(t) do
         for __, lang in ipairs(font.subsets) do
-            freq[lang] = (freq[lang] or 0) + 1
+            -- do not include extended variants
+            if not lang:match("-ext$") then
+                freq[lang] = (freq[lang] or 0) + 1
+            end
         end
     end
     return freq
