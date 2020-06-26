@@ -28,7 +28,7 @@ local FontDownloader = WidgetContainer:new{
     user_key = DataStorage:getSettingsDir() .. "gfonts-api.txt",
     timestamp_format = "%Y%m%d",
     fonts = {},
-    blacklist = {}
+    blacklist = {},
 --[[
     blacklist = {
         "Noto Sans", "Noto Sans HK", "Noto Sans JP", "Noto Sans KR", "Noto Sans SC", "Noto Sans TC",
