@@ -368,7 +368,6 @@ function ReaderGesture:addToMainMenu(menu_items)
         sub_item_table = {
             {
                 text_func = function() return actionTextFunc("double_tap_left_side", _("Left side")) end,
-                enabled_func = function() return self.ges_mode == "gesture_reader" end,
                 sub_item_table = self:buildMenu("double_tap_left_side", self.default_gesture["double_tap_left_side"]),
             },
             {
@@ -377,7 +376,6 @@ function ReaderGesture:addToMainMenu(menu_items)
             },
             {
                 text_func = function() return actionTextFunc("double_tap_top_left_corner", _("Top left")) end,
-                enabled_func = function() return self.ges_mode == "gesture_reader" end,
                 sub_item_table = self:buildMenu("double_tap_top_left_corner", self.default_gesture["double_tap_top_left_corner"]),
             },
             {
