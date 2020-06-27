@@ -58,24 +58,21 @@ local FileManager = InputContainer:extend{
 }
 
 function FileManager:onSetRotationMode(rotation)
-    if rotation ~= nil then
-        if rotation == Screen:getRotationMode() then
-            return true
-        end
+    if rotation ~= nil and rotation ~= Screen:getRotationMode() then
         Screen:setRotationMode(rotation)
-    end
-    if self.instance then
-        local file_manager = FileManager:new{
-            dimen = Screen:getSize(),
-            covers_fullscreen = true, -- hint for UIManager:_repaint()
-            root_path = self.instance.root_path,
-            focused_file = self.instance.focused_file,
-            onExit = function()
-                self.instance = nil
-            end
-        }
-        UIManager:show(file_manager)
-        self.instance = file_manager
+        if self.instance then
+            local file_manager = FileManager:new{
+                dimen = Screen:getSize(),
+                covers_fullscreen = true, -- hint for UIManager:_repaint()
+                root_path = self.instance.root_path,
+                focused_file = self.instance.focused_file,
+                onExit = function()
+                    self.instance = nil
+                end
+            }
+            UIManager:show(file_manager)
+            self.instance = file_manager
+        end
     end
     return true
 end
