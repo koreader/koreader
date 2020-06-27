@@ -326,8 +326,8 @@ function ReaderUI:init()
             view = self.view,
             ui = self
         })
-        self.disable_double_tap = G_reader_settings:readSetting("disable_double_tap") ~= false
     end
+    self.disable_double_tap = G_reader_settings:readSetting("disable_double_tap") ~= false
     -- back location stack
     self:registerModule("back", ReaderBack:new{
         ui = self,

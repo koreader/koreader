@@ -78,40 +78,6 @@ function ReaderZooming:init()
             },
         }
     end
-    if Device:isTouchDevice() then
-        self.ges_events = {
-            Spread = {
-                GestureRange:new{
-                    ges = "spread",
-                    range = Geom:new{
-                        x = 0, y = 0,
-                        w = Screen:getWidth(),
-                        h = Screen:getHeight(),
-                    }
-                }
-            },
-            Pinch = {
-                GestureRange:new{
-                    ges = "pinch",
-                    range = Geom:new{
-                        x = 0, y = 0,
-                        w = Screen:getWidth(),
-                        h = Screen:getHeight(),
-                    }
-                }
-            },
-            ToggleFreeZoom = {
-                GestureRange:new{
-                    ges = "double_tap",
-                    range = Geom:new{
-                        x = 0, y = 0,
-                        w = Screen:getWidth(),
-                        h = Screen:getHeight(),
-                    }
-                }
-            },
-        }
-    end
     self.ui.menu:registerToMainMenu(self)
 end
 
@@ -222,6 +188,41 @@ function ReaderZooming:onReZoom(font_size)
 end
 
 function ReaderZooming:onEnterFlippingMode(zoom_mode)
+    if Device:isTouchDevice() then
+        self.ges_events = {
+            Spread = {
+                GestureRange:new{
+                    ges = "spread",
+                    range = Geom:new{
+                        x = 0, y = 0,
+                        w = Screen:getWidth(),
+                        h = Screen:getHeight(),
+                    }
+                }
+            },
+            Pinch = {
+                GestureRange:new{
+                    ges = "pinch",
+                    range = Geom:new{
+                        x = 0, y = 0,
+                        w = Screen:getWidth(),
+                        h = Screen:getHeight(),
+                    }
+                }
+            },
+            ToggleFreeZoom = {
+                GestureRange:new{
+                    ges = "double_tap",
+                    range = Geom:new{
+                        x = 0, y = 0,
+                        w = Screen:getWidth(),
+                        h = Screen:getHeight(),
+                    }
+                }
+            },
+        }
+    end
+
     self.orig_zoom_mode = self.zoom_mode
     if zoom_mode == "free" then
         self.ui:handleEvent(Event:new("SetZoomMode", "page"))
@@ -231,6 +232,9 @@ function ReaderZooming:onEnterFlippingMode(zoom_mode)
 end
 
 function ReaderZooming:onExitFlippingMode(zoom_mode)
+    if Device:isTouchDevice() then
+        self.ges_events = {}
+    end
     self.orig_zoom_mode = nil
     self.ui:handleEvent(Event:new("SetZoomMode", zoom_mode))
 end
