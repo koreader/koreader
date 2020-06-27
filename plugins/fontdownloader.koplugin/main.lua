@@ -130,16 +130,20 @@ function FontDownloader:addToMainMenu(menu_items)
     }
     -- inject in font menu for CRE documents
     if self.ui.document and self.ui.document.provider == "crengine" then
-        local menu_orig = menu_items.change_font.sub_item_table[1].sub_item_table
-        local position = #menu_orig - 1 -- above fallback fonts
-        local menu = menu_orig
+        local menu = menu_items.change_font.sub_item_table[1].sub_item_table
+        for _, entry in ipairs(menu) do
+            if entry.id and entry.id == "fontdownloader" then
+                return
+            end
+        end
+        local position = #menu - 1 -- above fallback fonts
         table.insert(menu, position, {
+            id = "fontdownloader",
             text = _("Download more fonts"),
             callback = function()
                 self:frontpage()
             end,
         })
-        menu_items.change_font.sub_item_table[1].sub_item_table = menu
     end
 end
 
