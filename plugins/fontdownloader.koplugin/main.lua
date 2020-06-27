@@ -23,10 +23,13 @@ local fontsearch = require("fontsearch")
 local FontDownloader = WidgetContainer:new{
     name = "fontdownloader",
     is_doc_only = false,
-    base_url = "https://www.googleapis.com/webfonts/v1/webfonts",
-    user_cache = DataStorage:getDataDir() .. "/cache/gbooks.lua",
-    user_key = DataStorage:getSettingsDir() .. "gfonts-api.txt",
+    user_cache = DataStorage:getDataDir() .. "/cache/font-downloader.lua",
     timestamp_format = "%Y%m%d",
+
+    -- specific of google fonts
+    base_url = "https://www.googleapis.com/webfonts/v1/webfonts",
+    user_key = DataStorage:getSettingsDir() .. "gfonts-api.txt",
+
     fonts = {},
     blacklist = {},
 --[[
@@ -116,7 +119,6 @@ function FontDownloader:addToMainMenu(menu_items)
                 callback = function()
                     self:setFontDir()
                 end,
-
             },
             {
                 text = _("Sync font index"),
