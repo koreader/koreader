@@ -24,7 +24,7 @@ local FontDownloader = WidgetContainer:new{
     name = "fontdownloader",
     is_doc_only = false,
     user_cache = DataStorage:getDataDir() .. "/cache/font-downloader.lua",
-    timestamp_format = "%Y%m%d",
+    timestamp_format = "%Y-%m-%d",
 
     -- specific of google fonts
     base_url = "https://www.googleapis.com/webfonts/v1/webfonts",
@@ -166,25 +166,17 @@ function FontDownloader:frontpage(retry_count)
         return
     end
 
-    -- returns true if modification time is equal or less than 7 days old
-    local ok_stamp = function(timestamp)
-        if not timestamp then return false end
-        local current = os.date(self.timestamp_format)
-        if tonumber(current) > timestamp + 7 then return false end
-        return true
-    end
-
     -- returns true if font table is loaded or cached (with valid timestamp)
     local ok_table = function()
         if #self.fonts > 0 and self.fonts.timestamp then
-            if ok_stamp(self.fonts.timestamp) then
+            if fontsearch.timestampOk(self.fonts.timestamp) then
                 return true
             end
         end
         if util.fileExists(self.user_cache) then
             local ok, data = pcall(dofile, self.user_cache)
             if ok then
-                if ok_stamp(data.timestamp) then
+                if fontsearch.timestampOk(data.timestamp) then
                     self.fonts = data
                     return true
                 end

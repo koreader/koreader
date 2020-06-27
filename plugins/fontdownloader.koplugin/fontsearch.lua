@@ -110,6 +110,10 @@ end
 
 local M = {}
 
+function M.timestampOk(date)
+    return mtime.last_week(elapsedDays(date))
+end
+
 function M.frequenceOf(key, t)
     if key == "language" then
         return langFreq(t)
