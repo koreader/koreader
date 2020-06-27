@@ -7,9 +7,9 @@ local DataStorage = require("datastorage")
 local DocSettings = require("docsettings")
 local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
+local logger = require("logger")
 local util = require("ffi/util")
 local Device = require("device")
-local logger = require("logger")
 local JoplinClient = require("JoplinClient")
 local T = require("ffi/util").template
 local _ = require("gettext")
@@ -607,7 +607,7 @@ function EvernoteExporter:exportClippings(clippings)
                 NetworkMgr:promptWifiOn()
                 return
             elseif not ok and err then
-                logger.dbg("Error occurs when exporting book:", title, err)
+                logger.dbg("Error while exporting book", title, err)
                 error_count = error_count + 1
                 error_title = title
             elseif ok then
