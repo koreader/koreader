@@ -8,7 +8,6 @@ local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
-local Input = Device.input
 local Screen = Device.screen
 
 
