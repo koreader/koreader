@@ -481,6 +481,7 @@ function FontDownloader:promptDownload(t, family)
 end
 
 function FontDownloader:downloadFont(t, family)
+    local unregistered = {}
     for index, font in ipairs(t) do
         if font.family == family then
             for key, value in pairs(self.variants) do
@@ -489,7 +490,8 @@ function FontDownloader:downloadFont(t, family)
                     https.TIMEOUT = 10
                     Device.setIgnoreInput(true) -- Avoid ANRs on android, no-op for other platforms
                     local font_name = string.format("%s-%s.%s", family, value, font.format or "ttf")
-                    logger.info("downloading", font_name, "to", self.font_dir)
+                    local fullpath = self.font_dir .. "/" .. font_name
+                    logger.info("downloading to " , fullpath)
                     UIManager:show(InfoMessage:new{
                         text = T(_("Downloading %1"), font_name),
                         timeout = 2,
@@ -497,11 +499,27 @@ function FontDownloader:downloadFont(t, family)
                     UIManager:forceRePaint()
                     https.request{
                         url = font_url,
-                        sink = ltn12.sink.file(io.open(self.font_dir .. "/" .. font_name, "w")),
+                        sink = ltn12.sink.file(io.open(fullpath, "w")),
                     }
+                    table.insert(unregistered, #unregistered + 1, fullpath)
                     Device.setIgnoreInput(false)
                 end
             end
+        end
+    end
+    if #unregistered > 0 then
+        self:registerFonts(unregistered)
+    end
+end
+
+function FontDownloader:registerFonts(t)
+    local cre = require("libs/libkoreader-cre")
+    for _, font in ipairs(t) do
+        local ok, err = pcall(cre.registerFont, font)
+        if not ok then
+            logger.err("failed to register crengine font:", err)
+        else
+            logger.info("new font registered:", font)
         end
     end
 end
