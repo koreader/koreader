@@ -378,7 +378,7 @@ function FontDownloader:fontCatalog(t)
                 subset = "+"
                 lang = lang .. subset
             else
-                id = self.languages[subset]
+                local id = self.languages[subset]
                 if id then subset = id:lower() end
                 lang = index ~= 1 and lang .. ", " .. subset or lang .. " " .. subset
             end
