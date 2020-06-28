@@ -61,10 +61,13 @@ function Dispatcher:init()
                 end
                 if settingsList[option.name].category == "string" then
                     if settingsList[option.name].toggle == nil then
-                        settingsList[option.name].toggle = option.toggle or option.labels or option.values
-                        for z=1,#settingsList[option.name].toggle do
-                            if type(settingsList[option.name].toggle[z]) == "table" then
-                                settingsList[option.name].toggle[z] = settingsList[option.name].toggle[z][1]
+                        settingsList[option.name].toggle = option.toggle or option.labels
+                        if settingsList[option.name].toggle == nil then
+                        settingsList[option.name].toggle = {}
+                            for z=1,#option.values do
+                                if type(option.values[z]) == "table" then
+                                    settingsList[option.name].toggle[z] = option.values[z][1]
+                                end
                             end
                         end
                     end
