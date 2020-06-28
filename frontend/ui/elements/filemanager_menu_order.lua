@@ -72,11 +72,11 @@ local order = {
     screen = {
         "screensaver",
         "----------------------------",
+        "screen_rotation",
+        "----------------------------",
         "screen_dpi",
         "screen_eink_opt",
         "color_rendering",
-        "----------------------------",
-        "screen_toggle_gsensor",
         "----------------------------",
         "screen_timeout",
         "fullscreen",
