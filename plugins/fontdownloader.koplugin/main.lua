@@ -367,7 +367,7 @@ function FontDownloader:fontCatalog(t)
     local info = function(font)
         local info = T(_("Font: %1\nVersion: %2\nCategory: %3\nLast modified: %4"),
             font.family, font.version, font.category, font.lastModified)
-        local lang = _("Languages:")
+        local lang = _("Unicode coverage:")
         for index, subset in ipairs(font.subsets) do
             -- check if current subset is an extension of the previous one
             if subset:match("-ext$") then
