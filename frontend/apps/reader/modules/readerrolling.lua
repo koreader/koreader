@@ -322,15 +322,6 @@ function ReaderRolling:setupTouchZones()
         ratio_w = DTAP_ZONE_BACKWARD.w, ratio_h = DTAP_ZONE_BACKWARD.h,
     }
 
-    local forward_double_tap_zone = {
-        ratio_x = DDOUBLE_TAP_ZONE_NEXT_CHAPTER.x, ratio_y = DDOUBLE_TAP_ZONE_NEXT_CHAPTER.y,
-        ratio_w = DDOUBLE_TAP_ZONE_NEXT_CHAPTER.w, ratio_h = DDOUBLE_TAP_ZONE_NEXT_CHAPTER.h,
-    }
-    local backward_double_tap_zone = {
-        ratio_x = DDOUBLE_TAP_ZONE_PREV_CHAPTER.x, ratio_y = DDOUBLE_TAP_ZONE_PREV_CHAPTER.y,
-        ratio_w = DDOUBLE_TAP_ZONE_PREV_CHAPTER.w, ratio_h = DDOUBLE_TAP_ZONE_PREV_CHAPTER.h,
-    }
-
     local do_mirror = BD.mirroredUILayout()
     if self.inverse_reading_order then
         do_mirror = not do_mirror
@@ -338,11 +329,6 @@ function ReaderRolling:setupTouchZones()
     if do_mirror then
         forward_zone.ratio_x = 1 - forward_zone.ratio_x - forward_zone.ratio_w
         backward_zone.ratio_x = 1 - backward_zone.ratio_x - backward_zone.ratio_w
-
-        forward_double_tap_zone.ratio_x =
-            1 - forward_double_tap_zone.ratio_x - forward_double_tap_zone.ratio_w
-        backward_double_tap_zone.ratio_x =
-            1 - backward_double_tap_zone.ratio_x - backward_double_tap_zone.ratio_w
     end
 
     self.ui:registerTouchZones({
@@ -357,18 +343,6 @@ function ReaderRolling:setupTouchZones()
             ges = "tap",
             screen_zone = backward_zone,
             handler = function() return self:onGotoViewRel(-1) end,
-        },
-        {
-            id = "double_tap_forward",
-            ges = "double_tap",
-            screen_zone = forward_double_tap_zone,
-            handler = function() return self:onGotoNextChapter() end
-        },
-        {
-            id = "double_tap_backward",
-            ges = "double_tap",
-            screen_zone = backward_double_tap_zone,
-            handler = function() return self:onGotoPrevChapter() end
         },
         {
             id = "rolling_swipe",

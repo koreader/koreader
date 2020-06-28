@@ -191,6 +191,12 @@ function ReaderGesture:init()
         one_finger_swipe_top_edge_left = "ignore",
         one_finger_swipe_bottom_edge_right = "ignore",
         one_finger_swipe_bottom_edge_left = "ignore",
+        double_tap_left_side = self.ges_mode == "gesture_reader" and "page_jmp_back_10",
+        double_tap_right_side = self.ges_mode == "gesture_reader" and "page_jmp_fwd_10",
+        double_tap_top_left_corner = "ignore",
+        double_tap_top_right_corner = "ignore",
+        double_tap_bottom_left_corner = "ignore",
+        double_tap_bottom_right_corner = "ignore",
         two_finger_tap_top_left_corner = "ignore",
         two_finger_tap_top_right_corner = "ignore",
         two_finger_tap_bottom_left_corner = "ignore",
@@ -243,6 +249,8 @@ function ReaderGesture:init()
     local mirrored_if_rtl = {
         tap_top_left_corner = "tap_top_right_corner",
         tap_right_bottom_corner = "tap_left_bottom_corner",
+        double_tap_left_side = "double_tap_right_side",
+        double_tap_right_side = "double_tap_left_side",
     }
     local is_rtl = BD.mirroredUILayout()
     if is_rtl then
@@ -351,6 +359,39 @@ function ReaderGesture:addToMainMenu(menu_items)
                 sub_item_table = self:buildMenu("hold_bottom_right_corner", self.default_gesture["hold_bottom_right_corner"]),
             },
         },
+    }
+    local double_tap_submenu = {
+        text = _("Double tap"),
+        enabled_func = function()
+            return self.ges_mode == "gesture_reader" and self.ui.disable_double_tap ~= true
+        end,
+        sub_item_table = {
+            {
+                text_func = function() return actionTextFunc("double_tap_left_side", _("Left side")) end,
+                sub_item_table = self:buildMenu("double_tap_left_side", self.default_gesture["double_tap_left_side"]),
+            },
+            {
+                text_func = function() return actionTextFunc("double_tap_right_side", _("Right side")) end,
+                sub_item_table = self:buildMenu("double_tap_right_side", self.default_gesture["double_tap_right_side"]),
+            },
+            {
+                text_func = function() return actionTextFunc("double_tap_top_left_corner", _("Top left")) end,
+                sub_item_table = self:buildMenu("double_tap_top_left_corner", self.default_gesture["double_tap_top_left_corner"]),
+            },
+            {
+                text_func = function() return actionTextFunc("double_tap_top_right_corner", _("Top right")) end,
+                sub_item_table = self:buildMenu("double_tap_top_right_corner", self.default_gesture["double_tap_top_right_corner"]),
+            },
+            {
+                text_func = function() return actionTextFunc("double_tap_bottom_left_corner", _("Bottom left")) end,
+                sub_item_table = self:buildMenu("double_tap_bottom_left_corner", self.default_gesture["double_tap_bottom_left_corner"]),
+            },
+            {
+                text_func = function() return actionTextFunc("double_tap_right_bottom_corner", _("Bottom right")) end,
+                sub_item_table = self:buildMenu("double_tap_bottom_right_corner", self.default_gesture["double_tap_bottom_right_corner"]),
+                separator = true,
+            },
+        }
     }
     menu_items.gesture_manager = {
         text = _("Gesture manager"),
@@ -477,6 +518,7 @@ function ReaderGesture:addToMainMenu(menu_items)
                     },
                 },
             },
+            double_tap_submenu,
         },
     }
     menu_items.gesture_intervals = {
@@ -1005,6 +1047,18 @@ function ReaderGesture:setupGesture(ges, action)
         ratio_w = DTAP_ZONE_BOTTOM_RIGHT.w,
         ratio_h = DTAP_ZONE_BOTTOM_RIGHT.h,
     }
+    local zone_left = {
+        ratio_x = DDOUBLE_TAP_ZONE_PREV_CHAPTER.x,
+        ratio_y = DDOUBLE_TAP_ZONE_PREV_CHAPTER.y,
+        ratio_w = DDOUBLE_TAP_ZONE_PREV_CHAPTER.w,
+        ratio_h = DDOUBLE_TAP_ZONE_PREV_CHAPTER.h,
+    }
+    local zone_right = {
+        ratio_x = DDOUBLE_TAP_ZONE_NEXT_CHAPTER.x,
+        ratio_y = DDOUBLE_TAP_ZONE_NEXT_CHAPTER.y,
+        ratio_w = DDOUBLE_TAP_ZONE_NEXT_CHAPTER.w,
+        ratio_h = DDOUBLE_TAP_ZONE_NEXT_CHAPTER.h,
+    }
 
     local overrides_tap_corner
     local overrides_hold_corner
@@ -1080,6 +1134,24 @@ function ReaderGesture:setupGesture(ges, action)
         ges_type = "tap"
         zone = zone_bottom_left_corner
         overrides = overrides_tap_corner
+    elseif ges == "double_tap_left_side" then
+        ges_type = "double_tap"
+        zone = zone_left
+    elseif ges == "double_tap_right_side" then
+        ges_type = "double_tap"
+        zone = zone_right
+    elseif ges == "double_tap_top_left_corner" then
+        ges_type = "double_tap"
+        zone = zone_top_left_corner
+    elseif ges == "double_tap_top_right_corner" then
+        ges_type = "double_tap"
+        zone = zone_top_right_corner
+    elseif ges == "double_tap_bottom_right_corner" then
+        ges_type = "double_tap"
+        zone = zone_bottom_right_corner
+    elseif ges == "double_tap_bottom_left_corner" then
+        ges_type = "double_tap"
+        zone = zone_bottom_left_corner
     elseif ges == "hold_top_left_corner" then
         ges_type = "hold"
         zone = zone_top_left_corner
