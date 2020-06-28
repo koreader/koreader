@@ -17,27 +17,16 @@ local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
-local featured = require("featured")
 local fontsearch = require("fontsearch")
 
 local FontDownloader = WidgetContainer:new{
     name = "fontdownloader",
-    is_doc_only = false,
+    providers_path = "plugins/fontdownloader.koplugin/providers",
     user_cache = DataStorage:getDataDir() .. "/cache/font-downloader.lua",
     timestamp_format = "%Y-%m-%d",
-
-    -- specific of google fonts
-    base_url = "https://www.googleapis.com/webfonts/v1/webfonts",
-    user_key = DataStorage:getSettingsDir() .. "gfonts-api.txt",
-
+    is_doc_only = false,
+    repos = {},
     fonts = {},
-    blacklist = {},
---[[
-    blacklist = {
-        "Noto Sans", "Noto Sans HK", "Noto Sans JP", "Noto Sans KR", "Noto Sans SC", "Noto Sans TC",
-        "Noto Serif", "Noto Serif HK", "Noto Serif JP", "Noto Serif KR", "Noto Serif SC", "Noto Serif TC",
-    },
---]]
     recommended = {
         "Bitter",
         "Crimson Text",
@@ -99,35 +88,15 @@ local FontDownloader = WidgetContainer:new{
 
 function FontDownloader:init()
     self.ui.menu:registerToMainMenu(self)
-    local keyfile = io.open(self.user_key, "r")
-    if keyfile then
-        local key = keyfile:read("*a")
-        keyfile:close()
-        self.api_key = key
-        return
+    for entry in lfs.dir(lfs.currentdir() .. "/" .. self.providers_path) do
+        if entry ~= "." and entry ~= ".." then
+            local r = ("providers/" .. entry):gsub(".lua$", "")
+            table.insert(self.repos, #self.repos + 1, require(r))
+        end
     end
-    self.api_key = "AIzaSyDQZaihK8Lb7jJ3DYyrQrpyyJF7tyvrqAs"
 end
 
 function FontDownloader:addToMainMenu(menu_items)
-    -- plugin settings
-    menu_items.font_downloader = {
-        text = _("Font downloader"),
-        sub_item_table = {
-            {
-                text = _("Set download location"),
-                callback = function()
-                    self:setFontDir()
-                end,
-            },
-            {
-                text = _("Sync font index"),
-                callback = function()
-                    self.fonts = self:fontTable()
-                end,
-            },
-        }
-    }
     -- inject in font menu for CRE documents
     if self.ui.document and self.ui.document.provider == "crengine" then
         local menu = menu_items.change_font.sub_item_table[1].sub_item_table
@@ -165,7 +134,7 @@ end
 -- the function schedules itself as a pending action if it fails for some reason,
 -- so we keep a retry count to avoid "fail" loops
 function FontDownloader:frontpage(retry_count)
-    if retry_count and retry_count > 3 then
+    if retry_count and retry_count > #self.repos + 3 then
         logger.warn("Too many retries. Giving up")
         return
     end
@@ -211,9 +180,9 @@ function FontDownloader:frontpage(retry_count)
             NetworkMgr:promptWifiOn()
             return nil, "network is down"
         end
-        self.fonts = self:fontTable()
+        self:repoSync()
         UIManager:nextTick(callback)
-        return nil, "downloading font index"
+        return nil, "downloading font index from remote repos"
     end
 
     -- ready to show the UI
@@ -416,47 +385,25 @@ function FontDownloader:optionsCatalog(t, option)
     return catalog
 end
 
-function FontDownloader:fontTable()
-    -- get font table from google
-    UIManager:show(InfoMessage:new{
-        text = _("Downloading font index"),
-        timeout = 1,
-    })
-    UIManager:forceRePaint()
-    local rapidjson = require("rapidjson")
-    local socket = require("socket")
-    local request, sink = {}, {}
-    request.url = self.base_url .. "?key=" .. self.api_key
-    request.method = "GET"
-    request.sink = ltn12.sink.table(sink)
-    https.TIMEOUT = 10
-    local _, headers, status = socket.skip(1, https.request(request))
-    if headers == nil then
-        return {}, "Network is unreachable"
-    elseif status ~= "HTTP/1.1 200 OK" then
-        return {}, status
-    end
-    local t = rapidjson.decode(table.concat(sink))
-    if not t or not t.items or type(t.items) ~= "table" then
-        return {}, "Can't decode server response"
-    end
-    local fonts = t.items
-    -- remove blacklisted entries
-    for _, family in ipairs(self.blacklist) do
-        for index, font in ipairs(fonts) do
-            if family == font.family then
-                table.remove(fonts, index)
-            end
+function FontDownloader:repoSync()
+    local all_fonts = {}
+    for i, repo in ipairs(self.repos) do
+        if repo.url ~= "local" then
+            UIManager:show(InfoMessage:new{
+                text = T(_("Downloading font index from %1"), repo.id),
+                timeout = 1,
+            })
+            UIManager:forceRePaint()
         end
-    end
-    -- add our own fonts to the table
-    for _, font in ipairs(featured.getFonts()) do
-        table.insert(fonts, #fonts + 1, font)
+        local repo_fonts = repo:fontTable()
+        for _, font in ipairs(repo_fonts) do
+            table.insert(all_fonts, #all_fonts + 1, font)
+        end
     end
     -- dump generated font table and timestamp to disk
     local font_table = {}
     font_table["timestamp"] = os.date(self.timestamp_format)
-    font_table["list"] = fonts
+    font_table["list"] = all_fonts
     self.fonts = font_table
     util.dumpTable(self.fonts, self.user_cache)
 end

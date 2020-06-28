@@ -1,5 +1,11 @@
--- distributed by us, not google.
-local featured_fonts = {
+local FontRepo = require "fontrepo"
+
+local repo = FontRepo:new{
+    id = "NiLuJe fonts",
+    url = "local",
+}
+
+local fonts = {
     -- http://trac.ak-team.com/trac/browser/niluje/Configs/trunk/Kindle/Kobo_Hacks/Patches/REMINDER#L125
     ["Lit3rata"] = {
         format = "otf",
@@ -29,16 +35,14 @@ local featured_fonts = {
     },
 }
 
-local M = {}
-
-function M.getFonts()
-    local fonts = {}
-    for key, value in pairs(featured_fonts) do
+function repo:fontTable()
+    local t = {}
+    for key, value in pairs(fonts) do
         local font = value
         font.family = key
-        table.insert(fonts, #fonts + 1, font)
+        table.insert(t, #t + 1, font)
     end
-    return fonts
+    return t
 end
 
-return M
+return repo
