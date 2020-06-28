@@ -1,4 +1,5 @@
 local _ = require("gettext")
+local C_ = _.pgettext
 
 local S = {}
 
@@ -77,10 +78,10 @@ S.HIGH = _("high")
 S.ZERO_DEG = _("0 deg")
 S.FIVE_DEG = _("5 deg")
 S.TEN_DEG = _("10 deg")
-S.PORTRAIT = _("up")
-S.LANDSCAPE = _("right")
-S.PORTRAIT_ROTATED = _("down")
-S.LANDSCAPE_ROTATED = _("left")
+S.PORTRAIT = C_("Rotation", "up")
+S.LANDSCAPE = C_("Rotation", "right")
+S.PORTRAIT_ROTATED = C_("Rotation", "down")
+S.LANDSCAPE_ROTATED = C_("Rotation", "left")
 S.REGULAR = _("regular")
 S.BOLD = _("bold")
 S.VIEW_SCROLL = _("continuous")
