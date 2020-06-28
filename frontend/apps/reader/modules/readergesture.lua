@@ -1062,7 +1062,6 @@ function ReaderGesture:setupGesture(ges, action)
 
     local overrides_tap_corner
     local overrides_hold_corner
-    local overrides_double_tap
     local overrides_vertical_edge, overrides_horizontal_edge
     local overrides_pan, overrides_pan_release
     local overrides_swipe_pan, overrides_swipe_pan_release
@@ -1087,9 +1086,6 @@ function ReaderGesture:setupGesture(ges, action)
             -- them have priority over word lookup and text selection.
             "readerhighlight_hold",
             "readerfooter_hold",
-        }
-        overrides_double_tap = {
-            "toggle_free_zoom",
         }
         overrides_vertical_edge = {
             "paging_swipe",
@@ -1141,27 +1137,21 @@ function ReaderGesture:setupGesture(ges, action)
     elseif ges == "double_tap_left_side" then
         ges_type = "double_tap"
         zone = zone_left
-        overrides = overrides_double_tap
     elseif ges == "double_tap_right_side" then
         ges_type = "double_tap"
         zone = zone_right
-        overrides = overrides_double_tap
     elseif ges == "double_tap_top_left_corner" then
         ges_type = "double_tap"
         zone = zone_top_left_corner
-        overrides = overrides_double_tap
     elseif ges == "double_tap_top_right_corner" then
         ges_type = "double_tap"
         zone = zone_top_right_corner
-        overrides = overrides_double_tap
     elseif ges == "double_tap_bottom_right_corner" then
         ges_type = "double_tap"
         zone = zone_bottom_right_corner
-        overrides = overrides_double_tap
     elseif ges == "double_tap_bottom_left_corner" then
         ges_type = "double_tap"
         zone = zone_bottom_left_corner
-        overrides = overrides_double_tap
     elseif ges == "hold_top_left_corner" then
         ges_type = "hold"
         zone = zone_top_left_corner
