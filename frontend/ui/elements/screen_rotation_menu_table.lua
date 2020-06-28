@@ -25,7 +25,7 @@ return {
 
     table.insert(rotation_table, {
         text = _("Lock rotation"),
-        help_text = _("When checked the rotation of the filemanager and reader will not affect each other"),
+        help_text = _("When checked the rotation of the file browser and the reader will not affect each other"),
         checked_func = function()
             return G_reader_settings:isTrue("lock_rotation")
         end,
