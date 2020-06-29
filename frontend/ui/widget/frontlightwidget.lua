@@ -65,7 +65,7 @@ function FrontLightWidget:init()
         self.nl_min = self.powerd.fl_warmth_min
         self.nl_max = self.powerd.fl_warmth_max
         -- NOTE: fl_warmth is always [0...100] even when internal scale is [0...10]
-        self.nl_scale = (100 / self.nl_max)
+        self.nl_scale = (self.powerd.fl_max / self.nl_max)
     end
 
     -- button width to fit screen size

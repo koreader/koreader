@@ -357,7 +357,36 @@ function Device:canExecuteScript(file)
     end
 end
 
-android.LOGI(string.format("Android %s - %s (API %d) - flavor: %s",
-    android.prop.version, getCodename(), Device.firmware_rev, android.prop.flavor))
+local AndroidNaturalLight = Device:new{
+    model = "android_with_natural_lights",
+    hasNaturalLight = yes,
+    frontlight_settings = {
+        frontlight_white = "/sys/class/backlight/mxc_msp430_fl.0/brightness",
+        frontlight_mixer = "/sys/class/backlight/tlc5947_bl/color",
+        nl_min = 0,
+        nl_max = 10,
+        nl_inverted = true,
+    },
+}
 
-return Device
+function AndroidNaturalLight:init()
+    -- Automagically set this so we never have to remember to do it manually ;p
+    if self:hasNaturalLight() and self.frontlight_settings and self.frontlight_settings.frontlight_mixer then
+        self.hasNaturalLightMixer = yes
+    end
+    Device.init(self)
+end
+
+android.LOGI(string.format("Android %s - %s (API %d, product %s) - flavor: %s",
+    android.prop.version, getCodename(), Device.firmware_rev, android.prop.product, android.prop.flavor))
+
+local product = android.prop.product
+
+-- todo: check if color frontlight_settings.frontlight_mixer is readable
+is_color_writeable = true
+
+if product == "ntx_6sl" and is_color_writeable then
+    return AndroidNaturalLight
+else
+    return Device
+end
