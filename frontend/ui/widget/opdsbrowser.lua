@@ -13,7 +13,6 @@ local OPDSParser = require("ui/opdsparser")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local http = require('socket.http')
-local https = require('ssl.https')
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local ltn12 = require('ltn12')
@@ -308,8 +307,8 @@ function OPDSBrowser:fetchFeed(item_url, username, password, method)
     request['sink'] = ltn12.sink.table(sink)
     request['headers'] = username and { Authorization = "Basic " .. mime.b64(auth), ["Host"] = hostname, } or  { ["Host"] = hostname, }
     logger.info("request", request)
-    http.TIMEOUT, https.TIMEOUT = 10, 10
-    local httpRequest = parsed.scheme == 'http' and http.request or https.request
+    http.TIMEOUT = 10
+    local httpRequest = http.request
     local code, headers = socket.skip(1, httpRequest(request))
     -- raise error message when network is unavailable
     if headers == nil then
@@ -550,7 +549,7 @@ function OPDSBrowser:downloadFile(item, format, remote_url)
         UIManager:scheduleIn(1, function()
             logger.dbg("downloading file", local_path, "from", remote_url)
             local parsed = url.parse(remote_url)
-            http.TIMEOUT, https.TIMEOUT = 20, 20
+            http.TIMEOUT = 20
 
             local dummy, c = nil
 
@@ -565,7 +564,7 @@ function OPDSBrowser:downloadFile(item, format, remote_url)
                 local auth = string.format("%s:%s", item.username, item.password)
                 local hostname = parsed.host
 
-                dummy, c = https.request {
+                dummy, c = http.request {
                     url         = remote_url,
                     headers     = { Authorization = "Basic " .. mime.b64(auth), ["Host"] = hostname },
                     sink        = ltn12.sink.file(io.open(local_path, "w")),
