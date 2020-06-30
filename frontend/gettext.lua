@@ -211,6 +211,10 @@ function GetText_mt.__index.changeLang(new_lang)
                     local nplurals = plural_forms:match("nplurals=([0-9]+);") or 2
                     local plurals = plural_forms:match("plural=%((.*)%);")
 
+                    -- Hardcoded workaround for Hebrew which has 4 plural forms.
+                    if plurals == "n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && n % 10 == 0) ? 2 : 3)" then
+                        plurals = "n == 1 ? 0 : (n == 2) ? 1 : (n > 10 && n % 10 == 0) ? 2 : 3"
+                    end
                     -- Hardcoded workaround for Romanian which has 3 plural forms.
                     if plurals == "n == 1) ? 0 : ((n == 0 || n != 1 && n % 100 >= 1 && n % 100 <= 19) ? 1 : 2" then
                         plurals = "n == 1 ? 0 : (n == 0 || n != 1 && n % 100 >= 1 && n % 100 <= 19) ? 1 : 2"
