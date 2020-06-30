@@ -21,10 +21,10 @@ local CreOptions = {
             {
                 name = "rotation_mode",
                 name_text = S.SCREEN_MODE,
-                toggle = {S.PORTRAIT, S.LANDSCAPE, S.PORTRAIT_ROTATED, S.LANDSCAPE_ROTATED},
+                toggle = {S.LANDSCAPE, S.PORTRAIT, S.PORTRAIT_ROTATED, S.LANDSCAPE_ROTATED},
                 alternate = false,
-                values = {0, 1, 2, 3},
-                args = {0, 1, 2, 3},
+                values = {1, 0, 2, 3},
+                args = {1, 0, 2, 3},
                 default_arg = 0,
                 current_func = function() return Device.screen:getRotationMode() end,
                 event = "SetRotationMode",
