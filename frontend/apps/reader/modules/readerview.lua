@@ -821,7 +821,6 @@ end
 
 function ReaderView:onSaveSettings()
     self.ui.doc_settings:saveSetting("render_mode", self.render_mode)
-    self.ui.doc_settings:saveSetting("screen_mode", Screen:getScreenMode())
     self.ui.doc_settings:saveSetting("rotation_mode", Screen:getRotationMode())
     self.ui.doc_settings:saveSetting("gamma", self.state.gamma)
     self.ui.doc_settings:saveSetting("highlight", self.highlight.saved)
