@@ -39,26 +39,6 @@ return {
     if FileManager.instance then
         table.insert(rotation_table, {
             text_func = function()
-                local text = S.PORTRAIT
-                if G_reader_settings:readSetting("fm_rotation_mode") == 0 then
-                    text = text .. "   ★"
-                end
-                return text
-            end,
-            checked_func = function()
-                return Screen:getRotationMode() == 0
-            end,
-            callback = function(touchmenu_instance)
-                UIManager:broadcastEvent(Event:new("SetRotationMode", 0))
-                if touchmenu_instance then touchmenu_instance:closeMenu() end
-            end,
-            hold_callback = function(touchmenu_instance)
-                G_reader_settings:saveSetting("fm_rotation_mode", 0)
-                if touchmenu_instance then touchmenu_instance:updateItems() end
-            end,
-        })
-        table.insert(rotation_table, {
-            text_func = function()
                 local text = S.LANDSCAPE
                 if G_reader_settings:readSetting("fm_rotation_mode") == 1 then
                     text = text .. "   ★"
@@ -79,21 +59,21 @@ return {
         })
         table.insert(rotation_table, {
             text_func = function()
-                local text = S.PORTRAIT_ROTATED
-                if G_reader_settings:readSetting("fm_rotation_mode") == 2 then
+                local text = S.PORTRAIT
+                if G_reader_settings:readSetting("fm_rotation_mode") == 0 then
                     text = text .. "   ★"
                 end
                 return text
             end,
             checked_func = function()
-                return Screen:getRotationMode() == 2
+                return Screen:getRotationMode() == 0
             end,
             callback = function(touchmenu_instance)
-                UIManager:broadcastEvent(Event:new("SetRotationMode", 2))
+                UIManager:broadcastEvent(Event:new("SetRotationMode", 0))
                 if touchmenu_instance then touchmenu_instance:closeMenu() end
             end,
             hold_callback = function(touchmenu_instance)
-                G_reader_settings:saveSetting("fm_rotation_mode", 2)
+                G_reader_settings:saveSetting("fm_rotation_mode", 0)
                 if touchmenu_instance then touchmenu_instance:updateItems() end
             end,
         })
@@ -114,6 +94,26 @@ return {
             end,
             hold_callback = function(touchmenu_instance)
                 G_reader_settings:saveSetting("fm_rotation_mode", 3)
+                if touchmenu_instance then touchmenu_instance:updateItems() end
+            end,
+        })
+        table.insert(rotation_table, {
+            text_func = function()
+                local text = S.PORTRAIT_ROTATED
+                if G_reader_settings:readSetting("fm_rotation_mode") == 2 then
+                    text = text .. "   ★"
+                end
+                return text
+            end,
+            checked_func = function()
+                return Screen:getRotationMode() == 2
+            end,
+            callback = function(touchmenu_instance)
+                UIManager:broadcastEvent(Event:new("SetRotationMode", 2))
+                if touchmenu_instance then touchmenu_instance:closeMenu() end
+            end,
+            hold_callback = function(touchmenu_instance)
+                G_reader_settings:saveSetting("fm_rotation_mode", 2)
                 if touchmenu_instance then touchmenu_instance:updateItems() end
             end,
         })
