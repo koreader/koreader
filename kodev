@@ -773,6 +773,7 @@ OPTIONS:
 
     --show-previous     show coverage stats from previous run
     --full              show full coverage report (down to each line)
+    --no-debug          no debugging symbols (default for target devices)
     "
     show_full=0
     show_previous=0
@@ -785,6 +786,10 @@ OPTIONS:
                 ;;
             --show-previous)
                 show_previous=1
+                ;;
+            --no-debug)
+                export KODEBUG=
+                KODEBUG_NO_DEFAULT=1
                 ;;
             -h | --help)
                 echo "${COV_HELP_MSG}"
@@ -799,7 +804,8 @@ OPTIONS:
         shift
     done
 
-    check_submodules && make
+    set -e
+    check_submodules && kodev-build
     setup_env
     make "${EMU_DIR}/.busted"
     pushd "${EMU_DIR}" && {
@@ -867,8 +873,9 @@ Supported commands:
     log                 Tail log stream for a running KOReader app
     release             Build KOReader release package
     run                 Run KOReader
-    test                Run tests
-    check               Run static-analysis
+    test                Run busted tests
+    check               Run luacheck static-analysis
+    cov                 Run busted tests for coverage
     wbuilder            Run wbuilder.lua script (useful for building new UI widget)
 "
 [ $# -lt 1 ] && {
