@@ -358,7 +358,7 @@ function Device:canExecuteScript(file)
 end
 
 local AndroidNaturalLight = Device:new{
-    model = "android_with_natural_lights",
+    model = "Android_with_natural_lights",
     hasNaturalLight = yes,
     frontlight_settings = {
         frontlight_white = "/sys/class/backlight/mxc_msp430_fl.0/brightness",
@@ -382,10 +382,10 @@ android.LOGI(string.format("Android %s - %s (API %d, product %s) - flavor: %s",
 
 local product = android.prop.product
 
--- todo: check if color frontlight_settings.frontlight_mixer is readable
-is_color_writeable = true
-
-if product == "ntx_6sl" and is_color_writeable then
+if product == "ntx_6sl" then
+    if lfs.touch(AndroidNaturalLight.frontlight_settings.frontlight_mixer) == nil then
+        AndroidNaturalLight.hasNaturalLight = no
+    end
     return AndroidNaturalLight
 else
     return Device

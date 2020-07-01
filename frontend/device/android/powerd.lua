@@ -6,7 +6,7 @@ local _, android = pcall(require, "android")
 local AndroidPowerD = BasePowerD:new{
     fl_min = 0, fl_max = 100,
     fl_intensity = 10,
-    
+
     fl_warmth_min = 0, fl_warmth_max = 10,
     fl_warmth = nil,
     auto_warmth = false,
@@ -65,7 +65,6 @@ function AndroidPowerD:init()
         end
     end
 end
-
 
 function AndroidPowerD:setWarmth(warmth)
     if self.fl == nil then return end

@@ -201,6 +201,53 @@ if G_reader_settings:isTrue("color_rendering") and not Device:hasColorScreen() t
     })
 end
 
+-- Inform that write permissions for NaturalLight are not set on Tolino Epos2
+-- also show a short manual for activating it.
+if Device.model == "Android_with_natural_lights" and not Device.hasNaturalLight() then
+    if not G_reader_settings:has("color_write_permission") then
+       G_reader_settings:saveSetting("color_write_permission", 1)
+    end
+    if G_reader_settings:readSetting("color_write_permission") == 1 then
+      local MultiConfirmBox = require("/ui/widget/multiconfirmbox")
+      UIManager:show(MultiConfirmBox:new{
+          text = _("You are using a Tolino Epos2!\nKOReader needs permissions to set the backlight warmth.\n" ..
+            "\nDo you want instructions to activate NaturalLight?"),
+          cancel_text = _("Now"),
+          cancel_callback = function()
+              G_reader_settings:saveSetting("color_write_permission", 2) -- show again in 2-1=1 starts
+              local InfoMessage = require("ui/widget/infomessage")
+              UIManager:show(InfoMessage:new{
+              text = _("Connect the rooted device per USB\n" ..
+                       "Execute the following commands:\n\n" ..
+                       "adb shell\n" ..
+                       "su\n" ..
+                       "mount -o remount,rw /system\n" ..
+                       "PERM=\"/sys/class/backlight/tlc5947_bl/color\"\n" ..
+                       "FILE=\"/system/bin/upgrade_check.sh\"\n" ..
+                       "echo \"chmod 666 $PERM\" >> $FILE\n" ..
+                       "mount -o remount,ro /sytem\n" ..
+                       "\nRestart the System"
+                       ),
+              })
+          end,
+          choice1_text = _("Later"),
+          choice1_callback = function()
+              G_reader_settings:saveSetting("color_write_permission", 6) -- show again in 6-1=5 starts
+          end,
+          choice2_text = _("Never"),
+          choice2_callback = function()
+              G_reader_settings:saveSetting("color_write_permission", 0) -- never show again
+          end,
+        })
+    else
+        local value = G_reader_settings:readSetting("color_write_permission")
+        if value > 0 then
+            value = value - 1
+        end
+        G_reader_settings:saveSetting("color_write_permission", value)
+    end
+end
+
 -- Helpers
 local lfs = require("libs/libkoreader-lfs")
 local function retryLastFile()
