@@ -129,6 +129,7 @@ function Device:init()
         device = self,
         event_map = require("device/android/event_map"),
         handleMiscEv = function(this, ev)
+            local UIManager = require("ui/uimanager")
             logger.dbg("Android application event", ev.code)
             if ev.code == C.APP_CMD_SAVE_STATE then
                 return "SaveState"
@@ -136,6 +137,19 @@ function Device:init()
                 or ev.code == C.APP_CMD_INIT_WINDOW
                 or ev.code == C.APP_CMD_WINDOW_REDRAW_NEEDED then
                 this.device.screen:_updateWindow()
+            elseif ev.code == C.APP_CMD_CONFIG_CHANGED then
+                -- orientation and size changes
+                if android.screen.width ~= android.getScreenWidth()
+                or android.screen.height ~= android.getScreenHeight() then
+                    this.device.screen:resize()
+                    local new_size = this.device.screen:getSize()
+                    logger.info("Resizing screen to", new_size)
+                    local Event = require("ui/event")
+                    UIManager:broadcastEvent(Event:new("SetDimensions", new_size))
+                    UIManager:broadcastEvent(Event:new("ScreenResize", new_size))
+                    UIManager:broadcastEvent(Event:new("RedrawCurrentPage"))
+                end
+                -- to-do: keyboard connected, disconnected
             elseif ev.code == C.APP_CMD_RESUME then
                 EXTERNAL_DICTS_AVAILABILITY_CHECKED = false
                 if external_dict_when_back_callback then
@@ -145,7 +159,6 @@ function Device:init()
                 local new_file = android.getIntent()
                 if new_file ~= nil and lfs.attributes(new_file, "mode") == "file" then
                     -- we cannot blit to a window here since we have no focus yet.
-                    local UIManager = require("ui/uimanager")
                     local InfoMessage = require("ui/widget/infomessage")
                     local BD = require("ui/bidi")
                     UIManager:scheduleIn(0.1, function()
@@ -162,7 +175,6 @@ function Device:init()
                     local content_path = android.getLastImportedPath()
                     if content_path ~= nil then
                         local FileManager = require("apps/filemanager/filemanager")
-                        local UIManager = require("ui/uimanager")
                         UIManager:scheduleIn(0.5, function()
                             if FileManager.instance then
                                 FileManager.instance:onRefresh()

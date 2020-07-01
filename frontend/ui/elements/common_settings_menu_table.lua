@@ -205,6 +205,53 @@ if Device:isAndroid() then
     local isAndroid, android = pcall(require, "android")
     if not isAndroid then return end
 
+    -- REMOVE ME BEGINS: This is the interface to request orientation changes on android
+
+    -- all supported modes for API14
+    local orientation_modes = {
+        portrait = "Portrait",
+        reverse_portrait = "Reverse portrait",
+        sensor_portrait = "Sensor portrait",
+        landscape = "Landscape",
+        reverse_landscape = "Reverse landscape",
+        sensor_landscape = "Sensor landscape",
+        sensor  = "Always with gravity - 3 positions",
+        nosensor = "Never with gravity - current position",
+        full_sensor = "Always with gravity - 4 positions",
+        unspecified = "Unspecified",
+        user = "User",
+        behind = "Behind",
+    }
+    local ffi = require("ffi")
+    local C = ffi.C
+    -- android.orientation.get() -> get current orientation (also available on android.screen.orientation)
+    -- android.orientation.set(C[name]), -> set current orientation, for example:
+    --     android.orientation.set(C["ASCREEN_ORIENTATION_FULL_SENSOR"])
+
+    local isOrientation = function(orientation)
+         if not orientation or type(orientation) ~= "string" then return false end
+         return C["ASCREEN_ORIENTATION_" .. orientation:upper()] == android.orientation.get()
+    end
+    local setOrientation = function(orientation)
+        if not orientation or type(orientation) ~= "string" then return end
+        android.orientation.set(C["ASCREEN_ORIENTATION_" .. orientation:upper()])
+    end
+    -- generate entries for all orientation modes
+    local dummy_menu = {}
+    for mode, name in pairs(orientation_modes) do
+        table.insert(dummy_menu, #dummy_menu + 1, {
+            text = name,
+            checked_func = function() return isOrientation(mode) end,
+            callback = function() setOrientation(mode) end,
+        })
+    end
+    -- dummy menu
+    common_settings.orientation_dummy = {
+        text = _("test android orientation"),
+        sub_item_table = dummy_menu,
+    }
+    -- REMOVE ME ENDS #############################################################
+
     -- screen timeout options, disabled if device needs wakelocks.
     common_settings.screen_timeout = require("ui/elements/screen_android"):getTimeoutMenuTable()
 
