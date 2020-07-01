@@ -1,4 +1,5 @@
 local Device = require("device")
+local Screen = Device.screen
 local S = require("ui/data/strings")
 local optionsutil = require("ui/data/optionsutil")
 local _ = require("gettext")
@@ -23,8 +24,8 @@ local CreOptions = {
                 name_text = S.SCREEN_MODE,
                 toggle = {S.LANDSCAPE_ROTATED, S.PORTRAIT, S.LANDSCAPE, S.PORTRAIT_ROTATED},
                 alternate = false,
-                values = {3, 0, 1, 2},
-                args = {3, 0, 1, 2},
+                values = {Screen.ORIENTATION_LANDSCAPE_ROTATED, Screen.ORIENTATION_PORTRAIT, Screen.ORIENTATION_LANDSCAPE, Screen.ORIENTATION_PORTRAIT_ROTATED},
+                args = {Screen.ORIENTATION_LANDSCAPE_ROTATED, Screen.ORIENTATION_PORTRAIT, Screen.ORIENTATION_LANDSCAPE, Screen.ORIENTATION_PORTRAIT_ROTATED},
                 default_arg = 0,
                 current_func = function() return Device.screen:getRotationMode() end,
                 event = "SetRotationMode",
