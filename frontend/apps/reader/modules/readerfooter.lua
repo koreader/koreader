@@ -1975,7 +1975,7 @@ function ReaderFooter:onFrontlightStateChanged()
     end
 end
 
-function ReaderFooter:onChangeScreenMode()
+function ReaderFooter:onSetRotationMode()
     self:updateFooterContainer()
     self:resetLayout(true)
 end

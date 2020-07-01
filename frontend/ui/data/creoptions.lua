@@ -1,4 +1,5 @@
 local Device = require("device")
+local Screen = Device.screen
 local S = require("ui/data/strings")
 local optionsutil = require("ui/data/optionsutil")
 local _ = require("gettext")
@@ -19,14 +20,15 @@ local CreOptions = {
         icon = "resources/icons/appbar.transform.rotate.right.large.png",
         options = {
             {
-                name = "screen_mode",
+                name = "rotation_mode",
                 name_text = S.SCREEN_MODE,
-                toggle = {S.PORTRAIT, S.LANDSCAPE},
+                toggle = {S.LANDSCAPE_ROTATED, S.PORTRAIT, S.LANDSCAPE, S.PORTRAIT_ROTATED},
                 alternate = false,
-                args = {"portrait", "landscape"},
-                default_arg = "portrait",
-                current_func = function() return Device.screen:getScreenMode() end,
-                event = "ChangeScreenMode",
+                values = {Screen.ORIENTATION_LANDSCAPE_ROTATED, Screen.ORIENTATION_PORTRAIT, Screen.ORIENTATION_LANDSCAPE, Screen.ORIENTATION_PORTRAIT_ROTATED},
+                args = {Screen.ORIENTATION_LANDSCAPE_ROTATED, Screen.ORIENTATION_PORTRAIT, Screen.ORIENTATION_LANDSCAPE, Screen.ORIENTATION_PORTRAIT_ROTATED},
+                default_arg = 0,
+                current_func = function() return Device.screen:getRotationMode() end,
+                event = "SetRotationMode",
                 name_text_hold_callback = optionsutil.showValues,
             },
             {

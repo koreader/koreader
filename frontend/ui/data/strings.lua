@@ -1,8 +1,9 @@
 local _ = require("gettext")
+local C_ = _.pgettext
 
 local S = {}
 
-S.SCREEN_MODE = _("Orientation")
+S.SCREEN_MODE = _("Rotation")
 S.DUAL_PAGES = _("Dual Pages")
 S.PAGE_CROP = _("Page Crop")
 S.FULL_SCREEN = _("Full Screen")
@@ -77,8 +78,10 @@ S.HIGH = _("high")
 S.ZERO_DEG = _("0 deg")
 S.FIVE_DEG = _("5 deg")
 S.TEN_DEG = _("10 deg")
-S.PORTRAIT = _("portrait")
-S.LANDSCAPE = _("landscape")
+S.PORTRAIT = C_("Rotation", "↑ 0°")
+S.LANDSCAPE = C_("Rotation", "⤸ 90°")
+S.PORTRAIT_ROTATED = C_("Rotation", "↓ 180°")
+S.LANDSCAPE_ROTATED = C_("Rotation", "⤹ 90°")
 S.REGULAR = _("regular")
 S.BOLD = _("bold")
 S.VIEW_SCROLL = _("continuous")

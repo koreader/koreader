@@ -672,45 +672,18 @@ function ReaderView:restoreViewContext(ctx)
     end
 end
 
--- NOTE: This is just a shim for koptoptions, because we want to be able to pass an optional second argument to SetScreenMode...
---       This is also used as a sink for gsensor input events, because we can only send a single event per input,
---       and we need to cover both CRe & KOpt...
-function ReaderView:onSwapScreenMode(new_mode, rotation)
-    -- Don't do anything if an explicit rotation was requested, but it hasn't actually changed,
-    -- because we may be sending this event *right before* a ChangeScreenMode in CRe (gyro)
-    if rotation ~= nil and rotation ~= true and rotation == Screen:getRotationMode() then
-        return true
-    end
-    -- CRe
-    self.ui:handleEvent(Event:new("ChangeScreenMode", new_mode, rotation or true))
-    -- KOpt (On CRe, since it's redundant (RR:onChangeScreenMode already sends one), this'll get discarded early)
-    self.ui:handleEvent(Event:new("SetScreenMode", new_mode, rotation or true))
-end
-
-function ReaderView:onSetScreenMode(new_mode, rotation, noskip)
-    -- Don't do anything if an explicit rotation was requested, but it hasn't actually changed,
-    -- because we may be sending this event *right after* a ChangeScreenMode in CRe (gsensor)
-    -- We only want to let the onReadSettings one go through, otherwise the testsuite blows up...
-    if noskip == nil and rotation ~= nil and rotation ~= true and rotation == Screen:getRotationMode() then
-        return true
-    end
-    if new_mode == "landscape" or new_mode == "portrait" then
-        -- NOTE: Hacky hack! If rotation is "true", that's actually an "interactive" flag for setScreenMode
-        --- @fixme That's because we can't store nils in a table, which is what Event:new attempts to do ;).
-        --        c.f., <https://stackoverflow.com/q/7183998/> & <http://lua-users.org/wiki/VarargTheSecondClassCitizen>
-        --        With a fixed Event implementation, we'd instead stick "interactive" in a third argument,
-        --        which we could happily pass while still keeping rotation nil ;).
-        if rotation ~= nil and rotation ~= true then
-            Screen:setRotationMode(rotation)
-        else
-            Screen:setScreenMode(new_mode, rotation)
+function ReaderView:onSetRotationMode(rotation)
+    if rotation ~= nil then
+        if rotation == Screen:getRotationMode() then
+            return true
         end
-        UIManager:setDirty(self.dialog, "full")
-        local new_screen_size = Screen:getSize()
-        self.ui:handleEvent(Event:new("SetDimensions", new_screen_size))
-        self.ui:onScreenResize(new_screen_size)
-        self.ui:handleEvent(Event:new("InitScrollPageStates"))
+        Screen:setRotationMode(rotation)
     end
+    UIManager:setDirty(self.dialog, "full")
+    local new_screen_size = Screen:getSize()
+    self.ui:handleEvent(Event:new("SetDimensions", new_screen_size))
+    self.ui:onScreenResize(new_screen_size)
+    self.ui:handleEvent(Event:new("InitScrollPageStates"))
     return true
 end
 
@@ -750,15 +723,18 @@ In combination with zoom to fit page, page height, content height or content, co
 end
 
 function ReaderView:onReadSettings(config)
-    local screen_mode
     self.render_mode = config:readSetting("render_mode") or 0
-    if self.ui.document.info.has_pages then
-        screen_mode = config:readSetting("screen_mode") or G_reader_settings:readSetting("kopt_screen_mode") or "portrait"
-    else
-        screen_mode = config:readSetting("screen_mode") or G_reader_settings:readSetting("copt_screen_mode") or "portrait"
+    local locked = G_reader_settings:readSetting("lock_rotation")
+    local rotation_mode = config:readSetting("rotation_mode")
+    if not rotation_mode and locked then
+        if self.ui.document.info.has_pages then
+            rotation_mode = G_reader_settings:readSetting("kopt_rotation_mode") or 0
+        else
+            rotation_mode = G_reader_settings:readSetting("copt_rotation_mode") or 0
+        end
     end
-    if screen_mode then
-        self:onSetScreenMode(screen_mode, config:readSetting("rotation_mode"), true)
+    if rotation_mode then
+        self:onSetRotationMode(rotation_mode)
     end
     self.state.gamma = config:readSetting("gamma") or 1.0
     local full_screen = config:readSetting("kopt_full_screen") or self.document.configurable.full_screen
@@ -845,7 +821,6 @@ end
 
 function ReaderView:onSaveSettings()
     self.ui.doc_settings:saveSetting("render_mode", self.render_mode)
-    self.ui.doc_settings:saveSetting("screen_mode", Screen:getScreenMode())
     self.ui.doc_settings:saveSetting("rotation_mode", Screen:getRotationMode())
     self.ui.doc_settings:saveSetting("gamma", self.state.gamma)
     self.ui.doc_settings:saveSetting("highlight", self.highlight.saved)

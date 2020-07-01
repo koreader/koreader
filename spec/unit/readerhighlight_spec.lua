@@ -70,6 +70,7 @@ describe("Readerhighlight module", function()
         setup(function()
             local sample_epub = "spec/front/unit/data/juliet.epub"
             readerui = ReaderUI:new{
+                dimen = Screen:getSize(),
                 document = DocumentRegistry:openDocument(sample_epub),
             }
         end)
@@ -111,6 +112,7 @@ describe("Readerhighlight module", function()
         setup(function()
             local sample_pdf = "spec/front/unit/data/sample.pdf"
             readerui = ReaderUI:new{
+                dimen = Screen:getSize(),
                 document = DocumentRegistry:openDocument(sample_pdf),
             }
             readerui:handleEvent(Event:new("SetScrollMode", false))
@@ -194,6 +196,7 @@ describe("Readerhighlight module", function()
         setup(function()
             local sample_pdf = "spec/front/unit/data/sample.pdf"
             readerui = ReaderUI:new{
+                dimen = Screen:getSize(),
                 document = DocumentRegistry:openDocument(sample_pdf),
             }
             readerui:handleEvent(Event:new("SetScrollMode", true))

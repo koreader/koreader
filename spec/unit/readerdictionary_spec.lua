@@ -13,6 +13,7 @@ describe("Readerdictionary module", function()
     setup(function()
         local sample_epub = "spec/front/unit/data/leaves.epub"
         readerui = ReaderUI:new{
+            dimen = Screen:getSize(),
             document = DocumentRegistry:openDocument(sample_epub),
         }
         rolling = readerui.rolling

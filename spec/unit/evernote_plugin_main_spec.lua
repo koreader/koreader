@@ -1,14 +1,16 @@
 describe("Evernote plugin module", function()
     local readerui, match
     local sample_clippings, sample_epub
-    local DocumentRegistry
+    local DocumentRegistry, Screen
     setup(function()
         require("commonrequire")
         match = require("luassert.match")
         local ReaderUI = require("apps/reader/readerui")
         DocumentRegistry = require("document/documentregistry")
+        Screen = require("device").screen
         sample_epub = "spec/front/unit/data/juliet.epub"
         readerui = ReaderUI:new{
+                dimen = Screen:getSize(),
                 document = DocumentRegistry:openDocument(sample_epub),
             }
 

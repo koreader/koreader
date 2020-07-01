@@ -26,14 +26,15 @@ local KoptOptions = {
         icon = "resources/icons/appbar.transform.rotate.right.large.png",
         options = {
             {
-                name = "screen_mode",
+                name = "rotation_mode",
                 name_text = S.SCREEN_MODE,
-                toggle = {S.PORTRAIT, S.LANDSCAPE},
+                toggle = {S.LANDSCAPE_ROTATED, S.PORTRAIT, S.LANDSCAPE, S.PORTRAIT_ROTATED},
                 alternate = false,
-                args = {"portrait", "landscape"},
-                default_arg = "portrait",
-                current_func = function() return Screen:getScreenMode() end,
-                event = "SwapScreenMode",
+                values = {Screen.ORIENTATION_LANDSCAPE_ROTATED, Screen.ORIENTATION_PORTRAIT, Screen.ORIENTATION_LANDSCAPE, Screen.ORIENTATION_PORTRAIT_ROTATED},
+                args = {Screen.ORIENTATION_LANDSCAPE_ROTATED, Screen.ORIENTATION_PORTRAIT, Screen.ORIENTATION_LANDSCAPE, Screen.ORIENTATION_PORTRAIT_ROTATED},
+                default_arg = 0,
+                current_func = function() return Screen:getRotationMode() end,
+                event = "SetRotationMode",
                 name_text_hold_callback = optionsutil.showValues,
             }
         }

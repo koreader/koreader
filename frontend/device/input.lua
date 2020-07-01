@@ -667,24 +667,20 @@ end
 
 --- Accelerometer on the Forma, c.f., drivers/hwmon/mma8x5x.c
 function Input:handleMiscEvNTX(ev)
-    local rotation_mode, screen_mode
+    local rotation_mode
     if ev.code == MSC_RAW then
         if ev.value == MSC_RAW_GSENSOR_PORTRAIT_UP then
             -- i.e., UR
             rotation_mode = framebuffer.ORIENTATION_PORTRAIT
-            screen_mode = 'portrait'
         elseif ev.value == MSC_RAW_GSENSOR_LANDSCAPE_RIGHT then
             -- i.e., CW
             rotation_mode = framebuffer.ORIENTATION_LANDSCAPE
-            screen_mode = 'landscape'
         elseif ev.value == MSC_RAW_GSENSOR_PORTRAIT_DOWN then
             -- i.e., UD
             rotation_mode = framebuffer.ORIENTATION_PORTRAIT_ROTATED
-            screen_mode = 'portrait'
         elseif ev.value == MSC_RAW_GSENSOR_LANDSCAPE_LEFT then
             -- i.e., CCW
             rotation_mode = framebuffer.ORIENTATION_LANDSCAPE_ROTATED
-            screen_mode = 'landscape'
         else
             -- Discard FRONT/BACK
             return
@@ -695,18 +691,10 @@ function Input:handleMiscEvNTX(ev)
     end
 
     local old_rotation_mode = self.device.screen:getRotationMode()
-    local old_screen_mode = self.device.screen:getScreenMode()
-    -- NOTE: Try to handle ScreenMode changes sanely, without wrecking the FM, which only supports Portrait/Inverted ;).
     -- NOTE: See the Oasis version just above us for a variant that's locked to the current ScreenMode.
     --       Might be nice to expose the two behaviors to the user, somehow?
-    if rotation_mode ~= old_rotation_mode then
-        if screen_mode ~= old_screen_mode then
-            return Event:new("SwapScreenMode", screen_mode, rotation_mode)
-        else
-            self.device.screen:setRotationMode(rotation_mode)
-            local UIManager = require("ui/uimanager")
-            UIManager:onRotation()
-        end
+    if rotation_mode and rotation_mode ~= old_rotation_mode then
+        return Event:new("SetRotationMode", rotation_mode)
     end
 end
 

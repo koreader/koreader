@@ -48,6 +48,7 @@ describe("ReaderBookmark module", function()
         setup(function()
             DocSettings:open(sample_epub):purge()
             readerui = ReaderUI:new{
+                dimen = Screen:getSize(),
                 document = DocumentRegistry:openDocument(sample_epub),
             }
             readerui.status.enabled = false
@@ -130,6 +131,7 @@ describe("ReaderBookmark module", function()
         setup(function()
             DocSettings:open(sample_pdf):purge()
             readerui = ReaderUI:new{
+                dimen = Screen:getSize(),
                 document = DocumentRegistry:openDocument(sample_pdf),
             }
             readerui.status.enabled = false
