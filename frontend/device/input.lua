@@ -719,13 +719,13 @@ end
 
 --- Allow toggling the accelerometer at runtime.
 function Input:toggleMiscEvNTX(toggle)
-    if toggle and toggle == true then
+    if toggle == true then
         -- Honor Gyro events
         if not self.isNTXAccelHooked then
             self.handleMiscEv = self.handleMiscEvNTX
             self.isNTXAccelHooked = true
         end
-    elseif toggle and toggle == false then
+    elseif toggle == false then
         -- Ignore Gyro events
         if self.isNTXAccelHooked then
             self.handleMiscEv = function() end

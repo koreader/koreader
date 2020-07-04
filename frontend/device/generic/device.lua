@@ -347,10 +347,10 @@ function Device:lockGSensor(toggle)
         return
     end
 
-    if toggle and toggle == true then
+    if toggle == true then
         -- Lock GSensor to current roientation
         self.isGSensorLocked = yes
-    elseif toggle and toggle == false then
+    elseif toggle == false then
         -- Unlock GSensor
         self.isGSensorLocked = no
     else
