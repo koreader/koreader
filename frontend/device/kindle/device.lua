@@ -371,6 +371,7 @@ local KindleOasis = Kindle:new{
     isTouchDevice = yes,
     hasFrontlight = yes,
     hasKeys = yes,
+    hasGSensor = yes,
     display_dpi = 300,
     --[[
     -- NOTE: Points to event3 on WiFi devices, event4 on 3G devices...
@@ -386,6 +387,7 @@ local KindleOasis2 = Kindle:new{
     isTouchDevice = yes,
     hasFrontlight = yes,
     hasKeys = yes,
+    hasGSensor = yes,
     display_dpi = 300,
     touch_dev = "/dev/input/by-path/platform-30a30000.i2c-event",
 }

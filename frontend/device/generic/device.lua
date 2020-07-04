@@ -51,7 +51,9 @@ local Device = {
     hasBGRFrameBuffer = no,
     canImportFiles = no,
     canShareText = no,
+    hasGSensor = no,
     canToggleGSensor = no,
+    isGSensorLocked = no,
     canToggleMassStorage = no,
     canUseWAL = yes, -- requires mmap'ed I/O on the target FS
     canRestart = yes,
@@ -174,6 +176,13 @@ function Device:init()
     if self:hasKeys() then
         if G_reader_settings:isTrue("input_invert_page_turn_keys") then
             self:invertButtons()
+        end
+    end
+
+    -- Honor the gyro lock
+    if self:hasGSensor() then
+        if G_reader_settings:isTrue("input_lock_gsensor") then
+            self:lockGSensor(true)
         end
     end
 end
@@ -331,6 +340,28 @@ function Device:setIgnoreInput(enable) return true end
 
 -- Device specific method for toggling the GSensor
 function Device:toggleGSensor(toggle) end
+
+-- Whether or not the GSensor should be locked to the current orientation (i.e. Portrait <-> Inverted Portrait or Landscape <-> Inverted Landscape only)
+function Device:lockGSensor(toggle)
+    if not self:hasGSensor() then
+        return
+    end
+
+    if toggle and toggle == true then
+        -- Lock GSensor to current roientation
+        self.isGSensorLocked = yes
+    elseif toggle and toggle == false then
+        -- Unlock GSensor
+        self.isGSensorLocked = no
+    else
+        -- Toggle it
+        if self:isGSensorLocked() then
+            self.isGSensorLocked = no
+        else
+            self.isGSensorLocked = yes
+        end
+    end
+end
 
 -- Device specific method for set custom light levels
 function Device:setScreenBrightness(level) end

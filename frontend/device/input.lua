@@ -657,11 +657,18 @@ function Input:handleOasisOrientationEv(ev)
     end
 
     local old_rotation_mode = self.device.screen:getRotationMode()
-    local old_screen_mode = self.device.screen:getScreenMode()
-    if rotation_mode ~= old_rotation_mode and screen_mode == old_screen_mode then
-        self.device.screen:setRotationMode(rotation_mode)
-        local UIManager = require("ui/uimanager")
-        UIManager:onRotation()
+    if self.device:isGSensorLocked() then
+        local old_screen_mode = self.device.screen:getScreenMode()
+        if rotation_mode ~= old_rotation_mode and screen_mode == old_screen_mode then
+            -- Cheaper than a full SetRotationMode event, as we don't need to re-layout anything.
+            self.device.screen:setRotationMode(rotation_mode)
+            local UIManager = require("ui/uimanager")
+            UIManager:onRotation()
+        end
+    else
+        if rotation_mode ~= old_rotation_mode then
+            return Event:new("SetRotationMode", rotation_mode)
+        end
     end
 end
 
@@ -691,10 +698,18 @@ function Input:handleMiscEvNTX(ev)
     end
 
     local old_rotation_mode = self.device.screen:getRotationMode()
-    -- NOTE: See the Oasis version just above us for a variant that's locked to the current ScreenMode.
-    --       Might be nice to expose the two behaviors to the user, somehow?
-    if rotation_mode and rotation_mode ~= old_rotation_mode then
-        return Event:new("SetRotationMode", rotation_mode)
+    if self.device:isGSensorLocked() then
+        local old_screen_mode = self.device.screen:getScreenMode()
+        if rotation_mode and rotation_mode ~= old_rotation_mode and screen_mode == old_screen_mode then
+            -- Cheaper than a full SetRotationMode event, as we don't need to re-layout anything.
+            self.device.screen:setRotationMode(rotation_mode)
+            local UIManager = require("ui/uimanager")
+            UIManager:onRotation()
+        end
+    else
+        if rotation_mode and rotation_mode ~= old_rotation_mode then
+            return Event:new("SetRotationMode", rotation_mode)
+        end
     end
 end
 
