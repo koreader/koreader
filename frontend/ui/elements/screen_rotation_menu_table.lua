@@ -41,7 +41,7 @@ If you need to do so, you'll have to use the UI toggles.]]),
                 end,
                 callback = function()
                     G_reader_settings:flipNilOrFalse("input_lock_gsensor")
-                    Device:lockGSensor(not G_reader_settings:isTrue("input_lock_gsensor"))
+                    Device:lockGSensor(G_reader_settings:isTrue("input_lock_gsensor"))
                 end,
             })
         end
