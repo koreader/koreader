@@ -179,7 +179,7 @@ function Kindle:intoScreenSaver()
                 -- Leave Portrait & Inverted Portrait alone, that works just fine.
                 if bit.band(self.orig_rotation_mode, 1) == 1 then
                     -- i.e., only switch to Portrait if we're currently in *any* Landscape orientation (odd number)
-                    self.screen:setRotationMode(0)
+                    self.screen:setRotationMode(self.screen.ORIENTATION_PORTRAIT)
                 else
                     self.orig_rotation_mode = nil
                 end
