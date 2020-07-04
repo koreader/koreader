@@ -2,6 +2,7 @@ local _ = require("gettext")
 local Device = require("device")
 local Event = require("ui/event")
 local FileManager = require("apps/filemanager/filemanager")
+local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local Screen = Device.screen
 local S = require("ui/data/strings")
@@ -77,8 +78,15 @@ When checked, in addition to the obvious, setting a default rotation below will 
                     if touchmenu_instance then touchmenu_instance:closeMenu() end
                 end,
                 hold_callback = function(touchmenu_instance)
-                    G_reader_settings:saveSetting("fm_rotation_mode", Screen.ORIENTATION_LANDSCAPE_ROTATED)
-                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                    if G_reader_settings:nilOrFalse("lock_rotation") then
+                        UIManager:show(InfoMessage:new{
+                            text = _("Can't set a default FM rotation when lock_rotation is disabled!"),
+                            timeout = 2,
+                        })
+                    else
+                        G_reader_settings:saveSetting("fm_rotation_mode", Screen.ORIENTATION_LANDSCAPE_ROTATED)
+                        if touchmenu_instance then touchmenu_instance:updateItems() end
+                    end
                 end,
             })
             table.insert(rotation_table, {
@@ -97,8 +105,15 @@ When checked, in addition to the obvious, setting a default rotation below will 
                     if touchmenu_instance then touchmenu_instance:closeMenu() end
                 end,
                 hold_callback = function(touchmenu_instance)
-                    G_reader_settings:saveSetting("fm_rotation_mode", Screen.ORIENTATION_PORTRAIT)
-                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                    if G_reader_settings:nilOrFalse("lock_rotation") then
+                        UIManager:show(InfoMessage:new{
+                            text = _("Can't set a default FM rotation when lock_rotation is disabled!"),
+                            timeout = 2,
+                        })
+                    else
+                        G_reader_settings:saveSetting("fm_rotation_mode", Screen.ORIENTATION_PORTRAIT)
+                        if touchmenu_instance then touchmenu_instance:updateItems() end
+                    end
                 end,
             })
             table.insert(rotation_table, {
@@ -117,8 +132,15 @@ When checked, in addition to the obvious, setting a default rotation below will 
                     if touchmenu_instance then touchmenu_instance:closeMenu() end
                 end,
                 hold_callback = function(touchmenu_instance)
-                    G_reader_settings:saveSetting("fm_rotation_mode", Screen.ORIENTATION_LANDSCAPE)
-                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                    if G_reader_settings:nilOrFalse("lock_rotation") then
+                        UIManager:show(InfoMessage:new{
+                            text = _("Can't set a default FM rotation when lock_rotation is disabled!"),
+                            timeout = 2,
+                        })
+                    else
+                        G_reader_settings:saveSetting("fm_rotation_mode", Screen.ORIENTATION_LANDSCAPE)
+                        if touchmenu_instance then touchmenu_instance:updateItems() end
+                    end
                 end,
             })
             table.insert(rotation_table, {
@@ -137,8 +159,15 @@ When checked, in addition to the obvious, setting a default rotation below will 
                     if touchmenu_instance then touchmenu_instance:closeMenu() end
                 end,
                 hold_callback = function(touchmenu_instance)
-                    G_reader_settings:saveSetting("fm_rotation_mode", Screen.ORIENTATION_PORTRAIT_ROTATED)
-                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                    if G_reader_settings:nilOrFalse("lock_rotation") then
+                        UIManager:show(InfoMessage:new{
+                            text = _("Can't set a default FM rotation when lock_rotation is disabled!"),
+                            timeout = 2,
+                        })
+                    else
+                        G_reader_settings:saveSetting("fm_rotation_mode", Screen.ORIENTATION_PORTRAIT_ROTATED)
+                        if touchmenu_instance then touchmenu_instance:updateItems() end
+                    end
                 end,
             })
         end
