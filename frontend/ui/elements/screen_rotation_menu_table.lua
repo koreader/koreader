@@ -32,6 +32,9 @@ return {
                                 i.e.: Portrait <-> Inverted Portrait OR Landscape <-> Inverted Landscape.
                                 Switching between (Inverted) Portrait and (Inverted) Landscape will be inhibited.
                                 If you need to do so, you'll have to use the UI toggles.]]),
+                enabled_func = function()
+                    return G_reader_settings:nilOrFalse("input_ignore_gsensor")
+                end,
                 checked_func = function()
                     return G_reader_settings:isTrue("input_lock_gsensor")
                 end,
