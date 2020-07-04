@@ -27,9 +27,9 @@ return {
 
         if Device:hasGSensor() then
             table.insert(rotation_table, {
-                text = _("Lock accelerometer rotations to current orientation"),
+                text = _("Lock auto rotation to current orientation"),
                 help_text = _([[When checked, the gyro will only be honored when switching between the two inverse variants of your current rotation,
-i.e.: Portrait <-> Inverted Portrait OR Landscape <-> Inverted Landscape.
+i.e., Portrait <-> Inverted Portrait OR Landscape <-> Inverted Landscape.
 Switching between (Inverted) Portrait and (Inverted) Landscape will be inhibited.
 If you need to do so, you'll have to use the UI toggles.]]),
                 enabled_func = function()
