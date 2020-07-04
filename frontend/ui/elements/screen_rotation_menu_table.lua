@@ -81,7 +81,7 @@ When checked, in addition to the obvious, setting a default rotation below will 
                     if G_reader_settings:nilOrFalse("lock_rotation") then
                         UIManager:show(InfoMessage:new{
                             text = _("Can't set a default FM rotation when 'Keep file browser rotation' is disabled!"),
-                            timeout = 2,
+                            timeout = 4,
                         })
                     else
                         G_reader_settings:saveSetting("fm_rotation_mode", Screen.ORIENTATION_LANDSCAPE_ROTATED)
@@ -108,7 +108,7 @@ When checked, in addition to the obvious, setting a default rotation below will 
                     if G_reader_settings:nilOrFalse("lock_rotation") then
                         UIManager:show(InfoMessage:new{
                             text = _("Can't set a default FM rotation when 'Keep file browser rotation' is disabled!"),
-                            timeout = 2,
+                            timeout = 4,
                         })
                     else
                         G_reader_settings:saveSetting("fm_rotation_mode", Screen.ORIENTATION_PORTRAIT)
@@ -135,7 +135,7 @@ When checked, in addition to the obvious, setting a default rotation below will 
                     if G_reader_settings:nilOrFalse("lock_rotation") then
                         UIManager:show(InfoMessage:new{
                             text = _("Can't set a default FM rotation when 'Keep file browser rotation' is disabled!"),
-                            timeout = 2,
+                            timeout = 4,
                         })
                     else
                         G_reader_settings:saveSetting("fm_rotation_mode", Screen.ORIENTATION_LANDSCAPE)
@@ -162,7 +162,7 @@ When checked, in addition to the obvious, setting a default rotation below will 
                     if G_reader_settings:nilOrFalse("lock_rotation") then
                         UIManager:show(InfoMessage:new{
                             text = _("Can't set a default FM rotation when 'Keep file browser rotation' is disabled!"),
-                            timeout = 2,
+                            timeout = 4,
                         })
                     else
                         G_reader_settings:saveSetting("fm_rotation_mode", Screen.ORIENTATION_PORTRAIT_ROTATED)
