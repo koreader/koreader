@@ -72,7 +72,7 @@ end
 
 function FileManager:setRotationMode()
     local locked = G_reader_settings:readSetting("lock_rotation")
-    local rotation_mode = G_reader_settings:readSetting("fm_rotation_mode") or 0
+    local rotation_mode = G_reader_settings:readSetting("fm_rotation_mode") or Screen.ORIENTATION_PORTRAIT
     if locked then
         self:onSetRotationMode(rotation_mode)
     end
