@@ -287,6 +287,7 @@ describe("device module", function()
             local kindle_dev = require('device/kindle/device')
             assert.is.same("KindleOasis", kindle_dev.model)
             kindle_dev:init()
+            kindle_dev:lockGSensor(true)
 
             kindle_dev.input:waitEvent()
             assert.stub(UIManager.onRotation).was_called()
