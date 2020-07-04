@@ -80,7 +80,7 @@ When checked, in addition to the obvious, setting a default rotation below will 
                 hold_callback = function(touchmenu_instance)
                     if G_reader_settings:nilOrFalse("lock_rotation") then
                         UIManager:show(InfoMessage:new{
-                            text = _("Can't set a default FM rotation when lock_rotation is disabled!"),
+                            text = _("Can't set a default FM rotation when 'Keep file browser rotation' is disabled!"),
                             timeout = 2,
                         })
                     else
@@ -107,7 +107,7 @@ When checked, in addition to the obvious, setting a default rotation below will 
                 hold_callback = function(touchmenu_instance)
                     if G_reader_settings:nilOrFalse("lock_rotation") then
                         UIManager:show(InfoMessage:new{
-                            text = _("Can't set a default FM rotation when lock_rotation is disabled!"),
+                            text = _("Can't set a default FM rotation when 'Keep file browser rotation' is disabled!"),
                             timeout = 2,
                         })
                     else
@@ -134,7 +134,7 @@ When checked, in addition to the obvious, setting a default rotation below will 
                 hold_callback = function(touchmenu_instance)
                     if G_reader_settings:nilOrFalse("lock_rotation") then
                         UIManager:show(InfoMessage:new{
-                            text = _("Can't set a default FM rotation when lock_rotation is disabled!"),
+                            text = _("Can't set a default FM rotation when 'Keep file browser rotation' is disabled!"),
                             timeout = 2,
                         })
                     else
@@ -161,7 +161,7 @@ When checked, in addition to the obvious, setting a default rotation below will 
                 hold_callback = function(touchmenu_instance)
                     if G_reader_settings:nilOrFalse("lock_rotation") then
                         UIManager:show(InfoMessage:new{
-                            text = _("Can't set a default FM rotation when lock_rotation is disabled!"),
+                            text = _("Can't set a default FM rotation when 'Keep file browser rotation' is disabled!"),
                             timeout = 2,
                         })
                     else
