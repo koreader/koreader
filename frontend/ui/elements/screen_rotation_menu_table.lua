@@ -29,9 +29,9 @@ return {
             table.insert(rotation_table, {
                 text = _("Lock accelerometer rotations to current orientation"),
                 help_text = _([[When checked, the gyro will only be honored when switching between the two inverse variants of your current rotation,
-                                i.e.: Portrait <-> Inverted Portrait OR Landscape <-> Inverted Landscape.
-                                Switching between (Inverted) Portrait and (Inverted) Landscape will be inhibited.
-                                If you need to do so, you'll have to use the UI toggles.]]),
+i.e.: Portrait <-> Inverted Portrait OR Landscape <-> Inverted Landscape.
+Switching between (Inverted) Portrait and (Inverted) Landscape will be inhibited.
+If you need to do so, you'll have to use the UI toggles.]]),
                 enabled_func = function()
                     return G_reader_settings:nilOrFalse("input_ignore_gsensor")
                 end,
