@@ -277,7 +277,8 @@ if ARGV[argidx] and ARGV[argidx] ~= "" then
         local home_dir =
             G_reader_settings:readSetting("home_dir") or ARGV[argidx]
         UIManager:nextTick(function()
-            FileManager:showFiles(home_dir, "", true)
+            FileManager:setRotationMode(true)
+            FileManager:showFiles(home_dir)
         end)
         -- always open history on top of filemanager so closing history
         -- doesn't result in exit
