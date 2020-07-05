@@ -148,8 +148,8 @@ function PocketBook:init()
 
     -- fix rotation for Color Lux device
     if PocketBook:getDeviceModel() == "PocketBook Color Lux" then
-        self.screen.blitbuffer_rotation_mode = 0
-        self.screen.native_rotation_mode = 0
+        self.screen.blitbuffer_rotation_mode = self.screen.ORIENTATION_PORTRAIT
+        self.screen.native_rotation_mode = self.screen.ORIENTATION_PORTRAIT
     end
 
     os.remove(self.emu_events_dev)

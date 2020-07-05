@@ -728,9 +728,9 @@ function ReaderView:onReadSettings(config)
     local rotation_mode = config:readSetting("rotation_mode")
     if not rotation_mode and locked then
         if self.ui.document.info.has_pages then
-            rotation_mode = G_reader_settings:readSetting("kopt_rotation_mode") or 0
+            rotation_mode = G_reader_settings:readSetting("kopt_rotation_mode") or Screen.ORIENTATION_PORTRAIT
         else
-            rotation_mode = G_reader_settings:readSetting("copt_rotation_mode") or 0
+            rotation_mode = G_reader_settings:readSetting("copt_rotation_mode") or Screen.ORIENTATION_PORTRAIT
         end
     end
     if rotation_mode then
