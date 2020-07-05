@@ -731,8 +731,9 @@ function ReaderView:onReadSettings(config)
         rotation_mode = G_reader_settings:readSetting("fm_rotation_mode") or Screen.ORIENTATION_PORTRAIT
     else
         -- Honor docsettings's rotation
-        rotation_mode = config:readSetting("rotation_mode") -- Legacy
+        rotation_mode = config:readSetting("rotation_mode") -- Doc's
         if not rotation_mode then
+            -- No doc specific rotation, pickup global defaults for the doc type
             if self.ui.document.info.has_pages then
                 rotation_mode = G_reader_settings:readSetting("kopt_rotation_mode") or Screen.ORIENTATION_PORTRAIT
             else
