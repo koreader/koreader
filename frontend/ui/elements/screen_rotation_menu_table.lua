@@ -49,7 +49,9 @@ If you need to do so, you'll have to use the UI toggles.]]),
 
         table.insert(rotation_table, {
             text = _("Keep file browser rotation"),
-            help_text = _("When unchecked, the rotation of the file browser and the reader will not affect each other"),
+            help_text = _([[
+When checked, the rotation of the file browser will be kept when opening a document, no matter what the document's saved rotation may be.
+When unchecked, the rotation of the file browser and the reader will not affect each other.]]),
             checked_func = function()
                 return G_reader_settings:isTrue("lock_rotation")
             end,
