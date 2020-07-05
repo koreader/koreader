@@ -49,9 +49,7 @@ If you need to do so, you'll have to use the UI toggles.]]),
 
         table.insert(rotation_table, {
             text = _("Keep file browser rotation"),
-            help_text = _([[
-When unchecked, the rotation of the file browser and the reader will not affect each other.
-When checked, in addition to the obvious, setting a default rotation below will make it stick across KOReader restarts.]]),
+            help_text = _("When unchecked, the rotation of the file browser and the reader will not affect each other"),
             checked_func = function()
                 return G_reader_settings:isTrue("lock_rotation")
             end,
@@ -78,15 +76,8 @@ When checked, in addition to the obvious, setting a default rotation below will 
                     if touchmenu_instance then touchmenu_instance:closeMenu() end
                 end,
                 hold_callback = function(touchmenu_instance)
-                    if G_reader_settings:nilOrFalse("lock_rotation") then
-                        UIManager:show(InfoMessage:new{
-                            text = _("Can't set a default FM rotation when 'Keep file browser rotation' is disabled!"),
-                            timeout = 4,
-                        })
-                    else
-                        G_reader_settings:saveSetting("fm_rotation_mode", Screen.ORIENTATION_LANDSCAPE_ROTATED)
-                        if touchmenu_instance then touchmenu_instance:updateItems() end
-                    end
+                    G_reader_settings:saveSetting("fm_rotation_mode", Screen.ORIENTATION_LANDSCAPE_ROTATED)
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
                 end,
             })
             table.insert(rotation_table, {
@@ -105,15 +96,8 @@ When checked, in addition to the obvious, setting a default rotation below will 
                     if touchmenu_instance then touchmenu_instance:closeMenu() end
                 end,
                 hold_callback = function(touchmenu_instance)
-                    if G_reader_settings:nilOrFalse("lock_rotation") then
-                        UIManager:show(InfoMessage:new{
-                            text = _("Can't set a default FM rotation when 'Keep file browser rotation' is disabled!"),
-                            timeout = 4,
-                        })
-                    else
-                        G_reader_settings:saveSetting("fm_rotation_mode", Screen.ORIENTATION_PORTRAIT)
-                        if touchmenu_instance then touchmenu_instance:updateItems() end
-                    end
+                    G_reader_settings:saveSetting("fm_rotation_mode", Screen.ORIENTATION_PORTRAIT)
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
                 end,
             })
             table.insert(rotation_table, {
@@ -132,15 +116,8 @@ When checked, in addition to the obvious, setting a default rotation below will 
                     if touchmenu_instance then touchmenu_instance:closeMenu() end
                 end,
                 hold_callback = function(touchmenu_instance)
-                    if G_reader_settings:nilOrFalse("lock_rotation") then
-                        UIManager:show(InfoMessage:new{
-                            text = _("Can't set a default FM rotation when 'Keep file browser rotation' is disabled!"),
-                            timeout = 4,
-                        })
-                    else
-                        G_reader_settings:saveSetting("fm_rotation_mode", Screen.ORIENTATION_LANDSCAPE)
-                        if touchmenu_instance then touchmenu_instance:updateItems() end
-                    end
+                    G_reader_settings:saveSetting("fm_rotation_mode", Screen.ORIENTATION_LANDSCAPE)
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
                 end,
             })
             table.insert(rotation_table, {
@@ -159,15 +136,8 @@ When checked, in addition to the obvious, setting a default rotation below will 
                     if touchmenu_instance then touchmenu_instance:closeMenu() end
                 end,
                 hold_callback = function(touchmenu_instance)
-                    if G_reader_settings:nilOrFalse("lock_rotation") then
-                        UIManager:show(InfoMessage:new{
-                            text = _("Can't set a default FM rotation when 'Keep file browser rotation' is disabled!"),
-                            timeout = 4,
-                        })
-                    else
-                        G_reader_settings:saveSetting("fm_rotation_mode", Screen.ORIENTATION_PORTRAIT_ROTATED)
-                        if touchmenu_instance then touchmenu_instance:updateItems() end
-                    end
+                    G_reader_settings:saveSetting("fm_rotation_mode", Screen.ORIENTATION_PORTRAIT_ROTATED)
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
                 end,
             })
         end
