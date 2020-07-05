@@ -70,10 +70,10 @@ function FileManager:onSetRotationMode(rotation)
     return true
 end
 
-function FileManager:setRotationMode()
+function FileManager:setRotationMode(init)
     local locked = G_reader_settings:readSetting("lock_rotation")
     local rotation_mode = G_reader_settings:readSetting("fm_rotation_mode") or 0
-    if locked then
+    if locked or init then
         self:onSetRotationMode(rotation_mode)
     end
 end
@@ -1033,10 +1033,10 @@ function FileManager:getStartWithMenuTable()
     }
 end
 
-function FileManager:showFiles(path, focused_file)
+function FileManager:showFiles(path, focused_file, init)
     path = path or G_reader_settings:readSetting("lastdir") or filemanagerutil.getDefaultDir()
     G_reader_settings:saveSetting("lastdir", path)
-    self:setRotationMode()
+    self:setRotationMode(init)
     local file_manager = FileManager:new{
         dimen = Screen:getSize(),
         covers_fullscreen = true, -- hint for UIManager:_repaint()
