@@ -48,7 +48,7 @@ If you need to do so, you'll have to use the UI toggles.]]),
         end
 
         table.insert(rotation_table, {
-            text = _("Keep current rotation when switching views"),
+            text = _("Keep current rotation across views"),
             help_text = _([[
 When checked, the current rotation will be kept when switching between the file browser and the reader, in both directions, and that no matter what the document's saved rotation or the default reader or file browser rotation may be.
 This means that nothing will ever sneak a rotation behind your back, you choose your device's rotation, and it stays that way.
