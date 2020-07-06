@@ -48,10 +48,11 @@ If you need to do so, you'll have to use the UI toggles.]]),
         end
 
         table.insert(rotation_table, {
-            text = _("Keep file browser rotation"),
+            text = _("Keep current rotation when switching views"),
             help_text = _([[
-When checked, the rotation of the file browser will be kept when opening a document, no matter what the document's saved rotation or the default reader rotation may be.
-When unchecked, the rotation of the file browser and the reader will not affect each other.]]),
+When checked, the current rotation will be kept when switching between the file browser and the reader, in both directions, and that no matter what the document's saved rotation or the default reader or file browser rotation may be.
+This means that nothing will ever sneak a rotation behind your back, you choose your device's rotation, and it stays that way.
+When unchecked, the rotation of the file browser and the reader will not affect each other, and may very well be different.]]),
             checked_func = function()
                 return G_reader_settings:isTrue("lock_rotation")
             end,
