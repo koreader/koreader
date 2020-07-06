@@ -52,7 +52,7 @@ If you need to do so, you'll have to use the UI toggles.]]),
             help_text = _([[
 When checked, the current rotation will be kept when switching between the file browser and the reader, in both directions, and that no matter what the document's saved rotation or the default reader or file browser rotation may be.
 This means that nothing will ever sneak a rotation behind your back, you choose your device's rotation, and it stays that way.
-When unchecked, the rotation of the file browser and the reader will not affect each other, and may very well be different.]]),
+When unchecked, the default rotation of the file browser and the default/saved reader rotation will not affect each other (i.e., they will be honored), and may very well be different.]]),
             checked_func = function()
                 return G_reader_settings:isTrue("lock_rotation")
             end,
