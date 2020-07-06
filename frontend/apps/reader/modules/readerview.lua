@@ -726,10 +726,8 @@ function ReaderView:onReadSettings(config)
     self.render_mode = config:readSetting("render_mode") or 0
     local rotation_mode = nil
     local locked = G_reader_settings:isTrue("lock_rotation")
-    if locked then
-        -- Keep current rotation by doing nothing.
-        rotation_mode = nil
-    else
+    -- Keep current rotation by doing nothing when sticky rota is enabled.
+    if not locked then
         -- Honor docsettings's rotation
         rotation_mode = config:readSetting("rotation_mode") -- Doc's
         if not rotation_mode then

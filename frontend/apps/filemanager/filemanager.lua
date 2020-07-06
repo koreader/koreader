@@ -75,7 +75,7 @@ end
 function FileManager:setRotationMode(init)
     local locked = G_reader_settings:isTrue("lock_rotation")
     local rotation_mode = G_reader_settings:readSetting("fm_rotation_mode") or Screen.ORIENTATION_PORTRAIT
-    -- Only enforce the default rotation on first FM open, or when switching to the FM when lock_rotation is disabled.
+    -- Only enforce the default rotation on first FM open, or when switching to the FM when sticky rota is disabled.
     if init or not locked then
         self:onSetRotationMode(rotation_mode)
     end
