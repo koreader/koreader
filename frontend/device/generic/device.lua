@@ -51,7 +51,9 @@ local Device = {
     hasBGRFrameBuffer = no,
     canImportFiles = no,
     canShareText = no,
+    hasGSensor = no,
     canToggleGSensor = no,
+    isGSensorLocked = no,
     canToggleMassStorage = no,
     canUseWAL = yes, -- requires mmap'ed I/O on the target FS
     canRestart = yes,
@@ -176,6 +178,13 @@ function Device:init()
             self:invertButtons()
         end
     end
+
+    -- Honor the gyro lock
+    if self:hasGSensor() then
+        if G_reader_settings:isTrue("input_lock_gsensor") then
+            self:lockGSensor(true)
+        end
+    end
 end
 
 function Device:setScreenDPI(dpi_override)
@@ -246,7 +255,7 @@ function Device:onPowerEvent(ev)
             -- Leave Portrait & Inverted Portrait alone, that works just fine.
             if bit.band(self.orig_rotation_mode, 1) == 1 then
                 -- i.e., only switch to Portrait if we're currently in *any* Landscape orientation (odd number)
-                self.screen:setRotationMode(0)
+                self.screen:setRotationMode(self.screen.ORIENTATION_PORTRAIT)
             else
                 self.orig_rotation_mode = nil
             end
@@ -331,6 +340,28 @@ function Device:setIgnoreInput(enable) return true end
 
 -- Device specific method for toggling the GSensor
 function Device:toggleGSensor(toggle) end
+
+-- Whether or not the GSensor should be locked to the current orientation (i.e. Portrait <-> Inverted Portrait or Landscape <-> Inverted Landscape only)
+function Device:lockGSensor(toggle)
+    if not self:hasGSensor() then
+        return
+    end
+
+    if toggle == true then
+        -- Lock GSensor to current roientation
+        self.isGSensorLocked = yes
+    elseif toggle == false then
+        -- Unlock GSensor
+        self.isGSensorLocked = no
+    else
+        -- Toggle it
+        if self:isGSensorLocked() then
+            self.isGSensorLocked = no
+        else
+            self.isGSensorLocked = yes
+        end
+    end
+end
 
 -- Device specific method for set custom light levels
 function Device:setScreenBrightness(level) end

@@ -2,6 +2,7 @@ local _ = require("gettext")
 local Device = require("device")
 local Event = require("ui/event")
 local FileManager = require("apps/filemanager/filemanager")
+local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local Screen = Device.screen
 local S = require("ui/data/strings")
@@ -11,9 +12,10 @@ return {
     sub_item_table_func = function()
         local rotation_table = {}
 
-        if Device:canToggleGSensor() then
+        if Device:hasGSensor() and Device:canToggleGSensor() then
             table.insert(rotation_table, {
                 text = _("Ignore accelerometer rotation events"),
+                help_text = _("This will inhibit automatic rotations triggered by your device's gyro."),
                 checked_func = function()
                     return G_reader_settings:isTrue("input_ignore_gsensor")
                 end,
@@ -24,9 +26,32 @@ return {
             })
         end
 
+        if Device:hasGSensor() then
+            table.insert(rotation_table, {
+                text = _("Lock auto rotation to current orientation"),
+                help_text = _([[
+When checked, the gyro will only be honored when switching between the two inverse variants of your current rotation,
+i.e., Portrait <-> Inverted Portrait OR Landscape <-> Inverted Landscape.
+Switching between (Inverted) Portrait and (Inverted) Landscape will be inhibited.
+If you need to do so, you'll have to use the UI toggles.]]),
+                enabled_func = function()
+                    return G_reader_settings:nilOrFalse("input_ignore_gsensor")
+                end,
+                checked_func = function()
+                    return G_reader_settings:isTrue("input_lock_gsensor")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrFalse("input_lock_gsensor")
+                    Device:lockGSensor(G_reader_settings:isTrue("input_lock_gsensor"))
+                end,
+            })
+        end
+
         table.insert(rotation_table, {
             text = _("Keep file browser rotation"),
-            help_text = _("When checked the rotation of the file browser and the reader will not affect each other"),
+            help_text = _([[
+When checked, the rotation of the file browser will be kept when opening a document, no matter what the document's saved rotation or the default reader rotation may be.
+When unchecked, the rotation of the file browser and the reader will not affect each other.]]),
             checked_func = function()
                 return G_reader_settings:isTrue("lock_rotation")
             end,

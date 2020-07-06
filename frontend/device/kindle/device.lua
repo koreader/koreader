@@ -179,7 +179,7 @@ function Kindle:intoScreenSaver()
                 -- Leave Portrait & Inverted Portrait alone, that works just fine.
                 if bit.band(self.orig_rotation_mode, 1) == 1 then
                     -- i.e., only switch to Portrait if we're currently in *any* Landscape orientation (odd number)
-                    self.screen:setRotationMode(0)
+                    self.screen:setRotationMode(self.screen.ORIENTATION_PORTRAIT)
                 else
                     self.orig_rotation_mode = nil
                 end
@@ -371,6 +371,7 @@ local KindleOasis = Kindle:new{
     isTouchDevice = yes,
     hasFrontlight = yes,
     hasKeys = yes,
+    hasGSensor = yes,
     display_dpi = 300,
     --[[
     -- NOTE: Points to event3 on WiFi devices, event4 on 3G devices...
@@ -386,6 +387,7 @@ local KindleOasis2 = Kindle:new{
     isTouchDevice = yes,
     hasFrontlight = yes,
     hasKeys = yes,
+    hasGSensor = yes,
     display_dpi = 300,
     touch_dev = "/dev/input/by-path/platform-30a30000.i2c-event",
 }
