@@ -727,8 +727,8 @@ function ReaderView:onReadSettings(config)
     local rotation_mode = nil
     local locked = G_reader_settings:isTrue("lock_rotation")
     if locked then
-        -- Keep FM rotation
-        rotation_mode = G_reader_settings:readSetting("fm_rotation_mode") or Screen.ORIENTATION_PORTRAIT
+        -- Keep current rotation by doing nothing.
+        rotation_mode = nil
     else
         -- Honor docsettings's rotation
         rotation_mode = config:readSetting("rotation_mode") -- Doc's
