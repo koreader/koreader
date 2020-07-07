@@ -81,7 +81,7 @@ else
 	cp -f $(KOR_BASE)/ev_replay.py $(INSTALL_DIR)/koreader/
 	@echo "[*] create symlink instead of copying files in development mode"
 	cd $(INSTALL_DIR)/koreader && \
-		ln -sf ../../$(KOR_BASE)/$(OUTPUT_DIR)/* .
+		bash -O extglob -c "ln -sf ../../$(KOR_BASE)/$(OUTPUT_DIR)/!(cache) ."
 	@echo "[*] install front spec only for the emulator"
 	cd $(INSTALL_DIR)/koreader/spec && test -e front || \
 		ln -sf ../../../../spec ./front
