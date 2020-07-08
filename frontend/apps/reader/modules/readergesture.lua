@@ -1349,11 +1349,11 @@ function ReaderGesture:gestureAction(action, ges)
         or (ges.ges == "hold" and self.ignore_hold_corners) then
         return
     elseif action == "reading_progress" then
-        self.ui:handleEvent(Event:new("GetReaderProgress"))
+        self.ui:handleEvent(Event:new("ShowReaderProgress"))
     elseif action == "book_statistics" then
-        self.ui:handleEvent(Event:new("GetBookStats"))
+        self.ui:handleEvent(Event:new("ShowBookStats"))
     elseif action == "stats_calendar_view" then
-        self.ui:handleEvent(Event:new("GetCalendarView"))
+        self.ui:handleEvent(Event:new("ShowCalendarView"))
     elseif action == "toc" then
         self.ui:handleEvent(Event:new("ShowToc"))
     elseif action == "night_mode" then

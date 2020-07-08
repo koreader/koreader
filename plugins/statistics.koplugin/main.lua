@@ -2069,7 +2069,7 @@ function ReaderStatistics:getReadBookByDay(month)
     return per_day
 end
 
-function ReaderStatistics:onGetReaderProgress()
+function ReaderStatistics:onShowReaderProgress()
     local readingprogress
     self:insertDB(self.id_curr_book)
     local current_period, current_pages = self:getCurrentBookStats()
@@ -2088,7 +2088,7 @@ function ReaderStatistics:onGetReaderProgress()
     UIManager:show(readingprogress)
 end
 
-function ReaderStatistics:onGetBookStats()
+function ReaderStatistics:onShowBookStats()
     if self:isDocless() or not self.is_enabled then return end
     local stats = KeyValuePage:new{
         title = _("Current statistics"),
@@ -2097,7 +2097,7 @@ function ReaderStatistics:onGetBookStats()
     UIManager:show(stats)
 end
 
-function ReaderStatistics:onGetCalendarView()
+function ReaderStatistics:onShowCalendarView()
      UIManager:show(self:getCalendarView())
 end
 
