@@ -343,17 +343,17 @@ function Device:info()
 
     local platform_text = ""
     if product_type ~= "android" then
-        platform_text = T(_("\nDevice type: %1\n"), product_type)
+        platform_text = "\n" .. T(_("Device type: %1"), product_type) .. "\n"
     end
 
     local eink_text = ""
     if is_eink then
-        eink_text = T(_("\nE-ink display supported.\nPlatform: %1\n"), eink_platform)
+        eink_text = "\n" .. T(_("E-ink display supported.\nPlatform: %1"), eink_platform) .. "\n"
     end
 
     local wakelocks_text = ""
     if android.needsWakelocks() then
-        wakelocks_text = _("\nThis device needs CPU, screen and touchscreen always on.\nScreen timeout will be ignored while the app is in the foreground!\n")
+        wakelocks_text = "\n" .. _("This device needs CPU, screen and touchscreen always on.\nScreen timeout will be ignored while the app is in the foreground!") .. "\n"
     end
 
     return common_text..platform_text..eink_text..wakelocks_text
