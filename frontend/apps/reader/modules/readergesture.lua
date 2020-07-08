@@ -1391,9 +1391,7 @@ function ReaderGesture:gestureAction(action, ges)
     elseif action == "first_page" then
         self.ui:handleEvent(Event:new("GotoPage", 1))
     elseif action == "last_page" then
-        if self.view.document then
-            self.ui:handleEvent(Event:new("GotoPage", self.view.document:getPageCount()))
-        end
+        self.ui:handleEvent(Event:new("GoToEnd"))
     elseif action == "prev_chapter" then
         self.ui:handleEvent(Event:new("GotoPrevChapter"))
     elseif action == "next_bookmark" then
