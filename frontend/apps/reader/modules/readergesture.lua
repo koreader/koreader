@@ -774,7 +774,7 @@ function ReaderGesture:buildMenu(ges, default)
 
         {"toc", not self.is_docless},
         {"bookmarks", not self.is_docless},
-        {"reading_progress", ReaderGesture.getReaderProgress ~= nil},
+        {"reading_progress", not self.is_docless},
         {"book_statistics", not self.is_docless},
 
         {"book_status", not self.is_docless},
@@ -1348,12 +1348,12 @@ function ReaderGesture:gestureAction(action, ges)
     if action == "ignore"
         or (ges.ges == "hold" and self.ignore_hold_corners) then
         return
-    elseif action == "reading_progress" and ReaderGesture.getReaderProgress then
-        UIManager:show(ReaderGesture.getReaderProgress())
-    elseif action == "book_statistics" and ReaderGesture.getBookStats then
-        UIManager:show(ReaderGesture.getBookStats())
-    elseif action == "stats_calendar_view" and ReaderGesture.getCalendarView then
-        UIManager:show(ReaderGesture.getCalendarView())
+    elseif action == "reading_progress" then
+        self.ui:handleEvent(Event:new("GetReaderProgress"))
+    elseif action == "book_statistics" then
+        self.ui:handleEvent(Event:new("GetBookStats"))
+    elseif action == "stats_calendar_view" then
+        self.ui:handleEvent(Event:new("GetCalendarView"))
     elseif action == "toc" then
         self.ui:handleEvent(Event:new("ShowToc"))
     elseif action == "night_mode" then
