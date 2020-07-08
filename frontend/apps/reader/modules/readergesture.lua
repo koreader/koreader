@@ -1344,10 +1344,6 @@ function ReaderGesture:registerGesture(ges, action, ges_type, zone, overrides, d
     })
 end
 
-local function lightFrontlight()
-    return Device:hasLightLevelFallback() and G_reader_settings:nilOrTrue("light_fallback")
-end
-
 function ReaderGesture:gestureAction(action, ges)
     if action == "ignore"
         or (ges.ges == "hold" and self.ignore_hold_corners) then
@@ -1361,10 +1357,7 @@ function ReaderGesture:gestureAction(action, ges)
     elseif action == "toc" then
         self.ui:handleEvent(Event:new("ShowToc"))
     elseif action == "night_mode" then
-        local night_mode = G_reader_settings:isTrue("night_mode")
-        Screen:toggleNightMode()
-        UIManager:setDirty("all", "full")
-        G_reader_settings:saveSetting("night_mode", not night_mode)
+        self.ui:handleEvent(Event:new("ToggleNightMode"))
     elseif action == "full_refresh" then
         if self.view then
             -- update footer (time & battery)
@@ -1462,77 +1455,25 @@ function ReaderGesture:gestureAction(action, ges)
     elseif action == "show_config_menu" then
         self.ui:handleEvent(Event:new("ShowConfigMenu"))
     elseif action == "show_frontlight_dialog" then
-        if self.ges_mode == "gesture_fm" then
-            local ReaderFrontLight = require("apps/reader/modules/readerfrontlight")
-            ReaderFrontLight:onShowFlDialog()
-        else
-            self.ui:handleEvent(Event:new("ShowFlDialog"))
-        end
+        self.ui:handleEvent(Event:new("ShowFlDialog"))
     elseif action == "increase_frontlight" then
-        -- when using frontlight system settings
-        if lightFrontlight() then
-            UIManager:show(Notification:new{
-                text = _("Frontlight controlled by system settings."),
-                timeout = 2.5,
-            })
-            return true
-        end
-        if self.ges_mode == "gesture_fm" then
-            local ReaderFrontLight = require("apps/reader/modules/readerfrontlight")
-            ReaderFrontLight:onChangeFlIntensity(ges, 1)
-        else
-            self.ui:handleEvent(Event:new("ChangeFlIntensity", ges, 1))
-        end
+        self.ui:handleEvent(Event:new("ChangeFlIntensity", ges, 1))
     elseif action == "decrease_frontlight" then
-        -- when using frontlight system settings
-        if lightFrontlight() then
-            UIManager:show(Notification:new{
-                text = _("Frontlight controlled by system settings."),
-                timeout = 2.5,
-            })
-            return true
-        end
-        if self.ges_mode == "gesture_fm" then
-            local ReaderFrontLight = require("apps/reader/modules/readerfrontlight")
-            ReaderFrontLight:onChangeFlIntensity(ges, -1)
-        else
-            self.ui:handleEvent(Event:new("ChangeFlIntensity", ges, -1))
-        end
+        self.ui:handleEvent(Event:new("ChangeFlIntensity", ges, -1))
     elseif action == "increase_frontlight_warmth" then
-        if self.ges_mode == "gesture_fm" then
-            local ReaderFrontLight = require("apps/reader/modules/readerfrontlight")
-            ReaderFrontLight:onChangeFlWarmth(ges, 1)
-        else
-            self.ui:handleEvent(Event:new("ChangeFlWarmth", ges, 1))
-        end
+        self.ui:handleEvent(Event:new("ChangeFlWarmth", ges, 1))
     elseif action == "decrease_frontlight_warmth" then
-        if self.ges_mode == "gesture_fm" then
-            local ReaderFrontLight = require("apps/reader/modules/readerfrontlight")
-            ReaderFrontLight:onChangeFlWarmth(ges, -1)
-        else
-            self.ui:handleEvent(Event:new("ChangeFlWarmth", ges, -1))
-        end
+        self.ui:handleEvent(Event:new("ChangeFlWarmth", ges, -1))
     elseif action == "toggle_bookmark" then
         self.ui:handleEvent(Event:new("ToggleBookmark"))
     elseif action == "toggle_inverse_reading_order" then
         self:onToggleReadingOrder()
     elseif action == "toggle_frontlight" then
-        -- when using frontlight system settings
-        if lightFrontlight() then
-            UIManager:show(Notification:new{
-                text = _("Frontlight controlled by system settings."),
-                timeout = 2.5,
-            })
-            return true
-        end
-        Device:getPowerDevice():toggleFrontlight()
-        self:onShowFLOnOff()
+        self.ui:handleEvent(Event:new("ToggleFrontlight"))
     elseif action == "toggle_hold_corners" then
         self:onIgnoreHoldCorners()
     elseif action == "toggle_gsensor" then
-        G_reader_settings:flipNilOrFalse("input_ignore_gsensor")
-        Device:toggleGSensor(not G_reader_settings:isTrue("input_ignore_gsensor"))
-        self:onGSensorToggle()
+        self.ui:handleEvent(Event:new("ToggleGSensor"))
     elseif action == "toggle_page_flipping" then
         if not self.ui.document.info.has_pages then
             -- ReaderRolling has no support (yet) for onTogglePageFlipping,
@@ -1637,35 +1578,6 @@ function ReaderGesture:onIgnoreHoldCorners(ignore_hold_corners)
         G_reader_settings:saveSetting("ignore_hold_corners", ignore_hold_corners)
     end
     self.ignore_hold_corners = G_reader_settings:isTrue("ignore_hold_corners")
-    return true
-end
-
-function ReaderGesture:onShowFLOnOff()
-    local powerd = Device:getPowerDevice()
-    local new_text
-    if powerd.is_fl_on then
-        new_text = _("Frontlight on.")
-    else
-        new_text = _("Frontlight off.")
-    end
-    UIManager:show(Notification:new{
-        text = new_text,
-        timeout = 1.0,
-    })
-    return true
-end
-
-function ReaderGesture:onGSensorToggle()
-    local new_text
-    if G_reader_settings:isTrue("input_ignore_gsensor") then
-        new_text = _("Accelerometer rotation events off.")
-    else
-        new_text = _("Accelerometer rotation events on.")
-    end
-    UIManager:show(Notification:new{
-        text = new_text,
-        timeout = 1.0,
-    })
     return true
 end
 

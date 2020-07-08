@@ -22,7 +22,6 @@ frontend
 │       │   ├── readerflipping.lua
 │       │   ├── readerfont.lua
 │       │   ├── readerfooter.lua
-│       │   ├── readerfrontlight.lua
 │       │   ├── readergoto.lua
 │       │   ├── readerhighlight.lua
 │       │   ├── readerhinting.lua

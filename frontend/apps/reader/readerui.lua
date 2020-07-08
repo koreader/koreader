@@ -8,6 +8,7 @@ local BD = require("ui/bidi")
 local Cache = require("cache")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
+local DeviceListener = require("device/devicelistener")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
 local Event = require("ui/event")
@@ -29,7 +30,6 @@ local ReaderCropping = require("apps/reader/modules/readercropping")
 local ReaderDeviceStatus = require("apps/reader/modules/readerdevicestatus")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local ReaderFont = require("apps/reader/modules/readerfont")
-local ReaderFrontLight = require("apps/reader/modules/readerfrontlight")
 local ReaderGesture = require("apps/reader/modules/readergesture")
 local ReaderGoto = require("apps/reader/modules/readergoto")
 local ReaderHinting = require("apps/reader/modules/readerhinting")
@@ -187,14 +187,6 @@ function ReaderUI:init()
         view = self.view,
         ui = self
     }, true)
-    -- frontlight controller
-    if Device:hasFrontlight() then
-        self:registerModule("frontlight", ReaderFrontLight:new{
-            dialog = self.dialog,
-            view = self.view,
-            ui = self
-        })
-    end
     -- device status controller
     self:registerModule("battery", ReaderDeviceStatus:new{
         ui = self,
@@ -369,6 +361,12 @@ function ReaderUI:init()
     self:registerModule("bookinfo", FileManagerBookInfo:new{
         dialog = self.dialog,
         document = self.document,
+        ui = self,
+    })
+    -- event listener to change device settings
+    self:registerModule("devicelistener", DeviceListener:new {
+        document = self.document,
+        view = self.view,
         ui = self,
     })
     -- koreader plugins

@@ -5,6 +5,7 @@ local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
+local DeviceListener = require("device/devicelistener")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
 local Event = require("ui/event")
@@ -462,6 +463,7 @@ function FileManager:init()
     table.insert(self, ReaderDictionary:new{ ui = self })
     table.insert(self, ReaderWikipedia:new{ ui = self })
     table.insert(self, ReaderDeviceStatus:new{ ui = self })
+    table.insert(self, DeviceListener:new{ ui = self })
 
     -- koreader plugins
     for _,plugin_module in ipairs(PluginLoader:loadPlugins()) do

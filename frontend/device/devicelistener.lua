@@ -1,19 +1,59 @@
+local Device = require("device")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Notification = require("ui/widget/notification")
+local Screen = Device.screen
 local UIManager = require("ui/uimanager")
-local Screen = require("device").screen
-local Device = require("device")
-local T = require("ffi/util").template
 local _ = require("gettext")
+local T = require("ffi/util").template
 
-local ReaderFrontLight = InputContainer:new{
+local DeviceListener = InputContainer:new{
     steps_fl = { 0.1, 0.1, 0.2, 0.4, 0.7, 1.1, 1.6, 2.2, 2.9, 3.7, 4.6, 5.6, 6.7, 7.9, 9.2, 10.6, },
-    gestureScale = Screen:getWidth() * FRONTLIGHT_SENSITIVITY_DECREASE,
 }
+
+function DeviceListener:onToggleNightMode()
+    local night_mode = G_reader_settings:isTrue("night_mode")
+    Screen:toggleNightMode()
+    UIManager:setDirty("all", "full")
+    G_reader_settings:saveSetting("night_mode", not night_mode)
+end
+
+local function lightFrontlight()
+    return Device:hasLightLevelFallback() and G_reader_settings:nilOrTrue("light_fallback")
+end
+
+function DeviceListener:onShowIntensity()
+    if not Device:hasFrontlight() then return true end
+    local powerd = Device:getPowerDevice()
+    local new_text
+    if powerd:isFrontlightOff() then
+        new_text = _("Frontlight disabled.")
+    else
+        new_text = T(_("Frontlight intensity set to %1."), powerd:frontlightIntensity())
+    end
+    UIManager:show(Notification:new{
+        text = new_text,
+        timeout = 1,
+    })
+    return true
+end
+
+function DeviceListener:onShowWarmth(value)
+    local powerd = Device:getPowerDevice()
+    if powerd.fl_warmth ~= nil then
+        UIManager:show(Notification:new{
+            text = T(_("Warmth set to %1."), powerd.fl_warmth),
+            timeout = 1.0,
+        })
+    end
+    return true
+end
+
+-- frontlight controller
+if Device:hasFrontlight() then
 
 -- direction +1 - increase frontlight
 -- direction -1 - decrease frontlight
-function ReaderFrontLight:onChangeFlIntensity(ges, direction)
+function DeviceListener:onChangeFlIntensity(ges, direction)
     local powerd = Device:getPowerDevice()
     local gestureScale
     local scale_multiplier
@@ -71,7 +111,16 @@ end
 
 -- direction +1 - increase frontlight warmth
 -- direction -1 - decrease frontlight warmth
-function ReaderFrontLight:onChangeFlWarmth(ges, direction)
+function DeviceListener:onChangeFlWarmth(ges, direction)
+    -- when using frontlight system settings
+    if lightFrontlight() then
+        UIManager:show(Notification:new{
+            text = _("Frontlight controlled by system settings."),
+            timeout = 2.5,
+        })
+        return true
+    end
+
     local powerd = Device:getPowerDevice()
     if powerd.fl_warmth == nil then return false end
 
@@ -134,9 +183,17 @@ function ReaderFrontLight:onChangeFlWarmth(ges, direction)
     return true
 end
 
-
-function ReaderFrontLight:onShowOnOff()
+function DeviceListener:onToggleFrontlight()
+    -- when using frontlight system settings
+    if lightFrontlight() then
+        UIManager:show(Notification:new{
+            text = _("Frontlight controlled by system settings."),
+            timeout = 2.5,
+        })
+        return true
+    end
     local powerd = Device:getPowerDevice()
+    powerd:toggleFrontlight()
     local new_text
     if powerd.is_fl_on then
         new_text = _("Frontlight enabled.")
@@ -150,43 +207,29 @@ function ReaderFrontLight:onShowOnOff()
     return true
 end
 
-function ReaderFrontLight:onShowIntensity()
-    if not Device:hasFrontlight() then return true end
-    local powerd = Device:getPowerDevice()
-    local new_text
-    if powerd:isFrontlightOff() then
-        new_text = _("Frontlight disabled.")
-    else
-        new_text = T(_("Frontlight intensity set to %1."), powerd:frontlightIntensity())
-    end
-    UIManager:show(Notification:new{
-        text = new_text,
-        timeout = 1,
-    })
-    return true
-end
-
-function ReaderFrontLight:onShowWarmth(value)
-    local powerd = Device:getPowerDevice()
-    if powerd.fl_warmth ~= nil then
-        UIManager:show(Notification:new{
-            text = T(_("Warmth set to %1."), powerd.fl_warmth),
-            timeout = 1.0,
-        })
-    end
-    return true
-end
-
-function ReaderFrontLight:onShowFlDialog()
+function DeviceListener:onShowFlDialog()
     local FrontLightWidget = require("ui/widget/frontlightwidget")
     UIManager:show(FrontLightWidget:new{
         use_system_fl = Device:hasLightLevelFallback()
     })
 end
 
-function ReaderFrontLight:close()
-    self.fl_dialog:onClose()
-    UIManager:close(self.fl_dialog)
 end
 
-return ReaderFrontLight
+function DeviceListener:onToggleGSensor()
+    G_reader_settings:flipNilOrFalse("input_ignore_gsensor")
+    Device:toggleGSensor(not G_reader_settings:isTrue("input_ignore_gsensor"))
+    local new_text
+    if G_reader_settings:isTrue("input_ignore_gsensor") then
+        new_text = _("Accelerometer rotation events off.")
+    else
+        new_text = _("Accelerometer rotation events on.")
+    end
+    UIManager:show(Notification:new{
+        text = new_text,
+        timeout = 1.0,
+    })
+    return true
+end
+
+return DeviceListener
