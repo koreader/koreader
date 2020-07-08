@@ -1481,15 +1481,7 @@ function ReaderGesture:gestureAction(action, ges)
         end
         self.ui:handleEvent(Event:new("TogglePageFlipping"))
     elseif action == "toggle_reflow" then
-        if not self.document.info.has_pages then return end
-        if self.document.configurable.text_wrap == 1 then
-            self.document.configurable.text_wrap = 0
-        else
-            self.document.configurable.text_wrap = 1
-        end
-        self.ui:handleEvent(Event:new("RedrawCurrentPage"))
-        self.ui:handleEvent(Event:new("RestoreZoomMode"))
-        self.ui:handleEvent(Event:new("InitScrollPageStates"))
+        self.ui:handleEvent(Event:new("ToggleReflow"))
     elseif action == "toggle_rotation" then
         local arg = bit.band((Screen:getRotationMode() + 1), 3)
         self.ui:handleEvent(Event:new("SetRotationMode", arg))

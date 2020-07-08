@@ -6,6 +6,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local Math = require("optmath")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local UIManager = require("ui/uimanager")
+local bit = require("bit")
 local logger = require("logger")
 local _ = require("gettext")
 local Screen = Device.screen
@@ -1029,6 +1030,13 @@ function ReaderPaging:onGotoPrevChapter()
         self:onGotoPage(new_page)
     end
     return true
+end
+
+function ReaderPaging:onToggleReflow()
+    self.view.document.configurable.text_wrap = bit.bxor(self.view.document.configurable.text_wrap, 1)
+    self.ui:handleEvent(Event:new("RedrawCurrentPage"))
+    self.ui:handleEvent(Event:new("RestoreZoomMode"))
+    self.ui:handleEvent(Event:new("InitScrollPageStates"))
 end
 
 return ReaderPaging
