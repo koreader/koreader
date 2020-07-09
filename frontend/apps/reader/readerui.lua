@@ -768,6 +768,10 @@ function ReaderUI:switchDocument(new_file)
     self:showReader(new_file)
 end
 
+function ReaderUI:onOpenLastDoc()
+    self:switchDocument(self.menu:getPreviousFile())
+end
+
 function ReaderUI:getCurrentPage()
     if self.document.info.has_pages then
         return self.paging.current_page

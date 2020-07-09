@@ -87,7 +87,7 @@ function FileManagerMenu:initGesListener()
     })
 end
 
-function FileManagerMenu:openLastDoc()
+function FileManagerMenu:onOpenLastDoc()
     local last_file = G_reader_settings:readSetting("lastfile")
     if not last_file or lfs.attributes(last_file, "mode") ~= "file" then
         local InfoMessage = require("ui/widget/infomessage")
@@ -496,7 +496,7 @@ function FileManagerMenu:setUpdateItemTable()
             return G_reader_settings:readSetting("lastfile") ~= nil
         end,
         callback = function()
-            self:openLastDoc()
+            self:onOpenLastDoc()
         end,
         hold_callback = function()
             local last_file = G_reader_settings:readSetting("lastfile")
@@ -504,7 +504,7 @@ function FileManagerMenu:setUpdateItemTable()
                 text = T(_("Would you like to open the last document: %1?"), BD.filepath(last_file)),
                 ok_text = _("OK"),
                 ok_callback = function()
-                    self:openLastDoc()
+                    self:onOpenLastDoc()
                 end,
             })
         end

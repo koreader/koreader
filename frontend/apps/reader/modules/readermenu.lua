@@ -231,7 +231,7 @@ function ReaderMenu:setUpdateItemTable()
             return self:getPreviousFile() ~= nil
         end,
         callback = function()
-            self.ui:switchDocument(self:getPreviousFile())
+            self.ui:onOpenLastDoc()
         end,
         hold_callback = function()
             local previous_file = self:getPreviousFile()

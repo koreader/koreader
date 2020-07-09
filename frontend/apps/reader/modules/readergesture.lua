@@ -1425,13 +1425,7 @@ function ReaderGesture:gestureAction(action, ges)
     elseif action == "folder_shortcuts" then
         self.ui:handleEvent(Event:new("ShowFolderShortcutsDialog"))
     elseif action == "open_previous_document" then
-        -- FileManager
-        if self.ui.menu.openLastDoc and G_reader_settings:readSetting("lastfile") ~= nil then
-            self.ui.menu:openLastDoc()
-        -- ReaderUI
-        elseif self.ui.switchDocument and self.ui.menu then
-            self.ui:switchDocument(self.ui.menu:getPreviousFile())
-        end
+        self.ui:handleEvent(Event:new("OpenLastDoc"))
     elseif action == "dictionary_lookup" then
         self.ui:handleEvent(Event:new("ShowDictionaryLookup"))
     elseif action == "wikipedia_lookup" then
