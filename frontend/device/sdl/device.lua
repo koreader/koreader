@@ -136,6 +136,12 @@ local Linux = Device:new{
     home_dir = os.getenv("HOME"),
 }
 
+local Mac = Device:new{
+    model = "Mac",
+    isDesktop = yes,
+    home_dir = os.getenv("HOME"),
+}
+
 local UbuntuTouch = Device:new{
     model = "UbuntuTouch",
     hasFrontlight = yes,
@@ -356,7 +362,11 @@ end
 if os.getenv("APPIMAGE") then
     return AppImage
 elseif os.getenv("KO_MULTIUSER") then
-    return Linux
+    if jit.os == "OSX" then
+        return Mac
+    else
+        return Linux
+    end
 elseif os.getenv("UBUNTU_APPLICATION_ISOLATION") then
     return UbuntuTouch
 else

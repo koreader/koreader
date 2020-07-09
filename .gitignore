@@ -1,6 +1,8 @@
 .DS_*
 ._*
 *.AppImage
+*.app
+*.dmg
 *.directory
 *.swp
 *.swo
