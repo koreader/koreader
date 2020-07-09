@@ -2,7 +2,6 @@ local _ = require("gettext")
 local Device = require("device")
 local Event = require("ui/event")
 local FileManager = require("apps/filemanager/filemanager")
-local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local Screen = Device.screen
 local S = require("ui/data/strings")
