@@ -1414,8 +1414,7 @@ function ReaderGesture:gestureAction(action, ges)
     elseif action == "clear_location_history" then
         self.ui:handleEvent(Event:new("ClearLocationStack", true)) -- show_notification
     elseif action == "filemanager" then
-        self.ui:onClose()
-        self.ui:showFileManager()
+        self.ui:handleEvent(Event:new("Home"))
     elseif action == "file_search" then
         self.ui:handleEvent(Event:new("ShowFileSearch"))
     elseif action == "folder_up" then
@@ -1457,12 +1456,6 @@ function ReaderGesture:gestureAction(action, ges)
     elseif action == "toggle_gsensor" then
         self.ui:handleEvent(Event:new("ToggleGSensor"))
     elseif action == "toggle_page_flipping" then
-        if not self.ui.document.info.has_pages then
-            -- ReaderRolling has no support (yet) for onTogglePageFlipping,
-            -- so don't make that top left tap area unusable (and allow
-            -- taping on links there)
-            return false
-        end
         self.ui:handleEvent(Event:new("TogglePageFlipping"))
     elseif action == "toggle_reflow" then
         self.ui:handleEvent(Event:new("ToggleReflow"))
