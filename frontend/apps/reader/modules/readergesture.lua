@@ -1439,11 +1439,7 @@ function ReaderGesture:gestureAction(action, ges)
     elseif action == "fulltext_search" then
         self.ui:handleEvent(Event:new("ShowFulltextSearchInput"))
     elseif action == "show_menu" then
-        if self.ges_mode == "gesture_fm" then
-            self.ui:handleEvent(Event:new("ShowMenu"))
-        else
-            self.ui:handleEvent(Event:new("ShowReaderMenu"))
-        end
+        self.ui:handleEvent(Event:new("ShowMenu"))
     elseif action == "show_config_menu" then
         self.ui:handleEvent(Event:new("ShowConfigMenu"))
     elseif action == "show_frontlight_dialog" then
