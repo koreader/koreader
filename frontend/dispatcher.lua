@@ -118,142 +118,142 @@ function Dispatcher:addSubMenu(menu, location, settings)
         end,
     })
     for k, v in pairs(settingsList) do
-            if settingsList[k].category == "none" then
-                table.insert(menu, {
-                   text = settingsList[k].title,
-                   checked_func = function()
-                   return self[location][settings] ~= nil and self[location][settings][k] ~= nil
-                   end,
-                   callback = function(touchmenu_instance)
-                      if self[location][settings] ~= nil
-                      and self[location][settings][k] then
-                          self[location][settings][k] = nil
-                      else
-                          self[location][settings][k] = true
-                      end
-                      if touchmenu_instance then touchmenu_instance:updateItems() end
-                  end,
-               })
-            elseif settingsList[k].category == "toggle" then
-                table.insert(menu, {
-                    text_func = function()
-                        return T(settingsList[k].title, self[location][settings][k])
-                    end,
-                    checked_func = function()
-                    return self[location][settings] ~= nil and self[location][settings][k] ~= nil
-                    end,
-                    callback = function(touchmenu_instance)
-                        self[location][settings][k] = not self[location][settings][k]
-                        if touchmenu_instance then touchmenu_instance:updateItems() end
-                    end,
-                    hold_callback = function(touchmenu_instance)
-                        self[location][settings][k] = nil
-                        if touchmenu_instance then touchmenu_instance:updateItems() end
-                    end,
-                })
-            elseif settingsList[k].category == "absolutenumber" then
-                table.insert(menu, {
-                    text_func = function()
-                        return T(settingsList[k].title, self[location][settings][k] or "")
-                    end,
-                    checked_func = function()
-                    return self[location][settings] ~= nil and self[location][settings][k] ~= nil
-                    end,
-                    callback = function(touchmenu_instance)
-                        local SpinWidget = require("ui/widget/spinwidget")
-                        local items = SpinWidget:new{
-                            width = Screen:getWidth() * 0.6,
-                            value = self[location][settings][k] or settingsList[k].default or 0,
-                            value_min = settingsList[k].min,
-                            value_step = 1,
-                            value_hold_step = 2,
-                            value_max = settingsList[k].max,
-                            default_value = 0,
-                            title_text = T(settingsList[k].title, self[location][settings][k] or ""),
-                            callback = function(spin)
-                                self[location][settings][k] = spin.value
-                                if touchmenu_instance then
-                                    touchmenu_instance:updateItems()
-                                end
+        if settingsList[k].category == "none" then
+            table.insert(menu, {
+               text = settingsList[k].title,
+               checked_func = function()
+               return self[location][settings] ~= nil and self[location][settings][k] ~= nil
+               end,
+               callback = function(touchmenu_instance)
+                  if self[location][settings] ~= nil
+                  and self[location][settings][k] then
+                      self[location][settings][k] = nil
+                  else
+                      self[location][settings][k] = true
+                  end
+                  if touchmenu_instance then touchmenu_instance:updateItems() end
+              end,
+           })
+        elseif settingsList[k].category == "toggle" then
+            table.insert(menu, {
+                text_func = function()
+                    return T(settingsList[k].title, self[location][settings][k])
+                end,
+                checked_func = function()
+                return self[location][settings] ~= nil and self[location][settings][k] ~= nil
+                end,
+                callback = function(touchmenu_instance)
+                    self[location][settings][k] = not self[location][settings][k]
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                end,
+                hold_callback = function(touchmenu_instance)
+                    self[location][settings][k] = nil
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                end,
+            })
+        elseif settingsList[k].category == "absolutenumber" then
+            table.insert(menu, {
+                text_func = function()
+                    return T(settingsList[k].title, self[location][settings][k] or "")
+                end,
+                checked_func = function()
+                return self[location][settings] ~= nil and self[location][settings][k] ~= nil
+                end,
+                callback = function(touchmenu_instance)
+                    local SpinWidget = require("ui/widget/spinwidget")
+                    local items = SpinWidget:new{
+                        width = Screen:getWidth() * 0.6,
+                        value = self[location][settings][k] or settingsList[k].default or 0,
+                        value_min = settingsList[k].min,
+                        value_step = 1,
+                        value_hold_step = 2,
+                        value_max = settingsList[k].max,
+                        default_value = 0,
+                        title_text = T(settingsList[k].title, self[location][settings][k] or ""),
+                        callback = function(spin)
+                            self[location][settings][k] = spin.value
+                            if touchmenu_instance then
+                                touchmenu_instance:updateItems()
                             end
-                        }
-                        UIManager:show(items)
-                    end,
-                    hold_callback = function(touchmenu_instance)
-                        self[location][settings][k] = nil
-                        if touchmenu_instance then touchmenu_instance:updateItems() end
-                    end,
-                })
-            elseif settingsList[k].category == "incrementalnumber" then
-                table.insert(menu, {
-                    text_func = function()
-                        return T(settingsList[k].title, self[location][settings][k] or "")
-                    end,
-                    checked_func = function()
-                    return self[location][settings] ~= nil and self[location][settings][k] ~= nil
-                    end,
-                    callback = function(touchmenu_instance)
-                        local SpinWidget = require("ui/widget/spinwidget")
-                        local items = SpinWidget:new{
-                            width = Screen:getWidth() * 0.6,
-                            value = self[location][settings][k] or 0,
-                            value_min = settingsList[k].min,
-                            value_step = 1,
-                            value_hold_step = 2,
-                            value_max = settingsList[k].max,
-                            default_value = 0,
-                            title_text = T(settingsList[k].title, self[location][settings][k] or ""),
-                            text = _([[If set to 0 and called by a gesture the amount of the gesture will be used]]),
-                            callback = function(spin)
-                                self[location][settings][k] = spin.value
-                                if touchmenu_instance then
-                                    touchmenu_instance:updateItems()
-                                end
-                            end
-                        }
-                        UIManager:show(items)
-                    end,
-                    hold_callback = function(touchmenu_instance)
-                        self[location][settings][k] = nil
-                        if touchmenu_instance then
-                            touchmenu_instance:updateItems()
                         end
-                    end,
-                })
-            elseif settingsList[k].category == "string" then
-                local sub_item_table = {}
-                for i=1,#settingsList[k].args do
-                    table.insert(sub_item_table, {
-                        text = tostring(settingsList[k].toggle[i]),
-                        checked_func = function()
-                            return self[location][settings] ~= nil
-                            and self[location][settings][k] ~= nil
-                            and self[location][settings][k] == settingsList[k].args[i]
-                        end,
-                        callback = function()
-                            self[location][settings][k] = settingsList[k].args[i]
-                        end,
-                    })
-                end
-                table.insert(menu, {
-                    text_func = function()
-                        return T(settingsList[k].title, self[location][settings][k])
-                    end,
+                    }
+                    UIManager:show(items)
+                end,
+                hold_callback = function(touchmenu_instance)
+                    self[location][settings][k] = nil
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                end,
+            })
+        elseif settingsList[k].category == "incrementalnumber" then
+            table.insert(menu, {
+                text_func = function()
+                    return T(settingsList[k].title, self[location][settings][k] or "")
+                end,
+                checked_func = function()
+                return self[location][settings] ~= nil and self[location][settings][k] ~= nil
+                end,
+                callback = function(touchmenu_instance)
+                    local SpinWidget = require("ui/widget/spinwidget")
+                    local items = SpinWidget:new{
+                        width = Screen:getWidth() * 0.6,
+                        value = self[location][settings][k] or 0,
+                        value_min = settingsList[k].min,
+                        value_step = 1,
+                        value_hold_step = 2,
+                        value_max = settingsList[k].max,
+                        default_value = 0,
+                        title_text = T(settingsList[k].title, self[location][settings][k] or ""),
+                        text = _([[If set to 0 and called by a gesture the amount of the gesture will be used]]),
+                        callback = function(spin)
+                            self[location][settings][k] = spin.value
+                            if touchmenu_instance then
+                                touchmenu_instance:updateItems()
+                            end
+                        end
+                    }
+                    UIManager:show(items)
+                end,
+                hold_callback = function(touchmenu_instance)
+                    self[location][settings][k] = nil
+                    if touchmenu_instance then
+                        touchmenu_instance:updateItems()
+                    end
+                end,
+            })
+        elseif settingsList[k].category == "string" then
+            local sub_item_table = {}
+            for i=1,#settingsList[k].args do
+                table.insert(sub_item_table, {
+                    text = tostring(settingsList[k].toggle[i]),
                     checked_func = function()
                         return self[location][settings] ~= nil
                         and self[location][settings][k] ~= nil
+                        and self[location][settings][k] == settingsList[k].args[i]
                     end,
-                    sub_item_table = sub_item_table,
-                    keep_menu_open = true,
-                    hold_callback = function(touchmenu_instance)
-                        self[location][settings][k] = nil
-                        if touchmenu_instance then
-                            touchmenu_instance:updateItems()
-                        end
+                    callback = function()
+                        self[location][settings][k] = settingsList[k].args[i]
                     end,
                 })
             end
+            table.insert(menu, {
+                text_func = function()
+                    return T(settingsList[k].title, self[location][settings][k])
+                end,
+                checked_func = function()
+                    return self[location][settings] ~= nil
+                    and self[location][settings][k] ~= nil
+                end,
+                sub_item_table = sub_item_table,
+                keep_menu_open = true,
+                hold_callback = function(touchmenu_instance)
+                    self[location][settings][k] = nil
+                    if touchmenu_instance then
+                        touchmenu_instance:updateItems()
+                    end
+                end,
+            })
         end
+    end
 end
 
 function Dispatcher:execute(settings, gesture)
