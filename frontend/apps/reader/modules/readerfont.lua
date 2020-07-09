@@ -320,31 +320,32 @@ function ReaderFont:addToMainMenu(menu_items)
     }
 end
 
--- direction +1 - increase font size
--- direction -1 - decrease font size
-function ReaderFont:onAdjustFontSize(ges, direction)
+function ReaderFont:gesToFontSize(ges)
     if ges.distance == nil then
         ges.distance = 1
     end
-    if direction ~= -1 and direction ~= 1 then
-        -- set default value (increase font size)
-        direction = 1
-    end
     local step = math.ceil(2 * #self.steps * ges.distance / self.gestureScale)
     local delta_int = self.steps[step] or self.steps[#self.steps]
-    if direction == 1 then
-        local info = Notification:new{text = _("Increasing font size…")}
-        UIManager:show(info)
-        UIManager:forceRePaint()
-        self:onChangeSize("increase", delta_int)
-        UIManager:close(info)
-    else
-        local info = Notification:new{text = _("Decreasing font size…")}
-        UIManager:show(info)
-        UIManager:forceRePaint()
-        self:onChangeSize("decrease", delta_int)
-        UIManager:close(info)
-    end
+    return delta_int
+end
+
+function ReaderFont:onIncreaseFontSize(ges)
+    local delta_int = self:gesToFontSize(ges)
+    local info = Notification:new{text = _("Increasing font size…")}
+    UIManager:show(info)
+    UIManager:forceRePaint()
+    self:onChangeSize("increase", delta_int)
+    UIManager:close(info)
+    return true
+end
+
+function ReaderFont:onDecreaseFontSize(ges)
+    local delta_int = self:gesToFontSize(ges)
+    local info = Notification:new{text = _("Decreasing font size…")}
+    UIManager:show(info)
+    UIManager:forceRePaint()
+    self:onChangeSize("decrease", delta_int)
+    UIManager:close(info)
     return true
 end
 

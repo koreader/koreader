@@ -1,5 +1,4 @@
 local BD = require("ui/bidi")
-local bit = require("bit")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
@@ -812,7 +811,7 @@ function ReaderGesture:buildMenu(ges, default)
 
         {"toggle_hold_corners", true},
         {"toggle_gsensor", Device:canToggleGSensor()},
-        {"toggle_rotation", not self.is_docless, true},
+        {"toggle_rotation", true, true},
 
         {"wifi_on", Device:hasWifiToggle()},
         {"wifi_off", Device:hasWifiToggle()},
@@ -1389,7 +1388,7 @@ function ReaderGesture:gestureAction(action, ges)
     elseif action == "next_chapter" then
         self.ui:handleEvent(Event:new("GotoNextChapter"))
     elseif action == "first_page" then
-        self.ui:handleEvent(Event:new("GotoPage", 1))
+        self.ui:handleEvent(Event:new("GoToBeginning"))
     elseif action == "last_page" then
         self.ui:handleEvent(Event:new("GoToEnd"))
     elseif action == "prev_chapter" then
@@ -1455,13 +1454,13 @@ function ReaderGesture:gestureAction(action, ges)
     elseif action == "show_frontlight_dialog" then
         self.ui:handleEvent(Event:new("ShowFlDialog"))
     elseif action == "increase_frontlight" then
-        self.ui:handleEvent(Event:new("ChangeFlIntensity", ges, 1))
+        self.ui:handleEvent(Event:new("IncreaseFlIntensity", ges))
     elseif action == "decrease_frontlight" then
-        self.ui:handleEvent(Event:new("ChangeFlIntensity", ges, -1))
+        self.ui:handleEvent(Event:new("DecreaseFlIntensity", ges))
     elseif action == "increase_frontlight_warmth" then
-        self.ui:handleEvent(Event:new("ChangeFlWarmth", ges, 1))
+        self.ui:handleEvent(Event:new("IncreaseFlWarmth", ges))
     elseif action == "decrease_frontlight_warmth" then
-        self.ui:handleEvent(Event:new("ChangeFlWarmth", ges, -1))
+        self.ui:handleEvent(Event:new("DecreaseFlWarmth", ges))
     elseif action == "toggle_bookmark" then
         self.ui:handleEvent(Event:new("ToggleBookmark"))
     elseif action == "toggle_inverse_reading_order" then
@@ -1483,8 +1482,7 @@ function ReaderGesture:gestureAction(action, ges)
     elseif action == "toggle_reflow" then
         self.ui:handleEvent(Event:new("ToggleReflow"))
     elseif action == "toggle_rotation" then
-        local arg = bit.band((Screen:getRotationMode() + 1), 3)
-        self.ui:handleEvent(Event:new("SetRotationMode", arg))
+        self.ui:handleEvent(Event:new("ToggleRotation"))
     elseif action == "toggle_wifi" then
         self.ui:handleEvent(Event:new("ToggleWifi"))
     elseif action == "wifi_off" then
@@ -1492,9 +1490,9 @@ function ReaderGesture:gestureAction(action, ges)
     elseif action == "wifi_on" then
         self.ui:handleEvent(Event:new("InfoWifiOn"))
     elseif action == "increase_font" then
-        self.ui:handleEvent(Event:new("AdjustFontSize", ges, 1))
+        self.ui:handleEvent(Event:new("IncreaseFontSize", ges))
     elseif action == "decrease_font" then
-        self.ui:handleEvent(Event:new("AdjustFontSize", ges, -1))
+        self.ui:handleEvent(Event:new("DecreaseFontSize", ges))
     elseif action == "suspend" then
         UIManager:suspend()
     elseif action == "exit" then

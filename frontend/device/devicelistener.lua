@@ -1,8 +1,10 @@
 local Device = require("device")
+local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Notification = require("ui/widget/notification")
 local Screen = Device.screen
 local UIManager = require("ui/uimanager")
+local bit = require("bit")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
@@ -109,6 +111,16 @@ if Device:hasFrontlight() then
         return true
     end
 
+    function DeviceListener:onIncreaseFlIntensity(ges)
+        self:onChangeFlIntensity(ges, 1)
+        return true
+    end
+
+    function DeviceListener:onDecreaseFlIntensity(ges)
+        self:onChangeFlIntensity(ges, -1)
+        return true
+    end
+
     -- direction +1 - increase frontlight warmth
     -- direction -1 - decrease frontlight warmth
     function DeviceListener:onChangeFlWarmth(ges, direction)
@@ -183,6 +195,14 @@ if Device:hasFrontlight() then
         return true
     end
 
+    function DeviceListener:onIncreaseFlWarmth(ges)
+        self:onChangeFlWarmth(ges, 1)
+    end
+
+    function DeviceListener:onDecreaseFlWarmth(ges)
+        self:onChangeFlWarmth(ges, -1)
+    end
+
     function DeviceListener:onToggleFrontlight()
         -- when using frontlight system settings
         if lightFrontlight() then
@@ -216,19 +236,27 @@ if Device:hasFrontlight() then
 
 end
 
-function DeviceListener:onToggleGSensor()
-    G_reader_settings:flipNilOrFalse("input_ignore_gsensor")
-    Device:toggleGSensor(not G_reader_settings:isTrue("input_ignore_gsensor"))
-    local new_text
-    if G_reader_settings:isTrue("input_ignore_gsensor") then
-        new_text = _("Accelerometer rotation events off.")
-    else
-        new_text = _("Accelerometer rotation events on.")
+if Device:canToggleGSensor() then
+    function DeviceListener:onToggleGSensor()
+        G_reader_settings:flipNilOrFalse("input_ignore_gsensor")
+        Device:toggleGSensor(not G_reader_settings:isTrue("input_ignore_gsensor"))
+        local new_text
+        if G_reader_settings:isTrue("input_ignore_gsensor") then
+            new_text = _("Accelerometer rotation events off.")
+        else
+            new_text = _("Accelerometer rotation events on.")
+        end
+        UIManager:show(Notification:new{
+            text = new_text,
+            timeout = 1.0,
+        })
+        return true
     end
-    UIManager:show(Notification:new{
-        text = new_text,
-        timeout = 1.0,
-    })
+end
+
+function DeviceListener:onToggleRotation()
+    local arg = bit.band((Screen:getRotationMode() + 1), 3)
+    self.ui:handleEvent(Event:new("SetRotationMode", arg))
     return true
 end
 
