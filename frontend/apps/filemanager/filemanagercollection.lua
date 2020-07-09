@@ -94,7 +94,7 @@ function FileManagerCollection:onMenuHold(item)
         },
     }
     -- NOTE: Duplicated from frontend/apps/filemanager/filemanager.lua
-    if not Device:isAndroid() and util.isAllowedScript(item.file) then
+    if Device:canExecuteScript(item.file) then
         table.insert(buttons, {
             {
                 -- @translators This is the script's programming language (e.g., shell or python)

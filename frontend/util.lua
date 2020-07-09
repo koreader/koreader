@@ -722,7 +722,7 @@ end
 --- Companion helper function that returns the script's language,
 --- based on the filme extension.
 ---- @string filename
----- @treturn string (lowercase) (or nil if !isAllowedScript)
+---- @treturn string (lowercase) (or nil if not Device:canExecuteScript(file))
 function util.getScriptType(file)
     local file_ext = string.lower(util.getFileNameSuffix(file))
     if file_ext == "sh" then

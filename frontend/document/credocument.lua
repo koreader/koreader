@@ -1035,7 +1035,7 @@ function CreDocument:register(registry)
     registry:addProvider("rtf", "application/rtf", self, 90)
     registry:addProvider("xhtml", "application/xhtml+xml", self, 90)
     registry:addProvider("zip", "application/zip", self, 10)
-    -- Scripts that we allow running in the FM (c.f., util.isAllowedScript)
+    -- Scripts that we allow running in the FM (c.f., Device:canExecuteScript)
     registry:addProvider("sh", "application/x-shellscript", self, 90)
     registry:addProvider("py", "text/x-python", self, 90)
 end
