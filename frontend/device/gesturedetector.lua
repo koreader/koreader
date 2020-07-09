@@ -601,7 +601,7 @@ function GestureDetector:handlePan(tev)
             local pan_ev_multiswipe = pan_ev
             -- store a copy of pan_ev without rotation adjustment
             -- for multiswipe calculations when rotated
-            if self.screen.cur_rotation_mode > 0 then
+            if self.screen.cur_rotation_mode > self.screen.ORIENTATION_PORTRAIT then
                 pan_ev_multiswipe = util.tableDeepCopy(pan_ev)
             end
             if msd_direction ~= msd_direction_prev then
@@ -743,7 +743,7 @@ function GestureDetector:holdState(tev, hold)
     end
 end
 
-local ges_coordinate_translation_90 = {
+local ges_coordinate_translation_270 = {
     north = "west",
     south = "east",
     east = "north",
@@ -763,7 +763,7 @@ local ges_coordinate_translation_180 = {
     southeast = "northwest",
     southwest = "northeast",
 }
-local ges_coordinate_translation_270 = {
+local ges_coordinate_translation_90 = {
     north = "east",
     south = "west",
     east = "south",
@@ -787,8 +787,8 @@ end
   @return adjusted gesture.
 --]]
 function GestureDetector:adjustGesCoordinate(ges)
-    if self.screen.cur_rotation_mode == 1 then
-        -- in landscape mode rotated 270
+    if self.screen.cur_rotation_mode == self.screen.ORIENTATION_LANDSCAPE then
+        -- in landscape mode rotated 90
         if ges.pos then
             ges.pos.x, ges.pos.y = (self.screen:getWidth() - ges.pos.y), (ges.pos.x)
         end
@@ -797,9 +797,9 @@ function GestureDetector:adjustGesCoordinate(ges)
             or ges.ges == "two_finger_swipe"
             or ges.ges == "two_finger_pan"
         then
-            ges.direction = translateGesDirCoordinate(ges.direction, ges_coordinate_translation_270)
+            ges.direction = translateGesDirCoordinate(ges.direction, ges_coordinate_translation_90)
             if ges.ges == "multiswipe" then
-                ges.multiswipe_directions = translateMultiswipeGesDirCoordinate(ges.multiswipe_directions, ges_coordinate_translation_270)
+                ges.multiswipe_directions = translateMultiswipeGesDirCoordinate(ges.multiswipe_directions, ges_coordinate_translation_90)
             end
             if ges.relative then
                 ges.relative.x, ges.relative.y = -ges.relative.y, ges.relative.x
@@ -814,8 +814,8 @@ function GestureDetector:adjustGesCoordinate(ges)
                 ges.direction = "horizontal"
             end
         end
-    elseif self.screen.cur_rotation_mode == 3 then
-        -- in landscape mode rotated 90
+    elseif self.screen.cur_rotation_mode == self.screen.ORIENTATION_LANDSCAPE_ROTATED then
+        -- in landscape mode rotated 270
         if ges.pos then
             ges.pos.x, ges.pos.y = (ges.pos.y), (self.screen:getHeight() - ges.pos.x)
         end
@@ -824,9 +824,9 @@ function GestureDetector:adjustGesCoordinate(ges)
             or ges.ges == "two_finger_swipe"
             or ges.ges == "two_finger_pan"
         then
-            ges.direction = translateGesDirCoordinate(ges.direction, ges_coordinate_translation_90)
+            ges.direction = translateGesDirCoordinate(ges.direction, ges_coordinate_translation_270)
             if ges.ges == "multiswipe" then
-                ges.multiswipe_directions = translateMultiswipeGesDirCoordinate(ges.multiswipe_directions, ges_coordinate_translation_90)
+                ges.multiswipe_directions = translateMultiswipeGesDirCoordinate(ges.multiswipe_directions, ges_coordinate_translation_270)
             end
             if ges.relative then
                 ges.relative.x, ges.relative.y = ges.relative.y, -ges.relative.x
@@ -841,7 +841,7 @@ function GestureDetector:adjustGesCoordinate(ges)
                 ges.direction = "horizontal"
             end
         end
-    elseif self.screen.cur_rotation_mode == 2 then
+    elseif self.screen.cur_rotation_mode == self.screen.ORIENTATION_PORTRAIT_ROTATED then
         -- in portrait mode rotated 180
         if ges.pos then
             ges.pos.x, ges.pos.y = (self.screen:getWidth() - ges.pos.x), (self.screen:getHeight() - ges.pos.y)
