@@ -1408,9 +1408,9 @@ function ReaderGesture:gestureAction(action, ges)
     elseif action == "latest_bookmark" then
         self.ui:handleEvent(Event:new("GoToLatestBookmark"))
     elseif action == "follow_nearest_link" then
-        self.ui:handleEvent(Event:new("GoToPageLink", ges, false, G_reader_settings:isTrue("footnote_link_in_popup")))
+        self.ui:handleEvent(Event:new("GoToPageLink", ges))
     elseif action == "follow_nearest_internal_link" then
-        self.ui:handleEvent(Event:new("GoToPageLink", ges, true, G_reader_settings:isTrue("footnote_link_in_popup")))
+        self.ui:handleEvent(Event:new("GoToInternalPageLink", ges))
     elseif action == "clear_location_history" then
         self.ui:handleEvent(Event:new("ClearLocationStack", true)) -- show_notification
     elseif action == "filemanager" then
