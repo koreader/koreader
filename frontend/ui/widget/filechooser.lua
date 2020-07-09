@@ -322,6 +322,10 @@ function FileChooser:changeToPath(path, focused_path)
     self:onPathChanged(path)
 end
 
+function FileChooser:onFolderUp()
+    self:changeToPath(string.format("%s/..", self.path))
+end
+
 function FileChooser:changePageToPath(path)
     if not path then return end
     for num, item in ipairs(self.item_table) do

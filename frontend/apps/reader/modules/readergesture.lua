@@ -1418,7 +1418,7 @@ function ReaderGesture:gestureAction(action, ges)
     elseif action == "file_search" then
         self.ui:handleEvent(Event:new("ShowFileSearch"))
     elseif action == "folder_up" then
-        self.ui.file_chooser:changeToPath(string.format("%s/..", self.ui.file_chooser.path))
+        self.ui:handleEvent(Event:new("FolderUp"))
     elseif action == "show_plus_menu" then
         self.ui:handleEvent(Event:new("ShowPlusMenu"))
     elseif action == "folder_shortcuts" then
