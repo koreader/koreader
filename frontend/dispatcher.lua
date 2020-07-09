@@ -1,4 +1,5 @@
 local CreOptions = require("ui/data/creoptions")
+local Device = require("device")
 local Event = require("ui/event")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
@@ -20,29 +21,38 @@ and optionally
     default
     args: allowed values for string.
     toggle: display name for args
+    A true value for the correct section to display in.
 --]]--
 local settingsList = {
+    --Device settings
+    show_frontlight_dialog = { category="toggle", event="ShowFlDialog", title=_("Show frontlight dialog"), device=true, condition=Device:hasFrontlight()},
+    toggle_frontlight = { category="toggle", event="ToggleFrontlight", title=_("Toggle frontlight"), device=true, condition=Device:hasFrontlight()},
+    toggle_gsensor = { category="toggle", event="ToggleGSensor", title=_("Toggle accelerometer"), device=true, condition=Device:canToggleGSensor()},
+    wifi_on = { category="toggle", event="InfoWifiOn", title=_("Turn on Wi-Fi"), device=true, condition=Device:hasWifiToggle()},
+    wifi_off = { category="toggle", event="InfoWifiOff", title=_("Turn off Wi-Fi"), device=true, condition=Device:hasWifiToggle()},
+    toggle_wifi = { category="toggle", event="ToggleWifi", title=_("Toggle Wi-Fi"), device=true, condition=Device:hasWifiToggle()},
+
     --CreOptions
-    rotation_mode = {category="string"},
-    visible_pages = {category="string"},
-    h_page_margins = {category="string"},
-    sync_t_b_page_margins = {category="string"},
-    t_page_margin = {category="absolutenumber"},
-    b_page_margin = {category="absolutenumber"},
-    view_mode = {category="string", title="View Mode (CRengine)"},
-    block_rendering_mode = {category="string"},
-    render_dpi = {category="string"},
-    line_spacing = {category="absolutenumber"},
-    font_size = {category="absolutenumber", title="Font Size (CRengine)"},
-    font_weight = {category="string"},
-    --font_gamma = {category="string"},
-    font_hinting = {category="string"},
-    font_kerning = {category="string"},
-    status_line = {category="string"},
-    embedded_css = {category="string"},
-    embedded_fonts = {category="string"},
-    smooth_scaling = {category="string"},
-    nightmode_images = {category="string"},
+    rotation_mode = {category="string", device=true},
+    visible_pages = {category="string", rolling=true},
+    h_page_margins = {category="string", rolling=true},
+    sync_t_b_page_margins = {category="string", rolling=true},
+    t_page_margin = {category="absolutenumber", rolling=true},
+    b_page_margin = {category="absolutenumber", rolling=true},
+    view_mode = {category="string", rolling=true},
+    block_rendering_mode = {category="string", rolling=true},
+    render_dpi = {category="string", rolling=true},
+    line_spacing = {category="absolutenumber", rolling=true},
+    font_size = {category="absolutenumber", title="Font Size", rolling=true},
+    font_weight = {category="string", rolling=true},
+    --font_gamma = {category="string", rolling=true},
+    font_hinting = {category="string", rolling=true},
+    font_kerning = {category="string", rolling=true},
+    status_line = {category="string", rolling=true},
+    embedded_css = {category="string", rolling=true},
+    embedded_fonts = {category="string", rolling=true},
+    smooth_scaling = {category="string", rolling=true},
+    nightmode_images = {category="string", rolling=true},
 }
 
 --[[--
@@ -94,42 +104,22 @@ function Dispatcher:init()
     Dispatcher.initialized = true
 end
 
---[[--
-Add a submenu to edit which items are dispatched
-arguments are:
-    1) self
-    2) the table representing the submenu (can be empty)
-    3) the name of the parent of the settings table (must be a child of self)
-    4) the name of the settings table
-example usage:
-    Dispatcher.addSubMenu(self, sub_items, "profiles", "profile1")
---]]--
-function Dispatcher:addSubMenu(menu, location, settings)
-    if not Dispatcher.initialized then Dispatcher:init() end
-    table.insert(menu, {
-        text = _("None"),
-        separator = true,
-        checked_func = function()
-            return next(self[location][settings]) == nil
-        end,
-        callback = function(touchmenu_instance)
-            self[location][settings] = {}
-            if touchmenu_instance then touchmenu_instance:updateItems() end
-        end,
-    })
+function Dispatcher.addItem(caller, menu, location, settings, section)
     for k, v in pairs(settingsList) do
+        if settingsList[k][section] == true and
+        (settingsList[k].condition == nil or settingsList[k].condition) then
             if settingsList[k].category == "none" then
                 table.insert(menu, {
                    text = settingsList[k].title,
                    checked_func = function()
-                   return self[location][settings] ~= nil and self[location][settings][k] ~= nil
+                   return caller[location][settings] ~= nil and caller[location][settings][k] ~= nil
                    end,
                    callback = function(touchmenu_instance)
-                      if self[location][settings] ~= nil
-                      and self[location][settings][k] then
-                          self[location][settings][k] = nil
+                      if caller[location][settings] ~= nil
+                      and caller[location][settings][k] then
+                          caller[location][settings][k] = nil
                       else
-                          self[location][settings][k] = true
+                          caller[location][settings][k] = true
                       end
                       if touchmenu_instance then touchmenu_instance:updateItems() end
                   end,
@@ -137,41 +127,41 @@ function Dispatcher:addSubMenu(menu, location, settings)
             elseif settingsList[k].category == "toggle" then
                 table.insert(menu, {
                     text_func = function()
-                        return T(settingsList[k].title, self[location][settings][k])
+                        return T(settingsList[k].title, caller[location][settings][k])
                     end,
                     checked_func = function()
-                    return self[location][settings] ~= nil and self[location][settings][k] ~= nil
+                    return caller[location][settings] ~= nil and caller[location][settings][k] ~= nil
                     end,
                     callback = function(touchmenu_instance)
-                        self[location][settings][k] = not self[location][settings][k]
+                        caller[location][settings][k] = not caller[location][settings][k]
                         if touchmenu_instance then touchmenu_instance:updateItems() end
                     end,
                     hold_callback = function(touchmenu_instance)
-                        self[location][settings][k] = nil
+                        caller[location][settings][k] = nil
                         if touchmenu_instance then touchmenu_instance:updateItems() end
                     end,
                 })
             elseif settingsList[k].category == "absolutenumber" then
                 table.insert(menu, {
                     text_func = function()
-                        return T(settingsList[k].title, self[location][settings][k] or "")
+                        return T(settingsList[k].title, caller[location][settings][k] or "")
                     end,
                     checked_func = function()
-                    return self[location][settings] ~= nil and self[location][settings][k] ~= nil
+                    return caller[location][settings] ~= nil and caller[location][settings][k] ~= nil
                     end,
                     callback = function(touchmenu_instance)
                         local SpinWidget = require("ui/widget/spinwidget")
                         local items = SpinWidget:new{
                             width = Screen:getWidth() * 0.6,
-                            value = self[location][settings][k] or settingsList[k].default or 0,
+                            value = caller[location][settings][k] or settingsList[k].default or 0,
                             value_min = settingsList[k].min,
                             value_step = 1,
                             value_hold_step = 2,
                             value_max = settingsList[k].max,
                             default_value = 0,
-                            title_text = T(settingsList[k].title, self[location][settings][k] or ""),
+                            title_text = T(settingsList[k].title, caller[location][settings][k] or ""),
                             callback = function(spin)
-                                self[location][settings][k] = spin.value
+                                caller[location][settings][k] = spin.value
                                 if touchmenu_instance then
                                     touchmenu_instance:updateItems()
                                 end
@@ -180,32 +170,32 @@ function Dispatcher:addSubMenu(menu, location, settings)
                         UIManager:show(items)
                     end,
                     hold_callback = function(touchmenu_instance)
-                        self[location][settings][k] = nil
+                        caller[location][settings][k] = nil
                         if touchmenu_instance then touchmenu_instance:updateItems() end
                     end,
                 })
             elseif settingsList[k].category == "incrementalnumber" then
                 table.insert(menu, {
                     text_func = function()
-                        return T(settingsList[k].title, self[location][settings][k] or "")
+                        return T(settingsList[k].title, caller[location][settings][k] or "")
                     end,
                     checked_func = function()
-                    return self[location][settings] ~= nil and self[location][settings][k] ~= nil
+                    return caller[location][settings] ~= nil and caller[location][settings][k] ~= nil
                     end,
                     callback = function(touchmenu_instance)
                         local SpinWidget = require("ui/widget/spinwidget")
                         local items = SpinWidget:new{
                             width = Screen:getWidth() * 0.6,
-                            value = self[location][settings][k] or 0,
+                            value = caller[location][settings][k] or 0,
                             value_min = settingsList[k].min,
                             value_step = 1,
                             value_hold_step = 2,
                             value_max = settingsList[k].max,
                             default_value = 0,
-                            title_text = T(settingsList[k].title, self[location][settings][k] or ""),
+                            title_text = T(settingsList[k].title, caller[location][settings][k] or ""),
                             text = _([[If set to 0 and called by a gesture the amount of the gesture will be used]]),
                             callback = function(spin)
-                                self[location][settings][k] = spin.value
+                                caller[location][settings][k] = spin.value
                                 if touchmenu_instance then
                                     touchmenu_instance:updateItems()
                                 end
@@ -214,7 +204,7 @@ function Dispatcher:addSubMenu(menu, location, settings)
                         UIManager:show(items)
                     end,
                     hold_callback = function(touchmenu_instance)
-                        self[location][settings][k] = nil
+                        caller[location][settings][k] = nil
                         if touchmenu_instance then
                             touchmenu_instance:updateItems()
                         end
@@ -226,27 +216,27 @@ function Dispatcher:addSubMenu(menu, location, settings)
                     table.insert(sub_item_table, {
                         text = tostring(settingsList[k].toggle[i]),
                         checked_func = function()
-                            return self[location][settings] ~= nil
-                            and self[location][settings][k] ~= nil
-                            and self[location][settings][k] == settingsList[k].args[i]
+                            return caller[location][settings] ~= nil
+                            and caller[location][settings][k] ~= nil
+                            and caller[location][settings][k] == settingsList[k].args[i]
                         end,
                         callback = function()
-                            self[location][settings][k] = settingsList[k].args[i]
+                            caller[location][settings][k] = settingsList[k].args[i]
                         end,
                     })
                 end
                 table.insert(menu, {
                     text_func = function()
-                        return T(settingsList[k].title, self[location][settings][k])
+                        return T(settingsList[k].title, caller[location][settings][k])
                     end,
                     checked_func = function()
-                        return self[location][settings] ~= nil
-                        and self[location][settings][k] ~= nil
+                        return caller[location][settings] ~= nil
+                        and caller[location][settings][k] ~= nil
                     end,
                     sub_item_table = sub_item_table,
                     keep_menu_open = true,
                     hold_callback = function(touchmenu_instance)
-                        self[location][settings][k] = nil
+                        caller[location][settings][k] = nil
                         if touchmenu_instance then
                             touchmenu_instance:updateItems()
                         end
@@ -254,6 +244,45 @@ function Dispatcher:addSubMenu(menu, location, settings)
                 })
             end
         end
+    end
+end
+
+--[[--
+Add a submenu to edit which items are dispatched
+arguments are:
+    1) the caller
+    2) the table representing the submenu (can be empty)
+    3) the name of the parent of the settings table (must be a child of self)
+    4) the name of the settings table
+example usage:
+    Dispatcher.addSubMenu(self, sub_items, "profiles", "profile1")
+
+Must be executed in the context of the caller to add items to the callers menu.
+therefore declared as Dispatcher.addSubMenu(caller, menu, location, settings)
+but should be called as Dispatcher.addSubMenu(self, menu, location, settings)
+--]]--
+function Dispatcher.addSubMenu(caller, menu, location, settings)
+    if not Dispatcher.initialized then Dispatcher:init() end
+    table.insert(menu, {
+        text = _("None"),
+        separator = true,
+        checked_func = function()
+            return next(caller[location][settings]) == nil
+        end,
+        callback = function(touchmenu_instance)
+            caller[location][settings] = {}
+            if touchmenu_instance then touchmenu_instance:updateItems() end
+        end,
+    })
+    for section,section_text in pairs({device=_("Device"), rolling=_("Reflowable documents (epub, fb2, txt)"), paging=_("Fixed layout documents (pdf, djvu, pics)"),}) do
+        local submenu = {}
+        -- pass caller's context
+        Dispatcher.addItem(caller, submenu, location, settings, section)
+        table.insert(menu, {
+            text = section_text,
+            sub_item_table = submenu,
+        })
+    end
 end
 
 function Dispatcher:execute(settings, gesture)
