@@ -478,7 +478,7 @@ function FileManagerMenu:setUpdateItemTable()
         -- @translators Search for files by name.
         text = _("Find a file"),
         callback = function()
-            self.ui:handleEvent(Event:new("ShowFileSearch", self.ui.file_chooser.path))
+            self.ui:handleEvent(Event:new("ShowFileSearch"))
         end
     }
 

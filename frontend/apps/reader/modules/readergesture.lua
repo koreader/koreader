@@ -1417,12 +1417,7 @@ function ReaderGesture:gestureAction(action, ges)
         self.ui:onClose()
         self.ui:showFileManager()
     elseif action == "file_search" then
-        if self.ges_mode == "gesture_fm" then
-            self.ui:handleEvent(Event:new("ShowFileSearch", self.ui.file_chooser.path))
-        else
-            local last_dir = self.ui:getLastDirFile()
-            self.ui:handleEvent(Event:new("ShowFileSearch", last_dir))
-        end
+        self.ui:handleEvent(Event:new("ShowFileSearch"))
     elseif action == "folder_up" then
         self.ui.file_chooser:changeToPath(string.format("%s/..", self.ui.file_chooser.path))
     elseif action == "show_plus_menu" then
