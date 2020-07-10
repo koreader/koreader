@@ -368,7 +368,6 @@ function Input:handleKeyBoardEv(ev)
     -- this is also emitted by the close event in SDL
     if self:isEvKeyPress(ev) and self.modifiers["Alt"] and keycode == "F4" then
         local Device = require("frontend/device")
-        local Event = require("ui/event")
         local UIManager = require("ui/uimanager")
 
         local save_quit = function()
