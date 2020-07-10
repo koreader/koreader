@@ -14,7 +14,7 @@ endif
 
 # releases do not contain tests and misc data
 IS_RELEASE := $(if $(or $(EMULATE_READER),$(WIN32)),,1)
-IS_RELEASE := $(if $(or $(IS_RELEASE),$(APPIMAGE),$(DEBIAN)),1,)
+IS_RELEASE := $(if $(or $(IS_RELEASE),$(APPIMAGE),$(DEBIAN),$(MACOS)),1,)
 
 ANDROID_ARCH?=arm
 # Use the git commit count as the (integer) Android version code
@@ -50,6 +50,7 @@ CERVANTES_DIR=$(PLATFORM_DIR)/cervantes
 DEBIAN_DIR=$(PLATFORM_DIR)/debian
 KINDLE_DIR=$(PLATFORM_DIR)/kindle
 KOBO_DIR=$(PLATFORM_DIR)/kobo
+MACOS_DIR=$(PLATFORM_DIR)/mac
 POCKETBOOK_DIR=$(PLATFORM_DIR)/pocketbook
 REMARKABLE_DIR=$(PLATFORM_DIR)/remarkable
 SONY_PRSTUX_DIR=$(PLATFORM_DIR)/sony-prstux
@@ -399,6 +400,15 @@ debianupdate: all
 	rm -rf \
 		$(INSTALL_DIR)/debian/usr/lib/koreader/{ota,cache,clipboard,screenshots,spec,tools,resources/fonts,resources/icons/src}
 
+macosupdate: all
+	mkdir -p \
+		$(INSTALL_DIR)/bundle/Contents/MacOS \
+		$(INSTALL_DIR)/bundle/Contents/Resources
+
+	cp $(MACOS_DIR)/koreader.sh $(INSTALL_DIR)/bundle/Contents/MacOS/koreader
+	cp resources/koreader.icns $(INSTALL_DIR)/bundle/Contents/Resources/icon.icns
+	cp -LR $(INSTALL_DIR)/koreader $(INSTALL_DIR)/bundle/Contents/Resources
+
 REMARKABLE_PACKAGE:=koreader-remarkable$(KODEDUG_SUFFIX)-$(VERSION).zip
 REMARKABLE_PACKAGE_OTA:=koreader-remarkable$(KODEDUG_SUFFIX)-$(VERSION).targz
 remarkableupdate: all
@@ -518,6 +528,9 @@ else ifeq ($(TARGET), debian-armel)
 else ifeq ($(TARGET), debian-armhf)
 	make debianupdate
 	$(CURDIR)/platform/debian/do_debian_package.sh $(INSTALL_DIR) armhf
+else ifeq ($(TARGET), macos)
+	make macosupdate
+	$(CURDIR)/platform/mac/do_mac_bundle.sh $(INSTALL_DIR)
 endif
 
 androiddev: androidupdate

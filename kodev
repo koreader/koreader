@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 
+is_mac() {
+    if [ "$(uname -s)" != "Darwin" ]; then
+        echo "You need a mac to build this package"
+        exit 1
+    fi
+}
+
 CURDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VERSION=$(git describe HEAD)
 # Only append date if we're not on a whole version, like v2018.11
@@ -125,6 +132,7 @@ SUPPORTED_TARGETS="
     debian          Debian package for current arch
     debian-armel    Debian package for generic armel devices
     debian-armhf    Debian package for generic armhf devices
+    macos           MacOS app bundle. You need a mac to build this package
     emu             (*default) If no TARGET is given, assume emulator
     win32
 "
@@ -243,6 +251,11 @@ ${SUPPORTED_TARGETS}"
             make TARGET=debian-armhf
             assert_ret_zero $?
             ;;
+        macos)
+            is_mac
+            make TARGET=macos
+            assert_ret_zero $?
+            ;;
         win32)
             make TARGET=win32
             assert_ret_zero $?
@@ -334,6 +347,10 @@ ${SUPPORTED_TARGETS}"
             ;;
         debian-armhf)
             make TARGET=debian-armhf clean
+            ;;
+        macos)
+            is_mac
+            make TARGET=macos clean
             ;;
         win32)
             make TARGET=win32 clean
@@ -467,6 +484,11 @@ ${SUPPORTED_RELEASE_TARGETS}"
         debian-armhf)
             kodev-build debian-armhf
             make TARGET=debian-armhf update
+            ;;
+        macos)
+            is_mac
+            kodev-build macos
+            make TARGET=macos update
             ;;
         *)
             echo "Unsupported target for release: $1."
