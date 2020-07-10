@@ -1472,27 +1472,15 @@ function ReaderGesture:gestureAction(action, ges)
     elseif action == "decrease_font" then
         self.ui:handleEvent(Event:new("DecreaseFontSize", ges))
     elseif action == "suspend" then
-        UIManager:suspend()
+        self.ui:handleEvent(Event:new("SuspendEvent"))
     elseif action == "exit" then
-        self.ui.menu:exitOrRestart()
+        self.ui:handleEvent(Event:new("Exit"))
     elseif action == "restart" then
-        self.ui.menu:exitOrRestart(function() UIManager:restartKOReader() end)
+        self.ui:handleEvent(Event:new("Restart"))
     elseif action == "reboot" then
-        UIManager:show(ConfirmBox:new{
-            text = _("Are you sure you want to reboot the device?"),
-            ok_text = _("Reboot"),
-            ok_callback = function()
-                UIManager:nextTick(UIManager.reboot_action)
-            end,
-        })
+        self.ui:handleEvent(Event:new("Reboot"))
     elseif action == "poweroff" then
-        UIManager:show(ConfirmBox:new{
-            text = _("Are you sure you want to power off the device?"),
-            ok_text = _("Power off"),
-            ok_callback = function()
-                UIManager:nextTick(UIManager.poweroff_action)
-            end,
-        })
+        self.ui:handleEvent(Event:new("PowerOff"))
     elseif action == "zoom_contentwidth" then
         self.ui:handleEvent(Event:new("SetZoomMode", "contentwidth"))
     elseif action == "zoom_contentheight" then

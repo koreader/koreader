@@ -6,6 +6,7 @@ local BD = require("ui/bidi")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
+local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local NetworkMgr = require("ui/network/manager")
@@ -53,24 +54,12 @@ local function showRestartMessage()
         text = _("KOReader will be updated on next restart.\nWould you like to restart now?"),
         ok_text = _("Restart"),
         ok_callback = function()
-            local savequit_caller
             local save_quit = function()
                 Device:saveSettings()
                 UIManager:quit()
                 UIManager._exit_code = 85
             end
-
-            local FileManager = require("apps/filemanager/filemanager")
-            if FileManager.instance then
-                savequit_caller =  FileManager.instance.menu
-            end
-
-            local ReaderUI = require("apps/reader/readerui")
-            local readerui_instance = ReaderUI:_getRunningInstance()
-            if readerui_instance then
-                savequit_caller = readerui_instance.menu
-            end
-            savequit_caller:exitOrRestart(save_quit)
+            UIManager:broadcastEvent(Event:new("Exit", save_quit))
         end,
     })
 end

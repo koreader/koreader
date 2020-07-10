@@ -1,3 +1,4 @@
+local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -258,6 +259,42 @@ function DeviceListener:onToggleRotation()
     local arg = bit.band((Screen:getRotationMode() + 1), 3)
     self.ui:handleEvent(Event:new("SetRotationMode", arg))
     return true
+end
+
+if Device:canReboot() then
+    function DeviceListener:onReboot()
+        UIManager:show(ConfirmBox:new{
+            text = _("Are you sure you want to reboot the device?"),
+            ok_text = _("Reboot"),
+            ok_callback = function()
+                UIManager:nextTick(UIManager.reboot_action)
+            end,
+        })
+    end
+end
+
+if Device:canPowerOff() then
+    function DeviceListener:onPowerOff()
+        UIManager:show(ConfirmBox:new{
+            text = _("Are you sure you want to power off the device?"),
+            ok_text = _("Power off"),
+            ok_callback = function()
+                UIManager:nextTick(UIManager.poweroff_action)
+            end,
+        })
+    end
+end
+
+function DeviceListener:onSuspendEvent()
+    UIManager:suspend()
+end
+
+function DeviceListener:onExit(callback)
+    self.ui.menu:exitOrRestart(callback)
+end
+
+function DeviceListener:onRestart()
+    self.ui.menu:exitOrRestart(function() UIManager:restartKOReader() end)
 end
 
 return DeviceListener
