@@ -9,7 +9,6 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local LuaData = require("luadata")
-local Notification = require("ui/widget/notification")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local T = require("ffi/util").template
@@ -1444,7 +1443,7 @@ function ReaderGesture:gestureAction(action, ges)
     elseif action == "toggle_bookmark" then
         self.ui:handleEvent(Event:new("ToggleBookmark"))
     elseif action == "toggle_inverse_reading_order" then
-        self:onToggleReadingOrder()
+        self.ui:handleEvent(Event:new("ToggleReadingOrder"))
     elseif action == "toggle_frontlight" then
         self.ui:handleEvent(Event:new("ToggleFrontlight"))
     elseif action == "toggle_hold_corners" then
@@ -1528,21 +1527,6 @@ function ReaderGesture:onIgnoreHoldCorners(ignore_hold_corners)
         G_reader_settings:saveSetting("ignore_hold_corners", ignore_hold_corners)
     end
     self.ignore_hold_corners = G_reader_settings:isTrue("ignore_hold_corners")
-    return true
-end
-
-function ReaderGesture:onToggleReadingOrder()
-    local document_module = self.ui.document.info.has_pages and self.ui.paging or self.ui.rolling
-    document_module.inverse_reading_order = not document_module.inverse_reading_order
-    document_module:setupTouchZones()
-    local is_rtl = BD.mirroredUILayout()
-    if document_module.inverse_reading_order then
-        is_rtl = not is_rtl
-    end
-    UIManager:show(Notification:new{
-        text = is_rtl and _("RTL page turning.") or _("LTR page turning."),
-        timeout = 2.5,
-    })
     return true
 end
 

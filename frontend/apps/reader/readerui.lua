@@ -36,6 +36,7 @@ local ReaderHinting = require("apps/reader/modules/readerhinting")
 local ReaderHighlight = require("apps/reader/modules/readerhighlight")
 local ReaderKoptListener = require("apps/reader/modules/readerkoptlistener")
 local ReaderLink = require("apps/reader/modules/readerlink")
+local ReaderListener = require("apps/reader/modules/readerlistener")
 local ReaderMenu = require("apps/reader/modules/readermenu")
 local ReaderPageMap = require("apps/reader/modules/readerpagemap")
 local ReaderPanning = require("apps/reader/modules/readerpanning")
@@ -368,6 +369,13 @@ function ReaderUI:init()
         document = self.document,
         view = self.view,
         ui = self,
+    })
+    --  event listener for reader
+    self:registerModule("readerlistener", ReaderListener:new{
+        dialog = self.dialog,
+        view = self.view,
+        ui = self,
+        document = self.document,
     })
     -- koreader plugins
     for _, plugin_module in ipairs(PluginLoader:loadPlugins()) do
