@@ -294,4 +294,9 @@ function DeviceListener:onRestart()
     self.ui.menu:exitOrRestart(function() UIManager:restartKOReader() end)
 end
 
+function DeviceListener:onFullRefresh()
+    self.ui:handleEvent(Event:new("UpdateFooter"))
+    UIManager:setDirty("all", "full")
+end
+
 return DeviceListener

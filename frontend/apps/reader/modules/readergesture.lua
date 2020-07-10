@@ -1358,11 +1358,7 @@ function ReaderGesture:gestureAction(action, ges)
     elseif action == "night_mode" then
         self.ui:handleEvent(Event:new("ToggleNightMode"))
     elseif action == "full_refresh" then
-        if self.view then
-            -- update footer (time & battery)
-            self.view.footer:updateFooter()
-        end
-        UIManager:setDirty("all", "full")
+        self.ui:handleEvent(Event:new("FullRefresh"))
     elseif action == "bookmarks" then
         self.ui:handleEvent(Event:new("ShowBookmark"))
     elseif action == "history" then

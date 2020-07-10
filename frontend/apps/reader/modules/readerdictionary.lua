@@ -819,7 +819,7 @@ function ReaderDictionary:showDict(word, results, box, link)
             refresh_callback = function()
                 if self.view then
                     -- update info in footer (time, battery, etc)
-                    self.view.footer:updateFooter()
+                    self.view.footer:onUpdateFooter()
                 end
             end,
             html_dictionary_link_tapped_callback = function(dictionary, html_link)

@@ -557,7 +557,7 @@ end
 function ReaderFooter:setupAutoRefreshTime()
     if not self.autoRefreshTime then
         self.autoRefreshTime = function()
-            self:updateFooter(true)
+            self:onUpdateFooter(true)
             UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshTime)
         end
     end
@@ -839,7 +839,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                             self.settings.order = self.mode_index
                             G_reader_settings:saveSetting("footer", self.settings)
                             self:updateFooterTextGenerator()
-                            self:updateFooter()
+                            self:onUpdateFooter()
                             UIManager:setDirty(nil, "ui")
                         end
                     }
@@ -1686,7 +1686,7 @@ function ReaderFooter:getDataFromStatistics(title, pages)
     return title .. sec
 end
 
-function ReaderFooter:updateFooter(force_repaint, force_recompute)
+function ReaderFooter:onUpdateFooter(force_repaint, force_recompute)
     if self.pageno then
         self:updateFooterPage(force_repaint, force_recompute)
     else
@@ -1811,7 +1811,7 @@ function ReaderFooter:onReaderReady()
     self:resetLayout(self.settings.progress_margin_width)  -- set widget dimen
     self:setTocMarkers()
     self.updateFooterText = self._updateFooterText
-    self:updateFooter()
+    self:onUpdateFooter()
 end
 
 function ReaderFooter:onReadSettings(config)
@@ -1894,7 +1894,7 @@ function ReaderFooter:onTapFooter(ges)
             local percentage = (pos.x - dimen.x)/dimen.w
             self.ui:handleEvent(Event:new("GotoPercentage", percentage))
         end
-        self:updateFooter(true)
+        self:onUpdateFooter(true)
         return true
     end
     if self.has_no_mode or (self.settings.lock_tap and not ignore_lock) then
@@ -1921,7 +1921,7 @@ function ReaderFooter:onTapFooter(ges)
     end
     self:applyFooterMode()
     G_reader_settings:saveSetting("reader_footer_mode", self.mode)
-    self:updateFooter(true)
+    self:onUpdateFooter(true)
     return true
 end
 
@@ -1949,14 +1949,14 @@ function ReaderFooter:refreshFooter(refresh, signal)
     self:resetLayout(true)
     -- If we signal, the event we send will trigger a full repaint anyway, so we should be able to skip this one.
     -- We *do* need to ensure we at least re-compute the footer layout, though, especially when going from visible to invisible...
-    self:updateFooter(refresh and not signal, refresh and signal)
+    self:onUpdateFooter(refresh and not signal, refresh and signal)
     if signal then
         self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
     end
 end
 
 function ReaderFooter:onResume()
-    self:updateFooter()
+    self:onUpdateFooter()
     if self.settings.auto_refresh_time then
         self:setupAutoRefreshTime()
     end
@@ -1971,7 +1971,7 @@ end
 
 function ReaderFooter:onFrontlightStateChanged()
     if self.settings.frontlight then
-        self:updateFooter(true)
+        self:onUpdateFooter(true)
     end
 end
 

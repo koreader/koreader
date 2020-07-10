@@ -484,7 +484,7 @@ function ReaderRolling:onSwipe(_, ges)
         end
     else
         -- update footer (time & battery)
-        self.view.footer:updateFooter()
+        self.view.footer:onUpdateFooter()
         -- trigger full refresh
         UIManager:setDirty(nil, "full")
     end
@@ -786,7 +786,7 @@ function ReaderRolling:updatePos()
         self.old_doc_height = new_height
         self.old_page = new_page
         self.ui:handleEvent(Event:new("UpdateToc"))
-        self.view.footer:updateFooter()
+        self.view.footer:onUpdateFooter()
     end
     self:updateTopStatusBarMarkers()
     UIManager:setDirty(self.view.dialog, "partial")

@@ -659,7 +659,7 @@ function ReaderToc:addToMainMenu(menu_items)
                         self.ui.doc_settings:saveSetting("alternative_toc", true)
                         self:onShowToc()
                         self.view.footer:setTocMarkers(true)
-                        self.view.footer:updateFooter()
+                        self.view.footer:onUpdateFooter()
                     end,
                 })
             end

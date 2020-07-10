@@ -660,7 +660,7 @@ function ReaderStatistics:getStatisticEnabledMenuItem()
             end
             self:saveSettings()
             if not self:isDocless() then
-                self.view.footer:updateFooter()
+                self.view.footer:onUpdateFooter()
             end
         end,
     }
@@ -1975,7 +1975,7 @@ end
 function ReaderStatistics:onReaderReady()
     -- we have correct page count now, do the actual initialization work
     self:initData()
-    self.view.footer:updateFooter()
+    self.view.footer:onUpdateFooter()
 end
 
 function ReaderStatistics:getCalendarView()
