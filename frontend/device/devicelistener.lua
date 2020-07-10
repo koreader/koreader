@@ -106,9 +106,6 @@ if Device:hasFrontlight() then
             powerd:setIntensity(new_intensity)
         end
         self:onShowIntensity()
-        if self.view and self.view.footer_visible and self.view.footer.settings.frontlight then
-            self.view.footer:updateFooter()
-        end
         return true
     end
 
