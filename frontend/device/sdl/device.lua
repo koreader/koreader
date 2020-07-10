@@ -18,13 +18,7 @@ end
 
 -- open is the macOS counterpart
 local function hasMacOpen()
-    local std_out = io.popen("open")
-    local all = nil
-    if std_out ~= nil then
-        all = std_out:read()
-        std_out:close()
-    end
-    return all ~= nil
+    return os.execute("open >/dev/null 2>&1") == 256
 end
 
 -- get the name of the binary used to open links
@@ -86,7 +80,11 @@ local Device = Generic:new{
     openLink = function(self, link)
         local enabled, tool = getLinkOpener()
         if not enabled or not tool or not link or type(link) ~= "string" then return end
-        return os.execute('env -u LD_LIBRARY_PATH '..tool.." '"..link.."'") == 0
+        if jit.os == "OSX" then
+            return os.execute(tool .. " '" .. link .. "'") == 0
+        else
+            return os.execute('env -u LD_LIBRARY_PATH '..tool.." '"..link.."'") == 0
+        end
     end,
     canExternalDictLookup = yes,
     getExternalDictLookupList = getExternalDicts,
@@ -132,6 +130,11 @@ local Emulator = Device:new{
 
 local Linux = Device:new{
     model = "Linux",
+    isDesktop = yes,
+}
+
+local Mac = Device:new{
+    model = "Mac",
     isDesktop = yes,
 }
 
@@ -356,7 +359,11 @@ end
 if os.getenv("APPIMAGE") then
     return AppImage
 elseif os.getenv("KO_MULTIUSER") then
-    return Linux
+    if jit.os == "OSX" then
+        return Mac
+    else
+        return Linux
+    end
 elseif os.getenv("UBUNTU_APPLICATION_ISOLATION") then
     return UbuntuTouch
 else

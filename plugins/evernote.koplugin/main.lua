@@ -85,6 +85,7 @@ function EvernoteExporter:readyToExport()
 end
 
 function EvernoteExporter:migrateClippings()
+    if jit.os == "OSX" then return end
     local old_dir = util.joinPath(util.realpath(util.joinPath(self.path, "..")),
         "evernote.sdr")
     if lfs.attributes(old_dir, "mode") == "directory" then
