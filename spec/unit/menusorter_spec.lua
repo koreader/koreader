@@ -1,10 +1,8 @@
 describe("MenuSorter module", function()
     local MenuSorter
-    local equals
     setup(function()
         require("commonrequire")
         MenuSorter = require("ui/menusorter")
-        equals = require("util").tableEquals
     end)
 
     it("should put menu items in the defined order", function()

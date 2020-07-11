@@ -28,7 +28,7 @@ describe("defaults module", function()
         assert.is_same("DTAP_ZONE_BACKWARD", Defaults.defaults_name[85])
         assert.is_same("DCREREADER_CONFIG_WORD_SPACING_LARGE", Defaults.defaults_name[50])
         assert.is_same("DCREREADER_CONFIG_H_MARGIN_SIZES_XXX_LARGE", Defaults.defaults_name[20])
-        local f = dofile(persistent_filename)
+        dofile(persistent_filename)
         assert.is_same(DCREREADER_CONFIG_WORD_SPACING_LARGE, { [1] = 100, [2] = 90 })
         assert.is_same(DTAP_ZONE_BACKWARD, { ["y"] = 0, ["x"] = 0, ["h"] = 1, ["w"] = 0.25 })
         assert.is_same(DCREREADER_CONFIG_H_MARGIN_SIZES_XXX_LARGE, { [1] = 50, [2] = 50 })
@@ -51,7 +51,7 @@ describe("defaults module", function()
             w = 20.75
         }
         Defaults:saveSettings()
-        f = dofile(persistent_filename)
+        dofile(persistent_filename)
         assert.is_same(DCREREADER_CONFIG_WORD_SPACING_LARGE, { [2] = 90, [1] = 100 })
         assert.is_same(DDOUBLE_TAP_ZONE_PREV_CHAPTER, {
             ["y"] = 0,
@@ -88,7 +88,7 @@ DHINTCOUNT = 2
         Defaults.changed[57] = true
         Defaults.defaults_value[57] = 1
         Defaults:saveSettings()
-        f = dofile(persistent_filename)
+        dofile(persistent_filename)
         assert.Equals(DCREREADER_VIEW_MODE, "page")
         assert.is_same(DCREREADER_CONFIG_H_MARGIN_SIZES_LARGE, {
             [2] = 15,

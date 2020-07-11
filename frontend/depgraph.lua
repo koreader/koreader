@@ -96,8 +96,6 @@ function DepGraph:removeNode(node_key)
     local node, index = self:getNode(node_key)
     if node then
         if not node.deps or #node.deps == 0 then
-            -- We need to clear *all* references to that node for it to be GC'ed...
-            node = nil
             table.remove(self.nodes, index)
         end
     end
