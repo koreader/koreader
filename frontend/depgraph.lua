@@ -11,6 +11,8 @@ Example:
     -- The return value of dg:serialize() will be:
     -- {'a2', 'c1', 'b1', 'a1'}
 
+NOTE: Insertion order is preserved, duplicates are automatically prevented (both as main nodes and as deps).
+
 ]]
 
 local DepGraph = {}
@@ -23,20 +25,74 @@ function DepGraph:new(new_o)
     return o
 end
 
-function DepGraph:addNode(node_key, deps)
-    if not self.nodes[node_key] then
-        self.nodes[node_key] = {}
+function DepGraph:checkNode(id)
+    for i, _ in ipairs(self.nodes) do
+       if self.nodes[i].key == id then
+           return true
+       end
     end
+
+    return false
+end
+
+function DepGraph:getNode(id)
+    local node = nil
+    for i, _ in ipairs(self.nodes) do
+       if self.nodes[i].key == id then
+           node = self.nodes[i]
+           break
+       end
+    end
+    return node
+end
+
+function DepGraph:addNode(node_key, deps)
+    local dump = require("dump")
+    print("nodes count", #self.nodes)
+    print("self.nodes (START):")
+    print(dump(self.nodes))
+
+    -- Find main node if it already exists
+    local node = self:getNode(node_key)
+
+    -- Create it otherwise
+    if not node then
+        node = { key = node_key }
+        table.insert(self.nodes, node)
+        -- FIXME: Is this necessary? (i.e., what's a ref, what's a copy? I dunno, lua \o/)
+        node = self.nodes[#self.nodes]
+    end
+
     if not deps then return end
 
+    -- Create dep nodes if they don't already exist
     local node_deps = {}
-    for _,dep_node_key in ipairs(deps) do
-        if not self.nodes[dep_node_key] then
-            self.nodes[dep_node_key] = {}
+    for _, dep_node_key in ipairs(deps) do
+        local dep_node = self:getNode(dep_node_key)
+
+        -- Create dep node itself if need be
+        if not dep_node then
+            dep_node = { key = dep_node_key }
+            table.insert(self.nodes, dep_node)
         end
-        table.insert(node_deps, dep_node_key)
+
+        -- Build deps array the ling way 'round, and prevent duplicates, in case deps was funky as hell.
+        local exists = false
+        for _, k in ipairs(node_deps) do
+           if k == dep_node_key then
+                exists = true
+                break
+           end
+        end
+        if not exists then
+            table.insert(node_deps, dep_node_key)
+        end
     end
-    self.nodes[node_key].deps = node_deps
+    -- Update main node with its deps
+    node.deps = node_deps
+
+    print("self.nodes (END):")
+    print(dump(self.nodes))
 end
 
 function DepGraph:removeNode(node_key)
@@ -45,51 +101,67 @@ function DepGraph:removeNode(node_key)
     -- one in their override=, that have added themselves in
     -- this node's .deps). We don't want to lose these
     -- dependencies if we later re-addNode this node.
-    local node = self.nodes[node_key]
+    local node = self:getNode(node_key)
     if node then
         if not node.deps or #node.deps == 0 then
-            self.nodes[node_key] = nil
+            -- FIXME: Ref? Copy?
+            node = nil
         end
     end
-    -- But we should remove it from the .deps of other nodes.
-    for curr_node_key, curr_node in pairs(self.nodes) do
-        if curr_node.deps then
-            local remove_idx
-            for idx, dep_node_key in ipairs(self.nodes) do
+    -- But we should remove it from the .deps of *other* nodes.
+    for i, _ in ipairs(self.nodes) do
+        local curr_node = self.nodes[i]
+        -- Is not the to be removed node, and has deps
+        if curr_node.key ~= node_key and curr_node.deps then
+            -- Walk that node's deps to check if it depends on us
+            for idx, dep_node_key in ipairs(curr_node.deps) do
+                -- If it did, wipe ourselves from there
                 if dep_node_key == node_key then
-                    remove_idx = idx
+                    curr_node.deps[idx] = nil
                     break
                 end
             end
-            if remove_idx then table.remove(curr_node.deps, remove_idx) end
         end
     end
 end
 
-function DepGraph:checkNode(id)
-    if self.nodes[id] then
-        return true
-    else
-        return false
-    end
-end
-
+-- Add dep_node_key to node_key's deps
 function DepGraph:addNodeDep(node_key, dep_node_key)
-    local node = self.nodes[node_key]
+    local node = self:getNode(node_key)
+
     if not node then
-        node = {}
-        self.nodes[node_key] = node
+        node = { key = node_key }
+        table.insert(self.nodes, node)
+        -- FIXME: Ref? Copy? Apparently, everything's a ref, yay: https://www.lua.org/pil/2.5.html
+        node = self.nodes[#self.nodes]
     end
-    if not node.deps then node.deps = {} end
-    table.insert(node.deps, dep_node_key)
+
+    -- We'll need a table ;)
+    if not node.deps then
+        node.deps = {}
+    end
+
+    -- Prevent duplicate deps
+    local exists = false
+    for _, k in ipairs(node.deps) do
+        if k == dep_node_key then
+            exists = true
+            break
+        end
+    end
+    if not exists then
+        table.insert(node.deps, dep_node_key)
+    end
 end
 
 function DepGraph:removeNodeDep(node_key, dep_node_key)
-    local node = self.nodes[node_key]
-    if not node.deps then node.deps = {} end
-    for i, dep_key in ipairs(node.deps) do
-        if dep_key == dep_node_key then
-            self.nodes[node_key]["deps"][i] = nil
+    local node = self:getNode(node_key)
+    if node.deps then
+        for i, dep_key in ipairs(node.deps) do
+            if dep_key == dep_node_key then
+                node.deps[i] = nil
+                break
+            end
         end
     end
 end
@@ -97,20 +169,27 @@ end
 function DepGraph:serialize()
     local visited = {}
     local ordered_nodes = {}
-    for node_key,_ in pairs(self.nodes) do
+
+    local dump = require("dump")
+    print("self:")
+    print(dump(self))
+
+    for i, _ in ipairs(self.nodes) do
+        local node_key = self.nodes[i].key
+        print("node_key is", node_key)
         if not visited[node_key] then
-            local queue = {node_key}
+            local queue = { node_key }
             while #queue > 0 do
                 local pos = #queue
                 local curr_node_key = queue[pos]
-                local curr_node = self.nodes[curr_node_key]
+                local curr_node = self:getNode(curr_node_key)
                 local all_deps_visited = true
                 if curr_node.deps then
                     for _, dep_node_key in ipairs(curr_node.deps) do
                         if not visited[dep_node_key] then
-                            -- only insert to queue for later process if node
-                            -- has dependencies
-                            if self.nodes[dep_node_key].deps then
+                            -- only insert to queue for later process if node has dependencies
+                            local dep_node = self:getNode(dep_node_key)
+                            if dep_node and dep_node.deps then
                                 table.insert(queue, dep_node_key)
                             else
                                 table.insert(ordered_nodes, dep_node_key)
@@ -129,6 +208,8 @@ function DepGraph:serialize()
             end
         end
     end
+    print("ordered_nodes:")
+    print(dump(ordered_nodes))
     return ordered_nodes
 end
 
