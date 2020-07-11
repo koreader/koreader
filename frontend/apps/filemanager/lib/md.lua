@@ -1,4 +1,4 @@
--- From https://github.com/bakpakin/luamd revision 5e8fa39173afecd73913d27e0f0e63649b01fb5b
+-- From https://github.com/bakpakin/luamd revision 388ce799d93e899e4d673cdc6d522f12310822bd
 
 --[[
 Copyright (c) 2016 Calvin Rose <calsrose@gmail.com>
@@ -63,7 +63,7 @@ end
 -- Line Level Operations
 --------------------------------------------------------------------------------
 
-local lineDelimiters = {'`', '__', '**', '_', '*'}
+local lineDelimiters = {'`', '__', '**', '_', '*', '~~'}
 local function findDelim(str, start, max)
     local delim = nil
     local min = 1/0
@@ -111,7 +111,7 @@ local function linkEscape(str, t)
     if nomatches then externalLinkEscape(str, t) end
 end
 
-local lineDeimiterNames = {['`'] = 'code', ['__'] = 'strong', ['**'] = 'strong', ['_'] = 'em', ['*'] = 'em' }
+local lineDeimiterNames = {['`'] = 'code', ['__'] = 'strong', ['**'] = 'strong', ['_'] = 'em', ['*'] = 'em', ['~~'] = 'strike' }
 local function lineRead(str, start, finish)
     start, finish = start or 1, finish or #str
     local searchIndex = start
@@ -417,9 +417,54 @@ end
 -- Rendering
 --------------------------------------------------------------------------------
 
+-- c.f., http://lua-users.org/wiki/SortedIteration
+local function __genOrderedIndex( t )
+    local orderedIndex = {}
+    for key in pairs(t) do
+        table.insert( orderedIndex, key )
+    end
+    table.sort( orderedIndex )
+    return orderedIndex
+end
+
+local function orderedNext(t, state)
+    -- Equivalent of the next function, but returns the keys in the alphabetic
+    -- order. We use a temporary ordered key table that is stored in the
+    -- table being iterated.
+
+    local key = nil
+    --print("orderedNext: state = "..tostring(state) )
+    if state == nil then
+        -- the first time, generate the index
+        t.__orderedIndex = __genOrderedIndex( t )
+        key = t.__orderedIndex[1]
+    else
+        -- fetch the next value
+        for i = 1,table.getn(t.__orderedIndex) do
+            if t.__orderedIndex[i] == state then
+                key = t.__orderedIndex[i+1]
+            end
+        end
+    end
+
+    if key then
+        return key, t[key]
+    end
+
+    -- no more value to return, cleanup
+    t.__orderedIndex = nil
+    return
+end
+
+local function orderedPairs(t)
+    -- Equivalent of the pairs() function on tables. Allows to iterate
+    -- in order
+    return orderedNext, t, nil
+end
+
 local function renderAttributes(attributes)
     local accum = {}
-    for k, v in pairs(attributes) do
+    for k, v in orderedPairs(attributes) do
         accum[#accum + 1] = format("%s=\"%s\"", k, v)
     end
     return concat(accum, ' ')
