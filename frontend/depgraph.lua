@@ -37,13 +37,15 @@ end
 
 function DepGraph:getNode(id)
     local node = nil
+    local index = nil
     for i, _ in ipairs(self.nodes) do
        if self.nodes[i].key == id then
            node = self.nodes[i]
+           index = i
            break
        end
     end
-    return node
+    return node, index
 end
 
 function DepGraph:addNode(node_key, deps)
@@ -99,11 +101,12 @@ function DepGraph:removeNode(node_key)
     -- one in their override=, that have added themselves in
     -- this node's .deps). We don't want to lose these
     -- dependencies if we later re-addNode this node.
-    local node = self:getNode(node_key)
+    local node, index = self:getNode(node_key)
     if node then
         if not node.deps or #node.deps == 0 then
-            -- FIXME: Ref? Copy?
+            -- We need to clear *all* references to that node for it to be GC'ed...
             node = nil
+            table.remove(self.nodes, index)
         end
     end
     -- But we should remove it from the .deps of *other* nodes.
@@ -115,7 +118,9 @@ function DepGraph:removeNode(node_key)
             for idx, dep_node_key in ipairs(curr_node.deps) do
                 -- If it did, wipe ourselves from there
                 if dep_node_key == node_key then
+                    -- Wipe all refs
                     curr_node.deps[idx] = nil
+                    table.remove(self.nodes[i].deps, idx)
                     break
                 end
             end
@@ -151,11 +156,12 @@ function DepGraph:addNodeDep(node_key, dep_node_key)
 end
 
 function DepGraph:removeNodeDep(node_key, dep_node_key)
-    local node = self:getNode(node_key)
+    local node, index = self:getNode(node_key)
     if node.deps then
-        for i, dep_key in ipairs(node.deps) do
+        for idx, dep_key in ipairs(node.deps) do
             if dep_key == dep_node_key then
-                node.deps[i] = nil
+                node.deps[idx] = nil
+                table.remove(self.nodes[index].deps, idx)
                 break
             end
         end
