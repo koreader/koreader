@@ -11,7 +11,7 @@ KOREADER_DIR="${0%/*}/../Resources/koreader"
 cd "${KOREADER_DIR}" || exit
 RETURN_VALUE=85
 while [ ${RETURN_VALUE} -eq 85 ]; do
-    ./reader.lua "${ARGS}"
+    ./reader.lua "${HOME}"
     RETURN_VALUE=$?
 done
 

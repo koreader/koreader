@@ -13,6 +13,20 @@ else
     VERSION="$(cut -f2 -dv "${1}/koreader/git-rev" | cut -f1,2 -d-)"
 fi
 
+
+if [ -z "${MACOSX_DEPLOYMENT_TARGET}" ]; then
+    # Minimum supported version in Catalina
+    MINIMUM_VERSION=10.11
+else
+    MINIMUM_VERSION="${MACOSX_DEPLOYMENT_TARGET}"
+fi
+
+COPYRIGHT="Copyright © $(date +"%Y") KOReader"
+
+# Generate an Info.plist with updated version and copyright message.
+# Also define which extensions can be associated with the bundle. zip is skipped
+# because it is borked or I don't understand how it is supposed to work.
+
 cat <<EOF >"${INSTALL_DIR}/bundle/Contents/Info.plist"
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -34,6 +48,48 @@ cat <<EOF >"${INSTALL_DIR}/bundle/Contents/Info.plist"
         <string>APPL</string>
         <key>CFBundleIconFile</key>
         <string>icon</string>
+        <key>CFBundleDocumentTypes</key>
+        <array>
+            <dict>
+                <key>CFBundleTypeExtensions</key>
+                <array>
+                    <string>azw</string>
+                    <string>cbz</string>
+                    <string>chm</string>
+                    <string>djv</string>
+                    <string>djvu</string>
+                    <string>doc</string>
+                    <string>docx</string>
+                    <string>epub</string>
+                    <string>fb2</string>
+                    <string>htm</string>
+                    <string>html</string>
+                    <string>md</string>
+                    <string>mobi</string>
+                    <string>pdb</string>
+                    <string>pdf</string>
+                    <string>prc</string>
+                    <string>rtf</string>
+                    <string>txt</string>
+                    <string>xhtml</string>
+                    <string>xps</string>
+                </array>
+                <key>CFBundleTypeIconFile</key>
+                <string>icon</string>
+                <key>CFBundleTypeName</key>
+                <string>docs</string>
+                <key>CFBundleTypeRole</key>
+                <string>Viewer</string>
+            </dict>
+	</array>
+        <key>NSHumanReadableCopyright</key>
+        <string>${COPYRIGHT}</string>
+        <key>NSHighResolutionCapable</key>
+        <true/>
+        <key>LSMultipleInstancesProhibited</key>
+        <true/>
+        <key>LSMinimumSystemVersion</key>
+        <string>${MINIMUM_VERSION}</string>
     </dict>
 </plist>
 EOF
@@ -98,8 +154,7 @@ mv "${APP_PATH}" "${APP_BUNDLE}.app"
 if command_exists "create-dmg"; then
     # create KOReader-$VERSION.dmg with KOReader.app inside
     create-dmg "${APP_BUNDLE}.app" --overwrite
-    # create-dmg fails because we omit codesign
-    exit 0
+    rm -rf "${APP_BUNDLE}.app"
 else
     # rename as KOReader-$VERSION.app
     mv -v "${APP_BUNDLE}.app" "${APP_BUNDLE}-${VERSION}.app"
