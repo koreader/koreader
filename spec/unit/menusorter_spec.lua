@@ -153,7 +153,7 @@ describe("MenuSorter module", function()
             ["id"] = "KOMenu:menu_buttons"
         }
 
-        assert.is_true( equals(result_menu, test_menu) )
+        assert.is_same(result_menu, test_menu)
     end)
     it("should display submenu of orphaned submenu", function()
         local menu_items = {
@@ -178,6 +178,7 @@ describe("MenuSorter module", function()
         }
 
         local test_menu = MenuSorter:sort(menu_items, order)
+        print(require("dump")(test_menu))
 
         -- all four should be in the first menu
         assert.is_true(#test_menu[1] == 4)
