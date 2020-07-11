@@ -59,8 +59,6 @@ function DepGraph:addNode(node_key, deps)
     if not node then
         node = { key = node_key }
         table.insert(self.nodes, node)
-        -- FIXME: Is this necessary? (i.e., what's a ref, what's a copy? I dunno, lua \o/)
-        node = self.nodes[#self.nodes]
     end
 
     if not deps then return end
@@ -132,8 +130,6 @@ function DepGraph:addNodeDep(node_key, dep_node_key)
     if not node then
         node = { key = node_key }
         table.insert(self.nodes, node)
-        -- FIXME: Ref? Copy? Apparently, everything's a ref, yay: https://www.lua.org/pil/2.5.html
-        node = self.nodes[#self.nodes]
     end
 
     -- We'll need a table ;)
