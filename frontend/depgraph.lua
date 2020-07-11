@@ -49,11 +49,6 @@ function DepGraph:getNode(id)
 end
 
 function DepGraph:addNode(node_key, deps)
-    local dump = require("dump")
-    print("nodes count", #self.nodes)
-    print("self.nodes (START):")
-    print(dump(self.nodes))
-
     -- Find main node if it already exists
     local node = self:getNode(node_key)
 
@@ -90,9 +85,6 @@ function DepGraph:addNode(node_key, deps)
     end
     -- Update main node with its deps
     node.deps = node_deps
-
-    print("self.nodes (END):")
-    print(dump(self.nodes))
 end
 
 function DepGraph:removeNode(node_key)
@@ -172,13 +164,8 @@ function DepGraph:serialize()
     local visited = {}
     local ordered_nodes = {}
 
-    local dump = require("dump")
-    print("self:")
-    print(dump(self))
-
     for i, _ in ipairs(self.nodes) do
         local node_key = self.nodes[i].key
-        print("node_key is", node_key)
         if not visited[node_key] then
             local queue = { node_key }
             while #queue > 0 do
@@ -210,8 +197,6 @@ function DepGraph:serialize()
             end
         end
     end
-    print("ordered_nodes:")
-    print(dump(ordered_nodes))
     return ordered_nodes
 end
 
