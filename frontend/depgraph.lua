@@ -27,7 +27,7 @@ end
 
 -- Check if node exists, and is active
 function DepGraph:checkNode(id)
-    for i, n in ipairs(self.nodes) do
+    for _, n in ipairs(self.nodes) do
        if n.key == id and not n.disabled then
            return true
        end
@@ -49,6 +49,7 @@ function DepGraph:getNode(id)
     return node, index
 end
 
+-- If node is nil but index is set, node is disabled
 function DepGraph:getActiveNode(id)
     local node, index = self:getNode(id)
     if node and node.disabled then
@@ -194,7 +195,7 @@ function DepGraph:serialize()
     local visited = {}
     local ordered_nodes = {}
 
-    for i, n in ipairs(self.nodes) do
+    for _, n in ipairs(self.nodes) do
         local node_key = n.key
         if not visited[node_key] then
             local queue = { node_key }
