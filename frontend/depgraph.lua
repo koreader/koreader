@@ -50,10 +50,7 @@ function DepGraph:getNode(id)
 end
 
 function DepGraph:getActiveNode(id)
-    local node
-    local index
-
-    node, index = self:getNode(id)
+    local node, index = self:getNode(id)
     if node and node.disabled then
         node = nil
     end
