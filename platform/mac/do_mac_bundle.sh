@@ -81,7 +81,7 @@ cat <<EOF >"${INSTALL_DIR}/bundle/Contents/Info.plist"
                 <key>CFBundleTypeRole</key>
                 <string>Viewer</string>
             </dict>
-	</array>
+        </array>
         <key>NSHumanReadableCopyright</key>
         <string>${COPYRIGHT}</string>
         <key>NSHighResolutionCapable</key>
