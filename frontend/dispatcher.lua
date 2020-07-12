@@ -3,6 +3,7 @@ local Device = require("device")
 local Event = require("ui/event")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
+local orderedPairs = require("ffi/util").orderedPairs
 local T = require("ffi/util").template
 local _ = require("gettext")
 
@@ -184,7 +185,7 @@ function Dispatcher:init()
 end
 
 function Dispatcher.addItem(caller, menu, location, settings, section)
-    for k, v in pairs(settingsList) do
+    for k, v in orderedPairs(settingsList) do
         if settingsList[k][section] == true and
         (settingsList[k].condition == nil or settingsList[k].condition) then
             if settingsList[k].category == "none" or settingsList[k].category == "arg" then
@@ -353,7 +354,7 @@ function Dispatcher.addSubMenu(caller, menu, location, settings)
             if touchmenu_instance then touchmenu_instance:updateItems() end
         end,
     })
-    for section,section_text in pairs({device=_("Device"), rolling=_("Reflowable documents (epub, fb2, txt)"), paging=_("Fixed layout documents (pdf, djvu, pics)"), filemanager=_("Filemanager"),}) do
+    for section,section_text in orderedPairs({device=_("Device"), rolling=_("Reflowable documents (epub, fb2, txt)"), paging=_("Fixed layout documents (pdf, djvu, pics)"), filemanager=_("Filemanager"),}) do
         local submenu = {}
         -- pass caller's context
         Dispatcher.addItem(caller, submenu, location, settings, section)
