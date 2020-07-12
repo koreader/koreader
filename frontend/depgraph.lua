@@ -129,7 +129,6 @@ function DepGraph:removeNode(node_key)
             table.remove(self.nodes, index)
         else
             -- Can't remove it, just flag it as disabled instead
-            print("Flagging", node_key, "as disabled")
             node.disabled = true
         end
     end
@@ -142,7 +141,6 @@ function DepGraph:removeNode(node_key)
                 -- If it did, wipe ourselves from there
                 if dep_node_key == node_key then
                     table.remove(curr_node.deps, idx)
-                    print("Removed", dep_node_key, "from", curr_node.key, "deps at index", idx)
                     break
                 end
             end
@@ -198,30 +196,23 @@ function DepGraph:serialize()
 
     for i, n in ipairs(self.nodes) do
         local node_key = n.key
-        print("Iterating over", node_key)
         if not visited[node_key] then
             local queue = { node_key }
             while #queue > 0 do
                 local pos = #queue
                 local curr_node_key = queue[pos]
-                print("curr_node_key is", curr_node_key)
                 local curr_node = self:getActiveNode(curr_node_key)
-                print("curr_node is", curr_node and curr_node.key or "nil")
                 local all_deps_visited = true
                 if curr_node and curr_node.deps then
                     for _, dep_node_key in ipairs(curr_node.deps) do
                         if not visited[dep_node_key] then
                             -- Only insert to queue for later process if node has dependencies
-                            print("dep_node_key is", dep_node_key)
                             local dep_node = self:getActiveNode(dep_node_key)
-                            print("dep_node is", dep_node and dep_node.key or "nil")
                             -- Only if it was active!
                             if dep_node then
                                 if dep_node.deps then
-                                    print("Adding dep", dep_node_key, "to queue")
                                     table.insert(queue, dep_node_key)
                                 else
-                                    print("Adding dep", dep_node_key, "to ordered list")
                                     table.insert(ordered_nodes, dep_node_key)
                                 end
                             end
@@ -236,7 +227,6 @@ function DepGraph:serialize()
                     table.remove(queue, pos)
                     -- Only if it was active!
                     if curr_node then
-                        print("Adding", curr_node_key, "to ordered list")
                         table.insert(ordered_nodes, curr_node_key)
                     end
                 end
