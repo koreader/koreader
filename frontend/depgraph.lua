@@ -66,7 +66,7 @@ function DepGraph:addNode(node_key, deps)
     local node = self:getNode(node_key)
 
     if node then
-         -- If it exists, but was disabled, re-enable it
+        -- If it exists, but was disabled, re-enable it
         if node.disabled then
            node.disabled = nil
         end
@@ -86,8 +86,13 @@ function DepGraph:addNode(node_key, deps)
     for _, dep_node_key in ipairs(deps) do
         local dep_node = self:getNode(dep_node_key)
 
-        -- Create dep node itself if need be
-        if not dep_node then
+        if dep_node then
+            -- If it exists, but was disabled, re-enable it
+            if dep_node.disabled then
+                dep_node.disabled = nil
+            end
+        else
+            -- Create dep node itself if need be
             dep_node = { key = dep_node_key }
             table.insert(self.nodes, dep_node)
         end

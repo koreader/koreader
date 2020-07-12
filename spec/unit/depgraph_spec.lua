@@ -149,7 +149,8 @@ describe("DepGraph module", function()
         dg:addNode('feh')
         dg:removeNode('baz')
         dg:removeNode('bar')
-        dg:addNode('blah', {'bla', 'h', 'baz'})
+        dg:addNode('blah', {'bla', 'h', 'bamf'})
+        dg:removeNode('bamf')
         assert.are.same({
             'foo',
             'bam',
@@ -159,9 +160,9 @@ describe("DepGraph module", function()
             'blah',
         }, dg:serialize())
 
-        -- Check that baz was removed from blah's deps
+        -- Check that bamf was removed from blah's deps
         assert.are.same({
-            'blah',
+            'bla',
             'h',
         }, dg:getNode('blah').deps)
     end)
