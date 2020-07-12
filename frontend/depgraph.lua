@@ -36,17 +36,14 @@ function DepGraph:checkNode(id)
     return false
 end
 
+-- Returns a (node, node_index) tuple
 function DepGraph:getNode(id)
-    local node
-    local index
     for i, n in ipairs(self.nodes) do
         if n.key == id then
-            node = n
-            index = i
-            break
+            return n, i
         end
     end
-    return node, index
+    return nil, nil
 end
 
 -- If node is nil but index is set, node is disabled
