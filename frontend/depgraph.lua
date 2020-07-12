@@ -25,9 +25,10 @@ function DepGraph:new(new_o)
     return o
 end
 
+-- Check if node exists, and is active
 function DepGraph:checkNode(id)
     for i, _ in ipairs(self.nodes) do
-       if self.nodes[i].key == id then
+       if self.nodes[i].key == id and not self.nodes[i].disabled then
            return true
        end
     end
@@ -38,6 +39,7 @@ end
 function DepGraph:getNode(id)
     local node = nil
     local index = nil
+    -- FIXME: _ is node, duh.
     for i, _ in ipairs(self.nodes) do
         if self.nodes[i].key == id then
             node = self.nodes[i]
@@ -48,6 +50,18 @@ function DepGraph:getNode(id)
     return node, index
 end
 
+function DepGraph:getActiveNode(id)
+    local node = nil
+    local index = nil
+
+    node, index = self:getNode(id)
+    if node.disabled then
+        node = nil
+    end
+
+    return node, index
+end
+
 -- Add a node, with an optional list of dependencies
 -- If dependencies don't exist as proper nodes yet, they'll be created, in order.
 -- If node already exists, the new list of dependencies is *appended* to the existing one, without duplicates.
@@ -55,13 +69,21 @@ function DepGraph:addNode(node_key, deps)
     -- Find main node if it already exists
     local node = self:getNode(node_key)
 
-    -- Create it otherwise
-    if not node then
+    if node then
+         -- If it exists, but was disabled, re-enable it
+        if node.disabled then
+           node.disabled = nil
+        end
+    else
+        -- If it doesn't exist at all, create it
         node = { key = node_key }
         table.insert(self.nodes, node)
     end
 
-    if not deps then return end
+    -- No dependencies? We're done!
+    if not deps then
+        return
+    end
 
     -- Create dep nodes if they don't already exist
     local node_deps = node.deps or {}
@@ -91,7 +113,7 @@ function DepGraph:addNode(node_key, deps)
 end
 
 -- Attempt to remove a node, as well as all traces of it from other nodes' deps
--- If node has deps, it's actual node is kept, c.f., lenghty comment below.
+-- If node has deps, it's kept, but marked as disabled, c.f., lenghty comment below.
 function DepGraph:removeNode(node_key)
     -- We shouldn't remove a node if it has dependencies (as these may have been added via addNodeDep
     -- (as opposed to the optional deps list passed to addNode), like what InputContainer does with overrides,
@@ -99,16 +121,14 @@ function DepGraph:removeNode(node_key)
     -- meaning those other nodes basically add themselves to another's deps).
     -- We don't want to lose the non-native dependency on these other nodes in case we later re-addNode this one
     -- with its stock dependency list.
-    --- @fixme: That feels a bit clunky.
-    --          A node entry could perhaps use a "disabled" flag to handle that if the node hasn't actually been removed?
-    --          That'd make iterating over nodes slightly more awkward, because we'd sometimes only want to walk active nodes,
-    --          but not necessarily all the time...
     local node, index = self:getNode(node_key)
     if node then
         if not node.deps or #node.deps == 0 then
-            -- We need to clear *all* references to that node for it to be GC'ed...
-            node = nil --luacheck: ignore
+            -- No dependencies, can be wiped safely
             table.remove(self.nodes, index)
+        else
+            -- Can't remove it, just flag it as disabled instead
+            node.disabled = true
         end
     end
     -- On the other hand, we definitely should remove it from the deps of every *other* node.
@@ -120,7 +140,7 @@ function DepGraph:removeNode(node_key)
             for idx, dep_node_key in ipairs(curr_node.deps) do
                 -- If it did, wipe ourselves from there
                 if dep_node_key == node_key then
-                    -- Wipe all refs
+                    -- Wipe all refs (first one is technically for show)
                     curr_node.deps[idx] = nil
                     table.remove(self.nodes[i].deps, idx)
                     break
@@ -163,6 +183,7 @@ function DepGraph:removeNodeDep(node_key, dep_node_key)
     if node.deps then
         for idx, dep_key in ipairs(node.deps) do
             if dep_key == dep_node_key then
+                -- Wipe all refs (first one is technically for show)
                 node.deps[idx] = nil
                 table.remove(self.nodes[index].deps, idx)
                 break
@@ -184,13 +205,13 @@ function DepGraph:serialize()
             while #queue > 0 do
                 local pos = #queue
                 local curr_node_key = queue[pos]
-                local curr_node = self:getNode(curr_node_key)
+                local curr_node = self:getActiveNode(curr_node_key)
                 local all_deps_visited = true
-                if curr_node.deps then
+                if curr_node and curr_node.deps then
                     for _, dep_node_key in ipairs(curr_node.deps) do
                         if not visited[dep_node_key] then
-                            -- only insert to queue for later process if node has dependencies
-                            local dep_node = self:getNode(dep_node_key)
+                            -- Only insert to queue for later process if node has dependencies
+                            local dep_node = self:getActiveNode(dep_node_key)
                             if dep_node and dep_node.deps then
                                 table.insert(queue, dep_node_key)
                             else
