@@ -1,4 +1,5 @@
 -- From https://github.com/bakpakin/luamd revision 388ce799d93e899e4d673cdc6d522f12310822bd
+local util = require("util")
 
 --[[
 Copyright (c) 2016 Calvin Rose <calsrose@gmail.com>
@@ -417,54 +418,10 @@ end
 -- Rendering
 --------------------------------------------------------------------------------
 
--- c.f., http://lua-users.org/wiki/SortedIteration
-local function __genOrderedIndex( t )
-    local orderedIndex = {}
-    for key in pairs(t) do
-        table.insert( orderedIndex, key )
-    end
-    table.sort( orderedIndex )
-    return orderedIndex
-end
-
-local function orderedNext(t, state)
-    -- Equivalent of the next function, but returns the keys in the alphabetic
-    -- order. We use a temporary ordered key table that is stored in the
-    -- table being iterated.
-
-    local key = nil
-    --print("orderedNext: state = "..tostring(state) )
-    if state == nil then
-        -- the first time, generate the index
-        t.__orderedIndex = __genOrderedIndex( t )
-        key = t.__orderedIndex[1]
-    else
-        -- fetch the next value
-        for i = 1,table.getn(t.__orderedIndex) do
-            if t.__orderedIndex[i] == state then
-                key = t.__orderedIndex[i+1]
-            end
-        end
-    end
-
-    if key then
-        return key, t[key]
-    end
-
-    -- no more value to return, cleanup
-    t.__orderedIndex = nil
-    return
-end
-
-local function orderedPairs(t)
-    -- Equivalent of the pairs() function on tables. Allows to iterate
-    -- in order
-    return orderedNext, t, nil
-end
-
 local function renderAttributes(attributes)
     local accum = {}
-    for k, v in orderedPairs(attributes) do
+    -- KOReader: oderedPairs instead of pairs
+    for k, v in util.orderedPairs(attributes) do
         accum[#accum + 1] = format("%s=\"%s\"", k, v)
     end
     return concat(accum, ' ')
