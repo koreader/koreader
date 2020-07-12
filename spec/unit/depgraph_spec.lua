@@ -165,5 +165,22 @@ describe("DepGraph module", function()
             'bla',
             'h',
         }, dg:getNode('blah').deps)
+
+        -- Check that baz is re-enabled w/ its full deps (minus bar, that we removed earlier) if re-Added as a dep
+        dg:addNode('whee', {'baz'})
+        assert.are.same({
+            'foo',
+            'bam',
+        }, dg:getNode('baz').deps)
+        assert.are.same({
+            'foo',
+            'bam',
+            'baz',
+            'feh',
+            'bla',
+            'h',
+            'blah',
+            'whee',
+        }, dg:serialize())
     end)
 end)

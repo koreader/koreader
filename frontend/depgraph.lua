@@ -141,9 +141,8 @@ function DepGraph:removeNode(node_key)
             for idx, dep_node_key in ipairs(curr_node.deps) do
                 -- If it did, wipe ourselves from there
                 if dep_node_key == node_key then
-                    -- Wipe all refs (first one is technically for show)
-                    curr_node.deps[idx] = nil
                     table.remove(self.nodes[i].deps, idx)
+                    print("Removed", dep_node_key, "from", curr_node.key, "deps at index", idx)
                     break
                 end
             end
