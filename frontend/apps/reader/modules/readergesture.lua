@@ -1399,7 +1399,7 @@ function ReaderGesture:gestureAction(action, ges)
     elseif action == "back" then
         self.ui:handleEvent(Event:new("Back"))
     elseif action == "previous_location" then
-        self.ui:handleEvent(Event:new("GoBackLink", true)) -- show_notification_if_empty
+        self.ui:handleEvent(Event:new("GoBackLink")) -- show_notification_if_empty
     elseif action == "latest_bookmark" then
         self.ui:handleEvent(Event:new("GoToLatestBookmark"))
     elseif action == "follow_nearest_link" then
@@ -1407,7 +1407,7 @@ function ReaderGesture:gestureAction(action, ges)
     elseif action == "follow_nearest_internal_link" then
         self.ui:handleEvent(Event:new("GoToInternalPageLink", ges))
     elseif action == "clear_location_history" then
-        self.ui:handleEvent(Event:new("ClearLocationStack", true)) -- show_notification
+        self.ui:handleEvent(Event:new("ClearLocationStack")) -- show_notification
     elseif action == "filemanager" then
         self.ui:handleEvent(Event:new("Home"))
     elseif action == "file_search" then

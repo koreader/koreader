@@ -25,14 +25,77 @@ and optionally
 --]]--
 local settingsList = {
     --Device settings
-    show_frontlight_dialog = { category="toggle", event="ShowFlDialog", title=_("Show frontlight dialog"), device=true, condition=Device:hasFrontlight()},
-    toggle_frontlight = { category="toggle", event="ToggleFrontlight", title=_("Toggle frontlight"), device=true, condition=Device:hasFrontlight()},
-    toggle_gsensor = { category="toggle", event="ToggleGSensor", title=_("Toggle accelerometer"), device=true, condition=Device:canToggleGSensor()},
-    wifi_on = { category="toggle", event="InfoWifiOn", title=_("Turn on Wi-Fi"), device=true, condition=Device:hasWifiToggle()},
-    wifi_off = { category="toggle", event="InfoWifiOff", title=_("Turn off Wi-Fi"), device=true, condition=Device:hasWifiToggle()},
-    toggle_wifi = { category="toggle", event="ToggleWifi", title=_("Toggle Wi-Fi"), device=true, condition=Device:hasWifiToggle()},
+    show_frontlight_dialog = { category="none", event="ShowFlDialog", title=_("Show frontlight dialog"), device=true, condition=Device:hasFrontlight()},
+    toggle_frontlight = { category="none", event="ToggleFrontlight", title=_("Toggle frontlight"), device=true, condition=Device:hasFrontlight()},
+--    increase_frontlight = { category="incrementalnumber", event="IncreaseFlIntensity", min=1, max=100, title=_("Increase frontlight brightness"), device=true, condition=Device:hasFrontlight(),},
+--    decrease_frontlight = { category="incrementalnumber", event="DecreaseFlIntensity", min=1, max=100, title=_("Decrease frontlight brightness"), device=true, condition=Device:hasFrontlight(),},
+--    increase_frontlight_warmth = { category="incrementalnumber", event="IncreaseFlWarmth", min=1, max=100, title=_("Increase frontlight warmth"), device=true, condition=Device:hasNaturalLight(),},
+--    decrease_frontlight_warmth = { category="incrementalnumber", event="DecreaseFlWarmth", min=1, max=100, title=_("Decrease frontlight warmth"), device=true, condition=Device:hasNaturalLight(),},
+    toggle_gsensor = { category="none", event="ToggleGSensor", title=_("Toggle accelerometer"), device=true, condition=Device:canToggleGSensor()},
+    wifi_on = { category="none", event="InfoWifiOn", title=_("Turn on Wi-Fi"), device=true, condition=Device:hasWifiToggle()},
+    wifi_off = { category="none", event="InfoWifiOff", title=_("Turn off Wi-Fi"), device=true, condition=Device:hasWifiToggle()},
+    toggle_wifi = { category="none", event="ToggleWifi", title=_("Toggle Wi-Fi"), device=true, condition=Device:hasWifiToggle()},
+    reading_progress = { category="none", event="ShowReaderProgress", title=_("Reading progress"), device=true,},
+    stats_calendar_view = { category="none", event="ShowCalendarView", title=_("Statistics calendar view"), device=true,},
+    history = { category="none", event="ShowHist", title=_("History"), device=true,},
+    open_previous_document = { category="none", event="OpenLastDoc", title=_("Open previous document"), device=true,},
+    filemanager = { category="none", event="Home", title=_("File browser"), device=true,},
+    dictionary_lookup = { category="none", event="ShowDictionaryLookup", title=_("Dictionary lookup"), device=true,},
+    wikipedia_lookup = { category="none", event="ShowWikipediaLookup", title=_("Wikipedia lookup"), device=true,},
+    fulltext_search = { category="none", event="ShowFulltextSearchInput", title=_("Fulltext search"), device=true,},
+    file_search = { category="none", event="ShowFileSearch", title=_("File search"), device=true,},
+    full_refresh = { category="none", event="FullRefresh", title=_("Full screen refresh"), device=true,},
+    night_mode = { category="none", event="ToggleNightMode", title=_("Night mode"), device=true,},
+    suspend = { category="none", event="SuspendEvent", title=_("Suspend"), device=true,},
+    exit = { category="none", event="Exit", title=_("Exit KOReader"), device=true,},
+    restart = { category="none", event="Restart", title=_("Restart KOReader"), device=true, condition=Device:canRestart(),},
+    reboot = { category="none", event="Reboot", title=_("Reboot the device"), device=true, condition=Device:canReboot(),},
+    poweroff = { category="none", event="PowerOff", title=_("Power off"), device=true, condition=Device:canPowerOff(),},
+    show_menu = { category="none", event="ShowMenu", title=_("Show menu"), device=true,},
+    toggle_hold_corners = { category="none", event="IgnoreHoldCorners", title=_("Toggle hold corners"), device=true,},
+    toggle_rotation = { category="none", event="ToggleRotation", title=_("Toggle rotation"), device=true,},
 
-    --CreOptions
+    --filemanager settings
+    folder_up = { category="none", event="FolderUp", title=_("Folder up"), filemanager=true},
+    show_plus_menu = { category="none", event="ShowPlusMenu", title=_("Show plus menu"), filemanager=true},
+    folder_shortcuts = { category="none", event="ShowFolderShortcutsDialog", title=_("Folder shortcuts"), filemanager=true},
+
+    --reader settings
+    prev_chapter = { category="none", event="GotoPrevChapter", title=_("Previous chapter"), rolling=true, paging=true,},
+    next_chapter = { category="none", event="GotoNextChapter", title=_("Next chapter"), rolling=true, paging=true,},
+    first_page = { category="none", event="GoToBeginning", title=_("First page"), rolling=true, paging=true,},
+    last_page = { category="none", event="GoToEnd", title=_("Last page"), rolling=true, paging=true,},
+    prev_bookmark = { category="none", event="GotoPreviousBookmarkFromPage", title=_("Previous bookmark"), rolling=true, paging=true,},
+    next_bookmark = { category="none", event="GotoNextBookmarkFromPage", title=_("Next bookmark"), rolling=true, paging=true,},
+    go_to = { category="none", event="ShowGotoDialog", title=_("Go to"), rolling=true, paging=true,},
+    skim = { category="none", event="ShowSkimtoDialog", title=_("Skim"), rolling=true, paging=true,},
+    back = { category="none", event="Back", title=_("Back"), rolling=true, paging=true,},
+    previous_location = { category="none", event="GoBackLink", title=_("Back to previous location"), rolling=true, paging=true,},
+    latest_bookmark = { category="none", event="GoToLatestBookmark", title=_("Go to latest bookmark"), rolling=true, paging=true,},
+--    follow_nearest_link = { category="toggle", event="GoToPageLink", title=_("Follow nearest link"), rolling=true, paging=true,},
+--    follow_nearest_internal_link = { category="toggle", event="GoToInternalPageLink", title=_("Follow nearest internal link"), rolling=true, paging=true,},
+    clear_location_history = { category="none", event="ClearLocationStack", title=_("Clear location history"), rolling=true, paging=true,},
+    toc = { category="none", event="ShowToc", title=_("Table of contents"), rolling=true, paging=true,},
+    bookmarks = { category="none", event="ShowBookmark", title=_("Bookmarks"), rolling=true, paging=true,},
+    book_statistics = { category="none", event="ShowBookStats", title=_("Book statistics"), rolling=true, paging=true,},
+    book_status = { category="none", event="ShowBookStatus", title=_("Book status"), rolling=true, paging=true,},
+    book_info = { category="none", event="ShowBookInfo", title=_("Book information"), rolling=true, paging=true,},
+    book_description = { category="none", event="ShowBookDescription", title=_("Book description"), rolling=true, paging=true,},
+    book_cover = { category="none", event="ShowBookCover", title=_("Book cover"), rolling=true, paging=true,},
+    show_config_menu = { category="none", event="ShowConfigMenu", title=_("Show bottom menu"), rolling=true, paging=true,},
+    toggle_bookmark = { category="none", event="ToggleBookmark", title=_("Toggle bookmark"), rolling=true, paging=true,},
+    toggle_inverse_reading_order = { category="none", event="ToggleReadingOrder", title=_("Toggle page turn direction"), rolling=true, paging=true,},
+    cycle_highlight_action = { category="none", event="CycleHighlightAction", title=_("Cycle highlight action"), rolling=true, paging=true,},
+    cycle_highlight_style = { category="none", event="CycleHighlightStyle", title=_("Cycle highlight style"), rolling=true, paging=true,},
+--    increase_font = { category="incrementalnumber", event="IncreaseFontSize", min=1, max=50, title=_("Increase font size"), rolling=true,},
+--    decrease_font = { category="incrementalnumber", event="DecreaseFontSize", min=1, max=50, title=_("Decrease font size"), rolling=true,},
+
+    --paging reader settings
+    toggle_page_flipping = { category="none", event="TogglePageFlipping", title=_("Toggle page flipping"), paging=true,},
+    toggle_reflow = { category="none", event="ToggleReflow", title=_("Toggle reflow"), paging=true,},
+    zoom = { category="string", event="SetZoomMode", title=_("Zoom to"), args={"contentwidth", "contentheight", "pagewidth", "pageheight", "column", "content", "page"}, toggle={"content width", "content height", "page width", "page height", "column", "content", "page"}, paging=true,},
+
+    --parsed from CreOptions
     rotation_mode = {category="string", device=true},
     visible_pages = {category="string", rolling=true},
     h_page_margins = {category="string", rolling=true},
@@ -274,7 +337,7 @@ function Dispatcher.addSubMenu(caller, menu, location, settings)
             if touchmenu_instance then touchmenu_instance:updateItems() end
         end,
     })
-    for section,section_text in pairs({device=_("Device"), rolling=_("Reflowable documents (epub, fb2, txt)"), paging=_("Fixed layout documents (pdf, djvu, pics)"),}) do
+    for section,section_text in pairs({device=_("Device"), rolling=_("Reflowable documents (epub, fb2, txt)"), paging=_("Fixed layout documents (pdf, djvu, pics)"), filemanager=_("Filemanager"),}) do
         local submenu = {}
         -- pass caller's context
         Dispatcher.addItem(caller, submenu, location, settings, section)
@@ -291,15 +354,16 @@ function Dispatcher:execute(settings, gesture)
             if settingsList[k].category == "none" then
                 self.ui:handleEvent(Event:new(settingsList[k].event))
             end
-            if settingsList[k].category == "toggle"
-            or settingsList[k].category == "absolutenumber"
+            if settingsList[k].category == "absolutenumber"
             or settingsList[k].category == "string" then
                 self.ui:handleEvent(Event:new(settingsList[k].event, v))
             end
-            if settingsList[k].category == "incrementalnumber" then
+            if settingsList[k].category == "toggle"
+            or settingsList[k].category == "incrementalnumber" then
+            -- the event expects a gesture object
                 if v then
-                    self.ui:handleEvent(Event:new(settingsList[k].event, v))
-                else
+                    self.ui:handleEvent(Event:new(settingsList[k].event, {distance=v}))
+                elseif gesture ~= nil then
                     self.ui:handleEvent(Event:new(settingsList[k].event, gesture))
                 end
             end

@@ -276,13 +276,13 @@ This allows you to specify how much smaller or larger it should be relative to t
     menu_items.go_to_previous_location = {
         text = _("Go back to previous location"),
         enabled_func = function() return #self.location_stack > 0 end,
-        callback = function() self:onGoBackLink() end,
+        callback = function() self:onGoBackLink(true) end,
         hold_callback = function(touchmenu_instance)
             UIManager:show(ConfirmBox:new{
                 text = _("Clear location history?"),
                 ok_text = _("Clear"),
                 ok_callback = function()
-                    self:onClearLocationStack()
+                    self:onClearLocationStack(true)
                     touchmenu_instance:closeMenu()
                 end,
             })
@@ -441,9 +441,9 @@ function ReaderLink:addCurrentLocationToStack()
     end
 end
 
-function ReaderLink:onClearLocationStack(show_notification)
+function ReaderLink:onClearLocationStack(dont_show_notification)
     self.location_stack = {}
-    if show_notification then
+    if not dont_show_notification then
         UIManager:show(Notification:new{
             text = _("Location history cleared."),
             timeout = 2,
@@ -685,13 +685,13 @@ function ReaderLink:onGoToExternalLink(link_url)
 end
 
 --- Goes back to previous location.
-function ReaderLink:onGoBackLink(show_notification_if_empty)
+function ReaderLink:onGoBackLink(dont_show_notification_if_empty)
     local saved_location = table.remove(self.location_stack)
     if saved_location then
         logger.dbg("GoBack: restoring:", saved_location)
         self.ui:handleEvent(Event:new('RestoreBookLocation', saved_location))
         return true
-    elseif show_notification_if_empty then
+    elseif not dont_show_notification_if_empty then
         UIManager:show(Notification:new{
             text = _("Location history is empty."),
             timeout = 2,
@@ -709,7 +709,7 @@ function ReaderLink:onSwipe(arg, ges)
                 -- knows it is empty and that next swipe back will get him
                 -- to previous page (and not to previous location)
                 self.swipe_back_resist = #self.location_stack == 1
-                return self:onGoBackLink()
+                return self:onGoBackLink(true)
             elseif self.swipe_back_resist then
                 self.swipe_back_resist = false
                 -- Make that gesture don't do anything, and show a Notification
