@@ -50,7 +50,7 @@ end
 
 -- Add a node, with an optional list of dependencies
 -- If dependencies don't exist yet, they'll be created in order.
--- If node already exists, the list of dependencies is *replaced* by the new one.
+-- If node already exists, the new list of dependencies is *appended* to the existing one, without duplicates.
 function DepGraph:addNode(node_key, deps)
     -- Find main node if it already exists
     local node = self:getNode(node_key)
@@ -64,7 +64,7 @@ function DepGraph:addNode(node_key, deps)
     if not deps then return end
 
     -- Create dep nodes if they don't already exist
-    local node_deps = {}
+    local node_deps = node.deps or {}
     for _, dep_node_key in ipairs(deps) do
         local dep_node = self:getNode(dep_node_key)
 
@@ -74,7 +74,7 @@ function DepGraph:addNode(node_key, deps)
             table.insert(self.nodes, dep_node)
         end
 
-        -- Build deps array the long way 'round, and prevent duplicates, in case deps was funky as hell.
+        -- Update deps array the long way 'round, and prevent duplicates, in case deps was funky as hell.
         local exists = false
         for _, k in ipairs(node_deps) do
             if k == dep_node_key then
