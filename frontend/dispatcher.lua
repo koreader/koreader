@@ -32,16 +32,16 @@ and optionally
 --]]--
 local settingsList = {
     --Device settings
-    show_frontlight_dialog = { category="none", event="ShowFlDialog", title=_("Show frontlight dialog"), device=true, condition=Device:hasFrontlight()},
-    toggle_frontlight = { category="none", event="ToggleFrontlight", title=_("Toggle frontlight"), device=true, condition=Device:hasFrontlight()},
+    show_frontlight_dialog = { category="none", event="ShowFlDialog", title=_("Show frontlight dialog"), device=true, condition=Device:hasFrontlight(),},
+    toggle_frontlight = { category="none", event="ToggleFrontlight", title=_("Toggle frontlight"), device=true, condition=Device:hasFrontlight(),},
 --    increase_frontlight = { category="incrementalnumber", event="IncreaseFlIntensity", min=1, max=100, title=_("Increase frontlight brightness"), device=true, condition=Device:hasFrontlight(),},
 --    decrease_frontlight = { category="incrementalnumber", event="DecreaseFlIntensity", min=1, max=100, title=_("Decrease frontlight brightness"), device=true, condition=Device:hasFrontlight(),},
 --    increase_frontlight_warmth = { category="incrementalnumber", event="IncreaseFlWarmth", min=1, max=100, title=_("Increase frontlight warmth"), device=true, condition=Device:hasNaturalLight(),},
 --    decrease_frontlight_warmth = { category="incrementalnumber", event="DecreaseFlWarmth", min=1, max=100, title=_("Decrease frontlight warmth"), device=true, condition=Device:hasNaturalLight(),},
-    toggle_gsensor = { category="none", event="ToggleGSensor", title=_("Toggle accelerometer"), device=true, condition=Device:canToggleGSensor()},
-    wifi_on = { category="none", event="InfoWifiOn", title=_("Turn on Wi-Fi"), device=true, condition=Device:hasWifiToggle()},
-    wifi_off = { category="none", event="InfoWifiOff", title=_("Turn off Wi-Fi"), device=true, condition=Device:hasWifiToggle()},
-    toggle_wifi = { category="none", event="ToggleWifi", title=_("Toggle Wi-Fi"), device=true, condition=Device:hasWifiToggle()},
+    toggle_gsensor = { category="none", event="ToggleGSensor", title=_("Toggle accelerometer"), device=true, condition=Device:canToggleGSensor(),},
+    wifi_on = { category="none", event="InfoWifiOn", title=_("Turn on Wi-Fi"), device=true, condition=Device:hasWifiToggle(),},
+    wifi_off = { category="none", event="InfoWifiOff", title=_("Turn off Wi-Fi"), device=true, condition=Device:hasWifiToggle(),},
+    toggle_wifi = { category="none", event="ToggleWifi", title=_("Toggle Wi-Fi"), device=true, condition=Device:hasWifiToggle(),},
     reading_progress = { category="none", event="ShowReaderProgress", title=_("Reading progress"), device=true,},
     stats_calendar_view = { category="none", event="ShowCalendarView", title=_("Statistics calendar view"), device=true,},
     history = { category="none", event="ShowHist", title=_("History"), device=true,},
@@ -196,19 +196,20 @@ function Dispatcher.addItem(caller, menu, location, settings, section)
         (settingsList[k].condition == nil or settingsList[k].condition) then
             if settingsList[k].category == "none" or settingsList[k].category == "arg" then
                 table.insert(menu, {
-                   text = settingsList[k].title,
-                   checked_func = function()
-                   return caller[location][settings] ~= nil and caller[location][settings][k] ~= nil
+                    text = settingsList[k].title,
+                    checked_func = function()
+                    return caller[location][settings] ~= nil and caller[location][settings][k] ~= nil
+                    end,
+                    callback = function(touchmenu_instance)
+                        if caller[location][settings] ~= nil
+                        and caller[location][settings][k] then
+                            caller[location][settings][k] = nil
+                        else
+                            caller[location][settings][k] = true
+                        end
+                        if touchmenu_instance then touchmenu_instance:updateItems() end
                    end,
-                   callback = function(touchmenu_instance)
-                      if caller[location][settings] ~= nil
-                      and caller[location][settings][k] then
-                          caller[location][settings][k] = nil
-                      else
-                          caller[location][settings][k] = true
-                      end
-                      if touchmenu_instance then touchmenu_instance:updateItems() end
-                  end,
+                   separator = settingsList[k].separator,
                })
             elseif settingsList[k].category == "toggle" then
                 table.insert(menu, {
@@ -226,6 +227,7 @@ function Dispatcher.addItem(caller, menu, location, settings, section)
                         caller[location][settings][k] = nil
                         if touchmenu_instance then touchmenu_instance:updateItems() end
                     end,
+                    separator = settingsList[k].separator,
                 })
             elseif settingsList[k].category == "absolutenumber" then
                 table.insert(menu, {
@@ -259,6 +261,7 @@ function Dispatcher.addItem(caller, menu, location, settings, section)
                         caller[location][settings][k] = nil
                         if touchmenu_instance then touchmenu_instance:updateItems() end
                     end,
+                    separator = settingsList[k].separator,
                 })
             elseif settingsList[k].category == "incrementalnumber" then
                 table.insert(menu, {
@@ -295,6 +298,7 @@ function Dispatcher.addItem(caller, menu, location, settings, section)
                             touchmenu_instance:updateItems()
                         end
                     end,
+                    separator = settingsList[k].separator,
                 })
             elseif settingsList[k].category == "string" then
                 local sub_item_table = {}
@@ -327,6 +331,7 @@ function Dispatcher.addItem(caller, menu, location, settings, section)
                             touchmenu_instance:updateItems()
                         end
                     end,
+                    separator = settingsList[k].separator,
                 })
             end
         end
