@@ -365,7 +365,13 @@ function Dispatcher.addSubMenu(caller, menu, location, settings)
             if touchmenu_instance then touchmenu_instance:updateItems() end
         end,
     })
-    for _,section in ipairs({{"device", _("Device")}, {"filemanager", _("Filemanager")}, {"rolling", _("Reflowable documents (epub, fb2, txt)")}, {"paging", _("Fixed layout documents (pdf, djvu, pics)")},}) do
+    local section_list = {
+        {"device", _("Device")},
+        {"filemanager", _("Filemanager")},
+        {"rolling", _("Reflowable documents (epub, fb2, txt)")},
+        {"paging", _("Fixed layout documents (pdf, djvu, pics)")},
+    }
+    for _,section in ipairs(section_list) do
         local submenu = {}
         -- pass caller's context
         Dispatcher.addItem(caller, submenu, location, settings, section[1])
