@@ -182,5 +182,15 @@ describe("DepGraph module", function()
             'blah',
             'whee',
         }, dg:serialize())
+
+        -- Check that re-adding an existing node with new deps properly *appends* to its existing deps
+        dg:addNode('baz', {'wham', 'bang'})
+        assert.are.same({
+            'foo',
+            'bam',
+            'wham',
+            'bang',
+        }, dg:getNode('baz').deps)
+
     end)
 end)

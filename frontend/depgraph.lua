@@ -107,7 +107,7 @@ function DepGraph:addNode(node_key, deps)
             table.insert(node_deps, dep_node_key)
         end
     end
-    -- Update main node with its deps
+    -- Update main node with its updated deps
     node.deps = node_deps
 end
 
