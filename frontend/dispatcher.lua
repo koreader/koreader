@@ -13,15 +13,21 @@ local Dispatcher = {
 --[[--
 contains a list of a dispatchable settings
 each setting contains:
-    category: one of none, toggle, absolutenumber, incrementalnumber, or string.
+    category: one of
+       none: a direct event call
+       arg: a direct event call that gets passed a argument
+       toggle: a event that expects a gesture object
+       absolutenumber: event that sets a number
+       incrementalnumber: event that increments a number & expects a gesture object
+       string: event with a list of arguments to chose from
     event: what to call.
     title: for use in ui.
+    section: under which menu to display (currently: device, filemanager, rolling, paging)
 and optionally
     min/max: for number
     default
     args: allowed values for string.
     toggle: display name for args
-    A true value for the correct section to display in.
 --]]--
 local settingsList = {
     --Device settings
