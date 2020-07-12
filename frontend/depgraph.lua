@@ -134,14 +134,14 @@ function DepGraph:removeNode(node_key)
         end
     end
     -- On the other hand, we definitely should remove it from the deps of every *other* node.
-    for i, curr_node in ipairs(self.nodes) do
+    for _, curr_node in ipairs(self.nodes) do
         -- Is not the to be removed node, and has deps
         if curr_node.key ~= node_key and curr_node.deps then
             -- Walk that node's deps to check if it depends on us
             for idx, dep_node_key in ipairs(curr_node.deps) do
                 -- If it did, wipe ourselves from there
                 if dep_node_key == node_key then
-                    table.remove(self.nodes[i].deps, idx)
+                    table.remove(curr_node.deps, idx)
                     print("Removed", dep_node_key, "from", curr_node.key, "deps at index", idx)
                     break
                 end
@@ -179,13 +179,11 @@ end
 
 -- Remove dep_node_key from node_key's deps
 function DepGraph:removeNodeDep(node_key, dep_node_key)
-    local node, index = self:getNode(node_key)
+    local node = self:getNode(node_key)
     if node.deps then
         for idx, dep_key in ipairs(node.deps) do
             if dep_key == dep_node_key then
-                -- Wipe all refs (first one is technically for show)
-                node.deps[idx] = nil
-                table.remove(self.nodes[index].deps, idx)
+                table.remove(node.deps, idx)
                 break
             end
         end
