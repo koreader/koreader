@@ -5,6 +5,7 @@ local Device = require("device")
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
+local Notification = require("ui/widget/notification")
 local ProgressWidget = require("ui/widget/progresswidget")
 local ReaderPanning = require("apps/reader/modules/readerpanning")
 local Size = require("ui/size")
@@ -484,7 +485,7 @@ function ReaderRolling:onSwipe(_, ges)
         end
     else
         -- update footer (time & battery)
-        self.view.footer:updateFooter()
+        self.view.footer:onUpdateFooter()
         -- trigger full refresh
         UIManager:setDirty(nil, "full")
     end
@@ -786,7 +787,7 @@ function ReaderRolling:updatePos()
         self.old_doc_height = new_height
         self.old_page = new_page
         self.ui:handleEvent(Event:new("UpdateToc"))
-        self.view.footer:updateFooter()
+        self.view.footer:onUpdateFooter()
     end
     self:updateTopStatusBarMarkers()
     UIManager:setDirty(self.view.dialog, "partial")
@@ -1296,6 +1297,21 @@ Note that %1 (out of %2) xpaths from your bookmarks and highlights have been nor
             end)
         end,
     })
+end
+
+-- Duplicated in ReaderPaging
+function ReaderRolling:onToggleReadingOrder()
+    self.inverse_reading_order = not self.inverse_reading_order
+    self:setupTouchZones()
+    local is_rtl = BD.mirroredUILayout()
+    if self.inverse_reading_order then
+        is_rtl = not is_rtl
+    end
+    UIManager:show(Notification:new{
+        text = is_rtl and _("RTL page turning.") or _("LTR page turning."),
+        timeout = 2.5,
+    })
+    return true
 end
 
 return ReaderRolling

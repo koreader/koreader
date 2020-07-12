@@ -370,24 +370,11 @@ function Input:handleKeyBoardEv(ev)
         local Device = require("frontend/device")
         local UIManager = require("ui/uimanager")
 
-        local savequit_caller = nil
         local save_quit = function()
             Device:saveSettings()
             UIManager:quit()
         end
-
-        local FileManager = require("apps/filemanager/filemanager")
-        if FileManager.instance then
-            savequit_caller =  FileManager.instance.menu
-        end
-
-        local ReaderUI = require("apps/reader/readerui")
-        local readerui_instance = ReaderUI:_getRunningInstance()
-        if readerui_instance then
-            savequit_caller = readerui_instance.menu
-        end
-
-        savequit_caller:exitOrRestart(save_quit)
+        UIManager:broadcastEvent(Event:new("Exit", save_quit))
     end
 
     -- handle modifier keys

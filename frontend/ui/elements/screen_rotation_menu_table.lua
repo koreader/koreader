@@ -19,8 +19,7 @@ return {
                     return G_reader_settings:isTrue("input_ignore_gsensor")
                 end,
                 callback = function()
-                    G_reader_settings:flipNilOrFalse("input_ignore_gsensor")
-                    Device:toggleGSensor(not G_reader_settings:isTrue("input_ignore_gsensor"))
+                    UIManager:broadcastEvent(Event:new("ToggleGSensor"))
                 end,
             })
         end
